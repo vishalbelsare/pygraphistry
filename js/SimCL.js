@@ -84,7 +84,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				  var uint_t = WebCLKernelArgumentTypes.UINT;
 				  var local_t = WebCLKernelArgumentTypes.LOCAL_MEMORY_SIZE;
 				  var float_t = WebCLKernelArgumentTypes.FLOAT;
-				  types = [null, null, int_t, float_t, int_t, uint_t, null, null];
+				  types = [null, null, int_t, float_t, int_t, local_t, null, null];
 				} catch (e) { }
 				
 				var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * 4 * Float32Array.BYTES_PER_ELEMENT;
