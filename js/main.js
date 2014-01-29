@@ -1,7 +1,8 @@
 require.config({
 	paths: {
 		"jQuery": "libs/jquery-2.1.0",
-		"Q": "libs/q"
+		"Q": "libs/q",
+		"glMatrix": "libs/gl-matrix"
 	},
 	shim: {
 		"jQuery": {

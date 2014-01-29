@@ -1,12 +1,15 @@
-define(["Q", "util"], function(Q, util) {
-	function create(canvas) {
-		var renderer = {}, 
-		    deferred = Q.defer();
+define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
+	function _init(renderer) {
+		var gl = renderer.gl;
 		
-		var gl = canvas.getContext("experimental-webgl");
+		gl.enable(gl.BLEND);
+		gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+		gl.clearColor(0, 0, 0, 1);
+		gl.viewport(0, 0, renderer.canvas.width, renderer.canvas.height);
+		
 		var program = gl.createProgram();
 		
-		getShader(gl, "gl-vertex", gl.VERTEX_SHADER)
+		return getShader(gl, "gl-vertex", gl.VERTEX_SHADER)
 		.then(function(vertShader) {
 			gl.attachShader(program, vertShader);
 			
@@ -14,6 +17,31 @@ define(["Q", "util"], function(Q, util) {
 		})
 		.then(function(fragShader) {
 			gl.attachShader(program, fragShader);
+			
+			gl.linkProgram(program);
+			
+			// TODO: Setup model/view/projection matrices
+		})
+	}
+	
+	function create(canvas) {
+		var renderer = {}, 
+		    deferred = Q.defer();
+		
+		renderer.canvas = canvas;
+		renderer.gl = canvas.getContext("experimental-webgl");
+		
+		
+		renderer.createBuffers = function(size) {
+			
+		};
+		
+		renderer.draw = function() {
+			
+		};
+		
+		
+		_init(renderer).then(function() {
 			deferred.resolve(renderer);
 		})
 		.fail(function(err) {
