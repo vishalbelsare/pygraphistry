@@ -1,8 +1,9 @@
 define(["Q"], function (Q) {
 
     var CURRENT_CL = false;
-    try { CURRENT_CL = cl.enableExtension ? true : false; }
+    try { CURRENT_CL = typeof webcl.enableExtension == "function" ? true : false; }
     catch (e) { }
+    console.log("Current?", CURRENT_CL);
     
 	function create(gl) {
 		var deferred = Q.defer();

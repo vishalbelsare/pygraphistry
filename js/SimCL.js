@@ -74,14 +74,17 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			.then(function(nextVelocities) {
 				simulator.nextVelocities = nextVelocities;
 				
-				console.debug("Max threads:", simulator.cl.maxThreads);
 				var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * 4 * Float32Array.BYTES_PER_ELEMENT;
-				
+				return simulator.cl.createBuffer(localPos);
+			})
+			.then(function(localPosBuf) {
 				var types = [];
 				try {
+				  var int_t = WebCLKernelArgumentTypes.INT;
 				  var uint_t = WebCLKernelArgumentTypes.UINT;
 				  var local_t = WebCLKernelArgumentTypes.LOCAL_MEMORY_SIZE;
-				  types = [uint_t, uint_t, uint_t, uint_t, uint_t, local_t, uint_t, uint_t];
+				  var float_t = WebCLKernelArgumentTypes.FLOAT;
+				  types = [null, null, int_t, float_t, int_t, null, null, null];
 				} catch (e) { }
 				
 				return simulator.kernel.setArgs(
@@ -90,7 +93,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 					 new Int32Array([simulator.numPoints]),
 					 new Float32Array([0.005]), 
 					 new Int32Array([50]), 
-					 new Uint32Array([localPos]),
+					 localPosBuf,
 					 simulator.nextPoints.buffer, 
 					 simulator.nextVelocities.buffer],
 					types);				
