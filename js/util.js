@@ -5,6 +5,7 @@ define(["jQuery", "Q"], function($, Q) {
 		return Q($.ajax(url, {dataType: "text"}));
 	}
 	
+	
 	return {
 		"getSource": getSource
 	};
