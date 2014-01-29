@@ -1,4 +1,9 @@
 define(["Q"], function (Q) {
+
+    var CURRENT_CL = false;
+    try { CURRENT_CL = cl.enableExtension ? true : false; }
+    catch (e) { }
+    
 	function create(gl) {
 		var deferred = Q.defer();
 		
@@ -24,7 +29,7 @@ define(["Q"], function (Q) {
 		var device = devices[0];
 		
 		var context;
-		if (cl.enableExtension) {
+		if (CURRENT_CL) {
 		  cl.enableExtension("KHR_GL_SHARING");
 		  context = cl.createContext(gl, [devices[0]]);		
 		} else {
@@ -92,7 +97,7 @@ define(["Q"], function (Q) {
 	
 	// Executes the specified kernel, with `threads` number of threads, setting each element in
 	// `args` to successive position arguments to the kernel before calling.
-	function call(kernel, threads, args) {
+	function call(kernel, threads, args, types) {
 		args = args || [];
 		
 		return Q.promise(function(resolve, reject, notify) {
@@ -104,7 +109,11 @@ define(["Q"], function (Q) {
 				// }
 				
 				var workgroupSize = new Int32Array([threads]);
-				kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, workgroupSize.length, [], workgroupSize, []);
+				if (CURRENT_CL) {
+				    kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, workgroupSize.length, [], workgroupSize, []);
+				} else {
+				    kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, workgroupSize, null);				
+				}
 				kernel.cl.queue.finish();
 			} catch(err) {
 				reject(err);
@@ -115,14 +124,17 @@ define(["Q"], function (Q) {
 	}
 	
 	
-	function setArgs(kernel, args) {		
+	function setArgs(kernel, args, types) {		
 		var deferred = Q.defer();
 		
 		try {
 			for(var i = 0; i < args.length; i++) {
-				kernel.kernel.setArg(i, args[i]);
-			}
-			
+			    if (CURRENT_CL) {
+				    kernel.kernel.setArg(i, args[i]);
+				} else {
+				    kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], types[i]);
+				}
+			}			
 			deferred.resolve(kernel);
 		} catch(err) {
 			deferred.reject(err);
