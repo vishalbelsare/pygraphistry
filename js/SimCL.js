@@ -15,6 +15,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				};
 				simObj.tick = tick.bind(this, simObj);
 				simObj.setData = setData.bind(this, simObj);
+				simObj.dumpBuffers = dumpBuffers.bind(this, simObj);
 				
 				console.debug("WebCL simulator created");
 				return simObj
@@ -26,11 +27,16 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	
 	
 	function setData(simulator, points, velocities) {
+		if(points.length % 4 !== 0) {
+			throw new Error("The points buffer is an invalid size (must be a multiple of 4)");
+		}
 		simulator.numPoints = points.length / 4;
+		simulator.bufferSize = points.length * points.BYTES_PER_ELEMENT;
 		simulator.renderer.numPoints = simulator.numPoints;
+		simulator.renderer.bufferSize = simulator.bufferSize;
 		
 		return (
-			simulator.renderer.createBuffer(points.length * points.BYTES_PER_ELEMENT)
+			simulator.renderer.createBuffer(points.length * 4 * points.BYTES_PER_ELEMENT)
 			.then(function(pointsVBO) {
 				simulator.renderer.curPoints = pointsVBO;
 				return pointsVBO.write(points);
@@ -40,10 +46,10 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			})
 			.then(function(pointsBuf) {
 				simulator.curPoints = pointsBuf;
-				return simulator.curPoints.write(points)
+				return simulator.curPoints.write(points);
 			})
 			.then(function(pointsBuf) {
-				return simulator.renderer.createBuffer(velocities.length * velocities.BYTES_PER_ELEMENT);
+				return simulator.renderer.createBuffer(velocities.length * 4 * velocities.BYTES_PER_ELEMENT);
 			})
 			.then(function(velsVBO) {
 				simulator.renderer.curVelocities = velsVBO;
@@ -57,11 +63,11 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				return simulator.curVelocities.write(velocities);
 			})
 			.then(function(velsBuf) {
-				return simulator.cl.createBuffer(points.length * points.BYTES_PER_ELEMENT);
+				return simulator.cl.createBuffer(points.length * 4 *points.BYTES_PER_ELEMENT);
 			})
 			.then(function(nextPoints) {
 				simulator.nextPoints = nextPoints;
-				return simulator.cl.createBuffer(velocities.length * velocities.BYTES_PER_ELEMENT);
+				return simulator.cl.createBuffer(velocities.length * 4 * velocities.BYTES_PER_ELEMENT);
 			})
 			.then(function(nextVelocities) {
 				simulator.nextVelocities = nextVelocities;
@@ -100,12 +106,33 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		.then(function() {
 			return Q.all([simulator.curPoints.release(), simulator.curVelocities.release(),
 				simulator.nextPoints.release(), simulator.nextVelocities.release()]);
+		})
+		.then(function() {
+			simulator.cl.queue.finish();
+			return simulator;
+		});
+	}
+	
+	
+	function dumpBuffers(simulator) {
+		return Q.promise(function(resolve, reject, notify) {
+			console.debug("Dumping buffers for debugging");
+			console.debug("Buffer size:", simulator.bufferSize);
+			
+			var testPos = new Float32Array(simulator.bufferSize);
+			simulator.curPoints.read(testPos)
+			.then(function() {
+				console.debug("Buffer data:", testPos);
+				resolve(simulator);
+			})
 		});
 	}
 	
 	
 	return {
 		"create": create,
-		"tick": tick
+		"setData": setData,
+		"tick": tick,
+		"dumpBuffers": dumpBuffers
 	};
 });

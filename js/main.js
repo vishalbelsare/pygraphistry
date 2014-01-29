@@ -16,7 +16,7 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL"], function($, NBody,
 	function run() {
 		console.log("Running Naive N-body simulation");
 		
-		var points = createPoints(100);
+		var points = createPoints(4096);
 
 		NBody.create(SimCL, RenderGL, $("#simulation")[0])
 		.then(function(graph) {
@@ -25,17 +25,44 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL"], function($, NBody,
 			return graph.setPoints(points)
 			.then(function() {
 				var button = $("#step-button");
-				var clicks = 0;
+				var animationId = null;
+				var lastFrameTime = Date.now();
+				var frames = 0;
 				
-				button.on("click", function() {
-					graph.tick().then(function(){
-						clicks++;
-						console.log("" + clicks + " tick(s) executed")
-					}, function(err) {
-						console.error("Could not execute a tick. Error:", err);
-					});
-				});
+				function startAnimation() {
+					button.text("Stop");
+					button.on("click", stopAnimation);
+					
+					function runAnimation() {
+						if(animationId === null) {
+							return;
+						}
+						
+						graph.tick().then(function() {
+							frames++;
+							var currentFrameTime = Date.now();
+							
+							if(frames > 2 && currentFrameTime - lastFrameTime > 5000) {
+								console.error("Peformance seems to be dying. Disabling animation.")
+								stopAnimation();
+							} else {
+								animationId = window.requestAnimationFrame(runAnimation);
+							}
+						}, function(err) {
+							console.error("Could not execute a tick. Error:", err);
+						})
+					}
+					
+					animationId = window.requestAnimationFrame(runAnimation);
+				}
 				
+				function stopAnimation() {
+					window.cancelAnimationFrame(animationId);
+					animationId = null;
+					button.on("click", startAnimation);
+				}
+				
+				button.on("click", startAnimation);
 				button.prop("disabled", false);
 				
 			}, function(err) {
@@ -58,7 +85,8 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL"], function($, NBody,
 			// We want the z component to be 500, but we also need r when calculating the,
 			// velocities. So set z = r here, then read it back when creating velocities before
 			// setting it to 0.
-			points.push([r * Math.sin(theta), r * Math.cos(theta), r]);
+			var point = [r * Math.sin(theta), r * Math.cos(theta), r];
+			points.push(point);
 		}
 		
 		return points;

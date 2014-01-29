@@ -39,8 +39,8 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 		points.forEach(function(point) {
 			// Read r from the z component of the points vector, then set it to the value it should
 			// really be, 500.
-			var r = point[3];
-			point[3] = 0;
+			var r = point[2];
+			point[2] = 0;
 			
 			var vel = glMatrix.vec3.fromValues(point[0], point[1], point[2]);
 			glMatrix.vec3.normalize(vel, vel);
@@ -49,6 +49,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 			var tmp = vel[0];
 			vel[0] = - vel[1];
 			vel[1] = tmp;
+			
 			
 			glMatrix.vec3.scale(vel, vel, 20 * (r/0.5));
 			
@@ -84,10 +85,17 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 	
 	
 	function tick(graph) {
+		var startTime = Date.now();
 		return graph.simulator.tick()
 		.then(function() {
-			return graph.renderer.render();
-		})
+			var simTime = Date.now();
+			console.debug("    Simulator took", simTime - startTime);
+			return graph.renderer.render().then(function() {
+				var renderTime = Date.now();
+				console.debug("    Renderer took", renderTime - simTime)
+				console.debug("Total time:", renderTime - startTime);
+			})
+		});
 	}
 	
 	

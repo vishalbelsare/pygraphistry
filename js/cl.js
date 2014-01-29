@@ -120,6 +120,7 @@ define(["Q"], function (Q) {
 					}
 				};
 				bufObj.write = write.bind(this, bufObj);
+				bufObj.read = read.bind(this, bufObj);
 				bufObj.copyBuffer = copyBuffer.bind(this, cl, bufObj);
 				resolve(bufObj);
 			}
@@ -161,6 +162,7 @@ define(["Q"], function (Q) {
 					}
 				};
 				bufObj.write = write.bind(this, bufObj);
+				bufObj.read = read.bind(this, bufObj);
 				bufObj.copyBuffer = copyBuffer.bind(this, cl, bufObj);
 				
 				resolve(bufObj);
@@ -186,6 +188,21 @@ define(["Q"], function (Q) {
 				return buffer;
 			})
 		}))
+	}
+	
+	
+	function read(buffer, target) {
+		return (
+			buffer.acquire()
+			.then(function() {
+				var copySize = Math.min(buffer.size, target.length * target.BYTES_PER_ELEMENT);
+				buffer.cl.queue.enqueueReadBuffer(buffer.buffer, true, 0, copySize, target);
+				return buffer.release;
+			})
+			.then(function() {
+				return buffer;
+			})
+		);
 	}
 	
 	
