@@ -23,9 +23,23 @@ define(["Q"], function (Q) {
 		}
 		var device = devices[0];
 		
-		cl.enableExtension("KHR_GL_SHARING");
-		var context = cl.createContext(gl, [devices[0]]);
-		if(context === null) {
+		var context;
+		if (cl.enableExtension) {
+		  cl.enableExtension("KHR_GL_SHARING");
+		  context = cl.createContext(gl, [devices[0]]);		
+		} else {
+            var extension = cl.getExtension("KHR_GL_SHARING");
+            if (extension === null) {
+                throw new SCException("Could not create a shared CL/GL context using the WebCL extension system");
+            }
+            context = extension.createContext({
+                platform: platform,
+                devices: devices,
+                deviceType: cl.DEVICE_TYPE_GPU,
+                sharedContext: null
+            });
+        }
+		if (context === null) {
 			deferred.reject("Error creating WebCL context");
 		}
 		
