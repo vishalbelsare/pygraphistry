@@ -7,7 +7,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		gl.enable(gl.BLEND);
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
 		gl.clearColor(0, 0, 0, 1);
-		gl.viewport(0, 0, canvas.width, canvas.height);
+		gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
 		renderer.gl = gl;
 		
 		var program = gl.createProgram();
@@ -29,7 +29,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				renderer.mvpLocation = gl.getUniformLocation(program, "mvp");
 				renderer.curPosLoc = gl.getAttribLocation(program, "curPos");
 				renderer.curVelLoc = gl.getAttribLocation(program, "curVel");
-				renderer.setCamera = setCamera.bind(this, renderer);
+				// renderer.setCamera = setCamera.bind(this, renderer);
 				renderer.createBuffer = createBuffer.bind(this, renderer);
 				renderer.render = render.bind(this, renderer);
 				
@@ -63,13 +63,13 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 	}
 	
 	
-	function setCamera(renderer, position, target) {
-		return Q.promise(function(resolve, reject, notify) {
-			var mvpMatrix = glMatrix.mat4.create();
-			glMatrix.mat4.lookAt(mvpMatrix, position, target, glMatrix.vec3.fromValues(0, 1, 0));
-			resolve(mvpMatrix);
-		});
-	}
+	// function setCamera(renderer, position, target) {
+	// 	return Q.promise(function(resolve, reject, notify) {
+	// 		var mvpMatrix = glMatrix.mat4.create();
+	// 		glMatrix.mat4.lookAt(mvpMatrix, position, target, glMatrix.vec3.fromValues(0, 1, 0));
+	// 		resolve(mvpMatrix);
+	// 	});
+	// }
 	
 	
 	function createBuffer(renderer, size) {
@@ -99,11 +99,11 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		return Q.promise(function(resolve, reject, notify) {
 			var gl = renderer.gl;
 			
-			var mvpMatrix = glMatrix.mat4.create();
-			gl.uniformMatrix4fv(renderer.mvpLocation, false, mvpMatrix);
-			
 			gl.clear(gl.COLOR_BUFFER_BIT);
 			
+			var mvpMatrix = glMatrix.mat4.create();
+			gl.uniformMatrix4fv(renderer.mvpLocation, false, mvpMatrix);
+						
 			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.curPoints.buffer);
 			gl.enableVertexAttribArray(renderer.curPosLoc);
 			gl.vertexAttribPointer(renderer.curPosLoc, 4, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);

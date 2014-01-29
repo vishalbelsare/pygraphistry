@@ -27,25 +27,41 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL"], function($, NBody,
 				var button = $("#step-button");
 				var animationId = null;
 				var lastFrameTime = Date.now();
+				var frameTimer = Date.now();
 				var frames = 0;
 				
 				function startAnimation() {
 					button.text("Stop");
 					button.on("click", stopAnimation);
+					frameTimer = Date.now();
 					
 					function runAnimation() {
 						if(animationId === null) {
 							return;
 						}
-						
+												
 						graph.tick().then(function() {
 							frames++;
 							var currentFrameTime = Date.now();
 							
+							if(frames % 100 === 0) {
+								var newFrameTimer = Date.now();
+								console.debug("FPS:", (newFrameTimer - frameTimer)/100);
+								frameTimer = newFrameTimer;
+							}
+							
 							if(frames > 2 && currentFrameTime - lastFrameTime > 5000) {
 								console.error("Peformance seems to be dying. Disabling animation.")
+								lastFrameTime = currentFrameTime;
 								stopAnimation();
-							} else {
+							}
+							// else if(frames > 100) {
+							// 	console.log("Ran 100 frames. Stopping.");
+							// 	lastFrameTime = currentFrameTime;
+							// 	stopAnimation();
+							// }
+							else {
+								lastFrameTime = currentFrameTime;
 								animationId = window.requestAnimationFrame(runAnimation);
 							}
 						}, function(err) {

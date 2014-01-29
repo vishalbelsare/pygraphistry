@@ -35,6 +35,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		simulator.renderer.numPoints = simulator.numPoints;
 		simulator.renderer.bufferSize = simulator.bufferSize;
 		
+		console.debug("Number of points:", simulator.renderer.numPoints);
+		
 		return (
 			simulator.renderer.createBuffer(points.length * 4 * points.BYTES_PER_ELEMENT)
 			.then(function(pointsVBO) {
@@ -72,15 +74,22 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			.then(function(nextVelocities) {
 				simulator.nextVelocities = nextVelocities;
 				
-				return simulator;
+				console.debug("Max threads:", simulator.cl.maxThreads);
+				var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * 4 * Float32Array.BYTES_PER_ELEMENT;
+				
+				return simulator.kernel.setArgs([simulator.curPoints.buffer,
+					simulator.curVelocities.buffer, new Int32Array([simulator.numPoints]),
+					new Float32Array([0.005]), new Int32Array([50]), new Uint32Array([localPos]),
+					simulator.nextPoints.buffer, simulator.nextVelocities.buffer]);
+				
+				// return simulator;
 			})
 		);
 	}
 	
 	
 	function tick(simulator) {
-		return Q.all([simulator.curPoints.acquire(), simulator.curVelocities.acquire(),
-			simulator.nextPoints.acquire(), simulator.nextVelocities.acquire()])
+		return Q.all([simulator.curPoints.acquire(), simulator.curVelocities.acquire()])
 		.then(function() {
 			// arg 5 is localPos (in CL code) aka localMemSize (in JS code.) It equals
 			// localWorkSize[0] * POS_ATTRIB_SIZE * Float32Array.BYTES_PER_ELEMENT;
@@ -90,22 +99,16 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			// In other words, it's the lesser of points.length or DEVICE_MAX_WORK_GROUP_SIZE, times
 			// the number of bytes per point (= 4 * 4 = 16)
 			
-			var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * 4 * Float32Array.BYTES_PER_ELEMENT;
+			// var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * 4 * Float32Array.BYTES_PER_ELEMENT;
 			
-			return simulator.kernel.call(simulator.cl.numCores, [simulator.curPoints.buffer,
-				simulator.curVelocities.buffer, new Int32Array([simulator.numPoints]),
-				new Float32Array([0.005]), new Int32Array([50]), new Uint32Array([localPos]),
-				simulator.nextPoints.buffer, simulator.nextVelocities.buffer]);
+			return simulator.kernel.call(simulator.numPoints, []);
 		})
 		.then(function() {
-			return simulator.nextPoints.copyBuffer(simulator.curPoints);
+			return Q.all([simulator.nextPoints.copyBuffer(simulator.curPoints), 
+				simulator.nextVelocities.copyBuffer(simulator.curVelocities)]);
 		})
 		.then(function() {
-			return simulator.nextVelocities.copyBuffer(simulator.curVelocities);
-		})
-		.then(function() {
-			return Q.all([simulator.curPoints.release(), simulator.curVelocities.release(),
-				simulator.nextPoints.release(), simulator.nextVelocities.release()]);
+			return Q.all([simulator.curPoints.release(), simulator.curVelocities.release()]);
 		})
 		.then(function() {
 			simulator.cl.queue.finish();

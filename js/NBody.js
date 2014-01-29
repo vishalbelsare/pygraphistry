@@ -85,16 +85,16 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 	
 	
 	function tick(graph) {
-		var startTime = Date.now();
+		// var startTime = Date.now();
 		return graph.simulator.tick()
 		.then(function() {
-			var simTime = Date.now();
-			console.debug("    Simulator took", simTime - startTime);
-			return graph.renderer.render().then(function() {
-				var renderTime = Date.now();
-				console.debug("    Renderer took", renderTime - simTime)
-				console.debug("Total time:", renderTime - startTime);
-			})
+			// var simTime = Date.now();
+			// console.debug("    Simulator took", simTime - startTime);
+			return graph.renderer.render() //.then(function() {
+				// var renderTime = Date.now();
+				// console.debug("    Renderer took", renderTime - simTime)
+				// console.debug("Total time:", renderTime - startTime);
+			//})
 		});
 	}
 	

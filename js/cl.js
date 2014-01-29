@@ -65,6 +65,7 @@ define(["Q"], function (Q) {
 				"kernel": kernel,
 			}
 			kernelObj.call = call.bind(this, kernelObj);
+			kernelObj.setArgs = setArgs.bind(this, kernelObj);
 			
 			deferred.resolve(kernelObj);
 		} catch(e) {
@@ -78,13 +79,15 @@ define(["Q"], function (Q) {
 	// Executes the specified kernel, with `threads` number of threads, setting each element in
 	// `args` to successive position arguments to the kernel before calling.
 	function call(kernel, threads, args) {
+		args = args || [];
+		
 		return Q.promise(function(resolve, reject, notify) {
 			// For all args other than the first (which is the kernel,) set each to successive
 			// positional arguments to the kernel
 			try {
-				for(var i = 0; i < args.length; i++) {
-					kernel.kernel.setArg(i, args[i]);
-				}
+				// for(var i = 0; i < args.length; i++) {
+				// 	kernel.kernel.setArg(i, args[i]);
+				// }
 				
 				var workgroupSize = new Int32Array([threads]);
 				kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, workgroupSize.length, [], workgroupSize, []);
@@ -95,6 +98,23 @@ define(["Q"], function (Q) {
 			
 			resolve(kernel);
 		});
+	}
+	
+	
+	function setArgs(kernel, args) {		
+		var deferred = Q.defer();
+		
+		try {
+			for(var i = 0; i < args.length; i++) {
+				kernel.kernel.setArg(i, args[i]);
+			}
+			
+			deferred.resolve(kernel);
+		} catch(err) {
+			deferred.reject(err);
+		}
+		
+		return deferred;
 	}
 	
 	
@@ -210,6 +230,7 @@ define(["Q"], function (Q) {
 		"create": create,
 		"compile": compile,
 		"call": call,
+		"setArgs": setArgs,
 		"createBuffer": createBuffer,
 		"createBufferGL": createBufferGL,
 		"write": write
