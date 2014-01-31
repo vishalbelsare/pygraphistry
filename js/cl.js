@@ -1,3 +1,29 @@
+// Things that have changed between old WebCL and current:
+// 	* To enable GL-CL sharing, you use cl.enableExtension(), not cl.getExtension() + 
+//		extension.createContext().
+//		- Easy to polyfill
+//	* enqueueNDRangeKernel() has changed its function signature. 
+//		Previson: (kernel, offsets = null, globalWorkSize, localWorkSize = null)
+//		Current: (kernel, globalWorkSize.length, offsets = [], globalWorkSize, localWorkSize = [])
+//		- Again, easy to polyfill since we have all the info we need in both signatures.
+//	* setArg() used to require scalar types be passed is plain JS values, along with a type from
+//		the WebCLKernelArgumentTypes enum. Now, all scalar values should be passed as a 1-item
+//		TypedArray and there is no third argument (and WebCLKernelArgumentTypes has been deleted.)
+//		__local arguments, in both the old and current implementations, must be 1-item TypedArrays,
+//		but in the old version you needed to specify the type as 
+//		WebCLKernelArgumentTypes.LOCAL_MEMORY_SIZE, while in the current version, you don't/can't
+//		do that, and it's figured out automatically.
+//		- A bit tricky to polyfill. Some types (half, vectors, __local) don't map to TypedArrays.
+//		  At least in the current spec, kernel.getArgInfo(index) returns an object with string
+//		  versions of the addressQualifier (__local, __global, etc) and typeName. We can look up
+//		  the argument type in our setArgs(), and then pass that type into cl.kernel.setArg().
+//
+//	Version detection method: right now, easiest way is typeof webcl.enableExtension == "function".
+//	If false, then we're running on an old version of WebCL.
+//	While we could try intricate methods of detecting the capabilities of each feature and
+//	individually polyfilling them, we really only need to support two versions (Leo's 10.8 version,
+//	and the latest WebKit-WebCL-Mavericks version.)
+
 define(["Q"], function (Q) {
 
     var CURRENT_CL = false;
@@ -51,7 +77,11 @@ define(["Q"], function (Q) {
 		
 		var queue = context.createCommandQueue(device, null);
 		
+		// Maximum number of work-items in a work-group executing a kernel on a single compute unit,
+		// using the data parallel execution model.
 		var maxThreads = device.getInfo(cl.DEVICE_MAX_WORK_GROUP_SIZE);
+		// The number of parallel compute units on the OpenCL device. A work-group executes on a
+		// single compute unit.
 		var numCores = device.getInfo(cl.DEVICE_MAX_COMPUTE_UNITS);
 		
 		var clObj = {

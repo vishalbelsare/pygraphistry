@@ -34,6 +34,7 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL"], function($, NBody,
 					button.text("Stop");
 					button.on("click", stopAnimation);
 					frameTimer = Date.now();
+					lastFrameTime = Date.now();
 					
 					function runAnimation() {
 						if(animationId === null) {
@@ -75,6 +76,7 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL"], function($, NBody,
 				function stopAnimation() {
 					window.cancelAnimationFrame(animationId);
 					animationId = null;
+					button.text("Start");
 					button.on("click", startAnimation);
 				}
 				
@@ -98,7 +100,7 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL"], function($, NBody,
 			var r = 0.5 * Math.random();
 			var theta = 2 * Math.PI * Math.random();
 			
-			// We want the z component to be 500, but we also need r when calculating the,
+			// We want the z component to be 0, but we also need r when calculating the,
 			// velocities. So set z = r here, then read it back when creating velocities before
 			// setting it to 0.
 			var point = [r * Math.sin(theta), r * Math.cos(theta), r];

@@ -2,7 +2,8 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 	function create(simulator, renderer, canvas) {
 		var deferred = Q.defer();
 		
-		renderer.create(canvas).then(function(rend) {
+		renderer.create(canvas)
+		.then(function(rend) {
 			return simulator.create(rend).then(function(sim) {
 				var graph = {
 					"renderer": rend,
@@ -14,7 +15,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 				
 				deferred.resolve(graph);
 			})
-		}).fail(function(err) {
+		}, function(err) {
 			deferred.reject(err);
 		});
 		

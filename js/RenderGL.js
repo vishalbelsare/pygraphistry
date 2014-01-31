@@ -36,11 +36,6 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				return renderer;
 				// return renderer.setCamera(glMatrix.vec3.fromValues(0,0,3), glMatrix.vec3.fromValues(0,0,0));
 			})
-			// .then(function() {
-			// 	console.debug("WebGL renderer created");
-				
-			// 	return renderer;
-			// })
 		);
 	}
 	

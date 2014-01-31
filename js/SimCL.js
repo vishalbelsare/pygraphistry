@@ -74,10 +74,6 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			.then(function(nextVelocities) {
 				simulator.nextVelocities = nextVelocities;
 				
-				var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * 4 * Float32Array.BYTES_PER_ELEMENT;
-				return simulator.cl.createBuffer(localPos);
-			})
-			.then(function(localPosBuf) {
 				var types = [];
 				try {
 				  var int_t = WebCLKernelArgumentTypes.INT;
