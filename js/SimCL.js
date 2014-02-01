@@ -3,9 +3,9 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		return cljs.create(renderer.gl)
 		.then(function(cl) {
 			// Compile the WebCL kernels
-			return util.getSource("cl-nbody")
+			return util.getSource("cl-nbody-mass-springs")
 			.then(function(source) {
-				return cl.compile(source, "nbody_kernel_GPU");
+				return cl.compile(source, "nbody_compute_repulsion");
 			})
 			.then(function(kernel) {
 				var simObj = {
@@ -66,23 +66,20 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			})
 			.then(function(nextVelocities) {
 				simulator.nextVelocities = nextVelocities;
-				
+			
 				var types = [];
 				if(!cljs.CURRENT_CL) {
-					types = [null, null, cljs.types.int_t, cljs.types.float_t, cljs.types.int_t, cljs.types.local_t, null, null];
+					types = [cljs.types.int_t, null, null , cljs.types.float_t, cljs.types.local_t];
 				}
 				
 				var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * 4 * Float32Array.BYTES_PER_ELEMENT;
 				return simulator.kernel.setArgs(
-				    [simulator.curPoints.buffer,
-					 simulator.curVelocities.buffer, 
-					 new Int32Array([simulator.numPoints]),
-					 new Float32Array([0.005]), 
-					 new Int32Array([50]), 
-					 new Uint32Array([localPos]),
-					 simulator.nextPoints.buffer, 
-					 simulator.nextVelocities.buffer],
-					types);				
+				    [new Int32Array([simulator.numPoints]),
+				     simulator.curPoints.buffer,
+				     simulator.nextPoints.buffer,
+				     new Float32Array([0.005]),
+				     new Uint32Array([localPos])],
+					types);
 			})
 		);
 	}
@@ -91,16 +88,6 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	function tick(simulator) {
 		return Q.all([simulator.curPoints.acquire(), simulator.curVelocities.acquire()])
 		.then(function() {
-			// arg 5 is localPos (in CL code) aka localMemSize (in JS code.) It equals
-			// localWorkSize[0] * POS_ATTRIB_SIZE * Float32Array.BYTES_PER_ELEMENT;
-			// 	localWorkSize[0] = Math.min(workGroupSize, NBODY);
-			// 	NBODY = number of points
-			// 	workGroupSize = device.getInfo(cl.DEVICE_MAX_WORK_GROUP_SIZE);
-			// In other words, it's the lesser of points.length or DEVICE_MAX_WORK_GROUP_SIZE, times
-			// the number of bytes per point (= 4 * 4 = 16)
-			
-			// var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * 4 * Float32Array.BYTES_PER_ELEMENT;
-			
 			return simulator.kernel.call(simulator.numPoints, []);
 		})
 		.then(function() {
