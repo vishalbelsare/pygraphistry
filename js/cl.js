@@ -239,6 +239,8 @@ define(["Q"], function (Q) {
 			local_t: WebCLKernelArgumentTypes.LOCAL_MEMORY_SIZE,
 			float_t: WebCLKernelArgumentTypes.FLOAT
 		};
+		
+		return true;
 	}
 	var types = {};
 	var CURRENT_CL = !polyfill();
