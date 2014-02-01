@@ -33,23 +33,23 @@ define(["Q"], function (Q) {
     
 	var create = Q.promised(function create (gl) {
 		if (typeof(webcl) === "undefined") {
-		    throw "WebCL does not appear to be supported in your browser";
+		    throw new Error("WebCL does not appear to be supported in your browser");
 		}
 		
 		var cl = webcl;
 		if (cl === null) {
-			throw "Can't access WebCL object";
+			throw new Error("Can't access WebCL object");
 		}
 		
 		var platforms = cl.getPlatforms();
 		if (platforms.length === 0) {
-			throw "Can't find any WebCL platforms";
+			throw new Error("Can't find any WebCL platforms");
 		}
 		var platform = platforms[0];
 		
 		var devices = platform.getDevices(cl.DEVICE_TYPE_GPU);
 		if (devices.length === 0) {
-			throw "No WebCL devices of specified type (" + cl.DEVICE_TYPE_GPU + ") found";
+			throw new Error("No WebCL devices of specified type (" + cl.DEVICE_TYPE_GPU + ") found");
 		}
 		var device = devices[0];
 		
@@ -60,7 +60,7 @@ define(["Q"], function (Q) {
 		} else {
             var extension = cl.getExtension("KHR_GL_SHARING");
             if (extension === null) {
-                throw new SCException("Could not create a shared CL/GL context using the WebCL extension system");
+                throw new Error("Could not create a shared CL/GL context using the WebCL extension system");
             }
             context = extension.createContext({
                 platform: platform,
@@ -70,7 +70,7 @@ define(["Q"], function (Q) {
             });
         }
 		if (context === null) {
-			throw "Error creating WebCL context";
+			throw new Error("Error creating WebCL context");
 		}
 		
 		var queue = context.createCommandQueue(device, null);
@@ -149,7 +149,7 @@ define(["Q"], function (Q) {
 	var createBuffer = Q.promised(function createBuffer(cl, size) {
 	    var buffer = cl.context.createBuffer(cl.cl.MEM_READ_WRITE, size);
 		if (buffer === null) {
-		    throw "Could not create the WebCL buffer";
+		    throw new Error("Could not create the WebCL buffer");
 		} else {
 		    var bufObj = {
 			    "buffer": buffer,
@@ -171,7 +171,7 @@ define(["Q"], function (Q) {
 	var createBufferGL = Q.promised(function (cl, vbo) {
 		var buffer = cl.context.createFromGLBuffer(cl.cl.MEM_READ_WRITE, vbo);
 		if (buffer === null) {
-			throw "Could not create WebCL buffer from WebGL buffer";
+			throw new Error("Could not create WebCL buffer from WebGL buffer");
 		} else {
 			var bufObj = {
 				"buffer": buffer,
