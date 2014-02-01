@@ -1,36 +1,10 @@
-// Things that have changed between old WebCL and current:
-// 	* To enable GL-CL sharing, you use cl.enableExtension(), not cl.getExtension() + 
-//		extension.createContext().
-//		- Easy to polyfill
-//	* enqueueNDRangeKernel() has changed its function signature. 
-//		Previson: (kernel, offsets = null, globalWorkSize, localWorkSize = null)
-//		Current: (kernel, globalWorkSize.length, offsets = [], globalWorkSize, localWorkSize = [])
-//		- Again, easy to polyfill since we have all the info we need in both signatures.
-//	* setArg() used to require scalar types be passed is plain JS values, along with a type from
-//		the WebCLKernelArgumentTypes enum. Now, all scalar values should be passed as a 1-item
-//		TypedArray and there is no third argument (and WebCLKernelArgumentTypes has been deleted.)
-//		__local arguments, in both the old and current implementations, must be 1-item TypedArrays,
-//		but in the old version you needed to specify the type as 
-//		WebCLKernelArgumentTypes.LOCAL_MEMORY_SIZE, while in the current version, you don't/can't
-//		do that, and it's figured out automatically.
-//		- A bit tricky to polyfill. Some types (half, vectors, __local) don't map to TypedArrays.
-//		  At least in the current spec, kernel.getArgInfo(index) returns an object with string
-//		  versions of the addressQualifier (__local, __global, etc) and typeName. We can look up
-//		  the argument type in our setArgs(), and then pass that type into cl.kernel.setArg().
-//
-//	Version detection method: right now, easiest way is typeof webcl.enableExtension == "function".
-//	If false, then we're running on an old version of WebCL.
-//	While we could try intricate methods of detecting the capabilities of each feature and
-//	individually polyfilling them, we really only need to support two versions (Leo's 10.8 version,
-//	and the latest WebKit-WebCL-Mavericks version.)
+// TODO: in call() and setargs(), we currently requires a `argTypes` argument becuase older WebCL
+// versions require us to pass in the type of kernel args. However, current versions do not. We want
+// to keep this API as close to the current WebCL spec as possible. Therefore, we should not require
+// that argument, even on old versions. Instead, we should query the kernel for the types of each
+// argument and fill in that information automatically, when required by old WebCL versions.
 
 define(["Q"], function (Q) {
-
-    var CURRENT_CL = false;
-    try { CURRENT_CL = typeof webcl.enableExtension == "function" ? true : false; }
-    catch (e) { }
-    console.log("Current?", CURRENT_CL);
-    
 	var create = Q.promised(function create (gl) {
 		if (typeof(webcl) === "undefined") {
 		    throw new Error("WebCL does not appear to be supported in your browser");
@@ -53,22 +27,7 @@ define(["Q"], function (Q) {
 		}
 		var device = devices[0];
 		
-		var context;
-		if (CURRENT_CL) {
-		  cl.enableExtension("KHR_GL_SHARING");
-		  context = cl.createContext(gl, [devices[0]]);		
-		} else {
-            var extension = cl.getExtension("KHR_GL_SHARING");
-            if (extension === null) {
-                throw new Error("Could not create a shared CL/GL context using the WebCL extension system");
-            }
-            context = extension.createContext({
-                platform: platform,
-                devices: devices,
-                deviceType: cl.DEVICE_TYPE_GPU,
-                sharedContext: null
-            });
-        }
+		var context = _createContext(cl, gl, platform, [devices[0]])
 		if (context === null) {
 			throw new Error("Error creating WebCL context");
 		}
@@ -96,6 +55,15 @@ define(["Q"], function (Q) {
 		
 		return clObj;
 	});
+
+	
+	// This is a separate function from create() in order to allow polyfill() to override it on
+	// older WebCL platforms, which have a different way of creating a context and enabling CL-GL
+	// sharing.
+	var _createContext = function(cl, gl, platform, devices) {
+		cl.enableExtension("KHR_GL_SHARING");
+		return cl.createContext(gl, devices);
+	}
 	
 	
 	var compile = Q.promised(function (cl, source, kernelName) {
@@ -116,36 +84,28 @@ define(["Q"], function (Q) {
 	
 	// Executes the specified kernel, with `threads` number of threads, setting each element in
 	// `args` to successive position arguments to the kernel before calling.
-	var call = Q.promised(function (kernel, threads, args, types) {
+	var call = Q.promised(function (kernel, threads, args, argTypes) {
 		args = args || [];
-
-		// For all args other than the first (which is the kernel,) set each to successive
-		// positional arguments to the kernel
-
-		var workgroupSize = new Int32Array([threads]);
-		if (CURRENT_CL) {
+		argTypes = argTypes || [];
+		return kernel.setArgs(args, argTypes).then(function() {
+			var workgroupSize = new Int32Array([threads]);
 		    kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, workgroupSize.length, [], workgroupSize, []);
-		} else {
-		    kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, workgroupSize, null);				
-		}
-		kernel.cl.queue.finish();
-		
-		return kernel;
+			kernel.cl.queue.finish();
+
+			return kernel;
+		});
 	});
 	
 	
-	var setArgs = Q.promised(function (kernel, args, types) {		
+	var setArgs = Q.promised(function (kernel, args, argTypes) {		
 	    for (var i = 0; i < args.length; i++) {
-		    if (CURRENT_CL) {
-			    kernel.kernel.setArg(i, args[i]);
-			} else {
-			    kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], types[i]);
-			}
-		}			
+		    kernel.kernel.setArg(i, args[i]);
+		}
+		
 		return kernel;
 	});
 	
-		
+
 	var createBuffer = Q.promised(function createBuffer(cl, size) {
 	    var buffer = cl.context.createBuffer(cl.cl.MEM_READ_WRITE, size);
 		if (buffer === null) {
@@ -226,6 +186,64 @@ define(["Q"], function (Q) {
 	});
 	
 	
+	// Detects the WebCL platform we're running on, and modifies this module as needed.
+	// Returns true if the the platform is out-of-date and needed to be polyfilled, and false if
+	// the platform is up-to-date and no modification was needed.
+	function polyfill() {
+		// Detect if we're running on a current WebCL version
+		if(typeof webcl.enableExtension == "function") {
+			// If so, don't do anything
+			return false;
+		}
+		
+		console.debug("[cl.js] Detected old WebCL platform. Modifying functions to support it.");
+		
+		
+		_createContext = function(cl, gl, platform, devices) {
+			var extension = cl.getExtension("KHR_GL_SHARING");
+			if (extension === null) {
+			    throw new Error("Could not create a shared CL/GL context using the WebCL extension system");
+			}
+			return extension.createContext({
+			    platform: platform,
+			    devices: devices,
+			    deviceType: cl.DEVICE_TYPE_GPU,
+			    sharedContext: null
+			});
+		}
+		
+		
+		call = Q.promised(function (kernel, threads, args, argTypes) {
+			args = args || [];
+			argTypes = argTypes || [];
+			return kernel.setArgs(args, argTypes).then(function() {
+				var workgroupSize = new Int32Array([threads]);
+			    kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, workgroupSize, null);				
+				kernel.cl.queue.finish();
+				
+				return kernel;
+			});
+		});
+		
+		
+		setArgs = Q.promised(function (kernel, args, argTypes) {		
+		    for (var i = 0; i < args.length; i++) {
+			    kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i]);
+			}			
+			return kernel;
+		});
+		
+		types = {
+			int_t: WebCLKernelArgumentTypes.INT,
+			uint_t: WebCLKernelArgumentTypes.UINT,
+			local_t: WebCLKernelArgumentTypes.LOCAL_MEMORY_SIZE,
+			float_t: WebCLKernelArgumentTypes.FLOAT
+		};
+	}
+	var types = {};
+	var CURRENT_CL = !polyfill();
+	
+	
 	return {
 		"create": create,
 		"compile": compile,
@@ -233,6 +251,8 @@ define(["Q"], function (Q) {
 		"setArgs": setArgs,
 		"createBuffer": createBuffer,
 		"createBufferGL": createBufferGL,
-		"write": write
+		"write": write,
+		"types": types,
+		"CURRENT_CL": CURRENT_CL
 	};
 });
