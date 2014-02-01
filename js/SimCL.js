@@ -51,14 +51,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				return simulator.curPoints.write(points);
 			})
 			.then(function(pointsBuf) {
-				return simulator.renderer.createBuffer(velocities.length * 4 * velocities.BYTES_PER_ELEMENT);
-			})
-			.then(function(velsVBO) {
-				simulator.renderer.curVelocities = velsVBO;
-				return velsVBO.write(velocities);
-			})
-			.then(function(velsVBO) {
-				return simulator.cl.createBufferGL(velsVBO.buffer);
+				return simulator.cl.createBuffer(points.length * 4 *points.BYTES_PER_ELEMENT);
 			})
 			.then(function(velsBuf) {
 				simulator.curVelocities = velsBuf;

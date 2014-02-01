@@ -28,7 +28,6 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				// TODO: Set the mvp matrix in the vertex shader
 				renderer.mvpLocation = gl.getUniformLocation(program, "mvp");
 				renderer.curPosLoc = gl.getAttribLocation(program, "curPos");
-				renderer.curVelLoc = gl.getAttribLocation(program, "curVel");
 				// renderer.setCamera = setCamera.bind(this, renderer);
 				renderer.createBuffer = createBuffer.bind(this, renderer);
 				renderer.render = render.bind(this, renderer);
@@ -102,11 +101,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.curPoints.buffer);
 			gl.enableVertexAttribArray(renderer.curPosLoc);
 			gl.vertexAttribPointer(renderer.curPosLoc, 4, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
-			
-			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.curVelocities.buffer);
-			gl.enableVertexAttribArray(renderer.curVelLoc);  
-			gl.vertexAttribPointer(renderer.curVelLoc, 4, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
-			
+						
 			gl.drawArrays(gl.POINTS, 0, renderer.numPoints);
 			gl.flush();
 			
