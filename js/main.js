@@ -96,17 +96,12 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL"], function($, NBody,
 		// Allocate 4 bytes for each point (x, y, z, w)
 		var points = [];
 		
-		for(var i = 0; i < amount; i++) {
-			var r = 0.5 * Math.random();
-			var theta = 2 * Math.PI * Math.random();
-			
-			// We want the z component to be 0, but we also need r when calculating the,
-			// velocities. So set z = r here, then read it back when creating velocities before
-			// setting it to 0.
-			var point = [r * Math.sin(theta), r * Math.cos(theta), r];
-			points.push(point);
-		}
-		
+		points.push([0.5, 0.5, 0]);
+		points.push([0.1, 0.1, 0]);
+		points.push([0.9, 0.1, 0]);
+		points.push([0.9, 0.9, 0]);
+		points.push([0.1, 0.9, 0]);
+				
 		return points;
 	}
 	
