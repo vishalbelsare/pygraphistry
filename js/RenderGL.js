@@ -2,6 +2,11 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 	function create(canvas) {
 		var renderer = {};
 		
+		// The dimensions of a canvas, by default, do not accurately reflect its size on screen (as
+		// set in the HTML/CSS/etc.) This changes the canvas size to match its size on screen.
+		canvas.width = canvas.clientWidth;
+		canvas.height = canvas.clientHeight;
+		
 		// FIXME: If 'gl === null' then we need to return a promise and reject it.
 		var gl = canvas.getContext("experimental-webgl");
 		gl.enable(gl.BLEND);
