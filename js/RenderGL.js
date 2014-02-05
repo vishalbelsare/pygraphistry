@@ -10,8 +10,8 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		// FIXME: If 'gl === null' then we need to return a promise and reject it.
 		var gl = canvas.getContext("experimental-webgl");
 		gl.enable(gl.BLEND);
-		gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
-		gl.clearColor(0, 0, 0, 1);
+		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		gl.clearColor(0, 0, 0, 0);
 		renderer.gl = gl;
 		
 		var program = gl.createProgram();
