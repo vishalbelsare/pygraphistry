@@ -1,5 +1,5 @@
 define(["Q", "util", "cl"], function(Q, util, cljs) {
-	function create(renderer, points, velocities) {
+	function create(renderer) {
 		return cljs.create(renderer.gl)
 		.then(function(cl) {
 			// Compile the WebCL kernels
@@ -26,7 +26,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	}
 	
 	
-	function setData(simulator, points, velocities) {
+	function setData(simulator, points) {
 		if(points.length % 4 !== 0) {
 			throw new Error("The points buffer is an invalid size (must be a multiple of 4)");
 		}
@@ -53,20 +53,9 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			.then(function(pointsBuf) {
 				return simulator.cl.createBuffer(points.length * 4 *points.BYTES_PER_ELEMENT);
 			})
-			.then(function(velsBuf) {
-				simulator.curVelocities = velsBuf;
-				return simulator.curVelocities.write(velocities);
-			})
-			.then(function(velsBuf) {
-				return simulator.cl.createBuffer(points.length * 4 *points.BYTES_PER_ELEMENT);
-			})
 			.then(function(nextPoints) {
 				simulator.nextPoints = nextPoints;
-				return simulator.cl.createBuffer(velocities.length * 4 * velocities.BYTES_PER_ELEMENT);
-			})
-			.then(function(nextVelocities) {
-				simulator.nextVelocities = nextVelocities;
-			
+							
 				var types = [];
 				if(!cljs.CURRENT_CL) {
 					types = [cljs.types.int_t, null, null , cljs.types.float_t, cljs.types.local_t];
@@ -86,16 +75,15 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	
 	
 	function tick(simulator) {
-		return Q.all([simulator.curPoints.acquire(), simulator.curVelocities.acquire()])
+		return Q.all([simulator.curPoints.acquire()])
 		.then(function() {
 			return simulator.kernel.call(simulator.numPoints, []);
 		})
 		.then(function() {
-			return Q.all([simulator.nextPoints.copyBuffer(simulator.curPoints), 
-				simulator.nextVelocities.copyBuffer(simulator.curVelocities)]);
+			return Q.all([simulator.nextPoints.copyBuffer(simulator.curPoints)]);
 		})
 		.then(function() {
-			return Q.all([simulator.curPoints.release(), simulator.curVelocities.release()]);
+			return Q.all([simulator.curPoints.release()]);
 		})
 		.then(function() {
 			simulator.cl.queue.finish();

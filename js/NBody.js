@@ -24,40 +24,10 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 	}
 	
 	
-	function setPoints(graph, points) {
-		var vels = _createVelocities(points);
+	function setPoints(graph, points) {		
+		var floatPoints = _toFloat4(points, 1);
 		
-		var floatPoints = _toFloat4(points, 500), floatVels = _toFloat4(vels, 0);
-		
-		return graph.simulator.setData(floatPoints, floatVels);
-	}
-	
-	
-	// For an array of points (vec4), generates an equal sized array of velocities (vec3)
-	function _createVelocities(points) {
-		var vels = [];
-		
-		points.forEach(function(point) {
-			// Read r from the z component of the points vector, then set it to the value it should
-			// really be, 500.
-			var r = point[2];
-			point[2] = 0;
-			
-			var vel = glMatrix.vec3.fromValues(point[0], point[1], point[2]);
-			glMatrix.vec3.normalize(vel, vel);
-			
-			// rotate 90 ccwise
-			var tmp = vel[0];
-			vel[0] = - vel[1];
-			vel[1] = tmp;
-			
-			
-			glMatrix.vec3.scale(vel, vel, 20 * (r/0.5));
-			
-			vels.push(vel);
-		});
-		
-		return vels;
+		return graph.simulator.setData(floatPoints);
 	}
 	
 	
