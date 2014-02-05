@@ -12,7 +12,6 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		gl.enable(gl.BLEND);
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
 		gl.clearColor(0, 0, 0, 1);
-		gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
 		renderer.gl = gl;
 		
 		var program = gl.createProgram();
@@ -30,15 +29,13 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				gl.linkProgram(program);
 				gl.useProgram(program);
 				
-				// TODO: Set the mvp matrix in the vertex shader
-				renderer.mvpLocation = gl.getUniformLocation(program, "mvp");
+				renderer.canvas = canvas;
 				renderer.curPosLoc = gl.getAttribLocation(program, "curPos");
-				// renderer.setCamera = setCamera.bind(this, renderer);
+				renderer.setCamera = setCamera.bind(this, renderer);
 				renderer.createBuffer = createBuffer.bind(this, renderer);
 				renderer.render = render.bind(this, renderer);
 				
-				return renderer;
-				// return renderer.setCamera(glMatrix.vec3.fromValues(0,0,3), glMatrix.vec3.fromValues(0,0,0));
+				return renderer.setCamera(glMatrix.vec3.fromValues(0,0,1), glMatrix.vec3.fromValues(0,0,0));
 			})
 		);
 	}
@@ -62,13 +59,32 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 	}
 	
 	
-	// function setCamera(renderer, position, target) {
-	// 	return Q.promise(function(resolve, reject, notify) {
-	// 		var mvpMatrix = glMatrix.mat4.create();
-	// 		glMatrix.mat4.lookAt(mvpMatrix, position, target, glMatrix.vec3.fromValues(0, 1, 0));
-	// 		resolve(mvpMatrix);
-	// 	});
-	// }
+	function setCamera(renderer, position, target) {
+		return Q.promise(function(resolve, reject, notify) {
+			renderer.gl.viewport(0, 0, renderer.canvas.width, renderer.canvas.height);
+			// console.debug("Viewport:", renderer.gl.getParameter(renderer.gl.VIEWPORT));
+			
+			var perspectiveMatrix = glMatrix.mat4.create();
+			// Setup a basic orthographic projection
+			glMatrix.mat4.ortho(perspectiveMatrix, 0, 1, 0, 1, -1, 1);
+			
+			// Setup a regular projection matrix
+			// var aspect = renderer.canvas.clientWidth / renderer.canvas.clientHeight;
+			// console.debug("Aspect ratio:", aspect);
+			// glMatrix.mat4.perspective(pMatrix, 50, aspect, 0, 100);
+			
+			var viewMatrix = glMatrix.mat4.create();
+			glMatrix.mat4.lookAt(viewMatrix, position, target, glMatrix.vec3.fromValues(0, 1, 0));
+			
+			var mvpMatrix = glMatrix.mat4.create();
+			glMatrix.mat4.multiply(mvpMatrix, perspectiveMatrix, viewMatrix);
+			
+			var mvpLocation = renderer.gl.getUniformLocation(renderer.program, "mvp");
+			renderer.gl.uniformMatrix4fv(mvpLocation, false, mvpMatrix);
+						
+			resolve(renderer);
+		});
+	}
 	
 	
 	function createBuffer(renderer, size) {
@@ -99,9 +115,6 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 			var gl = renderer.gl;
 			
 			gl.clear(gl.COLOR_BUFFER_BIT);
-			
-			var mvpMatrix = glMatrix.mat4.create();
-			gl.uniformMatrix4fv(renderer.mvpLocation, false, mvpMatrix);
 						
 			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.curPoints.buffer);
 			gl.enableVertexAttribArray(renderer.curPosLoc);
