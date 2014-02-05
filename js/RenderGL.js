@@ -8,9 +8,11 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		canvas.height = canvas.clientHeight;
 		
 		// FIXME: If 'gl === null' then we need to return a promise and reject it.
-		var gl = canvas.getContext("experimental-webgl");
+		var gl = canvas.getContext("experimental-webgl", {antialias: false, premultipliedAlpha: false});
 		gl.enable(gl.BLEND);
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		gl.enable(gl.DEPTH_TEST);
+		gl.depthFunc(gl.LEQUAL);
 		gl.clearColor(0, 0, 0, 0);
 		renderer.gl = gl;
 		
@@ -114,7 +116,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		return Q.promise(function(resolve, reject, notify) {
 			var gl = renderer.gl;
 			
-			gl.clear(gl.COLOR_BUFFER_BIT);
+			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
 						
 			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.curPoints.buffer);
 			gl.enableVertexAttribArray(renderer.curPosLoc);
