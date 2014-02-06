@@ -15,7 +15,7 @@ require.config({
 require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"],
 	function($, NBody, glMatrix, RenderGL, SimCL, MatrixLoader, Q) {
 	var graph = null,
-		animId = null;
+		animating = null;
 
 
 	// Given a set of graph data, load the points into the N-body simulation
@@ -81,26 +81,24 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
 		});
     }
 
-
 	function animatePromise(promise) {
-		if(animId == null) {
-			return promise.then(function() {
+		return promise()
+		.then(function() {
+			if(animating){
 				animId = window.requestAnimationFrame(function() {
 					animatePromise(promise);
 				});
+
 				return animId;
-			});
-		} else {
-			return Q.promised(function() { return animId; });
-		}
+			} else {
+				return null;
+			}
+		});
 	}
 
 
 	function stopAnimation() {
-		if(animId != null) {
-			window.cancelAnimationFrame(animationId);
-			animId = null;
-		}
+		animating = false;
 	}
 
 
@@ -116,20 +114,40 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
 			return graph.setPoints(points);
 		})
 		.then(function() {
-			var button = $("#step-button");
+			var animButton = $("#anim-button");
+			var stepButton = $("#step-button");
 
-			button.on("click", function() {
-				button.text("Stop");
+			function startAnimation() {
+				animating = true;
+				animButton.text("Stop");
+				stepButton.prop("disabled", true);
 
-				button.on("click", function() {
-					button.text("Animate");
-					button.on("click", stopAnimation);
+				animButton.on("click", function() {
+					stopAnimation();
+					stepButton.prop("disabled", false);
+					animButton.text("Animate");
+					animButton.on("click", startAnimation);
 				});
 
-				animatePromise(graph.tick());
+				animatePromise(graph.tick);
+			}
+			animButton.on("click", startAnimation);
+
+			stepButton.on("click", function() {
+				if(animating) {
+					return false;
+				}
+
+				stepButton.prop("disabled", true);
+
+				graph.tick()
+				.then(function() {
+					stepButton.prop("disabled", false);
+				})
 			});
 
-			button.prop("disabled", false);
+			animButton.prop("disabled", false);
+			stepButton.prop("disabled", false);
 
 			return graph;
 		}, function(err) {
