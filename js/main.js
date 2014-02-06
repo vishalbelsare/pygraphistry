@@ -2,7 +2,8 @@ require.config({
 	paths: {
 		"jQuery": "libs/jquery-2.1.0",
 		"Q": "libs/q",
-		"glMatrix": "libs/gl-matrix"
+		"glMatrix": "libs/gl-matrix",
+		"MatrixLoader": "libs/load"
 	},
 	shim: {
 		"jQuery": {
@@ -11,18 +12,61 @@ require.config({
 	}
 });
 
-
-require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL"], function($, NBody, glMatrix, RenderGL, SimCL){
+require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"], 
+  function($, NBody, glMatrix, RenderGL, SimCL, MatrixLoader, Q) {
+  
+    function drawGraph (clGraph, graph) {
+      console.log('drawing', clGraph, graph);
+      var points = graph.nodes.map(function (node, i) {
+        return [node.index / graph.nodes.length, i / graph.nodes.length, 0];        
+      });
+      clGraph.setPoints(points);      
+    }  
+    
+    function loadMatrices(clGraph) {
+      var files = MatrixLoader.ls("data/matrices.json");
+      files.then(function (files) {
+        $('#matrices').append(
+          files
+            .map(function (file) {
+              var base = file.f.split(/\/|\./)[1]
+              var size = file.KB > 1000 ? (Math.round(file.KB / 1000) + " MB") : (file.KB + " KB");
+              var link = $("<a></a>")
+                .attr("href", "javascript:void(0)")
+                .text(base + " (" + size + ")")
+                .click(function () {
+                  $('#filename').text(base);
+                  $('#filesize').text(size);              
+                  var graph = MatrixLoader.load(file.f);
+                  graph.then(function (v) {             
+                    console.log('got', v);
+                    $('#filenodes').text(v.nodes.length);        
+                    $('#fileedges').text(v.links.length);
+                    $('#fileedgelist').text(
+                      v.links
+                        .slice(0, 20)
+                        .map(function (pair) { 
+                          return '(' + pair.source.index + ',' + pair.target.index + ')'; })
+                        .join(' '));
+                                            
+                  });
+                  Q.promised(drawGraph)(clGraph, graph);
+                });
+              return $('<li></li>').append(link);
+            }));
+      });
+    }
+  
 	function run() {
 		console.log("Running Naive N-body simulation");
 		
 		var points = createPoints(4096);
 
-		NBody.create(SimCL, RenderGL, $("#simulation")[0])
-		.then(function(graph) {
+		var graph = NBody.create(SimCL, RenderGL, $("#simulation")[0])
+		graph.then(function(graph) {
 			console.log("N-body graph created.");
 			
-			return graph.setPoints(points)
+			graph.setPoints(points)
 			.then(function() {
 				var button = $("#step-button");
 				var animationId = null;
@@ -81,13 +125,15 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL"], function($, NBody,
 				}
 				
 				button.on("click", startAnimation);
-				button.prop("disabled", false);
+				button.prop("disabled", false);				
 				
+				return graph;
 			}, function(err) {
 				console.error("Error creating N-body graph:", err.message);
 				console.error(err);
 			});
 		});
+		return graph;
 	}
 	
 	
@@ -106,5 +152,6 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL"], function($, NBody,
 	}
 	
 	
-	run();
+	var graph = run();
+	loadMatrices(graph);
 });
