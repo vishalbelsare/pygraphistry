@@ -93,6 +93,8 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
 			} else {
 				return null;
 			}
+		}, function(err) {
+			console.error("Error during animation:", err);
 		});
 	}
 
@@ -149,7 +151,7 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
 			animButton.prop("disabled", false);
 			stepButton.prop("disabled", false);
 
-			return graph;
+			return graph.tick();
 		}, function(err) {
 			console.err("Fatal error trying to setup graph:", err);
 		});
