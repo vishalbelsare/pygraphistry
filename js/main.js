@@ -172,9 +172,10 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
 	}
 
 
-	setup().fail(function(err) {
+	setup().
+	then(function() {
+		loadMatrices(graph);
+	}, function(err) {
 		console.error("Error setting up animation:", err);
 	});
-
-	loadMatrices(graph);
 });
