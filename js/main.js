@@ -93,14 +93,14 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL"], function($, NBody,
 	
 	// Generates `amount` number of random points
 	function createPoints(amount) {
-		// Allocate 4 bytes for each point (x, y, z, w)
+		// Allocate 2 elements for each point (x, y)
 		var points = [];
 		
-		points.push([0.5, 0.5, 0]);
-		points.push([0.1, 0.1, 0]);
-		points.push([0.9, 0.1, 0]);
-		points.push([0.9, 0.9, 0]);
-		points.push([0.1, 0.9, 0]);
+		points.push([0.5, 0.5]);
+		points.push([0.1, 0.1]);
+		points.push([0.9, 0.1]);
+		points.push([0.9, 0.9]);
+		points.push([0.1, 0.9]);
 				
 		return points;
 	}

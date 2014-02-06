@@ -1,4 +1,6 @@
 define(["Q", "glMatrix"], function(Q, glMatrix) {
+	var elementsPerPoint = 2;
+	
 	function create(simulator, renderer, canvas) {
 		var deferred = Q.defer();
 		
@@ -25,7 +27,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 	
 	
 	function setPoints(graph, points) {		
-		var floatPoints = _toFloat4(points, 1);
+		var floatPoints = _toFloatArray(points);
 		
 		return graph.simulator.setData(floatPoints);
 	}
@@ -38,17 +40,15 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 	}
 	
 	
-	// Turns an array of vec3's into a Float32Array with 4 values for each element in the input
-	// array. The fourth value is set to 'w'.
-	function _toFloat4(array, w) {
-		var floats = new Float32Array(array.length * 4);
+	// Turns an array of vec3's into a Float32Array with elementsPerPoint values for each element in
+	// the input array.
+	function _toFloatArray(array) {
+		var floats = new Float32Array(array.length * elementsPerPoint);
 		
 		for(var i = 0; i < array.length; i++) {
-			var ii = i * 4;
+			var ii = i * elementsPerPoint;
 			floats[ii + 0] = array[i][0];
 			floats[ii + 1] = array[i][1];
-			floats[ii + 2] = array[i][2];
-			floats[ii + 3] = w;
 		}
 		
 		return floats;
@@ -71,6 +71,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 	
 	
 	return {
+		"elementsPerPoint": elementsPerPoint,
 		"create": create,
 		"setPoints": setPoints,
 		"setEdges": setEdges,

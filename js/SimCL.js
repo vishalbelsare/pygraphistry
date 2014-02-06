@@ -11,7 +11,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				var simObj = {
 					"renderer": renderer,
 					"cl": cl,
-					"kernel": kernel
+					"kernel": kernel,
+					"elementsPerPoint": 2
 				};
 				simObj.tick = tick.bind(this, simObj);
 				simObj.setData = setData.bind(this, simObj);
@@ -27,10 +28,10 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	
 	
 	function setData(simulator, points) {
-		if(points.length % 4 !== 0) {
-			throw new Error("The points buffer is an invalid size (must be a multiple of 4)");
+		if(points.length % simulator.elementsPerPoint !== 0) {
+			throw new Error("The points buffer is an invalid size (must be a multiple of " + simulator.elementsPerPoint + ")");
 		}
-		simulator.numPoints = points.length / 4;
+		simulator.numPoints = points.length / simulator.elementsPerPoint;
 		simulator.bufferSize = points.length * points.BYTES_PER_ELEMENT;
 		simulator.renderer.numPoints = simulator.numPoints;
 		simulator.renderer.bufferSize = simulator.bufferSize;
@@ -38,7 +39,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		console.debug("Number of points:", simulator.renderer.numPoints);
 		
 		return (
-			simulator.renderer.createBuffer(points.length * 4 * points.BYTES_PER_ELEMENT)
+			simulator.renderer.createBuffer(points.length * simulator.elementsPerPoint * points.BYTES_PER_ELEMENT)
 			.then(function(pointsVBO) {
 				simulator.renderer.curPoints = pointsVBO;
 				return pointsVBO.write(points);
@@ -51,7 +52,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				return simulator.curPoints.write(points);
 			})
 			.then(function(pointsBuf) {
-				return simulator.cl.createBuffer(points.length * 4 *points.BYTES_PER_ELEMENT);
+				return simulator.cl.createBuffer(points.length * simulator.elementsPerPoint * points.BYTES_PER_ELEMENT);
 			})
 			.then(function(nextPoints) {
 				simulator.nextPoints = nextPoints;
@@ -61,7 +62,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 					types = [cljs.types.int_t, null, null , cljs.types.float_t, cljs.types.local_t];
 				}
 				
-				var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * 4 * Float32Array.BYTES_PER_ELEMENT;
+				var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
 				return simulator.kernel.setArgs(
 				    [new Int32Array([simulator.numPoints]),
 				     simulator.curPoints.buffer,

@@ -33,11 +33,13 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				
 				renderer.canvas = canvas;
 				renderer.curPosLoc = gl.getAttribLocation(program, "curPos");
-				renderer.setCamera = setCamera.bind(this, renderer);
+				renderer.setCamera2d = setCamera2d.bind(this, renderer);
 				renderer.createBuffer = createBuffer.bind(this, renderer);
 				renderer.render = render.bind(this, renderer);
+				renderer.elementsPerPoint = 2;
 				
-				return renderer.setCamera(glMatrix.vec3.fromValues(0,0,1), glMatrix.vec3.fromValues(0,0,0));
+				// return renderer.setCamera(glMatrix.vec3.fromValues(0,0,1), glMatrix.vec3.fromValues(0,0,0));
+				return renderer.setCamera2d(0, 1, 0, 1);
 			})
 		);
 	}
@@ -61,28 +63,50 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 	}
 	
 	
-	function setCamera(renderer, position, target) {
+	// function setCamera(renderer, position, target) {
+	// 	return Q.promise(function(resolve, reject, notify) {
+	// 		renderer.gl.viewport(0, 0, renderer.canvas.width, renderer.canvas.height);
+	// 		// console.debug("Viewport:", renderer.gl.getParameter(renderer.gl.VIEWPORT));
+			
+	// 		var perspectiveMatrix = glMatrix.mat4.create();
+	// 		// Setup a basic orthographic projection
+	// 		glMatrix.mat4.ortho(perspectiveMatrix, 0, 1, 0, 1, -1, 1);
+			
+	// 		// Setup a regular projection matrix
+	// 		// var aspect = renderer.canvas.clientWidth / renderer.canvas.clientHeight;
+	// 		// console.debug("Aspect ratio:", aspect);
+	// 		// glMatrix.mat4.perspective(pMatrix, 50, aspect, 0, 100);
+			
+	// 		var viewMatrix = glMatrix.mat4.create();
+	// 		glMatrix.mat4.lookAt(viewMatrix, position, target, glMatrix.vec3.fromValues(0, 1, 0));
+			
+	// 		var mvpMatrix = glMatrix.mat4.create();
+	// 		glMatrix.mat4.multiply(mvpMatrix, perspectiveMatrix, viewMatrix);
+			
+	// 		var mvpLocation = renderer.gl.getUniformLocation(renderer.program, "mvp");
+	// 		renderer.gl.uniformMatrix4fv(mvpLocation, false, mvpMatrix);
+						
+	// 		resolve(renderer);
+	// 	});
+	// }
+	
+	
+	function setCamera2d(renderer, left, right, bottom, top) {
 		return Q.promise(function(resolve, reject, notify) {
 			renderer.gl.viewport(0, 0, renderer.canvas.width, renderer.canvas.height);
-			// console.debug("Viewport:", renderer.gl.getParameter(renderer.gl.VIEWPORT));
+
+			var lr = 1 / (left - right),
+			    bt = 1 / (bottom - top);
 			
-			var perspectiveMatrix = glMatrix.mat4.create();
-			// Setup a basic orthographic projection
-			glMatrix.mat4.ortho(perspectiveMatrix, 0, 1, 0, 1, -1, 1);
+			var mvpMatrix = glMatrix.mat2d.create();
+			glMatrix.mat2d.scale(mvpMatrix, mvpMatrix, glMatrix.vec2.fromValues(-2 * lr, -2 * bt));
+			glMatrix.mat2d.translate(mvpMatrix, mvpMatrix, glMatrix.vec2.fromValues((left+right)*lr, (top+bottom)*bt));
 			
-			// Setup a regular projection matrix
-			// var aspect = renderer.canvas.clientWidth / renderer.canvas.clientHeight;
-			// console.debug("Aspect ratio:", aspect);
-			// glMatrix.mat4.perspective(pMatrix, 50, aspect, 0, 100);
-			
-			var viewMatrix = glMatrix.mat4.create();
-			glMatrix.mat4.lookAt(viewMatrix, position, target, glMatrix.vec3.fromValues(0, 1, 0));
-			
-			var mvpMatrix = glMatrix.mat4.create();
-			glMatrix.mat4.multiply(mvpMatrix, perspectiveMatrix, viewMatrix);
-			
+			var mvpMat3 = glMatrix.mat3.create();
+			glMatrix.mat3.fromMat2d(mvpMat3, mvpMatrix);
+			console.debug("Mat3 mvp matrix:", mvpMat3);
 			var mvpLocation = renderer.gl.getUniformLocation(renderer.program, "mvp");
-			renderer.gl.uniformMatrix4fv(mvpLocation, false, mvpMatrix);
+			renderer.gl.uniformMatrix3fv(mvpLocation, false, mvpMat3);
 						
 			resolve(renderer);
 		});
@@ -120,7 +144,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 						
 			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.curPoints.buffer);
 			gl.enableVertexAttribArray(renderer.curPosLoc);
-			gl.vertexAttribPointer(renderer.curPosLoc, 4, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
+			gl.vertexAttribPointer(renderer.curPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
 						
 			gl.drawArrays(gl.POINTS, 0, renderer.numPoints);
 			gl.flush();
@@ -133,6 +157,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 	return {
 		"create": create,
 		"addShader": addShader,
+		"setCamera2d": setCamera2d,
 		"createBuffer": createBuffer,
 		"write": write,
 		"render": render
