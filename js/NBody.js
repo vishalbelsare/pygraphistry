@@ -20,6 +20,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 
 
 	function setPoints(graph, points) {
+		// FIXME: If there is already data loaded, we should to free it before loading new data
 		if(!(points instanceof Float32Array)) {
 			points = _toFloatArray(points);
 		}
