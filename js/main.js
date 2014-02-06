@@ -44,7 +44,7 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
 		var t2 = new Date().getTime();
 		console.log('toNodes', t1 - t0, 'ms', 'toFloats', t2 - t1, 'ms', 'nodes', count2);
 
-		clGraph.setPointsImmediate(buff);
+		clGraph.setPoints(buff);
 
 		//console.log(buff);
     }
