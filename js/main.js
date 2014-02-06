@@ -16,20 +16,34 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
   function($, NBody, glMatrix, RenderGL, SimCL, MatrixLoader, Q) {
   
     function drawGraph (clGraph, graph) {
-      console.log('drawing', clGraph, graph);
-      var points = graph.nodes.map(function (node, i) {
-        return [node.index / graph.nodes.length, i / graph.nodes.length, 0];        
-      });
-      clGraph.setPoints(points);      
+
+      var all = [];
+      var check = {};
+      for (var i = 0; i < graph.edges.length; i++) {
+        var node = graph.edges[i];
+        if (!check[node]) {
+          check[node] = true;
+          all.push(node);
+        }
+      }
+
+      var buff = new Float32Array(all.length * 2);
+      for (var i = 0; i < all.length ; i++) {
+        buff[2 * i] = all[i] / all.length;
+        buff[2 * i + 1] = i / all.length;
+      }
+      clGraph.setPointsImmediate(buff);
+      
+      //console.log(buff);
     }  
     
     function loadMatrices(clGraph) {
-      var files = MatrixLoader.ls("data/matrices.json");
+      var files = MatrixLoader.ls("data/matrices.binary.json");
       files.then(function (files) {
         $('#matrices').append(
           files
             .map(function (file) {
-              var base = file.f.split(/\/|\./)[1]
+              var base = file.f.split(/\/|\./)[file.f.split(/\/|\./).length - 3]
               var size = file.KB > 1000 ? (Math.round(file.KB / 1000) + " MB") : (file.KB + " KB");
               var link = $("<a></a>")
                 .attr("href", "javascript:void(0)")
@@ -37,16 +51,15 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
                 .click(function () {
                   $('#filename').text(base);
                   $('#filesize').text(size);              
-                  var graph = MatrixLoader.load(file.f);
+                  var graph = MatrixLoader.loadBinary(file.f);
                   graph.then(function (v) {             
                     console.log('got', v);
-                    $('#filenodes').text(v.nodes.length);        
-                    $('#fileedges').text(v.links.length);
+                    $('#filenodes').text(v.numNodes);        
+                    $('#fileedges').text(v.numEdges);
                     $('#fileedgelist').text(
-                      v.links
-                        .slice(0, 20)
-                        .map(function (pair) { 
-                          return '(' + pair.source.index + ',' + pair.target.index + ')'; })
+                      Array.prototype.slice.call(v.edges, 0, 3)
+                        .map(function (_, i) { 
+                          return '(' + v.edges[2 * i] + ',' + v.edges[2 * i + 1] + ')'; })
                         .join(' '));
                                             
                   });
