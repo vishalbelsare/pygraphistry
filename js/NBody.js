@@ -14,7 +14,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 				graph.setEdges = setEdges.bind(this, graph);
 				graph.tick = tick.bind(this, graph);
 
-				deferred.resolve(graph);
+				return graph;
 			});
 		});
 	}

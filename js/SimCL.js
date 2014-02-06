@@ -17,16 +17,15 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				simObj.tick = tick.bind(this, simObj);
 				simObj.setData = setData.bind(this, simObj);
 				simObj.dumpBuffers = dumpBuffers.bind(this, simObj);
-				
+
 				console.debug("WebCL simulator created");
 				return simObj
-				
 			});
 		})
-		
+
 	}
-	
-	
+
+
 	function setData(simulator, points) {
 		if(points.length % simulator.elementsPerPoint !== 0) {
 			throw new Error("The points buffer is an invalid size (must be a multiple of " + simulator.elementsPerPoint + ")");
@@ -35,9 +34,9 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		simulator.bufferSize = points.length * points.BYTES_PER_ELEMENT;
 		simulator.renderer.numPoints = simulator.numPoints;
 		simulator.renderer.bufferSize = simulator.bufferSize;
-		
+
 		console.debug("Number of points:", simulator.renderer.numPoints);
-		
+
 		return (
 			simulator.renderer.createBuffer(points.length * simulator.elementsPerPoint * points.BYTES_PER_ELEMENT)
 			.then(function(pointsVBO) {
@@ -56,12 +55,12 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			})
 			.then(function(nextPoints) {
 				simulator.nextPoints = nextPoints;
-							
+
 				var types = [];
 				if(!cljs.CURRENT_CL) {
 					types = [cljs.types.int_t, null, null , cljs.types.float_t, cljs.types.local_t];
 				}
-				
+
 				var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
 				return simulator.kernel.setArgs(
 				    [new Int32Array([simulator.numPoints]),
@@ -73,8 +72,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			})
 		);
 	}
-	
-	
+
+
 	function tick(simulator) {
 		return Q.all([simulator.curPoints.acquire()])
 		.then(function() {
@@ -91,13 +90,13 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			return simulator;
 		});
 	}
-	
-	
+
+
 	function dumpBuffers(simulator) {
 		return Q.promise(function(resolve, reject, notify) {
 			console.debug("Dumping buffers for debugging");
 			console.debug("Buffer size:", simulator.bufferSize);
-			
+
 			var testPos = new Float32Array(simulator.bufferSize);
 			simulator.curPoints.read(testPos)
 			.then(function() {
@@ -106,8 +105,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			})
 		});
 	}
-	
-	
+
+
 	return {
 		"create": create,
 		"setData": setData,
