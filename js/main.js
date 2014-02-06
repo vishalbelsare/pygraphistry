@@ -16,22 +16,31 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
   function($, NBody, glMatrix, RenderGL, SimCL, MatrixLoader, Q) {
   
     function drawGraph (clGraph, graph) {
+    
+      var t0 = new Date().getTime();
 
-      var all = [];
       var check = {};
+      var count = 0;
       for (var i = 0; i < graph.edges.length; i++) {
         var node = graph.edges[i];
         if (!check[node]) {
           check[node] = true;
-          all.push(node);
+          count++;
         }
       }
 
-      var buff = new Float32Array(all.length * 2);
-      for (var i = 0; i < all.length ; i++) {
-        buff[2 * i] = all[i] / all.length;
-        buff[2 * i + 1] = i / all.length;
+      var t1 = new Date().getTime();      
+
+      var buff = new Float32Array(count * 2);
+      var count2 = 0;
+      for (var v in check) {
+        buff[count2++] = v / count;
+        buff[count2++] = count2 / count;
       }
+      
+      var t2 = new Date().getTime();      
+      console.log('toNodes', t1 - t0, 'ms', 'toFloats', t2 - t1, 'ms', 'nodes', count2);
+      
       clGraph.setPointsImmediate(buff);
       
       //console.log(buff);
