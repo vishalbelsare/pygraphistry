@@ -152,8 +152,6 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
 			stepButton.prop("disabled", false);
 
 			return graph.tick();
-		}, function(err) {
-			console.err("Fatal error trying to setup graph:", err);
 		});
 	}
 
@@ -173,6 +171,9 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
 	}
 
 
-	setup();
+	setup().fail(function(err) {
+		console.error("Error setting up animation:", err);
+	});
+
 	loadMatrices(graph);
 });

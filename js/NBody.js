@@ -2,9 +2,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 	var elementsPerPoint = 2;
 
 	function create(simulator, renderer, canvas) {
-		var deferred = Q.defer();
-
-		renderer.create(canvas)
+		return renderer.create(canvas)
 		.then(function(rend) {
 			return simulator.create(rend).then(function(sim) {
 				var graph = {
@@ -17,13 +15,8 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 				graph.tick = tick.bind(this, graph);
 
 				deferred.resolve(graph);
-			})
-		}, function(err) {
-			deferred.reject(err);
+			});
 		});
-
-
-		return deferred.promise;
 	}
 
 
