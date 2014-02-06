@@ -19,49 +19,67 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
 
 
 	// Given a set of graph data, load the points into the N-body simulation
-	function drawGraph (clGraph, graphData) {
-		console.log('drawing', clGraph, graphData);
-		var points = graphData.nodes.map(function (node, i) {
-		return [node.index / graphData.nodes.length, i / graphData.nodes.length, 0];
-		});
-		clGraph.setPoints(points);
-	}
+	function drawGraph (clGraph, graphFile) {
+		var t0 = new Date().getTime();
+
+		var check = {};
+		var count = 0;
+		for (var i = 0; i < graphFile.edges.length; i++) {
+			var node = graphFile.edges[i];
+			if (!check[node]) {
+				check[node] = true;
+				count++;
+			}
+		}
+
+		var t1 = new Date().getTime();
+
+		var buff = new Float32Array(count * 2);
+		var count2 = 0;
+		for (var v in check) {
+			buff[count2++] = v / count;
+			buff[count2++] = count2 / count;
+		}
+
+		var t2 = new Date().getTime();
+		console.log('toNodes', t1 - t0, 'ms', 'toFloats', t2 - t1, 'ms', 'nodes', count2);
+
+		clGraph.setPointsImmediate(buff);
+
+		//console.log(buff);
+    }
 
 
-	// Load the index of all the matrices we know about, and create links on the page to load each
-	// of them
-	function loadMatrices(clGraph) {
-		var files = MatrixLoader.ls("data/matrices.json");
+    function loadMatrices(clGraph) {
+		var files = MatrixLoader.ls("data/matrices.binary.json");
 		files.then(function (files) {
-		$('#matrices').append(
-			files
-			.map(function (file) {
-				var base = file.f.split(/\/|\./)[1]
-				var size = file.KB > 1000 ? (Math.round(file.KB / 1000) + " MB") : (file.KB + " KB");
-				var link = $("<a></a>")
-				.attr("href", "javascript:void(0)")
-				.text(base + " (" + size + ")")
-				.click(function () {
-					$('#filename').text(base);
-					$('#filesize').text(size);
-					var graphData = MatrixLoader.load(file.f);
-					graphData.then(function (v) {
-					console.log('got', v);
-					$('#filenodes').text(v.nodes.length);
-					$('#fileedges').text(v.links.length);
-					$('#fileedgelist').text(
-						v.links
-						.slice(0, 20)
-						.map(function (pair) {
-							return '(' + pair.source.index + ',' + pair.target.index + ')'; })
-						.join(' '));
+			$('#matrices').append(
+				files.map(function (file) {
+					var base = file.f.split(/\/|\./)[file.f.split(/\/|\./).length - 3]
+					var size = file.KB > 1000 ? (Math.round(file.KB / 1000) + " MB") : (file.KB + " KB");
+					var link = $("<a></a>")
+					.attr("href", "javascript:void(0)")
+					.text(base + " (" + size + ")")
+					.click(function () {
+						$('#filename').text(base);
+						$('#filesize').text(size);
+						var graphFile = MatrixLoader.loadBinary(file.f);
+						graphFile.then(function (v) {
+							console.log('got', v);
+							$('#filenodes').text(v.numNodes);
+							$('#fileedges').text(v.numEdges);
+							$('#fileedgelist').text(
+								Array.prototype.slice.call(v.edges, 0, 3)
+								.map(function (_, i) {
+								return '(' + v.edges[2 * i] + ',' + v.edges[2 * i + 1] + ')'; })
+								.join(' '));
+						});
+						Q.promised(drawGraph)(clGraph, graphFile);
 					});
-					Q.promised(drawGraph)(clGraph, graphData);
-				});
-				return $('<li></li>').append(link);
+					return $('<li></li>').append(link);
 			}));
 		});
-	}
+    }
 
 
 	function animatePromise(promise) {

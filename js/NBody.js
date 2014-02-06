@@ -12,6 +12,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 					"simulator": sim
 				};
 				graph.setPoints = setPoints.bind(this, graph);
+				graph.setPointsImmediate = setPointsImmediate.bind(this, graph);
 				graph.setEdges = setEdges.bind(this, graph);
 				graph.tick = tick.bind(this, graph);
 
@@ -32,6 +33,10 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 		return graph.simulator.setData(floatPoints);
 	}
 
+	function setPointsImmediate(graph, buffer) {
+	    return graph.simulator.setData(buffer);
+	}
+	
 
 	function setEdges(graph, edges) {
 		return Q.fcall(function() {
@@ -74,6 +79,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 		"elementsPerPoint": elementsPerPoint,
 		"create": create,
 		"setPoints": setPoints,
+		"setPointsImmediate": setPointsImmediate,
 		"setEdges": setEdges,
 		"tick": tick
 	};
