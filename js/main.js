@@ -162,6 +162,7 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
 		var points = [];
 
 		points.push([0.5, 0.5]);
+		points.push([0.5, 0.5]);
 		// points.push([0.1, 0.1]);
 		// points.push([0.9, 0.1]);
 		// points.push([0.9, 0.9]);
