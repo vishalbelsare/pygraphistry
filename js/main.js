@@ -3,7 +3,8 @@ require.config({
 		"jQuery": "libs/jquery-2.1.0",
 		"Q": "libs/q",
 		"glMatrix": "libs/gl-matrix",
-		"MatrixLoader": "libs/load"
+		"MatrixLoader": "libs/load",
+		"Bootstrap": "js/libs/bootstrap"
 	},
 	shim: {
 		"jQuery": {
@@ -54,33 +55,33 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
 
 
     function loadMatrices(clGraph) {
+        function fileNfo (file) {
+          return {
+            base: file.f.split(/\/|\./)[file.f.split(/\/|\./).length - 3],
+			size: file.KB > 1000 ? (Math.round(file.KB / 1000) + " MB") : (file.KB + " KB")
+		  };
+        }
+        
 		var files = MatrixLoader.ls("data/matrices.binary.json");
 		files.then(function (files) {
-			$('#matrices').append(
-				files.map(function (file) {
-					var base = file.f.split(/\/|\./)[file.f.split(/\/|\./).length - 3]
-					var size = file.KB > 1000 ? (Math.round(file.KB / 1000) + " MB") : (file.KB + " KB");
-					var link = $("<a></a>")
-					.attr("href", "javascript:void(0)")
-					.text(base + " (" + size + ")")
-					.click(function () {
-						$('#filename').text(base);
-						$('#filesize').text(size);
-						var graphFile = MatrixLoader.loadBinary(file.f);
-						graphFile.then(function (v) {
-							console.log('got', v);
-							$('#filenodes').text(v.numNodes);
-							$('#fileedges').text(v.numEdges);
-							$('#fileedgelist').text(
-								Array.prototype.slice.call(v.edges, 0, 3)
-								.map(function (_, i) {
-								return '(' + v.edges[2 * i] + ',' + v.edges[2 * i + 1] + ')'; })
-								.join(' '));
-						});
-						Q.promised(drawGraph)(clGraph, graphFile);
-					});
-					return $('<li></li>').append(link);
-			}));
+		  var options = files.map(function (file, i) {
+		    var nfo = fileNfo(file);
+			return $('<option></option>')
+			  .attr('value', i)
+			  .text(nfo.base + " (" + nfo.size + ")");		  
+		  });
+		  $('#datasets')
+		    .append(options)
+		    .on('change', function () {
+		      var file = files[parseInt(this.value)];
+			  var graphFile = MatrixLoader.loadBinary(file.f);
+			  graphFile.then(function (v) {
+			    console.log('got', v);
+				$('#filenodes').text('Nodes: ' + v.numNodes);
+				$('#fileedges').text('Edges: ' + v.numEdges);
+		      });
+			  Q.promised(drawGraph)(clGraph, graphFile);
+		    });		
 		});
     }
 
