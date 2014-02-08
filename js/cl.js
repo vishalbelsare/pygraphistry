@@ -237,7 +237,8 @@ define(["Q"], function (Q) {
 			int_t: WebCLKernelArgumentTypes.INT,
 			uint_t: WebCLKernelArgumentTypes.UINT,
 			local_t: WebCLKernelArgumentTypes.LOCAL_MEMORY_SIZE,
-			float_t: WebCLKernelArgumentTypes.FLOAT
+			float_t: WebCLKernelArgumentTypes.FLOAT,
+			float2_t: WebCLKernelArgumentTypes.FLOAT
 		};
 
 		return true;
