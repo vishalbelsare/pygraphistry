@@ -61,14 +61,14 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
 			size: file.KB > 1000 ? (Math.round(file.KB / 1000) + " MB") : (file.KB + " KB")
 		  };
         }
-        
+
 		var files = MatrixLoader.ls("data/matrices.binary.json");
 		files.then(function (files) {
 		  var options = files.map(function (file, i) {
 		    var nfo = fileNfo(file);
 			return $('<option></option>')
 			  .attr('value', i)
-			  .text(nfo.base + " (" + nfo.size + ")");		  
+			  .text(nfo.base + " (" + nfo.size + ")");
 		  });
 		  $('#datasets')
 		    .append(options)
@@ -81,7 +81,7 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
 				$('#fileedges').text('Edges: ' + v.numEdges);
 		      });
 			  Q.promised(drawGraph)(clGraph, graphFile);
-		    });		
+		    });
 		});
     }
 
@@ -111,7 +111,7 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
 	function setup() {
 		console.log("Running Naive N-body simulation");
 
-		return NBody.create(SimCL, RenderGL, $("#simulation")[0])
+		return NBody.create(SimCL, RenderGL, $("#simulation")[0], [1,1])
 		.then(function(createdGraph) {
 			graph = createdGraph;
 			console.log("N-body graph created.");
@@ -167,10 +167,14 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
 
 		points.push([0.5, 0.5]);
 		points.push([0.5, 0.5]);
+		// points.push([0.5, 0.5]);
+
+		points.push([0.2, 0.2]);
 		points.push([0.1, 0.1]);
 		points.push([0.9, 0.1]);
 		points.push([0.9, 0.9]);
 		points.push([0.1, 0.9]);
+		points.push([0.5, 0.5]);
 
 		return points;
 	}

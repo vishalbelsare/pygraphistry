@@ -1,4 +1,6 @@
 define(["Q", "util", "cl"], function(Q, util, cljs) {
+	var randLength = 73;
+
 	function create(renderer, dimensions) {
 		return cljs.create(renderer.gl)
 		.then(function(cl) {
@@ -56,11 +58,21 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			})
 			.then(function(nextPoints) {
 				simulator.nextPoints = nextPoints;
-
+				return simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT)
+			})
+			.then(function(randBuffer) {
+				simulator.randValues = randBuffer;
+				var rands = new Float32Array(randLength * simulator.elementsPerPoint);
+				for(var i = 0; i < rands.length; i++) {
+					rands[i] = Math.random();
+				}
+				return simulator.randValues.write(rands);
+			})
+			.then(function() {
 				var types = [];
 				if(!cljs.CURRENT_CL) {
 					// FIXME: find the old WebCL platform type for float2
-					types = [cljs.types.int_t, null, null , cljs.types.local_t, cljs.types.float_t];
+					types = [cljs.types.int_t, null, null , cljs.types.local_t, cljs.types.float_t, null];
 				}
 
 				var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
@@ -70,7 +82,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				     simulator.nextPoints.buffer,
 				     new Uint32Array([localPos]),
 				     new Float32Array(simulator.dimensions),
-				     new Float32Array([0.005])],
+				     new Float32Array([0.005]),
+				     simulator.randValues.buffer],
 					types);
 			})
 		);
