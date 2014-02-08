@@ -1,5 +1,5 @@
 define(["Q", "util", "cl"], function(Q, util, cljs) {
-	function create(renderer) {
+	function create(renderer, dimensions) {
 		return cljs.create(renderer.gl)
 		.then(function(cl) {
 			// Compile the WebCL kernels
@@ -17,6 +17,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				simObj.tick = tick.bind(this, simObj);
 				simObj.setData = setData.bind(this, simObj);
 				simObj.dumpBuffers = dumpBuffers.bind(this, simObj);
+				simObj.dimensions = dimensions;
 
 				console.debug("WebCL simulator created");
 				return simObj
@@ -58,7 +59,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 				var types = [];
 				if(!cljs.CURRENT_CL) {
-					types = [cljs.types.int_t, null, null , cljs.types.float_t, cljs.types.local_t];
+					// FIXME: find the old WebCL platform type for float2
+					types = [cljs.types.int_t, null, null , cljs.types.local_t, cljs.types.float_t];
 				}
 
 				var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
@@ -66,8 +68,9 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				    [new Int32Array([simulator.numPoints]),
 				     simulator.curPoints.buffer,
 				     simulator.nextPoints.buffer,
-				     new Float32Array([0.005]),
-				     new Uint32Array([localPos])],
+				     new Uint32Array([localPos]),
+				     new Float32Array(simulator.dimensions),
+				     new Float32Array([0.005])],
 					types);
 			})
 		);

@@ -1,10 +1,20 @@
 define(["Q", "glMatrix"], function(Q, glMatrix) {
 	var elementsPerPoint = 2;
 
-	function create(simulator, renderer, canvas) {
-		return renderer.create(canvas)
+	/**
+	 * Create a new N-body graph and return a promise for the graph object
+	 *
+	 * @param simulator - the module of the simulator backend to use
+	 * @param renderer - the module of the rendering backend to use
+	 * @param canvas - the canvas DOM element to draw the graph in
+	 * @param [dimensions=\[1,1\]] - a two element array [width,height] used for internal posituin calculations.
+	 */
+	function create(simulator, renderer, canvas, dimensions) {
+		dimensions = dimensions || [1,1];
+
+		return renderer.create(canvas, dimensions)
 		.then(function(rend) {
-			return simulator.create(rend).then(function(sim) {
+			return simulator.create(rend, dimensions).then(function(sim) {
 				var graph = {
 					"renderer": rend,
 					"simulator": sim
@@ -12,6 +22,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 				graph.setPoints = setPoints.bind(this, graph);
 				graph.setEdges = setEdges.bind(this, graph);
 				graph.tick = tick.bind(this, graph);
+				graph.dimensions = dimensions;
 
 				return graph;
 			});

@@ -1,5 +1,5 @@
 define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
-	function create(canvas) {
+	function create(canvas, dimensions) {
 		var renderer = {};
 
 		// The dimensions of a canvas, by default, do not accurately reflect its size on screen (as
@@ -38,8 +38,9 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				renderer.render = render.bind(this, renderer);
 				renderer.elementsPerPoint = 2;
 
-				// return renderer.setCamera(glMatrix.vec3.fromValues(0,0,1), glMatrix.vec3.fromValues(0,0,0));
-				return renderer.setCamera2d(0, 1, 0, 1);
+				// TODO: Enlarge the camera by the (size of gl points / 2) so that points are fully
+				// on screen even if they're at the edge of the graph.
+				return renderer.setCamera2d(-0.01, dimensions[0] + 0.01, -0.01, dimensions[1] + 0.01);
 			})
 		);
 	}
