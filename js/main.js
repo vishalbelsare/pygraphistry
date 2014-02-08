@@ -38,8 +38,8 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
 		var buff = new Float32Array(count * 2);
 		var count2 = 0;
 		for (var v in check) {
-			buff[count2++] = v / count;
-			buff[count2++] = count2 / count;
+			buff[count2++] = Math.random() * clGraph.dimensions[0];
+			buff[count2++] = Math.random() * clGraph.dimensions[1];
 		}
 
 		var t2 = new Date().getTime();
