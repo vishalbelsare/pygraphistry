@@ -4,7 +4,8 @@ require.config({
 		"Q": "libs/q",
 		"glMatrix": "libs/gl-matrix",
 		"MatrixLoader": "libs/load",
-		"Bootstrap": "js/libs/bootstrap"
+		"Bootstrap": "libs/bootstrap",
+		"Stats": "libs/stats.beautified"
 	},
 	shim: {
 		"jQuery": {
@@ -13,10 +14,11 @@ require.config({
 	}
 });
 
-require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"],
-	function($, NBody, glMatrix, RenderGL, SimCL, MatrixLoader, Q) {
+require(["jQuery", "NBody", "RenderGL", "SimCL", "MatrixLoader", "Q", "Stats"],
+	function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 	var graph = null,
-		animating = null;
+		animating = null,
+		fps = null;
 
 
 	// Given a set of graph data, load the points into the N-body simulation
@@ -86,8 +88,10 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
     }
 
 	function animatePromise(promise) {
+		fps.begin();
 		return promise()
 		.then(function() {
+			fps.end();
 			if(animating){
 				animId = window.requestAnimationFrame(function() {
 					animatePromise(promise);
@@ -98,12 +102,14 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
 				return null;
 			}
 		}, function(err) {
+			fps.end();
 			console.error("Error during animation:", err);
 		});
 	}
 
 
 	function stopAnimation() {
+		fps.end();
 		animating = false;
 	}
 
@@ -120,6 +126,11 @@ require(["jQuery", "NBody", "glMatrix", "RenderGL", "SimCL", "MatrixLoader", "Q"
 			return graph.setPoints(points);
 		})
 		.then(function() {
+			fps = new Stats();
+			console.debug("FPS:", fps);
+			fps.setMode(0);
+			$(".content").append(fps.domElement);
+
 			var animButton = $("#anim-button");
 			var stepButton = $("#step-button");
 
