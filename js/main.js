@@ -21,7 +21,8 @@ require(["jQuery", "NBody", "RenderGL", "SimCL", "MatrixLoader", "Q", "Stats"],
 function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 	var graph = null,
 		animating = null,
-		dimensions = [1,1];
+		numPoints = 16384, //16384
+		dimensions = [1,1]; //[960,960];
 
 
 	// Given a set of graph data, load the points into the N-body simulation
@@ -122,7 +123,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 			graph = createdGraph;
 			console.log("N-body graph created.");
 
-			var points = createPoints(16384, dimensions);
+			var points = createPoints(numPoints, dimensions);
 
 			var fpsTotal = new Stats();
 			fpsTotal.setMode(0);
