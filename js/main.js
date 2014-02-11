@@ -20,7 +20,8 @@ require.config({
 require(["jQuery", "NBody", "RenderGL", "SimCL", "MatrixLoader", "Q", "Stats"],
 function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 	var graph = null,
-		animating = null;
+		animating = null,
+		dimensions = [1,1];
 
 
 	// Given a set of graph data, load the points into the N-body simulation
@@ -116,12 +117,12 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 	function setup() {
 		console.log("Running Naive N-body simulation");
 
-		return NBody.create(SimCL, RenderGL, $("#simulation")[0], [1,1])
+		return NBody.create(SimCL, RenderGL, $("#simulation")[0], dimensions)
 		.then(function(createdGraph) {
 			graph = createdGraph;
 			console.log("N-body graph created.");
 
-			var points = createPoints(4096);
+			var points = createPoints(16384, dimensions);
 
 			var fpsTotal = new Stats();
 			fpsTotal.setMode(0);
@@ -207,20 +208,24 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 
 
 	// Generates `amount` number of random points
-	function createPoints(amount) {
+	function createPoints(amount, dim) {
 		// Allocate 2 elements for each point (x, y)
 		var points = [];
 
-		points.push([0.5, 0.5]);
-		points.push([0.5, 0.5]);
+		// points.push([0.5, 0.5]);
+		// points.push([0.5, 0.5]);
+		// // points.push([0.5, 0.5]);
+
+		// points.push([0.2, 0.2]);
+		// points.push([0.1, 0.1]);
+		// points.push([0.9, 0.1]);
+		// points.push([0.9, 0.9]);
+		// points.push([0.1, 0.9]);
 		// points.push([0.5, 0.5]);
 
-		points.push([0.2, 0.2]);
-		points.push([0.1, 0.1]);
-		points.push([0.9, 0.1]);
-		points.push([0.9, 0.9]);
-		points.push([0.1, 0.9]);
-		points.push([0.5, 0.5]);
+		for(var i = 0; i < amount; i++) {
+			points.push([Math.random() * dim[0], Math.random() * dim[1]]);
+		}
 
 		return points;
 	}
