@@ -121,6 +121,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		})
 		.then(function() {
 			simulator.events.bufferAquireEnd();
+			// TODO: Use a callback argument to finish(), rather than letting it block when we don't
+			// provide one.
 			simulator.cl.queue.finish();
 			return simulator;
 		});
