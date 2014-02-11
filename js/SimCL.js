@@ -20,6 +20,14 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				simObj.setData = setData.bind(this, simObj);
 				simObj.dumpBuffers = dumpBuffers.bind(this, simObj);
 				simObj.dimensions = dimensions;
+				simObj.events = {
+					"kernelStart": function() { },
+					"kernelEnd":  function() { },
+					"bufferCopyStart": function() { },
+					"bufferCopyEnd": function() { },
+					"bufferAquireStart": function() { },
+					"bufferAquireEnd": function() { }
+				};
 
 				console.debug("WebCL simulator created");
 				return simObj
@@ -91,17 +99,29 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 
 	function tick(simulator) {
+		simulator.events.bufferAquireStart();
+
 		return Q.all([simulator.curPoints.acquire()])
 		.then(function() {
+			simulator.events.bufferAquireEnd();
+			simulator.events.kernelStart();
+
 			return simulator.kernel.call(simulator.numPoints, []);
 		})
 		.then(function() {
+			simulator.events.kernelEnd();
+			simulator.events.bufferCopyStart();
+
 			return Q.all([simulator.nextPoints.copyBuffer(simulator.curPoints)]);
 		})
 		.then(function() {
+			simulator.events.bufferCopyEnd();
+			simulator.events.bufferAquireStart();
+
 			return Q.all([simulator.curPoints.release()]);
 		})
 		.then(function() {
+			simulator.events.bufferAquireEnd();
 			simulator.cl.queue.finish();
 			return simulator;
 		});

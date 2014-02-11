@@ -154,6 +154,16 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 				fpsRender.end();
 			};
 
+			var fpsKernel = new Stats();
+			fpsKernel.setMode(1);
+			$("#fpsKernel").append(fpsKernel.domElement);
+			graph.simulator.events.kernelStart = function() {
+				fpsKernel.begin();
+			};
+			graph.simulator.events.kernelEnd = function() {
+				fpsKernel.end();
+			};
+
 			return graph.setPoints(points);
 		})
 		.then(function() {
