@@ -99,7 +99,9 @@ define(["Q"], function (Q) {
 
 	var setArgs = Q.promised(function (kernel, args, argTypes) {
 	    for (var i = 0; i < args.length; i++) {
-		    kernel.kernel.setArg(i, args[i]);
+	    	if(args[i] !== null) {
+	    		kernel.kernel.setArg(i, args[i]);
+	    	}
 		}
 
 		return kernel;
