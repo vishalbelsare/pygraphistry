@@ -94,9 +94,9 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 		return promise()
 		.then(function() {
 			if(animating){
-				animId = window.requestAnimationFrame(function() {
+				animId = window.setTimeout(function() {
 					animatePromise(promise);
-				});
+				}, 0);
 
 				return animId;
 			} else {
@@ -142,7 +142,6 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 			graph.events.simulateEnd = function() {
 				fpsSim.end();
 			};
-
 
 			var fpsRender = new Stats();
 			fpsRender.setMode(1);
