@@ -153,7 +153,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 			gl.vertexAttribPointer(renderer.curPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
 
 			gl.drawArrays(gl.POINTS, 0, renderer.numPoints);
-			gl.flush();
+			gl.finish();
 
 			resolve(renderer);
 		});
