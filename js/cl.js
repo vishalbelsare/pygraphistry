@@ -235,11 +235,23 @@ define(["Q"], function (Q) {
 		});
 
 		types = {
-			int_t: WebCLKernelArgumentTypes.INT,
-			uint_t: WebCLKernelArgumentTypes.UINT,
-			local_t: WebCLKernelArgumentTypes.LOCAL_MEMORY_SIZE,
+			char_t: WebCLKernelArgumentTypes.CHAR,
+			double_t: WebCLKernelArgumentTypes.DOUBLE,
 			float_t: WebCLKernelArgumentTypes.FLOAT,
-			float2_t: WebCLKernelArgumentTypes.VEC2
+			half_t: WebCLKernelArgumentTypes.HALF,
+			int_t: WebCLKernelArgumentTypes.INT,
+			local_t: WebCLKernelArgumentTypes.LOCAL_MEMORY_SIZE,
+			long_t: WebCLKernelArgumentTypes.LONG,
+			short_t: WebCLKernelArgumentTypes.SHORT,
+			uchar_t: WebCLKernelArgumentTypes.UCHAR,
+			uint_t: WebCLKernelArgumentTypes.UINT,
+			ulong_t: WebCLKernelArgumentTypes.ULONG,
+			ushort_t: WebCLKernelArgumentTypes.USHORT,
+			float2_t: WebCLKernelArgumentTypes.VEC2,
+			float3_t: WebCLKernelArgumentTypes.VEC3,
+			float4_t: WebCLKernelArgumentTypes.VEC4,
+			float8_t: WebCLKernelArgumentTypes.VEC8,
+			float16_t: WebCLKernelArgumentTypes.VEC16
 		};
 
 		return true;
