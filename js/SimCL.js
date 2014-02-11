@@ -80,7 +80,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				var types = [];
 				if(!cljs.CURRENT_CL) {
 					// FIXME: find the old WebCL platform type for float2
-					types = [cljs.types.int_t, null, null , cljs.types.local_t, cljs.types.float_t, cljs.types.float_t, null, cljs.types.uint_t];
+					types = [cljs.types.int_t, null, null , cljs.types.local_t, cljs.types.float_t, cljs.types.float_t, cljs.types.float_t, cljs.types.float_t, null, cljs.types.uint_t];
 				}
 
 				var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
@@ -91,6 +91,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				     new Uint32Array([localPos]),
 				     new Float32Array([simulator.dimensions[0]]),
 				     new Float32Array([simulator.dimensions[1]]),
+				     new Float32Array([-0.00001]),
+				     new Float32Array([0.2]),
 				     simulator.randValues.buffer,
 				     new Uint32Array([0])],
 					types);
@@ -101,8 +103,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 	function tick(simulator, stepNumber) {
 	    simulator.kernel.setArgs(
-	     [null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
-	     [null, null, null, null, null, null, null, cljs.types.uint_t]
+	     [null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
+	     [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]
 	     );
 
 
