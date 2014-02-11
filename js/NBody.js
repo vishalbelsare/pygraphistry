@@ -21,6 +21,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 				};
 				graph.setPoints = setPoints.bind(this, graph);
 				graph.setEdges = setEdges.bind(this, graph);
+				graph.setPhysics = setPhysics.bind(this, graph);
 				graph.tick = tick.bind(this, graph);
 				graph.stepNumber = 0;
 				graph.dimensions = dimensions;
@@ -58,6 +59,10 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 		return Q.fcall(function() {
 			return graph;
 		});
+	}
+	
+	function setPhysics(graph, opts) {
+	    graph.simulator.setPhysics(opts);
 	}
 
 

@@ -89,6 +89,8 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 			  Q.promised(drawGraph)(clGraph, graphFile);
 		    });
 		});
+		
+		return files;
     }
 
 
@@ -214,12 +216,33 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 
 		return points;
 	}
+	
+	function bindSliders(graph) {
+	  $('#charge').on('change', function (e) {
+	    var v = $(this).val();
+	    var res = 0.1;
+	    for (var i = 0; i < (100-v); i++) res /= 1.3;
+	    var scaled = -1 * res;
+	    console.log('charge', v, '->', scaled);
+	    graph.setPhysics({charge: scaled});
+	  });
+	  $('#gravity').on('change', function (e) {
+	    var v = $(this).val();
+	    var res = 100.0;
+	    for (var i = 0; i < (100-v); i++) res /= 1.3;
+	    var scaled = 1 * res;
+	    console.log('gravity', v, '->', scaled);
+	    graph.setPhysics({gravity: scaled});
+	  });	
+	}
 
 
 	setup().
 	then(function() {
-		loadMatrices(graph);
+		return loadMatrices(graph);
 	}, function(err) {
 		console.error("Error setting up animation:", err);
+	}).then(function () {
+	    return bindSliders(graph);
 	});
 });

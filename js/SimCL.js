@@ -19,6 +19,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				simObj.tick = tick.bind(this, simObj);
 				simObj.setData = setData.bind(this, simObj);
 				simObj.dumpBuffers = dumpBuffers.bind(this, simObj);
+				simObj.setPhysics = setPhysics.bind(this, simObj);
 				simObj.dimensions = dimensions;
 				simObj.events = {
 					"kernelStart": function() { },
@@ -98,6 +99,18 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 					types);
 			})
 		);
+	}
+	
+	function setPhysics(simulator, cfg) {
+	    cfg = cfg || {};
+	    simulator.kernel.setArgs(
+	     [null, null, null, null, null, null, 
+	         cfg.charge ? new Float32Array([cfg.charge]) : null, cfg.gravity ? new Float32Array([cfg.gravity]) : null, 
+	         null, null],
+	     [null, null, null, null, null, null, 
+	         cfg.charge ? cljs.types.float_t : null, cfg.gravity ? cljs.types.float_t : null,
+	         null, null]
+	     );	
 	}
 
 
