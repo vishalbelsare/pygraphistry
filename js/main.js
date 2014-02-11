@@ -129,7 +129,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 			graph.events.tickBegin = function() {
 				fpsTotal.begin();
 			};
-			graph.events.tickFinish = function() {
+			graph.events.tickEnd = function() {
 				fpsTotal.end();
 			};
 
@@ -139,7 +139,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 			graph.events.simulateBegin = function() {
 				fpsSim.begin();
 			};
-			graph.events.simulateFinish = function() {
+			graph.events.simulateEnd = function() {
 				fpsSim.end();
 			};
 
@@ -150,7 +150,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 			graph.events.renderBegin = function() {
 				fpsRender.begin();
 			};
-			graph.events.renderFinish = function() {
+			graph.events.renderEnd = function() {
 				fpsRender.end();
 			};
 

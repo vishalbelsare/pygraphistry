@@ -25,11 +25,11 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 				graph.dimensions = dimensions;
 				graph.events = {
 					"simulateBegin": function() { },
-					"simulateFinish": function() { },
+					"simulateEnd": function() { },
 					"renderBegin": function() { },
-					"renderFinish": function() { },
+					"renderEnd": function() { },
 					"tickBegin": function() { },
-					"tickFinish": function() { }
+					"tickEnd": function() { }
 				};
 				// This attribute indicates if a call to tick() will be the first time it is called
 				// (useful because our first tick() should render the graph in its inital state,
@@ -84,8 +84,8 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 
 			return graph.renderer.render()
 			.then(function() {
-				graph.events.renderFinish();
-				graph.events.tickFinish();
+				graph.events.renderEnd();
+				graph.events.tickEnd();
 
 				return graph;
 			});
@@ -94,14 +94,14 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 
 			return graph.simulator.tick()
 			.then(function() {
-				graph.events.simulateFinish();
+				graph.events.simulateEnd();
 				graph.events.renderBegin();
 
 				return graph.renderer.render();
 			})
 			.then(function() {
-				graph.events.renderFinish();
-				graph.events.tickFinish();
+				graph.events.renderEnd();
+				graph.events.tickEnd();
 
 				return graph;
 			});
