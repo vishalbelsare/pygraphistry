@@ -128,42 +128,26 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 			var fpsTotal = new Stats();
 			fpsTotal.setMode(0);
 			$("#fpsTotal").append(fpsTotal.domElement);
-			graph.events.tickBegin = function() {
-				fpsTotal.begin();
-			};
-			graph.events.tickEnd = function() {
-				fpsTotal.end();
-			};
+			graph.events.tickBegin = function() { fpsTotal.begin(); };
+			graph.events.tickEnd = function() { fpsTotal.end(); };
 
 			var fpsSim = new Stats();
 			fpsSim.setMode(1);
 			$("#fpsSim").append(fpsSim.domElement);
-			graph.events.simulateBegin = function() {
-				fpsSim.begin();
-			};
-			graph.events.simulateEnd = function() {
-				fpsSim.end();
-			};
+			graph.events.simulateBegin = function() { fpsSim.begin(); };
+			graph.events.simulateEnd = function() { fpsSim.end(); };
 
 			var fpsRender = new Stats();
 			fpsRender.setMode(1);
 			$("#fpsRender").append(fpsRender.domElement);
-			graph.events.renderBegin = function() {
-				fpsRender.begin();
-			};
-			graph.events.renderEnd = function() {
-				fpsRender.end();
-			};
+			graph.events.renderBegin = function() { fpsRender.begin(); };
+			graph.events.renderEnd = function() { fpsRender.end(); };
 
 			var fpsKernel = new Stats();
 			fpsKernel.setMode(1);
 			$("#fpsKernel").append(fpsKernel.domElement);
-			graph.simulator.events.kernelStart = function() {
-				fpsKernel.begin();
-			};
-			graph.simulator.events.kernelEnd = function() {
-				fpsKernel.end();
-			};
+			graph.simulator.events.kernelStart = function() { fpsKernel.begin(); };
+			graph.simulator.events.kernelEnd = function() { fpsKernel.end(); };
 
 			return graph.setPoints(points);
 		})
