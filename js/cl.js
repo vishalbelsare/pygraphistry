@@ -228,7 +228,8 @@ define(["Q"], function (Q) {
 
 		setArgs = Q.promised(function (kernel, args, argTypes) {
 		    for (var i = 0; i < args.length; i++) {
-			    kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i]);
+			    if (args[i])
+			        kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i]);
 			}
 			return kernel;
 		});
