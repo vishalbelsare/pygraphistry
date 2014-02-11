@@ -10,15 +10,17 @@ require.config({
 	shim: {
 		"jQuery": {
 			exports: "$"
+		},
+		"Stats": {
+			exports: "Stats"
 		}
 	}
 });
 
 require(["jQuery", "NBody", "RenderGL", "SimCL", "MatrixLoader", "Q", "Stats"],
-	function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
+function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 	var graph = null,
-		animating = null,
-		fps = null;
+		animating = null;
 
 
 	// Given a set of graph data, load the points into the N-body simulation
@@ -87,11 +89,10 @@ require(["jQuery", "NBody", "RenderGL", "SimCL", "MatrixLoader", "Q", "Stats"],
 		});
     }
 
+
 	function animatePromise(promise) {
-		fps.begin();
 		return promise()
 		.then(function() {
-			fps.end();
 			if(animating){
 				animId = window.requestAnimationFrame(function() {
 					animatePromise(promise);
@@ -102,14 +103,12 @@ require(["jQuery", "NBody", "RenderGL", "SimCL", "MatrixLoader", "Q", "Stats"],
 				return null;
 			}
 		}, function(err) {
-			fps.end();
 			console.error("Error during animation:", err);
 		});
 	}
 
 
 	function stopAnimation() {
-		fps.end();
 		animating = false;
 	}
 
@@ -123,14 +122,41 @@ require(["jQuery", "NBody", "RenderGL", "SimCL", "MatrixLoader", "Q", "Stats"],
 			console.log("N-body graph created.");
 
 			var points = createPoints(4096);
+
+			var fpsTotal = new Stats();
+			fpsTotal.setMode(0);
+			$("#fpsTotal").append(fpsTotal.domElement);
+			graph.events.tickBegin = function() {
+				fpsTotal.begin();
+			};
+			graph.events.tickFinish = function() {
+				fpsTotal.end();
+			};
+
+			var fpsSim = new Stats();
+			fpsSim.setMode(1);
+			$("#fpsSim").append(fpsSim.domElement);
+			graph.events.simulateBegin = function() {
+				fpsSim.begin();
+			};
+			graph.events.simulateFinish = function() {
+				fpsSim.end();
+			};
+
+
+			var fpsRender = new Stats();
+			fpsRender.setMode(1);
+			$("#fpsRender").append(fpsRender.domElement);
+			graph.events.renderBegin = function() {
+				fpsRender.begin();
+			};
+			graph.events.renderFinish = function() {
+				fpsRender.end();
+			};
+
 			return graph.setPoints(points);
 		})
 		.then(function() {
-			fps = new Stats();
-			console.debug("FPS:", fps);
-			fps.setMode(0);
-			$(".content").append(fps.domElement);
-
 			var animButton = $("#anim-button");
 			var stepButton = $("#step-button");
 

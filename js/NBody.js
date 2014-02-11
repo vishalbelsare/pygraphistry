@@ -23,6 +23,14 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 				graph.setEdges = setEdges.bind(this, graph);
 				graph.tick = tick.bind(this, graph);
 				graph.dimensions = dimensions;
+				graph.events = {
+					"simulateBegin": function() { },
+					"simulateFinish": function() { },
+					"renderBegin": function() { },
+					"renderFinish": function() { },
+					"tickBegin": function() { },
+					"tickFinish": function() { }
+				};
 				// This attribute indicates if a call to tick() will be the first time it is called
 				// (useful because our first tick() should render the graph in its inital state,
 				// and so not run the simulator.)
@@ -68,13 +76,34 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 
 
 	function tick(graph) {
+		graph.events.tickBegin();
+
 		if(graph.firstTick) {
 			graph.firstTick = false;
+			graph.events.renderBegin();
+
 			return graph.renderer.render()
+			.then(function() {
+				graph.events.renderFinish();
+				graph.events.tickFinish();
+
+				return graph;
+			});
 		} else {
+			graph.events.simulateBegin();
+
 			return graph.simulator.tick()
 			.then(function() {
+				graph.events.simulateFinish();
+				graph.events.renderBegin();
+
 				return graph.renderer.render();
+			})
+			.then(function() {
+				graph.events.renderFinish();
+				graph.events.tickFinish();
+
+				return graph;
 			});
 		}
 	}
