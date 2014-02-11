@@ -22,6 +22,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 				graph.setPoints = setPoints.bind(this, graph);
 				graph.setEdges = setEdges.bind(this, graph);
 				graph.tick = tick.bind(this, graph);
+				graph.stepNumber = 0;
 				graph.dimensions = dimensions;
 				graph.events = {
 					"simulateBegin": function() { },
@@ -92,7 +93,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 		} else {
 			graph.events.simulateBegin();
 
-			return graph.simulator.tick()
+			return graph.simulator.tick(graph.stepNumber++)
 			.then(function() {
 				graph.events.simulateEnd();
 				graph.events.renderBegin();

@@ -228,7 +228,8 @@ define(["Q"], function (Q) {
 
 		setArgs = Q.promised(function (kernel, args, argTypes) {
 		    for (var i = 0; i < args.length; i++) {
-			    kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i]);
+			    if (args[i])
+			        kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i]);
 			}
 			return kernel;
 		});
@@ -238,7 +239,7 @@ define(["Q"], function (Q) {
 			uint_t: WebCLKernelArgumentTypes.UINT,
 			local_t: WebCLKernelArgumentTypes.LOCAL_MEMORY_SIZE,
 			float_t: WebCLKernelArgumentTypes.FLOAT,
-			float2_t: WebCLKernelArgumentTypes.FLOAT
+			float2_t: WebCLKernelArgumentTypes.VEC2
 		};
 
 		return true;
