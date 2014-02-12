@@ -7,13 +7,14 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			// Compile the WebCL kernels
 			return util.getSource("apply-forces.cl")
 			.then(function(source) {
-				return cl.compile(source, "apply_points");
+				return cl.compile(source, ["apply_points", "apply_springs"]);
 			})
-			.then(function(kernel) {
+			.then(function(kernels) {
 				var simObj = {
 					"renderer": renderer,
 					"cl": cl,
-					"kernel": kernel,
+					"pointKernel": kernels["apply_points"],
+					"edgesKernel": kernels["apply_springs"],
 					"elementsPerPoint": 2
 				};
 				simObj.tick = tick.bind(this, simObj);
@@ -85,7 +86,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				}
 
 				var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
-				return simulator.kernel.setArgs(
+				return simulator.pointKernel.setArgs(
 				    [new Int32Array([simulator.numPoints]),
 				     simulator.curPoints.buffer,
 				     simulator.nextPoints.buffer,
@@ -103,7 +104,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 	function setPhysics(simulator, cfg) {
 	    cfg = cfg || {};
-	    simulator.kernel.setArgs(
+	    simulator.pointKernel.setArgs(
 	     [null, null, null, null, null, null,
 	         cfg.charge ? new Float32Array([cfg.charge]) : null, cfg.gravity ? new Float32Array([cfg.gravity]) : null,
 	         null, null],
@@ -115,7 +116,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 
 	function tick(simulator, stepNumber) {
-	    simulator.kernel.setArgs(
+	    simulator.pointKernel.setArgs(
 	     [null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
 	     [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]
 	     );
@@ -128,7 +129,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			simulator.events.bufferAquireEnd();
 			simulator.events.kernelStart();
 
-			return simulator.kernel.call(simulator.numPoints, []);
+			return simulator.pointKernel.call(simulator.numPoints, []);
 		})
 		.then(function() {
 			simulator.events.kernelEnd();

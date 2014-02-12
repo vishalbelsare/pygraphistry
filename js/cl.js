@@ -65,20 +65,46 @@ define(["Q"], function (Q) {
 		return cl.createContext(gl, devices);
 	}
 
-
-	var compile = Q.promised(function (cl, source, kernelName) {
+	/**
+	 * Compile the WebCL program source and return the kernel(s) requested
+	 *
+	 * @param cl - the cljs instance object
+	 * @param {string} source - the source code of the WebCL program you wish to compile
+	 * @param {(string|string[])} kernels - the kernel name(s) you wish to get from the compiled program
+	 *
+	 * @returns {(kernel|Object.<string, kernel>)} If kernels was a single kernel name, returns a
+	 *          single kernel. If kernels was an array of kernel names, returns an object with each
+	 *          kernel name mapped to its kernel object.
+	 */
+	var compile = Q.promised(function (cl, source, kernels) {
 		var program = cl.context.createProgram(source);
 		program.build([cl.device]);
-		var kernel = program.createKernel(kernelName);
 
-		var kernelObj = {
-			"cl": cl,
-		    "kernel": kernel,
+		if (typeof kernels === "string") {
+				var kernelObj = {};
+			    kernelObj.kernel = program.createKernel(kernels);
+			    kernelObj.cl = cl;
+				kernelObj.call = call.bind(this, kernelObj);
+			 	kernelObj.setArgs = setArgs.bind(this, kernelObj);
+
+			    return kernelObj;
+		} else {
+			var kernelObjs = {};
+
+			for(var i = 0; i < kernels.length; i++) {
+				var kernelName = kernels[i];
+				var kernelObj = {};
+			    kernelObj.kernel = program.createKernel(kernelName);
+			    kernelObj.cl = cl;
+				kernelObj.call = call.bind(this, kernelObj);
+			 	kernelObj.setArgs = setArgs.bind(this, kernelObj);
+
+			 	kernelObjs[kernelName] = kernelObj;
+			}
+
+			return kernelObjs;
 		}
-		kernelObj.call = call.bind(this, kernelObj);
-	 	kernelObj.setArgs = setArgs.bind(this, kernelObj);
 
-	    return kernelObj;
 	});
 
 
