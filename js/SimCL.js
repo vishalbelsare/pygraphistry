@@ -7,7 +7,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			// Compile the WebCL kernels
 			return util.getSource("cl-nbody-mass-springs.cl")
 			.then(function(source) {
-				return cl.compile(source, "nbody_compute_repulsion");
+				return cl.compile(source, "apply_points");
 			})
 			.then(function(kernel) {
 				var simObj = {
