@@ -47,7 +47,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 		}
 
 		graph.stepNumber = 0;
-		return graph.simulator.setData(points);
+		return graph.simulator.setPoints(points);
 	}
 
 

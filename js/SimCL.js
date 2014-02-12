@@ -18,7 +18,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 					"elementsPerPoint": 2
 				};
 				simObj.tick = tick.bind(this, simObj);
-				simObj.setData = setData.bind(this, simObj);
+				simObj.setPoints = setPoints.bind(this, simObj);
 				simObj.setPhysics = setPhysics.bind(this, simObj);
 				simObj.dimensions = dimensions;
 				simObj.events = {
@@ -38,19 +38,18 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	}
 
 
-	function setData(simulator, points) {
+	function setPoints(simulator, points) {
 		if(points.length % simulator.elementsPerPoint !== 0) {
 			throw new Error("The points buffer is an invalid size (must be a multiple of " + simulator.elementsPerPoint + ")");
 		}
+
 		simulator.numPoints = points.length / simulator.elementsPerPoint;
-		simulator.bufferSize = points.length * points.BYTES_PER_ELEMENT;
 		simulator.renderer.numPoints = simulator.numPoints;
-		simulator.renderer.bufferSize = simulator.bufferSize;
 
 		console.debug("Number of points:", simulator.renderer.numPoints);
 
 		return (
-			// Create buffers for
+			// Create buffers and write initial data to them, then set
 			Q.all([simulator.renderer.createBuffer(points.length * simulator.elementsPerPoint * points.BYTES_PER_ELEMENT),
 				   simulator.cl.createBuffer(points.length * simulator.elementsPerPoint * points.BYTES_PER_ELEMENT),
 				   simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT)])
@@ -148,7 +147,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 	return {
 		"create": create,
-		"setData": setData,
-		"tick": tick,
+		"setPoints": setPoints,
+		"tick": tick
 	};
 });
