@@ -159,7 +159,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 			return graph.setPoints(points);
 		})
 		.then(function(graph) {
-			return graph.setEdges([[0, 1], [2, 3], [4, 5], [0, 4]]);
+			return graph.setEdges(createEdges(numEdges, numPoints));
 		})
 		.then(function() {
 			var animButton = $("#anim-button");
@@ -224,6 +224,21 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 
 		return points;
 	}
+
+
+	function createEdges(amount, numNodes) {
+		var edges = [];
+		// This may create duplicate edges. Oh well, for now.
+		for(var i = 0; i < amount; i++) {
+			var source = Math.min(Math.round(Math.random() * numNodes), numNodes - 1),
+			    target = Math.min(Math.round(Math.random() * numNodes), numNodes - 1);
+
+			edges.push([source, target]);
+		}
+
+		return edges;
+	}
+
 
 	function bindSliders(graph) {
 	  $('#charge').on('change', function (e) {
