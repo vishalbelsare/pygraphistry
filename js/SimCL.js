@@ -5,7 +5,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		return cljs.create(renderer.gl)
 		.then(function(cl) {
 			// Compile the WebCL kernels
-			return util.getSource("cl-nbody-mass-springs.cl")
+			return util.getSource("apply-forces.cl")
 			.then(function(source) {
 				return cl.compile(source, "apply_points");
 			})

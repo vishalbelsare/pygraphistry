@@ -20,11 +20,11 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		renderer.program = program;
 
 		return (
-			addShader(gl, "gl-vertex", gl.VERTEX_SHADER)
+			addShader(gl, "point.vertex", gl.VERTEX_SHADER)
 			.then(function(vertShader) {
 				gl.attachShader(program, vertShader);
 
-				return addShader(gl, "gl-point-fragment", gl.FRAGMENT_SHADER);
+				return addShader(gl, "point.fragment", gl.FRAGMENT_SHADER);
 			})
 			.then(function(fragShader) {
 				gl.attachShader(program, fragShader);
