@@ -47,7 +47,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 
 
 	function addShader(gl, id, type) {
-		return util.getSource(id).then(function(source) {
+		return util.getSource(id + ".glsl").then(function(source) {
 			var shader = gl.createShader(type);
 			gl.shaderSource(shader, source);
 			gl.compileShader(shader);

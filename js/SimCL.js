@@ -5,7 +5,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		return cljs.create(renderer.gl)
 		.then(function(cl) {
 			// Compile the WebCL kernels
-			return util.getSource("cl-nbody-mass-springs")
+			return util.getSource("cl-nbody-mass-springs.cl")
 			.then(function(source) {
 				return cl.compile(source, "nbody_compute_repulsion");
 			})
@@ -100,17 +100,17 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			})
 		);
 	}
-	
+
 	function setPhysics(simulator, cfg) {
 	    cfg = cfg || {};
 	    simulator.kernel.setArgs(
-	     [null, null, null, null, null, null, 
-	         cfg.charge ? new Float32Array([cfg.charge]) : null, cfg.gravity ? new Float32Array([cfg.gravity]) : null, 
+	     [null, null, null, null, null, null,
+	         cfg.charge ? new Float32Array([cfg.charge]) : null, cfg.gravity ? new Float32Array([cfg.gravity]) : null,
 	         null, null],
-	     [null, null, null, null, null, null, 
+	     [null, null, null, null, null, null,
 	         cfg.charge ? cljs.types.float_t : null, cfg.gravity ? cljs.types.float_t : null,
 	         null, null]
-	     );	
+	     );
 	}
 
 
