@@ -19,7 +19,6 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				};
 				simObj.tick = tick.bind(this, simObj);
 				simObj.setData = setData.bind(this, simObj);
-				simObj.dumpBuffers = dumpBuffers.bind(this, simObj);
 				simObj.setPhysics = setPhysics.bind(this, simObj);
 				simObj.dimensions = dimensions;
 				simObj.events = {
@@ -147,25 +146,9 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	}
 
 
-	function dumpBuffers(simulator) {
-		return Q.promise(function(resolve, reject, notify) {
-			console.debug("Dumping buffers for debugging");
-			console.debug("Buffer size:", simulator.bufferSize);
-
-			var testPos = new Float32Array(simulator.bufferSize);
-			simulator.curPoints.read(testPos)
-			.then(function() {
-				console.debug("Buffer data:", testPos);
-				resolve(simulator);
-			})
-		});
-	}
-
-
 	return {
 		"create": create,
 		"setData": setData,
 		"tick": tick,
-		"dumpBuffers": dumpBuffers
 	};
 });
