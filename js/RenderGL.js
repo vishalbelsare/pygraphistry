@@ -36,6 +36,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				renderer.setCamera2d = setCamera2d.bind(this, renderer);
 				renderer.createBuffer = createBuffer.bind(this, renderer);
 				renderer.render = render.bind(this, renderer);
+				renderer.buffers = {};
 				renderer.elementsPerPoint = 2;
 				renderer.numPoints = 0;
 
@@ -111,7 +112,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 
 			var mvpMat3 = glMatrix.mat3.create();
 			glMatrix.mat3.fromMat2d(mvpMat3, mvpMatrix);
-			console.debug("Mat3 mvp matrix:", mvpMat3);
+
 			var mvpLocation = renderer.gl.getUniformLocation(renderer.program, "mvp");
 			renderer.gl.uniformMatrix3fv(mvpLocation, false, mvpMat3);
 
@@ -154,7 +155,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				resolve(renderer);
 			}
 
-			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.curPoints.buffer);
+			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.curPoints.buffer);
 			gl.enableVertexAttribArray(renderer.curPosLoc);
 			gl.vertexAttribPointer(renderer.curPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
 

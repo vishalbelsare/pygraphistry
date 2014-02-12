@@ -49,7 +49,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 		}
 
 		var t2 = new Date().getTime();
-		console.log('toNodes', t1 - t0, 'ms', 'toFloats', t2 - t1, 'ms', 'nodes', count2);
+		// console.log('toNodes', t1 - t0, 'ms', 'toFloats', t2 - t1, 'ms', 'nodes', count2);
 
 		return clGraph.setPoints(buff)
 		.then(function() {
@@ -82,14 +82,14 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 		      var file = files[parseInt(this.value)];
 			  var graphFile = MatrixLoader.loadBinary(file.f);
 			  graphFile.then(function (v) {
-			    console.log('got', v);
+			    // console.log('got', v);
 				$('#filenodes').text('Nodes: ' + v.numNodes);
 				$('#fileedges').text('Edges: ' + v.numEdges);
 		      });
 			  Q.promised(drawGraph)(clGraph, graphFile);
 		    });
 		});
-		
+
 		return files;
     }
 
@@ -216,7 +216,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 
 		return points;
 	}
-	
+
 	function bindSliders(graph) {
 	  $('#charge').on('change', function (e) {
 	    var v = $(this).val();
@@ -233,7 +233,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 	    var scaled = 1 * res;
 	    console.log('gravity', v, '->', scaled);
 	    graph.setPhysics({gravity: scaled});
-	  });	
+	  });
 	}
 
 

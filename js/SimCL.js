@@ -30,6 +30,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 					"bufferAquireStart": function() { },
 					"bufferAquireEnd": function() { }
 				};
+				simObj.buffers = {};
 
 				console.debug("WebCL simulator created");
 				return simObj
@@ -60,8 +61,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				   simulator.cl.createBuffer(points.length * simulator.elementsPerPoint * points.BYTES_PER_ELEMENT),
 				   simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT)])
 			.spread(function(pointsVBO, nextPointsBuffer, randBuffer) {
-				simulator.renderer.curPoints = pointsVBO;
-				simulator.nextPoints = nextPointsBuffer;
+				simulator.renderer.buffers.curPoints = pointsVBO;
+				simulator.buffers.nextPoints = nextPointsBuffer;
 				simulator.randValues = randBuffer;
 
 				var rands = new Float32Array(randLength * simulator.elementsPerPoint);
@@ -75,7 +76,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				return simulator.cl.createBufferGL(pointsVBO.buffer);
 			})
 			.then(function(pointsBuf) {
-				simulator.curPoints = pointsBuf;
+				simulator.buffers.curPoints = pointsBuf;
 
 				var types = [];
 				if(!cljs.CURRENT_CL) {
@@ -86,8 +87,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
 				return simulator.pointKernel.setArgs(
 				    [new Int32Array([simulator.numPoints]),
-				     simulator.curPoints.buffer,
-				     simulator.nextPoints.buffer,
+				     simulator.buffers.curPoints.buffer,
+				     simulator.buffers.nextPoints.buffer,
 				     new Uint32Array([localPos]),
 				     new Float32Array([simulator.dimensions[0]]),
 				     new Float32Array([simulator.dimensions[1]]),
@@ -130,7 +131,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 		simulator.events.bufferAquireStart();
 
-		return Q.all([simulator.curPoints.acquire()])
+		return Q.all([simulator.buffers.curPoints.acquire()])
 		.then(function() {
 			simulator.events.bufferAquireEnd();
 			simulator.events.kernelStart();
@@ -141,13 +142,13 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			simulator.events.kernelEnd();
 			simulator.events.bufferCopyStart();
 
-			return Q.all([simulator.nextPoints.copyBuffer(simulator.curPoints)]);
+			return Q.all([simulator.buffers.nextPoints.copyBuffer(simulator.buffers.curPoints)]);
 		})
 		.then(function() {
 			simulator.events.bufferCopyEnd();
 			simulator.events.bufferAquireStart();
 
-			return Q.all([simulator.curPoints.release()]);
+			return Q.all([simulator.buffers.curPoints.release()]);
 		})
 		.then(function() {
 			simulator.events.bufferAquireEnd();
