@@ -146,6 +146,11 @@ define(["Q"], function (Q) {
 				"acquire": function() { return Q(); },
 				"release": function() { return Q(); }
 			};
+			bufObj.delete = Q.promised(function() {
+				bufObj.buffer.release();
+				bufObj.size = 0;
+				return null;
+			});
 			bufObj.write = write.bind(this, bufObj);
 			bufObj.read = read.bind(this, bufObj);
 			bufObj.copyBuffer = copyBuffer.bind(this, cl, bufObj);
@@ -172,6 +177,14 @@ define(["Q"], function (Q) {
 					cl.queue.enqueueReleaseGLObjects([buffer]);
 				})
 			};
+			bufObj.delete = Q.promised(function() {
+				return bufObj.release()
+				.then(function() {
+					bufObj.buffer.release();
+					bufObj.size = 0;
+					return null;
+				})
+			});
 			bufObj.write = write.bind(this, bufObj);
 			bufObj.read = read.bind(this, bufObj);
 			bufObj.copyBuffer = copyBuffer.bind(this, cl, bufObj);

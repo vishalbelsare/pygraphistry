@@ -144,6 +144,10 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 					"buffer": buffer,
 					"gl": renderer.gl
 				};
+				bufObj.delete = Q.promised(function() {
+					renderer.gl.deleteBuffer(buffer);
+					return null;
+				})
 				bufObj.write = write.bind(this, bufObj);
 			} catch(err) {
 				reject(err);
