@@ -57,10 +57,57 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 	var setEdges = Q.promised(function(graph, edges) {
 		console.debug("Number of edges:", edges.length);
 
-		var edges = new Uint32Array([0, 1]);
-		var workItems = new Uint32Array([0, 1]);
+		if(edges.length < 1) {
+			return Q.fcall(function() { return graph; });
+		}
 
-		return graph.simulator.setEdges(edges, workItems)
+		// First, duplicate the edges array so that our kernels will modify both source and targets
+		// edges_flipped = edges.slice(0);
+		// // Flip the target/source nodes in this flipped array
+		// for(var i = 0; i < edges_flipped.length; i++) {
+		// 	var oldSource = edges_flipped[i][0];
+		// 	edges_flipped[i][0] = edges_flipped[i][1];
+		// 	edges_flipped[i][1] = oldSource;
+		// }
+		var edges_flipped = edges.map(function(val, idx, arr) {
+			return [val[1], val[0]];
+		});
+		edges = edges.concat(edges_flipped);
+		edges.sort(function(a, b) {
+			if(a[0] < b[0]) {
+				return -1;
+			} else if(a[0] > b[1]) {
+				return 1;
+			} else {
+				return 0;
+			}
+		})
+
+		var workItems = [];
+
+		var current_source = edges[0][0];
+		var workItem = [0, 1];
+		for(var i = 1; i < edges.length; i++) {
+			if(edges[i][0] == current_source) {
+				workItem[1]++;
+			} else {
+				workItems.push(workItem[0]);
+				workItems.push(workItem[1]);
+				current_source = edges[i][0];
+				workItem = [i, 1];
+			}
+		}
+		workItems.push(workItem[0]);
+		workItems.push(workItem[1]);
+
+		var edgesFlattened = edges.reduce(function(a, b) {
+		    return a.concat(b);
+		});
+
+		var edgesTyped = new Uint32Array(edgesFlattened);
+		var workItemsTypes = new Uint32Array(workItems);
+
+		return graph.simulator.setEdges(edgesTyped, workItemsTypes)
 		.then(function() {
 			return graph;
 		});

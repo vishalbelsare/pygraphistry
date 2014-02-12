@@ -23,7 +23,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 
 	var graph = null,
 		animating = null,
-		numPoints = 16384, //16384
+		numPoints = 10, //16384
 		dimensions = [1,1]; //[960,960];
 
 
@@ -159,7 +159,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 			return graph.setPoints(points);
 		})
 		.then(function(graph) {
-			return graph.setEdges([]);
+			return graph.setEdges([[0, 1], [2, 3], [4, 5], [0, 4]]);
 		})
 		.then(function() {
 			var animButton = $("#anim-button");
