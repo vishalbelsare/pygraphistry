@@ -33,10 +33,6 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 					"tickBegin": function() { },
 					"tickEnd": function() { }
 				};
-				// This attribute indicates if a call to tick() will be the first time it is called
-				// (useful because our first tick() should render the graph in its inital state,
-				// and so not run the simulator.)
-				graph.firstTick = true;
 
 				return graph;
 			});
@@ -50,7 +46,6 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 			points = _toFloatArray(points);
 		}
 
-		graph.firstTick = true;
 		return graph.simulator.setData(points);
 	}
 
@@ -60,9 +55,13 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 			return graph;
 		});
 	}
-	
+
 	function setPhysics(graph, opts) {
 	    graph.simulator.setPhysics(opts);
+	    // TODO: Should we reset the stepNumber at the same time? It would allow our new forces to
+	    // be applied at full-strength, rather than modulated by the current alpha value. However,
+	    // it also means the forces will jump to higher values (due to the lower alpha) even if we
+	    // decrease the physical forces a small bit.
 	}
 
 
@@ -84,9 +83,10 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 	function tick(graph) {
 		graph.events.tickBegin();
 
-		if(graph.firstTick) {
-			graph.firstTick = false;
+		// On the first tick, don't run the simulator so we can see the starting point of the graph
+		if(graph.stepNumber == 0) {
 			graph.events.renderBegin();
+			graph.stepNumber++
 
 			return graph.renderer.render()
 			.then(function() {
