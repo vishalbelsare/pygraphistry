@@ -46,6 +46,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 			points = _toFloatArray(points);
 		}
 
+		graph.stepNumber = 0;
 		return graph.simulator.setData(points);
 	}
 
