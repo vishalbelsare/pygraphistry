@@ -8,7 +8,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		canvas.height = canvas.clientHeight;
 
 		// FIXME: If 'gl === null' then we need to return a promise and reject it.
-		var gl = canvas.getContext("experimental-webgl", {antialias: false, premultipliedAlpha: false});
+		var gl = canvas.getContext("experimental-webgl", {antialias: true, premultipliedAlpha: false});
 		gl.enable(gl.BLEND);
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		gl.enable(gl.DEPTH_TEST);
