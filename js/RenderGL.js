@@ -37,6 +37,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				renderer.createBuffer = createBuffer.bind(this, renderer);
 				renderer.render = render.bind(this, renderer);
 				renderer.elementsPerPoint = 2;
+				renderer.numPoints = 0;
 
 				// TODO: Enlarge the camera by the (size of gl points / 2) so that points are fully
 				// on screen even if they're at the edge of the graph.
@@ -147,6 +148,11 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 			var gl = renderer.gl;
 
 			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+
+			// If there are no points in the graph, don't render anything
+			if(renderer.numPoints < 1) {
+				resolve(renderer);
+			}
 
 			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.curPoints.buffer);
 			gl.enableVertexAttribArray(renderer.curPosLoc);

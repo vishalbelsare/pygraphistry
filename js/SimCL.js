@@ -21,6 +21,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				simObj.setPoints = setPoints.bind(this, simObj);
 				simObj.setPhysics = setPhysics.bind(this, simObj);
 				simObj.dimensions = dimensions;
+				simObj.numPoints = 0;
 				simObj.events = {
 					"kernelStart": function() { },
 					"kernelEnd":  function() { },
@@ -45,6 +46,11 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 		simulator.numPoints = points.length / simulator.elementsPerPoint;
 		simulator.renderer.numPoints = simulator.numPoints;
+
+		// If there are 0 points, then don't create any of the buffers
+		if(simulator.numPoints < 1) {
+			return Q.fcall(function() { return simulator; });
+		}
 
 		console.debug("Number of points:", simulator.renderer.numPoints);
 
@@ -91,6 +97,9 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				     new Uint32Array([0])],
 					types);
 			})
+			.then(function() {
+				return simulator;
+			})
 		);
 	}
 
@@ -108,6 +117,11 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 
 	function tick(simulator, stepNumber) {
+		// If there are no points in the graph, don't run the simulation
+		if(simulator.numPoints < 1) {
+			return Q.fcall(function() { simulator; });
+		}
+
 	    simulator.pointKernel.setArgs(
 	     [null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
 	     [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]
