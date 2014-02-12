@@ -141,18 +141,18 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 		graph.events.tickBegin();
 
 		// On the first tick, don't run the simulator so we can see the starting point of the graph
-		if(graph.stepNumber == 0) {
-			graph.events.renderBegin();
-			graph.stepNumber++
+		// if(graph.stepNumber == 0) {
+		// 	graph.events.renderBegin();
+		// 	graph.stepNumber++
 
-			return graph.renderer.render()
-			.then(function() {
-				graph.events.renderEnd();
-				graph.events.tickEnd();
+		// 	return graph.renderer.render()
+		// 	.then(function() {
+		// 		graph.events.renderEnd();
+		// 		graph.events.tickEnd();
 
-				return graph;
-			});
-		} else {
+		// 		return graph;
+		// 	});
+		// } else {
 			graph.events.simulateBegin();
 
 			return graph.simulator.tick(graph.stepNumber++)
@@ -168,7 +168,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 
 				return graph;
 			});
-		}
+		// }
 	}
 
 
