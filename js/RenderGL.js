@@ -34,7 +34,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				gl.attachShader(renderer.edgeProgram, fragShader);
 				gl.linkProgram(renderer.edgeProgram);
 
-				gl.lineWidth(2);
+				gl.lineWidth(1);
 
 				renderer.canvas = canvas;
 				renderer.curPointPosLoc = gl.getAttribLocation(renderer.pointProgram, "curPos");
