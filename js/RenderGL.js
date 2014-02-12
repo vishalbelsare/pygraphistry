@@ -12,11 +12,11 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		gl.enable(gl.BLEND);
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		gl.enable(gl.DEPTH_TEST);
-		gl.depthFunc(gl.LEQUAL);
 		gl.clearColor(0, 0, 0, 0);
 		renderer.gl = gl;
 
-		renderer.pointProgram = gl.createProgram();;
+		renderer.pointProgram = gl.createProgram();
+		renderer.edgeProgram = gl.createProgram();
 
 		return (
 			Q.all([addShader(gl, "point.vertex", gl.VERTEX_SHADER),
@@ -26,8 +26,19 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				gl.attachShader(renderer.pointProgram, fragShader);
 				gl.linkProgram(renderer.pointProgram);
 
+				return Q.all([addShader(gl, "edge.vertex", gl.VERTEX_SHADER),
+					          addShader(gl, "edge.fragment", gl.FRAGMENT_SHADER)]);
+			})
+			.spread(function(vertShader, fragShader) {
+				gl.attachShader(renderer.edgeProgram, vertShader);
+				gl.attachShader(renderer.edgeProgram, fragShader);
+				gl.linkProgram(renderer.edgeProgram);
+
+				gl.lineWidth(2);
+
 				renderer.canvas = canvas;
-				renderer.curPosLoc = gl.getAttribLocation(renderer.pointProgram, "curPos");
+				renderer.curPointPosLoc = gl.getAttribLocation(renderer.pointProgram, "curPos");
+				renderer.curEdgePosLoc = gl.getAttribLocation(renderer.edgeProgram, "curPos");
 				renderer.setCamera2d = setCamera2d.bind(this, renderer);
 				renderer.createBuffer = createBuffer.bind(this, renderer);
 				renderer.render = render.bind(this, renderer);
@@ -113,6 +124,10 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 			var mvpLocation = renderer.gl.getUniformLocation(renderer.pointProgram, "mvp");
 			renderer.gl.uniformMatrix3fv(mvpLocation, false, mvpMat3);
 
+			renderer.gl.useProgram(renderer.edgeProgram);
+			var mvpLocation = renderer.gl.getUniformLocation(renderer.edgeProgram, "mvp");
+			renderer.gl.uniformMatrix3fv(mvpLocation, false, mvpMat3);
+
 			resolve(renderer);
 		});
 	}
@@ -166,12 +181,28 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				resolve(renderer);
 			}
 
-			renderer.gl.useProgram(renderer.pointProgram);
+			gl.depthFunc(gl.LEQUAL);
+
+			gl.useProgram(renderer.pointProgram);
 			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.curPoints.buffer);
-			gl.enableVertexAttribArray(renderer.curPosLoc);
-			gl.vertexAttribPointer(renderer.curPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
+			gl.enableVertexAttribArray(renderer.curPointPosLoc);
+			gl.vertexAttribPointer(renderer.curPointPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
 
 			gl.drawArrays(gl.POINTS, 0, renderer.numPoints);
+
+			if(renderer.numEdges > 0) {
+				console.debug("Drawing edges", renderer.numEdges);
+
+				gl.depthFunc(gl.LESS);
+				// gl.depthFunc(gl.LEQUAL);
+				gl.useProgram(renderer.edgeProgram);
+				gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.springs.buffer);
+				gl.enableVertexAttribArray(renderer.curEdgePosLoc);
+				gl.vertexAttribPointer(renderer.curEdgePosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
+
+				gl.drawArrays(gl.LINES, 0, renderer.numEdges * 2);
+			}
+
 			gl.finish();
 
 			resolve(renderer);
