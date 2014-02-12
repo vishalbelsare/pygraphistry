@@ -47,15 +47,71 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 		}
 
 		graph.stepNumber = 0;
-		return graph.simulator.setData(points);
-	}
-
-
-	function setEdges(graph, edges) {
-		return Q.fcall(function() {
+		return graph.simulator.setPoints(points)
+		.then(function() {
 			return graph;
 		});
 	}
+
+
+	var setEdges = Q.promised(function(graph, edges) {
+		console.debug("Number of edges:", edges.length);
+
+		if(edges.length < 1) {
+			return Q.fcall(function() { return graph; });
+		}
+
+		// First, duplicate the edges array so that our kernels will modify both source and targets
+		// edges_flipped = edges.slice(0);
+		// // Flip the target/source nodes in this flipped array
+		// for(var i = 0; i < edges_flipped.length; i++) {
+		// 	var oldSource = edges_flipped[i][0];
+		// 	edges_flipped[i][0] = edges_flipped[i][1];
+		// 	edges_flipped[i][1] = oldSource;
+		// }
+		var edges_flipped = edges.map(function(val, idx, arr) {
+			return [val[1], val[0]];
+		});
+		edges = edges.concat(edges_flipped);
+		edges.sort(function(a, b) {
+			if(a[0] < b[0]) {
+				return -1;
+			} else if(a[0] > b[1]) {
+				return 1;
+			} else {
+				return 0;
+			}
+		})
+
+		var workItems = [];
+
+		var current_source = edges[0][0];
+		var workItem = [0, 1];
+		for(var i = 1; i < edges.length; i++) {
+			if(edges[i][0] == current_source) {
+				workItem[1]++;
+			} else {
+				workItems.push(workItem[0]);
+				workItems.push(workItem[1]);
+				current_source = edges[i][0];
+				workItem = [i, 1];
+			}
+		}
+		workItems.push(workItem[0]);
+		workItems.push(workItem[1]);
+
+		var edgesFlattened = edges.reduce(function(a, b) {
+		    return a.concat(b);
+		});
+
+		var edgesTyped = new Uint32Array(edgesFlattened);
+		var workItemsTypes = new Uint32Array(workItems);
+
+		return graph.simulator.setEdges(edgesTyped, workItemsTypes)
+		.then(function() {
+			return graph;
+		});
+	});
 
 	function setPhysics(graph, opts) {
 	    graph.simulator.setPhysics(opts);
@@ -85,18 +141,18 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 		graph.events.tickBegin();
 
 		// On the first tick, don't run the simulator so we can see the starting point of the graph
-		if(graph.stepNumber == 0) {
-			graph.events.renderBegin();
-			graph.stepNumber++
+		// if(graph.stepNumber == 0) {
+		// 	graph.events.renderBegin();
+		// 	graph.stepNumber++
 
-			return graph.renderer.render()
-			.then(function() {
-				graph.events.renderEnd();
-				graph.events.tickEnd();
+		// 	return graph.renderer.render()
+		// 	.then(function() {
+		// 		graph.events.renderEnd();
+		// 		graph.events.tickEnd();
 
-				return graph;
-			});
-		} else {
+		// 		return graph;
+		// 	});
+		// } else {
 			graph.events.simulateBegin();
 
 			return graph.simulator.tick(graph.stepNumber++)
@@ -112,7 +168,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 
 				return graph;
 			});
-		}
+		// }
 	}
 
 

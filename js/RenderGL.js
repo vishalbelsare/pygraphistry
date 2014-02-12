@@ -8,35 +8,44 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		canvas.height = canvas.clientHeight;
 
 		// FIXME: If 'gl === null' then we need to return a promise and reject it.
-		var gl = canvas.getContext("experimental-webgl", {antialias: false, premultipliedAlpha: false});
+		var gl = canvas.getContext("experimental-webgl", {antialias: true, premultipliedAlpha: false});
 		gl.enable(gl.BLEND);
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		gl.enable(gl.DEPTH_TEST);
-		gl.depthFunc(gl.LEQUAL);
 		gl.clearColor(0, 0, 0, 0);
 		renderer.gl = gl;
 
-		var program = gl.createProgram();
-		renderer.program = program;
+		renderer.pointProgram = gl.createProgram();
+		renderer.edgeProgram = gl.createProgram();
 
 		return (
-			addShader(gl, "gl-vertex", gl.VERTEX_SHADER)
-			.then(function(vertShader) {
-				gl.attachShader(program, vertShader);
+			Q.all([addShader(gl, "point.vertex", gl.VERTEX_SHADER),
+				   addShader(gl, "point.fragment", gl.FRAGMENT_SHADER)])
+			.spread(function(vertShader, fragShader) {
+				gl.attachShader(renderer.pointProgram, vertShader);
+				gl.attachShader(renderer.pointProgram, fragShader);
+				gl.linkProgram(renderer.pointProgram);
 
-				return addShader(gl, "gl-point-fragment", gl.FRAGMENT_SHADER);
+				return Q.all([addShader(gl, "edge.vertex", gl.VERTEX_SHADER),
+					          addShader(gl, "edge.fragment", gl.FRAGMENT_SHADER)]);
 			})
-			.then(function(fragShader) {
-				gl.attachShader(program, fragShader);
-				gl.linkProgram(program);
-				gl.useProgram(program);
+			.spread(function(vertShader, fragShader) {
+				gl.attachShader(renderer.edgeProgram, vertShader);
+				gl.attachShader(renderer.edgeProgram, fragShader);
+				gl.linkProgram(renderer.edgeProgram);
+
+				gl.lineWidth(1);
 
 				renderer.canvas = canvas;
-				renderer.curPosLoc = gl.getAttribLocation(program, "curPos");
+				renderer.curPointPosLoc = gl.getAttribLocation(renderer.pointProgram, "curPos");
+				renderer.curEdgePosLoc = gl.getAttribLocation(renderer.edgeProgram, "curPos");
 				renderer.setCamera2d = setCamera2d.bind(this, renderer);
 				renderer.createBuffer = createBuffer.bind(this, renderer);
 				renderer.render = render.bind(this, renderer);
+				renderer.buffers = {};
 				renderer.elementsPerPoint = 2;
+				renderer.numPoints = 0;
+				renderer.numEdges = 0;
 
 				// TODO: Enlarge the camera by the (size of gl points / 2) so that points are fully
 				// on screen even if they're at the edge of the graph.
@@ -110,8 +119,13 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 
 			var mvpMat3 = glMatrix.mat3.create();
 			glMatrix.mat3.fromMat2d(mvpMat3, mvpMatrix);
-			console.debug("Mat3 mvp matrix:", mvpMat3);
-			var mvpLocation = renderer.gl.getUniformLocation(renderer.program, "mvp");
+
+			renderer.gl.useProgram(renderer.pointProgram);
+			var mvpLocation = renderer.gl.getUniformLocation(renderer.pointProgram, "mvp");
+			renderer.gl.uniformMatrix3fv(mvpLocation, false, mvpMat3);
+
+			renderer.gl.useProgram(renderer.edgeProgram);
+			var mvpLocation = renderer.gl.getUniformLocation(renderer.edgeProgram, "mvp");
 			renderer.gl.uniformMatrix3fv(mvpLocation, false, mvpMat3);
 
 			resolve(renderer);
@@ -119,16 +133,30 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 	}
 
 
-	function createBuffer(renderer, size) {
+	function createBuffer(renderer, data) {
+		var args = arguments;
 		return Q.promise(function(resolve, reject, notify) {
-			var buffer = renderer.gl.createBuffer();
-			var bufObj = {
-				"buffer": buffer,
-				"gl": renderer.gl
-			};
-			bufObj.write = write.bind(this, bufObj);
+			try {
+				var buffer = renderer.gl.createBuffer();
+				var bufObj = {
+					"buffer": buffer,
+					"gl": renderer.gl
+				};
+				bufObj.write = write.bind(this, bufObj);
+			} catch(err) {
+				reject(err);
+			}
 
-			resolve(bufObj);
+			if(data) {
+				bufObj.write(data)
+				.then(function(){
+					resolve(bufObj);
+				}, function(err) {
+					reject(err);
+				});
+			} else {
+				resolve(bufObj);
+			}
 		})
 	}
 
@@ -148,11 +176,32 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 
 			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
 
-			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.curPoints.buffer);
-			gl.enableVertexAttribArray(renderer.curPosLoc);
-			gl.vertexAttribPointer(renderer.curPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
+			// If there are no points in the graph, don't render anything
+			if(renderer.numPoints < 1) {
+				resolve(renderer);
+			}
+
+			gl.depthFunc(gl.LEQUAL);
+
+			gl.useProgram(renderer.pointProgram);
+			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.curPoints.buffer);
+			gl.enableVertexAttribArray(renderer.curPointPosLoc);
+			gl.vertexAttribPointer(renderer.curPointPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
 
 			gl.drawArrays(gl.POINTS, 0, renderer.numPoints);
+
+			if(renderer.numEdges > 0) {
+				// Make sure to draw the edges behind the points
+				gl.depthFunc(gl.LESS);
+
+				gl.useProgram(renderer.edgeProgram);
+				gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.springs.buffer);
+				gl.enableVertexAttribArray(renderer.curEdgePosLoc);
+				gl.vertexAttribPointer(renderer.curEdgePosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
+
+				gl.drawArrays(gl.LINES, 0, renderer.numEdges * 2);
+			}
+
 			gl.finish();
 
 			resolve(renderer);

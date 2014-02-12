@@ -19,9 +19,12 @@ require.config({
 
 require(["jQuery", "NBody", "RenderGL", "SimCL", "MatrixLoader", "Q", "Stats"],
 function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
+	Q.longStackSupport = true;
+
 	var graph = null,
 		animating = null,
-		numPoints = 16384, //16384
+		numPoints = 8192, //16384
+		numEdges = Math.round(numPoints / 5),
 		dimensions = [1,1]; //[960,960];
 
 
@@ -49,9 +52,12 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 		}
 
 		var t2 = new Date().getTime();
-		console.log('toNodes', t1 - t0, 'ms', 'toFloats', t2 - t1, 'ms', 'nodes', count2);
+		// console.log('toNodes', t1 - t0, 'ms', 'toFloats', t2 - t1, 'ms', 'nodes', count2);
 
 		return clGraph.setPoints(buff)
+		.then(function() {
+			return clGraph.setEdges(graphFile.edges);
+		})
 		.then(function() {
 			return clGraph.tick();
 		});
@@ -82,14 +88,14 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 		      var file = files[parseInt(this.value)];
 			  var graphFile = MatrixLoader.loadBinary(file.f);
 			  graphFile.then(function (v) {
-			    console.log('got', v);
+			    // console.log('got', v);
 				$('#filenodes').text('Nodes: ' + v.numNodes);
 				$('#fileedges').text('Edges: ' + v.numEdges);
 		      });
 			  Q.promised(drawGraph)(clGraph, graphFile);
 		    });
 		});
-		
+
 		return files;
     }
 
@@ -152,6 +158,9 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 			graph.simulator.events.kernelEnd = function() { fpsKernel.end(); };
 
 			return graph.setPoints(points);
+		})
+		.then(function(graph) {
+			return graph.setEdges(createEdges(numEdges, numPoints));
 		})
 		.then(function() {
 			var animButton = $("#anim-button");
@@ -216,7 +225,22 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 
 		return points;
 	}
-	
+
+
+	function createEdges(amount, numNodes) {
+		var edges = [];
+		// This may create duplicate edges. Oh well, for now.
+		for(var i = 0; i < amount; i++) {
+			var source = Math.min(Math.round(Math.random() * numNodes), numNodes - 1),
+			    target = Math.min(Math.round(Math.random() * numNodes), numNodes - 1);
+
+			edges.push([source, target]);
+		}
+
+		return edges;
+	}
+
+
 	function bindSliders(graph) {
 	  $('#charge').on('change', function (e) {
 	    var v = $(this).val();
@@ -233,7 +257,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 	    var scaled = 1 * res;
 	    console.log('gravity', v, '->', scaled);
 	    graph.setPhysics({gravity: scaled});
-	  });	
+	  });
 	}
 
 
