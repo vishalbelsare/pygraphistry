@@ -157,7 +157,7 @@ define(["Q"], function (Q) {
 	// TODO: If we call buffer.acquire() twice without calling buffer.release(), it should have no
 	// effect.
 	var createBufferGL = Q.promised(function (cl, vbo) {
-		var buffer = cl.context.createFromGLBuffer(cl.cl.MEM_READ_WRITE, vbo);
+		var buffer = cl.context.createFromGLBuffer(cl.cl.MEM_READ_WRITE, vbo.buffer);
 		if (buffer === null) {
 			throw new Error("Could not create WebCL buffer from WebGL buffer");
 		} else {

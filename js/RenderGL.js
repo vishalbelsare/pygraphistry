@@ -121,16 +121,30 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 	}
 
 
-	function createBuffer(renderer, size) {
+	function createBuffer(renderer, data) {
+		var args = arguments;
 		return Q.promise(function(resolve, reject, notify) {
-			var buffer = renderer.gl.createBuffer();
-			var bufObj = {
-				"buffer": buffer,
-				"gl": renderer.gl
-			};
-			bufObj.write = write.bind(this, bufObj);
+			try {
+				var buffer = renderer.gl.createBuffer();
+				var bufObj = {
+					"buffer": buffer,
+					"gl": renderer.gl
+				};
+				bufObj.write = write.bind(this, bufObj);
+			} catch(err) {
+				reject(err);
+			}
 
-			resolve(bufObj);
+			if(data) {
+				bufObj.write(data)
+				.then(function(){
+					resolve(bufObj);
+				}, function(err) {
+					reject(err);
+				});
+			} else {
+				resolve(bufObj);
+			}
 		})
 	}
 

@@ -57,7 +57,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 		return (
 			// Create buffers and write initial data to them, then set
-			Q.all([simulator.renderer.createBuffer(points.length * simulator.elementsPerPoint * points.BYTES_PER_ELEMENT),
+			Q.all([simulator.renderer.createBuffer(points),
 				   simulator.cl.createBuffer(points.length * simulator.elementsPerPoint * points.BYTES_PER_ELEMENT),
 				   simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT)])
 			.spread(function(pointsVBO, nextPointsBuffer, randBuffer) {
@@ -70,12 +70,9 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 					rands[i] = Math.random();
 				}
 
-				return Q.all([pointsVBO.write(points), simulator.randValues.write(rands)]);
+				return Q.all([simulator.cl.createBufferGL(pointsVBO), simulator.randValues.write(rands)]);
 			})
-			.spread(function(pointsVBO, randBuffer) {
-				return simulator.cl.createBufferGL(pointsVBO.buffer);
-			})
-			.then(function(pointsBuf) {
+			.spread(function(pointsBuf, randValues) {
 				simulator.buffers.curPoints = pointsBuf;
 
 				var types = [];

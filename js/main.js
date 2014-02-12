@@ -19,6 +19,8 @@ require.config({
 
 require(["jQuery", "NBody", "RenderGL", "SimCL", "MatrixLoader", "Q", "Stats"],
 function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
+	Q.longStackSupport = true;
+
 	var graph = null,
 		animating = null,
 		numPoints = 16384, //16384
