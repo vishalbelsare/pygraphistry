@@ -169,14 +169,33 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 	function setPhysics(simulator, cfg) {
 	    cfg = cfg || {};
-	    simulator.pointKernel.setArgs(
-	     [null, null, null, null, null, null,
-	         cfg.charge ? new Float32Array([cfg.charge]) : null, cfg.gravity ? new Float32Array([cfg.gravity]) : null,
-	         null, null],
-	     [null, null, null, null, null, null,
-	         cfg.charge ? cljs.types.float_t : null, cfg.gravity ? cljs.types.float_t : null,
-	         null, null]
-	     );
+
+	    if(cfg.charge || cfg.gravity) {
+		    var charge = cfg.charge ? new Float32Array([cfg.charge]) : null;
+		    var charge_t = cfg.charge ? cljs.types.float_t : null;
+
+		    var gravity = cfg.gravity ? new Float32Array([cfg.gravity]) : null;
+		    var gravity_t = cfg.gravity ? cljs.types.float_t : null;
+
+		    simulator.pointKernel.setArgs(
+		     [null, null, null, null, null, null,
+		         charge, gravity, null, null],
+		     [null, null, null, null, null, null,
+		         charge_t, gravity_t, null, null]
+		     );
+		}
+
+		if(cfg.edgeDistance || cfg.edgeStrength) {
+			var edgeDistance = cfg.edgeDistance ? new Float32Array([cfg.edgeDistance]) : null;
+			var edgeDistance_t = cfg.edgeDistance ? cljs.types.float_t : null;
+
+			var edgeStrength = cfg.edgeStrength ? new Float32Array([cfg.edgeStrength]) : null;
+			var edgeStrength_t = cfg.edgeStrength ? cljs.types.float_t : null;
+
+			simulator.edgesKernel.setArgs(
+				[null, null, null, null, null, edgeStrength, edgeDistance],
+				[null, null, null, null, null, edgeStrength_t, edgeDistance_t]);
+		}
 	}
 
 
