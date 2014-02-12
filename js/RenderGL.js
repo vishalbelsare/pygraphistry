@@ -16,23 +16,18 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		gl.clearColor(0, 0, 0, 0);
 		renderer.gl = gl;
 
-		var program = gl.createProgram();
-		renderer.program = program;
+		renderer.pointProgram = gl.createProgram();;
 
 		return (
-			addShader(gl, "point.vertex", gl.VERTEX_SHADER)
-			.then(function(vertShader) {
-				gl.attachShader(program, vertShader);
-
-				return addShader(gl, "point.fragment", gl.FRAGMENT_SHADER);
-			})
-			.then(function(fragShader) {
-				gl.attachShader(program, fragShader);
-				gl.linkProgram(program);
-				gl.useProgram(program);
+			Q.all([addShader(gl, "point.vertex", gl.VERTEX_SHADER),
+				   addShader(gl, "point.fragment", gl.FRAGMENT_SHADER)])
+			.spread(function(vertShader, fragShader) {
+				gl.attachShader(renderer.pointProgram, vertShader);
+				gl.attachShader(renderer.pointProgram, fragShader);
+				gl.linkProgram(renderer.pointProgram);
 
 				renderer.canvas = canvas;
-				renderer.curPosLoc = gl.getAttribLocation(program, "curPos");
+				renderer.curPosLoc = gl.getAttribLocation(renderer.pointProgram, "curPos");
 				renderer.setCamera2d = setCamera2d.bind(this, renderer);
 				renderer.createBuffer = createBuffer.bind(this, renderer);
 				renderer.render = render.bind(this, renderer);
@@ -114,7 +109,8 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 			var mvpMat3 = glMatrix.mat3.create();
 			glMatrix.mat3.fromMat2d(mvpMat3, mvpMatrix);
 
-			var mvpLocation = renderer.gl.getUniformLocation(renderer.program, "mvp");
+			renderer.gl.useProgram(renderer.pointProgram);
+			var mvpLocation = renderer.gl.getUniformLocation(renderer.pointProgram, "mvp");
 			renderer.gl.uniformMatrix3fv(mvpLocation, false, mvpMat3);
 
 			resolve(renderer);
@@ -170,6 +166,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				resolve(renderer);
 			}
 
+			renderer.gl.useProgram(renderer.pointProgram);
 			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.curPoints.buffer);
 			gl.enableVertexAttribArray(renderer.curPosLoc);
 			gl.vertexAttribPointer(renderer.curPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
