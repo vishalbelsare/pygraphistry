@@ -160,7 +160,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			     simulator.buffers.curPoints.buffer,
 			     simulator.buffers.springsPos.buffer,
 			     new Float32Array([1.0]),
-			     new Float32Array([20])
+			     new Float32Array([0.2])
 			     ],
 				types);
 		});
