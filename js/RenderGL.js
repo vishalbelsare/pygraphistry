@@ -191,10 +191,9 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 			gl.drawArrays(gl.POINTS, 0, renderer.numPoints);
 
 			if(renderer.numEdges > 0) {
-				console.debug("Drawing edges", renderer.numEdges);
-
+				// Make sure to draw the edges behind the points
 				gl.depthFunc(gl.LESS);
-				// gl.depthFunc(gl.LEQUAL);
+
 				gl.useProgram(renderer.edgeProgram);
 				gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.springs.buffer);
 				gl.enableVertexAttribArray(renderer.curEdgePosLoc);

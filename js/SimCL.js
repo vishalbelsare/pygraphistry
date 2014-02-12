@@ -1,4 +1,5 @@
 define(["Q", "util", "cl"], function(Q, util, cljs) {
+	Q.longStackSupport = true;
 	var randLength = 73;
 
 	function create(renderer, dimensions) {
@@ -144,8 +145,25 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 						  simulator.buffers.workItems.write(workItems)]);
 		})
 		.spread(function(springsBuffer, _, _) {
-			return simulator;
-		})
+			simulator.buffers.springsPos = springsBuffer;
+
+			var types = [];
+			if(!cljs.CURRENT_CL) {
+				types = [null, null, null , null, null, cljs.types.float_t, cljs.types.float_t];
+			}
+
+			var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
+			return simulator.edgesKernel.setArgs(
+			    [simulator.buffers.edges.buffer,
+			     simulator.buffers.workItems.buffer,
+			     simulator.buffers.nextPoints.buffer,
+			     simulator.buffers.curPoints.buffer,
+			     simulator.buffers.springsPos.buffer,
+			     new Float32Array([1.0]),
+			     new Float32Array([20])
+			     ],
+				types);
+		});
 	}
 
 
@@ -187,12 +205,32 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			simulator.events.kernelEnd();
 			simulator.events.bufferCopyStart();
 
-			return Q.all([simulator.buffers.nextPoints.copyBuffer(simulator.buffers.curPoints)]);
+			// We have to copy the buffer explicitly because the springs kernel only copies the
+			// points that are connected by spring from nextPoints to curPoints.
+			return simulator.buffers.nextPoints.copyBuffer(simulator.buffers.curPoints);
 		})
 		.then(function() {
 			simulator.events.bufferCopyEnd();
-			simulator.events.bufferAquireStart();
 
+			if(simulator.numEdges > 0) {
+				simulator.events.kernelStart();
+
+				simulator.edgesKernel.setArgs(
+				 [null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
+				 [null, null, null, null, null, null, null, cljs.types.uint_t]
+				 );
+
+				return simulator.edgesKernel.call(simulator.numWorkItems, [])
+				.then(function() {
+					simulator.events.kernelEnd();
+					return simulator;
+				})
+			} else {
+				return simulator;
+			}
+		})
+		.then(function() {
+			simulator.events.bufferAquireStart();
 			return Q.all([simulator.buffers.curPoints.release()]);
 		})
 		.then(function() {
