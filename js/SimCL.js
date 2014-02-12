@@ -51,34 +51,28 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		console.debug("Number of points:", simulator.renderer.numPoints);
 
 		return (
-			simulator.renderer.createBuffer(points.length * simulator.elementsPerPoint * points.BYTES_PER_ELEMENT)
-			.then(function(pointsVBO) {
+			// Create buffers for
+			Q.all([simulator.renderer.createBuffer(points.length * simulator.elementsPerPoint * points.BYTES_PER_ELEMENT),
+				   simulator.cl.createBuffer(points.length * simulator.elementsPerPoint * points.BYTES_PER_ELEMENT),
+				   simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT)])
+			.spread(function(pointsVBO, nextPointsBuffer, randBuffer) {
 				simulator.renderer.curPoints = pointsVBO;
-				return pointsVBO.write(points);
-			})
-			.then(function(pointsVBO) {
-				return simulator.cl.createBufferGL(pointsVBO.buffer);
-			})
-			.then(function(pointsBuf) {
-				simulator.curPoints = pointsBuf;
-				return simulator.curPoints.write(points);
-			})
-			.then(function(pointsBuf) {
-				return simulator.cl.createBuffer(points.length * simulator.elementsPerPoint * points.BYTES_PER_ELEMENT);
-			})
-			.then(function(nextPoints) {
-				simulator.nextPoints = nextPoints;
-				return simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT)
-			})
-			.then(function(randBuffer) {
+				simulator.nextPoints = nextPointsBuffer;
 				simulator.randValues = randBuffer;
+
 				var rands = new Float32Array(randLength * simulator.elementsPerPoint);
 				for(var i = 0; i < rands.length; i++) {
 					rands[i] = Math.random();
 				}
-				return simulator.randValues.write(rands);
+
+				return Q.all([pointsVBO.write(points), simulator.randValues.write(rands)]);
 			})
-			.then(function() {
+			.spread(function(pointsVBO, randBuffer) {
+				return simulator.cl.createBufferGL(pointsVBO.buffer);
+			})
+			.then(function(pointsBuf) {
+				simulator.curPoints = pointsBuf;
+
 				var types = [];
 				if(!cljs.CURRENT_CL) {
 					// FIXME: find the old WebCL platform type for float2
