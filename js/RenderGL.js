@@ -39,6 +39,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				renderer.buffers = {};
 				renderer.elementsPerPoint = 2;
 				renderer.numPoints = 0;
+				renderer.numEdges = 0;
 
 				// TODO: Enlarge the camera by the (size of gl points / 2) so that points are fully
 				// on screen even if they're at the edge of the graph.

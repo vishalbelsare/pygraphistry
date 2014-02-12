@@ -54,11 +54,17 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 	}
 
 
-	function setEdges(graph, edges) {
-		return Q.fcall(function() {
+	var setEdges = Q.promised(function(graph, edges) {
+		console.debug("Number of edges:", edges.length);
+
+		var edges = new Uint32Array([0, 1]);
+		var workItems = new Uint32Array([0, 1]);
+
+		return graph.simulator.setEdges(edges, workItems)
+		.then(function() {
 			return graph;
 		});
-	}
+	});
 
 	function setPhysics(graph, opts) {
 	    graph.simulator.setPhysics(opts);

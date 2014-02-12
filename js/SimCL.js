@@ -19,9 +19,11 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				};
 				simObj.tick = tick.bind(this, simObj);
 				simObj.setPoints = setPoints.bind(this, simObj);
+				simObj.setEdges = setEdges.bind(this, simObj);
 				simObj.setPhysics = setPhysics.bind(this, simObj);
 				simObj.dimensions = dimensions;
 				simObj.numPoints = 0;
+				simObj.numEdges = 0;
 				simObj.events = {
 					"kernelStart": function() { },
 					"kernelEnd":  function() { },
@@ -101,6 +103,52 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		);
 	}
 
+
+	/**
+	 * Sets the edge list for the graph
+	 *
+	 * @param simulator - the simulator object to set the edges for
+	 * @param {Uint32Array} edges - buffer where every two items contain the index of the source
+	 *        node for an edge, and the index of the target node of the edge.
+	 * @param {Uint32Array} workItems - buffer where every two items encode information needed by
+	 *         one thread: the index of the first edge it should process, and the number of
+	 *         consecutive edges it should process in total.
+	 *
+	 * @returns {Q.promise} a promise for the simulator object
+	 */
+	function setEdges(simulator, edges, workItems) {
+		var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
+		var elementsPerWorkItem = 2;
+
+		if(edges.length % elementsPerEdge !== 0) {
+			throw new Error("The edge buffer size is invalid (must be a multiple of " + elementsPerEdge + ")");
+		}
+		if(workItems.length % elementsPerWorkItem !== 0) {
+			throw new Error("The work item buffer size is invalid (must be a multiple of " + elementsPerWorkItem + ")");
+		}
+
+		simulator.numEdges = edges.length / elementsPerEdge;
+		simulator.renderer.numEdges = simulator.numEdges;
+		simulator.numWorkItems = workItems.length / elementsPerWorkItem;
+
+		return Q.all([simulator.cl.createBuffer(edges.length * elementsPerEdge * edges.BYTES_PER_ELEMENT),
+			          simulator.cl.createBuffer(workItems.length * elementsPerWorkItem * workItems.BYTES_PER_ELEMENT),
+			          simulator.renderer.createBuffer(edges.length * 2 * elementsPerEdge * Float32Array.BYTES_PER_ELEMENT)])
+		.spread(function(edgesBuffer, workItemsBuffer, springsVBO) {
+			simulator.buffers.edges = edgesBuffer;
+			simulator.buffers.workItems = workItemsBuffer;
+			simulator.renderer.buffers.springs = springsVBO;
+
+			return Q.all([simulator.cl.createBufferGL(springsVBO),
+				          simulator.buffers.edges.write(edges),
+						  simulator.buffers.workItems.write(workItems)]);
+		})
+		.spread(function(springsBuffer, _, _) {
+			return simulator;
+		})
+	}
+
+
 	function setPhysics(simulator, cfg) {
 	    cfg = cfg || {};
 	    simulator.pointKernel.setArgs(
@@ -160,6 +208,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	return {
 		"create": create,
 		"setPoints": setPoints,
+		"setEdges": setEdges,
 		"tick": tick
 	};
 });

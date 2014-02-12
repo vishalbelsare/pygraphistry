@@ -55,6 +55,9 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 
 		return clGraph.setPoints(buff)
 		.then(function() {
+			return clGraph.setEdges(graphFile.edges);
+		})
+		.then(function() {
 			return clGraph.tick();
 		});
 
@@ -154,6 +157,9 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 			graph.simulator.events.kernelEnd = function() { fpsKernel.end(); };
 
 			return graph.setPoints(points);
+		})
+		.then(function(graph) {
+			return graph.setEdges([]);
 		})
 		.then(function() {
 			var animButton = $("#anim-button");
