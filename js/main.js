@@ -4,7 +4,6 @@ require.config({
 		"Q": "libs/q",
 		"glMatrix": "libs/gl-matrix",
 		"MatrixLoader": "libs/load",
-		"Bootstrap": "libs/bootstrap",
 		"Stats": "libs/stats.beautified"
 	},
 	shim: {
