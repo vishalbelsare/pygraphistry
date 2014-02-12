@@ -23,7 +23,8 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 
 	var graph = null,
 		animating = null,
-		numPoints = 10, //16384
+		numPoints = 8192, //16384
+		numEdges = Math.round(numPoints / 5),
 		dimensions = [1,1]; //[960,960];
 
 
