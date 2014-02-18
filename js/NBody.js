@@ -111,10 +111,26 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 		    return a.concat(b);
 		});
 
+        var nDim = graph.dimensions.length;
+		var midPoints = new Float32Array(rawEdges.length * graph.numSplits * nDim || 1);
+		if (graph.numSplits) {
+		    rawEdges.forEach(function (edge, i) {
+		    	for (var d = 0; d < nDim; d++) {
+		    		var start = graph.__pointsHostBuffer[edge[0] * nDim + d];
+		    		var end = graph.__pointsHostBuffer[edge[1] * nDim + d];
+		    		var step = (end - start) / (graph.numSplits + 1);
+		    	    for (var q = 0; q < graph.numSplits; q++) {
+		    	    	midPoints[(i * graph.numSplits + q) * nDim + d] = start + step * (q + 1);
+		    		}
+		    	}
+		    });
+		}
+		console.debug('Number of control points:', rawEdges.length * graph.numSplits * nDim);
+
 		var edgesTyped = new Uint32Array(edgesFlattened);
 		var workItemsTypes = new Uint32Array(workItems);
 
-		return graph.simulator.setEdges(edgesTyped, workItemsTypes)
+		return graph.simulator.setEdges(edgesTyped, workItemsTypes, midPoints)
 		.then(function() {
 			return graph;
 		});
