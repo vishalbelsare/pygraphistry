@@ -8,7 +8,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			// Compile the WebCL kernels
 			return util.getSource("apply-forces.cl")
 			.then(function(source) {
-				return cl.compile(source, ["apply_points", "apply_springs"]);
+				return cl.compile(source, ["apply_points", "apply_springs", "apply_midpoints", "apply_midsprings"]);
 			})
 			.then(function(kernels) {
 				var simObj = {
@@ -16,6 +16,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 					"cl": cl,
 					"pointKernel": kernels["apply_points"],
 					"edgesKernel": kernels["apply_springs"],
+					"midPointKernel": kernels["apply_midpoints"],
+					"midEdgesKernel": kernels["apply_midsprings"],
 					"elementsPerPoint": 2
 				};
 				simObj.tick = tick.bind(this, simObj);
