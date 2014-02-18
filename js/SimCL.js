@@ -355,6 +355,11 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			simulator.edgesKernel.setArgs(
 				[null, null, null, null, null, edgeStrength, edgeDistance],
 				[null, null, null, null, null, edgeStrength_t, edgeDistance_t]);
+
+			simulator.midEdgesKernel.setArgs(
+				[null, null, null, null, null, null, null, edgeStrength, edgeDistance],
+				[null, null, null, null, null, null, null, edgeStrength_t, edgeDistance_t]);
+
 		}
 	}
 
@@ -385,9 +390,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			    .then(function () {
 		            simulator.events.bufferCopyStart();
 		            return srcBuf.copyBuffer(dstBuf); })
-			    .then(function () {
-			    	return simulator.events.bufferCopyEnd();
-			    });
+			    .then(function () { return simulator.events.bufferCopyEnd(); });
 		}
 
 
