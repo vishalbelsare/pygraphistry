@@ -2,7 +2,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	Q.longStackSupport = true;
 	var randLength = 73;
 
-	function create(renderer, dimensions) {
+	function create(renderer, dimensions, numSplits) {
 		return cljs.create(renderer.gl)
 		.then(function(cl) {
 			// Compile the WebCL kernels
@@ -23,6 +23,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				simObj.setEdges = setEdges.bind(this, simObj);
 				simObj.setPhysics = setPhysics.bind(this, simObj);
 				simObj.dimensions = dimensions;
+				simObj.numSplits = numSplits;
 				simObj.numPoints = 0;
 				simObj.numEdges = 0;
 				simObj.events = {
@@ -114,10 +115,10 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	 * @param {Uint32Array} workItems - buffer where every two items encode information needed by
 	 *         one thread: the index of the first edge it should process, and the number of
 	 *         consecutive edges it should process in total.
-	 *
+	 * @param {Float32Array} midPoints - 
 	 * @returns {Q.promise} a promise for the simulator object
 	 */
-	function setEdges(simulator, edges, workItems) {
+	function setEdges(simulator, edges, workItems, midPoints) {
 		var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
 		var elementsPerWorkItem = 2;
 

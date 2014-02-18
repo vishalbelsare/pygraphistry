@@ -18,11 +18,12 @@ require.config({
 
 require(["jQuery", "NBody", "RenderGL", "SimCL", "MatrixLoader", "Q", "Stats"],
 function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
-	Q.longStackSupport = true;
+	//Q.longStackSupport = true;
 
 	var graph = null,
 		animating = null,
-		numPoints = 8192, //16384
+		numPoints = 1024, //8192, //16384
+		num
 		numEdges = Math.round(numPoints / 5),
 		dimensions = [1,1]; //[960,960];
 
@@ -125,7 +126,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 	function setup() {
 		console.log("Running Naive N-body simulation");
 
-		return NBody.create(SimCL, RenderGL, $("#simulation")[0], dimensions)
+		return NBody.create(SimCL, RenderGL, $("#simulation")[0], dimensions, 2)
 		.then(function(createdGraph) {
 			graph = createdGraph;
 			console.log("N-body graph created.");

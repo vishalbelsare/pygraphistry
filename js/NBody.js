@@ -9,8 +9,9 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 	 * @param canvas - the canvas DOM element to draw the graph in
 	 * @param [dimensions=\[1,1\]] - a two element array [width,height] used for internal posituin calculations.
 	 */
-	function create(simulator, renderer, canvas, dimensions) {
+	function create(simulator, renderer, canvas, dimensions, numSplits) {
 		dimensions = dimensions || [1,1];
+		numSplits = numSplits || 0;
 
 		return renderer.create(canvas, dimensions)
 		.then(function(rend) {
@@ -23,8 +24,9 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 				graph.setEdges = setEdges.bind(this, graph);
 				graph.setPhysics = setPhysics.bind(this, graph);
 				graph.tick = tick.bind(this, graph);
-				graph.stepNumber = 0;
+				graph.stepNumber = 0;				
 				graph.dimensions = dimensions;
+				graph.numSplits = numSplits;
 				graph.events = {
 					"simulateBegin": function() { },
 					"simulateEnd": function() { },
@@ -46,6 +48,8 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 			points = _toFloatArray(points);
 		}
 
+		graph.__pointsHostBuffer = points;
+
 		graph.stepNumber = 0;
 		return graph.simulator.setPoints(points)
 		.then(function() {
@@ -54,7 +58,10 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 	}
 
 
-	var setEdges = Q.promised(function(graph, edges) {
+	var setEdges = Q.promised(function(graph, rawEdges) {
+
+        var edges = rawEdges;
+
 		console.debug("Number of edges:", edges.length);
 
 		if(edges.length < 1) {
