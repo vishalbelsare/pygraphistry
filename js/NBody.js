@@ -58,63 +58,57 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 	}
 
 
-	var setEdges = Q.promised(function(graph, rawEdges) {
-
-        var edges = rawEdges;
+	var setEdges = Q.promised(function(graph, edges) {
 
 		console.debug("Number of edges:", edges.length);
 
-		if(edges.length < 1) {
+		if (edges.length < 1)
 			return Q.fcall(function() { return graph; });
-		}
-
-		// First, duplicate the edges array so that our kernels will modify both source and targets
-		// edges_flipped = edges.slice(0);
-		// // Flip the target/source nodes in this flipped array
-		// for(var i = 0; i < edges_flipped.length; i++) {
-		// 	var oldSource = edges_flipped[i][0];
-		// 	edges_flipped[i][0] = edges_flipped[i][1];
-		// 	edges_flipped[i][1] = oldSource;
-		// }
-		var edges_flipped = edges.map(function(val, idx, arr) {
+		
+		var edgesFlipped = edges.map(function(val, idx, arr) {
 			return [val[1], val[0]];
 		});
-		edges = edges.concat(edges_flipped);
-		edges.sort(function(a, b) {
-			if(a[0] < b[0]) {
-				return -1;
-			} else if(a[0] > b[1]) {
-				return 1;
-			} else {
-				return 0;
-			}
-		})
 
-		var workItems = [];
+        function package(edgeList) {
+        	edgeList.sort(function(a, b) {
+			    return a[0] < b[0] ? -1 
+			        : a[0] > b[0] ? 1
+			        : a[1] - b[1];
+			});
 
-		var current_source = edges[0][0];
-		var workItem = [0, 1];
-		for(var i = 1; i < edges.length; i++) {
-			if(edges[i][0] == current_source) {
-				workItem[1]++;
-			} else {
-				workItems.push(workItem[0]);
-				workItems.push(workItem[1]);
-				current_source = edges[i][0];
-				workItem = [i, 1];
-			}
-		}
-		workItems.push(workItem[0]);
-		workItems.push(workItem[1]);
+		    var workItems = [];
+		    var current_source = edgeList[0][0];
+		    var workItem = [0, 1];
+            edgeList.forEach(function (edge, i) {
+                if (i == 0) return;
+                if(edge[0] == current_source) {
+                    workItem[1]++;
+                } else {
+                    workItems.push(workItem[0]);
+                    workItems.push(workItem[1]);
+                    current_source = edge[0];
+                    workItem = [i, 1];
+                }
+            });
+			workItems.push(workItem[0]);
+			workItems.push(workItem[1]);
 
-		var edgesFlattened = edges.reduce(function(a, b) {
-		    return a.concat(b);
-		});
+            var edgesFlattened = edges.reduce(function(a, b) { return a.concat(b); });
+
+            return {
+                edgesTyped: new Uint32Array(edgesFlattened),
+                numWorkItems: workItems.length,
+                workItemsTyped: new Uint32Array(workItems)
+            };
+        }
+
+        var forwardEdges = package(edges);
+        var backwardsEdges = package(edgesFlipped);
 
         var nDim = graph.dimensions.length;
-		var midPoints = new Float32Array(rawEdges.length * graph.numSplits * nDim || 1);
+		var midPoints = new Float32Array(edges.length * graph.numSplits * nDim || 1);
 		if (graph.numSplits) {
-		    rawEdges.forEach(function (edge, i) {
+		    edges.forEach(function (edge, i) {
 		    	for (var d = 0; d < nDim; d++) {
 		    		var start = graph.__pointsHostBuffer[edge[0] * nDim + d];
 		    		var end = graph.__pointsHostBuffer[edge[1] * nDim + d];
@@ -125,15 +119,10 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 		    	}
 		    });
 		}
-		console.debug('Number of control points:', rawEdges.length * graph.numSplits * nDim);
+		console.debug('Number of control points:', edges.length * graph.numSplits);
 
-		var edgesTyped = new Uint32Array(edgesFlattened);
-		var workItemsTypes = new Uint32Array(workItems);
-
-		return graph.simulator.setEdges(edgesTyped, workItemsTypes, midPoints)
-		.then(function() {
-			return graph;
-		});
+		return graph.simulator.setEdges(forwardEdges, backwardsEdges, midPoints)
+		.then(function() { return graph; });
 	});
 
 	function setPhysics(graph, opts) {

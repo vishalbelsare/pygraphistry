@@ -149,17 +149,25 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	 * Sets the edge list for the graph
 	 *
 	 * @param simulator - the simulator object to set the edges for
-	 * @param {Uint32Array} edges - buffer where every two items contain the index of the source
+	 * @param {edgesTyped: {Uint32Array}, numWorkItems: uint, workItemsTyped: {Uint32Array} } forwardEdges - 
+	 *        Edge list as represented in input graph.
+	 *        edgesTyped is buffer where every two items contain the index of the source
 	 *        node for an edge, and the index of the target node of the edge.
-	 * @param {Uint32Array} workItems - buffer where every two items encode information needed by
+	 *        workItems is a buffer where every two items encode information needed by
 	 *         one thread: the index of the first edge it should process, and the number of
 	 *         consecutive edges it should process in total.
-	 * @param {Float32Array} midPoints - 
+	 * @param {edgesTyped: {Uint32Array}, numWorkItems: uint, workItemsTypes: {Uint32Array} } backwardsEdges - 
+	 *        Same as forwardEdges, except reverse edge src/dst and redefine workItems/numWorkItems corresondingly.
+	 * @param {Float32Array} midPoints - dense array of control points (packed sequence of nDim structs)
 	 * @returns {Q.promise} a promise for the simulator object
 	 */
-	function setEdges(simulator, edges, workItems, midPoints) {
+	function setEdges(simulator, forwardEdges, backwardsEdges, midPoints) {
+		//edges, workItems
 		var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
 		var elementsPerWorkItem = 2;
+
+		var edges = forwardEdges.edgesTyped;
+		var workItems = forwardEdges.workItemsTyped;
 
 
 		function midPointKernelParams (randValues) {
