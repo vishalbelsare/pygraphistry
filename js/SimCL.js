@@ -49,60 +49,85 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			throw new Error("The points buffer is an invalid size (must be a multiple of " + simulator.elementsPerPoint + ")");
 		}
 
-		simulator.numPoints = points.length / simulator.elementsPerPoint;
-		simulator.renderer.numPoints = simulator.numPoints;
+		return Q.all([simulator.buffers.nextPoints, simulator.buffers.randValues, simulator.buffers.curPoints]
+		.filter(function(val) { return !(!val); }).map(function(val) { return val.delete(); }))
+		.then(function() {
+			simulator.buffers.nextPoints = null;
+			simulator.buffers.randValues = null;
+			simulator.buffers.curPoints = null;
 
-		// If there are 0 points, then don't create any of the buffers
-		if(simulator.numPoints < 1) {
-			return Q.fcall(function() { return simulator; });
-		}
+			simulator.numPoints = 0;
+			simulator.renderer.numPoints = 0;
 
-		console.debug("Number of points:", simulator.renderer.numPoints);
+			if(simulator.renderer.buffers.curPoints) {
+				return simulator.renderer.buffers.curPoints.delete()
+				.then(function() {
+					simulator.renderer.buffers.curPoints = null;
+				})
+			} else {
+				return null;
+			}
+		})
+		.then(function() {
+			simulator.numPoints = points.length / simulator.elementsPerPoint;
+			simulator.renderer.numPoints = simulator.numPoints;
 
-		return (
+			// If there are 0 points, then don't create any of the buffers
+			if(simulator.numPoints < 1) {
+				throw "zero-points";
+			}
+
+			console.debug("Number of points:", simulator.renderer.numPoints);
+
 			// Create buffers and write initial data to them, then set
-			Q.all([simulator.renderer.createBuffer(points),
+			return Q.all([simulator.renderer.createBuffer(points),
 				   simulator.cl.createBuffer(points.length * simulator.elementsPerPoint * points.BYTES_PER_ELEMENT),
 				   simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT)])
-			.spread(function(pointsVBO, nextPointsBuffer, randBuffer) {
-				simulator.renderer.buffers.curPoints = pointsVBO;
-				simulator.buffers.nextPoints = nextPointsBuffer;
-				simulator.randValues = randBuffer;
+		})
+		.spread(function(pointsVBO, nextPointsBuffer, randBuffer) {
+			simulator.renderer.buffers.curPoints = pointsVBO;
+			simulator.buffers.nextPoints = nextPointsBuffer;
+			simulator.buffers.randValues = randBuffer;
 
-				var rands = new Float32Array(randLength * simulator.elementsPerPoint);
-				for(var i = 0; i < rands.length; i++) {
-					rands[i] = Math.random();
-				}
+			var rands = new Float32Array(randLength * simulator.elementsPerPoint);
+			for(var i = 0; i < rands.length; i++) {
+				rands[i] = Math.random();
+			}
 
-				return Q.all([simulator.cl.createBufferGL(pointsVBO), simulator.randValues.write(rands)]);
-			})
-			.spread(function(pointsBuf, randValues) {
-				simulator.buffers.curPoints = pointsBuf;
+			return Q.all([simulator.cl.createBufferGL(pointsVBO), simulator.buffers.randValues.write(rands)]);
+		})
+		.spread(function(pointsBuf, randValues) {
+			simulator.buffers.curPoints = pointsBuf;
 
-				var types = [];
-				if(!cljs.CURRENT_CL) {
-					// FIXME: find the old WebCL platform type for float2
-					types = [cljs.types.int_t, null, null , cljs.types.local_t, cljs.types.float_t, cljs.types.float_t, cljs.types.float_t, cljs.types.float_t, null, cljs.types.uint_t];
-				}
+			var types = [];
+			if(!cljs.CURRENT_CL) {
+				// FIXME: find the old WebCL platform type for float2
+				types = [cljs.types.int_t, null, null , cljs.types.local_t, cljs.types.float_t, cljs.types.float_t, cljs.types.float_t, cljs.types.float_t, null, cljs.types.uint_t];
+			}
 
-				var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
-				return simulator.pointKernel.setArgs(
-				    [new Int32Array([simulator.numPoints]),
-				     simulator.buffers.curPoints.buffer,
-				     simulator.buffers.nextPoints.buffer,
-				     new Uint32Array([localPos]),
-				     new Float32Array([simulator.dimensions[0]]),
-				     new Float32Array([simulator.dimensions[1]]),
-				     new Float32Array([-0.00001]),
-				     new Float32Array([0.2]),
-				     simulator.randValues.buffer,
-				     new Uint32Array([0])],
-					types);
-			})
-			.then(function() {
+			var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
+			return simulator.pointKernel.setArgs(
+			    [new Int32Array([simulator.numPoints]),
+			     simulator.buffers.curPoints.buffer,
+			     simulator.buffers.nextPoints.buffer,
+			     new Uint32Array([localPos]),
+			     new Float32Array([simulator.dimensions[0]]),
+			     new Float32Array([simulator.dimensions[1]]),
+			     new Float32Array([-0.00001]),
+			     new Float32Array([0.2]),
+			     simulator.buffers.randValues.buffer,
+			     new Uint32Array([0])],
+				types);
+		})
+		.then(function() {
+			return simulator;
+		}, function(err) {
+			if(err === "zero-points") {
 				return simulator;
-			})
-		);
+			} else {
+				throw err;
+			}
+		})
 	}
 
 
@@ -122,20 +147,44 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
 		var elementsPerWorkItem = 2;
 
-		if(edges.length % elementsPerEdge !== 0) {
-			throw new Error("The edge buffer size is invalid (must be a multiple of " + elementsPerEdge + ")");
-		}
-		if(workItems.length % elementsPerWorkItem !== 0) {
-			throw new Error("The work item buffer size is invalid (must be a multiple of " + elementsPerWorkItem + ")");
-		}
+		// Delete all the existing edge buffers
+		return Q.all([simulator.buffers.edges, simulator.buffers.workItems, simulator.buffers.springsPos]
+		.filter(function(val) { return !(!val); }).map(function(val) { return val.delete(); }))
+		.then(function() {
+			simulator.buffers.edges = null;
+			simulator.buffers.workItems = null;
+			simulator.buffers.springsPos = null;
 
-		simulator.numEdges = edges.length / elementsPerEdge;
-		simulator.renderer.numEdges = simulator.numEdges;
-		simulator.numWorkItems = workItems.length / elementsPerWorkItem;
+			simulator.numEdges = 0;
+			simulator.renderer.numEdges = 0;
+			simulator.numWorkItems = 0;
 
-		return Q.all([simulator.cl.createBuffer(edges.length * elementsPerEdge * edges.BYTES_PER_ELEMENT),
+			if(simulator.renderer.buffers.springs) {
+				return simulator.renderer.buffers.springs.delete()
+				.then(function() {
+					simulator.renderer.buffers.springs = null;
+				})
+			} else {
+				return null;
+			}
+		})
+		.then(function() {
+			if(edges.length % elementsPerEdge !== 0) {
+				throw new Error("The edge buffer size is invalid (must be a multiple of " + elementsPerEdge + ")");
+			}
+			if(workItems.length % elementsPerWorkItem !== 0) {
+				throw new Error("The work item buffer size is invalid (must be a multiple of " + elementsPerWorkItem + ")");
+			}
+
+			simulator.numEdges = edges.length / elementsPerEdge;
+			simulator.renderer.numEdges = simulator.numEdges;
+			simulator.numWorkItems = workItems.length / elementsPerWorkItem;
+		})
+		.then(function() {
+			return Q.all([simulator.cl.createBuffer(edges.length * elementsPerEdge * edges.BYTES_PER_ELEMENT),
 			          simulator.cl.createBuffer(workItems.length * elementsPerWorkItem * workItems.BYTES_PER_ELEMENT),
 			          simulator.renderer.createBuffer(edges.length * 2 * elementsPerEdge * Float32Array.BYTES_PER_ELEMENT)])
+		})
 		.spread(function(edgesBuffer, workItemsBuffer, springsVBO) {
 			simulator.buffers.edges = edgesBuffer;
 			simulator.buffers.workItems = workItemsBuffer;
