@@ -360,77 +360,82 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 
 	function tick(simulator, stepNumber) {
-		// If there are no points in the graph, don't run the simulation
-		if(simulator.numPoints < 1) {
-			return Q.fcall(function() { simulator; });
+
+        //FIXME should be 'simulator.events.releaseBufSeq(buf)'
+		function releaseBufSeq(buf) {
+	        return Q()
+	            .then(function () { 
+	            	simulator.events.bufferAquireStart();
+	            	return buf.release(); })
+	            .then(function () { return simulator.events.bufferAquireEnd(); }); 
 		}
 
+        //FIXME should be 'simulator.events.acquireBufSeq(buf)'
+		function acquireBufSeq(buf) {
+			return Q()
+			    .then(function () { 
+			    	simulator.events.bufferAquireStart();
+			    	return buf.acquire(); })
+			    .then(function () { return simulator.events.bufferAquireEnd(); });
+		}
+ 
+        //FIXME should be 'simulator.events.copyBufSeq(srcBuf, dstBuf)'
+		function copyBufSeq(srcBuf, dstBuf) {
+			return Q()
+			    .then(function () {
+		            simulator.events.bufferCopyStart();
+		            return srcBuf.copyBuffer(dstBuf); })
+			    .then(function () {
+			    	return simulator.events.bufferCopyEnd();
+			    });
+		}
+
+
+		// If there are no points in the graph, don't run the simulation
+		if(simulator.numPoints < 1)
+			return Q(simulator);
+		
 	    simulator.pointKernel.setArgs(
-	     [null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
-	     [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]
-	     );
+	        [null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
+	        [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
 
-
-		simulator.events.bufferAquireStart();
-
-		return Q.all([simulator.buffers.curPoints.acquire()])
+	    return Q()
+	    .then(function () { return acquireBufSeq(simulator.buffers.curPoints); })
 		.then(function() {
-			simulator.events.bufferAquireEnd();
 			simulator.events.kernelStart();
-
 			return simulator.pointKernel.call(simulator.numPoints, []);
 		})
+		.then(function() { simulator.events.kernelEnd(); })
+		.then(function () { return copyBufSeq(simulator.buffers.nextPoints, simulator.buffers.curPoints); })
 		.then(function() {
-			simulator.events.kernelEnd();
-			simulator.events.bufferCopyStart();
-
-			// We have to copy the buffer explicitly because the springs kernel only copies the
-			// points that are connected by spring from nextPoints to curPoints.
-			return simulator.buffers.nextPoints.copyBuffer(simulator.buffers.curPoints);
-		})
-		.then(function() {
-			simulator.events.bufferCopyEnd();
-
 			if(simulator.numEdges > 0) {
 				simulator.events.kernelStart();
 
 				simulator.edgesKernel.setArgs(
-				 [null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
-				 [null, null, null, null, null, null, null, cljs.types.uint_t]
-				 );
+				    [null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
+				    [null, null, null, null, null, null, null, cljs.types.uint_t]);
 
 				return simulator.edgesKernel.call(simulator.numWorkItems, [])
 				.then(function() {
 					simulator.events.kernelEnd();
-					return simulator;
-				})
+					return simulator; })
 			} else {
 				return simulator;
 			}
 		})
 		////////////////////////////
 		.then(function () {
-            //FIXME right stepnum
             simulator.midPointKernel.setArgs(
 	            [null, null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
-	            [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]
-	        );
+	            [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
 	    })
-	    .then(function () {
-	    	simulator.events.bufferAquireStart();
-	    	return simulator.buffers.curMidPoints.acquire();  // ACQUIRE MIDPOINTS AGAIN?
-	    })
-	    .then(function () { simulator.events.bufferAquireEnd(); })
+	    .then(function () { return acquireBufSeq(simulator.buffers.curMidPoints); })
         .then(function () {
 			simulator.events.kernelStart();
 			return simulator.midPointKernel.call(simulator.numMidPoints, []);  // APPLY MID-FORCES
 	    })
 	    .then(function () { simulator.events.kernelEnd(); })
-		.then (function () {
-			simulator.events.bufferCopyStart();
-			return simulator.buffers.nextMidPoints.copyBuffer(simulator.buffers.curMidPoints); //COPY NEW POSITIONS
-	    })
-	    .then(function() { simulator.events.bufferCopyEnd(); })
+		.then(function () { return copyBufSeq(simulator.buffers.nextMidPoints, simulator.buffers.curMidPoints); })
 		.then(function () {
 			if(simulator.numEdges > 0) {
 				simulator.events.kernelStart();
@@ -450,31 +455,12 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			}
 		})		
 		////////////////////////////
-		.then(function() {
-			simulator.events.bufferAquireStart();
-			return Q.all([simulator.buffers.curPoints.release()]);
+		.then(function () {
+			return Q.all(
+				['curPoints', 'springsPos', 'curMidPoints', 'midSpringsPos']
+				    .map(function (name) { return simulator.buffers[name]; })
+			        .map(function (buf) { return releaseBufSeq(buf); }));
 		})
-		.then(function() { simulator.events.bufferAquireEnd(); })
-
-		.then(function() {
-			simulator.events.bufferAquireStart();
-			return Q.all([simulator.buffers.springsPos.release()]);
-		})
-		.then(function() { simulator.events.bufferAquireEnd(); })
-
-		.then(function() {
-			simulator.events.bufferAquireStart();
-			return Q.all([simulator.buffers.curMidPoints.release()]);
-		})		
-		.then(function() { simulator.events.bufferAquireEnd(); })
-
-		.then(function() {
-			simulator.events.bufferAquireStart();
-			return Q.all([simulator.buffers.midSpringsPos.release()]);
-		})
-		.then(function() { simulator.events.bufferAquireEnd(); })
-
-
         .then(function () {		
 			simulator.cl.queue.finish(); //FIXME use callback arg
 			return simulator;	
