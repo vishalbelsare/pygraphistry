@@ -48,6 +48,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				renderer.elementsPerPoint = 2;
 				renderer.numPoints = 0;
 				renderer.numEdges = 0;
+				renderer.numMidPoints = 0;
 
 				// TODO: Enlarge the camera by the (size of gl points / 2) so that points are fully
 				// on screen even if they're at the edge of the graph.
@@ -190,22 +191,36 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 			gl.depthFunc(gl.LEQUAL);
 
 			gl.useProgram(renderer.pointProgram);
+
 			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.curPoints.buffer);
 			gl.enableVertexAttribArray(renderer.curPointPosLoc);
 			gl.vertexAttribPointer(renderer.curPointPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
-
 			gl.drawArrays(gl.POINTS, 0, renderer.numPoints);
+
+			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.curMidPoints.buffer);
+			gl.enableVertexAttribArray(renderer.curPointPosLoc);
+			gl.vertexAttribPointer(renderer.curPointPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
+			gl.drawArrays(gl.POINTS, 0, renderer.numMidPoints);
+			
 
 			if(renderer.numEdges > 0) {
 				// Make sure to draw the edges behind the points
 				gl.depthFunc(gl.LESS);
 
 				gl.useProgram(renderer.edgeProgram);
+
 				gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.springs.buffer);
 				gl.enableVertexAttribArray(renderer.curEdgePosLoc);
 				gl.vertexAttribPointer(renderer.curEdgePosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
-
 				gl.drawArrays(gl.LINES, 0, renderer.numEdges * 2);
+
+				/*
+				gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.midSprings.buffer);
+				gl.enableVertexAttribArray(renderer.curEdgePosLoc);
+				gl.vertexAttribPointer(renderer.curEdgePosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
+				gl.drawArrays(gl.LINES, 0, renderer.numEdges * 2);
+				*/
+
 			}
 
 			gl.finish();

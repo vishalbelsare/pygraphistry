@@ -1,5 +1,5 @@
 define(["Q", "util", "cl"], function(Q, util, cljs) {
-	Q.longStackSupport = true;
+	//Q.longStackSupport = true;
 	var randLength = 73;
 
 	function create(renderer, dimensions, numSplits) {
@@ -51,9 +51,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			throw new Error("The points buffer is an invalid size (must be a multiple of " + simulator.elementsPerPoint + ")");
 		}
 
-		return Q.all([simulator.buffers.nextPoints, simulator.buffers.randValues, simulator.buffers.curPoints]
-		.filter(function(val) { return !(!val); }).map(function(val) { return val.delete(); }))
-		.then(function() {
+		function reset () {
 			simulator.buffers.nextPoints = null;
 			simulator.buffers.randValues = null;
 			simulator.buffers.curPoints = null;
@@ -69,10 +67,11 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			} else {
 				return null;
 			}
-		})
-		.then(function() {
+		}
+
+		function createBuffers () {
 			simulator.numPoints = points.length / simulator.elementsPerPoint;
-			simulator.renderer.numPoints = simulator.numPoints;
+			simulator.renderer.numPoints = simulator.numPoints;			
 
 			// If there are 0 points, then don't create any of the buffers
 			if(simulator.numPoints < 1) {
@@ -83,10 +82,11 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 			// Create buffers and write initial data to them, then set
 			return Q.all([simulator.renderer.createBuffer(points),
-				   simulator.cl.createBuffer(points.length * simulator.elementsPerPoint * points.BYTES_PER_ELEMENT),
+				   simulator.cl.createBuffer(points.byteLength),
 				   simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT)])
-		})
-		.spread(function(pointsVBO, nextPointsBuffer, randBuffer) {
+		}
+
+		function bindBuffers(pointsVBO, nextPointsBuffer, randBuffer) {
 			simulator.renderer.buffers.curPoints = pointsVBO;
 			simulator.buffers.nextPoints = nextPointsBuffer;
 			simulator.buffers.randValues = randBuffer;
@@ -96,20 +96,24 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				rands[i] = Math.random();
 			}
 
-			return Q.all([simulator.cl.createBufferGL(pointsVBO), simulator.buffers.randValues.write(rands)]);
-		})
-		.spread(function(pointsBuf, randValues) {
-			simulator.buffers.curPoints = pointsBuf;
+			var pointsBuf = simulator.cl.createBufferGL(pointsVBO).then(function (pointsBuf) {
+			    simulator.buffers.curPoints = pointsBuf;
+				return pointsBuf;
+			})
 
+			return Q.all([pointsBuf, simulator.buffers.randValues.write(rands)]);
+		}
+
+		function pointKernelParams (randValues) {
 			var types = [];
 			if(!cljs.CURRENT_CL) {
 				// FIXME: find the old WebCL platform type for float2
-				types = [cljs.types.int_t, null, null , cljs.types.local_t, cljs.types.float_t, cljs.types.float_t, cljs.types.float_t, cljs.types.float_t, null, cljs.types.uint_t];
+				types = [cljs.types.uint_t, null, null , cljs.types.local_t, cljs.types.float_t, cljs.types.float_t, cljs.types.float_t, cljs.types.float_t, null, cljs.types.uint_t];
 			}
 
 			var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
 			return simulator.pointKernel.setArgs(
-			    [new Int32Array([simulator.numPoints]),
+			    [new Uint32Array([simulator.numPoints]),
 			     simulator.buffers.curPoints.buffer,
 			     simulator.buffers.nextPoints.buffer,
 			     new Uint32Array([localPos]),
@@ -120,16 +124,24 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			     simulator.buffers.randValues.buffer,
 			     new Uint32Array([0])],
 				types);
-		})
-		.then(function() {
-			return simulator;
-		}, function(err) {
-			if(err === "zero-points") {
-				return simulator;
-			} else {
-				throw err;
-			}
-		})
+		}
+
+		return Q.all(
+		    [simulator.buffers.nextPoints, simulator.buffers.randValues, simulator.buffers.curPoints]
+		        .filter(function(val) { return !(!val); }).map(function(val) { return val.delete(); }))
+		.then(reset)
+		.then(createBuffers)
+		.spread(bindBuffers)
+		.spread(function(pointsBuf, randValues) { return pointKernelParams(randValues); })
+		.then(
+			function() { return simulator; }, 
+			function(err) {
+			    if (err === "zero-points") {
+					return simulator;
+				} else {
+					throw err;
+				}
+			});
 	}
 
 
@@ -149,10 +161,31 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
 		var elementsPerWorkItem = 2;
 
-		// Delete all the existing edge buffers
-		return Q.all([simulator.buffers.edges, simulator.buffers.workItems, simulator.buffers.springsPos]
-		.filter(function(val) { return !(!val); }).map(function(val) { return val.delete(); }))
-		.then(function() {
+
+		function midPointKernelParams (randValues) {
+			var types = [];
+			if(!cljs.CURRENT_CL) {
+				// FIXME: find the old WebCL platform type for float2
+				types = [cljs.types.uint_t, cljs.types.uint_t, null, null , cljs.types.local_t, cljs.types.float_t, cljs.types.float_t, cljs.types.float_t, cljs.types.float_t, null, cljs.types.uint_t];
+			}
+
+			var localPos = Math.min(simulator.cl.maxThreads, simulator.numMidPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
+			return simulator.midPointKernel.setArgs(
+			    [new Uint32Array([simulator.numMidPoints]),
+                 new Uint32Array([simulator.numSplits]),
+			     simulator.buffers.curMidPoints.buffer,
+			     simulator.buffers.nextMidPoints.buffer,
+			     new Uint32Array([localPos]),
+			     new Float32Array([simulator.dimensions[0]]),
+			     new Float32Array([simulator.dimensions[1]]),
+			     new Float32Array([-0.00001]),
+			     new Float32Array([0.2]),
+			     simulator.buffers.randValues.buffer,
+			     new Uint32Array([0])],
+				types);
+		}
+
+		function reset () {
 			simulator.buffers.edges = null;
 			simulator.buffers.workItems = null;
 			simulator.buffers.springsPos = null;
@@ -160,6 +193,11 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			simulator.numEdges = 0;
 			simulator.renderer.numEdges = 0;
 			simulator.numWorkItems = 0;
+
+			simulator.numMidPoints = 0;
+			simulator.renderer.numMidPoints = 0;
+			simulator.numMidEdges = 0;
+			simulator.renderer.numMidEdges = 0;
 
 			if(simulator.renderer.buffers.springs) {
 				return simulator.renderer.buffers.springs.delete()
@@ -169,8 +207,9 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			} else {
 				return null;
 			}
-		})
-		.then(function() {
+		}
+
+		function initConstants () {
 			if(edges.length % elementsPerEdge !== 0) {
 				throw new Error("The edge buffer size is invalid (must be a multiple of " + elementsPerEdge + ")");
 			}
@@ -181,27 +220,48 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			simulator.numEdges = edges.length / elementsPerEdge;
 			simulator.renderer.numEdges = simulator.numEdges;
 			simulator.numWorkItems = workItems.length / elementsPerWorkItem;
-		})
-		.then(function() {
-			return Q.all([simulator.cl.createBuffer(edges.length * elementsPerEdge * edges.BYTES_PER_ELEMENT),
-			          simulator.cl.createBuffer(workItems.length * elementsPerWorkItem * workItems.BYTES_PER_ELEMENT),
-			          simulator.renderer.createBuffer(edges.length * 2 * elementsPerEdge * Float32Array.BYTES_PER_ELEMENT)])
-		})
-		.spread(function(edgesBuffer, workItemsBuffer, springsVBO) {
+
+			simulator.numMidPoints = midPoints.length / simulator.elementsPerPoint;
+			simulator.renderer.numMidPoints = simulator.numMidPoints;
+			simulator.numMidEdges = simulator.numMidPoints + simulator.numEdges;
+			simulator.renderer.numMidEdges = simulator.numMidEdges;
+		}
+
+		function createBuffers () {
+            return Q.all([
+			    simulator.cl.createBuffer(edges.byteLength),
+			    simulator.cl.createBuffer(workItems.byteLength),
+			    simulator.renderer.createBuffer(simulator.numEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT),
+			    simulator.renderer.createBuffer(midPoints),
+			    simulator.cl.createBuffer(midPoints.byteLength),
+			    simulator.renderer.createBuffer( (simulator.numMidPoints + (simulator.numEdges/2)) * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT)]);
+		}
+
+		function bindBuffers (edgesBuffer, workItemsBuffer, springsVBO, 
+			midPointsVBO, nextMidPointsBuffer, midSpringsVBO) {
+
 			simulator.buffers.edges = edgesBuffer;
 			simulator.buffers.workItems = workItemsBuffer;
 			simulator.renderer.buffers.springs = springsVBO;
 
+			simulator.renderer.buffers.curMidPoints = midPointsVBO;
+			simulator.buffers.nextMidPoints = nextMidPointsBuffer;
+			simulator.renderer.buffers.midSprings = midSpringsVBO;
+
 			return Q.all([simulator.cl.createBufferGL(springsVBO),
 				          simulator.buffers.edges.write(edges),
-						  simulator.buffers.workItems.write(workItems)]);
-		})
-		.spread(function(springsBuffer, _, _) {
+						  simulator.buffers.workItems.write(workItems),
+						  simulator.cl.createBufferGL(midPointsVBO),
+						  simulator.cl.createBufferGL(midSpringsVBO)]);
+		}
+
+		function edgeKernelParams(springsBuffer, midPointsBuf, midSpringsBuffer) {
 			simulator.buffers.springsPos = springsBuffer;
+			simulator.buffers.midSpringsPos = midSpringsBuffer;
 
 			var types = [];
 			if(!cljs.CURRENT_CL) {
-				types = [null, null, null , null, null, cljs.types.float_t, cljs.types.float_t];
+				types = [null, null , null, null, null, cljs.types.float_t, cljs.types.float_t];
 			}
 
 			var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
@@ -217,7 +277,45 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			     new Float32Array([0.1])
 			     ],
 				types);
-		});
+		}
+
+		function midEdgeKernelParams() {
+			var types = [];
+			if(!cljs.CURRENT_CL) {
+				types = [cljs.uint_t, null, null, null, null , null, null, cljs.types.float_t, cljs.types.float_t];
+			}
+
+			var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
+			return simulator.midEdgesKernel.setArgs(
+			    [new Uint32Array([simulator.numSplits]),
+			     simulator.buffers.edges.buffer,
+			     simulator.buffers.workItems.buffer,
+			     simulator.buffers.nextPoints.buffer,
+			     simulator.buffers.nextMidPoints.buffer,
+			     simulator.buffers.curPoints.buffer,
+			     simulator.buffers.springsPos.buffer,
+			     // new Float32Array([0.2]),
+			     // new Float32Array([40])
+			     new Float32Array([1.0]),
+			     new Float32Array([0.1])
+			     ],
+				types);
+		}
+
+		// Delete all the existing edge buffers
+		return Q.all([simulator.buffers.edges, simulator.buffers.workItems, simulator.buffers.springsPos]
+		.filter(function(val) { return !(!val); }).map(function(val) { return val.delete(); }))
+		.then(reset)
+		.then(initConstants)
+		.then(createBuffers)
+		.spread(bindBuffers)
+		.spread(function (springsBuffer, _, _, midPointsBuf, midSpringsBuffer) {
+			simulator.buffers.curMidPoints = midPointsBuf;
+			return midPointKernelParams(simulator.buffers.randValues)
+			  .then(function () { return [springsBuffer, midPointsBuf, midSpringsBuffer]; });
+		})
+		.spread(edgeKernelParams)
+		.then(midEdgeKernelParams)
 	}
 
 
@@ -237,6 +335,14 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		     [null, null, null, null, null, null,
 		         charge_t, gravity_t, null, null]
 		     );
+
+		    simulator.midPointKernel.setArgs(
+		     [null, null, null, null, null, null, null,
+		         charge, gravity, null, null],
+		     [null, null, null, null, null, null, null,
+		         charge_t, gravity_t, null, null]
+		     );
+
 		}
 
 		if(cfg.edgeDistance || cfg.edgeStrength) {
@@ -302,18 +408,79 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				return simulator;
 			}
 		})
+		////////////////////////////
+		.then(function () {
+            //FIXME right stepnum
+            simulator.midPointKernel.setArgs(
+	            [null, null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
+	            [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]
+	        );
+	    })
+	    .then(function () {
+	    	simulator.events.bufferAquireStart();
+	    	return simulator.buffers.curMidPoints.acquire();  // ACQUIRE MIDPOINTS AGAIN?
+	    })
+	    .then(function () { simulator.events.bufferAquireEnd(); })
+        .then(function () {
+			simulator.events.kernelStart();
+			return simulator.midPointKernel.call(simulator.numMidPoints, []);  // APPLY MID-FORCES
+	    })
+	    .then(function () { simulator.events.kernelEnd(); })
+		.then (function () {
+			simulator.events.bufferCopyStart();
+			return simulator.buffers.nextMidPoints.copyBuffer(simulator.buffers.curMidPoints); //COPY NEW POSITIONS
+	    })
+	    .then(function() { simulator.events.bufferCopyEnd(); })
+		.then(function () {
+			if(simulator.numEdges > 0) {
+				simulator.events.kernelStart();
+
+                //FIXME args
+				simulator.midEdgesKernel.setArgs(
+				[null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
+				[null, null, null, null, null, null, null, null, null, cljs.types.uint_t]
+				);
+				return simulator.midEdgesKernel.call(simulator.numWorkItems, [])
+				.then(function() {
+					simulator.events.kernelEnd();
+					return simulator;
+				})
+			} else {
+				return simulator;
+			}
+		})		
+		////////////////////////////
 		.then(function() {
 			simulator.events.bufferAquireStart();
 			return Q.all([simulator.buffers.curPoints.release()]);
 		})
+		.then(function() { simulator.events.bufferAquireEnd(); })
+
 		.then(function() {
-			simulator.events.bufferAquireEnd();
-			// TODO: Use a callback argument to finish(), rather than letting it block when we don't
-			// provide one.
-			simulator.cl.queue.finish();
-			return simulator;
-		});
+			simulator.events.bufferAquireStart();
+			return Q.all([simulator.buffers.springsPos.release()]);
+		})
+		.then(function() { simulator.events.bufferAquireEnd(); })
+
+		.then(function() {
+			simulator.events.bufferAquireStart();
+			return Q.all([simulator.buffers.curMidPoints.release()]);
+		})		
+		.then(function() { simulator.events.bufferAquireEnd(); })
+
+		.then(function() {
+			simulator.events.bufferAquireStart();
+			return Q.all([simulator.buffers.midSpringsPos.release()]);
+		})
+		.then(function() { simulator.events.bufferAquireEnd(); })
+
+
+        .then(function () {		
+			simulator.cl.queue.finish(); //FIXME use callback arg
+			return simulator;	
+		});    	
 	}
+
 
 
 	return {
