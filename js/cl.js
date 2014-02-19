@@ -147,7 +147,7 @@ define(["Q"], function (Q) {
 				"release": function() { return Q(); }
 			};
 			bufObj.delete = Q.promised(function() {
-				bufObj.buffer.release();
+				bufObj.release();
 				bufObj.size = 0;
 				return null;
 			});
@@ -180,7 +180,7 @@ define(["Q"], function (Q) {
 			bufObj.delete = Q.promised(function() {
 				return bufObj.release()
 				.then(function() {
-					bufObj.buffer.release();
+					bufObj.release();
 					bufObj.size = 0;
 					return null;
 				})
