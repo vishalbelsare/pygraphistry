@@ -262,6 +262,22 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 	    console.log('gravity', v, '->', scaled);
 	    graph.setPhysics({gravity: scaled});
 	  });
+	  $('#strength').on('change', function (e) {
+	    var v = $(this).val();
+	    var res = 100.0;
+	    for (var i = 0; i < (100-v); i++) res /= 1.3;
+	    var scaled = 1 * res;
+	    console.log('strength', v, '->', scaled);
+	    graph.setPhysics({edgeStrength: scaled});
+	  });
+	  $('#length').on('change', function (e) {
+	    var v = $(this).val();
+	    var res = 100.0;
+	    for (var i = 0; i < (100-v); i++) res /= 1.3;
+	    var scaled = 1 * res;
+	    console.log('length', v, '->', scaled);
+	    graph.setPhysics({edgeDistance: scaled});
+	  });
 	}
 
 
