@@ -93,6 +93,12 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 			workItems.push(workItem[0]);
 			workItems.push(workItem[1]);
 
+            //Cheesey load balancing
+            //TODO benchmark
+            workItems.sort(function (edgeList1, edgeList2) { 
+                return edgeList1.length - edgeList2.length;
+            });
+
             var edgesFlattened = edges.reduce(function(a, b) { return a.concat(b); });
 
             return {
