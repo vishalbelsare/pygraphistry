@@ -17,30 +17,36 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		gl.clearColor(0, 0, 0, 0);
 		renderer.gl = gl;
 
-		renderer.pointProgram = gl.createProgram();
-		renderer.edgeProgram = gl.createProgram();
+        function makeProgram (vertex, fragment) {
+        	var program = gl.createProgram();
+        	return Q.all([
+        	    addShader(gl, vertex, gl.VERTEX_SHADER),
+		        addShader(gl, fragment, gl.FRAGMENT_SHADER)])
+        	.spread(function (vertexShader, fragmentShader) { 
+				gl.attachShader(program, vertexShader);
+				gl.attachShader(program, fragmentShader);
+				gl.linkProgram(program);
+				return program;
+        	});
+        }
 
-		return (
-			Q.all([addShader(gl, "point.vertex", gl.VERTEX_SHADER),
-				   addShader(gl, "point.fragment", gl.FRAGMENT_SHADER)])
-			.spread(function(vertShader, fragShader) {
-				gl.attachShader(renderer.pointProgram, vertShader);
-				gl.attachShader(renderer.pointProgram, fragShader);
-				gl.linkProgram(renderer.pointProgram);
+        var programs = Q.all(['point', 'edge', 'midpoint', 'midedge']
+            .map(function (name) { return makeProgram(name + '.vertex', name + '.fragment'); }));
 
-				return Q.all([addShader(gl, "edge.vertex", gl.VERTEX_SHADER),
-					          addShader(gl, "edge.fragment", gl.FRAGMENT_SHADER)]);
-			})
-			.spread(function(vertShader, fragShader) {
-				gl.attachShader(renderer.edgeProgram, vertShader);
-				gl.attachShader(renderer.edgeProgram, fragShader);
-				gl.linkProgram(renderer.edgeProgram);
+        return programs
+          .spread(function (pointProgram, edgeProgram, midpointProgram, midedgeProgram) {
+          	    renderer.pointProgram = pointProgram;
+          	    renderer.edgeProgram = edgeProgram;
+          	    renderer.midpointProgram = midpointProgram;
+          	    renderer.midedgeProgram = midedgeProgram;
 
 				gl.lineWidth(1);
 
 				renderer.canvas = canvas;
 				renderer.curPointPosLoc = gl.getAttribLocation(renderer.pointProgram, "curPos");
 				renderer.curEdgePosLoc = gl.getAttribLocation(renderer.edgeProgram, "curPos");
+				renderer.curMidPointPosLoc = gl.getAttribLocation(renderer.midpointProgram, "curPos");
+				renderer.curMidEdgePosLoc = gl.getAttribLocation(renderer.midedgeProgram, "curPos");
 				renderer.setCamera2d = setCamera2d.bind(this, renderer);
 				renderer.createBuffer = createBuffer.bind(this, renderer);
 				renderer.render = render.bind(this, renderer);
@@ -52,9 +58,8 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 
 				// TODO: Enlarge the camera by the (size of gl points / 2) so that points are fully
 				// on screen even if they're at the edge of the graph.
-				return renderer.setCamera2d(-0.01, dimensions[0] + 0.01, -0.01, dimensions[1] + 0.01);
-			})
-		);
+				return renderer.setCamera2d(-0.01, dimensions[0] + 0.01, -0.01, dimensions[1] + 0.01);			
+		});
 	}
 
 
@@ -123,13 +128,12 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 			var mvpMat3 = glMatrix.mat3.create();
 			glMatrix.mat3.fromMat2d(mvpMat3, mvpMatrix);
 
-			renderer.gl.useProgram(renderer.pointProgram);
-			var mvpLocation = renderer.gl.getUniformLocation(renderer.pointProgram, "mvp");
-			renderer.gl.uniformMatrix3fv(mvpLocation, false, mvpMat3);
-
-			renderer.gl.useProgram(renderer.edgeProgram);
-			var mvpLocation = renderer.gl.getUniformLocation(renderer.edgeProgram, "mvp");
-			renderer.gl.uniformMatrix3fv(mvpLocation, false, mvpMat3);
+			['point', 'edge', 'midpoint', 'midedge'].forEach(function (name) {
+				var program = renderer[name + 'Program']
+			    renderer.gl.useProgram(program);
+			    var mvpLocation = renderer.gl.getUniformLocation(program, "mvp");
+			    renderer.gl.uniformMatrix3fv(mvpLocation, false, mvpMat3);
+			})
 
 			resolve(renderer);
 		});
@@ -191,15 +195,15 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 			gl.depthFunc(gl.LEQUAL);
 
 			gl.useProgram(renderer.pointProgram);
-
 			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.curPoints.buffer);
 			gl.enableVertexAttribArray(renderer.curPointPosLoc);
 			gl.vertexAttribPointer(renderer.curPointPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
 			gl.drawArrays(gl.POINTS, 0, renderer.numPoints);
 
+			gl.useProgram(renderer.midpointProgram);
 			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.curMidPoints.buffer);
-			gl.enableVertexAttribArray(renderer.curPointPosLoc);
-			gl.vertexAttribPointer(renderer.curPointPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
+			gl.enableVertexAttribArray(renderer.curMidPointPosLoc);
+			gl.vertexAttribPointer(renderer.curMidPointPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
 			gl.drawArrays(gl.POINTS, 0, renderer.numMidPoints);
 			
 
@@ -208,15 +212,15 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				gl.depthFunc(gl.LESS);
 
 				gl.useProgram(renderer.edgeProgram);
-
 				gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.springs.buffer);
 				gl.enableVertexAttribArray(renderer.curEdgePosLoc);
 				gl.vertexAttribPointer(renderer.curEdgePosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
 				gl.drawArrays(gl.LINES, 0, renderer.numEdges * 2);
 			
+				gl.useProgram(renderer.midedgeProgram);
 				gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.midSprings.buffer);
-				gl.enableVertexAttribArray(renderer.curEdgePosLoc);
-				gl.vertexAttribPointer(renderer.curEdgePosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
+				gl.enableVertexAttribArray(renderer.curMidEdgePosLoc);
+				gl.vertexAttribPointer(renderer.curMidEdgePosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
 				gl.drawArrays(gl.LINES, 0, renderer.numMidEdges * 2);				
 
 			}
