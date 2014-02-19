@@ -15,7 +15,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 
 		return renderer.create(canvas, dimensions)
 		.then(function(rend) {
-			return simulator.create(rend, dimensions).then(function(sim) {
+			return simulator.create(rend, dimensions, numSplits).then(function(sim) {
 				var graph = {
 					"renderer": rend,
 					"simulator": sim

@@ -245,7 +245,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			    simulator.renderer.createBuffer(simulator.numEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT),
 			    simulator.renderer.createBuffer(midPoints),
 			    simulator.cl.createBuffer(midPoints.byteLength),
-			    simulator.renderer.createBuffer( (simulator.numMidPoints + (simulator.numEdges/2)) * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT)]);
+			    simulator.renderer.createBuffer(simulator.numMidEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT)]);
 		}
 
 		function bindBuffers (
@@ -297,21 +297,22 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 		function midEdgeKernelParams() {
 			var types = [];
-			if(!cljs.CURRENT_CL) {
-				types = [cljs.uint_t, null, null, null, null , null, null, cljs.types.float_t, cljs.types.float_t];
-			}
-
+			if (!cljs.CURRENT_CL)
+				types = [cljs.types.uint_t, null, null, null, null , null, null, cljs.types.float_t, cljs.types.float_t, null];
+			
 			var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
+			console.log('using', simulator.numSplits, simulator);
 			return simulator.midEdgesKernel.setArgs(
 			    [new Uint32Array([simulator.numSplits]),
 			     simulator.buffers.forwardsEdges.buffer, //only need one direction as guaranteed to be chains
 			     simulator.buffers.forwardsWorkItems.buffer,
-			     simulator.buffers.curPoints.buffer,
+			     simulator.buffers.curPoints.buffer,			     
 			     simulator.buffers.nextMidPoints.buffer,
 			     simulator.buffers.curMidPoints.buffer,
-			     simulator.buffers.springsPos.buffer,
+			     simulator.buffers.midSpringsPos.buffer, //
 			     new Float32Array([1.0]),
-			     new Float32Array([0.1])
+			     new Float32Array([0.1]),
+			     null
 			     ],
 				types);
 		}
@@ -320,7 +321,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		return Q.all(
 			[simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, 
 			 simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, 
-			 simulator.buffers.springsPos]
+			 simulator.buffers.springsPos, simulator.buffers.midSpringsPos]
 		    .filter(function(val) { return !(!val); })
 		    .map(function(val) { return val.delete(); }))
 		.then(reset)

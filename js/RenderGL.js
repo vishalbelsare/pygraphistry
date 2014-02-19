@@ -213,13 +213,11 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				gl.enableVertexAttribArray(renderer.curEdgePosLoc);
 				gl.vertexAttribPointer(renderer.curEdgePosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
 				gl.drawArrays(gl.LINES, 0, renderer.numEdges * 2);
-
-				/*
+			
 				gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.midSprings.buffer);
 				gl.enableVertexAttribArray(renderer.curEdgePosLoc);
 				gl.vertexAttribPointer(renderer.curEdgePosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
-				gl.drawArrays(gl.LINES, 0, renderer.numEdges * 2);
-				*/
+				gl.drawArrays(gl.LINES, 0, renderer.numMidEdges * 2);				
 
 			}
 
