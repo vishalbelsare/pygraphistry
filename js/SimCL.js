@@ -59,7 +59,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			simulator.numPoints = 0;
 			simulator.renderer.numPoints = 0;
 
-			if(simulator.renderer.buffers.curPoints) {
+			if (simulator.renderer.buffers.curPoints) {
 				return simulator.renderer.buffers.curPoints.delete()
 				.then(function() {
 					simulator.renderer.buffers.curPoints = null;
@@ -149,7 +149,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	 * Sets the edge list for the graph
 	 *
 	 * @param simulator - the simulator object to set the edges for
-	 * @param {edgesTyped: {Uint32Array}, numWorkItems: uint, workItemsTyped: {Uint32Array} } forwardEdges - 
+	 * @param {edgesTyped: {Uint32Array}, numWorkItems: uint, workItemsTyped: {Uint32Array} } forwardsEdges - 
 	 *        Edge list as represented in input graph.
 	 *        edgesTyped is buffer where every two items contain the index of the source
 	 *        node for an edge, and the index of the target node of the edge.
@@ -157,18 +157,14 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	 *         one thread: the index of the first edge it should process, and the number of
 	 *         consecutive edges it should process in total.
 	 * @param {edgesTyped: {Uint32Array}, numWorkItems: uint, workItemsTypes: {Uint32Array} } backwardsEdges - 
-	 *        Same as forwardEdges, except reverse edge src/dst and redefine workItems/numWorkItems corresondingly.
+	 *        Same as forwardsEdges, except reverse edge src/dst and redefine workItems/numWorkItems corresondingly.
 	 * @param {Float32Array} midPoints - dense array of control points (packed sequence of nDim structs)
 	 * @returns {Q.promise} a promise for the simulator object
 	 */
-	function setEdges(simulator, forwardEdges, backwardsEdges, midPoints) {
+	function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
 		//edges, workItems
 		var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
 		var elementsPerWorkItem = 2;
-
-		var edges = forwardEdges.edgesTyped;
-		var workItems = forwardEdges.workItemsTyped;
-
 
 		function midPointKernelParams (randValues) {
 			var types = [];
@@ -194,19 +190,23 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		}
 
 		function reset () {
-			simulator.buffers.edges = null;
-			simulator.buffers.workItems = null;
+			simulator.buffers.forwardsEdges = null;
+			simulator.buffers.forwardsWorkItems = null;
 			simulator.buffers.springsPos = null;
+			simulator.buffers.backwardsEdges = null;
+			simulator.buffers.backwardsWorkItems = null;
 
 			simulator.numEdges = 0;
 			simulator.renderer.numEdges = 0;
-			simulator.numWorkItems = 0;
+			simulator.numForwardsWorkItems = 0;
+			simulator.numBackwardsWorkItems = 0;
 
 			simulator.numMidPoints = 0;
 			simulator.renderer.numMidPoints = 0;
 			simulator.numMidEdges = 0;
 			simulator.renderer.numMidEdges = 0;
 
+            //FIXME encapsulate and repeat for midSprings
 			if(simulator.renderer.buffers.springs) {
 				return simulator.renderer.buffers.springs.delete()
 				.then(function() {
@@ -218,16 +218,17 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		}
 
 		function initConstants () {
-			if(edges.length % elementsPerEdge !== 0) {
+			if(forwardsEdges.edgesTyped.length % elementsPerEdge !== 0) {
 				throw new Error("The edge buffer size is invalid (must be a multiple of " + elementsPerEdge + ")");
 			}
-			if(workItems.length % elementsPerWorkItem !== 0) {
+			if(forwardsEdges.workItemsTyped.length % elementsPerWorkItem !== 0) {
 				throw new Error("The work item buffer size is invalid (must be a multiple of " + elementsPerWorkItem + ")");
 			}
 
-			simulator.numEdges = edges.length / elementsPerEdge;
+			simulator.numEdges = forwardsEdges.edgesTyped.length / elementsPerEdge;
 			simulator.renderer.numEdges = simulator.numEdges;
-			simulator.numWorkItems = workItems.length / elementsPerWorkItem;
+			simulator.numForwardsWorkItems = forwardsEdges.workItemsTyped.length / elementsPerWorkItem;
+			simulator.numBackwardsWorkItems = backwardsEdges.workItemsTyped.length / elementsPerWorkItem;
 
 			simulator.numMidPoints = midPoints.length / simulator.elementsPerPoint;
 			simulator.renderer.numMidPoints = simulator.numMidPoints;
@@ -237,19 +238,26 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 		function createBuffers () {
             return Q.all([
-			    simulator.cl.createBuffer(edges.byteLength),
-			    simulator.cl.createBuffer(workItems.byteLength),
+			    simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength),
+			    simulator.cl.createBuffer(forwardsEdges.workItemsTyped.byteLength),
+			    simulator.cl.createBuffer(backwardsEdges.edgesTyped.byteLength),
+			    simulator.cl.createBuffer(backwardsEdges.workItemsTyped.byteLength),
 			    simulator.renderer.createBuffer(simulator.numEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT),
 			    simulator.renderer.createBuffer(midPoints),
 			    simulator.cl.createBuffer(midPoints.byteLength),
 			    simulator.renderer.createBuffer( (simulator.numMidPoints + (simulator.numEdges/2)) * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT)]);
 		}
 
-		function bindBuffers (edgesBuffer, workItemsBuffer, springsVBO, 
+		function bindBuffers (
+			forwardsEdgesBuffer, forwardsWorkItemsBuffer,
+			backwardsEdgesBuffer, backwardsWorkItemsBuffer,  
+			springsVBO, 
 			midPointsVBO, nextMidPointsBuffer, midSpringsVBO) {
 
-			simulator.buffers.edges = edgesBuffer;
-			simulator.buffers.workItems = workItemsBuffer;
+			simulator.buffers.forwardsEdges = forwardsEdgesBuffer;
+			simulator.buffers.forwardsWorkItems = forwardsWorkItemsBuffer;
+			simulator.buffers.backwardsEdges = backwardsEdgesBuffer;
+			simulator.buffers.backwardsWorkItems = backwardsWorkItemsBuffer;
 			simulator.renderer.buffers.springs = springsVBO;
 
 			simulator.renderer.buffers.curMidPoints = midPointsVBO;
@@ -257,33 +265,33 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			simulator.renderer.buffers.midSprings = midSpringsVBO;
 
 			return Q.all([simulator.cl.createBufferGL(springsVBO),
-				          simulator.buffers.edges.write(edges),
-						  simulator.buffers.workItems.write(workItems),
+				          simulator.buffers.forwardsEdges.write(forwardsEdges.edgesTyped),
+						  simulator.buffers.forwardsWorkItems.write(forwardsEdges.workItemsTyped),
+				          simulator.buffers.backwardsEdges.write(backwardsEdges.edgesTyped),
+						  simulator.buffers.backwardsWorkItems.write(backwardsEdges.workItemsTyped),
 						  simulator.cl.createBufferGL(midPointsVBO),
 						  simulator.cl.createBufferGL(midSpringsVBO)]);
 		}
-
+		
 		function edgeKernelParams(springsBuffer, midPointsBuf, midSpringsBuffer) {
 			simulator.buffers.springsPos = springsBuffer;
 			simulator.buffers.midSpringsPos = midSpringsBuffer;
 
 			var types = [];
 			if(!cljs.CURRENT_CL) {
-				types = [null, null , null, null, null, cljs.types.float_t, cljs.types.float_t];
+				types = [null, null , null, null, null, cljs.types.float_t, cljs.types.float_t, null];
 			}
 
 			var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
 			return simulator.edgesKernel.setArgs(
-			    [simulator.buffers.edges.buffer,
-			     simulator.buffers.workItems.buffer,
-			     simulator.buffers.nextPoints.buffer,
-			     simulator.buffers.curPoints.buffer,
+			    [null, //forwards/backwards picked dynamically
+			     null, //forwards/backwards picked dynamically
+			     null, //simulator.buffers.curPoints.buffer then simulator.buffers.nextPoints.buffer
+			     null, //simulator.buffers.nextPoints.buffer then simulator.buffers.curPoints.buffer
 			     simulator.buffers.springsPos.buffer,
-			     // new Float32Array([0.2]),
-			     // new Float32Array([40])
 			     new Float32Array([1.0]),
-			     new Float32Array([0.1])
-			     ],
+			     new Float32Array([0.1]),
+			     null],
 				types);
 		}
 
@@ -296,14 +304,12 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
 			return simulator.midEdgesKernel.setArgs(
 			    [new Uint32Array([simulator.numSplits]),
-			     simulator.buffers.edges.buffer,
-			     simulator.buffers.workItems.buffer,
-			     simulator.buffers.nextPoints.buffer,
-			     simulator.buffers.nextMidPoints.buffer,
+			     simulator.buffers.forwardsEdges.buffer, //only need one direction as guaranteed to be chains
+			     simulator.buffers.forwardsWorkItems.buffer,
 			     simulator.buffers.curPoints.buffer,
+			     simulator.buffers.nextMidPoints.buffer,
+			     simulator.buffers.curMidPoints.buffer,
 			     simulator.buffers.springsPos.buffer,
-			     // new Float32Array([0.2]),
-			     // new Float32Array([40])
 			     new Float32Array([1.0]),
 			     new Float32Array([0.1])
 			     ],
@@ -311,13 +317,17 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		}
 
 		// Delete all the existing edge buffers
-		return Q.all([simulator.buffers.edges, simulator.buffers.workItems, simulator.buffers.springsPos]
-		.filter(function(val) { return !(!val); }).map(function(val) { return val.delete(); }))
+		return Q.all(
+			[simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, 
+			 simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, 
+			 simulator.buffers.springsPos]
+		    .filter(function(val) { return !(!val); })
+		    .map(function(val) { return val.delete(); }))
 		.then(reset)
 		.then(initConstants)
 		.then(createBuffers)
 		.spread(bindBuffers)
-		.spread(function (springsBuffer, _, _, midPointsBuf, midSpringsBuffer) {
+		.spread(function (springsBuffer, _, _, _, _, midPointsBuf, midSpringsBuffer) {
 			simulator.buffers.curMidPoints = midPointsBuf;
 			return midPointKernelParams(simulator.buffers.randValues)
 			  .then(function () { return [springsBuffer, midPointsBuf, midSpringsBuffer]; });
@@ -336,6 +346,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 		    var gravity = cfg.gravity ? new Float32Array([cfg.gravity]) : null;
 		    var gravity_t = cfg.gravity ? cljs.types.float_t : null;
+
+		    console.log('physics');
 
 		    simulator.pointKernel.setArgs(
 		     [null, null, null, null, null, null,
@@ -361,8 +373,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			var edgeStrength_t = cfg.edgeStrength ? cljs.types.float_t : null;
 
 			simulator.edgesKernel.setArgs(
-				[null, null, null, null, null, edgeStrength, edgeDistance],
-				[null, null, null, null, null, edgeStrength_t, edgeDistance_t]);
+				[null, null, null, null, null, edgeStrength, edgeDistance, null],
+				[null, null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
 
 			simulator.midEdgesKernel.setArgs(
 				[null, null, null, null, null, null, null, edgeStrength, edgeDistance],
@@ -418,18 +430,25 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		})
 		.then(function() { simulator.events.kernelEnd(); })
 		.then(function () { return copyBufSeq(simulator.buffers.nextPoints, simulator.buffers.curPoints); })
+
+
 		.then(function() {
 			if(simulator.numEdges > 0) {
-				simulator.events.kernelStart();
-
-				simulator.edgesKernel.setArgs(
-				    [null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
-				    [null, null, null, null, null, null, null, cljs.types.uint_t]);
-
-				return simulator.edgesKernel.call(simulator.numWorkItems, [])
-				.then(function() {
-					simulator.events.kernelEnd();
-					return simulator; })
+				function edgeKernelSeq (edges, workItems, numWorkItems, fromPoints, toPoints) {
+				    simulator.events.kernelStart();
+				    simulator.edgesKernel.setArgs(
+				        [edges.buffer, workItems.buffer, fromPoints.buffer, toPoints.buffer, null, null, null, new Uint32Array([stepNumber])],
+				        [null, null, null, null, null, null, null, cljs.types.uint_t]);
+				    return simulator.edgesKernel.call(numWorkItems, [])
+				        .then(function() { simulator.events.kernelEnd(); });
+				}
+				return edgeKernelSeq(
+					simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
+					simulator.buffers.curPoints, simulator.buffers.nextPoints)
+				.then(function () { 				  	
+				  	 return edgeKernelSeq(
+				  		simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
+				  		simulator.buffers.nextPoints, simulator.buffers.curPoints); });
 			} else {
 				return simulator;
 			}
@@ -448,15 +467,12 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	    .then(function () { simulator.events.kernelEnd(); })
 		.then(function () { return copyBufSeq(simulator.buffers.nextMidPoints, simulator.buffers.curMidPoints); })
 		.then(function () {
-			if(simulator.numEdges > 0) {
+			if (simulator.numEdges > 0) {
 				simulator.events.kernelStart();
-
-                //FIXME args
 				simulator.midEdgesKernel.setArgs(
-				[null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
-				[null, null, null, null, null, null, null, null, null, cljs.types.uint_t]
-				);
-				return simulator.midEdgesKernel.call(simulator.numWorkItems, [])
+				    [null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
+				    [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
+				return simulator.midEdgesKernel.call(simulator.numForwardsWorkItems, [])
 				.then(function() {
 					simulator.events.kernelEnd();
 					return simulator;
