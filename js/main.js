@@ -22,7 +22,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 
 	var graph = null,
 		animating = null,
-		numPoints = 10,//1024,//2048,//16384,
+		numPoints = 1000,//1024,//2048,//16384,
 		num,
 		numEdges = numPoints,
 		dimensions = [1,1]; //[960,960];
