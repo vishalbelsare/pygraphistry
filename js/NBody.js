@@ -125,7 +125,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 		    	}
 		    });
 		}
-		console.debug('Number of control points:', edges.length * graph.numSplits);
+		console.debug('Number of control points:', edges.length * graph.numSplits, graph.numSplits);
 
 		return graph.simulator.setEdges(forwardEdges, backwardsEdges, midPoints)
 		.then(function() { return graph; });

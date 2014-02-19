@@ -22,7 +22,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 
 	var graph = null,
 		animating = null,
-		numPoints = 5,//1024,//2048,//16384,
+		numPoints = 10,//1024,//2048,//16384,
 		num,
 		numEdges = numPoints,
 		dimensions = [1,1]; //[960,960];
@@ -130,7 +130,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 	function setup() {
 		console.log("Running Naive N-body simulation");
 
-		return NBody.create(SimCL, RenderGL, $("#simulation")[0], dimensions, 2)
+		return NBody.create(SimCL, RenderGL, $("#simulation")[0], dimensions, 3)
 		.then(function(createdGraph) {
 			graph = createdGraph;
 			console.log("N-body graph created.");
