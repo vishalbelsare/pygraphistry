@@ -1,4 +1,7 @@
 define(["Q", "glMatrix"], function(Q, glMatrix) {
+	
+	var STEP_NUMBER_ON_CHANGE = 30;
+
 	var elementsPerPoint = 2;
 
 	/**
@@ -23,6 +26,8 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 				graph.setPoints = setPoints.bind(this, graph);
 				graph.setEdges = setEdges.bind(this, graph);
 				graph.setPhysics = setPhysics.bind(this, graph);
+				graph.setVisible = setVisible.bind(this, graph);
+				graph.setLocked = setLocked.bind(this, graph);
 				graph.tick = tick.bind(this, graph);
 				graph.stepNumber = 0;				
 				graph.dimensions = dimensions;
@@ -132,13 +137,18 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 	});
 
 	function setPhysics(graph, opts) {
-	    graph.simulator.setPhysics(opts);
-	    // TODO: Should we reset the stepNumber at the same time? It would allow our new forces to
-	    // be applied at full-strength, rather than modulated by the current alpha value. However,
-	    // it also means the forces will jump to higher values (due to the lower alpha) even if we
-	    // decrease the physical forces a small bit.
+		graph.stepNumber = STEP_NUMBER_ON_CHANGE;
+	    graph.simulator.setPhysics(opts, graph.stepNumber);
 	}
 
+	function setVisible(graph, opts) {
+		graph.renderer.setVisible(opts);
+	}
+
+	function setLocked(graph, opts) {
+		//TODO reset step number?		
+		graph.simulator.setLocked(opts, graph.stepNumber);
+	}
 
 	// Turns an array of vec3's into a Float32Array with elementsPerPoint values for each element in
 	// the input array.

@@ -2,7 +2,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	//Q.longStackSupport = true;
 	var randLength = 73;
 
-	function create(renderer, dimensions, numSplits) {
+	function create(renderer, dimensions, numSplits, locked) {
 		return cljs.create(renderer.gl)
 		.then(function(cl) {
 			// Compile the WebCL kernels
@@ -23,11 +23,15 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				simObj.tick = tick.bind(this, simObj);
 				simObj.setPoints = setPoints.bind(this, simObj);
 				simObj.setEdges = setEdges.bind(this, simObj);
+			    simObj.setLocked = setLocked.bind(this, simObj);
 				simObj.setPhysics = setPhysics.bind(this, simObj);
 				simObj.dimensions = dimensions;
 				simObj.numSplits = numSplits;
 				simObj.numPoints = 0;
 				simObj.numEdges = 0;
+				simObj.locked = $.extend(
+					{lockPoints: false, lockMidpoints: true, lockEdges: false, lockMidedges: true}, 
+					locked || {});
 				simObj.events = {
 					"kernelStart": function() { },
 					"kernelEnd":  function() { },
@@ -301,7 +305,6 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				types = [cljs.types.uint_t, null, null, null, null , null, null, cljs.types.float_t, cljs.types.float_t, null];
 			
 			var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
-			console.log('using', simulator.numSplits, simulator);
 			return simulator.midEdgesKernel.setArgs(
 			    [new Uint32Array([simulator.numSplits]),
 			     simulator.buffers.forwardsEdges.buffer, //only need one direction as guaranteed to be chains
@@ -337,8 +340,34 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		.then(midEdgeKernelParams)
 	}
 
+	function setLocked(simulator, cfg, stepNumber) {
+		cfg = cfg || {};
+		stepNumber = stepNumber || 0;
+		$.extend(simulator.locked, cfg);
 
-	function setPhysics(simulator, cfg) {
+		if (cfg.lockPoints) 
+			simulator.pointKernel.setArgs(
+		        [null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
+		        [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
+
+	    if (cfg.lockMidpoints)
+			simulator.midPointKernel.setArgs(
+		        [null, null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
+		        [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
+
+	    if (cfg.lockEdges)
+			simulator.edgesKernel.setArgs(
+				[null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
+				[null, null, null, null, null, null, null, cljs.types.uint_t]);
+
+	    if (cfg.midEdgesKernel)
+			simulator.edgesKernel.setArgs(
+				[null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
+				[null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
+	}
+
+	function setPhysics(simulator, cfg, stepNumber) {
+		stepNumber = stepNumber || 0;
 	    cfg = cfg || {};
 
 	    if(cfg.charge || cfg.gravity) {
@@ -348,21 +377,13 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		    var gravity = cfg.gravity ? new Float32Array([cfg.gravity]) : null;
 		    var gravity_t = cfg.gravity ? cljs.types.float_t : null;
 
-		    console.log('physics');
-
 		    simulator.pointKernel.setArgs(
-		     [null, null, null, null, null, null,
-		         charge, gravity, null, null],
-		     [null, null, null, null, null, null,
-		         charge_t, gravity_t, null, null]
-		     );
+		        [null, null, null, null, null, null, charge, gravity, null, new Uint32Array([stepNumber])],
+		        [null, null, null, null, null, null, charge_t, gravity_t, null, cljs.types.uint_t]);
 
 		    simulator.midPointKernel.setArgs(
-		     [null, null, null, null, null, null, null,
-		         charge, gravity, null, null],
-		     [null, null, null, null, null, null, null,
-		         charge_t, gravity_t, null, null]
-		     );
+		        [null, null, null, null, null, null, null, charge, gravity, null, new Uint32Array([stepNumber])],
+		        [null, null, null, null, null, null, null, charge_t, gravity_t, null, cljs.types.uint_t]);
 
 		}
 
@@ -374,13 +395,12 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			var edgeStrength_t = cfg.edgeStrength ? cljs.types.float_t : null;
 
 			simulator.edgesKernel.setArgs(
-				[null, null, null, null, null, edgeStrength, edgeDistance, null],
-				[null, null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
+				[null, null, null, null, null, edgeStrength, edgeDistance, new Uint32Array([stepNumber])],
+				[null, null, null, null, null, edgeStrength_t, edgeDistance_t, cljs.types.uint_t]);
 
 			simulator.midEdgesKernel.setArgs(
-				[null, null, null, null, null, null, null, edgeStrength, edgeDistance],
-				[null, null, null, null, null, null, null, edgeStrength_t, edgeDistance_t]);
-
+				[null, null, null, null, null, null, null, edgeStrength, edgeDistance, new Uint32Array([stepNumber])],
+				[null, null, null, null, null, null, null, edgeStrength_t, edgeDistance_t, cljs.types.uint_t]);
 		}
 	}
 
@@ -419,20 +439,19 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 		if(simulator.numPoints < 1)
 			return Q(simulator);
 		
-	    simulator.pointKernel.setArgs(
-	        [null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
-	        [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
-
 	    return Q()
+	    .then(function () {
+		    simulator.pointKernel.setArgs(
+		        [null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
+		        [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
+	    })
 	    .then(function () { return acquireBufSeq(simulator.buffers.curPoints); })
 		.then(function() {
 			simulator.events.kernelStart();
-			return simulator.pointKernel.call(simulator.numPoints, []);
+			return simulator.locked.lockPoints ? false : simulator.pointKernel.call(simulator.numPoints, []);
 		})
 		.then(function() { simulator.events.kernelEnd(); })
 		.then(function () { return copyBufSeq(simulator.buffers.nextPoints, simulator.buffers.curPoints); })
-
-
 		.then(function() {
 			if(simulator.numEdges > 0) {
 				function edgeKernelSeq (edges, workItems, numWorkItems, fromPoints, toPoints) {
@@ -443,13 +462,17 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				    return simulator.edgesKernel.call(numWorkItems, [])
 				        .then(function() { simulator.events.kernelEnd(); });
 				}
-				return edgeKernelSeq(
-					simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
-					simulator.buffers.curPoints, simulator.buffers.nextPoints)
-				.then(function () { 				  	
-				  	 return edgeKernelSeq(
-				  		simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
-				  		simulator.buffers.nextPoints, simulator.buffers.curPoints); });
+				if (simulator.locked.lockEdges) {
+					return simulator;
+				} else {
+					return edgeKernelSeq(
+						simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
+						simulator.buffers.curPoints, simulator.buffers.nextPoints)
+					.then(function () { 				  	
+					  	 return edgeKernelSeq(
+					  		simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
+					  		simulator.buffers.nextPoints, simulator.buffers.curPoints); });
+				}
 			} else {
 				return simulator;
 			}
@@ -463,12 +486,12 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	    .then(function () { return acquireBufSeq(simulator.buffers.curMidPoints); })
         .then(function () {
 			simulator.events.kernelStart();
-			return simulator.midPointKernel.call(simulator.numMidPoints, []);  // APPLY MID-FORCES
+			return simulator.locked.lockMidpoints ? simulator : simulator.midPointKernel.call(simulator.numMidPoints, []);  // APPLY MID-FORCES
 	    })
 	    .then(function () { simulator.events.kernelEnd(); })
 		.then(function () { return copyBufSeq(simulator.buffers.nextMidPoints, simulator.buffers.curMidPoints); })
 		.then(function () {
-			if (simulator.numEdges > 0) {
+			if (simulator.numEdges > 0 && !simulator.locked.lockMidedges) {
 				simulator.events.kernelStart();
 				simulator.midEdgesKernel.setArgs(
 				    [null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
