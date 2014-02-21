@@ -30,43 +30,16 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 
 	// Given a set of graph data, load the points into the N-body simulation
 	function drawGraph (clGraph, graphFile) {
-		// var t0 = new Date().getTime();
-
-		// var check = {};
-		// var count = 0;
-		// for (var i = 0; i < graphFile.edges.length; i++) {
-		// 	var node = graphFile.edges[i];
-		// 	if (!check[node]) {
-		// 		check[node] = true;
-		// 		count++;
-		// 	}
-		// }
-
-		// // var t1 = new Date().getTime();
-
-		// var buff = new Float32Array(count * 2);
-		// var count2 = 0;
-		// for (var v in check) {
-		// 	buff[count2++] = Math.random() * clGraph.dimensions[0];
-		// 	buff[count2++] = Math.random() * clGraph.dimensions[1];
-		// }
-
-		// var t2 = new Date().getTime();
-		// console.log('toNodes', t1 - t0, 'ms', 'toFloats', t2 - t1, 'ms', 'nodes', count2);
-
-		// var
 
 		var points = createPoints(graphFile.numNodes, clGraph.dimensions);
 
 		return clGraph.setPoints(points)
-		.then(function() {
-			return clGraph.setEdges([[0,1], [1,2]]);
+		.then(function() {			
+			return clGraph.setEdges(graphFile.edges);
 		})
 		.then(function() {
 			return clGraph.tick();
 		});
-
-		//console.log(buff);
     }
 
 

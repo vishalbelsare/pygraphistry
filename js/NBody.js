@@ -50,7 +50,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 	function setPoints(graph, points) {
 		// FIXME: If there is already data loaded, we should to free it before loading new data
 		if(!(points instanceof Float32Array)) {
-			points = _toFloatArray(points);
+			points = _toTypedArray(points, Float32Array);
 		}
 
 		graph.__pointsHostBuffer = points;
@@ -65,16 +65,25 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 
 	var setEdges = Q.promised(function(graph, edges) {
 
-		console.debug("Number of edges:", edges.length);
-
 		if (edges.length < 1)
 			return Q.fcall(function() { return graph; });
-		
-		var edgesFlipped = edges.map(function(val, idx, arr) {
-			return [val[1], val[0]];
-		});
 
-        function package(edgeList) {
+		if (!(edges instanceof Uint32Array)) {
+			edges = _toTypedArray(edges, Uint32Array);
+		}
+
+		console.debug("Number of edges:", edges.length / 2);
+		
+		var edgesFlipped = new Uint32Array(edges.length);
+		for (var i = 0; i < edges.length; i++)
+			edgesFlipped[i] = edges[edges.length - 1 - i];
+
+        function package(edges) {
+
+        	var edgeList = new Array(edges.length / 2);
+        	for (var i = 0; i < edges.length; i++)
+        		edgeList[i / 2] = [edges[i], edges[i + 1]];
+
         	edgeList.sort(function(a, b) {
 			    return a[0] < b[0] ? -1 
 			        : a[0] > b[0] ? 1
@@ -104,10 +113,14 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
                 return edgeList1.length - edgeList2.length;
             });
 
-            var edgesFlattened = edges.reduce(function(a, b) { return a.concat(b); });
+            var edgesFlattened = new Uint32Array(edges.length);
+            for (var i = 0; i < edgeList.length; i++) {
+            	edgesFlattened[2 * i] = edgeList[i][0];
+            	edgesFlattened[2 * i + 1] = edgeList[i][1];
+            }
 
             return {
-                edgesTyped: new Uint32Array(edgesFlattened),
+                edgesTyped: edgesFlattened,
                 numWorkItems: workItems.length,
                 workItemsTyped: new Uint32Array(workItems)
             };
@@ -117,18 +130,20 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
         var backwardsEdges = package(edgesFlipped);
 
         var nDim = graph.dimensions.length;
-		var midPoints = new Float32Array(edges.length * graph.numSplits * nDim || 1);
+		var midPoints = new Float32Array((edges.length / 2) * graph.numSplits * nDim || 1);
 		if (graph.numSplits) {
-		    edges.forEach(function (edge, i) {
+			for (var i = 0; i < edges.length; i+=2) {
+				var src = edges[i];
+				var dst = edges[i + 1];
 		    	for (var d = 0; d < nDim; d++) {
-		    		var start = graph.__pointsHostBuffer[edge[0] * nDim + d];
-		    		var end = graph.__pointsHostBuffer[edge[1] * nDim + d];
+		    		var start = graph.__pointsHostBuffer[src * nDim + d];
+		    		var end = graph.__pointsHostBuffer[dst * nDim + d];
 		    		var step = (end - start) / (graph.numSplits + 1);
 		    	    for (var q = 0; q < graph.numSplits; q++) {
 		    	    	midPoints[(i * graph.numSplits + q) * nDim + d] = start + step * (q + 1);
 		    		}
 		    	}
-		    });
+		    }
 		}
 		console.debug('Number of control points:', edges.length * graph.numSplits, graph.numSplits);
 
@@ -152,8 +167,8 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 
 	// Turns an array of vec3's into a Float32Array with elementsPerPoint values for each element in
 	// the input array.
-	function _toFloatArray(array) {
-		var floats = new Float32Array(array.length * elementsPerPoint);
+	function _toTypedArray(array, cons) {
+		var floats = new cons(array.length * elementsPerPoint);
 
 		for(var i = 0; i < array.length; i++) {
 			var ii = i * elementsPerPoint;
