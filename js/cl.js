@@ -21,34 +21,61 @@ define(["Q"], function (Q) {
 		}
 		var platform = platforms[0];
 
-		var devices = platform.getDevices(cl.DEVICE_TYPE_GPU);
-		if (devices.length === 0) {
-			throw new Error("No WebCL devices of specified type (" + cl.DEVICE_TYPE_GPU + ") found");
+        //sort by number of compute units and use first non-failing device
+        var devices = platform.getDevices(cl.DEVICE_TYPE_ALL).map(function (d) {
+
+            function typeToString (v) {
+                return v == 2 ? 'CPU'
+                    : v == 4 ? 'GPU'
+                    : v == 8 ? 'ACCELERATOR'
+                    : ('unknown type: ' + v);
+            }
+
+            var workItems = d.getInfo(cl.DEVICE_MAX_WORK_ITEM_SIZES);
+
+            return {
+                device: d,
+                DEVICE_TYPE: typeToString(d.getInfo(cl.DEVICE_TYPE)),
+                DEVICE_MAX_WORK_ITEM_SIZES: workItems,
+                computeUnits: workItems.reduce(function (a, b) { return a * b})
+            };
+        });
+        devices.sort(function (a, b) { return b.computeUnits - a.computeUnits; });
+        
+		var deviceWrapper;
+		var err = devices.length ? 
+            null : new Error("No WebCL devices of specified type (" + cl.DEVICE_TYPE_GPU + ") found");
+		for (var i = 0; i < devices.length; i++) {			
+            var wrapped = devices[i];
+			try {
+				wrapped.context = _createContext(cl, gl, platform, [wrapped.device])
+				if (wrapped.context === null) {
+					throw Error("Error creating WebCL context");
+				}
+				wrapped.queue = wrapped.context.createCommandQueue(wrapped.device, null);
+			} catch (e) {
+                console.debug("Skipping device due to error", i, wrapped, e);
+				err = e;
+				continue;
+			}			
+			deviceWrapper = wrapped;
+			break;
 		}
-		var device = devices[0];
+        if (!deviceWrapper) {
+            throw err;
+        }
 
-		var context = _createContext(cl, gl, platform, [devices[0]])
-		if (context === null) {
-			throw new Error("Error creating WebCL context");
-		}
-
-		var queue = context.createCommandQueue(device, null);
-
-		// Maximum number of work-items in a work-group executing a kernel on a single compute unit,
-		// using the data parallel execution model.
-		var maxThreads = device.getInfo(cl.DEVICE_MAX_WORK_GROUP_SIZE);
-		// The number of parallel compute units on the OpenCL device. A work-group executes on a
-		// single compute unit.
-		var numCores = device.getInfo(cl.DEVICE_MAX_COMPUTE_UNITS);
+        console.debug("Device", deviceWrapper);
 
 		var clObj = {
 			"cl": cl,
-			"context": context,
-			"device": device,
-			"queue": queue,
-			"maxThreads": maxThreads,
-			"numCores": numCores
+			"context": deviceWrapper.context,
+			"device": deviceWrapper.device,
+			"queue": deviceWrapper.queue,
+			"maxThreads": deviceWrapper.device.getInfo(cl.DEVICE_MAX_WORK_GROUP_SIZE),
+			"numCores": deviceWrapper.device.getInfo(cl.DEVICE_MAX_COMPUTE_UNITS)
 		};
+
 		clObj.compile = compile.bind(this, clObj);
 		clObj.createBuffer = createBuffer.bind(this, clObj);
 		clObj.createBufferGL = createBufferGL.bind(this, clObj);
