@@ -6,7 +6,14 @@ define(["jQuery", "Q"], function($, Q) {
 	}
 
 
+	// Extends target by adding the attributes of one or more other objects to it
+	function extend(target, object1, objectN) {
+		return $.extend.apply($, arguments);
+	}
+
+
 	return {
-		"getSource": getSource
+		"getSource": getSource,
+		"extend": extend
 	};
 });

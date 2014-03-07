@@ -1,5 +1,7 @@
 define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 	function create(canvas, dimensions, visible) {
+		visible = visible || {};
+
 		var renderer = {};
 
 		// The dimensions of a canvas, by default, do not accurately reflect its size on screen (as
@@ -43,10 +45,13 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				gl.lineWidth(1);
 
 				renderer.canvas = canvas;
+
 				renderer.curPointPosLoc = gl.getAttribLocation(renderer.pointProgram, "curPos");
 				renderer.curEdgePosLoc = gl.getAttribLocation(renderer.edgeProgram, "curPos");
 				renderer.curMidPointPosLoc = gl.getAttribLocation(renderer.midpointProgram, "curPos");
 				renderer.curMidEdgePosLoc = gl.getAttribLocation(renderer.midedgeProgram, "curPos");
+				renderer.curCurvesPosLoc = gl.get
+
 				renderer.setCamera2d = setCamera2d.bind(this, renderer);
 				renderer.createBuffer = createBuffer.bind(this, renderer);
 				renderer.render = render.bind(this, renderer);
@@ -55,14 +60,14 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				renderer.numPoints = 0;
 				renderer.numEdges = 0;
 				renderer.numMidPoints = 0;
-				renderer.visible = $.extend(
-				    {showPoints: true, showEdges: true, showMidpoints: false, showMidedges: false}, 
-				    visible || {});
+				renderer.visible = util.extend(
+				    {showPoints: true, showEdges: true, showMidpoints: false, showMidedges: false},
+				    visible );
 				renderer.setVisible = setVisible.bind(this, renderer);
 
 				// TODO: Enlarge the camera by the (size of gl points / 2) so that points are fully
 				// on screen even if they're at the edge of the graph.
-				return renderer.setCamera2d(-0.01, dimensions[0] + 0.01, -0.01, dimensions[1] + 0.01);			
+				return renderer.setCamera2d(-0.01, dimensions[0] + 0.01, -0.01, dimensions[1] + 0.01);
 		});
 	}
 
@@ -185,7 +190,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 	}
 
 	function setVisible(renderer, cfg) {
-		$.extend(renderer.visible, cfg);
+		util.extend(renderer.visible, cfg);
 	}
 
 
@@ -218,7 +223,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				gl.vertexAttribPointer(renderer.curMidPointPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
 				gl.drawArrays(gl.POINTS, 0, renderer.numMidPoints);
 			}
-			
+
 
 			if(renderer.numEdges > 0) {
 				// Make sure to draw the edges behind the points
@@ -231,13 +236,13 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 					gl.vertexAttribPointer(renderer.curEdgePosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
 					gl.drawArrays(gl.LINES, 0, renderer.numEdges * 2);
 				}
-			
+
 				if (renderer.visible.showMidedges) {
 					gl.useProgram(renderer.midedgeProgram);
 					gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.midSprings.buffer);
 					gl.enableVertexAttribArray(renderer.curMidEdgePosLoc);
 					gl.vertexAttribPointer(renderer.curMidEdgePosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
-					gl.drawArrays(gl.LINES, 0, renderer.numMidEdges * 2);				
+					gl.drawArrays(gl.LINES, 0, renderer.numMidEdges * 2);
 				}
 
 			}
