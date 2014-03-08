@@ -19,75 +19,86 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		gl.clearColor(0, 0, 0, 0);
 		renderer.gl = gl;
 
-        function makeProgram (vertex, fragment) {
-        	var program = gl.createProgram();
-        	return Q.all([
-        	    addShader(gl, vertex, gl.VERTEX_SHADER),
-		        addShader(gl, fragment, gl.FRAGMENT_SHADER)])
-        	.spread(function (vertexShader, fragmentShader) { 
-				gl.attachShader(program, vertexShader);
-				gl.attachShader(program, fragmentShader);
-				gl.linkProgram(program);
-				return program;
-        	});
-        }
+        renderer.createProgram = createProgram.bind(this, renderer);
 
-        var programs = Q.all(['point', 'edge', 'midpoint', 'midedge']
-            .map(function (name) { return makeProgram(name + '.vertex', name + '.fragment'); }));
+        return Q.all(['point', 'edge', 'midpoint', 'midedge'].map(function (name) {
+            return renderer.createProgram(name + '.vertex', name + '.fragment');
+        }))
+        .spread(function (pointProgram, edgeProgram, midpointProgram, midedgeProgram) {
+            renderer.pointProgram = pointProgram.glProgram;
+            renderer.edgeProgram = edgeProgram.glProgram;
+            renderer.midpointProgram = midpointProgram.glProgram;
+            renderer.midedgeProgram = midedgeProgram.glProgram;
 
-        return programs
-          .spread(function (pointProgram, edgeProgram, midpointProgram, midedgeProgram) {
-          	    renderer.pointProgram = pointProgram;
-          	    renderer.edgeProgram = edgeProgram;
-          	    renderer.midpointProgram = midpointProgram;
-          	    renderer.midedgeProgram = midedgeProgram;
+            gl.lineWidth(1);
 
-				gl.lineWidth(1);
+            renderer.canvas = canvas;
 
-				renderer.canvas = canvas;
+            renderer.curPointPosLoc = gl.getAttribLocation(renderer.pointProgram, "curPos");
+            renderer.curEdgePosLoc = gl.getAttribLocation(renderer.edgeProgram, "curPos");
+            renderer.curMidPointPosLoc = gl.getAttribLocation(renderer.midpointProgram, "curPos");
+            renderer.curMidEdgePosLoc = gl.getAttribLocation(renderer.midedgeProgram, "curPos");
+            renderer.curCurvesPosLoc = gl.get
 
-				renderer.curPointPosLoc = gl.getAttribLocation(renderer.pointProgram, "curPos");
-				renderer.curEdgePosLoc = gl.getAttribLocation(renderer.edgeProgram, "curPos");
-				renderer.curMidPointPosLoc = gl.getAttribLocation(renderer.midpointProgram, "curPos");
-				renderer.curMidEdgePosLoc = gl.getAttribLocation(renderer.midedgeProgram, "curPos");
-				renderer.curCurvesPosLoc = gl.get
+            renderer.setCamera2d = setCamera2d.bind(this, renderer);
+            renderer.createBuffer = createBuffer.bind(this, renderer);
+            renderer.render = render.bind(this, renderer);
+            renderer.buffers = {};
+            renderer.elementsPerPoint = 2;
+            renderer.numPoints = 0;
+            renderer.numEdges = 0;
+            renderer.numMidPoints = 0;
 
-				renderer.setCamera2d = setCamera2d.bind(this, renderer);
-				renderer.createBuffer = createBuffer.bind(this, renderer);
-				renderer.render = render.bind(this, renderer);
-				renderer.buffers = {};
-				renderer.elementsPerPoint = 2;
-				renderer.numPoints = 0;
-				renderer.numEdges = 0;
-				renderer.numMidPoints = 0;
-				renderer.visible = util.extend(
-				    {showPoints: true, showEdges: true, showMidpoints: false, showMidedges: false},
-				    visible );
-				renderer.setVisible = setVisible.bind(this, renderer);
+            renderer.visible = util.extend(
+                {showPoints: true, showEdges: true, showMidpoints: false, showMidedges: false},
+                visible );
 
-				// TODO: Enlarge the camera by the (size of gl points / 2) so that points are fully
-				// on screen even if they're at the edge of the graph.
-				return renderer.setCamera2d(-0.01, dimensions[0] + 0.01, -0.01, dimensions[1] + 0.01);
+            renderer.setVisible = setVisible.bind(this, renderer);
+
+            // TODO: Enlarge the camera by the (size of gl points / 2) so that points are fully
+            // on screen even if they're at the edge of the graph.
+            return renderer.setCamera2d(-0.01, dimensions[0] + 0.01, -0.01, dimensions[1] + 0.01);
 		});
 	}
 
 
-	function addShader(gl, id, type) {
-		return util.getSource(id + ".glsl").then(function(source) {
-			var shader = gl.createShader(type);
-			gl.shaderSource(shader, source);
-			gl.compileShader(shader);
+    function createProgram(renderer, vertexShaderID, fragmentShaderID) {
+        var gl = renderer.gl;
 
-			if(!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-				throw new Error("Error compiling WebGL shader with id " + id);
-			}
-			if(!gl.isShader(shader)) {
-				throw new Error("After compiling shader with id " + id + ", WebGL is reporting it is not a shader");
-			}
+        var pragObj = {};
+        pragObj.glProgram = gl.createProgram();
 
-			return shader;
-		});
-	}
+        return Q.all([ util.getSource(vertexShaderID + ".glsl"),
+                       util.getSource(fragmentShaderID + ".glsl") ])
+        .spread(function(vertShaderSource, fragShaderSource) {
+            // Compile the vertex shader
+            pragObj.vertexShader = gl.createShader(gl.VERTEX_SHADER);
+            gl.shaderSource(pragObj.vertexShader, vertShaderSource);
+            gl.compileShader(pragObj.vertexShader);
+            if(!gl.getShaderParameter(pragObj.vertexShader, gl.COMPILE_STATUS)) {
+                throw new Error("Error compiling WebGL vertex shader with id " + vertexShaderID);
+            }
+            if(!gl.isShader(pragObj.vertexShader)) {
+                throw new Error("After compiling vertex shader with id " + vertexShaderID + ", WebGL is reporting it is not a shader");
+            }
+            gl.attachShader(pragObj.glProgram, pragObj.vertexShader);
+
+            // Compiler the fragment shader
+            pragObj.fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+            gl.shaderSource(pragObj.fragmentShader, fragShaderSource);
+            gl.compileShader(pragObj.fragmentShader);
+            if(!gl.getShaderParameter(pragObj.fragmentShader, gl.COMPILE_STATUS)) {
+                throw new Error("Error compiling WebGL vertex shader with id " + fragmentShaderID);
+            }
+            if(!gl.isShader(pragObj.fragmentShader)) {
+                throw new Error("After compiling vertex shader with id " + fragmentShaderID + ", WebGL is reporting it is not a shader");
+            }
+            gl.attachShader(pragObj.glProgram, pragObj.fragmentShader);
+
+            gl.linkProgram(pragObj.glProgram);
+            return pragObj;
+        });
+    }
 
 
 	// TODO: Move back to a Mat4-based MVP matrix. However, retain the simple
@@ -256,7 +267,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 
 	return {
 		"create": create,
-		"addShader": addShader,
+        "createProgram": createProgram,
 		"setCamera2d": setCamera2d,
 		"createBuffer": createBuffer,
 		"write": write,
