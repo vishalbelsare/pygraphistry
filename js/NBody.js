@@ -30,7 +30,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 				graph.setVisible = setVisible.bind(this, graph);
 				graph.setLocked = setLocked.bind(this, graph);
 				graph.tick = tick.bind(this, graph);
-				graph.stepNumber = 0;				
+				graph.stepNumber = 0;
 				graph.dimensions = dimensions;
 				graph.numSplits = numSplits;
 				graph.events = {
@@ -74,7 +74,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 		}
 
 		console.debug("Number of edges:", edges.length / 2);
-		
+
 		var edgesFlipped = new Uint32Array(edges.length);
 		for (var i = 0; i < edges.length; i++)
 			edgesFlipped[i] = edges[edges.length - 1 - i];
@@ -86,7 +86,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
         		edgeList[i / 2] = [edges[i], edges[i + 1]];
 
         	edgeList.sort(function(a, b) {
-			    return a[0] < b[0] ? -1 
+			    return a[0] < b[0] ? -1
 			        : a[0] > b[0] ? 1
 			        : a[1] - b[1];
 			});
@@ -110,7 +110,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 
             //Cheesey load balancing
             //TODO benchmark
-            workItems.sort(function (edgeList1, edgeList2) { 
+            workItems.sort(function (edgeList1, edgeList2) {
                 return edgeList1.length - edgeList2.length;
             });
 
@@ -162,7 +162,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 	}
 
 	function setLocked(graph, opts) {
-		//TODO reset step number?		
+		//TODO reset step number?
 		graph.simulator.setLocked(opts, graph.stepNumber);
 	}
 

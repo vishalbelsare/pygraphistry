@@ -43,11 +43,11 @@ define(["Q"], function (Q) {
             };
         });
         devices.sort(function (a, b) { return b.computeUnits - a.computeUnits; });
-        
+
 		var deviceWrapper;
-		var err = devices.length ? 
+		var err = devices.length ?
             null : new Error("No WebCL devices of specified type (" + cl.DEVICE_TYPE_GPU + ") found");
-		for (var i = 0; i < devices.length; i++) {			
+		for (var i = 0; i < devices.length; i++) {
             var wrapped = devices[i];
 			try {
 				wrapped.context = _createContext(cl, gl, platform, [wrapped.device])
@@ -59,7 +59,7 @@ define(["Q"], function (Q) {
                 console.debug("Skipping device due to error", i, wrapped, e);
 				err = e;
 				continue;
-			}			
+			}
 			deviceWrapper = wrapped;
 			break;
 		}

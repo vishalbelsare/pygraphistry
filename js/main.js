@@ -35,7 +35,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 		var points = createPoints(graphFile.numNodes, clGraph.dimensions);
 
 		return clGraph.setPoints(points)
-		.then(function() {			
+		.then(function() {
 			return clGraph.setEdges(graphFile.edges);
 		})
 		.then(function() {
