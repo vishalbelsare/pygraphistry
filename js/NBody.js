@@ -1,5 +1,6 @@
 define(["Q", "glMatrix"], function(Q, glMatrix) {
-	
+    'use strict';
+
 	var STEP_NUMBER_ON_CHANGE = 30;
 
 	var elementsPerPoint = 2;
@@ -78,7 +79,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 		for (var i = 0; i < edges.length; i++)
 			edgesFlipped[i] = edges[edges.length - 1 - i];
 
-        function package(edges) {
+        function encapsulate(edges) {
 
         	var edgeList = new Array(edges.length / 2);
         	for (var i = 0; i < edges.length; i++)
@@ -126,8 +127,8 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
             };
         }
 
-        var forwardEdges = package(edges);
-        var backwardsEdges = package(edgesFlipped);
+        var forwardEdges = encapsulate(edges);
+        var backwardsEdges = encapsulate(edgesFlipped);
 
         var nDim = graph.dimensions.length;
 		var midPoints = new Float32Array((edges.length / 2) * graph.numSplits * nDim || 1);

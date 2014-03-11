@@ -5,6 +5,8 @@
 // argument and fill in that information automatically, when required by old WebCL versions.
 
 define(["Q"], function (Q) {
+    'use strict';
+
 	var create = Q.promised(function create (gl) {
 		if (typeof(webcl) === "undefined") {
 		    throw new Error("WebCL does not appear to be supported in your browser");

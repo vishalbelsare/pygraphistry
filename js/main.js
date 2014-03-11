@@ -18,6 +18,7 @@ require.config({
 
 require(["jQuery", "NBody", "RenderGL", "SimCL", "MatrixLoader", "Q", "Stats"],
 function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
+    'use strict';
 	//Q.longStackSupport = true;
 
 	var graph = null,
@@ -81,7 +82,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 		return promise()
 		.then(function() {
 			if(animating){
-				animId = window.setTimeout(function() {
+				var animId = window.setTimeout(function() {
 					animatePromise(promise);
 				}, 0);
 

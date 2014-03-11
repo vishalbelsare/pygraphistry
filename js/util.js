@@ -1,4 +1,6 @@
 define(["jQuery", "Q"], function($, Q) {
+    'use strict';
+
 	function getSource(id) {
 		var url = "shaders/" + id;
 

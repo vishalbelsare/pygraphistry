@@ -1,4 +1,6 @@
 define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
+    'use strict';
+
 	function create(canvas, dimensions, visible) {
 		visible = visible || {};
 
