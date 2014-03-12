@@ -38,8 +38,9 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
         renderer.render = render.bind(this, renderer);
         renderer.createProgram = createProgram.bind(this, renderer);
         renderer.setVisible = setVisible.bind(this, renderer);
+        renderer.isVisible = isVisible.bind(this, renderer);
 
-        renderer.visible = {showPoints: true, showEdges: true, showMidpoints: false, showMidedges: false};
+        renderer.visible = {points: true, edges: true, midpoints: false, midedges: false};
         if(visible) {
             renderer.setVisible(visible);
         }
@@ -108,11 +109,11 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
     }
 
 
-	// TODO: Move back to a Mat4-based MVP matrix. However, retain the simple
-	// (left, right, top, bottom) arguments. Perhaps make the MVP matrix an object field
-	// (initialized to the identity matrix) and have some simple function for move, rotate, etc.
 
 
+	// // TODO: Move back to this Mat4-based MVP matrix. However, retain the simple
+	// // (left, right, top, bottom) arguments. Perhaps make the MVP matrix an object field
+	// // (initialized to the identity matrix) and have some simple function for move, rotate, etc.
 	// function setCamera(renderer, position, target) {
 	// 	return Q.promise(function(resolve, reject, notify) {
 	// 		renderer.gl.viewport(0, 0, renderer.canvas.width, renderer.canvas.height);
@@ -207,11 +208,35 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		});
 	}
 
+
+    /**
+     * Enable or disable the drawing of elements in the scene. Elements are one of: points, edges,
+     * midpoints, midedges.
+     *
+     * @param renderer - the renderer object created with GLRunner.create()
+     * @param {Object} visible - An object with keys for 0 or more objects to set the visibility
+     * for. Each value should be true or false.
+     * @returns the renderer object passed in, with visibility options updated
+     */
 	function setVisible(renderer, visible) {
 		util.extend(renderer.visible, visible);
 
         return renderer;
 	}
+
+
+    /**
+     * Determines if the element passed in should be visible in image
+     *
+     * @param renderer - the renderer object created with GLRunner.create()
+     * @param element - the name of the element to check visibility for
+     *
+     * @returns a boolean value determining if the object should be visible (false by default)
+     */
+    function isVisible(renderer, element) {
+        // TODO: check the length of the associated buffer to see if it's >0; return false if not.
+        return (renderer.visible[element] || false);
+    }
 
 
 	function render(renderer) {
@@ -228,7 +253,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 
 			gl.depthFunc(gl.LEQUAL);
 
-            if (renderer.visible.showPoints) {
+            if (renderer.isVisible("points")) {
 				gl.useProgram(renderer.pointProgram.glProgram);
 				gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.curPoints.buffer);
 				gl.enableVertexAttribArray(renderer.curPointPosLoc);
@@ -236,7 +261,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				gl.drawArrays(gl.POINTS, 0, renderer.numPoints);
 			}
 
-			if (renderer.visible.showMidpoints) {
+			if (renderer.isVisible("midpoints")) {
 				gl.useProgram(renderer.midpointProgram.glProgram);
 				gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.curMidPoints.buffer);
 				gl.enableVertexAttribArray(renderer.curMidPointPosLoc);
@@ -249,7 +274,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 				// Make sure to draw the edges behind the points
 				gl.depthFunc(gl.LESS);
 
-				if (renderer.visible.showEdges) {
+				if (renderer.isVisible("edges")) {
 					gl.useProgram(renderer.edgeProgram.glProgram);
 					gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.springs.buffer);
 					gl.enableVertexAttribArray(renderer.curEdgePosLoc);
@@ -257,7 +282,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 					gl.drawArrays(gl.LINES, 0, renderer.numEdges * 2);
 				}
 
-				if (renderer.visible.showMidedges) {
+				if (renderer.isVisible("midedges")) {
 					gl.useProgram(renderer.midedgeProgram.glProgram);
 					gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.midSprings.buffer);
 					gl.enableVertexAttribArray(renderer.curMidEdgePosLoc);
@@ -280,6 +305,8 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		"setCamera2d": setCamera2d,
 		"createBuffer": createBuffer,
 		"write": write,
+        "setVisible": setVisible,
+        "isVisible": isVisible,
 		"render": render
 	};
 });

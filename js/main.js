@@ -251,7 +251,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 	    graph.setPhysics({edgeDistance: scaled});
 	  });
 
-	  ['showPoints', 'showEdges', 'showMidpoints', 'showMidedges'].forEach(function (name) {
+	  ['points', 'edges', 'midpoints', 'midedges'].forEach(function (name) {
 	  	  function bang () {
 	      	  var obj = {};
 	      	  obj[name] = $(this).is(':checked');
