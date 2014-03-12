@@ -212,7 +212,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 
 			var gl = renderer.gl;
 
-			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 			// If there are no points in the graph, don't render anything
 			if(renderer.numPoints < 1) {
