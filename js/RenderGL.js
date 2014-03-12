@@ -14,43 +14,47 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		// FIXME: If 'gl === null' then we need to return a promise and reject it.
 		var gl = canvas.getContext("experimental-webgl", {antialias: true, premultipliedAlpha: false});
 		gl.enable(gl.BLEND);
+
+        // Set up WebGL settings
 		// gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE);
 		gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
 		gl.enable(gl.DEPTH_TEST);
 		gl.clearColor(0, 0, 0, 0);
-		renderer.gl = gl;
+        gl.lineWidth(1);
 
+        // Populate the renderer object with default values, empty containers, etc.
+        renderer.gl = gl;
+        renderer.canvas = canvas;
+        renderer.buffers = {};
+        renderer.elementsPerPoint = 2;
+        renderer.numPoints = 0;
+        renderer.numEdges = 0;
+        renderer.numMidPoints = 0;
+
+        // For
+        renderer.setCamera2d = setCamera2d.bind(this, renderer);
+        renderer.createBuffer = createBuffer.bind(this, renderer);
+        renderer.render = render.bind(this, renderer);
         renderer.createProgram = createProgram.bind(this, renderer);
+        renderer.setVisible = setVisible.bind(this, renderer);
 
-        return Q.all(['point', 'edge', 'midpoint', 'midedge'].map(function (name) {
-            return renderer.createProgram(name + '.vertex', name + '.fragment');
+        renderer.visible = {showPoints: true, showEdges: true, showMidpoints: false, showMidedges: false};
+        if(visible) {
+            renderer.setVisible(visible);
+        }
+
+
+        return Q.all(
+            ['point', 'edge', 'midpoint', 'midedge'].map(function (name) {
+                return renderer.createProgram(name + '.vertex', name + '.fragment');
         }))
         .spread(function (pointProgram, edgeProgram, midpointProgram, midedgeProgram) {
-
-            gl.lineWidth(1);
-
-            renderer.canvas = canvas;
-
-
-            renderer.setCamera2d = setCamera2d.bind(this, renderer);
-            renderer.createBuffer = createBuffer.bind(this, renderer);
-            renderer.render = render.bind(this, renderer);
-            renderer.buffers = {};
-            renderer.elementsPerPoint = 2;
-            renderer.numPoints = 0;
-            renderer.numEdges = 0;
-            renderer.numMidPoints = 0;
-
-            renderer.visible = util.extend(
-                {showPoints: true, showEdges: true, showMidpoints: false, showMidedges: false},
-                visible );
             renderer.pointProgram = pointProgram;
             renderer.edgeProgram = edgeProgram;
             renderer.midpointProgram = midpointProgram;
             renderer.midedgeProgram = midedgeProgram;
 
-            renderer.setVisible = setVisible.bind(this, renderer);
             renderer.curPointPosLoc = gl.getAttribLocation(renderer.pointProgram.glProgram, "curPos");
             renderer.curEdgePosLoc = gl.getAttribLocation(renderer.edgeProgram.glProgram, "curPos");
             renderer.curMidPointPosLoc = gl.getAttribLocation(renderer.midpointProgram.glProgram, "curPos");
@@ -68,6 +72,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
         var gl = renderer.gl;
 
         var pragObj = {};
+        pragObj.renderer = renderer;
         pragObj.glProgram = gl.createProgram();
 
         return Q.all([ util.getSource(vertexShaderID + ".glsl"),
@@ -202,8 +207,10 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		});
 	}
 
-	function setVisible(renderer, cfg) {
-		util.extend(renderer.visible, cfg);
+	function setVisible(renderer, visible) {
+		util.extend(renderer.visible, visible);
+
+        return renderer;
 	}
 
 
