@@ -1,7 +1,7 @@
 define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
     'use strict';
 
-	function create(canvas, dimensions, visible) {
+	var create = Q.promised(function(canvas, dimensions, visible) {
 		visible = visible || {};
 
 		var renderer = {};
@@ -11,16 +11,19 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		canvas.width = canvas.clientWidth;
 		canvas.height = canvas.clientHeight;
 
-		// FIXME: If 'gl === null' then we need to return a promise and reject it.
 		var gl = canvas.getContext("experimental-webgl", {antialias: true, premultipliedAlpha: false});
-		gl.enable(gl.BLEND);
+        if(gl === null) {
+            throw new Error("Could not initialize WebGL");
+        }
 
         // Set up WebGL settings
+        gl.enable(gl.BLEND);
 		// gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE);
 		gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
 		gl.enable(gl.DEPTH_TEST);
 		gl.clearColor(0, 0, 0, 0);
+        // Lines should be 1px wide
         gl.lineWidth(1);
 
         // Populate the renderer object with default values, empty containers, etc.
@@ -66,7 +69,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
             // on screen even if they're at the edge of the graph.
             return renderer.setCamera2d(-0.01, dimensions[0] + 0.01, -0.01, dimensions[1] + 0.01);
 		});
-	}
+	});
 
 
     function createProgram(renderer, vertexShaderID, fragmentShaderID) {
