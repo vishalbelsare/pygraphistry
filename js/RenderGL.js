@@ -82,29 +82,24 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
         return Q.all([ util.getSource(vertexShaderID + ".glsl"),
                        util.getSource(fragmentShaderID + ".glsl") ])
         .spread(function(vertShaderSource, fragShaderSource) {
-            // Compile the vertex shader
-            pragObj.vertexShader = gl.createShader(gl.VERTEX_SHADER);
-            gl.shaderSource(pragObj.vertexShader, vertShaderSource);
-            gl.compileShader(pragObj.vertexShader);
-            if(!gl.getShaderParameter(pragObj.vertexShader, gl.COMPILE_STATUS)) {
-                throw new Error("Error compiling WebGL vertex shader with id " + vertexShaderID);
-            }
-            if(!gl.isShader(pragObj.vertexShader)) {
-                throw new Error("After compiling vertex shader with id " + vertexShaderID + ", WebGL is reporting it is not a shader");
-            }
-            gl.attachShader(pragObj.glProgram, pragObj.vertexShader);
 
-            // Compiler the fragment shader
-            pragObj.fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-            gl.shaderSource(pragObj.fragmentShader, fragShaderSource);
-            gl.compileShader(pragObj.fragmentShader);
-            if(!gl.getShaderParameter(pragObj.fragmentShader, gl.COMPILE_STATUS)) {
-                throw new Error("Error compiling WebGL vertex shader with id " + fragmentShaderID);
+            function compileShader(program, shaderSource, shaderType) {
+                var shader = renderer.gl.createShader(shaderType);
+                renderer.gl.shaderSource(shader, shaderSource);
+                renderer.gl.compileShader(shader);
+                if(!renderer.gl.getShaderParameter(shader, renderer.gl.COMPILE_STATUS)) {
+                    throw new Error("Error compiling WebGL shader (shader type: " + shaderType + ")");
+                }
+                if(!renderer.gl.isShader(shader)) {
+                    throw new Error("After compiling shader, WebGL is reporting it is not valid");
+                }
+                renderer.gl.attachShader(program.glProgram, shader);
+
+                return shader;
             }
-            if(!gl.isShader(pragObj.fragmentShader)) {
-                throw new Error("After compiling vertex shader with id " + fragmentShaderID + ", WebGL is reporting it is not a shader");
-            }
-            gl.attachShader(pragObj.glProgram, pragObj.fragmentShader);
+
+            pragObj.vertexShader   = compileShader(pragObj, vertShaderSource, gl.VERTEX_SHADER);
+            pragObj.fragmentShader = compileShader(pragObj, fragShaderSource, gl.FRAGMENT_SHADER);
 
             gl.linkProgram(pragObj.glProgram);
             return pragObj;
