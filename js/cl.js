@@ -44,7 +44,7 @@ define(["Q"], function (Q) {
         
 		var deviceWrapper;
 		var err = devices.length ? 
-            null : new Error("No WebCL devices of specified type (" + cl.DEVICE_TYPE_GPU + ") found");
+            null : new Error("No WebCL devices of specified type (" + cl.DEVICE_TYPE_ALL + ") found");
 		for (var i = 0; i < devices.length; i++) {			
             var wrapped = devices[i];
 			try {
