@@ -137,71 +137,56 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 	// }
 
 
-	function setCamera2d(renderer, left, right, bottom, top) {
-		return Q.promise(function(resolve, reject, notify) {
-			renderer.gl.viewport(0, 0, renderer.canvas.width, renderer.canvas.height);
+	var setCamera2d = Q.promised(function(renderer, left, right, bottom, top) {
+		renderer.gl.viewport(0, 0, renderer.canvas.width, renderer.canvas.height);
 
-			var lr = 1 / (left - right),
-			    bt = 1 / (bottom - top);
+		var lr = 1 / (left - right),
+		    bt = 1 / (bottom - top);
 
-			var mvpMatrix = glMatrix.mat2d.create();
-			glMatrix.mat2d.scale(mvpMatrix, mvpMatrix, glMatrix.vec2.fromValues(-2 * lr, -2 * bt));
-			glMatrix.mat2d.translate(mvpMatrix, mvpMatrix, glMatrix.vec2.fromValues((left+right)*lr, (top+bottom)*bt));
+		var mvpMatrix = glMatrix.mat2d.create();
+		glMatrix.mat2d.scale(mvpMatrix, mvpMatrix, glMatrix.vec2.fromValues(-2 * lr, -2 * bt));
+		glMatrix.mat2d.translate(mvpMatrix, mvpMatrix, glMatrix.vec2.fromValues((left+right)*lr, (top+bottom)*bt));
 
-			var mvpMat3 = glMatrix.mat3.create();
-			glMatrix.mat3.fromMat2d(mvpMat3, mvpMatrix);
+		var mvpMat3 = glMatrix.mat3.create();
+		glMatrix.mat3.fromMat2d(mvpMat3, mvpMatrix);
 
-			['pointProgram', 'edgeProgram', 'midpointProgram', 'midedgeProgram'].forEach(function (name) {
-				var program = renderer[name].glProgram;
-			    renderer.gl.useProgram(program);
-			    var mvpLocation = renderer.gl.getUniformLocation(program, "mvp");
-			    renderer.gl.uniformMatrix3fv(mvpLocation, false, mvpMat3);
-			})
-
-			resolve(renderer);
-		});
-	}
-
-
-	function createBuffer(renderer, data) {
-		var args = arguments;
-		return Q.promise(function(resolve, reject, notify) {
-			try {
-				var buffer = renderer.gl.createBuffer();
-				var bufObj = {
-					"buffer": buffer,
-					"gl": renderer.gl
-				};
-				bufObj.delete = Q.promised(function() {
-					renderer.gl.deleteBuffer(buffer);
-					return null;
-				})
-				bufObj.write = write.bind(this, bufObj);
-			} catch(err) {
-				reject(err);
-			}
-
-			if(data) {
-				bufObj.write(data)
-				.then(function(){
-					resolve(bufObj);
-				}, function(err) {
-					reject(err);
-				});
-			} else {
-				resolve(bufObj);
-			}
+		['pointProgram', 'edgeProgram', 'midpointProgram', 'midedgeProgram'].forEach(function (name) {
+			var program = renderer[name].glProgram;
+		    renderer.gl.useProgram(program);
+		    var mvpLocation = renderer.gl.getUniformLocation(program, "mvp");
+		    renderer.gl.uniformMatrix3fv(mvpLocation, false, mvpMat3);
 		})
-	}
+
+		return renderer;
+	});
 
 
-	function write(buffer, data) {
-		return Q.promise(function(resolve, reject) {
-			buffer.gl.bindBuffer(buffer.gl.ARRAY_BUFFER, buffer.buffer);
-			buffer.gl.bufferData(buffer.gl.ARRAY_BUFFER, data, buffer.gl.DYNAMIC_DRAW);
-			resolve(buffer);
-		});
-	}
+	var createBuffer = Q.promised(function(renderer, data) {
+		var buffer = renderer.gl.createBuffer();
+		var bufObj = {
+			"buffer": buffer,
+			"gl": renderer.gl
+		};
+
+		bufObj.delete = Q.promised(function() {
+			renderer.gl.deleteBuffer(buffer);
+			return renderer;
+		})
+		bufObj.write = write.bind(this, bufObj);
+
+		if(data) {
+			return bufObj.write(data);
+		} else {
+			return bufObj;
+		}
+	});
+
+
+	var write = Q.promised(function(buffer, data) {
+		buffer.gl.bindBuffer(buffer.gl.ARRAY_BUFFER, buffer.buffer);
+		buffer.gl.bufferData(buffer.gl.ARRAY_BUFFER, data, buffer.gl.DYNAMIC_DRAW);
+		return buffer;
+	});
 
 
     /**
@@ -234,64 +219,61 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
     }
 
 
-	function render(renderer) {
-		return Q.promise(function(resolve, reject, notify) {
+	var render = Q.promised(function(renderer) {
+		var gl = renderer.gl;
 
-			var gl = renderer.gl;
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		// If there are no points in the graph, don't render anything
+		if(renderer.numPoints < 1) {
+			return renderer;
+		}
 
-			// If there are no points in the graph, don't render anything
-			if(renderer.numPoints < 1) {
-				resolve(renderer);
+		gl.depthFunc(gl.LEQUAL);
+
+        if (renderer.isVisible("points")) {
+			gl.useProgram(renderer.pointProgram.glProgram);
+			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.curPoints.buffer);
+			gl.enableVertexAttribArray(renderer.curPointPosLoc);
+			gl.vertexAttribPointer(renderer.curPointPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
+			gl.drawArrays(gl.POINTS, 0, renderer.numPoints);
+		}
+
+		if (renderer.isVisible("midpoints")) {
+			gl.useProgram(renderer.midpointProgram.glProgram);
+			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.curMidPoints.buffer);
+			gl.enableVertexAttribArray(renderer.curMidPointPosLoc);
+			gl.vertexAttribPointer(renderer.curMidPointPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
+			gl.drawArrays(gl.POINTS, 0, renderer.numMidPoints);
+		}
+
+
+		if(renderer.numEdges > 0) {
+			// Make sure to draw the edges behind the points
+			gl.depthFunc(gl.LESS);
+
+			if (renderer.isVisible("edges")) {
+				gl.useProgram(renderer.edgeProgram.glProgram);
+				gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.springs.buffer);
+				gl.enableVertexAttribArray(renderer.curEdgePosLoc);
+				gl.vertexAttribPointer(renderer.curEdgePosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
+				gl.drawArrays(gl.LINES, 0, renderer.numEdges * 2);
 			}
 
-			gl.depthFunc(gl.LEQUAL);
-
-            if (renderer.isVisible("points")) {
-				gl.useProgram(renderer.pointProgram.glProgram);
-				gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.curPoints.buffer);
-				gl.enableVertexAttribArray(renderer.curPointPosLoc);
-				gl.vertexAttribPointer(renderer.curPointPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
-				gl.drawArrays(gl.POINTS, 0, renderer.numPoints);
+			if (renderer.isVisible("midedges")) {
+				gl.useProgram(renderer.midedgeProgram.glProgram);
+				gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.midSprings.buffer);
+				gl.enableVertexAttribArray(renderer.curMidEdgePosLoc);
+				gl.vertexAttribPointer(renderer.curMidEdgePosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
+				gl.drawArrays(gl.LINES, 0, renderer.numMidEdges * 2);
 			}
 
-			if (renderer.isVisible("midpoints")) {
-				gl.useProgram(renderer.midpointProgram.glProgram);
-				gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.curMidPoints.buffer);
-				gl.enableVertexAttribArray(renderer.curMidPointPosLoc);
-				gl.vertexAttribPointer(renderer.curMidPointPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
-				gl.drawArrays(gl.POINTS, 0, renderer.numMidPoints);
-			}
+		}
 
+		gl.finish();
 
-			if(renderer.numEdges > 0) {
-				// Make sure to draw the edges behind the points
-				gl.depthFunc(gl.LESS);
-
-				if (renderer.isVisible("edges")) {
-					gl.useProgram(renderer.edgeProgram.glProgram);
-					gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.springs.buffer);
-					gl.enableVertexAttribArray(renderer.curEdgePosLoc);
-					gl.vertexAttribPointer(renderer.curEdgePosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
-					gl.drawArrays(gl.LINES, 0, renderer.numEdges * 2);
-				}
-
-				if (renderer.isVisible("midedges")) {
-					gl.useProgram(renderer.midedgeProgram.glProgram);
-					gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.midSprings.buffer);
-					gl.enableVertexAttribArray(renderer.curMidEdgePosLoc);
-					gl.vertexAttribPointer(renderer.curMidEdgePosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
-					gl.drawArrays(gl.LINES, 0, renderer.numMidEdges * 2);
-				}
-
-			}
-
-			gl.finish();
-
-			resolve(renderer);
-		});
-	}
+		return renderer;
+	});
 
 
 	return {
