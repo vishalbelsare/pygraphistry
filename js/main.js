@@ -82,11 +82,9 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 		return promise()
 		.then(function() {
 			if(animating){
-				var animId = window.setTimeout(function() {
-					animatePromise(promise);
-				}, 0);
-
-				return animId;
+				return window.setTimeout(function() {
+                        animatePromise(promise);
+                    }, 0);
 			} else {
 				return null;
 			}
