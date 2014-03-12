@@ -44,9 +44,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
         renderer.isVisible = isVisible.bind(this, renderer);
 
         renderer.visible = {points: true, edges: true, midpoints: false, midedges: false};
-        if(visible) {
-            renderer.setVisible(visible);
-        }
+        renderer.setVisible(visible);
 
 
         return Q.all(
@@ -105,7 +103,6 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
             return pragObj;
         });
     }
-
 
 
 
