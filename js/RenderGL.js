@@ -70,11 +70,19 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
         var gl = renderer.gl;
 
         var pragObj = {};
+
         pragObj.renderer = renderer;
         pragObj.glProgram = gl.createProgram();
+        pragObj.bindVertexAttrib = bindVertexAttrib.bind(this, pragObj);
+        pragObj.use = function() {
+            gl.useProgram(pragObj.glProgram);
+        }
+        pragObj.attributes = {};
 
-        return Q.all([ util.getSource(vertexShaderID + ".glsl"),
-                       util.getSource(fragmentShaderID + ".glsl") ])
+        return Q.all([
+            util.getSource(vertexShaderID + ".glsl"),
+            util.getSource(fragmentShaderID + ".glsl")
+        ])
         .spread(function(vertShaderSource, fragShaderSource) {
 
             function compileShader(program, shaderSource, shaderType) {
@@ -99,7 +107,6 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
             return pragObj;
         });
     }
-
 
 
 	// // TODO: Move back to this Mat4-based MVP matrix. However, retain the simple
@@ -186,6 +193,34 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 
 
     /**
+     * Shortcut method to find the location of an attribute, bind a buffer, and then set the
+     * attribute to the buffer
+     *
+     * @param program - the program object with the attribute you want to bind to the buffer
+     * @param buffer - the buffer you want to bind to the attribute
+     * @param {string} attribute - the name of the attribute you wish to bind
+     * @param {number} elementsPerItem - the number of elements to use for each rendered item (e.g.,
+     * use two floats per point). Passed directly to gl.vertexAttribPointer() as 'size' argument.
+     * @param glType - the WebGL type of the array (e.g., gl.FLOAT)
+     * @param {boolean} normalize - should the data be normalized before being processed by shaders
+     * @param {number} stride - the number of bytes between item elements (normally
+     * elementsPerItem * sizeof(type))
+     * @param {number} offset - the number of bytes from the start of the buffer to begin reading
+     */
+    function bindVertexAttrib(program, buffer, attribute, elementsPerItem, glType, normalize, stride, offset) {
+        var gl = program.renderer.gl;
+        var location = gl.getAttribLocation(program.glProgram, attribute);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer.buffer);
+        gl.enableVertexAttribArray(location);
+        gl.vertexAttribPointer(location, elementsPerItem, glType, normalize, stride, offset);
+
+        return program;
+    }
+
+
+
+    /**
      * Enable or disable the drawing of elements in the scene. Elements are one of: points, edges,
      * midpoints, midedges.
      *
@@ -228,24 +263,18 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		gl.depthFunc(gl.LEQUAL);
 
         if (renderer.isVisible("points")) {
-			gl.useProgram(renderer.programs["points"].glProgram);
-
-            var curPointPosLoc = gl.getAttribLocation(renderer.programs["points"].glProgram, "curPos");
-			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.curPoints.buffer);
-			gl.enableVertexAttribArray(curPointPosLoc);
-			gl.vertexAttribPointer(curPointPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
-
+			renderer.programs["points"].use();
+            renderer.programs["points"].bindVertexAttrib(renderer.buffers.curPoints, "curPos",
+                renderer.elementsPerPoint, gl.FLOAT, false,
+                renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0)
 			gl.drawArrays(gl.POINTS, 0, renderer.numPoints);
 		}
 
 		if (renderer.isVisible("midpoints")) {
-			gl.useProgram(renderer.programs["midpoints"].glProgram);
-
-            var curMidPointPosLoc = gl.getAttribLocation(renderer.programs["midpoints"].glProgram, "curPos");
-			gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.curMidPoints.buffer);
-			gl.enableVertexAttribArray(curMidPointPosLoc);
-			gl.vertexAttribPointer(curMidPointPosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
-
+			renderer.programs["midpoints"].use();
+			renderer.programs["midpoints"].bindVertexAttrib(renderer.buffers.curMidPoints, "curPos",
+                renderer.elementsPerPoint, gl.FLOAT, false,
+                renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
 			gl.drawArrays(gl.POINTS, 0, renderer.numMidPoints);
 		}
 
@@ -254,24 +283,18 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 			gl.depthFunc(gl.LESS);
 
 			if (renderer.isVisible("edges")) {
-				gl.useProgram(renderer.programs["edges"].glProgram);
-
-                var curEdgePosLoc = gl.getAttribLocation(renderer.programs["edges"].glProgram, "curPos");
-				gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.springs.buffer);
-				gl.enableVertexAttribArray(curEdgePosLoc);
-				gl.vertexAttribPointer(curEdgePosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
-
+				renderer.programs["edges"].use();
+				renderer.programs["edges"].bindVertexAttrib(renderer.buffers.springs, "curPos",
+                    renderer.elementsPerPoint, gl.FLOAT, false,
+                    renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
 				gl.drawArrays(gl.LINES, 0, renderer.numEdges * 2);
 			}
 
 			if (renderer.isVisible("midedges")) {
-				gl.useProgram(renderer.prorams["midedges"].glProgram);
-
-                var curMidEdgePosLoc = gl.getAttribLocation(renderer.programs["midedges"].glProgram, "curPos");
-				gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffers.midSprings.buffer);
-				gl.enableVertexAttribArray(curMidEdgePosLoc);
-				gl.vertexAttribPointer(curMidEdgePosLoc, renderer.elementsPerPoint, gl.FLOAT, false, renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
-
+				renderer.prorams["midedges"].use();
+				renderer.prorams["midedges"].bindVertexAttrib(renderer.buffers.midSprings, "curPos",
+                    renderer.elementsPerPoint, gl.FLOAT, false,
+                    renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
 				gl.drawArrays(gl.LINES, 0, renderer.numMidEdges * 2);
 			}
 
@@ -289,6 +312,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 		"setCamera2d": setCamera2d,
 		"createBuffer": createBuffer,
 		"write": write,
+        "bindVertexAttrib": bindVertexAttrib,
         "setVisible": setVisible,
         "isVisible": isVisible,
 		"render": render
