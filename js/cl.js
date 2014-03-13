@@ -45,7 +45,7 @@ define(["Q"], function (Q) {
         devices.sort(function (a, b) { return b.computeUnits - a.computeUnits; });
 
 		var deviceWrapper;
-		var err = devices.length ? 
+		var err = devices.length ?
             null : new Error("No WebCL devices of specified type (" + cl.DEVICE_TYPE_ALL + ") found");
 		for (var i = 0; i < devices.length; i++) {
             var wrapped = devices[i];
@@ -75,7 +75,15 @@ define(["Q"], function (Q) {
 			"device": deviceWrapper.device,
 			"queue": deviceWrapper.queue,
 			"maxThreads": deviceWrapper.device.getInfo(cl.DEVICE_MAX_WORK_GROUP_SIZE),
-			"numCores": deviceWrapper.device.getInfo(cl.DEVICE_MAX_COMPUTE_UNITS)
+			"numCores": deviceWrapper.device.getInfo(cl.DEVICE_MAX_COMPUTE_UNITS),
+            "events": {
+                "kernelStart": function() { },
+                "kernelEnd":  function() { },
+                "bufferCopyStart": function() { },
+                "bufferCopyEnd": function() { },
+                "bufferAquireStart": function() { },
+                "bufferAquireEnd": function() { }
+            }
 		};
 
 		clObj.compile = compile.bind(this, clObj);

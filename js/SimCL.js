@@ -35,14 +35,9 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				simObj.locked = $.extend(
 					{lockPoints: false, lockMidpoints: true, lockEdges: false, lockMidedges: true},
 					locked || {});
-				simObj.events = {
-					"kernelStart": function() { },
-					"kernelEnd":  function() { },
-					"bufferCopyStart": function() { },
-					"bufferCopyEnd": function() { },
-					"bufferAquireStart": function() { },
-					"bufferAquireEnd": function() { }
-				};
+				simObj.events = {};
+                util.extend(simObj.events, cl.events);
+
 				simObj.buffers = {};
 
 				console.debug("WebCL simulator created");
@@ -408,7 +403,6 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 	function tick(simulator, stepNumber) {
 
-        //FIXME should be 'simulator.events.releaseBufSeq(buf)'
 		function releaseBufSeq(buf) {
 	        return Q()
 	            .then(function () {
@@ -417,7 +411,6 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	            .then(function () { return simulator.events.bufferAquireEnd(); });
 		}
 
-        //FIXME should be 'simulator.events.acquireBufSeq(buf)'
 		function acquireBufSeq(buf) {
 			return Q()
 			    .then(function () {
@@ -426,7 +419,6 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			    .then(function () { return simulator.events.bufferAquireEnd(); });
 		}
 
-        //FIXME should be 'simulator.events.copyBufSeq(srcBuf, dstBuf)'
 		function copyBufSeq(srcBuf, dstBuf) {
 			return Q()
 			    .then(function () {
@@ -451,6 +443,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			return Q(simulator);
         }
 
+        ////////////////////////////
+        // Run the points kernel
 	    return Q()
 	    .then(function () {
 		    simulator.pointKernel.setArgs(
@@ -482,6 +476,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 			}
 		})
 		////////////////////////////
+        // Run the edges kernel
 		.then(function () {
             simulator.midPointKernel.setArgs(
 	            [null, null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
