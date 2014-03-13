@@ -2,8 +2,8 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
     'use strict';
 
 	var STEP_NUMBER_ON_CHANGE = 30;
-
 	var elementsPerPoint = 2;
+
 
 	/**
 	 * Create a new N-body graph and return a promise for the graph object
@@ -152,19 +152,23 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 		.then(function() { return graph; });
 	});
 
+
 	function setPhysics(graph, opts) {
 		graph.stepNumber = STEP_NUMBER_ON_CHANGE;
 	    graph.simulator.setPhysics(opts, graph.stepNumber);
 	}
 
+
 	function setVisible(graph, opts) {
 		graph.renderer.setVisible(opts);
 	}
+
 
 	function setLocked(graph, opts) {
 		//TODO reset step number?
 		graph.simulator.setLocked(opts, graph.stepNumber);
 	}
+
 
 	// Turns an array of vec3's into a Float32Array with elementsPerPoint values for each element in
 	// the input array.
