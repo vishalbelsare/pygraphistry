@@ -32,12 +32,10 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 				simObj.numSplits = numSplits;
 				simObj.numPoints = 0;
 				simObj.numEdges = 0;
-				simObj.locked = $.extend(
+                simObj.locked = util.extend(
 					{lockPoints: false, lockMidpoints: true, lockEdges: false, lockMidedges: true},
-					locked || {});
-				simObj.events = {};
-                util.extend(simObj.events, cl.events);
-
+                    (locked || {})
+                );
 				simObj.buffers = {};
 
 				console.debug("WebCL simulator created");
