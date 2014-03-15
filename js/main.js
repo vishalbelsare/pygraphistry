@@ -127,12 +127,6 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 			graph.events.renderBegin = function() { fpsRender.begin(); };
 			graph.events.renderEnd = function() { fpsRender.end(); };
 
-			var fpsKernel = new Stats();
-			fpsKernel.setMode(1);
-			$("#fpsKernel").append(fpsKernel.domElement);
-			graph.simulator.events.kernelStart = function() { fpsKernel.begin(); };
-			graph.simulator.events.kernelEnd = function() { fpsKernel.end(); };
-
 			return graph.setPoints(points);
 		})
 		.then(function(graph) {
