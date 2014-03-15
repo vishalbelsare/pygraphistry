@@ -400,40 +400,30 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 
 	function tick(simulator, stepNumber) {
-
 		function releaseBufSeq(buf) {
 	        return Q()
 	            .then(function () {
-	            	simulator.events.bufferAquireStart();
-	            	return buf.release(); })
-	            .then(function () { return simulator.events.bufferAquireEnd(); });
+                    return buf.release();
+                });
 		}
 
 		function acquireBufSeq(buf) {
 			return Q()
 			    .then(function () {
-			    	simulator.events.bufferAquireStart();
 			    	return buf.acquire(); })
-			    .then(function () { return simulator.events.bufferAquireEnd(); });
 		}
 
 		function copyBufSeq(srcBuf, dstBuf) {
 			return Q()
 			    .then(function () {
-		            simulator.events.bufferCopyStart();
 		            return srcBuf.copyBuffer(dstBuf); })
-			    .then(function () {
-                    return simulator.events.bufferCopyEnd();
-                });
 		}
 
         function edgeKernelSeq (edges, workItems, numWorkItems, fromPoints, toPoints) {
-            simulator.events.kernelStart();
             simulator.edgesKernel.setArgs(
                 [edges.buffer, workItems.buffer, fromPoints.buffer, toPoints.buffer, null, null, null, new Uint32Array([stepNumber])],
                 [null, null, null, null, null, null, null, cljs.types.uint_t]);
             return simulator.edgesKernel.call(numWorkItems, [])
-                .then(function() { simulator.events.kernelEnd(); });
         }
 
 		// If there are no points in the graph, don't run the simulation
@@ -451,10 +441,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	    })
 	    .then(function () { return acquireBufSeq(simulator.buffers.curPoints); })
 		.then(function() {
-			simulator.events.kernelStart();
 			return simulator.locked.lockPoints ? false : simulator.pointKernel.call(simulator.numPoints, []);
 		})
-		.then(function() { simulator.events.kernelEnd(); })
 		.then(function () { return copyBufSeq(simulator.buffers.nextPoints, simulator.buffers.curPoints); })
 		.then(function() {
 			if(simulator.numEdges > 0) {
@@ -482,20 +470,16 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 	    })
 	    .then(function () { return acquireBufSeq(simulator.buffers.curMidPoints); })
         .then(function () {
-			simulator.events.kernelStart();
 			return simulator.locked.lockMidpoints ? simulator : simulator.midPointKernel.call(simulator.numMidPoints, []);  // APPLY MID-FORCES
 	    })
-	    .then(function () { simulator.events.kernelEnd(); })
 		.then(function () { return copyBufSeq(simulator.buffers.nextMidPoints, simulator.buffers.curMidPoints); })
 		.then(function () {
 			if (simulator.numEdges > 0 && !simulator.locked.lockMidedges) {
-				simulator.events.kernelStart();
 				simulator.midEdgesKernel.setArgs(
 				    [null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
 				    [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
 				return simulator.midEdgesKernel.call(simulator.numForwardsWorkItems, [])
 				.then(function() {
-					simulator.events.kernelEnd();
 					return simulator;
 				})
 			} else {

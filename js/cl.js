@@ -4,7 +4,7 @@
 // that argument, even on old versions. Instead, we should query the kernel for the types of each
 // argument and fill in that information automatically, when required by old WebCL versions.
 
-define(["Q"], function (Q) {
+define(["Q", "SimpleEvents"], function (Q, events) {
     'use strict';
 
 	var create = Q.promised(function create (gl) {
@@ -75,15 +75,7 @@ define(["Q"], function (Q) {
 			"device": deviceWrapper.device,
 			"queue": deviceWrapper.queue,
 			"maxThreads": deviceWrapper.device.getInfo(cl.DEVICE_MAX_WORK_GROUP_SIZE),
-			"numCores": deviceWrapper.device.getInfo(cl.DEVICE_MAX_COMPUTE_UNITS),
-            "events": {
-                "kernelStart": function() { },
-                "kernelEnd":  function() { },
-                "bufferCopyStart": function() { },
-                "bufferCopyEnd": function() { },
-                "bufferAquireStart": function() { },
-                "bufferAquireEnd": function() { }
-            }
+            "numCores": deviceWrapper.device.getInfo(cl.DEVICE_MAX_COMPUTE_UNITS)
 		};
 
 		clObj.compile = compile.bind(this, clObj);
@@ -152,8 +144,10 @@ define(["Q"], function (Q) {
 		argTypes = argTypes || [];
 		return kernel.setArgs(args, argTypes).then(function() {
 			var workgroupSize = new Int32Array([threads]);
+            events.fire("kernelStart");
 		    kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, workgroupSize.length, [], workgroupSize, []);
 			kernel.cl.queue.finish();
+            events.fire("kernelEnd");
 
 			return kernel;
 		});

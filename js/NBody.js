@@ -1,4 +1,4 @@
-define(["Q", "glMatrix"], function(Q, glMatrix) {
+define(["Q", "glMatrix", "SimpleEvents"], function(Q, glMatrix, events) {
     'use strict';
 
 	var STEP_NUMBER_ON_CHANGE = 30;
@@ -33,14 +33,6 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 				graph.stepNumber = 0;
 				graph.dimensions = dimensions;
 				graph.numSplits = numSplits;
-				graph.events = {
-					"simulateBegin": function() { },
-					"simulateEnd": function() { },
-					"renderBegin": function() { },
-					"renderEnd": function() { },
-					"tickBegin": function() { },
-					"tickEnd": function() { }
-				};
 
 				return graph;
 			});
@@ -186,7 +178,7 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 
 
 	function tick(graph) {
-		graph.events.tickBegin();
+        events.fire("tickBegin");
 
 		// On the first tick, don't run the simulator so we can see the starting point of the graph
 		// if(graph.stepNumber == 0) {
@@ -201,18 +193,18 @@ define(["Q", "glMatrix"], function(Q, glMatrix) {
 		// 		return graph;
 		// 	});
 		// } else {
-			graph.events.simulateBegin();
+            events.fire("simulateBegin");
 
 			return graph.simulator.tick(graph.stepNumber++)
 			.then(function() {
-				graph.events.simulateEnd();
-				graph.events.renderBegin();
+                events.fire("simulateEnd");
+                events.fire("renderBegin");
 
 				return graph.renderer.render();
 			})
 			.then(function() {
-				graph.events.renderEnd();
-				graph.events.tickEnd();
+                events.fire("renderEnd");
+                events.fire("tickEnd");
 
 				return graph;
 			});

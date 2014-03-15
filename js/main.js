@@ -16,8 +16,8 @@ require.config({
 	}
 });
 
-require(["jQuery", "NBody", "RenderGL", "SimCL", "MatrixLoader", "Q", "Stats"],
-function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
+require(["jQuery", "NBody", "RenderGL", "SimCL", "MatrixLoader", "Q", "Stats", "SimpleEvents"],
+function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events) {
     'use strict';
 	//Q.longStackSupport = true;
 
@@ -112,20 +112,20 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats) {
 			var fpsTotal = new Stats();
 			fpsTotal.setMode(0);
 			$("#fpsTotal").append(fpsTotal.domElement);
-			graph.events.tickBegin = function() { fpsTotal.begin(); };
-			graph.events.tickEnd = function() { fpsTotal.end(); };
+            events.listen("tickBegin", function() { fpsTotal.begin(); });
+            events.listen("tickEnd", function() { fpsTotal.end(); });
 
 			var fpsSim = new Stats();
 			fpsSim.setMode(1);
 			$("#fpsSim").append(fpsSim.domElement);
-			graph.events.simulateBegin = function() { fpsSim.begin(); };
-			graph.events.simulateEnd = function() { fpsSim.end(); };
+            events.listen("simulateBegin", function() { fpsSim.begin(); });
+            events.listen("simulateEnd", function() { fpsSim.end(); });
 
 			var fpsRender = new Stats();
 			fpsRender.setMode(1);
 			$("#fpsRender").append(fpsRender.domElement);
-			graph.events.renderBegin = function() { fpsRender.begin(); };
-			graph.events.renderEnd = function() { fpsRender.end(); };
+            events.listen("renderBegin", function() { fpsRender.begin(); });
+            events.listen("renderEnd", function() { fpsRender.end(); });
 
 			return graph.setPoints(points);
 		})
