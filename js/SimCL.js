@@ -400,24 +400,6 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
 
     function tick(simulator, stepNumber) {
-        function releaseBufSeq(buf) {
-            return Q()
-                .then(function () {
-                    return buf.release();
-                });
-        }
-
-        function acquireBufSeq(buf) {
-            return Q()
-                .then(function () {
-                    return buf.acquire(); })
-        }
-
-        function copyBufSeq(srcBuf, dstBuf) {
-            return Q()
-                .then(function () {
-                    return srcBuf.copyBuffer(dstBuf); })
-        }
 
         function edgeKernelSeq (edges, workItems, numWorkItems, fromPoints, toPoints) {
             simulator.edgesKernel.setArgs(
@@ -439,11 +421,11 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
                 [null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
                 [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
         })
-        .then(function () { return acquireBufSeq(simulator.buffers.curPoints); })
+        .then(function () { return simulator.buffers.curPoints.acquire(); })
         .then(function() {
             return simulator.locked.lockPoints ? false : simulator.pointKernel.call(simulator.numPoints, []);
         })
-        .then(function () { return copyBufSeq(simulator.buffers.nextPoints, simulator.buffers.curPoints); })
+        .then(function () { return simulator.buffers.nextPoints.copyBuffer(simulator.buffers.curPoints); })
         .then(function() {
             if(simulator.numEdges > 0) {
                 if (simulator.locked.lockEdges) {
@@ -468,11 +450,13 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
                 [null, null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
                 [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
         })
-        .then(function () { return acquireBufSeq(simulator.buffers.curMidPoints); })
+        .then(function () { return simulator.buffers.curMidPoints.acquire(); })
         .then(function () {
             return simulator.locked.lockMidpoints ? simulator : simulator.midPointKernel.call(simulator.numMidPoints, []);  // APPLY MID-FORCES
         })
-        .then(function () { return copyBufSeq(simulator.buffers.nextMidPoints, simulator.buffers.curMidPoints); })
+        .then(function() {
+            return simulator.buffers.nextMidPoints.copyBuffer(simulator.buffers.curMidPoints);
+        })
         .then(function () {
             if (simulator.numEdges > 0 && !simulator.locked.lockMidedges) {
                 simulator.midEdgesKernel.setArgs(
@@ -491,7 +475,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
             return Q.all(
                 ['curPoints', 'springsPos', 'curMidPoints', 'midSpringsPos']
                     .map(function (name) { return simulator.buffers[name]; })
-                    .map(function (buf) { return releaseBufSeq(buf); }));
+                    .map(function (buf) { return buf.release(); })
+            );
         })
         .then(function () {
             simulator.cl.queue.finish(); //FIXME use callback arg
