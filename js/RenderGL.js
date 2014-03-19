@@ -291,8 +291,8 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
             }
 
             if (renderer.isVisible("midedges")) {
-                renderer.prorams["midedges"].use();
-                renderer.prorams["midedges"].bindVertexAttrib(renderer.buffers.midSprings, "curPos",
+                renderer.programs["midedges"].use();
+                renderer.programs["midedges"].bindVertexAttrib(renderer.buffers.midSprings, "curPos",
                     renderer.elementsPerPoint, gl.FLOAT, false,
                     renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
                 gl.drawArrays(gl.LINES, 0, renderer.numMidEdges * 2);
