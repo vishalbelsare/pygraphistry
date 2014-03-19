@@ -147,7 +147,7 @@ define(["Q", "glMatrix", "SimpleEvents"], function(Q, glMatrix, events) {
 
     function setPhysics(graph, opts) {
         graph.stepNumber = STEP_NUMBER_ON_CHANGE;
-        graph.simulator.setPhysics(opts, graph.stepNumber);
+        graph.simulator.setPhysics(opts);
     }
 
 
@@ -158,7 +158,7 @@ define(["Q", "glMatrix", "SimpleEvents"], function(Q, glMatrix, events) {
 
     function setLocked(graph, opts) {
         //TODO reset step number?
-        graph.simulator.setLocked(opts, graph.stepNumber);
+        graph.simulator.setLocked(opts);
     }
 
 

@@ -333,19 +333,17 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
     }
 
 
-    function setLocked(simulator, cfg, stepNumber) {
+    function setLocked(simulator, cfg) {
         cfg = cfg || {};
-        stepNumber = stepNumber || 0;
         util.extend(simulator.locked, cfg);
     }
 
 
-    function setPhysics(simulator, cfg, stepNumber) {
+    function setPhysics(simulator, cfg) {
         // TODO: Instead of setting these kernel args immediately, we should make the physics values
         // properties of the simulator object, and just change those properties. Then, when we run
         // the kernels, we set the arg using the object property (the same way we set stepNumber.)
 
-        stepNumber = stepNumber || 0;
         cfg = cfg || {};
 
         if(cfg.charge || cfg.gravity) {
@@ -356,12 +354,12 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
             var gravity_t = cfg.gravity ? cljs.types.float_t : null;
 
             simulator.pointKernel.setArgs(
-                [null, null, null, null, null, null, charge, gravity, null, new Uint32Array([stepNumber])],
-                [null, null, null, null, null, null, charge_t, gravity_t, null, cljs.types.uint_t]);
+                [null, null, null, null, null, null, charge, gravity, null, null],
+                [null, null, null, null, null, null, charge_t, gravity_t, null, null]);
 
             simulator.midPointKernel.setArgs(
-                [null, null, null, null, null, null, null, charge, gravity, null, new Uint32Array([stepNumber])],
-                [null, null, null, null, null, null, null, charge_t, gravity_t, null, cljs.types.uint_t]);
+                [null, null, null, null, null, null, null, charge, gravity, null, null],
+                [null, null, null, null, null, null, null, charge_t, gravity_t, null, null]);
 
         }
 
@@ -373,12 +371,12 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
             var edgeStrength_t = cfg.edgeStrength ? cljs.types.float_t : null;
 
             simulator.edgesKernel.setArgs(
-                [null, null, null, null, null, edgeStrength, edgeDistance, new Uint32Array([stepNumber])],
-                [null, null, null, null, null, edgeStrength_t, edgeDistance_t, cljs.types.uint_t]);
+                [null, null, null, null, null, edgeStrength, edgeDistance, null],
+                [null, null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
 
             simulator.midEdgesKernel.setArgs(
-                [null, null, null, null, null, null, null, edgeStrength, edgeDistance, new Uint32Array([stepNumber])],
-                [null, null, null, null, null, null, null, edgeStrength_t, edgeDistance_t, cljs.types.uint_t]);
+                [null, null, null, null, null, null, null, edgeStrength, edgeDistance, null],
+                [null, null, null, null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
         }
     }
 
