@@ -184,7 +184,7 @@ define(["Q", "SimpleEvents"], function (Q, events) {
             });
             bufObj.write = write.bind(this, bufObj);
             bufObj.read = read.bind(this, bufObj);
-            bufObj.copyBuffer = copyBuffer.bind(this, cl, bufObj);
+            bufObj.copyInto = copyBuffer.bind(this, cl, bufObj);
             return bufObj;
         }
     });
@@ -218,7 +218,7 @@ define(["Q", "SimpleEvents"], function (Q, events) {
             });
             bufObj.write = write.bind(this, bufObj);
             bufObj.read = read.bind(this, bufObj);
-            bufObj.copyBuffer = copyBuffer.bind(this, cl, bufObj);
+            bufObj.copyInto = copyBuffer.bind(this, cl, bufObj);
 
             return bufObj;
         }

@@ -425,7 +425,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
         .then(function() {
             return simulator.locked.lockPoints ? false : simulator.pointKernel.call(simulator.numPoints, []);
         })
-        .then(function () { return simulator.buffers.nextPoints.copyBuffer(simulator.buffers.curPoints); })
+        .then(function () { return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints); })
         .then(function() {
             if(simulator.numEdges > 0) {
                 if (simulator.locked.lockEdges) {
@@ -455,7 +455,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
             return simulator.locked.lockMidpoints ? simulator : simulator.midPointKernel.call(simulator.numMidPoints, []);  // APPLY MID-FORCES
         })
         .then(function() {
-            return simulator.buffers.nextMidPoints.copyBuffer(simulator.buffers.curMidPoints);
+            return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
         })
         .then(function () {
             if (simulator.numEdges > 0 && !simulator.locked.lockMidedges) {
