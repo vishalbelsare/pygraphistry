@@ -425,6 +425,9 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
                 return simulator;
             }
         })
+        .then(function() {
+            return simulator.buffers.curPoints.release();
+        })
         ////////////////////////////
         // Run the edges kernel
         .then(function () {
@@ -452,13 +455,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
                 return simulator;
             }
         })
-        ////////////////////////////
-        .then(function () {
-            return Q.all(
-                ['curPoints', 'springsPos', 'curMidPoints', 'midSpringsPos']
-                    .map(function (name) { return simulator.buffers[name]; })
-                    .map(function (buf) { return buf.release(); })
-            );
+        .then(function() {
+            return simulator.buffers.curMidPoints.release();
         })
         .then(function () {
             simulator.cl.queue.finish(); //FIXME use callback arg
