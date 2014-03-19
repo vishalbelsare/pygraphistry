@@ -337,30 +337,14 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
         cfg = cfg || {};
         stepNumber = stepNumber || 0;
         $.extend(simulator.locked, cfg);
-
-        if (cfg.lockPoints)
-            simulator.pointKernel.setArgs(
-                [null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
-                [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
-
-        if (cfg.lockMidpoints)
-            simulator.midPointKernel.setArgs(
-                [null, null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
-                [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
-
-        if (cfg.lockEdges)
-            simulator.edgesKernel.setArgs(
-                [null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
-                [null, null, null, null, null, null, null, cljs.types.uint_t]);
-
-        if (cfg.midEdgesKernel)
-            simulator.edgesKernel.setArgs(
-                [null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
-                [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
     }
 
 
     function setPhysics(simulator, cfg, stepNumber) {
+        // TODO: Instead of setting these kernel args immediately, we should make the physics values
+        // properties of the simulator object, and just change those properties. Then, when we run
+        // the kernels, we set the arg using the object property (the same way we set stepNumber.)
+
         stepNumber = stepNumber || 0;
         cfg = cfg || {};
 
@@ -488,6 +472,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
 
     return {
         "create": create,
+        "setLocked": setLocked,
         "setPoints": setPoints,
         "setEdges": setEdges,
         "tick": tick
