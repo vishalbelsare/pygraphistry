@@ -336,7 +336,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
     function setLocked(simulator, cfg, stepNumber) {
         cfg = cfg || {};
         stepNumber = stepNumber || 0;
-        $.extend(simulator.locked, cfg);
+        util.extend(simulator.locked, cfg);
     }
 
 
