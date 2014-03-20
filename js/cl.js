@@ -37,7 +37,7 @@ define(["Q"], function (Q) {
                 device: d,
                 DEVICE_TYPE: typeToString(d.getInfo(cl.DEVICE_TYPE)),
                 DEVICE_MAX_WORK_ITEM_SIZES: workItems,
-                computeUnits: workItems.reduce(function (a, b) { return a * b})
+                computeUnits: [].slice.call(workItems, 0).reduce(function (a, b) { return a * b; })
             };
         });
         devices.sort(function (a, b) { return b.computeUnits - a.computeUnits; });
