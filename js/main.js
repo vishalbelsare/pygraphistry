@@ -4,7 +4,8 @@ require.config({
         "Q": "libs/q",
         "glMatrix": "libs/gl-matrix",
         "MatrixLoader": "libs/load",
-        "Stats": "libs/stats.beautified"
+        "Stats": "libs/stats.beautified",
+        "Long": "libs/Long"
     },
     shim: {
         "jQuery": {
