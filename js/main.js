@@ -228,6 +228,10 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events) {
                 );
             })
 
+            // Set the starting selection of the <select> control to be blank, since we start with
+            // random data loaded, not a matrix
+            dataEl.prop('selectedIndex', -1)
+
             $('#datasets')
             .on('change', function () {
                 var dataSet = dataList[parseInt(this.value)];
