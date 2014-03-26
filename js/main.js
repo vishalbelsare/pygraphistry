@@ -191,7 +191,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events) {
         // Given a URI of a JSON data index, return an array of objects, with keys for display name,
         // file URI, and data size
         function getDataList(listURI) {
-            return MatrixLoader.ls(listFile)
+            return MatrixLoader.ls(listURI)
             .then(function (files) {
                 var listing = [];
 
@@ -210,9 +210,21 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events) {
 
         var dataList = [];
 
-        return getDataList("data/matrices.binary.json")
+        return getDataList("data/geo.json")
+        .then(function(geoList){
+            geoList = geoList.map(function(fileInfo) {
+                fileInfo["base"] = fileInfo.base + ".geo";
+                fileInfo["loader"] = loadGeo;
+                return fileInfo;
+            });
+
+            dataList = dataList.concat(geoList);
+
+            return getDataList("data/matrices.binary.json");
+        })
         .then(function(matrixList){
             matrixList = matrixList.map(function(fileInfo) {
+                fileInfo["base"] = fileInfo.base + ".mtx";
                 fileInfo["loader"] = loadMatrix;
                 return fileInfo;
             });
@@ -270,6 +282,11 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events) {
         .then(function() {
             return clGraph.tick();
         });
+    }
+
+
+    function loadGeo(clGraph, graphFileURI) {
+        return Q.delay(10);
     }
 
 
