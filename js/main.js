@@ -322,8 +322,8 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events) {
         var edges = [];
         // This may create duplicate edges. Oh well, for now.
         for(var i = 0; i < amount; i++) {
-            var source = i,
-                target = (i + 1) % amount;
+            var source = (i % numNodes),
+                target = (i + 1) % numNodes;
 
             edges.push([source, target]);
         }
