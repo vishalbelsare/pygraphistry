@@ -1,7 +1,7 @@
 define(["jQuery", "Q", "Long"], function ($, Q, Long) {
     "use strict";
 
-    return {
+    var exports = {
         ls: function (matrixJson) {
             //FIXME do not do as eval
             var parts = matrixJson.split('/');
@@ -158,9 +158,36 @@ define(["jQuery", "Q", "Long"], function ($, Q, Long) {
             // normalize_d(v_d) = (v_d + d.scale.c)/d.scale.x
 
             return {
-                lat: {min: minLat, max: maxLat, stats: {avg: avgLat, std: stdLat}, scale: {c: -(avgLat - 1.5 * stdLat), x: 3 * stdLat}},
-                lng: {min: minLng, max: maxLng, stats: {avg: avgLng, std: stdLng}, scale: {c: -(avgLng - 1.5 * stdLng), x: 3 * stdLng}}
+                lat: {min: minLat, max: maxLat, stats: {avg: avgLat, std: stdLat}, scale: {center: -(avgLat - 1.5 * stdLat), factor: 3 * stdLat}},
+                lng: {min: minLng, max: maxLng, stats: {avg: avgLng, std: stdLng}, scale: {center: -(avgLng - 1.5 * stdLng), factor: 3 * stdLng}}
             };
+        },
+
+
+        /**
+         * Takes geo data returned by loadGeo and returns an object containing and edge and points
+         * array, with the points being properly normalized to be on [1,1] and
+         */
+        processGeo: function(geoData) {
+            var points = [],
+                edges = [],
+                bounds = exports.getGeoBounds(geoData);
+
+            if(bounds.lat.max - bounds.lat.min > bounds.lng.max - bounds.lng.min) {
+                var factor = 1 / (bounds.lat.max - bounds.lat.min);
+            } else {
+                var factor = 1 / (bounds.lng.max - bounds.lng.min);
+            }
+
+            for(var i = 0; i < geoData.numEdges; i++) {
+                points.push([(geoData.startLng(i) - bounds.lng.min) * factor, (geoData.startLat(i) - bounds.lat.min) * factor]);
+                points.push([(geoData.endLng(i) - bounds.lng.min) * factor, (geoData.endLat(i) - bounds.lat.min) * factor]);
+                edges.push([points.length - 2, points.length - 1]);
+            }
+
+            return {"points": points, "edges": edges};
         }
     };
+
+    return exports;
 });

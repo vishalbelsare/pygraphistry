@@ -286,7 +286,22 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events) {
 
 
     function loadGeo(clGraph, graphFileURI) {
-        return Q.delay(10);
+        var processedData;
+
+        return MatrixLoader.loadGeo(graphFileURI)
+        .then(function(geoData) {
+            processedData = MatrixLoader.processGeo(geoData);
+            $('#filenodes').text('Nodes: ' + processedData.points.length);
+            $('#fileedges').text('Edges: ' + processedData.edges.length);
+
+            return clGraph.setPoints(processedData.points);
+        })
+        .then(function() {
+            return clGraph.setEdges(processedData.edges);
+        })
+        .then(function() {
+            return clGraph.tick();
+        })
     }
 
 
