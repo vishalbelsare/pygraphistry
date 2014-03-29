@@ -21,6 +21,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
         // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE);
         gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
+        gl.depthFunc(gl.LEQUAL);
         gl.enable(gl.DEPTH_TEST);
         gl.clearColor(0, 0, 0, 0);
         // Lines should be 1px wide
@@ -260,28 +261,8 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
             return renderer;
         }
 
-        gl.depthFunc(gl.LEQUAL);
-
-        if (renderer.isVisible("points")) {
-            renderer.programs["points"].use();
-            renderer.programs["points"].bindVertexAttrib(renderer.buffers.curPoints, "curPos",
-                renderer.elementsPerPoint, gl.FLOAT, false,
-                renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0)
-            gl.drawArrays(gl.POINTS, 0, renderer.numPoints);
-        }
-
-        if (renderer.isVisible("midpoints")) {
-            renderer.programs["midpoints"].use();
-            renderer.programs["midpoints"].bindVertexAttrib(renderer.buffers.curMidPoints, "curPos",
-                renderer.elementsPerPoint, gl.FLOAT, false,
-                renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
-            gl.drawArrays(gl.POINTS, 0, renderer.numMidPoints);
-        }
 
         if(renderer.numEdges > 0) {
-            // Make sure to draw the edges behind the points
-            gl.depthFunc(gl.LESS);
-
             if (renderer.isVisible("edges")) {
                 renderer.programs["edges"].use();
                 renderer.programs["edges"].bindVertexAttrib(renderer.buffers.springs, "curPos",
@@ -297,7 +278,22 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
                     renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
                 gl.drawArrays(gl.LINES, 0, renderer.numMidEdges * 2);
             }
+        }
 
+        if (renderer.isVisible("points")) {
+            renderer.programs["points"].use();
+            renderer.programs["points"].bindVertexAttrib(renderer.buffers.curPoints, "curPos",
+                renderer.elementsPerPoint, gl.FLOAT, false,
+                renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0)
+            gl.drawArrays(gl.POINTS, 0, renderer.numPoints);
+        }
+
+        if (renderer.isVisible("midpoints")) {
+            renderer.programs["midpoints"].use();
+            renderer.programs["midpoints"].bindVertexAttrib(renderer.buffers.curMidPoints, "curPos",
+                renderer.elementsPerPoint, gl.FLOAT, false,
+                renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
+            gl.drawArrays(gl.POINTS, 0, renderer.numMidPoints);
         }
 
         gl.finish();
