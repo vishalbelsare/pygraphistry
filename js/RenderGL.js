@@ -11,7 +11,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
         canvas.width = canvas.clientWidth;
         canvas.height = canvas.clientHeight;
 
-        var gl = canvas.getContext("experimental-webgl", {antialias: true, premultipliedAlpha: false});
+        var gl = canvas.getContext("webgl", {antialias: true, premultipliedAlpha: false});
         if(gl === null) {
             throw new Error("Could not initialize WebGL");
         }
