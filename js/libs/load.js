@@ -176,6 +176,9 @@ define(["jQuery", "Q", "Long"], function ($, Q, Long) {
                 bounds = exports.getGeoBounds(geoData);
 
             for(var i = 0; i < geoData.numEdges; i++) {
+                if(Math.random() < 0.7) {
+                    continue;
+                }
                 points.push([(geoData.startLng(i) + bounds.lng.scale.c) / (bounds.lng.scale.x), (geoData.startLat(i) + bounds.lat.scale.c) / (bounds.lat.scale.x)]);
                 points.push([(geoData.endLng(i) + bounds.lng.scale.c) / (bounds.lng.scale.x), (geoData.endLat(i) + bounds.lat.scale.c) / (bounds.lat.scale.x)]);
                 edges.push([points.length - 2, points.length - 1]);
