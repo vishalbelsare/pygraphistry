@@ -28,6 +28,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
                 simObj.setEdges = setEdges.bind(this, simObj);
                 simObj.setLocked = setLocked.bind(this, simObj);
                 simObj.setPhysics = setPhysics.bind(this, simObj);
+                simObj.resetBuffers = resetBuffers.bind(this, simObj);
+
                 simObj.dimensions = dimensions;
                 simObj.numSplits = numSplits;
                 simObj.numPoints = 0;
@@ -36,7 +38,19 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
                     {lockPoints: false, lockMidpoints: true, lockEdges: false, lockMidedges: true},
                     (locked || {})
                 );
-                simObj.buffers = {};
+
+                simObj.buffers = {
+                    nextPoints: null,
+                    randValues: null,
+                    curPoints: null,
+                    forwardsEdges: null,
+                    forwardsWorkItems: null,
+                    backwardsEdges: null,
+                    backwardsWorkItems: null,
+                    springsPos: null,
+                    midSpringsPos: null,
+                    midSpringsColorCoord: null
+                };
 
                 console.debug("WebCL simulator created");
                 return simObj
@@ -44,6 +58,33 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
         })
 
     }
+
+
+    /**
+     * Given an array of (potentially null) buffers, delete the non-null buffers and set their
+     * variable in the simulator buffer object to null.
+     */
+    var resetBuffers = function(simulator, buffers) {
+        var validBuffers = buffers.filter(function(val) { return !(!val); });
+        if(validBuffers.length == 0) {
+            return Q(null);
+        }
+
+        // Search for the buffer in the simulator's buffer object, and set it to null there
+        validBuffers.forEach(function(buffToDelete) {
+            for(var buff in simulator.buffers) {
+                if(simulator.buffers.hasOwnProperty(buff) && simulator.buffers[buff] == buffToDelete) {
+                    simulator.buffers[buff] = null;
+                }
+            }
+        });
+
+        validBuffers.map(function(buffToDelete) {
+            buffToDelete.delete();
+        })
+
+        return Q.all(validBuffers);
+    };
 
 
     function setPoints(simulator, points) {
