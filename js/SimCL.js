@@ -123,7 +123,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
         })
         .spread(function(pointsVBO, nextPointsBuffer, randBuffer) {
             simulator.buffers.nextPoints = nextPointsBuffer;
-            // Let the renderer know about the WebGL buffer we just created
+
             simulator.renderer.buffers.curPoints = pointsVBO;
 
             // Generate an array of random values we will write to the randValues buffer
@@ -141,6 +141,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
             simulator.buffers.curPoints = pointsBuf;
 
             var localPosSize = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
+
             return simulator.pointKernel.setArgs([
                 new Uint32Array([simulator.numPoints]),
                 simulator.buffers.curPoints.buffer,
@@ -181,55 +182,30 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
         var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
         var elementsPerWorkItem = 2;
 
-        // Delete all the existing edge buffers
-        return Q.all(
-            [ simulator.buffers.forwardsEdges,
-              simulator.buffers.forwardsWorkItems,
-              simulator.buffers.backwardsEdges,
-              simulator.buffers.backwardsWorkItems,
-              simulator.buffers.springsPos,
-              simulator.buffers.midSpringsPos,
-              simulator.buffers.midSpringsColorCoord ]
-            .filter(function(val) { return !(!val); })
-            .map(function(val) { return val.delete(); }))
-        .then(function() {
-            // Reset
-            simulator.buffers.forwardsEdges = null;
-            simulator.buffers.forwardsWorkItems = null;
-            simulator.buffers.springsPos = null;
-            simulator.buffers.backwardsEdges = null;
-            simulator.buffers.backwardsWorkItems = null;
-            simulator.buffers.midSpringsColorCoord = null;
+        if(forwardsEdges.edgesTyped.length < 1) {
+            throw new Error("The edge buffer is empty");
+        }
+        if(forwardsEdges.edgesTyped.length % elementsPerEdge !== 0) {
+            throw new Error("The edge buffer size is invalid (must be a multiple of " + elementsPerEdge + ")");
+        }
+        if(forwardsEdges.workItemsTyped.length < 1) {
+            throw new Error("The work items buffer is empty");
+        }
+        if(forwardsEdges.workItemsTyped.length % elementsPerWorkItem !== 0) {
+            throw new Error("The work item buffer size is invalid (must be a multiple of " + elementsPerWorkItem + ")");
+        }
 
-            simulator.numEdges = 0;
-            simulator.renderer.numEdges = 0;
-            simulator.numForwardsWorkItems = 0;
-            simulator.numBackwardsWorkItems = 0;
-
-            simulator.numMidPoints = 0;
-            simulator.renderer.numMidPoints = 0;
-            simulator.numMidEdges = 0;
-            simulator.renderer.numMidEdges = 0;
-
-            //FIXME encapsulate and repeat for midSprings
-            if(simulator.renderer.buffers.springs) {
-                return simulator.renderer.buffers.springs.delete()
-                .then(function() {
-                    simulator.renderer.buffers.springs = null;
-                })
-            } else {
-                return null;
-            }
-        })
+        return simulator.resetBuffers([
+            simulator.buffers.forwardsEdges,
+            simulator.buffers.forwardsWorkItems,
+            simulator.buffers.backwardsEdges,
+            simulator.buffers.backwardsWorkItems,
+            simulator.buffers.springsPos,
+            simulator.buffers.midSpringsPos,
+            simulator.buffers.midSpringsColorCoord
+        ])
         .then(function() {
             // Init constant
-            if(forwardsEdges.edgesTyped.length % elementsPerEdge !== 0) {
-                throw new Error("The edge buffer size is invalid (must be a multiple of " + elementsPerEdge + ")");
-            }
-            if(forwardsEdges.workItemsTyped.length % elementsPerWorkItem !== 0) {
-                throw new Error("The work item buffer size is invalid (must be a multiple of " + elementsPerWorkItem + ")");
-            }
-
             simulator.numEdges = forwardsEdges.edgesTyped.length / elementsPerEdge;
             simulator.renderer.numEdges = simulator.numEdges;
             simulator.numForwardsWorkItems = forwardsEdges.workItemsTyped.length / elementsPerWorkItem;
@@ -239,121 +215,97 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
             simulator.renderer.numMidPoints = simulator.numMidPoints;
             simulator.numMidEdges = simulator.numMidPoints + simulator.numEdges;
             simulator.renderer.numMidEdges = simulator.numMidEdges;
-        })
-        .then(function() {
+
             // Create buffers
             return Q.all([
                 simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength),
                 simulator.cl.createBuffer(forwardsEdges.workItemsTyped.byteLength),
                 simulator.cl.createBuffer(backwardsEdges.edgesTyped.byteLength),
                 simulator.cl.createBuffer(backwardsEdges.workItemsTyped.byteLength),
+                simulator.cl.createBuffer(midPoints.byteLength),
                 simulator.renderer.createBuffer(simulator.numEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT),
                 simulator.renderer.createBuffer(midPoints),
-                simulator.cl.createBuffer(midPoints.byteLength),
                 simulator.renderer.createBuffer(simulator.numMidEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT),
                 simulator.renderer.createBuffer(simulator.numMidEdges * 2 * Float32Array.BYTES_PER_ELEMENT)]);
         })
-        .spread(function(forwardsEdgesBuffer, forwardsWorkItemsBuffer,
-                         backwardsEdgesBuffer, backwardsWorkItemsBuffer, springsVBO, midPointsVBO,
-                         nextMidPointsBuffer, midSpringsVBO, midSpringsColorCoordVBO) {
+        .spread(function(forwardsEdgesBuffer, forwardsWorkItemsBuffer, backwardsEdgesBuffer,
+                         backwardsWorkItemsBuffer, nextMidPointsBuffer, springsVBO,
+                         midPointsVBO, midSpringsVBO, midSpringsColorCoordVBO) {
             // Bind buffers
             simulator.buffers.forwardsEdges = forwardsEdgesBuffer;
             simulator.buffers.forwardsWorkItems = forwardsWorkItemsBuffer;
             simulator.buffers.backwardsEdges = backwardsEdgesBuffer;
             simulator.buffers.backwardsWorkItems = backwardsWorkItemsBuffer;
-            simulator.renderer.buffers.springs = springsVBO;
-
-            simulator.renderer.buffers.curMidPoints = midPointsVBO;
             simulator.buffers.nextMidPoints = nextMidPointsBuffer;
+
+            simulator.renderer.buffers.springs = springsVBO;
+            simulator.renderer.buffers.curMidPoints = midPointsVBO;
             simulator.renderer.buffers.midSprings = midSpringsVBO;
             simulator.renderer.buffers.midSpringsColorCoord = midSpringsColorCoordVBO;
 
-            return Q.all([simulator.cl.createBufferGL(springsVBO),
-                          simulator.buffers.forwardsEdges.write(forwardsEdges.edgesTyped),
-                          simulator.buffers.forwardsWorkItems.write(forwardsEdges.workItemsTyped),
-                          simulator.buffers.backwardsEdges.write(backwardsEdges.edgesTyped),
-                          simulator.buffers.backwardsWorkItems.write(backwardsEdges.workItemsTyped),
-                          simulator.cl.createBufferGL(midPointsVBO),
-                          simulator.cl.createBufferGL(midSpringsVBO),
-                          simulator.cl.createBufferGL(midSpringsColorCoordVBO)]);
+            return Q.all([
+                simulator.cl.createBufferGL(springsVBO),
+                simulator.cl.createBufferGL(midPointsVBO),
+                simulator.cl.createBufferGL(midSpringsVBO),
+                simulator.cl.createBufferGL(midSpringsColorCoordVBO),
+                simulator.buffers.forwardsEdges.write(forwardsEdges.edgesTyped),
+                simulator.buffers.forwardsWorkItems.write(forwardsEdges.workItemsTyped),
+                simulator.buffers.backwardsEdges.write(backwardsEdges.edgesTyped),
+                simulator.buffers.backwardsWorkItems.write(backwardsEdges.workItemsTyped),
+            ]);
         })
-        .spread(function (springsBuffer, fwdEdges, fwdWorkItems, bkwdEdges, bkwdWorkItems,
-                          midPointsBuf, midSpringsBuffer, midSpringsColorCoordBuffer) {
-            // Midpoints kernel paramters
+        .spread(function(springsBuffer, midPointsBuf, midSpringsBuffer, midSpringsColorCoordBuffer) {
+            simulator.buffers.springsPos = springsBuffer;
+            simulator.buffers.midSpringsPos = midSpringsBuffer;
             simulator.buffers.curMidPoints = midPointsBuf;
             simulator.buffers.midSpringsColorCoord = midSpringsColorCoordBuffer;
 
-            var types = [];
-            if(!cljs.CURRENT_CL) {
-                // FIXME: find the old WebCL platform type for float2
-                types = [cljs.types.uint_t, cljs.types.uint_t, null, null , cljs.types.local_t, cljs.types.float_t, cljs.types.float_t, cljs.types.float_t, cljs.types.float_t, null, cljs.types.uint_t];
-            }
+            var localPosSize = Math.min(simulator.cl.maxThreads, simulator.numMidPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
 
-            var localPos = Math.min(simulator.cl.maxThreads, simulator.numMidPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
+            var midPointArgs = simulator.midPointKernel.setArgs([
+                new Uint32Array([simulator.numMidPoints]),
+                new Uint32Array([simulator.numSplits]),
+                simulator.buffers.curMidPoints.buffer,
+                simulator.buffers.nextMidPoints.buffer,
+                new Uint32Array([localPosSize]),
+                new Float32Array([simulator.dimensions[0]]),
+                new Float32Array([simulator.dimensions[1]]),
+                new Float32Array([-0.00001]),
+                new Float32Array([0.2]),
+                simulator.buffers.randValues.buffer,
+                new Uint32Array([0])
+            ]);
 
-            return simulator.midPointKernel.setArgs(
-                [new Uint32Array([simulator.numMidPoints]),
-                 new Uint32Array([simulator.numSplits]),
-                 simulator.buffers.curMidPoints.buffer,
-                 simulator.buffers.nextMidPoints.buffer,
-                 new Uint32Array([localPos]),
-                 new Float32Array([simulator.dimensions[0]]),
-                 new Float32Array([simulator.dimensions[1]]),
-                 new Float32Array([-0.00001]),
-                 new Float32Array([0.2]),
-                 simulator.buffers.randValues.buffer,
-                 new Uint32Array([0])],
-                types)
-            .then(function() {
-                return [springsBuffer, midPointsBuf, midSpringsBuffer];
-            });
-        })
-        .spread(function(springsBuffer, midPointsBuf, midSpringsBuffer) {
-            // Edges kernel params
-            simulator.buffers.springsPos = springsBuffer;
-            simulator.buffers.midSpringsPos = midSpringsBuffer;
+            var edgeArgs = simulator.edgesKernel.setArgs([
+                null, //forwards/backwards picked dynamically
+                null, //forwards/backwards picked dynamically
+                null, //simulator.buffers.curPoints.buffer then simulator.buffers.nextPoints.buffer
+                null, //simulator.buffers.nextPoints.buffer then simulator.buffers.curPoints.buffer
+                simulator.buffers.springsPos.buffer,
+                new Float32Array([1.0]),
+                new Float32Array([0.1]),
+                null
+            ]);
 
-            var types = [];
-            if(!cljs.CURRENT_CL) {
-                types = [null, null , null, null, null, cljs.types.float_t, cljs.types.float_t, null];
-            }
+            var midEdgeArgs = simulator.midEdgesKernel.setArgs([
+                new Uint32Array([simulator.numSplits]),        // 0:
+                simulator.buffers.forwardsEdges.buffer,        // 1: only need one direction as guaranteed to be chains
+                simulator.buffers.forwardsWorkItems.buffer,    // 2:
+                simulator.buffers.curPoints.buffer,            // 3:
+                simulator.buffers.nextMidPoints.buffer,        // 4:
+                simulator.buffers.curMidPoints.buffer,         // 5:
+                simulator.buffers.midSpringsPos.buffer,        // 6:
+                simulator.buffers.midSpringsColorCoord.buffer, // 7:
+                new Float32Array([1.0]),                       // 8:
+                new Float32Array([0.1]),                       // 9:
+                null
+            ]);
 
-            var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
-            return simulator.edgesKernel.setArgs(
-                [null, //forwards/backwards picked dynamically
-                 null, //forwards/backwards picked dynamically
-                 null, //simulator.buffers.curPoints.buffer then simulator.buffers.nextPoints.buffer
-                 null, //simulator.buffers.nextPoints.buffer then simulator.buffers.curPoints.buffer
-                 simulator.buffers.springsPos.buffer,
-                 new Float32Array([1.0]),
-                 new Float32Array([0.1]),
-                 null],
-                types);
+            return Q.all(midPointArgs, edgeArgs, midEdgeArgs);
         })
         .then(function() {
-            // Mid-edges kernel params
-            var types = [];
-            if (!cljs.CURRENT_CL)
-                //       0                  1     2     3     4      5     6     7     8                   9                   10
-                types = [cljs.types.uint_t, null, null, null, null , null, null, null, cljs.types.float_t, cljs.types.float_t, null];
-
-            var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
-            return simulator.midEdgesKernel.setArgs(
-                [
-                    new Uint32Array([simulator.numSplits]),        // 0:
-                    simulator.buffers.forwardsEdges.buffer,        // 1: only need one direction as guaranteed to be chains
-                    simulator.buffers.forwardsWorkItems.buffer,    // 2:
-                    simulator.buffers.curPoints.buffer,            // 3:
-                    simulator.buffers.nextMidPoints.buffer,        // 4:
-                    simulator.buffers.curMidPoints.buffer,         // 5:
-                    simulator.buffers.midSpringsPos.buffer,        // 6:
-                    simulator.buffers.midSpringsColorCoord.buffer, // 7:
-                    new Float32Array([1.0]),                       // 8:
-                    new Float32Array([0.1]),                       // 9:
-                    null
-                ],
-                types);
-        })
+            return simulator;
+        });
     }
 
 
