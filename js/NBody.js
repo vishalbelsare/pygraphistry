@@ -179,20 +179,6 @@ define(["Q", "glMatrix", "SimpleEvents"], function(Q, glMatrix, events) {
 
     function tick(graph) {
         events.fire("tickBegin");
-
-        // On the first tick, don't run the simulator so we can see the starting point of the graph
-        // if(graph.stepNumber == 0) {
-        //  graph.events.renderBegin();
-        //  graph.stepNumber++
-
-        //  return graph.renderer.render()
-        //  .then(function() {
-        //      graph.events.renderEnd();
-        //      graph.events.tickEnd();
-
-        //      return graph;
-        //  });
-        // } else {
             events.fire("simulateBegin");
 
             return graph.simulator.tick(graph.stepNumber++)
