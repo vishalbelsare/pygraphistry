@@ -87,102 +87,76 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
     };
 
 
+    /**
+     * Set the initial positions of the points in the NBody simulation
+     * @param simulator - the simulator object created by SimCL.create()
+     * @param {Float32Array} points - a typed array containing two elements for every point, the x
+     * position, proceeded by the y position
+     *
+     * @returns a promise fulfilled by with the given simulator object
+     */
     function setPoints(simulator, points) {
+        if(points.length < 1) {
+            throw new Error("The points buffer is empty");
+        }
         if(points.length % simulator.elementsPerPoint !== 0) {
             throw new Error("The points buffer is an invalid size (must be a multiple of " + simulator.elementsPerPoint + ")");
         }
 
-        return Q.all(
-                [ simulator.buffers.nextPoints,
-                  simulator.buffers.randValues,
-                  simulator.buffers.curPoints ]
-            .filter(function(val) { return !(!val); })
-            .map(function(val) { return val.delete(); })
-        )
+        return simulator.resetBuffers([
+            simulator.buffers.nextPoints,
+            simulator.buffers.randValues,
+            simulator.buffers.curPoints
+        ])
         .then(function() {
-            // Reset
-            simulator.buffers.nextPoints = null;
-            simulator.buffers.randValues = null;
-            simulator.buffers.curPoints = null;
-
-            simulator.numPoints = 0;
-            simulator.renderer.numPoints = 0;
-
-            if (simulator.renderer.buffers.curPoints) {
-                return simulator.renderer.buffers.curPoints.delete()
-                .then(function() {
-                    simulator.renderer.buffers.curPoints = null;
-                })
-            } else {
-                return null;
-            }
-        })
-        .then(function() {
-            // Create buffers
             simulator.numPoints = points.length / simulator.elementsPerPoint;
             simulator.renderer.numPoints = simulator.numPoints;
-
-            // If there are 0 points, then don't create any of the buffers
-            if(simulator.numPoints < 1) {
-                throw "zero-points";
-            }
 
             console.debug("Number of points:", simulator.renderer.numPoints);
 
             // Create buffers and write initial data to them, then set
-            return Q.all([simulator.renderer.createBuffer(points),
-                   simulator.cl.createBuffer(points.byteLength),
-                   simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT)]);
+            return Q.all([
+                    simulator.renderer.createBuffer(points),
+                    simulator.cl.createBuffer(points.byteLength),
+                    simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT)
+                ]);
         })
         .spread(function(pointsVBO, nextPointsBuffer, randBuffer) {
-            // Bind buffers
-            simulator.renderer.buffers.curPoints = pointsVBO;
             simulator.buffers.nextPoints = nextPointsBuffer;
-            simulator.buffers.randValues = randBuffer;
+            // Let the renderer know about the WebGL buffer we just created
+            simulator.renderer.buffers.curPoints = pointsVBO;
 
+            // Generate an array of random values we will write to the randValues buffer
+            simulator.buffers.randValues = randBuffer;
             var rands = new Float32Array(randLength * simulator.elementsPerPoint);
             for(var i = 0; i < rands.length; i++) {
                 rands[i] = Math.random();
             }
 
-            var pointsBuf = simulator.cl.createBufferGL(pointsVBO).then(function (pointsBuf) {
-                simulator.buffers.curPoints = pointsBuf;
-                return pointsBuf;
-            })
-
-            return Q.all([pointsBuf, simulator.buffers.randValues.write(rands)]);
+            return Q.all([
+                simulator.cl.createBufferGL(pointsVBO),
+                simulator.buffers.randValues.write(rands)]);
         })
         .spread(function(pointsBuf, randValues) {
-            // Point kernel params
-            var types = [];
-            if(!cljs.CURRENT_CL) {
-                // FIXME: find the old WebCL platform type for float2
-                types = [cljs.types.uint_t, null, null , cljs.types.local_t, cljs.types.float_t, cljs.types.float_t, cljs.types.float_t, cljs.types.float_t, null, cljs.types.uint_t];
-            }
+            simulator.buffers.curPoints = pointsBuf;
 
-            var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
-            return simulator.pointKernel.setArgs(
-                [new Uint32Array([simulator.numPoints]),
-                 simulator.buffers.curPoints.buffer,
-                 simulator.buffers.nextPoints.buffer,
-                 new Uint32Array([localPos]),
-                 new Float32Array([simulator.dimensions[0]]),
-                 new Float32Array([simulator.dimensions[1]]),
-                 new Float32Array([-0.00001]),
-                 new Float32Array([0.2]),
-                 simulator.buffers.randValues.buffer,
-                 new Uint32Array([0])],
-                types);
+            var localPosSize = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
+            return simulator.pointKernel.setArgs([
+                new Uint32Array([simulator.numPoints]),
+                simulator.buffers.curPoints.buffer,
+                simulator.buffers.nextPoints.buffer,
+                new Uint32Array([localPosSize]),
+                new Float32Array([simulator.dimensions[0]]),
+                new Float32Array([simulator.dimensions[1]]),
+                new Float32Array([-0.00001]),
+                new Float32Array([0.2]),
+                simulator.buffers.randValues.buffer,
+                new Uint32Array([0])
+            ]);
         })
-        .then(
-            function() { return simulator; },
-            function(err) {
-                if (err === "zero-points") {
-                    return simulator;
-                } else {
-                    throw err;
-                }
-            });
+        .then(function() {
+            return simulator;
+        });
     }
 
 
