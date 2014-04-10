@@ -173,7 +173,8 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
               simulator.buffers.backwardsEdges,
               simulator.buffers.backwardsWorkItems,
               simulator.buffers.springsPos,
-              simulator.buffers.midSpringsPos ]
+              simulator.buffers.midSpringsPos,
+              simulator.buffers.midSpringsColorCoord ]
             .filter(function(val) { return !(!val); })
             .map(function(val) { return val.delete(); }))
         .then(function() {
@@ -183,6 +184,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
             simulator.buffers.springsPos = null;
             simulator.buffers.backwardsEdges = null;
             simulator.buffers.backwardsWorkItems = null;
+            simulator.buffers.midSpringsColorCoord = null;
 
             simulator.numEdges = 0;
             simulator.renderer.numEdges = 0;
@@ -233,11 +235,12 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
                 simulator.renderer.createBuffer(simulator.numEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT),
                 simulator.renderer.createBuffer(midPoints),
                 simulator.cl.createBuffer(midPoints.byteLength),
-                simulator.renderer.createBuffer(simulator.numMidEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT)]);
+                simulator.renderer.createBuffer(simulator.numMidEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT),
+                simulator.renderer.createBuffer(simulator.numMidEdges * 2 * Float32Array.BYTES_PER_ELEMENT)]);
         })
         .spread(function(forwardsEdgesBuffer, forwardsWorkItemsBuffer,
                          backwardsEdgesBuffer, backwardsWorkItemsBuffer, springsVBO, midPointsVBO,
-                         nextMidPointsBuffer, midSpringsVBO) {
+                         nextMidPointsBuffer, midSpringsVBO, midSpringsColorCoordVBO) {
             // Bind buffers
             simulator.buffers.forwardsEdges = forwardsEdgesBuffer;
             simulator.buffers.forwardsWorkItems = forwardsWorkItemsBuffer;
@@ -248,6 +251,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
             simulator.renderer.buffers.curMidPoints = midPointsVBO;
             simulator.buffers.nextMidPoints = nextMidPointsBuffer;
             simulator.renderer.buffers.midSprings = midSpringsVBO;
+            simulator.renderer.buffers.midSpringsColorCoord = midSpringsColorCoordVBO;
 
             return Q.all([simulator.cl.createBufferGL(springsVBO),
                           simulator.buffers.forwardsEdges.write(forwardsEdges.edgesTyped),
@@ -255,12 +259,14 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
                           simulator.buffers.backwardsEdges.write(backwardsEdges.edgesTyped),
                           simulator.buffers.backwardsWorkItems.write(backwardsEdges.workItemsTyped),
                           simulator.cl.createBufferGL(midPointsVBO),
-                          simulator.cl.createBufferGL(midSpringsVBO)]);
+                          simulator.cl.createBufferGL(midSpringsVBO),
+                          simulator.cl.createBufferGL(midSpringsColorCoordVBO)]);
         })
         .spread(function (springsBuffer, fwdEdges, fwdWorkItems, bkwdEdges, bkwdWorkItems,
-                          midPointsBuf, midSpringsBuffer) {
+                          midPointsBuf, midSpringsBuffer, midSpringsColorCoordBuffer) {
             // Midpoints kernel paramters
             simulator.buffers.curMidPoints = midPointsBuf;
+            simulator.buffers.midSpringsColorCoord = midSpringsColorCoordBuffer;
 
             var types = [];
             if(!cljs.CURRENT_CL) {
@@ -313,21 +319,24 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
             // Mid-edges kernel params
             var types = [];
             if (!cljs.CURRENT_CL)
-                types = [cljs.types.uint_t, null, null, null, null , null, null, cljs.types.float_t, cljs.types.float_t, null];
+                //       0                  1     2     3     4      5     6     7     8                   9                   10
+                types = [cljs.types.uint_t, null, null, null, null , null, null, null, cljs.types.float_t, cljs.types.float_t, null];
 
             var localPos = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
             return simulator.midEdgesKernel.setArgs(
-                [new Uint32Array([simulator.numSplits]),
-                 simulator.buffers.forwardsEdges.buffer, //only need one direction as guaranteed to be chains
-                 simulator.buffers.forwardsWorkItems.buffer,
-                 simulator.buffers.curPoints.buffer,
-                 simulator.buffers.nextMidPoints.buffer,
-                 simulator.buffers.curMidPoints.buffer,
-                 simulator.buffers.midSpringsPos.buffer, //
-                 new Float32Array([1.0]),
-                 new Float32Array([0.1]),
-                 null
-                 ],
+                [
+                    new Uint32Array([simulator.numSplits]),        // 0:
+                    simulator.buffers.forwardsEdges.buffer,        // 1: only need one direction as guaranteed to be chains
+                    simulator.buffers.forwardsWorkItems.buffer,    // 2:
+                    simulator.buffers.curPoints.buffer,            // 3:
+                    simulator.buffers.nextMidPoints.buffer,        // 4:
+                    simulator.buffers.curMidPoints.buffer,         // 5:
+                    simulator.buffers.midSpringsPos.buffer,        // 6:
+                    simulator.buffers.midSpringsColorCoord.buffer, // 7:
+                    new Float32Array([1.0]),                       // 8:
+                    new Float32Array([0.1]),                       // 9:
+                    null
+                ],
                 types);
         })
     }
@@ -375,8 +384,9 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
                 [null, null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
 
             simulator.midEdgesKernel.setArgs(
-                [null, null, null, null, null, null, null, edgeStrength, edgeDistance, null],
-                [null, null, null, null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
+                // 0   1     2     3     4     5     6     7     8               9               10
+                [null, null, null, null, null, null, null, null, edgeStrength,   edgeDistance,   null],
+                [null, null, null, null, null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
         }
     }
 
@@ -435,8 +445,13 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
                 [null, null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
                 [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
         })
-        .then(function () { return simulator.buffers.curMidPoints.acquire(); })
-        .then(function () {
+        .then(function() {
+            return Q.all([
+                simulator.buffers.curMidPoints.acquire(),
+                simulator.buffers.midSpringsColorCoord.acquire()
+            ]);
+        })
+        .spread(function() {
             return simulator.locked.lockMidpoints ? simulator : simulator.midPointKernel.call(simulator.numMidPoints, []);  // APPLY MID-FORCES
         })
         .then(function() {
@@ -445,8 +460,9 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
         .then(function () {
             if (simulator.numEdges > 0 && !simulator.locked.lockMidedges) {
                 simulator.midEdgesKernel.setArgs(
-                    [null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
-                    [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
+                    // 0   1     2     3     4     5     6     7     8     9     10
+                    [null, null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
+                    [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
                 return simulator.midEdgesKernel.call(simulator.numForwardsWorkItems, [])
                 .then(function() {
                     return simulator;
@@ -456,9 +472,12 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
             }
         })
         .then(function() {
-            return simulator.buffers.curMidPoints.release();
+            return Q.all([
+                simulator.buffers.curMidPoints.release(),
+                simulator.buffers.midSpringsColorCoord.release()
+            ]);
         })
-        .then(function () {
+        .spread(function () {
             simulator.cl.queue.finish(); //FIXME use callback arg
             return simulator;
         });
