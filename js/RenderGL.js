@@ -45,6 +45,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
         renderer.createProgram = createProgram.bind(this, renderer);
         renderer.setVisible = setVisible.bind(this, renderer);
         renderer.isVisible = isVisible.bind(this, renderer);
+        renderer.setColorMap = setColorMap.bind(this, renderer);
 
         renderer.visible = {points: true, edges: true, midpoints: false, midedges: false};
         renderer.setVisible(visible);
@@ -131,6 +132,25 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
         })
 
         return renderer;
+    });
+
+
+    /**
+     * Fetch the image at the given URL and use it when coloring edges in the graph.
+     */
+    var setColorMap = Q.promised(function(renderer, imageURL) {
+        var gl = renderer.gl;
+
+        return util.getImage(imageURL)
+        .then(function(texImg) {
+            var colorTex = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, colorTex);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texImg);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+            gl.generateMipmap(gl.TEXTURE_2D);
+            gl.bindTexture(gl.TEXTURE_2D, null);
+        });
     });
 
 
@@ -274,6 +294,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
     return {
         "create": create,
         "createProgram": createProgram,
+        "setColorMap": setColorMap,
         "setCamera2d": setCamera2d,
         "createBuffer": createBuffer,
         "write": write,
