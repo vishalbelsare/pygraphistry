@@ -39,6 +39,15 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events) {
 
             var points = createPoints(numPoints, dimensions);
 
+            return Q.all([
+                graph.setColorMap("test-colormap.png"),
+                graph.setPoints(points)
+            ]);
+        })
+        .spread(function(graph, graph2) {
+            return graph.setEdges(createEdges(numEdges, numPoints));
+        })
+        .then(function(graph) {
             var fpsTotal = new Stats();
             fpsTotal.setMode(0);
             $("#fpsTotal").append(fpsTotal.domElement);
@@ -57,12 +66,6 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events) {
             events.listen("renderBegin", function() { fpsRender.begin(); });
             events.listen("renderEnd", function() { fpsRender.end(); });
 
-            return graph.setPoints(points);
-        })
-        .then(function(graph) {
-            return graph.setEdges(createEdges(numEdges, numPoints));
-        })
-        .then(function() {
             var animButton = $("#anim-button");
             var stepButton = $("#step-button");
 

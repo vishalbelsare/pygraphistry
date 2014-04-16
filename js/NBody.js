@@ -29,6 +29,7 @@ define(["Q", "glMatrix", "SimpleEvents"], function(Q, glMatrix, events) {
                 graph.setPhysics = setPhysics.bind(this, graph);
                 graph.setVisible = setVisible.bind(this, graph);
                 graph.setLocked = setLocked.bind(this, graph);
+                graph.setColorMap = setColorMap.bind(this, graph);
                 graph.tick = tick.bind(this, graph);
                 graph.stepNumber = 0;
                 graph.dimensions = dimensions;
@@ -162,6 +163,14 @@ define(["Q", "glMatrix", "SimpleEvents"], function(Q, glMatrix, events) {
     }
 
 
+    function setColorMap(graph, imageURL) {
+        return graph.renderer.setColorMap(imageURL)
+        .then(function() {
+            return graph;
+        });
+    }
+
+
     // Turns an array of vec3's into a Float32Array with elementsPerPoint values for each element in
     // the input array.
     function _toTypedArray(array, cons) {
@@ -203,6 +212,7 @@ define(["Q", "glMatrix", "SimpleEvents"], function(Q, glMatrix, events) {
         "create": create,
         "setPoints": setPoints,
         "setEdges": setEdges,
+        "setColorMap": setColorMap,
         "tick": tick
     };
 });
