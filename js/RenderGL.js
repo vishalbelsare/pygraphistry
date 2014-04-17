@@ -36,6 +36,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
         renderer.numPoints = 0;
         renderer.numEdges = 0;
         renderer.numMidPoints = 0;
+        renderer.colorTexture = null;
 
         // For each module function that takes a renderer as the first argument, bind a version
         // to this renderer object, with the renderer argument curried in.
@@ -60,6 +61,11 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
             renderer.programs["edges"] = edgeProgram;
             renderer.programs["midpoints"] = midpointProgram;
             renderer.programs["midedges"] = midedgeProgram;
+
+            return renderer.createProgram("midedge.vertex", "midedge-textured.fragment");
+        })
+        .then(function(midedgeTexturedProgram) {
+            renderer.programs["midedgestextured"] = midedgeTexturedProgram;
 
             // TODO: Enlarge the camera by the (size of gl points / 2) so that points are fully
             // on screen even if they're at the edge of the graph.
@@ -124,7 +130,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
         var mvpMat3 = glMatrix.mat3.create();
         glMatrix.mat3.fromMat2d(mvpMat3, mvpMatrix);
 
-        ['points', 'edges', 'midpoints', 'midedges'].forEach(function (name) {
+        ['points', 'edges', 'midpoints', 'midedges', 'midedgestextured'].forEach(function (name) {
             var program = renderer.programs[name].glProgram;
             renderer.gl.useProgram(program);
             var mvpLocation = renderer.gl.getUniformLocation(program, "mvp");
@@ -139,12 +145,13 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
      * Fetch the image at the given URL and use it when coloring edges in the graph.
      */
     var setColorMap = Q.promised(function(renderer, imageURL) {
+        // TODO: Allow a user to clear the color map by passing in a null here or something
         var gl = renderer.gl;
 
         return util.getImage(imageURL)
         .then(function(texImg) {
-            var colorTex = gl.createTexture();
-            gl.bindTexture(gl.TEXTURE_2D, colorTex);
+            renderer.colorTexture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, renderer.colorTexture);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texImg);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
@@ -199,6 +206,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
      */
     function bindVertexAttrib(program, buffer, attribute, elementsPerItem, glType, normalize, stride, offset) {
         var gl = program.renderer.gl;
+        // TODO: cache this, because getAttribLocation is a CPU/GPU synchronization
         var location = gl.getAttribLocation(program.glProgram, attribute);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer.buffer);
@@ -261,11 +269,23 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
             }
 
             if (renderer.isVisible("midedges")) {
-                renderer.programs["midedges"].use();
-                renderer.programs["midedges"].bindVertexAttrib(renderer.buffers.midSprings, "curPos",
-                    renderer.elementsPerPoint, gl.FLOAT, false,
-                    renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
-                gl.drawArrays(gl.LINES, 0, renderer.numMidEdges * 2);
+                if(renderer.colorTexture === null) {
+                    renderer.programs["midedges"].use();
+                    renderer.programs["midedges"].bindVertexAttrib(renderer.buffers.midSprings, "curPos",
+                        renderer.elementsPerPoint, gl.FLOAT, false,
+                        renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
+                    gl.drawArrays(gl.LINES, 0, renderer.numMidEdges * 2);
+                } else {
+                    renderer.programs["midedgestextured"].use();
+                    renderer.programs["midedgestextured"].bindVertexAttrib(renderer.buffers.midSprings, "curPos",
+                        renderer.elementsPerPoint, gl.FLOAT, false,
+                        renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
+                    gl.activeTexture(gl.TEXTURE0);
+                    gl.bindTexture(gl.TEXTURE_2D, renderer.colorTexture);
+                    gl.uniform1i(gl.getUniformLocation(renderer.programs["midedgestextured"].glProgram, "uSampler"), 0);
+                    gl.drawArrays(gl.LINES, 0, renderer.numMidEdges * 2);
+                }
+
             }
         }
 
