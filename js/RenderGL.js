@@ -53,18 +53,14 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 
 
         return Q.all(
-            ['point', 'edge', 'midpoint', 'midedge'].map(function (name) {
+            ['point', 'edge', 'midpoint', 'midedge', 'midedge-textured'].map(function (name) {
                 return renderer.createProgram(name + '.vertex', name + '.fragment');
         }))
-        .spread(function (pointProgram, edgeProgram, midpointProgram, midedgeProgram) {
+        .spread(function (pointProgram, edgeProgram, midpointProgram, midedgeProgram, midedgeTexturedProgram) {
             renderer.programs["points"] = pointProgram;
             renderer.programs["edges"] = edgeProgram;
             renderer.programs["midpoints"] = midpointProgram;
             renderer.programs["midedges"] = midedgeProgram;
-
-            return renderer.createProgram("midedge.vertex", "midedge-textured.fragment");
-        })
-        .then(function(midedgeTexturedProgram) {
             renderer.programs["midedgestextured"] = midedgeTexturedProgram;
 
             // TODO: Enlarge the camera by the (size of gl points / 2) so that points are fully
@@ -152,6 +148,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
         .then(function(texImg) {
             renderer.colorTexture = gl.createTexture();
             gl.bindTexture(gl.TEXTURE_2D, renderer.colorTexture);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texImg);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
@@ -278,6 +275,9 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
                 } else {
                     renderer.programs["midedgestextured"].use();
                     renderer.programs["midedgestextured"].bindVertexAttrib(renderer.buffers.midSprings, "curPos",
+                        renderer.elementsPerPoint, gl.FLOAT, false,
+                        renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
+                    renderer.programs["midedgestextured"].bindVertexAttrib(renderer.buffers.midSpringsColorCoord, "aColorCoord",
                         renderer.elementsPerPoint, gl.FLOAT, false,
                         renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
                     gl.activeTexture(gl.TEXTURE0);

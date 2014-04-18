@@ -40,7 +40,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events) {
             var points = createPoints(numPoints, dimensions);
 
             return Q.all([
-                graph.setColorMap("test-colormap.png"),
+                graph.setColorMap("test-colormap2.png"),
                 graph.setPoints(points)
             ]);
         })

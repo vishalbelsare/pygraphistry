@@ -226,7 +226,7 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
                 simulator.renderer.createBuffer(simulator.numEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT),
                 simulator.renderer.createBuffer(midPoints),
                 simulator.renderer.createBuffer(simulator.numMidEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT),
-                simulator.renderer.createBuffer(simulator.numMidEdges * 2 * Float32Array.BYTES_PER_ELEMENT)]);
+                simulator.renderer.createBuffer(simulator.numMidEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT)]);
         })
         .spread(function(forwardsEdgesBuffer, forwardsWorkItemsBuffer, backwardsEdgesBuffer,
                          backwardsWorkItemsBuffer, nextMidPointsBuffer, springsVBO,
