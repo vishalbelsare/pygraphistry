@@ -137,15 +137,124 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
     });
 
 
+
+    var colorMaps =
+        [ 
+          [[0,0,0]], //1
+          [[255,0,0],[0,0,255]], //2
+          [[141,211,199],[255,255,179],[190,186,218]],
+          [[141,211,199],[255,255,179],[190,186,218], [251,128,114]],
+          [[228,26,28], [55,126,184], [77,175,74], [152,78,163], [255,127,0]],
+          [[228,26,28], [55,126,184], [77,175,74], [152,78,163], [255,127,0], [255,255,51]],
+          [[228,26,28], [55,126,184], [77,175,74], [152,78,163], [255,127,0], [255,255,51], [166,86,40]],
+          [[228,26,28], [55,126,184], [77,175,74], [152,78,163], [255,127,0], [255,255,51], [166,86,40], [247,129,191]],
+          [[228,26,28], [55,126,184], [77,175,74], [152,78,163], [255,127,0], [255,255,51], [166,86,40], [247,129,191], [153,153,153]],
+          [[166,206,227], [31,120,180], [178,223,138], [51,160,44], [251,154,153], [227,26,28], [253,191,111], [255,127,0], [202,178,214], [106,61,154]],
+          [[166,206,227], [31,120,180], [178,223,138], [51,160,44], [251,154,153], [227,26,28], [253,191,111], [255,127,0], [202,178,214], [106,61,154], [255,255,153]],
+          [[166,206,227], [31,120,180], [178,223,138], [51,160,44], [251,154,153], [227,26,28], [253,191,111], [255,127,0], [202,178,214], [106,61,154], [255,255,153], [177,89,40]]
+        ];
+
+
+
+
     /**
      * Fetch the image at the given URL and use it when coloring edges in the graph.
      */
-    var setColorMap = Q.promised(function(renderer, imageURL) {
+    var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
         // TODO: Allow a user to clear the color map by passing in a null here or something
         var gl = renderer.gl;
 
         return util.getImage(imageURL)
         .then(function(texImg) {
+
+            try {
+            if (maybeClusters) {
+
+                var canvas = document.createElement("canvas");
+                canvas.width = texImg.width;
+                canvas.height = texImg.height;
+
+                var ctx = canvas.getContext("2d");
+                var imageData = ctx.createImageData(texImg.width, texImg.height);
+
+                //default to white/transparent
+                for (var x = 0; x < texImg.width; x++) {
+                    for (var y = 0; y < texImg.height; y++) {
+                        var i = 4 * (y * texImg.width + x);
+                        imageData.data[i] = 255;
+                        imageData.data[i+1] = 255;
+                        imageData.data[i+2] = 255;
+                        imageData.data[i+3] = 0;                            
+                    }
+                }
+
+                //point box around each start point to its cluster
+                //FIXME: unsafe in case of overplotting; better to have a labeled edgelist..
+                var colors = colorMaps[maybeClusters.clusters.centers.length - 1];                
+                maybeClusters.edges.forEach(function (pair, i) {
+                    var clusterIdx = maybeClusters.clusters.labeling[i];
+                    var cluster = maybeClusters.clusters.centers[clusterIdx];
+                    var startPoint = maybeClusters.points[pair[0]];
+
+                    var color = colors[clusterIdx];
+
+                    var col = startPoint[0] * texImg.width;
+                    var row = startPoint[1] * texImg.height;
+
+                    var range = 3;
+
+                    for (var a = -range; a < range; a++) {
+                        for (var b = -range; b < range; b++) {
+
+                            var idx = (Math.floor(row + a) * texImg.width + Math.floor(col+b)) * 4;                    
+                            idx = Math.max(0, Math.min(texImg.width * texImg.height * 4, idx)); //clamp
+
+                            imageData.data[idx] = color[0];
+                            imageData.data[idx+1] = color[1];
+                            imageData.data[idx+2] = color[2];
+                            imageData.data[idx+3] = 255;         
+                        }
+                    }                  
+                });
+
+
+                /*
+                //VORONOI alternative: paint each coordinate based on closest cluster start point                
+                for (var x = 0; x < texImg.width; x++) {
+                    for (var y = 0; y < texImg.height; y++) {
+                        var closestCenter = -1;
+                        var closestCenterDist = 10;
+
+                        for (var c = 0; c < maybeClusters.clusters.centers.length; c++) {
+                            var dx = x/texImg.width - maybeClusters.clusters.centers[c][0];
+                            var dy = y/texImg.height - maybeClusters.clusters.centers[c][1];
+                            var dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist < closestCenterDist) {
+                                closestCenter = c;
+                                closestCenterDist = dist;
+                            }
+                        }
+
+                        var i = 4 * (y * texImg.width + x);
+                        var color = colors[closestCenter];
+
+                        imageData.data[i] = color[0];
+                        imageData.data[i+1] = color[1];
+                        imageData.data[i+2] = color[2];
+                        imageData.data[i+3] = 255;                        
+
+                    }
+                }
+                */
+                ctx.putImageData(imageData, 0, 0);
+                texImg = imageData;
+            }
+            } catch (e) {
+                console.error('bad cluster load', e);
+            }
+
+
+
             renderer.colorTexture = gl.createTexture();
             gl.bindTexture(gl.TEXTURE_2D, renderer.colorTexture);
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
