@@ -5,7 +5,8 @@ require.config({
         "glMatrix": "libs/gl-matrix",
         "MatrixLoader": "libs/load",
         "Stats": "libs/stats.beautified",
-        "Long": "libs/Long"
+        "Long": "libs/Long",
+        "kmeans": "libs/kmeans"
     },
     shim: {
         "jQuery": {
@@ -17,8 +18,8 @@ require.config({
     }
 });
 
-require(["jQuery", "NBody", "RenderGL", "SimCL", "MatrixLoader", "Q", "Stats", "SimpleEvents"],
-function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events) {
+require(["jQuery", "NBody", "RenderGL", "SimCL", "MatrixLoader", "Q", "Stats", "SimpleEvents", "kmeans"],
+function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events, _ /*kmeans*/) {
     "use strict";
 
     var graph = null,
@@ -38,14 +39,17 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events) {
             console.log("N-body graph created.");
 
             var points = createPoints(numPoints, dimensions);
+            var edges = createEdges(numEdges, numPoints);
 
-            return Q.all([
-                graph.setColorMap("test-colormap2.png"),
-                graph.setPoints(points)
+            return Q.all([                
+                graph.setPoints(points),
+                points, 
+                edges,
             ]);
         })
-        .spread(function(graph, graph2) {
-            return graph.setEdges(createEdges(numEdges, numPoints));
+        .spread(function(graph, points, edges) {
+            graph.setColorMap("test-colormap2.png");
+            return graph.setEdges(edges);
         })
         .then(function(graph) {
             var fpsTotal = new Stats();
@@ -300,6 +304,21 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events) {
             return clGraph.setPoints(processedData.points);
         })
         .then(function() {
+            
+            var position = function (points, edges) {
+                return edges.map(function (pair){
+                    var start = points[pair[0]];
+                    var end = points[pair[1]];
+                    return [start[0], start[1], end[0], end[1]];
+                });
+            };
+            var k = 6; //need to be <= # supported colors, currently 9
+            var steps =  50;
+            var positions = position(processedData.points, processedData.edges);
+            var clusters = kmeans(positions, k, steps); //[ [0--1]_4 ]_k
+            clGraph.setColorMap("test-colormap2.png", {clusters: clusters, points: processedData.points, edges: processedData.edges});
+
+            
             return clGraph.setEdges(processedData.edges);
         })
         .then(function() {

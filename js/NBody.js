@@ -163,8 +163,8 @@ define(["Q", "glMatrix", "SimpleEvents"], function(Q, glMatrix, events) {
     }
 
 
-    function setColorMap(graph, imageURL) {
-        return graph.renderer.setColorMap(imageURL)
+    function setColorMap(graph, imageURL, maybeClusters) {
+        return graph.renderer.setColorMap(imageURL, maybeClusters)
         .then(function() {
             return graph;
         });
