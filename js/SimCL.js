@@ -1,7 +1,7 @@
 define(["Q", "util", "cl"], function(Q, util, cljs) {
     "use strict";
 
-    //Q.longStackSupport = true;
+    Q.longStackSupport = true;
     var randLength = 73;
 
 
