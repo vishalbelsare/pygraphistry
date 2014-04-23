@@ -139,7 +139,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
 
 
     var colorMaps =
-        [ 
+        [
           [[0,0,0]], //1
           [[255,0,0],[0,0,255]], //2
           [[141,211,199],[255,255,179],[190,186,218]],
@@ -184,13 +184,13 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
                         imageData.data[i] = 255;
                         imageData.data[i+1] = 255;
                         imageData.data[i+2] = 255;
-                        imageData.data[i+3] = 0;                            
+                        imageData.data[i+3] = 0;
                     }
                 }
 
                 //point box around each start point to its cluster
                 //FIXME: unsafe in case of overplotting; better to have a labeled edgelist..
-                var colors = colorMaps[maybeClusters.clusters.centers.length - 1];                
+                var colors = colorMaps[maybeClusters.clusters.centers.length - 1];
                 maybeClusters.edges.forEach(function (pair, i) {
                     var clusterIdx = maybeClusters.clusters.labeling[i];
                     var cluster = maybeClusters.clusters.centers[clusterIdx];
@@ -206,20 +206,20 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
                     for (var a = -range; a < range; a++) {
                         for (var b = -range; b < range; b++) {
 
-                            var idx = (Math.floor(row + a) * texImg.width + Math.floor(col+b)) * 4;                    
+                            var idx = (Math.floor(row + a) * texImg.width + Math.floor(col+b)) * 4;
                             idx = Math.max(0, Math.min(texImg.width * texImg.height * 4, idx)); //clamp
 
                             imageData.data[idx] = color[0];
                             imageData.data[idx+1] = color[1];
                             imageData.data[idx+2] = color[2];
-                            imageData.data[idx+3] = 255;         
+                            imageData.data[idx+3] = 255;
                         }
-                    }                  
+                    }
                 });
 
 
                 /*
-                //VORONOI alternative: paint each coordinate based on closest cluster start point                
+                //VORONOI alternative: paint each coordinate based on closest cluster start point
                 for (var x = 0; x < texImg.width; x++) {
                     for (var y = 0; y < texImg.height; y++) {
                         var closestCenter = -1;
@@ -241,7 +241,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
                         imageData.data[i] = color[0];
                         imageData.data[i+1] = color[1];
                         imageData.data[i+2] = color[2];
-                        imageData.data[i+3] = 255;                        
+                        imageData.data[i+3] = 255;
 
                     }
                 }
