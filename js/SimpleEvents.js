@@ -1,4 +1,4 @@
-define([], function () {
+
     "use strict";
     var exports = {};
 
@@ -25,5 +25,4 @@ define([], function () {
     };
 
 
-    return exports;
-});
+    module.exports = exports;

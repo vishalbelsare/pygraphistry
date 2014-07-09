@@ -1,4 +1,9 @@
-define(["Q", "util", "cl"], function(Q, util, cljs) {
+var Q = require('Q');
+var util = require('./util.js');
+var cljs = require('./cl.js');
+
+
+
     "use strict";
 
     Q.longStackSupport = true;
@@ -451,12 +456,10 @@ define(["Q", "util", "cl"], function(Q, util, cljs) {
     }
 
 
-
-    return {
+    module.exports = {
         "create": create,
         "setLocked": setLocked,
         "setPoints": setPoints,
         "setEdges": setEdges,
         "tick": tick
     };
-});

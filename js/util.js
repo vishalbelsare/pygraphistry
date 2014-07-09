@@ -1,4 +1,6 @@
-define(["jQuery", "Q"], function($, Q) {
+var $ = require('jQuery');
+var Q = require('Q');
+
     'use strict';
 
 
@@ -41,9 +43,8 @@ define(["jQuery", "Q"], function($, Q) {
     }
 
 
-    return {
+    module.exports = {
         "getSource": getSource,
         "getImage": getImage,
         "extend": extend
     };
-});

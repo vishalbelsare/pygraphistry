@@ -1,4 +1,8 @@
-define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
+var Q = require('Q');
+var glMatrix = require('gl-matrix');
+var util = require('./util.js');
+
+
     'use strict';
 
     var create = Q.promised(function(canvas, dimensions, visible) {
@@ -420,7 +424,7 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
     });
 
 
-    return {
+    module.exports = {
         "create": create,
         "createProgram": createProgram,
         "setColorMap": setColorMap,
@@ -432,4 +436,3 @@ define(["Q", "glMatrix", "util"], function(Q, glMatrix, util) {
         "isVisible": isVisible,
         "render": render
     };
-});

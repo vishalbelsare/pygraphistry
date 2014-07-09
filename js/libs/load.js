@@ -1,4 +1,7 @@
-define(["jQuery", "Q", "Long"], function ($, Q, Long) {
+var $ = require('jQuery');
+var Q = require('Q');
+var Long = require('./Long.js');
+
     "use strict";
 
     var exports = {
@@ -188,5 +191,4 @@ define(["jQuery", "Q", "Long"], function ($, Q, Long) {
         }
     };
 
-    return exports;
-});
+    module.exports = exports;

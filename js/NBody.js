@@ -1,4 +1,8 @@
-define(["Q", "glMatrix", "SimpleEvents"], function(Q, glMatrix, events) {
+var Q = require('Q');
+var glMatrix = require('gl-matrix');
+var events = require('./SimpleEvents.js');
+
+
     'use strict';
 
     var STEP_NUMBER_ON_CHANGE = 30;
@@ -207,7 +211,7 @@ define(["Q", "glMatrix", "SimpleEvents"], function(Q, glMatrix, events) {
     }
 
 
-    return {
+    module.exports = {
         "elementsPerPoint": elementsPerPoint,
         "create": create,
         "setPoints": setPoints,
@@ -215,4 +219,3 @@ define(["Q", "glMatrix", "SimpleEvents"], function(Q, glMatrix, events) {
         "setColorMap": setColorMap,
         "tick": tick
     };
-});

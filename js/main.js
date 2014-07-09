@@ -1,25 +1,16 @@
-require.config({
-    paths: {
-        "jQuery": "libs/jquery-2.1.0",
-        "Q": "libs/q",
-        "glMatrix": "libs/gl-matrix",
-        "MatrixLoader": "libs/load",
-        "Stats": "libs/stats.beautified",
-        "Long": "libs/Long",
-        "kmeans": "libs/kmeans"
-    },
-    shim: {
-        "jQuery": {
-            exports: "$"
-        },
-        "Stats": {
-            exports: "Stats"
-        }
-    }
-});
+var $ = require('jQuery'),
+    NBody = require('./NBody.js'),
+    RenderGL = require('./RenderGL.js'),
+    SimCL = require('./SimCL.js'),
+    MatrixLoader = require('./libs/load.js'),
+    Q = require('q'),
+    Stats = require('./libs/stats.js'),
+    events = require('./SimpleEvents.js'),
+    kmeans = require('./libs/kmeans.js');
 
-require(["jQuery", "NBody", "RenderGL", "SimCL", "MatrixLoader", "Q", "Stats", "SimpleEvents", "kmeans"],
-function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events, _ /*kmeans*/) {
+
+
+
     "use strict";
 
     var graph = null,
@@ -41,9 +32,9 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events, _ /*kmeans*/
             var points = createPoints(numPoints, dimensions);
             var edges = createEdges(numEdges, numPoints);
 
-            return Q.all([                
+            return Q.all([
                 graph.setPoints(points),
-                points, 
+                points,
                 edges,
             ]);
         })
@@ -304,7 +295,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events, _ /*kmeans*/
             return clGraph.setPoints(processedData.points);
         })
         .then(function() {
-            
+
             var position = function (points, edges) {
                 return edges.map(function (pair){
                     var start = points[pair[0]];
@@ -318,7 +309,7 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events, _ /*kmeans*/
             var clusters = kmeans(positions, k, steps); //[ [0--1]_4 ]_k
             clGraph.setColorMap("test-colormap2.png", {clusters: clusters, points: processedData.points, edges: processedData.edges});
 
-            
+
             return clGraph.setEdges(processedData.edges);
         })
         .then(function() {
@@ -357,13 +348,14 @@ function($, NBody, RenderGL, SimCL, MatrixLoader, Q, Stats, events, _ /*kmeans*/
     ///////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////
 
+    $(function () {
 
-    setup().
-    then(function() {
-        return loadDataList(graph);
-    }, function(err) {
-        console.error("Error setting up animation:", err);
-    }).then(function () {
-        return bindSliders(graph);
+        setup().
+        then(function() {
+            return loadDataList(graph);
+        }, function(err) {
+            console.error("Error setting up animation:", err, err.stack);
+        }).then(function () {
+            return bindSliders(graph);
+        });
     });
-});

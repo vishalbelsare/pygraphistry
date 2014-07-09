@@ -1,10 +1,14 @@
+var Q = require('q');
+var events = require('./SimpleEvents.js');
+
+
 // TODO: in call() and setargs(), we currently requires a `argTypes` argument becuase older WebCL
 // versions require us to pass in the type of kernel args. However, current versions do not. We want
 // to keep this API as close to the current WebCL spec as possible. Therefore, we should not require
 // that argument, even on old versions. Instead, we should query the kernel for the types of each
 // argument and fill in that information automatically, when required by old WebCL versions.
 
-define(["Q", "SimpleEvents"], function (Q, events) {
+
     'use strict';
 
     var create = Q.promised(function create (gl) {
@@ -332,7 +336,7 @@ define(["Q", "SimpleEvents"], function (Q, events) {
     var CURRENT_CL = !polyfill();
 
 
-    return {
+    module.exports = {
         "create": create,
         "compile": compile,
         "call": call,
@@ -343,4 +347,3 @@ define(["Q", "SimpleEvents"], function (Q, events) {
         "types": types,
         "CURRENT_CL": CURRENT_CL
     };
-});
