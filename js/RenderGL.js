@@ -94,6 +94,10 @@ var util = require('./util.js');
         .spread(function(vertShaderSource, fragShaderSource) {
 
             function compileShader(program, shaderSource, shaderType) {
+
+                shaderSource = shaderSource.replace(
+                    /(precision [a-z]* float;)/g,"#ifdef GL_ES\n$1\n#endif\n");
+
                 var shader = renderer.gl.createShader(shaderType);
                 renderer.gl.shaderSource(shader, shaderSource);
                 renderer.gl.compileShader(shader);
@@ -272,10 +276,12 @@ var util = require('./util.js');
 
 
     var createBuffer = Q.promised(function(renderer, data) {
+        console.error('creating buffer', typeof(data), data.constructor)
         var buffer = renderer.gl.createBuffer();
         var bufObj = {
             "buffer": buffer,
-            "gl": renderer.gl
+            "gl": renderer.gl,
+            "len": typeof(data) == 'number' ? data : data.length
         };
 
         bufObj.delete = Q.promised(function() {

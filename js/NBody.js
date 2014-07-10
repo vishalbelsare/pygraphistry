@@ -23,7 +23,9 @@ var events = require('./SimpleEvents.js');
 
         return renderer.create(canvas, dimensions)
         .then(function(rend) {
+            console.error('CREATED RENDERER')
             return simulator.create(rend, dimensions, numSplits).then(function(sim) {
+                console.error('CREATED SIMULATOR')
                 var graph = {
                     "renderer": rend,
                     "simulator": sim

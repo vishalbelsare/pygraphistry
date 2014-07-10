@@ -1,17 +1,102 @@
 var Q = require('q');
 var events = require('./SimpleEvents.js');
 
-
-// TODO: in call() and setargs(), we currently requires a `argTypes` argument becuase older WebCL
-// versions require us to pass in the type of kernel args. However, current versions do not. We want
-// to keep this API as close to the current WebCL spec as possible. Therefore, we should not require
-// that argument, even on old versions. Instead, we should query the kernel for the types of each
-// argument and fill in that information automatically, when required by old WebCL versions.
+if (typeof(window) == 'undefined') {
+    webcl = require('node-webcl');
+    console.debug = console.log;
+}
 
 
-    'use strict';
+var getClContext;
+if (typeof(window) == 'undefined') {
+    console.error("NODECL")
+    var CreateContext = function(webcl, gl, platform, devices) {
+        return webcl.createContext({
+            devices: devices,
+            shareGroup: gl,
+            platform: platform});
+    };
+    var CreateCL = function(webcl, gl) {
+        if (typeof webcl === "undefined") {
+            throw new Error("WebCL does not appear to be supported in your browser");
+        } else if (webcl === null) {
+            throw new Error("Can't access WebCL object");
+        }
+        var platforms = webcl.getPlatforms();
+        if (platforms.length === 0) {
+            throw new Error("Can't find any WebCL platforms");
+        }
+        var platform = platforms[0];
+        var devices = platform.getDevices(webcl.DEVICE_TYPE_GPU).map(function(d) {
+            var workItems = d.getInfo(webcl.DEVICE_MAX_WORK_ITEM_SIZES);
+            return {
+                device: d,
+                computeUnits: workItems.reduce(function(a, b) {
+                    return a * b;
+                })
+            };
+        });
+        devices.sort(function(a, b) {
+            var nameA = a.device.getInfo(webcl.DEVICE_VENDOR);
+            var nameB = b.device.getInfo(webcl.DEVICE_VENDOR);
+            var vendor = "NVIDIA"
+            if (nameA.indexOf(vendor) != -1 && nameB.indexOf(vendor) == -1) {
+                return -1;
+            } else if (nameB.indexOf(vendor) != -1 && nameA.indexOf(vendor) == -1) {
+                return 1;
+            } else {
+                return b.computeUnits - a.computeUnits;
+            }
+        });
+        var deviceWrapper;
+        var err = devices.length ? null : new Error("No WebCL devices of specified type (" + webcl.DEVICE_TYPE_GPU + ") found");
+        for (var i = 0; i < devices.length; i++) {
+            var wrapped = devices[i];
+            try {
+                if (wrapped.device.getInfo(webcl.DEVICE_EXTENSIONS).search(/gl.sharing/i) == -1) {
+                    console.log('Skipping device due to no sharing', i, wrapped);
+                    continue;
+                }
+                wrapped.context = CreateContext(webcl, gl, platform, [ wrapped.device ]);
+                if (wrapped.context === null) {
+                    throw Error("Error creating WebCL context");
+                }
+                wrapped.queue = wrapped.context.createCommandQueue(wrapped.device, 0);
+            } catch (e) {
+                console.debug("Skipping device due to error", i, wrapped, e);
+                err = e;
+                continue;
+            }
+            deviceWrapper = wrapped;
+            break;
+        }
+        if (!deviceWrapper) {
+            throw err;
+        }
+        console.debug("Device", deviceWrapper, deviceWrapper.device.getInfo(webcl.DEVICE_VENDOR));
 
-    var create = Q.promised(function create (gl) {
+        var res = {
+            cl: webcl,
+            context: deviceWrapper.context,
+            device: deviceWrapper.device,
+            queue: deviceWrapper.queue,
+            maxThreads: deviceWrapper.device.getInfo(webcl.DEVICE_MAX_WORK_GROUP_SIZE),
+            numCores: deviceWrapper.device.getInfo(webcl.DEVICE_MAX_COMPUTE_UNITS)
+        };
+
+        //FIXME ??
+        res.compile = compile.bind(this, res);
+        res.createBuffer = createBuffer.bind(this, res);
+        res.createBufferGL = createBufferGL.bind(this, res);
+
+        return res;
+
+    };
+    getClContext = function (gl) {
+        return CreateCL(webcl, gl);
+    }
+} else {
+    getClContext = function (gl) {
         if (typeof(webcl) === "undefined") {
             throw new Error("WebCL does not appear to be supported in your browser");
         }
@@ -87,7 +172,24 @@ var events = require('./SimpleEvents.js');
         clObj.createBufferGL = createBufferGL.bind(this, clObj);
 
         return clObj;
-    });
+    };
+}
+
+
+
+
+
+
+// TODO: in call() and setargs(), we currently requires a `argTypes` argument becuase older WebCL
+// versions require us to pass in the type of kernel args. However, current versions do not. We want
+// to keep this API as close to the current WebCL spec as possible. Therefore, we should not require
+// that argument, even on old versions. Instead, we should query the kernel for the types of each
+// argument and fill in that information automatically, when required by old WebCL versions.
+
+
+    'use strict';
+
+    var create = Q.promised(getClContext);
 
 
     // This is a separate function from create() in order to allow polyfill() to override it on
@@ -110,6 +212,7 @@ var events = require('./SimpleEvents.js');
      *          kernel name mapped to its kernel object.
      */
     var compile = Q.promised(function (cl, source, kernels) {
+        try {
         var program = cl.context.createProgram(source);
         program.build([cl.device]);
 
@@ -137,6 +240,10 @@ var events = require('./SimpleEvents.js');
 
             return kernelObjs;
         }
+    } catch (e) {
+        console.error('wat', e.stack);
+        throw e;
+    }
 
     });
 
@@ -146,6 +253,7 @@ var events = require('./SimpleEvents.js');
     var call = Q.promised(function (kernel, threads, args, argTypes) {
         args = args || [];
         argTypes = argTypes || [];
+        console.error('call', args, argTypes)
         return kernel.setArgs(args, argTypes).then(function() {
             var workgroupSize = new Int32Array([threads]);
             events.fire("kernelStart");
@@ -159,6 +267,7 @@ var events = require('./SimpleEvents.js');
 
 
     var setArgs = Q.promised(function (kernel, args, argTypes) {
+        console.error('set each', args, argTypes)
         for (var i = 0; i < args.length; i++) {
             if(args[i] !== null) {
                 kernel.kernel.setArg(i, args[i]);
@@ -201,10 +310,11 @@ var events = require('./SimpleEvents.js');
         if (buffer === null) {
             throw new Error("Could not create WebCL buffer from WebGL buffer");
         } else {
+            if (!buffer.getInfo) console.error('vbo, weird len', vbo.len)
             var bufObj = {
                 "buffer": buffer,
                 "cl": cl,
-                "size": buffer.getInfo(cl.cl.MEM_SIZE),
+                "size": buffer.getInfo ? buffer.getInfo(cl.cl.MEM_SIZE) : (vbo.len * Float32Array.BYTES_PER_ELEMENT),
                 "acquire": Q.promised(function() {
                     cl.queue.enqueueAcquireGLObjects([buffer]);
                 }),
@@ -267,7 +377,7 @@ var events = require('./SimpleEvents.js');
     // the platform is up-to-date and no modification was needed.
     function polyfill() {
         // Detect if we're running on a current WebCL version
-        if(typeof webcl.enableExtension == "function") {
+        if(typeof(window) != 'undefined' && typeof webcl.enableExtension == "function") {
             // If so, don't do anything
             return false;
         }
@@ -276,39 +386,68 @@ var events = require('./SimpleEvents.js');
 
 
         _createContext = function(cl, gl, platform, devices) {
-            var extension = cl.getExtension("KHR_GL_SHARING");
-            if (extension === null) {
-                throw new Error("Could not create a shared CL/GL context using the WebCL extension system");
+            if (webcl.type) {
+                return webcl.createContext({
+                    devices: devices,
+                    shareGroup: gl,
+                    platform: platform});
+            } else {
+                var extension = cl.getExtension("KHR_GL_SHARING");
+                if (extension === null) {
+                    throw new Error("Could not create a shared CL/GL context using the WebCL extension system");
+                }
+                return extension.createContext({
+                    platform: platform,
+                    devices: devices,
+                    deviceType: cl.DEVICE_TYPE_GPU,
+                    sharedContext: null
+                });
             }
-            return extension.createContext({
-                platform: platform,
-                devices: devices,
-                deviceType: cl.DEVICE_TYPE_GPU,
-                sharedContext: null
-            });
+
         }
 
 
         call = Q.promised(function (kernel, threads, args, argTypes) {
             args = args || [];
             argTypes = argTypes || [];
+            console.error('CALL (set + enqueue)', args, argTypes)
             return kernel.setArgs(args, argTypes).then(function() {
-                var workgroupSize = new Int32Array([threads]);
-                kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, workgroupSize, null);
+                console.error('as', typeof(window) == 'undefined' ? 'arr' : 'typed')
+                var workgroupSize = typeof(window) == 'undefined' ? [threads] : new Int32Array([threads]);
+                console.error('wgs', workgroupSize)
+                if (webcl.type) {
+                    kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, [threads], null);
+                } else {
+                    kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, workgroupSize, null);
+                }
+                console.error('enqueued')
                 kernel.cl.queue.finish();
+                console.error('fished')
 
                 return kernel;
             });
         });
 
-
         setArgs = Q.promised(function (kernel, args, argTypes) {
+            console.error('setting each', args, argTypes)
+            try {
             for (var i = 0; i < args.length; i++) {
-                if (args[i])
-                    kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i]);
+                if (args[i]) {
+                    console.error(i, (args[i].length ? args[i][0] : args[i]).constructor, argTypes[i])
+                    kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i] || undefined);
+                }
             }
+            } catch (e) {
+                console.error('wat', e, e.stack)
+                throw new Error(e);
+            }
+            console.error('set')
             return kernel;
         });
+
+        if (typeof WebCLKernelArgumentTypes == 'undefined') {
+            WebCLKernelArgumentTypes = webcl.type;
+        }
 
         types = {
             char_t: WebCLKernelArgumentTypes.CHAR,
@@ -334,6 +473,7 @@ var events = require('./SimpleEvents.js');
     }
     var types = {};
     var CURRENT_CL = !polyfill();
+    console.error('CREATED CL CTX')
 
 
     module.exports = {

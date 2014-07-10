@@ -11,7 +11,17 @@ var Long = require('./Long.js');
             parts.pop();
             var base = parts.join('/') + '/';
 
-            return Q($.ajax(matrixJson, {dataType: "text"}))
+
+            var file;
+            if (typeof window == 'undefined') {
+                var fs = require('fs');
+                file = Q.denodeify(fs.readFile)(matrixJson, {encoding: 'utf8'});
+            } else {
+                var url = "shaders/" + id;
+                file = Q($.ajax(matrixJson, {dataType: "text"}))
+            }
+
+            return file
             .then(eval)
             .then(function (lst) {
                 return lst.map(function (f) {
@@ -115,14 +125,22 @@ var Long = require('./Long.js');
 
             var res = Q.defer();
 
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', file, true);
-            xhr.responseType = 'arraybuffer';
-            xhr.onload = function(e) {
-                res.resolve(Binary(new Uint32Array(this.response)));
-                // console.log('binary load', new Date().getTime() - t0, 'ms');
-            };
-            xhr.send();
+            if (typeof(window) == 'undefined') {
+                return Q.denodeify(require('fs').readFile)(file)
+                    .then(function (nodeBuffer) {
+                        console.error('read', nodeBuffer)
+                        return Binary(new Uint32Array(nodeBuffer));
+                    });
+            } else {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', file, true);
+                xhr.responseType = 'arraybuffer';
+                xhr.onload = function(e) {
+                    res.resolve(Binary(new Uint32Array(this.response)));
+                    // console.log('binary load', new Date().getTime() - t0, 'ms');
+                };
+                xhr.send();
+            }
 
             return res.promise;
         },

@@ -10,9 +10,13 @@ var Q = require('Q');
         // listen for the onload event. In this way, we may be able to load content from disk
         // without running a server.
 
-        var url = "shaders/" + id;
-
-        return Q($.ajax(url, {dataType: "text"}));
+        if (typeof window == 'undefined') {
+            var fs = require('fs');
+            return Q.denodeify(fs.readFile)('shaders/' + id, {encoding: 'utf8'});
+        } else {
+            var url = "shaders/" + id;
+            return Q($.ajax(url, {dataType: "text"}));
+        }
     }
 
     /**
@@ -39,7 +43,12 @@ var Q = require('Q');
 
     // Extends target by adding the attributes of one or more other objects to it
     function extend(target, object1, objectN) {
-        return $.extend.apply($, arguments);
+        for (var arg = 1; arg < arguments.length; arg++) {
+            for (var i in arguments[arg]) {
+                target[i] = arguments[arg][i];
+            }
+        }
+        return target;
     }
 
 
