@@ -1,6 +1,11 @@
 var $ = require('jQuery');
 var Q = require('Q');
 
+if (typeof(window) == 'undefined') {
+    webgl = require('node-webgl');
+    Image = webgl.Image;
+}
+
     'use strict';
 
 
@@ -28,14 +33,14 @@ var Q = require('Q');
         var deferred = Q.defer();
         var img = new Image();
 
-        img.addEventListener("load", function() {
+        img.onload = function() {
+            console.error('IMG LOADED')
             deferred.resolve(img);
-        });
-        img.addEventListener("error", function(msg) {
-            deferred.reject(msg);
-        });
+        };
 
+        console.error("SETTING SOURCE", url)
         img.src = url;
+        console.error("SET SOURCE")
 
         return deferred.promise;
     }
