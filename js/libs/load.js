@@ -94,6 +94,8 @@ var Long = require('./Long.js');
         loadGeo: function(file) { // -> Promise Binary
             var t0 = new Date().getTime();
 
+            console.error("LOADING GEO", file);
+
             function Binary (buf) {
                 var f32 = new Float32Array(buf.buffer);
                 var i32 = new Int32Array(buf.buffer);
@@ -126,12 +128,15 @@ var Long = require('./Long.js');
             var res = Q.defer();
 
             if (typeof(window) == 'undefined') {
+                console.error("node fs")
                 return Q.denodeify(require('fs').readFile)(file)
                     .then(function (nodeBuffer) {
-                        console.error('read', nodeBuffer)
                         return Binary(new Uint32Array(nodeBuffer));
+                    }, function (err) {
+                        console.error("OOPS", err);
                     });
             } else {
+                console.error("geo fallback")
                 var xhr = new XMLHttpRequest();
                 xhr.open('GET', file, true);
                 xhr.responseType = 'arraybuffer';

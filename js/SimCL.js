@@ -341,7 +341,7 @@ if (typeof(window) == 'undefined') {
 
                         console.error('ccc')
 
-
+            console.error("MID EDGES 0")
             var midEdgeArgs = simulator.midEdgesKernel.setArgs([
                 webcl.type ? [simulator.numSplits] : new Uint32Array([simulator.numSplits]),        // 0:
                 simulator.buffers.forwardsEdges.buffer,        // 1: only need one direction as guaranteed to be chains
@@ -415,6 +415,7 @@ if (typeof(window) == 'undefined') {
                 [null, null, null, null, null, edgeStrength, edgeDistance, null],
                 [null, null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
 
+            console.error("MID EDGES 1")
             simulator.midEdgesKernel.setArgs(
                 // 0   1     2     3     4     5     6     7     8               9               10
                 [null, null, null, null, null, null, null, null, edgeStrength,   edgeDistance,   null],
@@ -517,7 +518,7 @@ if (typeof(window) == 'undefined') {
             return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
         })
         .then(function () {
-            console.error('SET+CALL MID EDGES')
+            console.error('MID EDGES 2')
             if (simulator.numEdges > 0 && !simulator.locked.lockMidedges) {
                 simulator.midEdgesKernel.setArgs(
                     // 0   1     2     3     4     5     6     7     8     9     10
