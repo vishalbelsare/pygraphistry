@@ -15,8 +15,8 @@ var webcl = require('node-webcl');
 var webgl = require('node-webgl');
 
 
-var WIDTH = 200;
-var HEIGHT = 200;
+var WIDTH = 400;
+var HEIGHT = 400;
 
 
     "use strict";
@@ -57,7 +57,10 @@ var HEIGHT = 200;
             ]);
         })
         .spread(function(graph, points, edges) {
-            graph.setColorMap("test-colormap2.png");
+            graph.setColorMap("test-colormap2.png")
+                .then(
+                    function () { console.error('COLOR')},
+                    function (err) { console.error('COLOR EXN:', err, err.stack)});
             console.error('ff')
             return graph.setEdges(edges);
         })
@@ -95,6 +98,79 @@ var HEIGHT = 200;
 
     function stopAnimation() {
         animating = false;
+    }
+
+
+    /*
+        graph ->
+        {
+            physicsControls: {
+                charge,gravity,edgeStrength,edgeDistance: v -> ()
+            },
+            renderingControls: {
+                points,edges,midpoints,midedges: () -> ()
+            },
+
+        }
+    */
+    function controls(graph) {
+        var physicsControls =
+            ['charge', 'gravity', 'edgeStrength', 'edgeDistance']
+                .reduce(function (o, lbl) {
+                    o[lbl] = function (v) {
+                        var cmd = {};
+                        cmd[lbl] = v;
+                        graph.setPhysics(cmd);
+                    };
+                    return o;
+                }, {});
+        physicsControls.charge(0.1);
+        physicsControls.gravity(0.1);
+        physicsControls.edgeStrength(0.1);
+        physicsControls.edgeDistance(0.1);
+
+        var renderingControls =
+            ['points', 'edges', 'midpoints', 'midedges']
+                .reduce(function (o, lbl) {
+                    var cmd = {};
+                    cmd[lbl] = false;
+                    o[lbl] = function () {
+                        cmd[lbl] = !cmd[lbl];
+                        graph.setVisible(cmd);
+                    };
+                    return o;
+
+                }, {});
+        //on by default
+        for (var i in renderingControls) {
+            renderingControls[i]();
+        }
+
+
+        var locks =
+            ['lockPoints', 'lockEdges', 'lockMidpoints', 'lockMidedges']
+                .reduce(function (o, lbl) {
+                    var cmd = {};
+                    cmd[lbl] = true;
+                    o[lbl] = function () {
+                        cmd[lbl] = !cmd[lbl];
+                        graph.setLocked(cmd);
+                    };
+                    return o;
+                }, {});
+        //unlocked endpoints by default (unlock all, relock mid)
+        for (var i in locks) {
+            locks[i]();
+        }
+        locks.lockMidedges();
+        locks.lockMidpoints();
+
+
+        return {
+            physicsControls: physicsControls,
+            renderingControls: renderingControls,
+            locks: locks
+        };
     }
 
 
@@ -164,6 +240,13 @@ var HEIGHT = 200;
         .then(function(geoData) {
             processedData = MatrixLoader.processGeo(geoData);
 
+            console.error('============PROCESSED')
+            for (var i in processedData) {
+                console.error('proc', i, typeof(processedData[i]))
+
+            }
+            console.error('nodes/edges', processedData.points.length, processedData.edges.length)
+
             return clGraph.setPoints(processedData.points);
         })
         .then(function() {
@@ -185,7 +268,9 @@ var HEIGHT = 200;
         })
         .then(function() {
             return clGraph.tick();
-        })
+        }, function (err) {
+            console.error('WAT', err, err.stack)
+        });
     }
 
 
@@ -222,18 +307,24 @@ var HEIGHT = 200;
 
         setup()
         .then(function () {
+            console.error('~~~~~~~ SETUP')
             return loadDataList(graph);
         })
         .then(function (datalist) {
 
             console.error('loading data')
-            datalist[0].loader(graph, datalist[0].f);
+            return datalist[0].loader(graph, datalist[0].f);
+
+        }).then(function (loaded) {
+
+            console.error('LOADED')
+            var api = controls(graph);
 
             console.error('done setup')
 
             animating = true;
             //stopAnimation();
-            animatePromise(graph.tick);
+            //animatePromise(graph.tick);
 
             console.error('ANIMATING')
 
