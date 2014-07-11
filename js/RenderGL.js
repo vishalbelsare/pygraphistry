@@ -224,38 +224,6 @@ var util = require('./util.js');
                         }
                     }
                 });
-
-
-                /*
-                //VORONOI alternative: paint each coordinate based on closest cluster start point
-                for (var x = 0; x < texImg.width; x++) {
-                    for (var y = 0; y < texImg.height; y++) {
-                        var closestCenter = -1;
-                        var closestCenterDist = 10;
-
-                        for (var c = 0; c < maybeClusters.clusters.centers.length; c++) {
-                            var dx = x/texImg.width - maybeClusters.clusters.centers[c][0];
-                            var dy = y/texImg.height - maybeClusters.clusters.centers[c][1];
-                            var dist = Math.sqrt(dx * dx + dy * dy);
-                            if (dist < closestCenterDist) {
-                                closestCenter = c;
-                                closestCenterDist = dist;
-                            }
-                        }
-
-                        var i = 4 * (y * texImg.width + x);
-                        var color = colors[closestCenter];
-
-                        imageData.data[i] = color[0];
-                        imageData.data[i+1] = color[1];
-                        imageData.data[i+2] = color[2];
-                        imageData.data[i+3] = 255;
-
-                    }
-                }
-                */
-                ctx.putImageData(imageData, 0, 0);
-                texImg = imageData;
             }
             } catch (e) {
                 console.error('bad cluster load', e);
