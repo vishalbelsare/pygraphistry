@@ -159,12 +159,12 @@ if (typeof(window) == 'undefined') {
             simulator.buffers.curPoints = pointsBuf;
 
             var localPosSize = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
-            console.error("SETTING POINT 0")
+            console.error("SETTING POINT 0", "FIXME: dyn alloc __local, not hardcode in kernel");
             return simulator.pointKernel.setArgs([
                     webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
                     simulator.buffers.curPoints.buffer,
                     simulator.buffers.nextPoints.buffer,
-                    webcl.type ? [localPosSize] : new Uint32Array([localPosSize]),
+                    webcl.type ? [1] : new Uint32Array([localPosSize]),
                     webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
                     webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
                     webcl.type ? [-0.00001] : new Float32Array([-0.00001]),
@@ -453,7 +453,7 @@ if (typeof(window) == 'undefined') {
             console.error('acquiring')
             return simulator.buffers.curPoints.acquire(); })
         .then(function() {
-            console.error('(POINT NOOP)')
+            console.error('(FIXME POINT NOOP)')
             console.error('run point', simulator.locked.lockPoints ? false : true)
             return simulator.locked.lockPoints ? false : simulator.pointKernel.call(simulator.numPoints, []);
         })
@@ -521,7 +521,7 @@ if (typeof(window) == 'undefined') {
             if (simulator.numEdges > 0 && !simulator.locked.lockMidedges) {
                 simulator.midEdgesKernel.setArgs(
                     // 0   1     2     3     4     5     6     7     8     9     10
-                    [null, null, null, null, null, null, null, null, null, null, new Uint32Array([stepNumber])],
+                    [null, null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
                     [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
                 return simulator.midEdgesKernel.call(simulator.numForwardsWorkItems, [])
                 .then(function() {
