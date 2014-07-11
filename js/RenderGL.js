@@ -1,6 +1,10 @@
 var Q = require('Q');
 var glMatrix = require('gl-matrix');
 var util = require('./util.js');
+if (typeof(document) == 'undefined') {
+    document = require('node-webgl').document();
+}
+
 
 
     'use strict';
@@ -95,11 +99,11 @@ var util = require('./util.js');
 
             function compileShader(program, shaderSource, shaderType) {
 
-                shaderSource = shaderSource.replace(
+                var sanitizedShaderSource = shaderSource.replace(
                     /(precision [a-z]* float;)/g,"#ifdef GL_ES\n$1\n#endif\n");
 
                 var shader = renderer.gl.createShader(shaderType);
-                renderer.gl.shaderSource(shader, shaderSource);
+                renderer.gl.shaderSource(shader, sanitizedShaderSource);
                 renderer.gl.compileShader(shader);
                 if(!renderer.gl.getShaderParameter(shader, renderer.gl.COMPILE_STATUS)) {
                     throw new Error("Error compiling WebGL shader (shader type: " + shaderType + ")");
