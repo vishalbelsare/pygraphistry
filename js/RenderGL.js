@@ -4,7 +4,7 @@ var util = require('./util.js');
 
     'use strict';
 
-    var create = Q.promised(function(document, canvas, dimensions, visible) {
+    var create = Q.promised(function(document, canvas, bgColor, dimensions, visible) {
         visible = visible || {};
 
         var renderer = {document: document, canvas: canvas};
@@ -26,7 +26,7 @@ var util = require('./util.js');
         gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
         gl.depthFunc(gl.LEQUAL);
         gl.enable(gl.DEPTH_TEST);
-        gl.clearColor(0, 0, 0, 0);
+        gl.clearColor.apply(gl, bgColor);
         // Lines should be 1px wide
         gl.lineWidth(1);
 

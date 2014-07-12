@@ -23,7 +23,7 @@ var $ = require('jQuery'),
     function setup() {
         console.log("Running Naive N-body simulation");
 
-        return NBody.create(SimCL, RenderGL, $("#simulation")[0], dimensions, 3)
+        return NBody.create(SimCL, RenderGL, document, $("#simulation")[0], [0,0,0,0], dimensions, 3)
         .then(function(createdGraph) {
             graph = createdGraph;
             console.log("N-body graph created.");

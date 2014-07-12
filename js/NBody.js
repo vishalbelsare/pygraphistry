@@ -14,14 +14,16 @@ var events = require('./SimpleEvents.js');
      *
      * @param simulator - the module of the simulator backend to use
      * @param renderer - the module of the rendering backend to use
+     * @param document - parent document DOM
      * @param canvas - the canvas DOM element to draw the graph in
+     * @param bgColor - [0--255,0--255,0--255,0--1]
      * @param [dimensions=\[1,1\]] - a two element array [width,height] used for internal posituin calculations.
      */
-    function create(simulator, renderer, document, canvas, dimensions, numSplits) {
+    function create(simulator, renderer, document, canvas, bgColor, dimensions, numSplits) {
         dimensions = dimensions || [1,1];
         numSplits = numSplits || 0;
 
-        return renderer.create(document, canvas, dimensions)
+        return renderer.create(document, canvas, bgColor, dimensions)
         .then(function(rend) {
             console.debug('CREATED RENDERER')
             return simulator.create(rend, dimensions, numSplits).then(function(sim) {
