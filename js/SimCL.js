@@ -290,6 +290,22 @@ if (typeof(window) == 'undefined') {
             simulator.buffers.curMidPoints = midPointsBuf;
             simulator.buffers.midSpringsColorCoord = midSpringsColorCoordBuffer;
 
+
+            /*
+            console.error("TRY COPY");
+
+            return Q().then(function () {
+                //return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
+                return true;
+            }).then(function () {
+                console.error("SUCCED COPY")
+            }, function (err) {
+                console.error("FAIL COPY", err, err.stack)
+            })
+*/
+
+
+
             var localPosSize = Math.min(simulator.cl.maxThreads, simulator.numMidPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
             var midPointArgs = simulator.midPointKernel.setArgs([
                     webcl.type ? [simulator.numMidPoints] : new Uint32Array([simulator.numMidPoints]),

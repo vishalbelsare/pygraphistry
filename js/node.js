@@ -116,10 +116,10 @@ var HEIGHT = 400;
                     };
                     return o;
                 }, {});
-        //on by default
-        for (var i in renderingControls) {
-            renderingControls[i](true);
-        }
+        renderingControls.points(true);
+        renderingControls.edges(false);
+        renderingControls.midpoints(true);
+        renderingControls.midedges(true);
 
 
         var locks =
@@ -134,10 +134,10 @@ var HEIGHT = 400;
                     };
                     return o;
                 }, {});
-        locks.lockPoints(true);
-        locks.lockEdges(true);
-        locks.lockMidpoints(true);
+        locks.lockPoints(false);
         locks.lockEdges(false);
+        locks.lockMidpoints(false);
+        locks.lockMidedges(false);
 
         return {
             physicsControls: physicsControls,
