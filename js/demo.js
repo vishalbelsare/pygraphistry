@@ -188,8 +188,10 @@ function loadMatrix(graph, graphFileURI) {
     return MatrixLoader.loadBinary(graphFileURI)
     .then(function (v) {
         graphFile = v;
-        $('#filenodes').text('Nodes: ' + v.numNodes);
-        $('#fileedges').text('Edges: ' + v.numEdges);
+        if (typeof($) != 'undefined') {
+            $('#filenodes').text('Nodes: ' + v.numNodes);
+            $('#fileedges').text('Edges: ' + v.numEdges);
+        }
 
         var points = createPoints(graphFile.numNodes, graph.dimensions);
 

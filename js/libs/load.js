@@ -31,7 +31,7 @@ var Long = require('./Long.js');
 
             function Binary (buf) {
                 return {
-                    edges: new Uint32Array(buf.buffer, 4 * 4),
+                    edges: buf.subarray(4),
                     min: buf[0],
                     max: buf[1],
                     numNodes: buf[2],
@@ -39,25 +39,39 @@ var Long = require('./Long.js');
                 };
             }
 
-            var res = Q.defer();
+            if (typeof window == 'undefined') {
+                var file = Q.denodeify(require('fs').readFile)(file)
 
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', file, true);
-            xhr.responseType = 'arraybuffer';
-            xhr.onload = function(e) {
-                res.resolve(Binary(new Uint32Array(this.response)));
-                // console.log('binary load', new Date().getTime() - t0, 'ms');
-            };
-            xhr.send();
+                return file
+                    .then(function (nodeBuffer) {
+                        console.error('got', nodeBuffer.constructor)
+                        return Binary(new Uint32Array((new Uint8Array(nodeBuffer)).buffer));
+                    });
+            } else {
+                var res = Q.defer();
 
-            return res.promise;
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', file, true);
+                xhr.responseType = 'arraybuffer';
+                xhr.onload = function(e) {
+                    res.resolve(Binary(new Uint32Array(this.response)));
+                    // console.log('binary load', new Date().getTime() - t0, 'ms');
+                };
+                xhr.send();
+
+                return res.promise;
+
+            }
+
         },
 
 
         load: function (file) {
             var t0 = new Date().getTime();
 
-            return Q($.ajax(file, {dataType: "text"}))
+            return typeof(window) == 'undefined' ?
+                    Q.denodeify(require('fs').readFile)(file, {encoding: 'utf8'})
+                : Q($.ajax(file, {dataType: "text"}))
             .then(function (str) {
                 // console.log('naive parse', new Date().getTime() - t0, 'ms');
 
@@ -126,7 +140,7 @@ var Long = require('./Long.js');
                 console.error("node fs")
                 return Q.denodeify(require('fs').readFile)(file)
                     .then(function (nodeBuffer) {
-                        return Binary(new Uint32Array(nodeBuffer));
+                        return Binary(new Uint32Array((new Uint8Array(nodeBuffer)).buffer));
                     }, function (err) {
                         console.error("OOPS", err);
                     });
