@@ -6,15 +6,14 @@ var $ = require('jQuery'),
     Q = require('q'),
     Stats = require('./libs/stats.js'),
     events = require('./SimpleEvents.js'),
-    kmeans = require('./libs/kmeans.js');
-
+    kmeans = require('./libs/kmeans.js'),
+    demo = require('./demo.js')
 
 
 
     "use strict";
 
     var graph = null,
-        animating = null,
         numPoints = 1000,//1024,//2048,//16384,
         num,
         numEdges = numPoints,
@@ -29,8 +28,8 @@ var $ = require('jQuery'),
             graph = createdGraph;
             console.log("N-body graph created.");
 
-            var points = createPoints(numPoints, dimensions);
-            var edges = createEdges(numEdges, numPoints);
+            var points = demo.createPoints(numPoints, dimensions);
+            var edges = demo.createEdges(numEdges, numPoints);
 
             return Q.all([
                 graph.setPoints(points),
@@ -64,26 +63,27 @@ var $ = require('jQuery'),
             var animButton = $("#anim-button");
             var stepButton = $("#step-button");
 
+            var animation = demo.animator(document, graph.tick);
+
             function startAnimation() {
-                animating = true;
+
                 animButton.text("Stop");
                 stepButton.prop("disabled", true);
 
-                animButton.on("click", function() {
-                    stopAnimation();
+                animButton.off().on("click", function() {
+                    animation.stopAnimation();
                     stepButton.prop("disabled", false);
                     animButton.text("Animate");
-                    animButton.on("click", startAnimation);
+                    animButton.off().on("click", startAnimation);
                 });
 
-                animatePromise(graph.tick);
+                animation.startAnimation();
             }
             animButton.on("click", startAnimation);
 
             stepButton.on("click", function() {
-                if(animating) {
-                    return false;
-                }
+
+                animation.stopAnimation();
 
                 stepButton.prop("disabled", true);
 
@@ -96,39 +96,22 @@ var $ = require('jQuery'),
             animButton.prop("disabled", false);
             stepButton.prop("disabled", false);
 
-            return graph.tick();
+            //return graph.tick();
+            return graph;
         });
     }
 
-
-    function animatePromise(promise) {
-        return promise()
-        .then(function() {
-            if(animating){
-                return window.setTimeout(function() {
-                        animatePromise(promise);
-                    }, 0);
-            } else {
-                return null;
-            }
-        }, function(err) {
-            console.error("Error during animation:", err);
-        });
-    }
-
-
-    function stopAnimation() {
-        animating = false;
-    }
 
 
     function bindSliders(graph) {
+        console.error('setting phsyics');
+
         $('#charge').on('change', function (e) {
         var v = $(this).val();
         var res = 0.1;
         for (var i = 0; i < (100-v); i++) res /= 1.3;
         var scaled = -1 * res;
-//      console.log('charge', v, '->', scaled);
+      console.log('charge', v, '->', scaled);
         graph.setPhysics({charge: scaled});
         });
         $('#gravity').on('change', function (e) {
@@ -179,183 +162,52 @@ var $ = require('jQuery'),
     }
 
 
-    /**
-     * Populate the data list dropdown menu with available data, and setup actions to load the data
-     * when the user selects one of the options.
-     *
-     * @param clGraph - the NBody graph object created by NBody.create()
-     */
-    function loadDataList(clGraph) {
-        // Given a URI of a JSON data index, return an array of objects, with keys for display name,
-        // file URI, and data size
-        function getDataList(listURI) {
-            return MatrixLoader.ls(listURI)
-            .then(function (files) {
-                var listing = [];
+    ///////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
 
-                files.forEach(function (file, i) {
-                    listing.push({
-                        f: file.f,
-                        base: file.f.split(/\/|\./)[file.f.split(/\/|\./).length - 3],
-                        KB: file.KB,
-                        size: file.KB > 1000 ? (Math.round(file.KB / 1000) + " MB") : (file.KB + " KB")
-                    });
-                });
+    function renderDataList(dataList) {
 
-                return listing;
-            });
-        }
+        var dataEl = $("#datasets");
 
-        var dataList = [];
-
-        return getDataList("data/geo.json")
-        .then(function(geoList){
-            geoList = geoList.map(function(fileInfo) {
-                fileInfo["base"] = fileInfo.base + ".geo";
-                fileInfo["loader"] = loadGeo;
-                return fileInfo;
-            });
-
-            dataList = dataList.concat(geoList);
-
-            return getDataList("data/matrices.binary.json");
+        dataList.forEach(function(dataSet, i) {
+            dataEl.append($('<option></option>')
+                .attr('value', i)
+                .text(dataSet.base + " (" + dataSet.size + ")")
+            );
         })
-        .then(function(matrixList){
-            matrixList = matrixList.map(function(fileInfo) {
-                fileInfo["base"] = fileInfo.base + ".mtx";
-                fileInfo["loader"] = loadMatrix;
-                return fileInfo;
-            });
 
-            dataList = dataList.concat(matrixList);
+        // Set the starting selection of the <select> control to be blank, since we start with
+        // random data loaded, not a matrix
+        dataEl.prop('selectedIndex', -1)
 
-            var dataEl = $("#datasets");
+        $('#datasets')
+        .on('change', function () {
+            var dataSet = dataList[parseInt(this.value)];
 
-            dataList.forEach(function(dataSet, i) {
-                dataEl.append($('<option></option>')
-                    .attr('value', i)
-                    .text(dataSet.base + " (" + dataSet.size + ")")
-                );
+            return dataSet.loader(clGraph, dataSet.f)
+            .catch(function(err) {
+                console.error("Error loading matrix:", err);
+                throw err;
             })
-
-            // Set the starting selection of the <select> control to be blank, since we start with
-            // random data loaded, not a matrix
-            dataEl.prop('selectedIndex', -1)
-
-            $('#datasets')
-            .on('change', function () {
-                var dataSet = dataList[parseInt(this.value)];
-
-                return dataSet.loader(clGraph, dataSet.f)
-                .catch(function(err) {
-                    console.error("Error loading matrix:", err);
-                    throw err;
-                })
-            });
-
-            return dataList;
         });
     }
 
 
-    /**
-     * Loads the matrix data at the given URI into the NBody graph.
-     */
-    function loadMatrix(clGraph, graphFileURI) {
-        var graphFile;
-
-        return MatrixLoader.loadBinary(graphFileURI)
-        .then(function (v) {
-            graphFile = v;
-            $('#filenodes').text('Nodes: ' + v.numNodes);
-            $('#fileedges').text('Edges: ' + v.numEdges);
-
-            var points = createPoints(graphFile.numNodes, clGraph.dimensions);
-
-            return clGraph.setPoints(points);
-        })
-        .then(function() {
-            return clGraph.setEdges(graphFile.edges);
-        })
-        .then(function() {
-            return clGraph.tick();
-        });
-    }
-
-
-    function loadGeo(clGraph, graphFileURI) {
-        var processedData;
-
-        return MatrixLoader.loadGeo(graphFileURI)
-        .then(function(geoData) {
-            processedData = MatrixLoader.processGeo(geoData);
-            $('#filenodes').text('Nodes: ' + processedData.points.length);
-            $('#fileedges').text('Edges: ' + processedData.edges.length);
-
-            return clGraph.setPoints(processedData.points);
-        })
-        .then(function() {
-
-            var position = function (points, edges) {
-                return edges.map(function (pair){
-                    var start = points[pair[0]];
-                    var end = points[pair[1]];
-                    return [start[0], start[1], end[0], end[1]];
-                });
-            };
-            var k = 6; //need to be <= # supported colors, currently 9
-            var steps =  50;
-            var positions = position(processedData.points, processedData.edges);
-            var clusters = kmeans(positions, k, steps); //[ [0--1]_4 ]_k
-            clGraph.setColorMap("test-colormap2.png", {clusters: clusters, points: processedData.points, edges: processedData.edges});
-
-
-            return clGraph.setEdges(processedData.edges);
-        })
-        .then(function() {
-            return clGraph.tick();
-        })
-    }
-
-
-    // Generates `amount` number of random points
-    function createPoints(amount, dim) {
-        // Allocate 2 elements for each point (x, y)
-        var points = [];
-
-        for(var i = 0; i < amount; i++) {
-            points.push([Math.random() * dim[0], Math.random() * dim[1]]);
-        }
-
-        return points;
-    }
-
-
-    function createEdges(amount, numNodes) {
-        var edges = [];
-        // This may create duplicate edges. Oh well, for now.
-        for(var i = 0; i < amount; i++) {
-            var source = (i % numNodes),
-                target = (i + 1) % numNodes;
-
-            edges.push([source, target]);
-        }
-
-        return edges;
-    }
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////
 
     $(function () {
 
         setup().
         then(function() {
-            return loadDataList(graph);
+            console.error("SETUP, LOADING DATA")
+            return demo.loadDataList(graph);
         }, function(err) {
             console.error("Error setting up animation:", err, err.stack);
+        }).then(function (dataList) {
+            renderDataList(dataList);
         }).then(function () {
+            console.error("LOADED DATA, BINDING")
             return bindSliders(graph);
+        }, function (err) {
+            console.error("Error loading data", err, err.stack)
         });
     });
