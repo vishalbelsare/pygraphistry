@@ -44,7 +44,7 @@ var HEIGHT = 400;
 
 
 
-        return NBody.create(SimCL, RenderGL, canvas, dimensions, 3)
+        return NBody.create(SimCL, RenderGL, document, canvas, dimensions, 3)
         .then(function(createdGraph) {
             graph = createdGraph;
             console.log("N-body graph created.");

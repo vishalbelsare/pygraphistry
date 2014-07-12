@@ -1,15 +1,10 @@
 var Q = require('Q');
 var glMatrix = require('gl-matrix');
 var util = require('./util.js');
-if (typeof(document) == 'undefined') {
-    document = require('node-webgl').document();
-}
-
-
 
     'use strict';
 
-    var create = Q.promised(function(canvas, dimensions, visible) {
+    var create = Q.promised(function(document, canvas, dimensions, visible) {
         visible = visible || {};
 
         var renderer = {document: document, canvas: canvas};

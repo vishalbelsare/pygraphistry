@@ -17,11 +17,11 @@ var events = require('./SimpleEvents.js');
      * @param canvas - the canvas DOM element to draw the graph in
      * @param [dimensions=\[1,1\]] - a two element array [width,height] used for internal posituin calculations.
      */
-    function create(simulator, renderer, canvas, dimensions, numSplits) {
+    function create(simulator, renderer, document, canvas, dimensions, numSplits) {
         dimensions = dimensions || [1,1];
         numSplits = numSplits || 0;
 
-        return renderer.create(canvas, dimensions)
+        return renderer.create(document, canvas, dimensions)
         .then(function(rend) {
             console.debug('CREATED RENDERER')
             return simulator.create(rend, dimensions, numSplits).then(function(sim) {
