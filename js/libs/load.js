@@ -7,27 +7,22 @@ var Long = require('./Long.js');
     var exports = {
         ls: function (matrixJson) {
             //FIXME do not do as eval
+
             var parts = matrixJson.split('/');
             parts.pop();
             var base = parts.join('/') + '/';
 
-
-            var file;
-            if (typeof window == 'undefined') {
-                var fs = require('fs');
-                file = Q.denodeify(fs.readFile)(matrixJson, {encoding: 'utf8'});
-            } else {
-                var url = "shaders/" + id;
-                file = Q($.ajax(matrixJson, {dataType: "text"}))
-            }
+            var file = typeof window == 'undefined' ?
+                    Q.denodeify(require('fs').readFile)(matrixJson, {encoding: 'utf8'})
+                :   Q($.ajax(matrixJson, {dataType: "text"}));
 
             return file
-            .then(eval)
-            .then(function (lst) {
-                return lst.map(function (f) {
-                    return {KB: f.KB, 'f': base + f.f};
+                .then(eval)
+                .then(function (lst) {
+                    return lst.map(function (f) {
+                        return {KB: f.KB, 'f': base + f.f};
+                    });
                 });
-            });
         },
 
 
