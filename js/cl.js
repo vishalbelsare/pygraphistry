@@ -375,9 +375,21 @@ if (typeof(window) == 'undefined') {
 
 
     var copyBuffer = Q.promised(function (cl, source, destination) {
-        // TODO: acquire the buffers before copying them
-        cl.queue.enqueueCopyBuffer(source.buffer, destination.buffer, 0, 0, Math.min(source.size, destination.size));
-        return destination;
+        console.debug('COPY BUFFER', source.name, destination.name, source.size, destination.size)
+        var t0 = new Date().getTime();
+        return Q()
+            .then(function () { return source.acquire(); })
+            .then(function () { return destination.acquire(); })
+            .then(function () {
+                cl.queue.enqueueCopyBuffer(source.buffer, destination.buffer, 0, 0, Math.min(source.size, destination.size));
+                return source.release();
+            })
+            .then(function () { return destination.release(); })
+            .then(function () {
+                cl.queue.finish();
+                console.debug('  /copied', new Date().getTime() - t0);
+
+                return destination; });
     });
 
 
