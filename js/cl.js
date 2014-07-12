@@ -76,6 +76,7 @@ if (typeof(window) == 'undefined') {
         console.debug("  Device", deviceWrapper, deviceWrapper.device.getInfo(webcl.DEVICE_VENDOR));
 
         var res = {
+            gl: gl,
             cl: webcl,
             context: deviceWrapper.context,
             device: deviceWrapper.device,
@@ -159,6 +160,7 @@ if (typeof(window) == 'undefined') {
         console.debug("  Device", deviceWrapper);
 
         var clObj = {
+            "gl": gl,
             "cl": cl,
             "context": deviceWrapper.context,
             "device": deviceWrapper.device,

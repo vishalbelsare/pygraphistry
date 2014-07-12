@@ -12,7 +12,7 @@ if (typeof(document) == 'undefined') {
     var create = Q.promised(function(canvas, dimensions, visible) {
         visible = visible || {};
 
-        var renderer = {};
+        var renderer = {document: document, canvas: canvas};
 
         // The dimensions of a canvas, by default, do not accurately reflect its size on screen (as
         // set in the HTML/CSS/etc.) This changes the canvas size to match its size on screen.
