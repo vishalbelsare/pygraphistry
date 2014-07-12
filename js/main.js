@@ -104,39 +104,39 @@ var $ = require('jQuery'),
 
 
     function bindSliders(graph) {
-        console.error('setting phsyics');
+        console.debug('setting physics');
 
         $('#charge').on('change', function (e) {
-        var v = $(this).val();
-        var res = 0.1;
-        for (var i = 0; i < (100-v); i++) res /= 1.3;
-        var scaled = -1 * res;
-      console.log('charge', v, '->', scaled);
-        graph.setPhysics({charge: scaled});
+            var v = $(this).val();
+            var res = 0.1;
+            for (var i = 0; i < (100-v); i++) res /= 1.3;
+            var scaled = -1 * res;
+            //console.log('charge', v, '->', scaled);
+            graph.setPhysics({charge: scaled});
         });
         $('#gravity').on('change', function (e) {
-        var v = $(this).val();
-        var res = 100.0;
-        for (var i = 0; i < (100-v); i++) res /= 1.3;
-        var scaled = 1 * res;
-//      console.log('gravity', v, '->', scaled);
-        graph.setPhysics({gravity: scaled});
+            var v = $(this).val();
+            var res = 100.0;
+            for (var i = 0; i < (100-v); i++) res /= 1.3;
+            var scaled = 1 * res;
+            //      console.log('gravity', v, '->', scaled);
+            graph.setPhysics({gravity: scaled});
         });
         $('#strength').on('change', function (e) {
-        var v = $(this).val();
-        var res = 100.0;
-        for (var i = 0; i < (100-v); i++) res /= 1.3;
-        var scaled = 1 * res;
-//      console.log('strength', v, '->', scaled);
-        graph.setPhysics({edgeStrength: scaled});
+            var v = $(this).val();
+            var res = 100.0;
+            for (var i = 0; i < (100-v); i++) res /= 1.3;
+            var scaled = 1 * res;
+            //      console.log('strength', v, '->', scaled);
+            graph.setPhysics({edgeStrength: scaled});
         });
         $('#length').on('change', function (e) {
-        var v = $(this).val();
-        var res = 100.0;
-        for (var i = 0; i < (100-v); i++) res /= 1.3;
-        var scaled = 1 * res;
-//      console.log('length', v, '->', scaled);
-        graph.setPhysics({edgeDistance: scaled});
+            var v = $(this).val();
+            var res = 100.0;
+            for (var i = 0; i < (100-v); i++) res /= 1.3;
+            var scaled = 1 * res;
+            //      console.log('length', v, '->', scaled);
+            graph.setPhysics({edgeDistance: scaled});
         });
 
         ['points', 'edges', 'midpoints', 'midedges'].forEach(function (name) {
@@ -201,16 +201,17 @@ var $ = require('jQuery'),
 
         setup().
         then(function() {
-            console.error("SETUP, LOADING DATA")
+            console.debug("SETUP, LOADING DATA")
             return demo.loadDataList(graph);
-        }, function(err) {
-            console.error("Error setting up animation:", err, err.stack);
         }).then(function (dataList) {
-            renderDataList(dataList);
+            renderDataList(dataList, graph);
         }).then(function () {
-            console.error("LOADED DATA, BINDING")
+            console.debug("LOADED DATA, BINDING")
             return bindSliders(graph);
-        }, function (err) {
-            console.error("Error loading data", err, err.stack)
-        });
+        }).then(function () {
+            graph.tick(); //initial view
+        }).then(
+            function () { console.debug('DONE') },
+            function (err) { console.error('oops', err, err.stack) })
+
     });

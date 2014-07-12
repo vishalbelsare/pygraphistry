@@ -89,7 +89,7 @@ var Long = require('./Long.js');
         loadGeo: function(file) { // -> Promise Binary
             var t0 = new Date().getTime();
 
-            console.error("LOADING GEO", file);
+            console.debug("LOADING GEO", file);
 
             function Binary (buf) {
                 var f32 = new Float32Array(buf.buffer);
@@ -131,7 +131,7 @@ var Long = require('./Long.js');
                         console.error("OOPS", err);
                     });
             } else {
-                console.error("geo fallback")
+                console.debug("geo browser")
                 var xhr = new XMLHttpRequest();
                 xhr.open('GET', file, true);
                 xhr.responseType = 'arraybuffer';
