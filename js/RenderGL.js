@@ -174,6 +174,7 @@ var util = require('./util.js');
         return util.getImage(imageURL)
         .then(function(texImg) {
 
+            var imageData;
             try {
             if (maybeClusters) {
 
@@ -182,7 +183,13 @@ var util = require('./util.js');
                 canvas.height = texImg.height;
 
                 var ctx = canvas.getContext("2d");
-                var imageData = ctx.createImageData(texImg.width, texImg.height);
+                if (ctx.createImageData) {
+                    imageData = ctx.createImageData(texImg.width, texImg.height);
+                } else {
+                    imageData = {
+                        data: new Uint8Array(texImg.width * texImg.height * 4)
+                    }
+                }
 
                 //default to white/transparent
                 for (var x = 0; x < texImg.width; x++) {
@@ -233,7 +240,7 @@ var util = require('./util.js');
             renderer.colorTexture = gl.createTexture();
             gl.bindTexture(gl.TEXTURE_2D, renderer.colorTexture);
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texImg);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageData ? imageData.data : texImg);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
             gl.generateMipmap(gl.TEXTURE_2D);
