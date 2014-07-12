@@ -174,8 +174,14 @@ var HEIGHT = 400;
 
             console.error('done setup')
 
-            demo.animator(graph.renderer.document, graph.tick)
-                .startAnimation();
+            var animation = demo.animator(graph.renderer.document, graph.tick);
+
+            animation.startAnimation(
+                function () {
+                    console.error('done, pausing for 10s')
+                    setTimeout(function () { console.error('done, exiting'); }, 10 * 1000);
+                },
+                Math.round(50 * 1000 / 50) /* frames */);
 
             console.error('ANIMATING')
 

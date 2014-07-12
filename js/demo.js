@@ -84,23 +84,29 @@ function animator (document, promise) {
     }
 
 
+    var step = 0;
+    var bound = -1;
+
     var res = {
         stopAnimation: function () {
             animating = false;
             return res;
         },
-        startAnimation: function () {
+        startAnimation: function (maybeCb, maybeMaxSteps) {
+            bound = maybeMaxSteps;
             animating = true;
             var run = function () {
-                console.debug('===============STEPPING')
+                console.debug('===============STEPPING', step++)
+                bound--;
                 var t0 = new Date().getTime();
                 promise().then(
                     function () {
                         console.debug("  /STEPPED", new Date().getTime() - t0, 'ms');
-                        if (animating) {
+                        if (animating && bound != 0) {
                             next(run);
                         } else {
-                            console.debug("ANIMATE DONE")
+                            if (maybeCb) maybeCb();
+                            else console.debug("ANIMATE DONE");
                         }
                     },
                     function () {
