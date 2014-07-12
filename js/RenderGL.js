@@ -21,6 +21,7 @@ var util = require('./util.js');
 
         // Set up WebGL settings
         gl.enable(gl.BLEND);
+        gl.enable(gl.VERTEX_PROGRAM_POINT_SIZE || 0x8642);
         // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE);
         gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
