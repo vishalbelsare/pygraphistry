@@ -165,7 +165,7 @@ var $ = require('jQuery'),
     ///////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////
 
-    function renderDataList(dataList) {
+    function renderDataList(dataList, graph) {
 
         var dataEl = $("#datasets");
 
@@ -184,7 +184,10 @@ var $ = require('jQuery'),
         .on('change', function () {
             var dataSet = dataList[parseInt(this.value)];
 
-            return dataSet.loader(clGraph, dataSet.f)
+            return dataSet.loader(graph, dataSet.f)
+                .then(function () {
+                    graph.tick();
+                })
             .catch(function(err) {
                 console.error("Error loading matrix:", err);
                 throw err;

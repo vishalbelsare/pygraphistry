@@ -1,6 +1,7 @@
 "use strict";
 
 var MatrixLoader = require('./libs/load.js');
+var kmeans = require('./libs/kmeans.js');
 
 
 // Generates `amount` number of random points
