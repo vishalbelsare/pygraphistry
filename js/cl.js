@@ -217,7 +217,7 @@ if (typeof(window) == 'undefined') {
         var t0 = new Date().getTime();
         console.debug("COMPILING");
         try {
-        var program = cl.context.createProgram(source);
+        var program = cl.context.createProgram("#define NODECL\n\n" + source);
         program.build([cl.device]);
 
         if (typeof kernels === "string") {
