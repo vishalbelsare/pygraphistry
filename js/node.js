@@ -63,7 +63,6 @@ var HEIGHT = 400;
                 .then(
                     function () { console.error('COLOR')},
                     function (err) { console.error('COLOR EXN:', err, err.stack)});
-            console.error('ff')
             return graph.setEdges(edges);
         })
         .then(function(graph) {

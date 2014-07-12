@@ -27,6 +27,9 @@ var Long = require('./Long.js');
 
 
         loadBinary: function (file) { // -> Promise Binary
+
+            console.log("LOADING", file);
+
             var t0 = new Date().getTime();
 
             function Binary (buf) {
@@ -44,7 +47,6 @@ var Long = require('./Long.js');
 
                 return file
                     .then(function (nodeBuffer) {
-                        console.error('got', nodeBuffer.constructor)
                         return Binary(new Uint32Array((new Uint8Array(nodeBuffer)).buffer));
                     });
             } else {
