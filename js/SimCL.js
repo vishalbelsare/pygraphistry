@@ -454,7 +454,6 @@ if (typeof(window) == 'undefined') {
             console.debug('acquiring')
             return simulator.buffers.curPoints.acquire(); })
         .then(function() {
-            console.debug('(FIXME POINT NOOP)')
             console.debug('~~~~~run point', 'locked?', simulator.locked.lockPoints ? true : false)
             return simulator.locked.lockPoints ? false : simulator.pointKernel.call(simulator.numPoints, []);
         })
