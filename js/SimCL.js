@@ -415,13 +415,25 @@ if (typeof(window) == 'undefined') {
     function tick(simulator, stepNumber) {
 
         function edgeKernelSeq (edges, workItems, numWorkItems, fromPoints, toPoints) {
-            simulator.edgesKernel.setArgs(
-                [edges.buffer, workItems.buffer, fromPoints.buffer, toPoints.buffer, null,
-                 null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
-                [null, null, null, null, null,
-                 null, null, cljs.types.uint_t]);
-            console.error('edge call', cljs.types.uint_t, numWorkItems)
-            return simulator.edgesKernel.call(numWorkItems, [])
+
+            var bufs = [edges, workItems, fromPoints, toPoints, simulator.buffers.springsPos];
+
+            return Q()
+                .then(function () {
+                    simulator.edgesKernel.setArgs(
+                        [edges.buffer, workItems.buffer, fromPoints.buffer, toPoints.buffer, null,
+                         null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
+                        webcl.type ? [null, null, null, null, null,
+                         null, null, cljs.types.uint_t] : null);
+                }).then(function () {
+                    return Q.all(bufs.map(function (buf) { return buf.acquire(); }));
+                }).then(function () {
+                    //return Q(console.error("SKIP EDGE"))
+                    console.debug('edge call', cljs.types.uint_t, numWorkItems)
+                    simulator.edgesKernel.call(numWorkItems, []);
+                }).then(function () {
+                    return Q.all(bufs.map(function (buf) { return buf.release(); }));
+                })
         }
 
         // If there are no points in the graph, don't run the simulation
@@ -446,6 +458,8 @@ if (typeof(window) == 'undefined') {
             console.debug('~~~~~run point', 'locked?', simulator.locked.lockPoints ? true : false)
             return simulator.locked.lockPoints ? false : simulator.pointKernel.call(simulator.numPoints, []);
         })
+        .then(function () {
+            return simulator.buffers.curPoints.release(); })
         .then(function () {
             return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints); },
             function (err) {
@@ -477,10 +491,6 @@ if (typeof(window) == 'undefined') {
                 return simulator;
             }
         })
-        .then(function() {
-            console.error('edged')
-            return simulator.buffers.curPoints.release();
-        })
         ////////////////////////////
         // Run the edges kernel
         .then(function () {
@@ -501,8 +511,55 @@ if (typeof(window) == 'undefined') {
             console.debug('CALL MIDPOINT', 'locked?', simulator.locked.lockMidpoints)
             return simulator.locked.lockMidpoints ? simulator : simulator.midPointKernel.call(simulator.numMidPoints, []);  // APPLY MID-FORCES
         })
+        .then(function () {
+            return Q.all([
+                simulator.buffers.curMidPoints.release(),
+                simulator.buffers.midSpringsColorCoord.release()
+            ]);
+        })
         .then(function() {
-            console.error('COPY MIDPOINT')
+            //return console.error("SKIP COPY MID")
+            console.debug('COPY MIDPOINT')
+
+
+            /*
+                var memSize = 1 << 5;
+                var h_idata = new Uint8Array(memSize);
+                for(var i = 0; i < memSize; i++) {
+                    h_idata[i] = (i & 0xff);
+                }
+                var a, b;
+                return Q.all([
+                    simulator.cl.createBuffer(memSize, 'd_idata'),
+                    simulator.cl.createBufferGL(simulator.renderer.createBuffer(h_idata, 'd_odata_base'), 'd_odata')])
+                .spread(function (d_idata, d_odata) {
+                    console.error('got')
+                    a = d_idata;
+                    b = d_odata;
+
+                    return d_idata.write(h_idata);
+                })
+                .then(function () {
+                    console.error("WROTE")
+                    for(var i = 0; i < 1; i++) {
+                        a.copyInto(b);
+                    }
+                    return;
+                }, function (err) {
+                    console.error('FAIL WRITE TEST', err, err.stack)
+                })
+                .then(function () {
+                    console.error("PASS COPY TEST")
+
+                }, function () {
+                    console.error("FAILED COPY TEST")
+                })
+                .then(function () {
+
+
+                });
+            */
+
             return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
 
 
