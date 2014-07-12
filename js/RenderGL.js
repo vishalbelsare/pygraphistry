@@ -275,6 +275,7 @@ var util = require('./util.js');
     var write = Q.promised(function(buffer, data) {
         buffer.gl.bindBuffer(buffer.gl.ARRAY_BUFFER, buffer.buffer);
         buffer.gl.bufferData(buffer.gl.ARRAY_BUFFER, data, buffer.gl.DYNAMIC_DRAW);
+        buffer.gl.finish();
         return buffer;
     });
 
