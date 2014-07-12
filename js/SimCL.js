@@ -18,15 +18,15 @@ if (typeof(window) == 'undefined') {
     function create(renderer, dimensions, numSplits, locked) {
         return cljs.create(renderer.gl)
         .then(function(cl) {
-            console.error('GOT CL')
+            console.debug('CREATE CL (from gl)')
             // Compile the WebCL kernels
             return util.getSource("apply-forces.cl")
             .then(function(source) {
-                console.error('GOT SOURCE')
+                console.debug('GOT SOURCE')
                 return cl.compile(source, ["apply_points", "apply_springs", "apply_midpoints", "apply_midsprings"]);
             })
             .then(function(kernels) {
-                console.error('COMPILED')
+                console.debug('COMPILED')
                 var simObj = {
                     "renderer": renderer,
                     "cl": cl,
@@ -134,12 +134,13 @@ if (typeof(window) == 'undefined') {
 
             // Create buffers and write initial data to them, then set
             return Q.all([
-                    simulator.renderer.createBuffer(points),
-                    simulator.cl.createBuffer(points.byteLength),
-                    simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT)
+                    simulator.renderer.createBuffer(points, 'curPoints'),
+                    simulator.cl.createBuffer(points.byteLength, 'nextPoints'),
+                    simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 'randValues')
                 ]);
         })
         .spread(function(pointsVBO, nextPointsBuffer, randBuffer) {
+            console.debug('made most points')
             simulator.buffers.nextPoints = nextPointsBuffer;
 
             simulator.renderer.buffers.curPoints = pointsVBO;
@@ -152,14 +153,14 @@ if (typeof(window) == 'undefined') {
             }
 
             return Q.all([
-                simulator.cl.createBufferGL(pointsVBO),
+                simulator.cl.createBufferGL(pointsVBO, 'curPoints'),
                 simulator.buffers.randValues.write(rands)]);
         })
         .spread(function(pointsBuf, randValues) {
             simulator.buffers.curPoints = pointsBuf;
 
             var localPosSize = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
-            console.error("SETTING POINT 0", "FIXME: dyn alloc __local, not hardcode in kernel");
+            console.debug("SETTING POINT 0", "FIXME: dyn alloc __local, not hardcode in kernel");
             return simulator.pointKernel.setArgs([
                     webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
                     simulator.buffers.curPoints.buffer,
@@ -247,15 +248,15 @@ if (typeof(window) == 'undefined') {
 
             // Create buffers
             return Q.all([
-                simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength),
-                simulator.cl.createBuffer(forwardsEdges.workItemsTyped.byteLength),
-                simulator.cl.createBuffer(backwardsEdges.edgesTyped.byteLength),
-                simulator.cl.createBuffer(backwardsEdges.workItemsTyped.byteLength),
-                simulator.cl.createBuffer(midPoints.byteLength),
-                simulator.renderer.createBuffer(simulator.numEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT),
-                simulator.renderer.createBuffer(midPoints),
-                simulator.renderer.createBuffer(simulator.numMidEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT),
-                simulator.renderer.createBuffer(simulator.numMidEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT)]);
+                simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'forwardsEdges'),
+                simulator.cl.createBuffer(forwardsEdges.workItemsTyped.byteLength, 'forwardsWorkItems'),
+                simulator.cl.createBuffer(backwardsEdges.edgesTyped.byteLength, 'backwardsEdges'),
+                simulator.cl.createBuffer(backwardsEdges.workItemsTyped.byteLength, 'backwardsWorkItems'),
+                simulator.cl.createBuffer(midPoints.byteLength, 'nextMidPoints'),
+                simulator.renderer.createBuffer(simulator.numEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 'springs'),
+                simulator.renderer.createBuffer(midPoints, 'curMidPoints'),
+                simulator.renderer.createBuffer(simulator.numMidEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 'midSprings'),
+                simulator.renderer.createBuffer(simulator.numMidEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 'midSpringsColorCoord')]);
         })
         .spread(function(forwardsEdgesBuffer, forwardsWorkItemsBuffer, backwardsEdgesBuffer,
                          backwardsWorkItemsBuffer, nextMidPointsBuffer, springsVBO,
@@ -273,10 +274,10 @@ if (typeof(window) == 'undefined') {
             simulator.renderer.buffers.midSpringsColorCoord = midSpringsColorCoordVBO;
 
             return Q.all([
-                simulator.cl.createBufferGL(springsVBO),
-                simulator.cl.createBufferGL(midPointsVBO),
-                simulator.cl.createBufferGL(midSpringsVBO),
-                simulator.cl.createBufferGL(midSpringsColorCoordVBO),
+                simulator.cl.createBufferGL(springsVBO, 'springsPos'),
+                simulator.cl.createBufferGL(midPointsVBO, 'curMidPoints'),
+                simulator.cl.createBufferGL(midSpringsVBO, 'midSpringsPos'),
+                simulator.cl.createBufferGL(midSpringsColorCoordVBO, 'midSpringsColorCoord'),
                 simulator.buffers.forwardsEdges.write(forwardsEdges.edgesTyped),
                 simulator.buffers.forwardsWorkItems.write(forwardsEdges.workItemsTyped),
                 simulator.buffers.backwardsEdges.write(backwardsEdges.edgesTyped),
@@ -290,7 +291,6 @@ if (typeof(window) == 'undefined') {
             simulator.buffers.midSpringsColorCoord = midSpringsColorCoordBuffer;
 
             var localPosSize = Math.min(simulator.cl.maxThreads, simulator.numMidPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
-            console.error('aaa')
             var midPointArgs = simulator.midPointKernel.setArgs([
                     webcl.type ? [simulator.numMidPoints] : new Uint32Array([simulator.numMidPoints]),
                     webcl.type ? [simulator.numSplits] : new Uint32Array([simulator.numSplits]),
@@ -310,9 +310,8 @@ if (typeof(window) == 'undefined') {
                     webcl.type.UINT, webcl.type.UINT, null, null,
                     webcl.type.LOCAL_MEMORY_SIZE, webcl.type.FLOAT, webcl.type.FLOAT, webcl.type.FLOAT,webcl.type.FLOAT,
                 null, webcl.type.UINT] : null);
-            console.error('bbb')
 
-            console.error('EDGES KERNEL 0')
+            console.debug('EDGES KERNEL 0')
             var edgeArgs = simulator.edgesKernel.setArgs(
                 [   null, //forwards/backwards picked dynamically
                     null, //forwards/backwards picked dynamically
@@ -325,23 +324,8 @@ if (typeof(window) == 'undefined') {
                 webcl.type ? [null, null, null, null, null,
                     webcl.type.FLOAT, webcl.type.FLOAT]
                     : null);
-            console.error('ARGS', [
-                    null, //forwards/backwards picked dynamically
-                    null, //forwards/backwards picked dynamically
-                    null, //simulator.buffers.curPoints.buffer then simulator.buffers.nextPoints.buffer
-                    null, //simulator.buffers.nextPoints.buffer then simulator.buffers.curPoints.buffer
-                    simulator.buffers.springsPos.buffer,
-                    webcl.type ? [1.0] : new Float32Array([1.0]),
-                    webcl.type ? [0.1] : new Float32Array([0.1]),
-                    null])
-            console.error('TYPES',  webcl.type ? [null, null, null, null, null,
-                    webcl.type.FLOAT, webcl.type.FLOAT]
-                    : null)
 
-
-                        console.error('ccc')
-
-            console.error("MID EDGES 0")
+            console.debug("MID EDGES 0")
             var midEdgeArgs = simulator.midEdgesKernel.setArgs([
                 webcl.type ? [simulator.numSplits] : new Uint32Array([simulator.numSplits]),        // 0:
                 simulator.buffers.forwardsEdges.buffer,        // 1: only need one direction as guaranteed to be chains
@@ -360,13 +344,9 @@ if (typeof(window) == 'undefined') {
                     webcl.type.FLOAT, webcl.type.FLOAT, /*webcl.type.UINT*/null
                 ] : null);
 
-            console.error('ddd')
-
             return Q.all(midPointArgs, edgeArgs, midEdgeArgs);
         })
         .then(function() {
-                        console.error('eee')
-
             return simulator;
         });
     }
@@ -378,12 +358,20 @@ if (typeof(window) == 'undefined') {
     }
 
 
+
+    var totCfg = {};
+
     function setPhysics(simulator, cfg) {
         // TODO: Instead of setting these kernel args immediately, we should make the physics values
         // properties of the simulator object, and just change those properties. Then, when we run
         // the kernels, we set the arg using the object property (the same way we set stepNumber.)
 
         cfg = cfg || {};
+
+        for (var i in cfg) {
+            totCfg[i] = cfg[i];
+        }
+        console.debug('UPDATING PHYSICS', totCfg, '(delta:', cfg, ')');
 
         if(cfg.charge || cfg.gravity) {
             var charge = cfg.charge ? (webcl.type ? [cfg.charge] : new Float32Array([cfg.charge])) : null;
@@ -392,7 +380,7 @@ if (typeof(window) == 'undefined') {
             var gravity = cfg.gravity ? (webcl.type ? [cfg.gravity] : new Float32Array([cfg.gravity])) : null;
             var gravity_t = cfg.gravity ? cljs.types.float_t : null;
 
-            console.error("SETTING POINT 1")
+            console.debug("SETTING POINT 1")
             simulator.pointKernel.setArgs(
                 [null, null, null, null, null, null, charge, gravity, null, null],
                 [null, null, null, null, null, null, charge_t, gravity_t, null, null]);
@@ -410,12 +398,12 @@ if (typeof(window) == 'undefined') {
             var edgeStrength = cfg.edgeStrength ? (webcl.type ? [cfg.edgeStrength] : new Float32Array([cfg.edgeStrength])) : null;
             var edgeStrength_t = cfg.edgeStrength ? cljs.types.float_t : null;
 
-            console.error("EDGES KERNEL 1")
+            console.debug("EDGES KERNEL 1")
             simulator.edgesKernel.setArgs(
                 [null, null, null, null, null, edgeStrength, edgeDistance, null],
                 [null, null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
 
-            console.error("MID EDGES 1")
+            console.debug("MID EDGES 1")
             simulator.midEdgesKernel.setArgs(
                 // 0   1     2     3     4     5     6     7     8               9               10
                 [null, null, null, null, null, null, null, null, edgeStrength,   edgeDistance,   null],
@@ -445,17 +433,17 @@ if (typeof(window) == 'undefined') {
         // Run the points kernel
         return Q()
         .then(function () {
-            console.error('SETTING POINT 2')
+            console.debug('SETTING POINT 2')
             simulator.pointKernel.setArgs(
                 [null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
                 [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
         })
         .then(function () {
-            console.error('acquiring')
+            console.debug('acquiring')
             return simulator.buffers.curPoints.acquire(); })
         .then(function() {
-            console.error('(FIXME POINT NOOP)')
-            console.error('run point', simulator.locked.lockPoints ? false : true)
+            console.debug('(FIXME POINT NOOP)')
+            console.debug('~~~~~run point', 'locked?', simulator.locked.lockPoints ? true : false)
             return simulator.locked.lockPoints ? false : simulator.pointKernel.call(simulator.numPoints, []);
         })
         .then(function () {
@@ -465,18 +453,18 @@ if (typeof(window) == 'undefined') {
                 return err;
             })
         .then(function() {
-            console.error('copied?')
+            console.debug('copied?')
             if(simulator.numEdges > 0) {
                 if (simulator.locked.lockEdges) {
-                    console.error('sim')
+                    console.debug('~~~~~sim locked, SKIP')
                     return simulator;
                 } else {
-                    console.error('EDGE SEQ');
+                    console.debug('EDGE SEQ locked? false');
                     return edgeKernelSeq(
                         simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
                         simulator.buffers.curPoints, simulator.buffers.nextPoints)
                     .then(function () {
-                        console.error('forward, now back')
+                        console.debug('forward, now back')
                          return edgeKernelSeq(
                             simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
                             simulator.buffers.nextPoints, simulator.buffers.curPoints); },
@@ -496,29 +484,31 @@ if (typeof(window) == 'undefined') {
         ////////////////////////////
         // Run the edges kernel
         .then(function () {
-            console.error('SET MIDPOINT')
+            console.debug('SET MIDPOINT')
 
             simulator.midPointKernel.setArgs(
                 [null, null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
                 [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
         })
         .then(function() {
-            console.error('MIDPOINT READY')
+            console.debug('MIDPOINT READY')
             return Q.all([
                 simulator.buffers.curMidPoints.acquire(),
                 simulator.buffers.midSpringsColorCoord.acquire()
             ]);
         })
         .spread(function() {
-            console.error('CALL MIDPOINT')
+            console.debug('CALL MIDPOINT', 'locked?', simulator.locked.lockMidpoints)
             return simulator.locked.lockMidpoints ? simulator : simulator.midPointKernel.call(simulator.numMidPoints, []);  // APPLY MID-FORCES
         })
         .then(function() {
             console.error('COPY MIDPOINT')
             return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
+
+
         })
         .then(function () {
-            console.error('MID EDGES 2')
+            console.debug('~~~~~MID EDGES 2', 'locked?', simulator.locked.lockMidedges)
             if (simulator.numEdges > 0 && !simulator.locked.lockMidedges) {
                 simulator.midEdgesKernel.setArgs(
                     // 0   1     2     3     4     5     6     7     8     9     10
@@ -531,16 +521,18 @@ if (typeof(window) == 'undefined') {
             } else {
                 return simulator;
             }
+        }, function (err) {
+            console.error('badddd', err, err.stack)
         })
         .then(function() {
-            console.error('release midpoint')
+            console.debug('release midpoint')
             return Q.all([
                 simulator.buffers.curMidPoints.release(),
                 simulator.buffers.midSpringsColorCoord.release()
             ]);
         })
         .spread(function () {
-            console.error('q finish')
+            console.debug('q finish')
             simulator.cl.queue.finish(); //FIXME use callback arg
             return simulator;
         });

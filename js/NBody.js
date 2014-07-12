@@ -23,9 +23,9 @@ var events = require('./SimpleEvents.js');
 
         return renderer.create(canvas, dimensions)
         .then(function(rend) {
-            console.error('CREATED RENDERER')
+            console.debug('CREATED RENDERER')
             return simulator.create(rend, dimensions, numSplits).then(function(sim) {
-                console.error('CREATED SIMULATOR')
+                console.debug('CREATED SIMULATOR')
                 var graph = {
                     "renderer": rend,
                     "simulator": sim
@@ -201,9 +201,12 @@ var events = require('./SimpleEvents.js');
                 events.fire("simulateEnd");
                 events.fire("renderBegin");
 
+                console.debug("RENDER")
+
                 return graph.renderer.render();
             })
             .then(function() {
+                console.debug("RENDERED")
                 events.fire("renderEnd");
                 events.fire("tickEnd");
 

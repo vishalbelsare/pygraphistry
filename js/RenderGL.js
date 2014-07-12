@@ -230,7 +230,7 @@ if (typeof(document) == 'undefined') {
                 });
             }
             } catch (e) {
-                console.error('bad cluster load', e);
+                console.error('bad cluster load', e, e.stack);
             }
 
 
@@ -248,7 +248,7 @@ if (typeof(document) == 'undefined') {
 
 
     var createBuffer = Q.promised(function(renderer, data) {
-        console.error('creating buffer', typeof(data), data.constructor)
+        console.debug('creating gl buffer', typeof(data), data.constructor)
         var buffer = renderer.gl.createBuffer();
         var bufObj = {
             "buffer": buffer,

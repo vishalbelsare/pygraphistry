@@ -9,7 +9,7 @@ if (typeof(window) == 'undefined') {
 
 var getClContext;
 if (typeof(window) == 'undefined') {
-    console.error("NODECL")
+    console.debug("NODECL")
     var CreateContext = function(webcl, gl, platform, devices) {
         return webcl.createContext({
             devices: devices,
@@ -54,7 +54,7 @@ if (typeof(window) == 'undefined') {
             var wrapped = devices[i];
             try {
                 if (wrapped.device.getInfo(webcl.DEVICE_EXTENSIONS).search(/gl.sharing/i) == -1) {
-                    console.log('Skipping device due to no sharing', i, wrapped);
+                    console.log('  Skipping device due to no sharing', i, wrapped);
                     continue;
                 }
                 wrapped.context = CreateContext(webcl, gl, platform, [ wrapped.device ]);
@@ -63,7 +63,7 @@ if (typeof(window) == 'undefined') {
                 }
                 wrapped.queue = wrapped.context.createCommandQueue(wrapped.device, 0);
             } catch (e) {
-                console.debug("Skipping device due to error", i, wrapped, e);
+                console.debug("  Skipping device due to error", i, wrapped, e);
                 err = e;
                 continue;
             }
@@ -73,7 +73,7 @@ if (typeof(window) == 'undefined') {
         if (!deviceWrapper) {
             throw err;
         }
-        console.debug("Device", deviceWrapper, deviceWrapper.device.getInfo(webcl.DEVICE_VENDOR));
+        console.debug("  Device", deviceWrapper, deviceWrapper.device.getInfo(webcl.DEVICE_VENDOR));
 
         var res = {
             cl: webcl,
@@ -145,7 +145,7 @@ if (typeof(window) == 'undefined') {
                 }
                 wrapped.queue = wrapped.context.createCommandQueue(wrapped.device, null);
             } catch (e) {
-                console.debug("Skipping device due to error", i, wrapped, e);
+                console.debug("  Skipping device due to error", i, wrapped, e);
                 err = e;
                 continue;
             }
@@ -156,7 +156,7 @@ if (typeof(window) == 'undefined') {
             throw err;
         }
 
-        console.debug("Device", deviceWrapper);
+        console.debug("  Device", deviceWrapper);
 
         var clObj = {
             "cl": cl,
@@ -212,12 +212,15 @@ if (typeof(window) == 'undefined') {
      *          kernel name mapped to its kernel object.
      */
     var compile = Q.promised(function (cl, source, kernels) {
+        var t0 = new Date().getTime();
+        console.debug("COMPILING");
         try {
         var program = cl.context.createProgram(source);
         program.build([cl.device]);
 
         if (typeof kernels === "string") {
                 var kernelObj = {};
+                kernelObj.name = undefined;
                 kernelObj.kernel = program.createKernel(kernels);
                 kernelObj.cl = cl;
                 kernelObj.call = call.bind(this, kernelObj);
@@ -230,6 +233,7 @@ if (typeof(window) == 'undefined') {
             for(var i = 0; i < kernels.length; i++) {
                 var kernelName = kernels[i];
                 var kernelObj = {};
+                kernelObj.name = kernelName;
                 kernelObj.kernel = program.createKernel(kernelName);
                 kernelObj.cl = cl;
                 kernelObj.call = call.bind(this, kernelObj);
@@ -237,6 +241,8 @@ if (typeof(window) == 'undefined') {
 
                 kernelObjs[kernelName] = kernelObj;
             }
+
+            console.debug('  /compiled', new Date().getTime() - t0);
 
             return kernelObjs;
         }
@@ -251,44 +257,55 @@ if (typeof(window) == 'undefined') {
     // Executes the specified kernel, with `threads` number of threads, setting each element in
     // `args` to successive position arguments to the kernel before calling.
     var call = Q.promised(function (kernel, threads, args, argTypes) {
+        console.debug("CALL", kernel.name)
+        var t0 = new Date().getTime();
         args = args || [];
         argTypes = argTypes || [];
-        console.error('call', args, argTypes)
+        console.debug('call', args, argTypes)
         return kernel.setArgs(args, argTypes).then(function() {
             var workgroupSize = new Int32Array([threads]);
             events.fire("kernelStart");
             kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, workgroupSize.length, [], workgroupSize, []);
             kernel.cl.queue.finish();
             events.fire("kernelEnd");
-
+            console.debug('  /called', new Date().getTime() - t0);
             return kernel;
         });
     });
 
 
     var setArgs = Q.promised(function (kernel, args, argTypes) {
-        console.error('set each', args, argTypes)
+        console.debug('SET ARGS', args, argTypes)
+        var t0 = new Date().getTime();
         for (var i = 0; i < args.length; i++) {
             if(args[i] !== null) {
                 kernel.kernel.setArg(i, args[i]);
             }
         }
-
+        console.debug('  /all set', new Date().getTime() - t0);
         return kernel;
     });
 
 
-    var createBuffer = Q.promised(function createBuffer(cl, size) {
+    var createBuffer = Q.promised(function createBuffer(cl, size, name) {
+
+        console.debug('CREATE buffer', name);
+
         var buffer = cl.context.createBuffer(cl.cl.MEM_READ_WRITE, size);
         if (buffer === null) {
             throw new Error("Could not create the WebCL buffer");
         } else {
             var bufObj = {
+                "name": name,
                 "buffer": buffer,
                 "cl": cl,
                 "size": size,
-                "acquire": function() { return Q(); },
-                "release": function() { return Q(); }
+                "acquire": function() {
+                    console.debug("  acquire lock", bufObj.name)
+                    return Q(); },
+                "release": function() {
+                    console.debug("  release lock", bufObj.name)
+                    return Q(); }
             };
             bufObj.delete = Q.promised(function() {
                 bufObj.release();
@@ -305,21 +322,35 @@ if (typeof(window) == 'undefined') {
 
     // TODO: If we call buffer.acquire() twice without calling buffer.release(), it should have no
     // effect.
-    var createBufferGL = Q.promised(function (cl, vbo) {
+    var createBufferGL = Q.promised(function (cl, vbo, name) {
+
+        var t0 = new Date().getTime();
+
+        console.debug('CREATE buffer GL', name);
+
         var buffer = cl.context.createFromGLBuffer(cl.cl.MEM_READ_WRITE, vbo.buffer);
         if (buffer === null) {
             throw new Error("Could not create WebCL buffer from WebGL buffer");
         } else {
-            if (!buffer.getInfo) console.error('vbo, weird len', vbo.len)
+            if (!buffer.getInfo) console.warn('  vbo, weird len', vbo.len)
             var bufObj = {
+                "name": name,
                 "buffer": buffer,
                 "cl": cl,
                 "size": buffer.getInfo ? buffer.getInfo(cl.cl.MEM_SIZE) : (vbo.len * Float32Array.BYTES_PER_ELEMENT),
                 "acquire": Q.promised(function() {
+                    console.debug("  acquire gl", bufObj.name)
+                    var t0 = new Date().getTime();
                     cl.queue.enqueueAcquireGLObjects([buffer]);
+                    console.debug('    /acquired', new Date().getTime() - t0);
+
                 }),
                 "release": Q.promised(function() {
+                    console.debug("  release gl", bufObj.name);
+                    var t0 = new Date().getTime();
                     cl.queue.enqueueReleaseGLObjects([buffer]);
+                    console.debug('    /released', new Date().getTime() - t0);
+
                 })
             };
             bufObj.delete = Q.promised(function() {
@@ -334,6 +365,8 @@ if (typeof(window) == 'undefined') {
             bufObj.read = read.bind(this, bufObj);
             bufObj.copyInto = copyBuffer.bind(this, cl, bufObj);
 
+            console.debug('  /created', new Date().getTime() - t0);
+
             return bufObj;
         }
     });
@@ -347,6 +380,8 @@ if (typeof(window) == 'undefined') {
 
 
     var write = Q.promised(function write(buffer, data) {
+        console.debug("WRITE", buffer.name)
+        var t0 = new Date().getTime();
         return buffer.acquire()
             .then(function () {
                 buffer.cl.queue.enqueueWriteBuffer(buffer.buffer, true, 0, data.byteLength, data);
@@ -354,12 +389,15 @@ if (typeof(window) == 'undefined') {
             })
             .then(function() {
                 buffer.cl.queue.finish();
+                console.debug('  /wrote', new Date().getTime() - t0);
                 return buffer;
             });
     });
 
 
     var read = Q.promised(function (buffer, target) {
+        console.erro("READ", buffer.name);
+        var t0 = new Date().getTime();
         return buffer.acquire()
             .then(function() {
                 var copySize = Math.min(buffer.size, target.length * target.BYTES_PER_ELEMENT);
@@ -367,6 +405,7 @@ if (typeof(window) == 'undefined') {
                 return buffer.release();
             })
             .then(function() {
+                console.debug('  /read', new Date().getTime() - t0);
                 return buffer;
             });
     });
@@ -410,38 +449,37 @@ if (typeof(window) == 'undefined') {
         call = Q.promised(function (kernel, threads, args, argTypes) {
             args = args || [];
             argTypes = argTypes || [];
-            console.error('CALL (set + enqueue)', args, argTypes)
+            console.debug('CALL (poly)', kernel.name, args, argTypes)
+            var t0 = new Date().getTime();
             return kernel.setArgs(args, argTypes).then(function() {
-                console.error('as', typeof(window) == 'undefined' ? 'arr' : 'typed')
+                //kernel.cl.queue.finish();
                 var workgroupSize = typeof(window) == 'undefined' ? [threads] : new Int32Array([threads]);
-                console.error('wgs', workgroupSize)
                 if (webcl.type) {
                     kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, [threads], null);
                 } else {
                     kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, workgroupSize, null);
                 }
-                console.error('enqueued')
+                console.debug('  enqueued')
                 kernel.cl.queue.finish();
-                console.error('fished')
-
+                console.debug('  /called', new Date().getTime() - t0);
                 return kernel;
             });
         });
 
         setArgs = Q.promised(function (kernel, args, argTypes) {
-            console.error('setting each', args, argTypes)
+            console.debug('SET ARGS (poly)', args ? args.length : 'no args', argTypes ? argTypes.length : 'no types')
+            var t0 = new Date().getTime();
             try {
-            for (var i = 0; i < args.length; i++) {
-                if (args[i]) {
-                    console.error(i, (args[i].length ? args[i][0] : args[i]).constructor, argTypes[i])
-                    kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i] || undefined);
+                for (var i = 0; i < args.length; i++) {
+                    if (args[i]) {
+                        kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i] || undefined);
+                    }
                 }
-            }
             } catch (e) {
                 console.error('wat', e, e.stack)
                 throw new Error(e);
             }
-            console.error('set')
+            console.debug('  /set', new Date().getTime() - t0);
             return kernel;
         });
 
@@ -473,7 +511,6 @@ if (typeof(window) == 'undefined') {
     }
     var types = {};
     var CURRENT_CL = !polyfill();
-    console.error('CREATED CL CTX')
 
 
     module.exports = {

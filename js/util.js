@@ -34,13 +34,13 @@ if (typeof(window) == 'undefined') {
         var img = new Image();
 
         img.onload = function() {
-            console.error('IMG LOADED')
+            console.debug('IMG LOADED')
             deferred.resolve(img);
         };
 
-        console.error("SETTING SOURCE", url)
+        console.debug("SETTING SOURCE", url)
         img.src = url;
-        console.error("SET SOURCE")
+        console.debug("SET SOURCE")
 
         return deferred.promise;
     }
