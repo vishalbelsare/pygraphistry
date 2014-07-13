@@ -34,6 +34,8 @@ function createEdges(amount, numNodes) {
 function loadGeo(graph, graphFileURI) {
     var processedData;
 
+    console.error('~~~~~~~~~~~~~~ GEO ~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+
     return MatrixLoader.loadGeo(graphFileURI)
     .then(function(geoData) {
         processedData = MatrixLoader.processGeo(geoData);
@@ -67,8 +69,6 @@ function loadGeo(graph, graphFileURI) {
     .then(function() {
         console.debug("SET GEO POINTS, EDGES");
         return graph;
-    }, function (err) {
-        console.error('WAT', err, err.stack)
     });
 }
 
@@ -184,6 +184,8 @@ function loadDataList(clGraph) {
  */
 function loadMatrix(graph, graphFileURI) {
     var graphFile;
+
+    console.debug('LOADING FILE', graphFileURI);
 
     return MatrixLoader.loadBinary(graphFileURI)
     .then(function (v) {

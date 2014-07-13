@@ -18,8 +18,8 @@ var webgl = require('node-webgl');
 var demo = require('./demo.js');
 
 
-var WIDTH = 400;
-var HEIGHT = 400;
+var WIDTH = 600;
+var HEIGHT = 600;
 
 
     "use strict";
@@ -99,10 +99,18 @@ var HEIGHT = 400;
                 }, {});
 
         /* dumped from playing with web version */
+        /*
         physicsControls.charge(-0.00008385510126037207);
         physicsControls.gravity(0.00015448596582229787);
         physicsControls.edgeStrength(0.00015448596582229787);
         physicsControls.edgeDistance(0.0002610812822396834);
+        */
+
+        physicsControls.charge      (-0.000029360001841802474);
+        physicsControls.gravity     ( 0.00020083175556898723);
+        physicsControls.edgeStrength( 4.292198241799153);
+        physicsControls.edgeDistance( 0.0000158);
+
 
         var renderingControls =
             ['points', 'edges', 'midpoints', 'midedges']
@@ -111,12 +119,15 @@ var HEIGHT = 400;
                     cmd[lbl] = false;
                     o[lbl] = function (v) {
                         cmd[lbl] = v === undefined ? !cmd[lbl] : v;
+                        console.error('setting', cmd);
                         graph.setVisible(cmd);
                     };
                     return o;
                 }, {});
+
+
         renderingControls.points(true);
-        renderingControls.edges(false);
+        renderingControls.edges(true);
         renderingControls.midpoints(true);
         renderingControls.midedges(true);
 
@@ -133,8 +144,9 @@ var HEIGHT = 400;
                     };
                     return o;
                 }, {});
-        locks.lockPoints(false);
-        locks.lockEdges(false);
+
+        locks.lockPoints(true);
+        locks.lockEdges(true);
         locks.lockMidpoints(false);
         locks.lockMidedges(false);
 
@@ -159,25 +171,31 @@ var HEIGHT = 400;
 
 
         setup()
-        /*
+
         .then(function () {
-            console.error('~~~~~~~ SETUP')
-            return loadDataList(graph);
+            console.debug('~~~~~~~ SETUP')
+            return demo.loadDataList(graph);
         })
         .then(function (datalist) {
 
             console.error('loading data')
-            return datalist[0].loader(graph, datalist[0].f);
+            var which = 0;
+            console.error('which', datalist[which])
+            return datalist[which].loader(graph, datalist[which].f);
 
-        })*/.then(function (loaded) {
+        }).then(function (loaded) {
 
-            console.error('=================LOADED')
-            var api = controls(graph);
-
+            console.debug('=================LOADED')
             console.error('done setup')
 
-            var animation = demo.animator(graph.renderer.document, graph.tick);
+        }).then(function () {
 
+            var api = controls(graph);
+
+
+            console.error('init');
+
+            var animation = demo.animator(graph.renderer.document, graph.tick);
             animation.startAnimation(
                 function () {
                     console.error('done, pausing for 10s')

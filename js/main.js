@@ -172,7 +172,7 @@ var $ = require('jQuery'),
         dataList.forEach(function(dataSet, i) {
             dataEl.append($('<option></option>')
                 .attr('value', i)
-                .text(dataSet.base + " (" + dataSet.size + ")")
+                .text(i + '. ' + dataSet.base + " (" + dataSet.size + ")")
             );
         })
 
