@@ -525,15 +525,31 @@ if (typeof(window) == 'undefined') {
     var types = {};
     var CURRENT_CL = !polyfill();
 
+    var acquire = function (buffers) {
+        return Q.all(
+            buffers.map(function (buffer) {
+                return buffer.acquire();
+            }));
+    };
+
+    var release = function (buffers) {
+        return Q.all(
+            buffers.map(function (buffer) {
+                return buffer.release();
+            }));
+    };
+
 
     module.exports = {
-        "create": create,
-        "compile": compile,
+        "acquire": acquire,
         "call": call,
-        "setArgs": setArgs,
+        "compile": compile,
+        "create": create,
         "createBuffer": createBuffer,
         "createBufferGL": createBufferGL,
-        "write": write,
+        "release": release,
+        "setArgs": setArgs,
         "types": types,
+        "write": write,
         "CURRENT_CL": CURRENT_CL
     };
