@@ -161,7 +161,7 @@ if (typeof(window) == 'undefined') {
 
             var localPosSize = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
             console.debug("SETTING POINT 0", "FIXME: dyn alloc __local, not hardcode in kernel");
-            return simulator.pointKernel.setArgs([
+            simulator.pointKernel.setArgs([
                     webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
                     simulator.buffers.curPoints.buffer,
                     simulator.buffers.nextPoints.buffer,
@@ -184,8 +184,7 @@ if (typeof(window) == 'undefined') {
                     null,
                     webcl.type.UINT
                 ] : undefined);
-        })
-        .then(function() {
+
             return simulator;
         });
     }
@@ -291,7 +290,7 @@ if (typeof(window) == 'undefined') {
             simulator.buffers.midSpringsColorCoord = midSpringsColorCoordBuffer;
 
             var localPosSize = Math.min(simulator.cl.maxThreads, simulator.numMidPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
-            var midPointArgs = simulator.midPointKernel.setArgs(
+            simulator.midPointKernel.setArgs(
                 [
                     webcl.type ? [simulator.numMidPoints] : new Uint32Array([simulator.numMidPoints]),
                     webcl.type ? [simulator.numSplits] : new Uint32Array([simulator.numSplits]),
@@ -313,7 +312,7 @@ if (typeof(window) == 'undefined') {
                     null, webcl.type.UINT] : null);
 
             console.debug('EDGES KERNEL 0')
-            var edgeArgs = simulator.edgesKernel.setArgs(
+            simulator.edgesKernel.setArgs(
                 [   null, //forwards/backwards picked dynamically
                     null, //forwards/backwards picked dynamically
                     null, //simulator.buffers.curPoints.buffer then simulator.buffers.nextPoints.buffer
@@ -327,7 +326,7 @@ if (typeof(window) == 'undefined') {
                     : null);
 
             console.debug("MID EDGES 0")
-            var midEdgeArgs = simulator.midEdgesKernel.setArgs([
+            simulator.midEdgesKernel.setArgs([
                 webcl.type ? [simulator.numSplits] : new Uint32Array([simulator.numSplits]),        // 0:
                 simulator.buffers.forwardsEdges.buffer,        // 1: only need one direction as guaranteed to be chains
                 simulator.buffers.forwardsWorkItems.buffer,    // 2:
@@ -345,9 +344,6 @@ if (typeof(window) == 'undefined') {
                     webcl.type.FLOAT, webcl.type.FLOAT, /*webcl.type.UINT*/null
                 ] : null);
 
-            return Q.all(midPointArgs, edgeArgs, midEdgeArgs);
-        })
-        .then(function() {
             return simulator;
         });
     }
@@ -421,17 +417,19 @@ if (typeof(window) == 'undefined') {
 
             return Q()
                 .then(function () {
+
                     simulator.edgesKernel.setArgs(
                         [edges.buffer, workItems.buffer, fromPoints.buffer, toPoints.buffer, null,
                          null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
                         webcl.type ? [null, null, null, null, null,
                          null, null, cljs.types.uint_t] : null);
-                }).then(function () {
+
                     return Q.all(bufs.map(function (buf) { return buf.acquire(); }));
+
                 }).then(function () {
                     //return Q(console.error("SKIP EDGE"))
                     console.debug('edge call', cljs.types.uint_t, numWorkItems)
-                    simulator.edgesKernel.call(numWorkItems, []);
+                    simulator.edgesKernel.call(numWorkItems);
                 }).then(function () {
                     return Q.all(bufs.map(function (buf) { return buf.release(); }));
                 })
@@ -447,21 +445,24 @@ if (typeof(window) == 'undefined') {
         return Q()
         .then(function () {
             console.debug('SETTING POINT 2')
-            simulator.pointKernel.setArgs(
-                [null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
-                [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
-        })
-        .then(function () {
+
             console.debug('~~~~~pointKernel: curPoints --> nextPoints --> curPoints',
                 simulator.locked.lockPoints ? 'SKIP' : 'PERFORM');
+
+
             if (simulator.locked.lockPoints) {
                 return;
             } else {
                 return Q()
                     .then(function () {
+
+                        simulator.pointKernel.setArgs(
+                            [null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
+                            [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
+
                         return simulator.buffers.curPoints.acquire();
                     }).then(function () {
-                        return simulator.pointKernel.call(simulator.numPoints, []);
+                        return simulator.pointKernel.call(simulator.numPoints);
                     })
                     .then(function () {
                         return simulator.buffers.curPoints.release();
@@ -498,14 +499,15 @@ if (typeof(window) == 'undefined') {
                 var resources = [simulator.buffers.curMidPoints, simulator.buffers.midSpringsColorCoord];
 
                 Q().then(function () {
-                    return simulator.midPointKernel.setArgs(
+
+                    simulator.midPointKernel.setArgs(
                         [null, null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
                         [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
-                }).then(function () {
+
                     return Q.all(resources.map(function (r) {
                         return r.acquire(); }));
                 }).then(function () {
-                    return simulator.locked.lockMidpoints ? simulator : simulator.midPointKernel.call(simulator.numMidPoints, []);  // APPLY MID-FORCES
+                    return simulator.locked.lockMidpoints ? simulator : simulator.midPointKernel.call(simulator.numMidPoints);  // APPLY MID-FORCES
                 }).then(function () {
                     return Q.all(resources.map(function (r) { return r.release(); }))
                 });
@@ -524,7 +526,7 @@ if (typeof(window) == 'undefined') {
                     // 0   1     2     3     4     5     6     7     8     9     10
                     [null, null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
                     [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
-                return simulator.midEdgesKernel.call(simulator.numForwardsWorkItems, [])
+                return simulator.midEdgesKernel.call(simulator.numForwardsWorkItems)
                 .then(function() {
                     return simulator;
                 })

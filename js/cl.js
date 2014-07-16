@@ -258,27 +258,24 @@ if (typeof(window) == 'undefined') {
     });
 
 
-    // Executes the specified kernel, with `threads` number of threads, setting each element in
-    // `args` to successive position arguments to the kernel before calling.
-    var call = Q.promised(function (kernel, threads, args, argTypes) {
+    // Executes the specified kernel, with `threads` number of threads
+    var call = Q.promised(function (kernel, threads) {
         console.debug("CALL", kernel.name)
         var t0 = new Date().getTime();
-        args = args || [];
-        argTypes = argTypes || [];
-        console.debug('call', args, argTypes)
-        return kernel.setArgs(args, argTypes).then(function() {
-            var workgroupSize = new Int32Array([threads]);
-            events.fire("kernelStart");
-            kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, workgroupSize.length, [], workgroupSize, []);
-            kernel.cl.queue.finish();
-            events.fire("kernelEnd");
-            console.debug('  /called', new Date().getTime() - t0);
-            return kernel;
-        });
+        var workgroupSize = new Int32Array([threads]);
+        kernel.cl.queue.enqueueNDRangeKernel(
+            kernel.kernel,
+            workgroupSize.length,
+            [],
+            workgroupSize,
+            []);
+        kernel.cl.queue.finish();
+        console.debug('  /called', new Date().getTime() - t0);
+        return kernel;
     });
 
 
-    var setArgs = Q.promised(function (kernel, args, argTypes) {
+    var setArgs = function (kernel, args, argTypes) {
         console.debug('SET ARGS', args, argTypes)
         var t0 = new Date().getTime();
         for (var i = 0; i < args.length; i++) {
@@ -288,7 +285,7 @@ if (typeof(window) == 'undefined') {
         }
         console.debug('  /all set', new Date().getTime() - t0);
         return kernel;
-    });
+    };
 
 
     var createBuffer = Q.promised(function createBuffer(cl, size, name) {
