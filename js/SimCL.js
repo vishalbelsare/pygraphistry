@@ -428,7 +428,7 @@ if (typeof(window) == 'undefined') {
 
                     //return Q(console.error("SKIP EDGE"))
                     console.debug('edge call', cljs.types.uint_t, numWorkItems)
-                    simulator.edgesKernel.call(numWorkItems);
+                    return simulator.edgesKernel.call(numWorkItems);
 
                 }).then(function () {
 
