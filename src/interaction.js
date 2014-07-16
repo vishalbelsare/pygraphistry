@@ -1,5 +1,5 @@
 "use strict";
 
-exports.connect = function(endpoint) {
+exports.connect = function() {
 
 };

@@ -57,8 +57,8 @@ exports.loadProgram = function(gl, vertexSource, fragmentSource) {
     }
     gl.useProgram(program);
 
-    var w_location = gl.getUniformLocation(program, "u_w");
-    gl.uniform1f(w_location, 20/1);
+    var wLoc = gl.getUniformLocation(program, "u_w");
+    gl.uniform1f(wLoc, 20/1);
 
     return program;
 };
@@ -69,13 +69,13 @@ exports.loadBuffer = function(gl, program, buffer) {
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
     gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.DYNAMIC_DRAW);
 
-    var pos_attr_loc = gl.getAttribLocation(program, "a_position");
-    gl.enableVertexAttribArray(pos_attr_loc);
-    gl.vertexAttribPointer(pos_attr_loc, 3, gl.FLOAT, false, 16, 0);
+    var posLoc = gl.getAttribLocation(program, "a_position");
+    gl.enableVertexAttribArray(posLoc);
+    gl.vertexAttribPointer(posLoc, 3, gl.FLOAT, false, 16, 0);
 
-    var color_attr_loc = gl.getAttribLocation(program, "a_color");
-    gl.enableVertexAttribArray(color_attr_loc);
-    gl.vertexAttribPointer(color_attr_loc, 4, gl.UNSIGNED_BYTE, true, 16, 12);
+    var colorLoc = gl.getAttribLocation(program, "a_color");
+    gl.enableVertexAttribArray(colorLoc);
+    gl.vertexAttribPointer(colorLoc, 4, gl.UNSIGNED_BYTE, true, 16, 12);
 
     return vbo;
 };
@@ -95,7 +95,7 @@ exports.render = function(gl, numVertices) {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, numVertices);
 
     var error = gl.getError();
-    if(error != gl.NONE) {
+    if(error !== gl.NONE) {
         console.error("WebGL error detected after rendering: " + error);
     }
 
