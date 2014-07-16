@@ -8,12 +8,12 @@ function init(canvas) {
     var gl = renderer.init(canvas);
 
     // var fs = require("fs");
-    // var Iconv  = require('iconv').Iconv;
-    // var iconv = new Iconv('UTF-8', 'ASCII');
+    // var Iconv  = require("iconv").Iconv;
+    // var iconv = new Iconv("UTF-8", "ASCII");
     // var vertShaderSource = fs.readFileSync("./src/sc_vert.shader", "utf8");
     // var fragShaderSource = fs.readFileSync("./src/sc_frag.shader", "utf8");
     // var program = renderer.loadProgram(gl, iconv.convert(vertShaderSource), iconv.convert(fragShaderSource));
-    var vertexShaderSource = 'precision mediump float;\n\nattribute vec3 a_position;\nattribute vec4 a_color;\n\nuniform float u_w;\n\nuniform mat4 u_mvp_matrix;\n\nvarying vec4 v_color;\n\nvoid main() {\n    vec4 pos = vec4(a_position.x, -1.0 * a_position.y, -1.0 * a_position.z, u_w);\n    gl_Position = u_mvp_matrix * pos;\n    v_color = a_color;\n}';
+    var vertexShaderSource = "precision mediump float;\n\nattribute vec3 a_position;\nattribute vec4 a_color;\n\nuniform float u_w;\n\nuniform mat4 u_mvp_matrix;\n\nvarying vec4 v_color;\n\nvoid main() {\n    vec4 pos = vec4(a_position.x, -1.0 * a_position.y, -1.0 * a_position.z, u_w);\n    gl_Position = u_mvp_matrix * pos;\n    v_color = a_color;\n}";
     var fragmentShaderSource = "precision mediump float;\nvarying vec4 v_color;\n\nvoid main() {\n   gl_FragColor = v_color.abgr; \n}";
     var program = renderer.loadProgram(gl, vertexShaderSource, fragmentShaderSource);
 

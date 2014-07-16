@@ -83,7 +83,7 @@ exports.loadBuffer = function(gl, program, buffer) {
 
 exports.setCamera = function(gl, program, camera) {
     var mvpMatrix = camera.getMatrix();
-    var mvpLoc = gl.getUniformLocation(program, 'u_mvp_matrix');
+    var mvpLoc = gl.getUniformLocation(program, "u_mvp_matrix");
     gl.uniformMatrix4fv(mvpLoc, false, mvpMatrix);
 };
 
