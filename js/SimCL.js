@@ -81,6 +81,7 @@ if (typeof(window) == 'undefined') {
     /**
      * Given an array of (potentially null) buffers, delete the non-null buffers and set their
      * variable in the simulator buffer object to null.
+     * NOTE: erase from host immediately, though device may take longer (unobservable)
      */
     var resetBuffers = function(simulator, buffers) {
         var validBuffers = buffers.filter(function(val) { return !(!val); });
@@ -97,11 +98,9 @@ if (typeof(window) == 'undefined') {
             }
         });
 
-        validBuffers.map(function(buffToDelete) {
+        validBuffers.forEach(function(buffToDelete) {
             buffToDelete.delete();
-        })
-
-        return Q.all(validBuffers);
+        });
     };
 
 
@@ -121,24 +120,22 @@ if (typeof(window) == 'undefined') {
             throw new Error("The points buffer is an invalid size (must be a multiple of " + simulator.elementsPerPoint + ")");
         }
 
-        return simulator.resetBuffers([
+        simulator.resetBuffers([
             simulator.buffers.nextPoints,
             simulator.buffers.randValues,
-            simulator.buffers.curPoints
-        ])
-        .then(function() {
-            simulator.numPoints = points.length / simulator.elementsPerPoint;
-            simulator.renderer.numPoints = simulator.numPoints;
+            simulator.buffers.curPoints])
 
-            console.debug("Number of points:", simulator.renderer.numPoints);
+        simulator.numPoints = points.length / simulator.elementsPerPoint;
+        simulator.renderer.numPoints = simulator.numPoints;
 
-            // Create buffers and write initial data to them, then set
-            return Q.all([
-                    simulator.renderer.createBuffer(points, 'curPoints'),
-                    simulator.cl.createBuffer(points.byteLength, 'nextPoints'),
-                    simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 'randValues')
-                ]);
-        })
+        console.debug("Number of points:", simulator.renderer.numPoints);
+
+        // Create buffers and write initial data to them, then set
+        return Q.all([
+            simulator.renderer.createBuffer(points, 'curPoints'),
+            simulator.cl.createBuffer(points.byteLength, 'nextPoints'),
+            simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT,
+                'randValues')])
         .spread(function(pointsVBO, nextPointsBuffer, randBuffer) {
             console.debug('made most points')
             simulator.buffers.nextPoints = nextPointsBuffer;
@@ -224,16 +221,16 @@ if (typeof(window) == 'undefined') {
             throw new Error("The work item buffer size is invalid (must be a multiple of " + elementsPerWorkItem + ")");
         }
 
-        return simulator.resetBuffers([
+        simulator.resetBuffers([
             simulator.buffers.forwardsEdges,
             simulator.buffers.forwardsWorkItems,
             simulator.buffers.backwardsEdges,
             simulator.buffers.backwardsWorkItems,
             simulator.buffers.springsPos,
             simulator.buffers.midSpringsPos,
-            simulator.buffers.midSpringsColorCoord
-        ])
-        .then(function() {
+            simulator.buffers.midSpringsColorCoord]);
+
+        return Q().then(function() {
             // Init constant
             simulator.numEdges = forwardsEdges.edgesTyped.length / elementsPerEdge;
             simulator.renderer.numEdges = simulator.numEdges;
