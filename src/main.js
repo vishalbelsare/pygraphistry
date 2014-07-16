@@ -32,8 +32,44 @@ function init(canvas) {
 
         renderer.render(gl, program);
     });
+
+    socket.on("error", function(reason) {
+        statusMessage("Connection error (reason: " + reason + ")");
+    });
+
+    socket.on("disconnect", function(reason) {
+        statusMessage("Disconnected (reason: " + reason + ")");
+    });
 }
 
 window.addEventListener("load", function(){
     init($("#simulation")[0]);
 });
+
+
+function statusMessage(message) {
+    console.error(message);
+
+    if($(".status-message").length > 0) {
+        $(".status-message-text").text(message);
+    } else {
+        var modalEl = $("<div>")
+            .addClass("status-message")
+            .css("position", "fixed")
+            .css("left", "0px")
+            .css("bottom", "0px")
+            .css("width", "100%")
+            .css("height", "1.4em")
+            .css("text-align", "left")
+            .css("z-index", "10000")
+            .css("background-color", "rgba(255, 0, 0, 0.9)")
+            .css("color", "rgb(255, 255, 255)")
+            .css("font-weight", "800")
+            .css("padding", "0.25em")
+            .append($("<span>")
+                .addClass("status-message-text")
+                .text(message))
+
+        $("body").append(modalEl);
+    }
+}
