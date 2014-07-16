@@ -59,8 +59,7 @@ function loadGeo(graph, graphFileURI) {
         var positions = position(processedData.points, processedData.edges);
         var clusters = kmeans(positions, k, steps); //[ [0--1]_4 ]_k
 
-        return
-            graph
+        return graph
                 .setColorMap("test-colormap2.png", {clusters: clusters, points: processedData.points, edges: processedData.edges})
                 then(function () {
                     return graph.setEdges(processedData.edges);
