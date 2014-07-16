@@ -64,7 +64,7 @@ exports.loadProgram = function(gl, vertexSource, fragmentSource) {
 };
 
 
-exports.loadBuffer = function(gl, buffer, program) {
+exports.loadBuffer = function(gl, program, buffer) {
     var vbo = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
     gl.bufferData(gl.ARRAY_BUFFER, buffer.buffer, gl.DYNAMIC_DRAW);

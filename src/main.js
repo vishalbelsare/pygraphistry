@@ -25,10 +25,10 @@ function init(canvas) {
             });
     renderer.setCamera(gl, program, camera);
 
-    var socket = io.connect('http://localhost');
-    socket.on('vbo_update', function (data) {
-        console.log('got VBO update message');
-        var vbo = renderer.loadBuffer(gl, data.vbo, program);
+    var socket = io.connect("http://localhost", {reconnection: false});
+    socket.on("vbo_update", function (data) {
+        console.log("got VBO update message", data);
+        var vbo = renderer.loadBuffer(gl, program, data);
 
         renderer.render(gl, program);
     });
