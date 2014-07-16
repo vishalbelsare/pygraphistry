@@ -30,7 +30,7 @@ function init(canvas) {
         console.log("got VBO update message", data);
         var vbo = renderer.loadBuffer(gl, program, data);
 
-        renderer.render(gl, program);
+        renderer.render(gl, data.numVertices);
     });
 
     socket.on("error", function(reason) {

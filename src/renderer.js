@@ -88,11 +88,11 @@ exports.setCamera = function(gl, program, camera) {
 };
 
 
-exports.render = function(gl) {
+exports.render = function(gl, numVertices) {
     gl.finish();
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 100);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, numVertices);
 
     var error = gl.getError();
     if(error != gl.NONE) {
