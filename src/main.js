@@ -27,8 +27,8 @@ function init(canvas) {
 
     var socket = io.connect("http://localhost", {reconnection: false});
     socket.on("vbo_update", function (data) {
-        console.log("got VBO update message", data);
-        var vbo = renderer.loadBuffer(gl, program, data);
+        console.log("got VBO update message");
+        var vbo = renderer.loadBuffer(gl, program, data.buffer);
 
         renderer.render(gl, data.numVertices);
     });
