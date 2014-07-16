@@ -6,6 +6,8 @@ if (typeof(window) == 'undefined') {
     console.debug = console.log;
 }
 
+var DEVICE_TYPE = webcl.DEVICE_TYPE_GPU;
+
 
 var getClContext;
 if (typeof(window) == 'undefined') {
@@ -27,7 +29,7 @@ if (typeof(window) == 'undefined') {
             throw new Error("Can't find any WebCL platforms");
         }
         var platform = platforms[0];
-        var devices = platform.getDevices(webcl.DEVICE_TYPE_GPU).map(function(d) {
+        var devices = platform.getDevices(DEVICE_TYPE).map(function(d) {
             var workItems = d.getInfo(webcl.DEVICE_MAX_WORK_ITEM_SIZES);
             return {
                 device: d,
@@ -49,7 +51,7 @@ if (typeof(window) == 'undefined') {
             }
         });
         var deviceWrapper;
-        var err = devices.length ? null : new Error("No WebCL devices of specified type (" + webcl.DEVICE_TYPE_GPU + ") found");
+        var err = devices.length ? null : new Error("No WebCL devices of specified type (" + DEVICE_TYPE + ") found");
         for (var i = 0; i < devices.length; i++) {
             var wrapped = devices[i];
             try {
@@ -114,7 +116,7 @@ if (typeof(window) == 'undefined') {
         var platform = platforms[0];
 
         //sort by number of compute units and use first non-failing device
-        var devices = platform.getDevices(cl.DEVICE_TYPE_ALL).map(function (d) {
+        var devices = platform.getDevices(DEVICE_TYPE).map(function (d) {
 
             function typeToString (v) {
                 return v == 2 ? 'CPU'
@@ -136,7 +138,7 @@ if (typeof(window) == 'undefined') {
 
         var deviceWrapper;
         var err = devices.length ?
-            null : new Error("No WebCL devices of specified type (" + cl.DEVICE_TYPE_ALL + ") found");
+            null : new Error("No WebCL devices of specified type (" + DEVICE_TYPE + ") found");
         for (var i = 0; i < devices.length; i++) {
             var wrapped = devices[i];
             try {
@@ -452,7 +454,7 @@ if (typeof(window) == 'undefined') {
                 return extension.createContext({
                     platform: platform,
                     devices: devices,
-                    deviceType: cl.DEVICE_TYPE_GPU,
+                    deviceType: DEVICE_TYPE,
                     sharedContext: null
                 });
             }
