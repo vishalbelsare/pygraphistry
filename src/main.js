@@ -9,8 +9,6 @@ function init(canvas) {
     var gl = renderer.init(canvas);
 
     var fs = require("fs");
-    // var Iconv  = require("iconv").Iconv;
-    // var iconv = new Iconv("UTF-8", "ASCII");
     var vertexShaderSource = fs.readFileSync("./src/sc_vert.shader", "utf8").toString("ascii");
     var fragmentShaderSource = fs.readFileSync("./src/sc_frag.shader", "utf8").toString("ascii");
     var program = renderer.loadProgram(gl, vertexShaderSource, fragmentShaderSource);

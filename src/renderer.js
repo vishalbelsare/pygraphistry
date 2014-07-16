@@ -57,9 +57,6 @@ exports.loadProgram = function(gl, vertexSource, fragmentSource) {
     }
     gl.useProgram(program);
 
-    var wLoc = gl.getUniformLocation(program, "u_w");
-    gl.uniform1f(wLoc, 20/1);
-
     return program;
 };
 
