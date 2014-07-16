@@ -250,6 +250,7 @@ var util = require('./util.js');
     });
 
 
+    //async (may trigger a write)
     var createBuffer = Q.promised(function(renderer, data) {
         console.debug('creating gl buffer', typeof(data), data.constructor)
         var buffer = renderer.gl.createBuffer();
