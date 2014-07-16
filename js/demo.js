@@ -2,6 +2,7 @@
 
 var MatrixLoader = require('./libs/load.js');
 var kmeans = require('./libs/kmeans.js');
+var _ = require('underscore');
 
 
 // Generates `amount` number of random points
@@ -32,20 +33,20 @@ function createEdges(amount, numNodes) {
 
 
 function loadGeo(graph, graphFileURI) {
-    var processedData;
 
     console.error('~~~~~~~~~~~~~~ GEO ~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 
     return MatrixLoader.loadGeo(graphFileURI)
     .then(function(geoData) {
-        processedData = MatrixLoader.processGeo(geoData);
+        var processedData = MatrixLoader.processGeo(geoData);
 
         console.debug('============PROCESSED')
         console.debug('nodes/edges', processedData.points.length, processedData.edges.length)
 
-        return graph.setPoints(processedData.points);
+        return graph.setPoints(processedData.points)
+            .then(_.constant(processedData))
     })
-    .then(function() {
+    .then(function(processedData) {
 
         var position = function (points, edges) {
             return edges.map(function (pair){
