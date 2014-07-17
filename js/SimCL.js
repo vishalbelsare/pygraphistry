@@ -423,9 +423,7 @@ if (typeof(window) == 'undefined') {
                 webcl.type ? [null, null, null, null, null,
                  null, null, cljs.types.uint_t] : null);
 
-            return cljs.acquire(resources)
-                .then(function () { return simulator.edgesKernel.call(numWorkItems); })
-                .then(cljs.release.bind('', resources));
+            return simulator.edgesKernel.call(numWorkItems, resources);
         };
 
         // If there are no points in the graph, don't run the simulation
@@ -455,9 +453,7 @@ if (typeof(window) == 'undefined') {
                     [null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
                     [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
 
-                return cljs.acquire(resources)
-                    .then(function () { return simulator.pointKernel.call(simulator.numPoints); })
-                    .then(cljs.release.bind('', resources))
+                return simulator.pointKernel.call(simulator.numPoints, resources)
                     .then(function () { return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints); });
 
             }
@@ -484,7 +480,7 @@ if (typeof(window) == 'undefined') {
         .then(function () {
             console.debug('MIDPOINT', 'curMidPoints --> nextMidPoints', 'locked?', simulator.locked.lockMidpoints ? 'SKIP' : 'PERFORM');
             if (simulator.locked.lockMidpoints) {
-                return;
+                return simulator.buffers.curMidPoints.copyInto(simulator.buffers.nextMidPoints);
             } else {
 
                 var resources = [
@@ -496,9 +492,11 @@ if (typeof(window) == 'undefined') {
                     [null, null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
                     [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
 
-                return cljs.acquire(resources)
-                    .then(function () { return simulator.midPointKernel.call(simulator.numMidPoints); })
-                    .then(cljs.release.bind('', resources));
+                console.error('resources',
+                    simulator.buffers,
+                    resources.map(function (v, i) { return v ? 'exists ' + i : ' null ' + i}));
+
+                return simulator.midPointKernel.call(simulator.numMidPoints, resources);
             }
         })
         .then(function () {
@@ -522,9 +520,7 @@ if (typeof(window) == 'undefined') {
                     [null, null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
                     [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
 
-                return cljs.acquire(resources)
-                    .then(function () { return simulator.midEdgesKernel.call(simulator.numForwardsWorkItems); })
-                    .then(cljs.release.bind('', resources));
+                return simulator.midEdgesKernel.call(simulator.numForwardsWorkItems, resources);
             } else {
                 console.debug('COPY MIDPOINT', 'nextMidPoints-->curMidPoints')
                 return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
