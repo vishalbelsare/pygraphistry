@@ -99,15 +99,15 @@ exports.render = function(gl, numVertices) {
         return false;
     }
 
-    gl.finish();
+    // gl.finish();
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, exports.numVertices );
 
-    var error = gl.getError();
-    if(error !== gl.NONE) {
-        console.error("WebGL error detected after rendering: " + error);
-    }
+    // var error = gl.getError();
+    // if(error !== gl.NONE) {
+        // console.error("WebGL error detected after rendering: " + error);
+    // }
 
-    gl.finish();
+    // gl.finish();
 };
