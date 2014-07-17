@@ -21,8 +21,8 @@ function init(canvas) {
     var camera = new Cameras.Camera2d({
         left: -0.15,
         right: 5,
-        bottom: (5 * (1 / (700/700))) - 0.15,
-        top: -0.15 - 0.15
+        bottom: 5, // (5 * (1 / (700/700))) - 0.15,
+        top: -0.15 // - 0.15
     });
     renderer.setCamera(gl, program, camera);
 
@@ -35,7 +35,6 @@ function init(canvas) {
 
 
     var socket = io.connect("http://localhost", {reconnection: false});
-
     socket.on("vbo_update", function (data) {
         console.log("got VBO update message");
         renderer.loadBuffer(gl, program, data.buffer);

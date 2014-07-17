@@ -41,10 +41,9 @@ exports.setupScroll = function($eventTarget, camera) {
         .map(function(wheelEvent) {
             wheelEvent.preventDefault();
 
-            var cameraSize = camera.width > camera.height ? camera.width : camera.height;
-            var cameraSizeDelta = cameraSize * (wheelEvent.wheelDeltaY / 100.0);
-            camera.width += cameraSizeDelta;
-            camera.height += cameraSizeDelta;
+            var aspectRatio = camera.width / camera.height;
+            camera.width += camera.width * (wheelEvent.wheelDeltaY / 100.0);
+            camera.height = camera.width / aspectRatio;
 
             return camera;
         })
