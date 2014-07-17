@@ -233,9 +233,12 @@ var util = require('./util.js');
                         }
                     }
                 });
+            }else {
+                console.debug('  preset colors (', imageURL, ')');
             }
             } catch (e) {
                 console.error('bad cluster load', e, e.stack);
+                throw e;
             }
 
 

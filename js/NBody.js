@@ -1,7 +1,7 @@
 var Q = require('Q');
 var glMatrix = require('gl-matrix');
 var events = require('./SimpleEvents.js');
-
+var _ = require('underscore');
 
     'use strict';
 
@@ -173,9 +173,7 @@ var events = require('./SimpleEvents.js');
 
     function setColorMap(graph, imageURL, maybeClusters) {
         return graph.renderer.setColorMap(imageURL, maybeClusters)
-        .then(function() {
-            return graph;
-        });
+            .then(_.constant(graph));
     }
 
 

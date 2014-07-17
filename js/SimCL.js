@@ -2,6 +2,7 @@
 var Q = require('Q');
 var util = require('./util.js');
 var cljs = require('./cl.js');
+var _ = require('underscore')
 
 if (typeof(window) == 'undefined') {
     webcl = require('node-webcl');
@@ -342,6 +343,10 @@ if (typeof(window) == 'undefined') {
                 ] : null);
 
             return simulator;
+        })
+        .then(_.identity, function (err) {
+            console.error('bad set edges', err);
+            console.error(err.stack);
         });
     }
 
@@ -528,7 +533,12 @@ if (typeof(window) == 'undefined') {
             console.debug('q finish')
             simulator.cl.queue.finish(); //FIXME use callback arg
             return simulator;
-        });
+        }).then(
+            function (v) { console.debug('GOOD TICK') },
+            function (err) {
+                console.error("BAD TICK", err);
+                console.error(err.stack);
+            });
     }
 
 

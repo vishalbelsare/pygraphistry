@@ -31,6 +31,7 @@ if (typeof(window) == 'undefined') {
      */
     function getImage(url) {
         var deferred = Q.defer();
+        try {
         var img = new Image();
 
         img.onload = function() {
@@ -41,6 +42,9 @@ if (typeof(window) == 'undefined') {
         console.debug("SETTING SOURCE", url)
         img.src = url;
         console.debug("SET SOURCE")
+        } catch (e) {
+            deferred.reject(e);
+        }
 
         return deferred.promise;
     }
