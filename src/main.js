@@ -31,13 +31,17 @@ function init(canvas) {
         .subscribe(function(newCamera) {
             renderer.setCamera(gl, program, camera);
             renderer.render(gl);
-        })
-
+        });
 
     var glBufferStoreSize = 0;
     var socket = io.connect("http://localhost", {reconnection: false, transports: ['websocket']});
-    socket.on("vbo_update", function (data) {
-        console.log("got VBO update message");
+
+    var lastHandshake = new Date().getTime();
+    socket.on("vbo_update", function (data, handshake) {
+        var now = new Date().getTime();
+        handshake(now - lastHandshake);
+        console.log("got VBO update message", now - lastHandshake, "ms");
+        lastHandshake = now;
 
         renderer.loadBuffer(gl, data.buffer, data.numVertices <= glBufferStoreSize);
         renderer.render(gl, data.numVertices);
