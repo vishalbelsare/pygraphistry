@@ -179,7 +179,9 @@ var util = require('./util.js');
             try {
             if (maybeClusters) {
 
-                var canvas = document.createElement("canvas");
+                console.debug('  clustering colors')
+
+                var canvas = renderer.document.createElement("canvas");
                 canvas.width = texImg.width;
                 canvas.height = texImg.height;
 
@@ -241,7 +243,7 @@ var util = require('./util.js');
             renderer.colorTexture = gl.createTexture();
             gl.bindTexture(gl.TEXTURE_2D, renderer.colorTexture);
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageData ? imageData.data : texImg);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageData ? imageData : texImg);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
             gl.generateMipmap(gl.TEXTURE_2D);
