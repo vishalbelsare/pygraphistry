@@ -62,7 +62,8 @@ function loadGeo(graph, graphFileURI) {
 
         return graph
                 .setColorMap("test-colormap2.png", {clusters: clusters, points: processedData.points, edges: processedData.edges})
-                then(function () {
+                .then(function () {
+                    console.debug('NOW SETTING EDGES')
                     return graph.setEdges(processedData.edges);
                 });
     })
