@@ -170,9 +170,6 @@ var util = require('./util.js');
      */
     var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
 
-        if (typeof(window) == 'undefined') {
-            return console.warn('FIXME setColorMap not implemented for node-webgl');
-        }
 
         // TODO: Allow a user to clear the color map by passing in a null here or something
         var gl = renderer.gl;
@@ -182,7 +179,9 @@ var util = require('./util.js');
 
             var imageData;
             try {
-            if (maybeClusters) {
+            if (typeof(window) == 'undefined') {
+                console.warn('FIXME no fancy setColorMap in node')
+            } else if (maybeClusters) {
 
                 console.debug('  clustering colors')
 
@@ -256,6 +255,9 @@ var util = require('./util.js');
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
             gl.generateMipmap(gl.TEXTURE_2D);
             gl.bindTexture(gl.TEXTURE_2D, null);
+
+
+            console.debug('done set colormap')
         });
     });
 
