@@ -25,52 +25,10 @@ var HEIGHT = 600;
     "use strict";
 
     var graph = null,
-        numPoints = 1000,//1024,//2048,//16384,
+        numPoints = 10000,//1024,//2048,//16384,
         num,
         numEdges = numPoints,
         dimensions = [1,1]; //[960,960];
-
-
-    function setup() {
-        console.log("Running Naive N-body simulation");
-
-
-
-        var document = webgl.document();
-        document.setTitle('Graphviz');
-        var canvas = document.createElement("canvas", WIDTH, HEIGHT);
-        canvas.clientWidth = canvas.width = WIDTH;
-        canvas.clientHeight = canvas.height = HEIGHT;
-
-
-
-        return NBody.create(SimCL, RenderGL, document, canvas, [255,255,255,1.0], dimensions, 3)
-        .then(function(createdGraph) {
-            graph = createdGraph;
-            console.log("N-body graph created.");
-
-            var points = demo.createPoints(numPoints, dimensions);
-            var edges = demo.createEdges(numEdges, numPoints);
-
-            return Q.all([
-                graph.setPoints(points),
-                points,
-                edges,
-            ]);
-        })
-        .spread(function(graph, points, edges) {
-            graph.setColorMap("test-colormap2.png")
-                .then(
-                    function () { console.error('COLOR')},
-                    function (err) { console.error('COLOR EXN:', err, err.stack)});
-            return graph.setEdges(edges);
-        })
-        .then(function(graph) {
-                        console.error('<<SETUP>>')
-            return graph;//graph.tick();
-        });
-    }
-
 
 
 
@@ -126,9 +84,9 @@ var HEIGHT = 600;
                 }, {});
 
 
-        renderingControls.points(true);
-        renderingControls.edges(true);
-        renderingControls.midpoints(true);
+        renderingControls.points(false);
+        renderingControls.edges(false);
+        renderingControls.midpoints(false);
         renderingControls.midedges(true);
 
 
@@ -170,20 +128,58 @@ var HEIGHT = 600;
         console.error('========================== START ===========================================')
 
 
-        setup()
 
-        .then(function () {
+        console.log("Running Naive N-body simulation");
+
+
+
+        var document = webgl.document();
+        document.setTitle('Graphviz');
+        var canvas = document.createElement("canvas", WIDTH, HEIGHT);
+        canvas.clientWidth = canvas.width = WIDTH;
+        canvas.clientHeight = canvas.height = HEIGHT;
+
+        return NBody.create(SimCL, RenderGL, document, canvas, [255,255,255,1.0], dimensions, 3)
+        .then(function(createdGraph) {
+            graph = createdGraph;
+            console.log("N-body graph created.");
+        }).then(function () {
             console.debug('~~~~~~~ SETUP')
             return demo.loadDataList(graph);
         })
+
         .then(function (datalist) {
 
-            console.error('loading data')
-            var which = 0;
-            console.error('which', datalist[which])
-            return datalist[which].loader(graph, datalist[which].f);
+            var USE_GEO = true;
 
-        }).then(function (loaded) {
+            if (USE_GEO) {
+
+                console.error('loading data')
+                var which = 0;
+                console.error('which', datalist[which])
+                return datalist[which].loader(graph, datalist[which].f);
+
+            } else {
+
+                var points = demo.createPoints(numPoints, dimensions);
+                var edges = demo.createEdges(numEdges, numPoints);
+
+                return Q.all([
+                    graph.setPoints(points),
+                    points,
+                    edges,
+                ]).spread(function(graph, points, edges) {
+                    graph.setColorMap("test-colormap2.png");
+                    return graph.setEdges(edges);
+                });
+
+            }
+
+
+        })
+
+
+        .then(function () {
 
             console.debug('=================LOADED')
             console.error('done setup')
@@ -207,7 +203,6 @@ var HEIGHT = 600;
 
         }, function (err) {
             console.error('~~~~~could not load geo', err, err.stack);
-        }).then(function () { console.error('setup done')},
-        function (err) {
-            console.error('~~~~~wat', err, err.stack)
-        })
+        }).then(
+            function () { console.error('setup done')},
+            function (err) { console.error('~~~~~wat', err, err.stack) })

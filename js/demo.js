@@ -34,7 +34,7 @@ function createEdges(amount, numNodes) {
 
 function loadGeo(graph, graphFileURI) {
 
-    console.error('~~~~~~~~~~~~~~ GEO ~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+    console.debug('~~~~~~~~~~~~~~ GEO ~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 
     return MatrixLoader.loadGeo(graphFileURI)
     .then(function(geoData) {
