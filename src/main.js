@@ -24,9 +24,10 @@ function init(canvas) {
         bottom: (5 * (1 / (700/700))) - 0.15,
         top: -0.15 - 0.15
     });
-
     renderer.setCamera(gl, program, camera);
+
     interaction.setupDrag($(".sim-container"), camera)
+        .merge(interaction.setupScroll($(".sim-container"), camera))
         .subscribe(function(newCamera) {
             renderer.setCamera(gl, program, camera);
             renderer.render(gl);

@@ -33,3 +33,19 @@ exports.setupDrag = function($eventTarget, camera) {
                 });
         });
 }
+
+
+
+exports.setupScroll = function($eventTarget, camera) {
+    return Rx.Observable.fromEvent($eventTarget[0], 'wheel')
+        .map(function(wheelEvent) {
+            wheelEvent.preventDefault();
+
+            var cameraSize = camera.width > camera.height ? camera.width : camera.height;
+            var cameraSizeDelta = cameraSize * (wheelEvent.wheelDeltaY / 100.0);
+            camera.width += cameraSizeDelta;
+            camera.height += cameraSizeDelta;
+
+            return camera;
+        })
+}
