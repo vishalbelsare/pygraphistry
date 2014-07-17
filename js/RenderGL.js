@@ -169,6 +169,11 @@ var util = require('./util.js');
      * Fetch the image at the given URL and use it when coloring edges in the graph.
      */
     var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
+
+        if (typeof(window) == 'undefined') {
+            return console.warn('FIXME setColorMap not implemented for node-webgl');
+        }
+
         // TODO: Allow a user to clear the color map by passing in a null here or something
         var gl = renderer.gl;
 
