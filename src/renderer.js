@@ -1,5 +1,7 @@
 "use strict";
 
+exports.numVertices = 0;
+
 exports.init = function(canvas) {
     // var canvas = canvas;
 
@@ -85,10 +87,17 @@ exports.setCamera = function(gl, program, camera) {
 
 
 exports.render = function(gl, numVertices) {
+    if(typeof numVertices !== "undefined") {
+        exports.numVertices = numVertices;
+    }
+    if(exports.numVertices < 1) {
+        return false;
+    }
+
     gl.finish();
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, numVertices);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, exports.numVertices );
 
     var error = gl.getError();
     if(error !== gl.NONE) {

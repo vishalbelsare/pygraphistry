@@ -1,11 +1,12 @@
 "use strict";
 
-var $        = require("jquery"),
-    renderer = require("./renderer.js"),
-    Cameras  = require("../../../../superconductorjs/src/Camera.js"),
-    ui       = require("./ui.js");
+var $            = require("jquery"),
+    renderer     = require("./renderer.js"),
+    Cameras      = require("../../../../superconductorjs/src/Camera.js"),
+    ui           = require("./ui.js"),
+    interaction  = require("./interaction.js");
 // This needs to be its own 'var' declaration or Browserify/brfs won't parse it (bug)
-var fs       = require("fs");
+var fs           = require("fs");
 
 
 
@@ -17,12 +18,20 @@ function init(canvas) {
     var fragmentShaderSource = fs.readFileSync("./src/sc_frag.shader", "utf8").toString("ascii");
     var program = renderer.loadProgram(gl, vertexShaderSource, fragmentShaderSource);
 
-    renderer.setCamera(gl, program, new Cameras.Camera2d({
+    var camera = new Cameras.Camera2d({
         left: -0.15,
         right: 5,
         bottom: (5 * (1 / (700/700))) - 0.15,
         top: -0.15 - 0.15
-    }));
+    });
+
+    renderer.setCamera(gl, program, camera);
+    interaction.setupDrag($(".sim-container"), camera)
+        .subscribe(function(newCamera) {
+            renderer.setCamera(gl, program, camera);
+            renderer.render(gl);
+        })
+
 
     var socket = io.connect("http://localhost", {reconnection: false});
 
