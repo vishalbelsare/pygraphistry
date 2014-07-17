@@ -1,5 +1,6 @@
 var Q = require('q');
 var events = require('./SimpleEvents.js');
+var _ = require('underscore');
 
 if (typeof(window) == 'undefined') {
     webcl = require('node-webcl');
@@ -258,20 +259,40 @@ if (typeof(window) == 'undefined') {
     });
 
 
-    // Executes the specified kernel, with `threads` number of threads
-    var call = Q.promised(function (kernel, threads) {
+
+    var acquire = function (buffers) {
+        return Q.all(
+            (buffers||[]).map(function (buffer) {
+                return buffer.acquire();
+            }));
+    };
+
+    var release = function (buffers) {
+        return Q.all(
+            (buffers||[]).map(function (buffer) {
+                return buffer.release();
+            }));
+    };
+
+    // Executes the specified kernel, with `threads` number of threads, acquiring/releasing any needed resources
+    var call = Q.promised(function (kernel, threads, buffers) {
         console.debug("CALL", kernel.name)
         var t0 = new Date().getTime();
-        var workgroupSize = new Int32Array([threads]);
-        kernel.cl.queue.enqueueNDRangeKernel(
-            kernel.kernel,
-            workgroupSize.length,
-            [],
-            workgroupSize,
-            []);
-        kernel.cl.queue.finish();
-        console.debug('  /called', new Date().getTime() - t0);
-        return kernel;
+        return acquire(buffers)
+            .then(function () {
+                var workgroupSize = new Int32Array([threads]);
+                kernel.cl.queue.enqueueNDRangeKernel(
+                    kernel.kernel,
+                    workgroupSize.length,
+                    [],
+                    workgroupSize,
+                    []);
+            })
+            .then(release.bind('', buffers))
+            .then(function () {
+                kernel.cl.queue.finish();
+                console.debug('  /called', new Date().getTime() - t0);
+            }).then(_.constant(kernel));
     });
 
 
@@ -380,15 +401,18 @@ if (typeof(window) == 'undefined') {
             .then(function () { return source.acquire(); })
             .then(function () { return destination.acquire(); })
             .then(function () {
+                console.debug('  acquired both, copying', source.size, destination.size)
                 cl.queue.enqueueCopyBuffer(source.buffer, destination.buffer, 0, 0, Math.min(source.size, destination.size));
-                return source.release();
             })
-            .then(function () { return destination.release(); })
             .then(function () {
-                cl.queue.finish();
-                console.debug('  /copied', new Date().getTime() - t0);
-
-                return destination; });
+                return cl.queue.finish();
+            }).then(function() {
+                console.debug('  /copy finished', new Date().getTime() - t0);
+                return destination.release()
+                    .then(function () { return source.release(); })
+            }).then(function () {
+                console.debug(' /copy released')
+            });
     });
 
 
@@ -459,24 +483,28 @@ if (typeof(window) == 'undefined') {
         }
 
 
-        call = Q.promised(function (kernel, threads, args, argTypes) {
-            args = args || [];
-            argTypes = argTypes || [];
-            console.debug('CALL (poly)', kernel.name, args, argTypes)
+        call = Q.promised(function (kernel, threads, buffers) {
+            console.debug('CALL (poly)', kernel.name);
             var t0 = new Date().getTime();
-            return kernel.setArgs(args, argTypes).then(function() {
-                //kernel.cl.queue.finish();
-                var workgroupSize = typeof(window) == 'undefined' ? [threads] : new Int32Array([threads]);
-                if (webcl.type) {
-                    kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, [threads], null);
-                } else {
-                    kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, workgroupSize, null);
-                }
-                console.debug('  enqueued')
-                kernel.cl.queue.finish();
-                console.debug('  /called', new Date().getTime() - t0);
-                return kernel;
-            });
+            //kernel.cl.queue.finish();
+
+            return acquire(buffers)
+                .then(function () {
+
+                    var workgroupSize = typeof(window) == 'undefined' ? [threads] : new Int32Array([threads]);
+                    if (webcl.type) {
+                        kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, [threads], null);
+                    } else {
+                        kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, workgroupSize, null);
+                    }
+                    console.debug('  enqueued')
+                    return release(buffers);
+                })
+                .then(function () {
+                    kernel.cl.queue.finish();
+                    console.debug('  /called', new Date().getTime() - t0);
+                    return kernel;
+                });
         });
 
         setArgs = Q.promised(function (kernel, args, argTypes) {
@@ -525,19 +553,6 @@ if (typeof(window) == 'undefined') {
     var types = {};
     var CURRENT_CL = !polyfill();
 
-    var acquire = function (buffers) {
-        return Q.all(
-            buffers.map(function (buffer) {
-                return buffer.acquire();
-            }));
-    };
-
-    var release = function (buffers) {
-        return Q.all(
-            buffers.map(function (buffer) {
-                return buffer.release();
-            }));
-    };
 
 
     module.exports = {
