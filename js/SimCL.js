@@ -525,10 +525,6 @@ if (typeof(window) == 'undefined') {
                 console.debug('COPY MIDPOINT', 'nextMidPoints-->curMidPoints')
                 return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
             }
-        }).then(function () {
-            console.debug('q finish')
-            simulator.cl.queue.finish(); //FIXME use callback arg
-            return simulator;
         }).then(
             function (v) { console.debug('GOOD TICK') },
             function (err) {
