@@ -34,7 +34,7 @@ function init(canvas) {
         })
 
 
-    var socket = io.connect("http://localhost", {reconnection: false});
+    var socket = io.connect("http://localhost", {reconnection: false, transports: ['websocket']});
     socket.on("vbo_update", function (data) {
         console.log("got VBO update message");
         renderer.loadBuffer(gl, program, data.buffer);
