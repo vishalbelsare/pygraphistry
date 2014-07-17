@@ -59,14 +59,8 @@ exports.loadProgram = function(gl, vertexSource, fragmentSource) {
     }
     gl.useProgram(program);
 
-    return program;
-};
-
-
-exports.loadBuffer = function(gl, program, buffer) {
     var vbo = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-    gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.DYNAMIC_DRAW);
 
     var posLoc = gl.getAttribLocation(program, "a_position");
     gl.enableVertexAttribArray(posLoc);
@@ -76,7 +70,18 @@ exports.loadBuffer = function(gl, program, buffer) {
     gl.enableVertexAttribArray(colorLoc);
     gl.vertexAttribPointer(colorLoc, 4, gl.UNSIGNED_BYTE, true, 16, 12);
 
-    return vbo;
+    return program;
+};
+
+
+exports.loadBuffer = function(gl, buffer, reuseBuffer) {
+    gl.flush();
+
+    if(reuseBuffer === true) {
+        gl.bufferSubData(gl.ARRAY_BUFFER, 0, buffer);
+    } else {
+        gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.STREAM_DRAW);
+    }
 };
 
 

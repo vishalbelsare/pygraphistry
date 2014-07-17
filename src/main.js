@@ -34,12 +34,15 @@ function init(canvas) {
         })
 
 
+    var glBufferStoreSize = 0;
     var socket = io.connect("http://localhost", {reconnection: false, transports: ['websocket']});
     socket.on("vbo_update", function (data) {
         console.log("got VBO update message");
-        renderer.loadBuffer(gl, program, data.buffer);
 
+        renderer.loadBuffer(gl, data.buffer, data.numVertices <= glBufferStoreSize);
         renderer.render(gl, data.numVertices);
+
+        glBufferStoreSize = Math.max(glBufferStoreSize, data.numVertices);
     });
 
     socket.on("error", function(reason) {
