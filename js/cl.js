@@ -291,13 +291,13 @@ if (typeof(window) == 'undefined') {
             .then(release.bind('', buffers))
             .then(function () {
                 kernel.cl.queue.finish();
-                console.debug('  /called', new Date().getTime() - t0);
+//                console.debug('  /called', new Date().getTime() - t0);
             }).then(_.constant(kernel));
     });
 
 
     var setArgs = function (kernel, args, argTypes) {
-        console.debug('SET ARGS', args, argTypes)
+//        console.debug('SET ARGS', args, argTypes)
         var t0 = new Date().getTime();
         for (var i = 0; i < args.length; i++) {
             if(args[i] !== null) {
@@ -323,10 +323,10 @@ if (typeof(window) == 'undefined') {
                 "cl": cl,
                 "size": size,
                 "acquire": function() {
-                    console.debug("  acquire lock", bufObj.name)
+//                    console.debug("  acquire lock", bufObj.name)
                     return Q(); },
                 "release": function() {
-                    console.debug("  release lock", bufObj.name)
+//                    console.debug("  release lock", bufObj.name)
                     return Q(); }
             };
             bufObj.delete = Q.promised(function() {
@@ -361,17 +361,17 @@ if (typeof(window) == 'undefined') {
                 "cl": cl,
                 "size": buffer.getInfo ? buffer.getInfo(cl.cl.MEM_SIZE) : (vbo.len * Float32Array.BYTES_PER_ELEMENT),
                 "acquire": Q.promised(function() {
-                    console.debug("  acquire gl", bufObj.name)
+//                    console.debug("  acquire gl", bufObj.name)
                     var t0 = new Date().getTime();
                     cl.queue.enqueueAcquireGLObjects([buffer]);
-                    console.debug('    /acquired', new Date().getTime() - t0);
+//                    console.debug('    /acquired', new Date().getTime() - t0);
 
                 }),
                 "release": Q.promised(function() {
-                    console.debug("  release gl", bufObj.name);
+//                    console.debug("  release gl", bufObj.name);
                     var t0 = new Date().getTime();
                     cl.queue.enqueueReleaseGLObjects([buffer]);
-                    console.debug('    /released', new Date().getTime() - t0);
+//                    console.debug('    /released', new Date().getTime() - t0);
 
                 })
             };
@@ -397,21 +397,17 @@ if (typeof(window) == 'undefined') {
     var copyBuffer = Q.promised(function (cl, source, destination) {
         console.debug('COPY BUFFER', source.name, destination.name, source.size, destination.size)
         var t0 = new Date().getTime();
-        return Q()
-            .then(function () { return source.acquire(); })
-            .then(function () { return destination.acquire(); })
+        return acquire([source, destination])
             .then(function () {
-                console.debug('  acquired both, copying', source.size, destination.size)
+//                console.debug('  acquired both, copying', source.size, destination.size)
                 cl.queue.enqueueCopyBuffer(source.buffer, destination.buffer, 0, 0, Math.min(source.size, destination.size));
             })
             .then(function () {
-                return cl.queue.finish();
-            }).then(function() {
-                console.debug('  /copy finished', new Date().getTime() - t0);
-                return destination.release()
-                    .then(function () { return source.release(); })
-            }).then(function () {
-                console.debug(' /copy released')
+                cl.queue.finish();
+//                console.debug('  /copy finished', new Date().getTime() - t0);
+            }).then(release.bind('', [source, destination]))
+            .then(function () {
+//                console.debug(' /copy released')
             });
     });
 
@@ -497,18 +493,18 @@ if (typeof(window) == 'undefined') {
                     } else {
                         kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, workgroupSize, null);
                     }
-                    console.debug('  enqueued')
+//                    console.debug('  enqueued')
                     return release(buffers);
                 })
                 .then(function () {
                     kernel.cl.queue.finish();
-                    console.debug('  /called', new Date().getTime() - t0);
+//                    console.debug('  /called', new Date().getTime() - t0);
                     return kernel;
                 });
         });
 
         setArgs = Q.promised(function (kernel, args, argTypes) {
-            console.debug('SET ARGS (poly)', args ? args.length : 'no args', argTypes ? argTypes.length : 'no types')
+//            console.debug('SET ARGS (poly)', args ? args.length : 'no args', argTypes ? argTypes.length : 'no types')
             var t0 = new Date().getTime();
             try {
                 for (var i = 0; i < args.length; i++) {
@@ -520,7 +516,7 @@ if (typeof(window) == 'undefined') {
                 console.error('wat', e, e.stack)
                 throw new Error(e);
             }
-            console.debug('  /set', new Date().getTime() - t0);
+//            console.debug('  /set', new Date().getTime() - t0);
             return kernel;
         });
 

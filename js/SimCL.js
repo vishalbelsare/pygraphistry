@@ -435,10 +435,7 @@ if (typeof(window) == 'undefined') {
         // Run the points kernel
         return Q()
         .then(function () {
-            console.debug('SETTING POINT 2')
-
-            console.debug('~~~~~pointKernel: curPoints --> nextPoints --> curPoints',
-                simulator.locked.lockPoints ? 'SKIP' : 'PERFORM');
+            console.debug('~~~~~pointKernel: curPoints --> nextPoints --> curPoints', simulator.locked.lockPoints ? 'SKIP' : 'PERFORM');
 
             if (simulator.locked.lockPoints) {
                 return;
@@ -458,18 +455,17 @@ if (typeof(window) == 'undefined') {
 
             }
         }).then(function() {
-            console.debug('~~~~~EDGES', simulator.locked.lockEdges ? 'LOCKED' : 'PERFORM', simulator.numEdges,
-                'curPoints --> nextPoints --> curPoints');
+            console.debug('~~~~~EDGES', simulator.locked.lockEdges ? 'LOCKED' : 'PERFORM', simulator.numEdges, 'curPoints --> nextPoints --> curPoints');
             if (simulator.numEdges <= 0 || simulator.locked.lockEdges) {
                 return simulator;
             }
             if(simulator.numEdges > 0) {
-                console.debug('  forward');
+//                console.debug('  forward');
                 return edgeKernelSeq(
                         simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
                         simulator.buffers.curPoints, simulator.buffers.nextPoints)
                     .then(function () {
-                         console.debug('  back');
+//                         console.debug('  back');
                          return edgeKernelSeq(
                             simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
                             simulator.buffers.nextPoints, simulator.buffers.curPoints); });
@@ -491,10 +487,6 @@ if (typeof(window) == 'undefined') {
                 simulator.midPointKernel.setArgs(
                     [null, null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
                     [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
-
-                console.error('resources',
-                    simulator.buffers,
-                    resources.map(function (v, i) { return v ? 'exists ' + i : ' null ' + i}));
 
                 return simulator.midPointKernel.call(simulator.numMidPoints, resources);
             }
