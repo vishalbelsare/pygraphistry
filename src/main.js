@@ -39,14 +39,32 @@ function init(canvas) {
     var lastHandshake = new Date().getTime();
     socket.on("vbo_update", function (data, handshake) {
         var now = new Date().getTime();
-        handshake(now - lastHandshake);
         console.log("got VBO update message", now - lastHandshake, "ms");
         lastHandshake = now;
 
-        renderer.loadBuffer(gl, data.buffer, data.numVertices <= glBufferStoreSize);
-        renderer.render(gl, data.numVertices);
 
-        glBufferStoreSize = Math.max(glBufferStoreSize, data.numVertices);
+        //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
+        var oReq = new XMLHttpRequest();
+        oReq.open("GET", "http://localhost:1337/vbo", true);
+        oReq.responseType = "arraybuffer";
+        oReq.onload = function (oEvent) {
+            var gotCompressedVBO = new Date().getTime();
+            console.log("got VBO data", gotCompressedVBO - now, "ms");
+
+            handshake(now - lastHandshake);
+
+            var arrayBuffer = oReq.response; // Note: not oReq.responseText
+            //var byteArray = new Uint8Array(arrayBuffer);
+            var trimmedArray = new Uint8Array(
+                arrayBuffer,
+                0,
+                data.numVertices * (3 * Float32Array.BYTES_PER_ELEMENT + 4 * Uint8Array.BYTES_PER_ELEMENT));
+
+            renderer.loadBuffer(gl, trimmedArray, data.numVertices <= glBufferStoreSize);
+            renderer.render(gl, data.numVertices);
+            glBufferStoreSize = Math.max(glBufferStoreSize, data.numVertices);
+        };
+        oReq.send(null);
     });
 
     socket.on("error", function(reason) {
