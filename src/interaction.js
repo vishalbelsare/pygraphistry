@@ -7,7 +7,6 @@ var Rxjquery = require("rx-jquery");
 
 /**
  * Adds event listeners for drag/zoom and changes the local camera position in response
- * @param
  */
 exports.setupDrag = function($eventTarget, camera) {
     return $eventTarget.mousedownAsObservable()

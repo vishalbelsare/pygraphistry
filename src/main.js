@@ -5,18 +5,15 @@ var $            = require("jquery"),
     Cameras      = require("../../../../superconductorjs/src/Camera.js"),
     ui           = require("./ui.js"),
     interaction  = require("./interaction.js");
-// This needs to be its own 'var' declaration or Browserify/brfs won't parse it (bug)
-var fs           = require("fs");
 
+// global["debugjs"] = require("debug");
 
 
 function init(canvas) {
     var gl = renderer.init(canvas);
 
-    // These two fs.readFileSync() calls are replaced by string literals at compile-time by brfs
-    var vertexShaderSource = fs.readFileSync("./src/sc_vert.shader", "utf8").toString("ascii");
-    var fragmentShaderSource = fs.readFileSync("./src/sc_frag.shader", "utf8").toString("ascii");
-    var program = renderer.loadProgram(gl, vertexShaderSource, fragmentShaderSource);
+    var programs = renderer.loadProgram(gl);
+    var buffers = renderer.createBuffers(gl);
 
     var camera = new Cameras.Camera2d({
         left: -0.15,
@@ -24,17 +21,18 @@ function init(canvas) {
         bottom: 5, // (5 * (1 / (700/700))) - 0.15,
         top: -0.15 // - 0.15
     });
-    renderer.setCamera(gl, program, camera);
-
+    renderer.setCamera(gl, programs, camera);
     interaction.setupDrag($(".sim-container"), camera)
         .merge(interaction.setupScroll($(".sim-container"), camera))
         .subscribe(function(newCamera) {
-            renderer.setCamera(gl, program, camera);
-            renderer.render(gl);
+            renderer.setCamera(gl, programs, newCamera);
+            renderer.render(gl, programs, buffers);
         });
 
+
     var glBufferStoreSize = 0;
-    var socket = io.connect("http://localhost", {reconnection: false, transports: ['websocket']});
+
+    var socket = io.connect("http://localhost", {reconnection: false, transports: ["websocket"]});
 
     var lastHandshake = new Date().getTime();
     socket.on("vbo_update", function (data, handshake) {
@@ -43,8 +41,8 @@ function init(canvas) {
         console.log("got VBO update message", now - lastHandshake, "ms");
         lastHandshake = now;
 
-        renderer.loadBuffer(gl, data.buffer, data.numVertices <= glBufferStoreSize);
-        renderer.render(gl, data.numVertices);
+        renderer.loadBuffer(gl, buffers.mainVBO, data.buffer, data.numVertices <= glBufferStoreSize);
+        renderer.render(gl, programs, buffers, data.numVertices);
 
         glBufferStoreSize = Math.max(glBufferStoreSize, data.numVertices);
     });
