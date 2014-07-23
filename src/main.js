@@ -1,7 +1,8 @@
 "use strict";
 
 var $            = require("jquery"),
-    renderer     = require("./renderer.js"),
+    renderConfig = require("render-config"),
+    renderer     = require("./renderer.new.js"),
     Cameras      = require("../../../../superconductorjs/src/Camera.js"),
     ui           = require("./ui.js"),
     interaction  = require("./interaction.js");
@@ -11,10 +12,9 @@ var $            = require("jquery"),
 
 function init(canvas) {
     var gl = renderer.init(canvas);
-
-    var programs = renderer.loadProgram(gl);
-    var buffers = renderer.createBuffers(gl);
-
+    renderer.setGlOptions(gl, renderConfig.glOptions);
+    var programs = renderer.createPrograms(gl, renderConfig.programs);
+    var buffers = renderer.createBuffers(gl, renderConfig.buffers);
     var camera = new Cameras.Camera2d({
         left: -0.15,
         right: 5,
@@ -26,7 +26,7 @@ function init(canvas) {
         .merge(interaction.setupScroll($(".sim-container"), camera))
         .subscribe(function(newCamera) {
             renderer.setCamera(gl, programs, newCamera);
-            renderer.render(gl, programs, buffers);
+            renderer.render(gl, renderConfig, programs, buffers);
         });
 
 
@@ -58,8 +58,9 @@ function init(canvas) {
                 0,
                 data.numVertices * (3 * Float32Array.BYTES_PER_ELEMENT + 4 * Uint8Array.BYTES_PER_ELEMENT));
 
-            renderer.loadBuffer(gl, trimmedArray, data.numVertices <= glBufferStoreSize);
-            renderer.render(gl, data.numVertices);
+            renderer.loadBuffer(gl, buffers.mainVBO, trimmedArray, data.numVertices <= glBufferStoreSize);
+            renderer.render(gl, renderConfig, programs, buffers, data.numVertices);
+
             glBufferStoreSize = Math.max(glBufferStoreSize, data.numVertices);
         };
         oReq.send(null);

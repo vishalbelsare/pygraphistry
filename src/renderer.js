@@ -2,7 +2,7 @@
 
 
 var newRenderer = require("./renderer.new.js");
-var scOptions = require("./renderer.sc.js");
+var scOptions = require("render-config");
 
 exports.numVertices = 0;
 
