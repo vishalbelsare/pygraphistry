@@ -2,7 +2,7 @@
 
 var $ = require("jquery");
 var Rx = require("rx");
-var Rxjquery = require("rx-jquery");
+require("rx-jquery");
 
 
 /**
@@ -13,8 +13,8 @@ exports.setupDrag = function($eventTarget, camera) {
         .flatMapLatest(function(clickPos) {
             clickPos.preventDefault();
 
-            return $('html').mousemoveAsObservable()
-                .takeUntil($('html').mouseupAsObservable())
+            return $("html").mousemoveAsObservable()
+                .takeUntil($("html").mouseupAsObservable())
                 .distinctUntilChanged(function(pos) { return {x: pos.pageX, y: pos.pageY}; })
                 .scan({x: clickPos.pageX, y: clickPos.pageY}, function(accPos, curPos) {
                     // Calculate the distance moved (since last event) for each move event
@@ -31,12 +31,12 @@ exports.setupDrag = function($eventTarget, camera) {
                     return camera;
                 });
         });
-}
+};
 
 
 
 exports.setupScroll = function($eventTarget, camera) {
-    return Rx.Observable.fromEvent($eventTarget[0], 'wheel')
+    return Rx.Observable.fromEvent($eventTarget[0], "wheel")
         .map(function(wheelEvent) {
             wheelEvent.preventDefault();
 
@@ -45,5 +45,5 @@ exports.setupScroll = function($eventTarget, camera) {
             camera.height = camera.width / aspectRatio;
 
             return camera;
-        })
-}
+        });
+};
