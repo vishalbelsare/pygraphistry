@@ -2,7 +2,7 @@
 
 var $            = require("jquery"),
     renderConfig = require("render-config"),
-    renderer     = require("./renderer.new.js"),
+    renderer     = require("./renderer.js"),
     Cameras      = require("../../../../superconductorjs/src/Camera.js"),
     ui           = require("./ui.js"),
     interaction  = require("./interaction.js");
