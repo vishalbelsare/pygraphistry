@@ -74,11 +74,7 @@ exports.render = function(gl, programs, buffers, numVertices) {
         return false;
     }
 
-    try{
-        newRenderer.render(gl, scOptions, programs, buffers, {});
-    } catch(e) {
-        console.error("Caught exception trying to render:", e);
-    }
+    newRenderer.render(gl, scOptions, programs, buffers, exports.numVertices);
 
     // gl.finish();
     // gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
