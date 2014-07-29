@@ -1,7 +1,11 @@
 "use strict";
 
+var _ = require("underscore");
+
+/** @module Renderer */
+
 /** Cached dictionary of program.attribute: attribute locations
- * @type {Object.<WebGLProgram, Object.<string, GLint>} */
+ * @type {Object.<WebGLProgram, Object.<string, GLint>>} */
 var attrLocations = {};
 /** The bindings object currently in effect on a program
  * @type {Object.<WebGLProgram, RendererOptions.render.bindings>} */
@@ -14,19 +18,12 @@ var activeProgram = null;
 var boundBuffer = null;
 
 
-function forOwnProperties(obj, cb) {
-    for(var prop in obj) {
-        if(!obj.hasOwnProperty(prop)) {
-            continue;
-        }
-        cb(obj[prop], prop, obj);
-    }
-}
-
-
 /**
  * Wraps gl.getAttribLocation and caches the result, returning the cached result on subsequent
  * calls for the same attribute in the same program.
+ * @param {WebGLRenderingContext} gl - the WebGL context
+ * @param {WebGLProgram} program - the program the attribute is part of
+ * @param {string} attribute - the name of the attribute in the shader source code
  */
 var getAttribLocationFast = function(gl, program, attribute) {
     if(typeof attrLocations[program] !== "undefined" &&
@@ -51,7 +48,7 @@ var bindProgram = function(gl, program, bindings, buffers, bufferOptions) {
     }
 
     // For each attribute in the program's bindings
-    forOwnProperties(bindings, function(attributeBinding, attributeName) {
+    _.each(bindings, function(attributeBinding, attributeName) {
         var buffer = buffers[attributeBinding.buffer];
         if(boundBuffer !== buffer) {
             gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -65,8 +62,6 @@ var bindProgram = function(gl, program, bindings, buffers, bufferOptions) {
             element.stride, element.offset);
     });
 };
-
-
 
 exports.numVertices = 0;
 
@@ -84,6 +79,10 @@ exports.init = function(canvas) {
 };
 
 
+/**
+ * Set global GL settings
+ * @param {WebGLRenderingContext}
+ */
 exports.setGlOptions = function(gl, options) {
     var glOptionFunctionWhitelist = {
         "enable": true,
@@ -96,7 +95,7 @@ exports.setGlOptions = function(gl, options) {
     };
 
     // for(var optionName in options) {
-    forOwnProperties(options, function(optionCalls, optionName) {
+    _.each(options, function(optionCalls, optionName) {
         if(glOptionFunctionWhitelist[optionName] !== true ||
             typeof gl[optionName] !== "function") {
             return;
@@ -117,7 +116,7 @@ exports.createPrograms = function(gl, programs) {
     var createdPrograms = {};
 
     // for(var programName in programs) {
-    forOwnProperties(programs, function(programOptions, programName) {
+    _.each(programs, function(programOptions, programName) {
         var program = gl.createProgram();
 
         //// Create, compile and attach the shaders
@@ -194,7 +193,7 @@ exports.loadBuffer = function(gl, buffer, data, reuseBuffer) {
 
 
 exports.setCamera = function(gl, programs, camera) {
-    forOwnProperties(programs, function(program) {
+    _.each(programs, function(program) {
         if(activeProgram !== program) {
             gl.useProgram(activeProgram = program);
         }
@@ -213,7 +212,9 @@ exports.render = function(gl, options, programs, buffers, numVertices) {
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    forOwnProperties(options.render, function(renderOptions) {
+
+
+    _.each(options.render, function(renderOptions) {
         bindProgram(gl, programs[renderOptions.program], renderOptions.bindings, buffers, options.buffers);
         gl.drawArrays(gl[renderOptions.drawType], 0, exports.numVertices);
         // TODO: Disable vertex attributes when we're done?
