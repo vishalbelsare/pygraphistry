@@ -77,9 +77,9 @@ var bindProgram = function(gl, program, bindings, buffers, modelSettings) {
     if(programBindings[program] === bindings) { return false; }
 
     _.each(bindings, function(binding, attribute) {
-        bindBuffer(gl, buffers[binding.model]);
+        bindBuffer(gl, buffers[binding[0]]);
 
-        var element = modelSettings[binding.model][binding.element];
+        var element = modelSettings[binding[0]][binding[1]];
         var location = getAttribLocationFast(gl, program, attribute);
 
         gl.vertexAttribPointer(location, element.count, gl[element.type], element.normalize,

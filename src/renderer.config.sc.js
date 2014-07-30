@@ -59,8 +59,8 @@ var config = {
             "everything": {
                 "program": "main",
                 "bindings": {
-                    "a_position": {"model": "mainVBO", "element": "position" },
-                    "a_color": {"model": "mainVBO", "element": "color"}
+                    "a_position": ["mainVBO", "position"],
+                    "a_color": ["mainVBO", "color"]
                 },
                 "drawType": "TRIANGLE_STRIP"
             }
