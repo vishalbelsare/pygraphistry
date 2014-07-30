@@ -115,7 +115,7 @@ exports.init = function(canvas) {
  * @param {WebGLRenderingContext}
  */
 exports.setGlOptions = function(gl, options) {
-    var glOptionFunctionWhitelist = {
+    var whiteList = {
         "enable": true,
         "disable": true,
         "blendFuncSeparate": true,
@@ -127,7 +127,7 @@ exports.setGlOptions = function(gl, options) {
 
     // for(var optionName in options) {
     _.each(options, function(optionCalls, optionName) {
-        if(glOptionFunctionWhitelist[optionName] !== true ||
+        if(whiteList[optionName] !== true ||
             typeof gl[optionName] !== "function") {
             return;
         }
