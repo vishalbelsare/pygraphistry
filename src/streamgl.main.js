@@ -12,9 +12,9 @@ var $            = require("jquery"),
 
 function init(canvas) {
     var gl = renderer.init(canvas);
-    renderer.setGlOptions(gl, renderConfig.glOptions);
+    renderer.setGlOptions(gl, renderConfig.options);
     var programs = renderer.createPrograms(gl, renderConfig.programs);
-    var buffers = renderer.createBuffers(gl, renderConfig.buffers);
+    var buffers = renderer.createBuffers(gl, renderConfig.models);
     var camera = new Cameras.Camera2d({
         left: -0.15,
         right: 5,
@@ -27,7 +27,7 @@ function init(canvas) {
         .merge(interaction.setupScroll($(".sim-container"), camera))
         .subscribe(function(newCamera) {
             renderer.setCamera(gl, programs, newCamera);
-            renderer.render(gl, renderConfig, programs, buffers);
+            renderer.render(gl, programs, buffers, renderConfig);
         });
 
     var socket = io.connect("http://localhost", {reconnection: false, transports: ["websocket"]});
@@ -56,7 +56,7 @@ function init(canvas) {
                 data.numVertices * (3 * Float32Array.BYTES_PER_ELEMENT + 4 * Uint8Array.BYTES_PER_ELEMENT));
 
             renderer.loadBuffer(gl, buffers.mainVBO, trimmedArray, data.numVertices <= glBufferStoreSize);
-            renderer.render(gl, renderConfig, programs, buffers, data.numVertices);
+            renderer.render(gl, programs, buffers, renderConfig, data.numVertices);
 
             glBufferStoreSize = Math.max(glBufferStoreSize, data.numVertices);
         };
