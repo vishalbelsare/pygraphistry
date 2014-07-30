@@ -5,6 +5,9 @@ var renderConfig = require("../dist/render-config.sc.mod.js"),
     ui           = require("./ui.js"),
     proxyUtils = require("./proxyutils.js");
 
+
+
+
 // canvas * {camera2d, camera3d} * socket -> ()
 // Bind remote renderer to canvas
 function initialize(canvas, camera, socket) {
@@ -16,9 +19,9 @@ function initialize(canvas, camera, socket) {
     }
 
     var gl = renderer.init(canvas);
-    renderer.setGlOptions(gl, renderConfig.glOptions);
+    renderer.setGlOptions(gl, renderConfig.options);
     var programs = renderer.createPrograms(gl, renderConfig.programs);
-    var buffers = renderer.createBuffers(gl, renderConfig.buffers);
+    var buffers = renderer.createBuffers(gl, renderConfig.models);
     renderer.setCamera(gl, programs, camera);
 
 
@@ -51,7 +54,7 @@ function initialize(canvas, camera, socket) {
                         data.numVertices * (3 * Float32Array.BYTES_PER_ELEMENT + 4 * Uint8Array.BYTES_PER_ELEMENT));
 
                     renderer.loadBuffer(gl, buffers.mainVBO, trimmedArray, data.numVertices <= glBufferStoreSize);
-                    renderer.render(gl, renderConfig, programs, buffers, data.numVertices);
+                    renderer.render(gl, programs, buffers, renderConfig, data.numVertices);
 
                     glBufferStoreSize = Math.max(glBufferStoreSize, data.numVertices);
                 } catch (e) {

@@ -21,17 +21,26 @@ function init (canvas) {
             top: -0.15 // - 0.15
         });
 
-
-    var socket = io.connect("http://localhost:" + proxyUtils.MAIN_PORT, {reconnection: false, transports: ["websocket"]});
+    var socket = io.connect("http://localhost:" + proxyUtils.MAIN_PORT,
+        {reconnection: false, transports: ["websocket"]});
 
     var binding = initialize(canvas, camera, socket);
+
 
     interaction.setupDrag($(".sim-container"), camera)
         .merge(interaction.setupScroll($(".sim-container"), camera))
         .subscribe(function(newCamera) {
             renderer.setCamera(binding.gl, binding.programs, newCamera);
-            renderer.render(binding.gl, renderConfig, binding.programs, binding.buffers);
-        });
+            renderer.render(binding.gl, binding.programs, binding.buffers, renderConfig);
+        };
+    });
+
+    socket.on("error", function(reason) {
+        ui.error("Connection error (reason: " + reason + ")");
+    });
+    socket.on("disconnect", function(reason) {
+        ui.error("Disconnected (reason: " + reason + ")");
+    });
 }
 
 window.addEventListener("load", function(){

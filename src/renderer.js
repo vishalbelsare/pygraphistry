@@ -1,32 +1,24 @@
 "use strict";
 
+var _ = require("underscore");
+
+/** @module Renderer */
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Internal helpers
+////////////////////////////////////////////////////////////////////////////////
+
+
 /** Cached dictionary of program.attribute: attribute locations
- * @type {Object.<WebGLProgram, Object.<string, GLint>} */
+ * @type {Object.<WebGLProgram, Object.<string, GLint>>} */
 var attrLocations = {};
-/** The bindings object currently in effect on a program
- * @type {Object.<WebGLProgram, RendererOptions.render.bindings>} */
-var programBindings = {};
-/** The program currently in use by GL
- * @type {?WebGLProgram} */
-var activeProgram = null;
-/** The currently bound buffer in GL
- * @type {?WebGLBuffer} */
-var boundBuffer = null;
-
-
-function forOwnProperties(obj, cb) {
-    for(var prop in obj) {
-        if(!obj.hasOwnProperty(prop)) {
-            continue;
-        }
-        cb(obj[prop], prop, obj);
-    }
-}
-
-
 /**
  * Wraps gl.getAttribLocation and caches the result, returning the cached result on subsequent
  * calls for the same attribute in the same program.
+ * @param {WebGLRenderingContext} gl - the WebGL context
+ * @param {WebGLProgram} program - the program the attribute is part of
+ * @param {string} attribute - the name of the attribute in the shader source code
  */
 var getAttribLocationFast = function(gl, program, attribute) {
     if(typeof attrLocations[program] !== "undefined" &&
@@ -40,26 +32,55 @@ var getAttribLocationFast = function(gl, program, attribute) {
 };
 
 
-var bindProgram = function(gl, program, bindings, buffers, bufferOptions) {
+/** The program currently in use by GL
+ * @type {?WebGLProgram} */
+var activeProgram = null;
+var useProgram = function(gl, program) {
     if(activeProgram !== program) {
-        gl.useProgram(activeProgram = program);
+        gl.useProgram(program);
+        activeProgram = program;
+        return true;
     }
+
+    return false;
+};
+
+
+/** The currently bound buffer in GL
+ * @type {?WebGLBuffer} */
+var boundBuffer = null;
+var bindBuffer = function(gl, buffer) {
+    if(boundBuffer !== buffer) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        boundBuffer = buffer;
+        return true;
+    }
+    return false;
+};
+
+
+/** The bindings object currently in effect on a program
+ * @type {Object.<WebGLProgram, RendererOptions.render.bindings>} */
+var programBindings = {};
+/**
+ * Binds all of a programs attributes to elements of a/some buffer(s)
+ * @param {WebGLRenderingContext} gl - the WebGL context containing the program and buffers
+ * @param {WebGLProgram} program - The WebGL program to bind
+ * @param {Object} bindings - The config settings object for this program's bindings
+ * @param {Object.<string, WebGLBuffer>} buffers - Mapping of created buffer names to WebGL buffers
+ * @param {Object} modelSettings - The "models" object from the rendering config
+ */
+var bindProgram = function(gl, program, bindings, buffers, modelSettings) {
+    useProgram(gl, program);
 
     // If the program is already bound using the current binding preferences, no need to continue
-    if(programBindings[program] === bindings) {
-        return false;
-    }
+    if(programBindings[program] === bindings) { return false; }
 
-    // For each attribute in the program's bindings
-    forOwnProperties(bindings, function(attributeBinding, attributeName) {
-        var buffer = buffers[attributeBinding.buffer];
-        if(boundBuffer !== buffer) {
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-            boundBuffer = buffer;
-        }
+    _.each(bindings, function(binding, attribute) {
+        bindBuffer(gl, buffers[binding.model]);
 
-        var element = bufferOptions[attributeBinding.buffer].elements[attributeBinding.element];
-        var location = getAttribLocationFast(gl, program, attributeName);
+        var element = modelSettings[binding.model][binding.element];
+        var location = getAttribLocationFast(gl, program, attribute);
 
         gl.vertexAttribPointer(location, element.count, gl[element.type], element.normalize,
             element.stride, element.offset);
@@ -67,8 +88,13 @@ var bindProgram = function(gl, program, bindings, buffers, bufferOptions) {
 };
 
 
+////////////////////////////////////////////////////////////////////////////////
+// Exports
+////////////////////////////////////////////////////////////////////////////////
+
 
 exports.numVertices = 0;
+
 
 exports.init = function(canvas) {
     canvas.width = canvas.clientWidth;
@@ -84,6 +110,10 @@ exports.init = function(canvas) {
 };
 
 
+/**
+ * Set global GL settings
+ * @param {WebGLRenderingContext}
+ */
 exports.setGlOptions = function(gl, options) {
     var glOptionFunctionWhitelist = {
         "enable": true,
@@ -96,7 +126,7 @@ exports.setGlOptions = function(gl, options) {
     };
 
     // for(var optionName in options) {
-    forOwnProperties(options, function(optionCalls, optionName) {
+    _.each(options, function(optionCalls, optionName) {
         if(glOptionFunctionWhitelist[optionName] !== true ||
             typeof gl[optionName] !== "function") {
             return;
@@ -117,7 +147,7 @@ exports.createPrograms = function(gl, programs) {
     var createdPrograms = {};
 
     // for(var programName in programs) {
-    forOwnProperties(programs, function(programOptions, programName) {
+    _.each(programs, function(programOptions, programName) {
         var program = gl.createProgram();
 
         //// Create, compile and attach the shaders
@@ -167,11 +197,10 @@ exports.createPrograms = function(gl, programs) {
 exports.createBuffers = function(gl, buffers) {
     var createdBuffers = {};
 
-    for(var bufferName in buffers) {
-        if(!buffers.hasOwnProperty(bufferName)) { continue; }
+    _.each(buffers, function(bufferOpts, bufferName) {
         var vbo = gl.createBuffer();
         createdBuffers[bufferName] = vbo;
-    }
+    });
 
     return createdBuffers;
 };
@@ -180,10 +209,7 @@ exports.createBuffers = function(gl, buffers) {
 exports.loadBuffer = function(gl, buffer, data, reuseBuffer) {
     gl.flush();
 
-    if(boundBuffer !== buffer) {
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-        boundBuffer = buffer;
-    }
+    bindBuffer(gl, buffer);
 
     if(reuseBuffer === true) {
         gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
@@ -194,10 +220,8 @@ exports.loadBuffer = function(gl, buffer, data, reuseBuffer) {
 
 
 exports.setCamera = function(gl, programs, camera) {
-    forOwnProperties(programs, function(program) {
-        if(activeProgram !== program) {
-            gl.useProgram(activeProgram = program);
-        }
+    _.each(programs, function(program) {
+        useProgram(gl, program);
 
         var mvpLoc = gl.getUniformLocation(program, "u_mvp_matrix");
         gl.uniformMatrix4fv(mvpLoc, false, camera.getMatrix());
@@ -205,7 +229,7 @@ exports.setCamera = function(gl, programs, camera) {
 };
 
 
-exports.render = function(gl, options, programs, buffers, numVertices) {
+exports.render = function(gl, programs, buffers, config, numVertices) {
     exports.numVertices = typeof numVertices !== "undefined" ? numVertices : exports.numVertices;
     if(exports.numVertices < 1) {
         return false;
@@ -213,10 +237,10 @@ exports.render = function(gl, options, programs, buffers, numVertices) {
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    forOwnProperties(options.render, function(renderOptions) {
-        bindProgram(gl, programs[renderOptions.program], renderOptions.bindings, buffers, options.buffers);
-        gl.drawArrays(gl[renderOptions.drawType], 0, exports.numVertices);
-        // TODO: Disable vertex attributes when we're done?
+    _.each(config.scene.render, function(target) {
+        var renderItem = config.scene.items[target];
+        bindProgram(gl, programs[renderItem.program], renderItem.bindings, buffers, config.models);
+        gl.drawArrays(gl[renderItem.drawType], 0, exports.numVertices);
     });
 
     gl.flush();

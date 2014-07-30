@@ -1,9 +1,15 @@
 "use strict";
 
+/** @module RenderConfig/Superconductor */
+
 var fs = require("fs");
 
-module.exports = {
-    "glOptions": {
+/**
+ * Configuration for Superconductor rendering pipeline
+ * @type RenderPipeline
+ */
+var config = {
+    "options": {
         "enable": [["BLEND"], ["DEPTH_TEST"]],
         "disable": [["CULL_FACE"]],
         "blendFuncSeparate": [["SRC_ALPHA", "ONE_MINUS_SRC_ALPHA", "ONE", "ONE"]],
@@ -15,7 +21,7 @@ module.exports = {
 
     "camera": {
         "type": "2d",
-        "init": [{"left": -0.15, "right": 5, "bottom": 5, "top": -0.15}]
+        "init": [{"top": -0.15, "left": -0.15, "bottom": 5, "right": 5}]
     },
 
     "programs": {
@@ -30,42 +36,39 @@ module.exports = {
         }
     },
 
-    "buffers": {
+    "models": {
         "mainVBO": {
-            "elements": {
-                "position": {
-                    "type": "FLOAT",
-                    "count": 3,
-                    "normalize": false,
-                    "stride": 16,
-                    "offset": 0
-                },
-                "color": {
-                    "type": "UNSIGNED_BYTE",
-                    "count": 4,
-                    "normalize": true,
-                    "stride": 16,
-                    "offset": 12
-                },
+            "position": {
+                "type": "FLOAT",
+                "count": 3,
+                "normalize": false,
+                "stride": 16,
+                "offset": 0
+            },
+            "color": {
+                "type": "UNSIGNED_BYTE",
+                "count": 4,
+                "normalize": true,
+                "stride": 16,
+                "offset": 12
             }
         }
     },
 
-    "render": {
-        "everything": {
-            "program": "main",
-            "bindings": {
-                "a_position": {
-                    "buffer": "mainVBO",
-                    "element": "position"
+    "scene": {
+        "items": {
+            "everything": {
+                "program": "main",
+                "bindings": {
+                    "a_position": {"model": "mainVBO", "element": "position" },
+                    "a_color": {"model": "mainVBO", "element": "color"}
                 },
-                "a_color": {
-                    "buffer": "mainVBO",
-                    "element": "color"
-                }
-            },
-            "drawType": "TRIANGLE_STRIP",
-            "glOptions": {}
-        }
+                "drawType": "TRIANGLE_STRIP",
+                "glOptions": {}
+            }
+        },
+        "render": ["everything"]
     }
 };
+
+module.exports = config;
