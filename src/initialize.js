@@ -91,4 +91,4 @@ function initialize(canvas, camera, socket) {
 }
 
 // canvas * {camera2d, camera3d} * ?socket -> ()
-module.export = initialize;
+module.exports = initialize;

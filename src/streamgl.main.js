@@ -6,7 +6,8 @@ var $            = require("jquery"),
     Cameras      = require("../../../../superconductorjs/src/Camera.js"),
     interaction  = require("./interaction.js"),
     initialize   = require("./initialize.js"),
-    proxyUtils = require("./proxyutils.js");
+    proxyUtils   = require("./proxyutils.js"),
+    ui           = require("./ui.js");
 
 
 // global["debugjs"] = require("debug");
@@ -32,7 +33,6 @@ function init (canvas) {
         .subscribe(function(newCamera) {
             renderer.setCamera(binding.gl, binding.programs, newCamera);
             renderer.render(binding.gl, binding.programs, binding.buffers, renderConfig);
-        };
     });
 
     socket.on("error", function(reason) {
