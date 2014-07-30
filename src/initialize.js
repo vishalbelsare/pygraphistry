@@ -5,8 +5,6 @@ var renderer     = require("./renderer.js"),
     proxyUtils = require("./proxyutils.js");
 
 
-
-
 // canvas * {camera2d, camera3d} * socket -> ()
 // Bind remote renderer to canvas
 function initialize(canvas, camera, socket, renderConfig) {
@@ -57,13 +55,13 @@ function initialize(canvas, camera, socket, renderConfig) {
 
                     glBufferStoreSize = Math.max(glBufferStoreSize, data.numVertices);
                 } catch (e) {
-                    console.error("bah", e, new Error().stack);
+                    console.error("Error loading data into WebGL:", e, new Error().stack);
                 }
             };
 
             oReq.send(null);
         } catch (e) {
-            console.error("bah", e, new Error().stack);
+            console.error("Error retrieving WebGL buffer data from server:", e, new Error().stack);
         }
     });
 
