@@ -31,7 +31,6 @@ var config = {
                 "fragment": fs.readFileSync("./src/shaders/sc/fragment.glsl", "utf8").toString("ascii")
             },
             "attributes": ["a_position", "a_color"],
-            "uniforms": [],
             "camera": "u_mvp_matrix"
         }
     },
@@ -63,8 +62,7 @@ var config = {
                     "a_position": {"model": "mainVBO", "element": "position" },
                     "a_color": {"model": "mainVBO", "element": "color"}
                 },
-                "drawType": "TRIANGLE_STRIP",
-                "glOptions": {}
+                "drawType": "TRIANGLE_STRIP"
             }
         },
         "render": ["everything"]
