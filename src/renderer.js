@@ -229,7 +229,7 @@ exports.setCamera = function(gl, programs, camera) {
 };
 
 
-exports.render = function(gl, programs, buffers, config, numVertices) {
+exports.render = function(config, gl, programs, buffers, numVertices) {
     exports.numVertices = typeof numVertices !== "undefined" ? numVertices : exports.numVertices;
     if(exports.numVertices < 1) {
         return false;

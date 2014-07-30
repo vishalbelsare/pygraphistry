@@ -27,7 +27,7 @@ function init(canvas) {
         .merge(interaction.setupScroll($(".sim-container"), camera))
         .subscribe(function(newCamera) {
             renderer.setCamera(gl, programs, newCamera);
-            renderer.render(gl, programs, buffers, renderConfig);
+            renderer.render(renderConfig, gl, programs, buffers);
         });
 
     var socket = io.connect("http://localhost", {reconnection: false, transports: ["websocket"]});
@@ -56,7 +56,7 @@ function init(canvas) {
                 data.numVertices * (3 * Float32Array.BYTES_PER_ELEMENT + 4 * Uint8Array.BYTES_PER_ELEMENT));
 
             renderer.loadBuffer(gl, buffers.mainVBO, trimmedArray, data.numVertices <= glBufferStoreSize);
-            renderer.render(gl, programs, buffers, renderConfig, data.numVertices);
+            renderer.render(renderConfig, gl, programs, buffers, data.numVertices);
 
             glBufferStoreSize = Math.max(glBufferStoreSize, data.numVertices);
         };
