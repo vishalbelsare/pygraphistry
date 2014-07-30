@@ -27,8 +27,8 @@ var config = {
     "programs": {
         "main": {
             "sources": {
-                "vertex": fs.readFileSync("./src/sc_vert.shader", "utf8").toString("ascii"),
-                "fragment": fs.readFileSync("./src/sc_frag.shader", "utf8").toString("ascii")
+                "vertex": fs.readFileSync("./src/shaders/sc/vertex.glsl", "utf8").toString("ascii"),
+                "fragment": fs.readFileSync("./src/shaders/sc/fragment.glsl", "utf8").toString("ascii")
             },
             "attributes": ["a_position", "a_color"],
             "uniforms": [],
