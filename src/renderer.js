@@ -219,11 +219,12 @@ exports.loadBuffer = function(gl, buffer, data, reuseBuffer) {
 };
 
 
-exports.setCamera = function(gl, programs, camera) {
-    _.each(programs, function(program) {
+exports.setCamera = function(config, gl, programs, camera) {
+    _.each(config.programs, function(programConfig, programName) {
+        var program = programs[programName];
         useProgram(gl, program);
 
-        var mvpLoc = gl.getUniformLocation(program, "u_mvp_matrix");
+        var mvpLoc = gl.getUniformLocation(program, programConfig.camera);
         gl.uniformMatrix4fv(mvpLoc, false, camera.getMatrix());
     });
 };
