@@ -1,16 +1,24 @@
 "use strict";
 
-var $ = require("jquery");
+try {
+    if (typeof($) == 'undefined') {
+        $ = require("jquery");
+    }
+} catch (e) {
+    //do not need jquery
+}
 
 
 exports.error = function(message) {
     console.error(message, new Error().stack);
 
-    var $msg = $("<span>")
-        .addClass("status-error")
-        .text(message);
+    if (typeof($) != 'undefined') {
+        var $msg = $("<span>")
+            .addClass("status-error")
+            .text(message);
 
-    $(".status-bar")
-        .append($msg)
-        .css("visibility", "visible");
+        $(".status-bar")
+            .append($msg)
+            .css("visibility", "visible");
+    }
 };
