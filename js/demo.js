@@ -97,17 +97,14 @@ function animator (document, promise) {
             bound = maybeMaxSteps;
             animating = true;
             var run = function () {
-                console.debug('===============STEPPING', step++)
+                step++;
                 bound--;
-                var t0 = new Date().getTime();
                 promise().then(
                     function () {
-                        console.debug("  /STEPPED", new Date().getTime() - t0, 'ms');
                         if (animating && bound != 0) {
                             next(run);
                         } else {
                             if (maybeCb) maybeCb();
-                            else console.debug("ANIMATE DONE");
                         }
                     },
                     function () {

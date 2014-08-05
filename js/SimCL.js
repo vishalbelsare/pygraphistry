@@ -309,7 +309,6 @@ if (typeof(window) == 'undefined') {
                     webcl.type.LOCAL_MEMORY_SIZE, webcl.type.FLOAT, webcl.type.FLOAT, webcl.type.FLOAT,webcl.type.FLOAT,
                     null, webcl.type.UINT] : null);
 
-            console.debug('EDGES KERNEL 0')
             simulator.edgesKernel.setArgs(
                 [   null, //forwards/backwards picked dynamically
                     null, //forwards/backwards picked dynamically
@@ -323,7 +322,6 @@ if (typeof(window) == 'undefined') {
                     webcl.type.FLOAT, webcl.type.FLOAT]
                     : null);
 
-            console.debug("MID EDGES 0")
             simulator.midEdgesKernel.setArgs([
                 webcl.type ? [simulator.numSplits] : new Uint32Array([simulator.numSplits]),        // 0:
                 simulator.buffers.forwardsEdges.buffer,        // 1: only need one direction as guaranteed to be chains
@@ -379,7 +377,6 @@ if (typeof(window) == 'undefined') {
             var gravity = cfg.gravity ? (webcl.type ? [cfg.gravity] : new Float32Array([cfg.gravity])) : null;
             var gravity_t = cfg.gravity ? cljs.types.float_t : null;
 
-            console.debug("SETTING POINT 1")
             simulator.pointKernel.setArgs(
                 [null, null, null, null, null, null, charge, gravity, null, null],
                 [null, null, null, null, null, null, charge_t, gravity_t, null, null]);
@@ -397,12 +394,10 @@ if (typeof(window) == 'undefined') {
             var edgeStrength = cfg.edgeStrength ? (webcl.type ? [cfg.edgeStrength] : new Float32Array([cfg.edgeStrength])) : null;
             var edgeStrength_t = cfg.edgeStrength ? cljs.types.float_t : null;
 
-            console.debug("EDGES KERNEL 1")
             simulator.edgesKernel.setArgs(
                 [null, null, null, null, null, edgeStrength, edgeDistance, null],
                 [null, null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
 
-            console.debug("MID EDGES 1")
             simulator.midEdgesKernel.setArgs(
                 // 0   1     2     3     4     5     6     7     8               9               10
                 [null, null, null, null, null, null, null, null, edgeStrength,   edgeDistance,   null],
@@ -435,7 +430,6 @@ if (typeof(window) == 'undefined') {
         // Run the points kernel
         return Q()
         .then(function () {
-            console.debug('~~~~~pointKernel: curPoints --> nextPoints --> curPoints', simulator.locked.lockPoints ? 'SKIP' : 'PERFORM');
 
             if (simulator.locked.lockPoints) {
                 return;
@@ -455,17 +449,14 @@ if (typeof(window) == 'undefined') {
 
             }
         }).then(function() {
-            console.debug('~~~~~EDGES', simulator.locked.lockEdges ? 'LOCKED' : 'PERFORM', simulator.numEdges, 'curPoints --> nextPoints --> curPoints');
             if (simulator.numEdges <= 0 || simulator.locked.lockEdges) {
                 return simulator;
             }
             if(simulator.numEdges > 0) {
-//                console.debug('  forward');
                 return edgeKernelSeq(
                         simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
                         simulator.buffers.curPoints, simulator.buffers.nextPoints)
                     .then(function () {
-//                         console.debug('  back');
                          return edgeKernelSeq(
                             simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
                             simulator.buffers.nextPoints, simulator.buffers.curPoints); });
@@ -474,7 +465,6 @@ if (typeof(window) == 'undefined') {
         ////////////////////////////
         // Run the edges kernel
         .then(function () {
-            console.debug('MIDPOINT', 'curMidPoints --> nextMidPoints', 'locked?', simulator.locked.lockMidpoints ? 'SKIP' : 'PERFORM');
             if (simulator.locked.lockMidpoints) {
                 return simulator.buffers.curMidPoints.copyInto(simulator.buffers.nextMidPoints);
             } else {
@@ -492,7 +482,6 @@ if (typeof(window) == 'undefined') {
             }
         })
         .then(function () {
-            console.debug('~~~~~MID EDGES 2', 'nextMidPoints-->curMidPoints', 'locked?', simulator.locked.lockMidedges);
 
 
             if (simulator.numEdges > 0 && !simulator.locked.lockMidedges) {
@@ -514,15 +503,9 @@ if (typeof(window) == 'undefined') {
 
                 return simulator.midEdgesKernel.call(simulator.numForwardsWorkItems, resources);
             } else {
-                console.debug('COPY MIDPOINT', 'nextMidPoints-->curMidPoints')
                 return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
             }
-        }).then(
-            function (v) { console.debug('GOOD TICK') },
-            function (err) {
-                console.error("BAD TICK", err);
-                console.error(err.stack);
-            });
+        })
     }
 
 

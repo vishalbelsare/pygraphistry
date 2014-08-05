@@ -276,8 +276,6 @@ if (typeof(window) == 'undefined') {
 
     // Executes the specified kernel, with `threads` number of threads, acquiring/releasing any needed resources
     var call = Q.promised(function (kernel, threads, buffers) {
-        console.debug("CALL", kernel.name)
-        var t0 = new Date().getTime();
         return acquire(buffers)
             .then(function () {
                 var workgroupSize = new Int32Array([threads]);
@@ -291,13 +289,11 @@ if (typeof(window) == 'undefined') {
             .then(release.bind('', buffers))
             .then(function () {
                 kernel.cl.queue.finish();
-//                console.debug('  /called', new Date().getTime() - t0);
             }).then(_.constant(kernel));
     });
 
 
     var setArgs = function (kernel, args, argTypes) {
-//        console.debug('SET ARGS', args, argTypes)
         var t0 = new Date().getTime();
         for (var i = 0; i < args.length; i++) {
             if(args[i] !== null) {
@@ -323,10 +319,8 @@ if (typeof(window) == 'undefined') {
                 "cl": cl,
                 "size": size,
                 "acquire": function() {
-//                    console.debug("  acquire lock", bufObj.name)
                     return Q(); },
                 "release": function() {
-//                    console.debug("  release lock", bufObj.name)
                     return Q(); }
             };
             bufObj.delete = Q.promised(function() {
@@ -361,18 +355,11 @@ if (typeof(window) == 'undefined') {
                 "cl": cl,
                 "size": buffer.getInfo ? buffer.getInfo(cl.cl.MEM_SIZE) : (vbo.len * Float32Array.BYTES_PER_ELEMENT),
                 "acquire": Q.promised(function() {
-//                    console.debug("  acquire gl", bufObj.name)
-                    var t0 = new Date().getTime();
                     cl.queue.enqueueAcquireGLObjects([buffer]);
-//                    console.debug('    /acquired', new Date().getTime() - t0);
 
                 }),
                 "release": Q.promised(function() {
-//                    console.debug("  release gl", bufObj.name);
-                    var t0 = new Date().getTime();
                     cl.queue.enqueueReleaseGLObjects([buffer]);
-//                    console.debug('    /released', new Date().getTime() - t0);
-
                 })
             };
             bufObj.delete = Q.promised(function() {
@@ -396,18 +383,14 @@ if (typeof(window) == 'undefined') {
 
     var copyBuffer = Q.promised(function (cl, source, destination) {
         console.debug('COPY BUFFER', source.name, destination.name, source.size, destination.size)
-        var t0 = new Date().getTime();
         return acquire([source, destination])
             .then(function () {
-//                console.debug('  acquired both, copying', source.size, destination.size)
                 cl.queue.enqueueCopyBuffer(source.buffer, destination.buffer, 0, 0, Math.min(source.size, destination.size));
             })
             .then(function () {
                 cl.queue.finish();
-//                console.debug('  /copy finished', new Date().getTime() - t0);
             }).then(release.bind('', [source, destination]))
             .then(function () {
-//                console.debug(' /copy released')
             });
     });
 
@@ -480,8 +463,6 @@ if (typeof(window) == 'undefined') {
 
 
         call = Q.promised(function (kernel, threads, buffers) {
-            console.debug('CALL (poly)', kernel.name);
-            var t0 = new Date().getTime();
             //kernel.cl.queue.finish();
 
             return acquire(buffers)
@@ -493,18 +474,15 @@ if (typeof(window) == 'undefined') {
                     } else {
                         kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, workgroupSize, null);
                     }
-//                    console.debug('  enqueued')
                     return release(buffers);
                 })
                 .then(function () {
                     kernel.cl.queue.finish();
-//                    console.debug('  /called', new Date().getTime() - t0);
                     return kernel;
                 });
         });
 
         setArgs = Q.promised(function (kernel, args, argTypes) {
-//            console.debug('SET ARGS (poly)', args ? args.length : 'no args', argTypes ? argTypes.length : 'no types')
             var t0 = new Date().getTime();
             try {
                 for (var i = 0; i < args.length; i++) {

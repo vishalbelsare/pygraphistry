@@ -201,12 +201,10 @@ var _ = require('underscore');
                 events.fire("simulateEnd");
                 events.fire("renderBegin");
 
-                console.debug("RENDER")
 
                 return graph.renderer.render();
             })
             .then(function() {
-                console.debug("RENDERED")
                 events.fire("renderEnd");
                 events.fire("tickEnd");
 

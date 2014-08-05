@@ -21,7 +21,6 @@ var util = require('./util.js');
 
         // Set up WebGL settings
         gl.enable(gl.BLEND);
-        gl.enable(gl.VERTEX_PROGRAM_POINT_SIZE || 0x8642);
         // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE);
         gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
@@ -366,7 +365,6 @@ var util = require('./util.js');
 
         if(renderer.numEdges > 0) {
             if (renderer.isVisible("edges")) {
-                console.debug('RENDER: EDGES')
                 renderer.programs["edges"].use();
                 renderer.programs["edges"].bindVertexAttrib(renderer.buffers.springs, "curPos",
                     renderer.elementsPerPoint, gl.FLOAT, false,
@@ -375,7 +373,6 @@ var util = require('./util.js');
             }
 
             if (renderer.isVisible("midedges")) {
-                console.debug('RENDER: MIDEDGES')
                 if(renderer.colorTexture === null) {
                     renderer.programs["midedges"].use();
                     renderer.programs["midedges"].bindVertexAttrib(renderer.buffers.midSprings, "curPos",
@@ -400,7 +397,6 @@ var util = require('./util.js');
         }
 
         if (renderer.isVisible("points")) {
-                console.debug('RENDER: POINTS')
             renderer.programs["points"].use();
             renderer.programs["points"].bindVertexAttrib(renderer.buffers.curPoints, "curPos",
                 renderer.elementsPerPoint, gl.FLOAT, false,
@@ -409,7 +405,6 @@ var util = require('./util.js');
         }
 
         if (renderer.isVisible("midpoints")) {
-                console.debug('RENDER: MIDPOINTS')
             renderer.programs["midpoints"].use();
             renderer.programs["midpoints"].bindVertexAttrib(renderer.buffers.curMidPoints, "curPos",
                 renderer.elementsPerPoint, gl.FLOAT, false,
