@@ -116,6 +116,23 @@ function controls(graph) {
 }
 
 
+function fetchVBOs(graph) {
+    var buffersToFetch =
+        ["curPoints", "springsPos", "midSpringsPos", "curMidPoints", "midSpringsColorCoord"];
+    var targetArrays = {};
+
+    return Q.all(
+        buffersToFetch.map(function(val, idx, arr) {
+            targetArrays[val] = new Float32Array(
+                graph.simulator.buffers[val].size / Float32Array.BYTES_PER_ELEMENT
+            );
+            return graph.simulator.buffers[val].read(targetArrays[val]);
+        })
+    )
+    .then(function() {
+        return targetArrays;
+    });
+}
 
 
 function init() {
