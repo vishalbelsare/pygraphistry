@@ -5,7 +5,6 @@ var $            = require("jquery"),
     renderer     = require("./renderer.js"),
     Cameras      = require("../../../../superconductorjs/src/Camera.js"),
     interaction  = require("./interaction.js"),
-    initialize   = require("./initialize.js"),
     proxyUtils   = require("./proxyutils.js"),
     ui           = require("./ui.js");
 
@@ -25,14 +24,60 @@ function init (canvas) {
     var socket = io.connect("http://localhost:" + proxyUtils.MAIN_PORT,
         {reconnection: false, transports: ["websocket"]});
 
-    var binding = initialize(canvas, camera, socket, renderConfig);
+    var gl = renderer.init(canvas);
+    renderer.setGlOptions(gl, renderConfig.options);
+    var programs = renderer.createPrograms(gl, renderConfig.programs);
+    var buffers = renderer.createBuffers(gl, renderConfig.models);
+    renderer.setCamera(renderConfig, gl, programs, camera);
+
+    var glBufferStoreSize = 0;
+    var lastHandshake = new Date().getTime();
+    var lastData = null;
 
 
     interaction.setupDrag($(".sim-container"), camera)
         .merge(interaction.setupScroll($(".sim-container"), camera))
         .subscribe(function(newCamera) {
-            renderer.setCamera(renderConfig, binding.gl, binding.programs, newCamera);
-            renderer.render(renderConfig, binding.gl, binding.programs, binding.buffers);
+            renderer.setCamera(renderConfig, gl, programs, newCamera);
+            renderer.render(renderConfig, gl, programs, buffers);
+    });
+
+    socket.on("vbo_update", function (data, handshake) {
+        lastData = data;
+        try {
+            var now = new Date().getTime();
+            console.log("got VBO update message", now - lastHandshake, "ms");
+
+            //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
+            var oReq = new XMLHttpRequest();
+            oReq.open("GET", "http://localhost:" + proxyUtils.BINARY_PORT + "/vbo", true);
+            oReq.responseType = "arraybuffer";
+
+            oReq.onload = function () {
+                try {
+                    console.log("got VBO data", Date.now() - now, "ms");
+                    handshake(Date.now() - now);
+                    lastHandshake = Date.now();
+
+                    var arrayBuffer = oReq.response; // Note: not oReq.responseText
+                    var trimmedArray = new Uint8Array(
+                        arrayBuffer,
+                        0,
+                        data.numVertices * (3 * Float32Array.BYTES_PER_ELEMENT + 4 * Uint8Array.BYTES_PER_ELEMENT));
+
+                    renderer.loadBuffer(gl, buffers.mainVBO, trimmedArray, data.numVertices <= glBufferStoreSize);
+                    renderer.render(renderConfig, gl, programs, buffers, data.numVertices);
+
+                    glBufferStoreSize = Math.max(glBufferStoreSize, data.numVertices);
+                } catch (e) {
+                    console.error("Error loading data into WebGL:", e, new Error().stack);
+                }
+            };
+
+            oReq.send(null);
+        } catch (e) {
+            console.error("Error retrieving WebGL buffer data from server:", e, new Error().stack);
+        }
     });
 
     socket.on("error", function(reason) {
