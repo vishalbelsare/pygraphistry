@@ -75,7 +75,11 @@ function loadGeo(graph, graphFileURI) {
 
 
 
-function animator (document, promise) {
+// Returns an object with functions that can start and stop the animation
+// document is the webgl document the animation should run in
+// doStepPromised is a function which actually executes simulating & rendering an animation step,
+// and returns a promise which is resolved when the step is done.
+function animator (document, doStepPromised) {
 
     var animating = false;
 
@@ -104,6 +108,7 @@ function animator (document, promise) {
             }
 
             animating = true;
+            // Calls the promise, and when it resolves, call next() to run this again next frame
             var run = function () {
                 step++;
                 bound--;
@@ -112,17 +117,16 @@ function animator (document, promise) {
                     console.debug("Animating step", step, "(" + bound + " steps left)");
                 }
 
-                promise().then(
-                    function () {
+                doStepPromised()
+                .then(function () {
                         if (animating && bound != 0) {
                             next(run);
                         } else {
                             if (maybeCb) maybeCb();
                         }
                     },
-                    function () {
-                        console.error("ERROR", err, err.stack);
-                    });
+                    function() { console.error("ERROR", err, err.stack); }
+                );
             };
             next(run);
             return res;
