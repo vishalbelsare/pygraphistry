@@ -12,7 +12,8 @@ var //$ = require("jQuery"),
     Q = require("q"),
     Stats = require("./libs/stats.js"),
     events = require("./SimpleEvents.js"),
-    kmeans = require("./libs/kmeans.js");
+    kmeans = require("./libs/kmeans.js"),
+    Rx = require("rx");
 
 var webcl = require("node-webcl");
 var webgl = require("node-webgl");
@@ -183,6 +184,16 @@ function loadDataIntoSim(graph) {
 function create() {
     console.error("========================== START ===========================================")
 
+    // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
+    // the contents of each VBO
+    var vboUpdateSig = new Rx.BehaviorSubject({
+        curPoints: new Float32Array(),
+        springs: new Float32Array(),
+        curMidPoints: new Float32Array(),
+        midSprings: new Float32Array(),
+        midSpringsColorCoord: new Float32Array(),
+    });
+
     init()
     .then(function (graph) {
         console.debug("~~~~~~~ SETUP")
@@ -209,6 +220,8 @@ function create() {
         console.error("~~~~~Setup error:", err, ". Stack:", err.stack)
     })
     .done();
+
+    return vboUpdateSig;
 }
 
 
@@ -218,5 +231,7 @@ exports.create = create;
 
 // If the user invoked this script directly from the terminal, run init()
 if(require.main === module) {
-    create();
+    var vbosUpdated = create();
+
+    vbosUpdated.subscribe(function(vbos) { console.debug("Got updated VBOs"); } );
 }
