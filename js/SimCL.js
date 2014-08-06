@@ -65,8 +65,11 @@ function create(renderer, dimensions, numSplits, locked) {
                 backwardsWorkItems: null,
                 springsPos: null,
                 midSpringsPos: null,
-                midSpringsColorCoord: null
+                midSpringsColorCoord: null,
+                nextMidPoints: null,
+                curMidPoints: null
             };
+            Object.seal(simObj.buffers);
 
             console.debug("WebCL simulator created");
             Object.seal(simObj);
