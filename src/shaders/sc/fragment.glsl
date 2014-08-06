@@ -1,4 +1,7 @@
-precision mediump float;
+#ifdef GL_ES
+precision highp float;
+#endif
+
 varying vec4 v_color;
 
 void main() {
