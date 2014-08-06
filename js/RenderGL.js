@@ -34,8 +34,22 @@ var util = require('./util.js');
         // Populate the renderer object with default values, empty containers, etc.
         renderer.gl = gl;
         renderer.canvas = canvas;
-        renderer.buffers = {};
-        renderer.programs = {};
+        renderer.buffers = {
+            curPoints: null,
+            springs: null,
+            curMidPoints: null,
+            midSprings: null,
+            midSpringsColorCoord: null
+        };
+        Object.seal(renderer.buffers);
+        renderer.programs = {
+            points: null,
+            edges: null,
+            midpoints: null,
+            midedges: null,
+            midedgestextured: null
+        };
+        Object.seal(renderer.programs);
         renderer.elementsPerPoint = 2;
         renderer.numPoints = 0;
         renderer.numEdges = 0;
