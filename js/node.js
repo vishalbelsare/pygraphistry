@@ -133,7 +133,7 @@ function init() {
 }
 
 
-function loadData(graph) {
+function loadDataIntoSim(graph) {
     return demo.loadDataList(graph)
     .then(function (datalist) {
         if (USE_GEO) {
@@ -169,7 +169,7 @@ function create() {
     init()
     .then(function (graph) {
         console.debug("~~~~~~~ SETUP")
-        return loadData(graph);
+        return loadDataIntoSim(graph);
     })
     .then(function (graph) {
         console.debug("=================LOADED")
