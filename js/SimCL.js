@@ -46,6 +46,10 @@ function create(renderer, dimensions, numSplits, locked) {
             simObj.numSplits = numSplits;
             simObj.numPoints = 0;
             simObj.numEdges = 0;
+            simObj.numForwardsWorkItems = 0;
+            simObj.numBackwardsWorkItems = 0;
+            simObj.numMidPoints = 0;
+            simObj.numMidEdges = 0;
             simObj.locked = util.extend(
                 {lockPoints: false, lockMidpoints: true, lockEdges: false, lockMidedges: true},
                 (locked || {})
@@ -65,6 +69,7 @@ function create(renderer, dimensions, numSplits, locked) {
             };
 
             console.debug("WebCL simulator created");
+            Object.seal(simObj);
             return simObj
         }, function (err) {
             console.error('Could not compile sim', err)
