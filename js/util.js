@@ -1,3 +1,5 @@
+"use strict";
+
 var $ = require('jQuery');
 var Q = require('Q');
 
@@ -6,7 +8,7 @@ if (typeof(window) == 'undefined') {
     Image = webgl.Image;
 }
 
-    'use strict';
+
 
 
     function getSource(id) {

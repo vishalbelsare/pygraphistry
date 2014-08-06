@@ -1,3 +1,5 @@
+"use strict";
+
 var $ = require('jQuery'),
     NBody = require('./NBody.js'),
     RenderGL = require('./RenderGL.js'),
@@ -8,10 +10,6 @@ var $ = require('jQuery'),
     events = require('./SimpleEvents.js'),
     kmeans = require('./libs/kmeans.js'),
     demo = require('./demo.js')
-
-
-
-    "use strict";
 
     var graph = null,
         numPoints = 1000,//1024,//2048,//16384,

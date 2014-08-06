@@ -1,3 +1,4 @@
+"use strict";
 
 var Q = require('Q');
 var util = require('./util.js');
@@ -8,9 +9,6 @@ if (typeof(window) == 'undefined') {
     webcl = require('node-webcl');
 }
 
-
-
-    "use strict";
 
     Q.longStackSupport = true;
     var randLength = 73;

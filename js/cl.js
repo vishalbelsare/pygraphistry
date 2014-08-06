@@ -1,3 +1,5 @@
+"use strict";
+
 var Q = require('q');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');
@@ -190,9 +192,6 @@ if (typeof(window) == 'undefined') {
 // to keep this API as close to the current WebCL spec as possible. Therefore, we should not require
 // that argument, even on old versions. Instead, we should query the kernel for the types of each
 // argument and fill in that information automatically, when required by old WebCL versions.
-
-
-    'use strict';
 
     var create = Q.promised(getClContext);
 
