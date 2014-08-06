@@ -1,8 +1,8 @@
+"use strict";
+
 var $ = require('jQuery');
 var Q = require('Q');
 var Long = require('./Long.js');
-
-    "use strict";
 
     var exports = {
         ls: function (matrixJson) {

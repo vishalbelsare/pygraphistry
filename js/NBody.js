@@ -1,9 +1,9 @@
+"use strict";
+
 var Q = require('Q');
 var glMatrix = require('gl-matrix');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');
-
-    'use strict';
 
     var STEP_NUMBER_ON_CHANGE = 30;
     var elementsPerPoint = 2;

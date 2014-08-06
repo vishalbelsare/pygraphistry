@@ -1,8 +1,9 @@
+"use strict";
+
 var Q = require('Q');
 var glMatrix = require('gl-matrix');
 var util = require('./util.js');
 
-    'use strict';
 
     var create = Q.promised(function(document, canvas, bgColor, dimensions, visible) {
         visible = visible || {};
