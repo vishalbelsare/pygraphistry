@@ -3,21 +3,21 @@
 //prebaked script to load uber data
 //similar to main.js
 
-var //$ = require('jQuery'),
-    NBody = require('./NBody.js'),
-    RenderGL = require('./RenderGL.js'),
-    SimCL = require('./SimCL.js'),
-    MatrixLoader = require('./libs/load.js'),
-    Q = require('q'),
-    Stats = require('./libs/stats.js'),
-    events = require('./SimpleEvents.js'),
-    kmeans = require('./libs/kmeans.js');
 
-var webcl = require('node-webcl');
-var webgl = require('node-webgl');
+var //$ = require("jQuery"),
+    NBody = require("./NBody.js"),
+    RenderGL = require("./RenderGL.js"),
+    SimCL = require("./SimCL.js"),
+    MatrixLoader = require("./libs/load.js"),
+    Q = require("q"),
+    Stats = require("./libs/stats.js"),
+    events = require("./SimpleEvents.js"),
+    kmeans = require("./libs/kmeans.js");
 
+var webcl = require("node-webcl");
+var webgl = require("node-webgl");
 
-var demo = require('./demo.js');
+var demo = require("./demo.js");
 
 
 var WIDTH = 600;
@@ -28,7 +28,6 @@ var graph = null,
     num,
     numEdges = numPoints,
     dimensions = [1,1]; //[960,960];
-
 
 
 /*
@@ -45,7 +44,7 @@ var graph = null,
 */
 function controls(graph) {
     var physicsControls =
-        ['charge', 'gravity', 'edgeStrength', 'edgeDistance']
+        ["charge", "gravity", "edgeStrength", "edgeDistance"]
             .reduce(function (o, lbl) {
                 o[lbl] = function (v) {
                     var cmd = {};
@@ -70,13 +69,13 @@ function controls(graph) {
 
 
     var renderingControls =
-        ['points', 'edges', 'midpoints', 'midedges']
+        ["points", "edges", "midpoints", "midedges"]
             .reduce(function (o, lbl) {
                 var cmd = {};
                 cmd[lbl] = false;
                 o[lbl] = function (v) {
                     cmd[lbl] = v === undefined ? !cmd[lbl] : v;
-                    console.error('setting', cmd);
+                    console.error("setting", cmd);
                     graph.setVisible(cmd);
                 };
                 return o;
@@ -90,13 +89,13 @@ function controls(graph) {
 
 
     var locks =
-        ['lockPoints', 'lockEdges', 'lockMidpoints', 'lockMidedges']
+        ["lockPoints", "lockEdges", "lockMidpoints", "lockMidedges"]
             .reduce(function (o, lbl) {
                 var cmd = {};
                 cmd[lbl] = true;
                 o[lbl] = function (v) {
                     cmd[lbl] = v === undefined ? !cmd[lbl] : v;
-                    console.error('setting', cmd);
+                    console.error("setting", cmd);
                     graph.setLocked(cmd);
                 };
                 return o;
