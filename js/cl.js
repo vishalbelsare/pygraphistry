@@ -411,8 +411,6 @@ var write = Q.promised(function write(buffer, data) {
 
 
 var read = Q.promised(function (buffer, target) {
-    console.erro("READ", buffer.name);
-    var t0 = new Date().getTime();
     return buffer.acquire()
         .then(function() {
             var copySize = Math.min(buffer.size, target.length * target.BYTES_PER_ELEMENT);
@@ -420,8 +418,10 @@ var read = Q.promised(function (buffer, target) {
             return buffer.release();
         })
         .then(function() {
-            console.debug('  /read', new Date().getTime() - t0);
             return buffer;
+        },
+        function(err) {
+            console.error("Read error for buffer " + buffer.name + ":", err);
         });
 });
 
