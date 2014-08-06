@@ -24,9 +24,9 @@ require("./console.js");
 
 var WIDTH = 600;
 var HEIGHT = 600;
+var USE_GEO = true;
 
-var graph = null,
-    numPoints = 10000,//1024,//2048,//16384,
+var numPoints = 10000,//1024,//2048,//16384,
     num,
     numEdges = numPoints,
     dimensions = [1,1]; //[960,960];
@@ -118,18 +118,7 @@ function controls(graph) {
 
 
 
-
-
-
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-
-
 function init() {
-    console.error("========================== START ===========================================")
-
-
-
     console.log("Running Naive N-body simulation");
 
 
@@ -141,26 +130,19 @@ function init() {
     canvas.clientHeight = canvas.height = HEIGHT;
 
     return NBody.create(SimCL, RenderGL, document, canvas, [255,255,255,1.0], dimensions, 3)
-    .then(function(createdGraph) {
-        graph = createdGraph;
-        console.log("N-body graph created.");
-    }).then(function () {
-        console.debug("~~~~~~~ SETUP")
-        return demo.loadDataList(graph);
-    })
+}
+
+
+function loadData(graph) {
+    return demo.loadDataList(graph)
     .then(function (datalist) {
-
-        var USE_GEO = true;
-
         if (USE_GEO) {
-
             console.error("loading data")
             var which = 0;
             console.error("which", datalist[which])
             return datalist[which].loader(graph, datalist[which].f);
 
         } else {
-
             var points = demo.createPoints(numPoints, dimensions);
             var edges = demo.createEdges(numEdges, numPoints);
 
@@ -172,53 +154,52 @@ function init() {
                 graph.setColorMap("test-colormap2.png");
                 return graph.setEdges(edges);
             });
-
         }
-
-
     })
-    .then(function () {
-            console.debug("=================LOADED")
-            console.error("done setup")
-        },
-        function (err) {
-            console.error("~~~~~could not load geo", err, err.stack);
-        }
-    )
-    .then(function () {
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+
+
+function create() {
+    console.error("========================== START ===========================================")
+
+    init()
+    .then(function (graph) {
+        console.debug("~~~~~~~ SETUP")
+        return loadData(graph);
+    })
+    .then(function (graph) {
+        console.debug("=================LOADED")
+        console.error("done setup")
 
         var api = controls(graph);
 
 
-        console.error("init");
-
+        console.error("ANIMATING")
         var animation = demo.animator(graph.renderer.document, graph.tick);
         animation.startAnimation(
             function () {
                 console.error("done, pausing for 10s")
                 setTimeout(function () { console.error("done, exiting"); }, 10 * 1000);
-            },
-            Math.round(50 * 1000 / 50) /* frames */);
-
-        console.error("ANIMATING")
+            });
 
     }).then(function () {
-            console.error("setup done")
-        }, function (err) {
-            console.error("~~~~~Setup error:", err, ". Stack:", err.stack)
-        }
-    )
+        console.error("setup done")
+    }, function (err) {
+        console.error("~~~~~Setup error:", err, ". Stack:", err.stack)
+    })
     .done();
 }
 
 
 
-
-
-exports.init = init;
+exports.create = create;
 
 
 // If the user invoked this script directly from the terminal, run init()
 if(require.main === module) {
-    init();
+    create();
 }
