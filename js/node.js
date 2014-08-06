@@ -124,84 +124,100 @@ function controls(graph) {
 ///////////////////////////////////////////////////////////////////////////
 
 
-console.error('========================== START ===========================================')
+function init() {
+    console.error("========================== START ===========================================")
 
 
 
-console.log("Running Naive N-body simulation");
+    console.log("Running Naive N-body simulation");
 
 
 
-var document = webgl.document();
-document.setTitle('Graphviz');
-var canvas = document.createElement("canvas", WIDTH, HEIGHT);
-canvas.clientWidth = canvas.width = WIDTH;
-canvas.clientHeight = canvas.height = HEIGHT;
+    var document = webgl.document();
+    document.setTitle("Graphviz");
+    var canvas = document.createElement("canvas", WIDTH, HEIGHT);
+    canvas.clientWidth = canvas.width = WIDTH;
+    canvas.clientHeight = canvas.height = HEIGHT;
 
-return NBody.create(SimCL, RenderGL, document, canvas, [255,255,255,1.0], dimensions, 3)
-.then(function(createdGraph) {
-    graph = createdGraph;
-    console.log("N-body graph created.");
-}).then(function () {
-    console.debug('~~~~~~~ SETUP')
-    return demo.loadDataList(graph);
-})
+    return NBody.create(SimCL, RenderGL, document, canvas, [255,255,255,1.0], dimensions, 3)
+    .then(function(createdGraph) {
+        graph = createdGraph;
+        console.log("N-body graph created.");
+    }).then(function () {
+        console.debug("~~~~~~~ SETUP")
+        return demo.loadDataList(graph);
+    })
+    .then(function (datalist) {
 
-.then(function (datalist) {
+        var USE_GEO = true;
 
-    var USE_GEO = true;
+        if (USE_GEO) {
 
-    if (USE_GEO) {
+            console.error("loading data")
+            var which = 0;
+            console.error("which", datalist[which])
+            return datalist[which].loader(graph, datalist[which].f);
 
-        console.error('loading data')
-        var which = 0;
-        console.error('which', datalist[which])
-        return datalist[which].loader(graph, datalist[which].f);
+        } else {
 
-    } else {
+            var points = demo.createPoints(numPoints, dimensions);
+            var edges = demo.createEdges(numEdges, numPoints);
 
-        var points = demo.createPoints(numPoints, dimensions);
-        var edges = demo.createEdges(numEdges, numPoints);
+            return Q.all([
+                graph.setPoints(points),
+                points,
+                edges,
+            ]).spread(function(graph, points, edges) {
+                graph.setColorMap("test-colormap2.png");
+                return graph.setEdges(edges);
+            });
 
-        return Q.all([
-            graph.setPoints(points),
-            points,
-            edges,
-        ]).spread(function(graph, points, edges) {
-            graph.setColorMap("test-colormap2.png");
-            return graph.setEdges(edges);
-        });
-
-    }
-
-
-})
+        }
 
 
-.then(function () {
-
-    console.debug('=================LOADED')
-    console.error('done setup')
-
-}).then(function () {
-
-    var api = controls(graph);
-
-
-    console.error('init');
-
-    var animation = demo.animator(graph.renderer.document, graph.tick);
-    animation.startAnimation(
-        function () {
-            console.error('done, pausing for 10s')
-            setTimeout(function () { console.error('done, exiting'); }, 10 * 1000);
+    })
+    .then(function () {
+            console.debug("=================LOADED")
+            console.error("done setup")
         },
-        Math.round(50 * 1000 / 50) /* frames */);
+        function (err) {
+            console.error("~~~~~could not load geo", err, err.stack);
+        }
+    )
+    .then(function () {
 
-    console.error('ANIMATING')
+        var api = controls(graph);
 
-}, function (err) {
-    console.error('~~~~~could not load geo', err, err.stack);
-}).then(
-    function () { console.error('setup done')},
-    function (err) { console.error('~~~~~wat', err, err.stack) })
+
+        console.error("init");
+
+        var animation = demo.animator(graph.renderer.document, graph.tick);
+        animation.startAnimation(
+            function () {
+                console.error("done, pausing for 10s")
+                setTimeout(function () { console.error("done, exiting"); }, 10 * 1000);
+            },
+            Math.round(50 * 1000 / 50) /* frames */);
+
+        console.error("ANIMATING")
+
+    }).then(function () {
+            console.error("setup done")
+        }, function (err) {
+            console.error("~~~~~Setup error:", err, ". Stack:", err.stack)
+        }
+    )
+    .done();
+}
+
+
+
+
+
+exports.init = init;
+
+
+// If the user invoked this script directly from the terminal, run init()
+if(require.main === module) {
+    init();
+}
