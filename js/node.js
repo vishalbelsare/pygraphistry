@@ -206,15 +206,19 @@ function create() {
         var api = controls(graph);
 
 
-        console.error("ANIMATING")
-        var animation = demo.animator(graph.renderer.document, graph.tick);
-        animation.startAnimation(
-            function () {
-                console.error("done, pausing for 10s")
-                setTimeout(function () { console.error("done, exiting"); }, 10 * 1000);
-            });
+        console.error("ANIMATING");
 
-    }).then(function () {
+        // Run the animation loop by recursively expanding each tick event into a new sequence with
+        // [a requestAnimationFrame() callback mapped to graph.tick()]
+        var stepSignal = Rx.Observable.fromPromise(graph.tick())
+            .expand(function() {
+                return (Rx.Observable.fromCallback(graph.renderer.document.requestAnimationFrame))()
+                    .flatMap(function() {
+                        return Rx.Observable.fromPromise(graph.tick());
+                    });
+            })
+    })
+    .then(function () {
         console.error("setup done")
     }, function (err) {
         console.error("~~~~~Setup error:", err, ". Stack:", err.stack)
