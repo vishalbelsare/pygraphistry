@@ -86,7 +86,7 @@ function animator (document, promise) {
 
 
     var step = 0;
-    var bound = -1;
+    var bound = Infinity;
 
     var res = {
         stopAnimation: function () {
@@ -94,7 +94,10 @@ function animator (document, promise) {
             return res;
         },
         startAnimation: function (maybeCb, maybeMaxSteps) {
-            bound = maybeMaxSteps;
+            if(typeof maybeMaxSteps === "number") {
+                bound = maybeMaxSteps;
+            }
+
             animating = true;
             var run = function () {
                 step++;
