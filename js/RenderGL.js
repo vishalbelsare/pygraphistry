@@ -40,6 +40,7 @@ var util = require('./util.js');
         renderer.numPoints = 0;
         renderer.numEdges = 0;
         renderer.numMidPoints = 0;
+        renderer.numMidEdges = 0;
         renderer.colorTexture = null;
 
         // For each module function that takes a renderer as the first argument, bind a version
@@ -70,6 +71,10 @@ var util = require('./util.js');
             // TODO: Enlarge the camera by the (size of gl points / 2) so that points are fully
             // on screen even if they're at the edge of the graph.
             return renderer.setCamera2d(-0.01, dimensions[0] + 0.01, -0.01, dimensions[1] + 0.01);
+        })
+        .then(function(renderer) {
+            Object.seal(renderer);
+            return renderer;
         });
     });
 
