@@ -20,7 +20,7 @@ var //$ = require("jQuery"),
 var webcl = require("node-webcl");
 var webgl = require("node-webgl");
 
-var demo = require("./demo.js");
+var loader = require("./data-loader.js");
 
 require("./console.js");
 
@@ -154,7 +154,7 @@ function init() {
 
 
 function loadDataIntoSim(graph) {
-    return demo.loadDataList(graph)
+    return loader.loadDataList(graph)
     .then(function (datalist) {
         if (USE_GEO) {
             console.error("loading data")
@@ -163,8 +163,8 @@ function loadDataIntoSim(graph) {
             return datalist[which].loader(graph, datalist[which].f);
 
         } else {
-            var points = demo.createPoints(numPoints, dimensions);
-            var edges = demo.createEdges(numEdges, numPoints);
+            var points = loader.createPoints(numPoints, dimensions);
+            var edges = loader.createEdges(numEdges, numPoints);
 
             return Q.all([
                 graph.setPoints(points),

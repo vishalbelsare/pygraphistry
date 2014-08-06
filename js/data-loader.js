@@ -75,68 +75,6 @@ function loadGeo(graph, graphFileURI) {
 
 
 
-// Returns an object with functions that can start and stop the animation
-// document is the webgl document the animation should run in
-// doStepPromised is a function which actually executes simulating & rendering an animation step,
-// and returns a promise which is resolved when the step is done.
-function animator (document, doStepPromised) {
-
-    var animating = false;
-
-    var next = function (f) {
-        var base = (typeof window == 'undefined' ? document : window);
-        base.requestAnimationFrame(f);
-    }
-
-
-    var step = 0;
-    var bound = Infinity;
-
-    var res = {
-        stopAnimation: function () {
-            animating = false;
-            return res;
-        },
-        startAnimation: function (maybeCb, maybeMaxSteps) {
-            if(typeof maybeMaxSteps === "number") {
-                bound = maybeMaxSteps;
-                var announceIncrement = Math.round(maybeMaxSteps / 10);
-                console.debug("Starting graph animation for", maybeMaxSteps, "steps");
-            } else {
-                var announceIncrement = 1000;
-                console.debug("Starting graph animation and running forever");
-            }
-
-            animating = true;
-            // Calls the promise, and when it resolves, call next() to run this again next frame
-            var run = function () {
-                step++;
-                bound--;
-
-                if(step > 0 && step % announceIncrement === 0) {
-                    console.debug("Animating step", step, "(" + bound + " steps left)");
-                }
-
-                doStepPromised()
-                .then(function () {
-                        if (animating && bound != 0) {
-                            next(run);
-                        } else {
-                            if (maybeCb) maybeCb();
-                        }
-                    },
-                    function() { console.error("ERROR", err, err.stack); }
-                );
-            };
-            next(run);
-            return res;
-        }
-    }
-    return res;
-}
-
-
-
 /**
  * Populate the data list dropdown menu with available data, and setup actions to load the data
  * when the user selects one of the options.
@@ -228,7 +166,6 @@ function loadMatrix(graph, graphFileURI) {
 module.exports = {
     createPoints: createPoints,
     createEdges: createEdges,
-    animator: animator,
     loadGeo: loadGeo,
     loadDataList: loadDataList
 };

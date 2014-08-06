@@ -9,13 +9,76 @@ var $ = require('jQuery'),
     Stats = require('./libs/stats.js'),
     events = require('./SimpleEvents.js'),
     kmeans = require('./libs/kmeans.js'),
-    demo = require('./demo.js')
+    loader = require('./data-loader.js')
 
 var graph = null,
     numPoints = 1000,//1024,//2048,//16384,
     num,
     numEdges = numPoints,
     dimensions = [1,1]; //[960,960];
+
+
+
+
+// Returns an object with functions that can start and stop the animation
+// document is the webgl document the animation should run in
+// doStepPromised is a function which actually executes simulating & rendering an animation step,
+// and returns a promise which is resolved when the step is done.
+function animator (document, doStepPromised) {
+
+    var animating = false;
+
+    var next = function (f) {
+        var base = (typeof window == 'undefined' ? document : window);
+        base.requestAnimationFrame(f);
+    }
+
+
+    var step = 0;
+    var bound = Infinity;
+
+    var res = {
+        stopAnimation: function () {
+            animating = false;
+            return res;
+        },
+        startAnimation: function (maybeCb, maybeMaxSteps) {
+            if(typeof maybeMaxSteps === "number") {
+                bound = maybeMaxSteps;
+                var announceIncrement = Math.round(maybeMaxSteps / 10);
+                console.debug("Starting graph animation for", maybeMaxSteps, "steps");
+            } else {
+                var announceIncrement = 1000;
+                console.debug("Starting graph animation and running forever");
+            }
+
+            animating = true;
+            // Calls the promise, and when it resolves, call next() to run this again next frame
+            var run = function () {
+                step++;
+                bound--;
+
+                if(step > 0 && step % announceIncrement === 0) {
+                    console.debug("Animating step", step, "(" + bound + " steps left)");
+                }
+
+                doStepPromised()
+                .then(function () {
+                        if (animating && bound != 0) {
+                            next(run);
+                        } else {
+                            if (maybeCb) maybeCb();
+                        }
+                    },
+                    function() { console.error("ERROR", err, err.stack); }
+                );
+            };
+            next(run);
+            return res;
+        }
+    }
+    return res;
+}
 
 
 function setup() {
@@ -26,8 +89,8 @@ function setup() {
         graph = createdGraph;
         console.log("N-body graph created.");
 
-        var points = demo.createPoints(numPoints, dimensions);
-        var edges = demo.createEdges(numEdges, numPoints);
+        var points = loader.createPoints(numPoints, dimensions);
+        var edges = loader.createEdges(numEdges, numPoints);
 
         return Q.all([
             graph.setPoints(points),
@@ -61,7 +124,7 @@ function setup() {
         var animButton = $("#anim-button");
         var stepButton = $("#step-button");
 
-        var animation = demo.animator(document, graph.tick);
+        var animation = animator(document, graph.tick);
 
         function startAnimation() {
 
@@ -200,7 +263,7 @@ $(function () {
     setup().
     then(function() {
         console.debug("SETUP, LOADING DATA")
-        return demo.loadDataList(graph);
+        return loader.loadDataList(graph);
     }).then(function (dataList) {
         renderDataList(dataList, graph);
     }).then(function () {
