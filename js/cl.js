@@ -352,7 +352,7 @@ var createBufferGL = Q.promised(function (cl, vbo, name) {
             "name": name,
             "buffer": buffer,
             "cl": cl,
-            "size": buffer.getInfo ? buffer.getInfo(cl.cl.MEM_SIZE) : (vbo.len * Float32Array.BYTES_PER_ELEMENT),
+            "size": buffer.getInfo ? buffer.getInfo(cl.cl.MEM_SIZE) : vbo.len,
             "acquire": Q.promised(function() {
                 cl.queue.enqueueAcquireGLObjects([buffer]);
 

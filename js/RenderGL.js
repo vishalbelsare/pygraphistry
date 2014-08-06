@@ -288,7 +288,7 @@ var createBuffer = Q.promised(function(renderer, data) {
     var bufObj = {
         "buffer": buffer,
         "gl": renderer.gl,
-        "len": typeof(data) == 'number' ? data : data.length
+        "len": (typeof data === 'number') ? data : data.byteLength
     };
 
     bufObj.delete = Q.promised(function() {
