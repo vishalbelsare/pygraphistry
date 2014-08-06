@@ -19,6 +19,8 @@ var webgl = require("node-webgl");
 
 var demo = require("./demo.js");
 
+require("./console.js");
+
 
 var WIDTH = 600;
 var HEIGHT = 600;
