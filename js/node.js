@@ -217,6 +217,13 @@ function create() {
                         return Rx.Observable.fromPromise(graph.tick());
                     });
             })
+
+        stepSignal
+            .sample(20)
+            .flatMap(function() {
+                return Rx.Observable.fromPromise(fetchVBOs(graph));
+            })
+            .subscribe(vboUpdateSig);
     })
     .then(function () {
         console.error("setup done")
