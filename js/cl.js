@@ -193,351 +193,351 @@ if (typeof(window) == 'undefined') {
 // that argument, even on old versions. Instead, we should query the kernel for the types of each
 // argument and fill in that information automatically, when required by old WebCL versions.
 
-    var create = Q.promised(getClContext);
+var create = Q.promised(getClContext);
 
 
-    // This is a separate function from create() in order to allow polyfill() to override it on
-    // older WebCL platforms, which have a different way of creating a context and enabling CL-GL
-    // sharing.
-    var _createContext = function(cl, gl, platform, devices) {
-        cl.enableExtension("KHR_GL_SHARING");
-        return cl.createContext(gl, devices);
-    }
+// This is a separate function from create() in order to allow polyfill() to override it on
+// older WebCL platforms, which have a different way of creating a context and enabling CL-GL
+// sharing.
+var _createContext = function(cl, gl, platform, devices) {
+    cl.enableExtension("KHR_GL_SHARING");
+    return cl.createContext(gl, devices);
+}
 
-    /**
-     * Compile the WebCL program source and return the kernel(s) requested
-     *
-     * @param cl - the cljs instance object
-     * @param {string} source - the source code of the WebCL program you wish to compile
-     * @param {(string|string[])} kernels - the kernel name(s) you wish to get from the compiled program
-     *
-     * @returns {(kernel|Object.<string, kernel>)} If kernels was a single kernel name, returns a
-     *          single kernel. If kernels was an array of kernel names, returns an object with each
-     *          kernel name mapped to its kernel object.
-     */
-    var compile = Q.promised(function (cl, source, kernels) {
-        var t0 = new Date().getTime();
-        console.debug("COMPILING");
-        try {
-        var program = cl.context.createProgram("#define NODECL\n\n" + source);
-        program.build([cl.device]);
+/**
+ * Compile the WebCL program source and return the kernel(s) requested
+ *
+ * @param cl - the cljs instance object
+ * @param {string} source - the source code of the WebCL program you wish to compile
+ * @param {(string|string[])} kernels - the kernel name(s) you wish to get from the compiled program
+ *
+ * @returns {(kernel|Object.<string, kernel>)} If kernels was a single kernel name, returns a
+ *          single kernel. If kernels was an array of kernel names, returns an object with each
+ *          kernel name mapped to its kernel object.
+ */
+var compile = Q.promised(function (cl, source, kernels) {
+    var t0 = new Date().getTime();
+    console.debug("COMPILING");
+    try {
+    var program = cl.context.createProgram("#define NODECL\n\n" + source);
+    program.build([cl.device]);
 
-        if (typeof kernels === "string") {
-                var kernelObj = {};
-                kernelObj.name = undefined;
-                kernelObj.kernel = program.createKernel(kernels);
-                kernelObj.cl = cl;
-                kernelObj.call = call.bind(this, kernelObj);
-                kernelObj.setArgs = setArgs.bind(this, kernelObj);
+    if (typeof kernels === "string") {
+            var kernelObj = {};
+            kernelObj.name = undefined;
+            kernelObj.kernel = program.createKernel(kernels);
+            kernelObj.cl = cl;
+            kernelObj.call = call.bind(this, kernelObj);
+            kernelObj.setArgs = setArgs.bind(this, kernelObj);
 
-                return kernelObj;
-        } else {
-            var kernelObjs = {};
+            return kernelObj;
+    } else {
+        var kernelObjs = {};
 
-            for(var i = 0; i < kernels.length; i++) {
-                var kernelName = kernels[i];
-                var kernelObj = {};
-                kernelObj.name = kernelName;
-                kernelObj.kernel = program.createKernel(kernelName);
-                kernelObj.cl = cl;
-                kernelObj.call = call.bind(this, kernelObj);
-                kernelObj.setArgs = setArgs.bind(this, kernelObj);
+        for(var i = 0; i < kernels.length; i++) {
+            var kernelName = kernels[i];
+            var kernelObj = {};
+            kernelObj.name = kernelName;
+            kernelObj.kernel = program.createKernel(kernelName);
+            kernelObj.cl = cl;
+            kernelObj.call = call.bind(this, kernelObj);
+            kernelObj.setArgs = setArgs.bind(this, kernelObj);
 
-                kernelObjs[kernelName] = kernelObj;
-            }
-
-            console.debug('  /compiled', new Date().getTime() - t0);
-
-            return kernelObjs;
+            kernelObjs[kernelName] = kernelObj;
         }
-    } catch (e) {
-        console.error('wat', e.stack);
-        throw e;
+
+        console.debug('  /compiled', new Date().getTime() - t0);
+
+        return kernelObjs;
     }
+} catch (e) {
+    console.error('wat', e.stack);
+    throw e;
+}
 
-    });
+});
 
 
 
-    var acquire = function (buffers) {
-        return Q.all(
-            (buffers||[]).map(function (buffer) {
-                return buffer.acquire();
-            }));
-    };
+var acquire = function (buffers) {
+    return Q.all(
+        (buffers||[]).map(function (buffer) {
+            return buffer.acquire();
+        }));
+};
 
-    var release = function (buffers) {
-        return Q.all(
-            (buffers||[]).map(function (buffer) {
-                return buffer.release();
-            }));
-    };
+var release = function (buffers) {
+    return Q.all(
+        (buffers||[]).map(function (buffer) {
+            return buffer.release();
+        }));
+};
 
-    // Executes the specified kernel, with `threads` number of threads, acquiring/releasing any needed resources
-    var call = Q.promised(function (kernel, threads, buffers) {
-        return acquire(buffers)
-            .then(function () {
-                var workgroupSize = new Int32Array([threads]);
-                kernel.cl.queue.enqueueNDRangeKernel(
-                    kernel.kernel,
-                    workgroupSize.length,
-                    [],
-                    workgroupSize,
-                    []);
+// Executes the specified kernel, with `threads` number of threads, acquiring/releasing any needed resources
+var call = Q.promised(function (kernel, threads, buffers) {
+    return acquire(buffers)
+        .then(function () {
+            var workgroupSize = new Int32Array([threads]);
+            kernel.cl.queue.enqueueNDRangeKernel(
+                kernel.kernel,
+                workgroupSize.length,
+                [],
+                workgroupSize,
+                []);
+        })
+        .then(release.bind('', buffers))
+        .then(function () {
+            kernel.cl.queue.finish();
+        }).then(_.constant(kernel));
+});
+
+
+var setArgs = function (kernel, args, argTypes) {
+    var t0 = new Date().getTime();
+    for (var i = 0; i < args.length; i++) {
+        if(args[i] !== null) {
+            kernel.kernel.setArg(i, args[i]);
+        }
+    }
+    console.debug('  /all set', new Date().getTime() - t0);
+    return kernel;
+};
+
+
+var createBuffer = Q.promised(function createBuffer(cl, size, name) {
+
+    console.debug('CREATE buffer', name);
+
+    var buffer = cl.context.createBuffer(cl.cl.MEM_READ_WRITE, size);
+    if (buffer === null) {
+        throw new Error("Could not create the WebCL buffer");
+    } else {
+        var bufObj = {
+            "name": name,
+            "buffer": buffer,
+            "cl": cl,
+            "size": size,
+            "acquire": function() {
+                return Q(); },
+            "release": function() {
+                return Q(); }
+        };
+        bufObj.delete = Q.promised(function() {
+            bufObj.release();
+            bufObj.size = 0;
+            return null;
+        });
+        bufObj.write = write.bind(this, bufObj);
+        bufObj.read = read.bind(this, bufObj);
+        bufObj.copyInto = copyBuffer.bind(this, cl, bufObj);
+        return bufObj;
+    }
+});
+
+
+// TODO: If we call buffer.acquire() twice without calling buffer.release(), it should have no
+// effect.
+var createBufferGL = Q.promised(function (cl, vbo, name) {
+
+    var t0 = new Date().getTime();
+
+    console.debug('CREATE buffer GL', name);
+
+    var buffer = cl.context.createFromGLBuffer(cl.cl.MEM_READ_WRITE, vbo.buffer);
+    if (buffer === null) {
+        throw new Error("Could not create WebCL buffer from WebGL buffer");
+    } else {
+        if (!buffer.getInfo) console.warn('  vbo, weird len', vbo.len)
+        var bufObj = {
+            "name": name,
+            "buffer": buffer,
+            "cl": cl,
+            "size": buffer.getInfo ? buffer.getInfo(cl.cl.MEM_SIZE) : (vbo.len * Float32Array.BYTES_PER_ELEMENT),
+            "acquire": Q.promised(function() {
+                cl.queue.enqueueAcquireGLObjects([buffer]);
+
+            }),
+            "release": Q.promised(function() {
+                cl.queue.enqueueReleaseGLObjects([buffer]);
             })
-            .then(release.bind('', buffers))
-            .then(function () {
-                kernel.cl.queue.finish();
-            }).then(_.constant(kernel));
-    });
-
-
-    var setArgs = function (kernel, args, argTypes) {
-        var t0 = new Date().getTime();
-        for (var i = 0; i < args.length; i++) {
-            if(args[i] !== null) {
-                kernel.kernel.setArg(i, args[i]);
-            }
-        }
-        console.debug('  /all set', new Date().getTime() - t0);
-        return kernel;
-    };
-
-
-    var createBuffer = Q.promised(function createBuffer(cl, size, name) {
-
-        console.debug('CREATE buffer', name);
-
-        var buffer = cl.context.createBuffer(cl.cl.MEM_READ_WRITE, size);
-        if (buffer === null) {
-            throw new Error("Could not create the WebCL buffer");
-        } else {
-            var bufObj = {
-                "name": name,
-                "buffer": buffer,
-                "cl": cl,
-                "size": size,
-                "acquire": function() {
-                    return Q(); },
-                "release": function() {
-                    return Q(); }
-            };
-            bufObj.delete = Q.promised(function() {
+        };
+        bufObj.delete = Q.promised(function() {
+            return bufObj.release()
+            .then(function() {
                 bufObj.release();
                 bufObj.size = 0;
                 return null;
-            });
-            bufObj.write = write.bind(this, bufObj);
-            bufObj.read = read.bind(this, bufObj);
-            bufObj.copyInto = copyBuffer.bind(this, cl, bufObj);
-            return bufObj;
-        }
-    });
-
-
-    // TODO: If we call buffer.acquire() twice without calling buffer.release(), it should have no
-    // effect.
-    var createBufferGL = Q.promised(function (cl, vbo, name) {
-
-        var t0 = new Date().getTime();
-
-        console.debug('CREATE buffer GL', name);
-
-        var buffer = cl.context.createFromGLBuffer(cl.cl.MEM_READ_WRITE, vbo.buffer);
-        if (buffer === null) {
-            throw new Error("Could not create WebCL buffer from WebGL buffer");
-        } else {
-            if (!buffer.getInfo) console.warn('  vbo, weird len', vbo.len)
-            var bufObj = {
-                "name": name,
-                "buffer": buffer,
-                "cl": cl,
-                "size": buffer.getInfo ? buffer.getInfo(cl.cl.MEM_SIZE) : (vbo.len * Float32Array.BYTES_PER_ELEMENT),
-                "acquire": Q.promised(function() {
-                    cl.queue.enqueueAcquireGLObjects([buffer]);
-
-                }),
-                "release": Q.promised(function() {
-                    cl.queue.enqueueReleaseGLObjects([buffer]);
-                })
-            };
-            bufObj.delete = Q.promised(function() {
-                return bufObj.release()
-                .then(function() {
-                    bufObj.release();
-                    bufObj.size = 0;
-                    return null;
-                })
-            });
-            bufObj.write = write.bind(this, bufObj);
-            bufObj.read = read.bind(this, bufObj);
-            bufObj.copyInto = copyBuffer.bind(this, cl, bufObj);
-
-            console.debug('  /created', new Date().getTime() - t0);
-
-            return bufObj;
-        }
-    });
-
-
-    var copyBuffer = Q.promised(function (cl, source, destination) {
-        console.debug('COPY BUFFER', source.name, destination.name, source.size, destination.size)
-        return acquire([source, destination])
-            .then(function () {
-                cl.queue.enqueueCopyBuffer(source.buffer, destination.buffer, 0, 0, Math.min(source.size, destination.size));
             })
-            .then(function () {
-                cl.queue.finish();
-            }).then(release.bind('', [source, destination]))
-            .then(function () {
-            });
-    });
-
-
-    var write = Q.promised(function write(buffer, data) {
-        console.debug("WRITE", buffer.name)
-        var t0 = new Date().getTime();
-        return buffer.acquire()
-            .then(function () {
-                buffer.cl.queue.enqueueWriteBuffer(buffer.buffer, true, 0, data.byteLength, data);
-                return buffer.release();
-            })
-            .then(function() {
-                buffer.cl.queue.finish();
-                console.debug('  /wrote', new Date().getTime() - t0);
-                return buffer;
-            });
-    });
-
-
-    var read = Q.promised(function (buffer, target) {
-        console.erro("READ", buffer.name);
-        var t0 = new Date().getTime();
-        return buffer.acquire()
-            .then(function() {
-                var copySize = Math.min(buffer.size, target.length * target.BYTES_PER_ELEMENT);
-                buffer.cl.queue.enqueueReadBuffer(buffer.buffer, true, 0, copySize, target);
-                return buffer.release();
-            })
-            .then(function() {
-                console.debug('  /read', new Date().getTime() - t0);
-                return buffer;
-            });
-    });
-
-
-    // Detects the WebCL platform we're running on, and modifies this module as needed.
-    // Returns true if the the platform is out-of-date and needed to be polyfilled, and false if
-    // the platform is up-to-date and no modification was needed.
-    function polyfill() {
-        // Detect if we're running on a current WebCL version
-        if(typeof(window) != 'undefined' && typeof webcl.enableExtension == "function") {
-            // If so, don't do anything
-            return false;
-        }
-
-        console.debug("[cl.js] Detected old WebCL platform. Modifying functions to support it.");
-
-
-        _createContext = function(cl, gl, platform, devices) {
-            if (webcl.type) {
-                return webcl.createContext({
-                    devices: devices,
-                    shareGroup: gl,
-                    platform: platform});
-            } else {
-                var extension = cl.getExtension("KHR_GL_SHARING");
-                if (extension === null) {
-                    throw new Error("Could not create a shared CL/GL context using the WebCL extension system");
-                }
-                return extension.createContext({
-                    platform: platform,
-                    devices: devices,
-                    deviceType: DEVICE_TYPE,
-                    sharedContext: null
-                });
-            }
-
-        }
-
-
-        call = Q.promised(function (kernel, threads, buffers) {
-            //kernel.cl.queue.finish();
-
-            return acquire(buffers)
-                .then(function () {
-
-                    var workgroupSize = typeof(window) == 'undefined' ? [threads] : new Int32Array([threads]);
-                    if (webcl.type) {
-                        kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, [threads], null);
-                    } else {
-                        kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, workgroupSize, null);
-                    }
-                    return release(buffers);
-                })
-                .then(function () {
-                    kernel.cl.queue.finish();
-                    return kernel;
-                });
         });
+        bufObj.write = write.bind(this, bufObj);
+        bufObj.read = read.bind(this, bufObj);
+        bufObj.copyInto = copyBuffer.bind(this, cl, bufObj);
 
-        setArgs = Q.promised(function (kernel, args, argTypes) {
-            var t0 = new Date().getTime();
-            try {
-                for (var i = 0; i < args.length; i++) {
-                    if (args[i]) {
-                        kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i] || undefined);
-                    }
-                }
-            } catch (e) {
-                console.error('wat', e, e.stack)
-                throw new Error(e);
-            }
-//            console.debug('  /set', new Date().getTime() - t0);
-            return kernel;
-        });
+        console.debug('  /created', new Date().getTime() - t0);
 
-        if (typeof WebCLKernelArgumentTypes == 'undefined') {
-            WebCLKernelArgumentTypes = webcl.type;
-        }
-
-        types = {
-            char_t: WebCLKernelArgumentTypes.CHAR,
-            double_t: WebCLKernelArgumentTypes.DOUBLE,
-            float_t: WebCLKernelArgumentTypes.FLOAT,
-            half_t: WebCLKernelArgumentTypes.HALF,
-            int_t: WebCLKernelArgumentTypes.INT,
-            local_t: WebCLKernelArgumentTypes.LOCAL_MEMORY_SIZE,
-            long_t: WebCLKernelArgumentTypes.LONG,
-            short_t: WebCLKernelArgumentTypes.SHORT,
-            uchar_t: WebCLKernelArgumentTypes.UCHAR,
-            uint_t: WebCLKernelArgumentTypes.UINT,
-            ulong_t: WebCLKernelArgumentTypes.ULONG,
-            ushort_t: WebCLKernelArgumentTypes.USHORT,
-            float2_t: WebCLKernelArgumentTypes.VEC2,
-            float3_t: WebCLKernelArgumentTypes.VEC3,
-            float4_t: WebCLKernelArgumentTypes.VEC4,
-            float8_t: WebCLKernelArgumentTypes.VEC8,
-            float16_t: WebCLKernelArgumentTypes.VEC16
-        };
-
-        return true;
+        return bufObj;
     }
-    var types = {};
-    var CURRENT_CL = !polyfill();
+});
 
 
+var copyBuffer = Q.promised(function (cl, source, destination) {
+    console.debug('COPY BUFFER', source.name, destination.name, source.size, destination.size)
+    return acquire([source, destination])
+        .then(function () {
+            cl.queue.enqueueCopyBuffer(source.buffer, destination.buffer, 0, 0, Math.min(source.size, destination.size));
+        })
+        .then(function () {
+            cl.queue.finish();
+        }).then(release.bind('', [source, destination]))
+        .then(function () {
+        });
+});
 
-    module.exports = {
-        "acquire": acquire,
-        "call": call,
-        "compile": compile,
-        "create": create,
-        "createBuffer": createBuffer,
-        "createBufferGL": createBufferGL,
-        "release": release,
-        "setArgs": setArgs,
-        "types": types,
-        "write": write,
-        "CURRENT_CL": CURRENT_CL
+
+var write = Q.promised(function write(buffer, data) {
+    console.debug("WRITE", buffer.name)
+    var t0 = new Date().getTime();
+    return buffer.acquire()
+        .then(function () {
+            buffer.cl.queue.enqueueWriteBuffer(buffer.buffer, true, 0, data.byteLength, data);
+            return buffer.release();
+        })
+        .then(function() {
+            buffer.cl.queue.finish();
+            console.debug('  /wrote', new Date().getTime() - t0);
+            return buffer;
+        });
+});
+
+
+var read = Q.promised(function (buffer, target) {
+    console.erro("READ", buffer.name);
+    var t0 = new Date().getTime();
+    return buffer.acquire()
+        .then(function() {
+            var copySize = Math.min(buffer.size, target.length * target.BYTES_PER_ELEMENT);
+            buffer.cl.queue.enqueueReadBuffer(buffer.buffer, true, 0, copySize, target);
+            return buffer.release();
+        })
+        .then(function() {
+            console.debug('  /read', new Date().getTime() - t0);
+            return buffer;
+        });
+});
+
+
+// Detects the WebCL platform we're running on, and modifies this module as needed.
+// Returns true if the the platform is out-of-date and needed to be polyfilled, and false if
+// the platform is up-to-date and no modification was needed.
+function polyfill() {
+    // Detect if we're running on a current WebCL version
+    if(typeof(window) != 'undefined' && typeof webcl.enableExtension == "function") {
+        // If so, don't do anything
+        return false;
+    }
+
+    console.debug("[cl.js] Detected old WebCL platform. Modifying functions to support it.");
+
+
+    _createContext = function(cl, gl, platform, devices) {
+        if (webcl.type) {
+            return webcl.createContext({
+                devices: devices,
+                shareGroup: gl,
+                platform: platform});
+        } else {
+            var extension = cl.getExtension("KHR_GL_SHARING");
+            if (extension === null) {
+                throw new Error("Could not create a shared CL/GL context using the WebCL extension system");
+            }
+            return extension.createContext({
+                platform: platform,
+                devices: devices,
+                deviceType: DEVICE_TYPE,
+                sharedContext: null
+            });
+        }
+
+    }
+
+
+    call = Q.promised(function (kernel, threads, buffers) {
+        //kernel.cl.queue.finish();
+
+        return acquire(buffers)
+            .then(function () {
+
+                var workgroupSize = typeof(window) == 'undefined' ? [threads] : new Int32Array([threads]);
+                if (webcl.type) {
+                    kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, [threads], null);
+                } else {
+                    kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, workgroupSize, null);
+                }
+                return release(buffers);
+            })
+            .then(function () {
+                kernel.cl.queue.finish();
+                return kernel;
+            });
+    });
+
+    setArgs = Q.promised(function (kernel, args, argTypes) {
+        var t0 = new Date().getTime();
+        try {
+            for (var i = 0; i < args.length; i++) {
+                if (args[i]) {
+                    kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i] || undefined);
+                }
+            }
+        } catch (e) {
+            console.error('wat', e, e.stack)
+            throw new Error(e);
+        }
+//            console.debug('  /set', new Date().getTime() - t0);
+        return kernel;
+    });
+
+    if (typeof WebCLKernelArgumentTypes == 'undefined') {
+        WebCLKernelArgumentTypes = webcl.type;
+    }
+
+    types = {
+        char_t: WebCLKernelArgumentTypes.CHAR,
+        double_t: WebCLKernelArgumentTypes.DOUBLE,
+        float_t: WebCLKernelArgumentTypes.FLOAT,
+        half_t: WebCLKernelArgumentTypes.HALF,
+        int_t: WebCLKernelArgumentTypes.INT,
+        local_t: WebCLKernelArgumentTypes.LOCAL_MEMORY_SIZE,
+        long_t: WebCLKernelArgumentTypes.LONG,
+        short_t: WebCLKernelArgumentTypes.SHORT,
+        uchar_t: WebCLKernelArgumentTypes.UCHAR,
+        uint_t: WebCLKernelArgumentTypes.UINT,
+        ulong_t: WebCLKernelArgumentTypes.ULONG,
+        ushort_t: WebCLKernelArgumentTypes.USHORT,
+        float2_t: WebCLKernelArgumentTypes.VEC2,
+        float3_t: WebCLKernelArgumentTypes.VEC3,
+        float4_t: WebCLKernelArgumentTypes.VEC4,
+        float8_t: WebCLKernelArgumentTypes.VEC8,
+        float16_t: WebCLKernelArgumentTypes.VEC16
     };
+
+    return true;
+}
+var types = {};
+var CURRENT_CL = !polyfill();
+
+
+
+module.exports = {
+    "acquire": acquire,
+    "call": call,
+    "compile": compile,
+    "create": create,
+    "createBuffer": createBuffer,
+    "createBufferGL": createBufferGL,
+    "release": release,
+    "setArgs": setArgs,
+    "types": types,
+    "write": write,
+    "CURRENT_CL": CURRENT_CL
+};

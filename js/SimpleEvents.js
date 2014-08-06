@@ -1,28 +1,27 @@
+"use strict";
+var exports = {};
 
-    "use strict";
-    var exports = {};
-
-    // A module-level list of all the event listeners
-    var listeners = {};
-
-
-    exports.listen = function(event, callback) {
-        var eventListeners = listeners[event] || [];
-        eventListeners.push(callback);
-        listeners[event] = eventListeners;
-    };
+// A module-level list of all the event listeners
+var listeners = {};
 
 
-    // TODO: add 'remove' function
+exports.listen = function(event, callback) {
+    var eventListeners = listeners[event] || [];
+    eventListeners.push(callback);
+    listeners[event] = eventListeners;
+};
 
 
-    exports.fire = function(event, args) {
-        var eventListeners = listeners[event] || [];
-
-        for(var i in eventListeners) {
-            eventListeners[i].call(this, args);
-        }
-    };
+// TODO: add 'remove' function
 
 
-    module.exports = exports;
+exports.fire = function(event, args) {
+    var eventListeners = listeners[event] || [];
+
+    for(var i in eventListeners) {
+        eventListeners[i].call(this, args);
+    }
+};
+
+
+module.exports = exports;
