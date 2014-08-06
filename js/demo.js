@@ -96,12 +96,22 @@ function animator (document, promise) {
         startAnimation: function (maybeCb, maybeMaxSteps) {
             if(typeof maybeMaxSteps === "number") {
                 bound = maybeMaxSteps;
+                var announceIncrement = Math.round(maybeMaxSteps / 10);
+                console.debug("Starting graph animation for", maybeMaxSteps, "steps");
+            } else {
+                var announceIncrement = 1000;
+                console.debug("Starting graph animation and running forever");
             }
 
             animating = true;
             var run = function () {
                 step++;
                 bound--;
+
+                if(step > 0 && step % announceIncrement === 0) {
+                    console.debug("Animating step", step, "(" + bound + " steps left)");
+                }
+
                 promise().then(
                     function () {
                         if (animating && bound != 0) {
