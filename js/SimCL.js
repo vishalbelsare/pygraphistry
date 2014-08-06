@@ -6,7 +6,7 @@ var cljs = require('./cl.js');
 var _ = require('underscore')
 
 if (typeof(window) == 'undefined') {
-    webcl = require('node-webcl');
+    var webcl = require('node-webcl');
 }
 
 

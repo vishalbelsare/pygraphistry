@@ -4,8 +4,8 @@ var $ = require('jQuery');
 var Q = require('Q');
 
 if (typeof(window) == 'undefined') {
-    webgl = require('node-webgl');
-    Image = webgl.Image;
+    var webgl = require('node-webgl');
+    var Image = webgl.Image;
 }
 
 
