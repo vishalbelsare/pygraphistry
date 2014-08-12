@@ -6,15 +6,18 @@
 //similar to main.js
 
 
-var NBody = require("./NBody.js"),
+var Q = require("q"),
+    Rx = require("rx"),
+
+    chalk = require("chalk"),
+
+    webgl = require("node-webgl"),
+
+    NBody = require("./NBody.js"),
     RenderGL = require("./RenderGL.js"),
     SimCL = require("./SimCL.js"),
-    Q = require("q"),
-    Rx = require("rx"),
-    chalk = require("chalk"),
-    webgl = require("node-webgl"),
-    loader = require("./data-loader.js");
 
+    loader = require("./data-loader.js");
 
 
 var WIDTH = 600;
