@@ -118,10 +118,8 @@ function fetchVBOs(graph) {
 
     return Q.all(
         buffersToFetch.map(function(val, idx, arr) {
-            targetArrays[val] = new Float32Array(
-                graph.simulator.buffers[val].size / Float32Array.BYTES_PER_ELEMENT
-            );
-            return graph.simulator.buffers[val].read(targetArrays[val]);
+            targetArrays[val] = new ArrayBuffer(graph.simulator.buffers[val].size)
+            return graph.simulator.buffers[val].read(new Float32Array(targetArrays[val]));
         })
     )
     .then(function() {
@@ -191,11 +189,11 @@ function create() {
     // the contents of each VBO
     var vboUpdateSig = new Rx.BehaviorSubject({
         buffers: {
-            curPoints: new Float32Array(),
-            springs: new Float32Array(),
-            curMidPoints: new Float32Array(),
-            midSprings: new Float32Array(),
-            midSpringsColorCoord: new Float32Array(),
+            curPoints: new ArrayBuffer(0),
+            springs: new ArrayBuffer(0),
+            curMidPoints: new ArrayBuffer(0),
+            midSprings: new ArrayBuffer(0),
+            midSpringsColorCoord: new ArrayBuffer(0),
         }
     });
 
