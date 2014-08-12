@@ -242,7 +242,7 @@ function create() {
     })
     .done();
 
-    return vboUpdateSig;
+    return vboUpdateSig.share().skip(1);
 }
 
 
