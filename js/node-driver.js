@@ -6,23 +6,14 @@
 //similar to main.js
 
 
-var //$ = require("jQuery"),
-    NBody = require("./NBody.js"),
+var NBody = require("./NBody.js"),
     RenderGL = require("./RenderGL.js"),
     SimCL = require("./SimCL.js"),
-    MatrixLoader = require("./libs/load.js"),
     Q = require("q"),
-    Stats = require("./libs/stats.js"),
-    events = require("./SimpleEvents.js"),
-    kmeans = require("./libs/kmeans.js"),
-    Rx = require("rx");
+    Rx = require("rx"),
+    webgl = require("node-webgl"),
+    loader = require("./data-loader.js");
 
-var webcl = require("node-webcl");
-var webgl = require("node-webgl");
-
-var loader = require("./data-loader.js");
-
-require("./console.js");
 
 
 var WIDTH = 600;
