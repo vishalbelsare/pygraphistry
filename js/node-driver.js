@@ -11,6 +11,7 @@ var NBody = require("./NBody.js"),
     SimCL = require("./SimCL.js"),
     Q = require("q"),
     Rx = require("rx"),
+    chalk = require("chalk"),
     webgl = require("node-webgl"),
     loader = require("./data-loader.js");
 
@@ -143,8 +144,6 @@ function fetchNumElements(graph) {
 function init() {
     console.log("Running Naive N-body simulation");
 
-
-
     var document = webgl.document();
     document.setTitle("Graphviz");
     var canvas = document.createElement("canvas", WIDTH, HEIGHT);
@@ -186,7 +185,7 @@ function loadDataIntoSim(graph) {
 
 
 function create() {
-    console.error("========================== START ===========================================")
+    console.debug(chalk.inverse("\n~~~~~~~ START"));
 
     // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
     // the contents of each VBO
@@ -202,17 +201,14 @@ function create() {
 
     init()
     .then(function (graph) {
-        console.debug("~~~~~~~ SETUP")
+        console.debug(chalk.inverse("\n~~~~~~~ LOADING DATA"));
         return loadDataIntoSim(graph);
     })
     .then(function (graph) {
-        console.debug("=================LOADED")
-        console.error("done setup")
-
+        console.debug(chalk.inverse("\n~~~~~~~ SETTINGS"));
         var api = controls(graph);
 
-
-        console.error("ANIMATING");
+        console.debug(chalk.inverse("\n~~~~~~~ ANIMATING"));
 
         // Run the animation loop by recursively expanding each tick event into a new sequence with
         // [a requestAnimationFrame() callback mapped to graph.tick()]
@@ -236,9 +232,9 @@ function create() {
             .subscribe(vboUpdateSig);
     })
     .then(function () {
-        console.error("setup done")
+        console.debug("\n" + chalk.bgBlue("\n======= GRAPH CREATED") + "\n");
     }, function (err) {
-        console.error("~~~~~Setup error:", err, ". Stack:", err.stack)
+        console.error(chalk.bgRed("~~~~~Setup error:", err, ". Stack:", err.stack));
     })
     .done();
 
