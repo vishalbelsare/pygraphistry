@@ -9,6 +9,7 @@ var $            = require("jquery"),
 
 
 function init (canvas) {
+
     var camera = new Cameras.Camera2d({
             left: -0.15,
             right: 5,
@@ -34,8 +35,10 @@ function init (canvas) {
         });
 
     var glBufferStoreSize = 0;
-    var lastHandshake = Date.now();
+    console.warn("%cWarning: having the console open can slow down rendering by up to 2x",
+        "font-size: 18pt; font-weight: bold; font-family: \"Helvetica Neue\", Helvetica, sans-serif; background-color: rgb(255, 242, 0);")
 
+    var lastHandshake = Date.now();
     socket.on("vbo_update", function (data, handshake) {
         var elapsed = Date.now() - lastHandshake;
         console.log("got VBO update message", elapsed, "ms");
