@@ -129,6 +129,17 @@ function fetchVBOs(graph) {
 }
 
 
+function fetchNumElements(graph) {
+    return {
+        edges: graph.renderer.numEdges * 2,
+        midedges: graph.renderer.numMidEdges * 2,
+        midedgestextured: graph.renderer.numMidEdges * 2,
+        points: graph.renderer.numPoints,
+        midpoints: graph.renderer.numMidPoints
+    };
+}
+
+
 function init() {
     console.log("Running Naive N-body simulation");
 
@@ -180,11 +191,13 @@ function create() {
     // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
     // the contents of each VBO
     var vboUpdateSig = new Rx.BehaviorSubject({
-        curPoints: new Float32Array(),
-        springs: new Float32Array(),
-        curMidPoints: new Float32Array(),
-        midSprings: new Float32Array(),
-        midSpringsColorCoord: new Float32Array(),
+        buffers: {
+            curPoints: new Float32Array(),
+            springs: new Float32Array(),
+            curMidPoints: new Float32Array(),
+            midSprings: new Float32Array(),
+            midSpringsColorCoord: new Float32Array(),
+        }
     });
 
     init()
@@ -215,6 +228,10 @@ function create() {
             .sample(20)
             .flatMap(function() {
                 return Rx.Observable.fromPromise(fetchVBOs(graph));
+            })
+            .map(function(vbos) {
+                var numElements = fetchNumElements(graph);
+                return {buffers: vbos, elements: numElements};
             })
             .subscribe(vboUpdateSig);
     })
