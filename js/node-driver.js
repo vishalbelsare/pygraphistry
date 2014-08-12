@@ -225,7 +225,7 @@ function create() {
             })
 
         stepSignal
-            .sample(20)
+            .sample(30)
             .flatMap(function() {
                 return Rx.Observable.fromPromise(fetchVBOs(graph));
             })
