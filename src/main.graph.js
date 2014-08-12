@@ -17,6 +17,7 @@ function init (canvas) {
         });
 
     var socket = io.connect("http://localhost", {reconnection: false, transports: ["websocket"]});
+    socket.io.engine.binaryType = "arraybuffer";
 
     var gl = renderer.init(canvas);
     renderer.setGlOptions(gl, renderConfig.options);
