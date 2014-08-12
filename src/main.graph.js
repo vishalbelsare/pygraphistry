@@ -9,7 +9,6 @@ var $            = require("jquery"),
 
 
 function init (canvas) {
-
     var camera = new Cameras.Camera2d({
             left: -0.15,
             right: 5,
@@ -23,6 +22,7 @@ function init (canvas) {
     renderer.setGlOptions(gl, renderConfig.options);
     var programs = renderer.createPrograms(gl, renderConfig.programs);
     var buffers = renderer.createBuffers(gl, renderConfig.models);
+    // var bufferSizes = {};
     renderer.setCamera(renderConfig, gl, programs, camera);
 
     interaction.setupDrag($(".sim-container"), camera)
@@ -33,22 +33,20 @@ function init (canvas) {
         });
 
     var glBufferStoreSize = 0;
-    var lastHandshake = new Date().getTime();
+    var lastHandshake = Date.now();
 
     socket.on("vbo_update", function (data, handshake) {
-        try {
-            var now = new Date().getTime();
-            console.log("got VBO update message", now - lastHandshake, "ms");
+        var elapsed = Date.now() - lastHandshake;
+        console.log("got VBO update message", elapsed, "ms");
 
-            renderer.loadBuffer(gl, buffers.mainVBO, trimmedArray, data.numVertices <= glBufferStoreSize);
-            renderer.render(renderConfig, gl, programs, buffers, data.numVertices);
 
-            glBufferStoreSize = Math.max(glBufferStoreSize, data.numVertices);
+        // renderer.loadBuffer(gl, buffers.mainVBO, trimmedArray, data.numVertices <= glBufferStoreSize);
+        // renderer.render(renderConfig, gl, programs, buffers, data.numVertices);
 
-            handshake(Date.now() - now);
-        } catch (e) {
-            console.error("Error retrieving WebGL buffer data from server:", e, new Error().stack);
-        }
+        // glBufferStoreSize = Math.max(glBufferStoreSize, data.numVertices);
+
+        handshake(elapsed);
+        lastHandshake = Date.now();
     });
 
     socket.on("error", function(reason) {
