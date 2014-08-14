@@ -38,7 +38,7 @@ function loadGeo(graph, graphFileURI) {
 
     return MatrixLoader.loadGeo(graphFileURI)
     .then(function(geoData) {
-        var processedData = MatrixLoader.processGeo(geoData);
+        var processedData = MatrixLoader.processGeo(geoData, 0.3);
 
         console.debug('============PROCESSED')
         console.debug('nodes/edges', processedData.points.length, processedData.edges.length)

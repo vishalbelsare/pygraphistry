@@ -205,17 +205,19 @@ var exports = {
 
     /**
      * Takes geo data returned by loadGeo and returns an object containing and edge and points
-     * array, with the points being properly normalized to be on [1,1] and
+     * array, with the points being properly normalized to be on [1,1]
+     * @param {number} keepPercent - the decimal percentage of the data to include in the output
+     * (defaults to 0.3)
      */
-    processGeo: function(geoData) {
+    processGeo: function(geoData, keepPercent) {
+        keepPercent = keepPercent || 0.3;
         var points = [],
             edges = [],
             bounds = exports.getGeoBounds(geoData);
 
         for(var i = 0; i < geoData.numEdges; i++) {
-            if(Math.random() < 0.7) {
-                continue;
-            }
+            if(Math.random() < keepPercent) { continue; }
+
             points.push([(geoData.startLng(i) + bounds.lng.scale.c) / (bounds.lng.scale.x), (geoData.startLat(i) + bounds.lat.scale.c) / (bounds.lat.scale.x)]);
             points.push([(geoData.endLng(i) + bounds.lng.scale.c) / (bounds.lng.scale.x), (geoData.endLat(i) + bounds.lat.scale.c) / (bounds.lat.scale.x)]);
             edges.push([points.length - 2, points.length - 1]);
