@@ -23,29 +23,34 @@ function create(simulator, renderer, document, canvas, bgColor, dimensions, numS
     dimensions = dimensions || [1,1];
     numSplits = numSplits || 0;
 
-    return renderer.create(document, canvas, bgColor, dimensions)
-    .then(function(rend) {
-        console.debug('CREATED RENDERER')
-        return simulator.create(rend, dimensions, numSplits).then(function(sim) {
-            console.debug('CREATED SIMULATOR')
-            var graph = {
-                "renderer": rend,
-                "simulator": sim
-            };
-            graph.setPoints = setPoints.bind(this, graph);
-            graph.setEdges = setEdges.bind(this, graph);
-            graph.setPhysics = setPhysics.bind(this, graph);
-            graph.setVisible = setVisible.bind(this, graph);
-            graph.setLocked = setLocked.bind(this, graph);
-            graph.setColorMap = setColorMap.bind(this, graph);
-            graph.tick = tick.bind(this, graph);
-            graph.stepNumber = 0;
-            graph.dimensions = dimensions;
-            graph.numSplits = numSplits;
+    return renderer
+        .create(document, canvas, bgColor, dimensions)
+        .then(function(rend) {
+            console.debug('CREATED RENDERER')
 
-            return graph;
+            return simulator
+                .create(rend, dimensions, numSplits)
+                .then(function(sim) {
+                    console.debug('CREATED SIMULATOR');
+
+                    var graph = {
+                        "renderer": rend,
+                        "simulator": sim
+                    };
+                    graph.setPoints = setPoints.bind(this, graph);
+                    graph.setEdges = setEdges.bind(this, graph);
+                    graph.setPhysics = setPhysics.bind(this, graph);
+                    graph.setVisible = setVisible.bind(this, graph);
+                    graph.setLocked = setLocked.bind(this, graph);
+                    graph.setColorMap = setColorMap.bind(this, graph);
+                    graph.tick = tick.bind(this, graph);
+                    graph.stepNumber = 0;
+                    graph.dimensions = dimensions;
+                    graph.numSplits = numSplits;
+
+                    return graph;
+                });
         });
-    });
 }
 
 
