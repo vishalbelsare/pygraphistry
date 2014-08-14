@@ -10,6 +10,7 @@ var Q = require("q"),
     Rx = require("rx"),
 
     chalk = require("chalk"),
+    debug = require("debug")("StreamGL:driver"),
 
     webgl = require("node-webgl"),
 
@@ -75,7 +76,7 @@ function controls(graph) {
                 cmd[lbl] = false;
                 o[lbl] = function (v) {
                     cmd[lbl] = v === undefined ? !cmd[lbl] : v;
-                    console.error("setting", cmd);
+                    debug("Setting %o", cmd);
                     graph.setVisible(cmd);
                 };
                 return o;
@@ -95,7 +96,7 @@ function controls(graph) {
                 cmd[lbl] = true;
                 o[lbl] = function (v) {
                     cmd[lbl] = v === undefined ? !cmd[lbl] : v;
-                    console.error("setting", cmd);
+                    debug("Setting %o", cmd);
                     graph.setLocked(cmd);
                 };
                 return o;
@@ -115,10 +116,16 @@ function controls(graph) {
 
 
 function fetchVBOs(graph) {
+    // TODO: Reuse existing ArrayBuffers once we're sure we're sure it's safe to do so (we've
+    // written the CL data to it, and written it to the socket sent to the client.)
     var buffersToFetch =
         ["curPoints", "springsPos", "midSpringsPos", "curMidPoints", "midSpringsColorCoord"];
     var targetArrays = {};
 
+
+    // TODO: Instead of doing blocking CL reads, use CL events and wait on those.
+    // node-webcl's event arguments to enqueue commands seems busted at the moment, but
+    // maybe enqueueing a event barrier and using its event might work?
     return Q.all(
         buffersToFetch.map(function(val, idx, arr) {
             targetArrays[val] = new ArrayBuffer(graph.simulator.buffers[val].size)
@@ -159,9 +166,8 @@ function loadDataIntoSim(graph) {
     return loader.loadDataList(graph)
     .then(function (datalist) {
         if (USE_GEO) {
-            console.error("loading data")
             var which = 0;
-            console.error("which", datalist[which])
+            debug("Loading data: %o", datalist[which]);
             return datalist[which].loader(graph, datalist[which].f);
 
         } else {
@@ -186,7 +192,7 @@ function loadDataIntoSim(graph) {
 
 
 function create() {
-    console.debug(chalk.inverse("\n~~~~~~~ START"));
+    debug("STARTING DRIVER");
 
     // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
     // the contents of each VBO
@@ -202,14 +208,14 @@ function create() {
 
     init()
     .then(function (graph) {
-        console.debug(chalk.inverse("\n~~~~~~~ LOADING DATA"));
+        debug("LOADING DATA")
         return loadDataIntoSim(graph);
     })
     .then(function (graph) {
-        console.debug(chalk.inverse("\n~~~~~~~ SETTINGS"));
+        debug("APPLYING SETTINGS");
         var api = controls(graph);
 
-        console.debug(chalk.inverse("\n~~~~~~~ ANIMATING"));
+        debug("ANIMATING");
 
         // Run the animation loop by recursively expanding each tick event into a new sequence with
         // [a requestAnimationFrame() callback mapped to graph.tick()]
@@ -233,9 +239,11 @@ function create() {
             .subscribe(vboUpdateSig);
     })
     .then(function () {
-        console.debug("\n" + chalk.bgBlue("\n======= GRAPH CREATED") + "\n");
+        debug("Graph created");
     }, function (err) {
-        console.error(chalk.bgRed("~~~~~Setup error:", err, ". Stack:", err.stack));
+        console.error("\n" + chalk.bgRed("\n~~~~~ SETUP ERROR") + "\n", err, ". Stack:", err.stack);
+        console.error("\n" + chalk.bgRed("\nEXITING") + "\n");
+        process.exit(-1);
     })
     .done();
 
@@ -251,5 +259,5 @@ exports.create = create;
 if(require.main === module) {
     var vbosUpdated = create();
 
-    vbosUpdated.subscribe(function(vbos) { console.debug("Got updated VBOs"); } );
+    vbosUpdated.subscribe(function(vbos) { debug("Got updated VBOs"); } );
 }

@@ -3,6 +3,7 @@
 var Q = require('q');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');
+var debug = require("debug")("N-body:cl");
 
 if (typeof(window) == 'undefined') {
     var webcl = require('node-webcl');
@@ -14,7 +15,7 @@ var DEVICE_TYPE = webcl.DEVICE_TYPE_GPU;
 
 var getClContext;
 if (typeof(window) == 'undefined') {
-    console.debug("NODECL")
+    debug("Node.js cl.js initializing")
     var CreateContext = function(webcl, gl, platform, devices) {
         return webcl.createContext({
             devices: devices,
@@ -59,7 +60,7 @@ if (typeof(window) == 'undefined') {
             var wrapped = devices[i];
             try {
                 if (wrapped.device.getInfo(webcl.DEVICE_EXTENSIONS).search(/gl.sharing/i) == -1) {
-                    console.log('  Skipping device due to no sharing', i, wrapped);
+                    debug("Skipping device %d due to no sharing. %o", i, wrapped);
                     continue;
                 }
                 wrapped.context = CreateContext(webcl, gl, platform, [ wrapped.device ]);
@@ -68,7 +69,7 @@ if (typeof(window) == 'undefined') {
                 }
                 wrapped.queue = wrapped.context.createCommandQueue(wrapped.device, 0);
             } catch (e) {
-                console.debug("  Skipping device due to error", i, wrapped, e);
+                debug("Skipping device %d due to error %o. %o", i, e, wrapped);
                 err = e;
                 continue;
             }
@@ -78,7 +79,7 @@ if (typeof(window) == 'undefined') {
         if (!deviceWrapper) {
             throw err;
         }
-        console.debug("  Device", deviceWrapper, deviceWrapper.device.getInfo(webcl.DEVICE_VENDOR));
+        debug("Device set. Vendor: %s. Device: %o", deviceWrapper.device.getInfo(webcl.DEVICE_VENDOR), deviceWrapper);
 
         var res = {
             gl: gl,
@@ -151,7 +152,7 @@ if (typeof(window) == 'undefined') {
                 }
                 wrapped.queue = wrapped.context.createCommandQueue(wrapped.device, null);
             } catch (e) {
-                console.debug("  Skipping device due to error", i, wrapped, e);
+                debug("Skipping device %d due to error %o. %o", i, e, wrapped);
                 err = e;
                 continue;
             }
@@ -162,7 +163,7 @@ if (typeof(window) == 'undefined') {
             throw err;
         }
 
-        console.debug("  Device", deviceWrapper);
+        debug("Device set. Device: %o", deviceWrapper);
 
         var clObj = {
             "gl": gl,
@@ -217,44 +218,44 @@ var _createContext = function(cl, gl, platform, devices) {
  */
 var compile = Q.promised(function (cl, source, kernels) {
     var t0 = new Date().getTime();
-    console.debug("COMPILING");
+    debug("Compiling kernels");
+
     try {
-    var program = cl.context.createProgram("#define NODECL\n\n" + source);
-    program.build([cl.device]);
+        var program = cl.context.createProgram("#define NODECL\n\n" + source);
+        program.build([cl.device]);
 
-    if (typeof kernels === "string") {
-            var kernelObj = {};
-            kernelObj.name = undefined;
-            kernelObj.kernel = program.createKernel(kernels);
-            kernelObj.cl = cl;
-            kernelObj.call = call.bind(this, kernelObj);
-            kernelObj.setArgs = setArgs.bind(this, kernelObj);
+        if (typeof kernels === "string") {
+                var kernelObj = {};
+                kernelObj.name = undefined;
+                kernelObj.kernel = program.createKernel(kernels);
+                kernelObj.cl = cl;
+                kernelObj.call = call.bind(this, kernelObj);
+                kernelObj.setArgs = setArgs.bind(this, kernelObj);
 
-            return kernelObj;
-    } else {
-        var kernelObjs = {};
+                return kernelObj;
+        } else {
+            var kernelObjs = {};
 
-        for(var i = 0; i < kernels.length; i++) {
-            var kernelName = kernels[i];
-            var kernelObj = {};
-            kernelObj.name = kernelName;
-            kernelObj.kernel = program.createKernel(kernelName);
-            kernelObj.cl = cl;
-            kernelObj.call = call.bind(this, kernelObj);
-            kernelObj.setArgs = setArgs.bind(this, kernelObj);
+            for(var i = 0; i < kernels.length; i++) {
+                var kernelName = kernels[i];
+                var kernelObj = {};
+                kernelObj.name = kernelName;
+                kernelObj.kernel = program.createKernel(kernelName);
+                kernelObj.cl = cl;
+                kernelObj.call = call.bind(this, kernelObj);
+                kernelObj.setArgs = setArgs.bind(this, kernelObj);
 
-            kernelObjs[kernelName] = kernelObj;
+                kernelObjs[kernelName] = kernelObj;
+            }
+
+            debug('  Compiled kernels in %d ms.', new Date().getTime() - t0);
+
+            return kernelObjs;
         }
-
-        console.debug('  /compiled', new Date().getTime() - t0);
-
-        return kernelObjs;
+    } catch (e) {
+        console.error('Kernel compilation error:', e.stack);
+        throw e;
     }
-} catch (e) {
-    console.error('wat', e.stack);
-    throw e;
-}
-
 });
 
 
@@ -299,14 +300,13 @@ var setArgs = function (kernel, args, argTypes) {
             kernel.kernel.setArg(i, args[i]);
         }
     }
-    console.debug('  /all set', new Date().getTime() - t0);
+    debug('Set kernel args (%d ms)', new Date().getTime() - t0);
     return kernel;
 };
 
 
 var createBuffer = Q.promised(function createBuffer(cl, size, name) {
-
-    console.debug('CREATE buffer', name);
+    debug("Creating buffer %s", name);
 
     var buffer = cl.context.createBuffer(cl.cl.MEM_READ_WRITE, size);
     if (buffer === null) {
@@ -341,13 +341,15 @@ var createBufferGL = Q.promised(function (cl, vbo, name) {
 
     var t0 = new Date().getTime();
 
-    console.debug('CREATE buffer GL', name);
+    debug("Creating buffer %s from GL buffer", name);
 
     var buffer = cl.context.createFromGLBuffer(cl.cl.MEM_READ_WRITE, vbo.buffer);
     if (buffer === null) {
         throw new Error("Could not create WebCL buffer from WebGL buffer");
     } else {
-        if (!buffer.getInfo) console.warn('  vbo, weird len', vbo.len)
+        if (!buffer.getInfo) {
+            debug("WARNING: no getInfo() available on buffer %s", name);
+        }
         var bufObj = {
             "name": name,
             "buffer": buffer,
@@ -373,7 +375,7 @@ var createBufferGL = Q.promised(function (cl, vbo, name) {
         bufObj.read = read.bind(this, bufObj);
         bufObj.copyInto = copyBuffer.bind(this, cl, bufObj);
 
-        console.debug('  /created', new Date().getTime() - t0);
+        debug("  Created buffer in %d ms", new Date().getTime() - t0);
 
         return bufObj;
     }
@@ -381,7 +383,8 @@ var createBufferGL = Q.promised(function (cl, vbo, name) {
 
 
 var copyBuffer = Q.promised(function (cl, source, destination) {
-    console.debug('COPY BUFFER', source.name, destination.name, source.size, destination.size)
+    debug("Copying buffer. Source: %s (%d bytes), destination %s (%d bytes)",
+        source.name, source.size, destination.name, destination.size);
     return acquire([source, destination])
         .then(function () {
             cl.queue.enqueueCopyBuffer(source.buffer, destination.buffer, 0, 0, Math.min(source.size, destination.size));
@@ -395,7 +398,7 @@ var copyBuffer = Q.promised(function (cl, source, destination) {
 
 
 var write = Q.promised(function write(buffer, data) {
-    console.debug("WRITE", buffer.name)
+    debug("Writing to buffer %s", buffer.name);
     var t0 = new Date().getTime();
     return buffer.acquire()
         .then(function () {
@@ -404,7 +407,7 @@ var write = Q.promised(function write(buffer, data) {
         })
         .then(function() {
             buffer.cl.queue.finish();
-            console.debug('  /wrote', new Date().getTime() - t0);
+            debug("  Finished buffer %s write in %d ms", buffer.name, new Date().getTime() - t0);
             return buffer;
         });
 });
@@ -436,7 +439,7 @@ function polyfill() {
         return false;
     }
 
-    console.debug("[cl.js] Detected old WebCL platform. Modifying functions to support it.");
+    debug("Detected old WebCL platform. Modifying functions to support it.");
 
 
     _createContext = function(cl, gl, platform, devices) {
@@ -490,10 +493,9 @@ function polyfill() {
                 }
             }
         } catch (e) {
-            console.error('wat', e, e.stack)
+            console.error('Error setting kernel args (in polyfilled setArgs()):', e, e.stack)
             throw new Error(e);
         }
-//            console.debug('  /set', new Date().getTime() - t0);
         return kernel;
     });
 

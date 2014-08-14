@@ -3,6 +3,7 @@
 var Q = require('Q');
 var glMatrix = require('gl-matrix');
 var util = require('./util.js');
+var debug = require("debug")("N-body:RenderGL");
 
 
 var create = Q.promised(function(document, canvas, bgColor, dimensions, visible) {
@@ -199,10 +200,10 @@ var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
         var imageData;
         try {
         if (typeof(window) == 'undefined') {
-            console.warn('FIXME no fancy setColorMap in node')
+            debug("FIXME: no fancy setColorMap in node");
         } else if (maybeClusters) {
 
-            console.debug('  clustering colors')
+            debug("Clustering colors");
 
             var canvas = renderer.document.createElement("canvas");
             canvas.width = texImg.width;
@@ -257,7 +258,7 @@ var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
                 }
             });
         }else {
-            console.debug('  preset colors (', imageURL, ')');
+            debug("Using preset colors from %s", imageURL);
         }
         } catch (e) {
             console.error('bad cluster load', e, e.stack);
@@ -276,14 +277,15 @@ var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
         gl.bindTexture(gl.TEXTURE_2D, null);
 
 
-        console.debug('done set colormap')
+        debug("Finished setting colormap");
     });
 });
 
 
 //async (may trigger a write)
 var createBuffer = Q.promised(function(renderer, data) {
-    console.debug('creating gl buffer', typeof(data), data.constructor)
+    debug("Creating gl buffer of type %s. Constructor: %o", typeof(data), data.constructor);
+
     var buffer = renderer.gl.createBuffer();
     var bufObj = {
         "buffer": buffer,

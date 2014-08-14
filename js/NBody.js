@@ -4,6 +4,7 @@ var Q = require('Q');
 var glMatrix = require('gl-matrix');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');
+var debug = require("debug")("N-body:main");
 
 var STEP_NUMBER_ON_CHANGE = 30;
 var elementsPerPoint = 2;
@@ -26,12 +27,12 @@ function create(simulator, renderer, document, canvas, bgColor, dimensions, numS
     return renderer
         .create(document, canvas, bgColor, dimensions)
         .then(function(rend) {
-            console.debug('CREATED RENDERER')
+            debug("Created renderer");
 
             return simulator
                 .create(rend, dimensions, numSplits)
                 .then(function(sim) {
-                    console.debug('CREATED SIMULATOR');
+                    debug("Created simulator");
 
                     var graph = {
                         "renderer": rend,
@@ -79,7 +80,7 @@ var setEdges = Q.promised(function(graph, edges) {
         edges = _toTypedArray(edges, Uint32Array);
     }
 
-    console.debug("Number of edges:", edges.length / 2);
+    debug("Number of edges: %d", edges.length / 2)
 
     var edgesFlipped = new Uint32Array(edges.length);
     for (var i = 0; i < edges.length; i++)
@@ -152,7 +153,7 @@ var setEdges = Q.promised(function(graph, edges) {
             }
         }
     }
-    console.debug('Number of control points:', edges.length * graph.numSplits, graph.numSplits);
+    debug("Number of control points, splits: %d, %d", edges.length * graph.numSplits, graph.numSplits);
 
     return graph.simulator.setEdges(forwardEdges, backwardsEdges, midPoints)
     .then(function() { return graph; });

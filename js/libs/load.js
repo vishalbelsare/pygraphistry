@@ -3,6 +3,7 @@
 var $ = require('jQuery');
 var Q = require('Q');
 var Long = require('./Long.js');
+var debug = require("debug")("N-body:load");
 
 var exports = {
     ls: function (matrixJson) {
@@ -27,8 +28,7 @@ var exports = {
 
 
     loadBinary: function (file) { // -> Promise Binary
-
-        console.log("LOADING", file);
+        debug("Loading binary file %s", file);
 
         var t0 = new Date().getTime();
 
@@ -57,7 +57,6 @@ var exports = {
             xhr.responseType = 'arraybuffer';
             xhr.onload = function(e) {
                 res.resolve(Binary(new Uint32Array(this.response)));
-                // console.log('binary load', new Date().getTime() - t0, 'ms');
             };
             xhr.send();
 
@@ -75,8 +74,6 @@ var exports = {
                 Q.denodeify(require('fs').readFile)(file, {encoding: 'utf8'})
             : Q($.ajax(file, {dataType: "text"}))
         .then(function (str) {
-            // console.log('naive parse', new Date().getTime() - t0, 'ms');
-
             //http://bl.ocks.org/mbostock/2846454
             var nodes = [];
             var links = str
@@ -92,7 +89,7 @@ var exports = {
                 };
             });
 
-            console.log('naive parse + transform', new Date().getTime() - t0, 'ms');
+            debug("Did naive parse & transform in %d ms", new Date().getTime() - t0);
 
             return {
               nodes: nodes,
@@ -105,7 +102,7 @@ var exports = {
     loadGeo: function(file) { // -> Promise Binary
         var t0 = new Date().getTime();
 
-        console.debug("LOADING GEO", file);
+        debug("Loading Geo file %s", file);
 
         function Binary (buf) {
             var f32 = new Float32Array(buf.buffer);
@@ -139,21 +136,22 @@ var exports = {
         var res = Q.defer();
 
         if (typeof(window) == 'undefined') {
-            console.error("node fs")
+            debug("Loading geo data with node.js fs module");
+
             return Q.denodeify(require('fs').readFile)(file)
                 .then(function (nodeBuffer) {
                     return Binary(new Uint32Array((new Uint8Array(nodeBuffer)).buffer));
                 }, function (err) {
-                    console.error("OOPS", err);
+                    console.error("Error loading geo data with fs module:", err);
                 });
         } else {
-            console.debug("geo browser")
+            debug("Loading geo data with XHR");
+
             var xhr = new XMLHttpRequest();
             xhr.open('GET', file, true);
             xhr.responseType = 'arraybuffer';
             xhr.onload = function(e) {
                 res.resolve(Binary(new Uint32Array(this.response)));
-                // console.log('binary load', new Date().getTime() - t0, 'ms');
             };
             xhr.send();
         }

@@ -3,7 +3,8 @@
 var Q = require('Q');
 var util = require('./util.js');
 var cljs = require('./cl.js');
-var _ = require('underscore')
+var _ = require('underscore');
+var debug = require("debug")("N-body:SimCL");
 
 if (typeof(window) == 'undefined') {
     var webcl = require('node-webcl');
@@ -17,15 +18,16 @@ var randLength = 73;
 function create(renderer, dimensions, numSplits, locked) {
     return cljs.create(renderer.gl)
     .then(function(cl) {
-        console.debug('CREATE CL (from gl)')
+        debug("Creating CL object with GL context");
+
         // Compile the WebCL kernels
         return util.getSource("apply-forces.cl")
         .then(function(source) {
-            console.debug('GOT SOURCE')
+            debug("Retrieved kernel source");
             return cl.compile(source, ["apply_points", "apply_springs", "apply_midpoints", "apply_midsprings"]);
         })
         .then(function(kernels) {
-            console.debug('COMPILED')
+            debug("Compiled kernel source");
             var simObj = {
                 "renderer": renderer,
                 "cl": cl,
@@ -71,15 +73,12 @@ function create(renderer, dimensions, numSplits, locked) {
             };
             Object.seal(simObj.buffers);
 
-            console.debug("WebCL simulator created");
+            debug("WebCL simulator created");
             Object.seal(simObj);
             return simObj
         }, function (err) {
             console.error('Could not compile sim', err)
         });
-    }, function (err) {
-        console.error('Could not create sim', err);
-        return err;
     })
 
 }
@@ -135,7 +134,7 @@ function setPoints(simulator, points) {
     simulator.numPoints = points.length / simulator.elementsPerPoint;
     simulator.renderer.numPoints = simulator.numPoints;
 
-    console.debug("Number of points:", simulator.renderer.numPoints);
+    debug("Number of points in simulation: %d", simulator.renderer.numPoints);
 
     // Create buffers and write initial data to them, then set
     return Q.all([
@@ -144,7 +143,7 @@ function setPoints(simulator, points) {
         simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT,
             'randValues')])
     .spread(function(pointsVBO, nextPointsBuffer, randBuffer) {
-        console.debug('made most points')
+        debug('Created most of the points');
         simulator.buffers.nextPoints = nextPointsBuffer;
 
         simulator.renderer.buffers.curPoints = pointsVBO;
@@ -164,7 +163,7 @@ function setPoints(simulator, points) {
         simulator.buffers.curPoints = pointsBuf;
 
         var localPosSize = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
-        console.debug("SETTING POINT 0", "FIXME: dyn alloc __local, not hardcode in kernel");
+        debug("Setting point 0. FIXME: dyn alloc __local, not hardcode in kernel");
         simulator.pointKernel.setArgs([
                 webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
                 simulator.buffers.curPoints.buffer,
@@ -374,7 +373,7 @@ function setPhysics(simulator, cfg) {
     for (var i in cfg) {
         totCfg[i] = cfg[i];
     }
-    console.debug('UPDATING PHYSICS', totCfg, '(delta:', cfg, ')');
+    debug("Updating simulation physics to %o (new: %o)", totCfg, cfg);
 
     if(cfg.charge || cfg.gravity) {
         var charge = cfg.charge ? (webcl.type ? [cfg.charge] : new Float32Array([cfg.charge])) : null;

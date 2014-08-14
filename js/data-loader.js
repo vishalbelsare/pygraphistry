@@ -3,6 +3,7 @@
 var MatrixLoader = require('./libs/load.js');
 var kmeans = require('./libs/kmeans.js');
 var _ = require('underscore');
+var debug = require("debug")("StreamGL:data");
 
 
 // Generates `amount` number of random points
@@ -34,14 +35,13 @@ function createEdges(amount, numNodes) {
 
 function loadGeo(graph, graphFileURI) {
 
-    console.debug('~~~~~~~~~~~~~~ GEO ~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+    debug("Loading Geo");
 
     return MatrixLoader.loadGeo(graphFileURI)
     .then(function(geoData) {
         var processedData = MatrixLoader.processGeo(geoData, 0.3);
 
-        console.debug('============PROCESSED')
-        console.debug('nodes/edges', processedData.points.length, processedData.edges.length)
+        debug("Processed %d/%d nodes/edges", processedData.points.length, processedData.edges.length);
 
         return graph.setPoints(processedData.points)
             .then(_.constant(processedData))
@@ -63,12 +63,12 @@ function loadGeo(graph, graphFileURI) {
         return graph
                 .setColorMap("test-colormap2.png", {clusters: clusters, points: processedData.points, edges: processedData.edges})
                 .then(function () {
-                    console.debug('NOW SETTING EDGES')
+                    debug("Setting edges");
                     return graph.setEdges(processedData.edges);
                 });
     })
     .then(function() {
-        console.debug("SET GEO POINTS, EDGES");
+        debug("Done setting geo points, edges");
         return graph;
     });
 }
@@ -106,7 +106,7 @@ function loadDataList(clGraph) {
 
     return getDataList("data/geo.json")
     .then(function(geoList){
-        console.debug("  geolist")
+        debug("  geolist");
         geoList = geoList.map(function(fileInfo) {
             fileInfo["base"] = fileInfo.base + ".geo";
             fileInfo["loader"] = loadGeo;
@@ -118,7 +118,7 @@ function loadDataList(clGraph) {
         return getDataList("data/matrices.binary.json");
     })
     .then(function(matrixList){
-        console.debug('  matrixlist');
+        debug("  matrixlist");
         matrixList = matrixList.map(function(fileInfo) {
             fileInfo["base"] = fileInfo.base + ".mtx";
             fileInfo["loader"] = loadMatrix;
@@ -138,7 +138,7 @@ function loadDataList(clGraph) {
 function loadMatrix(graph, graphFileURI) {
     var graphFile;
 
-    console.debug('LOADING FILE', graphFileURI);
+    debug("Loading file %s", graphFileURI);
 
     return MatrixLoader.loadBinary(graphFileURI)
     .then(function (v) {

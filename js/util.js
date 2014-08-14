@@ -2,6 +2,7 @@
 
 var $ = require('jQuery');
 var Q = require('Q');
+var debug = require("debug")("N-body:utils")
 
 if (typeof(window) == 'undefined') {
     var webgl = require('node-webgl');
@@ -34,16 +35,17 @@ function getSource(id) {
 function getImage(url) {
     var deferred = Q.defer();
     try {
-    var img = new Image();
+        var img = new Image();
 
-    img.onload = function() {
-        console.debug('IMG LOADED')
-        deferred.resolve(img);
-    };
+        img.onload = function() {
+            debug("Done loading <img>");
 
-    console.debug("SETTING SOURCE", url)
-    img.src = url;
-    console.debug("SET SOURCE")
+            deferred.resolve(img);
+        };
+
+        debug("Loading <img> from src %s", url);
+        img.src = url;
+        debug("  <img> src set");
     } catch (e) {
         deferred.reject(e);
     }
