@@ -214,7 +214,7 @@ var exports = {
             bounds = exports.getGeoBounds(geoData);
 
         for(var i = 0; i < geoData.numEdges; i++) {
-            if(Math.random() < keepPercent) { continue; }
+            if(Math.random() > keepPercent) { continue; }
 
             points.push([(geoData.startLng(i) + bounds.lng.scale.c) / (bounds.lng.scale.x), (geoData.startLat(i) + bounds.lat.scale.c) / (bounds.lat.scale.x)]);
             points.push([(geoData.endLng(i) + bounds.lng.scale.c) / (bounds.lng.scale.x), (geoData.endLat(i) + bounds.lat.scale.c) / (bounds.lat.scale.x)]);
