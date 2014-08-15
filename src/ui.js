@@ -1,7 +1,7 @@
 "use strict";
 
 try {
-    if (typeof($) == 'undefined') {
+    if (typeof($) == "undefined") {
         $ = require("jquery");
     }
 } catch (e) {
@@ -12,7 +12,7 @@ try {
 exports.error = function(message) {
     console.error(message, new Error().stack);
 
-    if (typeof($) != 'undefined') {
+    if (typeof($) != "undefined") {
         var $msg = $("<span>")
             .addClass("status-error")
             .text(message);
