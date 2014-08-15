@@ -200,23 +200,21 @@ function _toTypedArray(array, cons) {
 
 function tick(graph) {
     events.fire("tickBegin");
-        events.fire("simulateBegin");
+    events.fire("simulateBegin");
 
-        return graph.simulator.tick(graph.stepNumber++)
-        .then(function() {
-            events.fire("simulateEnd");
-            events.fire("renderBegin");
+    return graph.simulator.tick(graph.stepNumber++)
+    .then(function() {
+        events.fire("simulateEnd");
+        events.fire("renderBegin");
 
+        return graph.renderer.render();
+    })
+    .then(function() {
+        events.fire("renderEnd");
+        events.fire("tickEnd");
 
-            return graph.renderer.render();
-        })
-        .then(function() {
-            events.fire("renderEnd");
-            events.fire("tickEnd");
-
-            return graph;
-        });
-    // }
+        return graph;
+    });
 }
 
 
