@@ -356,11 +356,14 @@ var createBufferGL = Q.promised(function (cl, vbo, name) {
             "cl": cl,
             "size": buffer.getInfo ? buffer.getInfo(cl.cl.MEM_SIZE) : vbo.len,
             "acquire": Q.promised(function() {
+                cl.gl.finish();
                 cl.queue.enqueueAcquireGLObjects([buffer]);
 
             }),
             "release": Q.promised(function() {
                 cl.queue.enqueueReleaseGLObjects([buffer]);
+                cl.queue.finish();
+                cl.gl.finish();
             })
         };
         bufObj.delete = Q.promised(function() {

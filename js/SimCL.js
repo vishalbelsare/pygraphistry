@@ -511,6 +511,10 @@ function tick(simulator, stepNumber) {
             return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
         }
     })
+    .then(function() {
+        simulator.cl.queue.finish();
+        simulator.renderer.gl.finish();
+    });
 }
 
 
