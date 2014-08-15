@@ -369,7 +369,7 @@ var createBufferGL = Q.promised(function (cl, vbo, name) {
                 bufObj.release();
                 bufObj.size = 0;
                 return null;
-            })
+            });
         });
         bufObj.write = write.bind(this, bufObj);
         bufObj.read = read.bind(this, bufObj);
@@ -391,9 +391,8 @@ var copyBuffer = Q.promised(function (cl, source, destination) {
         })
         .then(function () {
             cl.queue.finish();
-        }).then(release.bind('', [source, destination]))
-        .then(function () {
-        });
+        })
+        .then(release.bind(null, [source, destination]))
 });
 
 
