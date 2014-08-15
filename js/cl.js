@@ -323,7 +323,7 @@ var createBuffer = Q.promised(function createBuffer(cl, size, name) {
                 return Q(); }
         };
         bufObj.delete = Q.promised(function() {
-            bufObj.release();
+            buffer.release();
             bufObj.size = 0;
             return null;
         });
