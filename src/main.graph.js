@@ -23,7 +23,7 @@ function init (canvas) {
     var socket = io.connect("http://localhost", {reconnection: false, transports: ["websocket"]});
     socket.io.engine.binaryType = "arraybuffer";
 
-    var gl = renderer.init(canvas);
+    var gl = renderer.createContext(canvas);
     renderer.setGlOptions(gl, renderConfig.options);
     var programs = renderer.createPrograms(gl, renderConfig.programs);
     var buffers = renderer.createBuffers(gl, renderConfig.models);

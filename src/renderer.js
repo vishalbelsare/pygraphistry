@@ -102,7 +102,7 @@ var bufferSizes = {};
 exports.numVertices = 0;
 
 
-exports.init = function(canvas) {
+exports.createContext = function(canvas) {
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
 
