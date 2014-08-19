@@ -15,14 +15,15 @@ var DEVICE_TYPE = webcl.DEVICE_TYPE_GPU;
 
 var getClContext;
 if (typeof(window) == 'undefined') {
-    debug("Node.js cl.js initializing")
-    var CreateContext = function(webcl, gl, platform, devices) {
+    debug("Node.js cl.js initializing");
+    var createContext = function(webcl, gl, platform, devices) {
         return webcl.createContext({
             devices: devices,
             shareGroup: gl,
-            platform: platform});
+            platform: platform
+        });
     };
-    var CreateCL = function(webcl, gl) {
+    var createCL = function(webcl, gl) {
         if (typeof webcl === "undefined") {
             throw new Error("WebCL does not appear to be supported in your browser");
         } else if (webcl === null) {
@@ -45,7 +46,7 @@ if (typeof(window) == 'undefined') {
         devices.sort(function(a, b) {
             var nameA = a.device.getInfo(webcl.DEVICE_VENDOR);
             var nameB = b.device.getInfo(webcl.DEVICE_VENDOR);
-            var vendor = "NVIDIA"
+            var vendor = "NVIDIA";
             if (nameA.indexOf(vendor) != -1 && nameB.indexOf(vendor) == -1) {
                 return -1;
             } else if (nameB.indexOf(vendor) != -1 && nameA.indexOf(vendor) == -1) {
@@ -63,9 +64,9 @@ if (typeof(window) == 'undefined') {
                     debug("Skipping device %d due to no sharing. %o", i, wrapped);
                     continue;
                 }
-                wrapped.context = CreateContext(webcl, gl, platform, [ wrapped.device ]);
+                wrapped.context = createContext(webcl, gl, platform, [ wrapped.device ]);
                 if (wrapped.context === null) {
-                    throw Error("Error creating WebCL context");
+                    throw new Error("Error creating WebCL context");
                 }
                 wrapped.queue = wrapped.context.createCommandQueue(wrapped.device, 0);
             } catch (e) {
@@ -100,8 +101,8 @@ if (typeof(window) == 'undefined') {
 
     };
     getClContext = function (gl) {
-        return CreateCL(webcl, gl);
-    }
+        return createCL(webcl, gl);
+    };
 } else {
     getClContext = function (gl) {
         if (typeof(webcl) === "undefined") {
@@ -123,9 +124,9 @@ if (typeof(window) == 'undefined') {
         var devices = platform.getDevices(DEVICE_TYPE).map(function (d) {
 
             function typeToString (v) {
-                return v == 2 ? 'CPU'
-                    : v == 4 ? 'GPU'
-                    : v == 8 ? 'ACCELERATOR'
+                return v === 2 ? 'CPU'
+                    : v === 4 ? 'GPU'
+                    : v === 8 ? 'ACCELERATOR'
                     : ('unknown type: ' + v);
             }
 
@@ -146,9 +147,9 @@ if (typeof(window) == 'undefined') {
         for (var i = 0; i < devices.length; i++) {
             var wrapped = devices[i];
             try {
-                wrapped.context = _createContext(cl, gl, platform, [wrapped.device])
+                wrapped.context = _createContext(cl, gl, platform, [wrapped.device]);
                 if (wrapped.context === null) {
-                    throw Error("Error creating WebCL context");
+                    throw new Error("Error creating WebCL context");
                 }
                 wrapped.queue = wrapped.context.createCommandQueue(wrapped.device, null);
             } catch (e) {
@@ -203,7 +204,7 @@ var create = Q.promised(getClContext);
 var _createContext = function(cl, gl, platform, devices) {
     cl.enableExtension("KHR_GL_SHARING");
     return cl.createContext(gl, devices);
-}
+};
 
 /**
  * Compile the WebCL program source and return the kernel(s) requested
@@ -225,14 +226,14 @@ var compile = Q.promised(function (cl, source, kernels) {
         program.build([cl.device]);
 
         if (typeof kernels === "string") {
-                var kernelObj = {};
-                kernelObj.name = undefined;
-                kernelObj.kernel = program.createKernel(kernels);
-                kernelObj.cl = cl;
-                kernelObj.call = call.bind(this, kernelObj);
-                kernelObj.setArgs = setArgs.bind(this, kernelObj);
+            var kernelObj = {};
+            kernelObj.name = undefined;
+            kernelObj.kernel = program.createKernel(kernels);
+            kernelObj.cl = cl;
+            kernelObj.call = call.bind(this, kernelObj);
+            kernelObj.setArgs = setArgs.bind(this, kernelObj);
 
-                return kernelObj;
+            return kernelObj;
         } else {
             var kernelObjs = {};
 
@@ -395,7 +396,7 @@ var copyBuffer = Q.promised(function (cl, source, destination) {
         .then(function () {
             cl.queue.finish();
         })
-        .then(release.bind(null, [source, destination]))
+        .then(release.bind(null, [source, destination]));
 });
 
 
