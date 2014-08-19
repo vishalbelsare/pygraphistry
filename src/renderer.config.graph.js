@@ -74,7 +74,7 @@ module.exports = {
     },
 
     "models": {
-        "springs": {
+        "springsPos": {
             "curPos": {
                 "type": "FLOAT",
                 "count": 2,
@@ -83,7 +83,7 @@ module.exports = {
                 "normalize": false
             }
         },
-        "midSprings": {
+        "midSpringsPos": {
             "curPos": {
                 "type": "FLOAT",
                 "count": 2,
@@ -126,7 +126,7 @@ module.exports = {
             "edges": {
                 "program": "edges",
                 "bindings": {
-                    "curPos": ["springs", "curPos"]
+                    "curPos": ["springsPos", "curPos"]
                 },
                 "drawType": "LINES",
                 "glOptions": {}
