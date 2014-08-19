@@ -1,6 +1,7 @@
 "use strict";
 
 var _ = require("underscore");
+var debug = require("debug")("StreamGL:renderer");
 
 /** @module Renderer */
 
@@ -153,6 +154,7 @@ exports.createPrograms = function(gl, programs) {
 
     // for(var programName in programs) {
     _.each(programs, function(programOptions, programName) {
+        debug("Compiling program %s", programName);
         var program = gl.createProgram();
 
         //// Create, compile and attach the shaders
@@ -160,7 +162,8 @@ exports.createPrograms = function(gl, programs) {
         gl.shaderSource(vertShader, programOptions.sources.vertex);
         gl.compileShader(vertShader);
         if(!(gl.isShader(vertShader) && gl.getShaderParameter(vertShader, gl.COMPILE_STATUS))) {
-            throw new Error("Could not compile shader. Log: " + gl.getShaderInfoLog(vertShader));
+            throw new Error("Could not compile shader. Log: '" + gl.getShaderInfoLog(vertShader) +
+                "'\nSource:\n" + programOptions.sources.vertex);
         }
         gl.attachShader(program, vertShader);
 
@@ -168,22 +171,24 @@ exports.createPrograms = function(gl, programs) {
         gl.shaderSource(fragShader, programOptions.sources.fragment);
         gl.compileShader(fragShader);
         if(!(gl.isShader(fragShader) && gl.getShaderParameter(fragShader, gl.COMPILE_STATUS))) {
-            throw new Error("Could not compile shader. Log: " + gl.getShaderInfoLog(fragShader));
+            throw new Error("Could not compile shader. Log: '" + gl.getShaderInfoLog(fragShader) +
+                "'\nSource:\n" + programOptions.sources.fragment);
         }
         gl.attachShader(program, fragShader);
 
         //// Link and validate the program
         gl.linkProgram(program);
         if(!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            console.error("Could not link program. " + gl.getProgramInfoLog(program));
+            console.error("Could not link program '" + programName + "'. Log:\n" +
+                gl.getProgramInfoLog(program));
             gl.deleteProgram(program);
-            throw new Error("Could not link GL program");
+            throw new Error("Could not link GL program '" + programName + "'");
         }
 
         gl.validateProgram(program);
         if(!gl.getProgramParameter(program, gl.VALIDATE_STATUS)) {
             console.error(gl.getProgramParameter(program, gl.VALIDATE_STATUS));
-            throw new Error("Could not validate GL program");
+            throw new Error("Could not validate GL program '" + programName + "'");
         }
 
         //// Activate all the program's attributes as vertex attribute arrays
@@ -226,8 +231,10 @@ exports.loadBuffer = function(gl, buffer, data, bufferName) {
 
     try{
         if(bufferSizes[bufferName] >= data.byteLength) {
+            debug("Reusing existing GL buffer data store to load data for buffer %s (current size: %d, new data size: %d)", bufferName, bufferSizes[bufferName], data.byteLength);
             gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
         } else {
+            debug("Creating new buffer data store for buffer %s (new size: %d)", bufferName, data.byteLength);
             gl.bufferData(gl.ARRAY_BUFFER, data, gl.STREAM_DRAW);
             bufferSizes[bufferName] = data.byteLength;
         }
