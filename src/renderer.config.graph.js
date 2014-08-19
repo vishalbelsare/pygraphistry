@@ -130,9 +130,25 @@ module.exports = {
                 },
                 "drawType": "LINES",
                 "glOptions": {}
+            },
+            "points": {
+                "program": "points",
+                "bindings": {
+                    "curPos": ["curPoints", "curPos"]
+                },
+                "drawType": "POINTS",
+                "glOptions": {}
+            },
+            "midedges": {
+                "program": "midedges",
+                "bindings": {
+                    "curPos": ["midSpringsPos", "curPos"]
+                },
+                "drawType": "LINES",
+                "glOptions": {}
             }
         },
 
-        "render": ["edges"]
+        "render": ["midedges", "points"]
     }
 };
