@@ -26,7 +26,6 @@ var HEIGHT = 600;
 var USE_GEO = true;
 
 var numPoints = 10000,//1024,//2048,//16384,
-    num,
     numEdges = numPoints,
     dimensions = [1,1]; //[960,960];
 
@@ -127,8 +126,8 @@ function fetchVBOs(graph) {
     // node-webcl's event arguments to enqueue commands seems busted at the moment, but
     // maybe enqueueing a event barrier and using its event might work?
     return Q.all(
-        buffersToFetch.map(function(val, idx, arr) {
-            targetArrays[val] = new ArrayBuffer(graph.simulator.buffers[val].size)
+        buffersToFetch.map(function(val) {
+            targetArrays[val] = new ArrayBuffer(graph.simulator.buffers[val].size);
             return graph.simulator.buffers[val].read(new Float32Array(targetArrays[val]));
         })
     )
@@ -158,7 +157,7 @@ function init() {
     canvas.clientWidth = canvas.width = WIDTH;
     canvas.clientHeight = canvas.height = HEIGHT;
 
-    return NBody.create(SimCL, RenderGL, document, canvas, [255,255,255,1.0], dimensions, 3)
+    return NBody.create(SimCL, RenderGL, document, canvas, [255,255,255,1.0], dimensions, 3);
 }
 
 
@@ -183,7 +182,7 @@ function loadDataIntoSim(graph) {
                 return graph.setEdges(edges);
             });
         }
-    })
+    });
 }
 
 
@@ -208,12 +207,12 @@ function create() {
 
     init()
     .then(function (graph) {
-        debug("LOADING DATA")
+        debug("LOADING DATA");
         return loadDataIntoSim(graph);
     })
     .then(function (graph) {
         debug("APPLYING SETTINGS");
-        var api = controls(graph);
+        controls(graph);
 
         debug("ANIMATING");
 
@@ -259,5 +258,5 @@ exports.create = create;
 if(require.main === module) {
     var vbosUpdated = create();
 
-    vbosUpdated.subscribe(function(vbos) { debug("Got updated VBOs"); } );
+    vbosUpdated.subscribe(function() { debug("Got updated VBOs"); } );
 }
