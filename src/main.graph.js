@@ -13,6 +13,7 @@ var $            = require("jquery"),
     Cameras      = require("../../../../superconductorjs/src/Camera.js"),
     interaction  = require("./interaction.js"),
     ui           = require("./ui.js"),
+    _            = require("underscore"),
     debug        = require("debug")("StreamGL:main");
 
 
@@ -32,7 +33,6 @@ function init (canvas) {
     renderer.setGlOptions(gl, renderConfig.options);
     var programs = renderer.createPrograms(gl, renderConfig.programs);
     var buffers = renderer.createBuffers(gl, renderConfig.models);
-    // var bufferSizes = {};
     renderer.setCamera(renderConfig, gl, programs, camera);
 
     interaction.setupDrag($(".sim-container"), camera)
@@ -42,7 +42,6 @@ function init (canvas) {
             renderer.render(renderConfig, gl, programs, buffers);
         });
 
-    var glBufferStoreSize = 0;
     console.warn("%cWarning: having the console open can slow down execution significantly!",
         "font-size: 18pt; font-weight: bold; font-family: \"Helvetica Neue\", Helvetica, sans-serif; background-color: rgb(255, 242, 0);");
 
@@ -50,10 +49,18 @@ function init (canvas) {
     socket.on("vbo_update", function (data, handshake) {
         debug("VBO update");
 
-        // renderer.loadBuffer(gl, buffers.mainVBO, trimmedArray, data.numVertices <= glBufferStoreSize);
-        // renderer.render(renderConfig, gl, programs, buffers, data.numVertices);
+        _.each(data.buffers, function(bufferData, bufferName) {
+            debug("Loading server data for buffer %s (typeof server data: %s; byte length: %d)",
+                bufferName, bufferData.constructor, bufferData.byteLength);
 
-        // glBufferStoreSize = Math.max(glBufferStoreSize, data.numVertices);
+            if(typeof buffers[bufferName] !== "undefined") {
+                renderer.loadBuffer(gl, buffers[bufferName], bufferData, bufferName);
+            } else {
+                console.error("Buffer %s was sent by server, but does not exist locally",
+                    bufferName);
+            }
+        });
+        // renderer.render(renderConfig, gl, programs, buffers, data.numVertices);
 
         handshake(Date.now() - lastHandshake);
         lastHandshake = Date.now();

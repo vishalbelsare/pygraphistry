@@ -88,6 +88,11 @@ var bindProgram = function(gl, program, bindings, buffers, modelSettings) {
 };
 
 
+/** A dictionary mapping buffer names to current sizes
+ * @type {Object.<string, number>} */
+var bufferSizes = {};
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Exports
 ////////////////////////////////////////////////////////////////////////////////
@@ -206,15 +211,31 @@ exports.createBuffers = function(gl, buffers) {
 };
 
 
-exports.loadBuffer = function(gl, buffer, data, reuseBuffer) {
-    gl.flush();
 
+exports.loadBuffer = function(gl, buffer, data, bufferName) {
+    gl.flush();
     bindBuffer(gl, buffer);
 
-    if(reuseBuffer === true) {
-        gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
-    } else {
-        gl.bufferData(gl.ARRAY_BUFFER, data, gl.STREAM_DRAW);
+    if(typeof bufferSizes[bufferName] === "undefined") {
+        bufferSizes[bufferName] = 0;
+    }
+
+    if(data.byteLength <= 0) {
+        return;
+    }
+
+    try{
+        if(bufferSizes[bufferName] >= data.byteLength) {
+            gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
+        } else {
+            gl.bufferData(gl.ARRAY_BUFFER, data, gl.STREAM_DRAW);
+            bufferSizes[bufferName] = data.byteLength;
+        }
+    } catch(glErr) {
+        // This often doesn't get called on GL errors, since they seem to be thrown from the global
+        // WebGL context, not at the point we call the command (above).
+        console.error("Error: could not load data into buffer", bufferName, ". Error:", glErr);
+        throw glErr;
     }
 };
 
