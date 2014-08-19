@@ -4,7 +4,7 @@ var $ = require("jquery");
 
 
 exports.error = function(message) {
-    console.error(message, new Error().stack);
+    console.error(message, ". Stack:\n", new Error().stack);
 
     var $msg = $("<span>")
         .addClass("status-error")
