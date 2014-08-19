@@ -21,7 +21,7 @@ module.exports = {
 
     "camera": {
         "type": "2d",
-        "init": [{"top": 0, "left": 0, "bottom": 1, "right": 1}]
+        "init": [{"top": -1, "left": 0, "bottom": 0, "right": 1}]
     },
 
     "programs": {
