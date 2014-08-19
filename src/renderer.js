@@ -216,6 +216,28 @@ exports.createBuffers = function(gl, buffers) {
 };
 
 
+/**
+ * Given an object mapping buffer names to ArrayBuffer data, load all of them into the GL context
+ * @param {WebGLRenderingContext} gl - the WebGL context
+ * @param {Object.<string, WebGLBuffer>} buffers - the buffer object returned by createBuffers()
+ * @param {Object.<string, ArrayBuffer>} bufferData - a mapping of buffer name -> new data to load
+ * into that buffer
+ */
+exports.loadBuffers = function(gl, buffers, bufferData) {
+    _.each(bufferData, function(data, bufferName) {
+        debug("Loading buffer data for buffer %s (data type: %s, length: %s bytes)",
+            bufferName, data.constructor.name, data.byteLength);
+
+        if(typeof buffers[bufferName] === "undefined") {
+            console.error("Asked to load data for buffer '%s', but no buffer by that name exists locally",
+                bufferName);
+            return false;
+        }
+
+        exports.loadBuffer(gl, buffers[bufferName], data);
+    });
+};
+
 
 exports.loadBuffer = function(gl, buffer, data, bufferName) {
     gl.flush();

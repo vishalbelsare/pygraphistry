@@ -13,7 +13,6 @@ var $            = require("jquery"),
     Cameras      = require("../../../../superconductorjs/src/Camera.js"),
     interaction  = require("./interaction.js"),
     ui           = require("./ui.js"),
-    _            = require("underscore"),
     debug        = require("debug")("StreamGL:main");
 
 
@@ -49,17 +48,7 @@ function init (canvas) {
     socket.on("vbo_update", function (data, handshake) {
         debug("VBO update");
 
-        _.each(data.buffers, function(bufferData, bufferName) {
-            debug("Loading server data for buffer %s (typeof server data: %s; byte length: %d)",
-                bufferName, bufferData.constructor, bufferData.byteLength);
-
-            if(typeof buffers[bufferName] !== "undefined") {
-                renderer.loadBuffer(gl, buffers[bufferName], bufferData, bufferName);
-            } else {
-                console.error("Buffer %s was sent by server, but does not exist locally",
-                    bufferName);
-            }
-        });
+        renderer.loadBuffers(gl, buffers, data.buffers);
         // renderer.render(renderConfig, gl, programs, buffers, data.numVertices);
 
         handshake(Date.now() - lastHandshake);
