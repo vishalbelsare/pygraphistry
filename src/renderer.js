@@ -224,17 +224,19 @@ exports.loadBuffer = function(gl, buffer, data, bufferName) {
     if(typeof bufferSizes[bufferName] === "undefined") {
         bufferSizes[bufferName] = 0;
     }
-
     if(data.byteLength <= 0) {
+        debug("Warning: asked to load data for buffer '%s', but data length is 0", bufferName);
         return;
     }
 
     try{
         if(bufferSizes[bufferName] >= data.byteLength) {
-            debug("Reusing existing GL buffer data store to load data for buffer %s (current size: %d, new data size: %d)", bufferName, bufferSizes[bufferName], data.byteLength);
+            debug("Reusing existing GL buffer data store to load data for buffer %s (current size: %d, new data size: %d)",
+                bufferName, bufferSizes[bufferName], data.byteLength);
             gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
         } else {
-            debug("Creating new buffer data store for buffer %s (new size: %d)", bufferName, data.byteLength);
+            debug("Creating new buffer data store for buffer %s (new size: %d)",
+                bufferName, data.byteLength);
             gl.bufferData(gl.ARRAY_BUFFER, data, gl.STREAM_DRAW);
             bufferSizes[bufferName] = data.byteLength;
         }
