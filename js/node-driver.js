@@ -190,20 +190,12 @@ function loadDataIntoSim(graph) {
 ///////////////////////////////////////////////////////////////////////////
 
 
-function create() {
+function createAnimation() {
     debug("STARTING DRIVER");
 
     // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
     // the contents of each VBO
-    var vboUpdateSig = new Rx.BehaviorSubject({
-        buffers: {
-            curPoints: new ArrayBuffer(0),
-            springs: new ArrayBuffer(0),
-            curMidPoints: new ArrayBuffer(0),
-            midSprings: new ArrayBuffer(0),
-            midSpringsColorCoord: new ArrayBuffer(0),
-        }
-    });
+    var animStepSubj = new Rx.BehaviorSubject(null);
 
     init()
     .then(function (graph) {
@@ -218,24 +210,14 @@ function create() {
 
         // Run the animation loop by recursively expanding each tick event into a new sequence with
         // [a requestAnimationFrame() callback mapped to graph.tick()]
-        var stepSignal = Rx.Observable.fromPromise(graph.tick())
+        Rx.Observable.fromPromise(graph.tick())
             .expand(function() {
                 return (Rx.Observable.fromCallback(graph.renderer.document.requestAnimationFrame))()
-                    .flatMap(function() {
-                        return Rx.Observable.fromPromise(graph.tick());
-                    });
+                    .flatMap(function() { return Rx.Observable.fromPromise(graph.tick()); })
+                    .map(function() { return graph; });
             })
+            .subscribe(animStepSubj);
 
-        stepSignal
-            .sample(30)
-            .flatMap(function() {
-                return Rx.Observable.fromPromise(fetchVBOs(graph));
-            })
-            .map(function(vbos) {
-                var numElements = fetchNumElements(graph);
-                return {buffers: vbos, elements: numElements};
-            })
-            .subscribe(vboUpdateSig);
     })
     .then(function () {
         debug("Graph created");
@@ -246,17 +228,41 @@ function create() {
     })
     .done();
 
-    return vboUpdateSig.share().skip(1);
+    return animStepSubj.skip(1);
+}
+
+
+/**
+ * Fetches VBO data and # of elements from the given graph
+ * @returns {Rx.Observable} an observable sequence containing one item, an Object with the 'buffers'
+ * property set to an Object mapping buffer names to ArrayBuffer data; and the 'elements' Object
+ * mapping render item names to number of elements that should be rendered for the given buffers.
+ */
+function fetchData(graph) {
+    /* buffers: {
+        curPoints: new ArrayBuffer(0),
+        springs: new ArrayBuffer(0),
+        curMidPoints: new ArrayBuffer(0),
+        midSprings: new ArrayBuffer(0),
+        midSpringsColorCoord: new ArrayBuffer(0),
+    }; */
+
+    return Rx.Observable.fromPromise(fetchVBOs(graph))
+        .map(function(vbos) {
+            var numElements = fetchNumElements(graph);
+            return {buffers: vbos, elements: numElements};
+        });
 }
 
 
 
-exports.create = create;
+exports.create = createAnimation;
+exports.fetchData = fetchData;
 
 
 // If the user invoked this script directly from the terminal, run init()
 if(require.main === module) {
-    var vbosUpdated = create();
+    var vbosUpdated = createAnimation();
 
     vbosUpdated.subscribe(function() { debug("Got updated VBOs"); } );
 }
