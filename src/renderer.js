@@ -107,7 +107,7 @@ exports.createContext = function(canvas) {
     canvas.height = canvas.clientHeight;
 
     var gl = null;
-    gl = canvas.getContext("webgl", {antialias: true, premultipliedAlpha: false, preserveDrawingBuffer: true});
+    gl = canvas.getContext("webgl", {antialias: true, premultipliedAlpha: false});
     if(gl === null) { throw new Error("Could not initialize WebGL"); }
 
     gl.viewport(0, 0, canvas.width, canvas.height);
