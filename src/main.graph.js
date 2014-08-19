@@ -1,12 +1,5 @@
 "use strict";
 
-/*
-Enable debuging output in the console by running:
-    localStorage.debug = "StreamGL:*";
-in the console. Disable debug output by running:
-    localStorage.removeItem('debug');
-*/
-
 var $            = require("jquery"),
     renderConfig = require("render-config"),
     renderer     = require("./renderer.js"),
@@ -15,10 +8,18 @@ var $            = require("jquery"),
     ui           = require("./ui.js"),
     debug        = require("debug")("StreamGL:main");
 
+/*
+Enable debuging output in the console by running:
+    localStorage.debug = "StreamGL:*";
+in the console. Disable debug output by running:
+    localStorage.removeItem('debug');
+*/
+
+console.warn("%cWarning: having the console open can slow down execution significantly!",
+    "font-size: 18pt; font-weight: bold; font-family: \"Helvetica Neue\", Helvetica, sans-serif; background-color: rgb(255, 242, 0);");
+
 
 function init (canvas) {
-
-
     var socket = io.connect("http://localhost", {reconnection: false, transports: ["websocket"]});
     socket.io.engine.binaryType = "arraybuffer";
 
@@ -37,10 +38,9 @@ function init (canvas) {
             renderer.render(renderConfig, gl, programs, buffers);
         });
 
-    console.warn("%cWarning: having the console open can slow down execution significantly!",
-        "font-size: 18pt; font-weight: bold; font-family: \"Helvetica Neue\", Helvetica, sans-serif; background-color: rgb(255, 242, 0);");
 
     var lastHandshake = Date.now();
+
     socket.on("vbo_update", function (data, handshake) {
         debug("VBO update");
 
@@ -51,13 +51,11 @@ function init (canvas) {
         lastHandshake = Date.now();
     });
 
-    socket.on("error", function(reason) {
-        ui.error("Connection error (reason: " + reason + ")");
-    });
-    socket.on("disconnect", function(reason) {
-        ui.error("Disconnected (reason: " + reason + ")");
-    });
+
+    socket.on("error", function(reason) { ui.error("Connection error (reason: " + reason + ")"); });
+    socket.on("disconnect", function(reason){ ui.error("Disconnected (reason: " + reason + ")"); });
 }
+
 
 window.addEventListener("load", function(){
     init($("#simulation")[0]);
