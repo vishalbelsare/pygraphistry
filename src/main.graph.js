@@ -18,12 +18,6 @@ var $            = require("jquery"),
 
 function init (canvas) {
 
-    var camera = new Cameras.Camera2d({
-            left: -0.15,
-            right: 5,
-            bottom: 5, // (5 * (1 / (700/700))) - 0.15,
-            top: -0.15 // - 0.15
-        });
 
     var socket = io.connect("http://localhost", {reconnection: false, transports: ["websocket"]});
     socket.io.engine.binaryType = "arraybuffer";
@@ -32,6 +26,8 @@ function init (canvas) {
     renderer.setGlOptions(gl, renderConfig.options);
     var programs = renderer.createPrograms(gl, renderConfig.programs);
     var buffers = renderer.createBuffers(gl, renderConfig.models);
+
+    var camera = new Cameras.Camera2d(renderConfig.camera.init[0]);
     renderer.setCamera(renderConfig, gl, programs, camera);
 
     interaction.setupDrag($(".sim-container"), camera)
