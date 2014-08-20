@@ -35,7 +35,7 @@ function getSource(id) {
 function getImage(url) {
     var deferred = Q.defer();
     try {
-        var img = new Image();
+        var img = new window.Image();
 
         img.onload = function() {
             debug("Done loading <img>");
