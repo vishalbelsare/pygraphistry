@@ -97,6 +97,8 @@ var bindProgram = function(gl, program, programName, bindings, buffers, modelSet
         gl.vertexAttribPointer(location, element.count, gl[element.type], element.normalize,
             element.stride, element.offset);
 
+        gl.enableVertexAttribArray(location);
+
         programBindings[programName] = bindings;
     });
 };
@@ -202,12 +204,6 @@ exports.createPrograms = function(gl, programs) {
         if(!gl.getProgramParameter(program, gl.VALIDATE_STATUS)) {
             console.error(gl.getProgramParameter(program, gl.VALIDATE_STATUS));
             throw new Error("Could not validate GL program '" + programName + "'");
-        }
-
-        //// Activate all the program's attributes as vertex attribute arrays
-        for(var i = 0; i < programOptions.attributes.length; i++) {
-            var location = getAttribLocationFast(gl, program, programOptions.attributes[i]);
-            gl.enableVertexAttribArray(location);
         }
 
         createdPrograms[programName] = program;
