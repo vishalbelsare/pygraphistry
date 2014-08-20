@@ -25,6 +25,9 @@ var DEBUG_MODE = (QUERY_PARAMS.hasOwnProperty("debug") && QUERY_PARAMS.debug !==
 
 
 function init (canvas, meter) {
+    // If no meter passed in, create a stub object with methods mapped to noops
+    meter = (typeof meter === "object") ? meter : {tick: function(){}, pause: function(){}};
+
     var socket = io.connect("http://localhost", {reconnection: false, transports: ["websocket"]});
     socket.io.engine.binaryType = "arraybuffer";
 
@@ -58,11 +61,19 @@ function init (canvas, meter) {
     });
 
 
-    socket.on("error", function(reason) { ui.error("Connection error (reason: " + reason + ")"); });
-    socket.on("disconnect", function(reason){ ui.error("Disconnected (reason: " + reason + ")"); });
+    socket.on("error", function(reason) {
+        meter.pause();
+        ui.error("Connection error (reason:", reason, ")");
+    });
+    socket.on("disconnect", function(reason){
+        meter.pause();
+        ui.error("Disconnected (reason:", reason, ")");
+    });
 }
 
 
 window.addEventListener("load", function(){
-    init($("#simulation")[0]);
+    var meter = DEBUG_MODE ? new FPSMeter($("body")[0]) : undefined;
+
+    init($("#simulation")[0], meter);
 });
