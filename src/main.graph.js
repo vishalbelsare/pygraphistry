@@ -60,8 +60,6 @@ function init (canvas, meter) {
             handshake(Date.now() - lastHandshake);
             lastHandshake = Date.now();
             meter.tick();
-
-            if(Math.random() < 0.5) { throw new Error("Random error"); }
         } catch(e) {
             ui.error("Render error (", e, ")");
         }
