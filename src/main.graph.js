@@ -72,6 +72,7 @@ function init (canvas, meter) {
     });
     socket.on("disconnect", function(reason){
         meter.pause();
+        $(canvas).parent().addClass("disconnected");
         ui.error("Disconnected (reason:", reason, ")");
     });
 }
