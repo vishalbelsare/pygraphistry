@@ -19,7 +19,12 @@ console.warn("%cWarning: having the console open can slow down execution signifi
     "font-size: 18pt; font-weight: bold; font-family: \"Helvetica Neue\", Helvetica, sans-serif; background-color: rgb(255, 242, 0);");
 
 
-function init (canvas) {
+var QUERY_PARAMS = Object.freeze(ui.getQueryParams());
+var DEBUG_MODE = (QUERY_PARAMS.hasOwnProperty("debug") && QUERY_PARAMS.debug !== "false" &&
+        QUERY_PARAMS.debug !== "0");
+
+
+function init (canvas, meter) {
     var socket = io.connect("http://localhost", {reconnection: false, transports: ["websocket"]});
     socket.io.engine.binaryType = "arraybuffer";
 
