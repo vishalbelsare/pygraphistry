@@ -22,7 +22,7 @@ var attrLocations = {};
  * @param {string} programName - the name of the program
  * @param {string} attribute - the name of the attribute in the shader source code
  */
-var getAttribLocationFast = function(gl, program, programName, attribute) {
+function getAttribLocationFast(gl, program, programName, attribute) {
     if(typeof attrLocations[programName] !== "undefined" &&
         typeof attrLocations[programName][attribute] !== "undefined") {
         debug("Get attribute %s: using fast path", attribute);
@@ -33,13 +33,13 @@ var getAttribLocationFast = function(gl, program, programName, attribute) {
     attrLocations[programName] = attrLocations[programName] || {};
     attrLocations[programName][attribute] = gl.getAttribLocation(program, attribute);
     return attrLocations[programName][attribute];
-};
+}
 
 
 /** The program currently in use by GL
  * @type {?WebGLProgram} */
 var activeProgram = null;
-var useProgram = function(gl, program) {
+function useProgram(gl, program) {
     if(activeProgram !== program) {
         debug("Use program: on slow path");
         gl.useProgram(program);
@@ -49,20 +49,20 @@ var useProgram = function(gl, program) {
     debug("Use program: on fast path");
 
     return false;
-};
+}
 
 
 /** The currently bound buffer in GL
  * @type {?WebGLBuffer} */
 var boundBuffer = null;
-var bindBuffer = function(gl, buffer) {
+function bindBuffer(gl, buffer) {
     if(boundBuffer !== buffer) {
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
         boundBuffer = buffer;
         return true;
     }
     return false;
-};
+}
 
 
 /** The bindings object currently in effect on a program
@@ -76,7 +76,7 @@ var programBindings = {};
  * @param {Object.<string, WebGLBuffer>} buffers - Mapping of created buffer names to WebGL buffers
  * @param {Object} modelSettings - The "models" object from the rendering config
  */
-var bindProgram = function(gl, program, programName, bindings, buffers, modelSettings) {
+function bindProgram(gl, program, programName, bindings, buffers, modelSettings) {
     useProgram(gl, program);
 
     // FIXME: If we don't rebind every frame, but bind another program, then the bindings of the
@@ -101,7 +101,7 @@ var bindProgram = function(gl, program, programName, bindings, buffers, modelSet
 
         programBindings[programName] = bindings;
     });
-};
+}
 
 
 /** A dictionary mapping buffer names to current sizes
@@ -116,7 +116,7 @@ var bufferSizes = {};
 
 
 
-exports.createContext = function(canvas) {
+function createContext(canvas) {
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
 
@@ -127,14 +127,14 @@ exports.createContext = function(canvas) {
     gl.viewport(0, 0, canvas.width, canvas.height);
 
     return gl;
-};
+}
 
 
 /**
  * Set global GL settings
  * @param {WebGLRenderingContext}
  */
-exports.setGlOptions = function(gl, options) {
+function setGlOptions(gl, options) {
     var whiteList = {
         "enable": true,
         "disable": true,
@@ -160,10 +160,10 @@ exports.setGlOptions = function(gl, options) {
             gl[optionName].apply(gl, newArgs);
         });
     });
-};
+}
 
 
-exports.createPrograms = function(gl, programs) {
+function createPrograms(gl, programs) {
     var createdPrograms = {};
 
     // for(var programName in programs) {
@@ -209,10 +209,10 @@ exports.createPrograms = function(gl, programs) {
     });
 
     return createdPrograms;
-};
+}
 
 
-exports.createBuffers = function(gl, buffers) {
+function createBuffers(gl, buffers) {
     var createdBuffers = {};
 
     _.each(buffers, function(bufferOpts, bufferName) {
@@ -221,7 +221,7 @@ exports.createBuffers = function(gl, buffers) {
     });
 
     return createdBuffers;
-};
+}
 
 
 /**
@@ -231,7 +231,7 @@ exports.createBuffers = function(gl, buffers) {
  * @param {Object.<string, ArrayBuffer>} bufferData - a mapping of buffer name -> new data to load
  * into that buffer
  */
-exports.loadBuffers = function(gl, buffers, bufferData) {
+function loadBuffers(gl, buffers, bufferData) {
     _.each(bufferData, function(data, bufferName) {
         debug("Loading buffer data for buffer %s (data type: %s, length: %s bytes)",
             bufferName, data.constructor.name, data.byteLength);
@@ -242,12 +242,12 @@ exports.loadBuffers = function(gl, buffers, bufferData) {
             return false;
         }
 
-        exports.loadBuffer(gl, buffers[bufferName], bufferName, data);
+        loadBuffer(gl, buffers[bufferName], bufferName, data);
     });
-};
+}
 
 
-exports.loadBuffer = function(gl, buffer, bufferName, data) {
+function loadBuffer(gl, buffer, bufferName, data) {
     bindBuffer(gl, buffer);
 
     if(typeof bufferSizes[bufferName] === "undefined") {
@@ -275,10 +275,10 @@ exports.loadBuffer = function(gl, buffer, bufferName, data) {
         console.error("Error: could not load data into buffer", bufferName, ". Error:", glErr);
         throw glErr;
     }
-};
+}
 
 
-exports.setCamera = function(config, gl, programs, camera) {
+function setCamera(config, gl, programs, camera) {
     _.each(config.programs, function(programConfig, programName) {
         var program = programs[programName];
         useProgram(gl, program);
@@ -286,11 +286,11 @@ exports.setCamera = function(config, gl, programs, camera) {
         var mvpLoc = gl.getUniformLocation(program, programConfig.camera);
         gl.uniformMatrix4fv(mvpLoc, false, camera.getMatrix());
     });
-};
+}
 
 
 /** A mapping of scene items to the number of elements that should be rendered for them */
-exports.numElements = {};
+var numElements = {};
 
 
 /**
@@ -300,26 +300,38 @@ exports.numElements = {};
  * @param {Object.<string, WebGLBuffer>} buffers - the buffers, as returned from createBuffers()
  * @param {(string[])} [renderListOverride] - optional override of the scene.render array
  */
-exports.render = function(config, gl, programs, buffers, renderListOverride) {
+function render(config, gl, programs, buffers, renderListOverride) {
     debug("Rendering a frame");
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     var toRender = renderListOverride || config.scene.render;
     _.each(toRender, function(target) {
-        if(typeof exports.numElements[target] === "undefined" || exports.numElements[target] < 1) {
+        if(typeof numElements[target] === "undefined" || numElements[target] < 1) {
             debug("Not rendering item '%s' because it doesn't have any elements (set in numElements)",
                 target);
             return false;
         }
 
-        debug("  Rendering item '%s' (%d elements)", target, exports.numElements[target]);
+        debug("  Rendering item '%s' (%d elements)", target, numElements[target]);
 
         var renderItem = config.scene.items[target];
         bindProgram(gl, programs[renderItem.program], renderItem.program, renderItem.bindings, buffers, config.models);
-        gl.drawArrays(gl[renderItem.drawType], 0, exports.numElements[target]);
+        gl.drawArrays(gl[renderItem.drawType], 0, numElements[target]);
     });
 
     gl.flush();
-};
+}
 
+
+module.exports = {
+    init: init,
+    createContext: createContext,
+    setGlOptions: setGlOptions,
+    createPrograms: createPrograms,
+    createBuffers: createBuffers,
+    loadBuffers: loadBuffers,
+    loadBuffer: loadBuffer,
+    setCamera: setCamera,
+    render: render
+};
