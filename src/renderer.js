@@ -291,6 +291,9 @@ function setCamera(config, gl, programs, camera) {
 
 /** A mapping of scene items to the number of elements that should be rendered for them */
 var numElements = {};
+function setNumElements(newNumElements) {
+    numElements = newNumElements;
+}
 
 
 /**
@@ -333,5 +336,6 @@ module.exports = {
     loadBuffers: loadBuffers,
     loadBuffer: loadBuffer,
     setCamera: setCamera,
+    setNumElements: setNumElements,
     render: render
 };

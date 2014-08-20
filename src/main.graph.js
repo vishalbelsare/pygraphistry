@@ -45,7 +45,7 @@ function init (canvas) {
         debug("VBO update");
 
         renderer.loadBuffers(gl, buffers, data.buffers);
-        renderer.numElements = data.elements;
+        renderer.setNumElements(data.elements);
         renderer.render(renderConfig, gl, programs, buffers);
 
         handshake(Date.now() - lastHandshake);
