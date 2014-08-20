@@ -12,7 +12,7 @@ attribute vec2 aColorCoord;
 varying vec2 vColorCoord;
 
 void main(void) {
-	vec4 colorLoc = (mvp * vec4(aColorCoord.x, -1.0 * aColorCoord.y, Z_VAL, W_VAL));
+	vec4 colorLoc = (mvp * vec4(aColorCoord.x, 1.0 * aColorCoord.y, Z_VAL, W_VAL));
 	colorLoc.x = colorLoc.x / colorLoc.w;
 	colorLoc.y = colorLoc.y / colorLoc.w;
 	vColorCoord = colorLoc.xy;

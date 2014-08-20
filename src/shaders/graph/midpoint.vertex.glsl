@@ -11,6 +11,6 @@ void main(void) {
 
     gl_PointSize = 3.0;
 
-    vec4 pos = vec4(curPos.x, -1.0 * curPos.y, Z_VAL, W_VAL);
+    vec4 pos = vec4(curPos.x, 1.0 * curPos.y, Z_VAL, W_VAL);
     gl_Position = mvp * pos;
 }
