@@ -12,24 +12,27 @@ var debug = require("debug")("StreamGL:renderer");
 
 
 /** Cached dictionary of program.attribute: attribute locations
- * @type {Object.<WebGLProgram, Object.<string, GLint>>} */
+ * @type {Object.<string, Object.<string, GLint>>} */
 var attrLocations = {};
 /**
  * Wraps gl.getAttribLocation and caches the result, returning the cached result on subsequent
  * calls for the same attribute in the same program.
  * @param {WebGLRenderingContext} gl - the WebGL context
  * @param {WebGLProgram} program - the program the attribute is part of
+ * @param {string} programName - the name of the program
  * @param {string} attribute - the name of the attribute in the shader source code
  */
-var getAttribLocationFast = function(gl, program, attribute) {
-    if(typeof attrLocations[program] !== "undefined" &&
-        typeof attrLocations[program][attribute] !== "undefined") {
-        return attrLocations[program][attribute];
+var getAttribLocationFast = function(gl, program, programName, attribute) {
+    if(typeof attrLocations[programName] !== "undefined" &&
+        typeof attrLocations[programName][attribute] !== "undefined") {
+        debug("Get attribute %s: using fast path", attribute);
+        return attrLocations[programName][attribute];
     }
 
-    attrLocations[program] = attrLocations[program] || {};
-    attrLocations[program][attribute] = gl.getAttribLocation(program, attribute);
-    return attrLocations[program][attribute];
+    debug("Get attribute %s: using slow path", attribute);
+    attrLocations[programName] = attrLocations[programName] || {};
+    attrLocations[programName][attribute] = gl.getAttribLocation(program, attribute);
+    return attrLocations[programName][attribute];
 };
 
 
@@ -38,10 +41,12 @@ var getAttribLocationFast = function(gl, program, attribute) {
 var activeProgram = null;
 var useProgram = function(gl, program) {
     if(activeProgram !== program) {
+        debug("Use program: on slow path");
         gl.useProgram(program);
         activeProgram = program;
         return true;
     }
+    debug("Use program: on fast path");
 
     return false;
 };
@@ -61,7 +66,7 @@ var bindBuffer = function(gl, buffer) {
 
 
 /** The bindings object currently in effect on a program
- * @type {Object.<WebGLProgram, RendererOptions.render.bindings>} */
+ * @type {Object.<string, RendererOptions.render.bindings>} */
 var programBindings = {};
 /**
  * Binds all of a programs attributes to elements of a/some buffer(s)
@@ -71,20 +76,28 @@ var programBindings = {};
  * @param {Object.<string, WebGLBuffer>} buffers - Mapping of created buffer names to WebGL buffers
  * @param {Object} modelSettings - The "models" object from the rendering config
  */
-var bindProgram = function(gl, program, bindings, buffers, modelSettings) {
+var bindProgram = function(gl, program, programName, bindings, buffers, modelSettings) {
     useProgram(gl, program);
 
+    // FIXME: If we don't rebind every frame, but bind another program, then the bindings of the
+    // first program are lost. Shouldn't they persist unless we change them for the program?
     // If the program is already bound using the current binding preferences, no need to continue
-    if(programBindings[program] === bindings) { return false; }
+    //if(programBindings[programName] === bindings) {
+        //debug("Not binding program %s because already bound", programName);
+        //return false;
+    //}
+    debug("Binding program %s", programName);
 
     _.each(bindings, function(binding, attribute) {
         bindBuffer(gl, buffers[binding[0]]);
 
         var element = modelSettings[binding[0]][binding[1]];
-        var location = getAttribLocationFast(gl, program, attribute);
+        var location = getAttribLocationFast(gl, program, programName, attribute);
 
         gl.vertexAttribPointer(location, element.count, gl[element.type], element.normalize,
             element.stride, element.offset);
+
+        programBindings[programName] = bindings;
     });
 };
 
@@ -234,13 +247,12 @@ exports.loadBuffers = function(gl, buffers, bufferData) {
             return false;
         }
 
-        exports.loadBuffer(gl, buffers[bufferName], data);
+        exports.loadBuffer(gl, buffers[bufferName], bufferName, data);
     });
 };
 
 
-exports.loadBuffer = function(gl, buffer, data, bufferName) {
-    gl.flush();
+exports.loadBuffer = function(gl, buffer, bufferName, data) {
     bindBuffer(gl, buffer);
 
     if(typeof bufferSizes[bufferName] === "undefined") {
