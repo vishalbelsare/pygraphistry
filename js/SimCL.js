@@ -22,7 +22,9 @@ function create(renderer, dimensions, numSplits, locked) {
         return util.getSource("apply-forces.cl")
         .then(function(source) {
             console.debug('GOT SOURCE')
-            return cl.compile(source, ["apply_points", "apply_springs", "apply_midpoints", "apply_midsprings"]);
+            return cl.compile(source, [
+                "apply_points", "apply_springs", "apply_midpoints", "apply_midsprings",
+                "repulsePointsAndApplyGravity", "attractEdgesAndApplyForces"]);
         })
         .then(function(kernels) {
             console.debug('COMPILED')
@@ -33,6 +35,8 @@ function create(renderer, dimensions, numSplits, locked) {
                 "edgesKernel": kernels["apply_springs"],
                 "midPointKernel": kernels["apply_midpoints"],
                 "midEdgesKernel": kernels["apply_midsprings"],
+                "repulsePointsAndApplyGravityKernel": kernels["repulsePointsAndApplyGravity"],
+                "attractEdgesAndApplyForcesKernel": kernels["attractEdgesAndApplyForces"],
                 "elementsPerPoint": 2
             };
             simObj.tick = tick.bind(this, simObj);
@@ -186,6 +190,23 @@ function setPoints(simulator, points) {
                 webcl.type.FLOAT,
                 webcl.type.FLOAT,
                 null,
+                webcl.type.UINT
+            ] : undefined);
+
+        simulator.repulsePointsAndApplyGravityKernel.setArgs([
+                null, null, null, null, null, //GRAPH_ARGS
+                webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
+                simulator.buffers.curPoints.buffer,
+                webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
+                webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
+                webcl.type ? [0] : new Uint32Array([0])
+            ],
+            webcl.type ? [
+                null, null, null, null, null, //GRAPH_ARGS
+                webcl.type.UINT,
+                null,
+                webcl.type.FLOAT,
+                webcl.type.FLOAT,
                 webcl.type.UINT
             ] : undefined);
 
@@ -346,6 +367,20 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
                 webcl.type.FLOAT, webcl.type.FLOAT, /*webcl.type.UINT*/null
             ] : null);
 
+        simulator.attractEdgesAndApplyForcesKernel.setArgs(
+            [
+                null, null, null, null, null, //GRAPH_ARGS
+
+                null, //forwards/backwards picked dynamically
+                null, //forwards/backwards picked dynamically
+                null, //simulator.buffers.curPoints.buffer then simulator.buffers.nextPoints.buffer
+            ],
+            webcl.type ? [
+                null, null, null, null, null, //GRAPH_ARGS
+
+                null, null, null
+            ] : null);
+
         return simulator;
     })
     .then(_.identity, function (err) {
@@ -409,6 +444,60 @@ function setPhysics(simulator, cfg) {
             [null, null, null, null, null, null, null, null, edgeStrength,   edgeDistance,   null],
             [null, null, null, null, null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
     }
+
+
+    //==== FORCE ATLAS 2 SETTINGS
+
+    var vArr = [null, null, null, null, null];
+    var tArr = [null, null, null, null, null];
+    var anyAtlasArgsChanged = false;
+    if (cfg.hasOwnProperty('scalingRatio')) {
+        anyAtlasArgsChanged = true;
+        var v = webcl.type ? [cfg.scalingRatio] : new Float32Array([cfg.scalingRatio]);
+        var t = cljs.types.float_t;
+        var idx = 0;
+        vArr[idx] = v;
+        tArr[idx] = t;
+    }
+    if (cfg.hasOwnProperty('gravity')) {
+        anyAtlasArgsChanged = true;
+        var v = webcl.type ? [cfg.gravity] : new Float32Array([cfg.gravity]);
+        var t = cljs.types.float_t;
+        var idx = 1;
+        vArr[idx] = v;
+        tArr[idx] = t;
+    }
+    if (cfg.hasOwnProperty('edgeInfluence')) {
+        anyAtlasArgsChanged = true;
+        var v = webcl.type ? [cfg.edgeInfluence] : new Uint32Array([cfg.edgeInfluence]);
+        var t = cljs.types.uint_t;
+        var idx = 2;
+        vArr[idx] = v;
+        tArr[idx] = t;
+    }
+    var flags = ['preventOverlap', 'strongGravity', 'dissuadeHubs'];
+    var isAnyFlagToggled = flags.filter(function (flag) { return cfg.hasOwnProperty(flag); }).length;
+    if (isAnyFlagToggled) {
+        anyAtlasArgsChanged = true;
+        var mask = 0;
+        flags.forEach(function (flag, i) {
+            var isOn = cfg.hasOwnProperty(flag) ? cfg[flag] : totCfg[flag];;
+            if (isOn) {
+                mask = mask | (1 << i);
+            }
+        }));
+
+        var v = webcl.type ? [mask] : new Uint32Array([mask]);
+        var t = cljs.types.uint_t;
+        var idx = 3;
+        vArr[idx] = v;
+        tArr[idx] = t;
+    }
+    if (anyAtlasArgsChanged) {
+        simulator.repulsePointsAndApplyGravityKernel.setArgs(vArr, tArr);
+        simulator.attractEdgesAndApplyForcesKernel.setArgs(vArr, tArr);
+    }
+
 }
 
 

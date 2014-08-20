@@ -220,6 +220,32 @@ function bindSliders(graph) {
         bang.call($('#' + name));
     });
 
+
+    //FORCE ATLAS 2 SLIDERS
+
+    $('#scalingRatio').on('change', function (e) {
+        var v = $(this).val();
+        console.log('scalingRatio', v);
+        graph.setPhysics({scalingRatio: v});
+    });
+
+     $('#edgeInfluence').on('change', function (e) {
+        var v = $(this).val();
+        console.log('edgeInfluence', v);
+        graph.setPhysics({edgeInfluence: v});
+    });
+
+    ['forceAtlas', 'preventOverlap', 'strongGravity', 'dissuadeHubs'].forEach(function (name) {
+        function bang () {
+            var obj = {};
+            obj[name] = $(this).is(':checked');
+            graph.setPhysics(obj);
+        };
+        $('#' + name).on('change', bang);
+        bang.call($('#' + name));
+    });
+
+
 }
 
 
