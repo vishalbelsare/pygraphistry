@@ -8,6 +8,8 @@ var debug = require("debug")("N-body:SimCL");
 
 if (typeof(window) == 'undefined') {
     var webcl = require('node-webcl');
+} else if (typeof(webcl) == 'undefined') {
+    var webcl = window.webcl;
 }
 
 

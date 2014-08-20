@@ -8,6 +8,8 @@ var debug = require("debug")("N-body:cl");
 if (typeof(window) == 'undefined') {
     var webcl = require('node-webcl');
     console.debug = console.log;
+} else if (typeof(webcl) == 'undefined') {
+    var webcl = window.webcl;
 }
 
 var DEVICE_TYPE = webcl.DEVICE_TYPE_GPU;
