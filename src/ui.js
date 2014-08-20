@@ -3,10 +3,13 @@
 var $ = require("jquery");
 
 
-exports.error = function(message) {
-    console.error(message, ". Stack:\n", new Error().stack);
+exports.error = function() {
+    var args = Array.prototype.slice.call(arguments);
+    var message = args.join(" ");
 
-    var $msg = $("<span>")
+    console.error.apply(console, args);
+
+    var $msg = $("<div>")
         .addClass("status-error")
         .text(message);
 
