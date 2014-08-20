@@ -11,7 +11,8 @@ exports.error = function() {
 
     var $msg = $("<div>")
         .addClass("status-error")
-        .text(message);
+        .text(message)
+        .click(function() { $(this).slideUp(); });
 
     $(".status-bar")
         .append($msg)
