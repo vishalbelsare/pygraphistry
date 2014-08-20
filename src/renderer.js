@@ -114,7 +114,6 @@ var bufferSizes = {};
 ////////////////////////////////////////////////////////////////////////////////
 
 
-exports.numVertices = 0;
 
 
 exports.createContext = function(canvas) {
@@ -290,19 +289,37 @@ exports.setCamera = function(config, gl, programs, camera) {
 };
 
 
-exports.render = function(config, gl, programs, buffers, numVertices) {
-    exports.numVertices = typeof numVertices !== "undefined" ? numVertices : exports.numVertices;
-    if(exports.numVertices < 1) {
-        return false;
-    }
+/** A mapping of scene items to the number of elements that should be rendered for them */
+exports.numElements = {};
+
+
+/**
+ * Render one or more items as specified in render config's scene.render array
+ * @param {RenderOptions} config - the rendering config for the current context
+ * @param {WebGLRenderingContext} gl - the WebGL rendering context
+ * @param {Object.<string, WebGLBuffer>} buffers - the buffers, as returned from createBuffers()
+ * @param {(string[])} [renderListOverride] - optional override of the scene.render array
+ */
+exports.render = function(config, gl, programs, buffers, renderListOverride) {
+    debug("Rendering a frame");
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    _.each(config.scene.render, function(target) {
+    var toRender = renderListOverride || config.scene.render;
+    _.each(toRender, function(target) {
+        if(typeof exports.numElements[target] === "undefined" || exports.numElements[target] < 1) {
+            debug("Not rendering item '%s' because it doesn't have any elements (set in numElements)",
+                target);
+            return false;
+        }
+
+        debug("  Rendering item '%s' (%d elements)", target, exports.numElements[target]);
+
         var renderItem = config.scene.items[target];
-        bindProgram(gl, programs[renderItem.program], renderItem.bindings, buffers, config.models);
-        gl.drawArrays(gl[renderItem.drawType], 0, exports.numVertices);
+        bindProgram(gl, programs[renderItem.program], renderItem.program, renderItem.bindings, buffers, config.models);
+        gl.drawArrays(gl[renderItem.drawType], 0, exports.numElements[target]);
     });
 
     gl.flush();
 };
+
