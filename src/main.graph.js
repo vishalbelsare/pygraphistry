@@ -52,12 +52,19 @@ function init (canvas, meter) {
     socket.on("vbo_update", function (data, handshake) {
         debug("VBO update");
 
-        renderer.loadBuffers(gl, buffers, data.buffers);
-        renderer.setNumElements(data.elements);
-        renderer.render(renderConfig, gl, programs, buffers);
+        try {
+            renderer.loadBuffers(gl, buffers, data.buffers);
+            renderer.setNumElements(data.elements);
+            renderer.render(renderConfig, gl, programs, buffers);
 
-        handshake(Date.now() - lastHandshake);
-        lastHandshake = Date.now();
+            handshake(Date.now() - lastHandshake);
+            lastHandshake = Date.now();
+            meter.tick();
+
+            if(Math.random() < 0.5) { throw new Error("Random error"); }
+        } catch(e) {
+            ui.error("Render error (", e, ")");
+        }
     });
 
 
