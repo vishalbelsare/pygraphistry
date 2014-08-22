@@ -113,6 +113,11 @@ var setEdges = Q.promised(function(graph, edges) {
             }
         });
 
+        var degreesFlattened = new Uint32Array(graph.__pointsHostBuffer.length);
+        workItems.forEach(function (edgeList) {
+            degreesFlattened[edgeList[2]] = edgeList[1];
+        });
+
         //Cheesey load balancing
         //TODO benchmark
 
@@ -134,6 +139,7 @@ var setEdges = Q.promised(function(graph, edges) {
         }
 
         return {
+            degrees: degreesFlattened,
             edgesTyped: edgesFlattened,
             numWorkItems: workItemsFlattened.length,
             workItemsTyped: new Uint32Array(workItemsFlattened)

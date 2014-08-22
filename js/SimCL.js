@@ -74,8 +74,10 @@ function create(renderer, dimensions, numSplits, locked) {
                 randValues: null,
                 curPoints: null,
                 forwardsEdges: null,
+                forwardsDegrees: null,
                 forwardsWorkItems: null,
                 backwardsEdges: null,
+                backwardsDegrees: null,
                 backwardsWorkItems: null,
                 springsPos: null,
                 midSpringsPos: null,
@@ -213,6 +215,8 @@ function setPoints(simulator, points) {
                 webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
                 webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
                 webcl.type ? [0] : new Uint32Array([0]),
+                simulator.buffers.forwardsDegrees.buffer,
+                simulator.buffers.backwardsDegrees.buffer,
                 simulator.buffers.velocities.buffer,
             ]),
             webcl.type ? graphArgs_t.concat([
@@ -222,6 +226,8 @@ function setPoints(simulator, points) {
                 webcl.type.FLOAT,
                 webcl.type.FLOAT,
                 webcl.type.UINT,
+                null,
+                null,
                 null
             ]) : undefined);
         }
@@ -267,8 +273,10 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
 
     simulator.resetBuffers([
         simulator.buffers.forwardsEdges,
+        simulator.buffers.forwardsDegrees,
         simulator.buffers.forwardsWorkItems,
         simulator.buffers.backwardsEdges,
+        simulator.buffers.backwardsDegrees,
         simulator.buffers.backwardsWorkItems,
         simulator.buffers.springsPos,
         simulator.buffers.midSpringsPos,
@@ -289,8 +297,10 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
         // Create buffers
         return Q.all([
             simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'forwardsEdges'),
+            simulator.cl.createBuffer(forwardsEdges.degreesTyped.byteLength, 'forwardsDegrees'),
             simulator.cl.createBuffer(forwardsEdges.workItemsTyped.byteLength, 'forwardsWorkItems'),
             simulator.cl.createBuffer(backwardsEdges.edgesTyped.byteLength, 'backwardsEdges'),
+            simulator.cl.createBuffer(backwardsEdges.degreesTyped.byteLength, 'backwardsDegrees'),
             simulator.cl.createBuffer(backwardsEdges.workItemsTyped.byteLength, 'backwardsWorkItems'),
             simulator.cl.createBuffer(midPoints.byteLength, 'nextMidPoints'),
             simulator.renderer.createBuffer(simulator.numEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 'springs'),
@@ -298,13 +308,16 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
             simulator.renderer.createBuffer(simulator.numMidEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 'midSprings'),
             simulator.renderer.createBuffer(simulator.numMidEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 'midSpringsColorCoord')]);
     })
-    .spread(function(forwardsEdgesBuffer, forwardsWorkItemsBuffer, backwardsEdgesBuffer,
-                     backwardsWorkItemsBuffer, nextMidPointsBuffer, springsVBO,
+    .spread(function(forwardsEdgesBuffer, forwardsDegreesBuffer, forwardsWorkItemsBuffer,
+                     backwardsEdgesBuffer, backwardsDegreesBuffer, backwardsWorkItemsBuffer,
+                     nextMidPointsBuffer, springsVBO,
                      midPointsVBO, midSpringsVBO, midSpringsColorCoordVBO) {
         // Bind buffers
         simulator.buffers.forwardsEdges = forwardsEdgesBuffer;
+        simulator.buffers.forwardsDegrees = forwardsDegreesBuffer;
         simulator.buffers.forwardsWorkItems = forwardsWorkItemsBuffer;
         simulator.buffers.backwardsEdges = backwardsEdgesBuffer;
+        simulator.buffers.backwardsDegrees = backwardsDegreesBuffer;
         simulator.buffers.backwardsWorkItems = backwardsWorkItemsBuffer;
         simulator.buffers.nextMidPoints = nextMidPointsBuffer;
 
@@ -319,8 +332,10 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
             simulator.cl.createBufferGL(midSpringsVBO, 'midSpringsPos'),
             simulator.cl.createBufferGL(midSpringsColorCoordVBO, 'midSpringsColorCoord'),
             simulator.buffers.forwardsEdges.write(forwardsEdges.edgesTyped),
+            simulator.buffers.forwardsDegrees.write(forwardsEdges.degreesTyped),
             simulator.buffers.forwardsWorkItems.write(forwardsEdges.workItemsTyped),
             simulator.buffers.backwardsEdges.write(backwardsEdges.edgesTyped),
+            simulator.buffers.backwardsDegrees.write(backwardsEdges.degreesTyped),
             simulator.buffers.backwardsWorkItems.write(backwardsEdges.workItemsTyped),
         ]);
     })
