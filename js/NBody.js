@@ -86,8 +86,11 @@ var setEdges = Q.promised(function(graph, edges) {
     for (var i = 0; i < edges.length; i++)
         edgesFlipped[i] = edges[edges.length - 1 - i];
 
-    function encapsulate(edges) {
 
+    //FIXME THIS SHOULD WORK BUT CRASHES SAFARI
+    var encapsulate = function (edges) {
+
+        //[[src idx, dest idx]]
         var edgeList = new Array(edges.length / 2);
         for (var i = 0; i < edges.length; i++)
             edgeList[i / 2] = [edges[i], edges[i + 1]];
@@ -98,30 +101,33 @@ var setEdges = Q.promised(function(graph, edges) {
                 : a[1] - b[1];
         });
 
-        var workItems = [];
-        var current_source = edgeList[0][0];
-        var workItem = [0, 1];
+        //[ [edge number, numEdges, source idx], ... ]
+        var workItems = [ [0, 1, edgeList[0][0]] ];
         edgeList.forEach(function (edge, i) {
             if (i == 0) return;
-            if(edge[0] == current_source) {
-                workItem[1]++;
+            var prev = workItems[workItems.length - 1];
+            if(edge[0] == prev[2]) {
+                prev[1]++;
             } else {
-                workItems.push(workItem[0]);
-                workItems.push(workItem[1]);
-                current_source = edge[0];
-                workItem = [i, 1];
+                workItems.push([i, 1, edge[0]])
             }
         });
-        workItems.push(workItem[0]);
-        workItems.push(workItem[1]);
 
         //Cheesey load balancing
         //TODO benchmark
+
         workItems.sort(function (edgeList1, edgeList2) {
-            return edgeList1.length - edgeList2.length;
+            return edgeList1[1] - edgeList2[1];
         });
 
-        var edgesFlattened = new Uint32Array(edges.length);
+
+        var workItemsFlattened = new Uint32Array(workItems.length * 2);
+        for (var i = 0; i < workItems.length; i++) {
+            workItemsFlattened[2 * i] = workItems[i][0];
+            workItemsFlattened[2 * i + 1] = workItems[i][1];
+        }
+
+        var edgesFlattened = new Uint32Array(edgeList.length * 2);
         for (var i = 0; i < edgeList.length; i++) {
             edgesFlattened[2 * i] = edgeList[i][0];
             edgesFlattened[2 * i + 1] = edgeList[i][1];
@@ -129,8 +135,8 @@ var setEdges = Q.promised(function(graph, edges) {
 
         return {
             edgesTyped: edgesFlattened,
-            numWorkItems: workItems.length,
-            workItemsTyped: new Uint32Array(workItems)
+            numWorkItems: workItemsFlattened.length,
+            workItemsTyped: new Uint32Array(workItemsFlattened)
         };
     }
 
