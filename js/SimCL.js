@@ -20,6 +20,7 @@ var randLength = 73;
 var graphArgs = [null, null, null, null];
 var graphArgs_t = webcl.type ? [null, null, null, null] : null;
 
+var FORCE_ATLAS_2 = false;
 
 
 function create(renderer, dimensions, numSplits, locked) {
@@ -203,6 +204,7 @@ function setPoints(simulator, points) {
                 webcl.type.UINT
             ] : undefined);
 
+        if (FORCE_ATLAS_2) {
         simulator.repulsePointsAndApplyGravityKernel.setArgs(
             graphArgs.concat([
                 webcl.type ? [1] : new Uint32Array([localPosSize]),
@@ -222,6 +224,7 @@ function setPoints(simulator, points) {
                 webcl.type.UINT,
                 null
             ]) : undefined);
+        }
 
         return simulator;
     });
@@ -380,18 +383,21 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
                 webcl.type.FLOAT, webcl.type.FLOAT, /*webcl.type.UINT*/null
             ] : null);
 
+        if (FORCE_ATLAS_2) {
         simulator.attractEdgesAndApplyForcesKernel.setArgs(
             graphArgs.concat([
                 webcl.type ? [1] : new Uint32Array([localPosSize]),
                 null, //forwards/backwards picked dynamically
                 null, //forwards/backwards picked dynamically
                 null, //simulator.buffers.curPoints.buffer then simulator.buffers.nextPoints.buffer
+                null
             ]),
             webcl.type ? graphArgs_t.concat([
                 webcl.type.LOCAL_MEMORY_SIZE,
-                null, null, null
+                null, null, null,
+                null
             ]) : null);
-
+        }
         return simulator;
     })
     .then(_.identity, function (err) {
@@ -458,6 +464,7 @@ function setPhysics(simulator, cfg) {
 
 
     //==== FORCE ATLAS 2 SETTINGS
+    if (FORCE_ATLAS_2) {
 
     var vArr = [null, null, null, null, null];
     var tArr = [null, null, null, null, null];
@@ -507,6 +514,7 @@ function setPhysics(simulator, cfg) {
     if (anyAtlasArgsChanged) {
         simulator.repulsePointsAndApplyGravityKernel.setArgs(vArr, tArr);
         simulator.attractEdgesAndApplyForcesKernel.setArgs(vArr, tArr);
+    }
     }
 
 }
