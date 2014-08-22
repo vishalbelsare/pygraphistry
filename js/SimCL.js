@@ -80,7 +80,8 @@ function create(renderer, dimensions, numSplits, locked) {
                 midSpringsPos: null,
                 midSpringsColorCoord: null,
                 nextMidPoints: null,
-                curMidPoints: null
+                curMidPoints: null,
+                velocities: null
             };
             Object.seal(simObj.buffers);
 
@@ -140,7 +141,8 @@ function setPoints(simulator, points) {
     simulator.resetBuffers([
         simulator.buffers.nextPoints,
         simulator.buffers.randValues,
-        simulator.buffers.curPoints])
+        simulator.buffers.curPoints,
+        simulator.buffers.velocities])
 
     simulator.numPoints = points.length / simulator.elementsPerPoint;
     simulator.renderer.numPoints = simulator.numPoints;
@@ -152,10 +154,12 @@ function setPoints(simulator, points) {
         simulator.renderer.createBuffer(points, 'curPoints'),
         simulator.cl.createBuffer(points.byteLength, 'nextPoints'),
         simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT,
-            'randValues')])
-    .spread(function(pointsVBO, nextPointsBuffer, randBuffer) {
+            'randValues'),
+        simulator.cl.createBuffer(points.byteLength, 'velocities'),])
+    .spread(function(pointsVBO, nextPointsBuffer, randBuffer, velocities) {
         debug('Created most of the points');
         simulator.buffers.nextPoints = nextPointsBuffer;
+        simulator.buffers.velocities = velocities;
 
         simulator.renderer.buffers.curPoints = pointsVBO;
 
@@ -201,19 +205,22 @@ function setPoints(simulator, points) {
 
         simulator.repulsePointsAndApplyGravityKernel.setArgs(
             graphArgs.concat([
+                webcl.type ? [1] : new Uint32Array([localPosSize]),
                 webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
                 simulator.buffers.curPoints.buffer,
                 webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
                 webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
-                webcl.type ? [0] : new Uint32Array([0])
+                webcl.type ? [0] : new Uint32Array([0]),
+                simulator.buffers.velocities.buffer,
             ]),
             webcl.type ? graphArgs_t.concat([
-                null, null, null, null, //GRAPH_ARGS
+                webcl.type.LOCAL_MEMORY_SIZE,
                 webcl.type.UINT,
                 null,
                 webcl.type.FLOAT,
                 webcl.type.FLOAT,
-                webcl.type.UINT
+                webcl.type.UINT,
+                null
             ]) : undefined);
 
         return simulator;
@@ -375,11 +382,13 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
 
         simulator.attractEdgesAndApplyForcesKernel.setArgs(
             graphArgs.concat([
+                webcl.type ? [1] : new Uint32Array([localPosSize]),
                 null, //forwards/backwards picked dynamically
                 null, //forwards/backwards picked dynamically
                 null, //simulator.buffers.curPoints.buffer then simulator.buffers.nextPoints.buffer
             ]),
             webcl.type ? graphArgs_t.concat([
+                webcl.type.LOCAL_MEMORY_SIZE,
                 null, null, null
             ]) : null);
 
