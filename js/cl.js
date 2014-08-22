@@ -228,6 +228,9 @@ var compile = Q.promised(function (cl, source, kernels) {
         program.build([cl.device]);
 
         if (typeof kernels === "string") {
+
+            debug('    Compiling unknown kernel');
+
             var kernelObj = {};
             kernelObj.name = undefined;
             kernelObj.kernel = program.createKernel(kernels);
@@ -242,6 +245,10 @@ var compile = Q.promised(function (cl, source, kernels) {
             for(var i = 0; i < kernels.length; i++) {
                 var kernelName = kernels[i];
                 var kernelObj = {};
+
+                debug('    Compiling ', kernelName);
+
+
                 kernelObj.name = kernelName;
                 kernelObj.kernel = program.createKernel(kernelName);
                 kernelObj.cl = cl;
@@ -257,6 +264,7 @@ var compile = Q.promised(function (cl, source, kernels) {
         }
     } catch (e) {
         console.error('Kernel compilation error:', e.stack);
+        console.error(kernels);
         throw e;
     }
 });
@@ -489,7 +497,7 @@ function polyfill() {
             });
     });
 
-    setArgs = Q.promised(function (kernel, args, argTypes) {
+    setArgs = function (kernel, args, argTypes) {
         var t0 = new Date().getTime();
         try {
             for (var i = 0; i < args.length; i++) {
@@ -498,11 +506,11 @@ function polyfill() {
                 }
             }
         } catch (e) {
-            console.error('Error setting kernel args (in polyfilled setArgs()):', e, e.stack)
+            console.error('Error setting kernel args (in polyfilled setArgs())::', kernel.name, '::', e, e.stack);
             throw new Error(e);
         }
         return kernel;
-    });
+    };
 
     if (typeof WebCLKernelArgumentTypes == 'undefined') {
         var WebCLKernelArgumentTypes = webcl.type;
