@@ -16,6 +16,11 @@ if (typeof(window) == 'undefined') {
 Q.longStackSupport = true;
 var randLength = 73;
 
+//corresponds to apply-forces.cl
+var graphArgs = [null, null, null, null];
+var graphArgs_t = webcl.type ? [null, null, null, null] : null;
+
+
 
 function create(renderer, dimensions, numSplits, locked) {
     return cljs.create(renderer.gl)
@@ -194,22 +199,22 @@ function setPoints(simulator, points) {
                 webcl.type.UINT
             ] : undefined);
 
-        simulator.repulsePointsAndApplyGravityKernel.setArgs([
-                null, null, null, null, null, //GRAPH_ARGS
+        simulator.repulsePointsAndApplyGravityKernel.setArgs(
+            graphArgs.concat([
                 webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
                 simulator.buffers.curPoints.buffer,
                 webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
                 webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
                 webcl.type ? [0] : new Uint32Array([0])
-            ],
-            webcl.type ? [
-                null, null, null, null, null, //GRAPH_ARGS
+            ]),
+            webcl.type ? graphArgs_t.concat([
+                null, null, null, null, //GRAPH_ARGS
                 webcl.type.UINT,
                 null,
                 webcl.type.FLOAT,
                 webcl.type.FLOAT,
                 webcl.type.UINT
-            ] : undefined);
+            ]) : undefined);
 
         return simulator;
     });
@@ -369,18 +374,14 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
             ] : null);
 
         simulator.attractEdgesAndApplyForcesKernel.setArgs(
-            [
-                null, null, null, null, null, //GRAPH_ARGS
-
+            graphArgs.concat([
                 null, //forwards/backwards picked dynamically
                 null, //forwards/backwards picked dynamically
                 null, //simulator.buffers.curPoints.buffer then simulator.buffers.nextPoints.buffer
-            ],
-            webcl.type ? [
-                null, null, null, null, null, //GRAPH_ARGS
-
+            ]),
+            webcl.type ? graphArgs_t.concat([
                 null, null, null
-            ] : null);
+            ]) : null);
 
         return simulator;
     })
