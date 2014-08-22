@@ -2,11 +2,16 @@
 
 var $ = require('jQuery');
 var Q = require('Q');
-var debug = require("debug")("N-body:utils")
+var debug = require("debug")("N-body:utils");
+
+var Image, webgl;
 
 if (typeof(window) == 'undefined') {
-    var webgl = require('node-webgl');
-    var Image = webgl.Image;
+    webgl = require('node-webgl');
+    Image = webgl.Image;
+} else {
+    webgl = window.webgl;
+    Image = window.Image;
 }
 
 
