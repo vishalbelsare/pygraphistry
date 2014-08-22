@@ -486,7 +486,7 @@ function setPhysics(simulator, cfg) {
             if (isOn) {
                 mask = mask | (1 << i);
             }
-        }));
+        });
 
         var v = webcl.type ? [mask] : new Uint32Array([mask]);
         var t = cljs.types.uint_t;
