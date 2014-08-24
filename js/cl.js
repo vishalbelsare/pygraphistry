@@ -498,6 +498,7 @@ function polyfill() {
     });
 
     setArgs = function (kernel, args, argTypes) {
+        argTypes = argTypes || [];
         var t0 = new Date().getTime();
         try {
             for (var i = 0; i < args.length; i++) {
