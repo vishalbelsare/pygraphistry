@@ -139,7 +139,7 @@ var setEdges = Q.promised(function(graph, edges) {
         }
 
         return {
-            degrees: degreesFlattened,
+            degreesTyped: degreesFlattened,
             edgesTyped: edgesFlattened,
             numWorkItems: workItemsFlattened.length,
             workItemsTyped: new Uint32Array(workItemsFlattened)
