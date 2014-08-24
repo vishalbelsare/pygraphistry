@@ -17,11 +17,11 @@ Q.longStackSupport = true;
 var randLength = 73;
 
 //corresponds to apply-forces.cl
-var graphArgs = [null, null, null, null];
+//webcl.type ? [1] : new Uint32Array([localPosSize]),
+var graphArgs =
+    webcl.type ? [[0], [0], [0], [0]]
+    : [new Float32Array([0]), new Float32Array([0]), new Uint32Array([0]), new Uint32Array([0])];
 var graphArgs_t = webcl.type ? [null, null, null, null] : null;
-
-var FORCE_ATLAS_2 = false;
-
 
 function create(renderer, dimensions, numSplits, locked) {
     return cljs.create(renderer.gl)
@@ -68,6 +68,7 @@ function create(renderer, dimensions, numSplits, locked) {
                 {lockPoints: false, lockMidpoints: true, lockEdges: false, lockMidedges: true},
                 (locked || {})
             );
+            simObj.physics = {};
 
             simObj.buffers = {
                 nextPoints: null,
@@ -205,32 +206,6 @@ function setPoints(simulator, points) {
                 null,
                 webcl.type.UINT
             ] : undefined);
-
-        if (FORCE_ATLAS_2) {
-        simulator.repulsePointsAndApplyGravityKernel.setArgs(
-            graphArgs.concat([
-                webcl.type ? [1] : new Uint32Array([localPosSize]),
-                webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
-                simulator.buffers.curPoints.buffer,
-                webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
-                webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
-                webcl.type ? [0] : new Uint32Array([0]),
-                simulator.buffers.forwardsDegrees.buffer,
-                simulator.buffers.backwardsDegrees.buffer,
-                simulator.buffers.velocities.buffer,
-            ]),
-            webcl.type ? graphArgs_t.concat([
-                webcl.type.LOCAL_MEMORY_SIZE,
-                webcl.type.UINT,
-                null,
-                webcl.type.FLOAT,
-                webcl.type.FLOAT,
-                webcl.type.UINT,
-                null,
-                null,
-                null
-            ]) : undefined);
-        }
 
         return simulator;
     });
@@ -398,21 +373,57 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
                 webcl.type.FLOAT, webcl.type.FLOAT, /*webcl.type.UINT*/null
             ] : null);
 
-        if (FORCE_ATLAS_2) {
-        simulator.attractEdgesAndApplyForcesKernel.setArgs(
+
+        console.error('args', [
+                webcl.type ? [1] : new Uint32Array([localPosSize]),
+                webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
+                simulator.buffers.curPoints.buffer,
+                webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
+                webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
+                webcl.type ? [0] : new Uint32Array([0]),
+                simulator.buffers.forwardsDegrees.buffer,
+                simulator.buffers.backwardsDegrees.buffer,
+                simulator.buffers.velocities.buffer,
+            ])
+
+        //set here rather than with setPoints because need edges (for degrees)
+        simulator.repulsePointsAndApplyGravityKernel.setArgs(
             graphArgs.concat([
                 webcl.type ? [1] : new Uint32Array([localPosSize]),
+                webcl.type ? [1] : new Uint32Array([localPosSize]),
+                webcl.type ? [1] : new Uint32Array([localPosSize]),
+                webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
+                simulator.buffers.curPoints.buffer,
+                webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
+                webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
+                webcl.type ? [0] : new Uint32Array([0]),
+                simulator.buffers.forwardsDegrees.buffer,
+                simulator.buffers.backwardsDegrees.buffer,
+                simulator.buffers.velocities.buffer,
+            ]),
+            webcl.type ? graphArgs_t.concat([
+                webcl.type.LOCAL_MEMORY_SIZE,
+                webcl.type.UINT,
+                null,
+                webcl.type.FLOAT,
+                webcl.type.FLOAT,
+                webcl.type.UINT,
+                null,
+                null,
+                null
+            ]) : undefined);
+
+        simulator.attractEdgesAndApplyForcesKernel.setArgs(
+            graphArgs.concat([
                 null, //forwards/backwards picked dynamically
                 null, //forwards/backwards picked dynamically
                 null, //simulator.buffers.curPoints.buffer then simulator.buffers.nextPoints.buffer
                 null
             ]),
             webcl.type ? graphArgs_t.concat([
-                webcl.type.LOCAL_MEMORY_SIZE,
                 null, null, null,
                 null
             ]) : null);
-        }
         return simulator;
     })
     .then(_.identity, function (err) {
@@ -429,18 +440,17 @@ function setLocked(simulator, cfg) {
 
 
 
-var totCfg = {};
-
 function setPhysics(simulator, cfg) {
     // TODO: Instead of setting these kernel args immediately, we should make the physics values
     // properties of the simulator object, and just change those properties. Then, when we run
     // the kernels, we set the arg using the object property (the same way we set stepNumber.)
 
+    var totCfg = simulator.physics;
     cfg = cfg || {};
-
     for (var i in cfg) {
         totCfg[i] = cfg[i];
     }
+
     debug("Updating simulation physics to %o (new: %o)", totCfg, cfg);
 
     if(cfg.charge || cfg.gravity) {
@@ -479,10 +489,9 @@ function setPhysics(simulator, cfg) {
 
 
     //==== FORCE ATLAS 2 SETTINGS
-    if (FORCE_ATLAS_2) {
 
-    var vArr = [null, null, null, null, null];
-    var tArr = [null, null, null, null, null];
+    var vArr = [null, null, null, null];
+    var tArr = [null, null, null, null];
     var anyAtlasArgsChanged = false;
     if (cfg.hasOwnProperty('scalingRatio')) {
         anyAtlasArgsChanged = true;
@@ -530,7 +539,6 @@ function setPhysics(simulator, cfg) {
         simulator.repulsePointsAndApplyGravityKernel.setArgs(vArr, tArr);
         simulator.attractEdgesAndApplyForcesKernel.setArgs(vArr, tArr);
     }
-    }
 
 }
 
@@ -557,7 +565,32 @@ function tick(simulator, stepNumber) {
 
     ////////////////////////////
     // Run the points kernel
-    return Q()
+    var res = Q()
+    .then(function () {
+        if (simulator.physics.forceAtlas) {
+            var resources = [
+                simulator.buffers.curPoints,
+                simulator.buffers.forwardsDegrees,
+                simulator.buffers.backwardsDegrees,
+                simulator.buffers.velocities,
+            ];
+
+            console.error('args', graphArgs.map(function () { return null; })
+                    .concat([null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])]));
+
+            simulator.repulsePointsAndApplyGravityKernel.setArgs(
+                graphArgs.map(function () { return null; })
+                    .concat([null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])]),
+                webcl.type ? graphArgs_t.map(function () { return null; })
+                    .concat([null, null, null, null, null, null, null, cljs.types.uint_t])
+                    : undefined);
+
+            return simulator.repulsePointsAndApplyGravityKernel.call(simulator.numPoints, resources);
+
+        } else {
+            return;
+        }
+    })
     .then(function () {
 
         if (simulator.locked.lockPoints) {
@@ -639,6 +672,12 @@ function tick(simulator, stepNumber) {
         simulator.cl.queue.finish();
         simulator.renderer.gl.finish();
     });
+
+    res.then(function () {}, function (err) {
+        console.error('tick fail!', err, (err||{}).stack);
+    })
+
+    return res;
 }
 
 
