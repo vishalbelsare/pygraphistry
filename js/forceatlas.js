@@ -17,7 +17,7 @@ if (typeof(window) == 'undefined') {
 var graphArgs =
     webcl.type ? [[1], [1], [0], [0]]
     : [new Float32Array([1]), new Float32Array([1]), new Uint32Array([0]), new Uint32Array([0])];
-var graphArgs_t = webcl.type ? [null, null, null, null] : null;
+var graphArgs_t = webcl.type ? [cljs.types.float_t, cljs.types.float_t, cljs.types.uint_t, cljs.types.uint_t] : null;
 
 
 module.exports = {
@@ -108,6 +108,8 @@ module.exports = {
                 simulator.buffers.nextPoints.buffer
             ]),
             webcl.type ? graphArgs_t.concat([
+                webcl.type.LOCAL_MEMORY_SIZE,
+                webcl.type.LOCAL_MEMORY_SIZE,
                 webcl.type.LOCAL_MEMORY_SIZE,
                 webcl.type.UINT,
                 null,
