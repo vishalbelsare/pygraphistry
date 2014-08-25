@@ -18,38 +18,28 @@ if (typeof(window) == 'undefined') {
 Q.longStackSupport = true;
 var randLength = 73;
 
-//corresponds to apply-forces.cl
-//webcl.type ? [1] : new Uint32Array([localPosSize]),
-var graphArgs =
-    webcl.type ? [[1], [1], [0], [0]]
-    : [new Float32Array([1]), new Float32Array([1]), new Uint32Array([0]), new Uint32Array([0])];
-var graphArgs_t = webcl.type ? [null, null, null, null] : null;
-
 function create(renderer, dimensions, numSplits, locked) {
     return cljs.create(renderer.gl)
     .then(function(cl) {
         debug("Creating CL object with GL context");
 
+        var kernelNames =
+            ["gaussSeidelMidpoints", "gaussSeidelMidsprings", "gaussSeidelPoints", "gaussSeidelSprings"]
+            .concat(forceAtlas.kernelNames);
+
         // Compile the WebCL kernels
         return util.getSource("apply-forces.cl")
         .then(function(source) {
             console.debug('GOT SOURCE')
-            return cl.compile(source, [
-                "apply_points", "apply_springs", "apply_midpoints", "apply_midsprings",
-                "repulsePointsAndApplyGravity", "attractEdgesAndApplyForces"]);
+            return cl.compile(source, kernelNames);
         })
         .then(function(kernels) {
             debug("Compiled kernel source");
             var simObj = {
-                "renderer": renderer,
-                "cl": cl,
-                "pointKernel": kernels["apply_points"],
-                "edgesKernel": kernels["apply_springs"],
-                "midPointKernel": kernels["apply_midpoints"],
-                "midEdgesKernel": kernels["apply_midsprings"],
-                "repulsePointsAndApplyGravityKernel": kernels["repulsePointsAndApplyGravity"],
-                "attractEdgesAndApplyForcesKernel": kernels["attractEdgesAndApplyForces"],
-                "elementsPerPoint": 2
+                renderer: renderer,
+                cl: cl,
+                elementsPerPoint: 2,
+                kernels: kernels
             };
             simObj.tick = tick.bind(this, simObj);
             simObj.setPoints = setPoints.bind(this, simObj);
@@ -181,7 +171,7 @@ function setPoints(simulator, points) {
 
         var localPosSize = Math.min(simulator.cl.maxThreads, simulator.numPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
         debug("Setting point 0. FIXME: dyn alloc __local, not hardcode in kernel");
-        simulator.pointKernel.setArgs([
+        simulator.kernels.gaussSeidelPoints.setArgs([
                 webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
                 simulator.buffers.curPoints.buffer,
                 simulator.buffers.nextPoints.buffer,
@@ -204,7 +194,9 @@ function setPoints(simulator, points) {
                 null,
                 webcl.type.UINT
             ] : undefined);
-
+    })
+    .then(forceAtlas.setPoints.bind('', simulator))
+    .then(function () {
         return simulator;
     });
 }
@@ -319,7 +311,7 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
         simulator.buffers.midSpringsColorCoord = midSpringsColorCoordBuffer;
 
         var localPosSize = Math.min(simulator.cl.maxThreads, simulator.numMidPoints) * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
-        simulator.midPointKernel.setArgs(
+        simulator.kernels.gaussSeidelMidpoints.setArgs(
             [
                 webcl.type ? [simulator.numMidPoints] : new Uint32Array([simulator.numMidPoints]),
                 webcl.type ? [simulator.numSplits] : new Uint32Array([simulator.numSplits]),
@@ -340,7 +332,7 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
                 webcl.type.LOCAL_MEMORY_SIZE, webcl.type.FLOAT, webcl.type.FLOAT, webcl.type.FLOAT,webcl.type.FLOAT,
                 null, webcl.type.UINT] : null);
 
-        simulator.edgesKernel.setArgs(
+        simulator.kernels.gaussSeidelSprings.setArgs(
             [   null, //forwards/backwards picked dynamically
                 null, //forwards/backwards picked dynamically
                 null, //simulator.buffers.curPoints.buffer then simulator.buffers.nextPoints.buffer
@@ -353,7 +345,7 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
                 webcl.type.FLOAT, webcl.type.FLOAT]
                 : null);
 
-        simulator.midEdgesKernel.setArgs([
+        simulator.kernels.gaussSeidelMidsprings.setArgs([
             webcl.type ? [simulator.numSplits] : new Uint32Array([simulator.numSplits]),        // 0:
             simulator.buffers.forwardsEdges.buffer,        // 1: only need one direction as guaranteed to be chains
             simulator.buffers.forwardsWorkItems.buffer,    // 2:
@@ -370,47 +362,9 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
                 webcl.type.UINT, null, null, null, null, null, null, null,
                 webcl.type.FLOAT, webcl.type.FLOAT, /*webcl.type.UINT*/null
             ] : null);
-
-        //set here rather than with setPoints because need edges (for degrees)
-        simulator.repulsePointsAndApplyGravityKernel.setArgs(
-            graphArgs.concat([
-                webcl.type ? [1] : new Uint32Array([localPosSize]),
-                webcl.type ? [1] : new Uint32Array([localPosSize]),
-                webcl.type ? [1] : new Uint32Array([localPosSize]),
-                webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
-                simulator.buffers.curPoints.buffer,
-                webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
-                webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
-                webcl.type ? [0] : new Uint32Array([0]),
-                simulator.buffers.forwardsDegrees.buffer,
-                simulator.buffers.backwardsDegrees.buffer,
-                simulator.buffers.nextPoints.buffer
-            ]),
-            webcl.type ? graphArgs_t.concat([
-                webcl.type.LOCAL_MEMORY_SIZE,
-                webcl.type.UINT,
-                null,
-                webcl.type.FLOAT,
-                webcl.type.FLOAT,
-                webcl.type.UINT,
-                null,
-                null,
-                null
-            ]) : undefined);
-
-        simulator.attractEdgesAndApplyForcesKernel.setArgs(
-            graphArgs.concat([
-                null, //forwards/backwards picked dynamically
-                null, //forwards/backwards picked dynamically
-                null, //simulator.buffers.curPoints.buffer then simulator.buffers.nextPoints.buffer
-                null,
-                null,
-                simulator.buffers.springsPos.buffer
-            ]),
-            webcl.type ? graphArgs_t.concat([
-                null, null, null,
-                null, null, null
-            ]) : null);
+    })
+    .then(forceAtlas.setEdges.bind('', simulator))
+    .then(function () {
         return simulator;
     })
     .then(_.identity, function (err) {
@@ -447,11 +401,11 @@ function setPhysics(simulator, cfg) {
         var gravity = cfg.gravity ? (webcl.type ? [cfg.gravity] : new Float32Array([cfg.gravity])) : null;
         var gravity_t = cfg.gravity ? cljs.types.float_t : null;
 
-        simulator.pointKernel.setArgs(
+        simulator.kernels.gaussSeidelPoints.setArgs(
             [null, null, null, null, null, null, charge, gravity, null, null],
             [null, null, null, null, null, null, charge_t, gravity_t, null, null]);
 
-        simulator.midPointKernel.setArgs(
+        simulator.kernels.gaussSeidelMidpoints.setArgs(
             [null, null, null, null, null, null, null, charge, gravity, null, null],
             [null, null, null, null, null, null, null, charge_t, gravity_t, null, null]);
 
@@ -464,11 +418,11 @@ function setPhysics(simulator, cfg) {
         var edgeStrength = cfg.edgeStrength ? (webcl.type ? [cfg.edgeStrength] : new Float32Array([cfg.edgeStrength])) : null;
         var edgeStrength_t = cfg.edgeStrength ? cljs.types.float_t : null;
 
-        simulator.edgesKernel.setArgs(
+        simulator.kernels.gaussSeidelSprings.setArgs(
             [null, null, null, null, null, edgeStrength, edgeDistance, null],
             [null, null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
 
-        simulator.midEdgesKernel.setArgs(
+        simulator.kernels.gaussSeidelMidsprings.setArgs(
             // 0   1     2     3     4     5     6     7     8               9               10
             [null, null, null, null, null, null, null, null, edgeStrength,   edgeDistance,   null],
             [null, null, null, null, null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
@@ -523,8 +477,8 @@ function setPhysics(simulator, cfg) {
         tArr[idx] = t;
     }
     if (anyAtlasArgsChanged) {
-        simulator.repulsePointsAndApplyGravityKernel.setArgs(vArr, tArr);
-        simulator.attractEdgesAndApplyForcesKernel.setArgs(vArr, tArr);
+        simulator.kernels.forceAtlasPoints.setArgs(vArr, tArr);
+        simulator.kernels.forceAtlasEdges.setArgs(vArr, tArr);
     }
 
 }
@@ -538,13 +492,13 @@ function tick(simulator, stepNumber) {
 
         var resources = [edges, workItems, fromPoints, toPoints, simulator.buffers.springsPos];
 
-        simulator.edgesKernel.setArgs(
+        simulator.kernels.gaussSeidelSprings.setArgs(
             [edges.buffer, workItems.buffer, fromPoints.buffer, toPoints.buffer, null,
              null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
             webcl.type ? [null, null, null, null, null,
              null, null, cljs.types.uint_t] : null);
 
-        return simulator.edgesKernel.call(numWorkItems, resources);
+        return simulator.kernels.gaussSeidelSprings.call(numWorkItems, resources);
     };
 
 
@@ -563,17 +517,14 @@ function tick(simulator, stepNumber) {
             return;
         } else {
 
-            var resources = [
-                simulator.buffers.curPoints,
-                simulator.buffers.nextPoints,
-                simulator.buffers.randValues];
+            var resources = [simulator.buffers.curPoints, simulator.buffers.nextPoints, simulator.buffers.randValues];
 
-            simulator.pointKernel.setArgs(
+            simulator.kernels.gaussSeidelPoints.setArgs(
                 [null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
                 [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
 
-            return simulator.pointKernel.call(simulator.numPoints, resources)
-                .then(function () { return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints); });
+            return simulator.kernels.gaussSeidelPoints.call(simulator.numPoints, resources)
+                .then(function () {return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints); });
 
         }
     }).then(function() {
@@ -602,18 +553,16 @@ function tick(simulator, stepNumber) {
                 simulator.buffers.nextMidPoints,
                 simulator.buffers.midSpringsColorCoord];
 
-            simulator.midPointKernel.setArgs(
+            simulator.kernels.gaussSeidelMidpoints.setArgs(
                 [null, null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
                 [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
 
-            return simulator.midPointKernel.call(simulator.numMidPoints, resources);
+            return simulator.kernels.gaussSeidelMidpoints.call(simulator.numMidPoints, resources);
         }
     })
     .then(function () {
 
-
         if (simulator.numEdges > 0 && !simulator.locked.lockMidedges) {
-
 
             var resources = [
                 simulator.buffers.forwardsEdges,
@@ -624,12 +573,12 @@ function tick(simulator, stepNumber) {
                 simulator.buffers.midSpringsPos,
                 simulator.buffers.midSpringsColorCoord];
 
-            simulator.midEdgesKernel.setArgs(
+            simulator.kernels.gaussSeidelSprings.setArgs(
                 // 0   1     2     3     4     5     6     7     8     9     10
                 [null, null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
                 [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
 
-            return simulator.midEdgesKernel.call(simulator.numForwardsWorkItems, resources);
+            return simulator.kernels.gaussSeidelSprings.call(simulator.numForwardsWorkItems, resources);
         } else {
             return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
         }
