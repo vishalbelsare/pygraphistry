@@ -6,6 +6,8 @@ var cljs = require('./cl.js');
 var _ = require('underscore');
 var debug = require("debug")("N-body:SimCL");
 
+var forceAtlas = require("./forceatlas.js");
+
 if (typeof(window) == 'undefined') {
     var webcl = require('node-webcl');
 } else if (typeof(webcl) == 'undefined') {
@@ -545,22 +547,6 @@ function tick(simulator, stepNumber) {
         return simulator.edgesKernel.call(numWorkItems, resources);
     };
 
-    var atlasEdgesKernelSeq = function (edges, workItems, numWorkItems, fromPoints, toPoints) {
-
-        var resources = [edges, workItems, fromPoints, toPoints];
-
-        simulator.attractEdgesAndApplyForcesKernel.setArgs(
-            graphArgs.map(function () { return null; })
-                .concat(
-                    [edges.buffer, workItems.buffer, fromPoints.buffer, webcl.type ? [stepNumber] : new Uint32Array([stepNumber]),
-                    toPoints.buffer]),
-            webcl.type ? graphArgs_t.map(function () { return null; })
-                .concat([null, null, null, cljs.types.uint_t, null])
-                : undefined);
-
-        return simulator.attractEdgesAndApplyForcesKernel.call(numWorkItems, resources);
-
-    };
 
     // If there are no points in the graph, don't run the simulation
     if(simulator.numPoints < 1) {
@@ -570,50 +556,7 @@ function tick(simulator, stepNumber) {
     ////////////////////////////
     // Run the points kernel
     var res = Q()
-    .then(function () {
-        if (simulator.physics.forceAtlas) {
-
-            var resources = [
-                simulator.buffers.curPoints,
-                simulator.buffers.forwardsDegrees,
-                simulator.buffers.backwardsDegrees,
-                simulator.buffers.nextPoints,
-            ];
-
-            simulator.repulsePointsAndApplyGravityKernel.setArgs(
-                graphArgs.map(function () { return null; })
-                    .concat([null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])]),
-                webcl.type ? graphArgs_t.map(function () { return null; })
-                    .concat([null, null, null, null, null, null, null, cljs.types.uint_t])
-                    : undefined);
-
-            var appliedForces = simulator.repulsePointsAndApplyGravityKernel.call(simulator.numPoints, resources);
-
-            if (false) {
-                return appliedForces
-                    .then(function () {
-                        return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-                    });
-            } else {
-                return appliedForces
-                    .then(function () {
-                        if(simulator.numEdges > 0) {
-                            return atlasEdgesKernelSeq(
-                                    simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
-                                    simulator.buffers.nextPoints, simulator.buffers.curPoints)
-                                .then(function () {
-                                     return atlasEdgesKernelSeq(
-                                        simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
-                                        simulator.buffers.curPoints, simulator.buffers.nextPoints);
-                                })
-                                .then(function () {
-                                    return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-                                });
-                        }
-                });
-            }
-        }
-    })
+    .then(forceAtlas.tick.bind('', simulator, stepNumber))
     .then(function () {
 
         if (simulator.locked.lockPoints) {
