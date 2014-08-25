@@ -401,11 +401,13 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
                 null, //forwards/backwards picked dynamically
                 null, //forwards/backwards picked dynamically
                 null, //simulator.buffers.curPoints.buffer then simulator.buffers.nextPoints.buffer
-                null
+                null,
+                null,
+                simulator.buffers.springsPos.buffer
             ]),
             webcl.type ? graphArgs_t.concat([
                 null, null, null,
-                null
+                null, null, null
             ]) : null);
         return simulator;
     })
@@ -585,28 +587,31 @@ function tick(simulator, stepNumber) {
                     .concat([null, null, null, null, null, null, null, cljs.types.uint_t])
                     : undefined);
 
-            return simulator.repulsePointsAndApplyGravityKernel.call(simulator.numPoints, resources)
-                .then(function () {
-                return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-            });
+            var appliedForces = simulator.repulsePointsAndApplyGravityKernel.call(simulator.numPoints, resources);
 
-               /*
-                .then(function () {
-                    if(simulator.numEdges > 0) {
-                        return atlasEdgesKernelSeq(
-                                simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
-                                simulator.buffers.nextPoints, simulator.buffers.curPoints)
-                            .then(function () {
-                                 return atlasEdgesKernelSeq(
-                                    simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
-                                    simulator.buffers.curPoints, simulator.buffers.nextPoints);
-                            })
-                            .then(function () {
-                                return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-                            });
-                    }
+            if (false) {
+                return appliedForces
+                    .then(function () {
+                        return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
+                    });
+            } else {
+                return appliedForces
+                    .then(function () {
+                        if(simulator.numEdges > 0) {
+                            return atlasEdgesKernelSeq(
+                                    simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
+                                    simulator.buffers.nextPoints, simulator.buffers.curPoints)
+                                .then(function () {
+                                     return atlasEdgesKernelSeq(
+                                        simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
+                                        simulator.buffers.curPoints, simulator.buffers.nextPoints);
+                                })
+                                .then(function () {
+                                    return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
+                                });
+                        }
                 });
-*/
+            }
         }
     })
     .then(function () {
