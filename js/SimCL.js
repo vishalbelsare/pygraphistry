@@ -19,8 +19,8 @@ var randLength = 73;
 //corresponds to apply-forces.cl
 //webcl.type ? [1] : new Uint32Array([localPosSize]),
 var graphArgs =
-    webcl.type ? [[0], [0], [0], [0]]
-    : [new Float32Array([0]), new Float32Array([0]), new Uint32Array([0]), new Uint32Array([0])];
+    webcl.type ? [[1], [1], [0], [0]]
+    : [new Float32Array([1]), new Float32Array([1]), new Uint32Array([0]), new Uint32Array([0])];
 var graphArgs_t = webcl.type ? [null, null, null, null] : null;
 
 function create(renderer, dimensions, numSplits, locked) {
@@ -84,8 +84,7 @@ function create(renderer, dimensions, numSplits, locked) {
                 midSpringsPos: null,
                 midSpringsColorCoord: null,
                 nextMidPoints: null,
-                curMidPoints: null,
-                velocities: null
+                curMidPoints: null
             };
             Object.seal(simObj.buffers);
 
@@ -145,8 +144,7 @@ function setPoints(simulator, points) {
     simulator.resetBuffers([
         simulator.buffers.nextPoints,
         simulator.buffers.randValues,
-        simulator.buffers.curPoints,
-        simulator.buffers.velocities])
+        simulator.buffers.curPoints])
 
     simulator.numPoints = points.length / simulator.elementsPerPoint;
     simulator.renderer.numPoints = simulator.numPoints;
@@ -158,12 +156,10 @@ function setPoints(simulator, points) {
         simulator.renderer.createBuffer(points, 'curPoints'),
         simulator.cl.createBuffer(points.byteLength, 'nextPoints'),
         simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT,
-            'randValues'),
-        simulator.cl.createBuffer(points.byteLength, 'velocities'),])
-    .spread(function(pointsVBO, nextPointsBuffer, randBuffer, velocities) {
+            'randValues')])
+    .spread(function(pointsVBO, nextPointsBuffer, randBuffer) {
         debug('Created most of the points');
         simulator.buffers.nextPoints = nextPointsBuffer;
-        simulator.buffers.velocities = velocities;
 
         simulator.renderer.buffers.curPoints = pointsVBO;
 
@@ -373,19 +369,6 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
                 webcl.type.FLOAT, webcl.type.FLOAT, /*webcl.type.UINT*/null
             ] : null);
 
-
-        console.error('args', [
-                webcl.type ? [1] : new Uint32Array([localPosSize]),
-                webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
-                simulator.buffers.curPoints.buffer,
-                webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
-                webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
-                webcl.type ? [0] : new Uint32Array([0]),
-                simulator.buffers.forwardsDegrees.buffer,
-                simulator.buffers.backwardsDegrees.buffer,
-                simulator.buffers.velocities.buffer,
-            ])
-
         //set here rather than with setPoints because need edges (for degrees)
         simulator.repulsePointsAndApplyGravityKernel.setArgs(
             graphArgs.concat([
@@ -399,7 +382,7 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
                 webcl.type ? [0] : new Uint32Array([0]),
                 simulator.buffers.forwardsDegrees.buffer,
                 simulator.buffers.backwardsDegrees.buffer,
-                simulator.buffers.velocities.buffer,
+                simulator.buffers.nextPoints.buffer
             ]),
             webcl.type ? graphArgs_t.concat([
                 webcl.type.LOCAL_MEMORY_SIZE,
@@ -543,6 +526,8 @@ function setPhysics(simulator, cfg) {
 }
 
 
+//input positions: curPoints
+//output positions: nextPoints
 function tick(simulator, stepNumber) {
 
     var edgeKernelSeq = function  (edges, workItems, numWorkItems, fromPoints, toPoints) {
@@ -558,6 +543,23 @@ function tick(simulator, stepNumber) {
         return simulator.edgesKernel.call(numWorkItems, resources);
     };
 
+    var atlasEdgesKernelSeq = function (edges, workItems, numWorkItems, fromPoints, toPoints) {
+
+        var resources = [edges, workItems, fromPoints, toPoints];
+
+        simulator.attractEdgesAndApplyForcesKernel.setArgs(
+            graphArgs.map(function () { return null; })
+                .concat(
+                    [edges.buffer, workItems.buffer, fromPoints.buffer, webcl.type ? [stepNumber] : new Uint32Array([stepNumber]),
+                    toPoints.buffer]),
+            webcl.type ? graphArgs_t.map(function () { return null; })
+                .concat([null, null, null, cljs.types.uint_t, null])
+                : undefined);
+
+        return simulator.attractEdgesAndApplyForcesKernel.call(numWorkItems, resources);
+
+    };
+
     // If there are no points in the graph, don't run the simulation
     if(simulator.numPoints < 1) {
         return Q(simulator);
@@ -568,15 +570,13 @@ function tick(simulator, stepNumber) {
     var res = Q()
     .then(function () {
         if (simulator.physics.forceAtlas) {
+
             var resources = [
                 simulator.buffers.curPoints,
                 simulator.buffers.forwardsDegrees,
                 simulator.buffers.backwardsDegrees,
-                simulator.buffers.velocities,
+                simulator.buffers.nextPoints,
             ];
-
-            console.error('args', graphArgs.map(function () { return null; })
-                    .concat([null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])]));
 
             simulator.repulsePointsAndApplyGravityKernel.setArgs(
                 graphArgs.map(function () { return null; })
@@ -585,10 +585,28 @@ function tick(simulator, stepNumber) {
                     .concat([null, null, null, null, null, null, null, cljs.types.uint_t])
                     : undefined);
 
-            return simulator.repulsePointsAndApplyGravityKernel.call(simulator.numPoints, resources);
+            return simulator.repulsePointsAndApplyGravityKernel.call(simulator.numPoints, resources)
+                .then(function () {
+                return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
+            });
 
-        } else {
-            return;
+               /*
+                .then(function () {
+                    if(simulator.numEdges > 0) {
+                        return atlasEdgesKernelSeq(
+                                simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
+                                simulator.buffers.nextPoints, simulator.buffers.curPoints)
+                            .then(function () {
+                                 return atlasEdgesKernelSeq(
+                                    simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
+                                    simulator.buffers.curPoints, simulator.buffers.nextPoints);
+                            })
+                            .then(function () {
+                                return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
+                            });
+                    }
+                });
+*/
         }
     })
     .then(function () {
