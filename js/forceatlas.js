@@ -1,4 +1,11 @@
 
+var debug = require("debug")("N-body:SimCL:forceAtlas2"),
+    _ = require('underscore');
+
+
+var cljs = require('./cl.js');
+
+
 if (typeof(window) == 'undefined') {
     var webcl = require('node-webcl');
 } else if (typeof(webcl) == 'undefined') {
@@ -17,9 +24,66 @@ module.exports = {
 
     kernelNames: ["forceAtlasPoints", "forceAtlasEdges"],
 
-    setPoints: function () {
+    setPhysics: function (simulator, cfg) {
+
+        var vArr = [null, null, null, null];
+        var tArr = [null, null, null, null];
+        var anyAtlasArgsChanged = false;
+
+
+        if (cfg.hasOwnProperty('scalingRatio')) {
+            anyAtlasArgsChanged = true;
+            var v = webcl.type ? [cfg.scalingRatio] : new Float32Array([cfg.scalingRatio]);
+            var t = cljs.types.float_t;
+            var idx = 0;
+            vArr[idx] = v;
+            tArr[idx] = t;
+        }
+        if (cfg.hasOwnProperty('gravity')) {
+            anyAtlasArgsChanged = true;
+            var v = webcl.type ? [cfg.gravity] : new Float32Array([cfg.gravity]);
+            var t = cljs.types.float_t;
+            var idx = 1;
+            vArr[idx] = v;
+            tArr[idx] = t;
+        }
+        if (cfg.hasOwnProperty('edgeInfluence')) {
+            anyAtlasArgsChanged = true;
+            var v = webcl.type ? [cfg.edgeInfluence] : new Uint32Array([cfg.edgeInfluence]);
+            var t = cljs.types.uint_t;
+            var idx = 2;
+            vArr[idx] = v;
+            tArr[idx] = t;
+        }
+
+        var flags = ['preventOverlap', 'strongGravity', 'dissuadeHubs'];
+        var isAnyFlagToggled = flags.filter(function (flag) { return cfg.hasOwnProperty(flag); }).length;
+        if (isAnyFlagToggled) {
+            anyAtlasArgsChanged = true;
+            var mask = 0;
+            flags.forEach(function (flag, i) {
+                var isOn = cfg.hasOwnProperty(flag) ? cfg[flag] : simulator.physics[flag];;
+                if (isOn) {
+                    mask = mask | (1 << i);
+                }
+            });
+
+            var v = webcl.type ? [mask] : new Uint32Array([mask]);
+            var t = cljs.types.uint_t;
+            var idx = 3;
+            vArr[idx] = v;
+            tArr[idx] = t;
+        }
+
+
+        if (anyAtlasArgsChanged) {
+            simulator.kernels.forceAtlasPoints.setArgs(vArr, tArr);
+            simulator.kernels.forceAtlasEdges.setArgs(vArr, tArr);
+        }
 
     },
+
+    setPoints: _.identity,
 
     setEdges: function (simulator) {
 
