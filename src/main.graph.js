@@ -46,6 +46,10 @@ function init (canvas, meter) {
             renderer.render(renderConfig, gl, programs, buffers);
         });
 
+    $("#do-disconnect").click(function(btn) {
+        socket.disconnect();
+        btn.disabled = true;
+    });
 
     var lastHandshake = Date.now();
 
@@ -79,7 +83,12 @@ function init (canvas, meter) {
 
 
 window.addEventListener("load", function(){
-    var meter = DEBUG_MODE ? new FPSMeter($("body")[0]) : undefined;
+    var meter;
+
+    if(DEBUG_MODE) {
+        $("html").addClass("debug");
+        meter = new FPSMeter($("body")[0]);
+    }
 
     init($("#simulation")[0], meter);
 });
