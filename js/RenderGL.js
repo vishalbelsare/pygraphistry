@@ -41,6 +41,7 @@ var create = Q.promised(function(document, canvas, bgColor, dimensions, visible)
     renderer.buffers = {
         curPoints: null,
         pointSizes: null,
+        pointColors: null,
         springs: null,
         curMidPoints: null,
         midSprings: null,
@@ -430,7 +431,9 @@ var render = Q.promised(function(renderer) {
             renderer.elementsPerPoint, gl.FLOAT, false,
             renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0)
         renderer.programs["points"].bindVertexAttrib(renderer.buffers.pointSizes, "pointSize",
-            1, gl.UNSIGNED_BYTE, false, 0, 0)
+            1, gl.UNSIGNED_BYTE, false, 0, 0);
+        renderer.programs["points"].bindVertexAttrib(renderer.buffers.pointColors, "pointColor",
+            4, gl.UNSIGNED_BYTE, true, Uint32Array.BYTES_PER_ELEMENT, 0);
         gl.drawArrays(gl.POINTS, 0, renderer.numPoints);
     }
 

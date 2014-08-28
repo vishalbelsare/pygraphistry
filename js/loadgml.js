@@ -71,6 +71,9 @@ function loadGMLJSON (path) {
             for (var i = 0; i < data.nodes.length; i++) {
                 res.nodes.sizes[i] = Math.round(10 * nodes[i].size / 0.125);
             }
+            for (var i = 0; i < data.nodes.length; i++) {
+                res.nodes.colors[i] = (res.nodes.colors[i] << 8) | 255;
+            }
             return res;
         },
         function (err) {

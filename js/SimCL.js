@@ -134,7 +134,7 @@ var resetBuffers = function(simulator, buffers) {
  *
  * @returns a promise fulfilled by with the given simulator object
  */
-function setPoints(simulator, points, pointSizes) {
+function setPoints(simulator, points, pointSizes, pointColors) {
     if(points.length < 1) {
         throw new Error("The points buffer is empty");
     }
@@ -149,11 +149,19 @@ function setPoints(simulator, points, pointSizes) {
         }
     }
 
+    if (!pointColors) {
+        pointColors = new Uint32Array(points.length/simulator.elementsPerPoint);
+        for (var i = 0; i < points.length/simulator.elementsPerPoint; i++) {
+            pointColors[i] = (255 << 24) | (102 << 16) | (102 << 8) | 255;
+        }
+    }
+
     simulator.resetBuffers([
         simulator.buffers.nextPoints,
         simulator.buffers.randValues,
         simulator.buffers.curPoints,
-        simulator.buffers.pointSizes])
+        simulator.buffers.pointSizes,
+        simulator.buffers.pointColors])
 
     simulator.numPoints = points.length / simulator.elementsPerPoint;
     simulator.renderer.numPoints = simulator.numPoints;
@@ -164,15 +172,17 @@ function setPoints(simulator, points, pointSizes) {
     return Q.all([
         simulator.renderer.createBuffer(points, 'curPoints'),
         simulator.renderer.createBuffer(pointSizes, 'pointSizes'),
+        simulator.renderer.createBuffer(pointColors, 'pointColors'),
         simulator.cl.createBuffer(points.byteLength, 'nextPoints'),
         simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT,
             'randValues')])
-    .spread(function(pointsVBO, pointSizesVBO, nextPointsBuffer, randBuffer) {
+    .spread(function(pointsVBO, pointSizesVBO, pointColorsVBO, nextPointsBuffer, randBuffer) {
         debug('Created most of the points');
         simulator.buffers.nextPoints = nextPointsBuffer;
 
         simulator.renderer.buffers.curPoints = pointsVBO;
         simulator.renderer.buffers.pointSizes = pointSizesVBO;
+        simulator.renderer.buffers.pointColors = pointColorsVBO;
 
         // Generate an array of random values we will write to the randValues buffer
         simulator.buffers.randValues = randBuffer;

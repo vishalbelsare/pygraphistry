@@ -55,7 +55,7 @@ function create(simulator, renderer, document, canvas, bgColor, dimensions, numS
 }
 
 
-function setPoints(graph, points, pointSizes) {
+function setPoints(graph, points, pointSizes, pointColors) {
     // FIXME: If there is already data loaded, we should to free it before loading new data
     if(!(points instanceof Float32Array)) {
         points = _toTypedArray(points, Float32Array);
@@ -64,7 +64,7 @@ function setPoints(graph, points, pointSizes) {
     graph.__pointsHostBuffer = points;
 
     graph.stepNumber = 0;
-    return graph.simulator.setPoints(points, pointSizes)
+    return graph.simulator.setPoints(points, pointSizes, pointColors)
     .then(function() {
         return graph;
     });
