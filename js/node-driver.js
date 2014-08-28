@@ -21,9 +21,9 @@ var Q = require("q"),
     loader = require("./data-loader.js");
 
 
-var WIDTH = 600;
-var HEIGHT = 600;
-var USE_GEO = true;
+var WIDTH = 600,
+    HEIGHT = 600,
+    USE_GEO = true;
 
 var numPoints = 10000,//1024,//2048,//16384,
     numEdges = numPoints,
@@ -165,7 +165,7 @@ function loadDataIntoSim(graph) {
     return loader.loadDataList(graph)
     .then(function (datalist) {
         if (USE_GEO) {
-            var which = 0;
+            var which = 1;
             debug("Loading data: %o", datalist[which]);
             return datalist[which].loader(graph, datalist[which].f);
 
