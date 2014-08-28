@@ -1,7 +1,6 @@
 "use strict";
 
 var $            = require("jquery"),
-    Rx           = require("rx"),
     renderConfig = require("render-config"),
     renderer     = require("./renderer.js"),
     interaction  = require("./interaction.js"),
@@ -36,8 +35,6 @@ function init (canvas, meter) {
     var programs = renderState.get("programs").toJS();
     var buffers = renderState.get("buffers").toJS();
     var camera = renderState.get("camera");
-
-    var latestState = new Rx.BehaviorSubject(renderState);
 
     interaction.setupDrag($(".sim-container"), camera)
         .merge(interaction.setupScroll($(".sim-container"), camera))
