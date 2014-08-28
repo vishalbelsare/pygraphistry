@@ -143,9 +143,9 @@ function setPoints(simulator, points, pointSizes) {
     }
 
     if (!pointSizes) {
-        pointSizes = new Float32Array(points.length/simulator.elementsPerPoint);
+        pointSizes = new Uint8Array(points.length/simulator.elementsPerPoint);
         for (var i = 0; i < points.length/simulator.elementsPerPoint; i++) {
-            pointSizes[i] = 0.5 * 8;
+            pointSizes[i] = 4;
         }
     }
 

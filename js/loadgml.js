@@ -54,7 +54,7 @@ function loadGMLJSON (path) {
             var res = {
                 nodes: {
                     colors: new Uint32Array(_.pluck(nodes, 'color')),
-                    sizes: new Float32Array(nodes.length)
+                    sizes: new Uint8Array(nodes.length)
                 },
                 edges: data.links.map(function (o) { return [o.source, o.target]; }),
                 //BUG some reason

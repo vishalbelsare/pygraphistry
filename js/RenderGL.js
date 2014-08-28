@@ -28,6 +28,7 @@ var create = Q.promised(function(document, canvas, bgColor, dimensions, visible)
     gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
     gl.depthFunc(gl.LEQUAL);
     gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.GL_POINT_SPRITE | 0x8861); //34913
     gl.enable(gl.VERTEX_PROGRAM_POINT_SIZE | 0x8642);
     gl.enable(gl.POINT_SMOOTH | 0x0B10);
     gl.clearColor.apply(gl, bgColor);
@@ -118,13 +119,15 @@ function createProgram(renderer, vertexShaderID, fragmentShaderID) {
 
         function compileShader(program, shaderSource, shaderType) {
 
-            var sanitizedShaderSource = shaderSource.replace(
-                /(precision [a-z]* float;)/g,"#ifdef GL_ES\n$1\n#endif\n");
+            var sanitizedShaderSource =
+                (typeof(window) == 'undefined' ? '#version 120\n' : '')
+                + shaderSource.replace(/(precision [a-z]* float;)/g,"#ifdef GL_ES\n$1\n#endif\n");
 
             var shader = renderer.gl.createShader(shaderType);
             renderer.gl.shaderSource(shader, sanitizedShaderSource);
             renderer.gl.compileShader(shader);
             if(!renderer.gl.getShaderParameter(shader, renderer.gl.COMPILE_STATUS)) {
+                console.error(renderer.gl.getShaderInfoLog(shader));
                 throw new Error("Error compiling WebGL shader (shader type: " + shaderType + ")");
             }
             if(!renderer.gl.isShader(shader)) {
@@ -427,8 +430,7 @@ var render = Q.promised(function(renderer) {
             renderer.elementsPerPoint, gl.FLOAT, false,
             renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0)
         renderer.programs["points"].bindVertexAttrib(renderer.buffers.pointSizes, "pointSize",
-            1, gl.FLOAT, false,
-            Float32Array.BYTES_PER_ELEMENT, 0)
+            1, gl.UNSIGNED_BYTE, false, 0, 0)
         gl.drawArrays(gl.POINTS, 0, renderer.numPoints);
     }
 
