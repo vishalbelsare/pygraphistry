@@ -90,7 +90,7 @@ function loadGmlJson(graph, path) {
                 .then(_.constant(data));
         })
         .then(function (data) {
-            return graph.setEdges(data.edgesFlat || data.edtes);
+            return graph.setEdges(data.edgesFlat || data.edges);
         })
         .then(_.constant(graph));
 }
