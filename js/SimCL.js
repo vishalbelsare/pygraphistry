@@ -134,7 +134,7 @@ var resetBuffers = function(simulator, buffers) {
  *
  * @returns a promise fulfilled by with the given simulator object
  */
-function setPoints(simulator, points) {
+function setPoints(simulator, points, pointSizes) {
     if(points.length < 1) {
         throw new Error("The points buffer is empty");
     }
@@ -142,10 +142,18 @@ function setPoints(simulator, points) {
         throw new Error("The points buffer is an invalid size (must be a multiple of " + simulator.elementsPerPoint + ")");
     }
 
+    if (!pointSizes) {
+        pointSizes = new Float32Array(points.length/simulator.elementsPerPoint);
+        for (var i = 0; i < points.length/simulator.elementsPerPoint; i++) {
+            pointSizes[i] = 0.5 * 8;
+        }
+    }
+
     simulator.resetBuffers([
         simulator.buffers.nextPoints,
         simulator.buffers.randValues,
-        simulator.buffers.curPoints])
+        simulator.buffers.curPoints,
+        simulator.buffers.pointSizes])
 
     simulator.numPoints = points.length / simulator.elementsPerPoint;
     simulator.renderer.numPoints = simulator.numPoints;
@@ -155,14 +163,16 @@ function setPoints(simulator, points) {
     // Create buffers and write initial data to them, then set
     return Q.all([
         simulator.renderer.createBuffer(points, 'curPoints'),
+        simulator.renderer.createBuffer(pointSizes, 'pointSizes'),
         simulator.cl.createBuffer(points.byteLength, 'nextPoints'),
         simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT,
             'randValues')])
-    .spread(function(pointsVBO, nextPointsBuffer, randBuffer) {
+    .spread(function(pointsVBO, pointSizesVBO, nextPointsBuffer, randBuffer) {
         debug('Created most of the points');
         simulator.buffers.nextPoints = nextPointsBuffer;
 
         simulator.renderer.buffers.curPoints = pointsVBO;
+        simulator.renderer.buffers.pointSizes = pointSizesVBO;
 
         // Generate an array of random values we will write to the randValues buffer
         simulator.buffers.randValues = randBuffer;

@@ -82,10 +82,10 @@ function controls(graph) {
             }, {});
 
 
-    renderingControls.points(false);
-    renderingControls.edges(false);
+    renderingControls.points(true);
+    renderingControls.edges(true);
     renderingControls.midpoints(false);
-    renderingControls.midedges(true);
+    renderingControls.midedges(false);
 
 
     var locks =
@@ -101,10 +101,10 @@ function controls(graph) {
                 return o;
             }, {});
 
-    locks.lockPoints(true);
-    locks.lockEdges(true);
-    locks.lockMidpoints(false);
-    locks.lockMidedges(false);
+    locks.lockPoints(false);
+    locks.lockEdges(false);
+    locks.lockMidpoints(true);
+    locks.lockMidedges(true);
 
     return {
         physicsControls: physicsControls,
@@ -165,7 +165,7 @@ function loadDataIntoSim(graph) {
     return loader.loadDataList(graph)
     .then(function (datalist) {
         if (USE_GEO) {
-            var which = 1;
+            var which = 3;
             debug("Loading data: %o", datalist[which]);
             return datalist[which].loader(graph, datalist[which].f);
 

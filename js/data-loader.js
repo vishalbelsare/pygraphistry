@@ -86,7 +86,7 @@ function loadGmlJson(graph, path) {
             for (var i = 0; i < data.numNodes * 2; i++) {
                 randomPositions[i] = Math.random();
             }
-            return graph.setPoints(randomPositions)
+            return graph.setPoints(randomPositions, data.nodes.sizes)
                 .then(_.constant(data));
         })
         .then(function (data) {

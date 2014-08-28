@@ -28,6 +28,8 @@ var create = Q.promised(function(document, canvas, bgColor, dimensions, visible)
     gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
     gl.depthFunc(gl.LEQUAL);
     gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.VERTEX_PROGRAM_POINT_SIZE | 0x8642);
+    gl.enable(gl.POINT_SMOOTH | 0x0B10);
     gl.clearColor.apply(gl, bgColor);
     // Lines should be 1px wide
     gl.lineWidth(1);
@@ -37,6 +39,7 @@ var create = Q.promised(function(document, canvas, bgColor, dimensions, visible)
     renderer.canvas = canvas;
     renderer.buffers = {
         curPoints: null,
+        pointSizes: null,
         springs: null,
         curMidPoints: null,
         midSprings: null,
@@ -423,6 +426,9 @@ var render = Q.promised(function(renderer) {
         renderer.programs["points"].bindVertexAttrib(renderer.buffers.curPoints, "curPos",
             renderer.elementsPerPoint, gl.FLOAT, false,
             renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0)
+        renderer.programs["points"].bindVertexAttrib(renderer.buffers.pointSizes, "pointSize",
+            1, gl.FLOAT, false,
+            Float32Array.BYTES_PER_ELEMENT, 0)
         gl.drawArrays(gl.POINTS, 0, renderer.numPoints);
     }
 
