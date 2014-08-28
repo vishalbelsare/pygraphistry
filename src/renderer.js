@@ -1,6 +1,8 @@
 "use strict";
 
+var Cameras = require("../../../../superconductorjs/src/Camera.js");
 var _ = require("underscore");
+var Immutable = require("immutable");
 var debug = require("debug")("StreamGL:renderer");
 
 /** @module Renderer */
@@ -114,6 +116,40 @@ var bufferSizes = {};
 ////////////////////////////////////////////////////////////////////////////////
 
 
+function init(config, canvas) {
+    config = Immutable.fromJS(config);
+
+    var state = Immutable.Map({
+        config: config,
+
+        gl: undefined,
+        programs: Immutable.Map({}),
+        buffers: Immutable.Map({}),
+        camera: undefined,
+
+        boundBuffer: undefined,
+        bufferSize: Immutable.Map({}),
+        numElements: Immutable.Map({}),
+
+        activeProgram: undefined,
+        attrLocations: Immutable.Map({}),
+        programBindings: Immutable.Map({})
+    });
+
+    var gl = createContext(canvas);
+    state = state.set("gl", gl);
+
+    setGlOptions(state);
+
+    state = createPrograms(state);
+    state = createBuffers(state);
+
+    var camera = new Cameras.Camera2d(config.get("camera").get("init").get(0).toJS());
+    setCamera(config.toJS(), gl, state.get("programs").toJS(), camera);
+    state = state.set("camera", camera);
+
+    return state;
+}
 
 
 function createContext(canvas) {
@@ -134,7 +170,8 @@ function createContext(canvas) {
  * Set global GL settings
  * @param {WebGLRenderingContext}
  */
-function setGlOptions(gl, options) {
+function setGlOptions(state) {
+    var gl = state.get("gl");
     var whiteList = {
         "enable": true,
         "disable": true,
@@ -145,7 +182,8 @@ function setGlOptions(gl, options) {
         "lineWidth": true
     };
 
-    // for(var optionName in options) {
+    // FIXME: Make this work with Immutable.js' native iterators, rather than using toJS()
+    var options = state.get("config").get("options").toJS();
     _.each(options, function(optionCalls, optionName) {
         if(whiteList[optionName] !== true ||
             typeof gl[optionName] !== "function") {
@@ -163,30 +201,31 @@ function setGlOptions(gl, options) {
 }
 
 
-function createPrograms(gl, programs) {
-    var createdPrograms = {};
+function createPrograms(state) {
+    debug("Creating programs");
+    var gl = state.get("gl");
 
     // for(var programName in programs) {
-    _.each(programs, function(programOptions, programName) {
-        debug("Compiling program %s", programName);
+    var createdPrograms = state.get("config").get("programs").map(function(programOptions, programName) {
+        debug("Compiling program", programName, programOptions);
         var program = gl.createProgram();
 
         //// Create, compile and attach the shaders
         var vertShader = gl.createShader(gl.VERTEX_SHADER);
-        gl.shaderSource(vertShader, programOptions.sources.vertex);
+        gl.shaderSource(vertShader, programOptions.get("sources").get("vertex"));
         gl.compileShader(vertShader);
         if(!(gl.isShader(vertShader) && gl.getShaderParameter(vertShader, gl.COMPILE_STATUS))) {
             throw new Error("Could not compile shader. Log: '" + gl.getShaderInfoLog(vertShader) +
-                "'\nSource:\n" + programOptions.sources.vertex);
+                "'\nSource:\n" + programOptions.get("sources").get("vertex"));
         }
         gl.attachShader(program, vertShader);
 
         var fragShader = gl.createShader(gl.FRAGMENT_SHADER);
-        gl.shaderSource(fragShader, programOptions.sources.fragment);
+        gl.shaderSource(fragShader, programOptions.get("sources").get("fragment"));
         gl.compileShader(fragShader);
         if(!(gl.isShader(fragShader) && gl.getShaderParameter(fragShader, gl.COMPILE_STATUS))) {
             throw new Error("Could not compile shader. Log: '" + gl.getShaderInfoLog(fragShader) +
-                "'\nSource:\n" + programOptions.sources.fragment);
+                "'\nSource:\n" + programOptions.get("sources").get("fragment"));
         }
         gl.attachShader(program, fragShader);
 
@@ -205,22 +244,25 @@ function createPrograms(gl, programs) {
             throw new Error("Could not validate GL program '" + programName + "'");
         }
 
-        createdPrograms[programName] = program;
-    });
+        return program;
+    }).cacheResult();
+    // We need cacheResult() or Immutable.js will re-run the map on every access, recreating all
+    // the GL programs from scratch on every access. This calls ensures the map is run only once.
 
-    return createdPrograms;
+    return state.set("programs", createdPrograms);
 }
 
 
-function createBuffers(gl, buffers) {
-    var createdBuffers = {};
+function createBuffers(state) {
+    var gl = state.get("gl");
 
-    _.each(buffers, function(bufferOpts, bufferName) {
+    var createdBuffers = state.get("config").get("models").map(function(bufferOpts, bufferName) {
+        debug("Creating buffer %s", bufferName);
         var vbo = gl.createBuffer();
-        createdBuffers[bufferName] = vbo;
-    });
+        return vbo;
+    }).cacheResult();
 
-    return createdBuffers;
+    return state.set("buffers", createdBuffers);
 }
 
 
@@ -280,6 +322,7 @@ function loadBuffer(gl, buffer, bufferName, data) {
 
 function setCamera(config, gl, programs, camera) {
     _.each(config.programs, function(programConfig, programName) {
+        debug("Setting camera for program %s", programName);
         var program = programs[programName];
         useProgram(gl, program);
 

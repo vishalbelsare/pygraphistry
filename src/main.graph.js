@@ -1,9 +1,9 @@
 "use strict";
 
 var $            = require("jquery"),
+    Rx           = require("rx"),
     renderConfig = require("render-config"),
     renderer     = require("./renderer.js"),
-    Cameras      = require("../../../../superconductorjs/src/Camera.js"),
     interaction  = require("./interaction.js"),
     ui           = require("./ui.js"),
     debug        = require("debug")("StreamGL:main");
@@ -31,13 +31,13 @@ function init (canvas, meter) {
     var socket = io.connect("http://localhost", {reconnection: false, transports: ["websocket"]});
     socket.io.engine.binaryType = "arraybuffer";
 
-    var gl = renderer.createContext(canvas);
-    renderer.setGlOptions(gl, renderConfig.options);
-    var programs = renderer.createPrograms(gl, renderConfig.programs);
-    var buffers = renderer.createBuffers(gl, renderConfig.models);
+    var renderState = renderer.init(renderConfig, canvas);
+    var gl = renderState.get("gl");
+    var programs = renderState.get("programs").toJS();
+    var buffers = renderState.get("buffers").toJS();
+    var camera = renderState.get("camera");
 
-    var camera = new Cameras.Camera2d(renderConfig.camera.init[0]);
-    renderer.setCamera(renderConfig, gl, programs, camera);
+    var latestState = new Rx.BehaviorSubject(renderState);
 
     interaction.setupDrag($(".sim-container"), camera)
         .merge(interaction.setupScroll($(".sim-container"), camera))
