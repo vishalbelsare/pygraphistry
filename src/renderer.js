@@ -1,6 +1,9 @@
 "use strict";
 
+var Cameras = require("../../../../superconductorjs/src/Camera.js");
 var _ = require("underscore");
+var Immutable = require("immutable");
+var debug = require("debug")("StreamGL:renderer");
 
 /** @module Renderer */
 
@@ -11,56 +14,61 @@ var _ = require("underscore");
 
 
 /** Cached dictionary of program.attribute: attribute locations
- * @type {Object.<WebGLProgram, Object.<string, GLint>>} */
+ * @type {Object.<string, Object.<string, GLint>>} */
 var attrLocations = {};
 /**
  * Wraps gl.getAttribLocation and caches the result, returning the cached result on subsequent
  * calls for the same attribute in the same program.
  * @param {WebGLRenderingContext} gl - the WebGL context
  * @param {WebGLProgram} program - the program the attribute is part of
+ * @param {string} programName - the name of the program
  * @param {string} attribute - the name of the attribute in the shader source code
  */
-var getAttribLocationFast = function(gl, program, attribute) {
-    if(typeof attrLocations[program] !== "undefined" &&
-        typeof attrLocations[program][attribute] !== "undefined") {
-        return attrLocations[program][attribute];
+function getAttribLocationFast(gl, program, programName, attribute) {
+    if(typeof attrLocations[programName] !== "undefined" &&
+        typeof attrLocations[programName][attribute] !== "undefined") {
+        debug("Get attribute %s: using fast path", attribute);
+        return attrLocations[programName][attribute];
     }
 
-    attrLocations[program] = attrLocations[program] || {};
-    attrLocations[program][attribute] = gl.getAttribLocation(program, attribute);
-    return attrLocations[program][attribute];
-};
+    debug("Get attribute %s: using slow path", attribute);
+    attrLocations[programName] = attrLocations[programName] || {};
+    attrLocations[programName][attribute] = gl.getAttribLocation(program, attribute);
+    return attrLocations[programName][attribute];
+}
 
 
 /** The program currently in use by GL
  * @type {?WebGLProgram} */
 var activeProgram = null;
-var useProgram = function(gl, program) {
+function useProgram(gl, program) {
     if(activeProgram !== program) {
+        debug("Use program: on slow path");
         gl.useProgram(program);
         activeProgram = program;
         return true;
     }
+    debug("Use program: on fast path");
 
     return false;
-};
+}
 
 
 /** The currently bound buffer in GL
  * @type {?WebGLBuffer} */
 var boundBuffer = null;
-var bindBuffer = function(gl, buffer) {
+function bindBuffer(gl, buffer) {
     if(boundBuffer !== buffer) {
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
         boundBuffer = buffer;
         return true;
     }
     return false;
-};
+}
 
 
 /** The bindings object currently in effect on a program
- * @type {Object.<WebGLProgram, RendererOptions.render.bindings>} */
+ * @type {Object.<string, RendererOptions.render.bindings>} */
 var programBindings = {};
 /**
  * Binds all of a programs attributes to elements of a/some buffer(s)
@@ -70,22 +78,37 @@ var programBindings = {};
  * @param {Object.<string, WebGLBuffer>} buffers - Mapping of created buffer names to WebGL buffers
  * @param {Object} modelSettings - The "models" object from the rendering config
  */
-var bindProgram = function(gl, program, bindings, buffers, modelSettings) {
+function bindProgram(gl, program, programName, bindings, buffers, modelSettings) {
     useProgram(gl, program);
 
+    // FIXME: If we don't rebind every frame, but bind another program, then the bindings of the
+    // first program are lost. Shouldn't they persist unless we change them for the program?
     // If the program is already bound using the current binding preferences, no need to continue
-    if(programBindings[program] === bindings) { return false; }
+    //if(programBindings[programName] === bindings) {
+        //debug("Not binding program %s because already bound", programName);
+        //return false;
+    //}
+    debug("Binding program %s", programName);
 
     _.each(bindings, function(binding, attribute) {
         bindBuffer(gl, buffers[binding[0]]);
 
         var element = modelSettings[binding[0]][binding[1]];
-        var location = getAttribLocationFast(gl, program, attribute);
+        var location = getAttribLocationFast(gl, program, programName, attribute);
 
         gl.vertexAttribPointer(location, element.count, gl[element.type], element.normalize,
             element.stride, element.offset);
+
+        gl.enableVertexAttribArray(location);
+
+        programBindings[programName] = bindings;
     });
-};
+}
+
+
+/** A dictionary mapping buffer names to current sizes
+ * @type {Object.<string, number>} */
+var bufferSizes = {};
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -93,28 +116,62 @@ var bindProgram = function(gl, program, bindings, buffers, modelSettings) {
 ////////////////////////////////////////////////////////////////////////////////
 
 
-exports.numVertices = 0;
+function init(config, canvas) {
+    config = Immutable.fromJS(config);
+
+    var state = Immutable.Map({
+        config: config,
+
+        gl: undefined,
+        programs: Immutable.Map({}),
+        buffers: Immutable.Map({}),
+        camera: undefined,
+
+        boundBuffer: undefined,
+        bufferSize: Immutable.Map({}),
+        numElements: Immutable.Map({}),
+
+        activeProgram: undefined,
+        attrLocations: Immutable.Map({}),
+        programBindings: Immutable.Map({})
+    });
+
+    var gl = createContext(canvas);
+    state = state.set("gl", gl);
+
+    setGlOptions(state);
+
+    state = createPrograms(state);
+    state = createBuffers(state);
+
+    var camera = new Cameras.Camera2d(config.get("camera").get("init").get(0).toJS());
+    setCamera(config.toJS(), gl, state.get("programs").toJS(), camera);
+    state = state.set("camera", camera);
+
+    return state;
+}
 
 
-exports.init = function(canvas) {
+function createContext(canvas) {
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
 
     var gl = null;
-    gl = canvas.getContext("webgl", {antialias: true, premultipliedAlpha: false, preserveDrawingBuffer: true});
+    gl = canvas.getContext("webgl", {antialias: true, premultipliedAlpha: false});
     if(gl === null) { throw new Error("Could not initialize WebGL"); }
 
     gl.viewport(0, 0, canvas.width, canvas.height);
 
     return gl;
-};
+}
 
 
 /**
  * Set global GL settings
  * @param {WebGLRenderingContext}
  */
-exports.setGlOptions = function(gl, options) {
+function setGlOptions(state) {
+    var gl = state.get("gl");
     var whiteList = {
         "enable": true,
         "disable": true,
@@ -125,7 +182,8 @@ exports.setGlOptions = function(gl, options) {
         "lineWidth": true
     };
 
-    // for(var optionName in options) {
+    // FIXME: Make this work with Immutable.js' native iterators, rather than using toJS()
+    var options = state.get("config").get("options").toJS();
     _.each(options, function(optionCalls, optionName) {
         if(whiteList[optionName] !== true ||
             typeof gl[optionName] !== "function") {
@@ -140,109 +198,187 @@ exports.setGlOptions = function(gl, options) {
             gl[optionName].apply(gl, newArgs);
         });
     });
-};
+}
 
 
-exports.createPrograms = function(gl, programs) {
-    var createdPrograms = {};
+function createPrograms(state) {
+    debug("Creating programs");
+    var gl = state.get("gl");
 
     // for(var programName in programs) {
-    _.each(programs, function(programOptions, programName) {
+    var createdPrograms = state.get("config").get("programs").map(function(programOptions, programName) {
+        debug("Compiling program", programName, programOptions);
         var program = gl.createProgram();
 
         //// Create, compile and attach the shaders
         var vertShader = gl.createShader(gl.VERTEX_SHADER);
-        gl.shaderSource(vertShader, programOptions.sources.vertex);
+        gl.shaderSource(vertShader, programOptions.get("sources").get("vertex"));
         gl.compileShader(vertShader);
         if(!(gl.isShader(vertShader) && gl.getShaderParameter(vertShader, gl.COMPILE_STATUS))) {
-            throw new Error("Could not compile shader. Log: " + gl.getShaderInfoLog(vertShader));
+            throw new Error("Could not compile shader. Log: '" + gl.getShaderInfoLog(vertShader) +
+                "'\nSource:\n" + programOptions.get("sources").get("vertex"));
         }
         gl.attachShader(program, vertShader);
 
         var fragShader = gl.createShader(gl.FRAGMENT_SHADER);
-        gl.shaderSource(fragShader, programOptions.sources.fragment);
+        gl.shaderSource(fragShader, programOptions.get("sources").get("fragment"));
         gl.compileShader(fragShader);
         if(!(gl.isShader(fragShader) && gl.getShaderParameter(fragShader, gl.COMPILE_STATUS))) {
-            throw new Error("Could not compile shader. Log: " + gl.getShaderInfoLog(fragShader));
+            throw new Error("Could not compile shader. Log: '" + gl.getShaderInfoLog(fragShader) +
+                "'\nSource:\n" + programOptions.get("sources").get("fragment"));
         }
         gl.attachShader(program, fragShader);
 
         //// Link and validate the program
         gl.linkProgram(program);
         if(!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            console.error("Could not link program. " + gl.getProgramInfoLog(program));
+            console.error("Could not link program '" + programName + "'. Log:\n" +
+                gl.getProgramInfoLog(program));
             gl.deleteProgram(program);
-            throw new Error("Could not link GL program");
+            throw new Error("Could not link GL program '" + programName + "'");
         }
 
         gl.validateProgram(program);
         if(!gl.getProgramParameter(program, gl.VALIDATE_STATUS)) {
             console.error(gl.getProgramParameter(program, gl.VALIDATE_STATUS));
-            throw new Error("Could not validate GL program");
+            throw new Error("Could not validate GL program '" + programName + "'");
         }
 
-        //// Activate all the program's attributes as vertex attribute arrays
-        for(var i = 0; i < programOptions.attributes.length; i++) {
-            var location = getAttribLocationFast(gl, program, programOptions.attributes[i]);
-            gl.enableVertexAttribArray(location);
-        }
+        return program;
+    }).cacheResult();
+    // We need cacheResult() or Immutable.js will re-run the map on every access, recreating all
+    // the GL programs from scratch on every access. This calls ensures the map is run only once.
 
-        createdPrograms[programName] = program;
-    });
-
-    return createdPrograms;
-};
+    return state.set("programs", createdPrograms);
+}
 
 
-exports.createBuffers = function(gl, buffers) {
-    var createdBuffers = {};
+function createBuffers(state) {
+    var gl = state.get("gl");
 
-    _.each(buffers, function(bufferOpts, bufferName) {
+    var createdBuffers = state.get("config").get("models").map(function(bufferOpts, bufferName) {
+        debug("Creating buffer %s", bufferName);
         var vbo = gl.createBuffer();
-        createdBuffers[bufferName] = vbo;
+        return vbo;
+    }).cacheResult();
+
+    return state.set("buffers", createdBuffers);
+}
+
+
+/**
+ * Given an object mapping buffer names to ArrayBuffer data, load all of them into the GL context
+ * @param {WebGLRenderingContext} gl - the WebGL context
+ * @param {Object.<string, WebGLBuffer>} buffers - the buffer object returned by createBuffers()
+ * @param {Object.<string, ArrayBuffer>} bufferData - a mapping of buffer name -> new data to load
+ * into that buffer
+ */
+function loadBuffers(gl, buffers, bufferData) {
+    _.each(bufferData, function(data, bufferName) {
+        debug("Loading buffer data for buffer %s (data type: %s, length: %s bytes)",
+            bufferName, data.constructor.name, data.byteLength);
+
+        if(typeof buffers[bufferName] === "undefined") {
+            console.error("Asked to load data for buffer '%s', but no buffer by that name exists locally",
+                bufferName);
+            return false;
+        }
+
+        loadBuffer(gl, buffers[bufferName], bufferName, data);
     });
-
-    return createdBuffers;
-};
+}
 
 
-exports.loadBuffer = function(gl, buffer, data, reuseBuffer) {
-    gl.flush();
-
+function loadBuffer(gl, buffer, bufferName, data) {
     bindBuffer(gl, buffer);
 
-    if(reuseBuffer === true) {
-        gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
-    } else {
-        gl.bufferData(gl.ARRAY_BUFFER, data, gl.STREAM_DRAW);
+    if(typeof bufferSizes[bufferName] === "undefined") {
+        bufferSizes[bufferName] = 0;
     }
-};
+    if(data.byteLength <= 0) {
+        debug("Warning: asked to load data for buffer '%s', but data length is 0", bufferName);
+        return;
+    }
+
+    try{
+        if(bufferSizes[bufferName] >= data.byteLength) {
+            debug("Reusing existing GL buffer data store to load data for buffer %s (current size: %d, new data size: %d)",
+                bufferName, bufferSizes[bufferName], data.byteLength);
+            gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
+        } else {
+            debug("Creating new buffer data store for buffer %s (new size: %d)",
+                bufferName, data.byteLength);
+            gl.bufferData(gl.ARRAY_BUFFER, data, gl.STREAM_DRAW);
+            bufferSizes[bufferName] = data.byteLength;
+        }
+    } catch(glErr) {
+        // This often doesn't get called on GL errors, since they seem to be thrown from the global
+        // WebGL context, not at the point we call the command (above).
+        console.error("Error: could not load data into buffer", bufferName, ". Error:", glErr);
+        throw glErr;
+    }
+}
 
 
-exports.setCamera = function(config, gl, programs, camera) {
+function setCamera(config, gl, programs, camera) {
     _.each(config.programs, function(programConfig, programName) {
+        debug("Setting camera for program %s", programName);
         var program = programs[programName];
         useProgram(gl, program);
 
         var mvpLoc = gl.getUniformLocation(program, programConfig.camera);
         gl.uniformMatrix4fv(mvpLoc, false, camera.getMatrix());
     });
-};
+}
 
 
-exports.render = function(config, gl, programs, buffers, numVertices) {
-    exports.numVertices = typeof numVertices !== "undefined" ? numVertices : exports.numVertices;
-    if(exports.numVertices < 1) {
-        return false;
-    }
+/** A mapping of scene items to the number of elements that should be rendered for them */
+var numElements = {};
+function setNumElements(newNumElements) {
+    numElements = newNumElements;
+}
+
+
+/**
+ * Render one or more items as specified in render config's scene.render array
+ * @param {RenderOptions} config - the rendering config for the current context
+ * @param {WebGLRenderingContext} gl - the WebGL rendering context
+ * @param {Object.<string, WebGLBuffer>} buffers - the buffers, as returned from createBuffers()
+ * @param {(string[])} [renderListOverride] - optional override of the scene.render array
+ */
+function render(config, gl, programs, buffers, renderListOverride) {
+    debug("Rendering a frame");
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    _.each(config.scene.render, function(target) {
+    var toRender = renderListOverride || config.scene.render;
+    _.each(toRender, function(target) {
+        if(typeof numElements[target] === "undefined" || numElements[target] < 1) {
+            debug("Not rendering item '%s' because it doesn't have any elements (set in numElements)",
+                target);
+            return false;
+        }
+
+        debug("  Rendering item '%s' (%d elements)", target, numElements[target]);
+
         var renderItem = config.scene.items[target];
-        bindProgram(gl, programs[renderItem.program], renderItem.bindings, buffers, config.models);
-        gl.drawArrays(gl[renderItem.drawType], 0, exports.numVertices);
+        bindProgram(gl, programs[renderItem.program], renderItem.program, renderItem.bindings, buffers, config.models);
+        gl.drawArrays(gl[renderItem.drawType], 0, numElements[target]);
     });
 
     gl.flush();
+}
+
+
+module.exports = {
+    init: init,
+    createContext: createContext,
+    setGlOptions: setGlOptions,
+    createPrograms: createPrograms,
+    createBuffers: createBuffers,
+    loadBuffers: loadBuffers,
+    loadBuffer: loadBuffer,
+    setCamera: setCamera,
+    setNumElements: setNumElements,
+    render: render
 };

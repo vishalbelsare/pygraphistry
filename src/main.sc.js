@@ -1,19 +1,28 @@
 "use strict";
 
-var renderer     = require("./renderer.js"),
-    ui           = require("./ui.js"),
-    proxyUtils = require("./proxyutils.js");
+var $            = require("jquery"),
+    renderConfig = require("render-config"),
+    renderer     = require("./renderer.js"),
+    Cameras      = require("../../../../superconductorjs/src/Camera.js"),
+    interaction  = require("./interaction.js"),
+    proxyUtils   = require("./proxyutils.js"),
+    ui           = require("./ui.js");
 
 
-// canvas * {camera2d, camera3d} * socket -> ()
-// Bind remote renderer to canvas
-function initialize(canvas, camera, socket, renderConfig) {
+// global["debugjs"] = require("debug");
 
-    if (!canvas || !camera || !socket) {
-        var err = "need canvas/camera/socket";
-        console.error(err, new Error().stack);
-        throw new Error(err);
-    }
+
+function init (canvas) {
+
+    var camera = new Cameras.Camera2d({
+            left: -0.15,
+            right: 5,
+            bottom: 5, // (5 * (1 / (700/700))) - 0.15,
+            top: -0.15 // - 0.15
+        });
+
+    var socket = io.connect("http://localhost:" + proxyUtils.MAIN_PORT,
+        {reconnection: false, transports: ["websocket"]});
 
     var gl = renderer.init(canvas);
     renderer.setGlOptions(gl, renderConfig.options);
@@ -21,11 +30,17 @@ function initialize(canvas, camera, socket, renderConfig) {
     var buffers = renderer.createBuffers(gl, renderConfig.models);
     renderer.setCamera(renderConfig, gl, programs, camera);
 
-
     var glBufferStoreSize = 0;
     var lastHandshake = new Date().getTime();
-
     var lastData = null;
+
+
+    interaction.setupDrag($(".sim-container"), camera)
+        .merge(interaction.setupScroll($(".sim-container"), camera))
+        .subscribe(function(newCamera) {
+            renderer.setCamera(renderConfig, gl, programs, newCamera);
+            renderer.render(renderConfig, gl, programs, buffers);
+    });
 
     socket.on("vbo_update", function (data, handshake) {
         lastData = data;
@@ -71,21 +86,8 @@ function initialize(canvas, camera, socket, renderConfig) {
     socket.on("disconnect", function(reason) {
         ui.error("Disconnected (reason: " + reason + ")");
     });
-
-    return {
-        gl: gl,
-        programs: programs,
-        buffers: buffers,
-        renderFrame: function () {
-            if (lastData) {
-                renderer.setCamera(renderConfig, gl, programs, camera);
-                renderer.render(renderConfig, gl, programs, buffers, lastData.numVertices);
-            } else {
-                console.warn("no data vbo yet");
-            }
-        }
-    };
 }
 
-// canvas * {camera2d, camera3d} * ?socket -> ()
-module.exports = initialize;
+window.addEventListener("load", function(){
+    init($("#simulation")[0]);
+});
