@@ -24,6 +24,10 @@ var DEBUG_MODE = (QUERY_PARAMS.hasOwnProperty("debug") && QUERY_PARAMS.debug !==
 
 
 function init (canvas, meter) {
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
     // If no meter passed in, create a stub object with methods mapped to noops
     meter = (typeof meter === "object") ? meter : {tick: function(){}, pause: function(){}};
 
