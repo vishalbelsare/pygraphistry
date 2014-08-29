@@ -159,6 +159,14 @@ module.exports = {
                 "drawType": "POINTS",
                 "glOptions": {}
             },
+            "midpoints": {
+                "program": "midpoints",
+                "bindings": {
+                    "curPos": ["curMidPoints", "curPos"]
+                },
+                "drawType": "POINTS",
+                "glOptions": {}
+            },
             "midedges": {
                 "program": "midedges",
                 "bindings": {
