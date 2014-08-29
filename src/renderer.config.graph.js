@@ -177,6 +177,7 @@ module.exports = {
             }
         },
 
-        "render": ["edges", "points"]
+        //"render": ["edges", "points"]
+        "render": ["points", "midedges"]
     }
 };
