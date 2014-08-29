@@ -110,6 +110,24 @@ module.exports = {
                 "normalize": false
             }
         },
+        "pointSizes": {
+            "pointSize":  {
+                "type": "UNSIGNED_BYTE",
+                "count": 1,
+                "offset": 0,
+                "stride": 0,
+                "normalize": false
+            }
+        },
+        "pointColors": {
+            "pointColor":  {
+                "type": "UNSIGNED_BYTE",
+                "count": 4,
+                "offset": 0,
+                "stride": 0,
+                "normalize": true
+            }
+        },
         "curMidPoints": {
             "curPos": {
                 "type": "FLOAT",
@@ -134,7 +152,9 @@ module.exports = {
             "points": {
                 "program": "points",
                 "bindings": {
-                    "curPos": ["curPoints", "curPos"]
+                    "curPos": ["curPoints", "curPos"],
+                    "pointSize": ["pointSizes", "pointSize"],
+                    "pointColor": ["pointColors", "pointColor"]
                 },
                 "drawType": "POINTS",
                 "glOptions": {}
@@ -149,6 +169,6 @@ module.exports = {
             }
         },
 
-        "render": ["midedges", "points"]
+        "render": ["edges", "points"]
     }
 };
