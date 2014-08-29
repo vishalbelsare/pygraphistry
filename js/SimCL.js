@@ -87,6 +87,11 @@ function create(renderer, dimensions, numSplits, locked) {
                 nextMidPoints: null,
                 curMidPoints: null
             };
+            //constant
+            simObj.buffersLocal = {
+                pointSizes: null,
+                pointColors: null
+            };
             Object.seal(simObj.buffers);
 
             debug("WebCL simulator created");
@@ -155,6 +160,9 @@ function setPoints(simulator, points, pointSizes, pointColors) {
             pointColors[i] = (255 << 24) | (102 << 16) | (102 << 8) | 255;
         }
     }
+
+    simulator.buffersLocal.pointSizes = pointSizes;
+    simulator.buffersLocal.pointColors = pointColors;
 
     simulator.resetBuffers([
         simulator.buffers.nextPoints,

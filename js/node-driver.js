@@ -121,6 +121,11 @@ function fetchVBOs(graph) {
         ["curPoints", "springsPos", "midSpringsPos", "curMidPoints", "midSpringsColorCoord"];
     var targetArrays = {};
 
+    var localBuffers = {
+        'pointSizes': graph.simulator.buffersLocal.pointSizes.buffer,
+        'pointColors': graph.simulator.buffersLocal.pointColors.buffer
+    };
+
 
     // TODO: Instead of doing blocking CL reads, use CL events and wait on those.
     // node-webcl's event arguments to enqueue commands seems busted at the moment, but
@@ -132,6 +137,9 @@ function fetchVBOs(graph) {
         })
     )
     .then(function() {
+        for (var i in localBuffers) {
+            targetArrays[i] = localBuffers[i];
+        }
         return targetArrays;
     });
 }
@@ -245,6 +253,8 @@ function fetchData(graph) {
         curMidPoints: new ArrayBuffer(0),
         midSprings: new ArrayBuffer(0),
         midSpringsColorCoord: new ArrayBuffer(0),
+        pointSizes: new ArrayBuffer(0),
+        pointColors: new ArrayBuffer(0),
     }; */
 
     return Rx.Observable.fromPromise(fetchVBOs(graph))
