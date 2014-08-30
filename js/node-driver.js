@@ -45,6 +45,7 @@ var numPoints = 10000,//1024,//2048,//16384,
 function controls(graph) {
     var physicsControls =
         ["charge", "gravity", "edgeStrength", "edgeDistance"]
+        .concat(['scalingRatio', 'edgeInfluence', 'forceAtlas', 'preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'])
             .reduce(function (o, lbl) {
                 o[lbl] = function (v) {
                     var cmd = {};
@@ -82,11 +83,6 @@ function controls(graph) {
             }, {});
 
 
-    renderingControls.points(true);
-    renderingControls.edges(true);
-    renderingControls.midpoints(false);
-    renderingControls.midedges(false);
-
 
     var locks =
         ["lockPoints", "lockEdges", "lockMidpoints", "lockMidedges"]
@@ -101,10 +97,47 @@ function controls(graph) {
                 return o;
             }, {});
 
-    locks.lockPoints(false);
-    locks.lockEdges(false);
-    locks.lockMidpoints(true);
-    locks.lockMidedges(true);
+
+
+    if (false) {
+        physicsControls.forceAtlas(1);
+        physicsControls.scalingRatio(0.1);
+        physicsControls.gravity(0.005);
+        physicsControls.edgeInfluence(1);
+
+        physicsControls.preventOverlap(0);
+        physicsControls.strongGravity(0);
+        physicsControls.dissuadeHubs(0);
+        physicsControls.linLog(1);
+
+        renderingControls.points(true);
+        renderingControls.edges(true);
+        renderingControls.midpoints(false);
+        renderingControls.midedges(false);
+        locks.lockPoints(true);
+        locks.lockEdges(true);
+        locks.lockMidpoints(true);
+        locks.lockMidedges(true);
+
+
+
+        //physicsContorls.//', 'preventOverlap', 'strongGravity', 'dissuadeHubs'
+    } else {
+
+
+        renderingControls.points(false);
+        renderingControls.edges(false);
+        renderingControls.midpoints(false);
+        renderingControls.midedges(true);
+        locks.lockPoints(true);
+        locks.lockEdges(true);
+        locks.lockMidpoints(false);
+        locks.lockMidedges(false);
+
+
+
+    }
+
 
     return {
         physicsControls: physicsControls,

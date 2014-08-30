@@ -56,7 +56,7 @@ module.exports = {
             tArr[idx] = t;
         }
 
-        var flags = ['preventOverlap', 'strongGravity', 'dissuadeHubs'];
+        var flags = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'];
         var isAnyFlagToggled = flags.filter(function (flag) { return cfg.hasOwnProperty(flag); }).length;
         if (isAnyFlagToggled) {
             anyAtlasArgsChanged = true;
