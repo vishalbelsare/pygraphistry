@@ -1,11 +1,17 @@
 "use strict";
 
 var $            = require("jquery"),
-    renderConfig = require("render-config"),
+    Rx           = require("rx"),
+    _            = require("underscore"),
+    debug        = require("debug")("StreamGL:main");
+
+var renderConfig = require("render-config"),
     renderer     = require("./renderer.js"),
     interaction  = require("./interaction.js"),
     ui           = require("./ui.js"),
-    debug        = require("debug")("StreamGL:main");
+    proxyUtils = require('./proxyutils.js');
+
+
 
 
 var meter;
@@ -73,25 +79,38 @@ function init (canvas, opts) {
     socket.on("vbo_update", function (data, handshake) {
         console.log("VBO update");
 
-        for (var lbl in data) {
-            for (var opt in data[lbl]) {
-                console.log(lbl, opt)
+        var now = new Date().getTime();
+        console.log("got VBO update message", now - lastHandshake, "ms");
+
+        //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
+        var oReq = new XMLHttpRequest();
+        oReq.open("GET", "http://localhost:" + proxyUtils.BINARY_PORT + "/vbo", true);
+        oReq.responseType = "arraybuffer";
+
+        oReq.onload = function () {
+            try {
+                console.log("got VBO data", Date.now() - now, "ms");
+
+                var arrayBuffer = oReq.response; // Note: not oReq.responseText
+                var trimmedArray = new Uint8Array(
+                    arrayBuffer,
+                    0,
+                    data.numVertices * (3 * Float32Array.BYTES_PER_ELEMENT + 4 * Uint8Array.BYTES_PER_ELEMENT));
+
+                renderer.loadBuffers(gl, buffers, {mainVBO: trimmedArray.buffer});
+                renderer.setNumElements(data.elements);
+                renderer.render(renderConfig, gl, programs, buffers);
+
+                handshake(Date.now() - lastHandshake);
+                lastHandshake = Date.now();
+                meter.tick();
+
+            } catch (e) {
+                ui.error("Render error on loading data into WebGL:", e, new Error().stack);
             }
-        }
-        window.data = data;
+        };
 
-
-        try {
-            renderer.loadBuffers(gl, buffers, data.buffers);
-            renderer.setNumElements(data.elements);
-            renderer.render(renderConfig, gl, programs, buffers);
-
-            handshake(Date.now() - lastHandshake);
-            lastHandshake = Date.now();
-            meter.tick();
-        } catch(e) {
-            ui.error("Render error (", e, ")");
-        }
+        oReq.send(null);
     });
 
 
