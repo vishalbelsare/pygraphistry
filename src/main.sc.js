@@ -1,20 +1,13 @@
 "use strict";
 
-var $            = require("jquery"),
-    Rx           = require("rx"),
-    _            = require("underscore"),
-    debug        = require("debug")("StreamGL:main");
+var $               = require("jquery"),
+    debug           = require("debug")("StreamGL:main:sc");
 
-var renderConfig = require("render-config"),
-    renderer     = require("./renderer.js"),
-    interaction  = require("./interaction.js"),
-    ui           = require("./ui.js"),
-    proxyUtils = require('./proxyutils.js');
+var streamClient    = require('./main.js'),
+    ui              = require('./ui.js'),
+    interaction     = require("./interaction.js");
 
 
-
-
-var meter;
 
 /*
 Enable debuging output in the console by running:
@@ -26,101 +19,48 @@ in the console. Disable debug output by running:
 console.warn("%cWarning: having the console open can slow down execution significantly!",
     "font-size: 18pt; font-weight: bold; font-family: \"Helvetica Neue\", Helvetica, sans-serif; background-color: rgb(255, 242, 0);");
 
-
 var QUERY_PARAMS = Object.freeze(ui.getQueryParams());
 var DEBUG_MODE = (QUERY_PARAMS.hasOwnProperty("debug") && QUERY_PARAMS.debug !== "false" &&
         QUERY_PARAMS.debug !== "0");
 
-//opts :: {?meter, ?camera, ?socket}
+
+var hasInit = false;
+
+//canvas * {?camera, ?socket, ?noInteractions = false} -> {renderFrame: () -> (), setCamera: camera -> () }
 function init (canvas, opts) {
 
-    console.log('connected')
+    if (hasInit) return;
+    hasInit = true;
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    opts = opts || {};
 
-    if (!meter) meter = {tick: function(){}, pause: function(){}};
+    var client = streamClient(canvas, opts);
 
-    var socket = (opts||{}).socket;
-    if (!socket) {
-        socket = io.connect("http://localhost", {reconnection: false, transports: ["websocket"]});
-        socket.io.engine.binaryType = "arraybuffer";
-    } else if (!socket.io || !socket.io.engine || !(socket.io.engine == 'arraybuffer')) {
-        console.warn('Expected binary socket');
+    if (!opts.noInteractions) {
+        interaction.setupDrag($(".sim-container"), client.camera)
+            .merge(interaction.setupScroll($(".sim-container"), client.camera))
+            .subscribe(function(newCamera) {
+                client.setCamera(newCamera);
+                client.renderFrame();
+            });
     }
 
-    var renderState = renderer.init(renderConfig, canvas, opts);
-    var gl = renderState.get("gl");
-    var programs = renderState.get("programs").toJS();
-    var buffers = renderState.get("buffers").toJS();
-    var camera = renderState.get("camera");
-
     $("#do-disconnect").click(function(btn) {
-        socket.disconnect();
         btn.disabled = true;
+        client.disconnect();
     });
 
-    var lastHandshake = Date.now();
-
-    socket.on("vbo_update", function (data, handshake) {
-        console.log("VBO update");
-
-        var now = new Date().getTime();
-        console.log("got VBO update message", now - lastHandshake, "ms");
-
-        //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
-        var oReq = new XMLHttpRequest();
-        oReq.open("GET", "http://localhost:" + proxyUtils.BINARY_PORT + "/vbo", true);
-        oReq.responseType = "arraybuffer";
-
-        oReq.onload = function () {
-            try {
-                console.log("got VBO data", Date.now() - now, "ms");
-
-                var arrayBuffer = oReq.response; // Note: not oReq.responseText
-                var trimmedArray = new Uint8Array(
-                    arrayBuffer,
-                    0,
-                    data.numVertices * (3 * Float32Array.BYTES_PER_ELEMENT + 4 * Uint8Array.BYTES_PER_ELEMENT));
-
-                renderer.loadBuffers(gl, buffers, {mainVBO: trimmedArray.buffer});
-                renderer.setNumElements(data.elements);
-                renderer.render(renderConfig, gl, programs, buffers);
-
-                handshake(Date.now() - lastHandshake);
-                lastHandshake = Date.now();
-                meter.tick();
-
-            } catch (e) {
-                ui.error("Render error on loading data into WebGL:", e, new Error().stack);
-            }
-        };
-
-        oReq.send(null);
-    });
-
-
-    socket.on("error", function(reason) {
-        meter.pause();
+    client.socket.on("error", function(reason) {
         ui.error("Connection error (reason:", reason, (reason||{}).description, ")");
     });
-    socket.on("disconnect", function(reason){
-        meter.pause();
+
+    client.socket.on("disconnect", function(reason){
         $(canvas).parent().addClass("disconnected");
         ui.error("Disconnected (reason:", reason, ")");
     });
 
-    //////
-
-    return {
-        renderFrame: function () {
-            renderer.setCamera(renderConfig, gl, programs, camera);
-            renderer.render(renderConfig, gl, programs, buffers);
-        }
-    };
+    return client;
 }
-
-module.exports = init;
 
 window.addEventListener("load", function(){
     var meter;
@@ -130,5 +70,8 @@ window.addEventListener("load", function(){
         meter = new FPSMeter($("body")[0]);
     }
 
-    init($("#simulation")[0], meter);
+    init($("#simulation")[0], {meter: meter});
 });
+
+
+module.exports = init;
