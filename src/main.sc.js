@@ -31,13 +31,6 @@ var QUERY_PARAMS = Object.freeze(ui.getQueryParams());
 var DEBUG_MODE = (QUERY_PARAMS.hasOwnProperty("debug") && QUERY_PARAMS.debug !== "false" &&
         QUERY_PARAMS.debug !== "0");
 
-function initMeter () {
-    if(DEBUG_MODE) {
-        $("html").addClass("debug");
-        meter = new FPSMeter($("body")[0]);
-    }
-}
-
 //opts :: {?meter, ?camera, ?socket}
 function init (canvas, opts) {
 
@@ -48,7 +41,7 @@ function init (canvas, opts) {
 
     if (!meter) meter = {tick: function(){}, pause: function(){}};
 
-    var socket = opts.socket;
+    var socket = (opts||{}).socket;
     if (!socket) {
         socket = io.connect("http://localhost", {reconnection: false, transports: ["websocket"]});
         socket.io.engine.binaryType = "arraybuffer";
@@ -61,13 +54,6 @@ function init (canvas, opts) {
     var programs = renderState.get("programs").toJS();
     var buffers = renderState.get("buffers").toJS();
     var camera = renderState.get("camera");
-
-    interaction.setupDrag($(".sim-container"), camera)
-        .merge(interaction.setupScroll($(".sim-container"), camera))
-        .subscribe(function(newCamera) {
-            renderer.setCamera(renderConfig, gl, programs, newCamera);
-            renderer.render(renderConfig, gl, programs, buffers);
-        });
 
     $("#do-disconnect").click(function(btn) {
         socket.disconnect();
@@ -126,21 +112,23 @@ function init (canvas, opts) {
 
     //////
 
-    if (!meter && typeof(window) != 'undefined') {
-        window.addEventListener("load", initMeter);
-    }
-
     return {
         renderFrame: function () {
+            renderer.setCamera(renderConfig, gl, programs, camera);
             renderer.render(renderConfig, gl, programs, buffers);
         }
     };
 }
 
 module.exports = init;
-if (typeof(window) != 'undefined') {
-    window.addEventListener("load", function(){
-        initMeter();
-        init($("#simulation")[0], {meter: meter});
-    });
-}
+
+window.addEventListener("load", function(){
+    var meter;
+
+    if(DEBUG_MODE) {
+        $("html").addClass("debug");
+        meter = new FPSMeter($("body")[0]);
+    }
+
+    init($("#simulation")[0], meter);
+});
