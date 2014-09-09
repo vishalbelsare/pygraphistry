@@ -11,18 +11,21 @@ try {
 
 exports.error = function() {
     var args = Array.prototype.slice.call(arguments);
+    args.push(new Error().stack);
     var message = args.join(" ");
 
     console.error.apply(console, args);
 
-    var $msg = $("<div>")
-        .addClass("status-error")
-        .text(message)
-        .click(function() { $(this).slideUp(); });
+    if (typeof($) != 'undefined') {
+        var $msg = $("<div>")
+            .addClass("status-error")
+            .text(message)
+            .click(function() { $(this).slideUp(); });
 
-    $(".status-bar")
-        .append($msg)
-        .css("visibility", "visible");
+        $(".status-bar")
+            .append($msg)
+            .css("visibility", "visible");
+    }
 };
 
 

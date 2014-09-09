@@ -7,6 +7,9 @@ var $            = require("jquery"),
     ui           = require("./ui.js"),
     debug        = require("debug")("StreamGL:main");
 
+
+var meter;
+
 /*
 Enable debuging output in the console by running:
     localStorage.debug = "StreamGL:*";
@@ -22,14 +25,22 @@ var QUERY_PARAMS = Object.freeze(ui.getQueryParams());
 var DEBUG_MODE = (QUERY_PARAMS.hasOwnProperty("debug") && QUERY_PARAMS.debug !== "false" &&
         QUERY_PARAMS.debug !== "0");
 
+function initMeter () {
+    if(DEBUG_MODE) {
+        $("html").addClass("debug");
+        meter = new FPSMeter($("body")[0]);
+    }
+}
 
 //opts :: {?meter, ?camera, ?socket}
 function init (canvas, opts) {
 
+    console.log('connected')
+
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    var meter = (typeof meter === "object") ? meter : {tick: function(){}, pause: function(){}};
+    if (!meter) meter = {tick: function(){}, pause: function(){}};
 
     var socket = opts.socket;
     if (!socket) {
@@ -60,7 +71,15 @@ function init (canvas, opts) {
     var lastHandshake = Date.now();
 
     socket.on("vbo_update", function (data, handshake) {
-        debug("VBO update");
+        console.log("VBO update");
+
+        for (var lbl in data) {
+            for (var opt in data[lbl]) {
+                console.log(lbl, opt)
+            }
+        }
+        window.data = data;
+
 
         try {
             renderer.loadBuffers(gl, buffers, data.buffers);
@@ -78,7 +97,7 @@ function init (canvas, opts) {
 
     socket.on("error", function(reason) {
         meter.pause();
-        ui.error("Connection error (reason:", reason, ")");
+        ui.error("Connection error (reason:", reason, (reason||{}).description, ")");
     });
     socket.on("disconnect", function(reason){
         meter.pause();
@@ -88,18 +107,21 @@ function init (canvas, opts) {
 
     //////
 
-    window.addEventListener("load", function(){
-        if(DEBUG_MODE) {
-            $("html").addClass("debug");
-            meter = new FPSMeter($("body")[0]);
-        }
-    });
+    if (!meter && typeof(window) != 'undefined') {
+        window.addEventListener("load", initMeter);
+    }
 
     return {
         renderFrame: function () {
             renderer.render(renderConfig, gl, programs, buffers);
         }
-    };s
+    };
 }
 
 module.exports = init;
+if (typeof(window) != 'undefined') {
+    window.addEventListener("load", function(){
+        initMeter();
+        init($("#simulation")[0], {meter: meter});
+    });
+}

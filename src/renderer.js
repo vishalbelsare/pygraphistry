@@ -144,7 +144,7 @@ function init(config, canvas, opts) {
     state = createPrograms(state);
     state = createBuffers(state);
 
-    var camera = opts.camera || new Cameras.Camera2d(config.get("camera").get("init").get(0).toJS());
+    var camera = (opts||{}).camera || new Cameras.Camera2d(config.get("camera").get("init").get(0).toJS());
     setCamera(config.toJS(), gl, state.get("programs").toJS(), camera);
     state = state.set("camera", camera);
 
