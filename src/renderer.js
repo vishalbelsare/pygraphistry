@@ -1,9 +1,11 @@
 "use strict";
 
-var Cameras = require("../../../../superconductorjs/src/Camera.js");
-var _ = require("underscore");
-var Immutable = require("immutable");
-var debug = require("debug")("StreamGL:renderer");
+var _           = require("underscore"),
+    Immutable   = require("immutable"),
+    debug       = require("debug")("StreamGL:renderer");
+
+
+var Cameras     = require("../../../../superconductorjs/src/Camera.js");
 
 /** @module Renderer */
 
@@ -280,7 +282,7 @@ function loadBuffers(gl, buffers, bufferData) {
 
         if(typeof buffers[bufferName] === "undefined") {
             console.error("Asked to load data for buffer '%s', but no buffer by that name exists locally",
-                bufferName);
+                bufferName, buffers);
             return false;
         }
 
@@ -369,6 +371,19 @@ function render(config, gl, programs, buffers, renderListOverride) {
     gl.flush();
 }
 
+// Get names of buffers needed for active frame
+// RenderOptions -> [ string ]
+function getActiveBufferNames (config) {
+
+    var renderItems = config.scene.render;
+    var bufferNamesLists = renderItems.map(function (itemName) {
+        var bindings = config.scene.items[itemName].bindings;
+        return _.values(bindings).map(function (binding) { return binding[0]; });
+    });
+
+    return _.uniq(_.flatten(bufferNamesLists));
+}
+
 
 module.exports = {
     init: init,
@@ -380,5 +395,6 @@ module.exports = {
     loadBuffer: loadBuffer,
     setCamera: setCamera,
     setNumElements: setNumElements,
-    render: render
+    render: render,
+    getActiveBufferNames: getActiveBufferNames
 };
