@@ -8,6 +8,7 @@
 
 var Q = require("q"),
     Rx = require("rx"),
+    _ = require('underscore'),
 
     chalk = require("chalk"),
     debug = require("debug")("StreamGL:driver"),
@@ -125,14 +126,14 @@ function controls(graph) {
     } else {
 
 
-        renderingControls.points(false);
-        renderingControls.edges(false);
+        renderingControls.points(true);
+        renderingControls.edges(true);
         renderingControls.midpoints(false);
-        renderingControls.midedges(true);
-        locks.lockPoints(true);
-        locks.lockEdges(true);
-        locks.lockMidpoints(false);
-        locks.lockMidedges(false);
+        renderingControls.midedges(false);
+        locks.lockPoints(false);
+        locks.lockEdges(false);
+        locks.lockMidpoints(true);
+        locks.lockMidedges(true);
 
 
 
@@ -147,32 +148,41 @@ function controls(graph) {
 }
 
 
-function fetchVBOs(graph) {
+function fetchVBOs(graph, bufferNames) {
+
+    var targetArrays = {};
+
     // TODO: Reuse existing ArrayBuffers once we're sure we're sure it's safe to do so (we've
     // written the CL data to it, and written it to the socket sent to the client.)
     var buffersToFetch =
-        ["curPoints", "springsPos", "midSpringsPos", "curMidPoints", "midSpringsColorCoord"];
-    var targetArrays = {};
+        ["curPoints", "springsPos", "midSpringsPos", "curMidPoints", "midSpringsColorCoord"]
+        .filter(function (name) {
+            return bufferNames.indexOf(name) != -1;
+        });
 
-    var localBuffers = {
-        'pointSizes': graph.simulator.buffersLocal.pointSizes.buffer,
-        'pointColors': graph.simulator.buffersLocal.pointColors.buffer
-    };
-
+    var bufferSizes = fetchBufferByteLengths(graph);
 
     // TODO: Instead of doing blocking CL reads, use CL events and wait on those.
     // node-webcl's event arguments to enqueue commands seems busted at the moment, but
     // maybe enqueueing a event barrier and using its event might work?
     return Q.all(
         buffersToFetch.map(function(val) {
-            targetArrays[val] = new ArrayBuffer(graph.simulator.buffers[val].size);
+            targetArrays[val] = new ArrayBuffer(bufferSizes[val]);
             return graph.simulator.buffers[val].read(new Float32Array(targetArrays[val]));
         })
     )
     .then(function() {
+
+        var localBuffers = {
+            'pointSizes': graph.simulator.buffersLocal.pointSizes.buffer,
+            'pointColors': graph.simulator.buffersLocal.pointColors.buffer
+        };
         for (var i in localBuffers) {
-            targetArrays[i] = localBuffers[i];
+            if (bufferNames.indexOf(i) != -1) {
+                targetArrays[i] = localBuffers[i];
+            }
         }
+
         return targetArrays;
     });
 }
@@ -185,6 +195,18 @@ function fetchNumElements(graph) {
         midedgestextured: graph.renderer.numMidEdges * 2,
         points: graph.renderer.numPoints,
         midpoints: graph.renderer.numMidPoints
+    };
+}
+function fetchBufferByteLengths(graph) {
+    //FIXME generate from renderConfig
+    //form: elements * ?dimensions * points * BYTES_PER_ELEMENT
+    return {
+        springsPos: graph.renderer.numEdges * 2 * 2 * Float32Array.BYTES_PER_ELEMENT,
+        curPoints: graph.renderer.numPoints * 2 * Float32Array.BYTES_PER_ELEMENT,
+        pointSizes: graph.renderer.numPoints * Uint8Array.BYTES_PER_ELEMENT,
+        pointColors: graph.renderer.numPoints * 4 * Uint8Array.BYTES_PER_ELEMENT,
+        curMidPoints: graph.renderer.numMidPoints * 2 * Float32Array.BYTES_PER_ELEMENT,
+        midSpringsPos: graph.renderer.numMidEdges * 2 * 2 * Float32Array.BYTES_PER_ELEMENT
     };
 }
 
@@ -206,7 +228,7 @@ function loadDataIntoSim(graph) {
     return loader.loadDataList(graph)
     .then(function (datalist) {
         if (USE_GEO) {
-            var which = 3;
+            var which = 1;
             debug("Loading data: %o", datalist[which]);
             return datalist[which].loader(graph, datalist[which].f);
 
@@ -274,26 +296,40 @@ function createAnimation() {
 
 
 /**
- * Fetches VBO data and # of elements from the given graph
+ * Fetches compressed VBO data and # of elements for active buffers and programs
  * @returns {Rx.Observable} an observable sequence containing one item, an Object with the 'buffers'
  * property set to an Object mapping buffer names to ArrayBuffer data; and the 'elements' Object
  * mapping render item names to number of elements that should be rendered for the given buffers.
  */
-function fetchData(graph) {
-    /* buffers: {
-        curPoints: new ArrayBuffer(0),
-        springs: new ArrayBuffer(0),
-        curMidPoints: new ArrayBuffer(0),
-        midSprings: new ArrayBuffer(0),
-        midSpringsColorCoord: new ArrayBuffer(0),
-        pointSizes: new ArrayBuffer(0),
-        pointColors: new ArrayBuffer(0),
-    }; */
+function fetchData(graph, compress, bufferNames, programNames) {
 
-    return Rx.Observable.fromPromise(fetchVBOs(graph))
-        .map(function(vbos) {
-            var numElements = fetchNumElements(graph);
-            return {buffers: vbos, elements: numElements};
+
+    return Rx.Observable.fromPromise(fetchVBOs(graph, bufferNames))
+        .flatMap(function (vbos) {
+
+            var compressed =
+                bufferNames.map(function (bufferName) {
+                    return Rx.Observable.fromNodeCallback(compress.deflate)(
+                        vbos[bufferName],//binary,
+                        {output: new Buffer(
+                            Math.max(1024, Math.round(vbos[bufferName].byteLength / 2)))});
+                });
+
+            return Rx.Observable.zipArray(compressed).take(1);
+
+        })
+        .map(function(compressedVbos) {
+
+            var buffers = {};
+            bufferNames.forEach(function (name, i) {
+                buffers[name] = compressedVbos[i][0];
+            });
+
+            return {
+                compressed: buffers,
+                elements: _.pick(fetchNumElements(graph), programNames),
+                bufferByteLengths: _.pick(fetchBufferByteLengths(graph), bufferNames)
+            };
         });
 }
 
