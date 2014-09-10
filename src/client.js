@@ -16,7 +16,7 @@ var renderConfig = require("render-config"),
 
 
 //string -> Subject ArrayBuffer
-function fetchBuffer (bufferName) {
+function fetchBuffer (bufferByteLengths, bufferName) {
 
         var res = new Rx.Subject();
 
@@ -31,13 +31,9 @@ function fetchBuffer (bufferName) {
                 console.log("got VBO data", bufferName, Date.now() - now, "ms");
 
                 var arrayBuffer = oReq.response; // Note: not oReq.responseText
-                /*var trimmedArray = new Uint8Array(
-                    arrayBuffer,
-                    0,
-                    data.numVertices * (3 * Float32Array.BYTES_PER_ELEMENT + 4 * Uint8Array.BYTES_PER_ELEMENT));
-                */
+                var trimmedArray = new Uint8Array(arrayBuffer, 0, bufferByteLengths[bufferName]);
 
-                res.onNext(arrayBuffer);
+                res.onNext(trimmedArray);
 
             } catch (e) {
                 ui.error("Render error on loading data into WebGL:", e, new Error().stack);
@@ -89,12 +85,12 @@ function init (canvas, opts) {
         console.log("VBO update");
 
         var now = new Date().getTime();
-        console.log("got VBO update message", now - lastHandshake, "ms");
+        console.log("got VBO update message", now - lastHandshake, data.bufferByteLengths, data.elements, "ms");
 
         var bufferNames = renderer.getActiveBufferNames(renderConfig);
         console.log("  Active buffers", bufferNames);
 
-        var bufferVBOs = Rx.Observable.zipArray(bufferNames.map(fetchBuffer)).take(1);
+        var bufferVBOs = Rx.Observable.zipArray(bufferNames.map(fetchBuffer.bind('', data.bufferByteLengths))).take(1);
 
         bufferVBOs
             .subscribe(function (vbos) {
@@ -107,9 +103,10 @@ function init (canvas, opts) {
                 });
 
                 console.log("got all VBO data", Date.now() - now, "ms", bindings);
+                socket.emit('received_buffers'); //TODO fire preemptitively based on guess
 
                 try {
-                    renderer.loadBuffers(gl, buffers, {mainVBO: vbos[0]});
+                    renderer.loadBuffers(gl, buffers, bindings);
                     renderer.setNumElements(data.elements);
                     renderer.render(renderConfig, gl, programs, buffers);
 
