@@ -178,6 +178,6 @@ module.exports = {
         },
 
         //"render": ["edges", "points"]
-        "render": ["points", "midedges"]
+        "render": ["points", "edges"]
     }
 };
