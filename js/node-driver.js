@@ -228,7 +228,7 @@ function loadDataIntoSim(graph) {
     return loader.loadDataList(graph)
     .then(function (datalist) {
         if (USE_GEO) {
-            var which = 1;
+            var which = 2;
             debug("Loading data: %o", datalist[which]);
             return datalist[which].loader(graph, datalist[which].f);
 
@@ -312,7 +312,7 @@ function fetchData(graph, compress, bufferNames, programNames) {
                     return Rx.Observable.fromNodeCallback(compress.deflate)(
                         vbos[bufferName],//binary,
                         {output: new Buffer(
-                            Math.max(1024, Math.round(vbos[bufferName].byteLength / 2)))});
+                            Math.max(1024, Math.round(vbos[bufferName].byteLength * 1.5)))});
                 });
 
             return Rx.Observable.zipArray(compressed).take(1);

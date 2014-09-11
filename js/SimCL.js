@@ -263,6 +263,8 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
     return Q().then(function() {
         // Init constant
         simulator.numEdges = forwardsEdges.edgesTyped.length / elementsPerEdge;
+        debug("Number of edges in simulation: %d", simulator.numEdges);
+
         simulator.renderer.numEdges = simulator.numEdges;
         simulator.numForwardsWorkItems = forwardsEdges.workItemsTyped.length / elementsPerWorkItem;
         simulator.numBackwardsWorkItems = backwardsEdges.workItemsTyped.length / elementsPerWorkItem;
