@@ -25,6 +25,15 @@ module.exports = {
     },
 
     'programs': {
+        'edgeculled': {
+            'sources': {
+                'vertex': fs.readFileSync('./src/shaders/graph/edgeculled.vertex.glsl', 'utf8').toString('ascii'),
+                'fragment': fs.readFileSync('./src/shaders/graph/edgeculled.fragment.glsl', 'utf8').toString('ascii')
+            },
+            'attributes': ['curPos'],
+            'camera': 'mvp',
+            'uniforms': []
+        },
         'edges': {
             'sources': {
                 'vertex': fs.readFileSync('./src/shaders/graph/edge.vertex.glsl', 'utf8').toString('ascii'),
@@ -141,10 +150,18 @@ module.exports = {
 
     'scene': {
         'items': {
+            'edgeculled': {
+                'program': 'edgeculled',
+                'bindings': {
+                    'curPos': ['springsPos', 'curPos'],
+                },
+                'drawType': 'LINES',
+                'glOptions': {}
+            },
             'edges': {
                 'program': 'edges',
                 'bindings': {
-                    'curPos': ['springsPos', 'curPos']
+                    'curPos': ['springsPos', 'curPos'],
                 },
                 'drawType': 'LINES',
                 'glOptions': {}
@@ -152,9 +169,9 @@ module.exports = {
             'points': {
                 'program': 'points',
                 'bindings': {
-                    'curPos': ['curPoints', 'curPos'],
-                    'pointSize': ['pointSizes', 'pointSize'],
-                    'pointColor': ['pointColors', 'pointColor']
+                    'curPos':       ['curPoints', 'curPos'],
+                    'pointSize':    ['pointSizes', 'pointSize'],
+                    'pointColor':   ['pointColors', 'pointColor']
                 },
                 'drawType': 'POINTS',
                 'glOptions': {}
@@ -178,6 +195,6 @@ module.exports = {
         },
 
         //'render': ['edges', 'points']
-        'render': ['points', 'edges']
+        'render': ['points', 'edgeculled']
     }
 };
