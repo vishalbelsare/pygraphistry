@@ -195,6 +195,7 @@ function fetchNumElements(graph) {
         midedges: graph.renderer.numMidEdges * 2,
         midedgestextured: graph.renderer.numMidEdges * 2,
         points: graph.renderer.numPoints,
+        pointculled: graph.renderer.numPoints,
         midpoints: graph.renderer.numMidPoints
     };
 }
