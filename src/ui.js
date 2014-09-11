@@ -1,8 +1,8 @@
-"use strict";
+'use strict';
 
 try {
-    if (typeof($) == "undefined") {
-        $ = require("jquery");
+    if (typeof($) === 'undefined') {
+        $ = require('jquery');
     }
 } catch (e) {
     //do not need jquery
@@ -12,19 +12,19 @@ try {
 exports.error = function() {
     var args = Array.prototype.slice.call(arguments);
     args.push(new Error().stack);
-    var message = args.join(" ");
+    var message = args.join(' ');
 
     console.error.apply(console, args);
 
-    if (typeof($) != 'undefined') {
-        var $msg = $("<div>")
-            .addClass("status-error")
+    if (typeof($) !== 'undefined') {
+        var $msg = $('<div>')
+            .addClass('status-error')
             .text(message)
             .click(function() { $(this).slideUp(); });
 
-        $(".status-bar")
+        $('.status-bar')
             .append($msg)
-            .css("visibility", "visible");
+            .css('visibility', 'visible');
     }
 };
 
@@ -39,12 +39,12 @@ exports.getQueryParams = function() {
     var spaces = /\+/g;
     var qParts = /([^&=]+)(=([^&]*))?/;
 
-    return query.split("&").reduce(function(res, param) {
-        if(param === "") { return res; }
+    return query.split('&').reduce(function(res, param) {
+        if(param === '') { return res; }
 
         var parts = qParts.exec(param);
-        var key = parts[1].replace(spaces, " ");
-        var value = (typeof parts[3] === "undefined" ? "" : parts[3]).replace(spaces, " ");
+        var key = parts[1].replace(spaces, ' ');
+        var value = (typeof parts[3] === 'undefined' ? '' : parts[3]).replace(spaces, ' ');
 
         res[key] = value;
         return res;
