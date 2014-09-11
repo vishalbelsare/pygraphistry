@@ -6,20 +6,21 @@ precision mediump float;
 
 uniform mat4 mvp;
 attribute vec2 curPos;
-varying float alpha;
+
+attribute float pointSize;
+
+attribute vec4 pointColor;
+varying vec4 vColor;
 
 void main(void) {
+    gl_PointSize = clamp(pointSize, 0.125, 10.0);
 
     vec4 pos = mvp * vec4(curPos.x, 1.0 * curPos.y, Z_VAL, W_VAL);
+    gl_Position = pos;
 
     float furthestComponent = max(abs(pos.x), abs(pos.y));
     float remapped = (-furthestComponent + SENSITIVITY) / SENSITIVITY;
-    alpha = remapped < 0.0 ? -20.0 : clamp(remapped, 0.0, 1.0);
+    float alpha = remapped < 0.0 ? -20.0 : clamp(remapped, 0.0, 1.0);
 
-    if (alpha > 0.0) {
-        gl_Position = pos;
-    } else {
-        //degenerate
-        gl_Position = vec4(-2.0,-2.0,1.0,1.0);
-    }
+    vColor = vec4(pointColor.y, pointColor.z, pointColor.w, alpha);
 }
