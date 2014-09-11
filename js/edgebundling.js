@@ -1,6 +1,6 @@
 
 var _ = require('underscore'),
-    Q = require('Q');
+    Q = require('q');
 
 
 

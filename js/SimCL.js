@@ -1,6 +1,6 @@
 "use strict";
 
-var Q = require('Q');
+var Q = require('q');
 var util = require('./util.js');
 var cljs = require('./cl.js');
 var _ = require('underscore');
@@ -8,8 +8,8 @@ var debug = require("debug")("N-body:SimCL");
 
 
 var forceAtlas = require('./forceatlas.js'),
-    gaussSeidel = require('./gaussSeidel.js'),
-    edgeBundling = require('./edgeBundling.js');
+    gaussSeidel = require('./gaussseidel.js'),
+    edgeBundling = require('./edgebundling.js');
 
 
 var layoutAlgorithms = [forceAtlas, gaussSeidel, edgeBundling];

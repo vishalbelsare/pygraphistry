@@ -1,6 +1,6 @@
 "use strict";
 
-var Q = require('Q');
+var Q = require('q');
 var glMatrix = require('gl-matrix');
 var util = require('./util.js');
 var debug = require("debug")("N-body:RenderGL");

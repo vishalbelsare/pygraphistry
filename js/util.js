@@ -1,7 +1,7 @@
 "use strict";
 
-var $ = require('jQuery');
-var Q = require('Q');
+var $ = require('jquery');
+var Q = require('q');
 var debug = require("debug")("N-body:utils");
 
 var Image, webgl;

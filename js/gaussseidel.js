@@ -1,7 +1,7 @@
 
 
 var debug = require("debug")("N-body:SimCL:gaussSeidel"),
-    Q = require('Q');
+    Q = require('q');
 
 
 var cljs = require('./cl.js');

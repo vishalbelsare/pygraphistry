@@ -1,6 +1,6 @@
 "use strict";
 
-var Q = require('Q');
+var Q = require('q');
 var glMatrix = require('gl-matrix');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');

@@ -1,7 +1,7 @@
 "use strict";
 
-var $ = require('jQuery');
-var Q = require('Q');
+var $ = require('jquery');
+var Q = require('q');
 var Long = require('./Long.js');
 var debug = require("debug")("N-body:load");
 

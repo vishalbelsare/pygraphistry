@@ -10,8 +10,8 @@
 
 var PATH = 'data/gml/';
 
-var $ = require('jQuery'),
-    Q = require('Q'),
+var $ = require('jquery'),
+    Q = require('q'),
     _ = require('underscore');
 
 var debug = require("debug")("N-body:load:gml");
