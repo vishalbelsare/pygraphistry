@@ -1,5 +1,7 @@
 'use strict';
 
+var $ = require('jquery');
+
 try {
     if (typeof($) === 'undefined') {
         $ = require('jquery');
