@@ -191,6 +191,7 @@ function fetchVBOs(graph, bufferNames) {
 function fetchNumElements(graph) {
     return {
         edges: graph.renderer.numEdges * 2,
+        edgeculled: graph.renderer.numEdges * 2,
         midedges: graph.renderer.numMidEdges * 2,
         midedgestextured: graph.renderer.numMidEdges * 2,
         points: graph.renderer.numPoints,
