@@ -1,7 +1,9 @@
 'use strict';
 
-var $ = require('jquery');
-var Rx = require('rx');
+var $       = require('jquery'),
+    Rx      = require('rx'),
+    debug   = require('debug')('StreamGL:interaction');
+
 require('rx-jquery');
 
 

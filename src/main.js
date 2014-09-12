@@ -8,11 +8,13 @@
 
 
 var $               = require('jquery'),
+    _               = require('underscore'),
     debug           = require('debug')('StreamGL:main:sc');
 
 var streamClient    = require('./client.js'),
     ui              = require('./ui.js'),
-    interaction     = require('./interaction.js');
+    interaction     = require('./interaction.js'),
+    renderConfig    = require('render-config');
 
 /*
 Enable debuging output in the console by running:

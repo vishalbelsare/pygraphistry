@@ -26,7 +26,7 @@ function fetchBuffer (bufferByteLengths, bufferName) {
         var now = Date.now();
         oReq.onload = function () {
             try {
-                console.log('got VBO data', bufferName, Date.now() - now, 'ms');
+                debug('got VBO data', bufferName, Date.now() - now, 'ms');
 
                 var arrayBuffer = oReq.response; // Note: not oReq.responseText
                 var trimmedArray = new Uint8Array(arrayBuffer, 0, bufferByteLengths[bufferName]);
@@ -55,7 +55,7 @@ function init (canvas, opts) {
     debug('initializing networking client');
     opts = opts || {};
 
-    console.log('connected');
+    debug('connected');
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -67,7 +67,7 @@ function init (canvas, opts) {
         socket = io.connect('http://localhost', {reconnection: false, transports: ['websocket']});
         socket.io.engine.binaryType = 'arraybuffer';
     } else if (!socket.io || !socket.io.engine || socket.io.engine !== 'arraybuffer') {
-        console.warn('Expected binary socket');
+        debug('Expected binary socket');
     }
 
     var renderState = renderer.init(renderConfig, canvas, opts);
@@ -79,27 +79,27 @@ function init (canvas, opts) {
     var lastHandshake = Date.now();
 
     socket.on('vbo_update', function (data, handshake) {
-        console.log('VBO update');
+        debug('VBO update');
 
         var now = new Date().getTime();
-        console.log('got VBO update message', now - lastHandshake, data.bufferByteLengths, data.elements, 'ms');
+        debug('got VBO update message', now - lastHandshake, data.bufferByteLengths, data.elements, 'ms');
 
         var bufferNames = renderer.getActiveBufferNames(renderConfig);
-        console.log('  Active buffers', bufferNames);
+        debug('  Active buffers', bufferNames);
 
         var bufferVBOs = Rx.Observable.zipArray(bufferNames.map(fetchBuffer.bind('', data.bufferByteLengths))).take(1);
 
         bufferVBOs
             .subscribe(function (vbos) {
 
-                console.log('Got VBOs:', vbos.length);
+                debug('Got VBOs:', vbos.length);
                 var bindings = {};
                 bufferNames.forEach(function (name, i) {
-                    console.debug('Binding:', name, i);
+                    debug('Binding:', name, i);
                     bindings[name] = vbos[i];
                 });
 
-                console.log('got all VBO data', Date.now() - now, 'ms', bindings);
+                debug('got all VBO data', Date.now() - now, 'ms', bindings);
                 socket.emit('received_buffers'); //TODO fire preemptitively based on guess
 
                 try {
