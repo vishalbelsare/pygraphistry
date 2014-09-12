@@ -35,7 +35,20 @@ exports.setupDrag = function($eventTarget, camera) {
         });
 };
 
+exports.setupMousemove = function($eventTarget, hitTest, itemName) {
+    debug('setupMouseover');
+    var bounds = $('canvas', $eventTarget[0])[0].getBoundingClientRect();
 
+    return $eventTarget.mousemoveAsObservable()
+        //.sample(10)
+        .map(function (evt) {
+            var pos = {
+                x: evt.clientX - bounds.left,
+                y: evt.clientY - bounds.top
+            };
+            return hitTest(itemName, pos.x, pos.y);
+        });
+};
 
 exports.setupScroll = function($eventTarget, camera) {
     return Rx.Observable.fromEvent($eventTarget[0], 'wheel')

@@ -443,6 +443,16 @@ function render(state, renderListOverride) {
     gl.flush();
 }
 
+function hitTest(state, itemName, x, y) {
+    var canvas = state.get('gl').canvas;
+    var map = state.toJS().readbacks[itemName];
+    var remapped = new Uint32Array(map.buffer);
+    var idx = (canvas.height - y) * canvas.width + x;
+    var combined = remapped[idx];
+    debug('hit', x, y, '->', combined);
+    return combined;
+}
+
 // Get names of buffers needed for active frame
 // RenderOptions -> [ string ]
 function getActiveBufferNames (config) {
@@ -468,5 +478,6 @@ module.exports = {
     setCamera: setCamera,
     setNumElements: setNumElements,
     render: render,
-    getActiveBufferNames: getActiveBufferNames
+    getActiveBufferNames: getActiveBufferNames,
+    hitTest: hitTest
 };

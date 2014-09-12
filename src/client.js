@@ -131,6 +131,9 @@ function init (canvas, opts) {
         disconnect: socket.disconnect.bind(socket),
         setCamera: renderer.setCamera.bind(renderer, renderConfig, gl, programs),
 
+        //itemName * int * int -> int
+        hitTest: renderer.hitTest.bind(renderer, renderState),
+
         //call to render with current camera
         renderFrame: function () {
             renderer.setCamera(renderConfig, gl, programs, camera);

@@ -47,6 +47,14 @@ function init (canvas, opts) {
             client.renderFrame();
         });
 
+    renderConfig.scene.render
+        .filter(function (itemName) { return renderConfig.scene.items[itemName].renderTarget === 'texture'; })
+        .map(interaction.setupMousemove.bind('', $('.sim-container'), client.hitTest))
+        .forEach(function (hits) {
+            hits.subscribe(_.identity);
+        });
+
+
     $('#do-disconnect').click(function(btn) {
         btn.disabled = true;
         client.disconnect();
