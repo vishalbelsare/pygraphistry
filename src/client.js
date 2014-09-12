@@ -105,7 +105,7 @@ function init (canvas, opts) {
                 try {
                     renderer.loadBuffers(gl, buffers, bindings);
                     renderer.setNumElements(data.elements);
-                    renderer.render(renderConfig, gl, programs, buffers);
+                    renderer.render(renderState);
 
                     handshake(Date.now() - lastHandshake);
                     lastHandshake = Date.now();
@@ -134,7 +134,7 @@ function init (canvas, opts) {
         //call to render with current camera
         renderFrame: function () {
             renderer.setCamera(renderConfig, gl, programs, camera);
-            renderer.render(renderConfig, gl, programs, buffers);
+            renderer.render(renderState);
         }
     };
 }

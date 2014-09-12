@@ -343,13 +343,18 @@ function setNumElements(newNumElements) {
 
 /**
  * Render one or more items as specified in render config's scene.render array
- * @param {RenderOptions} config - the rendering config for the current context
- * @param {WebGLRenderingContext} gl - the WebGL rendering context
- * @param {Object.<string, WebGLBuffer>} buffers - the buffers, as returned from createBuffers()
+ * @param {Renderer} state - initialized renderer
  * @param {(string[])} [renderListOverride] - optional override of the scene.render array
  */
-function render(config, gl, programs, buffers, renderListOverride) {
+var lastRenderTarget = {};
+function render(state, renderListOverride) {
     debug('Rendering a frame');
+
+    var config      = state.get('config').toJS(),
+        gl          = state.get('gl'),
+        programs    = state.get('programs').toJS(),
+        buffers     = state.get('buffers').toJS();
+
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
