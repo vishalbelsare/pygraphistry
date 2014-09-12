@@ -125,9 +125,15 @@ function init(config, canvas, opts) {
         config: config,
 
         gl: undefined,
-        programs: Immutable.Map({}),
-        buffers: Immutable.Map({}),
+        programs:       Immutable.Map({}),
+        buffers:        Immutable.Map({}),
         camera: undefined,
+
+        //{item -> gl obj}
+        textures:       Immutable.Map({}),
+        fbos:           Immutable.Map({}),
+        renderBuffers:  Immutable.Map({}),
+        readbacks:      Immutable.Map({}),
 
         boundBuffer: undefined,
         bufferSize: Immutable.Map({}),
@@ -150,6 +156,11 @@ function init(config, canvas, opts) {
     setCamera(config.toJS(), gl, state.get('programs').toJS(), camera);
     state = state.set('camera', camera);
 
+    var renderTargets = createRenderTargets(config, canvas, gl);
+    _.pairs(renderTargets).forEach(function (pair) {
+        state = state.set(pair[0], pair[1]);
+    });
+
     return state;
 }
 
@@ -165,6 +176,53 @@ function createContext(canvas) {
     gl.viewport(0, 0, canvas.width, canvas.height);
 
     return gl;
+}
+
+//create for each item with a texture rendertarget, an offscreen fbo, texture, renderbuffer, and host buffer
+function createRenderTargets(config, canvas, gl) {
+
+    var neededTextures = config.get('scene').get('render')
+        .toJS()
+        .filter(function (itemName) {
+            return config.get('scene').get('items').get(itemName).get('renderTarget') === 'texture';
+        });
+
+    var textures      = neededTextures.map(gl.createTexture.bind(gl)),
+        fbos          = neededTextures.map(gl.createFramebuffer.bind(gl)),
+        renderBuffers = neededTextures.map(gl.createRenderbuffer.bind(gl)),
+        readbacks     = neededTextures.map(
+                function () { return new Uint8Array(canvas.width * canvas.height * 4); });
+
+    //bind
+    _.zip(textures, fbos, renderBuffers)
+        .forEach(function (pair) {
+            var texture     = pair[0],
+                fbo         = pair[1],
+                renderBuffer    = pair[2];
+
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+            //NPOT dimensions: https://developer.mozilla.org/en-US/docs/Web/WebGL/Using_textures_in_WebGL
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+            gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+
+            gl.bindRenderbuffer(gl.RENDERBUFFER, renderBuffer);
+            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, canvas.width, canvas.height);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+
+            gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderBuffer);
+        });
+
+    return {
+        textures:       Immutable.fromJS(_.object(_.zip(neededTextures, textures))),
+        fbos:           Immutable.fromJS(_.object(_.zip(neededTextures, fbos))),
+        renderBuffers:  Immutable.fromJS(_.object(_.zip(neededTextures, renderBuffers))),
+        readbacks:      Immutable.fromJS(_.object(_.zip(neededTextures, readbacks)))
+    };
 }
 
 
@@ -369,8 +427,17 @@ function render(state, renderListOverride) {
         debug('  Rendering item "%s" (%d elements)', target, numElements[target]);
 
         var renderItem = config.scene.items[target];
+        var renderTarget = renderItem.renderTarget === 'texture' ? target : null;
+        if (renderTarget !== lastRenderTarget) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget === 'texture' ? state.get('fbos').get(target) : null);
+        }
         bindProgram(gl, programs[renderItem.program], renderItem.program, renderItem.bindings, buffers, config.models);
         gl.drawArrays(gl[renderItem.drawType], 0, numElements[target]);
+        if (renderItem.renderTarget === 'texture') {
+            debug('reading back texture', target);
+            gl.readPixels(0, 0, state.get('gl').canvas.width, state.get('gl').canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, state.get('readbacks').get(target));
+        }
+        lastRenderTarget = renderTarget;
     });
 
     gl.flush();

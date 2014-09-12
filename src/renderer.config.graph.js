@@ -71,6 +71,15 @@ module.exports = {
             'camera': 'mvp',
             'uniforms': []
         },
+        'pointpicking': {
+            'sources': {
+                'vertex': fs.readFileSync('./src/shaders/graph/pointculled.vertex.glsl', 'utf8').toString('ascii'),
+                'fragment': fs.readFileSync('./src/shaders/graph/pointculled.fragment.glsl', 'utf8').toString('ascii')
+            },
+            'attributes': ['curPos'],
+            'camera': 'mvp',
+            'uniforms': []
+        },
         'points': {
             'sources': {
                 'vertex': fs.readFileSync('./src/shaders/graph/point.vertex.glsl', 'utf8').toString('ascii'),
@@ -185,6 +194,17 @@ module.exports = {
                 'drawType': 'POINTS',
                 'glOptions': {}
             },
+            'pointpicking': {
+                'program': 'pointpicking',
+                'bindings': {
+                    'curPos':       ['curPoints', 'curPos'],
+                    'pointSize':    ['pointSizes', 'pointSize'],
+                    'pointColor':   ['pointColors', 'pointColor']
+                },
+                'drawType': 'POINTS',
+                'glOptions': {},
+                'renderTarget': 'texture'
+            },
             'points': {
                 'program': 'points',
                 'bindings': {
@@ -214,6 +234,6 @@ module.exports = {
         },
 
         //'render': ['edges', 'points']
-        'render': ['pointculled', 'edgeculled']
+        'render': ['pointculled', 'edgeculled', 'pointpicking']
     }
 };
