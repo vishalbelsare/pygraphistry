@@ -51,7 +51,6 @@ exports.setupMousemove = function($eventTarget, hitTest, texture) {
 };
 
 exports.setupScroll = function($eventTarget, camera) {
-    var canvas = $('canvas', $eventTarget[0])[0];
     return Rx.Observable.fromEvent($eventTarget[0], 'wheel')
         .map(function(wheelEvent) {
             wheelEvent.preventDefault();

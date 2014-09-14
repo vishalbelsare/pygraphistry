@@ -406,6 +406,30 @@ function loadBuffer(state, buffer, bufferName, data) {
 }
 
 
+//Create new index array that extends old one
+//GLContext * int * int * UInt32Array -> Uint32Array
+function expandHostBuffer(gl, length, repetition, oldHostBuffer) {
+
+    var longerBuffer = new Uint32Array(Math.round(length * repetition * 1.25));
+
+    //memcpy old (initial) indexes
+    if (oldHostBuffer.length) {
+        var dstU8 = new Uint8Array(longerBuffer.buffer, 0, oldHostBuffer.length * 4);
+        var srcU8 = new Uint8Array(oldHostBuffer.buffer);
+        dstU8.set(srcU8);
+    }
+
+    for (var i = oldHostBuffer.length; i < longerBuffer.length; i += repetition) {
+        var lbl = (i / repetition) + 1;
+        for (var j = 0; j < repetition; j++) {
+            longerBuffer[i + j] = lbl;
+        }
+    }
+
+    return longerBuffer;
+
+}
+
 function updateIndexBuffer(gl, length, repetition) {
 
     if (!indexHostBuffers[repetition]) {
@@ -420,22 +444,8 @@ function updateIndexBuffer(gl, length, repetition) {
 
     if (oldHostBuffer.length < length * repetition) {
 
-        var longerBuffer = new Uint32Array(Math.round(length * repetition * 1.25));
+        var longerBuffer = expandHostBuffer(gl, length, repetition, indexHostBuffers[repetition]);
         indexHostBuffers[repetition] = longerBuffer;
-
-        //memcpy old (initial) indexes
-        if (oldHostBuffer.length) {
-            var dstU8 = new Uint8Array(longerBuffer.buffer, 0, oldHostBuffer.length * 4);
-            var srcU8 = new Uint8Array(oldHostBuffer.buffer);
-            dstU8.set(srcU8);
-        }
-
-        for (var i = oldHostBuffer.length; i < longerBuffer.length; i += repetition) {
-            var lbl = (i / repetition) + 1;
-            for (var j = 0; j < repetition; j++) {
-                longerBuffer[i + j] = lbl;
-            }
-        }
 
         var glBuffer = indexGlBuffers[repetition];
 
@@ -543,22 +553,34 @@ function hitTest(state, texture, x, y) {
     return combined - 1;
 }
 
+
+//hit test by sampling for a hit on circle's perimeter
+//returns idx or -1
+function hitTestCircumference(state, texture, x, y, r) {
+    for (var attempt = 0; attempt < r * 2 * Math.PI; attempt++) {
+        var attemptX = x + r * Math.round(Math.cos(attempt / r));
+        var attemptY = y + r * Math.round(Math.sin(attempt / r));
+        var hit = hitTest(state, texture, attemptX, attemptY);
+        if (hit > -1) {
+            return hit;
+        }
+    }
+    return -1;
+}
+
 //hit test by sampling for closest hit in area radius r (default to 0)
 //returns idx or -1
-function hitTestN(state, itemName, x, y, r) {
+function hitTestN(state, texture, x, y, r) {
 
     if (!r) {
-        return hitTest(state, itemName, x, y);
+        return hitTest(state, texture, x, y);
     }
 
     //look up to r px away
     for (var offset = 0; offset < r; offset++) {
-        //circumference
-        for (var attempt = 0; attempt < r * 2 * Math.PI; attempt++) {
-            var attemptX = x + offset * Math.round(Math.cos(attempt / r));
-            var attemptY = y + offset * Math.round(Math.sin(attempt / r));
-            var hit = hitTest(state, itemName, attemptX, attemptY);
-            if (hit > -1) return hit;
+        var hitOnCircle = hitTestCircumference(state, texture, x, y, offset);
+        if (hitOnCircle > -1) {
+            return hitOnCircle;
         }
     }
     return -1;
