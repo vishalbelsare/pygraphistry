@@ -84,8 +84,8 @@ function init (canvas, opts) {
         var now = new Date().getTime();
         debug('got VBO update message', now - lastHandshake, data.bufferByteLengths, data.elements, 'ms');
 
-        var bufferNames = renderer.getActiveBufferNames(renderConfig);
-        debug('  Active buffers', bufferNames);
+        var bufferNames = renderer.getServerBufferNames(renderConfig);
+        debug('  Server buffers', bufferNames);
 
         var bufferVBOs = Rx.Observable.zipArray(bufferNames.map(fetchBuffer.bind('', data.bufferByteLengths))).take(1);
 

@@ -453,9 +453,9 @@ function hitTest(state, itemName, x, y) {
     return combined;
 }
 
-// Get names of buffers needed for active frame
+// Get names of buffers needed from server
 // RenderOptions -> [ string ]
-function getActiveBufferNames (config) {
+function getServerBufferNames (config) {
 
     var renderItems = config.scene.render;
     var bufferNamesLists = renderItems.map(function (itemName) {
@@ -478,6 +478,6 @@ module.exports = {
     setCamera: setCamera,
     setNumElements: setNumElements,
     render: render,
-    getActiveBufferNames: getActiveBufferNames,
     hitTest: hitTest
+    getServerBufferNames: getServerBufferNames,
 };
