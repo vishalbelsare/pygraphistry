@@ -512,6 +512,10 @@ function render(state, renderListOverride) {
         if (renderItem.renderTarget === 'texture') {
             debug('  reading back texture', item);
             var pixelreads = state.get('pixelreads')[item];
+            if (pixelreads.length < gl.canvas.width * gl.canvas.height * 4) {
+                state.get('pixelreads')[item] = pixelreads =
+                    new Uint8Array(gl.canvas.width * gl.canvas.height * 4);
+            }
             gl.readPixels(0, 0, gl.canvas.width, gl.canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixelreads);
         }
 
