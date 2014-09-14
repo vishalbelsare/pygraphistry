@@ -51,12 +51,14 @@ exports.setupMousemove = function($eventTarget, hitTest, itemName) {
 };
 
 exports.setupScroll = function($eventTarget, camera) {
+    var canvas = $('canvas', $eventTarget[0])[0];
     return Rx.Observable.fromEvent($eventTarget[0], 'wheel')
         .map(function(wheelEvent) {
             wheelEvent.preventDefault();
 
             var aspectRatio = camera.width / camera.height;
-            camera.width += camera.width * (wheelEvent.wheelDeltaY / 100.0);
+
+            camera.width -= camera.width * (wheelEvent.wheelDeltaY / 100.0);
             camera.height = camera.width / aspectRatio;
 
             return camera;
