@@ -47,6 +47,8 @@ function init (canvas, opts) {
             client.renderFrame();
         });
 
+
+    var prevIdx = -1;
     _.keys(renderConfig.textures)
         .map(interaction.setupMousemove.bind('', $('.sim-container'), client.hitTest))
         .forEach(function (hits) {
@@ -54,7 +56,10 @@ function init (canvas, opts) {
                 .sample(10)
                 .filter(_.identity)
                 .subscribe(function (idx) {
-                    $('.hit-label').text(idx > -1 ? ('Mouse over: ' + idx) : '');
+                    if (idx !== prevIdx) {
+                        $('.hit-label').text(idx > -1 ? ('Mouse over: ' + idx) : '');
+                        prevIdx = idx;
+                    }
 
                 });
         });
