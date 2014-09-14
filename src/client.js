@@ -103,7 +103,7 @@ function init (canvas, opts) {
                 socket.emit('received_buffers'); //TODO fire preemptitively based on guess
 
                 try {
-                    renderer.loadBuffers(gl, buffers, bindings);
+                    renderer.loadBuffers(renderState, buffers, bindings);
                     renderer.setNumElements(data.elements);
                     renderer.render(renderState);
 

@@ -11,6 +11,17 @@ var Cameras     = require('../../../../superconductorjs/src/Camera.js');
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// Globals across renderer instances
+////////////////////////////////////////////////////////////////////////////////
+
+//keyed on instancing: 1 -> vertex, 2 -> line, 3 -> triangle, ...
+//[ Uint32Array ]
+var indexHostBuffers = [];
+//[ glBuffer ]
+var indexGlBuffers = [];
+
+
+////////////////////////////////////////////////////////////////////////////////
 // Internal helpers
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -141,8 +152,12 @@ function init(config, canvas, opts) {
 
         activeProgram: undefined,
         attrLocations: Immutable.Map({}),
-        programBindings: Immutable.Map({})
+        programBindings: Immutable.Map({}),
+
+        activeIndices:  getActiveIndices(config)
     });
+
+    debug('Active indices', state.get('activeIndices'));
 
     var gl = createContext(canvas);
     state = state.set('gl', gl);
@@ -328,12 +343,12 @@ function createBuffers(state) {
 
 /**
  * Given an object mapping buffer names to ArrayBuffer data, load all of them into the GL context
- * @param {WebGLRenderingContext} gl - the WebGL context
+ * @param {RendererState} state - renderer instance
  * @param {Object.<string, WebGLBuffer>} buffers - the buffer object returned by createBuffers()
  * @param {Object.<string, ArrayBuffer>} bufferData - a mapping of buffer name -> new data to load
  * into that buffer
  */
-function loadBuffers(gl, buffers, bufferData) {
+function loadBuffers(state, buffers, bufferData) {
     _.each(bufferData, function(data, bufferName) {
         debug('Loading buffer data for buffer %s (data type: %s, length: %s bytes)',
             bufferName, data.constructor.name, data.byteLength);
@@ -344,14 +359,13 @@ function loadBuffers(gl, buffers, bufferData) {
             return false;
         }
 
-        loadBuffer(gl, buffers[bufferName], bufferName, data);
+        loadBuffer(state, buffers[bufferName], bufferName, data);
     });
 }
 
 
-function loadBuffer(gl, buffer, bufferName, data) {
-    bindBuffer(gl, buffer);
-
+function loadBuffer(state, buffer, bufferName, data) {
+    var gl = state.get('gl');
     if(typeof bufferSizes[bufferName] === 'undefined') {
         bufferSizes[bufferName] = 0;
     }
@@ -360,7 +374,13 @@ function loadBuffer(gl, buffer, bufferName, data) {
         return;
     }
 
+    state.get('activeIndices')
+        .forEach(updateIndexBuffer.bind('', gl, data.byteLength / 4));
+
     try{
+
+        bindBuffer(gl, buffer);
+
         if(bufferSizes[bufferName] >= data.byteLength) {
             debug('Reusing existing GL buffer data store to load data for buffer %s (current size: %d, new data size: %d)',
                 bufferName, bufferSizes[bufferName], data.byteLength);
@@ -378,6 +398,49 @@ function loadBuffer(gl, buffer, bufferName, data) {
         throw glErr;
     }
 }
+
+
+function updateIndexBuffer(gl, length, repetition) {
+
+    if (!indexHostBuffers[repetition]) {
+        indexHostBuffers[repetition] = new Uint32Array([]);
+    }
+    if (!indexGlBuffers[repetition]) {
+        indexGlBuffers[repetition] = gl.createBuffer();
+        indexGlBuffers[repetition].repetition = repetition;
+    }
+
+    var oldHostBuffer = indexHostBuffers[repetition];
+
+    if (oldHostBuffer.length < length * repetition) {
+
+        var longerBuffer = new Uint32Array(Math.round(length * repetition * 1.25));
+        indexHostBuffers[repetition] = longerBuffer;
+
+        //memcpy old (initial) indexes
+        if (oldHostBuffer.length) {
+            var dstU8 = new Uint8Array(longerBuffer.buffer, 0, oldHostBuffer.length * 4);
+            var srcU8 = new Uint8Array(oldHostBuffer.buffer);
+            dstU8.set(srcU8);
+        }
+
+        for (var i = oldHostBuffer.length; i < longerBuffer.length; i += repetition) {
+            var lbl = (i / repetition) + 1;
+            for (var j = 0; j < repetition; j++) {
+                longerBuffer[i + j] = lbl;
+            }
+        }
+
+        var glBuffer = indexGlBuffers[repetition];
+
+        debug('Expanding index buffer', glBuffer, 'memcpy', oldHostBuffer.length/repetition, 'elts', 'write to', length * repetition);
+
+        bindBuffer(gl, glBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, longerBuffer, gl.STREAM_DRAW);
+    }
+}
+
+
 
 
 function setCamera(config, gl, programs, camera) {
@@ -460,10 +523,47 @@ function getServerBufferNames (config) {
     var renderItems = config.scene.render;
     var bufferNamesLists = renderItems.map(function (itemName) {
         var bindings = config.scene.items[itemName].bindings;
-        return _.values(bindings).map(function (binding) { return binding[0]; });
+        return _.pairs(bindings)
+            .filter(function (bindingPair) {
+                var modelName = bindingPair[1][0];
+                var attribName = bindingPair[1][1];
+                var datasource = config.models[modelName][attribName].datasource || 'SERVER';
+                return datasource === 'SERVER';
+            })
+            .map(function (bindingPair) {
+                var modelName = bindingPair[1][0];
+                return modelName;
+            });
     });
 
     return _.uniq(_.flatten(bufferNamesLists));
+}
+
+// Immutable RenderOptions -> [ int ]
+function getActiveIndices (config) {
+    config = config.toJS();
+
+    var renderItems = config.scene.render;
+    var activeIndexModesLists = renderItems.map(function (itemName) {
+        var bindings = config.scene.items[itemName].bindings;
+        return _.pairs(bindings)
+            .map(function (bindingPair) {
+                var modelName = bindingPair[1][0];
+                var attribName = bindingPair[1][1];
+                debug('bindingPair', bindingPair);
+                debug('datasource', config.models[modelName][attribName].datasource);
+                var datasource = config.models[modelName][attribName].datasource || 'SERVER';
+                return datasource;
+            })
+            .map(function (datasource) {
+                return datasource === 'VERTEX_INDEX' ? 1
+                    : datasource === 'LINE_INDEX' ? 2
+                    : 0;
+            })
+            .filter(function (repetition) { return repetition > 0; });
+    });
+
+    return _.uniq(_.flatten(activeIndexModesLists));
 }
 
 
