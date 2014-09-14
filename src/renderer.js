@@ -524,14 +524,47 @@ function render(state, renderListOverride) {
     gl.flush();
 }
 
+//returns idx or -1
 function hitTest(state, itemName, x, y) {
     var canvas = state.get('gl').canvas;
-    var map = state.toJS().readbacks[itemName];
+    var map = state.get('pixelreads')[itemName];
     var remapped = new Uint32Array(map.buffer);
     var idx = (canvas.height - y) * canvas.width + x;
     var combined = remapped[idx];
-    debug('hit', x, y, '->', combined);
-    return combined;
+
+    //swizzle because point shader is funny
+    var r = (combined >> 16) & 255;
+    var g = (combined >> 8) & 255;
+    var b = combined & 255;
+    var a = (combined >> 24) & 255;
+    combined = (r << 24) | (g << 16) | (b << 8) | a;
+
+    if (combined) {
+        debug('hit', itemName, x, y, '->', idx, '->', combined,
+           '(', combined >> 24, (combined >> 16) & 255, (combined >> 8) & 255, combined & 255, ')');
+    }
+    return combined - 1;
+}
+
+//hit test by sampling for closest hit in area radius r (default to 0)
+//returns idx or -1
+function hitTestN(state, itemName, x, y, r) {
+
+    if (!r) {
+        return hitTest(state, itemName, x, y);
+    }
+
+    //look up to r px away
+    for (var offset = 0; offset < r; offset++) {
+        //circumference
+        for (var attempt = 0; attempt < r * 2 * Math.PI; attempt++) {
+            var attemptX = x + offset * Math.round(Math.cos(attempt / r));
+            var attemptY = y + offset * Math.round(Math.sin(attempt / r));
+            var hit = hitTest(state, itemName, attemptX, attemptY);
+            if (hit > -1) return hit;
+        }
+    }
+    return -1;
 }
 
 // Get names of buffers needed from server
@@ -596,6 +629,6 @@ module.exports = {
     setCamera: setCamera,
     setNumElements: setNumElements,
     render: render,
-    hitTest: hitTest
     getServerBufferNames: getServerBufferNames,
+    hitTest: hitTestN
 };
