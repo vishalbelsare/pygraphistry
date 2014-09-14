@@ -40,11 +40,11 @@ var attrLocations = {};
 function getAttribLocationFast(gl, program, programName, attribute) {
     if(typeof attrLocations[programName] !== 'undefined' &&
         typeof attrLocations[programName][attribute] !== 'undefined') {
-        debug('Get attribute %s: using fast path', attribute);
+        debug('  Get attribute %s: using fast path', attribute);
         return attrLocations[programName][attribute];
     }
 
-    debug('Get attribute %s: using slow path', attribute);
+    debug('  Get attribute %s: using slow path', attribute);
     attrLocations[programName] = attrLocations[programName] || {};
     attrLocations[programName][attribute] = gl.getAttribLocation(program, attribute);
     return attrLocations[programName][attribute];
@@ -104,9 +104,18 @@ function bindProgram(gl, program, programName, bindings, buffers, modelSettings)
     debug('Binding program %s', programName);
 
     _.each(bindings, function(binding, attribute) {
-        bindBuffer(gl, buffers[binding[0]]);
 
         var element = modelSettings[binding[0]][binding[1]];
+        var datasource = element.datasource || 'SERVER';
+        var glBuffer =
+              datasource === 'SERVER'       ? buffers[binding[0]]
+            : datasource === 'VERTEX_INDEX' ? indexGlBuffers[1]
+            : datasource === 'EDGE_INDEX'   ? indexGlBuffers[2]
+            : (function () { throw new Error('unknown datasource ' + datasource); }());
+
+        debug('  bound buffer', attribute, binding, datasource, glBuffer, element.name);
+
+        bindBuffer(gl, glBuffer);
         var location = getAttribLocationFast(gl, program, programName, attribute);
 
         gl.vertexAttribPointer(location, element.count, gl[element.type], element.normalize,
@@ -144,7 +153,7 @@ function init(config, canvas, opts) {
         textures:       Immutable.Map({}),
         fbos:           Immutable.Map({}),
         renderBuffers:  Immutable.Map({}),
-        readbacks:      Immutable.Map({}),
+        pixelreads:     {},
 
         boundBuffer: undefined,
         bufferSize: Immutable.Map({}),
@@ -205,7 +214,7 @@ function createRenderTargets(config, canvas, gl) {
     var textures      = neededTextures.map(gl.createTexture.bind(gl)),
         fbos          = neededTextures.map(gl.createFramebuffer.bind(gl)),
         renderBuffers = neededTextures.map(gl.createRenderbuffer.bind(gl)),
-        readbacks     = neededTextures.map(
+        pixelreads    = neededTextures.map(
                 function () { return new Uint8Array(canvas.width * canvas.height * 4); });
 
     //bind
@@ -236,7 +245,7 @@ function createRenderTargets(config, canvas, gl) {
         textures:       Immutable.fromJS(_.object(_.zip(neededTextures, textures))),
         fbos:           Immutable.fromJS(_.object(_.zip(neededTextures, fbos))),
         renderBuffers:  Immutable.fromJS(_.object(_.zip(neededTextures, renderBuffers))),
-        readbacks:      Immutable.fromJS(_.object(_.zip(neededTextures, readbacks)))
+        pixelreads:     _.object(_.zip(neededTextures, pixelreads))
     };
 }
 
@@ -282,7 +291,7 @@ function createPrograms(state) {
 
     // for(var programName in programs) {
     var createdPrograms = state.get('config').get('programs').map(function(programOptions, programName) {
-        debug('Compiling program', programName, programOptions);
+        debug('Compiling program', programName);
         var program = gl.createProgram();
 
         //// Create, compile and attach the shaders
@@ -469,38 +478,43 @@ function setNumElements(newNumElements) {
  */
 var lastRenderTarget = {};
 function render(state, renderListOverride) {
-    debug('Rendering a frame');
+    debug('========= Rendering a frame');
 
     var config      = state.get('config').toJS(),
         gl          = state.get('gl'),
         programs    = state.get('programs').toJS(),
         buffers     = state.get('buffers').toJS();
 
-
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     var toRender = renderListOverride || config.scene.render;
-    _.each(toRender, function(target) {
-        if(typeof numElements[target] === 'undefined' || numElements[target] < 1) {
+    _.each(toRender, function(item) {
+
+        if(typeof numElements[item] === 'undefined' || numElements[item] < 1) {
             debug('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
-                target);
+                item);
             return false;
         }
 
-        debug('  Rendering item "%s" (%d elements)', target, numElements[target]);
+        debug('Rendering item "%s" (%d elements)', item, numElements[item]);
 
-        var renderItem = config.scene.items[target];
-        var renderTarget = renderItem.renderTarget === 'texture' ? target : null;
+        var renderItem = config.scene.items[item];
+        var renderTarget = renderItem.renderTarget === 'texture' ? item : null;
         if (renderTarget !== lastRenderTarget) {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget === 'texture' ? state.get('fbos').get(target) : null);
+            debug('  changing fbo');
+            gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget === item ? state.get('fbos').get(item) : null);
+            lastRenderTarget = renderTarget;
         }
+
         bindProgram(gl, programs[renderItem.program], renderItem.program, renderItem.bindings, buffers, config.models);
-        gl.drawArrays(gl[renderItem.drawType], 0, numElements[target]);
+        gl.drawArrays(gl[renderItem.drawType], 0, numElements[item]);
+
         if (renderItem.renderTarget === 'texture') {
-            debug('reading back texture', target);
-            gl.readPixels(0, 0, state.get('gl').canvas.width, state.get('gl').canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, state.get('readbacks').get(target));
+            debug('  reading back texture', item);
+            var pixelreads = state.get('pixelreads')[item];
+            gl.readPixels(0, 0, gl.canvas.width, gl.canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixelreads);
         }
-        lastRenderTarget = renderTarget;
+
     });
 
     gl.flush();
