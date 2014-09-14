@@ -47,8 +47,7 @@ function init (canvas, opts) {
             client.renderFrame();
         });
 
-    renderConfig.scene.render
-        .filter(function (itemName) { return renderConfig.scene.items[itemName].renderTarget === 'texture'; })
+    _.keys(renderConfig.textures)
         .map(interaction.setupMousemove.bind('', $('.sim-container'), client.hitTest))
         .forEach(function (hits) {
             hits

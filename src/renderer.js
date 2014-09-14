@@ -205,11 +205,8 @@ function createContext(canvas) {
 //create for each item with a texture rendertarget, an offscreen fbo, texture, renderbuffer, and host buffer
 function createRenderTargets(config, canvas, gl) {
 
-    var neededTextures = config.get('scene').get('render')
-        .toJS()
-        .filter(function (itemName) {
-            return config.get('scene').get('items').get(itemName).get('renderTarget') === 'texture';
-        });
+    var neededTextures = _.keys(config.get('textures').toJS());
+
 
     var textures      = neededTextures.map(gl.createTexture.bind(gl)),
         fbos          = neededTextures.map(gl.createFramebuffer.bind(gl)),
@@ -499,19 +496,19 @@ function render(state, renderListOverride) {
         debug('Rendering item "%s" (%d elements)', item, numElements[item]);
 
         var renderItem = config.scene.items[item];
-        var renderTarget = renderItem.renderTarget === 'texture' ? item : null;
+        var renderTarget = renderItem.renderTarget === 'CANVAS' ? null : renderItem.renderTarget;
         if (renderTarget !== lastRenderTarget) {
             debug('  changing fbo');
-            gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget === item ? state.get('fbos').get(item) : null);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
             lastRenderTarget = renderTarget;
         }
 
         bindProgram(gl, programs[renderItem.program], renderItem.program, renderItem.bindings, buffers, config.models);
         gl.drawArrays(gl[renderItem.drawType], 0, numElements[item]);
 
-        if (renderItem.renderTarget === 'texture') {
+        if (renderTarget && (renderTarget !== 'CANVAS')) {
             debug('  reading back texture', item);
-            var pixelreads = state.get('pixelreads')[item];
+            var pixelreads = state.get('pixelreads')[renderTarget];
             if (pixelreads.length < gl.canvas.width * gl.canvas.height * 4) {
                 state.get('pixelreads')[item] = pixelreads =
                     new Uint8Array(gl.canvas.width * gl.canvas.height * 4);
@@ -525,9 +522,9 @@ function render(state, renderListOverride) {
 }
 
 //returns idx or -1
-function hitTest(state, itemName, x, y) {
+function hitTest(state, texture, x, y) {
     var canvas = state.get('gl').canvas;
-    var map = state.get('pixelreads')[itemName];
+    var map = state.get('pixelreads')[texture];
     var remapped = new Uint32Array(map.buffer);
     var idx = (canvas.height - y) * canvas.width + x;
     var combined = remapped[idx];
@@ -540,7 +537,7 @@ function hitTest(state, itemName, x, y) {
     combined = (r << 24) | (g << 16) | (b << 8) | a;
 
     if (combined) {
-        debug('hit', itemName, x, y, '->', idx, '->', combined,
+        debug('hit', texture, x, y, '->', idx, '->', combined,
            '(', combined >> 24, (combined >> 16) & 255, (combined >> 8) & 255, combined & 255, ')');
     }
     return combined - 1;

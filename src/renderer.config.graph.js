@@ -91,6 +91,10 @@ module.exports = {
         }
     },
 
+    'textures': {
+        'pointHitmap': {}
+    },
+
     'models': {
         'springsPos': {
             'curPos': {
@@ -206,7 +210,7 @@ module.exports = {
                 },
                 'drawType': 'POINTS',
                 'glOptions': {},
-                'renderTarget': 'texture'
+                'renderTarget': 'pointHitmap'
             },
             'points': {
                 'program': 'points',

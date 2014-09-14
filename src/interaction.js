@@ -35,7 +35,7 @@ exports.setupDrag = function($eventTarget, camera) {
         });
 };
 
-exports.setupMousemove = function($eventTarget, hitTest, itemName) {
+exports.setupMousemove = function($eventTarget, hitTest, texture) {
     debug('setupMouseover');
     var bounds = $('canvas', $eventTarget[0])[0].getBoundingClientRect();
 
@@ -46,7 +46,7 @@ exports.setupMousemove = function($eventTarget, hitTest, itemName) {
                 x: evt.clientX - bounds.left,
                 y: evt.clientY - bounds.top
             };
-            return hitTest(itemName, pos.x, pos.y, 30);
+            return hitTest(texture, pos.x, pos.y, 30);
         });
 };
 
