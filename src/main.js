@@ -51,7 +51,13 @@ function init (canvas, opts) {
         .filter(function (itemName) { return renderConfig.scene.items[itemName].renderTarget === 'texture'; })
         .map(interaction.setupMousemove.bind('', $('.sim-container'), client.hitTest))
         .forEach(function (hits) {
-            hits.subscribe(_.identity);
+            hits
+                .sample(10)
+                .filter(_.identity)
+                .subscribe(function (idx) {
+                    $('.hit-label').text(idx > -1 ? ('Mouse over: ' + idx) : '');
+
+                });
         });
 
 
