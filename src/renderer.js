@@ -205,8 +205,9 @@ function createContext(canvas) {
 //create for each item with a texture rendertarget, an offscreen fbo, texture, renderbuffer, and host buffer
 function createRenderTargets(config, canvas, gl) {
 
-    var neededTextures = _.keys(config.get('textures').toJS());
-
+    var neededTextures =
+        config.get('textures') ?  _.keys(config.get('textures').toJS())
+        : [];
 
     var textures      = neededTextures.map(gl.createTexture.bind(gl)),
         fbos          = neededTextures.map(gl.createFramebuffer.bind(gl)),
