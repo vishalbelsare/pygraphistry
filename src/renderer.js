@@ -47,6 +47,9 @@ function getAttribLocationFast(gl, program, programName, attribute) {
     debug('  Get attribute %s: using slow path', attribute);
     attrLocations[programName] = attrLocations[programName] || {};
     attrLocations[programName][attribute] = gl.getAttribLocation(program, attribute);
+    if (attrLocations[programName][attribute] === -1) {
+        throw new Error('Error binding attribute::' + programName + '::' + attribute);
+    }
     return attrLocations[programName][attribute];
 }
 

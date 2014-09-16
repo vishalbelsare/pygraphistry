@@ -30,7 +30,7 @@ module.exports = {
                 'vertex': fs.readFileSync('./src/shaders/graph/edgeculled.vertex.glsl', 'utf8').toString('ascii'),
                 'fragment': fs.readFileSync('./src/shaders/graph/edgeculled.fragment.glsl', 'utf8').toString('ascii')
             },
-            'attributes': ['curPos'],
+            'attributes': ['edgeColor', 'curPos'],
             'camera': 'mvp',
             'uniforms': []
         },
@@ -141,6 +141,15 @@ module.exports = {
                 'normalize': false
             }
         },
+        'edgeColors': {
+            'edgeColor':  {
+                'type': 'UNSIGNED_BYTE',
+                'count': 4,
+                'offset': 0,
+                'stride': 0,
+                'normalize': true
+            }
+        },
         'pointColors': {
             'pointColor':  {
                 'type': 'UNSIGNED_BYTE',
@@ -179,6 +188,7 @@ module.exports = {
                 'program': 'edgeculled',
                 'bindings': {
                     'curPos': ['springsPos', 'curPos'],
+                    'edgeColor': ['edgeColors', 'edgeColor']
                 },
                 'drawType': 'LINES',
                 'glOptions': {}
