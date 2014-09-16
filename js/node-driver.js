@@ -175,7 +175,8 @@ function fetchVBOs(graph, bufferNames) {
 
         var localBuffers = {
             'pointSizes': graph.simulator.buffersLocal.pointSizes.buffer,
-            'pointColors': graph.simulator.buffersLocal.pointColors.buffer
+            'pointColors': graph.simulator.buffersLocal.pointColors.buffer,
+            'edgeColors': graph.simulator.buffersLocal.edgeColors.buffer
         };
         for (var i in localBuffers) {
             if (bufferNames.indexOf(i) != -1) {
@@ -208,6 +209,7 @@ function fetchBufferByteLengths(graph) {
         curPoints: graph.renderer.numPoints * 2 * Float32Array.BYTES_PER_ELEMENT,
         pointSizes: graph.renderer.numPoints * Uint8Array.BYTES_PER_ELEMENT,
         pointColors: graph.renderer.numPoints * 4 * Uint8Array.BYTES_PER_ELEMENT,
+        edgeColors: graph.renderer.numEdges * 2 * 4 * Uint8Array.BYTES_PER_ELEMENT,
         curMidPoints: graph.renderer.numMidPoints * 2 * Float32Array.BYTES_PER_ELEMENT,
         midSpringsPos: graph.renderer.numMidEdges * 2 * 2 * Float32Array.BYTES_PER_ELEMENT
     };
@@ -231,7 +233,7 @@ function loadDataIntoSim(graph) {
     return loader.loadDataList(graph)
     .then(function (datalist) {
         if (USE_GEO) {
-            var which = 2;
+            var which = 4;
             debug("Loading data: %o", datalist[which]);
             return datalist[which].loader(graph, datalist[which].f);
 

@@ -231,7 +231,7 @@ function setPoints(simulator, points, pointSizes, pointColors) {
  * @param {Float32Array} midPoints - dense array of control points (packed sequence of nDim structs)
  * @returns {Q.promise} a promise for the simulator object
  */
-function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
+function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints, edgeColors) {
     //edges, workItems
     var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
     var elementsPerWorkItem = 2;
@@ -248,6 +248,15 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints) {
     if(forwardsEdges.workItemsTyped.length % elementsPerWorkItem !== 0) {
         throw new Error("The work item buffer size is invalid (must be a multiple of " + elementsPerWorkItem + ")");
     }
+
+    if (!edgeColors) {
+        edgeColors = new Uint32Array(forwardsEdges.edgesTyped.length);
+        for (var i = 0; i < edgeColors.length; i++) {
+            var nodeIdx = forwardsEdges.edgesTyped[i];
+            edgeColors[i] = simulator.buffersLocal.pointColors[nodeIdx];
+        }
+    }
+    simulator.buffersLocal.edgeColors = edgeColors;
 
     simulator.resetBuffers([
         simulator.buffers.forwardsEdges,
