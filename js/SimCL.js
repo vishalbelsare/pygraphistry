@@ -229,6 +229,7 @@ function setPoints(simulator, points, pointSizes, pointColors) {
  * @param {edgesTyped: {Uint32Array}, numWorkItems: uint, workItemsTypes: {Uint32Array} } backwardsEdges -
  *        Same as forwardsEdges, except reverse edge src/dst and redefine workItems/numWorkItems corresondingly.
  * @param {Float32Array} midPoints - dense array of control points (packed sequence of nDim structs)
+ * @param {Uint32Array} edgeColors - dense array of edge start and end colors
  * @returns {Q.promise} a promise for the simulator object
  */
 function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints, edgeColors) {

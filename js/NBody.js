@@ -71,7 +71,7 @@ function setPoints(graph, points, pointSizes, pointColors) {
 }
 
 
-var setEdges = Q.promised(function(graph, edges) {
+var setEdges = Q.promised(function(graph, edges, edgeColors) {
 
     if (edges.length < 1)
         return Q.fcall(function() { return graph; });
@@ -92,8 +92,8 @@ var setEdges = Q.promised(function(graph, edges) {
 
         //[[src idx, dest idx]]
         var edgeList = new Array(edges.length / 2);
-        for (var i = 0; i < edges.length; i++)
-            edgeList[i / 2] = [edges[i], edges[i + 1]];
+        for (var i = 0; i < edges.length/2; i++)
+            edgeList[i] = [edges[2 * i], edges[2 * i + 1]];
 
         edgeList.sort(function(a, b) {
             return a[0] < b[0] ? -1
@@ -167,7 +167,7 @@ var setEdges = Q.promised(function(graph, edges) {
     }
     debug("Number of control points, splits: %d, %d", edges.length * graph.numSplits, graph.numSplits);
 
-    return graph.simulator.setEdges(forwardEdges, backwardsEdges, midPoints)
+    return graph.simulator.setEdges(forwardEdges, backwardsEdges, midPoints, edgeColors)
     .then(function() { return graph; });
 });
 

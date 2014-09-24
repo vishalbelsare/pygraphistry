@@ -65,7 +65,7 @@ function controls(graph) {
     */
 
     physicsControls.charge      (-0.000029360001841802474);
-    physicsControls.gravity     ( 0.00020083175556898723);
+    physicsControls.gravity     ( 0.020083175556898723);
     physicsControls.edgeStrength( 4.292198241799153);
     physicsControls.edgeDistance( 0.0000158);
 
@@ -233,7 +233,7 @@ function loadDataIntoSim(graph) {
     return loader.loadDataList(graph)
     .then(function (datalist) {
         if (USE_GEO) {
-            var which = 4;
+            var which = 2;
             debug("Loading data: %o", datalist[which]);
             return datalist[which].loader(graph, datalist[which].f);
 
@@ -311,6 +311,12 @@ function fetchData(graph, compress, bufferNames, programNames) {
 
     return Rx.Observable.fromPromise(fetchVBOs(graph, bufferNames))
         .flatMap(function (vbos) {
+
+            bufferNames.forEach(function (bufferName) {
+                if (!vbos.hasOwnProperty(bufferName)) {
+                    throw new Error('vbos does not have buffer', bufferName);
+                }
+            })
 
             var compressed =
                 bufferNames.map(function (bufferName) {

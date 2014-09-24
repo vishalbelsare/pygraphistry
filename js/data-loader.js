@@ -35,6 +35,41 @@ function createEdges(amount, numNodes) {
     return edges;
 }
 
+function loadSocioPLT(graph) {
+    debug("Loading SocioPLT");
+
+    var data = require('../../socioplt/generateGraph.js');
+
+
+    var nodesPerRow = Math.floor(Math.sqrt(data.nodes.length));
+    var points =
+        data.nodes.map(
+            function (_, i) {
+                return [i % nodesPerRow, Math.floor(i / nodesPerRow)];
+            });
+    var pointSizes = new Uint8Array(_.pluck(data.nodes, 'size'));
+    var pointColors = new Uint32Array(_.pluck(data.nodes, 'color'));
+
+    var edges = _.flatten(data.edges.map(function (edge) {
+            return [edge.src, edge.dst];
+        }));
+    var edgeColors = _.flatten(data.edges.map(function (edge) {
+            return [edge.color, edge.color];
+        }));
+
+    return graph.setPoints(new Float32Array(_.flatten(points)), pointSizes, pointColors)
+        .then(function () {
+            return graph.setEdges(
+                new Uint32Array(edges),//new Uint32Array(_.flatten(edges).map(function (idx, i) { return idx; })),
+                new Uint32Array(edgeColors));
+        })
+        .then(function () {
+            return graph;
+        }, function (err) {
+            throw err;
+        })
+}
+
 
 function loadGeo(graph, graphFileURI) {
 
@@ -136,6 +171,16 @@ function loadDataList(clGraph) {
         });
 
         dataList = dataList.concat(geoList);
+    })
+    .then(function () {
+        debug("  socioPLT");
+        dataList.push({
+            base: "socioPLT.json",
+            loader: loadSocioPLT,
+            f: "socioPLT.json",
+            KB: "??",
+            size: "??"
+       });
     })
     .then(function () {
         debug("  gml list");
