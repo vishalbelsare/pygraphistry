@@ -16,7 +16,7 @@ module.exports = {
         'blendEquationSeparate': [['FUNC_ADD', 'FUNC_ADD']],
         'depthFunc': [['LEQUAL']],
         'clearColor': [[0, 0, 0, 0.0]],
-        'lineWidth': [[1]]
+        'lineWidth': [[3]]
     },
 
     'camera': {
@@ -47,6 +47,15 @@ module.exports = {
             'sources': {
                 'vertex': fs.readFileSync('./src/shaders/graph/midedge.vertex.glsl', 'utf8').toString('ascii'),
                 'fragment': fs.readFileSync('./src/shaders/graph/midedge.fragment.glsl', 'utf8').toString('ascii')
+            },
+            'attributes': ['curPos'],
+            'camera': 'mvp',
+            'uniforms': []
+        },
+        'midedgeculled': {
+            'sources': {
+                'vertex': fs.readFileSync('./src/shaders/graph/midedgeculled.vertex.glsl', 'utf8').toString('ascii'),
+                'fragment': fs.readFileSync('./src/shaders/graph/midedgeculled.fragment.glsl', 'utf8').toString('ascii')
             },
             'attributes': ['curPos'],
             'camera': 'mvp',
@@ -247,10 +256,18 @@ module.exports = {
                 },
                 'drawType': 'LINES',
                 'glOptions': {}
+            },
+            'midedgeculled': {
+                'program': 'midedgeculled',
+                'bindings': {
+                    'curPos': ['midSpringsPos', 'curPos'],
+                },
+                'drawType': 'LINES',
+                'glOptions': {}
             }
         },
 
         //'render': ['edges', 'points']
-        'render': ['pointculled', 'edgeculled', 'pointpicking']
+        'render': ['pointculled', /*'edgeculled',*/ 'midedgeculled', 'pointpicking']
     }
 };
