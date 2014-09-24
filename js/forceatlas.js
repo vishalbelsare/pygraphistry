@@ -22,7 +22,7 @@ var graphArgs_t = webcl.type ? [cljs.types.float_t, cljs.types.float_t, cljs.typ
 
 module.exports = {
 
-    kernelNames: ["forceAtlasPoints", "forceAtlasEdges"],
+    kernelNames: ["forceAtlasPoints", "forceAtlasEdges", "gaussSeidelSpringsGather" /* reuse */],
 
     setPhysics: function (simulator, cfg) {
 
@@ -127,13 +127,20 @@ module.exports = {
                 null, //forwards/backwards picked dynamically
                 null, //simulator.buffers.curPoints.buffer then simulator.buffers.nextPoints.buffer
                 null,
-                null,
-                simulator.buffers.springsPos.buffer
+                null
             ]),
             webcl.type ? graphArgs_t.concat([
                 null, null, null,
-                null, null, null
+                null, null
             ]) : null);
+
+        simulator.kernels.gaussSeidelSpringsGather.setArgs(
+            [   simulator.buffers.forwardsEdges.buffer,
+                simulator.buffers.forwardsWorkItems.buffer,
+                simulator.buffers.curPoints.buffer,
+                simulator.buffers.springsPos.buffer],
+            webcl.type ? [null, null, null, null]
+                : null);
     },
 
     tick: function (simulator, stepNumber) {
@@ -187,7 +194,16 @@ module.exports = {
                                 return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
                             });
                     }
-                });
+                })
+                .then(function () {
+                    if (simulator.numEdges > 0) {
+
+                        var resources = [simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems,
+                            simulator.buffers.curPoints, simulator.buffers.springsPos];
+
+                        return simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources);
+                    }
+                })
         }
     }
 };
