@@ -16,7 +16,7 @@ if (typeof(window) == 'undefined') {
 
 module.exports = {
 
-    kernelNames: ["gaussSeidelPoints", "gaussSeidelSprings"],
+    kernelNames: ["gaussSeidelPoints", "gaussSeidelSprings", "gaussSeidelSpringsGather"],
 
     setPhysics: function (simulator, cfg) {
 
@@ -41,8 +41,8 @@ module.exports = {
             var edgeStrength_t = cfg.edgeStrength ? cljs.types.float_t : null;
 
             simulator.kernels.gaussSeidelSprings.setArgs(
-                [null, null, null, null, null, edgeStrength, edgeDistance, null],
-                [null, null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
+                [null, null, null, null, edgeStrength, edgeDistance, null],
+                [null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
         }
 
     },
@@ -88,12 +88,19 @@ module.exports = {
                 null, //forwards/backwards picked dynamically
                 null, //simulator.buffers.curPoints.buffer then simulator.buffers.nextPoints.buffer
                 null, //simulator.buffers.nextPoints.buffer then simulator.buffers.curPoints.buffer
-                simulator.buffers.springsPos.buffer,
                 webcl.type ? [1.0] : new Float32Array([1.0]),
                 webcl.type ? [0.1] : new Float32Array([0.1]),
                 null],
-            webcl.type ? [null, null, null, null, null,
+            webcl.type ? [null, null, null, null,
                 webcl.type.FLOAT, webcl.type.FLOAT]
+                : null);
+
+        simulator.kernels.gaussSeidelSpringsGather.setArgs(
+            [   simulator.buffers.forwardsEdges.buffer,
+                simulator.buffers.forwardsWorkItems.buffer,
+                simulator.buffers.curPoints.buffer,
+                simulator.buffers.springsPos.buffer],
+            webcl.type ? [null, null, null, null]
                 : null);
     },
 
@@ -104,9 +111,9 @@ module.exports = {
             var resources = [edges, workItems, fromPoints, toPoints, simulator.buffers.springsPos];
 
             simulator.kernels.gaussSeidelSprings.setArgs(
-                [edges.buffer, workItems.buffer, fromPoints.buffer, toPoints.buffer, null,
+                [edges.buffer, workItems.buffer, fromPoints.buffer, toPoints.buffer,
                  null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
-                webcl.type ? [null, null, null, null, null,
+                webcl.type ? [null, null, null, null,
                  null, null, cljs.types.uint_t] : null);
 
             return simulator.kernels.gaussSeidelSprings.call(numWorkItems, resources);
@@ -141,6 +148,18 @@ module.exports = {
                          return edgeKernelSeq(
                             simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
                             simulator.buffers.nextPoints, simulator.buffers.curPoints); });
+            }
+        }).then(function() {
+            if ((!simulator.locked.lockPoints || !simulator.locked.lockEdges)
+                && simulator.numEdges > 0) {
+
+                var resources = [simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems,
+                    simulator.buffers.curPoints, simulator.buffers.springsPos];
+
+                return simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources);
+
+            } else {
+                return simulator;
             }
         });
 
