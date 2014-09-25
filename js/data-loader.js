@@ -50,12 +50,21 @@ function loadSocioPLT(graph) {
     var pointSizes = new Uint8Array(_.pluck(data.nodes, 'size'));
     var pointColors = new Uint32Array(_.pluck(data.nodes, 'color'));
 
+    //data.edges = [{src: 0, dst: 1}];
+
     var edges = _.flatten(data.edges.map(function (edge) {
             return [edge.src, edge.dst];
         }));
     var edgeColors = _.flatten(data.edges.map(function (edge) {
             return [edge.color, edge.color];
         }));
+
+        //graph.setVisible({edgeStrength: -10});
+        //physicsControls.gravity     ( 0.020083175556898723);
+        //physicsControls.edgeStrength( 4.292198241799153);
+        //physicsControls.edgeDistance( 0.0000158);
+
+
 
     return graph.setPoints(new Float32Array(_.flatten(points)), pointSizes, pointColors)
         .then(function () {
@@ -64,6 +73,24 @@ function loadSocioPLT(graph) {
                 new Uint32Array(edgeColors));
         })
         .then(function () {
+
+
+            graph.setPhysics({forceAtlas: 0});
+            graph.setLocked({
+                lockPoints:     false,
+                lockEdges:      false,
+                lockMidpoints:  true,
+                lockMidedges:   true
+            });
+
+            graph.setPhysics({
+                charge: -0.001,
+                gravity: 0.1,
+                edgeStrength: 0.001,
+                edgeDistance: 0.001
+            });
+
+
             return graph;
         }, function (err) {
             throw err;
