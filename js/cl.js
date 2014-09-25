@@ -163,7 +163,8 @@ if (typeof(window) == 'undefined') {
                 if (wrapped.context === null) {
                     throw new Error("Error creating WebCL context");
                 }
-                wrapped.queue = wrapped.context.createCommandQueue(wrapped.device, null);
+                wrapped.device.enableExtension("KHR_gl_sharing");
+                wrapped.queue = wrapped.context.createCommandQueue(wrapped.device);
             } catch (e) {
                 debug("Skipping device %d due to error %o. %o", i, e, wrapped);
                 err = e;
@@ -214,7 +215,7 @@ var create = Q.promised(getClContext);
 // older WebCL platforms, which have a different way of creating a context and enabling CL-GL
 // sharing.
 var _createContext = function(cl, gl, platform, devices) {
-    cl.enableExtension("KHR_GL_SHARING");
+    cl.enableExtension("KHR_gl_sharing");
     return cl.createContext(gl, devices);
 };
 
