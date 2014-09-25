@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-"use strict";
+'use strict';
 
 //prebaked script to load uber data
 //similar to main.js

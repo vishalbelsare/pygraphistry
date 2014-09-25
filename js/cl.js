@@ -4,6 +4,7 @@ var Q = require('q');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');
 var debug = require("debug")("N-body:cl");
+var util = require('util');
 
 if (typeof(window) == 'undefined') {
     var webcl = require('node-webcl');
@@ -17,7 +18,9 @@ var DEVICE_TYPE = webcl.DEVICE_TYPE_GPU;
 
 var getClContext;
 if (typeof(window) == 'undefined') {
-    debug("Node.js cl.js initializing");
+    debug("Initializing node-webcl flavored cl.js functions");
+
+
     var createContext = function(webcl, gl, platform, devices) {
         return webcl.createContext({
             devices: devices,
@@ -25,18 +28,25 @@ if (typeof(window) == 'undefined') {
             platform: platform
         });
     };
+
+
     var createCL = function(webcl, gl) {
         if (typeof webcl === "undefined") {
             throw new Error("WebCL does not appear to be supported in your browser");
         } else if (webcl === null) {
             throw new Error("Can't access WebCL object");
         }
+
         var platforms = webcl.getPlatforms();
         if (platforms.length === 0) {
             throw new Error("Can't find any WebCL platforms");
         }
+        debug("Found %d OpenCL platforms; using first", platforms.length);
         var platform = platforms[0];
+
+        debug("Devices found on platform: %d", platform.getDevices(DEVICE_TYPE).length);
         var devices = platform.getDevices(DEVICE_TYPE).map(function(d) {
+            debug("Found device %s", util.inspect(d, {depth: null, showHidden: true, colors: true}));
             var workItems = d.getInfo(webcl.DEVICE_MAX_WORK_ITEM_SIZES);
             return {
                 device: d,

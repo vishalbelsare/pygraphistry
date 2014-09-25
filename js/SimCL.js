@@ -39,7 +39,7 @@ function create(renderer, dimensions, numSplits, locked) {
         // Compile the WebCL kernels
         return util.getSource("apply-forces.cl")
         .then(function(source) {
-            console.debug('GOT SOURCE')
+            debug("CL kernel source retrieved");
             return cl.compile(source, kernelNames);
         })
         .then(function(kernels) {
