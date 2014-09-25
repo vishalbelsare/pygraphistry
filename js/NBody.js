@@ -71,7 +71,7 @@ function setPoints(graph, points, pointSizes, pointColors) {
 }
 
 
-var setEdges = Q.promised(function(graph, edges) {
+var setEdges = Q.promised(function(graph, edges, edgeColors) {
 
     if (edges.length < 1)
         return Q.fcall(function() { return graph; });
@@ -92,17 +92,22 @@ var setEdges = Q.promised(function(graph, edges) {
 
         //[[src idx, dest idx]]
         var edgeList = new Array(edges.length / 2);
-        for (var i = 0; i < edges.length; i++)
-            edgeList[i / 2] = [edges[i], edges[i + 1]];
+        for (var i = 0; i < edges.length/2; i++)
+            edgeList[i] = [edges[2 * i], edges[2 * i + 1]];
 
+        //sort by src idx
         edgeList.sort(function(a, b) {
             return a[0] < b[0] ? -1
                 : a[0] > b[0] ? 1
                 : a[1] - b[1];
         });
 
-        //[ [edge number, numEdges, source idx], ... ]
+        //[ [first edge number from src idx, numEdges from source idx, source idx], ... ]
         var workItems = [ [0, 1, edgeList[0][0]] ];
+        var sourceHasEdge = {};
+        edgeList.forEach(function (edge, i) {
+            sourceHasEdge[edge[0]] = true;
+        });
         edgeList.forEach(function (edge, i) {
             if (i == 0) return;
             var prev = workItems[workItems.length - 1];
@@ -118,25 +123,20 @@ var setEdges = Q.promised(function(graph, edges) {
             degreesFlattened[edgeList[2]] = edgeList[1];
         });
 
-        //Cheesey load balancing
+        //Cheesey load balancing: sort by size
         //TODO benchmark
-
         workItems.sort(function (edgeList1, edgeList2) {
             return edgeList1[1] - edgeList2[1];
         });
 
+        //Uint32Array [first edge number from src idx, number of edges from src idx]
+        //fetch edge to find src and dst idx (all src same)
+        //num edges > 0
+        var workItemsFlattened =
+            new Uint32Array(
+                _.flatten(workItems.map(function (o) { return [o[0], o[1]]})));
 
-        var workItemsFlattened = new Uint32Array(workItems.length * 2);
-        for (var i = 0; i < workItems.length; i++) {
-            workItemsFlattened[2 * i] = workItems[i][0];
-            workItemsFlattened[2 * i + 1] = workItems[i][1];
-        }
-
-        var edgesFlattened = new Uint32Array(edgeList.length * 2);
-        for (var i = 0; i < edgeList.length; i++) {
-            edgesFlattened[2 * i] = edgeList[i][0];
-            edgesFlattened[2 * i + 1] = edgeList[i][1];
-        }
+        var edgesFlattened = new Uint32Array(_.flatten(edgeList));
 
         return {
             degreesTyped: degreesFlattened,
@@ -167,7 +167,7 @@ var setEdges = Q.promised(function(graph, edges) {
     }
     debug("Number of control points, splits: %d, %d", edges.length * graph.numSplits, graph.numSplits);
 
-    return graph.simulator.setEdges(forwardEdges, backwardsEdges, midPoints)
+    return graph.simulator.setEdges(forwardEdges, backwardsEdges, midPoints, edgeColors)
     .then(function() { return graph; });
 });
 

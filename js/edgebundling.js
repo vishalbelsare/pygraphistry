@@ -20,12 +20,12 @@ module.exports = {
 
     setPhysics: function (simulator, cfg) {
 
-        if(cfg.charge || cfg.gravity) {
-            var charge = cfg.charge ? (webcl.type ? [cfg.charge] : new Float32Array([cfg.charge])) : null;
-            var charge_t = cfg.charge ? cljs.types.float_t : null;
+        if(cfg.hasOwnProperty('charge') || cfg.hasOwnProperty('gravity')) {
+            var charge = cfg.hasOwnProperty('charge') ? (webcl.type ? [cfg.charge] : new Float32Array([cfg.charge])) : null;
+            var charge_t = cfg.hasOwnProperty('charge') ? cljs.types.float_t : null;
 
-            var gravity = cfg.gravity ? (webcl.type ? [cfg.gravity] : new Float32Array([cfg.gravity])) : null;
-            var gravity_t = cfg.gravity ? cljs.types.float_t : null;
+            var gravity = cfg.hasOwnProperty('gravity') ? (webcl.type ? [cfg.gravity] : new Float32Array([cfg.gravity])) : null;
+            var gravity_t = cfg.hasOwnProperty('gravity') ? cljs.types.float_t : null;
 
             simulator.kernels.gaussSeidelMidpoints.setArgs(
                 [null, null, null, null, null, null, null, charge, gravity, null, null],
@@ -33,12 +33,12 @@ module.exports = {
 
         }
 
-        if(cfg.edgeDistance || cfg.edgeStrength) {
-            var edgeDistance = cfg.edgeDistance ? (webcl.type ? [cfg.edgeDistance] : new Float32Array([cfg.edgeDistance])) : null;
-            var edgeDistance_t = cfg.edgeDistance ? cljs.types.float_t : null;
+        if(cfg.hasOwnProperty('edgeDistance') || cfg.hasOwnProperty('edgeStrength')) {
+            var edgeDistance = cfg.hasOwnProperty('edgeDistance') ? (webcl.type ? [cfg.edgeDistance] : new Float32Array([cfg.edgeDistance])) : null;
+            var edgeDistance_t = cfg.hasOwnProperty('edgeDistance') ? cljs.types.float_t : null;
 
-            var edgeStrength = cfg.edgeStrength ? (webcl.type ? [cfg.edgeStrength] : new Float32Array([cfg.edgeStrength])) : null;
-            var edgeStrength_t = cfg.edgeStrength ? cljs.types.float_t : null;
+            var edgeStrength = cfg.hasOwnProperty('edgeStrength') ? (webcl.type ? [cfg.edgeStrength] : new Float32Array([cfg.edgeStrength])) : null;
+            var edgeStrength_t = cfg.hasOwnProperty('edgeStrength') ? cljs.types.float_t : null;
 
             simulator.kernels.gaussSeidelMidsprings.setArgs(
                 // 0   1     2     3     4     5     6     7     8               9               10

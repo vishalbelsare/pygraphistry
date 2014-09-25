@@ -44,6 +44,7 @@ var numPoints = 10000,//1024,//2048,//16384,
     }
 */
 function controls(graph) {
+
     var physicsControls =
         ["charge", "gravity", "edgeStrength", "edgeDistance"]
         .concat(['scalingRatio', 'edgeInfluence', 'forceAtlas', 'preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'])
@@ -55,20 +56,6 @@ function controls(graph) {
                 };
                 return o;
             }, {});
-
-    /* dumped from playing with web version */
-    /*
-    physicsControls.charge(-0.00008385510126037207);
-    physicsControls.gravity(0.00015448596582229787);
-    physicsControls.edgeStrength(0.00015448596582229787);
-    physicsControls.edgeDistance(0.0002610812822396834);
-    */
-
-    physicsControls.charge      (-0.000029360001841802474);
-    physicsControls.gravity     ( 0.00020083175556898723);
-    physicsControls.edgeStrength( 4.292198241799153);
-    physicsControls.edgeDistance( 0.0000158);
-
 
     var renderingControls =
         ["points", "edges", "midpoints", "midedges"]
@@ -99,6 +86,26 @@ function controls(graph) {
             }, {});
 
 
+    /* dumped from playing with web version */
+    /*
+    physicsControls.charge(-0.00008385510126037207);
+    physicsControls.gravity(0.00015448596582229787);
+    physicsControls.edgeStrength(0.00015448596582229787);
+    physicsControls.edgeDistance(0.0002610812822396834);
+    */
+
+    //all off by default
+    physicsControls.forceAtlas(0);
+    locks.lockPoints(true);
+    locks.lockEdges(true);
+    locks.lockMidpoints(true);
+    locks.lockMidedges(true);
+
+    physicsControls.charge      (-0.000029360001841802474);
+    physicsControls.gravity     ( 0.020083175556898723);
+    physicsControls.edgeStrength( 4.292198241799153);
+    physicsControls.edgeDistance( 0.0000158);
+
 
     if (false) {
         physicsControls.forceAtlas(1);
@@ -125,7 +132,6 @@ function controls(graph) {
         //physicsContorls.//', 'preventOverlap', 'strongGravity', 'dissuadeHubs'
     } else {
 
-
         renderingControls.points(true);
         renderingControls.edges(true);
         renderingControls.midpoints(false);
@@ -134,9 +140,6 @@ function controls(graph) {
         locks.lockEdges(false);
         locks.lockMidpoints(true);
         locks.lockMidedges(true);
-
-
-
     }
 
 
@@ -194,6 +197,7 @@ function fetchNumElements(graph) {
         edges: graph.renderer.numEdges * 2,
         edgeculled: graph.renderer.numEdges * 2,
         midedges: graph.renderer.numMidEdges * 2,
+        midedgeculled: graph.renderer.numMidEdges * 2,
         midedgestextured: graph.renderer.numMidEdges * 2,
         points: graph.renderer.numPoints,
         pointculled: graph.renderer.numPoints,
@@ -233,7 +237,7 @@ function loadDataIntoSim(graph) {
     return loader.loadDataList(graph)
     .then(function (datalist) {
         if (USE_GEO) {
-            var which = 4;
+            var which = 1;
             debug("Loading data: %o", datalist[which]);
             return datalist[which].loader(graph, datalist[which].f);
 
@@ -267,13 +271,15 @@ function createAnimation() {
 
     init()
     .then(function (graph) {
+        debug("APPLYING SETTINGS");
+        controls(graph);
+        return graph;
+    })
+    .then(function (graph) {
         debug("LOADING DATA");
         return loadDataIntoSim(graph);
     })
     .then(function (graph) {
-        debug("APPLYING SETTINGS");
-        controls(graph);
-
         debug("ANIMATING");
 
         // Run the animation loop by recursively expanding each tick event into a new sequence with
@@ -311,6 +317,12 @@ function fetchData(graph, compress, bufferNames, programNames) {
 
     return Rx.Observable.fromPromise(fetchVBOs(graph, bufferNames))
         .flatMap(function (vbos) {
+
+            bufferNames.forEach(function (bufferName) {
+                if (!vbos.hasOwnProperty(bufferName)) {
+                    throw new Error('vbos does not have buffer', bufferName);
+                }
+            })
 
             var compressed =
                 bufferNames.map(function (bufferName) {
