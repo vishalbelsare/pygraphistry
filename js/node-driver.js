@@ -129,11 +129,11 @@ function controls(graph) {
         renderingControls.points(true);
         renderingControls.edges(true);
         renderingControls.midpoints(false);
-        renderingControls.midedges(false);
+        renderingControls.midedges(true);
         locks.lockPoints(false);
         locks.lockEdges(false);
-        locks.lockMidpoints(true);
-        locks.lockMidedges(true);
+        locks.lockMidpoints(false);
+        locks.lockMidedges(false);
 
 
 
@@ -194,6 +194,7 @@ function fetchNumElements(graph) {
         edges: graph.renderer.numEdges * 2,
         edgeculled: graph.renderer.numEdges * 2,
         midedges: graph.renderer.numMidEdges * 2,
+        midedgeculled: graph.renderer.numMidEdges * 2,
         midedgestextured: graph.renderer.numMidEdges * 2,
         points: graph.renderer.numPoints,
         pointculled: graph.renderer.numPoints,
@@ -233,7 +234,7 @@ function loadDataIntoSim(graph) {
     return loader.loadDataList(graph)
     .then(function (datalist) {
         if (USE_GEO) {
-            var which = 4;
+            var which = 2;
             debug("Loading data: %o", datalist[which]);
             return datalist[which].loader(graph, datalist[which].f);
 
