@@ -16,7 +16,7 @@ module.exports = {
         'blendEquationSeparate': [['FUNC_ADD', 'FUNC_ADD']],
         'depthFunc': [['LEQUAL']],
         'clearColor': [[0, 0, 0, 0.0]],
-        'lineWidth': [[3]]
+        'lineWidth': [[2]]
     },
 
     'camera': {
@@ -267,7 +267,6 @@ module.exports = {
             }
         },
 
-        //'render': ['edges', 'points']
-        'render': ['pointculled', /*'edgeculled',*/ 'midedgeculled', 'pointpicking']
+        'render': ['pointculled', 'edgeculled', 'pointpicking']
     }
 };
