@@ -268,13 +268,15 @@ function createAnimation() {
 
     init()
     .then(function (graph) {
+        debug("APPLYING SETTINGS");
+        controls(graph);
+        return graph;
+    })
+    .then(function (graph) {
         debug("LOADING DATA");
         return loadDataIntoSim(graph);
     })
     .then(function (graph) {
-        debug("APPLYING SETTINGS");
-        controls(graph);
-
         debug("ANIMATING");
 
         // Run the animation loop by recursively expanding each tick event into a new sequence with
