@@ -12,6 +12,7 @@ var renderConfig = require('render-config'),
     ui           = require('./ui.js'),
     proxyUtils   = require('./proxyutils.js');
 
+var BASE_URL = '' + window.location.protocol + '//' + window.location.hostname;
 
 //string -> Subject ArrayBuffer
 function fetchBuffer (bufferByteLengths, bufferName) {
@@ -20,7 +21,7 @@ function fetchBuffer (bufferByteLengths, bufferName) {
 
         //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
         var oReq = new XMLHttpRequest();
-        oReq.open('GET', 'http://localhost:' + proxyUtils.BINARY_PORT + '/vbo?buffer=' + bufferName, true);
+        oReq.open('GET', BASE_URL + ':' + proxyUtils.BINARY_PORT + '/vbo?buffer=' + bufferName, true);
         oReq.responseType = 'arraybuffer';
 
         var now = Date.now();
@@ -64,7 +65,7 @@ function init (canvas, opts) {
 
     var socket = opts.socket;
     if (!socket) {
-        socket = io.connect('http://localhost', {reconnection: false, transports: ['websocket']});
+        socket = io.connect('/', {reconnection: false, transports: ['websocket']});
         socket.io.engine.binaryType = 'arraybuffer';
     } else if (!socket.io || !socket.io.engine || socket.io.engine !== 'arraybuffer') {
         debug('Expected binary socket');
