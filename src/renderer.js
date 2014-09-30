@@ -20,15 +20,44 @@ var indexHostBuffers = [];
 //[ glBuffer ]
 var indexGlBuffers = [];
 
+/** Cached dictionary of program.attribute: attribute locations
+ * @type {Object.<string, Object.<string, GLint>>} */
+var attrLocations = {};
+
+
+/** Cached dictionary of program.uniform: uniform locations
+ * @type {Object.<string, Object.<string, GLint>>} */
+var uniformLocations = {};
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Internal helpers
 ////////////////////////////////////////////////////////////////////////////////
 
+//Factory behind getAttribLocationFast, getUniformLocationFast
+function addressMemoizer(cache, cacheName, glLocationMethodName) {
 
-/** Cached dictionary of program.attribute: attribute locations
- * @type {Object.<string, Object.<string, GLint>>} */
-var attrLocations = {};
+    return function (gl, program, programName, address) {
+
+        if(typeof cache[programName] !== 'undefined' &&
+            typeof cache[programName][address] !== 'undefined') {
+            debug('  Get %s %s: using fast path', cacheName, address);
+            return cache[programName][address];
+        }
+
+        debug('  Get %s %s (for %s): using slow path', cacheName, address, programName);
+        cache[programName] = cache[programName] || {};
+        cache[programName][address] = gl[glLocationMethodName](program, address);
+        if (cache[programName][address] === -1) {
+            throw new Error('Error binding address ' + cacheName + '::' + programName + '::' + address);
+        }
+
+        return cache[programName][address];
+
+    };
+}
+
+
 /**
  * Wraps gl.getAttribLocation and caches the result, returning the cached result on subsequent
  * calls for the same attribute in the same program.
@@ -37,21 +66,19 @@ var attrLocations = {};
  * @param {string} programName - the name of the program
  * @param {string} attribute - the name of the attribute in the shader source code
  */
-function getAttribLocationFast(gl, program, programName, attribute) {
-    if(typeof attrLocations[programName] !== 'undefined' &&
-        typeof attrLocations[programName][attribute] !== 'undefined') {
-        debug('  Get attribute %s: using fast path', attribute);
-        return attrLocations[programName][attribute];
-    }
 
-    debug('  Get attribute %s: using slow path', attribute);
-    attrLocations[programName] = attrLocations[programName] || {};
-    attrLocations[programName][attribute] = gl.getAttribLocation(program, attribute);
-    if (attrLocations[programName][attribute] === -1) {
-        throw new Error('Error binding attribute::' + programName + '::' + attribute);
-    }
-    return attrLocations[programName][attribute];
-}
+var getAttribLocationFast = addressMemoizer(attrLocations, 'attribute', 'getAttribLocation');
+
+/**
+ * Wraps gl.getUniformLocation and caches the result, returning the cached result on subsequent
+ * calls for the same uniform in the same program.
+ * @param {WebGLRenderingContext} gl - the WebGL context
+ * @param {WebGLProgram} program - the program the attribute is part of
+ * @param {string} programName - the name of the program
+ * @param {string} uniform - the name of the uniform in the shader source code
+ */
+var getUniformLocationFast = addressMemoizer(uniformLocations, 'uniform', 'getUniformLocation');
+
 
 
 /** The program currently in use by GL
@@ -83,6 +110,9 @@ function bindBuffer(gl, buffer) {
 }
 
 
+
+
+
 /** The bindings object currently in effect on a program
  * @type {Object.<string, RendererOptions.render.bindings>} */
 var programBindings = {};
@@ -90,11 +120,19 @@ var programBindings = {};
  * Binds all of a programs attributes to elements of a/some buffer(s)
  * @param {WebGLRenderingContext} gl - the WebGL context containing the program and buffers
  * @param {WebGLProgram} program - The WebGL program to bind
- * @param {Object} bindings - The config settings object for this program's bindings
+ * @param {Object} bindings - The config settings object for this program's attributes and uniforms
  * @param {Object.<string, WebGLBuffer>} buffers - Mapping of created buffer names to WebGL buffers
  * @param {Object} modelSettings - The 'models' object from the rendering config
  */
-function bindProgram(gl, program, programName, bindings, buffers, modelSettings) {
+function bindProgram(state, program, programName, bindings, buffers, modelSettings) {
+    bindings = bindings || {};
+    bindings.attributes = bindings.attributes || {};
+    bindings.uniforms = bindings.uniforms || {};
+
+    var gl = state.get('gl');
+
+    debug('Binding program %s', programName);
+
     useProgram(gl, program);
 
     // FIXME: If we don't rebind every frame, but bind another program, then the bindings of the
@@ -517,7 +555,10 @@ function render(state, renderListOverride) {
             lastRenderTarget = renderTarget;
         }
 
-        bindProgram(gl, programs[renderItem.program], renderItem.program, renderItem.bindings, buffers, config.models);
+        bindProgram(
+            state, programs[renderItem.program], renderItem.program,
+            {attributes: renderItem.bindings, uniforms: renderItem.uniforms},
+            buffers, config.models);
         gl.drawArrays(gl[renderItem.drawType], 0, numElements[item]);
 
         if (renderTarget && (renderTarget !== 'CANVAS')) {
