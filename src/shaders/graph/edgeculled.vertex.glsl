@@ -19,12 +19,7 @@ void main(void) {
     float remapped = (-furthestComponent + SENSITIVITY) / SENSITIVITY;
     alpha = remapped < 0.0 ? -20.0 : clamp(remapped, 0.0, 1.0);
 
-    if (alpha > 0.0) {
-        gl_Position = pos;
-    } else {
-        //degenerate
-        gl_Position = vec4(-2.0,-2.0,1.0,1.0);
-    }
+    gl_Position = pos;
 
     eColor = edgeColor;
 }
