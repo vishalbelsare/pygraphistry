@@ -7,6 +7,8 @@ var _           = require('underscore'),
 
 var Cameras     = require('../../../../superconductorjs/src/Camera.js');
 
+var localAttribHandler = require('./localAttribHandler.js');
+
 /** @module Renderer */
 
 
@@ -19,6 +21,13 @@ var Cameras     = require('../../../../superconductorjs/src/Camera.js');
 var indexHostBuffers = [];
 //[ glBuffer ]
 var indexGlBuffers = [];
+
+//User supplied buffers (auto-initialized to empty)
+//{ <name> -> TypedArray }
+var localHostBuffers = {};
+//{ <name> -> glBuffer }
+var localGlBuffers = {};
+
 
 /** Cached dictionary of program.attribute: attribute locations
  * @type {Object.<string, Object.<string, GLint>>} */
@@ -142,9 +151,7 @@ function bindProgram(state, program, programName, bindings, buffers, modelSettin
         //debug('Not binding program %s because already bound', programName);
         //return false;
     //}
-    debug('Binding program %s', programName);
-
-    _.each(bindings, function(binding, attribute) {
+    _.each(bindings.attributes, function(binding, attribute) {
 
         var element = modelSettings[binding[0]][binding[1]];
         var datasource = element.datasource || 'SERVER';
@@ -152,9 +159,12 @@ function bindProgram(state, program, programName, bindings, buffers, modelSettin
               datasource === 'SERVER'       ? buffers[binding[0]]
             : datasource === 'VERTEX_INDEX' ? indexGlBuffers[1]
             : datasource === 'EDGE_INDEX'   ? indexGlBuffers[2]
+            : datasource === 'LOCAL'        ?
+                localGlBuffers[state.get('config').get('models').get(binding[0]).get(binding[1]).get('localName')]
             : (function () { throw new Error('unknown datasource ' + datasource); }());
 
-        debug('  bound buffer', attribute, binding, datasource, glBuffer, element.name);
+        debug('  binding buffer', attribute, binding, datasource, glBuffer, element.name);
+
 
         bindBuffer(gl, glBuffer);
         var location = getAttribLocationFast(gl, program, programName, attribute);
@@ -164,8 +174,19 @@ function bindProgram(state, program, programName, bindings, buffers, modelSettin
 
         gl.enableVertexAttribArray(location);
 
-        programBindings[programName] = bindings;
     });
+
+
+    _.each(bindings.uniforms || {}, function (binding, uniformName) {
+
+        var location = getUniformLocationFast(gl, program, programName, uniformName);
+
+        gl['uniform' + binding.uniformType]
+            .apply(gl, [location].concat(binding.values));
+    });
+
+
+    programBindings[programName] = bindings;
 }
 
 
@@ -204,10 +225,12 @@ function init(config, canvas, opts) {
         attrLocations: Immutable.Map({}),
         programBindings: Immutable.Map({}),
 
-        activeIndices:  getActiveIndices(config)
+        activeIndices:  getActiveIndices(config),
+        activeLocalAttributes: localAttribHandler.getActiveLocalAttributes(config)
     });
 
     debug('Active indices', state.get('activeIndices'));
+    debug('Active attributes', state.get('activeLocalAttributes'));
 
     var gl = createContext(canvas);
     state = state.set('gl', gl);
@@ -424,6 +447,15 @@ function loadBuffer(state, buffer, bufferName, data) {
 
     state.get('activeIndices')
         .forEach(updateIndexBuffer.bind('', gl, data.byteLength / 4));
+
+    state.get('activeLocalAttributes')
+        .forEach(
+            localAttribHandler.updateLocalAttributesBuffer.bind('',
+                {host: localHostBuffers, gl: localGlBuffers},
+                {bindBuffer: bindBuffer, expandHostBuffer: expandHostBuffer},
+                gl,
+                data.byteLength / 4));
+
 
     try{
 
