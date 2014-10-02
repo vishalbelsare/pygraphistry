@@ -22,18 +22,18 @@ var DEVICE_TYPE = webcl.DEVICE_TYPE_GPU;
 // that argument, even on old versions. Instead, we should query the kernel for the types of each
 // argument and fill in that information automatically, when required by old WebCL versions.
 
-var create = Q.promised(function(gl) {
+var create = Q.promised(function(renderer) {
     if (typeof(window) == 'undefined') {
         debug("Initializing node-webcl flavored cl.js functions");
-        return createCLContextNode(gl);
+        return createCLContextNode(renderer);
     } else {
         debug("Initializing web browser flavored cl.js functions");
-        return createCLContextBrowser(gl);
+        return createCLContextBrowser(renderer);
     }
 });
 
 
-function createCLContextNode(gl) {
+function createCLContextNode(renderer) {
     if (typeof webcl === "undefined") {
         throw new Error("WebCL does not appear to be supported in your browser");
     } else if (webcl === null) {
@@ -79,7 +79,7 @@ function createCLContextNode(gl) {
                 debug("Skipping device %d due to no sharing. %o", i, wrapped);
                 continue;
             }
-            wrapped.context = _createContext(webcl, gl, platform, [ wrapped.device ]);
+            wrapped.context = _createContext(webcl, renderer, platform, [ wrapped.device ]);
             if (wrapped.context === null) {
                 throw new Error("Error creating WebCL context");
             }
@@ -98,7 +98,7 @@ function createCLContextNode(gl) {
     debug("Device set. Vendor: %s. Device: %o", deviceWrapper.device.getInfo(webcl.DEVICE_VENDOR), deviceWrapper);
 
     var res = {
-        gl: gl,
+        renderer: renderer,
         cl: webcl,
         context: deviceWrapper.context,
         device: deviceWrapper.device,
@@ -117,7 +117,7 @@ function createCLContextNode(gl) {
 };
 
 
-function createCLContextBrowser(gl) {
+function createCLContextBrowser(renderer) {
     if (typeof(webcl) === "undefined") {
         throw new Error("WebCL does not appear to be supported in your browser");
     }
@@ -160,7 +160,7 @@ function createCLContextBrowser(gl) {
     for (var i = 0; i < devices.length; i++) {
         var wrapped = devices[i];
         try {
-            wrapped.context = _createContext(cl, gl, platform, [wrapped.device]);
+            wrapped.context = _createContext(cl, renderer, platform, [wrapped.device]);
             if (wrapped.context === null) {
                 throw new Error("Error creating WebCL context");
             }
@@ -181,7 +181,7 @@ function createCLContextBrowser(gl) {
     debug("Device set. Device: %o", deviceWrapper);
 
     var clObj = {
-        "gl": gl,
+        "renderer": renderer,
         "cl": cl,
         "context": deviceWrapper.context,
         "device": deviceWrapper.device,
@@ -202,9 +202,9 @@ function createCLContextBrowser(gl) {
 // This is a separate function from create() in order to allow polyfill() to override it on
 // older WebCL platforms, which have a different way of creating a context and enabling CL-GL
 // sharing.
-var _createContext = function(cl, gl, platform, devices) {
+var _createContext = function(cl, renderer, platform, devices) {
     cl.enableExtension("KHR_gl_sharing");
-    return cl.createContext(gl, devices);
+    return cl.createContext(renderer.gl, devices);
 };
 
 
@@ -362,14 +362,14 @@ var createBufferGL = Q.promised(function (cl, vbo, name) {
             "cl": cl,
             "size": buffer.getInfo ? buffer.getInfo(cl.cl.MEM_SIZE) : vbo.len,
             "acquire": Q.promised(function() {
-                cl.gl.finish();
+                cl.renderer.finish();
                 cl.queue.enqueueAcquireGLObjects([buffer]);
 
             }),
             "release": Q.promised(function() {
                 cl.queue.enqueueReleaseGLObjects([buffer]);
                 cl.queue.finish();
-                cl.gl.finish();
+                cl.renderer.finish();
             })
         };
         bufObj.delete = Q.promised(function() {
@@ -449,11 +449,11 @@ function polyfill() {
     debug("Detected old WebCL platform. Modifying functions to support it.");
 
 
-    _createContext = function(cl, gl, platform, devices) {
+    _createContext = function(cl, renderer, platform, devices) {
         if (webcl.type) {
             return webcl.createContext({
                 devices: devices,
-                shareGroup: gl,
+                shareGroup: renderer.gl,
                 platform: platform});
         } else {
             var extension = cl.getExtension("KHR_GL_SHARING");

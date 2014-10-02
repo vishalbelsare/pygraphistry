@@ -26,7 +26,7 @@ Q.longStackSupport = true;
 var randLength = 73;
 
 function create(renderer, dimensions, numSplits, locked) {
-    return cljs.create(renderer.gl)
+    return cljs.create(renderer)
     .then(function(cl) {
         debug("Creating CL object with GL context");
 
