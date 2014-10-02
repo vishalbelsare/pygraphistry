@@ -35,6 +35,25 @@ function createEdges(amount, numNodes) {
     return edges;
 }
 
+function loadRectangle(rows, columns, graph) {
+    debug("Loading rectangle", rows, columns);
+
+    var points =
+        _.flatten(
+            _.range(0, rows)
+                .map(function (row) {
+                    return _.range(0, columns)
+                        .map(function (column) {
+                            return [column, row];
+                        });
+                }),
+            true);
+    return graph.setPoints(new Float32Array(_.flatten(points)))
+        .then(function () {
+            return graph.setEdges(new Uint32Array([0,1]));
+        });
+}
+
 function loadSocioPLT(graph) {
     debug("Loading SocioPLT");
 
@@ -210,6 +229,16 @@ function loadDataList(clGraph) {
        });
     })
     .then(function () {
+        debug("  rectangle");
+        dataList.push({
+            base: "rectangle",
+            loader: loadRectangle.bind('', 100, 100),
+            f: "??",
+            KB: "??",
+            size: "??"
+        });
+    })
+    .then(function () {
         debug("  gml list");
         var gmlList =
             GmlLoader.ls()
@@ -283,5 +312,6 @@ module.exports = {
     createPoints: createPoints,
     createEdges: createEdges,
     loadGeo: loadGeo,
-    loadDataList: loadDataList
+    loadDataList: loadDataList,
+    loadRectangle: loadRectangle
 };
