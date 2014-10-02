@@ -135,6 +135,12 @@ function init (canvas, opts) {
         //itemName * int * int -> int
         hitTest: renderer.hitTest.bind(renderer, renderState),
 
+        //string -> {read, write}
+        localAttributeProxy: renderer.localAttributeProxy(renderState),
+
+        renderer: renderer,
+        renderState: renderState,
+
         //call to render with current camera
         renderFrame: function () {
             renderer.setCamera(renderConfig, gl, programs, camera);

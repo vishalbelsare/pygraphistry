@@ -7,7 +7,9 @@ var _           = require('underscore'),
 
 var Cameras     = require('../../../../superconductorjs/src/Camera.js');
 
-var localAttribHandler = require('./localAttribHandler.js');
+var localAttribHandler  = require('./localAttribHandler.js'),
+    bufferProxy         = require('./bufferproxy.js').bufferProxy;
+
 
 /** @module Renderer */
 
@@ -713,6 +715,11 @@ function getActiveIndices (config) {
     return _.uniq(_.flatten(activeIndexModesLists));
 }
 
+// State -> string -> {read: int -> 'a, write: int * 'a -> ()}
+var localAttributeProxy = function (state) {
+    return bufferProxy(state.get('gl'), localHostBuffers, localGlBuffers);
+};
+
 
 module.exports = {
     init: init,
@@ -726,5 +733,6 @@ module.exports = {
     setNumElements: setNumElements,
     render: render,
     getServerBufferNames: getServerBufferNames,
-    hitTest: hitTestN
+    hitTest: hitTestN,
+    localAttributeProxy: localAttributeProxy
 };
