@@ -58,6 +58,7 @@ var create = Q.promised(function(document, canvas, bgColor, dimensions, visible)
     renderer.setVisible = setVisible.bind(this, renderer);
     renderer.isVisible = isVisible.bind(this, renderer);
     renderer.setColorMap = setColorMap.bind(this, renderer);
+    renderer.finish = finish.bind(this, renderer);
 
     renderer.visible.points = true;
     renderer.visible.edges = true;
@@ -366,6 +367,16 @@ function setVisible(renderer, visible) {
 function isVisible(renderer, element) {
     // TODO: check the length of the associated buffer to see if it's >0; return false if not.
     return (renderer.visible[element] || false);
+}
+
+/**
+ * Simple wrapper for gl.finish() (allows other Render* classes to override if not using GL)
+ *
+ * @param renderer - the renderer object created with GLRunner.create()
+ * @return the return value of the gl.finish() call
+ */
+function finish(renderer) {
+    return renderer.gl.finish();
 }
 
 

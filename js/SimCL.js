@@ -403,7 +403,7 @@ function tick(simulator, stepNumber) {
     .then(function () { return tickAllHelper(layoutAlgorithms.slice(0)); })
     .then(function() {
         simulator.cl.queue.finish();
-        simulator.renderer.gl.finish();
+        simulator.renderer.finish();
     });
 
     res.then(function () {}, function (err) {

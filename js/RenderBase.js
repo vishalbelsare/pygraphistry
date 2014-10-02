@@ -41,6 +41,7 @@ function create() {
         setVisible: null,
         isVisible : null,
         setColorMap: null,
+        finish: null,
 
         visible: {
             points: null,
