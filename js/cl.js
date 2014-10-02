@@ -231,7 +231,6 @@ var _createContext = function(cl, gl, platform, devices) {
  *          kernel name mapped to its kernel object.
  */
 var compile = Q.promised(function (cl, source, kernels) {
-    var t0 = new Date().getTime();
     debug("Compiling kernels");
 
     try {
@@ -269,7 +268,7 @@ var compile = Q.promised(function (cl, source, kernels) {
                 kernelObjs[kernelName] = kernelObj;
             }
 
-            debug('  Compiled kernels in %d ms.', new Date().getTime() - t0);
+            debug('  Compiled kernels');
 
             return kernelObjs;
         }
@@ -316,13 +315,12 @@ var call = Q.promised(function (kernel, threads, buffers) {
 
 
 var setArgs = function (kernel, args, argTypes) {
-    var t0 = new Date().getTime();
     for (var i = 0; i < args.length; i++) {
         if(args[i] !== null) {
             kernel.kernel.setArg(i, args[i]);
         }
     }
-    debug('Set kernel args (%d ms)', new Date().getTime() - t0);
+    debug('Set kernel args');
     return kernel;
 };
 
@@ -360,9 +358,6 @@ var createBuffer = Q.promised(function createBuffer(cl, size, name) {
 // TODO: If we call buffer.acquire() twice without calling buffer.release(), it should have no
 // effect.
 var createBufferGL = Q.promised(function (cl, vbo, name) {
-
-    var t0 = new Date().getTime();
-
     debug("Creating buffer %s from GL buffer", name);
 
     var buffer = cl.context.createFromGLBuffer(cl.cl.MEM_READ_WRITE, vbo.buffer);
@@ -400,7 +395,7 @@ var createBufferGL = Q.promised(function (cl, vbo, name) {
         bufObj.read = read.bind(this, bufObj);
         bufObj.copyInto = copyBuffer.bind(this, cl, bufObj);
 
-        debug("  Created buffer in %d ms", new Date().getTime() - t0);
+        debug("  Created buffer");
 
         return bufObj;
     }
@@ -423,7 +418,6 @@ var copyBuffer = Q.promised(function (cl, source, destination) {
 
 var write = Q.promised(function write(buffer, data) {
     debug("Writing to buffer %s", buffer.name);
-    var t0 = new Date().getTime();
     return buffer.acquire()
         .then(function () {
             buffer.cl.queue.enqueueWriteBuffer(buffer.buffer, true, 0, data.byteLength, data);
@@ -431,7 +425,7 @@ var write = Q.promised(function write(buffer, data) {
         })
         .then(function() {
             buffer.cl.queue.finish();
-            debug("  Finished buffer %s write in %d ms", buffer.name, new Date().getTime() - t0);
+            debug("  Finished buffer %s write");
             return buffer;
         });
 });
@@ -510,7 +504,6 @@ function polyfill() {
 
     setArgs = function (kernel, args, argTypes) {
         argTypes = argTypes || [];
-        var t0 = new Date().getTime();
         try {
             for (var i = 0; i < args.length; i++) {
                 if (args[i]) {
