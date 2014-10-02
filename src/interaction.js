@@ -56,7 +56,12 @@ exports.setupScroll = function($eventTarget, camera) {
             wheelEvent.preventDefault();
 
             var aspectRatio = camera.width / camera.height;
-            var scrollY = wheelEvent.originalEvent.wheelDeltaY || -wheelEvent.originalEvent.deltaY;
+            var scrollY =
+                wheelEvent.wheelDeltaY ||
+                -wheelEvent.deltaY ||
+                (wheelEvent.originalEvent ?
+                    (wheelEvent.originalEvent.wheelDeltaY || -wheelEvent.originalEvent.deltaY)
+                    : 0);
 
             camera.width -= camera.width * (scrollY / 100.0);
             camera.height = camera.width / aspectRatio;
