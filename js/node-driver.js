@@ -100,6 +100,10 @@ function controls(graph) {
     locks.lockEdges(true);
     locks.lockMidpoints(true);
     locks.lockMidedges(true);
+    renderingControls.points(false);
+    renderingControls.edges(false);
+    renderingControls.midpoints(false);
+    renderingControls.midedges(false);
 
     physicsControls.charge      (-0.000029360001841802474);
     physicsControls.gravity     ( 0.020083175556898723);
@@ -130,7 +134,7 @@ function controls(graph) {
 
 
         //physicsContorls.//', 'preventOverlap', 'strongGravity', 'dissuadeHubs'
-    } else {
+    } else if (false) {
 
         renderingControls.points(true);
         renderingControls.edges(true);
@@ -140,6 +144,13 @@ function controls(graph) {
         locks.lockEdges(false);
         locks.lockMidpoints(true);
         locks.lockMidedges(true);
+    } else {
+        locks.lockMidpoints(false);
+        locks.lockMidedges(false);
+        renderingControls.points(true);
+        renderingControls.midedges(true);
+
+
     }
 
 
@@ -202,6 +213,7 @@ function fetchNumElements(graph) {
         points: graph.renderer.numPoints,
         pointculled: graph.renderer.numPoints,
         pointpicking: graph.renderer.numPoints,
+        pointpickingScreen: graph.renderer.numPoints,
         midpoints: graph.renderer.numMidPoints
     };
 }
@@ -237,7 +249,7 @@ function loadDataIntoSim(graph) {
     return loader.loadDataList(graph)
     .then(function (datalist) {
         if (USE_GEO) {
-            var which = 1;
+            var which = 0;
             debug("Loading data: %o", datalist[which]);
             return datalist[which].loader(graph, datalist[which].f);
 
