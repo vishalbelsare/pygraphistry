@@ -498,7 +498,7 @@ function expandHostBuffer(gl, length, repetition, oldHostBuffer) {
     for (var i = oldHostBuffer.length; i < longerBuffer.length; i += repetition) {
         var lbl = (i / repetition) + 1;
         for (var j = 0; j < repetition; j++) {
-            longerBuffer[i + j] = lbl;
+            longerBuffer[i + j] = (lbl << 8) | 255;
         }
     }
 
@@ -616,20 +616,26 @@ function hitTest(state, texture, x, y) {
     var map = state.get('pixelreads')[texture];
     var remapped = new Uint32Array(map.buffer);
     var idx = (canvas.height - y) * canvas.width + x;
-    var combined = remapped[idx];
+    var raw = remapped[idx];//(remapped[idx] >> 8) & (255 | (255 << 8) | (255 << 16));
 
     //swizzle because point shader is funny
-    var r = (combined >> 16) & 255;
-    var g = (combined >> 8) & 255;
-    var b = combined & 255;
-    var a = (combined >> 24) & 255;
-    combined = (r << 24) | (g << 16) | (b << 8) | a;
+    //reverse..
+    var parts = _.range(0,4).map(function (_, i) {
+            return (raw >> (8 * i)) & 255;
+        });
+    var shuffled = [parts[0], parts[1], parts[2], parts[3]];
+    var r = 0,//shuffled[4],
+        g = 0,//shuffled[3],
+        b = shuffled[2],
+        a = shuffled[1];
+
+    var combined = ((r << 24) | (g << 16) | (b << 8) | a) - 1;
 
     if (combined) {
-        debug('hit', texture, x, y, '->', idx, '->', combined,
-           '(', combined >> 24, (combined >> 16) & 255, (combined >> 8) & 255, combined & 255, ')');
+        debug('hit', texture, x, y, '->', idx, '-> (', raw, '=>', combined, ') == ',
+           '(', r, g, b, a, ')');
     }
-    return combined - 1;
+    return combined;
 }
 
 

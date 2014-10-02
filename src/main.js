@@ -48,6 +48,8 @@ function init (canvas, opts) {
         });
 
 
+    var highlights = client.localAttributeProxy('highlights');
+
     var prevIdx = -1;
     _.keys(renderConfig.textures)
         .map(interaction.setupMousemove.bind('', $('.sim-container'), client.hitTest))
@@ -56,9 +58,24 @@ function init (canvas, opts) {
                 .sample(10)
                 .filter(_.identity)
                 .subscribe(function (idx) {
+                    debug('got idx', idx);
                     if (idx !== prevIdx) {
                         $('.hit-label').text(idx > -1 ? ('Mouse over: ' + idx) : '');
+                        var dirty = false;
+                        if (idx > -1) {
+                            debug('enlarging new point', idx);
+                            highlights.write(idx, 20);
+                            dirty = true;
+                        }
+                        if (prevIdx > -1) {
+                            debug('shrinking old point', prevIdx);
+                            highlights.write(prevIdx, 0);
+                            dirty = true;
+                        }
                         prevIdx = idx;
+                        if (dirty) {
+                            client.renderFrame();
+                        }
                     }
 
                 });

@@ -76,9 +76,9 @@ module.exports = {
                 'vertex': fs.readFileSync('./src/shaders/graph/pointculled.vertex.glsl', 'utf8').toString('ascii'),
                 'fragment': fs.readFileSync('./src/shaders/graph/pointculled.fragment.glsl', 'utf8').toString('ascii')
             },
-            'attributes': ['curPos'],
+            'attributes': ['pointIndex', 'curPos', 'pointSize', 'pointColor', 'fog'],
             'camera': 'mvp',
-            'uniforms': []
+            'uniforms': ['highlightedPoint']
         },
         'points': {
             'sources': {
@@ -188,6 +188,19 @@ module.exports = {
                 'stride': 0,
                 'normalize': true
             }
+        },
+        'highlightedPoint': {
+            'isHighlighted':  {
+
+                'datasource': 'LOCAL',
+                'localName': 'highlights',
+
+                'type': 'FLOAT',
+                'count': 1,
+                'offset': 0,
+                'stride': 0,
+                'normalize': false
+            }
         }
     },
 
@@ -215,21 +228,44 @@ module.exports = {
                 'bindings': {
                     'curPos':       ['curPoints', 'curPos'],
                     'pointSize':    ['pointSizes', 'pointSize'],
-                    'pointColor':   ['pointColors', 'pointColor']
+                    'pointColor':   ['pointColors', 'pointColor'],
+                    'isHighlighted':   ['highlightedPoint', 'isHighlighted']
                 },
-                'drawType': 'POINTS',
-                'glOptions': {}
-            },
-            'pointpicking': {
-                'program': 'points',
-                'bindings': {
-                    'curPos':       ['curPoints', 'curPos'],
-                    'pointSize':    ['pointSizes', 'pointSize'],
-                    'pointColor':   ['vertexIndices', 'pointColor']
+                'uniforms': {
+                    'fog': { 'uniformType': '1f', 'values': [10.0] }
                 },
                 'drawType': 'POINTS',
                 'glOptions': {},
-                'renderTarget': 'pointHitmap'
+                //'renderTarget': 'pointHitmap',
+            },
+            'pointpickingScreen': {
+                'program': 'pointculled',
+                'bindings': {
+                    'curPos':       ['curPoints', 'curPos'],
+                    'pointSize':    ['pointSizes', 'pointSize'],
+                    'pointColor':   ['vertexIndices', 'pointColor'],
+                    'isHighlighted':   ['highlightedPoint', 'isHighlighted']
+                },
+                'uniforms': {
+                    'fog': { 'uniformType': '1f', 'values': [0.0] }
+                },
+                'drawType': 'POINTS',
+                'glOptions': {},
+            },
+            'pointpicking': {
+                'program': 'pointculled',
+                'bindings': {
+                    'curPos':       ['curPoints', 'curPos'],
+                    'pointSize':    ['pointSizes', 'pointSize'],
+                    'pointColor':   ['vertexIndices', 'pointColor'],
+                    'isHighlighted':   ['highlightedPoint', 'isHighlighted']
+                },
+                'uniforms': {
+                    'fog': { 'uniformType': '1f', 'values': [0.0] }
+                },
+                'drawType': 'POINTS',
+                'glOptions': {},
+                'renderTarget': 'pointHitmap',
             },
             'points': {
                 'program': 'points',
@@ -267,6 +303,6 @@ module.exports = {
             }
         },
 
-        'render': ['pointculled', 'edgeculled', 'pointpicking']
+        'render': ['pointculled', 'pointpicking', 'midedgeculled']
     }
 };
