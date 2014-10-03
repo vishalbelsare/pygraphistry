@@ -294,16 +294,18 @@ function createAnimation() {
     .then(function (graph) {
         debug("ANIMATING");
 
-        // Run the animation loop by recursively expanding each tick event into a new sequence with
-        // [a requestAnimationFrame() callback mapped to graph.tick()]
-        Rx.Observable.fromPromise(graph.tick())
-            .expand(function() {
-                return (Rx.Observable.fromNodeCallback(setImmediate))()
-                    .flatMap(function() { return Rx.Observable.fromPromise(graph.tick()); })
-                    .map(function() { return graph; });
-            })
-            .subscribe(animStepSubj);
 
+        function animStep() {
+            setImmediate(function() {
+                graph.tick()
+                .then(function() {
+                    animStepSubj.onNext(graph);
+                    setTimeout(function() { animStep(); }, 16);
+                })
+            });
+        }
+
+        animStep();
     })
     .then(function () {
         debug("Graph created");

@@ -330,7 +330,7 @@ var call = Q.promised(function (kernel, threads, buffers) {
 
         })
         .then(release.bind('', buffers))
-        .then(function () { kernel.cl.queue.finish(); })
+        // .then(function () { kernel.cl.queue.finish(); })
         .then(_.constant(kernel));
 });
 
@@ -359,9 +359,7 @@ function setArgs(kernel, args, argTypes) {
 
 
 var createBuffer = Q.promised(function(cl, size, name) {
-    debug("Creating buffer %s", name);
-
-    debug("  Create buffer argsuments - cl: %j, size: %d, name: %s", cl, size, name);
+    debug("Creating buffer %s, size %d", name, size);
 
     var buffer = cl.context.createBuffer(cl.cl.MEM_READ_WRITE, size);
 
@@ -469,9 +467,9 @@ var copyBuffer = Q.promised(function (cl, source, destination) {
         .then(function () {
             cl.queue.enqueueCopyBuffer(source.buffer, destination.buffer, 0, 0, Math.min(source.size, destination.size));
         })
-        .then(function () {
-            cl.queue.finish();
-        })
+        // .then(function () {
+        //     cl.queue.finish();
+        // })
         .then(release.bind(null, [source, destination]));
 });
 
@@ -484,7 +482,7 @@ var write = Q.promised(function write(buffer, data) {
             return buffer.release();
         })
         .then(function() {
-            buffer.cl.queue.finish();
+            // buffer.cl.queue.finish();
             debug("  Finished buffer %s write", buffer.name);
             return buffer;
         });

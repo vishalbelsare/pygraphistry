@@ -402,6 +402,12 @@ function tick(simulator, stepNumber) {
     var res = Q()
     .then(function () { return tickAllHelper(layoutAlgorithms.slice(0)); })
     .then(function() {
+        // This cl.queue.finish() needs to be here because, without it, the queue appears to outside
+        // code as running really fast, and tons of ticks will be called, flooding the GPU/CPU with
+        // more stuff than they can handle.
+        // What we really want here is to give finish() a callback and resolve the promise when it's
+        // called, but node-webcl is out-of-date and doesn't support WebCL 1.0's optional callback
+        // argument to finish().
         simulator.cl.queue.finish();
         simulator.renderer.finish();
     });
