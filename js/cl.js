@@ -6,14 +6,11 @@ var _ = require('underscore');
 var debug = require("debug")("N-body:cl");
 var util = require('util');
 
-if (typeof(window) == 'undefined') {
-    var webcl = require('node-webcl');
-    console.debug = console.log;
-} else if (typeof(webcl) == 'undefined') {
-    var webcl = window.webcl;
-}
 
-var DEVICE_TYPE = webcl.DEVICE_TYPE_GPU;
+var NODEJS = typeof(window) === 'undefined';
+var DEVICE_TYPE = null;
+var types = {};
+
 
 
 // TODO: in call() and setargs(), we currently requires a `argTypes` argument becuase older WebCL
@@ -23,11 +20,9 @@ var DEVICE_TYPE = webcl.DEVICE_TYPE_GPU;
 // argument and fill in that information automatically, when required by old WebCL versions.
 
 var create = Q.promised(function(renderer) {
-    if (typeof(window) == 'undefined') {
-        debug("Initializing node-webcl flavored cl.js functions");
+    if (NODEJS) {
         return createCLContextNode(renderer);
     } else {
-        debug("Initializing web browser flavored cl.js functions");
         return createCLContextBrowser(renderer);
     }
 });
@@ -47,17 +42,28 @@ function createCLContextNode(renderer) {
     debug("Found %d OpenCL platforms; using first", platforms.length);
     var platform = platforms[0];
 
-    debug("Devices found on platform: %d", platform.getDevices(DEVICE_TYPE).length);
-    var devices = platform.getDevices(DEVICE_TYPE).map(function(d) {
+    var clDevices = platform.getDevices(DEVICE_TYPE);
+    debug("Devices found on platform: %d", clDevices.length);
+    if(clDevices.length < 1) {
+        throw new Error("No WebCL devices of specified type (" + DEVICE_TYPE + ") found")
+    }
+
+    var devices = clDevices.map(function(d) {
+    // var devices = platform.getDevices(DEVICE_TYPE).map(function(d) {
         debug("Found device %s", util.inspect(d, {depth: null, showHidden: true, colors: true}));
-        var workItems = d.getInfo(webcl.DEVICE_MAX_WORK_ITEM_SIZES);
+
+        var computeUnits = d
+            .getInfo(webcl.DEVICE_MAX_WORK_ITEM_SIZES)
+            .reduce(function(a, b) {
+                return a * b;
+            });
+
         return {
             device: d,
-            computeUnits: workItems.reduce(function(a, b) {
-                return a * b;
-            })
+            computeUnits: computeUnits
         };
     });
+
     devices.sort(function(a, b) {
         var nameA = a.device.getInfo(webcl.DEVICE_VENDOR);
         var nameB = b.device.getInfo(webcl.DEVICE_VENDOR);
@@ -70,31 +76,48 @@ function createCLContextNode(renderer) {
             return b.computeUnits - a.computeUnits;
         }
     });
-    var deviceWrapper;
-    var err = devices.length ? null : new Error("No WebCL devices of specified type (" + DEVICE_TYPE + ") found");
-    for (var i = 0; i < devices.length; i++) {
+
+
+    var deviceWrapper = null, err = null;
+
+    for (var i = 0; i < devices.length && deviceWrapper === null; i++) {
         var wrapped = devices[i];
+
         try {
-            if (wrapped.device.getInfo(webcl.DEVICE_EXTENSIONS).search(/gl.sharing/i) == -1) {
-                debug("Skipping device %d due to no sharing. %o", i, wrapped);
-                continue;
+            if(renderer.gl !== null) {
+                if(wrapped.device.getInfo(webcl.DEVICE_EXTENSIONS).search(/gl.sharing/i) == -1) {
+                    debug("Skipping device %d due to no sharing. %o", i, wrapped);
+                    continue;
+                }
+
+                wrapped.context = webcl.createContext({
+                    devices: [ wrapped.device ],
+                    shareGroup: renderer.gl,
+                    platform: platform
+                });
+            } else {
+                wrapped.context = webcl.createContext({
+                    devices: [ wrapped.device ],
+                    platform: platform
+                });
             }
-            wrapped.context = _createContext(webcl, renderer, platform, [ wrapped.device ]);
+
             if (wrapped.context === null) {
                 throw new Error("Error creating WebCL context");
             }
+
             wrapped.queue = wrapped.context.createCommandQueue(wrapped.device, 0);
+            deviceWrapper = wrapped;
         } catch (e) {
             debug("Skipping device %d due to error %o. %o", i, e, wrapped);
             err = e;
-            continue;
         }
-        deviceWrapper = wrapped;
-        break;
     }
-    if (!deviceWrapper) {
-        throw err;
+
+    if (deviceWrapper === null) {
+        throw (err !== null ? err : new Error("A context could not be created from an available device"));
     }
+
     debug("Device set. Vendor: %s. Device: %o", deviceWrapper.device.getInfo(webcl.DEVICE_VENDOR), deviceWrapper);
 
     var res = {
@@ -152,29 +175,39 @@ function createCLContextBrowser(renderer) {
             computeUnits: [].slice.call(workItems, 0).reduce(function (a, b) { return a * b; })
         };
     });
+
     devices.sort(function (a, b) { return b.computeUnits - a.computeUnits; });
 
-    var deviceWrapper;
-    var err = devices.length ?
-        null : new Error("No WebCL devices of specified type (" + DEVICE_TYPE + ") found");
-    for (var i = 0; i < devices.length; i++) {
+    if(devices.length < 1) {
+        throw new Error("No WebCL devices of specified type (" + DEVICE_TYPE + ") found");
+    }
+
+    var deviceWrapper = null, err = null;
+    for (var i = 0; i < devices.length && deviceWrapper === null; i++) {
         var wrapped = devices[i];
+
         try {
-            wrapped.context = _createContext(cl, renderer, platform, [wrapped.device]);
+            if(renderer.gl !== null) {
+                cl.enableExtension("KHR_gl_sharing");
+                wrapped.device.enableExtension("KHR_gl_sharing");
+                return cl.createContext(renderer.gl, [wrapped.device]);
+            } else {
+                return cl.createContext([wrapped.device]);
+            }
+
             if (wrapped.context === null) {
                 throw new Error("Error creating WebCL context");
             }
-            wrapped.device.enableExtension("KHR_gl_sharing");
+
             wrapped.queue = wrapped.context.createCommandQueue(wrapped.device);
+            deviceWrapper = wrapped;
         } catch (e) {
             debug("Skipping device %d due to error %o. %o", i, e, wrapped);
             err = e;
-            continue;
         }
-        deviceWrapper = wrapped;
-        break;
     }
-    if (!deviceWrapper) {
+
+    if (deviceWrapper === null) {
         throw err;
     }
 
@@ -197,15 +230,6 @@ function createCLContextBrowser(renderer) {
     return clObj;
 }
 
-
-
-// This is a separate function from create() in order to allow polyfill() to override it on
-// older WebCL platforms, which have a different way of creating a context and enabling CL-GL
-// sharing.
-var _createContext = function(cl, renderer, platform, devices) {
-    cl.enableExtension("KHR_gl_sharing");
-    return cl.createContext(renderer.gl, devices);
-};
 
 
 /**
@@ -277,6 +301,7 @@ var acquire = function (buffers) {
         }));
 };
 
+
 var release = function (buffers) {
     return Q.all(
         (buffers||[]).map(function (buffer) {
@@ -284,31 +309,50 @@ var release = function (buffers) {
         }));
 };
 
+
 // Executes the specified kernel, with `threads` number of threads, acquiring/releasing any needed resources
 var call = Q.promised(function (kernel, threads, buffers) {
     return acquire(buffers)
         .then(function () {
-            var workgroupSize = new Int32Array([threads]);
-            kernel.cl.queue.enqueueNDRangeKernel(
-                kernel.kernel,
-                workgroupSize.length,
-                [],
-                workgroupSize,
-                []);
+            if(NODEJS) {
+                var workgroupSize = [threads];
+                kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, workgroupSize, null);
+            } else {
+                var workgroupSize = new Int32Array([threads]);
+                kernel.cl.queue.enqueueNDRangeKernel(
+                    kernel.kernel,
+                    workgroupSize.length,
+                    [],
+                    workgroupSize,
+                    []
+                );
+            }
+
         })
         .then(release.bind('', buffers))
-        .then(function () {
-            kernel.cl.queue.finish();
-        }).then(_.constant(kernel));
+        .then(function () { kernel.cl.queue.finish(); })
+        .then(_.constant(kernel));
 });
 
 
-var setArgs = function (kernel, args, argTypes) {
-    for (var i = 0; i < args.length; i++) {
-        if(args[i] !== null) {
-            kernel.kernel.setArg(i, args[i]);
+function setArgs(kernel, args, argTypes) {
+    argTypes = argTypes || [];
+
+    try {
+        for (var i = 0; i < args.length; i++) {
+            if(args[i] !== null) {
+                if(NODEJS) {
+                    kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i] || undefined);
+                } else {
+                    kernel.kernel.setArg(i, args[i]);
+                }
+            }
         }
+    } catch (e) {
+        console.error('Error setting kernel args::', kernel.name, '::', e, e.stack);
+        throw new Error(e);
     }
+
     debug('Set kernel args');
     return kernel;
 };
@@ -348,6 +392,11 @@ var createBuffer = Q.promised(function createBuffer(cl, size, name) {
 // effect.
 var createBufferGL = Q.promised(function (cl, vbo, name) {
     debug("Creating buffer %s from GL buffer", name);
+
+    if(vbo.gl === null) {
+        debug("    GL not enabled; falling back to creating CL buffer");
+        return cl.createBuffer(vbo.len, name);
+    }
 
     var buffer = cl.context.createFromGLBuffer(cl.cl.MEM_READ_WRITE, vbo.buffer);
     if (buffer === null) {
@@ -436,104 +485,38 @@ var read = Q.promised(function (buffer, target) {
 });
 
 
-// Detects the WebCL platform we're running on, and modifies this module as needed.
-// Returns true if the the platform is out-of-date and needed to be polyfilled, and false if
-// the platform is up-to-date and no modification was needed.
-function polyfill() {
-    // Detect if we're running on a current WebCL version
-    if(typeof(window) != 'undefined' && typeof webcl.enableExtension == "function") {
-        // If so, don't do anything
-        return false;
-    }
+if (NODEJS) {
+    console.debug = console.log;
+    debug("Initializing node-webcl flavored cl.js");
+    var webcl = require('node-webcl');
 
-    debug("Detected old WebCL platform. Modifying functions to support it.");
-
-
-    _createContext = function(cl, renderer, platform, devices) {
-        if (webcl.type) {
-            return webcl.createContext({
-                devices: devices,
-                shareGroup: renderer.gl,
-                platform: platform});
-        } else {
-            var extension = cl.getExtension("KHR_GL_SHARING");
-            if (extension === null) {
-                throw new Error("Could not create a shared CL/GL context using the WebCL extension system");
-            }
-            return extension.createContext({
-                platform: platform,
-                devices: devices,
-                deviceType: DEVICE_TYPE,
-                sharedContext: null
-            });
-        }
-
-    }
-
-
-    call = Q.promised(function (kernel, threads, buffers) {
-        //kernel.cl.queue.finish();
-
-        return acquire(buffers)
-            .then(function () {
-
-                var workgroupSize = typeof(window) == 'undefined' ? [threads] : new Int32Array([threads]);
-                if (webcl.type) {
-                    kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, [threads], null);
-                } else {
-                    kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, workgroupSize, null);
-                }
-                return release(buffers);
-            })
-            .then(function () {
-                kernel.cl.queue.finish();
-                return kernel;
-            });
-    });
-
-    setArgs = function (kernel, args, argTypes) {
-        argTypes = argTypes || [];
-        try {
-            for (var i = 0; i < args.length; i++) {
-                if (args[i]) {
-                    kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i] || undefined);
-                }
-            }
-        } catch (e) {
-            console.error('Error setting kernel args (in polyfilled setArgs())::', kernel.name, '::', e, e.stack);
-            throw new Error(e);
-        }
-        return kernel;
-    };
-
-    if (typeof WebCLKernelArgumentTypes == 'undefined') {
-        var WebCLKernelArgumentTypes = webcl.type;
-    }
+    DEVICE_TYPE = webcl.DEVICE_TYPE_GPU;
 
     types = {
-        char_t: WebCLKernelArgumentTypes.CHAR,
-        double_t: WebCLKernelArgumentTypes.DOUBLE,
-        float_t: WebCLKernelArgumentTypes.FLOAT,
-        half_t: WebCLKernelArgumentTypes.HALF,
-        int_t: WebCLKernelArgumentTypes.INT,
-        local_t: WebCLKernelArgumentTypes.LOCAL_MEMORY_SIZE,
-        long_t: WebCLKernelArgumentTypes.LONG,
-        short_t: WebCLKernelArgumentTypes.SHORT,
-        uchar_t: WebCLKernelArgumentTypes.UCHAR,
-        uint_t: WebCLKernelArgumentTypes.UINT,
-        ulong_t: WebCLKernelArgumentTypes.ULONG,
-        ushort_t: WebCLKernelArgumentTypes.USHORT,
-        float2_t: WebCLKernelArgumentTypes.VEC2,
-        float3_t: WebCLKernelArgumentTypes.VEC3,
-        float4_t: WebCLKernelArgumentTypes.VEC4,
-        float8_t: WebCLKernelArgumentTypes.VEC8,
-        float16_t: WebCLKernelArgumentTypes.VEC16
+        char_t: webcl.type.CHAR,
+        double_t: webcl.type.DOUBLE,
+        float_t: webcl.type.FLOAT,
+        half_t: webcl.type.HALF,
+        int_t: webcl.type.INT,
+        local_t: webcl.type.LOCAL_MEMORY_SIZE,
+        long_t: webcl.type.LONG,
+        short_t: webcl.type.SHORT,
+        uchar_t: webcl.type.UCHAR,
+        uint_t: webcl.type.UINT,
+        ulong_t: webcl.type.ULONG,
+        ushort_t: webcl.type.USHORT,
+        float2_t: webcl.type.VEC2,
+        float3_t: webcl.type.VEC3,
+        float4_t: webcl.type.VEC4,
+        float8_t: webcl.type.VEC8,
+        float16_t: webcl.type.VEC16
     };
+} else if (typeof(webcl) == 'undefined') {
+    debug("Initializing web browser flavored cl.js");
+    var webcl = window.webcl;
 
-    return true;
+    DEVICE_TYPE = webcl.DEVICE_TYPE_GPU;
 }
-var types = {};
-var CURRENT_CL = !polyfill();
 
 
 
@@ -547,6 +530,5 @@ module.exports = {
     "release": release,
     "setArgs": setArgs,
     "types": types,
-    "write": write,
-    "CURRENT_CL": CURRENT_CL
+    "write": write
 };
