@@ -1,8 +1,9 @@
 "use strict";
 
-var $ = require('jquery');
-var Q = require('q');
 var debug = require("debug")("N-body:utils");
+
+var $ = require('jquery'),
+    Q = require('q');
 
 var Image, webgl;
 
@@ -59,19 +60,7 @@ function getImage(url) {
 }
 
 
-// Extends target by adding the attributes of one or more other objects to it
-function extend(target, object1, objectN) {
-    for (var arg = 1; arg < arguments.length; arg++) {
-        for (var i in arguments[arg]) {
-            target[i] = arguments[arg][i];
-        }
-    }
-    return target;
-}
-
-
 module.exports = {
     "getSource": getSource,
     "getImage": getImage,
-    "extend": extend
 };
