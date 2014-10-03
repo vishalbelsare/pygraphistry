@@ -358,33 +358,37 @@ function setArgs(kernel, args, argTypes) {
 };
 
 
-var createBuffer = Q.promised(function createBuffer(cl, size, name) {
+var createBuffer = Q.promised(function(cl, size, name) {
     debug("Creating buffer %s", name);
 
+    debug("  Create buffer argsuments - cl: %j, size: %d, name: %s", cl, size, name);
+
     var buffer = cl.context.createBuffer(cl.cl.MEM_READ_WRITE, size);
+
     if (buffer === null) {
         throw new Error("Could not create the WebCL buffer");
-    } else {
-        var bufObj = {
-            "name": name,
-            "buffer": buffer,
-            "cl": cl,
-            "size": size,
-            "acquire": function() {
-                return Q(); },
-            "release": function() {
-                return Q(); }
-        };
-        bufObj.delete = Q.promised(function() {
-            buffer.release();
-            bufObj.size = 0;
-            return null;
-        });
-        bufObj.write = write.bind(this, bufObj);
-        bufObj.read = read.bind(this, bufObj);
-        bufObj.copyInto = copyBuffer.bind(this, cl, bufObj);
-        return bufObj;
     }
+
+    var bufObj = {
+        "name": name,
+        "buffer": buffer,
+        "cl": cl,
+        "size": size,
+        "acquire": function() {
+            return Q(); },
+        "release": function() {
+            return Q(); },
+        "data": null
+    };
+    bufObj.delete = Q.promised(function() {
+        buffer.release();
+        bufObj.size = 0;
+        return null;
+    });
+    bufObj.write = write.bind(this, bufObj);
+    bufObj.read = read.bind(this, bufObj);
+    bufObj.copyInto = copyBuffer.bind(this, cl, bufObj);
+    return bufObj;
 });
 
 
