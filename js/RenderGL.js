@@ -1,5 +1,6 @@
-"use strict";
+'use strict';
 
+var RenderBase = require('./RenderBase.js');
 var Q = require('q');
 var glMatrix = require('gl-matrix');
 var util = require('./util.js');
@@ -9,7 +10,9 @@ var debug = require("debug")("N-body:RenderGL");
 var create = Q.promised(function(document, canvas, bgColor, dimensions, visible) {
     visible = visible || {};
 
-    var renderer = {document: document, canvas: canvas};
+    var renderer = RenderBase.create();
+    renderer.document = document;
+    renderer.canvas = canvas;
 
     // The dimensions of a canvas, by default, do not accurately reflect its size on screen (as
     // set in the HTML/CSS/etc.) This changes the canvas size to match its size on screen.
@@ -38,24 +41,7 @@ var create = Q.promised(function(document, canvas, bgColor, dimensions, visible)
     // Populate the renderer object with default values, empty containers, etc.
     renderer.gl = gl;
     renderer.canvas = canvas;
-    renderer.buffers = {
-        curPoints: null,
-        pointSizes: null,
-        pointColors: null,
-        springs: null,
-        curMidPoints: null,
-        midSprings: null,
-        midSpringsColorCoord: null
-    };
-    Object.seal(renderer.buffers);
-    renderer.programs = {
-        points: null,
-        edges: null,
-        midpoints: null,
-        midedges: null,
-        midedgestextured: null
-    };
-    Object.seal(renderer.programs);
+
     renderer.elementsPerPoint = 2;
     renderer.numPoints = 0;
     renderer.numEdges = 0;
@@ -72,8 +58,12 @@ var create = Q.promised(function(document, canvas, bgColor, dimensions, visible)
     renderer.setVisible = setVisible.bind(this, renderer);
     renderer.isVisible = isVisible.bind(this, renderer);
     renderer.setColorMap = setColorMap.bind(this, renderer);
+    renderer.finish = finish.bind(this, renderer);
 
-    renderer.visible = {points: true, edges: true, midpoints: false, midedges: false};
+    renderer.visible.points = true;
+    renderer.visible.edges = true;
+    renderer.visible.midpoints = false;
+    renderer.visible.midedges = false;
     renderer.setVisible(visible);
 
 
@@ -93,7 +83,6 @@ var create = Q.promised(function(document, canvas, bgColor, dimensions, visible)
         return renderer.setCamera2d(-0.01, dimensions[0] + 0.01, -0.01, dimensions[1] + 0.01);
     })
     .then(function(renderer) {
-        Object.seal(renderer);
         return renderer;
     });
 });
@@ -378,6 +367,16 @@ function setVisible(renderer, visible) {
 function isVisible(renderer, element) {
     // TODO: check the length of the associated buffer to see if it's >0; return false if not.
     return (renderer.visible[element] || false);
+}
+
+/**
+ * Simple wrapper for gl.finish() (allows other Render* classes to override if not using GL)
+ *
+ * @param renderer - the renderer object created with GLRunner.create()
+ * @return the return value of the gl.finish() call
+ */
+function finish(renderer) {
+    return renderer.gl.finish();
 }
 
 
