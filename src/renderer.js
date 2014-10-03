@@ -631,7 +631,7 @@ function hitTest(state, texture, x, y) {
 
     var combined = ((r << 24) | (g << 16) | (b << 8) | a) - 1;
 
-    if (combined) {
+    if (combined > -1) {
         debug('hit', texture, x, y, '->', idx, '-> (', raw, '=>', combined, ') == ',
            '(', r, g, b, a, ')');
     }
