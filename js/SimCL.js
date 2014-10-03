@@ -65,7 +65,7 @@ function create(renderer, dimensions, numSplits, locked) {
             simObj.numBackwardsWorkItems = 0;
             simObj.numMidPoints = 0;
             simObj.numMidEdges = 0;
-            simObj.locked = util.extend(
+            simObj.locked = _.extend(
                 {lockPoints: false, lockMidpoints: true, lockEdges: false, lockMidedges: true},
                 (locked || {})
             );
@@ -353,8 +353,7 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints, edgeColor
 
 
 function setLocked(simulator, cfg) {
-    cfg = cfg || {};
-    util.extend(simulator.locked, cfg);
+    _.extend(simulator.locked, cfg || {});
 }
 
 

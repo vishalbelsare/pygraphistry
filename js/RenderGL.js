@@ -1,7 +1,9 @@
 'use strict';
 
+var Q = require('q'),
+    _ = require('underscore');
+
 var RenderBase = require('./RenderBase.js');
-var Q = require('q');
 var glMatrix = require('gl-matrix');
 var util = require('./util.js');
 var debug = require("debug")("N-body:RenderGL");
@@ -350,7 +352,7 @@ function bindVertexAttrib(program, buffer, attribute, elementsPerItem, glType, n
  * @returns the renderer object passed in, with visibility options updated
  */
 function setVisible(renderer, visible) {
-    util.extend(renderer.visible, visible);
+    _.extend(renderer, {visible: visible});
 
     return renderer;
 }

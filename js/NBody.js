@@ -49,11 +49,21 @@ function create(simulator, renderer, document, canvas, bgColor, dimensions, numS
                     graph.dimensions = dimensions;
                     graph.numSplits = numSplits;
 
+                    graph.updateSettings = updateSettings.bind(this, graph);
+
                     return graph;
                 });
         });
 }
 
+
+function updateSettings (graph, cfg) {
+    _.each(cfg, function (v, k) {
+        graph.simulator.setPhysics(cfg);
+        graph.simulator.setLocked(cfg);
+        graph.renderer.setVisible(cfg);
+    });
+}
 
 function setPoints(graph, points, pointSizes, pointColors) {
     // FIXME: If there is already data loaded, we should to free it before loading new data
