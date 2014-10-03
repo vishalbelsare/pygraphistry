@@ -277,15 +277,27 @@ function loadDataIntoSim(graph) {
 function createAnimation() {
     debug("STARTING DRIVER");
 
+    var userInteractions = new Rx.Subject();
+
     // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
     // the contents of each VBO
     var animStepSubj = new Rx.BehaviorSubject(null);
+
+    animStepSubj.subscribe(function () {
+        debug("NOTIFYING OF BIG STEP")
+    })
 
     var theGraph = init();
 
     theGraph.then(function (graph) {
         debug("APPLYING SETTINGS");
         controls(graph);
+
+        userInteractions.subscribe(function (settings){
+            debug('updating settings..');
+            graph.updateSettings(settings);
+        });
+
         return graph;
     })
     .then(function (graph) {
@@ -295,13 +307,38 @@ function createAnimation() {
     .then(function (graph) {
         debug("ANIMATING");
 
-        // Run the animation loop by recursively expanding each tick event into a new sequence with
-        // [a requestAnimationFrame() callback mapped to graph.tick()]
+
+        var isRunning =
+
+        Rx.Observable.merge(
+                //run beginning & after every interaction
+                userInteractions.merge(Rx.Observable.return())
+                    .map(_.constant(true)),
+                //...  but stop a bit after last one
+                userInteractions.merge(Rx.Observable.return())
+                    .throttle(4000).map(_.constant(false)));
+
+        var isRunningRecent = new Rx.ReplaySubject(1);
+        isRunning.subscribe(isRunningRecent);
+
+        isRunningRecent.subscribe(function (v) {
+            debug('isRunningRecent:', v)
+        })
+
+        // Loop simulation by recursively expanding each tick event into a new sequence
+        // Gate by isRunning
         Rx.Observable.fromPromise(graph.tick())
             .expand(function() {
                 return (Rx.Observable.fromCallback(graph.renderer.document.requestAnimationFrame))()
-                    .flatMap(function() { return Rx.Observable.fromPromise(graph.tick()); })
-                    .map(function() { return graph; });
+                    .flatMap(function () {
+                        return isRunningRecent.filter(_.identity).take(1);
+                    })
+                    .flatMap(function() {
+                        debug('step..')
+                        return Rx.Observable.fromPromise(graph.tick().then(function () {
+                            debug('ticked')
+                        })); })
+                    .map(_.constant(graph));
             })
             .subscribe(animStepSubj);
 
@@ -317,9 +354,7 @@ function createAnimation() {
 
     return {
         proxy: function (settings) {
-            theGraph.then(function (graph) {
-                graph.updateSettings(settings);
-            });
+            userInteractions.onNext(settings);
         },
         ticks: animStepSubj.skip(1)
     }
