@@ -281,8 +281,9 @@ function createAnimation() {
     // the contents of each VBO
     var animStepSubj = new Rx.BehaviorSubject(null);
 
-    init()
-    .then(function (graph) {
+    var theGraph = init();
+
+    theGraph.then(function (graph) {
         debug("APPLYING SETTINGS");
         controls(graph);
         return graph;
@@ -305,7 +306,7 @@ function createAnimation() {
             .subscribe(animStepSubj);
 
     })
-    .then(function () {
+    .then(function (graph) {
         debug("Graph created");
     }, function (err) {
         console.error("\n" + chalk.bgRed("\n~~~~~ SETUP ERROR") + "\n", err, ". Stack:", err.stack);
@@ -314,7 +315,14 @@ function createAnimation() {
     })
     .done();
 
-    return animStepSubj.skip(1);
+    return {
+        proxy: function (settings) {
+            theGraph.then(function (graph) {
+                graph.updateSettings(settings);
+            });
+        },
+        ticks: animStepSubj.skip(1)
+    }
 }
 
 
