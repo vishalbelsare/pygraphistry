@@ -14,7 +14,8 @@ var $               = require('jquery'),
 var streamClient    = require('./client.js'),
     ui              = require('./ui.js'),
     interaction     = require('./interaction.js'),
-    renderConfig    = require('render-config');
+    renderConfig    = require('render-config'),
+    uberDemo        = require('../../demos/uber/js/main.js');
 
 /*
 Enable debuging output in the console by running:
@@ -60,7 +61,7 @@ function init (canvas, opts) {
                 .subscribe(function (idx) {
                     debug('got idx', idx);
                     if (idx !== prevIdx) {
-                        $('.hit-label').text(idx > -1 ? ('Mouse over: ' + idx) : '');
+                        $('.hit-label').text('Mouse over: ' + (idx > -1 ? idx : ''));
                         var dirty = false;
                         if (idx > -1) {
                             debug('enlarging new point', idx);
@@ -95,6 +96,8 @@ function init (canvas, opts) {
         $(canvas).parent().addClass('disconnected');
         ui.error('Disconnected (reason:', reason, ')');
     });
+
+    uberDemo(client);
 
     return client;
 }
