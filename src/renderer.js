@@ -663,7 +663,7 @@ function hitTestN(state, texture, x, y, r) {
 
     //look up to r px away
     for (var offset = 0; offset < r; offset++) {
-        var hitOnCircle = hitTestCircumference(state, texture, x, y, offset);
+        var hitOnCircle = hitTestCircumference(state, texture, x, y, offset + 1);
         if (hitOnCircle > -1) {
             return hitOnCircle;
         }
