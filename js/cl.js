@@ -375,10 +375,11 @@ var createBuffer = Q.promised(function(cl, size, name) {
         "cl": cl,
         "size": size,
         "acquire": function() {
-            return Q(); },
+            return Q();
+        },
         "release": function() {
-            return Q(); },
-        "data": null
+            return Q();
+        }
     };
     bufObj.delete = Q.promised(function() {
         buffer.release();
@@ -394,21 +395,35 @@ var createBuffer = Q.promised(function(cl, size, name) {
 
 // TODO: If we call buffer.acquire() twice without calling buffer.release(), it should have no
 // effect.
-var createBufferGL = Q.promised(function (cl, vbo, name) {
+function createBufferGL(cl, vbo, name) {
     debug("Creating buffer %s from GL buffer", name);
 
     if(vbo.gl === null) {
         debug("    GL not enabled; falling back to creating CL buffer");
-        return cl.createBuffer(vbo.len, name);
+        return createBuffer(cl, vbo.len, name)
+            .then(function(bufObj) {
+                if(vbo.data !== null) {
+                    return bufObj.write(vbo.data);
+                } else {
+                    return bufObj;
+                }
+            })
+            .then(function(bufObj) {
+                // Delete reference to data once we've written it, so we don't leak memory
+                bufObj.data = null;
+                return bufObj;
+            });
     }
 
+    var deferred = Q.defer();
+
     var buffer = cl.context.createFromGLBuffer(cl.cl.MEM_READ_WRITE, vbo.buffer);
+
     if (buffer === null) {
-        throw new Error("Could not create WebCL buffer from WebGL buffer");
+        deferred.reject(new Error("Could not create WebCL buffer from WebGL buffer"))
     } else {
-        if (!buffer.getInfo) {
-            debug("WARNING: no getInfo() available on buffer %s", name);
-        }
+        if (!buffer.getInfo) { debug("WARNING: no getInfo() available on buffer %s", name); }
+
         var bufObj = {
             "name": name,
             "buffer": buffer,
@@ -425,6 +440,7 @@ var createBufferGL = Q.promised(function (cl, vbo, name) {
                 cl.renderer.finish();
             })
         };
+
         bufObj.delete = Q.promised(function() {
             return bufObj.release()
             .then(function() {
@@ -433,15 +449,17 @@ var createBufferGL = Q.promised(function (cl, vbo, name) {
                 return null;
             });
         });
+
         bufObj.write = write.bind(this, bufObj);
         bufObj.read = read.bind(this, bufObj);
         bufObj.copyInto = copyBuffer.bind(this, cl, bufObj);
 
         debug("  Created buffer");
-
-        return bufObj;
+        deferred.resolve(bufObj)
     }
-});
+
+    return deferred.promise;
+}
 
 
 var copyBuffer = Q.promised(function (cl, source, destination) {
@@ -494,8 +512,6 @@ if (NODEJS) {
     debug("Initializing node-webcl flavored cl.js");
     var webcl = require('node-webcl');
 
-    DEVICE_TYPE = webcl.DEVICE_TYPE_GPU;
-
     types = {
         char_t: webcl.type.CHAR,
         double_t: webcl.type.DOUBLE,
@@ -518,10 +534,10 @@ if (NODEJS) {
 } else if (typeof(webcl) == 'undefined') {
     debug("Initializing web browser flavored cl.js");
     var webcl = window.webcl;
-
-    DEVICE_TYPE = webcl.DEVICE_TYPE_GPU;
 }
 
+
+DEVICE_TYPE = webcl.DEVICE_TYPE_GPU;
 
 
 module.exports = {
