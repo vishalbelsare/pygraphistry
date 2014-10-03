@@ -303,6 +303,6 @@ module.exports = {
             }
         },
 
-        'render': ['pointculled', 'pointpicking', 'midedgeculled']
+        'render': ['pointpicking', 'midedgeculled']
     }
 };
