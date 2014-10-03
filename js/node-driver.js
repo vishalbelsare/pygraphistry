@@ -13,10 +13,8 @@ var Q = require("q"),
     chalk = require("chalk"),
     debug = require("debug")("StreamGL:driver"),
 
-    webgl = require("node-webgl"),
-
     NBody = require("./NBody.js"),
-    RenderGL = require("./RenderGL.js"),
+    RenderNull = require('./RenderNull.js'),
     SimCL = require("./SimCL.js"),
 
     loader = require("./data-loader.js");
@@ -235,13 +233,15 @@ function fetchBufferByteLengths(graph) {
 function init() {
     console.log("Running Naive N-body simulation");
 
-    var document = webgl.document();
-    document.setTitle("Graphviz");
-    var canvas = document.createElement("canvas", WIDTH, HEIGHT);
-    canvas.clientWidth = canvas.width = WIDTH;
-    canvas.clientHeight = canvas.height = HEIGHT;
+    var document = null;
+    var canvasStandin = {
+        width: WIDTH,
+        height: HEIGHT,
+        clientWidth: WIDTH,
+        clientHeight: HEIGHT
+    };
 
-    return NBody.create(SimCL, RenderGL, document, canvas, [255,255,255,1.0], dimensions, 3);
+    return NBody.create(SimCL, RenderNull, document, canvasStandin, [255,255,255,1.0], dimensions, 3);
 }
 
 
@@ -298,7 +298,7 @@ function createAnimation() {
         // [a requestAnimationFrame() callback mapped to graph.tick()]
         Rx.Observable.fromPromise(graph.tick())
             .expand(function() {
-                return (Rx.Observable.fromCallback(graph.renderer.document.requestAnimationFrame))()
+                return (Rx.Observable.fromNodeCallback(setImmediate))()
                     .flatMap(function() { return Rx.Observable.fromPromise(graph.tick()); })
                     .map(function() { return graph; });
             })
