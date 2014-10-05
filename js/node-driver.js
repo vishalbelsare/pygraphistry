@@ -28,6 +28,8 @@ var numPoints = 10000,//1024,//2048,//16384,
     numEdges = numPoints,
     dimensions = [1,1]; //[960,960];
 
+var SIMULATION_TIME = 3000; //seconds
+
 
 /*
     graph ->
@@ -315,24 +317,27 @@ function createAnimation() {
                     .map(_.constant(true)),
                 //...  but stop a bit after last one
                 userInteractions.merge(Rx.Observable.return())
-                    .throttle(4000).map(_.constant(false)));
+                    .throttle(SIMULATION_TIME).map(_.constant(false)));
 
         var isRunningRecent = new Rx.ReplaySubject(1);
-        isRunning.subscribe(isRunningRecent);
 
         isRunningRecent.subscribe(function (v) {
-            debug('isRunningRecent:', v)
+            debug('=============================isRunningRecent:', v)
         });
+
+        isRunning.subscribe(isRunningRecent);
 
         // Loop simulation by recursively expanding each tick event into a new sequence
         // Gate by isRunning
         Rx.Observable.fromPromise(graph.tick())
             .expand(function() {
-                return (Rx.Observable.fromCallback(graph.renderer.document.requestAnimationFrame))()
+                //return (Rx.Observable.fromCallback(graph.renderer.document.requestAnimationFrame))()
+                return Rx.Observable.return()
+                    .delay(1) //removing makes too tight a loop
                     .flatMap(function () {
                         return isRunningRecent.filter(_.identity).take(1);
                     })
-                    .flatMap(function() {
+                    .flatMap(function(v) {
                         debug('step..')
                         return Rx.Observable.fromPromise(graph.tick().then(function () {
                             debug('ticked')
@@ -340,17 +345,7 @@ function createAnimation() {
                     .map(_.constant(graph));
             })
             .subscribe(animStepSubj);
-        function animStep() {
-            setImmediate(function() {
-                graph.tick()
-                .then(function() {
-                    animStepSubj.onNext(graph);
-                    setTimeout(function() { animStep(); }, 16);
-                })
-            });
-        }
 
-        animStep();
     })
     .then(function (graph) {
         debug("Graph created");
