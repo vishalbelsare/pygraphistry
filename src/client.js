@@ -15,13 +15,13 @@ var renderConfig = require('render-config'),
 var BASE_URL = '' + window.location.protocol + '//' + window.location.hostname;
 
 //string -> Subject ArrayBuffer
-function fetchBuffer (bufferByteLengths, bufferName) {
+function fetchBuffer (socketID, bufferByteLengths, bufferName) {
 
         var res = new Rx.Subject();
 
         //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
         var oReq = new XMLHttpRequest();
-        oReq.open('GET', BASE_URL + ':' + proxyUtils.BINARY_PORT + '/vbo?buffer=' + bufferName, true);
+        oReq.open('GET', BASE_URL + ':' + proxyUtils.BINARY_PORT + '/vbo?buffer=' + bufferName + '&id=' + socketID, true);
         oReq.responseType = 'arraybuffer';
 
         var now = Date.now();
@@ -88,7 +88,7 @@ function init (canvas, opts) {
         var bufferNames = renderer.getServerBufferNames(renderConfig);
         debug('  Server buffers', bufferNames);
 
-        var bufferVBOs = Rx.Observable.zipArray(bufferNames.map(fetchBuffer.bind('', data.bufferByteLengths))).take(1);
+        var bufferVBOs = Rx.Observable.zipArray(bufferNames.map(fetchBuffer.bind('', socket.io.engine.id, data.bufferByteLengths))).take(1);
 
         bufferVBOs
             .subscribe(function (vbos) {
