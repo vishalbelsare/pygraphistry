@@ -18,7 +18,7 @@ exports.setupDrag = function($eventTarget, camera) {
             return $('html').mousemoveAsObservable()
                 .takeUntil($('html').mouseupAsObservable())
                 .distinctUntilChanged(function(pos) { return {x: pos.pageX, y: pos.pageY}; })
-                .scan({x: clickPos.pageX, y: clickPos.pageY}, function(accPos, curPos) {
+                .scan({x: clickPos.pageX, y: clickPos.pageY, deltaX: 0, deltaY: 0}, function(accPos, curPos) {
                     // Calculate the distance moved (since last event) for each move event
                     return {
                         deltaX: (curPos.pageX - accPos.x) / $eventTarget.width(),
