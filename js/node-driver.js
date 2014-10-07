@@ -272,6 +272,32 @@ function loadDataIntoSim(graph) {
 }
 
 
+/**
+ * Returns an Observable that fires an event in `delay` ms, with the given `value`
+ * @param  {number}   [delay=16]    - the time, in milliseconds, before the event is fired
+ * @param  {*}        [value=false] - the value of the event (`delay` must be given if `value` is)
+ * @return {Rx.Observable} A Rx Observable stream that emits `value` after `delay`, and finishes
+ */
+function delayObservableGenerator(delay, value, cb) {
+    if(arguments.length < 2) {
+        cb = arguments[0];
+        delay = 16;
+        value = false;
+    } else if(arguments.length < 3) {
+        cb = arguments[1];
+        value = false;
+    }
+
+    return Rx.Observable.return(value)
+        .delay(delay)
+        .flatMap(function(v1) {
+            return Rx.Observable.fromNodeCallback(function(v2, cb) {
+                setImmediate(function() { cb(v2); });
+            })(v1);
+        });
+};
+
+
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
@@ -333,15 +359,23 @@ function createAnimation() {
             .expand(function() {
                 //return (Rx.Observable.fromCallback(graph.renderer.document.requestAnimationFrame))()
                 return Rx.Observable.return()
-                    .delay(1) //removing makes too tight a loop
+                    // Add in a delay to allow nodejs' event loop some breathing room
+                    .flatMap(function() {
+                        return delayObservableGenerator(16, false);
+                    })
                     .flatMap(function () {
                         return isRunningRecent.filter(_.identity).take(1);
                     })
                     .flatMap(function(v) {
                         debug('step..')
-                        return Rx.Observable.fromPromise(graph.tick().then(function () {
-                            debug('ticked')
-                        })); })
+                        return (Rx.Observable.fromPromise(
+                            graph
+                                .tick()
+                                .then(function () {
+                                    debug('ticked');
+                                })
+                        ));
+                    })
                     .map(_.constant(graph));
             })
             .subscribe(animStepSubj);
