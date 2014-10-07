@@ -9,10 +9,8 @@ var debug        = require('debug')('StreamGL:main'),
 
 var renderConfig = require('render-config'),
     renderer     = require('./renderer.js'),
-    ui           = require('./ui.js'),
-    proxyUtils   = require('./proxyutils.js');
+    ui           = require('./ui.js');
 
-var BASE_URL = '' + window.location.protocol + '//' + window.location.hostname;
 
 //string -> Subject ArrayBuffer
 function fetchBuffer (socketID, bufferByteLengths, bufferName) {
@@ -21,7 +19,7 @@ function fetchBuffer (socketID, bufferByteLengths, bufferName) {
 
         //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
         var oReq = new XMLHttpRequest();
-        oReq.open('GET', BASE_URL + ':' + proxyUtils.BINARY_PORT + '/vbo?buffer=' + bufferName + '&id=' + socketID, true);
+        oReq.open('GET', '/vbo?buffer=' + bufferName + '&id=' + socketID, true);
         oReq.responseType = 'arraybuffer';
 
         var now = Date.now();
