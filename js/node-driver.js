@@ -209,7 +209,7 @@ function fetchNumElements(graph) {
         edgeculled: graph.renderer.numEdges * 2,
         midedges: graph.renderer.numMidEdges * 2,
         midedgeculled: graph.renderer.numMidEdges * 2,
-        midedgestextured: graph.renderer.numMidEdges * 2,
+        midedgetextured: graph.renderer.numMidEdges * 2,
         points: graph.renderer.numPoints,
         pointculled: graph.renderer.numPoints,
         pointpicking: graph.renderer.numPoints,
@@ -227,7 +227,8 @@ function fetchBufferByteLengths(graph) {
         pointColors: graph.renderer.numPoints * 4 * Uint8Array.BYTES_PER_ELEMENT,
         edgeColors: graph.renderer.numEdges * 2 * 4 * Uint8Array.BYTES_PER_ELEMENT,
         curMidPoints: graph.renderer.numMidPoints * 2 * Float32Array.BYTES_PER_ELEMENT,
-        midSpringsPos: graph.renderer.numMidEdges * 2 * 2 * Float32Array.BYTES_PER_ELEMENT
+        midSpringsPos: graph.renderer.numMidEdges * 2 * 2 * Float32Array.BYTES_PER_ELEMENT,
+        midSpringsColorCoord: graph.renderer.numMidEdges * 2 * 2 * Float32Array.BYTES_PER_ELEMENT
     };
 }
 
