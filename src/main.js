@@ -14,7 +14,6 @@ var $               = require('jquery'),
 var streamClient    = require('./client.js'),
     ui              = require('./ui.js'),
     interaction     = require('./interaction.js'),
-    renderConfig    = require('render-config'),
     uberDemo        = require('../../demos/uber/js/main.js');
 
 /*
@@ -52,7 +51,7 @@ function init (canvas, opts) {
     var highlights = client.localAttributeProxy('highlights');
 
     var prevIdx = -1;
-    _.keys(renderConfig.textures)
+    ['pointHitmap']
         .map(interaction.setupMousemove.bind('', $('.sim-container'), client.hitTest))
         .forEach(function (hits) {
             hits
@@ -61,7 +60,7 @@ function init (canvas, opts) {
                 .subscribe(function (idx) {
                     debug('got idx', idx);
                     if (idx !== prevIdx) {
-                        $('.hit-label').text('Mouse over: ' + (idx > -1 ? idx : ''));
+                        $('.hit-label').text('Location ID: ' + (idx > -1 ? '#' + idx.toString(16) : ''));
                         var dirty = false;
                         if (idx > -1) {
                             debug('enlarging new point', idx);

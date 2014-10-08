@@ -61,13 +61,13 @@ module.exports = {
             'camera': 'mvp',
             'uniforms': []
         },
-        'midedgestextured': {
+        'midedgetextured': {
             'sources': {
                 'vertex': fs.readFileSync('./src/shaders/graph/midedge-textured.vertex.glsl', 'utf8').toString('ascii'),
                 'fragment': fs.readFileSync('./src/shaders/graph/midedge-textured.fragment.glsl', 'utf8').toString('ascii')
             },
             'attributes': ['curPos', 'aColorCoord'],
-            'sampler': ['uSampler'],
+            'textures': ['uSampler'],
             'camera': 'mvp',
             'uniforms': []
         },
@@ -101,7 +101,13 @@ module.exports = {
     },
 
     'textures': {
-        'pointHitmap': {}
+        'pointHitmap': {
+            'datasource': 'LOCAL',
+        },
+        'colorMap': {
+            'datasource': 'SERVER',
+            'path': 'test-colormap2.png'
+        }
     },
 
     'models': {
@@ -285,10 +291,14 @@ module.exports = {
                 'drawType': 'POINTS',
                 'glOptions': {}
             },
-            'midedges': {
-                'program': 'midedges',
+            'midedgetextured': {
+                'program': 'midedgetextured',
                 'bindings': {
-                    'curPos': ['midSpringsPos', 'curPos']
+                    'curPos': ['midSpringsPos', 'curPos'],
+                    'aColorCoord': ['midSpringsColorCoord', 'colorCoord']
+                },
+                'textureBindings': {
+                    'uSampler': ['colorMap']
                 },
                 'drawType': 'LINES',
                 'glOptions': {}
@@ -303,6 +313,6 @@ module.exports = {
             }
         },
 
-        'render': ['pointpicking', 'midedgeculled']
+        'render': ['pointpicking', 'pointculled', 'midedgetextured']
     }
 };

@@ -14,7 +14,7 @@ GLContext * {<name> -> TypedArray} * {<name> * -> TypedArray}
 //TODO unify somehow with CLDataWrapper
 
 
-var debug = require('debug')('StreamGL:bufferproxy');
+require('debug')('StreamGL:bufferproxy');
 
 
 function bufferProxy (gl, hostBuffers, glBuffers) {

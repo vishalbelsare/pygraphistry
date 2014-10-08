@@ -5,27 +5,34 @@
 */
 
 var debug        = require('debug')('StreamGL:main'),
-    Rx           = require('rx');
+    Rx           = require('rx'),
+    _            = require('underscore');
 
 var renderConfig = require('render-config'),
     renderer     = require('./renderer.js'),
     ui           = require('./ui.js');
 
 
-//string -> Subject ArrayBuffer
-function fetchBuffer (socketID, bufferByteLengths, bufferName) {
+//string -> (... -> ...)
+// where fragment == 'vbo?buffer' or 'texture?name'
+function makeFetcher (fragment) {
+
+    //string * {<name> -> int} * name -> Subject ArrayBuffer
+    return function (socketID, bufferByteLengths, bufferName) {
+
+        debug('fetching', bufferName);
 
         var res = new Rx.Subject();
 
         //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
         var oReq = new XMLHttpRequest();
-        oReq.open('GET', '/vbo?buffer=' + bufferName + '&id=' + socketID, true);
+        oReq.open('GET', '/' + fragment + '=' + bufferName + '&id=' + socketID, true);
         oReq.responseType = 'arraybuffer';
 
         var now = Date.now();
         oReq.onload = function () {
             try {
-                debug('got VBO data', bufferName, Date.now() - now, 'ms');
+                debug('got texture/vbo data', bufferName, Date.now() - now, 'ms');
 
                 var arrayBuffer = oReq.response; // Note: not oReq.responseText
                 var trimmedArray = new Uint8Array(arrayBuffer, 0, bufferByteLengths[bufferName]);
@@ -40,7 +47,17 @@ function fetchBuffer (socketID, bufferByteLengths, bufferName) {
         oReq.send(null);
 
         return res.take(1);
+    };
 }
+
+
+//string * {<name> -> int} * name -> Subject ArrayBuffer
+//socketID, bufferByteLengths, bufferName
+var fetchBuffer = makeFetcher('vbo?buffer');
+
+//string * {<name> -> int} * name -> Subject ArrayBuffer
+//socketID, textureByteLengths, textureName
+var fetchTexture = makeFetcher('texture?texture');
 
 
 //DOM * ?{?meter, ?camera, ?socket} ->
@@ -75,6 +92,10 @@ function init (canvas, opts) {
     var buffers = renderState.get('buffers').toJS();
     var camera = renderState.get('camera');
 
+    var bufferNames = renderer.getServerBufferNames(renderConfig),
+        textureNames = renderer.getServerTextureNames(renderConfig);
+    debug('  Server buffers/textures', bufferNames, textureNames);
+
     var lastHandshake = Date.now();
 
     socket.on('vbo_update', function (data, handshake) {
@@ -83,37 +104,65 @@ function init (canvas, opts) {
         var now = new Date().getTime();
         debug('got VBO update message', now - lastHandshake, data.bufferByteLengths, data.elements, 'ms');
 
-        var bufferNames = renderer.getServerBufferNames(renderConfig);
-        debug('  Server buffers', bufferNames);
+        var readyBuffers = new Rx.ReplaySubject(1);
+        var readyTextures = new Rx.ReplaySubject(1);
 
-        var bufferVBOs = Rx.Observable.zipArray(bufferNames.map(fetchBuffer.bind('', socket.io.engine.id, data.bufferByteLengths))).take(1);
+        Rx.Observable.zip(readyBuffers, readyTextures, _.identity)
+            .subscribe(function () {
+                debug('All buffers and textures received, completing');
+                handshake(Date.now() - lastHandshake);
+                lastHandshake = Date.now();
+                meter.tick();
+                renderer.render(renderState);
+            });
 
+        var bufferVBOs = Rx.Observable.zipArray(
+            [Rx.Observable.return()]
+                .concat(bufferNames.map(fetchBuffer.bind('', socket.io.engine.id, data.bufferByteLengths))))
+            .take(1);
         bufferVBOs
             .subscribe(function (vbos) {
+                vbos.shift();
 
                 debug('Got VBOs:', vbos.length);
-                var bindings = {};
-                bufferNames.forEach(function (name, i) {
-                    debug('Binding:', name, i);
-                    bindings[name] = vbos[i];
-                });
+                var bindings = _.object(_.zip(bufferNames, vbos));
 
                 debug('got all VBO data', Date.now() - now, 'ms', bindings);
-                socket.emit('received_buffers'); //TODO fire preemptitively based on guess
+                socket.emit('received_buffers'); //TODO fire preemptively based on guess
 
                 try {
                     renderer.loadBuffers(renderState, buffers, bindings);
                     renderer.setNumElements(data.elements);
-                    renderer.render(renderState);
-
-                    handshake(Date.now() - lastHandshake);
-                    lastHandshake = Date.now();
-                    meter.tick();
+                    readyBuffers.onNext();
                 } catch (e) {
                     ui.error('Render error on loading data into WebGL:', e, new Error().stack);
                 }
 
             });
+
+        var textureLengths =
+            _.object(_.pairs(data.textures).map(function (name, nfo) { return [name, nfo.bytes]; }));
+        var texturesData = Rx.Observable.zipArray(
+            [Rx.Observable.return()]
+                .concat(textureNames.map(fetchTexture.bind('', socket.io.engine.id, textureLengths))))
+            .take(1);
+        texturesData
+            .subscribe(function (textures) {
+                textures.shift();
+
+                var textureNfos = textureNames.map(function (name, i) {
+                    return _.extend(data.textures[name], {buffer: textures[i]});
+                });
+
+                var bindings = _.object(_.zip(textureNames, textureNfos));
+
+                debug('Got textures', textures);
+                renderer.loadTextures(renderState, bindings);
+
+                readyTextures.onNext();
+            });
+
+
     });
 
 

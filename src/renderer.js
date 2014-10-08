@@ -30,6 +30,9 @@ var localHostBuffers = {};
 //{ <name> -> glBuffer }
 var localGlBuffers = {};
 
+/** A dictionary mapping buffer names to current sizes
+ * @type {Object.<string, number>} */
+var bufferSizes = {};
 
 /** Cached dictionary of program.attribute: attribute locations
  * @type {Object.<string, Object.<string, GLint>>} */
@@ -181,20 +184,29 @@ function bindProgram(state, program, programName, bindings, buffers, modelSettin
 
     _.each(bindings.uniforms || {}, function (binding, uniformName) {
 
+        debug('  binding uniform', binding, uniformName);
+
         var location = getUniformLocationFast(gl, program, programName, uniformName);
 
         gl['uniform' + binding.uniformType]
             .apply(gl, [location].concat(binding.values));
     });
 
+    _.each(bindings.textureBindings || {}, function (binding, textureName) {
+
+        debug('  binding texture', binding, textureName, state.get('textures').get(binding[0]));
+
+        var location = getUniformLocationFast(gl, program, programName, textureName);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, state.get('textures').get(binding[0]));
+        gl.uniform1i(location, 0);
+
+    });
+
 
     programBindings[programName] = bindings;
 }
 
-
-/** A dictionary mapping buffer names to current sizes
- * @type {Object.<string, number>} */
-var bufferSizes = {};
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -208,7 +220,7 @@ function init(config, canvas, opts) {
     var state = Immutable.Map({
         config: config,
 
-        gl: undefined,
+        gl: createContext(canvas),
         programs:       Immutable.Map({}),
         buffers:        Immutable.Map({}),
         camera: undefined,
@@ -234,22 +246,25 @@ function init(config, canvas, opts) {
     debug('Active indices', state.get('activeIndices'));
     debug('Active attributes', state.get('activeLocalAttributes'));
 
-    var gl = createContext(canvas);
-    state = state.set('gl', gl);
-
     setGlOptions(state);
 
     state = createPrograms(state);
     state = createBuffers(state);
 
+    var gl = state.get('gl');
+
     var camera = (opts||{}).camera || new Cameras.Camera2d(config.get('camera').get('init').get(0).toJS());
     setCamera(config.toJS(), gl, state.get('programs').toJS(), camera);
-    state = state.set('camera', camera);
 
-    var renderTargets = createRenderTargets(config, canvas, gl);
-    _.pairs(renderTargets).forEach(function (pair) {
-        state = state.set(pair[0], pair[1]);
-    });
+    debug('precreated', state.toJS());
+
+    state = state.set('camera', camera);
+    debug('state pre', state.toJS());
+    state = state.mergeDeep(createRenderTargets(config, canvas, gl));
+    debug('state pre b', state.toJS());
+    state = state.mergeDeep(createStandardTextures(config, canvas, gl));
+    debug('state pre c', state.toJS());
+    debug('created', state.toJS());
 
     return state;
 }
@@ -268,12 +283,18 @@ function createContext(canvas) {
     return gl;
 }
 
-//create for each item with a texture rendertarget, an offscreen fbo, texture, renderbuffer, and host buffer
+// create for each texture rendertarget, an offscreen fbo, texture, renderbuffer, and host buffer
+// note that not all textures are render targets (e.g., server reads)
 function createRenderTargets(config, canvas, gl) {
 
     var neededTextures =
-        config.get('textures') ?  _.keys(config.get('textures').toJS())
-        : [];
+        _.uniq(
+            config.get('scene').get('items')
+            .map(function (item) {
+                return item.get('renderTarget') || 'CANVAS';
+            })
+            .filter(function (v) { return v !== 'CANVAS'; })
+            .toJS());
 
     var textures      = neededTextures.map(gl.createTexture.bind(gl)),
         fbos          = neededTextures.map(gl.createFramebuffer.bind(gl)),
@@ -306,13 +327,20 @@ function createRenderTargets(config, canvas, gl) {
         });
 
     return {
-        textures:       Immutable.fromJS(_.object(_.zip(neededTextures, textures))),
-        fbos:           Immutable.fromJS(_.object(_.zip(neededTextures, fbos))),
-        renderBuffers:  Immutable.fromJS(_.object(_.zip(neededTextures, renderBuffers))),
+        textures:       _.object(_.zip(neededTextures, textures)),
+        fbos:           _.object(_.zip(neededTextures, fbos)),
+        renderBuffers:  _.object(_.zip(neededTextures, renderBuffers)),
         pixelreads:     _.object(_.zip(neededTextures, pixelreads))
     };
 }
 
+// ... -> {<name>: glTexture}
+function createStandardTextures(config, canvas, gl) {
+    var names = getServerTextureNames(config.toJS());
+    debug('standard texture names', names);
+    var textures = names.map(gl.createTexture.bind(gl));
+    return {textures: _.object(_.zip(names, textures))};
+}
 
 /**
  * Set global GL settings
@@ -414,8 +442,28 @@ function createBuffers(state) {
 }
 
 
+function loadTextures(state, bindings) {
+    _.each(bindings, loadTexture.bind('', state));
+}
+function loadTexture(state, textureNfo, name) {
+
+    debug('load texture', name, textureNfo);
+
+    var gl = state.get('gl');
+
+    var texture = state.get('textures').get(name);
+    debug('  got texture', texture);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureNfo.width, textureNfo.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, textureNfo.buffer);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+}
+
 /**
- * Given an object mapping buffer names to ArrayBuffer data, load all of them into the GL context
+ * Given an object mapping buffer/texture names to ArrayBuffer data, load all of them into the GL context
  * @param {RendererState} state - renderer instance
  * @param {Object.<string, WebGLBuffer>} buffers - the buffer object returned by createBuffers()
  * @param {Object.<string, ArrayBuffer>} bufferData - a mapping of buffer name -> new data to load
@@ -591,7 +639,11 @@ function render(state, renderListOverride) {
 
         bindProgram(
             state, programs[renderItem.program], renderItem.program,
-            {attributes: renderItem.bindings, uniforms: renderItem.uniforms},
+            {
+                attributes: renderItem.bindings,
+                uniforms: renderItem.uniforms,
+                textureBindings: renderItem.textureBindings
+            },
             buffers, config.models);
         gl.drawArrays(gl[renderItem.drawType], 0, numElements[item]);
 
@@ -612,6 +664,7 @@ function render(state, renderListOverride) {
 
 //returns idx or -1
 function hitTest(state, texture, x, y) {
+    debug('hit testing', texture);
     var canvas = state.get('gl').canvas;
     var map = state.get('pixelreads')[texture];
     var remapped = new Uint32Array(map.buffer);
@@ -694,6 +747,27 @@ function getServerBufferNames (config) {
     return _.uniq(_.flatten(bufferNamesLists));
 }
 
+// Get names of textures needed from server
+// (Server texture and bound to an active item)
+// RenderOptions -> [ string ]
+function getServerTextureNames (config) {
+    return _.chain(_.pairs(config.textures))
+        .filter(function (pair) {
+            return (pair[1].datasource || 'SERVER') === 'SERVER'; })
+        .pluck('0')
+        .filter(function (name) {
+            var matchingItems = config.scene.render.map(function (itemName) {
+                var matchingItemTextures = _.values(((config.scene.items[itemName] || {}).textureBindings))
+                    .filter(function (boundTexture) {
+                        return boundTexture[0] === name;
+                    });
+                return matchingItemTextures.length;
+            }).filter(function (hits) { return hits; });
+            return matchingItems.length > 0;
+        })
+        .value();
+}
+
 // Immutable RenderOptions -> [ int ]
 function getActiveIndices (config) {
     config = config.toJS();
@@ -735,10 +809,12 @@ module.exports = {
     createBuffers: createBuffers,
     loadBuffers: loadBuffers,
     loadBuffer: loadBuffer,
+    loadTextures: loadTextures,
     setCamera: setCamera,
     setNumElements: setNumElements,
     render: render,
     getServerBufferNames: getServerBufferNames,
+    getServerTextureNames: getServerTextureNames,
     hitTest: hitTestN,
     localAttributeProxy: localAttributeProxy
 };
