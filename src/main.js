@@ -60,7 +60,7 @@ function init (canvas, opts) {
                 .subscribe(function (idx) {
                     debug('got idx', idx);
                     if (idx !== prevIdx) {
-                        $('.hit-label').text('Location ID: ' + (idx > -1 ? idx : ''));
+                        $('.hit-label').text('Location ID: ' + (idx > -1 ? '#' + idx.toString(16) : ''));
                         var dirty = false;
                         if (idx > -1) {
                             debug('enlarging new point', idx);
