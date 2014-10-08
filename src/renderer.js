@@ -667,6 +667,10 @@ function hitTest(state, texture, x, y) {
     debug('hit testing', texture);
     var canvas = state.get('gl').canvas;
     var map = state.get('pixelreads')[texture];
+    if (!map) {
+        debug('not texture for hit test', texture);
+        return;
+    }
     var remapped = new Uint32Array(map.buffer);
     var idx = (canvas.height - y) * canvas.width + x;
     var raw = remapped[idx];//(remapped[idx] >> 8) & (255 | (255 << 8) | (255 << 16));
