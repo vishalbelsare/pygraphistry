@@ -107,7 +107,19 @@ window.addEventListener('load', function(){
 
     if(DEBUG_MODE) {
         $('html').addClass('debug');
-        meter = new FPSMeter($('body')[0]);
+        meter = new FPSMeter($('body')[0], {
+            top: 'auto',
+            right: '5px',
+            left: 'auto',
+            bottom: '5px',
+
+            maxFps: 10,
+            decimals: 2,
+
+            theme: 'light',
+            heat: true,
+            graph: true
+        });
     }
 
     init($('#simulation')[0], {meter: meter});
