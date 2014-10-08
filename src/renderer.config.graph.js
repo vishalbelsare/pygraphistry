@@ -313,6 +313,6 @@ module.exports = {
             }
         },
 
-        'render': ['pointpicking', 'midedgetextured']
+        'render': ['pointpicking', 'pointculled', 'midedgetextured']
     }
 };
