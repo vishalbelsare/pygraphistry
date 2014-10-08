@@ -1,4 +1,4 @@
-precision mediump float;
+precision highp float;
 
 #define W_VAL 1.0
 #define Z_VAL 0.0
@@ -12,11 +12,8 @@ attribute vec2 aColorCoord;
 varying vec2 vColorCoord;
 
 void main(void) {
-	vec4 colorLoc = (mvp * vec4(aColorCoord.x, 1.0 * aColorCoord.y, Z_VAL, W_VAL));
-	colorLoc.x = colorLoc.x / colorLoc.w;
-	colorLoc.y = colorLoc.y / colorLoc.w;
+	vec4 colorLoc = vec4(aColorCoord.x, aColorCoord.y, Z_VAL, W_VAL);
 	vColorCoord = colorLoc.xy;
 
-    vec4 pos = vec4(curPos.x, -1.0 * curPos.y, Z_VAL, W_VAL);
-    gl_Position = mvp * pos;
+    gl_Position = mvp * vec4(curPos.x, curPos.y, Z_VAL, W_VAL);
 }
