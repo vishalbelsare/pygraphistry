@@ -125,8 +125,8 @@ function init (canvas, opts) {
         var now = new Date().getTime();
         debug('got VBO update message', now - lastHandshake, data, 'ms');
 
-        var changedBufferNames  = getUpdatedNames(bufferNames,  previousVersions.buffers,  data.versions.buffers),
-            changedTextureNames = getUpdatedNames(textureNames, previousVersions.textures, data.versions.textures);
+        var changedBufferNames  = getUpdatedNames(bufferNames,  previousVersions.buffers,  data.versions ? data.versions.buffers : null),
+            changedTextureNames = getUpdatedNames(textureNames, previousVersions.textures, data.versions ? data.versions.textures : null);
 
         socket.emit('planned_binary_requests', {buffers: changedBufferNames, textures: changedTextureNames});
 
@@ -191,7 +191,7 @@ function init (canvas, opts) {
                 readyTextures.onNext();
             });
 
-        previousVersions = data.versions;
+        previousVersions = data.versions || {};
 
     } catch (e) {
         debug('ERROR vbo_update', e, e.stack);
