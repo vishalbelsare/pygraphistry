@@ -13,9 +13,14 @@ var renderConfig = require('render-config'),
     ui           = require('./ui.js');
 
 
-//string -> (... -> ...)
+//string * {socketHost: string, socketPort: int} -> (... -> ...)
 // where fragment == 'vbo?buffer' or 'texture?name'
-function makeFetcher (fragment) {
+function makeFetcher (fragment, opts) {
+
+    opts = opts || {};
+    var PREFIX = opts.socketHost ?
+        'http://' + opts.socketHost + (opts.socketPort ? ':' + opts.socketPort : '')
+        : '';
 
     //string * {<name> -> int} * name -> Subject ArrayBuffer
     return function (socketID, bufferByteLengths, bufferName) {
@@ -26,7 +31,7 @@ function makeFetcher (fragment) {
 
         //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
         var oReq = new XMLHttpRequest();
-        oReq.open('GET', '/' + fragment + '=' + bufferName + '&id=' + socketID, true);
+        oReq.open('GET', PREFIX + '/' + fragment + '=' + bufferName + '&id=' + socketID, true);
         oReq.responseType = 'arraybuffer';
 
         var now = Date.now();
@@ -51,15 +56,6 @@ function makeFetcher (fragment) {
 }
 
 
-//string * {<name> -> int} * name -> Subject ArrayBuffer
-//socketID, bufferByteLengths, bufferName
-var fetchBuffer = makeFetcher('vbo?buffer');
-
-//string * {<name> -> int} * name -> Subject ArrayBuffer
-//socketID, textureByteLengths, textureName
-var fetchTexture = makeFetcher('texture?texture');
-
-
 //DOM * ?{?meter, ?camera, ?socket} ->
 //  {
 //      renderFrame: () -> (),
@@ -68,6 +64,16 @@ var fetchTexture = makeFetcher('texture?texture');
 //      socket
 //  }
 function init (canvas, opts) {
+
+    //string * {<name> -> int} * name -> Subject ArrayBuffer
+    //socketID, bufferByteLengths, bufferName
+    var fetchBuffer = makeFetcher('vbo?buffer', _.pick(opts, ['socketHost', 'socketPort']));
+
+    //string * {<name> -> int} * name -> Subject ArrayBuffer
+    //socketID, textureByteLengths, textureName
+    var fetchTexture = makeFetcher('texture?texture', _.pick(opts, ['socketHost', 'socketPort']));
+
+
     debug('initializing networking client');
     opts = opts || {};
 
@@ -84,6 +90,8 @@ function init (canvas, opts) {
         socket.io.engine.binaryType = 'arraybuffer';
     } else if (!socket.io || !socket.io.engine || socket.io.engine !== 'arraybuffer') {
         debug('Expected binary socket');
+    } else {
+        debug('Using existing socket');
     }
 
     var renderState = renderer.init(renderConfig, canvas, opts);
