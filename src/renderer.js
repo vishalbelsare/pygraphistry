@@ -288,13 +288,14 @@ function createContext(canvas) {
 function createRenderTargets(config, canvas, gl) {
 
     var neededTextures =
-        _.uniq(
-            config.get('scene').get('items')
-            .map(function (item) {
-                return item.get('renderTarget') || 'CANVAS';
-            })
-            .filter(function (v) { return v !== 'CANVAS'; })
-            .toJS());
+        _.chain(
+            config.get('scene').get('render')
+            .map(function (itemName) { return config.get('scene').get('items').get(itemName); })
+            .map(function (item) { return item.get('renderTarget') || 'CANVAS'; })
+            .filter(function (renderTarget) { return renderTarget !== 'CANVAS'; })
+            .toJS())
+        .uniq()
+        .value();
 
     var textures      = neededTextures.map(gl.createTexture.bind(gl)),
         fbos          = neededTextures.map(gl.createFramebuffer.bind(gl)),
