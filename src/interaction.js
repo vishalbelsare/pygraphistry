@@ -46,7 +46,7 @@ exports.setupMousemove = function($eventTarget, hitTest, texture) {
                 x: evt.clientX - bounds.left,
                 y: evt.clientY - bounds.top
             };
-            return hitTest(texture, pos.x, pos.y, 10);
+            return hitTest(texture, pos.x, pos.y, 20);
         });
 };
 
