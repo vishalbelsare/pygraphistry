@@ -55,6 +55,18 @@ function makeFetcher (fragment, opts) {
     };
 }
 
+// Filter for server resource names that have changed (or not previously present)
+//[ String ] * ?{?<name>: int} * ?{?<name>: int} -> [ String ]
+function getUpdatedNames (names, originalVersions, newVersions) {
+    if (!originalVersions || !newVersions) {
+        return names;
+    }
+    return names.filter(function (name) {
+        return (originalVersions[name] === undefined) ||
+            (originalVersions[name] !== newVersions[name]);
+    });
+}
+
 
 //DOM * ?{?meter, ?camera, ?socket} ->
 //  {
@@ -106,11 +118,22 @@ function init (canvas, opts) {
 
     var lastHandshake = Date.now();
 
+    var previousVersions = {};
     socket.on('vbo_update', function (data, handshake) {
+    try {
         debug('VBO update');
 
         var now = new Date().getTime();
-        debug('got VBO update message', now - lastHandshake, data.bufferByteLengths, data.elements, 'ms');
+        debug('got VBO update message', now - lastHandshake, data, 'ms');
+
+        debug('changing input/output', previousVersions, data.versions);
+
+        var changedBufferNames  = getUpdatedNames(bufferNames,  previousVersions.buffers,  data.versions.buffers),
+            changedTextureNames = getUpdatedNames(textureNames, previousVersions.textures, data.versions.textures);
+
+        debug('changed buffers/textures', changedBufferNames, changedTextureNames);
+
+
 
         var readyBuffers = new Rx.ReplaySubject(1);
         var readyTextures = new Rx.ReplaySubject(1);
@@ -170,7 +193,11 @@ function init (canvas, opts) {
                 readyTextures.onNext();
             });
 
+        previousVersions = data.versions;
 
+    } catch (e) {
+        debug('ERROR vbo_update', e, e.stack);
+    }
     });
 
 
