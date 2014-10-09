@@ -62,8 +62,7 @@ function getUpdatedNames (names, originalVersions, newVersions) {
         return names;
     }
     return names.filter(function (name) {
-        return (originalVersions[name] === undefined) ||
-            (originalVersions[name] !== newVersions[name]);
+        return originalVersions[name] !== newVersions[name];
     });
 }
 
@@ -126,14 +125,12 @@ function init (canvas, opts) {
         var now = new Date().getTime();
         debug('got VBO update message', now - lastHandshake, data, 'ms');
 
-        debug('changing input/output', previousVersions, data.versions);
-
         var changedBufferNames  = getUpdatedNames(bufferNames,  previousVersions.buffers,  data.versions.buffers),
             changedTextureNames = getUpdatedNames(textureNames, previousVersions.textures, data.versions.textures);
 
-        debug('changed buffers/textures', changedBufferNames, changedTextureNames);
+        socket.emit('planned_binary_requests', {buffers: changedBufferNames, textures: changedTextureNames});
 
-
+        debug('changed buffers/textures', previousVersions, data.versions, changedBufferNames, changedTextureNames);
 
         var readyBuffers = new Rx.ReplaySubject(1);
         var readyTextures = new Rx.ReplaySubject(1);
@@ -149,14 +146,14 @@ function init (canvas, opts) {
 
         var bufferVBOs = Rx.Observable.zipArray(
             [Rx.Observable.return()]
-                .concat(bufferNames.map(fetchBuffer.bind('', socket.io.engine.id, data.bufferByteLengths))))
+                .concat(changedBufferNames.map(fetchBuffer.bind('', socket.io.engine.id, data.bufferByteLengths))))
             .take(1);
         bufferVBOs
             .subscribe(function (vbos) {
                 vbos.shift();
 
                 debug('Got VBOs:', vbos.length);
-                var bindings = _.object(_.zip(bufferNames, vbos));
+                var bindings = _.object(_.zip(changedBufferNames, vbos));
 
                 debug('got all VBO data', Date.now() - now, 'ms', bindings);
                 socket.emit('received_buffers'); //TODO fire preemptively based on guess
@@ -172,20 +169,21 @@ function init (canvas, opts) {
             });
 
         var textureLengths =
-            _.object(_.pairs(data.textures).map(function (name, nfo) { return [name, nfo.bytes]; }));
+            _.object(_.pairs(_.pick(data.textures, changedTextureNames))
+                .map(function (name, nfo) { return [name, nfo.bytes]; }));
         var texturesData = Rx.Observable.zipArray(
             [Rx.Observable.return()]
-                .concat(textureNames.map(fetchTexture.bind('', socket.io.engine.id, textureLengths))))
+                .concat(changedTextureNames.map(fetchTexture.bind('', socket.io.engine.id, textureLengths))))
             .take(1);
         texturesData
             .subscribe(function (textures) {
                 textures.shift();
 
-                var textureNfos = textureNames.map(function (name, i) {
+                var textureNfos = changedTextureNames.map(function (name, i) {
                     return _.extend(data.textures[name], {buffer: textures[i]});
                 });
 
-                var bindings = _.object(_.zip(textureNames, textureNfos));
+                var bindings = _.object(_.zip(changedTextureNames, textureNfos));
 
                 debug('Got textures', textures);
                 renderer.loadTextures(renderState, bindings);
