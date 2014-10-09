@@ -40,7 +40,7 @@ exports.setupMousemove = function($eventTarget, hitTest, texture) {
     var bounds = $('canvas', $eventTarget[0])[0].getBoundingClientRect();
 
     return $eventTarget.mousemoveAsObservable()
-        //.sample(10)
+        .sample(5)
         .map(function (evt) {
             var pos = {
                 x: evt.clientX - bounds.left,

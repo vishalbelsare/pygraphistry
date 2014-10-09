@@ -616,7 +616,8 @@ function render(state, renderListOverride) {
         programs    = state.get('programs').toJS(),
         buffers     = state.get('buffers').toJS();
 
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    var clearedFBOs = { };
 
     var toRender = renderListOverride || config.scene.render;
     _.each(toRender, function(item) {
@@ -632,9 +633,15 @@ function render(state, renderListOverride) {
         var renderItem = config.scene.items[item];
         var renderTarget = renderItem.renderTarget === 'CANVAS' ? null : renderItem.renderTarget;
         if (renderTarget !== lastRenderTarget) {
-            debug('  changing fbo');
+            debug('  changing fbo', renderTarget);
             gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
             lastRenderTarget = renderTarget;
+        }
+
+        if (!clearedFBOs[renderTarget]) {
+            debug('  clearing render target', renderTarget);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            clearedFBOs[renderTarget] = true;
         }
 
         bindProgram(
