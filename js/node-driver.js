@@ -161,7 +161,7 @@ function controls(graph) {
     };
 }
 
-
+// ... -> {<name>: {buffer: ArrayBuffer, version: int}}
 function fetchVBOs(graph, bufferNames) {
 
     var targetArrays = {};
@@ -180,11 +180,13 @@ function fetchVBOs(graph, bufferNames) {
     // node-webcl's event arguments to enqueue commands seems busted at the moment, but
     // maybe enqueueing a event barrier and using its event might work?
     return Q.all(
-        buffersToFetch.map(function(val) {
-            targetArrays[val] = new ArrayBuffer(bufferSizes[val]);
-            return graph.simulator.buffers[val].read(new Float32Array(targetArrays[val]));
-        })
-    )
+        buffersToFetch.map(function(name) {
+            targetArrays[name] = {
+                buffer: new ArrayBuffer(bufferSizes[name]),
+                version: graph.simulator.versions.buffers[name]
+            };
+            return graph.simulator.buffers[name].read(new Float32Array(targetArrays[name].buffer));
+    }))
     .then(function() {
 
         var localBuffers = {
@@ -194,7 +196,10 @@ function fetchVBOs(graph, bufferNames) {
         };
         for (var i in localBuffers) {
             if (bufferNames.indexOf(i) != -1) {
-                targetArrays[i] = localBuffers[i];
+                targetArrays[i] = {
+                    buffer: localBuffers[i],
+                    version: graph.simulator.versions.buffers[i]
+                };
             }
         }
 
@@ -418,12 +423,16 @@ function fetchData(graph, compress, bufferNames, programNames) {
                 }
             })
 
+            //[ {buffer, version, compressed} ] ordered by bufferName
             var compressed =
                 bufferNames.map(function (bufferName) {
                     return Rx.Observable.fromNodeCallback(compress.deflate)(
-                        vbos[bufferName],//binary,
+                        vbos[bufferName].buffer,//binary,
                         {output: new Buffer(
-                            Math.max(1024, Math.round(vbos[bufferName].byteLength * 1.5)))});
+                            Math.max(1024, Math.round(vbos[bufferName].buffer.byteLength * 1.5)))})
+                        .map(function (compressed) {
+                            return _.extend({}, vbos[bufferName], {compressed: compressed});
+                        })
                 });
 
             return Rx.Observable.zipArray(compressed).take(1);
@@ -431,16 +440,23 @@ function fetchData(graph, compress, bufferNames, programNames) {
         })
         .map(function(compressedVbos) {
 
-            var buffers = {};
-            bufferNames.forEach(function (name, i) {
-                buffers[name] = compressedVbos[i][0];
-            });
+            var buffers =
+                _.object(_.zip(
+                        bufferNames,
+                        bufferNames.map(function (_, i) {  return compressedVbos[i].compressed[0]; })));
+
+            var versions =
+                _.object(_.zip(
+                        bufferNames,
+                        bufferNames.map(function (_, i) {  return compressedVbos[i].version; })));
 
             return {
                 compressed: buffers,
                 elements: _.pick(fetchNumElements(graph), programNames),
-                bufferByteLengths: _.pick(fetchBufferByteLengths(graph), bufferNames)
+                bufferByteLengths: _.pick(fetchBufferByteLengths(graph), bufferNames),
+                versions: versions
             };
+
         });
 }
 
