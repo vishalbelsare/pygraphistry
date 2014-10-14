@@ -160,6 +160,11 @@ module.exports = {
                         .concat([null, null, null, cljs.types.uint_t, null])
                         : undefined);
 
+                simulator.tickBuffers(
+                    _.keys(simulator.buffers).filter(function (name) {
+                        return simulator.buffers[name] == toPoints;
+                    }));
+
                 return simulator.kernels.forceAtlasEdges.call(numWorkItems, resources);
             };
 
@@ -168,6 +173,7 @@ module.exports = {
                 simulator.buffers.forwardsDegrees,
                 simulator.buffers.backwardsDegrees,
                 simulator.buffers.nextPoints,
+                simulator.buffers.springsPos
             ];
 
             simulator.kernels.forceAtlasPoints.setArgs(
@@ -176,6 +182,8 @@ module.exports = {
                 webcl.type ? graphArgs_t.map(function () { return null; })
                     .concat([null, null, null, null, null, null, null, cljs.types.uint_t])
                     : undefined);
+
+            simulator.tickBuffers(['nextPoints', 'curPoints', 'springsPos'])
 
             var appliedForces = simulator.kernels.forceAtlasPoints.call(simulator.numPoints, resources);
 

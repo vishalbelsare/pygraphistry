@@ -116,6 +116,11 @@ module.exports = {
                 webcl.type ? [null, null, null, null,
                  null, null, cljs.types.uint_t] : null);
 
+            simulator.tickBuffers(
+                _.keys(simulator.buffers).filter(function (name) {
+                    return simulator.buffers[name] == toPoints;
+                }));
+
             return simulator.kernels.gaussSeidelSprings.call(numWorkItems, resources);
         };
 
@@ -131,6 +136,8 @@ module.exports = {
                 simulator.kernels.gaussSeidelPoints.setArgs(
                     [null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
                     [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
+
+                simulator.tickBuffers(['nextPoints', 'curPoints']);
 
                 return simulator.kernels.gaussSeidelPoints.call(simulator.numPoints, resources)
                     .then(function () {return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints); });
@@ -155,6 +162,8 @@ module.exports = {
 
                 var resources = [simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems,
                     simulator.buffers.curPoints, simulator.buffers.springsPos];
+
+                simulator.tickBuffers(['springsPos']);
 
                 return simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources);
 
