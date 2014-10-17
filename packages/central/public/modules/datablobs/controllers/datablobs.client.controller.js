@@ -1,5 +1,5 @@
 'use strict';
-
+//http://www.biggermind.com/index.php/direct-upload-to-amazon-s3-with-node-js-and-express/
 angular.module('datablobs').controller('DataBlobsController', ['$scope', '$stateParams', '$location', 'Authentication', 'DataBlobs',
 	function($scope, $stateParams, $location, Authentication, DataBlobs) {
         var crypto = require('crypto');
@@ -10,16 +10,14 @@ angular.module('datablobs').controller('DataBlobsController', ['$scope', '$state
             expiration: expiration.toISOString(),
             conditions: [
                 {bucket: 'graphistry.data'},
-                ['starts-with', '$key', ''],
                 {acl: 'private'},
                 {success_action_redirect: 'http://54.183.185.65/#!/datablobs'},
-                ['starts-with', '$Content-Type', 'image/'],
                 ['content-length-range', 0, 1048576]
             ]
         };
 
-        var awsKeyId = 'YOUR AWS KEY ID';
-        var awsKey = 'YOUR AWS KEY';
+        var awsKeyId = 'AKIAIHSOQRSC47KF6THQ';
+        var awsKey = 'WV/OV5w7cDpN64vYfkl+Mu0AD2nyttxuPhFEuLRd';
 
         var policyString = JSON.stringify(policy);
         var encodedPolicyString = new Buffer(policyString).toString('base64');
