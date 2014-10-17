@@ -3,12 +3,19 @@
 		<h1>New DataBlob</h1>
 	</div>
 	<div class="col-md-12">
-		<form name="datablobForm" class="form-horizontal" data-ng-submit="create()" novalidate>
+		<form name="datablobForm" class="form-horizontal" action="https://graphistry.data.s3.amazonaws.com/" enctype='multipart/form-data' method='post'>
+            <input type='hidden' name='AWSAccessKeyId' ng-model='awskeyid'>
+            <input type='hidden' name='acl' value='private'>
+            <input type='hidden' name='success_action_redirect' value="http://54.183.185.65/#!/datablobs">
+            <input type='hidden' name='policy' ng-model='policy'>
+            <input type='hidden' name='signature' ng-model='signature'>
+            <input type='hidden' name='Content-Type' value='image/png'>
+            <input type='file' name='file' size='40'>
 			<fieldset>
 				<div class="form-group" ng-class="{ 'has-error': datablobForm.title.$dirty && datablobForm.title.$invalid }">
 					<label class="control-label" for="title">Title</label>
 					<div class="controls">
-						<input name="title" type="text" data-ng-model="title" id="title" class="form-control" placeholder="Title" required>
+						<input name="key" type="text" id="title" class="form-control" placeholder="Title" required>
 					</div>
 				</div>
 				<div class="form-group">

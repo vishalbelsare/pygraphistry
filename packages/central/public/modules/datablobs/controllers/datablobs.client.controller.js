@@ -2,11 +2,41 @@
 
 angular.module('datablobs').controller('DataBlobsController', ['$scope', '$stateParams', '$location', 'Authentication', 'DataBlobs',
 	function($scope, $stateParams, $location, Authentication, DataBlobs) {
+        var crypto = require('crypto');
+        var expiration = new Date();
+        expiration.setHours(expiration.getHours() + 1);
+
+        var policy = {
+            expiration: expiration.toISOString(),
+            conditions: [
+                {bucket: 'graphistry.data'},
+                ['starts-with', '$key', ''],
+                {acl: 'private'},
+                {success_action_redirect: 'http://54.183.185.65/#!/datablobs'},
+                ['starts-with', '$Content-Type', 'image/'],
+                ['content-length-range', 0, 1048576]
+            ]
+        };
+
+        var awsKeyId = 'YOUR AWS KEY ID';
+        var awsKey = 'YOUR AWS KEY';
+
+        var policyString = JSON.stringify(policy);
+        var encodedPolicyString = new Buffer(policyString).toString('base64');
+
+        var hmac = crypto.createHmac('sha1', awsKey);
+        hmac.update(encodedPolicyString);
+
+        var digest = hmac.digest('base64');
+
+	    $scope.awskeyid = awsKeyId;
+	    $scope.policy = encodedPolicyString;
+	    $scope.signature = digest;
 		$scope.authentication = Authentication;
 
 		$scope.create = function() {
 			var datablob = new DataBlobs({
-				title: this.title,
+				title: this.key,
 				content: this.content
 			});
 			datablob.$save(function(response) {
