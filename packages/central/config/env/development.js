@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = {
-	db: 'mongodb://localhost/graphistry-dev',
+    db: 'mongodb://graphistry:graphtheplanet@ds047030.mongolab.com:47030/graphistry',
 	app: {
 		title: 'Graphistry dev'
 	},

@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = {
-	db: 'mongodb://localhost/graphistry-test',
+    db: ' mongodb://graphistry:graphtheplanet@ds047030.mongolab.com:47030/graphistry-test',
 	port: 3001,
 	app: {
 		title: 'Graphistry test'
