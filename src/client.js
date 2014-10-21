@@ -170,7 +170,10 @@ function init (canvas, opts) {
 
         var textureLengths =
             _.object(_.pairs(_.pick(data.textures, changedTextureNames))
-                .map(function (name, nfo) { return [name, nfo.bytes]; }));
+                .map(function (pair) {
+                    var name = pair[0];
+                    var nfo = pair[1];
+                    return [name, nfo.bytes]; }));
         var texturesData = Rx.Observable.zipArray(
             [Rx.Observable.return()]
                 .concat(changedTextureNames.map(fetchTexture.bind('', socket.io.engine.id, textureLengths))))
