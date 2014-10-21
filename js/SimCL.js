@@ -48,7 +48,11 @@ function create(renderer, dimensions, numSplits, locked) {
                 renderer: renderer,
                 cl: cl,
                 elementsPerPoint: 2,
-                kernels: kernels
+                kernels: kernels,
+                versions: {
+                    tick: 0,
+                    buffers: { }
+                }
             };
             simObj.tick = tick.bind(this, simObj);
             simObj.setPoints = setPoints.bind(this, simObj);
@@ -56,6 +60,7 @@ function create(renderer, dimensions, numSplits, locked) {
             simObj.setLocked = setLocked.bind(this, simObj);
             simObj.setPhysics = setPhysics.bind(this, simObj);
             simObj.resetBuffers = resetBuffers.bind(this, simObj);
+            simObj.tickBuffers = tickBuffers.bind(this, simObj);
 
             simObj.dimensions = dimensions;
             simObj.numSplits = numSplits;
@@ -106,27 +111,55 @@ function create(renderer, dimensions, numSplits, locked) {
 
 
 /**
+ * Simulator * [ String ] * ?int -> ()
+ * Increase buffer version to tick number, signifying its contents may have changed
+ * (Same version number signifies no change since last read of that buffer)
+ * If not tick provided, increment global and use that
+ **/
+
+var tickBuffers = function (simulator, bufferNames, tick) {
+
+    if (tick === undefined) {
+        simulator.versions.tick++;
+        tick = simulator.versions.tick;
+    }
+
+    if (bufferNames.length) {
+        bufferNames.forEach(function (name) {
+            simulator.versions.buffers[name] = simulator.versions.tick;
+        });
+    }
+};
+
+
+/**
  * Given an array of (potentially null) buffers, delete the non-null buffers and set their
  * variable in the simulator buffer object to null.
  * NOTE: erase from host immediately, though device may take longer (unobservable)
  */
 var resetBuffers = function(simulator, buffers) {
-    var validBuffers = buffers.filter(function(val) { return !(!val); });
-    if(validBuffers.length == 0) {
-        return Q(null);
+
+    if (!buffers.length) {
+        return;
     }
 
-    // Search for the buffer in the simulator's buffer object, and set it to null there
-    validBuffers.forEach(function(buffToDelete) {
-        for(var buff in simulator.buffers) {
-            if(simulator.buffers.hasOwnProperty(buff) && simulator.buffers[buff] == buffToDelete) {
-                simulator.buffers[buff] = null;
+    var buffNames = buffers
+        .filter(function(val) { return !(!val); })
+        .map(function (buffer) {
+            for(var buff in simulator.buffers) {
+                if(simulator.buffers.hasOwnProperty(buff) && simulator.buffers[buff] == buffer) {
+                    return buff;
+                }
             }
-        }
-    });
+            throw new Error("Could not find buffer", buffer);
+        });
 
-    validBuffers.forEach(function(buffToDelete) {
-        buffToDelete.delete();
+    tickBuffers(simulator, buffNames);
+
+    //delete old
+    buffNames.forEach(function(buffName) {
+        simulator.buffers[buffName].delete();
+        simulator.buffers[buffName] = null;
     });
 };
 
@@ -177,6 +210,8 @@ function setPoints(simulator, points, pointSizes, pointColors) {
     debug("Number of points in simulation: %d", simulator.renderer.numPoints);
 
     // Create buffers and write initial data to them, then set
+    simulator.tickBuffers(['curPoints', 'pointSizes', 'pointColors', 'randValues']);
+
     return Q.all([
         simulator.renderer.createBuffer(points, 'curPoints'),
         simulator.renderer.createBuffer(pointSizes, 'pointSizes'),
@@ -257,6 +292,7 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints, edgeColor
             edgeColors[i] = simulator.buffersLocal.pointColors[nodeIdx];
         }
     }
+    simulator.tickBuffers(['edgeColors']);
     simulator.buffersLocal.edgeColors = edgeColors;
 
     simulator.resetBuffers([
@@ -384,6 +420,8 @@ function tick(simulator, stepNumber) {
     if(simulator.numPoints < 1) {
         return Q(simulator);
     }
+
+    simulator.versions.tick++;
 
     //run each algorithm to completion before calling next
     var tickAllHelper = function (remainingAlgorithms) {

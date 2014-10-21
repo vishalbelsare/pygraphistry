@@ -1,7 +1,7 @@
 
-var _ = require('underscore'),
-    Q = require('q');
-
+var _       = require('underscore'),
+    Q       = require('q'),
+    debug   = require('debug')('StreamGL:edgebundling');
 
 
 var cljs = require('./cl.js');
@@ -99,9 +99,16 @@ module.exports = {
 
     tick: function (simulator, stepNumber) {
 
+        if (simulator.locked.lockMidpoints && simulator.locked.lockMidedges) {
+            debug('LOCKED, EARLY EXIT');
+            return Q();
+        }
+
         return Q()
         .then(function () {
+
             if (simulator.locked.lockMidpoints) {
+                simulator.tickBuffers(['nextMidPoints']);
                 return simulator.buffers.curMidPoints.copyInto(simulator.buffers.nextMidPoints);
             } else {
 
@@ -114,9 +121,12 @@ module.exports = {
                     [null, null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
                     [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
 
+                simulator.tickBuffers(['curMidPoints', 'nextMidPoints']);
+
                 return simulator.kernels.gaussSeidelMidpoints.call(simulator.numMidPoints, resources);
             }
         })
+        //TODO do both forwards and backwards?
         .then(function () {
             if (simulator.numEdges > 0 && !simulator.locked.lockMidedges) {
                 var resources = [
@@ -133,11 +143,17 @@ module.exports = {
                     [null, null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
                     [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
 
+                simulator.tickBuffers(['curMidPoints', 'midSpringsPos', 'midSpringsColorCoord']);
+
                 return simulator.kernels.gaussSeidelMidsprings.call(simulator.numForwardsWorkItems, resources);
             } else {
+
+                simulator.tickBuffers(['curMidPoints']);
+
                 return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
             }
-        });
+        })
+        .then(_.identity, debug.bind('EDGE BUNDLING TICK ERROR'));
 
     }
 
