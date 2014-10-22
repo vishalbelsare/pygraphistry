@@ -61,7 +61,8 @@ exports.setupScroll = function($eventTarget, camera) {
                 -wheelEvent.deltaY ||
                 (wheelEvent.originalEvent ?
                     (wheelEvent.originalEvent.wheelDeltaY || -wheelEvent.originalEvent.deltaY)
-                    : 0);
+                    : 0)
+                | 0; //NaN protection
 
             camera.width -= camera.width * (scrollY / 100.0);
             camera.height = camera.width / aspectRatio;
