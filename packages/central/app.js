@@ -9,7 +9,7 @@ var url = 'mongodb://graphistry:graphtheplanet@ds047030.mongolab.com:47030/graph
 
 MongoClient.connect(url, function(err, db) {
   assert.equal(null, err);
-  console.log("Validated MongoLab connection");
+  console.log("validated mongolab connection");
   db.close();
 });
 
@@ -30,9 +30,15 @@ app.get('/:dataName', function (req, res) {
                 return;
             }
             if (doc) {
+                // Query only for gpus that have been updated within 30 secs
+                var d = new Date();
+                d.setSeconds(d.getSeconds() - 30);
+
                 // Get all GPUs that have free memory that can fit the data
                 client.collection('gpu_monitor')
-                      .find({'gpu_memory_free': {'$gt': doc.size} }, {'sort': ['gpu_memory_free', 'asc']})
+                      .find({'gpu_memory_free': {'$gt': doc.size},
+                             'updated': {'$gt': d}, },
+                             {'sort': ['gpu_memory_free', 'asc']})
                       .toArray(function(err, ips) {
 
                     if (err) {
@@ -44,13 +50,19 @@ app.get('/:dataName', function (req, res) {
 
                     // Are there no servers with enough space?
                     if (ips.length == 0) {
+                        console.log("All GPUs out of space!");
                         res.send('No servers can fit the data :/');
                         res.end();
                         return;
                     }
 
+                    // Query only for workers that have been updated within 30 secs
+                    var d = new Date();
+                    d.setSeconds(d.getSeconds() - 30);
+
                     // Find all idle node processes
-                    client.collection('node_monitor').find({'active': false})
+                    client.collection('node_monitor').find({'active': false, 
+                                                            'updated': {'$gt': d}})
                                                      .toArray(function(err, results) {
 
                         if (err) {
@@ -62,7 +74,8 @@ app.get('/:dataName', function (req, res) {
 
                         // Are all processes busy or dead?
                         if (results.length == 0) {
-                            res.send('There is space on a server, but all processes in the fleet are busy.');
+                            console.log('There is space on a server, but all workers in the fleet are busy or dead (have not pinged home in over 30 seconds).');
+                            res.send('There is space on a server, but all workers in the fleet are busy or dead (have not pinged home in over 30 seconds)');
                             res.end();
                             return;
                         }
@@ -81,7 +94,7 @@ app.get('/:dataName', function (req, res) {
 
                                 // 302 redirect?
                                 var route = ip + ':' + port;
-                                console.log(route)
+                                console.log("sending request to " + route)
                                 res.send(route);
                                 res.end();
                                 return;
@@ -92,6 +105,7 @@ app.get('/:dataName', function (req, res) {
             } else {
                 res.send('Couldn\'t find that dataset');
                 res.end();
+                return;
             }
         });
     });
@@ -103,5 +117,5 @@ var server = app.listen(3000, 'localhost', function () {
   var host = server.address().address
   var port = server.address().port
 
-  console.log('Router app listening at http://%s:%s', host, port)
+  console.log('router app listening at http://%s:%s', host, port)
 })
