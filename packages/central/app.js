@@ -15,6 +15,8 @@ MongoClient.connect(url, function(err, db) {
 
 app.get('/', function (req, res) {
   res.send('Hi there! Please provide a dataset through the URL.');
+  res.end()
+  return;
 })
 
 app.get('/:dataName', function (req, res) {
@@ -96,7 +98,7 @@ app.get('/:dataName', function (req, res) {
 });
 
 
-var server = app.listen(3000, function () {
+var server = app.listen(3000, 'localhost', function () {
 
   var host = server.address().address
   var port = server.address().port
