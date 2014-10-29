@@ -105,7 +105,7 @@ app.get('/:dataName', function (req, res) {
 });
 
 
-mongodb.MongoClient.connect(url, {auto_reconnect: true}, function(err, database) {
+MongoClient.connect(url, {auto_reconnect: true}, function(err, database) {
   if(err) debug(err);
 
   db = database.db('graphistry');
