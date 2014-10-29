@@ -31,7 +31,7 @@ app.get('/:dataName', function (req, res) {
             db.collection('gpu_monitor')
                   .find({'gpu_memory_free': {'$gt': doc.size},
                          'updated': {'$gt': d}, },
-                         {'sort': ['gpu_memory_free', 'asc']})
+                         {'sort': ['gpu_memory_free', 'desc']})
                   .toArray(function(err, ips) {
 
                 if (err) {
