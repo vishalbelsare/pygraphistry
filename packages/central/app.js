@@ -5,7 +5,7 @@ var app = express()
 var MongoClient = mongo.MongoClient
   , assert = require('assert');
 
-var url = 'mongodb://graphistry:graphtheplanet@linus.mongohq.com:10092/graphistry';
+var url = 'mongodb://graphistry:graphtheplanet@lighthouse.2.mongolayer.com:10048,lighthouse.3.mongolayer.com:10048/graphistry-prod';
 var db;
 
 app.get('/', function (req, res) {
@@ -86,9 +86,9 @@ app.get('/:dataName', function (req, res) {
                             // Todo: ping process first for safety
 
                             // 301 redirect?
-                            var route = ip + ':' + port;
-                            res.redirect(301, route + 'graph.html')
+                            var route = 'http://' + ip + ':' + port;
                             console.log("sending request to " + route)
+                            res.redirect(route + '/graph.html')
                             // res.send(route);
                             res.end();
                             return;
@@ -106,9 +106,9 @@ app.get('/:dataName', function (req, res) {
 
 
 MongoClient.connect(url, {auto_reconnect: true}, function(err, database) {
-  if(err) debug(err);
+  if(err) console.log(err);
 
-  db = database.db('graphistry');
+  db = database.db('graphistry-prod');
 
   var server = app.listen(3000, 'localhost', function () {
       var host = server.address().address
