@@ -92,10 +92,11 @@ app.get('/:dataName', function (req, res) {
 
                                 // Todo: ping process first for safety
 
-                                // 302 redirect?
+                                // 301 redirect?
                                 var route = ip + ':' + port;
+                                res.redirect(301, route + 'graph.html')
                                 console.log("sending request to " + route)
-                                res.send(route);
+                                // res.send(route);
                                 res.end();
                                 return;
                             }
