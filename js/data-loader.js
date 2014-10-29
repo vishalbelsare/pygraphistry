@@ -57,7 +57,7 @@ function loadRectangle(rows, columns, graph) {
 function loadSocioPLT(graph) {
     debug("Loading SocioPLT");
 
-    var data = require('../../socioplt/generateGraph.js');
+    var data = require('./libs/socioplt/generateGraph.js');
 
 
     var nodesPerRow = Math.floor(Math.sqrt(data.nodes.length));
