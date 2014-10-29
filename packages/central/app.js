@@ -5,7 +5,7 @@ var app = express()
 var MongoClient = mongo.MongoClient
   , assert = require('assert');
 
-var url = 'mongodb://graphistry:graphtheplanet@ds047030.mongolab.com:47030/graphistry';
+var url = 'mongodb://graphistry:graphtheplanet@linus.mongohq.com:10092/graphistry';
 var db;
 
 app.get('/', function (req, res) {
