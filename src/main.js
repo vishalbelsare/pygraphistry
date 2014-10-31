@@ -14,7 +14,7 @@ var $               = require('jquery'),
 var streamClient    = require('./client.js'),
     ui              = require('./ui.js'),
     interaction     = require('./interaction.js'),
-    uberDemo        = require('../../demos/uber/js/main.js');
+    uberDemo        = require('./uber-demo.js');
 
 /*
 Enable debuging output in the console by running:
