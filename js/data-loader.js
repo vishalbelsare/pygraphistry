@@ -5,8 +5,7 @@ var debug = require("debug")("StreamGL:data");
 var _ = require('underscore');
 
 var MatrixLoader = require('./libs/load.js'),
-    kmeans = require('./libs/kmeans.js'),
-    GmlLoader = require('./loadgml.js');
+    kmeans = require('./libs/kmeans.js');
 
 
 // Generates `amount` number of random points
@@ -157,26 +156,6 @@ function loadGeo(graph, graphFileURI) {
     });
 }
 
-function loadGmlJson(graph, path) {
-
-    debug("Loading gml: " + path);
-
-    return GmlLoader.loadGMLJSON(path)
-        .then(function (data) {
-            var randomPositions = new Float32Array(data.numNodes * 2);
-            for (var i = 0; i < data.numNodes * 2; i++) {
-                randomPositions[i] = Math.random();
-            }
-            return graph.setPoints(randomPositions, data.nodes.sizes, data.nodes.colors)
-                .then(_.constant(data));
-        })
-        .then(function (data) {
-            return graph.setEdges(data.edgesFlat || data.edges);
-        })
-        .then(_.constant(graph));
-}
-
-
 
 /**
  * Populate the data list dropdown menu with available data, and setup actions to load the data
@@ -237,27 +216,6 @@ function loadDataList(clGraph) {
             KB: "??",
             size: "??"
         });
-    })
-    .then(function () {
-        debug("  gml list");
-        var gmlList =
-            GmlLoader.ls()
-                .map(function (path) {
-                    var name = path.split('/')[path.split('/').length - 1];
-                    var kb =
-                        4
-                        * (parseInt(name.split('_')[1].slice(1)) * 5
-                            + parseInt(name.split('_')[2].slice(1)) * 2)
-                        / 1000; //
-                    return {
-                        f: path,
-                        KB: kb,
-                        size: kb > 1000 ? (Math.round(kb / 1000) + " MB") : (kb + " KB"),
-                        base: name,
-                        loader: loadGmlJson
-                    };
-                });
-        dataList = dataList.concat(gmlList);
     })
     .then(function () {
         return getDataList("data/matrices.binary.json");
