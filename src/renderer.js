@@ -5,7 +5,7 @@ var _           = require('underscore'),
     debug       = require('debug')('StreamGL:renderer');
 
 
-var Cameras     = require('../../../../superconductorjs/src/Camera.js');
+var Cameras     = require('./camera.js');
 
 var localAttribHandler  = require('./localAttribHandler.js'),
     bufferProxy         = require('./bufferproxy.js').bufferProxy;
