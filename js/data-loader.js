@@ -1,7 +1,8 @@
 "use strict";
 
-var debug = require("debug")("StreamGL:data");
+var fs = require('fs');
 
+var debug = require("debug")("StreamGL:data");
 var _ = require('underscore');
 
 var MatrixLoader = require('./libs/load.js'),
@@ -218,7 +219,12 @@ function loadDataList(clGraph) {
         });
     })
     .then(function () {
-        return getDataList("data/matrices.binary.json");
+        var matricesIndexFilePath = 'data/matrices.binary.json';
+        if(fs.existsSync(matricesIndexFilePath)) {
+            return getDataList(matricesIndexFilePath);
+        } else {
+            return [];
+        }
     })
     .then(function(matrixList){
         debug("  matrixlist");
