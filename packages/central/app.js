@@ -55,7 +55,7 @@ app.get('/:dataName', function (req, res) {
 
                 // Find all idle node processes
                 db.collection('node_monitor').find({'active': false, 
-                                                        'updated': {'$gt': d}})
+                                                    'updated': {'$gt': d}})
                                                  .toArray(function(err, results) {
 
                     if (err) {
