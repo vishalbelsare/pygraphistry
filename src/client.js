@@ -5,7 +5,9 @@
 */
 
 var debug        = require('debug')('StreamGL:main'),
+    $            = require('jquery'),
     Rx           = require('rx'),
+    rx_jquery    = require('rx-jquery'),
     _            = require('underscore');
 
 var renderConfig = require('render-config'),
@@ -67,22 +69,19 @@ function getUpdatedNames (names, originalVersions, newVersions) {
 /**
  * Fetches the URL for the viz server to use
  */
-function getVizServerAddress(cb) {
-    var oReq = new XMLHttpRequest();
-    oReq.responseType = 'json';
-    oReq.open('GET', '/vizaddr/graph', true);
-
-    oReq.onload = function() {
-        if(typeof oReq.response !== 'object') {
-            throw new Error('Got bad response from server when fetching viz server address:' + oReq.response);
-        }
-
-        debug('Server assigned us the viz server at %s:%d', oReq.response.hostname, oReq.response.port);
-
-        cb(oReq.response);
-    };
-
-    oReq.send(null);
+function getVizServerAddress() {
+    return $.ajaxAsObservable({
+            url: '/vizaddr/graph',
+            dataType: 'json'
+        })
+        .map(function(reply) {
+            return {
+                'hostname': reply.data.hostname,
+                'port': reply.data.port,
+                'url': '//' + reply.data.hostname + ':' + reply.data.port
+            };
+        })
+        .take(1);
 }
 
 
@@ -96,18 +95,16 @@ function getVizServerAddress(cb) {
 function init (canvas, opts, cb) {
     cb = cb || function() { };
 
-    getVizServerAddress(function(addr) {
-        var hostname = addr.hostname;
-        var port = addr.port;
-        var vizServerUrl = '//' + hostname + ':' + port;
+    getVizServerAddress().subscribe(function(addr) {
+        debug('Got viz server address', addr);
 
         //string * {<name> -> int} * name -> Subject ArrayBuffer
         //socketID, bufferByteLengths, bufferName
-        var fetchBuffer = makeFetcher('vbo?buffer', hostname, port);
+        var fetchBuffer = makeFetcher('vbo?buffer', addr.hostname, addr.port);
 
         //string * {<name> -> int} * name -> Subject ArrayBuffer
         //socketID, textureByteLengths, textureName
-        var fetchTexture = makeFetcher('texture?texture', hostname, port);
+        var fetchTexture = makeFetcher('texture?texture', addr.hostname, addr.port);
 
 
         debug('initializing networking client');
@@ -122,7 +119,7 @@ function init (canvas, opts, cb) {
 
         var socket = opts.socket;
         if (!socket) {
-            socket = io.connect(vizServerUrl, {reconnection: false, transports: ['websocket']});
+            socket = io.connect(addr.url, {reconnection: false, transports: ['websocket']});
             socket.io.engine.binaryType = 'arraybuffer';
         } else if (!socket.io || !socket.io.engine || socket.io.engine !== 'arraybuffer') {
             debug('Expected binary socket');

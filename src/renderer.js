@@ -676,7 +676,7 @@ function render(state, renderListOverride) {
 
 //returns idx or -1
 function hitTest(state, texture, x, y) {
-    debug('hit testing', texture);
+    // debug('hit testing', texture);
     var canvas = state.get('gl').canvas;
     var map = state.get('pixelreads')[texture];
     if (!map) {
