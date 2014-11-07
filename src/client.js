@@ -10,9 +10,8 @@ var debug        = require('debug')('StreamGL:main'),
     rx_jquery    = require('rx-jquery'),
     _            = require('underscore');
 
-var renderConfig = require('render-config'),
-    renderer     = require('./renderer.js'),
-    ui           = require('./ui.js');
+var renderer     = require('./renderer.js');
+var ui           = require('./ui.js');
 
 
 //string * {socketHost: string, socketPort: int} -> (... -> ...)
@@ -85,70 +84,67 @@ function getVizServerAddress() {
 }
 
 
-//DOM * ?{?meter, ?camera, ?socket} ->
-//  {
-//      renderFrame: () -> (),
-//      setCamera: camera -> (),
-//      disconnect: () -> (),
-//      socket
-//  }
-function init (canvas, opts, cb) {
-    cb = cb || function() { };
+function connect() {
+    debug('Connecting to visualization server');
 
-    getVizServerAddress().subscribe(function(addr) {
-        debug('Got viz server address', addr);
-
-        //string * {<name> -> int} * name -> Subject ArrayBuffer
-        //socketID, bufferByteLengths, bufferName
-        var fetchBuffer = makeFetcher('vbo?buffer', addr.hostname, addr.port);
-
-        //string * {<name> -> int} * name -> Subject ArrayBuffer
-        //socketID, textureByteLengths, textureName
-        var fetchTexture = makeFetcher('texture?texture', addr.hostname, addr.port);
-
-
-        debug('initializing networking client');
-        opts = opts || {};
-
-        debug('connected');
-
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
-        var meter = opts.meter || {tick: function(){}, pause: function(){}};
-
-        var socket = opts.socket;
-        if (!socket) {
-            socket = io.connect(addr.url, {reconnection: false, transports: ['websocket']});
+    return getVizServerAddress()
+        .map(function(addr) {
+            var socket = io(addr.url, {reconnection: false, transports: ['websocket']});
             socket.io.engine.binaryType = 'arraybuffer';
-        } else if (!socket.io || !socket.io.engine || socket.io.engine !== 'arraybuffer') {
-            debug('Expected binary socket');
-        } else {
-            debug('Using existing socket');
-        }
 
-        var renderState = renderer.init(renderConfig, canvas, opts);
-        var gl = renderState.get('gl');
-        var programs = renderState.get('programs').toJS();
-        var buffers = renderState.get('buffers').toJS();
-        var camera = renderState.get('camera');
+            debug('Stream client websocket connected to visualization server');
 
-        var bufferNames = renderer.getServerBufferNames(renderConfig),
-            textureNames = renderer.getServerTextureNames(renderConfig);
-        debug('  Server buffers/textures', bufferNames, textureNames);
+            return socket;
+        });
+}
 
-        var lastHandshake = Date.now();
 
-        var previousVersions = {};
-        socket.on('vbo_update', function (data, handshake) {
+function createRenderer(socket, canvas) {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    var rcObsv = Rx.Observable.fromCallback(socket.on, socket, function(renderConf) {
+            debug('Received render-config from server', renderConf[0]);
+            var renderState = renderer.init(renderConf[0], canvas);
+            debug('Renderer created');
+
+            return renderState;
+        })('render_config');
+
+    debug('Getting render-config from server');
+    socket.emit('get_render_config');
+
+    return rcObsv;
+}
+
+
+function handleVboUpdates(socket, renderState) {
+    //string * {<name> -> int} * name -> Subject ArrayBuffer
+    //socketID, bufferByteLengths, bufferName
+    var fetchBuffer = makeFetcher('vbo?buffer', socket.io.uri);
+
+    //string * {<name> -> int} * name -> Subject ArrayBuffer
+    //socketID, textureByteLengths, textureName
+    var fetchTexture = makeFetcher('texture?texture', socket.io.uri);
+
+    var buffers = renderState.get('buffers').toJS();
+    var bufferNames = renderer.getServerBufferNames(renderConfig);
+    var textureNames = renderer.getServerTextureNames(renderConfig);
+
+    debug('Server buffers/textures', bufferNames, textureNames);
+
+    var lastHandshake = Date.now();
+
+    var previousVersions = {};
+    socket.on('vbo_update', function (data, handshake) {
         try {
             debug('VBO update');
 
             var now = new Date().getTime();
             debug('got VBO update message', now - lastHandshake, data, 'ms');
 
-            var changedBufferNames  = getUpdatedNames(bufferNames,  previousVersions.buffers,  data.versions ? data.versions.buffers : null),
-                changedTextureNames = getUpdatedNames(textureNames, previousVersions.textures, data.versions ? data.versions.textures : null);
+            var changedBufferNames  = getUpdatedNames(bufferNames,  previousVersions.buffers,  data.versions ? data.versions.buffers : null);
+            var changedTextureNames = getUpdatedNames(textureNames, previousVersions.textures, data.versions ? data.versions.textures : null);
 
             socket.emit('planned_binary_requests', {buffers: changedBufferNames, textures: changedTextureNames});
 
@@ -162,7 +158,6 @@ function init (canvas, opts, cb) {
                     debug('All buffers and textures received, completing');
                     handshake(Date.now() - lastHandshake);
                     lastHandshake = Date.now();
-                    meter.tick();
                     renderer.render(renderState);
                 });
 
@@ -170,6 +165,7 @@ function init (canvas, opts, cb) {
                 [Rx.Observable.return()]
                     .concat(changedBufferNames.map(fetchBuffer.bind('', socket.io.engine.id, data.bufferByteLengths))))
                 .take(1);
+
             bufferVBOs
                 .subscribe(function (vbos) {
                     vbos.shift();
@@ -196,64 +192,39 @@ function init (canvas, opts, cb) {
                         var name = pair[0];
                         var nfo = pair[1];
                         return [name, nfo.bytes]; }));
+
             var texturesData = Rx.Observable.zipArray(
                 [Rx.Observable.return()]
                     .concat(changedTextureNames.map(fetchTexture.bind('', socket.io.engine.id, textureLengths))))
                 .take(1);
-            texturesData
-                .subscribe(function (textures) {
-                    textures.shift();
 
-                    var textureNfos = changedTextureNames.map(function (name, i) {
-                        return _.extend(data.textures[name], {buffer: textures[i]});
-                    });
+            texturesData.subscribe(function (textures) {
+                textures.shift();
 
-                    var bindings = _.object(_.zip(changedTextureNames, textureNfos));
-
-                    debug('Got textures', textures);
-                    renderer.loadTextures(renderState, bindings);
-
-                    readyTextures.onNext();
+                var textureNfos = changedTextureNames.map(function (name, i) {
+                    return _.extend(data.textures[name], {buffer: textures[i]});
                 });
+
+                var bindings = _.object(_.zip(changedTextureNames, textureNfos));
+
+                debug('Got textures', textures);
+                renderer.loadTextures(renderState, bindings);
+
+                readyTextures.onNext();
+            });
 
             previousVersions = data.versions || {};
 
         } catch (e) {
             debug('ERROR vbo_update', e, e.stack);
         }
-        });
-
-
-        socket.on('error', meter.pause.bind(meter));
-        socket.on('disconnect', meter.pause.bind(meter));
-
-        //////
-
-        cb({
-            //on events: error, disconnect
-            socket: socket,
-
-            camera: camera,
-            disconnect: socket.disconnect.bind(socket),
-            setCamera: renderer.setCamera.bind(renderer, renderConfig, gl, programs),
-
-            //itemName * int * int -> int
-            hitTest: renderer.hitTest.bind(renderer, renderState),
-
-            //string -> {read, write}
-            localAttributeProxy: renderer.localAttributeProxy(renderState),
-
-            renderer: renderer,
-            renderState: renderState,
-
-            //call to render with current camera
-            renderFrame: function () {
-                renderer.setCamera(renderConfig, gl, programs, camera);
-                renderer.render(renderState);
-            }
-        });
-
     });
+
+    socket.emit('begin_streaming');
 }
 
-module.exports = init;
+module.exports = {
+    connect: connect,
+    createRenderer: createRenderer,
+    handleVboUpdates: handleVboUpdates
+};
