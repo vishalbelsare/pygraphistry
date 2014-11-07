@@ -32,6 +32,38 @@ exports.error = function() {
 
 
 /**
+ * Convenience function callable from the browser console to enable/disable `debug()` output
+ *
+ * @function logging
+ * @param {?boolean} [enable]   - True to print debug output, false to disable printing. If missing,
+ *                                then the current state is toggled.
+ * @param {boolean} [all=false] - Print debugging output from non-StreamGL modules.
+ */
+window.logging = function(enable, all) {
+    enable = (typeof enable === 'undefined' || enable === null) ?
+        !(localStorage.debug === '*' || localStorage.debug === 'StreamGL:*') : enable;
+    all = !!(all); // If all is undefined/null, it's set to false
+    var reload_delay = 4;
+
+    if(enable) {
+        localStorage.debug = (all) ? '*' : 'StreamGL:*';
+    } else {
+        localStorage.removeItem('debug');
+    }
+
+    console.log('%c%s debugging%s. Reloading browser in %d seconds.',
+        'font-size: 14pt; font-weight: bold; font-family: \'Helvetica Neue\', Helvetica, sans-serif; color: rgb(77, 159, 252);',
+        (enable ? 'Enabled' : 'Disabled'),
+        (enable ? (all ? ' all modules' : 'StreamGL modules') : ''),
+        reload_delay);
+
+    window.setTimeout(function() { window.location.reload(); }, reload_delay * 1000);
+
+    return enable;
+};
+
+
+/**
  * Returns an Object representing each of the window URL's query paramters.
  * @example the url "index.html?foo=bar&baz" returns {"foo": "bar", "baz": true}
  */
