@@ -17,9 +17,7 @@ var renderConfig = require('render-config'),
 
 //string * {socketHost: string, socketPort: int} -> (... -> ...)
 // where fragment == 'vbo?buffer' or 'texture?name'
-function makeFetcher (fragment, host, port) {
-    var PREFIX = '//' + host + ':' + port;
-
+function makeFetcher (fragment, url) {
     //string * {<name> -> int} * name -> Subject ArrayBuffer
     return function (socketID, bufferByteLengths, bufferName) {
 
@@ -29,7 +27,7 @@ function makeFetcher (fragment, host, port) {
 
         //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
         var oReq = new XMLHttpRequest();
-        oReq.open('GET', PREFIX + '/' + fragment + '=' + bufferName + '&id=' + socketID, true);
+        oReq.open('GET', url + '/' + fragment + '=' + bufferName + '&id=' + socketID, true);
         oReq.responseType = 'arraybuffer';
 
         var now = Date.now();
@@ -75,6 +73,8 @@ function getVizServerAddress() {
             dataType: 'json'
         })
         .map(function(reply) {
+            debug('Got viz server address', reply.data);
+
             return {
                 'hostname': reply.data.hostname,
                 'port': reply.data.port,
