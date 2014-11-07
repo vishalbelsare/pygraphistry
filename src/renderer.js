@@ -213,8 +213,8 @@ function bindProgram(state, program, programName, bindings, buffers, modelSettin
 // Exports
 ////////////////////////////////////////////////////////////////////////////////
 
-//opts : {?camera}
-function init(config, canvas, opts) {
+
+function init(config, canvas) {
     config = Immutable.fromJS(config);
 
     var state = Immutable.Map({
@@ -253,7 +253,7 @@ function init(config, canvas, opts) {
 
     var gl = state.get('gl');
 
-    var camera = (opts||{}).camera || new Cameras.Camera2d(config.get('camera').get('init').get(0).toJS());
+    var camera = new Cameras.Camera2d(config.get('camera').get('init').get(0).toJS());
     setCamera(config.toJS(), gl, state.get('programs').toJS(), camera);
 
     debug('precreated', state.toJS());
