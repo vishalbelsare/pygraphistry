@@ -1,0 +1,10 @@
+{
+  "name": "central-app",
+  "description": "central-app,
+  "version": "1",
+  "private": true,
+  "dependencies": {
+    "express": "*",
+    "mongodb": "*"
+  }
+}
