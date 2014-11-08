@@ -34,90 +34,49 @@ var DEBUG_MODE = (QUERY_PARAMS.hasOwnProperty('debug') && QUERY_PARAMS.debug !==
         QUERY_PARAMS.debug !== '0');
 
 
-//canvas * {?camera, ?socket} -> {renderFrame: () -> (), setCamera: camera -> () }
-// function init (canvas, opts) {
-//     debug('Initializing client networking driver');
+// Sets up event handlers to display socket errors + disconnects on screen
+function displayErrors(socket, $canvas) {
+    socket.on('error', function(reason) {
+        ui.error('Connection error (reason:', reason, (reason||{}).description, ')');
+    });
 
-//     opts = opts || {};
+    socket.on('disconnect', function(reason){
+        $canvas.parent().addClass('disconnected');
+        ui.error('Disconnected (reason:', reason, ')');
+    });
 
-//     streamClient.init(canvas, opts, function(client) {
-//         interaction.setupDrag($('.sim-container'), client.camera)
-//             .merge(interaction.setupScroll($('.sim-container'), client.camera))
-//             .subscribe(function(newCamera) {
-//                 client.setCamera(newCamera);
-//                 client.renderFrame();
-//             });
-
-
-//         var highlights = client.localAttributeProxy('highlights');
-
-//         var prevIdx = -1;
-//         ['pointHitmap']
-//             .map(interaction.setupMousemove.bind('', $('.sim-container'), client.hitTest))
-//             .forEach(function (hits) {
-//                 hits
-//                     .sample(10)
-//                     .filter(_.identity)
-//                     .subscribe(function (idx) {
-//                         debug('got idx', idx);
-//                         if (idx !== prevIdx) {
-//                             $('.hit-label').text('Location ID: ' + (idx > -1 ? '#' + idx.toString(16) : ''));
-//                             var dirty = false;
-//                             if (idx > -1) {
-//                                 debug('enlarging new point', idx);
-//                                 highlights.write(idx, 20);
-//                                 dirty = true;
-//                             }
-//                             if (prevIdx > -1) {
-//                                 debug('shrinking old point', prevIdx);
-//                                 highlights.write(prevIdx, 0);
-//                                 dirty = true;
-//                             }
-//                             prevIdx = idx;
-//                             if (dirty) {
-//                                 client.renderFrame();
-//                             }
-//                         }
-
-//                     });
-//             });
+    $('#do-disconnect').click(function(btn) {
+        btn.disabled = true;
+        socket.disconnect();
+    });
+}
 
 
-//         $('#do-disconnect').click(function(btn) {
-//             btn.disabled = true;
-//             client.disconnect();
-//         });
-
-//         client.socket.on('error', function(reason) {
-//             ui.error('Connection error (reason:', reason, (reason||{}).description, ')');
-//         });
-
-//         client.socket.on('disconnect', function(reason){
-//             $(canvas).parent().addClass('disconnected');
-//             ui.error('Disconnected (reason:', reason, ')');
-//         });
-
-//         uberDemo(client);
-//     });
-// }
-
-
-function init2(canvas, opts) {
-    debug('Initializing2 client networking driver');
+function init(canvas, opts) {
+    debug('Initializing client networking driver');
     opts = opts || {};
 
     streamClient.connect()
         .flatMap(function(socket) {
             debug('Creating renderer');
 
+            displayErrors(socket, $(canvas));
+
             return streamClient.createRenderer(socket, canvas)
                 .map(function(renderState) {
                     debug('Renderer created');
+
+                    interaction.setup($('.sim-container'), renderState);
+                    // uberDemo(client);
+
                     return {socket: socket, renderState: renderState};
                 })
         })
         .subscribe(function(v) {
-            streamClient.handleVboUpdates(v.socket, v.renderState);
+            var socket = v.socket;
+            var renderState = v.renderState;
+
+            streamClient.handleVboUpdates(socket, renderState);
         })
 }
 
@@ -142,5 +101,5 @@ window.addEventListener('load', function(){
         });
     }
 
-    init2($('#simulation')[0], {meter: meter});
+    init($('#simulation')[0], {meter: meter});
 });
