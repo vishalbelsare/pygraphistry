@@ -1,6 +1,7 @@
 'use strict';
 
 var $        = require('jquery');
+var _        = require('underscore');
 var Rx       = require('rx');
 var debug    = require('debug')('StreamGL:interaction');
 var renderer = require('./renderer');
@@ -11,7 +12,7 @@ require('rx-jquery');
 /**
  * Adds event listeners for drag/zoom and changes the local camera position in response
  */
-exports.setupDrag = function($eventTarget, camera) {
+function setupDrag($eventTarget, camera) {
     return $eventTarget.mousedownAsObservable()
         .flatMapLatest(function(clickPos) {
             clickPos.preventDefault();
@@ -34,9 +35,10 @@ exports.setupDrag = function($eventTarget, camera) {
                     return camera;
                 });
         });
-};
+}
 
-exports.setupMousemove = function($eventTarget, hitTest, texture) {
+
+function setupMousemove($eventTarget, renderState, texture) {
     debug('setupMouseover');
     var bounds = $('canvas', $eventTarget[0])[0].getBoundingClientRect();
 
@@ -47,11 +49,12 @@ exports.setupMousemove = function($eventTarget, hitTest, texture) {
                 x: evt.clientX - bounds.left,
                 y: evt.clientY - bounds.top
             };
-            return hitTest(texture, pos.x, pos.y, 20);
+            return renderer.hitTest(renderState, texture, pos.x, pos.y, 20);
         });
-};
+}
 
-exports.setupScroll = function($eventTarget, camera) {
+
+function setupScroll($eventTarget, camera) {
     return Rx.Observable.fromEvent($eventTarget[0], 'mousewheel')
         .map(function(wheelEvent) {
             wheelEvent.preventDefault();
@@ -70,4 +73,59 @@ exports.setupScroll = function($eventTarget, camera) {
 
             return camera;
         });
-};
+}
+
+
+
+function setup($eventTarget, renderState) {
+    var currentState = renderState;
+    var camera = renderState.get('camera');
+
+    setupDrag($eventTarget, camera)
+        .merge(setupScroll($eventTarget, camera))
+        .subscribe(function(newCamera) {
+            currentState = renderer.setCameraIm(renderState, newCamera);
+            renderer.render(currentState);
+        });
+
+    var highlights = renderer.localAttributeProxy(renderState)('highlights');
+    var prevIdx = -1;
+
+    ['pointHitmap']
+        .map(setupMousemove.bind(this, $eventTarget, currentState))
+        .forEach(function(hits) {
+            hits.sample(10)
+                .filter(_.identity)
+                .subscribe(function (idx) {
+                    debug('got idx', idx);
+                    if (idx !== prevIdx) {
+                        $('.hit-label').text('Location ID: ' + (idx > -1 ? '#' + idx.toString(16) : ''));
+
+                        var dirty = false;
+
+                        if (idx > -1) {
+                            debug('enlarging new point', idx);
+                            highlights.write(idx, 20);
+                            dirty = true;
+                        }
+
+                        if (prevIdx > -1) {
+                            debug('shrinking old point', prevIdx);
+                            highlights.write(prevIdx, 0);
+                            dirty = true;
+                        }
+
+                        prevIdx = idx;
+                        if (dirty) {
+                            renderer.render(currentState);
+                        }
+                    }
+
+                });
+        });
+
+    debug('Interaction setup complete');
+}
+
+
+exports.setup = setup;
