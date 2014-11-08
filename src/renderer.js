@@ -600,6 +600,16 @@ function setCamera(config, gl, programs, camera) {
 }
 
 
+// Wrapper for setCamera which takes an Immutable renderState (returned by init()) and a camera
+function setCameraIm(renderState, camera) {
+    setCamera(renderState.get('config').toJS(), renderState.get('gl'),
+        renderState.get('programs').toJS(), camera);
+
+    return renderState.set('camera', camera);
+}
+
+
+
 /** A mapping of scene items to the number of elements that should be rendered for them */
 var numElements = {};
 function setNumElements(newNumElements) {
@@ -827,6 +837,7 @@ module.exports = {
     loadBuffer: loadBuffer,
     loadTextures: loadTextures,
     setCamera: setCamera,
+    setCameraIm: setCameraIm,
     setNumElements: setNumElements,
     render: render,
     getServerBufferNames: getServerBufferNames,
