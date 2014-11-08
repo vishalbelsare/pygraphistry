@@ -67,7 +67,7 @@ function init(canvas, opts) {
                     debug('Renderer created');
 
                     interaction.setup($('.sim-container'), renderState);
-                    // uberDemo(client);
+                    uberDemo(socket);
 
                     return {socket: socket, renderState: renderState};
                 })

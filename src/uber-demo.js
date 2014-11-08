@@ -1,10 +1,10 @@
 var debug   = require('debug')('uber:main'),
     Rx      = require('rx');
 
-function init (client) {
+function init(socket) {
 
     //trigger animation on server
-    client.socket.emit('graph_settings', {});
+    socket.emit('graph_settings', {});
 
 
 /*
@@ -22,7 +22,7 @@ function init (client) {
             .tooltip()
             .on('click', function () {
                 debug('reset_graph')
-                client.socket.emit('reset_graph', {}, function () {
+                socket.emit('reset_graph', {}, function () {
                     debug('page refresh');
                     window.location.reload();
                 });
@@ -60,7 +60,7 @@ function init (client) {
                 var payload = {};
                 payload[name] = val;
 
-                client.socket.emit('graph_settings', payload);
+                socket.emit('graph_settings', payload);
                 debug('settings', payload);
 
             });
