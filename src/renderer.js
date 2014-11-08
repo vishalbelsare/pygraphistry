@@ -726,6 +726,11 @@ function hitTestCircumference(state, texture, x, y, r) {
 //returns idx or -1
 function hitTestN(state, texture, x, y, r) {
 
+    if (!state.get('pixelreads')[texture]) {
+        debug('no texture for hit test, escape early', texture);
+        return;
+    }
+
     if (!r) {
         return hitTest(state, texture, x, y);
     }
