@@ -137,8 +137,8 @@ function handleVboUpdates(socket, renderState) {
     var fetchTexture = makeFetcher('texture?texture', socket.io.uri);
 
     var buffers = renderState.get('buffers').toJS();
-    var bufferNames = renderer.getServerBufferNames(renderConfig);
-    var textureNames = renderer.getServerTextureNames(renderConfig);
+    var bufferNames = renderer.getServerBufferNames(renderState.get('config').toJS());
+    var textureNames = renderer.getServerTextureNames(renderState.get('config').toJS());
 
     debug('Server buffers/textures', bufferNames, textureNames);
 
