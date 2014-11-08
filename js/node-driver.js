@@ -239,7 +239,7 @@ function fetchBufferByteLengths(graph) {
 
 
 function init() {
-    console.log("Running Naive N-body simulation");
+    debug("Running Naive N-body simulation");
 
     var document = null;
     var canvasStandin = {
