@@ -52,9 +52,10 @@ function displayErrors(socket, $canvas) {
 }
 
 
-function init(canvas, opts) {
+function init(canvas) {
     debug('Initializing client networking driver');
-    opts = opts || {};
+
+    var renderedFrame = new Rx.BehaviorSubject(0);
 
     streamClient.connect()
         .flatMap(function(socket) {
@@ -76,17 +77,19 @@ function init(canvas, opts) {
             var socket = v.socket;
             var renderState = v.renderState;
 
-            streamClient.handleVboUpdates(socket, renderState);
+            streamClient.handleVboUpdates(socket, renderState).subscribe(renderedFrame);
         })
+
+    return renderedFrame;
 }
 
 
 window.addEventListener('load', function(){
-    var meter;
+    var renderedFrame = init($('#simulation')[0], {meter: meter});
 
     if(DEBUG_MODE) {
         $('html').addClass('debug');
-        meter = new FPSMeter($('body')[0], {
+        var meter = new FPSMeter($('body')[0], {
             top: 'auto',
             right: '5px',
             left: 'auto',
@@ -99,7 +102,10 @@ window.addEventListener('load', function(){
             heat: true,
             graph: true
         });
+
+        renderedFrame.subscribe(function(elapsed) {
+            meter.tick();
+        });
     }
 
-    init($('#simulation')[0], {meter: meter});
 });
