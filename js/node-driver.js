@@ -9,13 +9,15 @@
 var Q = require("q"),
     Rx = require("rx"),
     _ = require('underscore'),
+
     request = require('request'),
     chalk = require("chalk"),
-    //debug       = log.debug.bind(log),
     debug = require("debug")("StreamGL:driver"),
+
     NBody = require("./NBody.js"),
     RenderNull = require('./RenderNull.js'),
     SimCL = require("./SimCL.js"),
+
     metrics = require("./metrics.js"),
     loader = require("./data-loader.js");
 
@@ -162,14 +164,6 @@ function controls(graph) {
     };
 }
 
-
-
-function getBufferVersion (graph, bufferName) {
-
-    return graph.simulator.versions.buffers[bufferName];
-}
-
-
 // ... -> {<name>: {buffer: ArrayBuffer, version: int}}
 function fetchVBOs(graph, bufferNames) {
 
@@ -192,7 +186,7 @@ function fetchVBOs(graph, bufferNames) {
         buffersToFetch.map(function(name) {
             targetArrays[name] = {
                 buffer: new ArrayBuffer(bufferSizes[name]),
-                version: getBufferVersion(graph, name)
+                version: graph.simulator.versions.buffers[name]
             };
             return graph.simulator.buffers[name].read(new Float32Array(targetArrays[name].buffer));
     }))
@@ -203,11 +197,11 @@ function fetchVBOs(graph, bufferNames) {
             'pointColors': graph.simulator.buffersLocal.pointColors.buffer,
             'edgeColors': graph.simulator.buffersLocal.edgeColors.buffer
         };
-        for (var name in localBuffers) {
-            if (bufferNames.indexOf(name) != -1) {
-                targetArrays[name] = {
-                    buffer: localBuffers[name],
-                    version: getBufferVersion(graph, name)
+        for (var i in localBuffers) {
+            if (bufferNames.indexOf(i) != -1) {
+                targetArrays[i] = {
+                    buffer: localBuffers[i],
+                    version: graph.simulator.versions.buffers[i]
                 };
             }
         }
@@ -248,6 +242,7 @@ function fetchBufferByteLengths(graph) {
 
 
 function init() {
+    debug("Running Naive N-body simulation");
     console.log("Running Naive N-body simulation");
 
     var document = null;
@@ -422,23 +417,12 @@ function createAnimation() {
  * property set to an Object mapping buffer names to ArrayBuffer data; and the 'elements' Object
  * mapping render item names to number of elements that should be rendered for the given buffers.
  */
-function fetchData(graph, compress, bufferNames, bufferVersions, programNames, logger) {
-
-    bufferVersions = bufferVersions || _.object(bufferNames.map(function (name) { return [name, -1]}));
-
-    var neededBuffers =
-        bufferNames.filter(function (name) {
-            var clientVersion = bufferVersions[name];
-            var liveVersion = getBufferVersion(graph, name);
-            return clientVersion < liveVersion;
-        });
-    bufferNames = neededBuffers;
+function fetchData(graph, compress, bufferNames, programNames) {
 
     var now = Date.now();
     return Rx.Observable.fromPromise(fetchVBOs(graph, bufferNames))
         .flatMap(function (vbos) {
-
-            metrics.info({metric: {'fetchVBOs_lastVersions': bufferVersions}});
+            //metrics.info({metric: {'fetchVBOs_lastVersions': bufferVersions}});
             metrics.info({metric: {'fetchVBOs_buffers': bufferNames}});
             metrics.info({metric: {'fetchVBOs_durationMS': Date.now() - now}});
 
@@ -446,7 +430,7 @@ function fetchData(graph, compress, bufferNames, bufferVersions, programNames, l
                 if (!vbos.hasOwnProperty(bufferName)) {
                     throw new Error('vbos does not have buffer', bufferName);
                 }
-            });
+            })
 
             //[ {buffer, version, compressed} ] ordered by bufferName
             var now = Date.now();
