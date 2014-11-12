@@ -1,6 +1,7 @@
 "use strict";
 
 var debug = require("debug")("N-body:utils");
+var path = require('path');
 
 var $ = require('jquery'),
     Q = require('q');
@@ -26,9 +27,16 @@ function getSource(id) {
 
     if (typeof window == 'undefined') {
         var fs = require('fs');
-        return Q.denodeify(fs.readFile)('shaders/' + id, {encoding: 'utf8'});
+        var shader_path = path.resolve(__dirname, '..' ,'shaders', id);
+
+        debug('Fetching shader source for shader %s at path %s, using fs read', id, shader_path)
+
+        return Q.denodeify(fs.readFile)(shader_path, {encoding: 'utf8'});
     } else {
         var url = "shaders/" + id;
+
+        debug('Fetching shader source for shader %s at url %s, using AJAX', id, url)
+
         return Q($.ajax(url, {dataType: "text"}));
     }
 }
