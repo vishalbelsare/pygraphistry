@@ -5,7 +5,7 @@
   "private": true,
   "dependencies": {
     "express": "*",
-    "mongodb": "*"
+    "mongodb": "*",
     "horizon-viz": "git+ssh://git@github.com:graphistry/horizon-viz.git#master",
     "graph-viz": "git+ssh://git@github.com:graphistry/graph-vis.git#master",
   }
