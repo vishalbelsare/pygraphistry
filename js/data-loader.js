@@ -1,6 +1,7 @@
 "use strict";
 
 var fs = require('fs');
+var path = require('path');
 
 var debug = require("debug")("StreamGL:data");
 var _ = require('underscore');
@@ -187,7 +188,7 @@ function loadDataList(clGraph) {
 
     var dataList = [];
 
-    return getDataList("data/geo.json")
+    return getDataList(path.resolve(__dirname, '..', 'data', 'geo.json'))
     .then(function(geoList){
         debug("  geolist");
         geoList = geoList.map(function(fileInfo) {
@@ -219,7 +220,7 @@ function loadDataList(clGraph) {
         });
     })
     .then(function () {
-        var matricesIndexFilePath = 'data/matrices.binary.json';
+        var matricesIndexFilePath = path.resolve(__dirname, '..', 'data', 'matrices.binary.json');
         if(fs.existsSync(matricesIndexFilePath)) {
             return getDataList(matricesIndexFilePath);
         } else {
