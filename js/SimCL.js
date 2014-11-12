@@ -42,8 +42,10 @@ function create(renderer, dimensions, numSplits, locked) {
             debug("CL kernel source retrieved");
             return cl.compile(source, kernelNames);
         })
+
         .then(function(kernels) {
             debug("Compiled kernel source");
+
             var simObj = {
                 renderer: renderer,
                 cl: cl,
@@ -54,6 +56,7 @@ function create(renderer, dimensions, numSplits, locked) {
                     buffers: { }
                 }
             };
+
             simObj.tick = tick.bind(this, simObj);
             simObj.setPoints = setPoints.bind(this, simObj);
             simObj.setEdges = setEdges.bind(this, simObj);
@@ -97,10 +100,11 @@ function create(renderer, dimensions, numSplits, locked) {
                 pointSizes: null,
                 pointColors: null
             };
+
             Object.seal(simObj.buffers);
+            Object.seal(simObj);
 
             debug("WebCL simulator created");
-            Object.seal(simObj);
             return simObj
         }, function (err) {
             console.error('Could not compile sim', err)
