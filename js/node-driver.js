@@ -9,16 +9,17 @@
 var Q = require("q"),
     Rx = require("rx"),
     _ = require('underscore'),
-
+    request = require('request'),
     chalk = require("chalk"),
+    //debug       = log.debug.bind(log),
     debug = require("debug")("StreamGL:driver"),
-
     NBody = require("./NBody.js"),
     RenderNull = require('./RenderNull.js'),
     SimCL = require("./SimCL.js"),
-
+    metrics = require("./metrics.js"),
     loader = require("./data-loader.js");
 
+metrics.init('StreamGL:driver');
 
 var WIDTH = 600,
     HEIGHT = 600,
@@ -161,6 +162,14 @@ function controls(graph) {
     };
 }
 
+
+
+function getBufferVersion (graph, bufferName) {
+
+    return graph.simulator.versions.buffers[bufferName];
+}
+
+
 // ... -> {<name>: {buffer: ArrayBuffer, version: int}}
 function fetchVBOs(graph, bufferNames) {
 
@@ -183,7 +192,7 @@ function fetchVBOs(graph, bufferNames) {
         buffersToFetch.map(function(name) {
             targetArrays[name] = {
                 buffer: new ArrayBuffer(bufferSizes[name]),
-                version: graph.simulator.versions.buffers[name]
+                version: getBufferVersion(graph, name)
             };
             return graph.simulator.buffers[name].read(new Float32Array(targetArrays[name].buffer));
     }))
@@ -194,11 +203,11 @@ function fetchVBOs(graph, bufferNames) {
             'pointColors': graph.simulator.buffersLocal.pointColors.buffer,
             'edgeColors': graph.simulator.buffersLocal.edgeColors.buffer
         };
-        for (var i in localBuffers) {
-            if (bufferNames.indexOf(i) != -1) {
-                targetArrays[i] = {
-                    buffer: localBuffers[i],
-                    version: graph.simulator.versions.buffers[i]
+        for (var name in localBuffers) {
+            if (bufferNames.indexOf(name) != -1) {
+                targetArrays[name] = {
+                    buffer: localBuffers[name],
+                    version: getBufferVersion(graph, name)
                 };
             }
         }
@@ -239,7 +248,7 @@ function fetchBufferByteLengths(graph) {
 
 
 function init() {
-    debug("Running Naive N-body simulation");
+    console.log("Running Naive N-body simulation");
 
     var document = null;
     var canvasStandin = {
@@ -363,6 +372,7 @@ function createAnimation() {
         // Gate by isRunning
         Rx.Observable.fromPromise(graph.tick())
             .expand(function() {
+                var now = Date.now();
                 //return (Rx.Observable.fromCallback(graph.renderer.document.requestAnimationFrame))()
                 return Rx.Observable.return()
                     // Add in a delay to allow nodejs' event loop some breathing room
@@ -379,6 +389,7 @@ function createAnimation() {
                                 .tick()
                                 .then(function () {
                                     debug('ticked');
+                                    metrics.info({metric: {'tick_durationMS': Date.now() - now} });
                                 })
                         ));
                     })
@@ -411,31 +422,52 @@ function createAnimation() {
  * property set to an Object mapping buffer names to ArrayBuffer data; and the 'elements' Object
  * mapping render item names to number of elements that should be rendered for the given buffers.
  */
-function fetchData(graph, compress, bufferNames, programNames) {
+function fetchData(graph, compress, bufferNames, bufferVersions, programNames, logger) {
 
+    bufferVersions = bufferVersions || _.object(bufferNames.map(function (name) { return [name, -1]}));
 
+    var neededBuffers =
+        bufferNames.filter(function (name) {
+            var clientVersion = bufferVersions[name];
+            var liveVersion = getBufferVersion(graph, name);
+            return clientVersion < liveVersion;
+        });
+    bufferNames = neededBuffers;
+
+    var now = Date.now();
     return Rx.Observable.fromPromise(fetchVBOs(graph, bufferNames))
         .flatMap(function (vbos) {
+
+            metrics.info({metric: {'fetchVBOs_lastVersions': bufferVersions}});
+            metrics.info({metric: {'fetchVBOs_buffers': bufferNames}});
+            metrics.info({metric: {'fetchVBOs_durationMS': Date.now() - now}});
 
             bufferNames.forEach(function (bufferName) {
                 if (!vbos.hasOwnProperty(bufferName)) {
                     throw new Error('vbos does not have buffer', bufferName);
                 }
-            })
+            });
 
             //[ {buffer, version, compressed} ] ordered by bufferName
+            var now = Date.now();
             var compressed =
                 bufferNames.map(function (bufferName) {
+                    var now = Date.now();
                     return Rx.Observable.fromNodeCallback(compress.deflate)(
                         vbos[bufferName].buffer,//binary,
                         {output: new Buffer(
                             Math.max(1024, Math.round(vbos[bufferName].buffer.byteLength * 1.5)))})
                         .map(function (compressed) {
+                            metrics.info({metric: {'compress_buffer': bufferName} });
+                            metrics.info({metric: {'compress_inputBytes': vbos[bufferName].buffer.byteLength} });
+                            metrics.info({metric: {'compress_outputBytes': compressed.length} });
+                            metrics.info({metric: {'compress_durationMS': Date.now() - now} });
                             return _.extend({}, vbos[bufferName], {compressed: compressed});
                         })
                 });
 
-            return Rx.Observable.zipArray(compressed).take(1);
+            return Rx.Observable.zipArray(compressed).take(1)
+                .do(function () { metrics.info({metric: {'compressAll_durationMS': Date.now() - now} }) });
 
         })
         .map(function(compressedVbos) {
