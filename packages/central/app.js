@@ -88,7 +88,7 @@ app.get('/:dataName', function (req, res) {
                             // 301 redirect?
                             var route = 'http://' + ip + ':' + port;
                             console.log("sending request to " + route)
-                            res.redirect(route + '/graph.html')
+                            res.redirect(route + '/horizon')
                             // res.send(route);
                             res.end();
                             return;
