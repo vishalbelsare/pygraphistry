@@ -52,13 +52,16 @@ function displayErrors(socket, $canvas) {
 }
 
 
-function init(canvas) {
-    debug('Initializing client networking driver');
+function init(canvas, vizType, fps) {
+    debug('Initializing client networking driver', vizType);
 
     var renderedFrame = new Rx.BehaviorSubject(0);
 
-    streamClient.connect()
-        .flatMap(function(socket) {
+    streamClient.connect(vizType)
+        .flatMap(function(nfo) {
+            var socket  = nfo.socket,
+                address = nfo.address;
+
             debug('Creating renderer');
 
             displayErrors(socket, $(canvas));
@@ -73,19 +76,23 @@ function init(canvas) {
                     return {socket: socket, renderState: renderState};
                 })
         })
-        .subscribe(function(v) {
-            var socket = v.socket;
-            var renderState = v.renderState;
+        .subscribe(
+            function(v) {
+                var socket = v.socket;
+                var renderState = v.renderState;
 
-            streamClient.handleVboUpdates(socket, renderState).subscribe(renderedFrame);
-        })
+                streamClient.handleVboUpdates(socket, renderState).subscribe(renderedFrame);
+            },
+            function (err) {
+                console.error('error connecting stream client', err, err.stack);
+            });
 
     return renderedFrame;
 }
 
 
 window.addEventListener('load', function(){
-    var renderedFrame = init($('#simulation')[0], {meter: meter});
+    var renderedFrame = init($('#simulation')[0], 'graph', {meter: meter});
 
     if(DEBUG_MODE) {
         $('html').addClass('debug');

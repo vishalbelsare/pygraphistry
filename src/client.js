@@ -85,17 +85,25 @@ function getVizServerAddress() {
 }
 
 
-function connect() {
+function connect(vizType) {
     debug('Connecting to visualization server');
+    if (!vizType) throw new Error('need vizType');
 
     return getVizServerAddress()
-        .map(function(addr) {
+        .flatMap(function(addr) {
+
+            debug('got address', addr);
+
             var socket = io(addr.url, {reconnection: false, transports: ['websocket']});
             socket.io.engine.binaryType = 'arraybuffer';
 
-            debug('Stream client websocket connected to visualization server');
+            debug('Stream client websocket connected to visualization server', vizType);
 
-            return socket;
+            return Rx.Observable.fromNodeCallback(socket.emit.bind(socket, 'viz'))(vizType)
+                .do(function () {
+                    debug('notified viz type');
+                })
+                .map(_.constant({address: addr, socket: socket}));
         });
 }
 
