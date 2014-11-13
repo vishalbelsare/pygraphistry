@@ -1,0 +1,38 @@
+.content {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.status-bar {
+    max-height: 1.5em;
+    background-color: rgba(51,51,153, 0.3);
+}
+
+#main, .accordion {
+    background-color: rgba(204, 204, 204, 0.3);
+    color: #EEF;
+    padding: 0.5em;
+}
+
+.menu {
+    position: absolute;
+    left: 0;
+}
+
+body {
+    background-color: #223 !important;
+}
+
+label {
+    color: rgba(255,255,255,0.9);
+}
+
+.accordion-heading .fa {
+    color: white;
+}
+
+button.btn-default {
+    background-color: transparent;
+    color: white;
+}
