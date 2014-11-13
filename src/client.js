@@ -8,7 +8,8 @@ var debug        = require('debug')('StreamGL:main'),
     $            = require('jquery'),
     Rx           = require('rx'),
     rx_jquery    = require('rx-jquery'),
-    _            = require('underscore');
+    _            = require('underscore'),
+    io           = require('socket.io-client');
 
 var renderer     = require('./renderer.js');
 var ui           = require('./ui.js');
