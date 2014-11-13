@@ -73,7 +73,8 @@ function getVizServerAddress() {
             dataType: 'json'
         })
         .map(function(reply) {
-            debug('Got viz server address', reply.data);
+            debug('Got viz server address');
+            debug('here');
 
             return {
                 'hostname': reply.data.hostname,
