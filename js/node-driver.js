@@ -164,6 +164,21 @@ function controls(graph) {
     };
 }
 
+
+function getBufferVersion (graph, bufferName) {
+    var deviceBuffers = ["curPoints", "springsPos", "midSpringsPos", "curMidPoints", "midSpringsColorCoord"];
+    var localBuffers = ['pointSizes', 'pointColors', 'edgeColors'];
+
+    if (deviceBuffers.indexOf(bufferName) > -1) {
+        return graph.simulator.versions.buffers[bufferName];
+    } else if (localBuffers.indexOf(bufferName) > -1) {
+        return graph.simulator.versions.buffers[bufferName];
+    } else {
+        throw new Error("could not find buffer", bufferName);
+    }
+}
+
+
 // ... -> {<name>: {buffer: ArrayBuffer, version: int}}
 function fetchVBOs(graph, bufferNames) {
 
@@ -417,7 +432,17 @@ function createAnimation() {
  * property set to an Object mapping buffer names to ArrayBuffer data; and the 'elements' Object
  * mapping render item names to number of elements that should be rendered for the given buffers.
  */
-function fetchData(graph, compress, bufferNames, programNames) {
+function fetchData(graph, compress, bufferNames, bufferVersions, programNames) {
+
+    bufferVersions = bufferVersions || _.object(bufferNames.map(function (name) { return [name, -1]}));
+
+    var neededBuffers =
+        bufferNames.filter(function (name) {
+            var clientVersion = bufferVersions[name];
+            var liveVersion = getBufferVersion(graph, name);
+            return clientVersion < liveVersion;
+        });
+    bufferNames = neededBuffers;
 
     var now = Date.now();
     return Rx.Observable.fromPromise(fetchVBOs(graph, bufferNames))
@@ -442,6 +467,7 @@ function fetchData(graph, compress, bufferNames, programNames) {
                         {output: new Buffer(
                             Math.max(1024, Math.round(vbos[bufferName].buffer.byteLength * 1.5)))})
                         .map(function (compressed) {
+                            debug('compress bufferName', bufferName);
                             metrics.info({metric: {'compress_buffer': bufferName} });
                             metrics.info({metric: {'compress_inputBytes': vbos[bufferName].buffer.byteLength} });
                             metrics.info({metric: {'compress_outputBytes': compressed.length} });
