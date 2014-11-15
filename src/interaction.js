@@ -39,8 +39,8 @@ function setupDrag($eventTarget, camera) {
             .scan(0, function (acc, ev) {
                 var data = {
                     cam: camera,
-                    oldX: 0,
-                    oldY: 0,
+                    oldX: 0.0,
+                    oldY: 0.0,
                     reset: false
                 };
 
@@ -50,8 +50,21 @@ function setupDrag($eventTarget, camera) {
                 }
 
                 ev.preventDefault();
+
+                var duringPinch = Array.isArray(ev.originalEvent.currentTouch);
+                if (duringPinch) {
+                    if (acc) {
+                        data.oldX = acc.oldX;
+                        data.oldY = acc.oldY;
+                        data.reset = true;
+                    }
+                    debug("Ignoring swipe event (drag event in progress)")
+                    return data;
+                }
+
                 data.oldX = ev.originalEvent.currentTouch.x;
                 data.oldY = ev.originalEvent.currentTouch.y;
+
                 if (acc && !acc.reset) {
                     var dx = (ev.originalEvent.currentTouch.x - acc.oldX) / $$eventTarget.width();
                     var dy = (ev.originalEvent.currentTouch.y - acc.oldY) / $$eventTarget.height();
@@ -60,6 +73,7 @@ function setupDrag($eventTarget, camera) {
                     camera.center.y -= dy * camera.height;
                     data.cam = camera;
                 }
+
                 return data;
 
             })
