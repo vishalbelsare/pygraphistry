@@ -43,7 +43,7 @@ window.logging = function(enable, all) {
     enable = (typeof enable === 'undefined' || enable === null) ?
         !(localStorage.debug === '*' || localStorage.debug === 'StreamGL:*') : enable;
     all = !!(all); // If all is undefined/null, it's set to false
-    var reload_delay = 4;
+    var reloadDelay = 4;
 
     if(enable) {
         localStorage.debug = (all) ? '*' : 'StreamGL:*';
@@ -55,9 +55,9 @@ window.logging = function(enable, all) {
         'font-size: 14pt; font-weight: bold; font-family: \'Helvetica Neue\', Helvetica, sans-serif; color: rgb(77, 159, 252);',
         (enable ? 'Enabled' : 'Disabled'),
         (enable ? (all ? ' all modules' : 'StreamGL modules') : ''),
-        reload_delay);
+        reloadDelay);
 
-    window.setTimeout(function() { window.location.reload(); }, reload_delay * 1000);
+    window.setTimeout(function() { window.location.reload(); }, reloadDelay * 1000);
 
     return enable;
 };

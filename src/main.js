@@ -1,16 +1,15 @@
 'use strict';
 
-// * @module StreamGL/main
+/* global FPSMeter */
 
-/*
 
-    Simple use of client.js with UI bindings
-
-*/
+/**
+ * Simple use of client.js with UI bindings
+ * @module StreamGL/main
+ */
 
 
 var $               = require('jquery'),
-    _               = require('underscore'),
     Rx              = require('rx'),
     debug           = require('debug')('StreamGL:main:sc');
 
@@ -52,17 +51,16 @@ function displayErrors(socket, $canvas) {
 }
 
 
-function init(canvas, vizType, fps) {
+function init(canvas, vizType) {
     debug('Initializing client networking driver', vizType);
 
     var renderedFrame = new Rx.BehaviorSubject(0);
 
     streamClient.connect(vizType)
         .flatMap(function(nfo) {
-            var socket  = nfo.socket,
-                address = nfo.address;
-
             debug('Creating renderer');
+
+            var socket  = nfo.socket;
 
             displayErrors(socket, $(canvas));
 
@@ -74,7 +72,7 @@ function init(canvas, vizType, fps) {
                     uberDemo(socket);
 
                     return {socket: socket, renderState: renderState};
-                })
+                });
         })
         .subscribe(
             function(v) {
@@ -92,10 +90,11 @@ function init(canvas, vizType, fps) {
 
 
 window.addEventListener('load', function(){
-    var renderedFrame = init($('#simulation')[0], 'graph', {meter: meter});
+    var renderedFrame = init($('#simulation')[0], 'graph');
 
     if(DEBUG_MODE) {
         $('html').addClass('debug');
+
         var meter = new FPSMeter($('body')[0], {
             top: 'auto',
             right: '5px',
@@ -110,7 +109,7 @@ window.addEventListener('load', function(){
             graph: true
         });
 
-        renderedFrame.subscribe(function(elapsed) {
+        renderedFrame.subscribe(function() {
             meter.tick();
         });
     }

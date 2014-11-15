@@ -4,12 +4,12 @@
     Client networking layer for connecting a local canvas to remote layout engine
 */
 
-var debug        = require('debug')('StreamGL:main'),
-    $            = require('jquery'),
-    Rx           = require('rx'),
-    rx_jquery    = require('rx-jquery'),
-    _            = require('underscore'),
-    io           = require('socket.io-client');
+var debug        = require('debug')('StreamGL:main');
+var $            = require('jquery');
+var Rx           = require('rx');
+                   require('rx-jquery');
+var _            = require('underscore');
+var io           = require('socket.io-client');
 
 var renderer     = require('./renderer.js');
 var ui           = require('./ui.js');
@@ -88,7 +88,9 @@ function getVizServerAddress() {
 
 function connect(vizType) {
     debug('Connecting to visualization server');
-    if (!vizType) throw new Error('need vizType');
+    if (!vizType) {
+        throw new Error('need vizType');
+    }
 
     return getVizServerAddress()
         .flatMap(function(addr) {

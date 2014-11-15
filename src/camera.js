@@ -1,16 +1,21 @@
 /** Cameras are responsible for setting, manipulating and reporting our position in a scene. */
 
+/* global Superconductor */
+
 (function() {
     'use strict';
 
-    if(typeof window == "undefined" || !window.glMatrix) {
-        var glMatrix = require("gl-matrix");
-        var mat4 = glMatrix.mat4;
-        var vec3 = glMatrix.vec3;
+    var glMatrix, mat4, vec3, vec4;
+    if(typeof window === 'undefined' || !window.glMatrix) {
+        glMatrix = require('gl-matrix');
+        mat4 = glMatrix.mat4;
+        vec3 = glMatrix.vec3;
+        vec4 = glMatrix.vec4;
     } else {
         glMatrix = window.glMatrix;
         mat4 = window.mat4;
         vec3 = window.vec3;
+        vec4 = window.vec4;
     }
 
     function Camera3d(argsRaw) {
@@ -35,7 +40,7 @@
         this.near = args.lens.near;
         this.far = args.lens.far;
         this.aspect = args.lens.aspect;
-    };
+    }
 
     /** Sets the lens and position attributes based off the size of a <canvas> element. */
     Camera3d.prototype.fromCanvas = function(canvas) {
@@ -61,20 +66,20 @@
 
     /** Get the 4x4 transformation matrix representing the camera perspective and position */
     Camera3d.prototype.getMatrix = function() {
-        var glMatrix = typeof module == 'undefined' ? window.glMatrix : module.exports.glMatrix;
-        var mat4 = typeof module == 'undefined' ? window.mat4 : module.exports.mat4;
-        var vec3 = typeof module == 'undefined' ? window.vec3 : module.exports.vec3;
+        var glMatrix = typeof module === 'undefined' ? window.glMatrix : module.exports.glMatrix;
+        var mat4 = typeof module === 'undefined' ? window.mat4 : module.exports.mat4;
+        var vec3 = typeof module === 'undefined' ? window.vec3 : module.exports.vec3;
 
-        var projct_mat = mat4.create(); //new J3DIMatrix4();
-        mat4.perspective(projct_mat, glMatrix.toRadian(this.fov), this.aspect, this.near, this.far)
+        var projectionMatrix = mat4.create(); //new J3DIMatrix4();
+        mat4.perspective(projectionMatrix, glMatrix.toRadian(this.fov), this.aspect, this.near, this.far);
 
-        mat4.translate(projct_mat, projct_mat, vec3.fromValues(this.position.x, this.position.y, this.position.z));
+        mat4.translate(projectionMatrix, projectionMatrix, vec3.fromValues(this.position.x, this.position.y, this.position.z));
 
-        mat4.rotateX(projct_mat, projct_mat, glMatrix.toRadian(this.rotation.x));
-        mat4.rotateY(projct_mat, projct_mat, glMatrix.toRadian(this.rotation.y));
-        mat4.rotateZ(projct_mat, projct_mat, glMatrix.toRadian(this.rotation.z));
+        mat4.rotateX(projectionMatrix, projectionMatrix, glMatrix.toRadian(this.rotation.x));
+        mat4.rotateY(projectionMatrix, projectionMatrix, glMatrix.toRadian(this.rotation.y));
+        mat4.rotateZ(projectionMatrix, projectionMatrix, glMatrix.toRadian(this.rotation.z));
 
-        return projct_mat;
+        return projectionMatrix;
     };
 
 
@@ -91,7 +96,7 @@
         }
 
         this.fromBounds(bounds.left, bounds.right, bounds.bottom, bounds.top);
-    };
+    }
 
 
     Camera2d.prototype.fromBounds = function(left, right, bottom,  top) {
@@ -110,14 +115,14 @@
 
 
     Camera2d.prototype.getMatrix = function() {
-        var projct_mat = mat4.create(); //new J3DIMatrix4();
+        var projectionMatrix = mat4.create(); //new J3DIMatrix4();
         // Choose arbitrary near and far planes (0, 20)
         // We purposelly swap and negate the top and bottom arguments so that the matrix follows
         // HTML-style coordinates (top-left corner at 0,0) vs. than GL coordinates (bottom-left 0,0)
-        mat4.ortho(projct_mat, this.center.x - (this.width / 2), this.center.x + (this.width / 2),
+        mat4.ortho(projectionMatrix, this.center.x - (this.width / 2), this.center.x + (this.width / 2),
             -this.center.y - (this.height / 2), -this.center.y + (this.height / 2), -1, 10);
 
-        return projct_mat;
+        return projectionMatrix;
     };
 
 
@@ -134,7 +139,7 @@
           'y': screenCoords[1],
           'w': screenCoords[3]
         };
-    }
+    };
 
 
     /** Given (x,y, w) coordinates in world space, transforms them to coordinates for a canvas */
@@ -155,18 +160,18 @@
         canvasCoords.y = canvasCoords.y * canvas.clientHeight;
 
         return canvasCoords;
-    }
+    };
 
 
     //FIXME should not depend on SC
-    if(typeof Superconductor !== "undefined") {
+    if(typeof Superconductor !== 'undefined') {
         Superconductor.Cameras = {
             'Camera3d': Camera3d,
             'Camera2d': Camera2d
         };
     }
 
-    if(typeof(module) != 'undefined') {
+    if(typeof(module) !== 'undefined') {
         module.exports.Camera3d = Camera3d;
         module.exports.Camera2d = Camera2d;
     }

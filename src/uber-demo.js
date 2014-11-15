@@ -1,36 +1,26 @@
-var debug   = require('debug')('uber:main'),
-    Rx      = require('rx');
+'use strict';
+
+var debug   = require('debug')('uber:main');
+var Rx      = require('rx');
+var $       = require('jquery');
 
 function init(socket) {
-
     //trigger animation on server
     socket.emit('graph_settings', {});
-
-
-/*
-    $(".dropdown-menu li a").click(function(){
-        var opt = $(this).text();
-        $(this).parents(".btn-group").find('.selection')
-            .text(opt)
-            .val(opt);
-    });
-*/
 
     //TODO try/catch because sc.html does not have tooltip
     try {
         $('#refresh')
             .tooltip()
             .on('click', function () {
-                debug('reset_graph')
+                debug('reset_graph');
+
                 socket.emit('reset_graph', {}, function () {
                     debug('page refresh');
                     window.location.reload();
                 });
             });
-    } catch (e) {
-
-    }
-
+    } catch (e) { }
 
     var elts = {
         nodeSlider: 'charge',
@@ -40,7 +30,6 @@ function init(socket) {
     };
 
     $('.menu-slider').each(function () {
-
         var $this = $(this);
 
         $(this).slider();
@@ -64,10 +53,7 @@ function init(socket) {
                 debug('settings', payload);
 
             });
-
     });
-
-
 }
 
 
