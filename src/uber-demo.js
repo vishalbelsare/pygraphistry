@@ -3,6 +3,8 @@
 var debug   = require('debug')('uber:main');
 var Rx      = require('rx');
 var $       = require('jquery');
+var Slider  = require('bootstrap-slider');
+
 
 function init(socket) {
     //trigger animation on server
@@ -30,21 +32,20 @@ function init(socket) {
     };
 
     $('.menu-slider').each(function () {
-        var $this = $(this);
 
-        $(this).slider();
+        //from global bootstra-slider scope
+        var slider = new Slider(this);
 
         var name = elts[this.id];
 
+        var slide = new Rx.Subject();
+        slider.on('slide', function () { slide.onNext(slider.getValue()); });
+
         //send to server
-        Rx.Observable
-            .fromEvent($(this), 'slide')
+        slide
+            .distinctUntilChanged()
             .sample(10)
-            .distinctUntilChanged(function () {
-                return $this.slider('getValue');
-            })
-            .subscribe(function () {
-                var v = $this.slider('getValue');
+            .subscribe(function (v) {
                 var val = (v < 0 ? -1 : 1) * Math.sqrt(Math.abs(v))/1000;
                 var payload = {};
                 payload[name] = val;
@@ -52,6 +53,8 @@ function init(socket) {
                 socket.emit('graph_settings', payload);
                 debug('settings', payload);
 
+            }, function (err) {
+                console.error('nooo', err);
             });
     });
 }
