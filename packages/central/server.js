@@ -21,7 +21,7 @@ var db;
 var config = require('./config')();
 debug("Config set to %j", config);
 
-var GRAPH_STATIC_PATH   = path.resolve(__dirname, 'assets');
+var GRAPH_STATIC_PATH   = path.resolve(require('graph-viz').staticFilePath(), 'assets');
 var HORIZON_STATIC_PATH = path.resolve(require('horizon-viz').staticFilePath(), 'assets');
 
 var HTTP_SERVER_LISTEN_ADDRESS = config.HTTP_LISTEN_ADDRESS;
@@ -157,10 +157,10 @@ app.get('*/StreamGL.map', function(req, res) {
     res.sendFile(require.resolve('StreamGL/dist/StreamGL.map'));
 });
 
-// Serve the horizon demo (/horizon/index.html)
+// Serve horizon static assets
 app.use('/horizon', express.static(HORIZON_STATIC_PATH));
-// Serve graph static assets (and /sc.html)
-app.use(express.static(GRAPH_STATIC_PATH));
+// Serve graph static assets
+app.use('/graph',   express.static(GRAPH_STATIC_PATH));
 
 
 // Default '/' path redirects to graph demo
