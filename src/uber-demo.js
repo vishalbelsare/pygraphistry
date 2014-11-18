@@ -8,6 +8,16 @@ var $       = require('jquery');
 var Slider  = require('bootstrap-slider');
 
 
+
+function sendSetting(socket, name, value) {
+    var payload = {};
+    payload[name] = value;
+
+    socket.emit('graph_settings', payload);
+    debug('settings', payload);
+}
+
+
 function init(socket) {
     //trigger animation on server
     socket.emit('graph_settings', {});
@@ -34,28 +44,23 @@ function init(socket) {
     };
 
     $('.menu-slider').each(function () {
-
-        //from global bootstra-slider scope
         var slider = new Slider(this);
-
         var name = elts[this.id];
 
-        var slide = new Rx.Subject();
-        slider.on('slide', function () { slide.onNext(slider.getValue()); });
+        var slide = Rx.Observable.fromEventPattern(
+            function(h) { slider.on('slide', h); },
+            function() { /* No 'off' fn in bootstrap-slider */ return; });
 
         //send to server
         slide
             .distinctUntilChanged()
             .sample(10)
-            .subscribe(function (v) {
-                var val = v / 1000;
-
-                var payload = {};
-                payload[name] = val;
-
-                socket.emit('graph_settings', payload);
-                debug('settings', payload);
-
+            .merge(Rx.Observable.just(0))   // Send the current value on load
+            .map(function() {
+                return slider.getValue() / 1000;
+            })
+            .subscribe(function (val) {
+                sendSetting(socket, name, val);
             }, function (err) {
                 console.error('nooo', err);
             });

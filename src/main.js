@@ -69,7 +69,6 @@ function init(canvas, vizType) {
                     debug('Renderer created');
 
                     interaction.setup($('.sim-container'), renderState);
-                    uberDemo(socket);
 
                     return {socket: socket, renderState: renderState};
                 });
@@ -80,6 +79,8 @@ function init(canvas, vizType) {
                 var renderState = v.renderState;
 
                 streamClient.handleVboUpdates(socket, renderState).subscribe(renderedFrame);
+
+                uberDemo(socket);
             },
             function (err) {
                 console.error('error connecting stream client', err, err.stack);
