@@ -166,7 +166,7 @@ app.use('/graph',   express.static(GRAPH_STATIC_PATH));
 // Default '/' path redirects to graph demo
 app.get('/', function(req, res) {
     debug('redirecting')
-    res.redirect('/graph.html' + (req.query.debug !== undefined ? '?debug' : ''));
+    res.redirect('/graph/index.html' + (req.query.debug !== undefined ? '?debug' : ''));
 });
 
 
