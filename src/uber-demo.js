@@ -1,5 +1,7 @@
 'use strict';
 
+// FIXME: Move this to graph-viz repo -- it shouldn't be a part of the core StreamGL library
+
 var debug   = require('debug')('uber:main');
 var Rx      = require('rx');
 var $       = require('jquery');
@@ -46,7 +48,8 @@ function init(socket) {
             .distinctUntilChanged()
             .sample(10)
             .subscribe(function (v) {
-                var val = (v < 0 ? -1 : 1) * Math.sqrt(Math.abs(v))/1000;
+                var val = v / 1000;
+
                 var payload = {};
                 payload[name] = val;
 
