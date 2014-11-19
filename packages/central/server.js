@@ -50,7 +50,7 @@ function get_likely_local_ip() {
 }
 
 
-app.get('/vizaddr/graph', function(req, res) {
+function assign_worker(req, res) {
     if (config.PRODUCTION) {
         var name = req.param("dataName");
         name = "uber" // hardcode for now
@@ -141,11 +141,14 @@ app.get('/vizaddr/graph', function(req, res) {
         debug("Assigning client '%s' to viz server on %s, port %d", req.ip, VIZ_SERVER_HOST, VIZ_SERVER_PORT);
         res.json({'hostname': VIZ_SERVER_HOST, 'port': VIZ_SERVER_PORT});
     }
+}
+
+app.get('/vizaddr/graph', function(req, res) {
+    assign_worker(req, res);
 });
 
 app.get('/vizaddr/horizon', function(req, res) {
-    debug("Assigning client '%s' to viz server on %s, port %d", req.ip, VIZ_SERVER_HOST, VIZ_SERVER_PORT);
-    res.json({'hostname': VIZ_SERVER_HOST, 'port': VIZ_SERVER_PORT});
+    assign_worker(req, res);
 });
 
 
@@ -165,10 +168,19 @@ app.use('/graph',   express.static(GRAPH_STATIC_PATH));
 
 // Default '/' path redirects to graph demo
 app.get('/', function(req, res) {
-    debug('redirecting')
+    debug('hello home page')
+    res.send('Hi! Try going to <a src="dev.graphistry.com/graph">graph<a/> or <a src="dev.graphistry.com/horizon">horizon</a>')
+});
+
+app.get('/graph', function(req, res) {
+    debug('redirecting to graph')
     res.redirect('/graph/index.html' + (req.query.debug !== undefined ? '?debug' : ''));
 });
 
+app.get('/horizon', function(req, res) {
+    debug('redirecting to horizon')
+    res.redirect('/horizon/src/demo/index.html' + (req.query.debug !== undefined ? '?debug' : ''));
+});
 
 Rx.Observable.return()
     .flatMap(function () {
@@ -192,4 +204,5 @@ Rx.Observable.return()
             console.error("[server.js] Fatal error: could not start server on address %s, port %s. Exiting...",
                 HTTP_SERVER_LISTEN_ADDRESS, HTTP_SERVER_LISTEN_PORT);
             process.exit(1);
-        });
+        }
+    );
