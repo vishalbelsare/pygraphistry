@@ -169,7 +169,7 @@ app.use('/graph',   express.static(GRAPH_STATIC_PATH));
 // Default '/' path redirects to graph demo
 app.get('/', function(req, res) {
     debug('hello home page')
-    res.send('Hi! Try going to <a href="dev.graphistry.com/graph">graph<a/> or <a href="dev.graphistry.com/horizon">horizon</a>')
+    res.send('Hi! Try going to <a href="http://dev.graphistry.com/graph">graph<a/> or <a href="http://dev.graphistry.com/horizon">horizon</a>')
 });
 
 app.get('/graph', function(req, res) {
