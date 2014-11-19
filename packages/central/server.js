@@ -49,17 +49,17 @@ function get_likely_local_ip() {
     return (public_iface.length > 0) ? public_iface[0].address : 'localhost';
 }
 
-
-function assign_worker(req, res) {
+/**
+ * The router that checks for available resources and assigns them
+ * @return {'status','message','ip',port}
+ */
+function route_worker(req, res) {
     if (config.PRODUCTION) {
         var name = req.param("dataName");
         name = "uber" // hardcode for now
         db.collection('data_info').findOne({"name": name}, function(err, doc) {
             if (err) {
-                debug(err);
-                res.send('Problem with query');
-                res.end();
-                return;
+                return {'status': 'fail', 'error': 'Problem with query'};
             }
             if (doc) {
                 // Query only for gpus that have been updated within 30 secs
@@ -74,18 +74,12 @@ function assign_worker(req, res) {
                       .toArray(function(err, ips) {
 
                     if (err) {
-                        debug(err);
-                        res.send('Problem with query');
-                        res.end();
-                        return;
+                        return {'status': 'fail', 'error': 'Problem with query'};
                     }
 
                     // Are there no servers with enough space?
                     if (ips.length == 0) {
-                        debug("All GPUs out of space!");
-                        res.send('No servers can fit the data :/');
-                        res.end();
-                        return;
+                        return {'status': 'fail', 'error': 'no servers can fit the data'};
                     }
 
                     // Query only for workers that have been updated within 30 secs
@@ -98,18 +92,12 @@ function assign_worker(req, res) {
                                                      .toArray(function(err, results) {
 
                         if (err) {
-                            debug(err);
-                            res.send('Problem with query');
-                            res.end();
-                            return;
+                            return {'status': 'fail', 'error': 'Problem with query'};
                         }
 
                         // Are all processes busy or dead?
                         if (results.length == 0) {
-                            debug('There is space on a server, but all workers in the fleet are busy or dead (have not pinged home in over 30 seconds).');
-                            res.send('There is space on a server, but all workers in the fleet are busy or dead (have not pinged home in over 30 seconds)');
-                            res.end();
-                            return;
+                            return {'status': 'error', 'message': 'there is space on a server, but all workers in the fleet are busy or dead (have not pinged home in over 30 seconds)'};
                         }
 
                         // Try each IP in order of free space
@@ -123,32 +111,32 @@ function assign_worker(req, res) {
                                 var port = results[j]['port'];
 
                                 // Todo: ping process first for safety
-                                debug("Assigning client '%s' to viz server on %s, port %d", req.ip, ip, port);
-                                res.json({'hostname': ip, 'port': port});
-                                res.end();
-                                return;
+                                return {'status': 'success', 'hostname': ip, 'port': port};
                             }
                         }
                     });
                 });
             } else {
-                res.send('Couldn\'t find that dataset');
-                res.end();
-                return;
+                return {'status': 'error', 'message': 'can\'t find that dataset'};
             }
         });
     } else {
-        debug("Assigning client '%s' to viz server on %s, port %d", req.ip, VIZ_SERVER_HOST, VIZ_SERVER_PORT);
-        res.json({'hostname': VIZ_SERVER_HOST, 'port': VIZ_SERVER_PORT});
+        return {'status': 'success', 'hostname': VIZ_SERVER_HOST, 'port': VIZ_SERVER_PORT};
     }
 }
 
 app.get('/vizaddr/graph', function(req, res) {
-    assign_worker(req, res);
+    var routed = route_worker();
+    debug(routed);
+    res.json(routed);
+    res.end()
 });
 
 app.get('/vizaddr/horizon', function(req, res) {
-    assign_worker(req, res);
+    var routed = route_worker();
+    debug(routed);
+    res.json(routed);
+    res.end()
 });
 
 
