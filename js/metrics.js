@@ -11,6 +11,9 @@ var Rx = require("rx"),
 var boundaryUrl = 'https://abe@graphistry.com:api.fc39b94e8f-3713@premium-api.boundary.com/v1/measurements';
 
 var sendToBoundary = function(entry) {
+    if (!config.PRODUCTION){
+        return;
+    }
     var data = {}
     for ( var property in entry ) {
         data['measure'] = entry[property];
