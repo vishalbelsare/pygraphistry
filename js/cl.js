@@ -51,6 +51,13 @@ function createCLContextNode(renderer) {
     var devices = clDevices.map(function(d) {
     // var devices = platform.getDevices(DEVICE_TYPE).map(function(d) {
         debug("Found device %s", util.inspect(d, {depth: null, showHidden: true, colors: true}));
+        
+        function typeToString (v) {
+            return v === 2 ? 'CPU'
+                : v === 4 ? 'GPU'
+                : v === 8 ? 'ACCELERATOR'
+                : ('unknown type: ' + v);
+        }
 
         var computeUnits = d
             .getInfo(webcl.DEVICE_MAX_WORK_ITEM_SIZES)
@@ -60,6 +67,7 @@ function createCLContextNode(renderer) {
 
         return {
             device: d,
+            deviceType: typeToString(d.getInfo(webcl.DEVICE_TYPE)),
             computeUnits: computeUnits
         };
     });
@@ -119,6 +127,8 @@ function createCLContextNode(renderer) {
     }
 
     debug("Device set. Vendor: %s. Device: %o", deviceWrapper.device.getInfo(webcl.DEVICE_VENDOR), deviceWrapper);
+    if (deviceWrapper.deviceType === "CPU")
+        console.warn("WARNING using CPU driver for OpenCL");
 
     var res = {
         renderer: renderer,
@@ -535,7 +545,7 @@ if (NODEJS) {
 }
 
 
-DEVICE_TYPE = webcl.DEVICE_TYPE_GPU;
+DEVICE_TYPE = webcl.DEVICE_TYPE_ALL;
 
 
 module.exports = {
