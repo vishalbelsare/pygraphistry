@@ -52,7 +52,7 @@ function createCLContextNode(renderer) {
     // var devices = platform.getDevices(DEVICE_TYPE).map(function(d) {
         debug("Found device %s", util.inspect(d, {depth: null, showHidden: true, colors: true}));
         
-        function typeToString (v) {
+        var typeToString = function (v) {
             return v === 2 ? 'CPU'
                 : v === 4 ? 'GPU'
                 : v === 8 ? 'ACCELERATOR'
