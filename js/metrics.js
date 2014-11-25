@@ -1,14 +1,14 @@
 "use strict";
 
 
-var Rx = require("rx"),
-    request = require('request'),
-    config = require('../config')(),
-    logger = require('bunyan'),
-    infoWrapped;
+var Rx = require("rx");
+var request = require('request');
+var config = require('../config')();
+
 
 // TODO: Import via config file, this should be in Ansible
 var boundaryUrl = 'https://abe@graphistry.com:api.fc39b94e8f-3713@premium-api.boundary.com/v1/measurements';
+
 
 var sendToBoundary = function(entry) {
     if (!config.PRODUCTION){
@@ -39,7 +39,8 @@ var sendToBoundary = function(entry) {
     );
 };
 
-// Wrap the Bunyan logging and send to Boundary / anywhere else
+
+// Send logged metrics to Boundary
 // { '0': { 'method': 'tick', durationMS': 173 } }
 var info = function () {
     for (var key in arguments) {
@@ -53,14 +54,12 @@ var info = function () {
             }
         }
     }
-
-    return infoWrapped.apply(this, arguments);
 };
+
 
 // Must call init first with a namespace
 var init = function(name){
-    logger      = logger.createLogger({name: name});
-    infoWrapped = logger.info.bind(logger);
+    // noop since we took out Bunyan logging. Remains for compatability reasons.
 }
 
 module.exports = {
