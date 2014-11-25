@@ -11,7 +11,6 @@ var Q = require("q"),
     _ = require('underscore'),
 
     request = require('request'),
-    chalk = require("chalk"),
     debug = require("debug")("StreamGL:driver"),
 
     NBody = require("./NBody.js"),
@@ -411,8 +410,8 @@ function createAnimation() {
     .then(function (graph) {
         debug("Graph created");
     }, function (err) {
-        console.error("\n" + chalk.bgRed("\n~~~~~ SETUP ERROR") + "\n", err, ". Stack:", err.stack);
-        console.error("\n" + chalk.bgRed("\nEXITING") + "\n");
+        console.error("\n\n~~~~~ SETUP ERROR\n", err, ". Stack:", err.stack);
+        console.error("\n\nEXITING\n\n");
         process.exit(-1);
     })
     .done();
