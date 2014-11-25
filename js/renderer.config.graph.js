@@ -27,8 +27,8 @@ module.exports = {
     'programs': {
         'edgeculled': {
             'sources': {
-                'vertex': fs.readFileSync(__dirname + '/shaders/graph/edgeculled.vertex.glsl', 'utf8').toString('ascii'),
-                'fragment': fs.readFileSync(__dirname + '/shaders/graph/edgeculled.fragment.glsl', 'utf8').toString('ascii')
+                'vertex': fs.readFileSync(__dirname + '/../shaders/edgeculled.vertex.glsl', 'utf8').toString('ascii'),
+                'fragment': fs.readFileSync(__dirname + '/../shaders/edgeculled.fragment.glsl', 'utf8').toString('ascii')
             },
             'attributes': ['edgeColor', 'curPos'],
             'camera': 'mvp',
@@ -36,8 +36,8 @@ module.exports = {
         },
         'edges': {
             'sources': {
-                'vertex': fs.readFileSync(__dirname + '/shaders/graph/edge.vertex.glsl', 'utf8').toString('ascii'),
-                'fragment': fs.readFileSync(__dirname + '/shaders/graph/edge.fragment.glsl', 'utf8').toString('ascii')
+                'vertex': fs.readFileSync(__dirname + '/../shaders/edge.vertex.glsl', 'utf8').toString('ascii'),
+                'fragment': fs.readFileSync(__dirname + '/../shaders/edge.fragment.glsl', 'utf8').toString('ascii')
             },
             'attributes': ['curPos'],
             'camera': 'mvp',
@@ -45,8 +45,8 @@ module.exports = {
         },
         'midedges': {
             'sources': {
-                'vertex': fs.readFileSync(__dirname + '/shaders/graph/midedge.vertex.glsl', 'utf8').toString('ascii'),
-                'fragment': fs.readFileSync(__dirname + '/shaders/graph/midedge.fragment.glsl', 'utf8').toString('ascii')
+                'vertex': fs.readFileSync(__dirname + '/../shaders/midedge.vertex.glsl', 'utf8').toString('ascii'),
+                'fragment': fs.readFileSync(__dirname + '/../shaders/midedge.fragment.glsl', 'utf8').toString('ascii')
             },
             'attributes': ['curPos'],
             'camera': 'mvp',
@@ -54,8 +54,8 @@ module.exports = {
         },
         'midedgeculled': {
             'sources': {
-                'vertex': fs.readFileSync(__dirname + '/shaders/graph/midedgeculled.vertex.glsl', 'utf8').toString('ascii'),
-                'fragment': fs.readFileSync(__dirname + '/shaders/graph/midedgeculled.fragment.glsl', 'utf8').toString('ascii')
+                'vertex': fs.readFileSync(__dirname + '/../shaders/midedgeculled.vertex.glsl', 'utf8').toString('ascii'),
+                'fragment': fs.readFileSync(__dirname + '/../shaders/midedgeculled.fragment.glsl', 'utf8').toString('ascii')
             },
             'attributes': ['curPos'],
             'camera': 'mvp',
@@ -63,8 +63,8 @@ module.exports = {
         },
         'midedgetextured': {
             'sources': {
-                'vertex': fs.readFileSync(__dirname + '/shaders/graph/midedge-textured.vertex.glsl', 'utf8').toString('ascii'),
-                'fragment': fs.readFileSync(__dirname + '/shaders/graph/midedge-textured.fragment.glsl', 'utf8').toString('ascii')
+                'vertex': fs.readFileSync(__dirname + '/../shaders/midedge-textured.vertex.glsl', 'utf8').toString('ascii'),
+                'fragment': fs.readFileSync(__dirname + '/../shaders/midedge-textured.fragment.glsl', 'utf8').toString('ascii')
             },
             'attributes': ['curPos', 'aColorCoord'],
             'textures': ['uSampler'],
@@ -73,8 +73,8 @@ module.exports = {
         },
         'pointculled': {
             'sources': {
-                'vertex': fs.readFileSync(__dirname + '/shaders/graph/pointculled.vertex.glsl', 'utf8').toString('ascii'),
-                'fragment': fs.readFileSync(__dirname + '/shaders/graph/pointculled.fragment.glsl', 'utf8').toString('ascii')
+                'vertex': fs.readFileSync(__dirname + '/../shaders/pointculled.vertex.glsl', 'utf8').toString('ascii'),
+                'fragment': fs.readFileSync(__dirname + '/../shaders/pointculled.fragment.glsl', 'utf8').toString('ascii')
             },
             'attributes': ['pointIndex', 'curPos', 'pointSize', 'pointColor', 'fog'],
             'camera': 'mvp',
@@ -82,8 +82,8 @@ module.exports = {
         },
         'points': {
             'sources': {
-                'vertex': fs.readFileSync(__dirname + '/shaders/graph/point.vertex.glsl', 'utf8').toString('ascii'),
-                'fragment': fs.readFileSync(__dirname + '/shaders/graph/point.fragment.glsl', 'utf8').toString('ascii')
+                'vertex': fs.readFileSync(__dirname + '/../shaders/point.vertex.glsl', 'utf8').toString('ascii'),
+                'fragment': fs.readFileSync(__dirname + '/../shaders/point.fragment.glsl', 'utf8').toString('ascii')
             },
             'attributes': ['curPos', 'pointSize', 'pointColor'],
             'camera': 'mvp',
@@ -91,8 +91,8 @@ module.exports = {
         },
         'midpoints': {
             'sources': {
-                'vertex': fs.readFileSync(__dirname + '/shaders/graph/midpoint.vertex.glsl', 'utf8').toString('ascii'),
-                'fragment': fs.readFileSync(__dirname + '/shaders/graph/midpoint.fragment.glsl', 'utf8').toString('ascii')
+                'vertex': fs.readFileSync(__dirname + '/../shaders/midpoint.vertex.glsl', 'utf8').toString('ascii'),
+                'fragment': fs.readFileSync(__dirname + '/../shaders/midpoint.fragment.glsl', 'utf8').toString('ascii')
             },
             'attributes': ['curPos'],
             'camera': 'mvp',
