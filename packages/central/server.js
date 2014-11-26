@@ -189,7 +189,7 @@ Rx.Observable.return()
             return Rx.Observable.fromNodeCallback(
                 MongoClient.connect.bind(MongoClient, config.MONGO_SERVER))({auto_reconnect: true})
                 .do(function (database) {
-                    db = database.db('graphistry-prod');
+                    db = database.db(config.MONGO_DB);
                 });
         }
     })
