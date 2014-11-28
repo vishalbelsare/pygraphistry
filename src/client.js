@@ -75,7 +75,7 @@ function getVizServerAddress() {
         .map(function(reply) {
             debug('Got viz server address');
 
-            console.log("Routed in " + ( (Date.now() / 1000) - parseInt(reply.data.timestamp) ) + " ms")
+            console.log("routed in " + ( Date.now() - parseFloat(reply.data.timestamp) ) + " ms")
 
             return {
                 'hostname': reply.data.hostname,
