@@ -124,7 +124,7 @@ function assign_worker(req, res) {
 
                                 // Todo: ping process first for safety
                                 debug("Assigning client '%s' to viz server on %s, port %d", req.ip, ip, port);
-                                res.json({'hostname': ip, 'port': port, 'timestamp': Date.now() / 1000});
+                                res.json({'hostname': ip, 'port': port, 'timestamp': Date.now()});
                                 res.end();
                                 return;
                             }
