@@ -291,6 +291,28 @@ function createContext(canvas) {
     return gl;
 }
 
+
+//RenderState * canvas * string -> {width: float, height: float}
+function getTextureDims(config, canvas, name) {
+
+    if (!name || name === 'CANVAS') {
+        return {width: canvas.width, height: canvas.height};
+    }
+
+    var textureConfig = config.get ? config.get('textures').get(name).toJS() : config.textures[name];
+
+    var width =
+        textureConfig.hasOwnProperty('width') ?
+            Math.round(0.01 * textureConfig.width.value * canvas.width)
+        : canvas.width;
+    var height =
+        textureConfig.hasOwnProperty('height') ?
+            Math.round(0.01 * textureConfig.height.value * canvas.height)
+        : canvas.height;
+
+    return {width: width, height: height};
+}
+
 // create for each texture rendertarget, an offscreen fbo, texture, renderbuffer, and host buffer
 // note that not all textures are render targets (e.g., server reads)
 function createRenderTargets(config, canvas, gl) {
@@ -308,18 +330,26 @@ function createRenderTargets(config, canvas, gl) {
     var textures      = neededTextures.map(gl.createTexture.bind(gl)),
         fbos          = neededTextures.map(gl.createFramebuffer.bind(gl)),
         renderBuffers = neededTextures.map(gl.createRenderbuffer.bind(gl)),
+        dimensions    = neededTextures.map(getTextureDims.bind('', config, canvas)),
         pixelreads    = neededTextures.map(
-                function () { return new Uint8Array(canvas.width * canvas.height * 4); });
+                function (_, i) {
+                    return new Uint8Array(dimensions[i].width * dimensions[i].height * 4); });
 
     //bind
-    _.zip(textures, fbos, renderBuffers)
+    _.zip(textures, fbos, renderBuffers, dimensions)
         .forEach(function (pair) {
             var texture     = pair[0],
                 fbo         = pair[1],
-                renderBuffer    = pair[2];
+                renderBuffer    = pair[2],
+                dimensions  = pair[3];
+
+            var width = dimensions.width;
+            var height = dimensions.height;
 
             gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,
+                width, height,
+                0, gl.RGBA, gl.UNSIGNED_BYTE, null);
             //NPOT dimensions: https://developer.mozilla.org/en-US/docs/Web/WebGL/Using_textures_in_WebGL
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -329,7 +359,7 @@ function createRenderTargets(config, canvas, gl) {
             gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
 
             gl.bindRenderbuffer(gl.RENDERBUFFER, renderBuffer);
-            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, canvas.width, canvas.height);
+            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
             gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
 
             gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderBuffer);
@@ -652,6 +682,11 @@ function render(state, renderListOverride) {
 
         var renderItem = config.scene.items[item];
         var renderTarget = renderItem.renderTarget === 'CANVAS' ? null : renderItem.renderTarget;
+
+        //change viewport in case of downsampled target
+        var dims = getTextureDims(config, gl.canvas, renderTarget);
+        gl.viewport(0, 0, dims.width, dims.height);
+
         if (renderTarget !== lastRenderTarget) {
             debug('  changing fbo', renderTarget);
             gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
@@ -677,11 +712,11 @@ function render(state, renderListOverride) {
         if (renderTarget && (renderTarget !== 'CANVAS')) {
             debug('  reading back texture', item);
             var pixelreads = state.get('pixelreads')[renderTarget];
-            if (pixelreads.length < gl.canvas.width * gl.canvas.height * 4) {
+            if (pixelreads.length < dims.width * dims.height * 4) {
                 state.get('pixelreads')[item] = pixelreads =
-                    new Uint8Array(gl.canvas.width * gl.canvas.height * 4);
+                    new Uint8Array(dims.width * dims.height * 4);
             }
-            gl.readPixels(0, 0, gl.canvas.width, gl.canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixelreads);
+            gl.readPixels(0, 0, dims.width, dims.height, gl.RGBA, gl.UNSIGNED_BYTE, pixelreads);
         }
 
     });
