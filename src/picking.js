@@ -6,6 +6,24 @@ var _       = require('underscore');
 var debug   = require('debug')('graphistry:StreamGL:picking');
 
 
+function uint32ToIdx (raw) {
+
+    //swizzle because point shader is funny
+    //reverse..
+    var parts = _.range(0,4).map(function (_, i) {
+            return (raw >> (8 * i)) & 255;
+        });
+    var shuffled = parts;//[parts[0], parts[1], parts[2], parts[3]];
+    var r = 0,//shuffled[4],
+        g = 0,//shuffled[3],
+        b = shuffled[2],
+        a = shuffled[1];
+
+    return ((r << 24) | (g << 16) | (b << 8) | a) - 1;
+
+}
+
+
 //returns idx or -1
 function hitTest(state, texture, x, y) {
     // debug('hit testing', texture);
@@ -19,24 +37,7 @@ function hitTest(state, texture, x, y) {
     var idx = (canvas.height - y) * canvas.width + x;
     var raw = remapped[idx];//(remapped[idx] >> 8) & (255 | (255 << 8) | (255 << 16));
 
-    //swizzle because point shader is funny
-    //reverse..
-    var parts = _.range(0,4).map(function (_, i) {
-            return (raw >> (8 * i)) & 255;
-        });
-    var shuffled = [parts[0], parts[1], parts[2], parts[3]];
-    var r = 0,//shuffled[4],
-        g = 0,//shuffled[3],
-        b = shuffled[2],
-        a = shuffled[1];
-
-    var combined = ((r << 24) | (g << 16) | (b << 8) | a) - 1;
-
-    if (combined > -1) {
-        debug('hit', texture, x, y, '->', idx, '-> (', raw, '=>', combined, ') == ',
-           '(', r, g, b, a, ')');
-    }
-    return combined;
+    return uint32ToIdx(raw);
 }
 
 
@@ -80,5 +81,6 @@ function hitTestN(state, texture, x, y, r) {
 module.exports = {
     hitTest: hitTest,
     hitTestCircumference: hitTestCircumference,
-    hitTestN: hitTestN
+    hitTestN: hitTestN,
+    uint32ToIdx: uint32ToIdx
 };
