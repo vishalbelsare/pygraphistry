@@ -51,6 +51,14 @@ function genLabel ($labelCont, txt) {
 var renderLabelsRan = false;
 function renderLabels($labelCont, renderState) {
 
+    var curPoints = renderState.get('hostBuffers').curPoints;
+    if (!curPoints) {
+        console.warn('renderLabels called before curPoints available');
+        return;
+    }
+    var points = new Float32Array(curPoints.buffer);
+
+
     if (!renderLabelsRan) {
         renderLabelsRan = true;
         var allOn = renderer.localAttributeProxy(renderState)('allHighlighted');
@@ -76,12 +84,26 @@ function renderLabels($labelCont, renderState) {
     var t1 = Date.now();
 
 
+    var camera = renderState.get('camera');
+    var cnv = $('#simulation').get(0);
+    var mtx = camera.getMatrix();
+
     //return unused first incase need extra to reuse
+    //need to make sure not just overplotted (in which case, mark as hit)
     _.values(activeLabels).forEach(function (lbl) {
         if (!hits[lbl.idx]) {
-            inactiveLabels.push(lbl);
-            delete activeLabels[lbl.idx];
-            lbl.elt.css('display','none');
+
+            var pos = camera.canvasCoords(points[2 * lbl.idx], -points[2 * lbl.idx + 1], 1, cnv, mtx);
+
+            if (pos.x < 0 || pos.y < 0 || pos.x > cnv.clientWidth || pos.y > cnv.clientHeight) {
+                //remove
+                inactiveLabels.push(lbl);
+                delete activeLabels[lbl.idx];
+                lbl.elt.css('display','none');
+            } else {
+                //overplotted, keep
+                hits[lbl.idx] = true;
+            }
         }
     });
 
@@ -112,18 +134,6 @@ function renderLabels($labelCont, renderState) {
 
     var t2 = Date.now();
 
-    var curPoints = renderState.get('hostBuffers').curPoints;
-
-    if (!curPoints) {
-        console.warn('renderLabels called before curPoints available');
-        return;
-    }
-
-    var points = new Float32Array(renderState.get('hostBuffers').curPoints.buffer);
-    var camera = renderState.get('camera');
-    var cnv = $('#simulation').get(0);
-
-    var mtx = camera.getMatrix();
     var newPos = new Float32Array(labels.length * 2);
     for (var i = 0; i < labels.length; i++) {
         var idx = labels[i].idx;
