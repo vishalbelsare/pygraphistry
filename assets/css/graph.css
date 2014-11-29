@@ -36,3 +36,15 @@ button.btn-default {
     background-color: transparent;
     color: white;
 }
+
+.graph-label-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+.graph-label {
+    position: absolute;
+    color: rgba(255,255,255,0.9);
+    font-size: 1.2em;
+    background-color: rgba(0,0,0,0.7);
+}
