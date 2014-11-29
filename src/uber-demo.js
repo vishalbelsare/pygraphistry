@@ -23,6 +23,10 @@ function sendSetting(socket, name, value) {
 }
 
 
+var HIGHLIGHT_SIZE = 20;
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // Event handler setup
 ///////////////////////////////////////////////////////////////////////////////
@@ -120,7 +124,7 @@ function setupInteractions($eventTarget, renderState) {
 
                         if (idx > -1) {
                             debug('Enlarging current mouseover point', idx);
-                            highlights.write(idx, 20);
+                            highlights.write(idx, HIGHLIGHT_SIZE);
                             dirty = true;
                         }
 
