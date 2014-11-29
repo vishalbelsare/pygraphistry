@@ -27,13 +27,33 @@ function sendSetting(socket, name, value) {
 // Event handler setup
 ///////////////////////////////////////////////////////////////////////////////
 
-//immediate
-function renderLabels($eventTarget, renderState, labels) {
-
-    console.log('renderState', renderState.get('hostBuffers'));
-
+//TODO remove global
+//[ {elt: $DOM, idx: int} ]
+var activeLabels = [];
 
 
+// RendererState * [ {elt: $DOM, idx: int} ] -> ()
+// Immediately reposition each label based on camera and curPoints buffer
+function renderLabels(renderState, labels) {
+
+    var curPoints = renderState.get('hostBuffers').curPoints;
+
+    if (!curPoints) {
+        console.warn('renderLabels called before curPoints available');
+        return;
+    }
+
+    var points = new Float32Array(renderState.get('hostBuffers').curPoints.buffer);
+    var camera = renderState.get('camera');
+    var cnv = $('#simulation').get(0);
+
+    labels.forEach(function (elt) {
+        var idx = elt.idx;
+        var pos = camera.canvasCoords(points[2 * idx], -points[2 * idx + 1], 1, cnv);
+        elt.elt.css({
+            left:   pos.x,
+            top:    pos.y});
+    });
 }
 
 function setupInteractions($eventTarget, renderState) {
@@ -42,12 +62,13 @@ function setupInteractions($eventTarget, renderState) {
 
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
-    var labels = [1,2,3,4,5].map(function (i) {
+    var labels = _.range(1,20).map(function (i) {
         return $('<span>')
             .addClass('graph-label')
-            .text('zzz ' + i + ' zzz');
+            .text(i);
     });
-    labels.forEach(function ($lbl) {
+    labels.forEach(function ($lbl, i) {
+        activeLabels.push({idx: i, elt: $lbl});
         $labelCont.append($lbl);
     });
 
@@ -66,7 +87,7 @@ function setupInteractions($eventTarget, renderState) {
     interactions
         .subscribe(function(newCamera) {
             currentState = renderer.setCameraIm(renderState, newCamera);
-            renderLabels($eventTarget, currentState);
+            renderLabels(currentState, activeLabels);
             renderer.render(currentState);
         });
 
@@ -84,7 +105,18 @@ function setupInteractions($eventTarget, renderState) {
 
                     if (idx !== prevIdx) {
                         debug('Hitmap detected mouseover on a new point with index', idx);
-                        $('.hit-label').text('Location ID: ' + (idx > -1 ? '#' + idx.toString(16) : ''));
+
+                        var points = new Float32Array(renderState.get('hostBuffers').curPoints.buffer);
+                        var xtra = idx > -1 ? (' (' + points[2*idx].toFixed(3) + ', ' + points[2*idx+1].toFixed(3) + ')') : '';
+                        var lblText = (idx > -1 ? '#' + idx.toString(16) : '') + xtra;
+                        $('.hit-label').text('Location ID: ' + lblText);
+
+                        if (idx > -1) {
+                            console.log('resetting 0:', activeLabels[0].idx, '->', idx);
+                            activeLabels[0].idx = idx;
+                            activeLabels[0].elt.text(lblText);
+                            renderLabels(currentState, activeLabels);
+                        }
 
                         var dirty = false;
 
