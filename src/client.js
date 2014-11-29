@@ -41,7 +41,7 @@ function makeFetcher (fragment, url) {
                 res.onNext(trimmedArray);
 
             } catch (e) {
-                ui.error('Render error on loading data into WebGL:', e, new Error().stack);
+                ui.error('Render error on loading data into WebGL:', e, e.stack);
             }
         };
 
@@ -205,7 +205,7 @@ function handleVboUpdates(socket, renderState) {
                         renderer.setNumElements(data.elements);
                         readyBuffers.onNext();
                     } catch (e) {
-                        ui.error('Render error on loading data into WebGL:', e, new Error().stack);
+                        ui.error('Render error on loading data into WebGL:', e, e.stack);
                     }
 
                 });
