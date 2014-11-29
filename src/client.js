@@ -59,7 +59,7 @@ function getUpdatedNames (names, originalVersions, newVersions) {
         return names;
     }
     return names.filter(function (name) {
-        return originalVersions[name] !== newVersions[name];
+        return newVersions.hasOwnProperty(name) && (originalVersions[name] !== newVersions[name]);
     });
 }
 
