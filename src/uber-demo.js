@@ -116,13 +116,6 @@ function setupInteractions($eventTarget, renderState) {
                         var lblText = (idx > -1 ? '#' + idx.toString(16) : '') + xtra;
                         $('.hit-label').text('Location ID: ' + lblText);
 
-                        if (idx > -1) {
-                            console.log('resetting 0:', activeLabels[0].idx, '->', idx);
-                            activeLabels[0].idx = idx;
-                            activeLabels[0].elt.text(lblText);
-                            renderLabels(currentState, activeLabels);
-                        }
-
                         var dirty = false;
 
                         if (idx > -1) {
