@@ -104,6 +104,11 @@ module.exports = {
         'pointHitmap': {
             'datasource': 'LOCAL',
         },
+        'pointHitmapDownsampled': {
+            'datasource': 'LOCAL',
+            'width': {'unit': 'percent', 'value': 2.5},
+            'height': {'unit': 'percent', 'value': 2.5}
+        },
         'colorMap': {
             'datasource': 'SERVER',
             'path': 'test-colormap2.png'
@@ -207,6 +212,19 @@ module.exports = {
                 'stride': 0,
                 'normalize': false
             }
+        },
+        'allHighlighted': {
+            'allHighlighted':  {
+
+                'datasource': 'LOCAL',
+                'localName': 'allHighlighted',
+
+                'type': 'FLOAT',
+                'count': 1,
+                'offset': 0,
+                'stride': 0,
+                'normalize': false
+            }
         }
     },
 
@@ -242,7 +260,6 @@ module.exports = {
                 },
                 'drawType': 'POINTS',
                 'glOptions': {},
-                //'renderTarget': 'pointHitmap',
             },
             'pointpickingScreen': {
                 'program': 'pointculled',
@@ -272,6 +289,21 @@ module.exports = {
                 'drawType': 'POINTS',
                 'glOptions': {},
                 'renderTarget': 'pointHitmap',
+            },
+            'pointsampling': {
+                'program': 'pointculled',
+                'bindings': {
+                    'curPos':       ['curPoints', 'curPos'],
+                    'pointSize':    ['pointSizes', 'pointSize'],
+                    'pointColor':   ['vertexIndices', 'pointColor'],
+                    'isHighlighted':   ['allHighlighted', 'allHighlighted']
+                },
+                'uniforms': {
+                    'fog': { 'uniformType': '1f', 'values': [0.0] }
+                },
+                'drawType': 'POINTS',
+                'glOptions': {},
+                'renderTarget': 'pointHitmapDownsampled'
             },
             'points': {
                 'program': 'points',
@@ -313,6 +345,6 @@ module.exports = {
             }
         },
 
-        'render': ['pointpicking', 'pointculled', 'midedgetextured']
+        'render': ['pointpicking', 'pointsampling', 'pointculled', 'midedgetextured']
     }
 };

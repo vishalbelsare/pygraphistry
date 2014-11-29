@@ -236,6 +236,7 @@ function fetchNumElements(graph) {
         pointculled: graph.renderer.numPoints,
         pointpicking: graph.renderer.numPoints,
         pointpickingScreen: graph.renderer.numPoints,
+        pointsampling: graph.renderer.numPoints,
         midpoints: graph.renderer.numMidPoints
     };
 }
