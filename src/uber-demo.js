@@ -10,7 +10,8 @@ var Slider  = require('bootstrap-slider');
 
 
 var interaction = require('./interaction.js');
-var renderer = require('./renderer');
+var renderer    = require('./renderer');
+var picking     = require('./picking.js');
 
 
 
@@ -33,7 +34,8 @@ var HIGHLIGHT_SIZE = 20;
 
 //TODO remove global
 //[ {elt: $DOM, idx: int} ]
-var activeLabels = [];
+var activeLabels = {};
+var inactiveLabels = [];
 
 function genLabel ($labelCont, txt) {
     var res = $('<span>')
@@ -44,9 +46,71 @@ function genLabel ($labelCont, txt) {
     return res;
 }
 
-// RendererState * [ {elt: $DOM, idx: int} ] -> ()
+// $DOM * RendererState  -> ()
 // Immediately reposition each label based on camera and curPoints buffer
-function renderLabels(renderState, labels) {
+var renderLabelsRan = false;
+function renderLabels($labelCont, renderState) {
+
+    if (!renderLabelsRan) {
+        renderLabelsRan = true;
+        var allOn = renderer.localAttributeProxy(renderState)('allHighlighted');
+        var amt = renderState.get('hostBuffers').curPoints.buffer.byteLength / (4 * 2);
+        for (var i = 0; i < amt; i++) {
+            allOn.write(i, HIGHLIGHT_SIZE / 2);
+        }
+    }
+
+
+    var t0 = Date.now();
+
+    var samples = renderState.get('pixelreads').pointHitmapDownsampled;
+    var samples32 = new Uint32Array(samples.buffer);
+    var hits = {};
+    for (var i = 0; i < samples32.length; i++) {
+        hits[picking.uint32ToIdx(samples32[i])] = true;
+    }
+    if (hits['-1']) {
+        delete hits['-1'];
+    }
+
+    var t1 = Date.now();
+
+
+    //return unused first incase need extra to reuse
+    _.values(activeLabels).forEach(function (lbl) {
+        if (!hits[lbl.idx]) {
+            inactiveLabels.push(lbl);
+            delete activeLabels[lbl.idx];
+            lbl.elt.css('display','none');
+        }
+    });
+
+    //select label elts (and make active if needed)
+    var labels = _.keys(hits)
+        .map(function (idx) {
+            if (activeLabels[idx]) {
+                return activeLabels[idx];
+            } else {
+                if (!inactiveLabels.length) {
+                    return {
+                        idx: idx,
+                        elt:  genLabel($labelCont, idx)
+                    };
+                }
+                var lbl = inactiveLabels.pop();
+                lbl.idx = idx;
+                lbl.elt
+                    .text(idx)
+                    .css('display', 'block');
+                return lbl;
+            }
+        })
+        .filter(_.identity);
+
+    activeLabels = _.object(labels.map(function (lbl) { return [lbl.idx, lbl]; }));
+
+
+    var t2 = Date.now();
 
     var curPoints = renderState.get('hostBuffers').curPoints;
 
@@ -62,7 +126,8 @@ function renderLabels(renderState, labels) {
     var mtx = camera.getMatrix();
     var newPos = new Float32Array(labels.length * 2);
     for (var i = 0; i < labels.length; i++) {
-        var pos = camera.canvasCoords(points[2 * i], -points[2 * i + 1], 1, cnv, mtx);
+        var idx = labels[i].idx;
+        var pos = camera.canvasCoords(points[2 * idx], -points[2 * idx + 1], 1, cnv, mtx);
         newPos[2 * i] = pos.x;
         newPos[2 * i + 1] = pos.y;
     }
@@ -70,6 +135,8 @@ function renderLabels(renderState, labels) {
     labels.forEach(function (elt, i) {
         elt.elt.css('left', newPos[2 * i]).css('top', newPos[2 * i + 1]);
     });
+
+    console.log('sampled', t1 - t0, t2 - t1, Date.now() - t2, 'labels:', labels.length, '/', _.keys(hits).length, inactiveLabels.length);
 
 }
 
@@ -83,7 +150,24 @@ function setupInteractions($eventTarget, renderState) {
         return genLabel($labelCont, i);
     });
     labels.forEach(function ($lbl, i) {
-        activeLabels.push({idx: i, elt: $lbl});
+        var cont = {idx: i, elt: $lbl};
+        inactiveLabels.push(cont);
+        var isOn = false;
+        $lbl
+            .on('mouseover', function () {
+                if (!isOn) {
+                    isOn = true;
+                    highlights.write(cont.idx, HIGHLIGHT_SIZE);
+                    renderer.render(currentState);
+                }
+            })
+            .on('mouseout', function () {
+                if (isOn) {
+                    isOn = false;
+                    highlights.write(cont.idx, 0);
+                    renderer.render(currentState);
+                }
+            });
     });
 
     var interactions;
@@ -101,7 +185,7 @@ function setupInteractions($eventTarget, renderState) {
     interactions
         .subscribe(function(newCamera) {
             currentState = renderer.setCameraIm(renderState, newCamera);
-            renderLabels(currentState, activeLabels);
+            renderLabels($labelCont, currentState);
             renderer.render(currentState);
         });
 
