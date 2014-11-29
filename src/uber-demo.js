@@ -47,13 +47,18 @@ function renderLabels(renderState, labels) {
     var camera = renderState.get('camera');
     var cnv = $('#simulation').get(0);
 
-    labels.forEach(function (elt) {
-        var idx = elt.idx;
-        var pos = camera.canvasCoords(points[2 * idx], -points[2 * idx + 1], 1, cnv);
-        elt.elt.css({
-            left:   pos.x,
-            top:    pos.y});
+    var mtx = camera.getMatrix();
+    var newPos = new Float32Array(labels.length * 2);
+    for (var i = 0; i < labels.length; i++) {
+        var pos = camera.canvasCoords(points[2 * i], -points[2 * i + 1], 1, cnv, mtx);
+        newPos[2 * i] = pos.x;
+        newPos[2 * i + 1] = pos.y;
+    }
+
+    labels.forEach(function (elt, i) {
+        elt.elt.css('left', newPos[2 * i]).css('top', newPos[2 * i + 1]);
     });
+
 }
 
 function setupInteractions($eventTarget, renderState) {

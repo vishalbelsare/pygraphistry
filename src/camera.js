@@ -127,8 +127,8 @@
 
 
     /** Takes an (x,y) world coordinate and returns the translation into device coordinates */
-    Camera2d.prototype.deviceCoords = function(x, y, w) {
-        var matrix = this.getMatrix();
+    Camera2d.prototype.deviceCoords = function(x, y, w, optMtx) {
+        var matrix = optMtx || this.getMatrix();
         // We need to flip 'y' to match what our shader does
         var worldCoords = vec4.fromValues(x, -1 * y, 0, w);
         var screenCoords = vec4.create();
@@ -143,8 +143,8 @@
 
 
     /** Given (x,y, w) coordinates in world space, transforms them to coordinates for a canvas */
-    Camera2d.prototype.canvasCoords = function(x, y, w, canvas) {
-        var deviceCoords = this.deviceCoords(x, y, w);
+    Camera2d.prototype.canvasCoords = function(x, y, w, canvas, optMtx) {
+        var deviceCoords = this.deviceCoords(x, y, w, optMtx);
         // We need to flip 'y' because GL puts (0,0) at the bottom-left, and <canvas> puts it at
         // the top-left.
         var canvasCoords = {
