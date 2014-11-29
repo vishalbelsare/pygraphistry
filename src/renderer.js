@@ -223,6 +223,8 @@ function init(config, canvas) {
         gl: createContext(canvas),
         programs:       Immutable.Map({}),
         buffers:        Immutable.Map({}),
+        //TODO make immutable
+        hostBuffers:    {},
         camera: undefined,
 
         //{item -> gl obj}
@@ -486,6 +488,7 @@ function loadBuffers(state, buffers, bufferData) {
         }
 
         loadBuffer(state, buffers[bufferName], bufferName, data);
+        state.get('hostBuffers')[bufferName] = data;
     });
 }
 
