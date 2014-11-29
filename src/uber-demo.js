@@ -146,7 +146,7 @@ function renderLabels($labelCont, renderState) {
         elt.elt.css('left', newPos[2 * i]).css('top', newPos[2 * i + 1]);
     });
 
-    console.log('sampled', t1 - t0, t2 - t1, Date.now() - t2, 'labels:', labels.length, '/', _.keys(hits).length, inactiveLabels.length);
+    debug('sampling timing', t1 - t0, t2 - t1, Date.now() - t2, 'labels:', labels.length, '/', _.keys(hits).length, inactiveLabels.length);
 
 }
 
