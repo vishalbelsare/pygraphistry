@@ -35,6 +35,14 @@ var HIGHLIGHT_SIZE = 20;
 //[ {elt: $DOM, idx: int} ]
 var activeLabels = [];
 
+function genLabel ($labelCont, txt) {
+    var res = $('<span>')
+        .addClass('graph-label')
+        .css('display', 'none')
+        .text(txt);
+    $labelCont.append(res);
+    return res;
+}
 
 // RendererState * [ {elt: $DOM, idx: int} ] -> ()
 // Immediately reposition each label based on camera and curPoints buffer
@@ -71,14 +79,11 @@ function setupInteractions($eventTarget, renderState) {
 
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
-    var labels = _.range(1,20).map(function (i) {
-        return $('<span>')
-            .addClass('graph-label')
-            .text(i);
+    var labels = _.range(1,500).map(function (i) {
+        return genLabel($labelCont, i);
     });
     labels.forEach(function ($lbl, i) {
         activeLabels.push({idx: i, elt: $lbl});
-        $labelCont.append($lbl);
     });
 
     var interactions;
