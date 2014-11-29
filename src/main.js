@@ -15,7 +15,6 @@ var $               = require('jquery'),
 
 var streamClient    = require('./client.js'),
     ui              = require('./ui.js'),
-    interaction     = require('./interaction.js'),
     uberDemo        = require('./uber-demo.js');
 
 /*
@@ -67,9 +66,6 @@ function init(canvas, vizType) {
             return streamClient.createRenderer(socket, canvas)
                 .map(function(renderState) {
                     debug('Renderer created');
-
-                    interaction.setup($('.sim-container'), renderState);
-
                     return {socket: socket, renderState: renderState};
                 });
         })
@@ -80,7 +76,7 @@ function init(canvas, vizType) {
 
                 streamClient.handleVboUpdates(socket, renderState).subscribe(renderedFrame);
 
-                uberDemo(socket);
+                uberDemo(socket, $('.sim-container'), v.renderState);
             },
             function (err) {
                 console.error('error connecting stream client', err, err.stack);

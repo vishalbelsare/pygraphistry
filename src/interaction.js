@@ -3,7 +3,6 @@
 /* global $$ */
 
 var $        = require('jquery');
-var _        = require('underscore');
 var Rx       = require('rx');
 var debug    = require('debug')('StreamGL:interaction');
 var renderer = require('./renderer');
@@ -213,74 +212,12 @@ function setupPinch(eventTarget, camera) {
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
-// Event handler setup
-///////////////////////////////////////////////////////////////////////////////
+module.exports = {
+    setupDrag: setupDrag,
+    setupMousemove: setupMousemove,
+    setupScroll: setupScroll,
+    setupSwipe: setupSwipe,
+    setupPinch: setupPinch,
 
-function setupInteraction($eventTarget, renderState) {
-    var currentState = renderState;
-    var camera = renderState.get('camera');
-
-
-    if(touchBased) {
-        debug('Detected touch-based device. Setting up touch interaction event handlers.');
-        var eventTarget = $eventTarget[0];
-
-        setupSwipe(eventTarget, camera)
-            .merge(setupPinch($eventTarget, camera))
-            .subscribe(function(newCamera) {
-                currentState = renderer.setCameraIm(renderState, newCamera);
-                renderer.render(currentState);
-            });
-    } else {
-        debug('Detected mouse-based device. Setting up mouse interaction event handlers.');
-
-        setupDrag($eventTarget, camera)
-            .merge(setupScroll($eventTarget, camera))
-            .subscribe(function(newCamera) {
-                currentState = renderer.setCameraIm(renderState, newCamera);
-                renderer.render(currentState);
-            });
-    }
-
-    var highlights = renderer.localAttributeProxy(renderState)('highlights');
-    var prevIdx = -1;
-
-    ['pointHitmap']
-        .map(setupMousemove.bind({}, $eventTarget, currentState))
-        .forEach(function(hits) {
-            hits.sample(10)
-                .filter(_.identity)
-                .subscribe(function (idx) {
-                    debug('Point hitmap got index:', idx);
-
-                    if (idx !== prevIdx) {
-                        debug('Hitmap detected mouseover on a new point with index', idx);
-                        $('.hit-label').text('Location ID: ' + (idx > -1 ? '#' + idx.toString(16) : ''));
-
-                        var dirty = false;
-
-                        if (idx > -1) {
-                            debug('Enlarging current mouseover point', idx);
-
-                            highlights.write(idx, 20);
-                            dirty = true;
-                        }
-
-                        if (prevIdx > -1) {
-                            debug('Shrinking previous mouseover point', prevIdx);
-                            highlights.write(prevIdx, 0);
-                            dirty = true;
-                        }
-
-                        prevIdx = idx;
-                        if (dirty) {
-                            renderer.render(currentState);
-                        }
-                    }
-                });
-        });
-}
-
-
-exports.setup = setupInteraction;
+    isTouchBased: touchBased
+};
