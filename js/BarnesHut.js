@@ -550,27 +550,23 @@ module.exports = {
     //simulator.barnes.num_bodies = 5002;
     //simulator.barnes.num_nodes = 20008;
     // TODO (paden) Can set arguements outside of tick
-    simulator.resetBuffers(simulator.barnes.buffers);
-    return simulator.setupTempBuffers(simulator)
-    .then(function () {
-        curPointsBuffer = simulator.buffers.curPoints.buffer;
-        simulator.kernels.to_barnes_layout.setArgs(
-            graphArgs.concat(
-              webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
-              curPointsBuffer,
-              simulator.barnes.buffers.x_cords.buffer,
-              simulator.barnes.buffers.y_cords.buffer,
-              simulator.barnes.buffers.mass.buffer,
-              simulator.barnes.buffers.blocked.buffer,
-              simulator.barnes.buffers.maxdepth.buffer
-              ),
-            webcl.type ? graphArgs_t.concat(webcl.type.UINT, null, null, null, null, null, null, null) : undefined
+    curPointsBuffer = simulator.buffers.curPoints.buffer;
+    simulator.kernels.to_barnes_layout.setArgs(
+        graphArgs.concat(
+          webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
+          curPointsBuffer,
+          simulator.barnes.buffers.x_cords.buffer,
+          simulator.barnes.buffers.y_cords.buffer,
+          simulator.barnes.buffers.mass.buffer,
+          simulator.barnes.buffers.blocked.buffer,
+          simulator.barnes.buffers.maxdepth.buffer
+          ),
+        webcl.type ? graphArgs_t.concat(webcl.type.UINT, null, null, null, null, null, null, null) : undefined
 
-              );
-        resources = [simulator.buffers.curPoints];
-        var layoutKernelSeq = simulator.kernels.to_barnes_layout.call(256, resources);
-        return layoutKernelSeq;
-    })
+        );
+    resources = [simulator.buffers.curPoints];
+    var layoutKernelSeq = simulator.kernels.to_barnes_layout.call(256, resources);
+    return layoutKernelSeq
     .then(function () {
       if (debug) {
       return testLayout(simulator);
@@ -598,14 +594,20 @@ module.exports = {
       return simulator.kernels.build_tree.call(256, resources);
       return;
     })
-    .then(function () {
-      return testBuildTree(simulator);
-    })
+    //.then(function () {
+      //return testBuildTree(simulator);
+    //})
     .then( function () {
+      if (debug) {
       cpuSummation = CalculateSummation(simulator);
       setBarnesArgs(simulator, "compute_sums");
       resources = [simulator.buffers.curPoints];
       return Q.all([cpuSummation, simulator.kernels.compute_sums.call(256, resources)])
+      } else {
+        setBarnesArgs(simulator, "compute_sums");
+        resources = [simulator.buffers.curPoints];
+        return Q.all([simulator.kernels.compute_sums.call(256, resources)])
+      }
 
     })
     .spread( function (cpuMemory) {
@@ -654,15 +656,15 @@ module.exports = {
       resources = [simulator.buffers.curPoints];
       return simulator.kernels.move_bodies.call(256, resources);
     })
-    .then( function () {
-      if (true) {
-      return readBuffers(simulator).then(function(memObject) {
-        printBuffer(memObject.curPoints);
-      })
-      } else {
-        return;
-      }
-    })
+    //.then( function () {
+      //if (true) {
+      //return readBuffers(simulator).then(function(memObject) {
+        //printBuffer(memObject.curPoints);
+      //})
+      //} else {
+        //return;
+      //}
+    //})
     .then(function () {
         nextPointsBuffer = simulator.buffers.nextPoints.buffer;
         console.log(nextPointsBuffer);
@@ -680,6 +682,7 @@ module.exports = {
 
               );
         resources = [simulator.buffers.curPoints];
+        simulator.tickBuffers(['nextPoints', 'curPoints', 'springsPos'])
         var layoutKernelSeq = simulator.kernels.from_barnes_layout.call(256, resources);
         return layoutKernelSeq;
     })
@@ -732,7 +735,7 @@ module.exports = {
       return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
     })
     .then( function() {
-      console.log("Done");
+      //console.log("Done");
     })
     //.catch( function (error) {
       //console.log(error);

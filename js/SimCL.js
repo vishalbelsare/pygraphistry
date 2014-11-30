@@ -13,7 +13,8 @@ var forceAtlas = require('./forceatlas.js'),
     barnesHut = require('./BarnesHut.js');
 
 
-var layoutAlgorithms = [forceAtlas, gaussSeidel, edgeBundling, /*barnesHut*/];
+var layoutAlgorithms = [/*forceAtlas,*/ gaussSeidel, edgeBundling, barnesHut];
+//var layoutAlgorithms = [forceAtlas, gaussSeidel, edgeBundling];
 
 
 if (typeof(window) == 'undefined') {
@@ -200,7 +201,6 @@ var resetBuffers = function(simulator, buffers) {
 // TODO (paden) Do we need to allocate memory for these buffers on the host?
 var setupTempBuffers = function(simulator) {
     simulator.resetBuffers(simulator.barnes.buffers);
-    console.log("TEST4");
     simulator.renderer.numPoints = simulator.numPoints;
     var blocks = 8; //TODO (paden) should be set to multiprocecessor count
 
