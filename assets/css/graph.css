@@ -42,9 +42,32 @@ button.btn-default {
     top: 0;
     left: 0;
 }
+
 .graph-label {
     position: absolute;
-    color: rgba(255,255,255,0.9);
-    font-size: 1.2em;
-    background-color: rgba(0,0,0,0.7);
+    max-width: 5em;
+    color: rgba(255,255,234,0.9);
+    font-size: 0.8em;
+    text-shadow: 0 0 3px rgba(20,20,20,1.0);
+    padding: 0.5em;
+
+    border-radius: 10px;
+    border: 2px solid transparent;
+}
+
+.graph-label:hover {
+    text-shadow: 0 0 3px rgba(20,20,20,1.0);
+    z-index: 10000;
+    background-color: rgba(25, 25, 51, 0.7);
+    color: rgba(255,255,244,0.9);
+    border-color: rgba(255,255,244,0.9);
+}
+
+.graph-label:after {
+    content: ' lorem ipsum';
+    visibility: hidden;
+}
+
+.graph-label:hover:after {
+    visibility: visible;
 }
