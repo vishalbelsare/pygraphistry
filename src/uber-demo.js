@@ -190,6 +190,21 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints) {
 
 }
 
+
+//render most of scene on refresh, but defer slow hitmap (readPixels)
+var lastRender = new Rx.Subject();
+function renderScene(renderer, currentState) {
+    var items = currentState.get('config').get('scene').get('render').toJS()
+        .filter(function (v) { return v !== 'pointpicking'; });
+    renderer.render(currentState, items);
+    lastRender.onNext({renderer: renderer, currentState: currentState});
+}
+lastRender.sample(200).subscribe(
+    function (cfg) { cfg.renderer.render(cfg.currentState, ['pointpicking']); },
+    function (err) { console.error('Error handling mouse', err, err.stack); });
+
+
+
 function setupInteractions($eventTarget, renderState) {
     var currentState = renderState;
     var camera = renderState.get('camera');
@@ -208,14 +223,14 @@ function setupInteractions($eventTarget, renderState) {
                 if (!isOn) {
                     isOn = true;
                     highlights.write(cont.idx, HIGHLIGHT_SIZE);
-                    renderer.render(currentState);
+                    renderScene(renderer, currentState);
                 }
             })
             .on('mouseout', function () {
                 if (isOn) {
                     isOn = false;
                     highlights.write(cont.idx, 0);
-                    renderer.render(currentState);
+                    renderScene(renderer, currentState);
                 }
             });
     });
@@ -246,7 +261,7 @@ function setupInteractions($eventTarget, renderState) {
     interactions
         .subscribe(function(newCamera) {
             currentState = renderer.setCameraIm(renderState, newCamera);
-            renderer.render(currentState);
+            renderScene(renderer, currentState);
         });
 
 
@@ -294,7 +309,7 @@ function setupInteractions($eventTarget, renderState) {
 
                         prevIdx = idx;
                         if (dirty) {
-                            renderer.render(currentState);
+                            renderScene(renderer, currentState);
                         }
                     }
                 },
