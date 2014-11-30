@@ -2,6 +2,7 @@
 
 var _           = require('underscore'),
     Immutable   = require('immutable'),
+    Rx          = require('rx'),
     debug       = require('debug')('StreamGL:renderer');
 
 
@@ -244,7 +245,9 @@ function init(config, canvas) {
         programBindings: Immutable.Map({}),
 
         activeIndices:  getActiveIndices(config),
-        activeLocalAttributes: localAttribHandler.getActiveLocalAttributes(config)
+        activeLocalAttributes: localAttribHandler.getActiveLocalAttributes(config),
+
+        rendered: new Rx.Subject()
     });
 
     debug('Active indices', state.get('activeIndices'));
@@ -477,6 +480,11 @@ function createBuffers(state) {
         return vbo;
     }).cacheResult();
 
+    var hostBuffers = state.get('hostBuffers');
+    _.keys(state.get('config').get('models').toJS()).forEach(function(bufferName) {
+        hostBuffers[bufferName] = new Rx.ReplaySubject(1);
+    });
+
     return state.set('buffers', createdBuffers);
 }
 
@@ -520,7 +528,8 @@ function loadBuffers(state, buffers, bufferData) {
         }
 
         loadBuffer(state, buffers[bufferName], bufferName, data);
-        state.get('hostBuffers')[bufferName] = data;
+        state.get('hostBuffers')[bufferName].onNext(data);
+
     });
 }
 
@@ -720,6 +729,8 @@ function render(state, renderListOverride) {
         }
 
     });
+
+    state.get('rendered').onNext(toRender);
 
     gl.flush();
 }
