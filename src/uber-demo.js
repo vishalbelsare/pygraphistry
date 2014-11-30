@@ -64,21 +64,10 @@ function renderLabels($labelCont, renderState) {
     });
 }
 
-function renderLabelsImmediate ($labelCont, renderState, curPoints) {
 
-    var points = new Float32Array(curPoints.buffer);
-
-    if (!renderLabelsRan) {
-        renderLabelsRan = true;
-        var allOn = renderer.localAttributeProxy(renderState)('allHighlighted');
-        var amt = curPoints.buffer.byteLength / (4 * 2);
-        for (var i = 0; i < amt; i++) {
-            allOn.write(i, HIGHLIGHT_SIZE);
-        }
-    }
-
-
-    var t0 = Date.now();
+//renderState -> {<idx> -> True}
+//dict of points that are on screen -- approx may skip some
+function getActiveApprox(renderState) {
 
     var samples = renderState.get('pixelreads').pointHitmapDownsampled;
     var samples32 = new Uint32Array(samples.buffer);
@@ -90,15 +79,21 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints) {
         delete hits['-1'];
     }
 
-    var t1 = Date.now();
+    return hits;
+}
 
+
+
+//{<idx>: True} * [{elt: $DOM}] * {<idx>: True} * RenderState * [ Float ] -> ()
+//return unused activeLabels to inactiveLabels incase need extra to reuse
+//(otherwise mark as hit)
+//Idea: need to make sure missing not due to overplotting
+function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
 
     var camera = renderState.get('camera');
     var cnv = $('#simulation').get(0);
     var mtx = camera.getMatrix();
 
-    //return unused first incase need extra to reuse
-    //need to make sure not just overplotted (in which case, mark as hit)
     _.values(activeLabels).forEach(function (lbl) {
         if (!hits[lbl.idx]) {
 
@@ -118,6 +113,50 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints) {
             }
         }
     });
+
+}
+
+
+function repositionLabels(renderState, labels, points) {
+
+    var camera = renderState.get('camera');
+    var cnv = $('#simulation').get(0);
+    var mtx = camera.getMatrix();
+
+    var newPos = new Float32Array(labels.length * 2);
+    for (var i = 0; i < labels.length; i++) {
+        var idx = labels[i].idx;
+        var pos = camera.canvasCoords(points[2 * idx], -points[2 * idx + 1], 1, cnv, mtx);
+        newPos[2 * i] = pos.x;
+        newPos[2 * i + 1] = pos.y;
+    }
+
+    labels.forEach(function (elt, i) {
+        elt.elt.css('left', newPos[2 * i]).css('top', newPos[2 * i + 1]);
+    });
+
+}
+
+function renderLabelsImmediate ($labelCont, renderState, curPoints) {
+
+    var points = new Float32Array(curPoints.buffer);
+
+    if (!renderLabelsRan) {
+        renderLabelsRan = true;
+        var allOn = renderer.localAttributeProxy(renderState)('allHighlighted');
+        var amt = curPoints.buffer.byteLength / (4 * 2);
+        for (var i = 0; i < amt; i++) {
+            allOn.write(i, HIGHLIGHT_SIZE);
+        }
+    }
+
+    var t0 = Date.now();
+
+    var hits = getActiveApprox(renderState);
+
+    var t1 = Date.now();
+
+    finishApprox(activeLabels, inactiveLabels, hits, renderState, points);
 
     //select label elts (and make active if needed)
     var labels = _.keys(hits)
@@ -143,20 +182,9 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints) {
 
     activeLabels = _.object(labels.map(function (lbl) { return [lbl.idx, lbl]; }));
 
-
     var t2 = Date.now();
 
-    var newPos = new Float32Array(labels.length * 2);
-    for (var i = 0; i < labels.length; i++) {
-        var idx = labels[i].idx;
-        var pos = camera.canvasCoords(points[2 * idx], -points[2 * idx + 1], 1, cnv, mtx);
-        newPos[2 * i] = pos.x;
-        newPos[2 * i + 1] = pos.y;
-    }
-
-    labels.forEach(function (elt, i) {
-        elt.elt.css('left', newPos[2 * i]).css('top', newPos[2 * i + 1]);
-    });
+    repositionLabels(renderState, labels, points);
 
     debug('sampling timing', t1 - t0, t2 - t1, Date.now() - t2, 'labels:', labels.length, '/', _.keys(hits).length, inactiveLabels.length);
 
