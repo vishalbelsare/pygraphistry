@@ -13,7 +13,7 @@ var forceAtlas = require('./forceatlas.js'),
     barnesHut = require('./BarnesHut.js');
 
 
-var layoutAlgorithms = [/*forceAtlas,*/ gaussSeidel, edgeBundling, barnesHut];
+var layoutAlgorithms = [gaussSeidel, edgeBundling, barnesHut];
 //var layoutAlgorithms = [forceAtlas, gaussSeidel, edgeBundling];
 
 

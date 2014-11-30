@@ -533,18 +533,17 @@ module.exports = {
           null, null
         ]) : null);
 
-    //simulator.kernels.gaussSeidelSpringsGather.setArgs(
-        //[   simulator.buffers.forwardsEdges.buffer,
-        //simulator.buffers.forwardsWorkItems.buffer,
-        //simulator.buffers.curPoints.buffer,
-        //simulator.buffers.springsPos.buffer],
-        //webcl.type ? [null, null, null, null]
-        //: null);
+    simulator.kernels.gaussSeidelSpringsGather.setArgs(
+        [   simulator.buffers.forwardsEdges.buffer,
+        simulator.buffers.forwardsWorkItems.buffer,
+        simulator.buffers.curPoints.buffer,
+        simulator.buffers.springsPos.buffer],
+        webcl.type ? [null, null, null, null]
+        : null);
   },
 
   tick: function (simulator, stepNumber) {
     //if (simulator.barnes.flag) return;
-    var debug = false;
     simulator.barnes.flag = 1;
     //simulator.numPoints = 5002;
     //simulator.barnes.num_bodies = 5002;
@@ -567,26 +566,10 @@ module.exports = {
     resources = [simulator.buffers.curPoints];
     var layoutKernelSeq = simulator.kernels.to_barnes_layout.call(256, resources);
     return layoutKernelSeq
-    .then(function () {
-      if (debug) {
-      return testLayout(simulator);
-      }
-    }).then(function() {
+    .then(function() {
         setBarnesArgs(simulator, "bound_box");
         resources = [simulator.buffers.curPoints];
         return simulator.kernels.bound_box.call(256, resources)
-    })
-    .then(function () {
-      testBoundBox(simulator);
-    })
-    .then( function () {
-      if (debug) {
-      return readBuffers(simulator).then(function(memObject) {
-        printBuffer(memObject.children);
-      })
-      } else {
-        return;
-      }
     })
     .then(function () {
       setBarnesArgs(simulator, "build_tree");
@@ -594,31 +577,10 @@ module.exports = {
       return simulator.kernels.build_tree.call(256, resources);
       return;
     })
-    //.then(function () {
-      //return testBuildTree(simulator);
-    //})
     .then( function () {
-      if (debug) {
-      cpuSummation = CalculateSummation(simulator);
-      setBarnesArgs(simulator, "compute_sums");
-      resources = [simulator.buffers.curPoints];
-      return Q.all([cpuSummation, simulator.kernels.compute_sums.call(256, resources)])
-      } else {
         setBarnesArgs(simulator, "compute_sums");
         resources = [simulator.buffers.curPoints];
         return Q.all([simulator.kernels.compute_sums.call(256, resources)])
-      }
-
-    })
-    .spread( function (cpuMemory) {
-      if (debug) {
-      return Q.all(
-      [
-      CheckSummation(simulator, cpuMemory, readBuffers(simulator)),
-      CalculateSort(simulator)])
-      } else {
-        return Q.all([]);
-      }
     })
     .spread( function (something, sortMemory) {
       setBarnesArgs(simulator, "sort");
@@ -626,30 +588,11 @@ module.exports = {
       sortKernel = simulator.kernels.sort.call(256, resources)
       return Q.all([sortKernel, sortMemory]);
     })
-    .spread( function(something, sortMemory) {
-      if (debug) {
-      gpuMemory = readBuffers(simulator);
-      return CheckSorted(simulator, sortMemory, gpuMemory)
-      }
-    })
-    .then( function() {
-      if (debug) {
-      return CalculateForce(simulator);
-      } else {
-        return;
-      }
-    })
     .then(function (cpuMemory) {
       setBarnesArgs(simulator, "calculate_forces");
       resources = [simulator.buffers.curPoints];
       return Q.all([simulator.kernels.calculate_forces.call(256, resources),
                     cpuMemory]);
-    })
-    .spread ( function (something, cpuMemory) {
-      //console.log(cpuMemory);
-      if (debug) {
-      return CheckForces(simulator, cpuMemory, readBuffers(simulator));
-      }
     })
     .then( function() {
       setBarnesArgs(simulator,"move_bodies");
@@ -734,62 +677,5 @@ module.exports = {
       simulator.tickBuffers(['curPoints']);
       return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
     })
-    .then( function() {
-      //console.log("Done");
-    })
-    //.catch( function (error) {
-      //console.log(error);
-    //})
-    //.then( function () {
-      //simulator.kernels.move_bodies.setArgs(
-          //graphArgs.concat(
-            //simulator.barnes.buffers.x_cords.buffer,
-            //simulator.barnes.buffers.y_cords.buffer,
-            //simulator.barnes.buffers.accx.buffer,
-            //simulator.barnes.buffers.accy.buffer,
-            //simulator.barnes.buffers.children.buffer,
-            //simulator.barnes.buffers.mass.buffer,
-            //simulator.barnes.buffers.start.buffer,
-            //simulator.barnes.buffers.sort.buffer,
-            //simulator.barnes.buffers.xmin.buffer,
-            //simulator.barnes.buffers.xmax.buffer,
-            //simulator.barnes.buffers.ymin.buffer,
-            //simulator.barnes.buffers.ymax.buffer,
-            //simulator.barnes.buffers.count.buffer,
-            //simulator.barnes.buffers.blocked.buffer,
-            //simulator.barnes.buffers.step.buffer,
-            //simulator.barnes.buffers.bottom.buffer,
-            //simulator.barnes.buffers.maxdepth.buffer,
-            //simulator.barnes.buffers.radius.buffer,
-            //webcl.type ? [simulator.barnes.num_bodies] : new Uint32Array([simulator.barnes.num_bodies]),
-            //webcl.type ? [simulator.barnes.num_nodes] : new Uint32Array([simulator.barnes.num_nodes])
-            //), webcl.type ? graphArgs_t.concat(
-              //[null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-              //null, null, null, webcl.type.INT, webcl.type.INT]) : undefined
-            //);
-      //resources = [simulator.buffers.curPoints];
-      ////return;
-      //return simulator.kernels.move_bodies.call(256, resources);
-    //})
-    //.then( function () {
-        //curPointsBuffer = simulator.buffers.curPoints.buffer;
-      //simulator.kernels.from_barnes_layout.setArgs(
-            //graphArgs.concat(
-              //webcl.type ? [simulator.numPoints] : Uint32Array([simulator.numPoints]),
-              //simulator.buffers.nextPoints.buffer,
-              //simulator.barnes.buffers.x_cords.buffer,
-              //simulator.barnes.buffers.y_cords.buffer,
-              //simulator.barnes.buffers.mass.buffer
-              //));
-      //resources = [simulator.buffers.curPoints];
-      ////return;
-      //return simulator.kernels.from_barnes_layout.call(256, resources);
-    //})
-    .then(function () {
-    });
-
-
-
-
-      }
+  }
   };
