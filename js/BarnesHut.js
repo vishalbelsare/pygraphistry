@@ -654,6 +654,15 @@ module.exports = {
       resources = [simulator.buffers.curPoints];
       return simulator.kernels.move_bodies.call(256, resources);
     })
+    .then( function () {
+      if (true) {
+      return readBuffers(simulator).then(function(memObject) {
+        printBuffer(memObject.curPoints);
+      })
+      } else {
+        return;
+      }
+    })
     .then(function () {
         nextPointsBuffer = simulator.buffers.nextPoints.buffer;
         console.log(nextPointsBuffer);
@@ -675,6 +684,7 @@ module.exports = {
         return layoutKernelSeq;
     })
     .then(function () {
+      simulator.tickBuffers(['curPoints']);
       return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
     })
     .then( function() {
