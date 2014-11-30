@@ -94,6 +94,8 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
     var cnv = $('#simulation').get(0);
     var mtx = camera.getMatrix();
 
+    var toClear = [];
+
     _.values(activeLabels).forEach(function (lbl) {
         if (!hits[lbl.idx]) {
 
@@ -106,7 +108,7 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
                 //remove
                 inactiveLabels.push(lbl);
                 delete activeLabels[lbl.idx];
-                lbl.elt.css('display','none');
+                toClear.push(lbl);
             } else {
                 //overplotted, keep
                 hits[lbl.idx] = true;
@@ -114,10 +116,11 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
         }
     });
 
+    return toClear;
 }
 
 
-function repositionLabels(renderState, labels, points) {
+function newLabelPositions(renderState, labels, points) {
 
     var camera = renderState.get('camera');
     var cnv = $('#simulation').get(0);
@@ -130,6 +133,19 @@ function repositionLabels(renderState, labels, points) {
         newPos[2 * i] = pos.x;
         newPos[2 * i + 1] = pos.y;
     }
+
+    return newPos;
+}
+
+function effectLabels(toClear, toShow, labels, newPos) {
+
+        //DOM effects
+    toClear.forEach(function (lbl) {
+        lbl.elt.css('display','none');
+    });
+    toShow.forEach(function (lbl) {
+        lbl.elt.css('display', 'block');
+    });
 
     labels.forEach(function (elt, i) {
         elt.elt.css('left', newPos[2 * i]).css('top', newPos[2 * i + 1]);
@@ -156,9 +172,10 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints) {
 
     var t1 = Date.now();
 
-    finishApprox(activeLabels, inactiveLabels, hits, renderState, points);
+    var toClear = finishApprox(activeLabels, inactiveLabels, hits, renderState, points);
 
     //select label elts (and make active if needed)
+    var toShow = [];
     var labels = _.keys(hits)
         .map(function (idx) {
             if (activeLabels[idx]) {
@@ -172,9 +189,8 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints) {
                 }
                 var lbl = inactiveLabels.pop();
                 lbl.idx = idx;
-                lbl.elt
-                    .text(idx)
-                    .css('display', 'block');
+                lbl.elt.text(idx);
+                toShow.push(lbl);
                 return lbl;
             }
         })
@@ -184,9 +200,13 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints) {
 
     var t2 = Date.now();
 
-    repositionLabels(renderState, labels, points);
+    var newPos = newLabelPositions(renderState, labels, points, toClear, toShow);
 
-    debug('sampling timing', t1 - t0, t2 - t1, Date.now() - t2, 'labels:', labels.length, '/', _.keys(hits).length, inactiveLabels.length);
+    var t3 = Date.now();
+
+    effectLabels(toClear, toShow, labels, newPos);
+
+    debug('sampling timing', t1 - t0, t2 - t1, t3 - t2, Date.now() - t3, 'labels:', labels.length, '/', _.keys(hits).length, inactiveLabels.length);
 
 }
 
