@@ -13,7 +13,8 @@ var forceAtlas = require('./forceatlas.js'),
     barnesHut = require('./BarnesHut.js');
 
 
-var layoutAlgorithms = [gaussSeidel, edgeBundling, barnesHut];
+//var layoutAlgorithms = [gaussSeidel, edgeBundling, barnesHut];
+var layoutAlgorithms = [barnesHut, gaussSeidel, edgeBundling];
 //var layoutAlgorithms = [forceAtlas, gaussSeidel, edgeBundling];
 
 
@@ -486,12 +487,12 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints, edgeColor
         simulator.buffers.midSpringsColorCoord = midSpringsColorCoordBuffer;
     })
     .then(function () {
+      setupTempBuffers(simulator);
+    })
+    .then( function () {
         return Q.all(
             layoutAlgorithms
                 .map(function (alg) {
-                    if (alg == barnesHut) {
-                      setupTempBuffers(simulator);
-                    }
                     return alg.setEdges(simulator);
                 }));
     })

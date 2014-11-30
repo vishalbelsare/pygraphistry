@@ -511,12 +511,7 @@ module.exports = {
 
   },
 
-  setPoints: function(simulator) {
-    simulator.kernels.layout.setArgs(
-        graphArgs.concat( //webcl.type ? [simulator.numPoints] : newUint32Array([simulator.numPoints]),
-          simulator.buffers.curPoints.buffer,
-          tempBuffers.x_cords, tempBuffers.y_cords))
-  },
+  setPoints:_.identity,
 
   setEdges: function (simulator) {
 
@@ -549,6 +544,7 @@ module.exports = {
     //simulator.barnes.num_bodies = 5002;
     //simulator.barnes.num_nodes = 20008;
     // TODO (paden) Can set arguements outside of tick
+    simulator.tickBuffers(['nextPoints', 'curPoints', 'springsPos'])
     curPointsBuffer = simulator.buffers.curPoints.buffer;
     simulator.kernels.to_barnes_layout.setArgs(
         graphArgs.concat(
@@ -625,7 +621,6 @@ module.exports = {
 
               );
         resources = [simulator.buffers.curPoints];
-        simulator.tickBuffers(['nextPoints', 'curPoints', 'springsPos'])
         var layoutKernelSeq = simulator.kernels.from_barnes_layout.call(256, resources);
         return layoutKernelSeq;
     })
@@ -650,6 +645,7 @@ module.exports = {
 
         return simulator.kernels.forceAtlasEdges.call(numWorkItems, resources);
       };
+
       if(simulator.numEdges > 0) {
         return atlasEdgesKernelSeq(
             simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
@@ -672,10 +668,6 @@ module.exports = {
 
         return simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources);
       }
-    })
-    .then(function () {
-      simulator.tickBuffers(['curPoints']);
-      return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
     })
   }
   };
