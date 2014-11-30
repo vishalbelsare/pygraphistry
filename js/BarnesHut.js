@@ -684,6 +684,50 @@ module.exports = {
         return layoutKernelSeq;
     })
     .then(function () {
+      var atlasEdgesKernelSeq = function (edges, workItems, numWorkItems, fromPoints, toPoints) {
+
+        var resources = [edges, workItems, fromPoints, toPoints];
+
+        simulator.kernels.forceAtlasEdges.setArgs(
+            graphArgs.map(function () { return null; })
+            .concat(
+              [edges.buffer, workItems.buffer, fromPoints.buffer, webcl.type ? [stepNumber] : new Uint32Array([stepNumber]),
+              toPoints.buffer]),
+            webcl.type ? graphArgs_t.map(function () { return null; })
+            .concat([null, null, null, cljs.types.uint_t, null])
+            : undefined);
+
+        simulator.tickBuffers(
+            _.keys(simulator.buffers).filter(function (name) {
+              return simulator.buffers[name] == toPoints;
+            }));
+
+        return simulator.kernels.forceAtlasEdges.call(numWorkItems, resources);
+      };
+      if(simulator.numEdges > 0) {
+        return atlasEdgesKernelSeq(
+            simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
+            simulator.buffers.nextPoints, simulator.buffers.curPoints)
+          .then(function () {
+            return atlasEdgesKernelSeq(
+                simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
+                simulator.buffers.curPoints, simulator.buffers.nextPoints);
+          })
+        .then(function () {
+          return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
+        });
+      }
+    })
+    .then(function () {
+      if (simulator.numEdges > 0) {
+
+        var resources = [simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems,
+        simulator.buffers.curPoints, simulator.buffers.springsPos];
+
+        return simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources);
+      }
+    })
+    .then(function () {
       simulator.tickBuffers(['curPoints']);
       return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
     })
