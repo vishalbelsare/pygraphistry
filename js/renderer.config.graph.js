@@ -106,8 +106,8 @@ module.exports = {
         },
         'pointHitmapDownsampled': {
             'datasource': 'LOCAL',
-            'width': {'unit': 'percent', 'value': 7},
-            'height': {'unit': 'percent', 'value': 7}
+            'width': {'unit': 'percent', 'value': 5},
+            'height': {'unit': 'percent', 'value': 5}
         },
         'colorMap': {
             'datasource': 'SERVER',
