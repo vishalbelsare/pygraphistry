@@ -51,20 +51,29 @@ function genLabel ($labelCont, txt) {
 var renderLabelsRan = false;
 function renderLabels($labelCont, renderState) {
 
+    debug('rendering labels');
+
     var curPoints = renderState.get('hostBuffers').curPoints;
     if (!curPoints) {
         console.warn('renderLabels called before curPoints available');
         return;
     }
-    var points = new Float32Array(curPoints.buffer);
 
+    curPoints.take(1).subscribe(function (curPoints) {
+        renderLabelsImmediate($labelCont, renderState, curPoints);
+    });
+}
+
+function renderLabelsImmediate ($labelCont, renderState, curPoints) {
+
+    var points = new Float32Array(curPoints.buffer);
 
     if (!renderLabelsRan) {
         renderLabelsRan = true;
         var allOn = renderer.localAttributeProxy(renderState)('allHighlighted');
-        var amt = renderState.get('hostBuffers').curPoints.buffer.byteLength / (4 * 2);
+        var amt = curPoints.buffer.byteLength / (4 * 2);
         for (var i = 0; i < amt; i++) {
-            allOn.write(i, HIGHLIGHT_SIZE / 2);
+            allOn.write(i, HIGHLIGHT_SIZE);
         }
     }
 
@@ -183,6 +192,17 @@ function setupInteractions($eventTarget, renderState) {
             });
     });
 
+    Rx.Observable.combineLatest(
+            currentState.get('hostBuffers').curPoints,
+            currentState.get('rendered').filter(function (items) {
+                return items && (items.indexOf('pointsampling') > -1);
+            }),
+            _.identity)
+        .subscribe(function () {
+            renderLabels($labelCont, currentState);
+        });
+
+
     var interactions;
     if(interaction.isTouchBased) {
         debug('Detected touch-based device. Setting up touch interaction event handlers.');
@@ -198,7 +218,6 @@ function setupInteractions($eventTarget, renderState) {
     interactions
         .subscribe(function(newCamera) {
             currentState = renderer.setCameraIm(renderState, newCamera);
-            renderLabels($labelCont, currentState);
             renderer.render(currentState);
         });
 
@@ -211,13 +230,22 @@ function setupInteractions($eventTarget, renderState) {
         .forEach(function(hits) {
             hits.sample(10)
                 .filter(_.identity)
-                .subscribe(function (idx) {
+                .flatMap(function (idx) {
+                    return renderState.get('hostBuffers').curPoints.take(1)
+                    .map(function (curPoints) {
+                        return {idx: idx, curPoints: curPoints};
+                    });
+                })
+                .subscribe(function (pair) {
+                    var idx = pair.idx;
+                    var curPoints = pair.curPoints;
+
                     debug('Point hitmap got index:', idx);
 
                     if (idx !== prevIdx) {
                         debug('Hitmap detected mouseover on a new point with index', idx);
 
-                        var points = new Float32Array(renderState.get('hostBuffers').curPoints.buffer);
+                        var points = new Float32Array(curPoints.buffer);
                         var xtra = idx > -1 ? (' (' + points[2*idx].toFixed(3) + ', ' + points[2*idx+1].toFixed(3) + ')') : '';
                         var lblText = (idx > -1 ? '#' + idx.toString(16) : '') + xtra;
                         $('.hit-label').text('Location ID: ' + lblText);
