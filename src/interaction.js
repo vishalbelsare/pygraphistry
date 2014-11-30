@@ -67,7 +67,7 @@ function setupMousemove($eventTarget, renderState, texture) {
 
 
 function setupScroll($eventTarget, camera) {
-    return Rx.Observable.fromEvent($eventTarget[0], 'mousewheel')
+    return Rx.Observable.fromEvent($eventTarget[0], 'wheel')
         .map(function(wheelEvent) {
             wheelEvent.preventDefault();
 
