@@ -9,10 +9,11 @@ var debug = require("debug")("N-body:SimCL");
 
 var forceAtlas = require('./forceatlas.js'),
     gaussSeidel = require('./gaussseidel.js'),
-    edgeBundling = require('./edgebundling.js');
+    edgeBundling = require('./edgebundling.js'),
+    barnesHut = require('./BarnesHut.js');
 
 
-var layoutAlgorithms = [forceAtlas, gaussSeidel, edgeBundling];
+var layoutAlgorithms = [forceAtlas, gaussSeidel, edgeBundling, /*barnesHut*/];
 
 
 if (typeof(window) == 'undefined') {
@@ -42,10 +43,9 @@ function create(renderer, dimensions, numSplits, locked) {
             debug("CL kernel source retrieved");
             return cl.compile(source, kernelNames);
         })
-
         .then(function(kernels) {
+            console.log(kernelNames);
             debug("Compiled kernel source");
-
             var simObj = {
                 renderer: renderer,
                 cl: cl,
@@ -56,13 +56,13 @@ function create(renderer, dimensions, numSplits, locked) {
                     buffers: { }
                 }
             };
-
             simObj.tick = tick.bind(this, simObj);
             simObj.setPoints = setPoints.bind(this, simObj);
             simObj.setEdges = setEdges.bind(this, simObj);
             simObj.setLocked = setLocked.bind(this, simObj);
             simObj.setPhysics = setPhysics.bind(this, simObj);
             simObj.resetBuffers = resetBuffers.bind(this, simObj);
+            simObj.setupTempBuffers = setupTempBuffers.bind(this, simObj);
             simObj.tickBuffers = tickBuffers.bind(this, simObj);
 
             simObj.dimensions = dimensions;
@@ -78,6 +78,35 @@ function create(renderer, dimensions, numSplits, locked) {
                 (locked || {})
             );
             simObj.physics = {};
+
+            simObj.barnes = {
+                
+                num_nodes : 0,
+
+                flag: 0,
+
+                num_bodies : 0,
+
+
+                buffers : {
+                  x_cords: null, //cl.createBuffer(cl, 0, "x_cords"),
+                  y_cords: null,
+                  velx: null,
+                  vely: null,
+                  accx: null,
+                  accy: null,
+                  children: null,
+                  global_x_mins: null,
+                  global_y_mins: null,
+                  global_x_maxs: null,
+                  global_y_maxs: null,
+                  count: null,
+                  blocked: null,
+                  step: null,
+                  bottom: null,
+                  maxdepth: null,
+                }
+            }
 
             simObj.buffers = {
                 nextPoints: null,
@@ -100,11 +129,10 @@ function create(renderer, dimensions, numSplits, locked) {
                 pointSizes: null,
                 pointColors: null
             };
-
             Object.seal(simObj.buffers);
-            Object.seal(simObj);
 
             debug("WebCL simulator created");
+            Object.seal(simObj);
             return simObj
         }, function (err) {
             console.error('Could not compile sim', err)
@@ -131,8 +159,9 @@ var tickBuffers = function (simulator, bufferNames, tick) {
     if (bufferNames.length) {
         bufferNames.forEach(function (name) {
             simulator.versions.buffers[name] = simulator.versions.tick;
-        });
+       })
     }
+
 };
 
 
@@ -166,6 +195,85 @@ var resetBuffers = function(simulator, buffers) {
         simulator.buffers[buffName] = null;
     });
 };
+
+
+// TODO (paden) Do we need to allocate memory for these buffers on the host?
+var setupTempBuffers = function(simulator) {
+    simulator.resetBuffers(simulator.barnes.buffers);
+    console.log("TEST4");
+    simulator.renderer.numPoints = simulator.numPoints;
+    var blocks = 8; //TODO (paden) should be set to multiprocecessor count
+
+    var num_nodes = simulator.numPoints * 4;
+    // TODO (paden) make this into a definition
+    var WARPSIZE = 16;
+    //if (num_nodes < 1024*blocks) num_nodes = 1024*blocks;
+    //while ((num_nodes & (WARPSIZE - 1)) != 0) num_nodes++;
+    //num_nodes--;
+    var num_bodies = simulator.numPoints;
+    simulator.barnes.num_nodes = num_nodes;
+    simulator.barnes.num_bodies = num_bodies;
+    // TODO (paden) Use actual number of workgroups. Don't hardcode
+    var num_work_groups = 100;
+    
+    //var blocked = new Int32Array(1);
+    //blocked[0] = 0;
+    //var step = new Int32Array(1);
+    //step[0] = -1;
+    //var max_depth = new Int32Array(1);
+    //max_depth[0] = -1;
+    //console.log("num_nodes: " + num_nodes);
+
+    return Q.all(
+        [
+        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT,  'x_cords'),
+        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'y_cords'),
+        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'accx'),
+        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'accy'),
+        simulator.cl.createBuffer(4*(num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'children'),
+        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'mass'),
+        simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'start'),
+        // TODO (paden) Create subBuffers
+        simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'sort'),
+        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_mins'),
+        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_maxs'),
+        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_y_mins'),
+        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_y_maxs'),
+        simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'count'),
+        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'blocked'),
+        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'step'),
+        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'bottom'),
+        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'maxdepth'),
+        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'radius')
+        ])
+    .spread(function (x_cords, y_cords, accx, accy, children, mass, start, sort, xmin, xmax, ymin, ymax, count,
+          blocked, step, bottom, maxdepth, radius) {
+      simulator.barnes.buffers.x_cords = x_cords;
+      simulator.barnes.buffers.y_cords = y_cords;
+      simulator.barnes.buffers.accx = accx;
+      simulator.barnes.buffers.accy = accy;
+      simulator.barnes.buffers.children = children;
+      simulator.barnes.buffers.mass = mass;
+      simulator.barnes.buffers.start = start;
+      simulator.barnes.buffers.sort = sort;
+      simulator.barnes.buffers.xmin = xmin;
+      simulator.barnes.buffers.xmax = xmax;
+      simulator.barnes.buffers.ymin = ymin;
+      simulator.barnes.buffers.ymax = ymax;
+      simulator.barnes.buffers.count = count;
+      simulator.barnes.buffers.blocked = blocked;
+      simulator.barnes.buffers.step = step;
+      simulator.barnes.buffers.bottom = bottom;
+      simulator.barnes.buffers.maxdepth = maxdepth;
+      simulator.barnes.buffers.radius = radius;
+    })
+    .catch(function(error) {
+
+      console.log(error);
+      console.log("ERROR in setUP");
+    });
+};
+
 
 
 /**
@@ -206,7 +314,9 @@ function setPoints(simulator, points, pointSizes, pointColors) {
         simulator.buffers.randValues,
         simulator.buffers.curPoints,
         simulator.buffers.pointSizes,
-        simulator.buffers.pointColors])
+        simulator.buffers.pointColors,
+        // TODO (paden) Do we need to reset temp buffers? 
+        ])
 
     simulator.numPoints = points.length / simulator.elementsPerPoint;
     simulator.renderer.numPoints = simulator.numPoints;
@@ -379,6 +489,9 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints, edgeColor
         return Q.all(
             layoutAlgorithms
                 .map(function (alg) {
+                    if (alg == barnesHut) {
+                      setupTempBuffers(simulator);
+                    }
                     return alg.setEdges(simulator);
                 }));
     })
