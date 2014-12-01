@@ -25,17 +25,10 @@ function uint32ToIdx (raw) {
 
 
 //returns idx or -1
-function hitTest(state, texture, x, y) {
+function hitTest(map, canvas, x, y) {
     // debug('hit testing', texture);
-    var canvas = state.get('gl').canvas;
-    var map = state.get('pixelreads')[texture];
-    if (!map) {
-        debug('not texture for hit test', texture);
-        return;
-    }
-    var remapped = new Uint32Array(map.buffer);
     var idx = (canvas.height - y) * canvas.width + x;
-    var raw = remapped[idx];//(remapped[idx] >> 8) & (255 | (255 << 8) | (255 << 16));
+    var raw = map[idx];//(remapped[idx] >> 8) & (255 | (255 << 8) | (255 << 16));
 
     return uint32ToIdx(raw);
 }
@@ -43,11 +36,11 @@ function hitTest(state, texture, x, y) {
 
 //hit test by sampling for a hit on circle's perimeter
 //returns idx or -1
-function hitTestCircumference(state, texture, x, y, r) {
+function hitTestCircumference(map, canvas, x, y, r) {
     for (var attempt = 0; attempt < r * 2 * Math.PI; attempt++) {
         var attemptX = x + r * Math.round(Math.cos(attempt / r));
         var attemptY = y + r * Math.round(Math.sin(attempt / r));
-        var hit = hitTest(state, texture, attemptX, attemptY);
+        var hit = hitTest(map, canvas, attemptX, attemptY);
         if (hit > -1) {
             return hit;
         }
@@ -64,13 +57,22 @@ function hitTestN(state, texture, x, y, r) {
         return;
     }
 
+    var canvas = state.get('gl').canvas;
+    var map = state.get('pixelreads')[texture];
+    if (!map) {
+        debug('not texture for hit test', texture);
+        return;
+    }
+    var remapped = new Uint32Array(map.buffer);
+
+
     if (!r) {
-        return hitTest(state, texture, x, y);
+        return hitTest(remapped, canvas, x, y);
     }
 
     //look up to r px away
     for (var offset = 0; offset < r; offset++) {
-        var hitOnCircle = hitTestCircumference(state, texture, x, y, offset + 1);
+        var hitOnCircle = hitTestCircumference(remapped, canvas, x, y, offset + 1);
         if (hitOnCircle > -1) {
             return hitOnCircle;
         }
