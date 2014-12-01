@@ -355,11 +355,14 @@ function setBarnesArgs(simulator, kernelName) {
         simulator.barnes.buffers.bottom.buffer,
         simulator.barnes.buffers.maxdepth.buffer,
         simulator.barnes.buffers.radius.buffer,
+        //webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
+        webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
+        webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
         webcl.type ? [simulator.barnes.num_bodies] : new Uint32Array([simulator.barnes.num_bodies]),
         webcl.type ? [simulator.barnes.num_nodes] : new Uint32Array([simulator.barnes.num_nodes])
           ), webcl.type ? graphArgs_t.concat(
             [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null, null, webcl.type.INT, webcl.type.INT]) : undefined
+            null, null, null, webcl.type.FLOAT, webcl.type.FLOAT, webcl.type.INT, webcl.type.INT]) : undefined
           );
 }
 
@@ -399,8 +402,6 @@ function readBuffers(simulator) {
       ]
   )
   .spread( function () {
-             //console.log("here2");
-             //console.log(xCoordsHost[0]);
              return {
                xCoords: xCoordsHost,
                yCoords: yCoordsHost,
@@ -606,7 +607,6 @@ module.exports = {
     //})
     .then(function () {
         nextPointsBuffer = simulator.buffers.nextPoints.buffer;
-        console.log(nextPointsBuffer);
         simulator.kernels.from_barnes_layout.setArgs(
             graphArgs.concat(
               webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
