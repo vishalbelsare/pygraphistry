@@ -223,7 +223,7 @@ var reqAnimationFrame =
         window.mozRequestAnimationFrame    ||
         window.oRequestAnimationFrame      ||
         window.msRequestAnimationFrame     ||
-        function (f) { setTimeout(action, 1000 / 60); };
+        function (f) { setTimeout(f, 1000 / 60); };
 
 var lastRenderTime = 0;
 var mostRecent = null;
