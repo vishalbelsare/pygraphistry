@@ -67,7 +67,11 @@ function setupMousemove($eventTarget, renderState, texture) {
 
 
 function setupScroll($eventTarget, camera) {
-    return Rx.Observable.fromEvent($eventTarget[0], 'wheel')
+
+    return Rx.Observable.merge(
+            Rx.Observable.fromEvent($eventTarget[0], 'wheel'), //ffox/chrome
+            Rx.Observable.fromEvent($eventTarget[0], 'mousewheel')) //safari/chrome
+        .sample(1)
         .map(function(wheelEvent) {
             wheelEvent.preventDefault();
 
@@ -75,8 +79,8 @@ function setupScroll($eventTarget, camera) {
             var scrollY =
                 wheelEvent.wheelDeltaY ||
                 -wheelEvent.deltaY ||
-                (wheelEvent.originalEvent) ?
-                    (wheelEvent.originalEvent.wheelDeltaY || -wheelEvent.originalEvent.deltaY) : 0
+                ((wheelEvent.originalEvent) ?
+                    (wheelEvent.originalEvent.wheelDeltaY || -wheelEvent.originalEvent.deltaY) : 0)
                 | 0; //NaN protection
 
             camera.width -= camera.width * (scrollY / 100.0);
