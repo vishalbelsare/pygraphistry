@@ -217,13 +217,6 @@ var setupTempBuffers = function(simulator) {
     // TODO (paden) Use actual number of workgroups. Don't hardcode
     var num_work_groups = 100;
     
-    //var blocked = new Int32Array(1);
-    //blocked[0] = 0;
-    //var step = new Int32Array(1);
-    //step[0] = -1;
-    //var max_depth = new Int32Array(1);
-    //max_depth[0] = -1;
-    //console.log("num_nodes: " + num_nodes);
 
     return Q.all(
         [
@@ -234,7 +227,7 @@ var setupTempBuffers = function(simulator) {
         simulator.cl.createBuffer(4*(num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'children'),
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'mass'),
         simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'start'),
-        // TODO (paden) Create subBuffers
+         //TODO (paden) Create subBuffers
         simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'sort'),
         simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_mins'),
         simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_maxs'),
@@ -249,6 +242,7 @@ var setupTempBuffers = function(simulator) {
         ])
     .spread(function (x_cords, y_cords, accx, accy, children, mass, start, sort, xmin, xmax, ymin, ymax, count,
           blocked, step, bottom, maxdepth, radius) {
+      console.log("After this");
       simulator.barnes.buffers.x_cords = x_cords;
       simulator.barnes.buffers.y_cords = y_cords;
       simulator.barnes.buffers.accx = accx;
@@ -267,6 +261,11 @@ var setupTempBuffers = function(simulator) {
       simulator.barnes.buffers.bottom = bottom;
       simulator.barnes.buffers.maxdepth = maxdepth;
       simulator.barnes.buffers.radius = radius;
+      return;
+      console.log("DONE");
+    })
+    .then( function() {
+      console.log("DONEDONE")
     })
     .catch(function(error) {
 
@@ -487,7 +486,7 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints, edgeColor
         simulator.buffers.midSpringsColorCoord = midSpringsColorCoordBuffer;
     })
     .then(function () {
-      setupTempBuffers(simulator);
+      return setupTempBuffers(simulator)
     })
     .then( function () {
         return Q.all(
@@ -497,6 +496,7 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints, edgeColor
                 }));
     })
     .then(function () {
+        console.log(simulator.barnes.buffers);
         return simulator;
     })
     .then(_.identity, function (err) {

@@ -334,38 +334,6 @@ function printBuffer(buffer) {
   }
 };
 
-function setBarnesArgs(simulator, kernelName) {
-  simulator.kernels[kernelName].setArgs(
-      graphArgs.concat(
-        simulator.barnes.buffers.x_cords.buffer,
-        simulator.barnes.buffers.y_cords.buffer,
-        simulator.barnes.buffers.accx.buffer,
-        simulator.barnes.buffers.accy.buffer,
-        simulator.barnes.buffers.children.buffer,
-        simulator.barnes.buffers.mass.buffer,
-        simulator.barnes.buffers.start.buffer,
-        simulator.barnes.buffers.sort.buffer,
-        simulator.barnes.buffers.xmin.buffer,
-        simulator.barnes.buffers.xmax.buffer,
-        simulator.barnes.buffers.ymin.buffer,
-        simulator.barnes.buffers.ymax.buffer,
-        simulator.barnes.buffers.count.buffer,
-        simulator.barnes.buffers.blocked.buffer,
-        simulator.barnes.buffers.step.buffer,
-        simulator.barnes.buffers.bottom.buffer,
-        simulator.barnes.buffers.maxdepth.buffer,
-        simulator.barnes.buffers.radius.buffer,
-        //webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
-        webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
-        webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
-        webcl.type ? [simulator.barnes.num_bodies] : new Uint32Array([simulator.barnes.num_bodies]),
-        webcl.type ? [simulator.barnes.num_nodes] : new Uint32Array([simulator.barnes.num_nodes])
-          ), webcl.type ? graphArgs_t.concat(
-            [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null, null, webcl.type.FLOAT, webcl.type.FLOAT, webcl.type.INT, webcl.type.INT]) : undefined
-          );
-}
-
 
 
 function readBuffers(simulator) {
@@ -505,10 +473,15 @@ module.exports = {
     }
 
 
-    //if (anyBarnesArgsChanged) {
-      //simulator.kernels.forceAtlasPoints.setArgs(vArr, tArr);
-      //simulator.kernels.forceAtlasEdges.setArgs(vArr, tArr);
-    //}
+    if (anyBarnesArgsChanged) {
+      console.log("Set args");
+      console.log(vArr);
+      console.log(graphArgs);
+      simulator.kernels.bound_box.setArgs(vArr, tArr);
+      simulator.kernels.calculate_forces.setArgs(vArr, tArr);
+      simulator.kernels.move_bodies.setArgs(vArr, tArr);
+      simulator.kernels.forceAtlasEdges.setArgs(vArr, tArr);
+    }
 
   },
 
@@ -536,6 +509,48 @@ module.exports = {
         simulator.buffers.springsPos.buffer],
         webcl.type ? [null, null, null, null]
         : null);
+
+    function setBarnesArgs(simulator, kernelName) {
+      console.log(simulator.barnes.buffers);
+      simulator.kernels[kernelName].setArgs(
+          graphArgs.concat(
+            simulator.barnes.buffers.x_cords.buffer,
+            simulator.barnes.buffers.y_cords.buffer,
+            simulator.barnes.buffers.accx.buffer,
+            simulator.barnes.buffers.accy.buffer,
+            simulator.barnes.buffers.children.buffer,
+            simulator.barnes.buffers.mass.buffer,
+            simulator.barnes.buffers.start.buffer,
+            simulator.barnes.buffers.sort.buffer,
+            simulator.barnes.buffers.xmin.buffer,
+            simulator.barnes.buffers.xmax.buffer,
+            simulator.barnes.buffers.ymin.buffer,
+            simulator.barnes.buffers.ymax.buffer,
+            simulator.barnes.buffers.count.buffer,
+            simulator.barnes.buffers.blocked.buffer,
+            simulator.barnes.buffers.step.buffer,
+            simulator.barnes.buffers.bottom.buffer,
+            simulator.barnes.buffers.maxdepth.buffer,
+            simulator.barnes.buffers.radius.buffer,
+            webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
+            webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
+            webcl.type ? [simulator.barnes.num_bodies] : new Uint32Array([simulator.barnes.num_bodies]),
+            webcl.type ? [simulator.barnes.num_nodes] : new Uint32Array([simulator.barnes.num_nodes])
+            ),
+          webcl.type ? graphArgs_t.concat(
+              [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+              null, null, null, webcl.type.FLOAT, webcl.type.FLOAT, webcl.type.INT, webcl.type.INT]) : undefined
+      );
+    }
+    setBarnesArgs(simulator, "bound_box");
+    setBarnesArgs(simulator, "build_tree");
+    setBarnesArgs(simulator, "compute_sums");
+    setBarnesArgs(simulator, "sort");
+    setBarnesArgs(simulator, "calculate_forces");
+    setBarnesArgs(simulator, "move_bodies");
+
+
+    // Set here rather than in set points because we need edges for degrees. TODO use degrees
   },
 
   tick: function (simulator, stepNumber) {
@@ -564,35 +579,29 @@ module.exports = {
     var layoutKernelSeq = simulator.kernels.to_barnes_layout.call(256, resources);
     return layoutKernelSeq
     .then(function() {
-        setBarnesArgs(simulator, "bound_box");
         resources = [simulator.buffers.curPoints];
         return simulator.kernels.bound_box.call(256, resources)
     })
     .then(function () {
-      setBarnesArgs(simulator, "build_tree");
       var resources = [simulator.buffers.curPoints];
       return simulator.kernels.build_tree.call(256, resources);
       return;
     })
     .then( function () {
-        setBarnesArgs(simulator, "compute_sums");
         resources = [simulator.buffers.curPoints];
         return Q.all([simulator.kernels.compute_sums.call(256, resources)])
     })
     .spread( function (something, sortMemory) {
-      setBarnesArgs(simulator, "sort");
       resources = [simulator.buffers.curPoints];
       sortKernel = simulator.kernels.sort.call(256, resources)
       return Q.all([sortKernel, sortMemory]);
     })
     .then(function (cpuMemory) {
-      setBarnesArgs(simulator, "calculate_forces");
       resources = [simulator.buffers.curPoints];
       return Q.all([simulator.kernels.calculate_forces.call(256, resources),
                     cpuMemory]);
     })
     .then( function() {
-      setBarnesArgs(simulator,"move_bodies");
       resources = [simulator.buffers.curPoints];
       return simulator.kernels.move_bodies.call(256, resources);
     })
