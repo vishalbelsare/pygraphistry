@@ -57,6 +57,7 @@ function setupMousemove($eventTarget, renderState, texture) {
     return $eventTarget.mousemoveAsObservable()
         .sample(5)
         .map(function (evt) {
+            evt.preventDefault();
             var pos = {
                 x: evt.clientX - bounds.left,
                 y: evt.clientY - bounds.top
@@ -71,10 +72,11 @@ function setupScroll($eventTarget, camera) {
     return Rx.Observable.merge(
             Rx.Observable.fromEvent($eventTarget[0], 'wheel'), //ffox/chrome
             Rx.Observable.fromEvent($eventTarget[0], 'mousewheel')) //safari/chrome
+        .do(function (wheelEvent) {
+            wheelEvent.preventDefault();
+        })
         .sample(1)
         .map(function(wheelEvent) {
-            wheelEvent.preventDefault();
-
             var aspectRatio = camera.width / camera.height;
             var scrollY =
                 wheelEvent.wheelDeltaY ||
