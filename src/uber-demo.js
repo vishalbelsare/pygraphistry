@@ -214,15 +214,38 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints) {
 //render most of scene on refresh, but defer slow hitmap (readPixels)
 var lastRender = new Rx.Subject();
 function renderScene(renderer, currentState) {
-    var items = currentState.get('config').get('scene').get('render').toJS()
-        .filter(function (v) { return v !== 'pointpicking'; });
-    renderer.render(currentState, items);
     lastRender.onNext({renderer: renderer, currentState: currentState});
 }
-lastRender.sample(200).subscribe(
-    function (cfg) { cfg.renderer.render(cfg.currentState, ['pointpicking']); },
-    function (err) { console.error('Error handling mouse', err, err.stack); });
 
+var reqAnimationFrame =
+        window.requestAnimationFrame       ||
+        window.webkitRequestAnimationFrame ||
+        window.mozRequestAnimationFrame    ||
+        window.oRequestAnimationFrame      ||
+        window.msRequestAnimationFrame     ||
+        function (f) { setTimeout(action, 1000 / 60); };
+
+var lastRenderTime = 0;
+var mostRecent = null;
+lastRender
+    .do(function (cfg) {
+        mostRecent = cfg;
+        reqAnimationFrame(function (t) {
+            if (!mostRecent || t === lastRenderTime) {
+                return;
+            }
+            lastRenderTime = t;
+
+            var cfg = mostRecent;
+
+            var items = cfg.currentState.get('config').get('scene').get('render').toJS()
+                .filter(function (v) { return v !== 'pointpicking'; });
+            cfg.renderer.render(cfg.currentState, items);
+        });
+    })
+    .sample(150).subscribe(
+        function (cfg) { cfg.renderer.render(cfg.currentState, ['pointpicking']); },
+        function (err) { console.error('Error handling mouse', err, err.stack); });
 
 
 function setupInteractions($eventTarget, renderState) {
