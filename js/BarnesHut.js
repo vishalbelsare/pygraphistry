@@ -474,9 +474,6 @@ module.exports = {
 
 
     if (anyBarnesArgsChanged) {
-      console.log("Set args");
-      console.log(vArr);
-      console.log(graphArgs);
       simulator.kernels.bound_box.setArgs(vArr, tArr);
       simulator.kernels.calculate_forces.setArgs(vArr, tArr);
       simulator.kernels.move_bodies.setArgs(vArr, tArr);
@@ -511,7 +508,6 @@ module.exports = {
         : null);
 
     function setBarnesArgs(simulator, kernelName) {
-      console.log(simulator.barnes.buffers);
       simulator.kernels[kernelName].setArgs(
           graphArgs.concat(
             simulator.barnes.buffers.x_cords.buffer,
@@ -554,6 +550,7 @@ module.exports = {
   },
 
   tick: function (simulator, stepNumber) {
+    debug("to layout");
     //if (simulator.barnes.flag) return;
     simulator.barnes.flag = 1;
     //simulator.numPoints = 5002;
@@ -579,41 +576,29 @@ module.exports = {
     var layoutKernelSeq = simulator.kernels.to_barnes_layout.call(256, resources);
     return layoutKernelSeq
     .then(function() {
-        resources = [simulator.buffers.curPoints];
+        resources = [];
         return simulator.kernels.bound_box.call(256, resources)
     })
     .then(function () {
-      var resources = [simulator.buffers.curPoints];
+      debug("Build Tree");
       return simulator.kernels.build_tree.call(256, resources);
-      return;
     })
     .then( function () {
-        resources = [simulator.buffers.curPoints];
+        debug("Compute sums");
         return Q.all([simulator.kernels.compute_sums.call(256, resources)])
     })
-    .spread( function (something, sortMemory) {
-      resources = [simulator.buffers.curPoints];
-      sortKernel = simulator.kernels.sort.call(256, resources)
-      return Q.all([sortKernel, sortMemory]);
+    .then(function () {
+        debug("sort");
+      return simulator.kernels.sort.call(256, resources);
     })
-    .then(function (cpuMemory) {
-      resources = [simulator.buffers.curPoints];
-      return Q.all([simulator.kernels.calculate_forces.call(256, resources),
-                    cpuMemory]);
+    .then(function () {
+        debug("calculate forces");
+      return simulator.kernels.calculate_forces.call(256, resources);
     })
     .then( function() {
-      resources = [simulator.buffers.curPoints];
+        debug("move bodies");
       return simulator.kernels.move_bodies.call(256, resources);
     })
-    //.then( function () {
-      //if (true) {
-      //return readBuffers(simulator).then(function(memObject) {
-        //printBuffer(memObject.curPoints);
-      //})
-      //} else {
-        //return;
-      //}
-    //})
     .then(function () {
         nextPointsBuffer = simulator.buffers.nextPoints.buffer;
         simulator.kernels.from_barnes_layout.setArgs(
@@ -629,8 +614,9 @@ module.exports = {
             webcl.type ? graphArgs_t.concat(webcl.type.UINT, null, null, null, null, null, null, null) : undefined
 
               );
-        resources = [simulator.buffers.curPoints];
+        resources = [simulator.buffers.nextPoints];
         var layoutKernelSeq = simulator.kernels.from_barnes_layout.call(256, resources);
+        debug("from layout");
         return layoutKernelSeq;
     })
     .then(function () {

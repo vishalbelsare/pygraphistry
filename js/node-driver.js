@@ -26,7 +26,7 @@ var WIDTH = 600,
     HEIGHT = 600,
     USE_GEO = true;
 
-var numPoints = 20, //1024,//1024,//2048,//16384,
+var numPoints = 10000, //1024,//1024,//2048,//16384,
     numEdges = numPoints,
     dimensions = [1,1]; //[960,960];
 

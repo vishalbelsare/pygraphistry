@@ -205,17 +205,17 @@ var setupTempBuffers = function(simulator) {
     simulator.renderer.numPoints = simulator.numPoints;
     var blocks = 8; //TODO (paden) should be set to multiprocecessor count
 
-    var num_nodes = simulator.numPoints * 4;
+    var num_nodes = simulator.numPoints * 2;
     // TODO (paden) make this into a definition
     var WARPSIZE = 16;
-    //if (num_nodes < 1024*blocks) num_nodes = 1024*blocks;
-    //while ((num_nodes & (WARPSIZE - 1)) != 0) num_nodes++;
-    //num_nodes--;
+    if (num_nodes < 1024*blocks) num_nodes = 1024*blocks;
+    while ((num_nodes & (WARPSIZE - 1)) != 0) num_nodes++;
+    num_nodes--;
     var num_bodies = simulator.numPoints;
     simulator.barnes.num_nodes = num_nodes;
     simulator.barnes.num_bodies = num_bodies;
     // TODO (paden) Use actual number of workgroups. Don't hardcode
-    var num_work_groups = 100;
+    var num_work_groups = 128;
     
 
     return Q.all(
@@ -262,10 +262,6 @@ var setupTempBuffers = function(simulator) {
       simulator.barnes.buffers.maxdepth = maxdepth;
       simulator.barnes.buffers.radius = radius;
       return;
-      console.log("DONE");
-    })
-    .then( function() {
-      console.log("DONEDONE")
     })
     .catch(function(error) {
 
@@ -496,7 +492,6 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints, edgeColor
                 }));
     })
     .then(function () {
-        console.log(simulator.barnes.buffers);
         return simulator;
     })
     .then(_.identity, function (err) {
