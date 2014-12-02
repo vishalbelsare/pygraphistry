@@ -144,6 +144,7 @@ module.exports = {
     },
 
     tick: function (simulator, stepNumber) {
+        var tickTime = Date.now()
 
         if (simulator.physics.forceAtlas) {
 
@@ -187,9 +188,15 @@ module.exports = {
 
             var appliedForces = simulator.kernels.forceAtlasPoints.call(simulator.numPoints, resources);
 
-            return appliedForces
+            var beforeApplied = Date.now();
+            appliedForces
                 .then(function () {
+                  return simulator.cl.queue.finish();
+                })
+                .then(function() {
+                    console.log("Force points completed", Date.now() - beforeApplied);
                     if(simulator.numEdges > 0) {
+                        var beforeEdges = Date.now()
                         return atlasEdgesKernelSeq(
                                 simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
                                 simulator.buffers.nextPoints, simulator.buffers.curPoints)
@@ -198,7 +205,12 @@ module.exports = {
                                     simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
                                     simulator.buffers.curPoints, simulator.buffers.nextPoints);
                             })
+                            .then(function() {
+                              simulator.cl.queue.finish();
+                             })
                             .then(function () {
+
+                                console.log("Force atlas edges completed", Date.now() - beforeEdges);
                                 return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
                             });
                     }
@@ -212,6 +224,9 @@ module.exports = {
                         return simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources);
                     }
                 })
+                .then(function () {
+                  console.log("Total tick time", Date.now() - tickTime);
+                });
         }
     }
 };

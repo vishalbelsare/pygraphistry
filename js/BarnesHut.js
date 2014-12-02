@@ -550,7 +550,6 @@ module.exports = {
   },
 
   tick: function (simulator, stepNumber) {
-    debug("to layout");
     //if (simulator.barnes.flag) return;
     simulator.barnes.flag = 1;
     //simulator.numPoints = 5002;
@@ -558,6 +557,7 @@ module.exports = {
     //simulator.barnes.num_nodes = 20008;
     // TODO (paden) Can set arguements outside of tick
     simulator.tickBuffers(['nextPoints', 'curPoints', 'springsPos'])
+    var totalTime = Date.now()
     curPointsBuffer = simulator.buffers.curPoints.buffer;
     simulator.kernels.to_barnes_layout.setArgs(
         graphArgs.concat(
@@ -574,32 +574,54 @@ module.exports = {
         );
     resources = [simulator.buffers.curPoints];
     var layoutKernelSeq = simulator.kernels.to_barnes_layout.call(256, resources);
+    var now = Date.now()
     return layoutKernelSeq
     .then(function() {
+        console.log("barnes layout completed in:", Date.now() - now);
+        now = Date.now();
         resources = [];
-        return simulator.kernels.bound_box.call(256, resources)
+        //return simulator.kernels.bound_box.call(256, resources)
+        simulator.kernels.bound_box.call(256, resources)
+        return simulator.cl.queue.finish()
     })
     .then(function () {
-      debug("Build Tree");
-      return simulator.kernels.build_tree.call(256, resources);
+      console.log("bound_box completed in:", Date.now() - now);
+      now = Date.now();
+      //return simulator.kernels.build_tree.call(256, resources);
+      simulator.kernels.build_tree.call(256, resources);
+      return simulator.cl.queue.finish()
     })
     .then( function () {
-        debug("Compute sums");
-        return Q.all([simulator.kernels.compute_sums.call(256, resources)])
+      console.log("build_tree completed in:", Date.now() - now);
+      now = Date.now();
+        simulator.kernels.compute_sums.call(256, resources);
+        return simulator.cl.queue.finish()
     })
     .then(function () {
-        debug("sort");
+      console.log("compute_sums completed in:", Date.now() - now);
       return simulator.kernels.sort.call(256, resources);
     })
+    .then( function () {
+     return simulator.cl.queue.finish()
+    })
     .then(function () {
-        debug("calculate forces");
+      console.log("sort completed in:", Date.now() - now);
+      now = Date.now();
       return simulator.kernels.calculate_forces.call(256, resources);
     })
     .then( function() {
-        debug("move bodies");
+       return simulator.cl.queue.finish();
+    })
+    .then( function() {
+      console.log("calculate forces completed in:", Date.now() - now);
+      now = Date.now();
       return simulator.kernels.move_bodies.call(256, resources);
     })
+    .then (function () {
+      return simulator.cl.queue.finish();
+    })
     .then(function () {
+        console.log("move_bodies completed in:", Date.now() - now);
         nextPointsBuffer = simulator.buffers.nextPoints.buffer;
         simulator.kernels.from_barnes_layout.setArgs(
             graphArgs.concat(
@@ -615,11 +637,15 @@ module.exports = {
 
               );
         resources = [simulator.buffers.nextPoints];
-        var layoutKernelSeq = simulator.kernels.from_barnes_layout.call(256, resources);
-        debug("from layout");
-        return layoutKernelSeq;
+        before_layout = Date.now();
+        return simulator.kernels.from_barnes_layout.call(256, resources);
+    })
+    .then (function () {
+      return simulator.cl.queue.finish()
     })
     .then(function () {
+      console.log("from barnes layout", Date.now() - before_layout);
+      console.log("Total time for points", Date.now() - totalTime);
       var atlasEdgesKernelSeq = function (edges, workItems, numWorkItems, fromPoints, toPoints) {
 
         var resources = [edges, workItems, fromPoints, toPoints];
@@ -642,27 +668,38 @@ module.exports = {
       };
 
       if(simulator.numEdges > 0) {
+        now = Date.now()
         return atlasEdgesKernelSeq(
             simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
             simulator.buffers.nextPoints, simulator.buffers.curPoints)
           .then(function () {
-            return atlasEdgesKernelSeq(
+            atlasEdgesKernelSeq(
                 simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
                 simulator.buffers.curPoints, simulator.buffers.nextPoints);
+            return simulator.cl.queue.finish();
           })
         .then(function () {
-          return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
+        console.log("Atlas edges completed in:", Date.now() - now);
+          beforeCopy = Date.now();
+          simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
+          simulator.cl.queue.finish();
         });
       }
     })
     .then(function () {
+      console.log("Trasfer data complted in:", Date.now() - beforeCopy);
       if (simulator.numEdges > 0) {
 
         var resources = [simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems,
         simulator.buffers.curPoints, simulator.buffers.springsPos];
+        now = Date.now();
 
-        return simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources);
+        simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources);
+        simulator.cl.queue.finish();
       }
+    })
+    .then(function () {
+      console.log("time for gather", Date.now() - now);
     })
   }
   };

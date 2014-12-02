@@ -14,8 +14,8 @@ var forceAtlas = require('./forceatlas.js'),
 
 
 //var layoutAlgorithms = [gaussSeidel, edgeBundling, barnesHut];
-var layoutAlgorithms = [barnesHut, gaussSeidel, edgeBundling];
-//var layoutAlgorithms = [forceAtlas, gaussSeidel, edgeBundling];
+//var layoutAlgorithms = [barnesHut, gaussSeidel, edgeBundling];;
+var layoutAlgorithms = [forceAtlas, gaussSeidel, edgeBundling];
 
 
 if (typeof(window) == 'undefined') {
@@ -540,6 +540,7 @@ function tick(simulator, stepNumber) {
     var tickAllHelper = function (remainingAlgorithms) {
         if (!remainingAlgorithms.length) return;
         var algorithm = remainingAlgorithms.shift();
+        //console.log(algorithm);
         return Q()
             .then(function () {
                 return algorithm.tick(simulator, stepNumber);
@@ -549,6 +550,7 @@ function tick(simulator, stepNumber) {
             });
     };
 
+    var beforeTick = Date.now()
     var res = Q()
     .then(function () { return tickAllHelper(layoutAlgorithms.slice(0)); })
     .then(function() {
@@ -558,8 +560,12 @@ function tick(simulator, stepNumber) {
         // What we really want here is to give finish() a callback and resolve the promise when it's
         // called, but node-webcl is out-of-date and doesn't support WebCL 1.0's optional callback
         // argument to finish().
-        simulator.cl.queue.finish();
-        simulator.renderer.finish();
+        return Q.all[
+        simulator.cl.queue.finish(),
+        simulator.renderer.finish()]
+    })
+    .then( function () {
+      console.log("After tick", Date.now() - beforeTick)
     });
 
     res.then(function () {}, function (err) {
