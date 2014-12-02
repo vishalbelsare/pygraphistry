@@ -673,17 +673,21 @@ module.exports = {
             simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
             simulator.buffers.nextPoints, simulator.buffers.curPoints)
           .then(function () {
-            atlasEdgesKernelSeq(
+            return atlasEdgesKernelSeq(
                 simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
                 simulator.buffers.curPoints, simulator.buffers.nextPoints);
+          })
+          .then( function () {
             return simulator.cl.queue.finish();
           })
         .then(function () {
         console.log("Atlas edges completed in:", Date.now() - now);
           beforeCopy = Date.now();
-          simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-          simulator.cl.queue.finish();
-        });
+          return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
+        })
+        .then (function () {
+          return simulator.cl.queue.finish();
+        })
       }
     })
     .then(function () {
