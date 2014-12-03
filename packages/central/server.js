@@ -23,6 +23,7 @@ debug("Config set to %j", config);
 
 var GRAPH_STATIC_PATH   = path.resolve(require('graph-viz').staticFilePath(), 'assets');
 var HORIZON_STATIC_PATH = path.resolve(require('horizon-viz').staticFilePath(), 'assets');
+var UBER_STATIC_PATH   = path.resolve(require('uber-viz').staticFilePath(), 'assets');
 
 var HTTP_SERVER_LISTEN_ADDRESS = config.HTTP_LISTEN_ADDRESS;
 var HTTP_SERVER_LISTEN_PORT = config.HTTP_LISTEN_PORT;
@@ -164,6 +165,8 @@ app.get('*/StreamGL.map', function(req, res) {
 app.use('/horizon', express.static(HORIZON_STATIC_PATH));
 // Serve graph static assets
 app.use('/graph',   express.static(GRAPH_STATIC_PATH));
+// Serve uber static assets
+app.use('/uber',   express.static(UBER_STATIC_PATH));
 
 
 // Default '/' path redirects to graph demo
@@ -181,6 +184,12 @@ app.get('/horizon', function(req, res) {
     debug('redirecting to horizon')
     res.redirect('/horizon/src/demo/index.html' + (req.query.debug !== undefined ? '?debug' : ''));
 });
+
+app.get('/uber', function(req, res) {
+    debug('redirecting to graph')
+    res.redirect('/uber/index.html' + (req.query.debug !== undefined ? '?debug' : ''));
+});
+
 
 Rx.Observable.return()
     .flatMap(function () {

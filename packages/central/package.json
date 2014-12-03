@@ -8,6 +8,7 @@
     "express": "*",
     "graph-viz": "git+ssh://git@github.com:graphistry/graph-viz.git#master",
     "horizon-viz": "git+ssh://git@github.com:graphistry/horizon-viz.git#master",
+    "uber-viz": "git+ssh://git@github.com:graphistry/uber-viz.git#master",
     "StreamGL": "git+ssh://git@github.com:graphistry/StreamGL.git#master",
     "mongodb": "*",
     "rx": "^2.3.17",
