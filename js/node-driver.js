@@ -11,7 +11,7 @@ var Q = require("q"),
     _ = require('underscore'),
 
     request = require('request'),
-    debug = require("debug")("StreamGL:driver"),
+    debug = require("debug")("graphistry:graph-viz:node-driver"),
 
     NBody = require("./NBody.js"),
     RenderNull = require('./RenderNull.js'),
@@ -272,30 +272,26 @@ function init() {
 }
 
 
-function loadDataIntoSim(graph) {
-    return loader.loadDataList(graph)
-    .then(function (datalist) {
-        if (USE_GEO) {
+function loadDataIntoSim(graph, dataListURI) {
+    if (dataListURI == "random") {
+        var points = loader.createPoints(numPoints, dimensions);
+        var edges = loader.createEdges(numEdges, numPoints);
+
+        return Q.all([
+            graph.setPoints(points),
+            points,
+            edges,
+        ]).spread(function(graph, points, edges) {
+            graph.setColorMap("test-colormap2.png");
+            return graph.setEdges(edges);
+        });
+    } else {
+        return loader.loadDataList(dataListURI).then(function (datalist) {
             var which = 0;
-            debug("Loading data: %o", datalist[which]);
-            return datalist[which].loader(graph, datalist[which].f);
-
-        } else {
-            var points = loader.createPoints(numPoints, dimensions);
-            var edges = loader.createEdges(numEdges, numPoints);
-
-            return Q.all([
-                graph.setPoints(points),
-                points,
-                edges,
-            ]).spread(function(graph, points, edges) {
-                graph.setColorMap("test-colormap2.png");
-                return graph.setEdges(edges);
-            });
-        }
-    });
+            return loader.loadDataSet(graph, datalist[which]);
+        });
+    }
 }
-
 
 /**
  * Returns an Observable that fires an event in `delay` ms, with the given `value`
@@ -327,7 +323,7 @@ function delayObservableGenerator(delay, value, cb) {
 ///////////////////////////////////////////////////////////////////////////
 
 
-function createAnimation() {
+function createAnimation(dataListURI) {
     debug("STARTING DRIVER");
 
     var userInteractions = new Rx.Subject();
@@ -355,7 +351,7 @@ function createAnimation() {
     })
     .then(function (graph) {
         debug("LOADING DATA");
-        return loadDataIntoSim(graph);
+        return loadDataIntoSim(graph, dataListURI);
     })
     .then(function (graph) {
         debug("ANIMATING");
@@ -510,7 +506,10 @@ exports.fetchData = fetchData;
 
 // If the user invoked this script directly from the terminal, run init()
 if(require.main === module) {
-    var vbosUpdated = createAnimation();
+    var config  = require('./config.js')();
+    var vbosUpdated = createAnimation(config.DATALISTURI);
 
     vbosUpdated.subscribe(function() { debug("Got updated VBOs"); } );
 }
+
+// vim: set et ff=unix ts=8 sw=4 fdm=syntax: 

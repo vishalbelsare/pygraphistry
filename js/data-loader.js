@@ -2,13 +2,20 @@
 
 var fs = require('fs');
 var path = require('path');
-
-var debug = require("debug")("StreamGL:data");
+var Q = require('q');
+var debug = require("debug")("graphistry:graph-viz:data-loader");
 var _ = require('underscore');
 
-var MatrixLoader = require('./libs/load.js'),
+var MatrixLoader = require('./libs/MatrixLoader.js'),
     kmeans = require('./libs/kmeans.js');
 
+var loaders = {
+    "vgraph": null,
+    "matrix" : loadMatrix,
+    "OBSOLETE_geo": loadGeo,
+    "OBSOLETE_socioPLT" : loadSocioPLT,
+    "OBSOLETE_rectangle" : loadRectangle.bind('', 100, 100)
+};
 
 // Generates `amount` number of random points
 function createPoints(amount, dim) {
@@ -55,10 +62,10 @@ function loadRectangle(rows, columns, graph) {
         });
 }
 
-function loadSocioPLT(graph) {
+function loadSocioPLT(graph, datasetURI) {
     debug("Loading SocioPLT");
 
-    var data = require('./libs/socioplt/generateGraph.js');
+    var data = require('./libs/socioplt/generateGraph.js').process(datasetURI);
 
 
     var nodesPerRow = Math.floor(Math.sqrt(data.nodes.length));
@@ -158,17 +165,42 @@ function loadGeo(graph, graphFileURI) {
     });
 }
 
+function fetchDataList(listURI) {
+
+    debug("Listing datasets in " + listURI);
+    var file = (typeof(window) == 'undefined') ?
+                Q.denodeify(require('fs').readFile)(listURI, {encoding: 'utf8'}) :
+                Q($.ajax(listURI, {dataType: "text"}));
+
+    return file
+        .then(function (s) {
+            return _.map(JSON.parse(s), function (dataset) {
+                if ("file" in dataset) { // Resolve relative paths
+                    var parts = listURI.split('/');
+                    parts.pop();
+                    var base = parts.join('/') + '/';
+                    dataset.file = base + dataset.file
+                }
+                return dataset;
+            });
+        });
+}
+
+function loadDataSet(graph, dataset) {
+    debug("Loading data: %o", dataset);
+    return loaders[dataset.type](graph, dataset.file);
+}
+
 
 /**
  * Populate the data list dropdown menu with available data, and setup actions to load the data
  * when the user selects one of the options.
  *
- * @param clGraph - the NBody graph object created by NBody.create()
  */
-function loadDataList(clGraph) {
+function loadDataList(dataListURI) {
     // Given a URI of a JSON data index, return an array of objects, with keys for display name,
     // file URI, and data size
-    function getDataList(listURI) {
+    /*function getDataList(listURI) {
         return MatrixLoader.ls(listURI)
         .then(function (files) {
             var listing = [];
@@ -184,11 +216,13 @@ function loadDataList(clGraph) {
 
             return listing;
         });
-    }
+    }*/
+    
+    var dataList = fetchDataList(path.resolve(__dirname, '..', dataListURI));
+    return dataList;
+    
 
-    var dataList = [];
-
-    return getDataList(path.resolve(__dirname, '..', 'data', 'geo.json'))
+    /*return fetchDataList(path.resolve(__dirname, '..', 'data', dataset))
     .then(function(geoList){
         debug("  geolist");
         geoList = geoList.map(function(fileInfo) {
@@ -238,7 +272,7 @@ function loadDataList(clGraph) {
         dataList = dataList.concat(matrixList);
 
         return dataList;
-    });
+    });*/
 }
 
 
@@ -276,7 +310,8 @@ function loadMatrix(graph, graphFileURI) {
 module.exports = {
     createPoints: createPoints,
     createEdges: createEdges,
-    loadGeo: loadGeo,
     loadDataList: loadDataList,
-    loadRectangle: loadRectangle
+    loadDataSet: loadDataSet,
 };
+
+// vim: set et ff=unix ts=8 sw=4 fdm=syntax: 
