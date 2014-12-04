@@ -11,7 +11,7 @@ var Slider  = require('bootstrap-slider');
 
 var interaction = require('./interaction.js');
 var renderer    = require('./renderer');
-var picking     = require('./picking.js');
+var labels      = require('./labels.js')();
 
 
 
@@ -32,10 +32,6 @@ var HIGHLIGHT_SIZE = 20;
 // Event handler setup
 ///////////////////////////////////////////////////////////////////////////////
 
-//TODO remove global
-//[ {elt: $DOM, idx: int} ]
-var activeLabels = {};
-var inactiveLabels = [];
 
 function genLabel ($labelCont, txt) {
     var res = $('<span>')
@@ -65,59 +61,8 @@ function renderLabels($labelCont, renderState) {
 }
 
 
-//renderState -> {<idx> -> True}
-//dict of points that are on screen -- approx may skip some
-function getActiveApprox(renderState) {
-
-    var samples = renderState.get('pixelreads').pointHitmapDownsampled;
-    var samples32 = new Uint32Array(samples.buffer);
-    var hits = {};
-    for (var i = 0; i < samples32.length; i++) {
-        hits[picking.uint32ToIdx(samples32[i])] = true;
-    }
-    if (hits['-1']) {
-        delete hits['-1'];
-    }
-
-    return hits;
-}
 
 
-
-//{<idx>: True} * [{elt: $DOM}] * {<idx>: True} * RenderState * [ Float ] -> ()
-//return unused activeLabels to inactiveLabels incase need extra to reuse
-//(otherwise mark as hit)
-//Idea: need to make sure missing not due to overplotting
-function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
-
-    var camera = renderState.get('camera');
-    var cnv = $('#simulation').get(0);
-    var mtx = camera.getMatrix();
-
-    var toClear = [];
-
-    _.values(activeLabels).forEach(function (lbl) {
-        if (!hits[lbl.idx]) {
-
-            var pos = camera.canvasCoords(points[2 * lbl.idx], -points[2 * lbl.idx + 1], 1, cnv, mtx);
-
-            var isOffScreen = pos.x < 0 || pos.y < 0 || pos.x > cnv.clientWidth || pos.y > cnv.clientHeight;
-            var isDecayed = Math.random() > 0.5;
-
-            if (isOffScreen || isDecayed) {
-                //remove
-                inactiveLabels.push(lbl);
-                delete activeLabels[lbl.idx];
-                toClear.push(lbl);
-            } else {
-                //overplotted, keep
-                hits[lbl.idx] = true;
-            }
-        }
-    });
-
-    return toClear;
-}
 
 
 function newLabelPositions(renderState, labels, points) {
@@ -168,26 +113,26 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints) {
 
     var t0 = Date.now();
 
-    var hits = getActiveApprox(renderState);
+    var hits = labels.getActiveApprox(renderState, 'pointHitmapDownsampled');
 
     var t1 = Date.now();
 
-    var toClear = finishApprox(activeLabels, inactiveLabels, hits, renderState, points);
+    var toClear = labels.finishApprox(labels.activeLabels, labels.inactiveLabels, hits, renderState, points);
 
     //select label elts (and make active if needed)
     var toShow = [];
-    var labels = _.keys(hits)
+    var lbls = _.keys(hits)
         .map(function (idx) {
-            if (activeLabels[idx]) {
-                return activeLabels[idx];
+            if (labels.activeLabels[idx]) {
+                return labels.activeLabels[idx];
             } else {
-                if (!inactiveLabels.length) {
+                if (!labels.inactiveLabels.length) {
                     return {
                         idx: idx,
                         elt:  genLabel($labelCont, idx)
                     };
                 }
-                var lbl = inactiveLabels.pop();
+                var lbl = labels.inactiveLabels.pop();
                 lbl.idx = idx;
                 lbl.elt.text(idx);
                 toShow.push(lbl);
@@ -196,17 +141,17 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints) {
         })
         .filter(_.identity);
 
-    activeLabels = _.object(labels.map(function (lbl) { return [lbl.idx, lbl]; }));
+    labels.activeLabels = _.object(labels.map(function (lbl) { return [lbl.idx, lbl]; }));
 
     var t2 = Date.now();
 
-    var newPos = newLabelPositions(renderState, labels, points, toClear, toShow);
+    var newPos = newLabelPositions(renderState, lbls, points, toClear, toShow);
 
     var t3 = Date.now();
 
-    effectLabels(toClear, toShow, labels, newPos);
+    effectLabels(toClear, toShow, lbls, newPos);
 
-    debug('sampling timing', t1 - t0, t2 - t1, t3 - t2, Date.now() - t3, 'labels:', labels.length, '/', _.keys(hits).length, inactiveLabels.length);
+    debug('sampling timing', t1 - t0, t2 - t1, t3 - t2, Date.now() - t3, 'labels:', lbls.length, '/', _.keys(hits).length, labels.inactiveLabels.length);
 
 }
 
@@ -254,12 +199,12 @@ function setupInteractions($eventTarget, renderState) {
 
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
-    var labels = _.range(1,10).map(function (i) {
+    var lbls = _.range(1,10).map(function (i) {
         return genLabel($labelCont, i);
     });
-    labels.forEach(function ($lbl, i) {
+    lbls.forEach(function ($lbl, i) {
         var cont = {idx: i, elt: $lbl};
-        inactiveLabels.push(cont);
+        labels.inactiveLabels.push(cont);
         var isOn = false;
         $lbl
             .on('mouseover', function () {
