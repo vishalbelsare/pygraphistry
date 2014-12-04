@@ -100,7 +100,7 @@ var setupTempBuffers = function(simulator, tempBuffers) {
     });
 };
 
-tempBuffers  = {
+var tempBuffers  = {
     x_cords: null, //cl.createBuffer(cl, 0, "x_cords"),
     y_cords: null,
     velx: null,
@@ -117,7 +117,52 @@ tempBuffers  = {
     step: null,
     bottom: null,
     maxdepth: null,
-  },
+  };
+
+function setStepNumberArg(simulator, stepNumber) {
+
+  function setStepNumberArgOfKernel(kernelName) {
+    console.log("stepNumber", stepNumber);
+    simulator.kernels[kernelName].setArgs(
+        graphArgs.map( function () {return null;} ).concat(
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          webcl.type ? [stepNumber] : new Uint32Array([stepNumber]),
+          null,
+          null,
+          null,
+          null
+                ),
+                webcl.type ? graphArgs_t.map( function () { return null; } ).concat(
+                    [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+                    null, null, null, webcl.type.UINT, null, null, null, null]) : undefined
+                  );
+  }
+  return Q.all([
+    setStepNumberArgOfKernel("bound_box"),
+    setStepNumberArgOfKernel("build_tree"),
+    setStepNumberArgOfKernel("compute_sums"),
+      setStepNumberArgOfKernel("sort"),
+      setStepNumberArgOfKernel("calculate_forces"),
+        setStepNumberArgOfKernel("move_bodies")
+  ]);
+};
 
 
 module.exports = {
@@ -237,6 +282,7 @@ module.exports = {
             tempBuffers.bottom.buffer,
             tempBuffers.maxdepth.buffer,
             tempBuffers.radius.buffer,
+            webcl.type ? [0] : new Uint32Array([0]),
             webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
             webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
             webcl.type ? [numBodies] : new Uint32Array([numBodies]),
@@ -244,7 +290,7 @@ module.exports = {
             ),
           webcl.type ? graphArgs_t.concat(
               [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-              null, null, null, webcl.type.FLOAT, webcl.type.FLOAT, webcl.type.INT, webcl.type.INT]) : undefined
+              null, null, null, webcl.type.UINT, webcl.type.FLOAT, webcl.type.FLOAT, webcl.type.INT, webcl.type.INT]) : undefined
       );
     }
     return setupTempBuffers(simulator, tempBuffers).then(function () {
@@ -257,14 +303,13 @@ module.exports = {
     })
 
 
+
     // Set here rather than in set points because we need edges for degrees. TODO use degrees
   },
 
+
   tick: function (simulator, stepNumber) {
-    //if (simulator.barnes.flag) return;
-    //simulator.numPoints = 5002;
-    //simulator.barnes.num_bodies = 5002;
-    //simulator.barnes.num_nodes = 20008;
+    //
     // TODO (paden) Can set arguements outside of tick
     simulator.tickBuffers(['nextPoints', 'curPoints', 'springsPos'])
     var totalTime = Date.now()
@@ -277,15 +322,21 @@ module.exports = {
           tempBuffers.y_cords.buffer,
           tempBuffers.mass.buffer,
           tempBuffers.blocked.buffer,
-          tempBuffers.maxdepth.buffer
+          tempBuffers.maxdepth.buffer,
+          webcl.type ? [stepNumber] : new Uint32Array([stepNumber])
           ),
-        webcl.type ? graphArgs_t.concat(webcl.type.UINT, null, null, null, null, null, null, null) : undefined
+        // TODO (paden) This should 
+        webcl.type ? graphArgs_t.concat(webcl.type.UINT, null, null, null, null, null, null, webcl.type.UINT) : undefined
 
         );
     resources = [simulator.buffers.curPoints];
     var layoutKernelSeq = simulator.kernels.to_barnes_layout.call(256, resources);
     var now = Date.now()
+    console.log("step number", stepNumber);
+    return setStepNumberArg(simulator, stepNumber)
+    .then(function () {
     return layoutKernelSeq
+    })
     .then(function() {
         console.log("barnes layout completed in:", Date.now() - now);
         now = Date.now();
@@ -341,9 +392,10 @@ module.exports = {
               tempBuffers.y_cords.buffer,
               tempBuffers.mass.buffer,
               tempBuffers.blocked.buffer,
-              tempBuffers.maxdepth.buffer
+              tempBuffers.maxdepth.buffer,
+              webcl.type ? [stepNumber] : new Uint32Array([stepNumber])
               ),
-            webcl.type ? graphArgs_t.concat(webcl.type.UINT, null, null, null, null, null, null, null) : undefined
+            webcl.type ? graphArgs_t.concat(webcl.type.UINT, null, null, null, null, null, null, webcl.type.UINT) : undefined
 
               );
         resources = [simulator.buffers.nextPoints];
