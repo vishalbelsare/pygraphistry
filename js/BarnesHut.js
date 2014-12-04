@@ -29,9 +29,11 @@ function printBuffer(buffer) {
   }
 };
 
+var numNodes = 0;
+var numBodies = 0;
+
 var setupTempBuffers = function(simulator, tempBuffers) {
     simulator.resetBuffers(tempBuffers);
-    simulator.renderer.numPoints = simulator.numPoints;
     var blocks = 8; //TODO (paden) should be set to multiprocecessor count
 
     var num_nodes = simulator.numPoints * 2;
@@ -41,8 +43,8 @@ var setupTempBuffers = function(simulator, tempBuffers) {
     while ((num_nodes & (WARPSIZE - 1)) != 0) num_nodes++;
     num_nodes--;
     var num_bodies = simulator.numPoints;
-    simulator.barnes.num_nodes = num_nodes;
-    simulator.barnes.num_bodies = num_bodies;
+    numNodes = num_nodes;
+    numBodies = num_bodies;
     // TODO (paden) Use actual number of workgroups. Don't hardcode
     var num_work_groups = 128;
     
@@ -125,7 +127,9 @@ module.exports = {
   // Temporary buffers. These will only be used in barnes hut algorithm.
   tempBuffers: tempBuffers,
 
+  numNodes: numNodes,
 
+  numBodies: numBodies,
 
   setPhysics: function (simulator, cfg) {
 
@@ -235,8 +239,8 @@ module.exports = {
             tempBuffers.radius.buffer,
             webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
             webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
-            webcl.type ? [simulator.barnes.num_bodies] : new Uint32Array([simulator.barnes.num_bodies]),
-            webcl.type ? [simulator.barnes.num_nodes] : new Uint32Array([simulator.barnes.num_nodes])
+            webcl.type ? [numBodies] : new Uint32Array([numBodies]),
+            webcl.type ? [numNodes] : new Uint32Array([numNodes])
             ),
           webcl.type ? graphArgs_t.concat(
               [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
@@ -258,7 +262,6 @@ module.exports = {
 
   tick: function (simulator, stepNumber) {
     //if (simulator.barnes.flag) return;
-    simulator.barnes.flag = 1;
     //simulator.numPoints = 5002;
     //simulator.barnes.num_bodies = 5002;
     //simulator.barnes.num_nodes = 20008;

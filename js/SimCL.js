@@ -64,7 +64,6 @@ function create(renderer, dimensions, numSplits, locked) {
             simObj.setLocked = setLocked.bind(this, simObj);
             simObj.setPhysics = setPhysics.bind(this, simObj);
             simObj.resetBuffers = resetBuffers.bind(this, simObj);
-            simObj.setupTempBuffers = setupTempBuffers.bind(this, simObj);
             simObj.tickBuffers = tickBuffers.bind(this, simObj);
 
             simObj.dimensions = dimensions;
@@ -80,35 +79,6 @@ function create(renderer, dimensions, numSplits, locked) {
                 (locked || {})
             );
             simObj.physics = {};
-
-            simObj.barnes = {
-                
-                num_nodes : 0,
-
-                flag: 0,
-
-                num_bodies : 0,
-
-
-                buffers : {
-                  x_cords: null, //cl.createBuffer(cl, 0, "x_cords"),
-                  y_cords: null,
-                  velx: null,
-                  vely: null,
-                  accx: null,
-                  accy: null,
-                  children: null,
-                  global_x_mins: null,
-                  global_y_mins: null,
-                  global_x_maxs: null,
-                  global_y_maxs: null,
-                  count: null,
-                  blocked: null,
-                  step: null,
-                  bottom: null,
-                  maxdepth: null,
-                }
-            }
 
             simObj.buffers = {
                 nextPoints: null,
@@ -199,76 +169,6 @@ var resetBuffers = function(simulator, buffers) {
 };
 
 
-// TODO (paden) Do we need to allocate memory for these buffers on the host?
-var setupTempBuffers = function(simulator) {
-    simulator.resetBuffers(simulator.barnes.buffers);
-    simulator.renderer.numPoints = simulator.numPoints;
-    var blocks = 8; //TODO (paden) should be set to multiprocecessor count
-
-    var num_nodes = simulator.numPoints * 2;
-    // TODO (paden) make this into a definition
-    var WARPSIZE = 16;
-    if (num_nodes < 1024*blocks) num_nodes = 1024*blocks;
-    while ((num_nodes & (WARPSIZE - 1)) != 0) num_nodes++;
-    num_nodes--;
-    var num_bodies = simulator.numPoints;
-    simulator.barnes.num_nodes = num_nodes;
-    simulator.barnes.num_bodies = num_bodies;
-    // TODO (paden) Use actual number of workgroups. Don't hardcode
-    var num_work_groups = 128;
-    
-
-    return Q.all(
-        [
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT,  'x_cords'),
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'y_cords'),
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'accx'),
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'accy'),
-        simulator.cl.createBuffer(4*(num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'children'),
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'mass'),
-        simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'start'),
-         //TODO (paden) Create subBuffers
-        simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'sort'),
-        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_mins'),
-        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_maxs'),
-        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_y_mins'),
-        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_y_maxs'),
-        simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'count'),
-        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'blocked'),
-        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'step'),
-        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'bottom'),
-        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'maxdepth'),
-        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'radius')
-        ])
-    .spread(function (x_cords, y_cords, accx, accy, children, mass, start, sort, xmin, xmax, ymin, ymax, count,
-          blocked, step, bottom, maxdepth, radius) {
-      console.log("After this");
-      simulator.barnes.buffers.x_cords = x_cords;
-      simulator.barnes.buffers.y_cords = y_cords;
-      simulator.barnes.buffers.accx = accx;
-      simulator.barnes.buffers.accy = accy;
-      simulator.barnes.buffers.children = children;
-      simulator.barnes.buffers.mass = mass;
-      simulator.barnes.buffers.start = start;
-      simulator.barnes.buffers.sort = sort;
-      simulator.barnes.buffers.xmin = xmin;
-      simulator.barnes.buffers.xmax = xmax;
-      simulator.barnes.buffers.ymin = ymin;
-      simulator.barnes.buffers.ymax = ymax;
-      simulator.barnes.buffers.count = count;
-      simulator.barnes.buffers.blocked = blocked;
-      simulator.barnes.buffers.step = step;
-      simulator.barnes.buffers.bottom = bottom;
-      simulator.barnes.buffers.maxdepth = maxdepth;
-      simulator.barnes.buffers.radius = radius;
-      return;
-    })
-    .catch(function(error) {
-
-      console.log(error);
-      console.log("ERROR in setUP");
-    });
-};
 
 
 
@@ -480,9 +380,6 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints, edgeColor
         simulator.buffers.midSpringsPos = midSpringsBuffer;
         simulator.buffers.curMidPoints = midPointsBuf;
         simulator.buffers.midSpringsColorCoord = midSpringsColorCoordBuffer;
-    })
-    .then(function () {
-      return setupTempBuffers(simulator)
     })
     .then( function () {
         return Q.all(
