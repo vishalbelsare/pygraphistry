@@ -29,13 +29,76 @@ function printBuffer(buffer) {
   }
 };
 
+var setupTempBuffers = function(simulator, tempBuffers) {
+    simulator.resetBuffers(tempBuffers);
+    simulator.renderer.numPoints = simulator.numPoints;
+    var blocks = 8; //TODO (paden) should be set to multiprocecessor count
 
-module.exports = {
+    var num_nodes = simulator.numPoints * 2;
+    // TODO (paden) make this into a definition
+    var WARPSIZE = 16;
+    if (num_nodes < 1024*blocks) num_nodes = 1024*blocks;
+    while ((num_nodes & (WARPSIZE - 1)) != 0) num_nodes++;
+    num_nodes--;
+    var num_bodies = simulator.numPoints;
+    simulator.barnes.num_nodes = num_nodes;
+    simulator.barnes.num_bodies = num_bodies;
+    // TODO (paden) Use actual number of workgroups. Don't hardcode
+    var num_work_groups = 128;
+    
 
-  kernelNames: ["to_barnes_layout", "bound_box", "build_tree", "compute_sums", "sort", "calculate_forces", "move_bodies", "from_barnes_layout", "forceAtlasEdges", "gaussSeidelSpringsGather" /* reuse */],
+    return Q.all(
+        [
+        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT,  'x_cords'),
+        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'y_cords'),
+        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'accx'),
+        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'accy'),
+        simulator.cl.createBuffer(4*(num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'children'),
+        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'mass'),
+        simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'start'),
+         //TODO (paden) Create subBuffers
+        simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'sort'),
+        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_mins'),
+        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_maxs'),
+        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_y_mins'),
+        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_y_maxs'),
+        simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'count'),
+        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'blocked'),
+        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'step'),
+        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'bottom'),
+        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'maxdepth'),
+        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'radius')
+        ])
+    .spread(function (x_cords, y_cords, accx, accy, children, mass, start, sort, xmin, xmax, ymin, ymax, count,
+          blocked, step, bottom, maxdepth, radius) {
+      console.log(tempBuffers);
+      tempBuffers.x_cords = x_cords;
+      tempBuffers.y_cords = y_cords;
+      tempBuffers.accx = accx;
+      tempBuffers.accy = accy;
+      tempBuffers.children = children;
+      tempBuffers.mass = mass;
+      tempBuffers.start = start;
+      tempBuffers.sort = sort;
+      tempBuffers.xmin = xmin;
+      tempBuffers.xmax = xmax;
+      tempBuffers.ymin = ymin;
+      tempBuffers.ymax = ymax;
+      tempBuffers.count = count;
+      tempBuffers.blocked = blocked;
+      tempBuffers.step = step;
+      tempBuffers.bottom = bottom;
+      tempBuffers.maxdepth = maxdepth;
+      tempBuffers.radius = radius;
+      return;
+    })
+    .catch(function(error) {
+      console.log(error);
+      console.log("ERROR in setUP");
+    });
+};
 
-  // Temporary buffers. These will only be used in barnes hut algorithm.
-  tempbuffers: {
+tempBuffers  = {
     x_cords: null, //cl.createBuffer(cl, 0, "x_cords"),
     y_cords: null,
     velx: null,
@@ -53,6 +116,14 @@ module.exports = {
     bottom: null,
     maxdepth: null,
   },
+
+
+module.exports = {
+
+  kernelNames: ["to_barnes_layout", "bound_box", "build_tree", "compute_sums", "sort", "calculate_forces", "move_bodies", "from_barnes_layout", "forceAtlasEdges", "gaussSeidelSpringsGather" /* reuse */],
+
+  // Temporary buffers. These will only be used in barnes hut algorithm.
+  tempBuffers: tempBuffers,
 
 
 
@@ -118,6 +189,7 @@ module.exports = {
   setPoints:_.identity,
 
   setEdges: function (simulator) {
+    
 
     simulator.kernels.forceAtlasEdges.setArgs(
         graphArgs.concat([
@@ -143,24 +215,24 @@ module.exports = {
     function setBarnesArgs(simulator, kernelName) {
       simulator.kernels[kernelName].setArgs(
           graphArgs.concat(
-            simulator.barnes.buffers.x_cords.buffer,
-            simulator.barnes.buffers.y_cords.buffer,
-            simulator.barnes.buffers.accx.buffer,
-            simulator.barnes.buffers.accy.buffer,
-            simulator.barnes.buffers.children.buffer,
-            simulator.barnes.buffers.mass.buffer,
-            simulator.barnes.buffers.start.buffer,
-            simulator.barnes.buffers.sort.buffer,
-            simulator.barnes.buffers.xmin.buffer,
-            simulator.barnes.buffers.xmax.buffer,
-            simulator.barnes.buffers.ymin.buffer,
-            simulator.barnes.buffers.ymax.buffer,
-            simulator.barnes.buffers.count.buffer,
-            simulator.barnes.buffers.blocked.buffer,
-            simulator.barnes.buffers.step.buffer,
-            simulator.barnes.buffers.bottom.buffer,
-            simulator.barnes.buffers.maxdepth.buffer,
-            simulator.barnes.buffers.radius.buffer,
+            tempBuffers.x_cords.buffer,
+            tempBuffers.y_cords.buffer,
+            tempBuffers.accx.buffer,
+            tempBuffers.accy.buffer,
+            tempBuffers.children.buffer,
+            tempBuffers.mass.buffer,
+            tempBuffers.start.buffer,
+            tempBuffers.sort.buffer,
+            tempBuffers.xmin.buffer,
+            tempBuffers.xmax.buffer,
+            tempBuffers.ymin.buffer,
+            tempBuffers.ymax.buffer,
+            tempBuffers.count.buffer,
+            tempBuffers.blocked.buffer,
+            tempBuffers.step.buffer,
+            tempBuffers.bottom.buffer,
+            tempBuffers.maxdepth.buffer,
+            tempBuffers.radius.buffer,
             webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
             webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
             webcl.type ? [simulator.barnes.num_bodies] : new Uint32Array([simulator.barnes.num_bodies]),
@@ -171,12 +243,14 @@ module.exports = {
               null, null, null, webcl.type.FLOAT, webcl.type.FLOAT, webcl.type.INT, webcl.type.INT]) : undefined
       );
     }
+    return setupTempBuffers(simulator, tempBuffers).then(function () {
     setBarnesArgs(simulator, "bound_box");
     setBarnesArgs(simulator, "build_tree");
     setBarnesArgs(simulator, "compute_sums");
     setBarnesArgs(simulator, "sort");
     setBarnesArgs(simulator, "calculate_forces");
     setBarnesArgs(simulator, "move_bodies");
+    })
 
 
     // Set here rather than in set points because we need edges for degrees. TODO use degrees
@@ -196,11 +270,11 @@ module.exports = {
         graphArgs.concat(
           webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
           curPointsBuffer,
-          simulator.barnes.buffers.x_cords.buffer,
-          simulator.barnes.buffers.y_cords.buffer,
-          simulator.barnes.buffers.mass.buffer,
-          simulator.barnes.buffers.blocked.buffer,
-          simulator.barnes.buffers.maxdepth.buffer
+          tempBuffers.x_cords.buffer,
+          tempBuffers.y_cords.buffer,
+          tempBuffers.mass.buffer,
+          tempBuffers.blocked.buffer,
+          tempBuffers.maxdepth.buffer
           ),
         webcl.type ? graphArgs_t.concat(webcl.type.UINT, null, null, null, null, null, null, null) : undefined
 
@@ -260,11 +334,11 @@ module.exports = {
             graphArgs.concat(
               webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
               nextPointsBuffer,
-              simulator.barnes.buffers.x_cords.buffer,
-              simulator.barnes.buffers.y_cords.buffer,
-              simulator.barnes.buffers.mass.buffer,
-              simulator.barnes.buffers.blocked.buffer,
-              simulator.barnes.buffers.maxdepth.buffer
+              tempBuffers.x_cords.buffer,
+              tempBuffers.y_cords.buffer,
+              tempBuffers.mass.buffer,
+              tempBuffers.blocked.buffer,
+              tempBuffers.maxdepth.buffer
               ),
             webcl.type ? graphArgs_t.concat(webcl.type.UINT, null, null, null, null, null, null, null) : undefined
 
