@@ -1,16 +1,15 @@
 'use strict';
 
-var _           = require('underscore'),
-    Immutable   = require('immutable'),
-    Rx          = require('rx'),
-    debug       = require('debug')('StreamGL:renderer');
+var _           = require('underscore');
+// TODO: Upgrade to immutable v3 (from v2) -- breaking changes; our usage must be updated to match
+var Immutable   = require('immutable');
+var Rx          = require('rx');
+var debug       = require('debug')('StreamGL:renderer');
 
-
-var Cameras     = require('./camera.js');
-
-var localAttribHandler  = require('./localAttribHandler.js'),
-    bufferProxy         = require('./bufferproxy.js').bufferProxy,
-    picking             = require('./picking.js');
+var Cameras             = require('./camera.js');
+var localAttribHandler  = require('./localAttribHandler.js');
+var bufferProxy         = require('./bufferproxy.js').bufferProxy;
+var picking             = require('./picking.js');
 
 
 
