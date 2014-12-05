@@ -1,6 +1,6 @@
 'use strict';
 
-// Label tracking and rendering
+// Point-of-interest tracking and rendering
 // Idea:
 //      -- sample texture to get subset of onscreen labels
 //      -- if label switched from on-to-off, check if sampling missed
@@ -72,8 +72,9 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
 
 
 function init () {
+    debug('initializing label engine');
 
-    return {
+    var instance = {
 
         state: {
             //{<int> -> {elt: $DOM, idx: int} }
@@ -81,12 +82,19 @@ function init () {
 
             //[ {elt: $DOM, idx: int} ]
             inactiveLabels: []
+
         },
 
+        // {<int> -> {elt: $DOM, idx: int} } -> ()
+        resetActiveLabels: function (activeLabels) {
+            instance.state.activeLabels = activeLabels;
+        },
 
         getActiveApprox: getActiveApprox,
         finishApprox: finishApprox
     };
+
+    return instance;
 
 }
 

@@ -11,7 +11,7 @@ var Slider  = require('bootstrap-slider');
 
 var interaction = require('./interaction.js');
 var renderer    = require('./renderer');
-var labels      = require('./labels.js')();
+var poi      = require('./poi.js')();
 
 
 
@@ -113,26 +113,26 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints) {
 
     var t0 = Date.now();
 
-    var hits = labels.getActiveApprox(renderState, 'pointHitmapDownsampled');
+    var hits = poi.getActiveApprox(renderState, 'pointHitmapDownsampled');
 
     var t1 = Date.now();
 
-    var toClear = labels.finishApprox(labels.activeLabels, labels.inactiveLabels, hits, renderState, points);
+    var toClear = poi.finishApprox(poi.state.activeLabels, poi.state.inactiveLabels, hits, renderState, points);
 
     //select label elts (and make active if needed)
     var toShow = [];
-    var lbls = _.keys(hits)
+    var labels = _.keys(hits)
         .map(function (idx) {
-            if (labels.activeLabels[idx]) {
-                return labels.activeLabels[idx];
+            if (poi.state.activeLabels[idx]) {
+                return poi.state.activeLabels[idx];
             } else {
-                if (!labels.inactiveLabels.length) {
+                if (!poi.state.inactiveLabels.length) {
                     return {
                         idx: idx,
                         elt:  genLabel($labelCont, idx)
                     };
                 }
-                var lbl = labels.inactiveLabels.pop();
+                var lbl = poi.state.inactiveLabels.pop();
                 lbl.idx = idx;
                 lbl.elt.text(idx);
                 toShow.push(lbl);
@@ -141,17 +141,18 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints) {
         })
         .filter(_.identity);
 
-    labels.activeLabels = _.object(labels.map(function (lbl) { return [lbl.idx, lbl]; }));
+    poi.resetActiveLabels(_.object(labels.map(function (lbl) { return [lbl.idx, lbl]; })));
 
     var t2 = Date.now();
 
-    var newPos = newLabelPositions(renderState, lbls, points, toClear, toShow);
+    var newPos = newLabelPositions(renderState, labels, points, toClear, toShow);
 
     var t3 = Date.now();
 
-    effectLabels(toClear, toShow, lbls, newPos);
+    effectLabels(toClear, toShow, labels, newPos);
 
-    debug('sampling timing', t1 - t0, t2 - t1, t3 - t2, Date.now() - t3, 'labels:', lbls.length, '/', _.keys(hits).length, labels.inactiveLabels.length);
+    debug('sampling timing', t1 - t0, t2 - t1, t3 - t2, Date.now() - t3,
+        'labels:', labels.length, '/', _.keys(hits).length, poi.state.inactiveLabels.length);
 
 }
 
@@ -199,12 +200,12 @@ function setupInteractions($eventTarget, renderState) {
 
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
-    var lbls = _.range(1,10).map(function (i) {
+    var labels = _.range(1,10).map(function (i) {
         return genLabel($labelCont, i);
     });
-    lbls.forEach(function ($lbl, i) {
+    labels.forEach(function ($lbl, i) {
         var cont = {idx: i, elt: $lbl};
-        labels.inactiveLabels.push(cont);
+        poi.state.inactiveLabels.push(cont);
         var isOn = false;
         $lbl
             .on('mouseover', function () {
