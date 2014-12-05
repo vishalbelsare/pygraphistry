@@ -3,7 +3,7 @@
 
 var Rx = require("rx");
 var request = require('request');
-var config = require('../config')();
+var config = require('config').init();
 
 
 // TODO: Import via config file, this should be in Ansible
@@ -11,7 +11,7 @@ var boundaryUrl = 'https://abe@graphistry.com:api.fc39b94e8f-3713@premium-api.bo
 
 
 var sendToBoundary = function(entry) {
-    if (!config.PRODUCTION){
+    if (!(config.PRODUCTION || config.STAGING)){
         return;
     }
     var data = {}
