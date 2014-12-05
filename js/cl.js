@@ -499,11 +499,11 @@ var write = Q.promised(function write(buffer, data) {
 });
 
 
-var read = Q.promised(function (buffer, target) {
+var read = Q.promised(function (buffer, target, optStartIdx) {
     return buffer.acquire()
         .then(function() {
             var copySize = Math.min(buffer.size, target.length * target.BYTES_PER_ELEMENT);
-            buffer.cl.queue.enqueueReadBuffer(buffer.buffer, true, 0, copySize, target);
+            buffer.cl.queue.enqueueReadBuffer(buffer.buffer, true, optStartIdx | 0, copySize, target);
             return buffer.release();
         })
         .then(function() {
