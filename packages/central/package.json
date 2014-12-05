@@ -4,14 +4,14 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
+    "StreamGL": "git+ssh://git@github.com:graphistry/StreamGL.git#master",
     "debug": "^2.1.0",
     "express": "*",
     "graph-viz": "git+ssh://git@github.com:graphistry/graph-viz.git#master",
     "horizon-viz": "git+ssh://git@github.com:graphistry/horizon-viz.git#master",
-    "uber-viz": "git+ssh://git@github.com:graphistry/uber-viz.git#master",
-    "StreamGL": "git+ssh://git@github.com:graphistry/StreamGL.git#master",
-    "mongodb": "*",
+    "mongodb": "^1.4.23",
     "rx": "^2.3.17",
+    "uber-viz": "git+ssh://git@github.com:graphistry/uber-viz.git#master",
     "underscore": "^1.7.0"
   }
 }
