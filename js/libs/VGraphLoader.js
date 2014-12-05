@@ -5,6 +5,7 @@ var Q = require('q');
 var fs = require('fs');
 var debug = require("debug")("graphistry:graph-viz:data-loader");
 var pb = require("protobufjs");
+var zlib = require("zlib");
 
 var builder = pb.loadProtoFile("js/libs/graph_vector.proto");
 var pb_root = builder.build();
@@ -14,11 +15,22 @@ var decoders = {
 }
 
 function load(graph, dataset) {
-    return Q.denodeify(fs.readFile)(dataset.file)
-        .then(function (content) {
-            var vg = pb_root.VectorGraph.decode(content)
-            return decoders[vg.version](graph, vg);
-        });
+    return unpack(dataset.file).then(function (content) {
+        var vg = pb_root.VectorGraph.decode(content)
+        return decoders[vg.version](graph, vg);
+    });
+}
+
+function unpack(filename) {
+    var fileExt = filename.split('.').pop();
+    var content = Q.denodeify(fs.readFile)(filename);
+    if (fileExt == "gz") {
+        debug("Unzipping dataset...");
+        return content.then(function (data) {
+            return Q.denodeify(zlib.gunzip)(data);
+        })
+    } else
+        return content;
 }
 
 function decode0(graph, vg)  {
