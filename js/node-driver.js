@@ -229,7 +229,6 @@ function fetchVBOs(graph, bufferNames) {
                 buffer: new ArrayBuffer(bufferSizes[name]),
                 version: graph.simulator.versions.buffers[name]
             };
-            console.log('name', name);
             var modelName = bufferToModel[name][0];
             var stride = bufferToModel[name][1];
             return graph.simulator.buffers[name].read(
