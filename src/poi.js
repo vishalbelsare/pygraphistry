@@ -12,6 +12,8 @@ var _           = require('underscore');
 var picking     = require('./picking.js');
 
 
+var APPROX = 0.9;
+
 //renderState * String -> {<idx> -> True}
 //dict of points that are on screen -- approx may skip some
 function getActiveApprox(renderState, textureName) {
@@ -20,7 +22,9 @@ function getActiveApprox(renderState, textureName) {
     var samples32 = new Uint32Array(samples.buffer);
     var hits = {};
     for (var i = 0; i < samples32.length; i++) {
-        hits[picking.uint32ToIdx(samples32[i])] = true;
+        if (Math.random() > APPROX) {
+            hits[picking.uint32ToIdx(samples32[i])] =  true;
+        }
     }
     if (hits['-1']) {
         delete hits['-1'];
@@ -49,7 +53,7 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
             var pos = camera.canvasCoords(points[2 * lbl.idx], -points[2 * lbl.idx + 1], 1, cnv, mtx);
 
             var isOffScreen = pos.x < 0 || pos.y < 0 || pos.x > cnv.clientWidth || pos.y > cnv.clientHeight;
-            var isDecayed = Math.random() > 0.5;
+            var isDecayed = Math.random() > 1 - APPROX;
 
             if (isOffScreen || isDecayed) {
                 //remove

@@ -336,6 +336,25 @@ function init(socket, $elt, renderState) {
         gravitySlider: 'gravity'
     };
 
+    window.$OLD('#timeSlider').rangeSlider({
+         bounds: {min: 0, max: 100},
+         arrows: false,
+         defaultValues: {min: 30, max: 40},
+         valueLabels: 'hide', //show, change, hide
+         wheelMode: 'zoom'
+      });
+
+
+    var timeSlide = new Rx.Subject();
+    //FIXME: replace $OLD w/ browserfied jquery+jqrangeslider
+    window.$OLD('#timeSlider').on('valuesChanging', function (e, data) {
+        timeSlide.onNext({min: data.values.min, max: data.values.max});
+    });
+    timeSlide.sample(3).subscribe(function (when) {
+        socket.emit('graph_settings', {timeSubset: {min: when.min, max: when.max}});
+    });
+
+
     $('.menu-slider').each(function () {
         var slider = new Slider(this);
         var name = elts[this.id];
