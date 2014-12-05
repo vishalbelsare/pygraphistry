@@ -93,10 +93,16 @@ button.btn-default {
     padding: 0.5em;
 
     border-radius: 10px;
+
     border: 2px solid transparent;
+
+    opacity: 0.05;
 }
 
 .graph-label:hover {
+
+    opacity: 1.0;
+
     text-shadow: 0 0 3px rgba(20,20,20,1.0);
     z-index: 10000;
     background-color: rgba(25, 25, 51, 0.7);
