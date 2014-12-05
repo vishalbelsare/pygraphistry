@@ -321,12 +321,19 @@ var release = function (buffers) {
 
 
 // Executes the specified kernel, with `threads` number of threads, acquiring/releasing any needed resources
-var call = Q.promised(function (kernel, threads, buffers) {
+var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
     return acquire(buffers)
         .then(function () {
+            var workgroup;
             if(NODEJS) {
-                var workgroupSize = [threads];
-                kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, workgroupSize, null);
+               if (localSize === undefined) {
+                 workgroup = null;
+               } else {
+                 workgroup = [localSize];
+               }
+               console.log(workgroup);
+                var global = [globalSize];
+                kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, global, workgroup);
             } else {
                 var workgroupSize = new Int32Array([threads]);
                 kernel.cl.queue.enqueueNDRangeKernel(
@@ -338,6 +345,9 @@ var call = Q.promised(function (kernel, threads, buffers) {
                 );
             }
 
+        })
+        .catch (function(error) {
+          console.log(error);
         })
         .then(release.bind('', buffers))
         // .then(function () { kernel.cl.queue.finish(); })
