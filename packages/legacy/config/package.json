@@ -2,7 +2,7 @@
   "name": "config",
   "description": "config",
   "version": "0.0.1",
-  "private": true
+  "private": true,
   "dependencies": {
     "underscore": "^1.7.0"
   }
