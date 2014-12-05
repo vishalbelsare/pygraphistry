@@ -3,7 +3,7 @@
 var $ = require('jquery');
 var Q = require('q');
 var Long = require('./Long.js');
-var debug = require("debug")("N-body:load");
+var debug = require("debug")("graphistry:graph-viz:data-loader");
 
 var exports = {
     ls: function (matrixJson) {

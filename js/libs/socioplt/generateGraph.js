@@ -1,8 +1,10 @@
 var _ = require('underscore');
 
 //statement -> language -> {rating, deviation}
-var data = require('./out.json');
 
+function process(dataset) {
+    var data = require(dataset);
+    
 var statements = _.keys(data);
 var languages = _.keys(data[statements[0]]);
 
@@ -69,11 +71,9 @@ var edges =
             }
         })
     }));
-
-//console.log('nodes', nodes);
-//console.log('edges', edges);
+    return {'nodes': nodes, 'edges': edges};
+}
 
 module.exports = {
-    nodes: nodes,
-    edges: edges
+    process: process,
 };

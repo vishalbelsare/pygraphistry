@@ -1,6 +1,9 @@
 'use strict';
 
-/** @module RenderConfig/Graph */
+/**
+ * Render config object used by browser's StreamGL library to configure WebGL + streaming. Sent via
+ * XHR or WebSocket to the browser by the server in response to API call.
+ */
 
 var fs = require('fs');
 
@@ -106,8 +109,8 @@ module.exports = {
         },
         'pointHitmapDownsampled': {
             'datasource': 'LOCAL',
-            'width': {'unit': 'percent', 'value': 2.5},
-            'height': {'unit': 'percent', 'value': 2.5}
+            'width': {'unit': 'percent', 'value': 5},
+            'height': {'unit': 'percent', 'value': 5}
         },
         'colorMap': {
             'datasource': 'SERVER',

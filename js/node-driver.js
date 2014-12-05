@@ -11,7 +11,7 @@ var Q = require("q"),
     _ = require('underscore'),
 
     request = require('request'),
-    debug = require("debug")("StreamGL:driver"),
+    debug = require("debug")("graphistry:graph-viz:node-driver"),
 
     NBody = require("./NBody.js"),
     RenderNull = require('./RenderNull.js'),
@@ -23,6 +23,7 @@ var Q = require("q"),
 metrics.init('StreamGL:driver');
 
 var WIDTH = 600,
+<<<<<<< HEAD
     HEIGHT = 600,
     USE_GEO = false;
 
@@ -32,6 +33,12 @@ var numPoints = 1000, //1024,//1024,//2048,//16384,
 
 var SIMULATION_TIME = 300000; //seconds
 
+=======
+    HEIGHT = 600;
+
+var SIMULATION_TIME = 3000; //seconds
+var dimensions = [1,1];
+>>>>>>> 60f37e9936a0ce44dbc6196d7ad7c9def15157af
 
 /*
     graph ->
@@ -178,6 +185,26 @@ function getBufferVersion (graph, bufferName) {
 }
 
 
+
+function graphCounts(graph) {
+
+    var numPoints = graph.simulator.timeSubset.pointsRange.len;
+    var numEdges = graph.simulator.timeSubset.edgeRange.len;
+
+    var numMidPoints =
+        Math.round((numPoints / graph.renderer.numPoints) * graph.renderer.numMidPoints);
+    var numMidEdges =
+        Math.round((numEdges / graph.renderer.numEdges) * graph.renderer.numMidEdges);
+
+    return {
+        numPoints: numPoints,
+        numEdges: numEdges,
+        numMidPoints: numMidPoints,
+        numMidEdges: numMidEdges,
+        midSpringsColorCoord: 0
+    };
+}
+
 // ... -> {<name>: {buffer: ArrayBuffer, version: int}}
 function fetchVBOs(graph, bufferNames) {
 
@@ -191,7 +218,19 @@ function fetchVBOs(graph, bufferNames) {
             return bufferNames.indexOf(name) != -1;
         });
 
+    var bufferToModel = {
+        curPoints: ['numPoints', 0 * Float32Array.BYTES_PER_ELEMENT],
+        springsPos: ['numEdges', 2 * 2 * Float32Array.BYTES_PER_ELEMENT],
+        midSpringsPos: ['numMidEdges', 2 * 2 * Float32Array.BYTES_PER_ELEMENT],
+        curMidPoints: ['curMidPoints', 2 * Float32Array.BYTES_PER_ELEMENT],
+        midSpringsColorCoord: ['midSpringsColorCoord', 0],
+        pointSizes: ['numPoints', 1 * Float32Array.BYTES_PER_ELEMENT],
+        pointColors: ['numPoints', 1 * Float32Array.BYTES_PER_ELEMENT],
+        edgeColors: ['numEdges', 1 * Float32Array.BYTES_PER_ELEMENT]
+    };
+
     var bufferSizes = fetchBufferByteLengths(graph);
+    var counts = graphCounts(graph);
 
     // TODO: Instead of doing blocking CL reads, use CL events and wait on those.
     // node-webcl's event arguments to enqueue commands seems busted at the moment, but
@@ -202,10 +241,13 @@ function fetchVBOs(graph, bufferNames) {
                 buffer: new ArrayBuffer(bufferSizes[name]),
                 version: graph.simulator.versions.buffers[name]
             };
-            return graph.simulator.buffers[name].read(new Float32Array(targetArrays[name].buffer));
+            var modelName = bufferToModel[name][0];
+            var stride = bufferToModel[name][1];
+            return graph.simulator.buffers[name].read(
+                new Float32Array(targetArrays[name].buffer),
+                counts[modelName] * stride);
     }))
     .then(function() {
-
         var localBuffers = {
             'pointSizes': graph.simulator.buffersLocal.pointSizes.buffer,
             'pointColors': graph.simulator.buffersLocal.pointColors.buffer,
@@ -225,33 +267,41 @@ function fetchVBOs(graph, bufferNames) {
 }
 
 
+
 function fetchNumElements(graph) {
+
+    var counts = graphCounts(graph);
+
     return {
-        edges: graph.renderer.numEdges * 2,
-        edgeculled: graph.renderer.numEdges * 2,
-        midedges: graph.renderer.numMidEdges * 2,
-        midedgeculled: graph.renderer.numMidEdges * 2,
-        midedgetextured: graph.renderer.numMidEdges * 2,
-        points: graph.renderer.numPoints,
-        pointculled: graph.renderer.numPoints,
-        pointpicking: graph.renderer.numPoints,
-        pointpickingScreen: graph.renderer.numPoints,
-        pointsampling: graph.renderer.numPoints,
-        midpoints: graph.renderer.numMidPoints
+        edges:              counts.numEdges * 2,
+        edgeculled:         counts.numEdges * 2,
+        midedges:           counts.numMidEdges * 2,
+        midedgeculled:      counts.numMidEdges * 2,
+        midedgetextured:    counts.numMidEdges * 2,
+        points:             counts.numPoints,
+        pointculled:        counts.numPoints,
+        pointpicking:       counts.numPoints,
+        pointpickingScreen: counts.numPoints,
+        pointsampling:      counts.numPoints,
+        midpoints:          counts.numMidPoints
     };
 }
 function fetchBufferByteLengths(graph) {
+
+
+    var counts = graphCounts(graph);
+
     //FIXME generate from renderConfig
     //form: elements * ?dimensions * points * BYTES_PER_ELEMENT
     return {
-        springsPos: graph.renderer.numEdges * 2 * 2 * Float32Array.BYTES_PER_ELEMENT,
-        curPoints: graph.renderer.numPoints * 2 * Float32Array.BYTES_PER_ELEMENT,
-        pointSizes: graph.renderer.numPoints * Uint8Array.BYTES_PER_ELEMENT,
-        pointColors: graph.renderer.numPoints * 4 * Uint8Array.BYTES_PER_ELEMENT,
-        edgeColors: graph.renderer.numEdges * 2 * 4 * Uint8Array.BYTES_PER_ELEMENT,
-        curMidPoints: graph.renderer.numMidPoints * 2 * Float32Array.BYTES_PER_ELEMENT,
-        midSpringsPos: graph.renderer.numMidEdges * 2 * 2 * Float32Array.BYTES_PER_ELEMENT,
-        midSpringsColorCoord: graph.renderer.numMidEdges * 2 * 2 * Float32Array.BYTES_PER_ELEMENT
+        springsPos:             counts.numEdges * 2 * 2 * Float32Array.BYTES_PER_ELEMENT,
+        curPoints:              counts.numPoints * 2 * Float32Array.BYTES_PER_ELEMENT,
+        pointSizes:             counts.numPoints * Uint8Array.BYTES_PER_ELEMENT,
+        pointColors:            counts.numPoints * 4 * Uint8Array.BYTES_PER_ELEMENT,
+        edgeColors:             counts.numEdges * 2 * 4 * Uint8Array.BYTES_PER_ELEMENT,
+        curMidPoints:           counts.numMidPoints * 2 * Float32Array.BYTES_PER_ELEMENT,
+        midSpringsPos:          counts.numMidEdges * 2 * 2 * Float32Array.BYTES_PER_ELEMENT,
+        midSpringsColorCoord:   counts.numMidEdges * 2 * 2 * Float32Array.BYTES_PER_ELEMENT
     };
 }
 
@@ -272,30 +322,12 @@ function init() {
 }
 
 
-function loadDataIntoSim(graph) {
-    return loader.loadDataList(graph)
-    .then(function (datalist) {
-        if (USE_GEO) {
-            var which = 0;
-            debug("Loading data: %o", datalist[which]);
-            return datalist[which].loader(graph, datalist[which].f);
-
-        } else {
-            var points = loader.createPoints(numPoints, dimensions);
-            var edges = loader.createEdges(numEdges, numPoints);
-
-            return Q.all([
-                graph.setPoints(points),
-                points,
-                edges,
-            ]).spread(function(graph, points, edges) {
-                graph.setColorMap("test-colormap2.png");
-                return graph.setEdges(edges);
-            });
-        }
+function loadDataIntoSim(graph, dataListURI) {
+    return loader.loadDataList(dataListURI).then(function (datalist) {
+        var which = 0;
+        return loader.loadDataSet(graph, datalist[which]);
     });
 }
-
 
 /**
  * Returns an Observable that fires an event in `delay` ms, with the given `value`
@@ -327,7 +359,7 @@ function delayObservableGenerator(delay, value, cb) {
 ///////////////////////////////////////////////////////////////////////////
 
 
-function createAnimation() {
+function createAnimation(dataListURI) {
     debug("STARTING DRIVER");
 
     var userInteractions = new Rx.Subject();
@@ -355,7 +387,7 @@ function createAnimation() {
     })
     .then(function (graph) {
         debug("LOADING DATA");
-        return loadDataIntoSim(graph);
+        return loadDataIntoSim(graph, dataListURI);
     })
     .then(function (graph) {
         debug("ANIMATING");
@@ -510,7 +542,10 @@ exports.fetchData = fetchData;
 
 // If the user invoked this script directly from the terminal, run init()
 if(require.main === module) {
-    var vbosUpdated = createAnimation();
+    var config  = require('./config.js')();
+    var vbosUpdated = createAnimation(config.DATALISTURI);
 
     vbosUpdated.subscribe(function() { debug("Got updated VBOs"); } );
 }
+
+// vim: set et ff=unix ts=8 sw=4 fdm=syntax: 

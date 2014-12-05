@@ -46,8 +46,8 @@ function create(renderer, dimensions, numSplits, locked) {
             return cl.compile(source, kernelNames);
         })
         .then(function(kernels) {
-            console.log(kernelNames);
             debug("Compiled kernel source");
+
             var simObj = {
                 renderer: renderer,
                 cl: cl,
@@ -60,9 +60,10 @@ function create(renderer, dimensions, numSplits, locked) {
             };
             simObj.tick = tick.bind(this, simObj);
             simObj.setPoints = setPoints.bind(this, simObj);
-            simObj.setEdges = setEdges.bind(this, simObj);
+            simObj.setEdges = setEdges.bind(this, renderer, simObj);
             simObj.setLocked = setLocked.bind(this, simObj);
             simObj.setPhysics = setPhysics.bind(this, simObj);
+            simObj.setTimeSubset = setTimeSubset.bind(this, renderer, simObj);
             simObj.resetBuffers = resetBuffers.bind(this, simObj);
             simObj.tickBuffers = tickBuffers.bind(this, simObj);
 
@@ -79,6 +80,10 @@ function create(renderer, dimensions, numSplits, locked) {
                 (locked || {})
             );
             simObj.physics = {};
+
+            simObj.bufferHostCopies = {
+                forwardsEdges: null
+            };
 
             simObj.buffers = {
                 nextPoints: null,
@@ -101,10 +106,17 @@ function create(renderer, dimensions, numSplits, locked) {
                 pointSizes: null,
                 pointColors: null
             };
+
+            simObj.timeSubset = {
+                relRange: {min: 0, max: 100},
+                pointsRange: {startIdx: 0, len: renderer.numPoints},
+                edgeRange: {startIdx: 0, len: renderer.numEdges}
+            };
+
             Object.seal(simObj.buffers);
+            Object.seal(simObj);
 
             debug("WebCL simulator created");
-            Object.seal(simObj);
             return simObj
         }, function (err) {
             console.error('Could not compile sim', err)
@@ -169,9 +181,6 @@ var resetBuffers = function(simulator, buffers) {
 };
 
 
-
-
-
 /**
  * Set the initial positions of the points in the NBody simulation (curPoints)
  * @param simulator - the simulator object created by SimCL.create()
@@ -210,9 +219,7 @@ function setPoints(simulator, points, pointSizes, pointColors) {
         simulator.buffers.randValues,
         simulator.buffers.curPoints,
         simulator.buffers.pointSizes,
-        simulator.buffers.pointColors,
-        // TODO (paden) Do we need to reset temp buffers? 
-        ])
+        simulator.buffers.pointColors])
 
     simulator.numPoints = points.length / simulator.elementsPerPoint;
     simulator.renderer.numPoints = simulator.numPoints;
@@ -277,7 +284,7 @@ function setPoints(simulator, points, pointSizes, pointColors) {
  * @param {Uint32Array} edgeColors - dense array of edge start and end colors
  * @returns {Q.promise} a promise for the simulator object
  */
-function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints, edgeColors) {
+function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints, edgeColors) {
     //edges, workItems
     var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
     var elementsPerWorkItem = 2;
@@ -294,6 +301,8 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints, edgeColor
     if(forwardsEdges.workItemsTyped.length % elementsPerWorkItem !== 0) {
         throw new Error("The work item buffer size is invalid (must be a multiple of " + elementsPerWorkItem + ")");
     }
+
+    simulator.bufferHostCopies.forwardsEdges = forwardsEdges;
 
     if (!edgeColors) {
         edgeColors = new Uint32Array(forwardsEdges.edgesTyped.length);
@@ -389,6 +398,7 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints, edgeColor
                 }));
     })
     .then(function () {
+        setTimeSubset(renderer, simulator, simulator.timeSubset.relRange);
         return simulator;
     })
     .then(_.identity, function (err) {
@@ -421,6 +431,28 @@ function setPhysics(simulator, cfg) {
     });
 }
 
+//renderer * simulator * {min: 0--100, max: 0--100}
+function setTimeSubset(renderer, simulator, range) {
+
+    //points
+    var startIdx = Math.round(renderer.numPoints * 0.01 * range.min);
+    var len = Math.round(renderer.numPoints * 0.01 * range.max) - startIdx;
+
+    //edges
+    var numWorkItems = simulator.bufferHostCopies.forwardsEdges.workItemsTyped.length / 2;
+    var startEdgeIdx = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[
+        Math.round(numWorkItems * 0.01 * range.min)];
+    var endEdgeIdx = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[
+        Math.round(numWorkItems * 0.01 * range.max)];
+    var numEdges = endEdgeIdx - startEdgeIdx
+        + simulator.bufferHostCopies.forwardsEdges.degreesTyped[endEdgeIdx];
+
+    simulator.timeSubset =
+        {relRange: range, //%
+         pointsRange: {startIdx: startIdx, len: len},
+         edgeRange: {startIdx: startEdgeIdx, len: numEdges}};
+}
+
 
 //input positions: curPoints
 //output positions: nextPoints
@@ -437,7 +469,6 @@ function tick(simulator, stepNumber) {
     var tickAllHelper = function (remainingAlgorithms) {
         if (!remainingAlgorithms.length) return;
         var algorithm = remainingAlgorithms.shift();
-        //console.log(algorithm);
         return Q()
             .then(function () {
                 return algorithm.tick(simulator, stepNumber);
@@ -447,7 +478,6 @@ function tick(simulator, stepNumber) {
             });
     };
 
-    var beforeTick = Date.now()
     var res = Q()
     .then(function () { return tickAllHelper(layoutAlgorithms.slice(0)); })
     .then(function() {
@@ -457,12 +487,8 @@ function tick(simulator, stepNumber) {
         // What we really want here is to give finish() a callback and resolve the promise when it's
         // called, but node-webcl is out-of-date and doesn't support WebCL 1.0's optional callback
         // argument to finish().
-        return Q.all[
-        simulator.cl.queue.finish(),
-        simulator.renderer.finish()]
-    })
-    .then( function () {
-      console.log("After tick", Date.now() - beforeTick)
+        simulator.cl.queue.finish();
+        simulator.renderer.finish();
     });
 
     res.then(function () {}, function (err) {
