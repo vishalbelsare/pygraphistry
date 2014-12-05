@@ -1,0 +1,41 @@
+message VectorGraph {
+  enum GraphType {
+    UNDIRECTED = 0;
+    DIRECTED = 1;
+  }
+  required uint32 version = 1;
+  optional string name = 2;
+  required GraphType type = 3;
+  required uint32 nvertices = 4;
+  required uint32 nedges = 5;
+  
+  message Edge {
+    required uint32 src = 1;
+    required uint32 dst = 2;
+  }
+  repeated Edge edges = 6;
+  
+  enum AttributeTarget {
+   VERTEX = 0;
+   EDGE = 1;
+  }
+  message Int32AttributeVector {
+    required string name = 1;
+    required AttributeTarget type = 2;
+    repeated uint32 values = 3 [packed=true];
+  }
+  message DoubleAttributeVector {
+    required string name = 1;
+    required AttributeTarget type = 2;
+    repeated double values = 3 [packed=true];
+  }
+  message StringAttributeVector {
+    required string name = 1;
+    required AttributeTarget type = 2;
+    repeated string values = 3;
+  }
+  
+  repeated Int32AttributeVector int32_vectors = 7;
+  repeated DoubleAttributeVector double_vectors = 8;
+  repeated StringAttributeVector string_vectors = 9;
+}

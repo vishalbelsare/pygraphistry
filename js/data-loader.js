@@ -7,10 +7,11 @@ var debug = require("debug")("graphistry:graph-viz:data-loader");
 var _ = require('underscore');
 
 var MatrixLoader = require('./libs/MatrixLoader.js'),
+    VGraphLoader = require('./libs/VGraphLoader.js'),
     kmeans = require('./libs/kmeans.js');
 
 var loaders = {
-    "vgraph": null,
+    "vgraph": VGraphLoader.load,
     "matrix" : loadMatrix,
     "random" : loadRandom,
     "OBSOLETE_geo": loadGeo,
