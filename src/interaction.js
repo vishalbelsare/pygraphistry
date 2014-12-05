@@ -80,7 +80,7 @@ function setupScroll($eventTarget, camera) {
             var aspectRatio = camera.width / camera.height;
             var scrollY =
                 wheelEvent.wheelDeltaY ||
-                -wheelEvent.deltaY ||
+                wheelEvent.deltaY ||
                 ((wheelEvent.originalEvent) ?
                     (wheelEvent.originalEvent.wheelDeltaY || -wheelEvent.originalEvent.deltaY) : 0)
                 | 0; //NaN protection
