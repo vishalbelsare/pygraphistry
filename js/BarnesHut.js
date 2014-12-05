@@ -122,7 +122,6 @@ var tempBuffers  = {
 function setStepNumberArg(simulator, stepNumber) {
 
   function setStepNumberArgOfKernel(kernelName) {
-    console.log("stepNumber", stepNumber);
     simulator.kernels[kernelName].setArgs(
         graphArgs.map( function () {return null;} ).concat(
           null,
@@ -332,7 +331,6 @@ module.exports = {
     resources = [simulator.buffers.curPoints];
     var layoutKernelSeq = simulator.kernels.to_barnes_layout.call(256, resources);
     var now = Date.now()
-    console.log("step number", stepNumber);
     return setStepNumberArg(simulator, stepNumber)
     .then(function () {
     return layoutKernelSeq
@@ -342,25 +340,27 @@ module.exports = {
         now = Date.now();
         resources = [];
         //return simulator.kernels.bound_box.call(256, resources)
-        simulator.kernels.bound_box.call(256, resources)
+        simulator.kernels.bound_box.call(256*10, resources, 256)
+    })
+    .then( function () {
         return simulator.cl.queue.finish()
     })
     .then(function () {
       console.log("bound_box completed in:", Date.now() - now);
       now = Date.now();
       //return simulator.kernels.build_tree.call(256, resources);
-      simulator.kernels.build_tree.call(256, resources);
+      simulator.kernels.build_tree.call(4*256, resources, 256);
       return simulator.cl.queue.finish()
     })
     .then( function () {
       console.log("build_tree completed in:", Date.now() - now);
       now = Date.now();
-        simulator.kernels.compute_sums.call(256, resources);
+        simulator.kernels.compute_sums.call(4*256, resources, 256);
         return simulator.cl.queue.finish()
     })
     .then(function () {
       console.log("compute_sums completed in:", Date.now() - now);
-      return simulator.kernels.sort.call(256, resources);
+      return simulator.kernels.sort.call(4*256, resources, 256);
     })
     .then( function () {
      return simulator.cl.queue.finish()
@@ -368,7 +368,7 @@ module.exports = {
     .then(function () {
       console.log("sort completed in:", Date.now() - now);
       now = Date.now();
-      return simulator.kernels.calculate_forces.call(256, resources);
+      return simulator.kernels.calculate_forces.call(4*256, resources, 256);
     })
     .then( function() {
        return simulator.cl.queue.finish();
@@ -376,7 +376,7 @@ module.exports = {
     .then( function() {
       console.log("calculate forces completed in:", Date.now() - now);
       now = Date.now();
-      return simulator.kernels.move_bodies.call(256, resources);
+      return simulator.kernels.move_bodies.call(4*256, resources, 256);
     })
     .then (function () {
       return simulator.cl.queue.finish();

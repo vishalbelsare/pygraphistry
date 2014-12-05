@@ -331,7 +331,6 @@ var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
                } else {
                  workgroup = [localSize];
                }
-               console.log(workgroup);
                 var global = [globalSize];
                 kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, global, workgroup);
             } else {
