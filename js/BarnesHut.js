@@ -368,7 +368,7 @@ module.exports = {
     .then(function () {
       console.log("sort completed in:", Date.now() - now);
       now = Date.now();
-      return simulator.kernels.calculate_forces.call(4*256, resources, 256);
+      return simulator.kernels.calculate_forces.call(400*256, resources, 256);
     })
     .then( function() {
        return simulator.cl.queue.finish();
@@ -376,7 +376,7 @@ module.exports = {
     .then( function() {
       console.log("calculate forces completed in:", Date.now() - now);
       now = Date.now();
-      return simulator.kernels.move_bodies.call(4*256, resources, 256);
+      return simulator.kernels.move_bodies.call(256, resources, 256);
     })
     .then (function () {
       return simulator.cl.queue.finish();
@@ -429,8 +429,8 @@ module.exports = {
         return simulator.kernels.forceAtlasEdges.call(numWorkItems, resources);
       };
 
+      beforeEdges = Date.now()
       if(simulator.numEdges > 0) {
-        now = Date.now()
         return atlasEdgesKernelSeq(
             simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
             simulator.buffers.nextPoints, simulator.buffers.curPoints)
@@ -443,7 +443,7 @@ module.exports = {
             return simulator.cl.queue.finish();
           })
         .then(function () {
-        console.log("Atlas edges completed in:", Date.now() - now);
+        console.log("Atlas edges completed in:", Date.now() - beforeEdges);
           beforeCopy = Date.now();
           return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
         })
@@ -460,8 +460,10 @@ module.exports = {
         simulator.buffers.curPoints, simulator.buffers.springsPos];
         now = Date.now();
 
-        simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources);
+        return simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources)
+        .then (function () {
         simulator.cl.queue.finish();
+        })
       }
     })
     .then(function () {

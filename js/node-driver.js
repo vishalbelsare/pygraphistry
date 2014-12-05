@@ -24,7 +24,7 @@ metrics.init('StreamGL:driver');
 
 var WIDTH = 600,
     HEIGHT = 600,
-    USE_GEO = true;
+    USE_GEO = false;
 
 var numPoints = 1000, //1024,//1024,//2048,//16384,
     numEdges = numPoints,

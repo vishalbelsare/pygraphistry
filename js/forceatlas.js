@@ -185,7 +185,6 @@ module.exports = {
                     : undefined);
 
             simulator.tickBuffers(['nextPoints', 'curPoints', 'springsPos'])
-
             var appliedForces = simulator.kernels.forceAtlasPoints.call(simulator.numPoints, resources);
 
             var beforeApplied = Date.now();
@@ -195,8 +194,8 @@ module.exports = {
                 })
                 .then(function() {
                     console.log("Force points completed", Date.now() - beforeApplied);
+                     beforeEdges = Date.now()
                     if(simulator.numEdges > 0) {
-                        var beforeEdges = Date.now()
                         return atlasEdgesKernelSeq(
                                 simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
                                 simulator.buffers.nextPoints, simulator.buffers.curPoints)
@@ -206,7 +205,7 @@ module.exports = {
                                     simulator.buffers.curPoints, simulator.buffers.nextPoints);
                             })
                             .then(function() {
-                              simulator.cl.queue.finish();
+                              return simulator.cl.queue.finish();
                              })
                             .then(function () {
 
