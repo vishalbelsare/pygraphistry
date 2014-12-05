@@ -23,15 +23,10 @@ var Q = require("q"),
 metrics.init('StreamGL:driver');
 
 var WIDTH = 600,
-    HEIGHT = 600,
-    USE_GEO = true;
-
-var numPoints = 10000,//1024,//2048,//16384,
-    numEdges = numPoints,
-    dimensions = [1,1]; //[960,960];
+    HEIGHT = 600;
 
 var SIMULATION_TIME = 3000; //seconds
-
+var dimensions = [1,1];
 
 /*
     graph ->
@@ -273,24 +268,10 @@ function init() {
 
 
 function loadDataIntoSim(graph, dataListURI) {
-    if (dataListURI == "random") {
-        var points = loader.createPoints(numPoints, dimensions);
-        var edges = loader.createEdges(numEdges, numPoints);
-
-        return Q.all([
-            graph.setPoints(points),
-            points,
-            edges,
-        ]).spread(function(graph, points, edges) {
-            graph.setColorMap("test-colormap2.png");
-            return graph.setEdges(edges);
-        });
-    } else {
-        return loader.loadDataList(dataListURI).then(function (datalist) {
-            var which = 0;
-            return loader.loadDataSet(graph, datalist[which]);
-        });
-    }
+    return loader.loadDataList(dataListURI).then(function (datalist) {
+        var which = 0;
+        return loader.loadDataSet(graph, datalist[which]);
+    });
 }
 
 /**
