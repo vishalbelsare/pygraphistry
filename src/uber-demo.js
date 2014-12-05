@@ -284,6 +284,7 @@ function setupInteractions($eventTarget, renderState) {
 
                         var dirty = false;
 
+                        if (false) {
                         if (idx > -1) {
                             debug('Enlarging current mouseover point', idx);
                             highlights.write(idx, HIGHLIGHT_SIZE);
@@ -294,6 +295,7 @@ function setupInteractions($eventTarget, renderState) {
                             debug('Shrinking previous mouseover point', prevIdx);
                             highlights.write(prevIdx, 0);
                             dirty = true;
+                        }
                         }
 
                         prevIdx = idx;
