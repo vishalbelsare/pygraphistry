@@ -58,11 +58,13 @@ function create(simulator, renderer, document, canvas, bgColor, dimensions, numS
 
 
 function updateSettings (graph, cfg) {
-    _.each(cfg, function (v, k) {
-        graph.simulator.setPhysics(cfg);
-        graph.simulator.setLocked(cfg);
-        graph.renderer.setVisible(cfg);
-    });
+    graph.simulator.setPhysics(cfg);
+    graph.simulator.setLocked(cfg);
+    graph.renderer.setVisible(cfg);
+
+    if (cfg.timeSubset) {
+        graph.simulator.setTimeSubset(cfg.timeSubset);
+    }
 }
 
 function setPoints(graph, points, pointSizes, pointColors) {
