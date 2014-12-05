@@ -79,6 +79,10 @@ function create(renderer, dimensions, numSplits, locked) {
             );
             simObj.physics = {};
 
+            simObj.bufferHostCopies = {
+                forwardsEdges: null
+            };
+
             simObj.buffers = {
                 nextPoints: null,
                 randValues: null,
@@ -288,6 +292,8 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints, edgeColor
     if(forwardsEdges.workItemsTyped.length % elementsPerWorkItem !== 0) {
         throw new Error("The work item buffer size is invalid (must be a multiple of " + elementsPerWorkItem + ")");
     }
+
+    simulator.bufferHostCopies.forwardsEdges = forwardsEdges;
 
     if (!edgeColors) {
         edgeColors = new Uint32Array(forwardsEdges.edgesTyped.length);
