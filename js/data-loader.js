@@ -15,7 +15,7 @@ var loaders = {
     "random" : loadRandom,
     "OBSOLETE_geo": loadGeo,
     "OBSOLETE_socioPLT" : loadSocioPLT,
-    "OBSOLETE_rectangle" : loadRectangle.bind('', 100, 100)
+    "OBSOLETE_rectangle" : loadRectangle
 };
 
 
@@ -116,14 +116,15 @@ function loadRandom(graph, dataset) {
 }
 
 
-function loadRectangle(rows, columns, graph) {
-    debug("Loading rectangle", rows, columns);
+function loadRectangle(graph, dataset) {
+    var cfg = dataset.config
+    debug("Loading rectangle", cfg.rows, cfg.columns);
 
     var points =
         _.flatten(
-            _.range(0, rows)
+            _.range(0, cfg.rows)
                 .map(function (row) {
-                    return _.range(0, columns)
+                    return _.range(0, cfg.columns)
                         .map(function (column) {
                             return [column, row];
                         });
