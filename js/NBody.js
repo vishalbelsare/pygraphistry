@@ -58,11 +58,13 @@ function create(simulator, renderer, document, canvas, bgColor, dimensions, numS
 
 
 function updateSettings (graph, cfg) {
-    _.each(cfg, function (v, k) {
-        graph.simulator.setPhysics(cfg);
-        graph.simulator.setLocked(cfg);
-        graph.renderer.setVisible(cfg);
-    });
+    graph.simulator.setPhysics(cfg);
+    graph.simulator.setLocked(cfg);
+    graph.renderer.setVisible(cfg);
+
+    if (cfg.timeSubset) {
+        graph.simulator.setTimeSubset(cfg.timeSubset);
+    }
 }
 
 function setPoints(graph, points, pointSizes, pointColors) {
@@ -128,15 +130,22 @@ var setEdges = Q.promised(function(graph, edges, edgeColors) {
             }
         });
 
-        var degreesFlattened = new Uint32Array(graph.__pointsHostBuffer.length);
-        workItems.forEach(function (edgeList) {
-            degreesFlattened[edgeList[2]] = edgeList[1];
-        });
 
+        //DISABLED: keeping ordered to streamline time-based filtering
+        /*
         //Cheesey load balancing: sort by size
         //TODO benchmark
         workItems.sort(function (edgeList1, edgeList2) {
             return edgeList1[1] - edgeList2[1];
+        });
+        */
+
+        var degreesFlattened = new Uint32Array(graph.__pointsHostBuffer.length);
+        //-1 signifies no item
+        var srcToWorkItem = new Int32Array(graph.__pointsHostBuffer.length);
+        workItems.forEach(function (edgeList, idx) {
+            srcToWorkItem[edgeList[0]] = idx;
+            degreesFlattened[edgeList[2]] = edgeList[1];
         });
 
         //Uint32Array [first edge number from src idx, number of edges from src idx]
@@ -152,7 +161,8 @@ var setEdges = Q.promised(function(graph, edges, edgeColors) {
             degreesTyped: degreesFlattened,
             edgesTyped: edgesFlattened,
             numWorkItems: workItemsFlattened.length,
-            workItemsTyped: new Uint32Array(workItemsFlattened)
+            workItemsTyped: new Uint32Array(workItemsFlattened),
+            srcToWorkItem: srcToWorkItem
         };
     }
 

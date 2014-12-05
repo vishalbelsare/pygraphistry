@@ -1,8 +1,8 @@
 
 
-var debug = require("debug")("N-body:SimCL:gaussSeidel"),
-    Q = require('q');
-
+var debug = require("debug")("N-body:SimCL:gaussSeidel")
+var Q = require('q');
+var _ = require('underscore');
 
 var cljs = require('./cl.js');
 

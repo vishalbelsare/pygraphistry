@@ -59,9 +59,10 @@ function create(renderer, dimensions, numSplits, locked) {
 
             simObj.tick = tick.bind(this, simObj);
             simObj.setPoints = setPoints.bind(this, simObj);
-            simObj.setEdges = setEdges.bind(this, simObj);
+            simObj.setEdges = setEdges.bind(this, renderer, simObj);
             simObj.setLocked = setLocked.bind(this, simObj);
             simObj.setPhysics = setPhysics.bind(this, simObj);
+            simObj.setTimeSubset = setTimeSubset.bind(this, renderer, simObj);
             simObj.resetBuffers = resetBuffers.bind(this, simObj);
             simObj.tickBuffers = tickBuffers.bind(this, simObj);
 
@@ -78,6 +79,10 @@ function create(renderer, dimensions, numSplits, locked) {
                 (locked || {})
             );
             simObj.physics = {};
+
+            simObj.bufferHostCopies = {
+                forwardsEdges: null
+            };
 
             simObj.buffers = {
                 nextPoints: null,
@@ -99,6 +104,12 @@ function create(renderer, dimensions, numSplits, locked) {
             simObj.buffersLocal = {
                 pointSizes: null,
                 pointColors: null
+            };
+
+            simObj.timeSubset = {
+                relRange: {min: 0, max: 100},
+                pointsRange: {startIdx: 0, len: renderer.numPoints},
+                edgeRange: {startIdx: 0, len: renderer.numEdges}
             };
 
             Object.seal(simObj.buffers);
@@ -271,7 +282,7 @@ function setPoints(simulator, points, pointSizes, pointColors) {
  * @param {Uint32Array} edgeColors - dense array of edge start and end colors
  * @returns {Q.promise} a promise for the simulator object
  */
-function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints, edgeColors) {
+function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints, edgeColors) {
     //edges, workItems
     var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
     var elementsPerWorkItem = 2;
@@ -288,6 +299,8 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints, edgeColor
     if(forwardsEdges.workItemsTyped.length % elementsPerWorkItem !== 0) {
         throw new Error("The work item buffer size is invalid (must be a multiple of " + elementsPerWorkItem + ")");
     }
+
+    simulator.bufferHostCopies.forwardsEdges = forwardsEdges;
 
     if (!edgeColors) {
         edgeColors = new Uint32Array(forwardsEdges.edgesTyped.length);
@@ -383,6 +396,7 @@ function setEdges(simulator, forwardsEdges, backwardsEdges, midPoints, edgeColor
                 }));
     })
     .then(function () {
+        setTimeSubset(renderer, simulator, simulator.timeSubset.relRange);
         return simulator;
     })
     .then(_.identity, function (err) {
@@ -413,6 +427,28 @@ function setPhysics(simulator, cfg) {
     layoutAlgorithms.forEach(function (algorithm) {
         algorithm.setPhysics(simulator, cfg);
     });
+}
+
+//renderer * simulator * {min: 0--100, max: 0--100}
+function setTimeSubset(renderer, simulator, range) {
+
+    //points
+    var startIdx = Math.round(renderer.numPoints * 0.01 * range.min);
+    var len = Math.round(renderer.numPoints * 0.01 * range.max) - startIdx;
+
+    //edges
+    var numWorkItems = simulator.bufferHostCopies.forwardsEdges.workItemsTyped.length / 2;
+    var startEdgeIdx = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[
+        Math.round(numWorkItems * 0.01 * range.min)];
+    var endEdgeIdx = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[
+        Math.round(numWorkItems * 0.01 * range.max)];
+    var numEdges = endEdgeIdx - startEdgeIdx
+        + simulator.bufferHostCopies.forwardsEdges.degreesTyped[endEdgeIdx];
+
+    simulator.timeSubset =
+        {relRange: range, //%
+         pointsRange: {startIdx: startIdx, len: len},
+         edgeRange: {startIdx: startEdgeIdx, len: numEdges}};
 }
 
 
