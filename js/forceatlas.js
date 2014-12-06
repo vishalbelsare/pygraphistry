@@ -144,6 +144,7 @@ module.exports = {
     },
 
     tick: function (simulator, stepNumber) {
+        var tickTime = Date.now()
 
         if (simulator.physics.forceAtlas) {
 
@@ -184,11 +185,10 @@ module.exports = {
                     : undefined);
 
             simulator.tickBuffers(['nextPoints', 'curPoints', 'springsPos'])
-
             var appliedForces = simulator.kernels.forceAtlasPoints.call(simulator.numPoints, resources);
 
             return appliedForces
-                .then(function () {
+                .then(function() {
                     if(simulator.numEdges > 0) {
                         return atlasEdgesKernelSeq(
                                 simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
@@ -199,6 +199,7 @@ module.exports = {
                                     simulator.buffers.curPoints, simulator.buffers.nextPoints);
                             })
                             .then(function () {
+
                                 return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
                             });
                     }

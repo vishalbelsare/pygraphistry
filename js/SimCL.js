@@ -9,9 +9,11 @@ var debug = require("debug")("N-body:SimCL");
 
 var forceAtlas = require('./forceatlas.js'),
     gaussSeidel = require('./gaussseidel.js'),
-    edgeBundling = require('./edgebundling.js');
+    edgeBundling = require('./edgebundling.js'),
+    barnesHut = require('./BarnesHut.js');
 
 
+//var layoutAlgorithms = [barnesHut, gaussSeidel, edgeBundling];;
 var layoutAlgorithms = [forceAtlas, gaussSeidel, edgeBundling];
 
 
@@ -42,7 +44,6 @@ function create(renderer, dimensions, numSplits, locked) {
             debug("CL kernel source retrieved");
             return cl.compile(source, kernelNames);
         })
-
         .then(function(kernels) {
             debug("Compiled kernel source");
 
@@ -56,7 +57,6 @@ function create(renderer, dimensions, numSplits, locked) {
                     buffers: { }
                 }
             };
-
             simObj.tick = tick.bind(this, simObj);
             simObj.setPoints = setPoints.bind(this, simObj);
             simObj.setEdges = setEdges.bind(this, renderer, simObj);
@@ -142,8 +142,9 @@ var tickBuffers = function (simulator, bufferNames, tick) {
     if (bufferNames.length) {
         bufferNames.forEach(function (name) {
             simulator.versions.buffers[name] = simulator.versions.tick;
-        });
+       })
     }
+
 };
 
 
@@ -388,7 +389,7 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints,
         simulator.buffers.curMidPoints = midPointsBuf;
         simulator.buffers.midSpringsColorCoord = midSpringsColorCoordBuffer;
     })
-    .then(function () {
+    .then( function () {
         return Q.all(
             layoutAlgorithms
                 .map(function (alg) {

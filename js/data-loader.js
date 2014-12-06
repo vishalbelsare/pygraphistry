@@ -7,16 +7,40 @@ var debug = require("debug")("graphistry:graph-viz:data-loader");
 var _ = require('underscore');
 
 var MatrixLoader = require('./libs/MatrixLoader.js'),
+    VGraphLoader = require('./libs/VGraphLoader.js'),
     kmeans = require('./libs/kmeans.js');
 
 var loaders = {
-    "vgraph": null,
+    "vgraph": VGraphLoader.load,
     "matrix" : loadMatrix,
     "random" : loadRandom,
     "OBSOLETE_geo": loadGeo,
     "OBSOLETE_socioPLT" : loadSocioPLT,
     "OBSOLETE_rectangle" : loadRectangle
 };
+
+function loadDataIntoSim(graph, dataConfig) {
+    return loadDataList(dataConfig.listURI).then(function (datalist) {
+        // Try to find a dataset by name first
+        if (dataConfig.name) {
+            debug("Loading dataset by name");
+            var match = _.find(datalist, function (dataset) {return dataset.name == dataConfig.name;});
+            if (match)
+                return loadDataSet(graph, match);
+        }
+        
+        // Then by index
+        var idx = parseInt(dataConfig.idx)
+        if (!isNaN(idx) && idx < datalist.length) {
+            debug("Loading dataset by index")
+            return loadDataSet(graph, datalist[idx]);
+        }
+          
+        // Otherwise the first listed
+        debug("Loading first dataset")
+        return loadDataSet(graph, datalist[0]);
+    });
+}
 
 
 // Given a URI of a JSON data index, return an array of objects, with keys for display name,
@@ -271,8 +295,7 @@ function loadMatrix(graph, dataset) {
 module.exports = {
     createPoints: createPoints,
     createEdges: createEdges,
-    loadDataList: loadDataList,
-    loadDataSet: loadDataSet,
+    loadDataIntoSim: loadDataIntoSim
 };
 
 // vim: set et ff=unix ts=8 sw=4 fdm=syntax: 

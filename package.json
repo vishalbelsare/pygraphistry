@@ -18,12 +18,14 @@
     "mongodb": "*",
     "node-pigz": "git+ssh://git@github.com:graphistry/node-pigz.git#master",
     "node-webcl": "git+ssh://git@github.com:graphistry/node-webcl.git#master",
+    "config": "git+ssh://git@github.com:graphistry/config.git#master",
     "node-webgl": "^0.4.3",
     "q": "^1.0.1",
     "request": "^2.49.0",
     "rx": "^2.3.19",
     "socket.io": "^1.2.0",
     "underscore": "^1.7.0",
-    "datasets": "git+ssh://git@github.com:graphistry/datasets.git#master"
+    "datasets": "git+ssh://git@github.com:graphistry/datasets.git#master",
+    "protobufjs": "3.8.x"
   }
 }

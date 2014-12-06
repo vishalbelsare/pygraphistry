@@ -109,7 +109,7 @@ function controls(graph) {
 
 
     if (false) {
-        physicsControls.forceAtlas(1);
+        physicsControls.forceAtlas(0);
         physicsControls.scalingRatio(0.1);
         physicsControls.gravity(0.005);
         physicsControls.edgeInfluence(1);
@@ -310,13 +310,6 @@ function init() {
 }
 
 
-function loadDataIntoSim(graph, dataListURI) {
-    return loader.loadDataList(dataListURI).then(function (datalist) {
-        var which = 0;
-        return loader.loadDataSet(graph, datalist[which]);
-    });
-}
-
 /**
  * Returns an Observable that fires an event in `delay` ms, with the given `value`
  * @param  {number}   [delay=16]    - the time, in milliseconds, before the event is fired
@@ -347,7 +340,7 @@ function delayObservableGenerator(delay, value, cb) {
 ///////////////////////////////////////////////////////////////////////////
 
 
-function createAnimation(dataListURI) {
+function createAnimation(config) {
     debug("STARTING DRIVER");
 
     var userInteractions = new Rx.Subject();
@@ -375,7 +368,12 @@ function createAnimation(dataListURI) {
     })
     .then(function (graph) {
         debug("LOADING DATA");
-        return loadDataIntoSim(graph, dataListURI);
+        var dataConfig = {
+            'listURI': config.DATALISTURI, 
+            'name': config.DATASETNAME, 
+            'idx': config.DATASETIDX
+        }
+        return loader.loadDataIntoSim(graph, dataConfig);
     })
     .then(function (graph) {
         debug("ANIMATING");
@@ -531,7 +529,7 @@ exports.fetchData = fetchData;
 // If the user invoked this script directly from the terminal, run init()
 if(require.main === module) {
     var config  = require('./config.js')();
-    var vbosUpdated = createAnimation(config.DATALISTURI);
+    var vbosUpdated = createAnimation(config);
 
     vbosUpdated.subscribe(function() { debug("Got updated VBOs"); } );
 }
