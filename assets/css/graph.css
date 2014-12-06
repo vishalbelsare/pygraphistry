@@ -118,3 +118,20 @@ button.btn-default {
 .graph-label:hover:after {
     visibility: visible;
 }
+
+#highlighted-point-cont {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+
+}
+
+.highlighted-point {
+    position: relative;
+    left: -5px;
+    top: -5px;
+    border: 2px solid white;
+    border-radius: 5px;
+    width: 10px;
+    height: 10px;
+}
