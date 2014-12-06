@@ -187,14 +187,8 @@ module.exports = {
             simulator.tickBuffers(['nextPoints', 'curPoints', 'springsPos'])
             var appliedForces = simulator.kernels.forceAtlasPoints.call(simulator.numPoints, resources);
 
-            var beforeApplied = Date.now();
-            appliedForces
-                .then(function () {
-                  return simulator.cl.queue.finish();
-                })
+            return appliedForces
                 .then(function() {
-                    console.log("Force points completed", Date.now() - beforeApplied);
-                     beforeEdges = Date.now()
                     if(simulator.numEdges > 0) {
                         return atlasEdgesKernelSeq(
                                 simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
@@ -204,12 +198,8 @@ module.exports = {
                                     simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
                                     simulator.buffers.curPoints, simulator.buffers.nextPoints);
                             })
-                            .then(function() {
-                              return simulator.cl.queue.finish();
-                             })
                             .then(function () {
 
-                                console.log("Force atlas edges completed", Date.now() - beforeEdges);
                                 return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
                             });
                     }
@@ -223,9 +213,6 @@ module.exports = {
                         return simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources);
                     }
                 })
-                .then(function () {
-                  console.log("Total tick time", Date.now() - tickTime);
-                });
         }
     }
 };

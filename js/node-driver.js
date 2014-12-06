@@ -23,22 +23,10 @@ var Q = require("q"),
 metrics.init('StreamGL:driver');
 
 var WIDTH = 600,
-<<<<<<< HEAD
-    HEIGHT = 600,
-    USE_GEO = false;
-
-var numPoints = 1000, //1024,//1024,//2048,//16384,
-    numEdges = numPoints,
-    dimensions = [1,1]; //[960,960];
-
-var SIMULATION_TIME = 300000; //seconds
-
-=======
     HEIGHT = 600;
 
 var SIMULATION_TIME = 3000; //seconds
 var dimensions = [1,1];
->>>>>>> 60f37e9936a0ce44dbc6196d7ad7c9def15157af
 
 /*
     graph ->

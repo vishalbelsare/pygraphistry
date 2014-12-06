@@ -13,7 +13,6 @@ if (typeof(window) == 'undefined') {
 } else if (typeof(webcl) == 'undefined') {
   var webcl = window.webcl;
 }
-console.log(webcl.type);
 
 //corresponds to apply-forces.cl
 //webcl.type ? [1] : new Uint32Array([localPosSize]),
@@ -73,7 +72,6 @@ var setupTempBuffers = function(simulator, tempBuffers) {
         ])
     .spread(function (x_cords, y_cords, accx, accy, children, mass, start, sort, xmin, xmax, ymin, ymax, count,
           blocked, step, bottom, maxdepth, radius) {
-      console.log(tempBuffers);
       tempBuffers.x_cords = x_cords;
       tempBuffers.y_cords = y_cords;
       tempBuffers.accx = accx;
@@ -96,7 +94,6 @@ var setupTempBuffers = function(simulator, tempBuffers) {
     })
     .catch(function(error) {
       console.log(error);
-      console.log("ERROR in setUP");
     });
 };
 
@@ -336,53 +333,25 @@ module.exports = {
     return layoutKernelSeq
     })
     .then(function() {
-        console.log("barnes layout completed in:", Date.now() - now);
-        now = Date.now();
         resources = [];
-        //return simulator.kernels.bound_box.call(256, resources)
-        simulator.kernels.bound_box.call(256*10, resources, 256)
-    })
-    .then( function () {
-        return simulator.cl.queue.finish()
+        return simulator.kernels.bound_box.call(256*10, resources, 256)
     })
     .then(function () {
-      console.log("bound_box completed in:", Date.now() - now);
-      now = Date.now();
-      //return simulator.kernels.build_tree.call(256, resources);
-      simulator.kernels.build_tree.call(4*256, resources, 256);
-      return simulator.cl.queue.finish()
+      return simulator.kernels.build_tree.call(4*256, resources, 256);
     })
     .then( function () {
-      console.log("build_tree completed in:", Date.now() - now);
-      now = Date.now();
-        simulator.kernels.compute_sums.call(4*256, resources, 256);
-        return simulator.cl.queue.finish()
+        return simulator.kernels.compute_sums.call(4*256, resources, 256);
     })
     .then(function () {
-      console.log("compute_sums completed in:", Date.now() - now);
       return simulator.kernels.sort.call(4*256, resources, 256);
     })
-    .then( function () {
-     return simulator.cl.queue.finish()
-    })
     .then(function () {
-      console.log("sort completed in:", Date.now() - now);
-      now = Date.now();
       return simulator.kernels.calculate_forces.call(400*256, resources, 256);
     })
     .then( function() {
-       return simulator.cl.queue.finish();
-    })
-    .then( function() {
-      console.log("calculate forces completed in:", Date.now() - now);
-      now = Date.now();
       return simulator.kernels.move_bodies.call(256, resources, 256);
     })
-    .then (function () {
-      return simulator.cl.queue.finish();
-    })
     .then(function () {
-        console.log("move_bodies completed in:", Date.now() - now);
         nextPointsBuffer = simulator.buffers.nextPoints.buffer;
         simulator.kernels.from_barnes_layout.setArgs(
             graphArgs.concat(
@@ -399,15 +368,12 @@ module.exports = {
 
               );
         resources = [simulator.buffers.nextPoints];
-        before_layout = Date.now();
         return simulator.kernels.from_barnes_layout.call(256, resources);
     })
     .then (function () {
       return simulator.cl.queue.finish()
     })
     .then(function () {
-      console.log("from barnes layout", Date.now() - before_layout);
-      console.log("Total time for points", Date.now() - totalTime);
       var atlasEdgesKernelSeq = function (edges, workItems, numWorkItems, fromPoints, toPoints) {
 
         var resources = [edges, workItems, fromPoints, toPoints];
@@ -429,7 +395,6 @@ module.exports = {
         return simulator.kernels.forceAtlasEdges.call(numWorkItems, resources);
       };
 
-      beforeEdges = Date.now()
       if(simulator.numEdges > 0) {
         return atlasEdgesKernelSeq(
             simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
@@ -439,35 +404,19 @@ module.exports = {
                 simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
                 simulator.buffers.curPoints, simulator.buffers.nextPoints);
           })
-          .then( function () {
-            return simulator.cl.queue.finish();
-          })
         .then(function () {
-        console.log("Atlas edges completed in:", Date.now() - beforeEdges);
-          beforeCopy = Date.now();
           return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-        })
-        .then (function () {
-          return simulator.cl.queue.finish();
         })
       }
     })
     .then(function () {
-      console.log("Trasfer data complted in:", Date.now() - beforeCopy);
       if (simulator.numEdges > 0) {
 
         var resources = [simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems,
         simulator.buffers.curPoints, simulator.buffers.springsPos];
-        now = Date.now();
 
         return simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources)
-        .then (function () {
-        simulator.cl.queue.finish();
-        })
       }
-    })
-    .then(function () {
-      console.log("time for gather", Date.now() - now);
     })
   }
   };
