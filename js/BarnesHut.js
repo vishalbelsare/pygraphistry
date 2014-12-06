@@ -2,7 +2,7 @@
 
 var debug = require("debug")("N-body:SimCL:BarnesHut"),
     _ = require('underscore');
-    Q = require('Q');
+    Q = require('q');
 
 
 var cljs = require('./cl.js');
