@@ -18,7 +18,7 @@ var express = require('express'),
 
 var db;
 
-var config = require('./config')();
+var config = require('config').init();
 debug("Config set to %j", config);
 
 var GRAPH_STATIC_PATH   = path.resolve(require('graph-viz').staticFilePath(), 'assets');
@@ -52,7 +52,7 @@ function get_likely_local_ip() {
 
 
 function assign_worker(req, res) {
-    if (config.PRODUCTION) {
+    if (config.PRODUCTION || config.STAGING) {
         var name = req.param("dataName");
         name = "uber" // hardcode for now
         db.collection('data_info').findOne({"name": name}, function(err, doc) {
@@ -193,7 +193,7 @@ app.get('/uber', function(req, res) {
 
 Rx.Observable.return()
     .flatMap(function () {
-        if (!config.PRODUCTION) { return Rx.Observable.return(); }
+        if (! (config.PRODUCTION || config.STAGING) ) { return Rx.Observable.return(); }
         else {
             return Rx.Observable.fromNodeCallback(
                 MongoClient.connect.bind(MongoClient, config.MONGO_SERVER))({auto_reconnect: true})

@@ -5,6 +5,7 @@
   "private": true,
   "dependencies": {
     "StreamGL": "git+ssh://git@github.com:graphistry/StreamGL.git#master",
+    "config": "git+ssh://git@github.com:graphistry/config.git#master",
     "debug": "^2.1.0",
     "express": "*",
     "graph-viz": "git+ssh://git@github.com:graphistry/graph-viz.git#master",
