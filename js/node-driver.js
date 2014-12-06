@@ -109,7 +109,7 @@ function controls(graph) {
 
 
     if (false) {
-        physicsControls.forceAtlas(1);
+        physicsControls.forceAtlas(0);
         physicsControls.scalingRatio(0.1);
         physicsControls.gravity(0.005);
         physicsControls.edgeInfluence(1);
