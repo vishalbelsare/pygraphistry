@@ -9,6 +9,9 @@ var assert      = require('assert');
 var Rx          = require('rx');
 var os          = require('os');
 var _           = require('underscore');
+var config      = require('config')();
+
+debug("Config set to %j", config);
 
 
 var express = require('express'),
@@ -18,8 +21,6 @@ var express = require('express'),
 
 var db;
 
-var config = require('config').init();
-debug("Config set to %j", config);
 
 var GRAPH_STATIC_PATH   = path.resolve(require('graph-viz').staticFilePath(), 'assets');
 var HORIZON_STATIC_PATH = path.resolve(require('horizon-viz').staticFilePath(), 'assets');
@@ -52,7 +53,7 @@ function get_likely_local_ip() {
 
 
 function assign_worker(req, res) {
-    if (config.PRODUCTION || config.STAGING) {
+    if(config.ENVIRONMENT === 'production' || config.ENVIRONMENT === 'staging') {
         var name = req.param("dataName");
         name = "uber" // hardcode for now
         db.collection('data_info').findOne({"name": name}, function(err, doc) {
@@ -194,8 +195,9 @@ app.get('/uber', function(req, res) {
 
 Rx.Observable.return()
     .flatMap(function () {
-        if (! (config.PRODUCTION || config.STAGING) ) { return Rx.Observable.return(); }
-        else {
+        if(config.ENVIRONMENT !== 'production' && config.ENVIRONMENT !== 'staging') {
+            return Rx.Observable.return();
+        } else {
             return Rx.Observable.fromNodeCallback(
                 MongoClient.connect.bind(MongoClient, config.MONGO_SERVER))({auto_reconnect: true})
                 .do(function (database) {
