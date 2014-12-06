@@ -92,7 +92,7 @@ function controls(graph) {
     */
 
     //all off by default
-    physicsControls.forceAtlas(1);
+    physicsControls.forceAtlas(0);
     locks.lockPoints(true);
     locks.lockEdges(true);
     locks.lockMidpoints(true);
