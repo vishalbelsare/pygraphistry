@@ -3,7 +3,7 @@
 
 var Rx = require("rx");
 var request = require('request');
-var config = require('config').init();
+var config = require('config')();
 
 
 // TODO: Import via config file, this should be in Ansible
