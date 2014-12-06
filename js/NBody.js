@@ -39,6 +39,7 @@ function create(simulator, renderer, document, canvas, bgColor, dimensions, numS
                         "simulator": sim
                     };
                     graph.setPoints = setPoints.bind(this, graph);
+                    graph.setPointAttributes = setPointAttributes.bind(this, graph);
                     graph.setEdges = setEdges.bind(this, graph);
                     graph.setPhysics = setPhysics.bind(this, graph);
                     graph.setVisible = setVisible.bind(this, graph);
@@ -82,6 +83,9 @@ function setPoints(graph, points, pointSizes, pointColors) {
     });
 }
 
+function setPointAttributes(graph, name, type, values) {
+    // TODO code me.
+}
 
 var setEdges = Q.promised(function(graph, edges, edgeColors) {
 
