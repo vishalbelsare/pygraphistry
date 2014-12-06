@@ -284,19 +284,35 @@ function setupInteractions($eventTarget, renderState) {
 
                         var dirty = false;
 
-                        if (false) {
+
                         if (idx > -1) {
                             debug('Enlarging current mouseover point', idx);
-                            highlights.write(idx, HIGHLIGHT_SIZE);
-                            dirty = true;
-                        }
 
+                            var camera = renderState.get('camera');
+                            var cnv = $('#simulation').get(0);
+                            var mtx = camera.getMatrix();
+
+                            //var points = renderState.get('hostBuffers').curPoints
+                            var pointsF32 = new Float32Array(points.buffer);
+                            var pos = camera.canvasCoords(pointsF32[2 * idx], -pointsF32[2 * idx + 1], 1, cnv, mtx);
+
+                            //console.log(idx, pos, camera, $, pointsF32);
+
+                            //highlights.write(idx, HIGHLIGHT_SIZE);
+                            //dirty = true;
+                            $('#highlighted-point-cont').css({
+                                top: pos.y,
+                                left: pos.x
+                            });
+                        }
+                        /*
                         if (prevIdx > -1) {
                             debug('Shrinking previous mouseover point', prevIdx);
                             highlights.write(prevIdx, 0);
                             dirty = true;
                         }
-                        }
+                        */
+
 
                         prevIdx = idx;
                         if (dirty) {
