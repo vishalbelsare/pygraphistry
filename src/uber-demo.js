@@ -275,10 +275,15 @@ function setupInteractions($eventTarget, renderState) {
                 });
             });
 
-    Rx.Observable.combineLatest(
-        interactions,
-        highlightedPoint,
-        function (camera, pointPair) { return _.extend({}, {camera: camera}, pointPair); })
+    var latestHighlightedPoint = new Rx.ReplaySubject(1);
+    highlightedPoint.subscribe(latestHighlightedPoint);
+
+    interactions.flatMapLatest(function (camera) {
+        return latestHighlightedPoint.take(1)
+            .map(function(pointPair) {
+                return _.extend({}, {camera: camera}, pointPair);
+            });
+        })
         .subscribe(function(data) {
             currentState = renderer.setCameraIm(renderState, data.camera);
             renderScene(renderer, currentState, data.curPoints, data.idx);
