@@ -11,8 +11,8 @@ var _           = require('underscore');
 
 var picking     = require('./picking.js');
 
-
-var APPROX = 0.9;
+//0--1: the closer to 1, the more likely that unsampled points disappear
+var APPROX = 0.3;
 
 //renderState * String -> {<idx> -> True}
 //dict of points that are on screen -- approx may skip some
