@@ -34,11 +34,20 @@ var HIGHLIGHT_SIZE = 20;
 
 
 function genLabel ($labelCont, txt) {
+
     var res = $('<span>')
         .addClass('graph-label')
         .css('display', 'none')
-        .text(txt);
+        .text(txt)
+        .on('mouseover', function () {
+            $(this).addClass('on');
+        })
+        .on('mouseout', function () {
+            $(this).removeClass('on');
+        });
+
     $labelCont.append(res);
+
     return res;
 }
 
@@ -206,22 +215,6 @@ function setupInteractions($eventTarget, renderState) {
     labels.forEach(function ($lbl, i) {
         var cont = {idx: i, elt: $lbl};
         poi.state.inactiveLabels.push(cont);
-        var isOn = false;
-        $lbl
-            .on('mouseover', function () {
-                if (!isOn) {
-                    isOn = true;
-                    highlights.write(cont.idx, HIGHLIGHT_SIZE);
-                    renderScene(renderer, currentState);
-                }
-            })
-            .on('mouseout', function () {
-                if (isOn) {
-                    isOn = false;
-                    highlights.write(cont.idx, 0);
-                    renderScene(renderer, currentState);
-                }
-            });
     });
 
     Rx.Observable.combineLatest(
