@@ -85,6 +85,9 @@ button.btn-default {
 }
 
 .graph-label {
+
+    margin-top: 1.5em;
+
     position: absolute;
     max-width: 5em;
     color: rgba(255,255,234,0.9);
