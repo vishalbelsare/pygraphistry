@@ -70,6 +70,28 @@ function renderLabels($labelCont, renderState) {
 }
 
 
+//RenderState * [ float ] * int -> ()
+function renderCursor (renderState, points, idx) {
+
+    debug('Enlarging current mouseover point', idx);
+
+    if (idx <= 0) {
+        return;
+    }
+
+    var camera = renderState.get('camera');
+    var cnv = $('#simulation').get(0);
+    var mtx = camera.getMatrix();
+
+    var pos = camera.canvasCoords(points[2 * idx], -points[2 * idx + 1], 1, cnv, mtx);
+
+    $('#highlighted-point-cont').css({
+        top: pos.y,
+        left: pos.x
+    });
+
+}
+
 
 
 
@@ -168,8 +190,8 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints) {
 
 //render most of scene on refresh, but defer slow hitmap (readPixels)
 var lastRender = new Rx.Subject();
-function renderScene(renderer, currentState) {
-    lastRender.onNext({renderer: renderer, currentState: currentState});
+function renderScene(renderer, currentState, points, higlightIdx) {
+    lastRender.onNext({renderer: renderer, currentState: currentState, points: points, higlightIdx: higlightIdx});
 }
 
 var reqAnimationFrame =
@@ -196,6 +218,7 @@ lastRender
             var items = cfg.currentState.get('config').get('scene').get('render').toJS()
                 .filter(function (v) { return v !== 'pointpicking'; });
             cfg.renderer.render(cfg.currentState, items);
+            renderCursor(cfg.currentState, new Float32Array(cfg.points.buffer), cfg.higlightIdx);
         });
     })
     .sample(150).subscribe(
@@ -240,81 +263,57 @@ function setupInteractions($eventTarget, renderState) {
             .merge(interaction.setupScroll($eventTarget, camera));
     }
 
-    interactions
-        .subscribe(function(newCamera) {
-            currentState = renderer.setCameraIm(renderState, newCamera);
-            renderScene(renderer, currentState);
+
+    var highlightedPoint =
+        interaction.setupMousemove($eventTarget, currentState, 'pointHitmap')
+            .sample(10)
+            .filter(_.identity)
+            .flatMap(function (idx) {
+                return renderState.get('hostBuffers').curPoints.take(1)
+                .map(function (curPoints) {
+                    return {idx: idx, curPoints: curPoints};
+                });
+            });
+
+    Rx.Observable.combineLatest(
+        interactions,
+        highlightedPoint,
+        function (camera, pointPair) { return _.extend({}, {camera: camera}, pointPair); })
+        .subscribe(function(data) {
+            currentState = renderer.setCameraIm(renderState, data.camera);
+            renderScene(renderer, currentState, data.curPoints, data.idx);
         });
 
+    highlightedPoint
+        .scan(
+            {prev: {idx: -1, curPoints: []}, cur: {idx: -1, curPoints: []}},
+            function (acc, pair) {
+                return {prev: acc.cur, cur: pair};
+            })
+        .filter(function (prevCur) {
+            debug('Point hitmap got index:', prevCur.cur.idx);
+            return prevCur.prev.idx !== prevCur.cur.idx;
+        })
+        .subscribe(function (prevCur) {
 
-    var highlights = renderer.localAttributeProxy(renderState)('highlights');
-    var prevIdx = -1;
+            debug('Hitmap detected mouseover on a new point with index',
+                prevCur && prevCur.cur ? prevCur.cur.idx : undefined);
 
-    ['pointHitmap']
-        .map(interaction.setupMousemove.bind({}, $eventTarget, currentState))
-        .forEach(function(hits) {
-            hits.sample(10)
-                .filter(_.identity)
-                .flatMap(function (idx) {
-                    return renderState.get('hostBuffers').curPoints.take(1)
-                    .map(function (curPoints) {
-                        return {idx: idx, curPoints: curPoints};
-                    });
-                })
-                .subscribe(function (pair) {
-                    var idx = pair.idx;
-                    var curPoints = pair.curPoints;
+            var idx = prevCur.cur.idx;
+            var curPoints = prevCur.cur.curPoints;
 
-                    debug('Point hitmap got index:', idx);
+            var points = new Float32Array(curPoints.buffer);
 
-                    if (idx !== prevIdx) {
-                        debug('Hitmap detected mouseover on a new point with index', idx);
+            var xtra = idx > -1 ? (' (' + points[2*idx].toFixed(3) + ', ' + points[2*idx+1].toFixed(3) + ')') : '';
+            var lblText = (idx > -1 ? '#' + idx.toString(16) : '') + xtra;
+            $('.hit-label').text('Location ID: ' + lblText);
 
-                        var points = new Float32Array(curPoints.buffer);
-                        var xtra = idx > -1 ? (' (' + points[2*idx].toFixed(3) + ', ' + points[2*idx+1].toFixed(3) + ')') : '';
-                        var lblText = (idx > -1 ? '#' + idx.toString(16) : '') + xtra;
-                        $('.hit-label').text('Location ID: ' + lblText);
+            if (idx > -1) {
+                renderCursor(renderState, new Float32Array(points.buffer), idx);
+            }
+        },
+        function (err) { console.error('mouse move err', err, err.stack); });
 
-                        var dirty = false;
-
-
-                        if (idx > -1) {
-                            debug('Enlarging current mouseover point', idx);
-
-                            var camera = renderState.get('camera');
-                            var cnv = $('#simulation').get(0);
-                            var mtx = camera.getMatrix();
-
-                            //var points = renderState.get('hostBuffers').curPoints
-                            var pointsF32 = new Float32Array(points.buffer);
-                            var pos = camera.canvasCoords(pointsF32[2 * idx], -pointsF32[2 * idx + 1], 1, cnv, mtx);
-
-                            //console.log(idx, pos, camera, $, pointsF32);
-
-                            //highlights.write(idx, HIGHLIGHT_SIZE);
-                            //dirty = true;
-                            $('#highlighted-point-cont').css({
-                                top: pos.y,
-                                left: pos.x
-                            });
-                        }
-                        /*
-                        if (prevIdx > -1) {
-                            debug('Shrinking previous mouseover point', prevIdx);
-                            highlights.write(prevIdx, 0);
-                            dirty = true;
-                        }
-                        */
-
-
-                        prevIdx = idx;
-                        if (dirty) {
-                            renderScene(renderer, currentState);
-                        }
-                    }
-                },
-                function (err) { console.error('mouse move err', err, err.stack); });
-        });
 }
 
 
