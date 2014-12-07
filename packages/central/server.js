@@ -164,7 +164,13 @@ app.get('*/StreamGL.map', function(req, res) {
 // Serve horizon static assets
 app.use('/horizon', express.static(HORIZON_STATIC_PATH));
 // Serve graph static assets
-app.use('/graph',   express.static(GRAPH_STATIC_PATH));
+app.use('/graph', function (req, res, next) {
+    if (req.path == '/index.html'|| req.path == '/') {
+        config.DATASETNAME = req.param('datasetname');
+        config.DATASETIDX = req.param('datasetidx');
+    }
+    return express.static(GRAPH_STATIC_PATH)(req, res, next);
+});
 // Serve uber static assets
 app.use('/uber',   express.static(UBER_STATIC_PATH));
 
@@ -173,11 +179,6 @@ app.use('/uber',   express.static(UBER_STATIC_PATH));
 app.get('/', function(req, res) {
     debug('hello home page')
     res.send('Hi! Try going to <a href="/graph">graph<a/> or <a href="/horizon">horizon</a>')
-});
-
-app.get('/graph', function(req, res) {
-    debug('redirecting to graph')
-    res.redirect('/graph/index.html' + (req.query.debug !== undefined ? '?debug' : ''));
 });
 
 app.get('/horizon', function(req, res) {
