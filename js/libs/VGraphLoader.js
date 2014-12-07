@@ -6,9 +6,19 @@ var fs = require('fs');
 var debug = require("debug")("graphistry:graph-viz:data-loader");
 var pb = require("protobufjs");
 var zlib = require("zlib");
+var path = require('path');
 
-var builder = pb.loadProtoFile("js/libs/graph_vector.proto");
-var pb_root = builder.build();
+var builder = null;
+var pb_root = null;
+pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'), function (err, builder_) {
+    if (err) {
+        console.error('could not build proto', err, err.stack);
+        return;
+    } else {
+        builder = builder_;
+        pb_root = builder.build();
+    }
+});
 
 var decoders = {
     0: decode0
@@ -53,9 +63,9 @@ function getAttributeValues(vg, name) {
 }
 
 function decode0(graph, vg)  {
-    debug("Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)", 
+    debug("Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)",
           vg.version, vg.name, vg.nvertices, vg.nedges);
-    
+
     debug("Graph has attributes: %o", listAttributeValues(vg));
 
     var vertices = [];
@@ -104,4 +114,4 @@ function decode0(graph, vg)  {
 module.exports = {
     load: load,
 };
-// vim: set et ff=unix ts=8 sw=4 fdm=syntax: 
+// vim: set et ff=unix ts=8 sw=4 fdm=syntax:
