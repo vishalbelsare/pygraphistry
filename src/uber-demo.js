@@ -190,8 +190,8 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints) {
 
 //render most of scene on refresh, but defer slow hitmap (readPixels)
 var lastRender = new Rx.Subject();
-function renderScene(renderer, currentState, points, higlightIdx) {
-    lastRender.onNext({renderer: renderer, currentState: currentState, points: points, higlightIdx: higlightIdx});
+function renderScene(renderer, currentState, points, highlightIdx) {
+    lastRender.onNext({renderer: renderer, currentState: currentState, points: points, highlightIdx: highlightIdx});
 }
 
 var reqAnimationFrame =
@@ -220,7 +220,7 @@ lastRender
             var items = cfg.currentState.get('config').get('scene').get('render').toJS()
                 .filter(function (v) { return v !== 'pointpicking'; });
             cfg.renderer.render(cfg.currentState, items);
-            renderCursor(cfg.currentState, new Float32Array(cfg.points.buffer), cfg.higlightIdx);
+            renderCursor(cfg.currentState, new Float32Array(cfg.points.buffer), cfg.highlightIdx);
         });
     })
     .sample(150).subscribe(
