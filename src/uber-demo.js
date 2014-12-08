@@ -71,9 +71,23 @@ function renderLabels($labelCont, renderState, labelIdx) {
         return;
     }
 
-    curPoints.take(1).subscribe(function (curPoints) {
-        renderLabelsImmediate($labelCont, renderState, curPoints);
-    });
+    curPoints.take(1)
+        .do(function (curPoints) {
+
+            //first run: created the enlarged points for the sampler
+            if (!renderLabelsRan) {
+                renderLabelsRan = true;
+                var allOn = renderer.localAttributeProxy(renderState)('allHighlighted');
+                var amt = curPoints.buffer.byteLength / (4 * 2);
+                for (var i = 0; i < amt; i++) {
+                    allOn.write(i, HIGHLIGHT_SIZE);
+                }
+            }
+
+            renderLabelsImmediate($labelCont, renderState, curPoints, labelIdx);
+
+        })
+        .subscribe(_.identity, makeErrorHandler('renderLabels'));
 }
 
 
@@ -139,15 +153,6 @@ function effectLabels(toClear, toShow, labels, newPos, labelIdx) {
 function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIdx) {
 
     var points = new Float32Array(curPoints.buffer);
-
-    if (!renderLabelsRan) {
-        renderLabelsRan = true;
-        var allOn = renderer.localAttributeProxy(renderState)('allHighlighted');
-        var amt = curPoints.buffer.byteLength / (4 * 2);
-        for (var i = 0; i < amt; i++) {
-            allOn.write(i, HIGHLIGHT_SIZE);
-        }
-    }
 
     var t0 = Date.now();
 
