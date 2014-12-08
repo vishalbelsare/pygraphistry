@@ -77,7 +77,26 @@ function setPoints(graph, points, pointSizes, pointColors) {
     graph.__pointsHostBuffer = points;
 
     graph.stepNumber = 0;
-    return graph.simulator.setPoints(points, pointSizes, pointColors)
+    return graph.simulator.setPoints(points)
+    .then(function (simulator){
+        if (!pointSizes) {
+            pointSizes = new Uint8Array(simulator.numPoints);
+            for (var i = 0; i < simulator.numPoints; i++) {
+                pointSizes[i] = 4;
+            }
+        }
+
+        return simulator.setSizes(pointSizes)
+    }).then(function (simulator) {
+        if (!pointColors) {
+            pointColors = new Uint32Array(simulator.numPoints);
+            for (var i = 0; i < simulator.numPoints; i++) {
+                pointColors[i] = (255 << 24) | (102 << 16) | (102 << 8) | 255;
+            }
+        }
+
+        return simulator.setColors(pointColors)
+    })
     .then(function() {
         return graph;
     });
