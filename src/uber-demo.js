@@ -61,7 +61,7 @@ function genLabel ($labelCont, txt) {
 // $DOM * RendererState  -> ()
 // Immediately reposition each label based on camera and curPoints buffer
 var renderLabelsRan = false;
-function renderLabels($labelCont, renderState) {
+function renderLabels($labelCont, renderState, labelIdx) {
 
     debug('rendering labels');
 
@@ -120,7 +120,7 @@ function newLabelPositions(renderState, labels, points) {
     return newPos;
 }
 
-function effectLabels(toClear, toShow, labels, newPos) {
+function effectLabels(toClear, toShow, labels, newPos, labelIdx) {
 
         //DOM effects
     toClear.forEach(function (lbl) {
@@ -136,7 +136,7 @@ function effectLabels(toClear, toShow, labels, newPos) {
 
 }
 
-function renderLabelsImmediate ($labelCont, renderState, curPoints) {
+function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIdx) {
 
     var points = new Float32Array(curPoints.buffer);
 
@@ -152,7 +152,9 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints) {
     var t0 = Date.now();
 
     var hits = poi.getActiveApprox(renderState, 'pointHitmapDownsampled');
-
+    if (labelIdx > -1) {
+        hits[labelIdx] = true;
+    }
     var t1 = Date.now();
 
     var toClear = poi.finishApprox(poi.state.activeLabels, poi.state.inactiveLabels, hits, renderState, points);
@@ -187,7 +189,7 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints) {
 
     var t3 = Date.now();
 
-    effectLabels(toClear, toShow, labels, newPos);
+    effectLabels(toClear, toShow, labels, newPos, labelIdx);
 
     debug('sampling timing', t1 - t0, t2 - t1, t3 - t2, Date.now() - t3,
         'labels:', labels.length, '/', _.keys(hits).length, poi.state.inactiveLabels.length);
