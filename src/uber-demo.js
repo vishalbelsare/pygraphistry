@@ -166,15 +166,24 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIdx) {
             if (poi.state.activeLabels[idx]) {
                 return poi.state.activeLabels[idx];
             } else {
+
+                var points = new Float32Array(curPoints.buffer);
+                var lblText = ' (' + points[2*idx].toFixed(3) + ', ' + points[2*idx+1].toFixed(3) + ')';
+
+                var contents = $('<div>')
+                                .append($('<span>').text(idx))
+                                .append($('<hr>'))
+                                .append($('<span>').text(lblText));
+
                 if (!poi.state.inactiveLabels.length) {
                     return {
-                        idx: idx,
-                        elt:  genLabel($labelCont, idx)
+                        idx: parseInt(idx),
+                        elt:  genLabel($labelCont, contents)
                     };
                 }
                 var lbl = poi.state.inactiveLabels.pop();
-                lbl.idx = idx;
-                lbl.elt.text(idx);
+                lbl.idx = parseInt(idx);
+                lbl.elt.empty().append(contents);
                 toShow.push(lbl);
                 return lbl;
             }
