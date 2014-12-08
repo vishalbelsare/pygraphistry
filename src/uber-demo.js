@@ -202,6 +202,8 @@ var reqAnimationFrame =
         window.msRequestAnimationFrame     ||
         function (f) { setTimeout(f, 1000 / 60); };
 
+//Render gpu items, text on reqAnimFrame
+//Slower, update the pointpicking sampler (does GPU->CPU transfer)
 var lastRenderTime = 0;
 var mostRecent = null;
 lastRender
@@ -251,6 +253,8 @@ function setupInteractions($eventTarget, renderState) {
         });
 
 
+    //pan/zoom
+    //Observable Event
     var interactions;
     if(interaction.isTouchBased) {
         debug('Detected touch-based device. Setting up touch interaction event handlers.');
@@ -275,6 +279,7 @@ function setupInteractions($eventTarget, renderState) {
                 });
             });
 
+    //Observable int
     var latestHighlightedPoint = new Rx.ReplaySubject(1);
     highlightedPoint.subscribe(latestHighlightedPoint);
 
