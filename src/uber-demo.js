@@ -232,35 +232,66 @@ lastRender
             renderCursor(cfg.currentState, new Float32Array(cfg.points.buffer), cfg.highlightIdx);
         });
     })
-    .sample(100).subscribe(
-        function (cfg) { cfg.renderer.render(cfg.currentState, ['pointpicking']); },
-        function (err) { console.error('Error handling mouse', err, err.stack); });
+    .sample(100)
+    .do(function (cfg) {
+        cfg.renderer.render(cfg.currentState, ['pointpicking']);
+    })
+    .subscribe(_.identity, makeErrorHandler('render effect'));
 
+
+//move labels when camera moves or new highlight
+//$DOM * Observable RenderState -> ()
+function setupLabels ($labelCont, latestState, latestHighlightedPoint) {
+
+    latestState
+        .flatMapLatest(function (currentState) {
+            //wait until has samples
+            return currentState.get('rendered')
+                .filter(function (items) { return items && (items.indexOf('pointsampling') > -1); })
+                .flatMap(function () {
+                    return latestHighlightedPoint.map(function (idx) {
+                        return {idx: idx, currentState: currentState};
+                    });
+                });
+        })
+        .do(function (pair) {
+            var currentState = pair.currentState;
+            var idx = pair.idx;
+            renderLabels($labelCont, currentState, idx);
+        })
+        .subscribe(_.identity, makeErrorHandler('setuplabels'));
+}
+
+//$DOM * RenderState -> Observable int
+//Changes either from point mouseover or a label mouseover
+function getLatestHighlightedPoint ($eventTarget, renderState, labelHover) {
+    var res = new Rx.ReplaySubject(1);
+
+    interaction.setupMousemove($eventTarget, renderState, 'pointHitmap')
+        .filter(function (v) { return v > -1; })
+        .merge(
+            labelHover
+                .map(function (elt) {
+                    return _.values(poi.state.activeLabels)
+                        .filter(function (lbl) { return lbl.elt.get(0) === elt; });
+                })
+                .filter(function (highlightedLabels) { return highlightedLabels.length; })
+                .map(function (highlightedLabels) { return highlightedLabels[0].idx; }))
+        .sample(10)
+        .subscribe(res, makeErrorHandler('getLatestHighlightedPoint'));
+
+    return res;
+}
 
 function setupInteractions($eventTarget, renderState) {
-    var currentState = renderState;
+    //var currentState = renderState;
+
+    var stateStream = new Rx.Subject();
+    var latestState = new Rx.ReplaySubject(1);
+    stateStream.subscribe(latestState);
+    stateStream.onNext(renderState);
+
     var camera = renderState.get('camera');
-
-    var $labelCont = $('<div>').addClass('graph-label-container');
-    $eventTarget.append($labelCont);
-    var labels = _.range(1,10).map(function (i) {
-        return genLabel($labelCont, i);
-    });
-    labels.forEach(function ($lbl, i) {
-        var cont = {idx: i, elt: $lbl};
-        poi.state.inactiveLabels.push(cont);
-    });
-
-    Rx.Observable.combineLatest(
-            currentState.get('hostBuffers').curPoints,
-            currentState.get('rendered').filter(function (items) {
-                return items && (items.indexOf('pointsampling') > -1);
-            }),
-            _.identity)
-        .subscribe(function () {
-            renderLabels($labelCont, currentState);
-        });
-
 
     //pan/zoom
     //Observable Event
@@ -278,11 +309,13 @@ function setupInteractions($eventTarget, renderState) {
 
 
     //Observable int
-    var latestHighlightedPoint = new Rx.ReplaySubject(1);
-    interaction.setupMousemove($eventTarget, currentState, 'pointHitmap')
-            .sample(10)
-            .filter(function (v) { return v > -1; })
-            .subscribe(latestHighlightedPoint);
+    //Either from point mouseover or label mouseover
+    var latestHighlightedPoint = getLatestHighlightedPoint($eventTarget, renderState, labelHover);
+
+    var $labelCont = $('<div>').addClass('graph-label-container');
+    $eventTarget.append($labelCont);
+    setupLabels($labelCont, latestState, latestHighlightedPoint);
+
 
     //render scene on pan/zoom (get latest points etc. at that time)
     interactions
