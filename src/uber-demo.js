@@ -27,23 +27,30 @@ function sendSetting(socket, name, value) {
 var HIGHLIGHT_SIZE = 20;
 
 
+function makeErrorHandler(name) {
+    return function (err) {
+        console.error(name, err, (err || {}).stack);
+    };
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Event handler setup
 ///////////////////////////////////////////////////////////////////////////////
 
+//Observable DOM
+var labelHover = new Rx.Subject();
 
+//create label, attach to dom, and on hover, notify labelHover
 function genLabel ($labelCont, txt) {
 
-    var res = $('<span>')
+    var res = $('<div>')
         .addClass('graph-label')
         .css('display', 'none')
-        .text(txt)
+        .empty()
+        .append(txt)
         .on('mouseover', function () {
-            $(this).addClass('on');
-        })
-        .on('mouseout', function () {
-            $(this).removeClass('on');
+            labelHover.onNext(this);
         });
 
     $labelCont.append(res);
@@ -286,12 +293,14 @@ function setupInteractions($eventTarget, renderState) {
                 })
                 .take(1);
         })
-        .subscribe(function(data) {
-            currentState = renderer.setCameraIm(renderState, data.camera);
+        .do(function(data) {
+            var currentState = renderer.setCameraIm(renderState, data.camera);
+            stateStream.onNext(currentState);
             renderScene(renderer, currentState, data.curPoints, data.idx);
-        });
+        })
+        .subscribe(_.identity, makeErrorHandler('render scene on pan/zoom'));
 
-    //change highlighted label on mouseover
+    //change highlighted point on hover, central label
     latestHighlightedPoint
         .scan(
             {prevIdx: -1, curIdx: -1},
@@ -307,7 +316,7 @@ function setupInteractions($eventTarget, renderState) {
                     return _.extend({}, data, {curPoints: curPoints});
                 });
         })
-        .subscribe(function (prevCur) {
+        .do(function (prevCur) {
 
             debug('Hitmap detected mouseover on a new point with index', prevCur.curIdx);
 
@@ -323,8 +332,8 @@ function setupInteractions($eventTarget, renderState) {
             if (idx > -1) {
                 renderCursor(renderState, new Float32Array(points.buffer), idx);
             }
-        },
-        function (err) { console.error('mouse move err', err, err.stack); });
+        })
+        .subscribe(_.identity, makeErrorHandler('mouse move err'));
 
 }
 
@@ -372,9 +381,11 @@ function init(socket, $elt, renderState) {
     window.$OLD('#timeSlider').on('valuesChanging', function (e, data) {
         timeSlide.onNext({min: data.values.min, max: data.values.max});
     });
-    timeSlide.sample(3).subscribe(function (when) {
-        socket.emit('graph_settings', {timeSubset: {min: when.min, max: when.max}});
-    });
+    timeSlide.sample(3)
+        .do(function (when) {
+            socket.emit('graph_settings', {timeSubset: {min: when.min, max: when.max}});
+        })
+        .subscribe(_.identity, makeErrorHandler('timeSlide'));
 
 
     $('.menu-slider').each(function () {
@@ -393,11 +404,10 @@ function init(socket, $elt, renderState) {
             .map(function() {
                 return slider.getValue() / 1000;
             })
-            .subscribe(function (val) {
+            .do(function (val) {
                 sendSetting(socket, name, val);
-            }, function (err) {
-                console.error('nooo', err);
-            });
+            })
+            .subscribe(_.identity, makeErrorHandler('menu slider'));
     });
 }
 
