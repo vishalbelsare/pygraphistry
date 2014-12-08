@@ -223,7 +223,7 @@ lastRender
             renderCursor(cfg.currentState, new Float32Array(cfg.points.buffer), cfg.highlightIdx);
         });
     })
-    .sample(150).subscribe(
+    .sample(100).subscribe(
         function (cfg) { cfg.renderer.render(cfg.currentState, ['pointpicking']); },
         function (err) { console.error('Error handling mouse', err, err.stack); });
 
