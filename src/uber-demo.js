@@ -268,49 +268,51 @@ function setupInteractions($eventTarget, renderState) {
     }
 
 
-    var highlightedPoint =
-        interaction.setupMousemove($eventTarget, currentState, 'pointHitmap')
-            .sample(10)
-            .filter(_.identity)
-            .flatMap(function (idx) {
-                return renderState.get('hostBuffers').curPoints.take(1)
-                .map(function (curPoints) {
-                    return {idx: idx, curPoints: curPoints};
-                });
-            });
-
     //Observable int
     var latestHighlightedPoint = new Rx.ReplaySubject(1);
-    highlightedPoint.subscribe(latestHighlightedPoint);
+    interaction.setupMousemove($eventTarget, currentState, 'pointHitmap')
+            .sample(10)
+            .filter(function (v) { return v > -1; })
+            .subscribe(latestHighlightedPoint);
 
-    interactions.flatMapLatest(function (camera) {
-        return latestHighlightedPoint.take(1)
-            .map(function(pointPair) {
-                return _.extend({}, {camera: camera}, pointPair);
-            });
+    //render scene on pan/zoom (get latest points etc. at that time)
+    interactions
+        .flatMapLatest(function (camera) {
+            return Rx.Observable.combineLatest(
+                latestHighlightedPoint,
+                renderState.get('hostBuffers').curPoints,
+                function (idx, curPoints) {
+                    return _.extend({}, {idx: idx, camera: camera, curPoints: curPoints});
+                })
+                .take(1);
         })
         .subscribe(function(data) {
             currentState = renderer.setCameraIm(renderState, data.camera);
             renderScene(renderer, currentState, data.curPoints, data.idx);
         });
 
-    highlightedPoint
+    //change highlighted label on mouseover
+    latestHighlightedPoint
         .scan(
-            {prev: {idx: -1, curPoints: []}, cur: {idx: -1, curPoints: []}},
-            function (acc, pair) {
-                return {prev: acc.cur, cur: pair};
-            })
+            {prevIdx: -1, curIdx: -1},
+            function (acc, idx) { return {prevIdx: acc.curIdx, curIdx: idx}; })
         .filter(function (prevCur) {
-            debug('Point hitmap got index:', prevCur.cur.idx);
-            return prevCur.prev.idx !== prevCur.cur.idx;
+            debug('Point hitmap got index:', prevCur.curIdx);
+            return prevCur.prevIdx !== prevCur.curIdx;
+        })
+        .flatMap(function (data) {
+            return renderState.get('hostBuffers').curPoints
+                .take(1)
+                .map(function (curPoints) {
+                    return _.extend({}, data, {curPoints: curPoints});
+                });
         })
         .subscribe(function (prevCur) {
 
-            debug('Hitmap detected mouseover on a new point with index',
-                prevCur && prevCur.cur ? prevCur.cur.idx : undefined);
+            debug('Hitmap detected mouseover on a new point with index', prevCur.curIdx);
 
-            var idx = prevCur.cur.idx;
-            var curPoints = prevCur.cur.curPoints;
+            var idx = prevCur.curIdx;
+            var curPoints = prevCur.curPoints;
 
             var points = new Float32Array(curPoints.buffer);
 
