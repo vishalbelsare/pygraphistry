@@ -101,7 +101,7 @@ button.btn-default {
 
     opacity: 0.8;
 
-    width: 4em;
+    max-width: 7em;
     overflow: hidden;
     height: 2em;
 
@@ -125,16 +125,13 @@ button.btn-default {
 
     box-shadow: 0 0 10px rgba(255,255,255,0.75);
 
+    z-index: 10000;
+
 }
 
-.graph-label:after {
-    content: ' lorem ipsum';
-    visibility: hidden;
-}
+.graph-label.on hr { margin: 0; margin-bottom: 0.3em;}
+.graph-label.on > div:first-child { margin-bottom: 0.5em; }
 
-.graph-label.on:after {
-    visibility: visible;
-}
 
 #highlighted-point-cont {
     position: absolute;
