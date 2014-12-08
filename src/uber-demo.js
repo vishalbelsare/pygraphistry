@@ -136,16 +136,22 @@ function newLabelPositions(renderState, labels, points) {
 
 function effectLabels(toClear, toShow, labels, newPos, labelIdx) {
 
-        //DOM effects
+    //DOM effects: disable old, then move->enable new
     toClear.forEach(function (lbl) {
         lbl.elt.css('display','none');
-    });
-    toShow.forEach(function (lbl) {
-        lbl.elt.css('display', 'block');
     });
 
     labels.forEach(function (elt, i) {
         elt.elt.css('left', newPos[2 * i]).css('top', newPos[2 * i + 1]);
+        elt.elt.removeClass('on');
+    });
+
+    if (labelIdx > -1) {
+        poi.state.activeLabels[labelIdx].elt.addClass('on');
+    }
+
+    toShow.forEach(function (lbl) {
+        lbl.elt.css('display', 'block');
     });
 
 }
