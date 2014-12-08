@@ -76,6 +76,7 @@ function create(renderer, dimensions, numSplits, locked) {
             simObj.numBackwardsWorkItems = 0;
             simObj.numMidPoints = 0;
             simObj.numMidEdges = 0;
+            simObj.postSlider = false; // Enable/Disable Leo's slider
             simObj.locked = _.extend(
                 {lockPoints: false, lockMidpoints: true, lockEdges: false, lockMidedges: true},
                 (locked || {})
@@ -239,8 +240,8 @@ function setPoints(simulator, points) {
     .then(gaussSeidel.setPoints.bind('', simulator))
     .then(forceAtlas.setPoints.bind('', simulator))
     .then(edgeBundling.setPoints.bind('', simulator))
-    .then(function () {
-        return simulator;
+    .then(function () {return simulator;}, function () {
+        console.error("Failure in SimCl.setPoints")
     });
 }
 
@@ -265,6 +266,8 @@ function setSizes(simulator, pointSizes) {
 
         simulator.renderer.buffers.pointSizes = pointSizesVBO;
         return simulator;
+    }).then(function () {return simulator;}, function () {
+        console.error("Failure in SimCl.setSizes")
     });
 }
 
@@ -282,6 +285,8 @@ function setColors(simulator, pointColors) {
 
         simulator.renderer.buffers.pointColors = pointColorsVBO;
         return simulator;
+    }).then(function () {return simulator;}, function () {
+        console.error("Failure in SimCl.setColors")
     });
 }
 
@@ -416,7 +421,8 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints,
                 }));
     })
     .then(function () {
-        setTimeSubset(renderer, simulator, simulator.timeSubset.relRange);
+        if (simulator.postSlider)
+            setTimeSubset(renderer, simulator, simulator.timeSubset.relRange);
         return simulator;
     })
     .then(_.identity, function (err) {

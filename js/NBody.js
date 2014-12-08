@@ -97,8 +97,8 @@ function setPoints(graph, points, pointSizes, pointColors) {
 
         return simulator.setColors(pointColors)
     })
-    .then(function() {
-        return graph;
+    .then(function() {return graph;}, function () {
+        console.error("Failure in NBody.setPoints")
     });
 }
 
