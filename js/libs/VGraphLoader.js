@@ -31,25 +31,26 @@ var decoders = {
 
 var attributeLoaders = function(graph) {
     return {
-        pointSizes: {
-            load: function (sizes) {
-                graph.setSizes(normalizeUInt8(logTransform(sizes), 5))
-            },
+        pointSize: {
+            load: graph.setSizes,
             type : "number",
             default: graph.setSizes,
-            target: VERTEX 
+            target: VERTEX,
+            values: undefined
         },
         pointColor: {
             load: graph.setColors,
             type: "number",
             default: graph.setColors,
-            target: VERTEX
+            target: VERTEX,
+            values: undefined
         },
         edgeColor: {
             load: graph.setEdgeColors,
             type: "[number, number]",
             default: graph.setEdgeColors,
-            target: EDGE
+            target: EDGE,
+            values: undefined
         }
     };
 }
@@ -57,7 +58,7 @@ var attributeLoaders = function(graph) {
 function load(graph, dataset) {
     return unpack(dataset.file).then(function (content) {
         var vg = pb_root.VectorGraph.decode(content)
-        return decoders[vg.version](graph, vg, dataset.mappings);
+        return decoders[vg.version](graph, vg, dataset.config);
     });
 }
 
@@ -85,7 +86,7 @@ function getAttributeMap(vg) {
     return map;
 }
 
-function decode0(graph, vg, mappings)  {
+function decode0(graph, vg, config)  {
     debug("Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)",
           vg.version, vg.name, vg.nvertices, vg.nedges);
 
@@ -93,8 +94,7 @@ function decode0(graph, vg, mappings)  {
     debug("Graph has attribute: %o", Object.keys(amap))
     var vertices = [];
     var edges = []
-    var dimensions = [1, 1];
-    var loaders = attributeLoaders(graph);
+    var dimensions = [1, 1]; 
 
     for (var i = 0; i < vg.nvertices; i++) {
         var vertex = [];
@@ -108,34 +108,35 @@ function decode0(graph, vg, mappings)  {
         edges.push([e.src, e.dst]);
     }
 
-    if (mappings) {
-        for (var key in mappings) {
-            if (!(key in loaders)) {
-                console.warn("WARNING No loader for attribute " + key);
-                continue;
-            }
-            var loader = loaders[key];
+    var loaders = attributeLoaders(graph);
+    var mapper = undefined; 
+    if (config.mapper) {
+        mapper = mappers[config.mapper]
+        if (mapper)
+            loaders = mapper.wrap(loaders)
+        else
+            console.warn("WARNING Unknown mapper ", config.mapper);
+    }
+    
+    debug("Attribute loaders: %o", loaders)
+    
+    for (var vname in amap) {
+        if (!(vname in loaders)) 
+            continue;
+        var loader = loaders[vname];
 
-            var vname = mappings[key];
-            if (!(vname in amap)) {
-                console.warn("WARNING Dataset has no attribute vector named " + vname);
-                continue;
-            }
-
-            var vec = amap[vname];
-            if (vec.target != loader.target) {
-                console.warn("WARNING Vertex/Node attribute mismatch for " + vname);
-                continue;
-            }
-
-            if (vec.type != loader.type) {
-                console.warn("WARNING Expected type " + loader.type + " but got " + vec.type);
-                continue;
-            }
-
-            debug("Loading " + vname + " as " + key); 
-            loaders[key].values = vec.values;
+        var vec = amap[vname];
+        if (vec.target != loader.target) {
+            console.warn("WARNING Vertex/Node attribute mismatch for " + vname);
+            continue;
         }
+
+        if (vec.type != loader.type) {
+            console.warn("WARNING Expected type " + loader.type + " but got " + vec.type);
+            continue;
+        }
+
+        loaders[vname].values = vec.values;
     }
 
     var vloaders = _.filter(loaders, function (l) {return l.target == VERTEX;});
@@ -157,11 +158,45 @@ function decode0(graph, vg, mappings)  {
 function runLoaders(loaders) {
     for (var i = 0; i < loaders.length; i++) {
         var loader = loaders[i];
+        debug("LOADER %o", loader)
         if (loader.values)
             loader.load(loader.values);
         else if (loader.default)
             loader.default()
     }
+}
+
+var testMapper = {
+    mappings: {
+        pointSize: {
+            name: "degree",
+            transform: function (v) {
+                return normalizeUInt8(logTransform(v), 5)
+            }
+        }
+    },
+
+    wrap: function(loaders) {
+        var res = {}
+        for (var a in loaders) {
+            if (a in testMapper.mappings) {
+                var loader = loaders[a];
+                var mapping = testMapper.mappings[a];
+                if (mapping.transform) {
+                    var oldLoad = loader.load;
+                    loader.load = function (data) {oldLoad(mapping.transform(data))}
+                }
+                res[mapping.name] = loader;
+                debug("Mapping " + mapping.name + " as " + a); 
+            } else
+                res[a] = loaders[a];
+        }
+        return res;
+    }
+}
+
+var mappers = {
+    "opentsdbflowdump_1hrMapper": testMapper
 }
 
 function logTransform(array) {
