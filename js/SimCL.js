@@ -62,6 +62,7 @@ function create(renderer, dimensions, numSplits, locked) {
             simObj.setSizes = setSizes.bind(this, simObj);
             simObj.setColors = setColors.bind(this, simObj);
             simObj.setEdges = setEdges.bind(this, renderer, simObj);
+            simObj.setEdgeColors = setEdgeColors.bind(this, simObj);
             simObj.setLocked = setLocked.bind(this, simObj);
             simObj.setPhysics = setPhysics.bind(this, simObj);
             simObj.setTimeSubset = setTimeSubset.bind(this, renderer, simObj);
@@ -266,8 +267,8 @@ function setSizes(simulator, pointSizes) {
 
         simulator.renderer.buffers.pointSizes = pointSizesVBO;
         return simulator;
-    }).then(function () {return simulator;}, function () {
-        console.error("Failure in SimCl.setSizes")
+    }).fail(function (error) {
+        console.error("ERROR Failure in SimCl.setSizes", error.stack)
     });
 }
 
@@ -285,8 +286,8 @@ function setColors(simulator, pointColors) {
 
         simulator.renderer.buffers.pointColors = pointColorsVBO;
         return simulator;
-    }).then(function () {return simulator;}, function () {
-        console.error("Failure in SimCl.setColors")
+    }).fail(function (error) {
+        console.error("ERROR Failure in SimCl.setColors", error.stack)
     });
 }
 
@@ -304,10 +305,9 @@ function setColors(simulator, pointColors) {
  * @param {edgesTyped: {Uint32Array}, numWorkItems: uint, workItemsTypes: {Uint32Array} } backwardsEdges -
  *        Same as forwardsEdges, except reverse edge src/dst and redefine workItems/numWorkItems corresondingly.
  * @param {Float32Array} midPoints - dense array of control points (packed sequence of nDim structs)
- * @param {Uint32Array} edgeColors - dense array of edge start and end colors
  * @returns {Q.promise} a promise for the simulator object
  */
-function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints, edgeColors) {
+function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints) {
     //edges, workItems
     var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
     var elementsPerWorkItem = 2;
@@ -326,16 +326,6 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints,
     }
 
     simulator.bufferHostCopies.forwardsEdges = forwardsEdges;
-
-    if (!edgeColors) {
-        edgeColors = new Uint32Array(forwardsEdges.edgesTyped.length);
-        for (var i = 0; i < edgeColors.length; i++) {
-            var nodeIdx = forwardsEdges.edgesTyped[i];
-            edgeColors[i] = simulator.buffersLocal.pointColors[nodeIdx];
-        }
-    }
-    simulator.tickBuffers(['edgeColors']);
-    simulator.buffersLocal.edgeColors = edgeColors;
 
     simulator.resetBuffers([
         simulator.buffers.forwardsEdges,
@@ -431,6 +421,26 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints,
     });
 }
 
+
+/**
+ * Sets the edge colors for the graph
+ *
+ * @param simulator - the simulator object to set the edges for
+ * @param {Uint32Array} edgeColors - dense array of edge start and end colors
+ */
+function setEdgeColors(simulator, edgeColors) {
+    if (!edgeColors) {
+        var forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
+        edgeColors = new Uint32Array(forwardsEdges.edgesTyped.length);
+        for (var i = 0; i < edgeColors.length; i++) {
+            var nodeIdx = forwardsEdges.edgesTyped[i];
+            edgeColors[i] = simulator.buffersLocal.pointColors[nodeIdx];
+        }
+    }
+    simulator.tickBuffers(['edgeColors']);
+    simulator.buffersLocal.edgeColors = edgeColors;
+    return simulator;
+}
 
 function setLocked(simulator, cfg) {
     _.extend(simulator.locked, cfg || {});
@@ -530,5 +540,6 @@ module.exports = {
     "setSizes": setSizes,
     "setColors": setColors,
     "setEdges": setEdges,
+    "setEdgeColors": setEdgeColors,
     "tick": tick
 };

@@ -2,6 +2,7 @@
 
 var $ = require('jquery');
 var Q = require('q');
+var _ = require('underscore');
 var fs = require('fs');
 var debug = require("debug")("graphistry:graph-viz:data-loader");
 var pb = require("protobufjs");
@@ -20,14 +21,41 @@ pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'), function (err, b
     }
 });
 
+// TODO: Figure out how to read enum from protobuf
+var VERTEX = 0;
+var EDGE = 1;
+
 var decoders = {
     0: decode0
+}
+
+var attributeLoaders = function(graph) {
+    return {
+        pointSizes: {
+            load: graph.setSizes,
+            type : "number",
+            hasDefault: true,
+            target: VERTEX 
+        },
+        pointColor: {
+            load: graph.setColors,
+            type: "number",
+            hasDefault: true,
+            target: VERTEX
+        },
+        edgeColor: {
+            load: graph.setEdgeColors,
+            type: "[number, number]",
+            hasDefault: true,
+            target: EDGE
+        }
+    };
 }
 
 function load(graph, dataset) {
     return unpack(dataset.file).then(function (content) {
         var vg = pb_root.VectorGraph.decode(content)
-        return decoders[vg.version](graph, vg);
+        return decoders[vg.version](graph, vg, dataset.mappings);
     });
 }
 
@@ -43,37 +71,28 @@ function unpack(filename) {
         return content;
 }
 
-function listAttributeValues(vg) {
+function getAttributeMap(vg) {
     var vectors = vg.string_vectors.concat(vg.int32_vectors, vg.double_vectors);
-    var res = [];
+    var map = {};
     for (var i = 0; i < vectors.length; i++) {
         var v = vectors[i];
-        res.push([v.name, v.type, typeof(v.values[0])]);
+        if (v.values.length > 0)
+            map[v.name] = {"target" : v.target, "type": typeof(v.values[0]),
+                           "values": v.values}
     }
-    return res;
+    return map;
 }
 
-function getAttributeValues(vg, name) {
-    var vectors = vg.string_vectors.concat(vg.int32_vectors, vg.double_vectors);
-    for (var i = 0; i < vectors.length; i++) {
-        var v = vectors[i];
-        if (v.name == name)
-            return v.values;
-    }
-}
-
-function decode0(graph, vg)  {
+function decode0(graph, vg, mappings)  {
     debug("Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)",
           vg.version, vg.name, vg.nvertices, vg.nedges);
 
-    debug("Graph has attributes: %o", listAttributeValues(vg));
-
+    var amap = getAttributeMap(vg);
+    debug("Graph has attribute: %o", Object.keys(amap))
     var vertices = [];
     var edges = []
     var dimensions = [1, 1];
-
-    var VERTEX = 0;
-    var EDGE = 1;
+    var loaders = attributeLoaders(graph);
 
     for (var i = 0; i < vg.nvertices; i++) {
         var vertex = [];
@@ -87,31 +106,60 @@ function decode0(graph, vg)  {
         edges.push([e.src, e.dst]);
     }
 
-    for (var i = 0; i < vg.string_vectors.length; i++) {
-        var v = vg.string_vectors[i];
-        if (v.type == VERTEX)
-            graph.setPointAttributes(v.name, "string", v.values);
+    if (mappings) {
+        for (var key in mappings) {
+            if (!(key in loaders)) {
+                console.warn("WARNING No loader for attribute " + key);
+                continue;
+            }
+            var loader = loaders[key];
+
+            var vname = mappings[key];
+            if (!(vname in amap)) {
+                console.warn("WARNING Dataset has no attribute vector named " + vname);
+                continue;
+            }
+
+            var vec = amap[vname];
+            if (vec.target != loader.target) {
+                console.warn("WARNING Vertex/Node attribute mismatch for " + vname);
+                continue;
+            }
+
+            if (vec.type != loader.type) {
+                console.warn("WARNING Expected type " + loader.type + " but got " + vec.type);
+                continue;
+            }
+
+            debug("Loading " + vname + " as " + key); 
+            loaders[key].values = vec.values;
+        }
     }
 
-    for (var i = 0; i < vg.double_vectors.length; i++) {
-        var v = vg.double_vectors[i];
-        if (v.type == VERTEX)
-            graph.setPointAttributes(v.name, "float", v.values);
+    var vloaders = _.filter(loaders, function (l) {return l.target == VERTEX;});
+    var eloaders = _.filter(loaders, function (l) {return l.target == EDGE;});
+
+    return graph.setVertices(vertices)
+    .then(function () {
+        runLoaders(vloaders);
+        return graph.setEdges2(edges);
+    }).then(function () {
+        runLoaders(eloaders);
+        return graph; 
+    })
+    .catch(function (error) {
+        console.error("ERROR Failure in VGraphLoader ", error.stack)
+    })
+}
+
+function runLoaders(loaders) {
+    for (var i = 0; i < loaders.length; i++) {
+        var loader = loaders[i];
+        if (loader.values || loader.hasDefault)
+            loader.load(loader.values);
     }
-
-    for (var i = 0; i < vg.int32_vectors.length; i++) {
-        var v = vg.int32_vectors[i];
-        if (v.type == VERTEX)
-            graph.setPointAttributes(v.name, "int", v.values);
-    }
-
-    return graph.setPoints(vertices).then(function () {
-        return graph.setEdges(edges);
-    });
-
 }
 
 module.exports = {
     load: load,
 };
-// vim: set et ff=unix ts=8 sw=4 fdm=syntax:

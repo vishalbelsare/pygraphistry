@@ -21,17 +21,17 @@ message VectorGraph {
   }
   message Int32AttributeVector {
     required string name = 1;
-    required AttributeTarget type = 2;
+    required AttributeTarget target = 2;
     repeated uint32 values = 3 [packed=true];
   }
   message DoubleAttributeVector {
     required string name = 1;
-    required AttributeTarget type = 2;
+    required AttributeTarget target = 2;
     repeated double values = 3 [packed=true];
   }
   message StringAttributeVector {
     required string name = 1;
-    required AttributeTarget type = 2;
+    required AttributeTarget target = 2;
     repeated string values = 3;
   }
   
