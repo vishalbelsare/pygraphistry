@@ -32,21 +32,23 @@ var decoders = {
 var attributeLoaders = function(graph) {
     return {
         pointSizes: {
-            load: graph.setSizes,
+            load: function (sizes) {
+                graph.setSizes(normalizeUInt8(logTransform(sizes), 5))
+            },
             type : "number",
-            hasDefault: true,
+            default: graph.setSizes,
             target: VERTEX 
         },
         pointColor: {
             load: graph.setColors,
             type: "number",
-            hasDefault: true,
+            default: graph.setColors,
             target: VERTEX
         },
         edgeColor: {
             load: graph.setEdgeColors,
             type: "[number, number]",
-            hasDefault: true,
+            default: graph.setEdgeColors,
             target: EDGE
         }
     };
@@ -155,9 +157,31 @@ function decode0(graph, vg, mappings)  {
 function runLoaders(loaders) {
     for (var i = 0; i < loaders.length; i++) {
         var loader = loaders[i];
-        if (loader.values || loader.hasDefault)
+        if (loader.values)
             loader.load(loader.values);
+        else if (loader.default)
+            loader.default()
     }
+}
+
+function logTransform(array) {
+    var res = [];
+    for (var i = 0; i < array.length; i++)
+        res[i] = (array[i] <= 0 ? 0 : Math.log(array[i]))
+    return res;
+}
+
+function normalizeUInt8(array, minimum) {
+    var max = _.max(array);
+    var min = _.min(array);
+
+    var scaleFactor = (Math.pow(2, 8) - minimum) / (max - min + 1)
+
+    var res = [];
+    for (var i = 0; i < array.length; i++)
+        res[i] = minimum + Math.floor((array[i] - min) * scaleFactor);
+    debug("DEGREES %o", res)
+    return res;
 }
 
 module.exports = {

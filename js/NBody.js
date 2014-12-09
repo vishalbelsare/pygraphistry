@@ -72,6 +72,7 @@ function updateSettings (graph, cfg) {
     }
 }
 
+// TODO Deprecate and remove
 function setPoints(graph, points, pointSizes, pointColors) {
     // FIXME: If there is already data loaded, we should to free it before loading new data
     return setVertices(graph, points)
@@ -139,6 +140,7 @@ function setDefaultColors(simulator) {
     return simulator.setColors(pointColors);
 }
 
+// TODO Deprecate and remove
 function setEdges(graph, edges, edgeColors) {
     return setEdges2(graph, edges)
     .then(function () {
@@ -259,7 +261,7 @@ var setEdges2 = Q.promised(function(graph, edges) {
 });
 
 function setEdgeColors(graph, edgeColors) {
-    debug("Setting Edge colors");
+    debug("Loading edgeColors");
     return graph.simulator.setEdgeColors(edgeColors);
 }
 
