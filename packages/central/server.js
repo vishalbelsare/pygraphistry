@@ -195,7 +195,7 @@ app.get('/uber', function(req, res) {
 
 Rx.Observable.return()
     .flatMap(function () {
-        if(config.ENVIRONMENT !== 'production' && config.ENVIRONMENT !== 'staging') {
+        if(config.ENVIRONMENT === 'local') {
             return Rx.Observable.return();
         } else {
             return Rx.Observable.fromNodeCallback(
