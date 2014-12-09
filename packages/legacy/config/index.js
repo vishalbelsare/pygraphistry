@@ -9,7 +9,8 @@ module.exports = function() {
         MONGO_SERVER: 'localhost',
         DATABASE: 'graphistry-dev',
         HOSTNAME: 'localhost',
-        DATALISTURI: 'node_modules/datasets/all.json'
+        DATALISTURI: 'node_modules/datasets/all.json',
+        ENVIRONMENT: 'local'
     };
 
     var commandLineOptions = {};
@@ -24,12 +25,12 @@ module.exports = function() {
     var options = _.extend(defaultOptions, commandLineOptions);
 
     // Supervisor passes "PRODUCTION" = true as a command line arg in prod
-    if (options.PRODUCTION) {
+    if (options.ENVIRONMENT == 'production') {
         options.DATABASE = 'graphistry-prod';
         options.MONGO_SERVER = 'mongodb://graphistry:graphtheplanet@lighthouse.2.mongolayer.com:10048,lighthouse.3.mongolayer.com:10048/graphistry-prod';
     }
 
-    if (options.STAGING) {
+    if (options.ENVIRONMENT == 'staging') {
         options.DATABASE = 'graphistry-staging';
         options.MONGO_SERVER = 'mongodb://graphistry:graphtheplanet@lighthouse.2.mongolayer.com:10048,lighthouse.3.mongolayer.com:10048/graphistry-staging';
     }
