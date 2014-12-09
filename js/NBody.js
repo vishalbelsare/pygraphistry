@@ -39,8 +39,12 @@ function create(simulator, renderer, document, canvas, bgColor, dimensions, numS
                         "simulator": sim
                     };
                     graph.setPoints = setPoints.bind(this, graph);
-                    graph.setPointAttributes = setPointAttributes.bind(this, graph);
+                    graph.setVertices = setVertices.bind(this, graph);
+                    graph.setSizes = setSizes.bind(this, graph);
+                    graph.setColors = setColors.bind(this, graph);
                     graph.setEdges = setEdges.bind(this, graph);
+                    graph.setEdgesAndColors = setEdgesAndColors.bind(this, graph);
+                    graph.setEdgeColors = setEdgeColors.bind(this, graph);
                     graph.setPhysics = setPhysics.bind(this, graph);
                     graph.setVisible = setVisible.bind(this, graph);
                     graph.setLocked = setLocked.bind(this, graph);
@@ -68,8 +72,24 @@ function updateSettings (graph, cfg) {
     }
 }
 
+// TODO Deprecate and remove. Left for Uber compatibitily
 function setPoints(graph, points, pointSizes, pointColors) {
     // FIXME: If there is already data loaded, we should to free it before loading new data
+    return setVertices(graph, points)
+    .then(function (simulator) {
+        return setSizes(graph, pointSizes);        
+    }).then(function (simulator) {
+        return setColors(graph, pointColors);
+    })
+    .then(function() {
+        return graph;
+    }).catch(function (error) {
+        console.error("ERROR Failure in NBody.setPoints ", error.stack);
+    });
+}
+
+function setVertices(graph, points) {
+    debug("Loading Vertices")
     if(!(points instanceof Float32Array)) {
         points = _toTypedArray(points, Float32Array);
     }
@@ -77,18 +97,59 @@ function setPoints(graph, points, pointSizes, pointColors) {
     graph.__pointsHostBuffer = points;
 
     graph.stepNumber = 0;
-    return graph.simulator.setPoints(points, pointSizes, pointColors)
-    .then(function() {
-        return graph;
+    return graph.simulator.setPoints(points)
+}
+
+function setSizes(graph, pointSizes) {
+    if (!pointSizes)
+        return setDefaultSizes(graph.simulator);
+
+    debug("Loading pointSizes")
+    var _pointSizes = new Uint8Array(graph.simulator.numPoints);
+    var min = 0, max = Math.pow(2, 8) - 1;
+    if (!_.all(pointSizes, function (s) {return s >= min && s <= max}))
+        console.warn("WARNING Point size out of range, capping to 8 bits")
+    for (var i = 0; i < graph.simulator.numPoints; i++)
+        _pointSizes[i] = Math.min(max, Math.max(min, pointSizes[i]));
+    return graph.simulator.setSizes(_pointSizes)
+}
+
+function setDefaultSizes(simulator) {
+    debug("Using default node sizes");
+    var pointSizes = new Uint8Array(simulator.numPoints);
+    for (var i = 0; i < simulator.numPoints; i++)
+        pointSizes[i] = 4;
+
+    return simulator.setSizes(pointSizes);
+}
+
+function setColors(graph, pointColors) {
+    if (!pointColors)
+        return setDefaultColors(graph.simulator);
+
+    console.error("ERROR TODO SET COLORS");
+    process.abort();
+}
+
+function setDefaultColors(simulator) {
+    debug("Using default node colors");
+    var pointColors = new Uint32Array(simulator.numPoints);
+    for (var i = 0; i < simulator.numPoints; i++)
+        pointColors[i] = (255 << 24) | (102 << 16) | (102 << 8) | 255;
+
+    return simulator.setColors(pointColors);
+}
+
+// TODO Deprecate and remove. Left for Uber compatibility
+function setEdgesAndColors(graph, edges, edgeColors) {
+    return setEdges(graph, edges)
+    .then(function () {
+        setEdgeColors(graph, edgeColors)
     });
 }
 
-function setPointAttributes(graph, name, type, values) {
-    // TODO code me.
-}
-
-var setEdges = Q.promised(function(graph, edges, edgeColors) {
-
+var setEdges = Q.promised(function(graph, edges) {
+    debug("Loading Edges")
     if (edges.length < 1)
         return Q.fcall(function() { return graph; });
 
@@ -199,10 +260,18 @@ var setEdges = Q.promised(function(graph, edges, edgeColors) {
     }
     debug("Number of control points, splits: %d, %d", edges.length * graph.numSplits, graph.numSplits);
 
-    return graph.simulator.setEdges(forwardEdges, backwardsEdges, midPoints, edgeColors)
-    .then(function() { return graph; });
+    return graph.simulator.setEdges(forwardEdges, backwardsEdges, midPoints)
+    .then(function() { 
+        return graph; 
+    }).fail(function (error) {
+        console.error("ERROR Failure in NBody.setEdges ", error.stack);
+    });
 });
 
+function setEdgeColors(graph, edgeColors) {
+    debug("Loading edgeColors");
+    return graph.simulator.setEdgeColors(edgeColors);
+}
 
 function setPhysics(graph, opts) {
     graph.stepNumber = STEP_NUMBER_ON_CHANGE;

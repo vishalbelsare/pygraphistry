@@ -176,8 +176,13 @@ function getBufferVersion (graph, bufferName) {
 
 function graphCounts(graph) {
 
-    var numPoints = graph.simulator.timeSubset.pointsRange.len;
-    var numEdges = graph.simulator.timeSubset.edgeRange.len;
+    if (graph.simulator.postSlider) {
+        var numPoints = graph.simulator.timeSubset.pointsRange.len;
+        var numEdges = graph.simulator.timeSubset.edgeRange.len;
+    } else {
+        var numPoints = graph.simulator.numPoints;
+        var numEdges = graph.simulator.numEdges;
+    }
 
     var numMidPoints =
         Math.round((numPoints / graph.renderer.numPoints) * graph.renderer.numMidPoints);
@@ -229,11 +234,18 @@ function fetchVBOs(graph, bufferNames) {
                 buffer: new ArrayBuffer(bufferSizes[name]),
                 version: graph.simulator.versions.buffers[name]
             };
-            var modelName = bufferToModel[name][0];
-            var stride = bufferToModel[name][1];
-            return graph.simulator.buffers[name].read(
-                new Float32Array(targetArrays[name].buffer),
-                counts[modelName] * stride);
+
+            if (graph.simulator.postSlider) {
+                var modelName = bufferToModel[name][0];
+                var stride = bufferToModel[name][1];
+                return graph.simulator.buffers[name].read(
+                    new Float32Array(targetArrays[name].buffer),
+                    counts[modelName] * stride);
+            } else {
+                return graph.simulator.buffers[name].read(
+                    new Float32Array(targetArrays[name].buffer)
+                )
+            }
     }))
     .then(function() {
         var localBuffers = {
@@ -533,5 +545,3 @@ if(require.main === module) {
 
     vbosUpdated.subscribe(function() { debug("Got updated VBOs"); } );
 }
-
-// vim: set et ff=unix ts=8 sw=4 fdm=syntax: 

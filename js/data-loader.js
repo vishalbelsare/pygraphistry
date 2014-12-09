@@ -135,7 +135,7 @@ function loadRandom(graph, dataset) {
 
     return graph.setPoints(points).then(function() {
         graph.setColorMap("test-colormap2.png");
-        return graph.setEdges(edges);
+        return graph.setEdgesAndColors(edges);
     });
 }
 
@@ -156,7 +156,7 @@ function loadRectangle(graph, dataset) {
             true);
     return graph.setPoints(new Float32Array(_.flatten(points)))
         .then(function () {
-            return graph.setEdges(new Uint32Array([0,1]));
+            return graph.setEdgesAndColors(new Uint32Array([0,1]));
         });
 }
 
@@ -193,7 +193,7 @@ function loadSocioPLT(graph, dataset) {
 
     return graph.setPoints(new Float32Array(_.flatten(points)), pointSizes, pointColors)
         .then(function () {
-            return graph.setEdges(
+            return graph.setEdgesAndColors(
                 new Uint32Array(edges),//new Uint32Array(_.flatten(edges).map(function (idx, i) { return idx; })),
                 new Uint32Array(edgeColors));
         })
@@ -253,7 +253,7 @@ function loadGeo(graph, dataset) {
                 .setColorMap("test-colormap2.png", {clusters: clusters, points: processedData.points, edges: processedData.edges})
                 .then(function () {
                     debug("Setting edges");
-                    return graph.setEdges(processedData.edges);
+                    return graph.setEdgesAndColors(processedData.edges);
                 });
     })
     .then(function() {
@@ -284,7 +284,7 @@ function loadMatrix(graph, dataset) {
         return graph.setPoints(points);
     })
     .then(function() {
-        return graph.setEdges(graphFile.edges);
+        return graph.setEdgesAndColors(graphFile.edges);
     })
     .then(function() {
         return graph;

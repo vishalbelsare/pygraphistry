@@ -59,7 +59,10 @@ function create(renderer, dimensions, numSplits, locked) {
             };
             simObj.tick = tick.bind(this, simObj);
             simObj.setPoints = setPoints.bind(this, simObj);
+            simObj.setSizes = setSizes.bind(this, simObj);
+            simObj.setColors = setColors.bind(this, simObj);
             simObj.setEdges = setEdges.bind(this, renderer, simObj);
+            simObj.setEdgeColors = setEdgeColors.bind(this, simObj);
             simObj.setLocked = setLocked.bind(this, simObj);
             simObj.setPhysics = setPhysics.bind(this, simObj);
             simObj.setTimeSubset = setTimeSubset.bind(this, renderer, simObj);
@@ -74,6 +77,7 @@ function create(renderer, dimensions, numSplits, locked) {
             simObj.numBackwardsWorkItems = 0;
             simObj.numMidPoints = 0;
             simObj.numMidEdges = 0;
+            simObj.postSlider = true; // Enable/Disable Leo's slider
             simObj.locked = _.extend(
                 {lockPoints: false, lockMidpoints: true, lockEdges: false, lockMidedges: true},
                 (locked || {})
@@ -188,7 +192,7 @@ var resetBuffers = function(simulator, buffers) {
  *
  * @returns a promise fulfilled by with the given simulator object
  */
-function setPoints(simulator, points, pointSizes, pointColors) {
+function setPoints(simulator, points) {
     if(points.length < 1) {
         throw new Error("The points buffer is empty");
     }
@@ -196,29 +200,10 @@ function setPoints(simulator, points, pointSizes, pointColors) {
         throw new Error("The points buffer is an invalid size (must be a multiple of " + simulator.elementsPerPoint + ")");
     }
 
-    if (!pointSizes) {
-        pointSizes = new Uint8Array(points.length/simulator.elementsPerPoint);
-        for (var i = 0; i < points.length/simulator.elementsPerPoint; i++) {
-            pointSizes[i] = 4;
-        }
-    }
-
-    if (!pointColors) {
-        pointColors = new Uint32Array(points.length/simulator.elementsPerPoint);
-        for (var i = 0; i < points.length/simulator.elementsPerPoint; i++) {
-            pointColors[i] = (255 << 24) | (102 << 16) | (102 << 8) | 255;
-        }
-    }
-
-    simulator.buffersLocal.pointSizes = pointSizes;
-    simulator.buffersLocal.pointColors = pointColors;
-
     simulator.resetBuffers([
         simulator.buffers.nextPoints,
         simulator.buffers.randValues,
-        simulator.buffers.curPoints,
-        simulator.buffers.pointSizes,
-        simulator.buffers.pointColors])
+        simulator.buffers.curPoints])
 
     simulator.numPoints = points.length / simulator.elementsPerPoint;
     simulator.renderer.numPoints = simulator.numPoints;
@@ -226,22 +211,18 @@ function setPoints(simulator, points, pointSizes, pointColors) {
     debug("Number of points in simulation: %d", simulator.renderer.numPoints);
 
     // Create buffers and write initial data to them, then set
-    simulator.tickBuffers(['curPoints', 'pointSizes', 'pointColors', 'randValues']);
+    simulator.tickBuffers(['curPoints', 'randValues']);
 
     return Q.all([
         simulator.renderer.createBuffer(points, 'curPoints'),
-        simulator.renderer.createBuffer(pointSizes, 'pointSizes'),
-        simulator.renderer.createBuffer(pointColors, 'pointColors'),
         simulator.cl.createBuffer(points.byteLength, 'nextPoints'),
         simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT,
             'randValues')])
-    .spread(function(pointsVBO, pointSizesVBO, pointColorsVBO, nextPointsBuffer, randBuffer) {
+    .spread(function(pointsVBO, nextPointsBuffer, randBuffer) {
         debug('Created most of the points');
         simulator.buffers.nextPoints = nextPointsBuffer;
 
         simulator.renderer.buffers.curPoints = pointsVBO;
-        simulator.renderer.buffers.pointSizes = pointSizesVBO;
-        simulator.renderer.buffers.pointColors = pointColorsVBO;
 
         // Generate an array of random values we will write to the randValues buffer
         simulator.buffers.randValues = randBuffer;
@@ -260,11 +241,55 @@ function setPoints(simulator, points, pointSizes, pointColors) {
     .then(gaussSeidel.setPoints.bind('', simulator))
     .then(forceAtlas.setPoints.bind('', simulator))
     .then(edgeBundling.setPoints.bind('', simulator))
-    .then(function () {
-        return simulator;
+    .then(function () {return simulator;}, function () {
+        console.error("Failure in SimCl.setPoints")
     });
 }
 
+/**
+ * Set the initial sizes of the points in the NBody simulation (pointSizes)
+ * @param simulator - the simulator object created by SimCL.create()
+ * @param {Float32Array} sizes - a typed array containing one element for every point
+ *
+ * @returns a promise fulfilled by with the given simulator object
+ */
+function setSizes(simulator, pointSizes) {
+    simulator.buffersLocal.pointSizes = pointSizes;
+
+    simulator.resetBuffers([simulator.buffers.pointSizes])
+
+    // Create buffers and write initial data to them, then set
+    simulator.tickBuffers(['pointSizes']);
+
+    return simulator.renderer.createBuffer(pointSizes, 'pointSizes')
+    .then(function(pointSizesVBO) {
+        debug('Created sizes VBO');
+
+        simulator.renderer.buffers.pointSizes = pointSizesVBO;
+        return simulator;
+    }).fail(function (error) {
+        console.error("ERROR Failure in SimCl.setSizes", error.stack)
+    });
+}
+
+function setColors(simulator, pointColors) {
+    simulator.buffersLocal.pointColors = pointColors;
+
+    simulator.resetBuffers([simulator.buffers.pointColors])
+
+    // Create buffers and write initial data to them, then set
+    simulator.tickBuffers(['pointColors']);
+
+    return simulator.renderer.createBuffer(pointColors, 'pointColors')
+    .then(function(pointColorsVBO) {
+        debug('Created colors VBO');
+
+        simulator.renderer.buffers.pointColors = pointColorsVBO;
+        return simulator;
+    }).fail(function (error) {
+        console.error("ERROR Failure in SimCl.setColors", error.stack)
+    });
+}
 
 /**
  * Sets the edge list for the graph
@@ -280,10 +305,9 @@ function setPoints(simulator, points, pointSizes, pointColors) {
  * @param {edgesTyped: {Uint32Array}, numWorkItems: uint, workItemsTypes: {Uint32Array} } backwardsEdges -
  *        Same as forwardsEdges, except reverse edge src/dst and redefine workItems/numWorkItems corresondingly.
  * @param {Float32Array} midPoints - dense array of control points (packed sequence of nDim structs)
- * @param {Uint32Array} edgeColors - dense array of edge start and end colors
  * @returns {Q.promise} a promise for the simulator object
  */
-function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints, edgeColors) {
+function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints) {
     //edges, workItems
     var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
     var elementsPerWorkItem = 2;
@@ -302,16 +326,6 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints,
     }
 
     simulator.bufferHostCopies.forwardsEdges = forwardsEdges;
-
-    if (!edgeColors) {
-        edgeColors = new Uint32Array(forwardsEdges.edgesTyped.length);
-        for (var i = 0; i < edgeColors.length; i++) {
-            var nodeIdx = forwardsEdges.edgesTyped[i];
-            edgeColors[i] = simulator.buffersLocal.pointColors[nodeIdx];
-        }
-    }
-    simulator.tickBuffers(['edgeColors']);
-    simulator.buffersLocal.edgeColors = edgeColors;
 
     simulator.resetBuffers([
         simulator.buffers.forwardsEdges,
@@ -397,7 +411,8 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints,
                 }));
     })
     .then(function () {
-        setTimeSubset(renderer, simulator, simulator.timeSubset.relRange);
+        if (simulator.postSlider)
+            setTimeSubset(renderer, simulator, simulator.timeSubset.relRange);
         return simulator;
     })
     .then(_.identity, function (err) {
@@ -406,6 +421,26 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints,
     });
 }
 
+
+/**
+ * Sets the edge colors for the graph
+ *
+ * @param simulator - the simulator object to set the edges for
+ * @param {Uint32Array} edgeColors - dense array of edge start and end colors
+ */
+function setEdgeColors(simulator, edgeColors) {
+    if (!edgeColors) {
+        var forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
+        edgeColors = new Uint32Array(forwardsEdges.edgesTyped.length);
+        for (var i = 0; i < edgeColors.length; i++) {
+            var nodeIdx = forwardsEdges.edgesTyped[i];
+            edgeColors[i] = simulator.buffersLocal.pointColors[nodeIdx];
+        }
+    }
+    simulator.tickBuffers(['edgeColors']);
+    simulator.buffersLocal.edgeColors = edgeColors;
+    return simulator;
+}
 
 function setLocked(simulator, cfg) {
     _.extend(simulator.locked, cfg || {});
@@ -504,6 +539,9 @@ module.exports = {
     "create": create,
     "setLocked": setLocked,
     "setPoints": setPoints,
+    "setSizes": setSizes,
+    "setColors": setColors,
     "setEdges": setEdges,
+    "setEdgeColors": setEdgeColors,
     "tick": tick
 };
