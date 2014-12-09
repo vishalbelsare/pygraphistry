@@ -11,9 +11,10 @@ var boundaryUrl = 'https://abe@graphistry.com:api.fc39b94e8f-3713@premium-api.bo
 
 
 var sendToBoundary = function(entry) {
-    if (!(config.PRODUCTION || config.STAGING)){
+    if(config.ENVIRONMENT === 'local') {
         return;
     }
+
     var data = {}
     for ( var property in entry ) {
         data['measure'] = entry[property];
