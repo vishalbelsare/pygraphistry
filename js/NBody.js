@@ -43,7 +43,7 @@ function create(simulator, renderer, document, canvas, bgColor, dimensions, numS
                     graph.setSizes = setSizes.bind(this, graph);
                     graph.setColors = setColors.bind(this, graph);
                     graph.setEdges = setEdges.bind(this, graph);
-                    graph.setEdges2 = setEdges2.bind(this, graph);
+                    graph.setEdgesAndColors = setEdgesAndColors.bind(this, graph);
                     graph.setEdgeColors = setEdgeColors.bind(this, graph);
                     graph.setPhysics = setPhysics.bind(this, graph);
                     graph.setVisible = setVisible.bind(this, graph);
@@ -72,7 +72,7 @@ function updateSettings (graph, cfg) {
     }
 }
 
-// TODO Deprecate and remove
+// TODO Deprecate and remove. Left for Uber compatibitily
 function setPoints(graph, points, pointSizes, pointColors) {
     // FIXME: If there is already data loaded, we should to free it before loading new data
     return setVertices(graph, points)
@@ -140,15 +140,15 @@ function setDefaultColors(simulator) {
     return simulator.setColors(pointColors);
 }
 
-// TODO Deprecate and remove
-function setEdges(graph, edges, edgeColors) {
-    return setEdges2(graph, edges)
+// TODO Deprecate and remove. Left for Uber compatibility
+function setEdgesAndColors(graph, edges, edgeColors) {
+    return setEdges(graph, edges)
     .then(function () {
         setEdgeColors(graph, edgeColors)
     });
 }
 
-var setEdges2 = Q.promised(function(graph, edges) {
+var setEdges = Q.promised(function(graph, edges) {
     debug("Loading Edges")
     if (edges.length < 1)
         return Q.fcall(function() { return graph; });

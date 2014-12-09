@@ -144,7 +144,7 @@ function decode0(graph, vg, mappings)  {
     return graph.setVertices(vertices)
     .then(function () {
         runLoaders(vloaders);
-        return graph.setEdges2(edges);
+        return graph.setEdges(edges);
     }).then(function () {
         runLoaders(eloaders);
         return graph; 
@@ -180,7 +180,6 @@ function normalizeUInt8(array, minimum) {
     var res = [];
     for (var i = 0; i < array.length; i++)
         res[i] = minimum + Math.floor((array[i] - min) * scaleFactor);
-    debug("DEGREES %o", res)
     return res;
 }
 
