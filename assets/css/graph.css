@@ -15,8 +15,10 @@
     padding: 0.5em;
 }
 
+
 .menu {
     position: absolute;
+    z-index: 20000;
     left: 0;
 }
 
