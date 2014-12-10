@@ -158,7 +158,6 @@ function decode0(graph, vg, config)  {
 function runLoaders(loaders) {
     for (var i = 0; i < loaders.length; i++) {
         var loader = loaders[i];
-        debug("LOADER %o", loader)
         if (loader.values)
             loader.load(loader.values);
         else if (loader.default)
