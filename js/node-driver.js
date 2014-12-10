@@ -20,6 +20,10 @@ var Q = require("q"),
     metrics = require("./metrics.js"),
     loader = require("./data-loader.js");
 
+
+var renderConfig = require('./renderer.config.graph.js');
+
+
 metrics.init('StreamGL:driver');
 
 var WIDTH = 600,
@@ -27,6 +31,72 @@ var WIDTH = 600,
 
 var SIMULATION_TIME = 3000; //seconds
 var dimensions = [1,1];
+
+
+//========== HARDCODED RENDER CONFIG BINDINGS
+
+var TYPE_TO_BYTE_LENGTH = {
+    'FLOAT': 4,
+    'UNSIGNED_BYTE': 1
+};
+
+var DEVICE_BUFFER_NAMES = ['curPoints', 'springsPos', 'midSpringsPos', 'curMidPoints', 'midSpringsColorCoord'];
+var LOCAL_BUFFER_NAMES  = ['pointSizes', 'pointColors', 'edgeColors'];
+
+
+
+
+
+//number/offset of graph elements and how they relate to various models
+//graph -> {<model>: {num: int, offset: int}
+function graphCounts(graph) {
+
+    var offsetPoint;
+    var offsetEdge;
+    var numMidPoints;
+    var numMidEdges;
+    var offsetMidPoints;
+    var offsetMidEdges;
+    if (graph.simulator.postSlider) {
+        var numPoints   = graph.simulator.timeSubset.pointsRange.len;
+        var numEdges    = graph.simulator.timeSubset.edgeRange.len;
+        offsetPoint     = graph.simulator.timeSubset.pointsRange.startIdx;
+        offsetEdge      = graph.simulator.timeSubset.edgeRange.startIdx;
+        numMidPoints    = graph.simulator.timeSubset.midPointsRange.len;
+        numMidEdges     = graph.simulator.timeSubset.midEdgeRange.len;
+        offsetMidPoints = graph.simulator.timeSubset.midPointsRange.startIdx;
+        offsetMidEdges  = graph.simulator.timeSubset.midEdgeRange.startIdx;
+    } else {
+        var numPoints = graph.simulator.numPoints;
+        var numEdges = graph.simulator.numEdges;
+        offsetPoint = 0;
+        offsetEdge = 0;
+        //Number of mid/points edges is directly related so just scale
+        numMidPoints =
+            Math.round((numPoints / graph.renderer.numPoints) * graph.renderer.numMidPoints);
+        numMidEdges =
+            Math.round((numEdges / graph.renderer.numEdges) * graph.renderer.numMidEdges);
+        offsetMidPoints = 0;
+        offsetMidEdges  = 0;
+    }
+
+    var point       = {num: numPoints,      offset: 0};
+    var edge        = {num: numEdges,       offset: 0};
+    var midPoint    = {num: numMidPoints,   offset: 0};
+    var midEdge     = {num: numMidEdges,    offset: 0};
+
+    return {
+        curPoints: point,
+        springsPos: edge,
+        pointSizes: point,
+        pointColors: point,
+        edgeColors: edge,
+        curMidPoints: midPoint,
+        midSpringsPos: midEdge,
+        midSpringsColorCoord: midEdge
+    };
+
+}
 
 
 function applyControls(graph, cfgName) {
@@ -55,12 +125,10 @@ function applyControls(graph, cfgName) {
 
 
 function getBufferVersion (graph, bufferName) {
-    var deviceBuffers = ["curPoints", "springsPos", "midSpringsPos", "curMidPoints", "midSpringsColorCoord"];
-    var localBuffers = ['pointSizes', 'pointColors', 'edgeColors'];
 
-    if (deviceBuffers.indexOf(bufferName) > -1) {
+    if (DEVICE_BUFFER_NAMES.indexOf(bufferName) > -1) {
         return graph.simulator.versions.buffers[bufferName];
-    } else if (localBuffers.indexOf(bufferName) > -1) {
+    } else if (LOCAL_BUFFER_NAMES.indexOf(bufferName) > -1) {
         return graph.simulator.versions.buffers[bufferName];
     } else {
         throw new Error("could not find buffer", bufferName);
@@ -69,53 +137,10 @@ function getBufferVersion (graph, bufferName) {
 
 
 
-function graphCounts(graph) {
-
-    if (graph.simulator.postSlider) {
-        var numPoints = graph.simulator.timeSubset.pointsRange.len;
-        var numEdges = graph.simulator.timeSubset.edgeRange.len;
-    } else {
-        var numPoints = graph.simulator.numPoints;
-        var numEdges = graph.simulator.numEdges;
-    }
-
-    var numMidPoints =
-        Math.round((numPoints / graph.renderer.numPoints) * graph.renderer.numMidPoints);
-    var numMidEdges =
-        Math.round((numEdges / graph.renderer.numEdges) * graph.renderer.numMidEdges);
-
-    return {
-        numPoints: numPoints,
-        numEdges: numEdges,
-        numMidPoints: numMidPoints,
-        numMidEdges: numMidEdges,
-        midSpringsColorCoord: 0
-    };
-}
-
 // ... -> {<name>: {buffer: ArrayBuffer, version: int}}
 function fetchVBOs(graph, bufferNames) {
 
     var targetArrays = {};
-
-    // TODO: Reuse existing ArrayBuffers once we're sure we're sure it's safe to do so (we've
-    // written the CL data to it, and written it to the socket sent to the client.)
-    var buffersToFetch =
-        ["curPoints", "springsPos", "midSpringsPos", "curMidPoints", "midSpringsColorCoord"]
-        .filter(function (name) {
-            return bufferNames.indexOf(name) != -1;
-        });
-
-    var bufferToModel = {
-        curPoints: ['numPoints', 0 * Float32Array.BYTES_PER_ELEMENT],
-        springsPos: ['numEdges', 2 * 2 * Float32Array.BYTES_PER_ELEMENT],
-        midSpringsPos: ['numMidEdges', 2 * 2 * Float32Array.BYTES_PER_ELEMENT],
-        curMidPoints: ['curMidPoints', 2 * Float32Array.BYTES_PER_ELEMENT],
-        midSpringsColorCoord: ['midSpringsColorCoord', 0],
-        pointSizes: ['numPoints', 1 * Float32Array.BYTES_PER_ELEMENT],
-        pointColors: ['numPoints', 1 * Float32Array.BYTES_PER_ELEMENT],
-        edgeColors: ['numEdges', 1 * Float32Array.BYTES_PER_ELEMENT]
-    };
 
     var bufferSizes = fetchBufferByteLengths(graph);
     var counts = graphCounts(graph);
@@ -124,80 +149,89 @@ function fetchVBOs(graph, bufferNames) {
     // node-webcl's event arguments to enqueue commands seems busted at the moment, but
     // maybe enqueueing a event barrier and using its event might work?
     return Q.all(
-        buffersToFetch.map(function(name) {
+        DEVICE_BUFFER_NAMES
+        .filter(function (name) { return bufferNames.indexOf(name) != -1; })
+        .map(function(name) {
             targetArrays[name] = {
                 buffer: new ArrayBuffer(bufferSizes[name]),
                 version: graph.simulator.versions.buffers[name]
             };
 
             if (graph.simulator.postSlider) {
-                var modelName = bufferToModel[name][0];
-                var stride = bufferToModel[name][1];
+                var model = renderConfig.models[name];
+                var layout = _.values(model)[0];
+                var stride = layout.stride
+                    || (layout.count * TYPE_TO_BYTE_LENGTH[layout.type]);
+                if (_.values(model).length != 1) {
+                    console.error('Currently assumes one view per model');
+                    throw new Error('Currently assumes one view per model');
+                }
                 return graph.simulator.buffers[name].read(
                     new Float32Array(targetArrays[name].buffer),
-                    counts[modelName] * stride);
+                    counts[name].offset,
+                    counts[name].num * stride);
             } else {
                 return graph.simulator.buffers[name].read(
-                    new Float32Array(targetArrays[name].buffer)
-                )
+                    new Float32Array(targetArrays[name].buffer));
             }
     }))
     .then(function() {
-        var localBuffers = {
-            'pointSizes': graph.simulator.buffersLocal.pointSizes.buffer,
-            'pointColors': graph.simulator.buffersLocal.pointColors.buffer,
-            'edgeColors': graph.simulator.buffersLocal.edgeColors.buffer
-        };
-        for (var i in localBuffers) {
-            if (bufferNames.indexOf(i) != -1) {
-                targetArrays[i] = {
-                    buffer: localBuffers[i],
-                    version: graph.simulator.versions.buffers[i]
+        LOCAL_BUFFER_NAMES
+            .filter(function (name) { return bufferNames.indexOf(name) != -1; })
+            .forEach(function (name) {
+                targetArrays[name] = {
+                    buffer: graph.simulator.buffersLocal[name],
+                    version: graph.simulator.versions.buffers[name]
                 };
-            }
-        }
-
+            });
         return targetArrays;
     });
 }
 
 
 
+//graph -> {<itemName>: int}
+//For each render item, find a serverside model and send its count
 function fetchNumElements(graph) {
 
     var counts = graphCounts(graph);
 
-    return {
-        edges:              counts.numEdges * 2,
-        edgeculled:         counts.numEdges * 2,
-        midedges:           counts.numMidEdges * 2,
-        midedgeculled:      counts.numMidEdges * 2,
-        midedgetextured:    counts.numMidEdges * 2,
-        points:             counts.numPoints,
-        pointculled:        counts.numPoints,
-        pointpicking:       counts.numPoints,
-        pointpickingScreen: counts.numPoints,
-        pointsampling:      counts.numPoints,
-        midpoints:          counts.numMidPoints
-    };
-}
-function fetchBufferByteLengths(graph) {
+    return _.object(
+        _.keys(renderConfig.scene.items)
+            .map(function (item) {
+                var serversideModelBindings =
+                    _.values(renderConfig.scene.items[item].bindings)
+                        .filter(function (binding) {
+                            var model = renderConfig.models[binding[0]];
+                            var serverLayouts =
+                                _.values(model)
+                                    .filter(function (layout) { return layout.datasource !== 'LOCAL'; });
+                            return serverLayouts.length;
+                        });
+                var aServersideModelName = serversideModelBindings[0][0];
+                return [item, counts[aServersideModelName].num];
+            }));
 
+}
+
+
+//graph -> {<model>: int}
+//Find num bytes needed for each model
+function fetchBufferByteLengths(graph) {
 
     var counts = graphCounts(graph);
 
-    //FIXME generate from renderConfig
-    //form: elements * ?dimensions * points * BYTES_PER_ELEMENT
-    return {
-        springsPos:             counts.numEdges * 2 * 2 * Float32Array.BYTES_PER_ELEMENT,
-        curPoints:              counts.numPoints * 2 * Float32Array.BYTES_PER_ELEMENT,
-        pointSizes:             counts.numPoints * Uint8Array.BYTES_PER_ELEMENT,
-        pointColors:            counts.numPoints * 4 * Uint8Array.BYTES_PER_ELEMENT,
-        edgeColors:             counts.numEdges * 2 * 4 * Uint8Array.BYTES_PER_ELEMENT,
-        curMidPoints:           counts.numMidPoints * 2 * Float32Array.BYTES_PER_ELEMENT,
-        midSpringsPos:          counts.numMidEdges * 2 * 2 * Float32Array.BYTES_PER_ELEMENT,
-        midSpringsColorCoord:   counts.numMidEdges * 2 * 2 * Float32Array.BYTES_PER_ELEMENT
-    };
+    return _.object(
+            _.pairs(counts)
+                .map(function (pair) {
+                    var name = pair[0];
+                    var count = pair[1].num;
+                    var model = renderConfig.models[name];
+                    var layout = _.values(model)[0];
+                    return [
+                        name,
+                        count * (layout.stride || (TYPE_TO_BYTE_LENGTH[layout.type] * layout.count))];
+                }));
 }
 
 
@@ -261,8 +295,8 @@ function createAnimation(config) {
     })
 
     var dataConfig = {
-        'listURI': config.DATALISTURI, 
-        'name': config.DATASETNAME, 
+        'listURI': config.DATALISTURI,
+        'name': config.DATASETNAME,
         'idx': config.DATASETIDX
     }
 
@@ -280,7 +314,7 @@ function createAnimation(config) {
         })
 
         debug("LOADING DATASET");
-        return loader.loadDatasetIntoSim(graph, dataset) 
+        return loader.loadDatasetIntoSim(graph, dataset)
     }).then(function (graph) {
         debug("ANIMATING");
 
