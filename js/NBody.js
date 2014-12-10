@@ -212,7 +212,7 @@ var setEdges = Q.promised(function(graph, edges) {
             srcToWorkItem[i] = -1;
         }
         workItems.forEach(function (edgeList, idx) {
-            srcToWorkItem[edgeList[0]] = idx;
+            srcToWorkItem[edgeList[2]] = idx;
             degreesFlattened[edgeList[2]] = edgeList[1];
         });
         for (var i = 0; i < srcToWorkItem.length; i++) {
