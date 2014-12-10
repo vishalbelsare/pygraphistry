@@ -112,8 +112,10 @@ function create(renderer, dimensions, numSplits, locked) {
 
             simObj.timeSubset = {
                 relRange: {min: 0, max: 100},
-                pointsRange: {startIdx: 0, len: renderer.numPoints},
-                edgeRange: {startIdx: 0, len: renderer.numEdges}
+                pointsRange:    {startIdx: 0, len: renderer.numPoints},
+                edgeRange:      {startIdx: 0, len: renderer.numEdges},
+                midPointsRange: {startIdx: 0, len: renderer.numPoints * numSplits},
+                midEdgeRange:   {startIdx: 0, len: renderer.numEdges * numSplits}
             };
 
             Object.seal(simObj.buffers);
@@ -486,8 +488,14 @@ function setTimeSubset(renderer, simulator, range) {
 
     simulator.timeSubset =
         {relRange: range, //%
-         pointsRange: {startIdx: startIdx, len: len},
-         edgeRange: {startIdx: startEdgeIdx, len: numEdges}};
+         pointsRange:       {startIdx: startIdx, len: len},
+         edgeRange:         {startIdx: startEdgeIdx, len: numEdges},
+         midPointsRange:    {
+                startIdx: startIdx      * simulator.numSplits,
+                len: len                * simulator.numSplits},
+         midEdgeRange:      {
+                startIdx: startEdgeIdx  * (1+simulator.numSplits),
+                len: numEdges           * (1+simulator.numSplits)}};
 }
 
 

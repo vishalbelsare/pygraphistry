@@ -48,32 +48,53 @@ var LOCAL_BUFFER_NAMES  = ['pointSizes', 'pointColors', 'edgeColors'];
 
 
 
-//number of graph elements and how they relate to various models
-//graph -> {<model>: int}
+//number/offset of graph elements and how they relate to various models
+//graph -> {<model>: {num: int, offset: int}
 function graphCounts(graph) {
 
+    var offsetPoint;
+    var offsetEdge;
+    var numMidPoints;
+    var numMidEdges;
+    var offsetMidPoints;
+    var offsetMidEdges;
     if (graph.simulator.postSlider) {
-        var numPoints = graph.simulator.timeSubset.pointsRange.len;
-        var numEdges = graph.simulator.timeSubset.edgeRange.len;
+        var numPoints   = graph.simulator.timeSubset.pointsRange.len;
+        var numEdges    = graph.simulator.timeSubset.edgeRange.len;
+        offsetPoint     = graph.simulator.timeSubset.pointsRange.startIdx;
+        offsetEdge      = graph.simulator.timeSubset.edgeRange.startIdx;
+        numMidPoints    = graph.simulator.timeSubset.midPointsRange.len;
+        numMidEdges     = graph.simulator.timeSubset.midEdgeRange.len;
+        offsetMidPoints = graph.simulator.timeSubset.midPointsRange.startIdx;
+        offsetMidEdges  = graph.simulator.timeSubset.midEdgeRange.startIdx;
     } else {
         var numPoints = graph.simulator.numPoints;
         var numEdges = graph.simulator.numEdges;
+        offsetPoint = 0;
+        offsetEdge = 0;
+        //Number of mid/points edges is directly related so just scale
+        numMidPoints =
+            Math.round((numPoints / graph.renderer.numPoints) * graph.renderer.numMidPoints);
+        numMidEdges =
+            Math.round((numEdges / graph.renderer.numEdges) * graph.renderer.numMidEdges);
+        offsetMidPoints = 0;
+        offsetMidEdges  = 0;
     }
 
-    var numMidPoints =
-        Math.round((numPoints / graph.renderer.numPoints) * graph.renderer.numMidPoints);
-    var numMidEdges =
-        Math.round((numEdges / graph.renderer.numEdges) * graph.renderer.numMidEdges);
+    var point       = {num: numPoints,      offset: 0};
+    var edge        = {num: numEdges,       offset: 0};
+    var midPoint    = {num: numMidPoints,   offset: 0};
+    var midEdge     = {num: numMidEdges,    offset: 0};
 
     return {
-        curPoints: numPoints,
-        springsPos: numEdges,
-        pointSizes: numPoints,
-        pointColors: numPoints,
-        edgeColors: numEdges,
-        curMidPoints: numMidPoints,
-        midSpringsPos: numMidEdges,
-        midSpringsColorCoord: numMidEdges
+        curPoints: point,
+        springsPos: edge,
+        pointSizes: point,
+        pointColors: point,
+        edgeColors: edge,
+        curMidPoints: midPoint,
+        midSpringsPos: midEdge,
+        midSpringsColorCoord: midEdge
     };
 
 }
@@ -258,8 +279,8 @@ function fetchVBOs(graph, bufferNames) {
                 }
                 return graph.simulator.buffers[name].read(
                     new Float32Array(targetArrays[name].buffer),
-                    0,
-                    counts[name] * stride);
+                    counts[name].offset,
+                    counts[name].num * stride);
             } else {
                 return graph.simulator.buffers[name].read(
                     new Float32Array(targetArrays[name].buffer));
@@ -299,7 +320,7 @@ function fetchNumElements(graph) {
                             return serverLayouts.length;
                         });
                 var aServersideModelName = serversideModelBindings[0][0];
-                return [item, counts[aServersideModelName]];
+                return [item, counts[aServersideModelName].num];
             }));
 
 }
@@ -315,7 +336,7 @@ function fetchBufferByteLengths(graph) {
             _.pairs(counts)
                 .map(function (pair) {
                     var name = pair[0];
-                    var count = pair[1];
+                    var count = pair[1].num;
                     var model = renderConfig.models[name];
                     var layout = _.values(model)[0];
                     return [
