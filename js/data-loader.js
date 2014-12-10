@@ -19,27 +19,32 @@ var loaders = {
     "OBSOLETE_rectangle" : loadRectangle
 };
 
-function loadDataIntoSim(graph, dataConfig) {
+function getDataset(dataConfig) {
     return loadDataList(dataConfig.listURI).then(function (datalist) {
         // Try to find a dataset by name first
         if (dataConfig.name) {
             debug("Loading dataset by name");
             var match = _.find(datalist, function (dataset) {return dataset.name == dataConfig.name;});
             if (match)
-                return loadDataSet(graph, match);
+                return match;
         }
         
         // Then by index
         var idx = parseInt(dataConfig.idx)
         if (!isNaN(idx) && idx < datalist.length) {
-            debug("Loading dataset by index")
-            return loadDataSet(graph, datalist[idx]);
+            debug("Loading dataset by index");
+            return datalist[idx];
         }
           
         // Otherwise the first listed
-        debug("Loading first dataset")
-        return loadDataSet(graph, datalist[0]);
+        debug("Loading first dataset");
+        return datalist[0];
     });
+}
+
+function loadDatasetIntoSim(graph, dataset) {
+    debug("Loading data: %o", dataset);
+    return loaders[dataset.type](graph, dataset);
 }
 
 
@@ -92,12 +97,6 @@ function loadDataList(dataListURI) {
         .then(function (datalist) {
             return _.map(datalist, normalizeDataset);
         });
-}
-
-
-function loadDataSet(graph, dataset) {
-    debug("Loading data: %o", dataset);
-    return loaders[dataset.type](graph, dataset);
 }
 
 
@@ -295,7 +294,8 @@ function loadMatrix(graph, dataset) {
 module.exports = {
     createPoints: createPoints,
     createEdges: createEdges,
-    loadDataIntoSim: loadDataIntoSim
+    loadDatasetIntoSim: loadDatasetIntoSim,
+    getDataset: getDataset
 };
 
 // vim: set et ff=unix ts=8 sw=4 fdm=syntax: 

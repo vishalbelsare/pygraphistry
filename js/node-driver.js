@@ -28,134 +28,29 @@ var WIDTH = 600,
 var SIMULATION_TIME = 3000; //seconds
 var dimensions = [1,1];
 
-/*
-    graph ->
-    {
-        physicsControls: {
-            charge,gravity,edgeStrength,edgeDistance: v -> ()
-        },
-        renderingControls: {
-            points,edges,midpoints,midedges: () -> ()
-        },
 
+function applyControls(graph, cfgName) {
+    var controls = require('./layout.config.js');
+    var cfg = cfgName ? controls.cfgName : controls.default;
+
+    debug("Applying simControls: %o", cfg);
+    var physicsCtrl = cfg.physics;
+    if (!physicsCtrl) {
+        physicsCtrl = controls.defaultControls.physics;
     }
-*/
-function controls(graph) {
+    graph.setPhysics(physicsCtrl);
 
-    var physicsControls =
-        ["charge", "gravity", "edgeStrength", "edgeDistance"]
-        .concat(['scalingRatio', 'edgeInfluence', 'forceAtlas', 'preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'])
-            .reduce(function (o, lbl) {
-                o[lbl] = function (v) {
-                    var cmd = {};
-                    cmd[lbl] = v;
-                    graph.setPhysics(cmd);
-                };
-                return o;
-            }, {});
-
-    var renderingControls =
-        ["points", "edges", "midpoints", "midedges"]
-            .reduce(function (o, lbl) {
-                var cmd = {};
-                cmd[lbl] = false;
-                o[lbl] = function (v) {
-                    cmd[lbl] = v === undefined ? !cmd[lbl] : v;
-                    debug("Setting %o", cmd);
-                    graph.setVisible(cmd);
-                };
-                return o;
-            }, {});
-
-
-
-    var locks =
-        ["lockPoints", "lockEdges", "lockMidpoints", "lockMidedges"]
-            .reduce(function (o, lbl) {
-                var cmd = {};
-                cmd[lbl] = true;
-                o[lbl] = function (v) {
-                    cmd[lbl] = v === undefined ? !cmd[lbl] : v;
-                    debug("Setting %o", cmd);
-                    graph.setLocked(cmd);
-                };
-                return o;
-            }, {});
-
-
-    /* dumped from playing with web version */
-    /*
-    physicsControls.charge(-0.00008385510126037207);
-    physicsControls.gravity(0.00015448596582229787);
-    physicsControls.edgeStrength(0.00015448596582229787);
-    physicsControls.edgeDistance(0.0002610812822396834);
-    */
-
-    //all off by default
-    physicsControls.forceAtlas(0);
-    locks.lockPoints(true);
-    locks.lockEdges(true);
-    locks.lockMidpoints(true);
-    locks.lockMidedges(true);
-    renderingControls.points(false);
-    renderingControls.edges(false);
-    renderingControls.midpoints(false);
-    renderingControls.midedges(false);
-
-    physicsControls.charge      (-0.000029360001841802474);
-    physicsControls.gravity     ( 0.020083175556898723);
-    physicsControls.edgeStrength( 4.292198241799153);
-    physicsControls.edgeDistance( 0.0000158);
-
-
-    if (false) {
-        physicsControls.forceAtlas(0);
-        physicsControls.scalingRatio(0.1);
-        physicsControls.gravity(0.005);
-        physicsControls.edgeInfluence(1);
-
-        physicsControls.preventOverlap(0);
-        physicsControls.strongGravity(0);
-        physicsControls.dissuadeHubs(0);
-        physicsControls.linLog(1);
-
-        renderingControls.points(true);
-        renderingControls.edges(true);
-        renderingControls.midpoints(false);
-        renderingControls.midedges(false);
-        locks.lockPoints(true);
-        locks.lockEdges(true);
-        locks.lockMidpoints(true);
-        locks.lockMidedges(true);
-
-
-
-        //physicsContorls.//', 'preventOverlap', 'strongGravity', 'dissuadeHubs'
-    } else if (false) {
-
-        renderingControls.points(true);
-        renderingControls.edges(true);
-        renderingControls.midpoints(false);
-        renderingControls.midedges(false);
-        locks.lockPoints(false);
-        locks.lockEdges(false);
-        locks.lockMidpoints(true);
-        locks.lockMidedges(true);
-    } else {
-        locks.lockMidpoints(false);
-        locks.lockMidedges(false);
-        renderingControls.points(true);
-        renderingControls.midedges(true);
-
-
+    var renderingCtrl = cfg.rendering;
+    if (!renderingCtrl) {
+        renderingCtrl = controls.defaultControl.renderingCtrl;
     }
+    graph.setVisible(renderingCtrl);
 
-
-    return {
-        physicsControls: physicsControls,
-        renderingControls: renderingControls,
-        locks: locks
-    };
+    var lockCtrl = cfg.locks;
+    if (!lockCtrl) {
+        lockCtrl = controls.defaultControl.lockCtrl;
+    }
+    graph.setLocked(lockCtrl)
 }
 
 
@@ -365,31 +260,29 @@ function createAnimation(config) {
         debug("NOTIFYING OF BIG STEP")
     })
 
+    var dataConfig = {
+        'listURI': config.DATALISTURI, 
+        'name': config.DATASETNAME, 
+        'idx': config.DATASETIDX
+    }
+
+    var theDataset = loader.getDataset(dataConfig);
     var theGraph = init();
 
-    theGraph.then(function (graph) {
+    Q.all([theGraph, theDataset]).spread(function (graph, dataset) {
+        debug("Dataset %o", dataset);
         debug("APPLYING SETTINGS");
-        controls(graph);
+        applyControls(graph, dataset.config['simControls']);
 
         userInteractions.subscribe(function (settings){
             debug('updating settings..');
             graph.updateSettings(settings);
-        });
+        })
 
-        return graph;
-    })
-    .then(function (graph) {
-        debug("LOADING DATA");
-        var dataConfig = {
-            'listURI': config.DATALISTURI, 
-            'name': config.DATASETNAME, 
-            'idx': config.DATASETIDX
-        }
-        return loader.loadDataIntoSim(graph, dataConfig);
-    })
-    .then(function (graph) {
+        debug("LOADING DATASET");
+        return loader.loadDatasetIntoSim(graph, dataset) 
+    }).then(function (graph) {
         debug("ANIMATING");
-
 
         var isRunning =
             Rx.Observable.merge(
