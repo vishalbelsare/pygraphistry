@@ -4,13 +4,13 @@ var Q = require('q');
 var util = require('./util.js');
 var cljs = require('./cl.js');
 var _ = require('underscore');
-var debug = require("debug")("N-body:SimCL");
+var debug = require("debug")("graphistry:graph-viz:simcl");
 
 
-var forceAtlas = require('./forceatlas.js'),
-    gaussSeidel = require('./gaussseidel.js'),
-    edgeBundling = require('./edgebundling.js'),
-    barnesHut = require('./BarnesHut.js');
+//var forceAtlas = require('./forceatlas.js'),
+//    gaussSeidel = require('./gaussseidel.js'),
+//    edgeBundling = require('./edgebundling.js'),
+//    barnesHut = require('./BarnesHut.js');
 
 
 //var layoutAlgorithms = [barnesHut, gaussSeidel, edgeBundling];
@@ -233,10 +233,13 @@ function setPoints(simulator, points) {
     .spread(function(pointsBuf, randValues) {
         simulator.buffers.curPoints = pointsBuf;
     })
-    .then(gaussSeidel.setPoints.bind('', simulator))
-    .then(forceAtlas.setPoints.bind('', simulator))
-    .then(edgeBundling.setPoints.bind('', simulator))
-    .then(function () {return simulator;}, function (err) {
+    .then(function () {
+        _.each(simulator.layoutAlgorithms, function (la) {
+            la.setPoints(simulator);
+        });
+        return simulator;
+    })
+    .fail(function (err) {
         console.error("Failure in SimCl.setPoints ", err.stack)
     });
 }
@@ -411,8 +414,7 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints)
         return simulator;
     })
     .fail(function (err) {
-        console.error('bad set edges', err);
-        console.error(err.stack);
+        console.error('ERROR in SetEdges ', err.stack);
     });
 }
 
