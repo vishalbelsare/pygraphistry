@@ -48,7 +48,7 @@ function write(buffers) {
                 try {
                     var byteBuffer = vg.encode();
                     var buffer = byteBuffer.toBuffer();
-                    fs.writeFile(path.resolve(__dirname + "../../../datasets/geo/uber.geo.serialized"), buffer, function(err) {
+                    fs.writeFile(path.resolve(__dirname + "../../../node_modules/datasets/geo/uber.geo.serialized"), buffer, function(err) {
                         if(err) {
                             console.log(err);
                         } else {
