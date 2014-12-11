@@ -20,7 +20,7 @@ var elementsPerPoint = 2;
  * @param bgColor - [0--255,0--255,0--255,0--1]
  * @param [dimensions=\[1,1\]] - a two element array [width,height] used for internal posituin calculations.
  */
-function create(simulator, renderer, document, canvas, bgColor, dimensions, numSplits) {
+function create(renderer, document, canvas, bgColor, dimensions, numSplits) {
     dimensions = dimensions || [1,1];
     numSplits = numSplits || 0;
 
@@ -28,41 +28,51 @@ function create(simulator, renderer, document, canvas, bgColor, dimensions, numS
         .create(document, canvas, bgColor, dimensions)
         .then(function(rend) {
             debug("Created renderer");
+            var graph = {
+                "renderer": rend,
+                "simulator": undefined,
+            };
+            
+            graph.initSimulation = initSimulation.bind(this, graph);
+            graph.setPoints = setPoints.bind(this, graph);
+            graph.setVertices = setVertices.bind(this, graph);
+            graph.setSizes = setSizes.bind(this, graph);
+            graph.setColors = setColors.bind(this, graph);
+            graph.setEdges = setEdges.bind(this, graph);
+            graph.setEdgesAndColors = setEdgesAndColors.bind(this, graph);
+            graph.setEdgeColors = setEdgeColors.bind(this, graph);
+            graph.setVisible = setVisible.bind(this, graph);
+            graph.setLocked = setLocked.bind(this, graph);
+            graph.setColorMap = setColorMap.bind(this, graph);
+            graph.tick = tick.bind(this, graph);
+            graph.stepNumber = 0;
+            graph.dimensions = dimensions;
+            graph.numSplits = numSplits;
 
-            return simulator
-                .create(rend, dimensions, numSplits)
-                .then(function(sim) {
-                    debug("Created simulator");
+            graph.updateSettings = updateSettings.bind(this, graph);
 
-                    var graph = {
-                        "renderer": rend,
-                        "simulator": sim
-                    };
-                    graph.setPoints = setPoints.bind(this, graph);
-                    graph.setVertices = setVertices.bind(this, graph);
-                    graph.setSizes = setSizes.bind(this, graph);
-                    graph.setColors = setColors.bind(this, graph);
-                    graph.setEdges = setEdges.bind(this, graph);
-                    graph.setEdgesAndColors = setEdgesAndColors.bind(this, graph);
-                    graph.setEdgeColors = setEdgeColors.bind(this, graph);
-                    graph.setPhysics = setPhysics.bind(this, graph);
-                    graph.setVisible = setVisible.bind(this, graph);
-                    graph.setLocked = setLocked.bind(this, graph);
-                    graph.setColorMap = setColorMap.bind(this, graph);
-                    graph.tick = tick.bind(this, graph);
-                    graph.stepNumber = 0;
-                    graph.dimensions = dimensions;
-                    graph.numSplits = numSplits;
-
-                    graph.updateSettings = updateSettings.bind(this, graph);
-
-                    return graph;
-                });
+            return graph;
+        }).fail(function (err) {
+            console.error("ERROR Cannot create graph. ". err.stack)
         });
 }
 
+function initSimulation(graph, simulator, layoutAlgorithms, locked) {
+    debug('Creating Simulator')
+    return simulator.create(graph.renderer, graph.dimensions, 
+                            graph.numSplits, locked, layoutAlgorithms)
+        .then(function(sim) {
+            debug("Created simulator");
+            graph.simulator = sim;
+            return graph;
+        }).fail(function (err) {
+            console.error("ERROR Cannot create simulator. ", err.stack)
+        });
+}
 
 function updateSettings (graph, cfg) {
+    debug("Updating settings");
+
     graph.simulator.setPhysics(cfg);
     graph.simulator.setLocked(cfg);
     graph.renderer.setVisible(cfg);

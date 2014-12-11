@@ -27,6 +27,38 @@ var create = Q.promised(function(renderer) {
     }
 });
 
+function setKernelArgs(kernels, simulator, kernelName) {
+    var kEntry = _.find(kernels, function (k) {return k.name == kernelName});
+    if (!kEntry)
+        util.die("No kernel named " + kernelName);
+    
+    var order = kEntry.order;
+    var args = kEntry.args;
+
+    if (order.length != args.length)
+        util.die("Mismatch between order/args for " + kernelName);
+
+    var argArray = [];
+    var typeArray = [];
+
+    for (var i = 0; i < order.length; i++) {
+        var arg = order[i];
+        var val = args[arg];
+        var type = argsType[arg];
+
+        if (type === undefined)
+            util.die("Cannot find type of argument " + arg + " for " + kernelName);
+
+        argArray.push(arg);
+        typeArray.push(type);
+    }
+    
+    var kernel = simulator.kernels[kernelName];
+    if (!kernel)
+        util.die("Simulator has no kernel " + kernelName);
+
+    kernel.setArgs(argArray, typeArray);
+}
 
 function createCLContextNode(renderer) {
     if (typeof webcl === "undefined") {
@@ -566,6 +598,7 @@ module.exports = {
     "createBufferGL": createBufferGL,
     "release": release,
     "setArgs": setArgs,
+    "setKernelArgs": setKernelArgs,
     "types": types,
     "write": write
 };

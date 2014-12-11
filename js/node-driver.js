@@ -33,24 +33,25 @@ function applyControls(graph, cfgName) {
     var controls = require('./layout.config.js');
     var cfg = cfgName ? controls.cfgName : controls.default;
 
-    debug("Applying simControls: %o", cfg);
-    var physicsCtrl = cfg.physics;
-    if (!physicsCtrl) {
-        physicsCtrl = controls.defaultControls.physics;
-    }
-    graph.setPhysics(physicsCtrl);
+    debug("Applying layout settings: %o", cfg);
 
-    var renderingCtrl = cfg.rendering;
-    if (!renderingCtrl) {
-        renderingCtrl = controls.defaultControl.renderingCtrl;
+    var simulator = cfg.simulator || SimCL
+    var algoEntries = cfg.layoutAlgorithms || [];
+    var layoutAlgorithms = []
+
+    for (var i = 0; i < algoEntries.length; i++) {
+        var entry = algoEntries[i];
+        var params = entry.params || {}
+        debug("Params %o", params)
+        entry.algo.setPhysics(params)
+        layoutAlgorithms.push(entry.algo);
     }
+
+    var lockCtrl = cfg.locks || controls.default.lockCtrl;
+    graph.initSimulation(simulator, layoutAlgorithms, lockCtrl);
+
+    var renderingCtrl = cfg.rendering || controls.default.renderingCtrl;
     graph.setVisible(renderingCtrl);
-
-    var lockCtrl = cfg.locks;
-    if (!lockCtrl) {
-        lockCtrl = controls.defaultControl.lockCtrl;
-    }
-    graph.setLocked(lockCtrl)
 }
 
 
@@ -213,7 +214,7 @@ function init() {
         clientHeight: HEIGHT
     };
 
-    return NBody.create(SimCL, RenderNull, document, canvasStandin, [255,255,255,1.0], dimensions, 3);
+    return NBody.create(RenderNull, document, canvasStandin, [255,255,255,1.0], dimensions, 3);
 }
 
 
@@ -271,11 +272,10 @@ function createAnimation(config) {
 
     Q.all([theGraph, theDataset]).spread(function (graph, dataset) {
         debug("Dataset %o", dataset);
-        debug("APPLYING SETTINGS");
         applyControls(graph, dataset.config['simControls']);
 
         userInteractions.subscribe(function (settings){
-            debug('updating settings..');
+            debug('Updating settings..');
             graph.updateSettings(settings);
         })
 

@@ -1,11 +1,9 @@
-
-
 var debug = require("debug")("N-body:SimCL:gaussSeidel")
 var Q = require('q');
 var _ = require('underscore');
+var util = require('./util.js');
 
 var cljs = require('./cl.js');
-
 
 if (typeof(window) == 'undefined') {
     var webcl = require('node-webcl');
@@ -13,14 +11,81 @@ if (typeof(window) == 'undefined') {
     var webcl = window.webcl;
 }
 
+var gsPoints = {
+    numPoints: null,
+    inputPositions: null,
+    outputPositions: null,
+    tilePointsParam: null,
+    width: null,
+    height: null,
+    charge: null,
+    gravity: null,
+    randValues: null,
+    stepNumber: null
+};
+var gsPointsOrder = ['numPoints',  'inputPositions', 'outputPositions', 'tilePointsParam', 'width', 
+                      'height', 'charge', 'gravity', 'randValues', 'stepNumber'];
+
+var gsSprings = {
+    springs: null,
+    workList: null,
+    inputPoints: null,
+    outputPoints: null,
+    springStrength: null,
+    springDistance: null,
+    stepNumber: null
+};
+var gsSpringsOrder = ['springs', 'workList', 'inputPoints', 'outputPoints', 
+                      'springStrength', 'springDistance','stepNumber'];
+
+var gsSpringsGather = {
+    springs: null,
+    workList: null,
+    inputPoints: null,
+    springPositions: null
+};
+var gsSpringsGatherOrder = ['springs', 'workList', 'inputPoints', 'springPositions'];
+
+var argsType = {
+    numPoints: cljs.types.uint_t,
+    inputPositions: null,
+    outputPositions: null,
+    tilePointsParam: cljs.types.local_t,
+    width: cljs.types.float_t,
+    height: cljs.types.float_t,
+    charge: cljs.types.float_t,
+    gravity: cljs.types.float_t,
+    randValues: null,
+    stepNumber: cljs.types.uint_t,
+    springs: null, 
+    workList: null,
+    inputPoints: null,
+    outputPoints: null,
+    springStrength: cljs.types.float_t,
+    springDistance: cljs.types.float_t,
+    springPositions: null 
+}
 
 module.exports = {
-
-    kernelNames: ["gaussSeidelPoints", "gaussSeidelSprings", "gaussSeidelSpringsGather"],
-
-    setPhysics: function (simulator, cfg) {
-
-        if(cfg.hasOwnProperty('charge') || cfg.hasOwnProperty('gravity')) {
+    name: "gaussSeidel",
+    kernels: [
+        {
+            name: "gaussSeidelPoints",
+            args: gsPoints,
+            order: gsPointsOrder
+        },{
+            name: "gaussSeidelSprings",
+            args: gsSprings,
+            order: gsSpringsOrder
+        },{
+            name: "gaussSeidelSpringsGather",
+            args: gsSpringsGather,
+            order: gsSpringsGatherOrder
+        }
+    ],
+    
+    setPhysics: function (cfg) {
+        /*if(cfg.hasOwnProperty('charge') || cfg.hasOwnProperty('gravity')) {
             var charge = cfg.hasOwnProperty('charge') ? (webcl.type ? [cfg.charge] : new Float32Array([cfg.charge])) : null;
             var charge_t = cfg.hasOwnProperty('charge') ? cljs.types.float_t : null;
 
@@ -30,10 +95,13 @@ module.exports = {
             simulator.kernels.gaussSeidelPoints.setArgs(
                 [null, null, null, null, null, null, charge, gravity, null, null],
                 [null, null, null, null, null, null, charge_t, gravity_t, null, null]);
+        }*/
+        if ('charge' in cfg)
+            gsPoints.charge = cfg.charge;
+        if ('gravity' in cfg)
+            gsPoints.gravity = cfg.gravity;
 
-        }
-
-        if(cfg.hasOwnProperty('edgeDistance') || cfg.hasOwnProperty('edgeStrength')) {
+        /*if(cfg.hasOwnProperty('edgeDistance') || cfg.hasOwnProperty('edgeStrength')) {
             var edgeDistance = cfg.hasOwnProperty('edgeDistance') ? (webcl.type ? [cfg.edgeDistance] : new Float32Array([cfg.edgeDistance])) : null;
             var edgeDistance_t = cfg.hasOwnProperty('edgeDistance') ? cljs.types.float_t : null;
 
@@ -43,8 +111,11 @@ module.exports = {
             simulator.kernels.gaussSeidelSprings.setArgs(
                 [null, null, null, null, edgeStrength, edgeDistance, null],
                 [null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
-        }
-
+        }*/
+        if ('edgeDistance' in cfg)
+          gsSprings.edgeDistance = cfg.edgeDistance;
+        if ('edgeStrength' in cfg)
+          gsSprings.edgeStrength = cfg.edgeStrength;
     },
 
     setPoints: function (simulator) {
@@ -56,7 +127,7 @@ module.exports = {
 
         debug("Setting point 0. FIXME: dyn alloc __local, not hardcode in kernel");
 
-        simulator.kernels.gaussSeidelPoints.setArgs([
+        /*simulator.kernels.gaussSeidelPoints.setArgs([
                 webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
                 simulator.buffers.curPoints.buffer,
                 simulator.buffers.nextPoints.buffer,
@@ -70,7 +141,8 @@ module.exports = {
             ],
             webcl.type ? [
                 webcl.type.UINT,
-                null, null,
+                null, 
+                null,
                 webcl.type.LOCAL_MEMORY_SIZE,
                 webcl.type.FLOAT,
                 webcl.type.FLOAT,
@@ -78,12 +150,21 @@ module.exports = {
                 webcl.type.FLOAT,
                 null,
                 webcl.type.UINT
-            ] : undefined);
+            ] : undefined);*/
+
+        gsPoints.numPoints = webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]);
+        gsPoints.inputPositions = simulator.buffers.curPoints.buffer;
+        gsPoints.outputPositions = simulator.buffers.nextPoints.buffer;
+        gsPoints.tilePointsParam = webcl.type ? [1] : new Uint32Array([localPosSize]);
+        gsPoints.width = webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]);
+        gsPoints.height = webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]);
+        gsPoints.randValue = simulator.buffers.randValues.buffer;
+        gsPoints.stepNumber = webcl.type ? [0] : new Uint32Array([0]);
     },
 
     setEdges: function (simulator) {
 
-        simulator.kernels.gaussSeidelSprings.setArgs(
+        /*simulator.kernels.gaussSeidelSprings.setArgs(
             [   null, //forwards/backwards picked dynamically
                 null, //forwards/backwards picked dynamically
                 null, //simulator.buffers.curPoints.buffer then simulator.buffers.nextPoints.buffer
@@ -102,6 +183,17 @@ module.exports = {
                 simulator.buffers.springsPos.buffer],
             webcl.type ? [null, null, null, null]
                 : null);
+        */
+        gsSprings.springs = null;
+        gsSprings.workList = null;
+        gsSprings.inputPoints = null;
+        gsSprings.outputPoints = null;
+        gsSprings.stepNumber = null;
+
+        gsSpringsGather.springs = simulator.buffers.forwardsEdges.buffer; 
+        gsSpringsGather.workList = simulator.buffers.forwardsWorkItems.buffer; 
+        gsSpringsGather.inputPoints = simulator.buffers.curPoints.buffer; 
+        gsSpringsGather.springPositions = simulator.buffers.springsPos.buffer;
     },
 
     tick: function (simulator, stepNumber) {
@@ -110,11 +202,19 @@ module.exports = {
 
             var resources = [edges, workItems, fromPoints, toPoints, simulator.buffers.springsPos];
 
-            simulator.kernels.gaussSeidelSprings.setArgs(
+            /*simulator.kernels.gaussSeidelSprings.setArgs(
                 [edges.buffer, workItems.buffer, fromPoints.buffer, toPoints.buffer,
                  null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
                 webcl.type ? [null, null, null, null,
-                 null, null, cljs.types.uint_t] : null);
+                 null, null, cljs.types.uint_t] : null);*/
+
+            gsSprings.spings = edges.buffer;
+            gsSprings.workList = workItems.buffer;
+            gsSprings.inputPoints = fromPoints.buffer;
+            gsSprings.outputPoints = toPoints.buffer;
+            gsSprings.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]); 
+            
+            setKernelArgs(simulator, "gaussSeidelSprings");
 
             simulator.tickBuffers(
                 _.keys(simulator.buffers).filter(function (name) {
@@ -133,9 +233,12 @@ module.exports = {
 
                 var resources = [simulator.buffers.curPoints, simulator.buffers.nextPoints, simulator.buffers.randValues];
 
-                simulator.kernels.gaussSeidelPoints.setArgs(
+                /*simulator.kernels.gaussSeidelPoints.setArgs(
                     [null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
-                    [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);
+                    [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);*/
+
+                gsPoints.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
+                setKernelArgs(simulator, "gaussSeidelPoints");
 
                 simulator.tickBuffers(['nextPoints', 'curPoints']);
 
@@ -173,5 +276,6 @@ module.exports = {
         });
 
     }
-
 }
+
+var setKernelArgs = cljs.setKernelArgs.bind('', module.exports.kernels)
