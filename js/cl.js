@@ -551,11 +551,12 @@ var write = Q.promised(function write(buffer, data) {
 });
 
 
-var read = Q.promised(function (buffer, target, optStartIdx) {
+var read = Q.promised(function (buffer, target, optStartIdx, optLen) {
     return buffer.acquire()
         .then(function() {
-            var copySize = Math.min(buffer.size, target.length * target.BYTES_PER_ELEMENT);
-            buffer.cl.queue.enqueueReadBuffer(buffer.buffer, true, optStartIdx | 0, copySize, target);
+            var start = Math.min(optStartIdx | 0, target.length);
+            var len = optLen !== undefined ? optLen : buffer.size - start;
+            buffer.cl.queue.enqueueReadBuffer(buffer.buffer, true, start, len, target);
             return buffer.release();
         })
         .then(function() {
@@ -611,5 +612,6 @@ module.exports = {
     "setArgs": setArgs,
     "setKernelArgs": setKernelArgs,
     "types": types,
-    "write": write
+    "write": write,
+    "read": read
 };

@@ -107,8 +107,10 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
 
             simObj.timeSubset = {
                 relRange: {min: 0, max: 100},
-                pointsRange: {startIdx: 0, len: renderer.numPoints},
-                edgeRange: {startIdx: 0, len: renderer.numEdges}
+                pointsRange:    {startIdx: 0, len: renderer.numPoints},
+                edgeRange:      {startIdx: 0, len: renderer.numEdges},
+                midPointsRange: {startIdx: 0, len: renderer.numPoints * numSplits},
+                midEdgeRange:   {startIdx: 0, len: renderer.numEdges * numSplits}
             };
 
             Object.seal(simObj.buffers);
@@ -459,19 +461,28 @@ function setTimeSubset(renderer, simulator, range) {
     var startIdx = Math.round(renderer.numPoints * 0.01 * range.min);
     var len = Math.round(renderer.numPoints * 0.01 * range.max) - startIdx;
 
-    //edges
-    var numWorkItems = simulator.bufferHostCopies.forwardsEdges.workItemsTyped.length / 2;
-    var startEdgeIdx = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[
-        Math.round(numWorkItems * 0.01 * range.min)];
-    var endEdgeIdx = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[
-        Math.round(numWorkItems * 0.01 * range.max)];
-    var numEdges = endEdgeIdx - startEdgeIdx
-        + simulator.bufferHostCopies.forwardsEdges.degreesTyped[endEdgeIdx];
+
+    var pointToEdgeIdx = function (ptIdx) {
+        var edgeList = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[ptIdx];
+        return simulator.bufferHostCopies.forwardsEdges.workItemsTyped[2 * edgeList];
+    };
+
+    //edges: sorted by start, so just compare start vs stop
+    var startEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.min));
+    var endEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.max));
+
+    var numEdges = endEdgeIdx - startEdgeIdx;
 
     simulator.timeSubset =
         {relRange: range, //%
-         pointsRange: {startIdx: startIdx, len: len},
-         edgeRange: {startIdx: startEdgeIdx, len: numEdges}};
+         pointsRange:       {startIdx: startIdx, len: len},
+         edgeRange:         {startIdx: startEdgeIdx, len: numEdges},
+         midPointsRange:    {
+                startIdx: startIdx      * simulator.numSplits,
+                len: len                * simulator.numSplits},
+         midEdgeRange:      {
+                startIdx: startEdgeIdx  * (1+simulator.numSplits),
+                len: numEdges           * (1+simulator.numSplits)}};
 }
 
 

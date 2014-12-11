@@ -64,6 +64,12 @@ function resetState(config) {
 }
 
 
+function getState() {
+    return animStep.graph.then(function (graph) {
+        return graph.simulator.buffers;
+    })
+}
+
 /**** END GLOBALS ****************************************************/
 
 
@@ -83,6 +89,8 @@ function vboSizeMB(vbos) {
 function init(config, app, socket) {
     debug('Client connected', socket.id);
 
+    // Get the datasetname from the socket query param, sent by Central
+    config.DATASETNAME = socket.handshake.query.datasetname;
     resetState(config);
 
     app.get('/vbo', function(req, res) {
@@ -329,10 +337,9 @@ function init(config, app, socket) {
         })
         .subscribe(function () { debug('LOOP ITERATED', socket.id); }, debug.bind('ERROR LOOP'));
     });
+    return module.exports;
 }
 
-
-module.exports = init;
 
 if (require.main === module) {
 
@@ -394,4 +401,10 @@ if (require.main === module) {
             function () { console.log('\nViz worker listening'); },
             function (err) { console.error('\nError starting viz worker', err); });
 
+}
+
+
+module.exports = {
+    init: init,
+    getState: getState
 }

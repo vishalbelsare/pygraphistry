@@ -216,12 +216,20 @@ var setEdges = Q.promised(function(graph, edges) {
         */
 
         var degreesFlattened = new Uint32Array(graph.__pointsHostBuffer.length);
-        //-1 signifies no item
+        //to closeset workItem in case src has none
         var srcToWorkItem = new Int32Array(graph.__pointsHostBuffer.length);
+        for (var i = 0; i < srcToWorkItem.length; i++) {
+            srcToWorkItem[i] = -1;
+        }
         workItems.forEach(function (edgeList, idx) {
-            srcToWorkItem[edgeList[0]] = idx;
+            srcToWorkItem[edgeList[2]] = idx;
             degreesFlattened[edgeList[2]] = edgeList[1];
         });
+        for (var i = 0; i < srcToWorkItem.length; i++) {
+            if (srcToWorkItem[i] == -1) {
+                srcToWorkItem[i] = i == 0 ? 0 : srcToWorkItem[i - 1];
+            }
+        }
 
         //Uint32Array [first edge number from src idx, number of edges from src idx]
         //fetch edge to find src and dst idx (all src same)
