@@ -67,8 +67,13 @@ function getImage(url) {
     return deferred.promise;
 }
 
+function die(msg) {
+    console.error("FATAL ERROR: ", (new Error(msg)).stack)
+    process.exit(1);
+}
 
 module.exports = {
     "getSource": getSource,
     "getImage": getImage,
+    "die": die
 };

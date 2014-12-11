@@ -146,73 +146,71 @@ module.exports = {
     tick: function (simulator, stepNumber) {
         var tickTime = Date.now()
 
-        if (simulator.physics.forceAtlas) {
+        var atlasEdgesKernelSeq = function (edges, workItems, numWorkItems, fromPoints, toPoints) {
 
-            var atlasEdgesKernelSeq = function (edges, workItems, numWorkItems, fromPoints, toPoints) {
+            var resources = [edges, workItems, fromPoints, toPoints];
 
-                var resources = [edges, workItems, fromPoints, toPoints];
-
-                simulator.kernels.forceAtlasEdges.setArgs(
-                    graphArgs.map(function () { return null; })
-                        .concat(
-                            [edges.buffer, workItems.buffer, fromPoints.buffer, webcl.type ? [stepNumber] : new Uint32Array([stepNumber]),
-                            toPoints.buffer]),
-                    webcl.type ? graphArgs_t.map(function () { return null; })
-                        .concat([null, null, null, cljs.types.uint_t, null])
-                        : undefined);
-
-                simulator.tickBuffers(
-                    _.keys(simulator.buffers).filter(function (name) {
-                        return simulator.buffers[name] == toPoints;
-                    }));
-
-                return simulator.kernels.forceAtlasEdges.call(numWorkItems, resources);
-            };
-
-            var resources = [
-                simulator.buffers.curPoints,
-                simulator.buffers.forwardsDegrees,
-                simulator.buffers.backwardsDegrees,
-                simulator.buffers.nextPoints,
-                simulator.buffers.springsPos
-            ];
-
-            simulator.kernels.forceAtlasPoints.setArgs(
+            simulator.kernels.forceAtlasEdges.setArgs(
                 graphArgs.map(function () { return null; })
-                    .concat([null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])]),
+                    .concat(
+                        [edges.buffer, workItems.buffer, fromPoints.buffer, webcl.type ? [stepNumber] : new Uint32Array([stepNumber]),
+                        toPoints.buffer]),
                 webcl.type ? graphArgs_t.map(function () { return null; })
-                    .concat([null, null, null, null, null, null, null, cljs.types.uint_t])
+                    .concat([null, null, null, cljs.types.uint_t, null])
                     : undefined);
 
-            simulator.tickBuffers(['nextPoints', 'curPoints', 'springsPos'])
-            var appliedForces = simulator.kernels.forceAtlasPoints.call(simulator.numPoints, resources);
+            simulator.tickBuffers(
+                _.keys(simulator.buffers).filter(function (name) {
+                    return simulator.buffers[name] == toPoints;
+                }));
 
-            return appliedForces
-                .then(function() {
-                    if(simulator.numEdges > 0) {
-                        return atlasEdgesKernelSeq(
-                                simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
-                                simulator.buffers.nextPoints, simulator.buffers.curPoints)
-                            .then(function () {
-                                 return atlasEdgesKernelSeq(
-                                    simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
-                                    simulator.buffers.curPoints, simulator.buffers.nextPoints);
-                            })
-                            .then(function () {
+            return simulator.kernels.forceAtlasEdges.call(numWorkItems, resources);
+        };
 
-                                return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-                            });
-                    }
-                })
-                .then(function () {
-                    if (simulator.numEdges > 0) {
+        var resources = [
+            simulator.buffers.curPoints,
+            simulator.buffers.forwardsDegrees,
+            simulator.buffers.backwardsDegrees,
+            simulator.buffers.nextPoints,
+            simulator.buffers.springsPos
+        ];
 
-                        var resources = [simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems,
-                            simulator.buffers.curPoints, simulator.buffers.springsPos];
+        simulator.kernels.forceAtlasPoints.setArgs(
+            graphArgs.map(function () { return null; })
+                .concat([null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])]),
+            webcl.type ? graphArgs_t.map(function () { return null; })
+                .concat([null, null, null, null, null, null, null, cljs.types.uint_t])
+                : undefined);
 
-                        return simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources);
-                    }
-                })
-        }
+        simulator.tickBuffers(['nextPoints', 'curPoints', 'springsPos'])
+        var appliedForces = simulator.kernels.forceAtlasPoints.call(simulator.numPoints, resources);
+
+        return appliedForces
+            .then(function() {
+                if(simulator.numEdges > 0) {
+                    return atlasEdgesKernelSeq(
+                            simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
+                            simulator.buffers.nextPoints, simulator.buffers.curPoints)
+                        .then(function () {
+                              return atlasEdgesKernelSeq(
+                                simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
+                                simulator.buffers.curPoints, simulator.buffers.nextPoints);
+                        })
+                        .then(function () {
+
+                            return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
+                        });
+                }
+            })
+            .then(function () {
+                if (simulator.numEdges > 0) {
+
+                    var resources = [simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems,
+                        simulator.buffers.curPoints, simulator.buffers.springsPos];
+
+                    return simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources);
+                }
+            })
+        
     }
 };

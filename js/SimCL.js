@@ -4,18 +4,7 @@ var Q = require('q');
 var util = require('./util.js');
 var cljs = require('./cl.js');
 var _ = require('underscore');
-var debug = require("debug")("N-body:SimCL");
-
-
-var forceAtlas = require('./forceatlas.js'),
-    gaussSeidel = require('./gaussseidel.js'),
-    edgeBundling = require('./edgebundling.js'),
-    barnesHut = require('./BarnesHut.js');
-
-
-//var layoutAlgorithms = [barnesHut, gaussSeidel, edgeBundling];;
-var layoutAlgorithms = [forceAtlas, gaussSeidel, edgeBundling];
-
+var debug = require("debug")("graphistry:graph-viz:simcl");
 
 if (typeof(window) == 'undefined') {
     var webcl = require('node-webcl');
@@ -23,20 +12,16 @@ if (typeof(window) == 'undefined') {
     var webcl = window.webcl;
 }
 
-
 Q.longStackSupport = true;
 var randLength = 73;
 
-function create(renderer, dimensions, numSplits, locked) {
+function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
     return cljs.create(renderer)
     .then(function(cl) {
         debug("Creating CL object with GL context");
 
-        var kernelNames =
-            _.chain(layoutAlgorithms)
-                .pluck('kernelNames')
-                .flatten()
-                .value();
+        var kernelNames = _.chain(layoutAlgorithms)
+                .pluck("kernels").flatten().pluck("name").flatten().value();
 
         // Compile the WebCL kernels
         return util.getSource("apply-forces.cl")
@@ -55,7 +40,8 @@ function create(renderer, dimensions, numSplits, locked) {
                 versions: {
                     tick: 0,
                     buffers: { }
-                }
+                },
+                layoutAlgorithms: layoutAlgorithms
             };
             simObj.tick = tick.bind(this, simObj);
             simObj.setPoints = setPoints.bind(this, simObj);
@@ -78,10 +64,7 @@ function create(renderer, dimensions, numSplits, locked) {
             simObj.numMidPoints = 0;
             simObj.numMidEdges = 0;
             simObj.postSlider = true; // Enable/Disable Leo's slider
-            simObj.locked = _.extend(
-                {lockPoints: false, lockMidpoints: true, lockEdges: false, lockMidedges: true},
-                (locked || {})
-            );
+            simObj.locked = locked || {};
             simObj.physics = {};
 
             simObj.bufferHostCopies = {
@@ -240,11 +223,14 @@ function setPoints(simulator, points) {
     .spread(function(pointsBuf, randValues) {
         simulator.buffers.curPoints = pointsBuf;
     })
-    .then(gaussSeidel.setPoints.bind('', simulator))
-    .then(forceAtlas.setPoints.bind('', simulator))
-    .then(edgeBundling.setPoints.bind('', simulator))
-    .then(function () {return simulator;}, function () {
-        console.error("Failure in SimCl.setPoints")
+    .then(function () {
+        _.each(simulator.layoutAlgorithms, function (la) {
+            la.setPoints(simulator);
+        });
+        return simulator;
+    })
+    .fail(function (err) {
+        console.error("Failure in SimCl.setPoints ", (err||{}).stack)
     });
 }
 
@@ -269,8 +255,8 @@ function setSizes(simulator, pointSizes) {
 
         simulator.renderer.buffers.pointSizes = pointSizesVBO;
         return simulator;
-    }).fail(function (error) {
-        console.error("ERROR Failure in SimCl.setSizes", error.stack)
+    }).fail(function (err) {
+        console.error("ERROR Failure in SimCl.setSizes", (err||{}).stack)
     });
 }
 
@@ -288,8 +274,8 @@ function setColors(simulator, pointColors) {
 
         simulator.renderer.buffers.pointColors = pointColorsVBO;
         return simulator;
-    }).fail(function (error) {
-        console.error("ERROR Failure in SimCl.setColors", error.stack)
+    }).fail(function (err) {
+        console.error("ERROR Failure in SimCl.setColors", (err||{}).stack)
     });
 }
 
@@ -407,7 +393,7 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints)
     })
     .then( function () {
         return Q.all(
-            layoutAlgorithms
+            simulator.layoutAlgorithms
                 .map(function (alg) {
                     return alg.setEdges(simulator);
                 }));
@@ -417,9 +403,8 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints)
             setTimeSubset(renderer, simulator, simulator.timeSubset.relRange);
         return simulator;
     })
-    .then(_.identity, function (err) {
-        console.error('bad set edges', err);
-        console.error(err.stack);
+    .fail(function (err) {
+        console.error('ERROR in SetEdges ', (err||{}).stack);
     });
 }
 
@@ -451,19 +436,9 @@ function setLocked(simulator, cfg) {
 
 
 function setPhysics(simulator, cfg) {
-    // TODO: Instead of setting these kernel args immediately, we should make the physics values
-    // properties of the simulator object, and just change those properties. Then, when we run
-    // the kernels, we set the arg using the object property (the same way we set stepNumber.)
-
-    cfg = cfg || {};
-    for (var i in cfg) {
-        simulator.physics[i] = cfg[i];
-    }
-
-    debug("Updating simulation physics to %o (new: %o)", simulator.physics, cfg);
-
-    layoutAlgorithms.forEach(function (algorithm) {
-        algorithm.setPhysics(simulator, cfg);
+    _.each(simulator.layoutAlgorithms, function (algo) {
+        if (algo.name in cfg)
+            algo.setPhysics(cfg.name)
     });
 }
 
@@ -524,8 +499,9 @@ function tick(simulator, stepNumber) {
     };
 
     var res = Q()
-    .then(function () { return tickAllHelper(layoutAlgorithms.slice(0)); })
-    .then(function() {
+    .then(function () { 
+        return tickAllHelper(simulator.layoutAlgorithms.slice(0)); 
+    }).then(function() {
         // This cl.queue.finish() needs to be here because, without it, the queue appears to outside
         // code as running really fast, and tons of ticks will be called, flooding the GPU/CPU with
         // more stuff than they can handle.
@@ -534,10 +510,8 @@ function tick(simulator, stepNumber) {
         // argument to finish().
         simulator.cl.queue.finish();
         simulator.renderer.finish();
-    });
-
-    res.then(function () {}, function (err) {
-        console.error('tick fail!', err, (err||{}).stack);
+    }).fail(function (err) {
+        console.error('SimCl tick fail! ', err, (err||{}).stack);
     })
 
     return res;

@@ -103,24 +103,21 @@ function applyControls(graph, cfgName) {
     var controls = require('./layout.config.js');
     var cfg = cfgName ? controls.cfgName : controls.default;
 
-    debug("Applying simControls: %o", cfg);
-    var physicsCtrl = cfg.physics;
-    if (!physicsCtrl) {
-        physicsCtrl = controls.defaultControls.physics;
-    }
-    graph.setPhysics(physicsCtrl);
+    debug("Applying layout settings: %o", cfg);
 
-    var renderingCtrl = cfg.rendering;
-    if (!renderingCtrl) {
-        renderingCtrl = controls.defaultControl.renderingCtrl;
-    }
-    graph.setVisible(renderingCtrl);
+    var simulator = cfg.simulator || SimCL
+    var algoEntries = cfg.layoutAlgorithms || [];
+    var layoutAlgorithms = []
 
-    var lockCtrl = cfg.locks;
-    if (!lockCtrl) {
-        lockCtrl = controls.defaultControl.lockCtrl;
+    for (var i = 0; i < algoEntries.length; i++) {
+        var entry = algoEntries[i];
+        var params = entry.params || {}
+        entry.algo.setPhysics(params)
+        layoutAlgorithms.push(entry.algo);
     }
-    graph.setLocked(lockCtrl)
+
+    var lockCtrl = cfg.locks || controls.default.lockCtrl;
+    return graph.initSimulation(simulator, layoutAlgorithms, lockCtrl);
 }
 
 
@@ -247,7 +244,10 @@ function init() {
         clientHeight: HEIGHT
     };
 
-    return NBody.create(SimCL, RenderNull, document, canvasStandin, [255,255,255,1.0], dimensions, 3);
+    return NBody.create(RenderNull, document, canvasStandin, [255,255,255,1.0], dimensions, 3)
+        .fail(function (err) {
+            console.error("ERROR Nbody.create failed ", (err||{}).stack);
+        });
 }
 
 
@@ -290,9 +290,9 @@ function createAnimation(config) {
     // the contents of each VBO
     var animStepSubj = new Rx.BehaviorSubject(null);
 
-    animStepSubj.subscribe(function () {
-        debug("NOTIFYING OF BIG STEP")
-    })
+    //animStepSubj.subscribe(function () {
+    //    debug("NOTIFYING OF BIG STEP")
+    //})
 
     var dataConfig = {
         'listURI': config.DATALISTURI,
@@ -307,11 +307,13 @@ function createAnimation(config) {
 
     Q.all([theGraph, theDataset]).spread(function (graph, dataset) {
         debug("Dataset %o", dataset);
-        debug("APPLYING SETTINGS");
-        applyControls(graph, dataset.config['simControls']);
-
+        return Q.all([
+            applyControls(graph, dataset.config['simControls']),
+            dataset
+        ]);
+    }).spread(function (graph, dataset) {
         userInteractions.subscribe(function (settings){
-            debug('updating settings..');
+            debug('Updating settings..');
             graph.updateSettings(settings);
         })
 
@@ -352,12 +354,12 @@ function createAnimation(config) {
                         return isRunningRecent.filter(_.identity).take(1);
                     })
                     .flatMap(function(v) {
-                        debug('step..')
+                        //debug('step..')
                         return (Rx.Observable.fromPromise(
                             graph
                                 .tick()
                                 .then(function () {
-                                    debug('ticked');
+                                    //debug('ticked');
                                     metrics.info({metric: {'tick_durationMS': Date.now() - now} });
                                 })
                         ));

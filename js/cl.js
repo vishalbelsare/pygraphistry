@@ -3,8 +3,9 @@
 var Q = require('q');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');
-var debug = require("debug")("N-body:cl");
+var debug = require("debug")("graphistry:graph-viz:cl");
 var util = require('util');
+var utiljs = require('./util.js');
 
 
 var NODEJS = typeof(window) === 'undefined';
@@ -27,6 +28,48 @@ var create = Q.promised(function(renderer) {
     }
 });
 
+function setKernelArgs(kernels, simulator, kernelName) {
+    var kEntry = _.find(kernels, function (k) {return k.name == kernelName});
+    if (!kEntry)
+        utiljs.die("No kernel named " + kernelName);
+    
+    var order = kEntry.order;
+    var args = kEntry.args;
+    var types = kEntry.types;
+    if (order == undefined || args == undefined || types == undefined)
+        utiljs.die("kEntry incomplete for kernel %s", kernelName)
+        
+
+    debug("Setting Kernel Args for %s %o", kernelName, args)
+
+    if (order.length != Object.keys(args).length) {
+        console.error("Order %o", order)
+        console.error("Args %o", args)
+        utiljs.die("Mismatch between order/args for " + kernelName);
+    }
+
+    var argArray = [];
+    var typeArray = [];
+
+    for (var i = 0; i < order.length; i++) {
+        var arg = order[i];
+        var val = args[arg];
+        var type = types[arg];
+
+        if (type === undefined)
+            utiljs.die("Cannot find type of argument " + arg + " for " + kernelName);
+        if (val === null) 
+            console.warn("WARNING In kernel %s, attribute %s is null", kernelName, arg);
+        argArray.push(val);
+        typeArray.push(type);
+    }
+    
+    var kernel = simulator.kernels[kernelName];
+    if (!kernel)
+        utiljs.die("Simulator has no kernel " + kernelName);
+
+    kernel.setArgs(argArray, typeArray);
+}
 
 function createCLContextNode(renderer) {
     if (typeof webcl === "undefined") {
@@ -567,6 +610,7 @@ module.exports = {
     "createBufferGL": createBufferGL,
     "release": release,
     "setArgs": setArgs,
+    "setKernelArgs": setKernelArgs,
     "types": types,
     "write": write,
     "read": read
