@@ -42,16 +42,17 @@ function applyControls(graph, cfgName) {
     for (var i = 0; i < algoEntries.length; i++) {
         var entry = algoEntries[i];
         var params = entry.params || {}
-        debug("Params %o", params)
         entry.algo.setPhysics(params)
         layoutAlgorithms.push(entry.algo);
     }
 
     var lockCtrl = cfg.locks || controls.default.lockCtrl;
-    graph.initSimulation(simulator, layoutAlgorithms, lockCtrl);
-
-    var renderingCtrl = cfg.rendering || controls.default.renderingCtrl;
-    graph.setVisible(renderingCtrl);
+    return graph.initSimulation(simulator, layoutAlgorithms, lockCtrl)
+        .then(function (graph) {
+            var renderingCtrl = cfg.rendering || controls.default.renderingCtrl;
+            graph.setVisible(renderingCtrl);
+            return graph;
+        });
 }
 
 
@@ -257,9 +258,9 @@ function createAnimation(config) {
     // the contents of each VBO
     var animStepSubj = new Rx.BehaviorSubject(null);
 
-    animStepSubj.subscribe(function () {
-        debug("NOTIFYING OF BIG STEP")
-    })
+    //animStepSubj.subscribe(function () {
+    //    debug("NOTIFYING OF BIG STEP")
+    //})
 
     var dataConfig = {
         'listURI': config.DATALISTURI, 
@@ -272,8 +273,11 @@ function createAnimation(config) {
 
     Q.all([theGraph, theDataset]).spread(function (graph, dataset) {
         debug("Dataset %o", dataset);
-        applyControls(graph, dataset.config['simControls']);
-
+        return Q.all([
+            applyControls(graph, dataset.config['simControls']),
+            dataset
+        ]);
+    }).spread(function (graph, dataset) {
         userInteractions.subscribe(function (settings){
             debug('Updating settings..');
             graph.updateSettings(settings);
@@ -316,12 +320,12 @@ function createAnimation(config) {
                         return isRunningRecent.filter(_.identity).take(1);
                     })
                     .flatMap(function(v) {
-                        debug('step..')
+                        //debug('step..')
                         return (Rx.Observable.fromPromise(
                             graph
                                 .tick()
                                 .then(function () {
-                                    debug('ticked');
+                                    //debug('ticked');
                                     metrics.info({metric: {'tick_durationMS': Date.now() - now} });
                                 })
                         ));

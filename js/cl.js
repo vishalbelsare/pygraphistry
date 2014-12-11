@@ -5,6 +5,7 @@ var events = require('./SimpleEvents.js');
 var _ = require('underscore');
 var debug = require("debug")("N-body:cl");
 var util = require('util');
+var utiljs = require('./util.js');
 
 
 var NODEJS = typeof(window) === 'undefined';
@@ -30,13 +31,16 @@ var create = Q.promised(function(renderer) {
 function setKernelArgs(kernels, simulator, kernelName) {
     var kEntry = _.find(kernels, function (k) {return k.name == kernelName});
     if (!kEntry)
-        util.die("No kernel named " + kernelName);
+        utiljs.die("No kernel named " + kernelName);
     
     var order = kEntry.order;
     var args = kEntry.args;
+    var types = kEntry.types;
 
-    if (order.length != args.length)
-        util.die("Mismatch between order/args for " + kernelName);
+    console.info("Setting Kernel Args for %s %o", kernelName, args)
+
+    if (order.length != Object.keys(args).length)
+        utiljs.die("Mismatch between order/args for " + kernelName);
 
     var argArray = [];
     var typeArray = [];
@@ -44,18 +48,19 @@ function setKernelArgs(kernels, simulator, kernelName) {
     for (var i = 0; i < order.length; i++) {
         var arg = order[i];
         var val = args[arg];
-        var type = argsType[arg];
+        var type = types[arg];
 
         if (type === undefined)
-            util.die("Cannot find type of argument " + arg + " for " + kernelName);
-
-        argArray.push(arg);
+            utiljs.die("Cannot find type of argument " + arg + " for " + kernelName);
+        if (val === null) 
+            console.warn("WARNING attribute %s is null", arg);
+        argArray.push(val);
         typeArray.push(type);
     }
     
     var kernel = simulator.kernels[kernelName];
     if (!kernel)
-        util.die("Simulator has no kernel " + kernelName);
+        utiljs.die("Simulator has no kernel " + kernelName);
 
     kernel.setArgs(argArray, typeArray);
 }

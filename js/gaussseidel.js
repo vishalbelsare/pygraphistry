@@ -1,8 +1,6 @@
-var debug = require("debug")("N-body:SimCL:gaussSeidel")
+var debug = require("debug")("graphistry:graph-viz:gaussSeidel")
 var Q = require('q');
 var _ = require('underscore');
-var util = require('./util.js');
-
 var cljs = require('./cl.js');
 
 if (typeof(window) == 'undefined') {
@@ -72,15 +70,18 @@ module.exports = {
         {
             name: "gaussSeidelPoints",
             args: gsPoints,
-            order: gsPointsOrder
+            order: gsPointsOrder,
+            types: argsType
         },{
             name: "gaussSeidelSprings",
             args: gsSprings,
-            order: gsSpringsOrder
+            order: gsSpringsOrder,
+            types: argsType
         },{
             name: "gaussSeidelSpringsGather",
             args: gsSpringsGather,
-            order: gsSpringsGatherOrder
+            order: gsSpringsGatherOrder,
+            types: argsType
         }
     ],
     
@@ -151,14 +152,16 @@ module.exports = {
                 null,
                 webcl.type.UINT
             ] : undefined);*/
+       
 
+        debug("curPointBuf %o", simulator.buffers.curPoints.buffer)
         gsPoints.numPoints = webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]);
         gsPoints.inputPositions = simulator.buffers.curPoints.buffer;
         gsPoints.outputPositions = simulator.buffers.nextPoints.buffer;
         gsPoints.tilePointsParam = webcl.type ? [1] : new Uint32Array([localPosSize]);
         gsPoints.width = webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]);
         gsPoints.height = webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]);
-        gsPoints.randValue = simulator.buffers.randValues.buffer;
+        gsPoints.randValues = simulator.buffers.randValues.buffer;
         gsPoints.stepNumber = webcl.type ? [0] : new Uint32Array([0]);
     },
 
@@ -208,7 +211,7 @@ module.exports = {
                 webcl.type ? [null, null, null, null,
                  null, null, cljs.types.uint_t] : null);*/
 
-            gsSprings.spings = edges.buffer;
+            gsSprings.springs = edges.buffer;
             gsSprings.workList = workItems.buffer;
             gsSprings.inputPoints = fromPoints.buffer;
             gsSprings.outputPoints = toPoints.buffer;
@@ -221,6 +224,7 @@ module.exports = {
                     return simulator.buffers[name] == toPoints;
                 }));
 
+            debug("Running gaussSeidelSprings");
             return simulator.kernels.gaussSeidelSprings.call(numWorkItems, resources);
         };
 
@@ -228,6 +232,7 @@ module.exports = {
         .then(function () {
 
             if (simulator.locked.lockPoints) {
+                debug("Points are locked, nothing to do.")
                 return;
             } else {
 
@@ -242,12 +247,14 @@ module.exports = {
 
                 simulator.tickBuffers(['nextPoints', 'curPoints']);
 
+                debug("Running gaussSeidelPoints");
                 return simulator.kernels.gaussSeidelPoints.call(simulator.numPoints, resources)
                     .then(function () {return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints); });
 
             }
         }).then(function() {
             if (simulator.numEdges <= 0 || simulator.locked.lockEdges) {
+                debug("Edges are locked, nothing to do.")
                 return simulator;
             }
             if(simulator.numEdges > 0) {
@@ -267,7 +274,15 @@ module.exports = {
                     simulator.buffers.curPoints, simulator.buffers.springsPos];
 
                 simulator.tickBuffers(['springsPos']);
+                
+                gsSpringsGather.springs = simulator.buffers.forwardsEdges.buffer;
+                gsSpringsGather.workList = simulator.buffers.forwardsWorkItems.buffer;
+                gsSpringsGather.inputPoints = simulator.buffers.curPoints.buffer;
+                gsSpringsGather.springPositions = simulator.buffers.springsPos.buffer;
 
+                setKernelArgs(simulator, "gaussSeidelSpringsGather");
+
+                debug("Running gaussSeidelSpringsGather");
                 return simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources);
 
             } else {
@@ -277,5 +292,4 @@ module.exports = {
 
     }
 }
-
 var setKernelArgs = cljs.setKernelArgs.bind('', module.exports.kernels)

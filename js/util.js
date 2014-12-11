@@ -68,8 +68,7 @@ function getImage(url) {
 }
 
 function die(msg) {
-    console.error("FATAL ERROR: ", msg);
-    console.error(new Error().stack);
+    console.error("FATAL ERROR: ", (new Error(msg)).stack)
     process.exit(1);
 }
 

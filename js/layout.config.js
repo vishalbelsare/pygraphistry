@@ -36,7 +36,7 @@ var defaultControls = {
         }*/
     ],
     locks: {
-        lockPoints: true,
+        lockPoints: false,
         lockEdges: true,
         lockMidpoints: false,
         lockMidedges: false  
