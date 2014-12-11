@@ -25,6 +25,8 @@ var gsPoints = {
 };
 var gsPointsOrder = ['numPoints',  'inputPositions', 'outputPositions', 'tilePointsParam', 'width', 
                       'height', 'charge', 'gravity', 'randValues', 'stepNumber'];
+Object.seal(gsPoints);
+
 
 var gsSprings = {
     springs: null,
@@ -37,6 +39,7 @@ var gsSprings = {
 };
 var gsSpringsOrder = ['springs', 'workList', 'inputPoints', 'outputPoints', 
                       'springStrength', 'springDistance','stepNumber'];
+Object.seal(gsSprings);
 
 var gsSpringsGather = {
     springs: null,
@@ -45,6 +48,7 @@ var gsSpringsGather = {
     springPositions: null
 };
 var gsSpringsGatherOrder = ['springs', 'workList', 'inputPoints', 'springPositions'];
+Object.seal(gsSpringsGather);
 
 var argsType = {
     numPoints: cljs.types.uint_t,
@@ -65,6 +69,7 @@ var argsType = {
     springDistance: cljs.types.float_t,
     springPositions: null 
 }
+Object.seal(argsType);
 
 module.exports = {
     name: "gaussSeidel",
