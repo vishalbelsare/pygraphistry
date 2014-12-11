@@ -568,5 +568,6 @@ module.exports = {
     "release": release,
     "setArgs": setArgs,
     "types": types,
-    "write": write
+    "write": write,
+    "read": read
 };

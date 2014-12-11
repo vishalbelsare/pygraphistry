@@ -299,6 +299,8 @@ function createAnimation(config) {
         'name': config.DATASETNAME,
         'idx': config.DATASETIDX
     }
+    
+    console.log(dataConfig)
 
     var theDataset = loader.getDataset(dataConfig);
     var theGraph = init();
@@ -378,7 +380,8 @@ function createAnimation(config) {
         proxy: function (settings) {
             userInteractions.onNext(settings);
         },
-        ticks: animStepSubj.skip(1)
+        ticks: animStepSubj.skip(1),
+        graph: theGraph
     }
 }
 
