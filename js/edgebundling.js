@@ -1,7 +1,7 @@
 
 var _       = require('underscore'),
     Q       = require('q'),
-    debug   = require('debug')('StreamGL:edgebundling');
+    debug   = require('debug')('graphistry:graph-viz:edgebundling');
 
 
 var cljs = require('./cl.js');
@@ -16,8 +16,8 @@ if (typeof(window) == 'undefined') {
 var gsMidpoints = {
     numPoints: null,
     numSplits: null,
-    inputMidPositions: null,
-    outputMidPositions: null,
+    inputMidPoints: null,
+    outputMidPoints: null,
     tilePointsParam: null,
     width: null,
     height: null,
@@ -26,7 +26,7 @@ var gsMidpoints = {
     randValues: null,
     stepNumber: null
 };
-var gsMidpointsOrder = ['numPoints', 'numSplits', 'inputMidPositions', 'outputMidPositions', 'tilePointsParam', 
+var gsMidpointsOrder = ['numPoints', 'numSplits', 'inputMidPoints', 'outputMidPoints', 'tilePointsParam', 
                         'width', 'height', 'charge', 'gravity', 'randValues', 'stepNumber'];
 
 var gsMidsprings = {
@@ -47,7 +47,7 @@ var gsMidspringsOrder = ['numSplits', 'springs', 'workList', 'inputPoints', 'inp
                          'springStrength', 'springDistance', 'stepNumber'];
 
 var argsType = {
-    xxnumPoints: cljs.types.uint_t,
+    numPoints: cljs.types.uint_t,
     numSplits: cljs.types.uint_t,
     inputMidPositions: null,
     outputMidPositions: null,
@@ -75,11 +75,13 @@ module.exports = {
         {
             name: "gaussSeidelMidpoints",
             args: gsMidpoints,
-            order: gsMidpointsOrder
+            order: gsMidpointsOrder,
+            types: argsType
         },{
             name: "gaussSeidelMidsprings",
             args: gsMidsprings,
-            order: gsMidspringsOrder
+            order: gsMidspringsOrder,
+            types: argsType
         }
     ],
 
@@ -99,6 +101,8 @@ module.exports = {
         }*/
         if ('charge' in cfg)
             gsMidpoints.charge = webcl.type ? [cfg.charge] : new Float32Array([cfg.charge]);
+        if ('gravity' in cfg)
+            gsMidpoints.gravity = webcl.type ? [cfg.gravity] : new Float32Array([cfg.gravity]);
 
         /*if(cfg.hasOwnProperty('edgeDistance') || cfg.hasOwnProperty('edgeStrength')) {
             var edgeDistance = cfg.hasOwnProperty('edgeDistance') ? (webcl.type ? [cfg.edgeDistance] : new Float32Array([cfg.edgeDistance])) : null;
@@ -113,7 +117,7 @@ module.exports = {
                 [null, null, null, null, null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
         }*/
         if ('edgeDistance' in cfg)
-            gsMidsprings.edgeDistance = webcl.type ? [cfg.edgeDistance] : new Float32Array([cfg.edgeDistance]);
+            gsMidsprings.springDistance = webcl.type ? [cfg.edgeDistance] : new Float32Array([cfg.edgeDistance]);
         if ('edgeStrength' in cfg)
             gsMidsprings.springStrength = webcl.type ? [cfg.edgeStrength] : new Float32Array([cfg.edgeStrength]);
 
@@ -215,6 +219,7 @@ module.exports = {
                 setKernelArgs(simulator, "gaussSeidelMidpoints");
                 simulator.tickBuffers(['curMidPoints', 'nextMidPoints']);
 
+                debug("Running kernel gaussSeidelMidpoints")
                 return simulator.kernels.gaussSeidelMidpoints.call(simulator.numMidPoints, resources);
             }
         })
@@ -236,11 +241,12 @@ module.exports = {
                     [null, null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
                     [null, null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);*/
 
-                gsSprings.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
+                gsMidsprings.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
                 setKernelArgs(simulator, "gaussSeidelMidsprings");
 
                 simulator.tickBuffers(['curMidPoints', 'midSpringsPos', 'midSpringsColorCoord']);
 
+                debug("Running kernel gaussSeidelMidsprings")
                 return simulator.kernels.gaussSeidelMidsprings.call(simulator.numForwardsWorkItems, resources);
             } else {
 
@@ -248,8 +254,9 @@ module.exports = {
 
                 return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
             }
-        })
-        .then(_.identity, debug.bind('EDGE BUNDLING TICK ERROR'));
+        }).fail(function (err) {
+            console.error('ERROR edgebundling tick ', err.stack)
+        });
 
     }
 

@@ -236,8 +236,8 @@ function setPoints(simulator, points) {
     .then(gaussSeidel.setPoints.bind('', simulator))
     .then(forceAtlas.setPoints.bind('', simulator))
     .then(edgeBundling.setPoints.bind('', simulator))
-    .then(function () {return simulator;}, function () {
-        console.error("Failure in SimCl.setPoints")
+    .then(function () {return simulator;}, function (err) {
+        console.error("Failure in SimCl.setPoints ", err.stack)
     });
 }
 
@@ -410,7 +410,7 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints)
             setTimeSubset(renderer, simulator, simulator.timeSubset.relRange);
         return simulator;
     })
-    .then(_.identity, function (err) {
+    .fail(function (err) {
         console.error('bad set edges', err);
         console.error(err.stack);
     });
@@ -509,10 +509,8 @@ function tick(simulator, stepNumber) {
         // argument to finish().
         simulator.cl.queue.finish();
         simulator.renderer.finish();
-    });
-
-    res.then(function () {}, function (err) {
-        console.error('tick fail!', err, (err||{}).stack);
+    }).fail(function (err) {
+        console.error('SimCl tick fail! ', err, (err||{}).stack);
     })
 
     return res;

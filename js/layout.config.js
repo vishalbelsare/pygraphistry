@@ -25,7 +25,7 @@ var defaultControls = {
                 edgeStrength: 4.292198241799153,
                 edgeDistance: 0.0000158
             }
-        }/*,{
+        },{
             algo: edgeBundling,
             params: {
                 charge: -0.000029360001841802474, 
@@ -33,10 +33,45 @@ var defaultControls = {
                 edgeStrength: 4.292198241799153,
                 edgeDistance: 0.0000158,
             }
-        }*/
+        }
     ],
     locks: {
-        lockPoints: false,
+        lockPoints: true,
+        lockEdges: true,
+        lockMidpoints: false,
+        lockMidedges: false  
+    },
+    rendering: {
+        points: true,
+        edges: false,
+        midpoints: false,
+        midedges: true  
+    }
+}
+
+var testControls = {
+    simulator: SimCL,
+    layoutAlgorithms: [
+        {   
+            algo: gaussSeidel,
+            params: {
+                charge: -0.000029360001841802474, 
+                gravity: 0.020083175556898723, 
+                edgeStrength: 4.292198241799153,
+                edgeDistance: 0.0000158
+            }
+        },{
+            algo: edgeBundling,
+            params: {
+                charge: -0.000029360001841802474, 
+                gravity: 0.020083175556898723, 
+                edgeStrength: 4.292198241799153,
+                edgeDistance: 0.0000158,
+            }
+        }
+    ],
+    locks: {
+        lockPoints: true,
         lockEdges: true,
         lockMidpoints: false,
         lockMidedges: false  

@@ -114,9 +114,9 @@ module.exports = {
                 [null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
         }*/
         if ('edgeDistance' in cfg)
-          gsSprings.edgeDistance = cfg.edgeDistance;
+          gsSprings.springDistance = cfg.edgeDistance;
         if ('edgeStrength' in cfg)
-          gsSprings.edgeStrength = cfg.edgeStrength;
+          gsSprings.springStrength = cfg.edgeStrength;
     },
 
     setPoints: function (simulator) {
@@ -249,8 +249,11 @@ module.exports = {
 
                 debug("Running gaussSeidelPoints");
                 return simulator.kernels.gaussSeidelPoints.call(simulator.numPoints, resources)
-                    .then(function () {return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints); });
-
+                    .then(function () {
+                        return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints); 
+                    }).fail(function (err) {
+                        console.error("ERROR Kernel gaussSeidelPoints failed ", err.stack)
+                    });
             }
         }).then(function() {
             if (simulator.numEdges <= 0 || simulator.locked.lockEdges) {
@@ -264,7 +267,10 @@ module.exports = {
                     .then(function () {
                          return edgeKernelSeq(
                             simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
-                            simulator.buffers.nextPoints, simulator.buffers.curPoints); });
+                            simulator.buffers.nextPoints, simulator.buffers.curPoints); 
+                    }).fail(function (err) {
+                        console.error("ERROR edgeKernelSeq failed ", err.stack)
+                    });
             }
         }).then(function() {
             if ((!simulator.locked.lockPoints || !simulator.locked.lockEdges)
@@ -288,6 +294,8 @@ module.exports = {
             } else {
                 return simulator;
             }
+        }).fail(function (err) {
+            console.error("ERROR GaussSeidel tick failed ", err.stack)
         });
 
     }

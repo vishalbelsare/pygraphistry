@@ -36,11 +36,17 @@ function setKernelArgs(kernels, simulator, kernelName) {
     var order = kEntry.order;
     var args = kEntry.args;
     var types = kEntry.types;
+    if (order == undefined || args == undefined || types == undefined)
+        utiljs.die("kEntry incomplete for kernel %s", kernelName)
+        
 
-    console.info("Setting Kernel Args for %s %o", kernelName, args)
+    debug("Setting Kernel Args for %s %o", kernelName, args)
 
-    if (order.length != Object.keys(args).length)
+    if (order.length != Object.keys(args).length) {
+        console.error("Order %o", order)
+        console.error("Args %o", args)
         utiljs.die("Mismatch between order/args for " + kernelName);
+    }
 
     var argArray = [];
     var typeArray = [];
@@ -53,7 +59,7 @@ function setKernelArgs(kernels, simulator, kernelName) {
         if (type === undefined)
             utiljs.die("Cannot find type of argument " + arg + " for " + kernelName);
         if (val === null) 
-            console.warn("WARNING attribute %s is null", arg);
+            console.warn("WARNING In kernel %s, attribute %s is null", kernelName, arg);
         argArray.push(val);
         typeArray.push(type);
     }
