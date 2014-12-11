@@ -53,6 +53,7 @@ function create(simulator, renderer, document, canvas, bgColor, dimensions, numS
                     graph.stepNumber = 0;
                     graph.dimensions = dimensions;
                     graph.numSplits = numSplits;
+                    graph.datasetname = "";
 
                     graph.updateSettings = updateSettings.bind(this, graph);
 

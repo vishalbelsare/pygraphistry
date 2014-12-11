@@ -23,45 +23,50 @@ pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'), function (err, b
     }
 });
 
-function write(buffers) {
+function write(graph) {
+    buffers = graph.simulator.buffers;
     var vg = new pb_root.VectorGraph();
-    for (var i in buffers) {
-        if (i == 'forwardsEdges') {
-            var target  = new Int32Array(buffers[i].size);
-            vg.nvertices = buffers[i].size;
-            buffers[i].read(target).then(function(buf) {
-                for (var index = 0; index < target.length; index++) {
-                    if (index % 2 == 0) {
-                        try {
-                            var edge = new pb_root.VectorGraph.Edge()
-                            edge.src = target.buffer[index]
-                            edge.dst = target.buffer[index + 1]
-                            if (edge.src != 0 && edge.dst != 0){
-                                vg.edges.push(edge)
-                            }
-                        } catch (err) { console.log(err)}
-                    }
-                }
-                vg.version = 0;
-                vg.type = pb_root.VectorGraph.GraphType.UNDIRECTED;
-                vg.nedges = vg.edges.length;
+    var target  = new Int32Array(buffers['forwardsEdges'].size);
+    vg.nvertices = buffers['curPoints'].size;
+    vg.version = 0;
+    vg.type = pb_root.VectorGraph.GraphType.UNDIRECTED;
+
+    buffers['forwardsEdges'].read(target).then(function(buf) {
+        for (var index = 0; index < target.length; index++) {
+            if (index % 2 == 0) {
                 try {
-                    var byteBuffer = vg.encode();
-                    var buffer = byteBuffer.toBuffer();
-                    fs.writeFile(path.resolve(__dirname + "../../../node_modules/datasets/geo/uber.geo.serialized"), buffer, function(err) {
-                        if(err) {
-                            console.log(err);
-                        } else {
-                            console.log("saved serialized file");
-                        }
-                    });
-                } catch (err) {
-                    console.log(err)
+                    var edge = new pb_root.VectorGraph.Edge()
+                    edge.src = target.buffer[index]
+                    edge.dst = target.buffer[index + 1]
+                    if (edge.src != 0 && edge.dst != 0){
+                        vg.edges.push(edge)
+                    }
+                } catch (err) { 
+                    debug(err)
                 }
-    
-            })
+            }
         }
-    }
+    })
+    .then(function(){
+        vg.nedges = vg.edges.length;
+        try {
+            var byteBuffer = vg.encode();
+            var buffer = byteBuffer.toBuffer();
+            // mongo query to update dataset
+
+            datasetname = graph.datasetname;
+            fs.writeFile(path.resolve(__dirname + "../../../node_modules/datasets/geo/uber.geo.serialized"), buffer, function(err) {
+                if(err) {
+                    debug(err);
+                } else {
+                    debug("saved serialized file");
+                }
+            });
+        } catch (err) {
+            debug(err)
+        }        
+    })
+
 }
 
 module.exports = {

@@ -44,6 +44,7 @@ function getDataset(dataConfig) {
 
 function loadDatasetIntoSim(graph, dataset) {
     debug("Loading data: %o", dataset);
+    graph.datasetname = dataset.name;
     return loaders[dataset.type](graph, dataset);
 }
 
