@@ -65,7 +65,6 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
             simObj.numMidEdges = 0;
             simObj.postSlider = true; // Enable/Disable Leo's slider
             simObj.locked = locked || {};
-            simObj.physics = {};
 
             simObj.bufferHostCopies = {
                 forwardsEdges: null

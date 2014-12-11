@@ -4,7 +4,8 @@ var debug = require("debug")("N-body:utils");
 var path = require('path');
 
 var $ = require('jquery'),
-    Q = require('q');
+    Q = require('q'),
+    nodeutil = require('util');
 
 var Image, webgl;
 
@@ -67,7 +68,8 @@ function getImage(url) {
     return deferred.promise;
 }
 
-function die(msg) {
+function die() {
+    var msg = nodeutil.format.apply(this, arguments)
     console.error("FATAL ERROR: ", (new Error(msg)).stack)
     process.exit(1);
 }

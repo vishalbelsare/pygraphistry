@@ -37,7 +37,7 @@ function setKernelArgs(kernels, simulator, kernelName) {
     var args = kEntry.args;
     var types = kEntry.types;
     if (order == undefined || args == undefined || types == undefined)
-        utiljs.die("kEntry incomplete for kernel %s", kernelName)
+        utiljs.die("kEntry incomplete for kernel %s: %o", kernelName, kEntry);
         
 
     debug("Setting Kernel Args for %s %o", kernelName, args)

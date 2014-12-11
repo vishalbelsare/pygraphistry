@@ -91,7 +91,12 @@ module.exports = {
             types: argsType
         }
     ],
-    
+
+    // Also used by forceatlas
+    gsSpringsGather: gsSpringsGather, 
+    gsSpringsGatherOrder: gsSpringsGatherOrder, 
+    argsType: argsType, 
+
     setPhysics: function (cfg) {
         if ('charge' in cfg)
             gsPoints.charge = cfg.charge;

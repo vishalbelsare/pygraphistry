@@ -6,16 +6,6 @@ var forceAtlas = require('./forceatlas.js'),
     edgeBundling = require('./edgebundling.js'),
     barnesHut = require('./BarnesHut.js');
 
-/* ForceAtlas params
- *  scalingRatio: 1.0,
- *  edgeInfluence: 0,
- *  forceAtlas: false,
- *  preventOverlap: false,
- *  strongGravity: false,
- *  dissuadeHubs: false,
- *  linLog: false,
-*/
-
 var defaultControls = {
     simulator: SimCL,
     layoutAlgorithms: [
@@ -40,6 +30,30 @@ var defaultControls = {
     locks: {
         lockPoints: true,
         lockEdges: true,
+        lockMidpoints: false,
+        lockMidedges: false  
+    }
+}
+
+var testControls = {
+    simulator: SimCL,
+    layoutAlgorithms: [
+        {   
+            algo: forceAtlas,
+            params: {
+                gravity: 0.020083175556898723, 
+                scalingRatio: 1.0,
+                edgeInfluence: 0,
+                preventOverlap: false,
+                strongGravity: false,
+                dissuadeHubs: false,
+                linLog: false
+            }
+        }
+    ],
+    locks: {
+        lockPoints: false,
+        lockEdges: false,
         lockMidpoints: false,
         lockMidedges: false  
     }
