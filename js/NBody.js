@@ -41,7 +41,6 @@ function create(renderer, document, canvas, bgColor, dimensions, numSplits) {
             graph.setEdges = setEdges.bind(this, graph);
             graph.setEdgesAndColors = setEdgesAndColors.bind(this, graph);
             graph.setEdgeColors = setEdgeColors.bind(this, graph);
-            graph.setVisible = setVisible.bind(this, graph);
             graph.setLocked = setLocked.bind(this, graph);
             graph.setColorMap = setColorMap.bind(this, graph);
             graph.tick = tick.bind(this, graph);
@@ -53,7 +52,7 @@ function create(renderer, document, canvas, bgColor, dimensions, numSplits) {
 
             return graph;
         }).fail(function (err) {
-            console.error("ERROR Cannot create graph. ". err.stack)
+            console.error("ERROR Cannot create graph. ", (err||{}).stack);
         });
 }
 
@@ -282,17 +281,6 @@ function setEdgeColors(graph, edgeColors) {
     debug("Loading edgeColors");
     return graph.simulator.setEdgeColors(edgeColors);
 }
-
-function setPhysics(graph, opts) {
-    graph.stepNumber = STEP_NUMBER_ON_CHANGE;
-    graph.simulator.setPhysics(opts);
-}
-
-
-function setVisible(graph, opts) {
-    graph.renderer.setVisible(opts);
-}
-
 
 function setLocked(graph, opts) {
     //TODO reset step number?

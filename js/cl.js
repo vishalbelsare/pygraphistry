@@ -3,7 +3,7 @@
 var Q = require('q');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');
-var debug = require("debug")("N-body:cl");
+var debug = require("debug")("graphistry:graph-viz:cl");
 var util = require('util');
 var utiljs = require('./util.js');
 

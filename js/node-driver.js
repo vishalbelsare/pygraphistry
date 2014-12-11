@@ -117,12 +117,7 @@ function applyControls(graph, cfgName) {
     }
 
     var lockCtrl = cfg.locks || controls.default.lockCtrl;
-    return graph.initSimulation(simulator, layoutAlgorithms, lockCtrl)
-        .then(function (graph) {
-            var renderingCtrl = cfg.rendering || controls.default.renderingCtrl;
-            graph.setVisible(renderingCtrl);
-            return graph;
-        });
+    return graph.initSimulation(simulator, layoutAlgorithms, lockCtrl);
 }
 
 
@@ -249,7 +244,10 @@ function init() {
         clientHeight: HEIGHT
     };
 
-    return NBody.create(RenderNull, document, canvasStandin, [255,255,255,1.0], dimensions, 3);
+    return NBody.create(RenderNull, document, canvasStandin, [255,255,255,1.0], dimensions, 3)
+        .fail(function (err) {
+            console.error("ERROR Nbody.create failed ", (err||{}).stack);
+        });
 }
 
 

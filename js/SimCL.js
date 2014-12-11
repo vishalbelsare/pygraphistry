@@ -75,7 +75,7 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
             simObj.numBackwardsWorkItems = 0;
             simObj.numMidPoints = 0;
             simObj.numMidEdges = 0;
-            simObj.postSlider = false; // Enable/Disable Leo's slider
+            simObj.postSlider = true; // Enable/Disable Leo's slider
             simObj.locked = locked || {};
             simObj.physics = {};
 

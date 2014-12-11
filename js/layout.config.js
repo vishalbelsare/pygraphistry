@@ -40,12 +40,6 @@ var defaultControls = {
         lockEdges: true,
         lockMidpoints: false,
         lockMidedges: false  
-    },
-    rendering: {
-        points: true,
-        edges: false,
-        midpoints: false,
-        midedges: true  
     }
 }
 
@@ -75,12 +69,6 @@ var testControls = {
         lockEdges: true,
         lockMidpoints: false,
         lockMidedges: false  
-    },
-    rendering: {
-        points: true,
-        edges: false,
-        midpoints: false,
-        midedges: true  
     }
 }
 
