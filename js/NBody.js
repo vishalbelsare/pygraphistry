@@ -65,7 +65,7 @@ function initSimulation(graph, simulator, layoutAlgorithms, locked) {
             graph.simulator = sim;
             return graph;
         }).fail(function (err) {
-            console.error("ERROR Cannot create simulator. ", err.stack)
+            console.error("ERROR Cannot create simulator. ", (err||{}).stack)
         });
 }
 
@@ -92,8 +92,8 @@ function setPoints(graph, points, pointSizes, pointColors) {
     })
     .then(function() {
         return graph;
-    }).catch(function (error) {
-        console.error("ERROR Failure in NBody.setPoints ", error.stack);
+    }).fail(function (err) {
+        console.error("ERROR Failure in NBody.setPoints ", (err||{}).stack);
     });
 }
 
@@ -272,8 +272,8 @@ var setEdges = Q.promised(function(graph, edges) {
     return graph.simulator.setEdges(forwardEdges, backwardsEdges, midPoints)
     .then(function() { 
         return graph; 
-    }).fail(function (error) {
-        console.error("ERROR Failure in NBody.setEdges ", error.stack);
+    }).fail(function (err) {
+        console.error("ERROR Failure in NBody.setEdges ", (err||{}).stack);
     });
 });
 

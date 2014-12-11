@@ -86,33 +86,10 @@ module.exports = {
     ],
     
     setPhysics: function (cfg) {
-        /*if(cfg.hasOwnProperty('charge') || cfg.hasOwnProperty('gravity')) {
-            var charge = cfg.hasOwnProperty('charge') ? (webcl.type ? [cfg.charge] : new Float32Array([cfg.charge])) : null;
-            var charge_t = cfg.hasOwnProperty('charge') ? cljs.types.float_t : null;
-
-            var gravity = cfg.hasOwnProperty('gravity') ? (webcl.type ? [cfg.gravity] : new Float32Array([cfg.gravity])) : null;
-            var gravity_t = cfg.hasOwnProperty('gravity') ? cljs.types.float_t : null;
-
-            simulator.kernels.gaussSeidelPoints.setArgs(
-                [null, null, null, null, null, null, charge, gravity, null, null],
-                [null, null, null, null, null, null, charge_t, gravity_t, null, null]);
-        }*/
         if ('charge' in cfg)
             gsPoints.charge = cfg.charge;
         if ('gravity' in cfg)
             gsPoints.gravity = cfg.gravity;
-
-        /*if(cfg.hasOwnProperty('edgeDistance') || cfg.hasOwnProperty('edgeStrength')) {
-            var edgeDistance = cfg.hasOwnProperty('edgeDistance') ? (webcl.type ? [cfg.edgeDistance] : new Float32Array([cfg.edgeDistance])) : null;
-            var edgeDistance_t = cfg.hasOwnProperty('edgeDistance') ? cljs.types.float_t : null;
-
-            var edgeStrength = cfg.hasOwnProperty('edgeStrength') ? (webcl.type ? [cfg.edgeStrength] : new Float32Array([cfg.edgeStrength])) : null;
-            var edgeStrength_t = cfg.hasOwnProperty('edgeStrength') ? cljs.types.float_t : null;
-
-            simulator.kernels.gaussSeidelSprings.setArgs(
-                [null, null, null, null, edgeStrength, edgeDistance, null],
-                [null, null, null, null, edgeStrength_t, edgeDistance_t, null]);
-        }*/
         if ('edgeDistance' in cfg)
           gsSprings.springDistance = cfg.edgeDistance;
         if ('edgeStrength' in cfg)
@@ -128,33 +105,6 @@ module.exports = {
 
         debug("Setting point 0. FIXME: dyn alloc __local, not hardcode in kernel");
 
-        /*simulator.kernels.gaussSeidelPoints.setArgs([
-                webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
-                simulator.buffers.curPoints.buffer,
-                simulator.buffers.nextPoints.buffer,
-                webcl.type ? [1] : new Uint32Array([localPosSize]),
-                webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
-                webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
-                webcl.type ? [-0.00001] : new Float32Array([-0.00001]),
-                webcl.type ? [0.2] : new Float32Array([0.2]),
-                simulator.buffers.randValues.buffer,
-                webcl.type ? [0] : new Uint32Array([0])
-            ],
-            webcl.type ? [
-                webcl.type.UINT,
-                null, 
-                null,
-                webcl.type.LOCAL_MEMORY_SIZE,
-                webcl.type.FLOAT,
-                webcl.type.FLOAT,
-                webcl.type.FLOAT,
-                webcl.type.FLOAT,
-                null,
-                webcl.type.UINT
-            ] : undefined);*/
-       
-
-        debug("curPointBuf %o", simulator.buffers.curPoints.buffer)
         gsPoints.numPoints = webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]);
         gsPoints.inputPositions = simulator.buffers.curPoints.buffer;
         gsPoints.outputPositions = simulator.buffers.nextPoints.buffer;
@@ -166,27 +116,6 @@ module.exports = {
     },
 
     setEdges: function (simulator) {
-
-        /*simulator.kernels.gaussSeidelSprings.setArgs(
-            [   null, //forwards/backwards picked dynamically
-                null, //forwards/backwards picked dynamically
-                null, //simulator.buffers.curPoints.buffer then simulator.buffers.nextPoints.buffer
-                null, //simulator.buffers.nextPoints.buffer then simulator.buffers.curPoints.buffer
-                webcl.type ? [1.0] : new Float32Array([1.0]),
-                webcl.type ? [0.1] : new Float32Array([0.1]),
-                null],
-            webcl.type ? [null, null, null, null,
-                webcl.type.FLOAT, webcl.type.FLOAT]
-                : null);
-
-        simulator.kernels.gaussSeidelSpringsGather.setArgs(
-            [   simulator.buffers.forwardsEdges.buffer,
-                simulator.buffers.forwardsWorkItems.buffer,
-                simulator.buffers.curPoints.buffer,
-                simulator.buffers.springsPos.buffer],
-            webcl.type ? [null, null, null, null]
-                : null);
-        */
         gsSprings.springs = null;
         gsSprings.workList = null;
         gsSprings.inputPoints = null;
@@ -204,12 +133,6 @@ module.exports = {
         var edgeKernelSeq = function  (edges, workItems, numWorkItems, fromPoints, toPoints) {
 
             var resources = [edges, workItems, fromPoints, toPoints, simulator.buffers.springsPos];
-
-            /*simulator.kernels.gaussSeidelSprings.setArgs(
-                [edges.buffer, workItems.buffer, fromPoints.buffer, toPoints.buffer,
-                 null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
-                webcl.type ? [null, null, null, null,
-                 null, null, cljs.types.uint_t] : null);*/
 
             gsSprings.springs = edges.buffer;
             gsSprings.workList = workItems.buffer;
@@ -238,10 +161,6 @@ module.exports = {
 
                 var resources = [simulator.buffers.curPoints, simulator.buffers.nextPoints, simulator.buffers.randValues];
 
-                /*simulator.kernels.gaussSeidelPoints.setArgs(
-                    [null, null, null, null, null, null, null, null, null, webcl.type ? [stepNumber] : new Uint32Array([stepNumber])],
-                    [null, null, null, null, null, null, null, null, null, cljs.types.uint_t]);*/
-
                 gsPoints.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
                 setKernelArgs(simulator, "gaussSeidelPoints");
 
@@ -252,7 +171,7 @@ module.exports = {
                     .then(function () {
                         return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints); 
                     }).fail(function (err) {
-                        console.error("ERROR Kernel gaussSeidelPoints failed ", err.stack)
+                        console.error("ERROR Kernel gaussSeidelPoints failed ", (err||{}).stack)
                     });
             }
         }).then(function() {
@@ -269,7 +188,7 @@ module.exports = {
                             simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
                             simulator.buffers.nextPoints, simulator.buffers.curPoints); 
                     }).fail(function (err) {
-                        console.error("ERROR edgeKernelSeq failed ", err.stack)
+                        console.error("ERROR edgeKernelSeq failed ", (err||{}).stack)
                     });
             }
         }).then(function() {
@@ -295,7 +214,7 @@ module.exports = {
                 return simulator;
             }
         }).fail(function (err) {
-            console.error("ERROR GaussSeidel tick failed ", err.stack)
+            console.error("ERROR GaussSeidel tick failed ", (err||{}).stack)
         });
 
     }

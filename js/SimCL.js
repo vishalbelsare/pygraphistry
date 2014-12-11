@@ -242,7 +242,7 @@ function setPoints(simulator, points) {
         return simulator;
     })
     .fail(function (err) {
-        console.error("Failure in SimCl.setPoints ", err.stack)
+        console.error("Failure in SimCl.setPoints ", (err||{}).stack)
     });
 }
 
@@ -267,8 +267,8 @@ function setSizes(simulator, pointSizes) {
 
         simulator.renderer.buffers.pointSizes = pointSizesVBO;
         return simulator;
-    }).fail(function (error) {
-        console.error("ERROR Failure in SimCl.setSizes", error.stack)
+    }).fail(function (err) {
+        console.error("ERROR Failure in SimCl.setSizes", (err||{}).stack)
     });
 }
 
@@ -286,8 +286,8 @@ function setColors(simulator, pointColors) {
 
         simulator.renderer.buffers.pointColors = pointColorsVBO;
         return simulator;
-    }).fail(function (error) {
-        console.error("ERROR Failure in SimCl.setColors", error.stack)
+    }).fail(function (err) {
+        console.error("ERROR Failure in SimCl.setColors", (err||{}).stack)
     });
 }
 
@@ -416,7 +416,7 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints)
         return simulator;
     })
     .fail(function (err) {
-        console.error('ERROR in SetEdges ', err.stack);
+        console.error('ERROR in SetEdges ', (err||{}).stack);
     });
 }
 
