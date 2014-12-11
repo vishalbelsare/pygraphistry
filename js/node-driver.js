@@ -300,7 +300,7 @@ function createAnimation(config) {
         'idx': config.DATASETIDX
     }
     
-    console.log(dataConfig)
+    debug(dataConfig)
 
     var theDataset = loader.getDataset(dataConfig);
     var theGraph = init();

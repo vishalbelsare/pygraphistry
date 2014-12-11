@@ -12,9 +12,10 @@ var fs = require('fs');
 
 var builder = null;
 var pb_root = null;
-pb.loadProtoFile('/Users/abestanway/code/graphistry/graph-viz/js/libs/graph_vector.proto', function (err, builder_) {
+
+pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'), function (err, builder_) {
     if (err) {
-        console.error('could not build proto', err, err.stack);
+        debug('error: could not build proto', err, err.stack);
         return;
     } else {
         builder = builder_;
@@ -47,7 +48,7 @@ function write(buffers) {
                 try {
                     var byteBuffer = vg.encode();
                     var buffer = byteBuffer.toBuffer();
-                    fs.writeFile("/Users/abestanway/code/graphistry/datasets/geo/uber.geo.serialized", buffer, function(err) {
+                    fs.writeFile(path.resolve(__dirname + "../../../datasets/geo/uber.geo.serialized"), buffer, function(err) {
                         if(err) {
                             console.log(err);
                         } else {
