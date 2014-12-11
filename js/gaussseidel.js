@@ -1,4 +1,6 @@
-var debug = require("debug")("graphistry:graph-viz:gaussSeidel")
+'use strict';
+
+var debug = require("debug")("graphistry:graph-viz:gaussseidel")
 var Q = require('q');
 var _ = require('underscore');
 var cljs = require('./cl.js');

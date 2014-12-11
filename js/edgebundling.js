@@ -1,3 +1,5 @@
+'use strict';
+
 var _       = require('underscore'),
     Q       = require('q'),
     debug   = require('debug')('graphistry:graph-viz:edgebundling'),

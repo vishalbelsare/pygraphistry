@@ -6,23 +6,11 @@ var cljs = require('./cl.js');
 var _ = require('underscore');
 var debug = require("debug")("graphistry:graph-viz:simcl");
 
-
-//var forceAtlas = require('./forceatlas.js'),
-//    gaussSeidel = require('./gaussseidel.js'),
-//    edgeBundling = require('./edgebundling.js'),
-//    barnesHut = require('./BarnesHut.js');
-
-
-//var layoutAlgorithms = [barnesHut, gaussSeidel, edgeBundling];
-//var layoutAlgorithms = [forceAtlas, gaussSeidel, edgeBundling];
-//var layoutAlgorithms = [];
-
 if (typeof(window) == 'undefined') {
     var webcl = require('node-webcl');
 } else if (typeof(webcl) == 'undefined') {
     var webcl = window.webcl;
 }
-
 
 Q.longStackSupport = true;
 var randLength = 73;
