@@ -14,6 +14,7 @@ var io           = require('socket.io-client');
 var renderer     = require('./renderer.js');
 var ui           = require('./ui.js');
 
+var datasetname = getUrlParameter('datasetname');
 
 //string * {socketHost: string, socketPort: int} -> (... -> ...)
 // where fragment == 'vbo?buffer' or 'texture?name'
@@ -63,17 +64,31 @@ function getUpdatedNames (names, originalVersions, newVersions) {
     });
 }
 
+/**
+ * Gets the URL param for the dataset
+ */
+function getUrlParameter(sParam) {
+    var sPageURL = window.location.search.substring(1);
+    var sURLVariables = sPageURL.split('&');
+    for (var i = 0; i < sURLVariables.length; i++){
+        var sParameterName = sURLVariables[i].split('=');
+        if (sParameterName[0] === sParam) {
+            return sParameterName[1];
+        }
+    }
+}
+
 
 /**
  * Fetches the URL for the viz server to use
  */
-function getVizServerAddress() {
+function getVizServerParams() {
     return $.ajaxAsObservable({
-            url: '/vizaddr/graph',
+            url: '/vizaddr/graph?datasetname=' + datasetname,
             dataType: 'json'
         })
         .map(function(reply) {
-            debug('Got viz server address');
+            debug('Got viz server params');
 
             console.log('routed in ' + ( Date.now() - parseFloat(reply.data.timestamp) ) + ' ms');
 
@@ -93,12 +108,16 @@ function connect(vizType) {
         throw new Error('need vizType');
     }
 
-    return getVizServerAddress()
-        .flatMap(function(addr) {
+    return getVizServerParams()
+        .flatMap(function(params) {
 
-            debug('got address', addr);
+            debug('got params', params);
+            //i don't want to have to send it to both socket and not http. but i need it in http for the databae reqest. hmrmrmrmrmrmr
+            var socket = io(params.url, { query: 'datasetname=' + datasetname, 
+                                          reconnection: false, 
+                                          transports: ['websocket']
+                                        });
 
-            var socket = io(addr.url, {reconnection: false, transports: ['websocket']});
             socket.io.engine.binaryType = 'arraybuffer';
 
             debug('Stream client websocket connected to visualization server', vizType);
@@ -107,7 +126,7 @@ function connect(vizType) {
                 .do(function () {
                     debug('notified viz type');
                 })
-                .map(_.constant({address: addr, socket: socket}));
+                .map(_.constant({params: params, socket: socket}));
         });
 }
 
