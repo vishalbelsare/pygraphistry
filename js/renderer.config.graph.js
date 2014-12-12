@@ -299,7 +299,7 @@ module.exports = {
                     'curPos':       ['curPoints', 'curPos'],
                     'pointSize':    ['pointSizes', 'pointSize'],
                     'pointColor':   ['vertexIndices', 'pointColor'],
-                    'isHighlighted':   ['allHighlighted', 'allHighlighted']
+                    'isHighlighted':   ['highlightedPoint', 'isHighlighted']
                 },
                 'uniforms': {
                     'fog': { 'uniformType': '1f', 'values': [0.0] }
