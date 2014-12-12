@@ -38,6 +38,7 @@ function create(renderer, document, canvas, bgColor, dimensions, numSplits) {
             graph.setVertices = setVertices.bind(this, graph);
             graph.setSizes = setSizes.bind(this, graph);
             graph.setColors = setColors.bind(this, graph);
+            graph.setLabels = setLabels.bind(this, graph);
             graph.setEdges = setEdges.bind(this, graph);
             graph.setEdgesAndColors = setEdgesAndColors.bind(this, graph);
             graph.setEdgeColors = setEdgeColors.bind(this, graph);
@@ -280,6 +281,11 @@ var setEdges = Q.promised(function(graph, edges) {
 function setEdgeColors(graph, edgeColors) {
     debug("Loading edgeColors");
     return graph.simulator.setEdgeColors(edgeColors);
+}
+
+function setLabels(graph, pointLabels) {
+    //TODO ship to the client
+    //debug("Got labels %o", pointLabels);
 }
 
 function setLocked(graph, opts) {

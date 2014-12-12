@@ -51,6 +51,12 @@ var attributeLoaders = function(graph) {
             default: graph.setEdgeColors,
             target: EDGE,
             values: undefined
+        },
+        pointLabel: {
+            load: graph.setLabels,
+            type: "string",
+            target: VERTEX,
+            values: undefined
         }
     };
 }
@@ -172,6 +178,9 @@ var testMapper = {
             transform: function (v) {
                 return normalizeUInt8(logTransform(v), 5)
             }
+        },
+        pointLabel: {
+            name: "label"
         }
     },
 
@@ -181,16 +190,23 @@ var testMapper = {
             if (a in testMapper.mappings) {
                 var loader = loaders[a];
                 var mapping = testMapper.mappings[a];
-                if (mapping.transform) {
-                    var oldLoad = loader.load;
-                    loader.load = function (data) {oldLoad(mapping.transform(data))}
-                }
                 res[mapping.name] = loader;
+
+                if ('transform' in mapping) 
+                    // Helper function to work around dubious JS scoping
+                    doWrap(res, mapping, loader.load);
+                
                 debug("Mapping " + mapping.name + " as " + a); 
             } else
                 res[a] = loaders[a];
         }
         return res;
+    }
+}
+
+function doWrap(res, mapping, oldLoad) {
+    res[mapping.name].load = function (data) {
+        oldLoad(mapping.transform(data));
     }
 }
 
