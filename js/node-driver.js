@@ -101,8 +101,13 @@ function graphCounts(graph) {
 
 function applyControls(graph, cfgName) {
     var controls = require('./layout.config.js');
-    var cfg = cfgName ? controls.cfgName : controls.default;
-
+    var cfg = controls.default;
+    if (cfgName) {
+        if (controls[cfgName])
+            cfg = controls[cfgName];
+        else
+          console.warn("WARNING Unknown sim controls: %s. Using defaults.", cfgName)
+    }
     debug("Applying layout settings: %o", cfg);
 
     var simulator = cfg.simulator || SimCL
