@@ -468,8 +468,8 @@ function setTimeSubset(renderer, simulator, range) {
                 startIdx: startIdx      * simulator.numSplits,
                 len: numPoints          * simulator.numSplits},
          midEdgeRange:      {
-                startIdx: startEdgeIdx  * (1+simulator.numSplits),
-                len: numEdges           * (1+simulator.numSplits)}};
+                startIdx: startEdgeIdx  * (1 + simulator.numSplits),
+                len: numEdges           * (1 + simulator.numSplits)}};
 }
 
 

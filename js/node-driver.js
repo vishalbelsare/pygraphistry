@@ -80,10 +80,10 @@ function graphCounts(graph) {
         offsetMidEdges  = 0;
     }
 
-    var point       = {num: numPoints,      offset: 0};
-    var edge        = {num: numEdges,       offset: 0};
-    var midPoint    = {num: numMidPoints,   offset: 0};
-    var midEdge     = {num: numMidEdges,    offset: 0};
+    var point       = {num: numPoints,      offset: offsetPoint};
+    var edge        = {num: numEdges,       offset: offsetMidEdges};
+    var midPoint    = {num: numMidPoints,   offset: offsetMidPoints};
+    var midEdge     = {num: numMidEdges,    offset: offsetMidEdges};
 
     return {
         curPoints: point,
@@ -170,7 +170,7 @@ function fetchVBOs(graph, bufferNames) {
                 }
                 return graph.simulator.buffers[name].read(
                     new Float32Array(targetArrays[name].buffer),
-                    counts[name].offset,
+                    counts[name].offset * stride,
                     counts[name].num * stride);
             } else {
                 return graph.simulator.buffers[name].read(
