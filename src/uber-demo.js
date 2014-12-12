@@ -173,9 +173,12 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIdx) {
     //select label elts (and make active if needed)
     var toShow = [];
     var labels = _.keys(hits)
-        .map(function (idx) {
+        .map(function (idxStr) {
+            var idx = parseInt(idxStr);
             if (poi.state.activeLabels[idx]) {
                 return poi.state.activeLabels[idx];
+            } else if ((_.keys(poi.state.activeLabels).length > poi.MAX_LABELS) && (labelIdx !== idx)) {
+                return null;
             } else {
 
                 var points = new Float32Array(curPoints.buffer);
@@ -188,12 +191,12 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIdx) {
 
                 if (!poi.state.inactiveLabels.length) {
                     return {
-                        idx: parseInt(idx),
+                        idx: idx,
                         elt:  genLabel($labelCont, contents)
                     };
                 }
                 var lbl = poi.state.inactiveLabels.pop();
-                lbl.idx = parseInt(idx);
+                lbl.idx = idx;
                 lbl.elt.empty().append(contents);
                 toShow.push(lbl);
                 return lbl;
