@@ -80,7 +80,7 @@ function setupScroll($eventTarget, camera) {
             var aspectRatio = camera.width / camera.height;
             var scrollY =
                 wheelEvent.wheelDeltaY ||
-                wheelEvent.deltaY * 30 || // Hacky attempt to fix zoom speed with mouse under FF. See http://stackoverflow.com/questions/5527601/normalizing-mousewheel-speed-across-browsers
+                wheelEvent.deltaY ||
                 ((wheelEvent.originalEvent) ?
                     (wheelEvent.originalEvent.wheelDeltaY || -wheelEvent.originalEvent.deltaY) : 0)
                 | 0; //NaN protection
