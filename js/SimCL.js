@@ -475,6 +475,20 @@ function setTimeSubset(renderer, simulator, range) {
          midEdgeRange:      {
                 startIdx: startEdgeIdx  * (1 + simulator.numSplits),
                 len: numEdges           * (1 + simulator.numSplits)}};
+
+
+    simulator.tickBuffers([
+        //points/edges
+        'curPoints', 'nextPoints', 'springsPos',
+
+        //style
+        'pointSizes', 'pointColors',
+
+        //midpoints/midedges
+        'curMidPoints', 'nextMidPoints', 'curMidPoints', 'midSpringsPos', 'midSpringsColorCoord'
+
+        ]);
+
 }
 
 

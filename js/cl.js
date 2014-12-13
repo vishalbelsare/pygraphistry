@@ -554,8 +554,8 @@ var write = Q.promised(function write(buffer, data) {
 var read = Q.promised(function (buffer, target, optStartIdx, optLen) {
     return buffer.acquire()
         .then(function() {
-            var start = Math.min(optStartIdx | 0, target.length);
-            var len = optLen !== undefined ? optLen : buffer.size - start;
+            var start = Math.min(optStartIdx || 0, buffer.size);
+            var len = optLen !== undefined ? optLen : (buffer.size - start);
             buffer.cl.queue.enqueueReadBuffer(buffer.buffer, true, start, len, target);
             return buffer.release();
         })

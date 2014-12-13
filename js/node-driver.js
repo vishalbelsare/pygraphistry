@@ -181,13 +181,29 @@ function fetchVBOs(graph, bufferNames) {
         LOCAL_BUFFER_NAMES
             .filter(function (name) { return bufferNames.indexOf(name) != -1; })
             .forEach(function (name) {
-                targetArrays[name] = {
-                    buffer: graph.simulator.buffersLocal[name],
-                    version: graph.simulator.versions.buffers[name]
-                };
+                if (graph.simulator.postSlider) {
+
+                    var model = renderConfig.models[name];
+                    var layout = _.values(model)[0];
+                    var stride = layout.stride
+
+                    targetArrays[name] = {
+                        buffer: new graph.simulator.buffersLocal[name].constructor(
+                            graph.simulator.buffersLocal[name],
+                            counts[name].offset * stride,
+                            counts[name].num * stride),
+                        version: graph.simulator.versions.buffers[name]
+                    };
+                } else {
+                    targetArrays[name] = {
+                        buffer: graph.simulator.buffersLocal[name],
+                        version: graph.simulator.versions.buffers[name]
+                    };
+                }
             });
         return targetArrays;
-    });
+    })
+    .then(_.identity, console.error);
 }
 
 
@@ -458,6 +474,9 @@ function fetchData(graph, compress, bufferNames, bufferVersions, programNames) {
                 _.object(_.zip(
                         bufferNames,
                         bufferNames.map(function (_, i) {  return compressedVbos[i].version; })));
+
+            //want all versions
+            _.extend(versions, graph.simulator.versions.buffers);
 
             return {
                 compressed: buffers,
