@@ -114,7 +114,7 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
 
 
 /**
- * Simulator * [ String ] * ?int -> ()
+ * Simulator * ?[ String ] * ?int -> ()
  * Increase buffer version to tick number, signifying its contents may have changed
  * (Same version number signifies no change since last read of that buffer)
  * If not tick provided, increment global and use that
@@ -127,10 +127,15 @@ var tickBuffers = function (simulator, bufferNames, tick) {
         tick = simulator.versions.tick;
     }
 
-    if (bufferNames.length) {
+    if (bufferNames) {
         bufferNames.forEach(function (name) {
-            simulator.versions.buffers[name] = simulator.versions.tick;
-       })
+            simulator.versions.buffers[name] = tick;
+        });
+    } else {
+        _.keys(simulator.versions.buffers).forEach(function (name) {
+            simulator.versions.buffers[name] = tick;
+            console.log('tick', name, tick);
+        });
     }
 
 };
