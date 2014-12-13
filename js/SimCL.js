@@ -49,6 +49,7 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
             simObj.setColors = setColors.bind(this, simObj);
             simObj.setEdges = setEdges.bind(this, renderer, simObj);
             simObj.setEdgeColors = setEdgeColors.bind(this, simObj);
+            simObj.setLabels = setLabels.bind(this, simObj);
             simObj.setLocked = setLocked.bind(this, simObj);
             simObj.setPhysics = setPhysics.bind(this, simObj);
             simObj.setTimeSubset = setTimeSubset.bind(this, renderer, simObj);
@@ -65,6 +66,8 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
             simObj.numMidEdges = 0;
             simObj.postSlider = true; // Enable/Disable Leo's slider
             simObj.locked = locked || {};
+            simObj.labels = [];
+
 
             simObj.bufferHostCopies = {
                 forwardsEdges: null
@@ -281,6 +284,11 @@ function setColors(simulator, pointColors) {
     }).fail(function (err) {
         console.error("ERROR Failure in SimCl.setColors", (err||{}).stack)
     });
+}
+
+//Simulator * ?[HtmlString] -> ()
+function setLabels(simulator, labels) {
+    simulator.labels = labels || [];
 }
 
 /**
@@ -537,12 +545,13 @@ function tick(simulator, stepNumber) {
 
 
 module.exports = {
-    "create": create,
-    "setLocked": setLocked,
-    "setPoints": setPoints,
-    "setSizes": setSizes,
-    "setColors": setColors,
-    "setEdges": setEdges,
-    "setEdgeColors": setEdgeColors,
-    "tick": tick
+    'create': create,
+    'setLocked': setLocked,
+    'setPoints': setPoints,
+    'setSizes': setSizes,
+    'setColors': setColors,
+    'setEdges': setEdges,
+    'setLabels': setLabels,
+    'setEdgeColors': setEdgeColors,
+    'tick': tick
 };

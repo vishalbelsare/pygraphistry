@@ -232,6 +232,11 @@ function loadGeo(graph, dataset) {
         debug("Processed %d/%d nodes/edges", processedData.points.length, processedData.edges.length);
 
         return graph.setPoints(processedData.points)
+            .then(function () {
+                return graph.setLabels(processedData.points.map(function (v, i) {
+                    return '<b>' + i + '</b><hr/>' + v[0].toFixed(4) + ', ' + v[1].toFixed(4);
+                }));
+            })
             .then(_.constant(processedData))
     })
     .then(function(processedData) {

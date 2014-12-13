@@ -284,8 +284,8 @@ function setEdgeColors(graph, edgeColors) {
 }
 
 function setLabels(graph, pointLabels) {
-    //TODO ship to the client
-    //debug("Got labels %o", pointLabels);
+    debug('setLabels', pointLabels ? pointLabels.length : 'none');
+    return graph.simulator.setLabels(pointLabels);
 }
 
 function setLocked(graph, opts) {
