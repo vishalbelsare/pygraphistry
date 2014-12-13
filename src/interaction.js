@@ -75,6 +75,23 @@ function setupScroll($eventTarget, camera) {
         })
         .sample(1)
         .map(function(wheelEvent) {
+
+            //OLD
+            if (true) {
+            var aspectRatio = camera.width / camera.height;
+            var scrollY =
+                wheelEvent.wheelDeltaY ||
+                wheelEvent.deltaY ||
+                ((wheelEvent.originalEvent) ?
+                    (wheelEvent.originalEvent.wheelDeltaY || -wheelEvent.originalEvent.deltaY) : 0)
+                | 0; //NaN protection
+
+            camera.width -= camera.width * (scrollY / 100.0);
+            camera.height = camera.width / aspectRatio;
+            return camera;
+            }
+
+
             //debug("wheelEvent: %o", wheelEvent);
 
             var zoomBase = wheelEvent.deltaFactor / 35.0;
