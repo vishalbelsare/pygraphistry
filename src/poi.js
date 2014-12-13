@@ -8,12 +8,23 @@
 
 var debug       = require('debug')('graphistry:StreamGL:labels');
 var _           = require('underscore');
+var Rx          = require('rx');
+var $           = require('jquery');
 
 var picking     = require('./picking.js');
 
 //0--1: the closer to 1, the more likely that unsampled points disappear
 var APPROX = 0.3;
 var MAX_LABELS = 20;
+
+
+function makeErrorHandler(name) {
+    return function (err) {
+        console.error(name, err, (err || {}).stack);
+    };
+}
+
+
 
 //renderState * String -> {<idx> -> True}
 //dict of points that are on screen -- approx may skip some
@@ -76,17 +87,81 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
     return toClear;
 }
 
+//DOM =======================
+
+//create label, attach to dom
+//label texts defined externall; can change idx to update
+function genLabel (instance, $labelCont, idx) {
+
+
+    var setter = new Rx.ReplaySubject(1);
+
+    var $elt = $('<div>')
+        .addClass('graph-label')
+        .css('display', 'none')
+        .empty()
+        .html('' + idx);
+
+    $labelCont.append($elt);
+
+
+    var res = {
+        idx: idx,
+        elt: $elt,
+        setIdx: setter.onNext.bind(setter)
+    };
+
+    setter
+        .sample(3)
+        .do(function (idx) {
+            res.idx = idx;
+        })
+        .flatMapLatest(instance.getLabelText)
+        .do(function (htmlStr) {
+            $elt.html(htmlStr ? htmlStr : '');
+        })
+        .subscribe(_.identity, makeErrorHandler('genLabel fetcher'));
+
+    return res;
+}
+
+
+
+//NETWORK ===================
+
+//instance * int -> ReplaySubject_1 ?HtmlString
+//TODO batch fetches
+function getLabelText (instance, idx) {
+    if (!instance.state.labelCache[idx]) {
+        instance.state.labelCache[idx] = new Rx.ReplaySubject(1);
+        instance.state.socket.emit('get_labels', [idx], function (err, data) {
+            if (err) {
+                console.error('get_labels', err);
+            } else {
+                instance.state.labelCache[idx].onNext(data);
+            }
+        });
+    }
+    return instance.state.labelCache[idx];
+}
 
 
 
 
-
-function init () {
+function init (socket) {
     debug('initializing label engine');
 
-    var instance = {
+    var instance = { };
+
+    _.extend(instance, {
 
         state: {
+
+            socket: socket,
+
+            //[ ReplaySubject_1 ?HtmlString ]
+            labelCache: [],
+
             //{<int> -> {elt: $DOM, idx: int} }
             activeLabels: {},
 
@@ -102,9 +177,15 @@ function init () {
             instance.state.activeLabels = activeLabels;
         },
 
+        //int -> Subject ?HtmlString
+        getLabelText: getLabelText.bind('', instance),
+
         getActiveApprox: getActiveApprox,
-        finishApprox: finishApprox
-    };
+        finishApprox: finishApprox,
+
+        //$DOM * idx -> {elt: $DOM, idx: int, setIdx: Subject int}
+        genLabel: genLabel.bind('', instance)
+    });
 
     return instance;
 
