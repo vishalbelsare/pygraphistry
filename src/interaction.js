@@ -77,7 +77,7 @@ function setupScroll($eventTarget, camera) {
         .map(function(wheelEvent) {
 
             //OLD
-            if (true) {
+            if (false) {
             var aspectRatio = camera.width / camera.height;
             var scrollY =
                 wheelEvent.wheelDeltaY ||
@@ -92,24 +92,22 @@ function setupScroll($eventTarget, camera) {
             }
 
 
-            //debug("wheelEvent: %o", wheelEvent);
-
-            var zoomBase = wheelEvent.deltaFactor / 35.0;
+            var zoomBase = 1.1; 
             var zoomFactor = (wheelEvent.deltaY < 0 ? zoomBase : 1.0 / zoomBase) || 1.0;
             
             /* FIXME Attemp to implement "follow mouse" zoom.
              * Camera.center is clearly not what I think it is.
-             * /
-            /*
+             *
+            
             var pos = {
-                x: (wheelEvent.clientX - bounds.left) / (bounds.right - bounds.left),
-                y: -1.0 * (wheelEvent.clientY - bounds.top) / (bounds.bottom  - bounds.top)
+                x: (wheelEvent.clientX - bounds.left) / bounds.width,
+                y: -1.0 * (wheelEvent.clientY - bounds.top) / bounds.height
             };
             var xoffset = pos.x - camera.center.x;
             var yoffset = pos.y - camera.center.y;
             camera.center.x += xoffset * (1.0 - zoomFactor);
             camera.center.y += yoffset * (1.0 - zoomFactor);
-            */
+            */ 
 
             camera.width = camera.width * zoomFactor;
             camera.height = camera.height * zoomFactor;
