@@ -48,7 +48,7 @@ var renderLabelsRan = false;
 function renderLabels($labelCont, renderState, labelIdx) {
 
     debug('rendering labels');
-
+    
     var curPoints = renderState.get('hostBuffers').curPoints;
     if (!curPoints) {
         console.warn('renderLabels called before curPoints available');
@@ -76,9 +76,11 @@ function renderLabels($labelCont, renderState, labelIdx) {
 
 
 //RenderState * [ float ] * int -> ()
-function renderCursor (renderState, points, idx) {
+function renderCursor (renderState, points, idx, sizes) {
 
     debug('Enlarging current mouseover point', idx);
+    debug('TESTTEST Sizes: %o', sizes);
+
 
     if (idx <= 0) {
         return;
@@ -93,6 +95,11 @@ function renderCursor (renderState, points, idx) {
     $('#highlighted-point-cont').css({
         top: pos.y,
         left: pos.x
+    });
+    $('.highlighted-point').css({
+        'width': 50,
+        'height': 50,
+        'border-radius': 25
     });
 
 }
@@ -198,8 +205,8 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIdx) {
 
 //render most of scene on refresh, but defer slow hitmap (readPixels)
 var lastRender = new Rx.Subject();
-function renderScene(renderer, currentState, points, highlightIdx) {
-    lastRender.onNext({renderer: renderer, currentState: currentState, points: points, highlightIdx: highlightIdx});
+function renderScene(renderer, currentState, data) {
+    lastRender.onNext({renderer: renderer, currentState: currentState, data: data});
 }
 
 var reqAnimationFrame =
@@ -228,7 +235,7 @@ lastRender
             var items = cfg.currentState.get('config').get('scene').get('render').toJS()
                 .filter(function (v) { return v !== 'pointpicking'; });
             cfg.renderer.render(cfg.currentState, items);
-            renderCursor(cfg.currentState, new Float32Array(cfg.points.buffer), cfg.highlightIdx);
+            renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer), cfg.data.highlightIdx, new Uint8Array(cfg.data.pointSizes.buffer));
         });
     })
     .sample(100)
@@ -322,15 +329,17 @@ function setupInteractions($eventTarget, renderState) {
             return Rx.Observable.combineLatest(
                 latestHighlightedPoint,
                 renderState.get('hostBuffers').curPoints,
-                function (idx, curPoints) {
-                    return _.extend({}, {idx: idx, camera: camera, curPoints: curPoints});
+                renderState.get('hostBuffers').pointSizes,
+                function (idx, curPoints, pointSizes) {
+                    return {highlightIdx: idx, camera: camera, curPoints: curPoints,
+                            pointSizes: pointSizes};
                 })
                 .take(1);
         })
         .do(function(data) {
             var currentState = renderer.setCameraIm(renderState, data.camera);
             stateStream.onNext(currentState);
-            renderScene(renderer, currentState, data.curPoints, data.idx);
+            renderScene(renderer, currentState, data);
         })
         .subscribe(_.identity, makeErrorHandler('render scene on pan/zoom'));
 
@@ -350,6 +359,13 @@ function setupInteractions($eventTarget, renderState) {
                     return _.extend({}, data, {curPoints: curPoints});
                 });
         })
+        .flatMap(function (data) {
+            return renderState.get('hostBuffers').pointSizes
+                .take(1)
+                .map(function (pointSizes) {
+                    return _.extend({}, data, {pointSizes: pointSizes});
+                });
+        })
         .do(function (prevCur) {
 
             debug('Hitmap detected mouseover on a new point with index', prevCur.curIdx);
@@ -364,7 +380,7 @@ function setupInteractions($eventTarget, renderState) {
             $('.hit-label').text('Location ID: ' + lblText);
 
             if (idx > -1) {
-                renderCursor(renderState, new Float32Array(points.buffer), idx);
+                renderCursor(renderState, new Float32Array(points.buffer), idx, new Uint8Array(prevCur.pointSizes.buffer));
             }
         })
         .subscribe(_.identity, makeErrorHandler('mouse move err'));
