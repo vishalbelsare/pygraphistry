@@ -53,10 +53,9 @@ function get_likely_local_ip() {
 
 
 function assign_worker(req, res) {
+    var datasetname = req.query.datasetname;
     if(config.ENVIRONMENT === 'production' || config.ENVIRONMENT === 'staging') {
-        var name = req.param("dataName");
-        name = "uber" // hardcode for now
-        db.collection('data_info').findOne({"name": name}, function(err, doc) {
+        db.collection('data_info').findOne({"name": "UberSaved"}, function(err, doc) {
             if (err) {
                 debug(err);
                 res.send('Problem with query');
@@ -126,7 +125,10 @@ function assign_worker(req, res) {
 
                                 // Todo: ping process first for safety
                                 debug("Assigning client '%s' to viz server on %s, port %d", req.ip, ip, port);
-                                res.json({'hostname': ip, 'port': port, 'timestamp': Date.now()});
+                                res.json({'hostname': ip,
+                                          'port': port,
+                                          'timestamp': Date.now()
+                                          });
                                 res.end();
                                 return;
                             }
@@ -141,7 +143,10 @@ function assign_worker(req, res) {
         });
     } else {
         debug("Assigning client '%s' to viz server on %s, port %d", req.ip, VIZ_SERVER_HOST, VIZ_SERVER_PORT);
-        res.json({'hostname': VIZ_SERVER_HOST, 'port': VIZ_SERVER_PORT});
+        res.json({'hostname': VIZ_SERVER_HOST,
+                  'port': VIZ_SERVER_PORT,
+                  'datasetname': datasetname
+                 });
     }
 }
 
@@ -166,7 +171,7 @@ app.get('*/StreamGL.map', function(req, res) {
 app.use('/horizon', express.static(HORIZON_STATIC_PATH));
 // Serve graph static assets
 app.use('/graph', function (req, res, next) {
-    if (req.path == '/index.html'|| req.path == '/') {
+    if (req.path == '/index.html' || req.path == '/') {
         config.DATASETNAME = req.param('datasetname');
         config.DATASETIDX = req.param('datasetidx');
     }
