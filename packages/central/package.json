@@ -14,5 +14,6 @@
     "rx": "^2.3.17",
     "uber-viz": "git+ssh://git@github.com:graphistry/uber-viz.git#master",
     "underscore": "^1.7.0"
-  }
+  },
+  "main": "server.js"
 }

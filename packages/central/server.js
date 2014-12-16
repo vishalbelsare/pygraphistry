@@ -193,28 +193,44 @@ app.get('/uber', function(req, res) {
 });
 
 
-Rx.Observable.return()
-    .flatMap(function () {
-        if(config.ENVIRONMENT === 'local') {
-            return Rx.Observable.return();
-        } else {
-            return Rx.Observable.fromNodeCallback(
-                MongoClient.connect.bind(MongoClient, config.MONGO_SERVER))({auto_reconnect: true})
-                .do(function (database) {
-                    db = database.db(config.DATABASE);
-                });
-        }
-    })
-    .flatMap(function () {
-        return Rx.Observable.fromNodeCallback(http.listen.bind(http, HTTP_SERVER_LISTEN_PORT))(HTTP_SERVER_LISTEN_ADDRESS);
-    })
-    .subscribe(
+function start() {
+    return Rx.Observable.return()
+        .flatMap(function () {
+            if(config.ENVIRONMENT === 'local') {
+                return Rx.Observable.return();
+            } else {
+                return Rx.Observable.fromNodeCallback(
+                    MongoClient.connect.bind(MongoClient, config.MONGO_SERVER))({auto_reconnect: true})
+                    .do(function (database) {
+                        db = database.db(config.DATABASE);
+                    });
+            }
+        })
+        .flatMap(function () {
+            return Rx.Observable.fromNodeCallback(http.listen.bind(http, HTTP_SERVER_LISTEN_PORT))(HTTP_SERVER_LISTEN_ADDRESS);
+        });
+}
+
+
+if(require.main === module) {
+    start().subscribe(
         function () {
             console.log('\n[server.js] Server listening on %s:%d', HTTP_SERVER_LISTEN_ADDRESS, HTTP_SERVER_LISTEN_PORT);
         },
         function (err) {
             console.error("[server.js] Fatal error: could not start server on address %s, port %s. Exiting...",
                 HTTP_SERVER_LISTEN_ADDRESS, HTTP_SERVER_LISTEN_PORT);
+
             process.exit(1);
         }
     );
+}
+
+
+module.exports = {
+    start: start,
+    config: {
+        listenIP: HTTP_SERVER_LISTEN_ADDRESS,
+        listenPort: HTTP_SERVER_LISTEN_PORT
+    }
+};
