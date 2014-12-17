@@ -1,6 +1,7 @@
 /** @module config */
 'use strict';
 
+var debug = require('debug')('graphistry:config');
 var _ = require('underscore');
 
 
@@ -146,6 +147,8 @@ module.exports = function(optionOverrides) {
     // Run a second pass the generators, passing the tentative options as the current program
     // options, then resolve these and use as the ultimate set of program options.
     var optionsFinal = resolve(optionsTentative, defaults, deployEnv, commandLine, optionOverrides);
+
+    debug('Program options resolved to:', optionsFinal);
 
     return optionsFinal;
 };
