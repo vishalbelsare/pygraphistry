@@ -60,7 +60,7 @@ module.exports = {
                 'vertex': fs.readFileSync(__dirname + '/../shaders/midedgeculled.vertex.glsl', 'utf8').toString('ascii'),
                 'fragment': fs.readFileSync(__dirname + '/../shaders/midedgeculled.fragment.glsl', 'utf8').toString('ascii')
             },
-            'attributes': ['curPos'],
+            'attributes': ['curPos', 'edgeColor'],
             'camera': 'mvp',
             'uniforms': []
         },
@@ -342,6 +342,7 @@ module.exports = {
                 'program': 'midedgeculled',
                 'bindings': {
                     'curPos': ['midSpringsPos', 'curPos'],
+                    'edgeColor' : ['edgeColors', 'edgeColor']
                 },
                 'drawType': 'LINES',
                 'glOptions': {}
