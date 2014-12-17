@@ -49,6 +49,7 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
             simObj.setColors = setColors.bind(this, simObj);
             simObj.setEdges = setEdges.bind(this, renderer, simObj);
             simObj.setEdgeColors = setEdgeColors.bind(this, simObj);
+            simObj.setMidEdgeColors = setMidEdgeColors.bind(this, simObj);
             simObj.setLabels = setLabels.bind(this, simObj);
             simObj.setLocked = setLocked.bind(this, simObj);
             simObj.setPhysics = setPhysics.bind(this, simObj);
@@ -64,7 +65,6 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
             simObj.numBackwardsWorkItems = 0;
             simObj.numMidPoints = 0;
             simObj.numMidEdges = 0;
-            simObj.postSlider = true; // Enable/Disable Leo's slider
             simObj.locked = locked || {};
             simObj.labels = [];
 
@@ -270,8 +270,6 @@ function setSizes(simulator, pointSizes) {
 function setColors(simulator, pointColors) {
     simulator.buffersLocal.pointColors = pointColors;
 
-    simulator.resetBuffers([simulator.buffers.pointColors])
-
     // Create buffers and write initial data to them, then set
     simulator.tickBuffers(['pointColors']);
 
@@ -411,8 +409,7 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints)
                 }));
     })
     .then(function () {
-        if (simulator.postSlider)
-            setTimeSubset(renderer, simulator, simulator.timeSubset.relRange);
+        setTimeSubset(renderer, simulator, simulator.timeSubset.relRange);
         return simulator;
     })
     .fail(function (err) {
@@ -429,6 +426,7 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints)
  */
 function setEdgeColors(simulator, edgeColors) {
     if (!edgeColors) {
+        debug('Using default edge colors')
         var forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
         edgeColors = new Uint32Array(forwardsEdges.edgesTyped.length);
         for (var i = 0; i < edgeColors.length; i++) {
@@ -436,9 +434,16 @@ function setEdgeColors(simulator, edgeColors) {
             edgeColors[i] = simulator.buffersLocal.pointColors[nodeIdx];
         }
     }
-    simulator.tickBuffers(['edgeColors']);
+
+
     simulator.buffersLocal.edgeColors = edgeColors;
+    simulator.tickBuffers(['edgeColors']);
+
     return simulator;
+}
+
+function setMidEdgeColors(simulator, midEdgeColors) {
+    console.error("TODO: Code setMidEdgeColors")
 }
 
 function setLocked(simulator, cfg) {
@@ -490,7 +495,7 @@ function setTimeSubset(renderer, simulator, range) {
         'curPoints', 'nextPoints', 'springsPos',
 
         //style
-        'pointSizes', 'pointColors',
+        'pointSizes', 'pointColors', 'edgeColors',
 
         //midpoints/midedges
         'curMidPoints', 'nextMidPoints', 'curMidPoints', 'midSpringsPos', 'midSpringsColorCoord'

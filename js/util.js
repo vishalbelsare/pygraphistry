@@ -74,8 +74,17 @@ function die() {
     process.exit(1);
 }
 
+function rgb(r, g, b, a) {
+    if (!a)
+        a = 255;
+    // Assume little endian machines
+    return (a << 24) | (b << 16) | (g << 8) | r; 
+}
+
+
 module.exports = {
     "getSource": getSource,
     "getImage": getImage,
-    "die": die
+    "die": die,
+    "rgb": rgb
 };

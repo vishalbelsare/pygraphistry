@@ -50,35 +50,14 @@ var LOCAL_BUFFER_NAMES  = ['pointSizes', 'pointColors', 'edgeColors'];
 //number/offset of graph elements and how they relate to various models
 //graph -> {<model>: {num: int, offset: int}
 function graphCounts(graph) {
-
-    var offsetPoint;
-    var offsetEdge;
-    var numMidPoints;
-    var numMidEdges;
-    var offsetMidPoints;
-    var offsetMidEdges;
-    if (graph.simulator.postSlider) {
-        var numPoints   = graph.simulator.timeSubset.pointsRange.len;
-        var numEdges    = graph.simulator.timeSubset.edgeRange.len;
-        offsetPoint     = graph.simulator.timeSubset.pointsRange.startIdx;
-        offsetEdge      = graph.simulator.timeSubset.edgeRange.startIdx;
-        numMidPoints    = graph.simulator.timeSubset.midPointsRange.len;
-        numMidEdges     = graph.simulator.timeSubset.midEdgeRange.len;
-        offsetMidPoints = graph.simulator.timeSubset.midPointsRange.startIdx;
-        offsetMidEdges  = graph.simulator.timeSubset.midEdgeRange.startIdx;
-    } else {
-        var numPoints = graph.simulator.numPoints;
-        var numEdges = graph.simulator.numEdges;
-        offsetPoint = 0;
-        offsetEdge = 0;
-        //Number of mid/points edges is directly related so just scale
-        numMidPoints =
-            Math.round((numPoints / graph.renderer.numPoints) * graph.renderer.numMidPoints);
-        numMidEdges =
-            Math.round((numEdges / graph.renderer.numEdges) * graph.renderer.numMidEdges);
-        offsetMidPoints = 0;
-        offsetMidEdges  = 0;
-    }
+    var numPoints   = graph.simulator.timeSubset.pointsRange.len;
+    var numEdges    = graph.simulator.timeSubset.edgeRange.len;
+    var offsetPoint     = graph.simulator.timeSubset.pointsRange.startIdx;
+    var offsetEdge      = graph.simulator.timeSubset.edgeRange.startIdx;
+    var numMidPoints    = graph.simulator.timeSubset.midPointsRange.len;
+    var numMidEdges     = graph.simulator.timeSubset.midEdgeRange.len;
+    var offsetMidPoints = graph.simulator.timeSubset.midPointsRange.startIdx;
+    var offsetMidEdges  = graph.simulator.timeSubset.midEdgeRange.startIdx;
 
     var point       = {num: numPoints,      offset: offsetPoint};
     var edge        = {num: numEdges,       offset: offsetMidEdges};
@@ -159,47 +138,34 @@ function fetchVBOs(graph, bufferNames) {
                 version: graph.simulator.versions.buffers[name]
             };
 
-            if (graph.simulator.postSlider) {
-                var model = renderConfig.models[name];
-                var layout = _.values(model)[0];
-                var stride = layout.stride
-                    || (layout.count * TYPE_TO_BYTE_LENGTH[layout.type]);
-                if (_.values(model).length != 1) {
-                    console.error('Currently assumes one view per model');
-                    throw new Error('Currently assumes one view per model');
-                }
-                return graph.simulator.buffers[name].read(
-                    new Float32Array(targetArrays[name].buffer),
-                    counts[name].offset * stride,
-                    counts[name].num * stride);
-            } else {
-                return graph.simulator.buffers[name].read(
-                    new Float32Array(targetArrays[name].buffer));
+            var model = renderConfig.models[name];
+            var layout = _.values(model)[0];
+            var stride = layout.stride
+                || (layout.count * TYPE_TO_BYTE_LENGTH[layout.type]);
+            if (_.values(model).length != 1) {
+                console.error('Currently assumes one view per model');
+                throw new Error('Currently assumes one view per model');
             }
+            return graph.simulator.buffers[name].read(
+                new Float32Array(targetArrays[name].buffer),
+                counts[name].offset * stride,
+                counts[name].num * stride);
     }))
     .then(function() {
         LOCAL_BUFFER_NAMES
             .filter(function (name) { return bufferNames.indexOf(name) != -1; })
             .forEach(function (name) {
-                if (graph.simulator.postSlider) {
+                var model = renderConfig.models[name];
+                var layout = _.values(model)[0];
+                var stride = layout.stride
 
-                    var model = renderConfig.models[name];
-                    var layout = _.values(model)[0];
-                    var stride = layout.stride
-
-                    targetArrays[name] = {
-                        buffer: new graph.simulator.buffersLocal[name].constructor(
-                            graph.simulator.buffersLocal[name],
-                            counts[name].offset * stride,
-                            counts[name].num * stride),
-                        version: graph.simulator.versions.buffers[name]
-                    };
-                } else {
-                    targetArrays[name] = {
-                        buffer: graph.simulator.buffersLocal[name],
-                        version: graph.simulator.versions.buffers[name]
-                    };
-                }
+                targetArrays[name] = {
+                    buffer: new graph.simulator.buffersLocal[name].constructor(
+                        graph.simulator.buffersLocal[name],
+                        counts[name].offset * stride,
+                        counts[name].num * stride),
+                    version: graph.simulator.versions.buffers[name]
+                };
             });
         return targetArrays;
     })
@@ -450,7 +416,7 @@ function fetchData(graph, compress, bufferNames, bufferVersions, programNames) {
                         {output: new Buffer(
                             Math.max(1024, Math.round(vbos[bufferName].buffer.byteLength * 1.5)))})
                         .map(function (compressed) {
-                            debug('compress bufferName', bufferName);
+                            debug('compress bufferName %s (size %d)', bufferName,vbos[bufferName].buffer.byteLength);
                             metrics.info({metric: {'compress_buffer': bufferName} });
                             metrics.info({metric: {'compress_inputBytes': vbos[bufferName].buffer.byteLength} });
                             metrics.info({metric: {'compress_outputBytes': compressed.length} });
