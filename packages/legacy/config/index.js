@@ -53,12 +53,6 @@ function commandLine(options) {
  * @return {Object} A new set of options combining existing options with ENVIRONMENT options
  */
 function deployEnv(options) {
-    var localOptions = {
-        ENVIRONMENT: 'local',
-        DATABASE: 'mongodb://localhost:27017/graphistry-local',
-        MONGO_SERVER: 'graphistry-local'
-    };
-
     var stagingOptions = {
         DATABASE: 'graphistry-staging',
         MONGO_SERVER: 'mongodb://graphistry:graphtheplanet@lighthouse.2.mongolayer.com:10048,lighthouse.3.mongolayer.com:10048/graphistry-staging'
@@ -76,9 +70,8 @@ function deployEnv(options) {
         case 'production':
             return _.extend({}, options, prodOptions);
             break;
-        default:  // 'local'
-            return _.extend({}, options, localOptions);
-            break;
+        default:
+            return _.extend({}, options);
     }
 }
 
