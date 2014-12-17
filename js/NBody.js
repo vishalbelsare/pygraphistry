@@ -4,7 +4,7 @@ var Q = require('q');
 var glMatrix = require('gl-matrix');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');
-var debug = require("debug")("graphistry:graph-viz:nbody");
+var debug = require("debug")("graphistry:graph-viz:graph:nbody");
 var util = require('./util.js');
 
 var elementsPerPoint = 2;

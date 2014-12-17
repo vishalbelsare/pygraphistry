@@ -1,6 +1,6 @@
 
 
-var debug = require("debug")("N-body:SimCL:BarnesHut"),
+var debug = require("debug")("graphistry:graph-viz:cl:barneshut"),
     _ = require('underscore');
     Q = require('q');
 

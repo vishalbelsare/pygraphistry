@@ -4,7 +4,7 @@ var Q = require('q');
 var util = require('./util.js');
 var cljs = require('./cl.js');
 var _ = require('underscore');
-var debug = require("debug")("graphistry:graph-viz:simcl");
+var debug = require("debug")("graphistry:graph-viz:graph:simcl");
 
 if (typeof(window) == 'undefined') {
     var webcl = require('node-webcl');

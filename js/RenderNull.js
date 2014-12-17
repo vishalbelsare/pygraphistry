@@ -5,7 +5,7 @@
 
 var RenderBase = require('./RenderBase.js');
 var Q = require('q');
-var debug = require('debug')('N-body:RenderNull');
+var debug = require('debug')('graphistry:graph-viz:render:rendernull');
 
 
 var create = Q.promised(function(document) {
