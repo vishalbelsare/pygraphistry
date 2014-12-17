@@ -2,7 +2,7 @@
 
 var _       = require('underscore'),
     Q       = require('q'),
-    debug   = require('debug')('graphistry:graph-viz:edgebundling'),
+    debug   = require('debug')('graphistry:graph-viz:cl:edgebundling'),
     cljs    = require('./cl.js');
 
 

@@ -3,7 +3,7 @@
 var fs = require('fs');
 var path = require('path');
 var Q = require('q');
-var debug = require("debug")("graphistry:graph-viz:data-loader");
+var debug = require("debug")("graphistry:graph-viz:data:data-loader");
 var _ = require('underscore');
 
 var MatrixLoader = require('./libs/MatrixLoader.js'),

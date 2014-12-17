@@ -4,7 +4,8 @@ var Q = require('q');
 var glMatrix = require('gl-matrix');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');
-var debug = require("debug")("N-body:main");
+var debug = require("debug")("graphistry:graph-viz:graph:nbody");
+var util = require('./util.js');
 
 var STEP_NUMBER_ON_CHANGE = 30;
 var elementsPerPoint = 2;

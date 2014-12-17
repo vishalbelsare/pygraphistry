@@ -11,7 +11,7 @@ var Q = require("q"),
     _ = require('underscore'),
 
     request = require('request'),
-    debug = require("debug")("graphistry:graph-viz:node-driver"),
+    debug = require("debug")("graphistry:graph-viz:driver:node-driver"),
 
     NBody = require("./NBody.js"),
     RenderNull = require('./RenderNull.js'),
