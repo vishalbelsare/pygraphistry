@@ -7,7 +7,6 @@ var _ = require('underscore');
 
 // TODO: Should we seal the final options object we return? Or make option lookup use dynamic
 // methods instead of properties? (`options.vizServerAddress()`)?
-// FIXME: Once we connect to mongo using a URL, don't re-connect to the given database
 // FIXME: Find HOSTNAME from the environment, not config file
 // FIXME: We need to grab DATALISTURI using npm path resolution, not as a hard-code UNIX path
 // FIXME: Use 'MONGO_{USERNAME,PASSWORD,URLS,DATABASE}' instead of 'MONGO_SERVER' and 'DATABASE'
@@ -31,12 +30,12 @@ function defaults() {
 
         DATALISTURI: 'node_modules/datasets/all.json',
 
-        MONGO_SERVER: 'mongodb://localhost:27017/graphistry-local',
+        MONGO_SERVER: 'mongodb://localhost/graphistry-local',
         DATABASE: 'graphistry-local',
 
         MONGO_USERNAME: '',
         MONGO_PASSWORD: '',
-        MONGO_HOSTS: ['localhost:27017'],
+        MONGO_HOSTS: ['localhost'],
         MONGO_DATABASE: 'graphistry-local'
     };
 }
