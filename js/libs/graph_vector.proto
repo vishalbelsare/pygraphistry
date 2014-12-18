@@ -34,8 +34,15 @@ message VectorGraph {
     required AttributeTarget target = 2;
     repeated string values = 3;
   }
-  
+
   repeated Int32AttributeVector int32_vectors = 7;
   repeated DoubleAttributeVector double_vectors = 8;
   repeated StringAttributeVector string_vectors = 9;
+  
+  message Int32BufferVector {
+    required string name = 1;
+    repeated uint32 values = 2 [packed=true];
+  }
+
+  repeated Int32BufferVector int32_buffer_vectors = 10;
 }

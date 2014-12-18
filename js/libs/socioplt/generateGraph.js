@@ -2,9 +2,8 @@ var _ = require('underscore');
 
 //statement -> language -> {rating, deviation}
 
-function process(dataset) {
-    var data = require(dataset);
-    
+function process(data) {
+
 var statements = _.keys(data);
 var languages = _.keys(data[statements[0]]);
 

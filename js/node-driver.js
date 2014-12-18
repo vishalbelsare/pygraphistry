@@ -281,7 +281,7 @@ function delayObservableGenerator(delay, value, cb) {
 ///////////////////////////////////////////////////////////////////////////
 
 
-function createAnimation(config) {
+function createAnimation(datasetname) {
     debug("STARTING DRIVER");
 
     var userInteractions = new Rx.Subject();
@@ -294,21 +294,14 @@ function createAnimation(config) {
     //    debug("NOTIFYING OF BIG STEP")
     //})
 
-    var dataConfig = {
-        'listURI': config.DATALISTURI,
-        'name': config.DATASETNAME,
-        'idx': config.DATASETIDX
-    }
-    
-    debug(dataConfig)
-
-    var theDataset = loader.getDataset(dataConfig);
+    var theDataset = loader.getDataset(datasetname);
     var theGraph = init();
 
     Q.all([theGraph, theDataset]).spread(function (graph, dataset) {
         debug("Dataset %o", dataset);
+        graph.metadata = dataset.Metadata;
         return Q.all([
-            applyControls(graph, dataset.config['simControls']),
+            applyControls(graph, dataset.Metadata.config['simControls']),
             dataset
         ]);
     }).spread(function (graph, dataset) {
@@ -465,15 +458,5 @@ function fetchData(graph, compress, bufferNames, bufferVersions, programNames) {
 }
 
 
-
 exports.create = createAnimation;
 exports.fetchData = fetchData;
-
-
-// If the user invoked this script directly from the terminal, run init()
-if(require.main === module) {
-    var config  = require('./config.js')();
-    var vbosUpdated = createAnimation(config);
-
-    vbosUpdated.subscribe(function() { debug("Got updated VBOs"); } );
-}

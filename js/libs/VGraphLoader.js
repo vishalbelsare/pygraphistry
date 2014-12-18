@@ -8,6 +8,7 @@ var debug = require("debug")("graphistry:graph-viz:data-loader");
 var pb = require("protobufjs");
 var zlib = require("zlib");
 var path = require('path');
+var config  = require('config')();
 
 var builder = null;
 var pb_root = null;
@@ -55,23 +56,12 @@ var attributeLoaders = function(graph) {
     };
 }
 
+/**
+ * Load the raw data from the dataset object from S3
+**/
 function load(graph, dataset) {
-    return unpack(dataset.file).then(function (content) {
-        var vg = pb_root.VectorGraph.decode(content)
-        return decoders[vg.version](graph, vg, dataset.config);
-    });
-}
-
-function unpack(filename) {
-    var fileExt = filename.split('.').pop();
-    var content = Q.denodeify(fs.readFile)(filename);
-    if (fileExt == "gz") {
-        debug("Unzipping dataset...");
-        return content.then(function (data) {
-            return Q.denodeify(zlib.gunzip)(data);
-        })
-    } else
-        return content;
+    graph.vg = pb_root.VectorGraph.decode(dataset.Body)
+    return decoders[graph.vg.version](graph, graph.vg, dataset.Metadata.config);
 }
 
 function getAttributeMap(vg) {
@@ -148,9 +138,31 @@ function decode0(graph, vg, config)  {
         return graph.setEdges(edges);
     }).then(function () {
         runLoaders(eloaders);
-        return graph; 
-    })
-    .catch(function (error) {
+        // graph.simulator.buffers = graph.vg.int32_buffer_vectors;
+    }).then(function(){
+        var arrs = Object.keys(graph.simulator.buffers).map(function(index){
+            var buffer = graph.simulator.buffers[index];
+            var data;
+    
+            // find the element with the index. TODO: make this a dict somehow?
+            for (var el in graph.vg.int32_buffer_vectors) {
+                if (graph.vg.int32_buffer_vectors[el].name == index) {
+                    var raw = graph.vg.int32_buffer_vectors[el].values;
+                    data = new ArrayBuffer(raw);
+                }
+            }
+
+            if (data) {
+                return buffer.write(data).then(function(buf) {
+                    console.log('loaded ' + index)
+                })                    
+            }
+
+        })
+        return Q.all(arrs);
+    }).then(function(){
+        return graph;
+    }).catch(function (error) {
         console.error("ERROR Failure in VGraphLoader ", error.stack)
     })
 }
