@@ -70,23 +70,16 @@ var netflowControls = {
                 edgeStrength: 4.292198241799153,
                 edgeDistance: 0.0000158
             }
-        },{
-            algo: edgeBundling,
-            params: {
-                charge: -0.000029360001841802474,
-                gravity: 0.020083175556898723,
-                edgeStrength: 4.292198241799153,
-                edgeDistance: 0.0000158,
-            }
         }
     ],
     locks: {
         lockPoints: false,
         lockEdges: false,
-        lockMidpoints: false,
-        lockMidedges: false
+        lockMidpoints: true,
+        lockMidedges: true
     }
 }
 
 exports.default = defaultControls;
 exports.netflow = netflowControls;
+exports.test = testControls;

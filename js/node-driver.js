@@ -23,7 +23,7 @@ var Q = require("q"),
 
 
 var rConf = require('./renderer.config.js');
-var renderConfig = rConf.scenes.default; // Still hardcode default config for now...
+var renderConfig = rConf.scenes.netflow; // Still hardcode default config for now...
 
 metrics.init('StreamGL:driver');
 
