@@ -1,9 +1,41 @@
 'use strict';
 
-/**
- * Render config object used by browser's StreamGL library to configure WebGL + streaming. Sent via
- * XHR or WebSocket to the browser by the server in response to API call.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/***********************************
+ * OBSOLETE AND NO LONGER USED.    *
+ * EDIT renderer.config.js INSTEAD *
+ ***********************************/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 var fs = require('fs');
 

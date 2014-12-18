@@ -12,6 +12,7 @@ var Q = require("q"),
 
     request = require('request'),
     debug = require("debug")("graphistry:graph-viz:driver:node-driver"),
+    util = require('./util.js'),
 
     NBody = require("./NBody.js"),
     RenderNull = require('./RenderNull.js'),
@@ -21,8 +22,8 @@ var Q = require("q"),
     loader = require("./data-loader.js");
 
 
-var renderConfig = require('./renderer.config.graph.js');
-
+var rConf = require('./renderer.config.js');
+var renderConfig = rConf.scenes.default; // Still hardcode default config for now...
 
 metrics.init('StreamGL:driver');
 
@@ -34,11 +35,6 @@ var dimensions = [1,1];
 
 
 //========== HARDCODED RENDER CONFIG BINDINGS
-
-var TYPE_TO_BYTE_LENGTH = {
-    'FLOAT': 4,
-    'UNSIGNED_BYTE': 1
-};
 
 var DEVICE_BUFFER_NAMES = ['curPoints', 'springsPos', 'midSpringsPos', 'curMidPoints', 'midSpringsColorCoord'];
 var LOCAL_BUFFER_NAMES  = ['pointSizes', 'pointColors', 'edgeColors'];
@@ -106,14 +102,11 @@ function applyControls(graph, cfgName) {
 
 
 function getBufferVersion (graph, bufferName) {
-
-    if (DEVICE_BUFFER_NAMES.indexOf(bufferName) > -1) {
-        return graph.simulator.versions.buffers[bufferName];
-    } else if (LOCAL_BUFFER_NAMES.indexOf(bufferName) > -1) {
-        return graph.simulator.versions.buffers[bufferName];
-    } else {
-        throw new Error("could not find buffer", bufferName);
-    }
+    var buffers = graph.simulator.versions.buffers;
+    if (!(bufferName in buffers))
+        util.die('Cannot find version of buffer %s', bufferName);
+    
+    return buffers[bufferName];
 }
 
 
@@ -141,10 +134,9 @@ function fetchVBOs(graph, bufferNames) {
             var model = renderConfig.models[name];
             var layout = _.values(model)[0];
             var stride = layout.stride
-                || (layout.count * TYPE_TO_BYTE_LENGTH[layout.type]);
+                || (layout.count * rConf.gl2Bytes(layout.type));
             if (_.values(model).length != 1) {
-                console.error('Currently assumes one view per model');
-                throw new Error('Currently assumes one view per model');
+                util.die('Currently assumes one view per model');
             }
             return graph.simulator.buffers[name].read(
                 new Float32Array(targetArrays[name].buffer),
@@ -181,10 +173,10 @@ function fetchNumElements(graph) {
     var counts = graphCounts(graph);
 
     return _.object(
-        _.keys(renderConfig.scene.items)
+        _.keys(renderConfig.items)
             .map(function (item) {
                 var serversideModelBindings =
-                    _.values(renderConfig.scene.items[item].bindings)
+                    _.values(renderConfig.items[item].bindings)
                         .filter(function (binding) {
                             var model = renderConfig.models[binding[0]];
                             var serverLayouts =
@@ -205,17 +197,15 @@ function fetchBufferByteLengths(graph) {
 
     var counts = graphCounts(graph);
 
-    return _.object(
-            _.pairs(counts)
-                .map(function (pair) {
-                    var name = pair[0];
-                    var count = pair[1].num;
-                    var model = renderConfig.models[name];
-                    var layout = _.values(model)[0];
-                    return [
-                        name,
-                        count * (layout.stride || (TYPE_TO_BYTE_LENGTH[layout.type] * layout.count))];
-                }));
+    return _.chain(renderConfig.models).map(function (views, name) {
+        var layout = _.values(views)[0];
+        return [name , layout];
+    }).object().omit(function (layout, name) {
+        return layout.datasource != undefined;
+    }).map(function (layout, name) {
+        var count = counts[name].num;
+        return [name, count * (layout.stride || (rConf.gl2Bytes(layout.type) * layout.count))];
+    }).object().value();
 }
 
 
@@ -286,8 +276,8 @@ function createAnimation(config) {
         'name': config.DATASETNAME,
         'idx': config.DATASETIDX
     }
-    
-    debug(dataConfig)
+
+    debug('dataConfig: %o', dataConfig);
 
     var theDataset = loader.getDataset(dataConfig);
     var theGraph = init();
@@ -458,6 +448,7 @@ function fetchData(graph, compress, bufferNames, bufferVersions, programNames) {
 
 exports.create = createAnimation;
 exports.fetchData = fetchData;
+exports.renderConfig = renderConfig;
 
 
 // If the user invoked this script directly from the terminal, run init()
