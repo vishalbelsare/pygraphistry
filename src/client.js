@@ -37,7 +37,9 @@ function makeFetcher (fragment, url) {
                 debug('got texture/vbo data', bufferName, Date.now() - now, 'ms');
 
                 var arrayBuffer = oReq.response; // Note: not oReq.responseText
-                var trimmedArray = new Uint8Array(arrayBuffer, 0, bufferByteLengths[bufferName]);
+                var blength = bufferByteLengths[bufferName];
+                debug('Buffer length (%s): %d', bufferName, blength);
+                var trimmedArray = new Uint8Array(arrayBuffer, 0, blength);
 
                 res.onNext(trimmedArray);
 

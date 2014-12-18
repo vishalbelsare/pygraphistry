@@ -715,6 +715,8 @@ function render(state, renderListOverride) {
                 textureBindings: renderItem.textureBindings
             },
             buffers, config.models);
+
+        debug("Done binding, drawing now...")
         gl.drawArrays(gl[renderItem.drawType], 0, numElements[item]);
 
         if (renderTarget && (renderTarget !== 'CANVAS')) {
