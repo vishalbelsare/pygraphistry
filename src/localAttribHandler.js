@@ -9,9 +9,9 @@ var debug = require('debug')('StreamGL:renderer'),
 function getActiveLocalAttributes (config) {
     config = config.toJS();
 
-    var renderItems = config.scene.render;
+    var renderItems = config.render;
     var activeLocalAttributesLists = renderItems.map(function (itemName) {
-        var bindings = config.scene.items[itemName].bindings;
+        var bindings = config.items[itemName].bindings;
         return _.pairs(bindings)
             .map(function (bindingPair) {
                 var modelName = bindingPair[1][0];

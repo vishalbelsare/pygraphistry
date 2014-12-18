@@ -225,7 +225,7 @@ lastRender
 
             var cfg = mostRecent;
 
-            var items = cfg.currentState.get('config').get('scene').get('render').toJS()
+            var items = cfg.currentState.get('config').get('render').toJS()
                 .filter(function (v) { return v !== 'pointpicking'; });
             cfg.renderer.render(cfg.currentState, items);
             renderCursor(cfg.currentState, new Float32Array(cfg.points.buffer), cfg.highlightIdx);
