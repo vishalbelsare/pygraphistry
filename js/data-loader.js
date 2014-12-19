@@ -103,7 +103,7 @@ function createEdges(amount, numNodes) {
 
 
 function loadRandom(graph, dataset) {
-    var cfg = dataset.config
+    var cfg = dataset.Metadata.config
     var points = createPoints(cfg.npoints, cfg.dimensions);
     var edges = createEdges(cfg.nedges, cfg.npoints);
 
@@ -115,7 +115,7 @@ function loadRandom(graph, dataset) {
 
 
 function loadRectangle(graph, dataset) {
-    var cfg = dataset.config
+    var cfg = dataset.Metadata.config
     debug("Loading rectangle", cfg.rows, cfg.columns);
 
     var points =

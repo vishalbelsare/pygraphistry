@@ -34,7 +34,7 @@ function write(graph) {
     // Add vertices. It's a flattened array, so compose into tuples.
     var untypedVertices = Array.prototype.slice.call(graph.__pointsHostBuffer);
 
-    for (var index = 0, len = untypedVertices.length; index < len; index++) {
+    for (var index = 0; index < untypedVertices.length; index++) {
         if (index % 2 != 0) {
             continue;
         }

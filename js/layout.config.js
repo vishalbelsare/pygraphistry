@@ -6,7 +6,7 @@ var forceAtlas = require('./forceatlas.js'),
     edgeBundling = require('./edgebundling.js'),
     barnesHut = require('./BarnesHut.js');
 
-var defaultControls = {
+var uberControls = {
     simulator: SimCL,
     layoutAlgorithms: [
         {
@@ -88,5 +88,6 @@ var netflowControls = {
     }
 }
 
-exports.default = defaultControls;
+exports.default = uberControls;
+exports.uber = uberControls;
 exports.netflow = netflowControls;
