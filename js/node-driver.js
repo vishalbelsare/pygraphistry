@@ -98,7 +98,7 @@ function getBufferVersion (graph, bufferName) {
     var buffers = graph.simulator.versions.buffers;
     if (!(bufferName in buffers))
         util.die('Cannot find version of buffer %s', bufferName);
-    
+
     return buffers[bufferName];
 }
 
@@ -148,6 +148,10 @@ function fetchVBOs(graph, bufferNames) {
                 var stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
 
                 debug('Fetching host buffer %s', name);
+                if (!graph.simulator.buffersLocal[name]) {
+                    throw new Error('missing buffersLocal base buffer: ' + name);
+                }
+
                 targetArrays[name] = {
                     buffer: new graph.simulator.buffersLocal[name].constructor(
                         graph.simulator.buffersLocal[name],
