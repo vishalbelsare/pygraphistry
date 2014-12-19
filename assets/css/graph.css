@@ -48,46 +48,6 @@ button.btn-default {
     color: white;
 }
 
-#timeSlider {
-    margin: 1em;
-}
-#timeSlider .ui-rangeSlider-innerBar {
-    background-color: transparent;
-    border: 2px solid rgba(224,244,244,0.3);
-    border-radius: 7px;
-}
-
-#timeSlider:hover .ui-rangeSlider-innerBar, #timeSlider:hover .ui-rangeSlider-handle, #timeSlider:hover .ui-rangeSlider-bar {
-    outline: none;
-    border-color: rgba(255,255,255,0.75);
-    box-shadow: 0 0 10px rgba(255,255,255,0.75);
-}
-
-#timeSlider .ui-rangeSlider-bar {
-    background-color: rgba(255,255,255,0.3);
-}
-
-#timeSlider:hover .ui-rangeSlider-bar {
-    background-color: rgba(255,255,255,0.75);
-}
-
-#timeSlider .ui-rangeSlider-handle {
-    background-color: rgba(255,255,255,0.3);
-}
-
-#timeSlider:hover .ui-rangeSlider-handle {
-    background-color: rgba(255,255,255,0.6);
-}
-
-
-#timeSlider .ui-rangeSlider-leftHandle {
-    border-radius: 5px 0px 0px 5px;
-}
-
-#timeSlider .ui-rangeSlider-rightHandle {
-    border-radius: 0px 7px 7px 0px;
-}
-
 
 .graph-label-container {
     position: absolute;

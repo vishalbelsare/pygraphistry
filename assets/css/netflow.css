@@ -1,3 +1,42 @@
+html {
+    height: 100%;
+}
+body {
+    background: linear-gradient(to bottom, rgba(242,246,248,1) 0%, rgba(216,225,231,1) 5%, rgba(181,198,208,1) 5%, rgba(224,239,249,1) 79%, rgba(245,251,255,1) 88%);
+    height: 100%;
+}
+
+
+.heading {
+    padding-top: 0.5em;
+    text-align: center;
+    background: rgba(242,246,248,0.7);
+    font-family: 'Nunito', sans-serif;
+    letter-spacing: -0.03em;
+    color: rgb(51, 51, 102);
+}
+
+.heading span {
+    font-size: 0.75em;
+    font-variant: small-caps;
+}
+
+.ui-rangeSlider .ui-rangeSlider-innerBar {
+    background-color: rgba(255,255,255,0.3);
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.ui-rangeSlider .ui-rangeSlider-handle.ui-rangeSlider-leftHandle,
+.ui-rangeSlider .ui-rangeSlider-handle.ui-rangeSlider-rightHandle {
+    width: 3px;
+    background-color: rgba(0,0,0,0.1);
+}
+
+.ui-rangeSlider .ui-rangeSlider-ba {
+    background-color: white;
+}
+
+
 .graph-label h2 {
     text-align: left;
     font-size: 1em;
