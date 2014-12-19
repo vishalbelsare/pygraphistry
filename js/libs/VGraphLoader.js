@@ -153,6 +153,8 @@ function decode0(graph, vg, config)  {
     }).then(function () {
         runLoaders(eloaders);
     }).then(function(){
+        // Copy all serialized data to simulator buffers if data is present
+        // The serialized data lives in graph.vg
         var arrs = Object.keys(graph.simulator.buffers).map(function(index){
             var buffer = graph.simulator.buffers[index];
             var data;
@@ -161,19 +163,46 @@ function decode0(graph, vg, config)  {
             for (var el in graph.vg.int32_buffer_vectors) {
                 if (graph.vg.int32_buffer_vectors[el].name == index) {
                     var raw = graph.vg.int32_buffer_vectors[el].values;
-                    data = new ArrayBuffer(raw);
+
+                    data = new Float32Array(raw);
+
+                    var normalArray = Array.prototype.slice.call(data);
+                    
+                    // sanity check
+                    var total = normalArray.reduce(function(a, b) {
+                      return a + b;
+                    });
+                    console.log(index, total, normalArray.length)
+
+                    // Write the data to the buffer
+                    try {
+                        return buffer.write(data).then(function(buf) {
+                            console.log('loaded ' + index)
+                            return buf;
+                        })                            
+                    } catch (e) {
+                        console.log(e)
+                    }
+                    break;
                 }
             }
-
-            if (data) {
-                return buffer.write(data).then(function(buf) {
-                    console.log('loaded ' + index)
-                })                    
-            }
-
         })
         return Q.all(arrs);
-    }).then(function(){
+    }).then(function () {
+        _.each(graph.simulator.layoutAlgorithms, function (la) {
+            la.setPoints(graph.simulator);
+        });
+        return graph;
+    }).then(function (graph) {
+        _.each(graph.simulator.layoutAlgorithms, function (la) {
+            la.setEdges(graph.simulator);
+        });
+        return graph;
+    }).then(function (graph) {
+        // graph.simulator.setTimeSubset(graph.simulator.renderer, graph.simulator, graph.simulator.timeSubset.relRange);            
+        return graph;
+    })
+    .then(function(graph){
         return graph;
     }).catch(function (error) {
         console.error("ERROR Failure in VGraphLoader ", error.stack)

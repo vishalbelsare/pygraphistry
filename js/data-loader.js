@@ -24,7 +24,7 @@ var loaders = {
 /**
  * Download raw data from S3 and unzip
 **/
-function getDataset(datasetname) {
+function downloadDataset(datasetname) {
     debug("Loading dataset " + datasetname);
 
     var params = {
@@ -273,7 +273,7 @@ module.exports = {
     createPoints: createPoints,
     createEdges: createEdges,
     loadDatasetIntoSim: loadDatasetIntoSim,
-    getDataset: getDataset
+    downloadDataset: downloadDataset
 };
 
 // vim: set et ff=unix ts=8 sw=4 fdm=syntax: 

@@ -41,7 +41,7 @@ message VectorGraph {
   
   message Int32BufferVector {
     required string name = 1;
-    repeated uint32 values = 2 [packed=true];
+    repeated float values = 2 [packed=true];
   }
 
   repeated Int32BufferVector int32_buffer_vectors = 10;

@@ -10,6 +10,7 @@ var zlib = require("zlib");
 var path = require('path');
 var fs = require('fs');
 var config  = require('config')();
+// var renderConfig = require('../../js/renderer.config.graph.js');
 
 var builder = null;
 var pb_root = null;
@@ -47,21 +48,28 @@ function write(graph) {
 
     if (graph.vg) {
         Q().then(function() {
-            
             // Iterate through each buffer
             var arrs = Object.keys(buffers).map(function(index){
+
                 var buffer = buffers[index];
 
                 // TODO: Set this dynamically based on type?
-                var target = new Int32Array(buffer.size);
+                var target = new Float32Array(buffer.size);
                 
                 // Read the buffer data into a typed array and push to vectors array
                 return buffer.read(target).then(function(buf) {
                     var vector = new pb_root.VectorGraph.Int32BufferVector();
                     var normalArray = Array.prototype.slice.call(target);
+                    
                     vector.values = normalArray;
                     vector.name = index;
                     vectors.push(vector)
+
+                    // sanity check
+                    var total = normalArray.reduce(function(a, b) {
+                      return a + b;
+                    });
+                    console.log(index, total, normalArray.length)
                     return target;
                 })
             })
