@@ -84,19 +84,27 @@ function decode0(graph, vg, config)  {
     debug("Graph has attribute: %o", Object.keys(amap))
     var vertices = [];
     var edges = []
-    var dimensions = [1, 1]; 
+    var dimensions = [1, 1];
 
-    for (var i = 0; i < vg.nvertices; i++) {
-        var vertex = [];
-        for (var j = 0; j < dimensions.length; j++)
-            vertex.push(Math.random() * dimensions[j]);
-        vertices.push(vertex);
+    // Do the vertices already exist in the serialized version?
+    if (vg.vertices.length != 0) {
+        vg.vertices.forEach(function(el) {
+            vertices.push([el.x, el.y])
+        });
+    } else {
+        for (var i = 0; i < vg.nvertices; i++) {
+            var vertex = [];
+            for (var j = 0; j < dimensions.length; j++)
+                vertex.push(Math.random() * dimensions[j]);
+            vertices.push(vertex);
+        }        
     }
 
     for (var i = 0; i < vg.edges.length; i++) {
         var e = vg.edges[i];
         edges.push([e.src, e.dst]);
     }
+    // silently failing wtfff
 
     var loaders = attributeLoaders(graph);
     var mapper = undefined; 

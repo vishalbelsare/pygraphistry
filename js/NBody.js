@@ -99,6 +99,8 @@ function setPoints(graph, points, pointSizes, pointColors) {
 
 function setVertices(graph, points) {
     debug("Loading Vertices")
+
+    // This flattens out the points array
     if(!(points instanceof Float32Array)) {
         points = _toTypedArray(points, Float32Array);
     }

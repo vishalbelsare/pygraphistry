@@ -31,6 +31,20 @@ function write(graph) {
     var buffers = graph.simulator.buffers;
     var vectors = [];
 
+    // Add vertices. It's a flattened array, so compose into tuples.
+    var untypedVertices = Array.prototype.slice.call(graph.__pointsHostBuffer);
+
+    for (var index = 0, len = untypedVertices.length; index < len; index++) {
+        if (index % 2 != 0) {
+            continue;
+        }
+
+        var vertexMessage = new pb_root.VectorGraph.Vertex();
+        vertexMessage.x = graph.__pointsHostBuffer[index];
+        vertexMessage.y = graph.__pointsHostBuffer[index+1];
+        graph.vg.vertices.push(vertexMessage);
+    }
+
     if (graph.vg) {
         Q().then(function() {
             

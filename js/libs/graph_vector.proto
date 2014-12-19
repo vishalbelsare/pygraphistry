@@ -14,7 +14,7 @@ message VectorGraph {
     required uint32 dst = 2;
   }
   repeated Edge edges = 6;
-  
+
   enum AttributeTarget {
    VERTEX = 0;
    EDGE = 1;
@@ -45,4 +45,10 @@ message VectorGraph {
   }
 
   repeated Int32BufferVector int32_buffer_vectors = 10;
+
+  message Vertex {
+    required float x = 1;
+    required float y = 2;
+  }
+  repeated Vertex vertices = 11;
 }
