@@ -22,8 +22,17 @@ body {
 }
 
 .ui-rangeSlider .ui-rangeSlider-innerBar {
-    background-color: rgba(255,255,255,0.3);
+    background-color: rgba(196, 212, 222, 0.72);
     border: 1px solid rgba(0,0,0,0.1);
+}
+
+.ui-rangeSlider .ui-rangeSlider-bar {
+    background-color: rgba(255,255,255,0.3);
+    box-shadow: 0 0 10px rgba(255,255,255,0.75);
+}
+
+.ui-rangeSlider .ui-rangeSlider-bar:hover {
+    box-shadow: 0 0 20px rgba(255,255,255,0.95);
 }
 
 .ui-rangeSlider .ui-rangeSlider-handle.ui-rangeSlider-leftHandle,
@@ -37,15 +46,28 @@ body {
 }
 
 
-.graph-label h2 {
-    text-align: left;
-    font-size: 1em;
+.menu {
+    z-index: 100001;
+}
+.accordion {
+    background-color: rgba(196, 212, 222, 0.72);
 }
 
-.graph-label {
-    padding-left: 0;
-    padding-right: 0;
+.control-label {
+    color: rgb(51, 51, 102);
 }
+.slider-handle {
+    background-image: linear-gradient(to bottom, #149bdf 0%, rgb(51, 51, 102) 100%)
+}
+.form-group button.btn {
+    border-color: rgba(255,255,255,0.5);
+}
+.form-group button.btn:hover {
+    color: white;
+    background-color: transparent;
+    box-shadow: 0 0 20px rgba(255,255,255,0.75);
+}
+
 
 .stat-top { margin: 0;}
 .stat-top h2, .stat-flows thead {
@@ -100,3 +122,71 @@ body {
 .stat-flows tbody td {
     text-align: left;
 }
+
+.graph-label h2 {
+    text-align: left;
+    font-size: 1em;
+}
+
+.graph-label {
+    text-align:left;
+    padding-left: 0;
+    padding-right: 0;
+}
+.graph-label td {
+    text-align: center;
+}
+
+.graph-label-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.graph-label {
+
+    margin-top: 1.5em;
+
+    position: absolute;
+    color: rgb(51, 51, 102);
+    font-weight: bold;
+    font-size: 0.8em;
+    text-shadow: 0 0 5px rgba(255,255,255,1.0);
+    padding: 0.5em;
+
+    border-radius: 10px;
+
+    border: 1px solid transparent;
+
+    opacity: 0.8;
+
+    overflow: hidden;
+    height: 2em;
+
+    z-index: 10000;
+
+    color: rgb(51, 51, 102);
+
+}
+
+.graph-label.on {
+
+    opacity: 1.0;
+
+    background-color: rgba(255, 255, 255, 0.85);
+    border-color: rgba(255,255,244,0.9);
+
+
+    width: auto;
+    height: auto;
+    overflow: auto;
+
+    box-shadow: 0 0 10px rgba(255,255,255,0.75);
+
+    z-index: 100000;
+
+}
+
+.graph-label.on hr { margin: 0; margin-bottom: 0.3em;}
+.graph-label.on > div:first-child { margin-bottom: 0.5em; }
+
