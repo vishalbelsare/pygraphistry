@@ -104,7 +104,6 @@ function decode0(graph, vg, config)  {
         var e = vg.edges[i];
         edges.push([e.src, e.dst]);
     }
-    // silently failing wtfff
 
     var loaders = attributeLoaders(graph);
     var mapper = undefined; 
@@ -146,7 +145,6 @@ function decode0(graph, vg, config)  {
         return graph.setEdges(edges);
     }).then(function () {
         runLoaders(eloaders);
-        // graph.simulator.buffers = graph.vg.int32_buffer_vectors;
     }).then(function(){
         var arrs = Object.keys(graph.simulator.buffers).map(function(index){
             var buffer = graph.simulator.buffers[index];
