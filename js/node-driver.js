@@ -17,13 +17,11 @@ var Q = require("q"),
     NBody = require("./NBody.js"),
     RenderNull = require('./RenderNull.js'),
     SimCL = require("./SimCL.js"),
+    rConf = require('./renderer.config.js'),
 
     metrics = require("./metrics.js"),
     loader = require("./data-loader.js");
 
-
-var rConf = require('./renderer.config.js');
-var renderConfig = rConf.scenes.netflow; // Still hardcode default config for now...
 
 metrics.init('StreamGL:driver');
 
@@ -70,13 +68,13 @@ function graphCounts(graph) {
 function applyControls(graph, cfgName) {
     var controls = require('./layout.config.js');
     var cfg = controls.default;
-    if (cfgName) {
-        if (controls[cfgName])
-            cfg = controls[cfgName];
-        else
-          console.warn("WARNING Unknown sim controls: %s. Using defaults.", cfgName)
-    }
-    debug("Applying layout settings: %o", cfg);
+
+    if (cfgName in controls)
+        cfg = controls[cfgName];
+    else
+        console.warn('WARNING Unknown simControls "%s", using defaults.', cfgName)
+
+    debug('Applying layout settings: %o', cfg);
 
     var simulator = cfg.simulator || SimCL
     var algoEntries = cfg.layoutAlgorithms || [];
@@ -105,9 +103,9 @@ function getBufferVersion (graph, bufferName) {
 
 
 // ... -> {<name>: {buffer: ArrayBuffer, version: int}}
-function fetchVBOs(graph, bufferNames) {
+function fetchVBOs(graph, renderConfig, bufferNames) {
     var targetArrays = {};
-    var bufferSizes = fetchBufferByteLengths(graph);
+    var bufferSizes = fetchBufferByteLengths(graph, renderConfig);
     var counts = graphCounts(graph);
 
     var layouts = _.object(_.map(bufferNames, function (name) {
@@ -170,7 +168,7 @@ function fetchVBOs(graph, bufferNames) {
 
 //graph -> {<itemName>: int}
 //For each render item, find a serverside model and send its count
-function fetchNumElements(graph) {
+function fetchNumElements(graph, renderConfig) {
 
     var counts = graphCounts(graph);
 
@@ -192,7 +190,7 @@ function fetchNumElements(graph) {
 
 //graph -> {<model>: int}
 //Find num bytes needed for each model
-function fetchBufferByteLengths(graph) {
+function fetchBufferByteLengths(graph, renderConfig) {
 
     var counts = graphCounts(graph);
 
@@ -255,7 +253,7 @@ function delayObservableGenerator(delay, value, cb) {
 ///////////////////////////////////////////////////////////////////////////
 
 
-function createAnimation(config) {
+function createAnimation(theDataset) {
     debug("STARTING DRIVER");
 
     var userInteractions = new Rx.Subject();
@@ -264,19 +262,6 @@ function createAnimation(config) {
     // the contents of each VBO
     var animStepSubj = new Rx.BehaviorSubject(null);
 
-    //animStepSubj.subscribe(function () {
-    //    debug("NOTIFYING OF BIG STEP")
-    //})
-
-    var dataConfig = {
-        'listURI': config.DATALISTURI,
-        'name': config.DATASETNAME,
-        'idx': config.DATASETIDX
-    }
-
-    debug('dataConfig: %o', dataConfig);
-
-    var theDataset = loader.getDataset(dataConfig);
     var theGraph = init();
 
     Q.all([theGraph, theDataset]).spread(function (graph, dataset) {
@@ -368,7 +353,7 @@ function createAnimation(config) {
  * property set to an Object mapping buffer names to ArrayBuffer data; and the 'elements' Object
  * mapping render item names to number of elements that should be rendered for the given buffers.
  */
-function fetchData(graph, compress, bufferNames, bufferVersions, programNames) {
+function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, programNames) {
 
     bufferVersions = bufferVersions || _.object(bufferNames.map(function (name) { return [name, -1]}));
 
@@ -381,7 +366,7 @@ function fetchData(graph, compress, bufferNames, bufferVersions, programNames) {
     bufferNames = neededBuffers;
 
     var now = Date.now();
-    return Rx.Observable.fromPromise(fetchVBOs(graph, bufferNames))
+    return Rx.Observable.fromPromise(fetchVBOs(graph, renderConfig, bufferNames))
         .flatMap(function (vbos) {
             //metrics.info({metric: {'fetchVBOs_lastVersions': bufferVersions}});
             metrics.info({metric: {'fetchVBOs_buffers': bufferNames}});
@@ -433,8 +418,9 @@ function fetchData(graph, compress, bufferNames, bufferVersions, programNames) {
 
             return {
                 compressed: buffers,
-                elements: _.pick(fetchNumElements(graph), programNames),
-                bufferByteLengths: _.pick(fetchBufferByteLengths(graph), bufferNames),
+                elements: _.pick(fetchNumElements(graph, renderConfig), programNames),
+                bufferByteLengths: _.pick(fetchBufferByteLengths(graph, renderConfig), 
+                                          bufferNames),
                 versions: versions
             };
 
@@ -445,13 +431,3 @@ function fetchData(graph, compress, bufferNames, bufferVersions, programNames) {
 
 exports.create = createAnimation;
 exports.fetchData = fetchData;
-exports.renderConfig = renderConfig;
-
-
-// If the user invoked this script directly from the terminal, run init()
-if(require.main === module) {
-    var config  = require('./config.js')();
-    var vbosUpdated = createAnimation(config);
-
-    vbosUpdated.subscribe(function() { debug("Got updated VBOs"); } );
-}
