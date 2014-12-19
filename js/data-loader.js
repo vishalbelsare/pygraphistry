@@ -24,7 +24,9 @@ function getDataset(dataConfig) {
         // Try to find a dataset by name first
         if (dataConfig.name) {
             debug("Loading dataset by name");
-            var match = _.find(datalist, function (dataset) {return dataset.name == dataConfig.name;});
+            var match = _.find(datalist, function (dataset) {
+                return dataset.name == dataConfig.name;
+            });
             if (match)
                 return match;
         }

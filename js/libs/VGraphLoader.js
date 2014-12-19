@@ -101,13 +101,22 @@ function decode0(graph, vg, config)  {
     debug("Graph has attribute: %o", Object.keys(amap))
     var vertices = [];
     var edges = []
-    var dimensions = [1, 1]; 
+    var dimensions = [1, 1];
 
-    for (var i = 0; i < vg.nvertices; i++) {
-        var vertex = [];
-        for (var j = 0; j < dimensions.length; j++)
-            vertex.push(Math.random() * dimensions[j]);
-        vertices.push(vertex);
+    var xObj = _.find(vg.double_vectors, function (o) { return o.name === 'x'; });
+    var yObj = _.find(vg.double_vectors, function (o) { return o.name === 'y'; });
+    if (xObj && yObj) {
+        debug('WARNING: hardcoding 2 dimensions');
+        for (var i = 0; i < vg.nvertices; i++) {
+            vertices.push([xObj.values[i]/10, yObj.values[i]/10]);
+        }
+    } else {
+        for (var i = 0; i < vg.nvertices; i++) {
+            var vertex = [];
+            for (var j = 0; j < dimensions.length; j++)
+                vertex.push(Math.random() * dimensions[j]);
+            vertices.push(vertex);
+        }
     }
 
     for (var i = 0; i < vg.edges.length; i++) {
@@ -116,7 +125,7 @@ function decode0(graph, vg, config)  {
     }
 
     var loaders = attributeLoaders(graph);
-    var mapper = undefined; 
+    var mapper = undefined;
     if (config.mapper) {
         mapper = mappers[config.mapper]
         if (mapper)
@@ -124,11 +133,11 @@ function decode0(graph, vg, config)  {
         else
             console.warn("WARNING Unknown mapper ", config.mapper);
     }
-    
+
     debug("Attribute loaders: %o", loaders)
-    
+
     for (var vname in amap) {
-        if (!(vname in loaders)) 
+        if (!(vname in loaders))
             continue;
         var loader = loaders[vname];
 
@@ -155,7 +164,7 @@ function decode0(graph, vg, config)  {
         return graph.setEdges(edges);
     }).then(function () {
         runLoaders(eloaders);
-        return graph; 
+        return graph;
     })
     .catch(function (error) {
         console.error("ERROR Failure in VGraphLoader ", error.stack)
@@ -205,16 +214,28 @@ var testMapper = {
                 var mapping = testMapper.mappings[a];
                 res[mapping.name] = loader;
 
-                if ('transform' in mapping) 
+                if ('transform' in mapping)
                     // Helper function to work around dubious JS scoping
                     doWrap(res, mapping, loader.load);
-                
-                debug("Mapping " + mapping.name + " to " + a); 
+
+                debug("Mapping " + mapping.name + " to " + a);
             } else
                 res[a] = loaders[a];
         }
         return res;
     }
+}
+
+var testMapperDemo = {
+    wrap: testMapper.wrap,
+    mappings: _.extend({}, testMapper.mappings, {
+        x: {
+            name: 'x'
+        },
+        y: {
+            name: 'y'
+        }
+    })
 }
 
 function doWrap(res, mapping, oldLoad) {
@@ -224,7 +245,8 @@ function doWrap(res, mapping, oldLoad) {
 }
 
 var mappers = {
-    "opentsdbflowdump_1hrMapper": testMapper
+    "opentsdbflowdump_1hrMapper": testMapper,
+    "opentsdbflowdump_1hrMapperDemo": testMapperDemo,
 }
 
 function logTransform(values) {
@@ -242,7 +264,7 @@ function normalizeUInt8(array, minimum) {
         return minimum + Math.floor((val - min) * scaleFactor);
     });
 }
-    
+
 function int2color(values) {
     var palette = [util.rgb(234,87,61), util.rgb(251,192,99), util.rgb(100,176,188),
                    util.rgb(68,102,153), util.rgb(85,85,119)];

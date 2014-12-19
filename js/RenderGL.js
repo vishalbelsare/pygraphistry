@@ -281,7 +281,7 @@ var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
 
 //async (may trigger a write)
 var createBuffer = Q.promised(function(renderer, data) {
-    debug("Creating gl buffer of type %s. Constructor: %o", typeof(data), data.constructor);
+    debug("Creating gl buffer of type %s. Constructor: %o", typeof(data), (data||{}).constructor);
 
     var buffer = renderer.gl.createBuffer();
     var bufObj = {
