@@ -34,13 +34,6 @@ var SIMULATION_TIME = 3000; //seconds
 var dimensions = [1,1];
 
 
-//========== HARDCODED RENDER CONFIG BINDINGS
-
-var DEVICE_BUFFER_NAMES = ['curPoints', 'springsPos', 'midSpringsPos', 'curMidPoints', 'midSpringsColorCoord'];
-var LOCAL_BUFFER_NAMES  = ['pointSizes', 'pointColors', 'edgeColors'];
-
-
-
 
 
 //number/offset of graph elements and how they relate to various models
@@ -113,44 +106,48 @@ function getBufferVersion (graph, bufferName) {
 
 // ... -> {<name>: {buffer: ArrayBuffer, version: int}}
 function fetchVBOs(graph, bufferNames) {
-
     var targetArrays = {};
-
     var bufferSizes = fetchBufferByteLengths(graph);
     var counts = graphCounts(graph);
+
+    var layouts = _.object(_.map(bufferNames, function (name) {
+        var model = renderConfig.models[name];
+        if (_.values(model).length != 1)
+            util.die('Currently assumes one view per model');
+
+        return [name, _.values(model)[0]];
+
+    }));
+    var hostBufs = _.omit(layouts, function (layout) {
+        return layout.datasource !== 'HOST';
+    });
+    var devBufs = _.omit(layouts, function (layout) {
+        return layout.datasource !== 'DEVICE';
+    });
 
     // TODO: Instead of doing blocking CL reads, use CL events and wait on those.
     // node-webcl's event arguments to enqueue commands seems busted at the moment, but
     // maybe enqueueing a event barrier and using its event might work?
     return Q.all(
-        DEVICE_BUFFER_NAMES
-        .filter(function (name) { return bufferNames.indexOf(name) != -1; })
-        .map(function(name) {
-            targetArrays[name] = {
-                buffer: new ArrayBuffer(bufferSizes[name]),
-                version: graph.simulator.versions.buffers[name]
-            };
+            _.map(devBufs, function (layout, name) {
+                var stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
 
-            var model = renderConfig.models[name];
-            var layout = _.values(model)[0];
-            var stride = layout.stride
-                || (layout.count * rConf.gl2Bytes(layout.type));
-            if (_.values(model).length != 1) {
-                util.die('Currently assumes one view per model');
-            }
-            return graph.simulator.buffers[name].read(
-                new Float32Array(targetArrays[name].buffer),
-                counts[name].offset * stride,
-                counts[name].num * stride);
-    }))
-    .then(function() {
-        LOCAL_BUFFER_NAMES
-            .filter(function (name) { return bufferNames.indexOf(name) != -1; })
-            .forEach(function (name) {
-                var model = renderConfig.models[name];
-                var layout = _.values(model)[0];
-                var stride = layout.stride
+                targetArrays[name] = {
+                    buffer: new ArrayBuffer(bufferSizes[name]),
+                    version: graph.simulator.versions.buffers[name]
+                };
 
+                debug('Reading device buffer %s', name);
+                return graph.simulator.buffers[name].read(
+                    new Float32Array(targetArrays[name].buffer),
+                    counts[name].offset * stride,
+                    counts[name].num * stride);
+            })
+        ).then(function () {
+            _.each(hostBufs, function (layout, name) {
+                var stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
+
+                debug('Fetching host buffer %s', name);
                 targetArrays[name] = {
                     buffer: new graph.simulator.buffersLocal[name].constructor(
                         graph.simulator.buffersLocal[name],
@@ -159,9 +156,10 @@ function fetchVBOs(graph, bufferNames) {
                     version: graph.simulator.versions.buffers[name]
                 };
             });
-        return targetArrays;
-    })
-    .then(_.identity, console.error);
+            return targetArrays;
+        }).fail(function (err) {
+            console.error("ERROR Failure in node-driver.fetchVBO ", (err||{}).stack);
+        });
 }
 
 
@@ -179,10 +177,7 @@ function fetchNumElements(graph) {
                     _.values(renderConfig.items[item].bindings)
                         .filter(function (binding) {
                             var model = renderConfig.models[binding[0]];
-                            var serverLayouts =
-                                _.values(model)
-                                    .filter(function (layout) { return layout.datasource !== 'LOCAL'; });
-                            return serverLayouts.length;
+                            return rConf.isBufServerSide(model);
                         });
                 var aServersideModelName = serversideModelBindings[0][0];
                 return [item, counts[aServersideModelName].num];
@@ -197,12 +192,10 @@ function fetchBufferByteLengths(graph) {
 
     var counts = graphCounts(graph);
 
-    return _.chain(renderConfig.models).map(function (views, name) {
-        var layout = _.values(views)[0];
-        return [name , layout];
-    }).object().omit(function (layout, name) {
-        return layout.datasource != undefined;
-    }).map(function (layout, name) {
+    return _.chain(renderConfig.models).omit(function (model, name) {
+        return rConf.isBufClientSide(model);
+    }).map(function (model, name) {
+        var layout = _.values(model)[0];
         var count = counts[name].num;
         return [name, count * (layout.stride || (rConf.gl2Bytes(layout.type) * layout.count))];
     }).object().value();
@@ -392,7 +385,7 @@ function fetchData(graph, compress, bufferNames, bufferVersions, programNames) {
 
             bufferNames.forEach(function (bufferName) {
                 if (!vbos.hasOwnProperty(bufferName)) {
-                    throw new Error('vbos does not have buffer', bufferName);
+                    util.die('Vbos does not have buffer %s', bufferName);
                 }
             })
 
