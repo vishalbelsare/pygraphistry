@@ -22,6 +22,7 @@ var express = require('express'),
 var db;
 
 
+var MAIN_STATIC_PATH    = path.resolve(__dirname, 'assets');
 var GRAPH_STATIC_PATH   = path.resolve(require('graph-viz').staticFilePath(), 'assets');
 var HORIZON_STATIC_PATH = path.resolve(require('horizon-viz').staticFilePath(), 'assets');
 var UBER_STATIC_PATH   = path.resolve(require('uber-viz').staticFilePath(), 'assets');
@@ -181,11 +182,9 @@ app.use('/graph', function (req, res, next) {
 app.use('/uber',   express.static(UBER_STATIC_PATH));
 
 
-// Default '/' path redirects to graph demo
-app.get('/', function(req, res) {
-    debug('hello home page')
-    res.send('Hi! Try going to <a href="/graph">graph<a/> or <a href="/horizon">horizon</a>')
-});
+// Default '/' static assets
+app.use('/', express.static(MAIN_STATIC_PATH));
+
 
 app.get('/horizon', function(req, res) {
     debug('redirecting to horizon')
