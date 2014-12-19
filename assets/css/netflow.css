@@ -26,10 +26,16 @@ body {
     border: 1px solid rgba(51, 51, 102, 0.5);
 }
 
+
 .ui-rangeSlider .ui-rangeSlider-bar {
     background-color: rgba(255,255,255,0.7);
     box-shadow: 0 0 10px rgba(255,255,255,0.75);
     border: 1px solid rgba(51, 51, 102, 0.5);
+}
+
+.ui-rangeSlider-bar:before {
+    content: 'time';
+    color: rgba(51, 51, 102, 0.5);
 }
 
 .ui-rangeSlider .ui-rangeSlider-bar:hover {
@@ -40,6 +46,10 @@ body {
 .ui-rangeSlider .ui-rangeSlider-handle.ui-rangeSlider-rightHandle {
     width: 5px;
     background-color: rgba(51, 51, 102, 0.5);
+}
+
+.ui-rangeSlider-handle.ui-rangeSlider-leftHandle {
+    display: none;
 }
 
 .ui-rangeSlider .ui-rangeSlider-ba {
