@@ -1,6 +1,8 @@
 'use strict';
 
-var SimCL = require("./SimCL.js")
+var _ = require('underscore');
+var SimCL = require('./SimCL.js');
+var util = require('./util.js');
 var forceAtlas = require('./forceatlas.js'),
     gaussSeidel = require('./gaussseidel.js'),
     edgeBundling = require('./edgebundling.js'),
@@ -32,6 +34,11 @@ var uberControls = {
         lockEdges: true,
         lockMidpoints: false,
         lockMidedges: false
+    },
+    global: {
+        simulationTime: 3000, //milliseconds
+        dimensions: [1, 1],
+        numSplits: 3
     }
 }
 
@@ -56,6 +63,11 @@ var testControls = {
         lockEdges: false,
         lockMidpoints: false,
         lockMidedges: false
+    },
+    global: {
+        simulationTime: 3000, //milliseconds
+        dimensions: [1, 1],
+        numSplits: 3
     }
 }
 
@@ -77,10 +89,40 @@ var netflowControls = {
         lockEdges: false,
         lockMidpoints: true,
         lockMidedges: true
+    },
+    global: {
+        simulationTime: 10000, //milliseconds
+        dimensions: [1, 1]
     }
 }
 
-exports.default = uberControls;
-exports.uber = uberControls;
-exports.netflow = netflowControls;
-exports.test = testControls;
+var controls = {
+    'default': uberControls,
+    'uber': uberControls,
+    'netflow': netflowControls,
+    'test': netflowControls
+}
+
+function saneControl(control, name) {
+    _.each(['simulator', 'layoutAlgorithms', 'locks', 'global'], function (field) {
+        if (!(field in control))
+            util.die('In control %s, block %s missing', name, field);
+    });
+
+    _.each(['lockPoints', 'lockEdges', 'lockMidpoints', 'lockMidedges'], function (field) {
+        if (!(field in control.locks))
+            util.die('In control %s, lock %s missing', name, field);
+    });
+
+    _.each(['simulationTime'], function (field) {
+        if (!(field in control.global))
+            util.die('In control %s.global, lock %s missing', name, field);
+    });
+}
+
+function getControls(controls) {
+    _.each(controls, saneControl);
+    return controls;
+}
+
+exports.controls = getControls(controls);

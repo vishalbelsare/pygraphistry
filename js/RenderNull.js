@@ -10,6 +10,7 @@ var debug = require('debug')('graphistry:graph-viz:render:rendernull');
 
 var create = Q.promised(function(document) {
     var renderer = RenderBase.create();
+    debug("Created renderer RenderNull");
 
     renderer.document = document;
 

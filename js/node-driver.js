@@ -18,19 +18,13 @@ var Q = require("q"),
     RenderNull = require('./RenderNull.js'),
     SimCL = require("./SimCL.js"),
     rConf = require('./renderer.config.js'),
+    lConf = require('./layout.config.js'),
 
     metrics = require("./metrics.js"),
     loader = require("./data-loader.js");
 
 
 metrics.init('StreamGL:driver');
-
-var WIDTH = 600,
-    HEIGHT = 600;
-
-var SIMULATION_TIME = 3000; //seconds
-var dimensions = [1,1];
-
 
 
 
@@ -64,32 +58,6 @@ function graphCounts(graph) {
 
 }
 
-
-function applyControls(graph, cfgName) {
-    var controls = require('./layout.config.js');
-    var cfg = controls.default;
-
-    if (cfgName in controls)
-        cfg = controls[cfgName];
-    else
-        console.warn('WARNING Unknown simControls "%s", using defaults.', cfgName)
-
-    debug('Applying layout settings: %o', cfg);
-
-    var simulator = cfg.simulator || SimCL
-    var algoEntries = cfg.layoutAlgorithms || [];
-    var layoutAlgorithms = []
-
-    for (var i = 0; i < algoEntries.length; i++) {
-        var entry = algoEntries[i];
-        var params = entry.params || {}
-        entry.algo.setPhysics(params)
-        layoutAlgorithms.push(entry.algo);
-    }
-
-    var lockCtrl = cfg.locks || controls.default.lockCtrl;
-    return graph.initSimulation(simulator, layoutAlgorithms, lockCtrl);
-}
 
 
 function getBufferVersion (graph, bufferName) {
@@ -204,23 +172,57 @@ function fetchBufferByteLengths(graph, renderConfig) {
 }
 
 
-function init() {
-    debug("Running Naive N-body simulation");
-    console.log("Running Naive N-body simulation");
+function init(cfg) {
+    debug("Starting initialization");
+    var global = cfg.global
 
+    /* Example of RenderGL instatiation. 
+     * Left for historical purposes, probably broken!
+     *
     var document = null;
-    var canvasStandin = {
-        width: WIDTH,
-        height: HEIGHT,
-        clientWidth: WIDTH,
-        clientHeight: HEIGHT
-    };
+    var canvasStandin = {width: WIDTH, height: HEIGHT, clientWidth: WIDTH,
+                         clientHeight: HEIGHT};
+    var bgColor = [255, 255, 255, 1.0];
+    RenderGl.create(document, canvasStandin, bgColor, global.dimensions);
+    */
 
-    return NBody.create(RenderNull, document, canvasStandin, [255,255,255,1.0], dimensions, 3)
-        .fail(function (err) {
-            console.error("ERROR Nbody.create failed ", (err||{}).stack);
+    return RenderNull.create(
+            null
+        ).then(function (renderer) {
+            var graph = NBody.create(renderer, global.dimensions, global.numSplits,
+                                     global.simulationTime);
+            return initSimulator(graph, cfg);
+        }).fail(function (err) {
+            console.error("ERROR Failure in NBody creation ", (err||{}).stack);
         });
 }
+
+
+
+function getControls(cfgName) {
+    var cfg = lConf.controls.default;
+    if (cfgName in lConf.controls)
+        cfg = lConf.controls[cfgName];
+    else
+        console.warn('WARNING Unknown simControls "%s", using defaults.', cfgName)
+
+    return cfg;
+}
+
+
+function initSimulator(graph, cfg) {
+    debug('Applying layout settings: %o', cfg);
+    var layoutAlgorithms = []
+
+    for (var i = 0; i < cfg.layoutAlgorithms.length; i++) {
+        var entry = cfg.layoutAlgorithms[i];
+        entry.algo.setPhysics(entry.params)
+        layoutAlgorithms.push(entry.algo);
+    }
+
+    return graph.initSimulation(cfg.simulator, layoutAlgorithms, cfg.locks);
+}
+
 
 
 /**
@@ -261,15 +263,14 @@ function createAnimation(theDataset) {
     // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
     // the contents of each VBO
     var animStepSubj = new Rx.BehaviorSubject(null);
+    var theGraph = Q.defer();
 
-    var theGraph = init();
-
-    Q.all([theGraph, theDataset]).spread(function (graph, dataset) {
+    theDataset.then(function (dataset) {
         debug("Dataset %o", dataset);
-        return Q.all([
-            applyControls(graph, dataset.config['simControls']),
-            dataset
-        ]);
+        var cfg = getControls(dataset.config['simControls']);
+
+        theGraph.resolve(init(cfg));
+        return Q.all([theGraph.promise, dataset]); 
     }).spread(function (graph, dataset) {
         userInteractions.subscribe(function (settings){
             debug('Updating settings..');
@@ -288,7 +289,7 @@ function createAnimation(theDataset) {
                     .map(_.constant(true)),
                 //...  but stop a bit after last one
                 userInteractions.merge(Rx.Observable.return())
-                    .throttle(SIMULATION_TIME).map(_.constant(false)));
+                    .throttle(graph.simulationTime).map(_.constant(false)));
 
         var isRunningRecent = new Rx.ReplaySubject(1);
 
@@ -342,7 +343,7 @@ function createAnimation(theDataset) {
             userInteractions.onNext(settings);
         },
         ticks: animStepSubj.skip(1),
-        graph: theGraph
+        graph: theGraph.promise
     }
 }
 
