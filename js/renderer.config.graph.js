@@ -1,9 +1,41 @@
 'use strict';
 
-/**
- * Render config object used by browser's StreamGL library to configure WebGL + streaming. Sent via
- * XHR or WebSocket to the browser by the server in response to API call.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/***********************************
+ * OBSOLETE AND NO LONGER USED.    *
+ * EDIT renderer.config.js INSTEAD *
+ ***********************************/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 var fs = require('fs');
 
@@ -60,7 +92,7 @@ module.exports = {
                 'vertex': fs.readFileSync(__dirname + '/../shaders/midedgeculled.vertex.glsl', 'utf8').toString('ascii'),
                 'fragment': fs.readFileSync(__dirname + '/../shaders/midedgeculled.fragment.glsl', 'utf8').toString('ascii')
             },
-            'attributes': ['curPos'],
+            'attributes': ['curPos', 'edgeColor'],
             'camera': 'mvp',
             'uniforms': []
         },
@@ -299,7 +331,7 @@ module.exports = {
                     'curPos':       ['curPoints', 'curPos'],
                     'pointSize':    ['pointSizes', 'pointSize'],
                     'pointColor':   ['vertexIndices', 'pointColor'],
-                    'isHighlighted':   ['allHighlighted', 'allHighlighted']
+                    'isHighlighted':   ['highlightedPoint', 'isHighlighted']
                 },
                 'uniforms': {
                     'fog': { 'uniformType': '1f', 'values': [0.0] }
@@ -342,6 +374,7 @@ module.exports = {
                 'program': 'midedgeculled',
                 'bindings': {
                     'curPos': ['midSpringsPos', 'curPos'],
+                    'edgeColor' : ['edgeColors', 'edgeColor']
                 },
                 'drawType': 'LINES',
                 'glOptions': {}

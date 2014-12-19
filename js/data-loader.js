@@ -3,7 +3,7 @@
 var fs = require('fs');
 var path = require('path');
 var Q = require('q');
-var debug = require("debug")("graphistry:graph-viz:data-loader");
+var debug = require("debug")("graphistry:graph-viz:data:data-loader");
 var _ = require('underscore');
 var config  = require('config')();
 var zlib = require("zlib");
@@ -20,7 +20,6 @@ var loaders = {
     "OBSOLETE_socioPLT" : loadSocioPLT,
     "OBSOLETE_rectangle" : loadRectangle
 };
-
 
 /**
  * Download raw data from S3 and unzip
@@ -110,7 +109,7 @@ function loadRandom(graph, dataset) {
 
     return graph.setPoints(points).then(function() {
         graph.setColorMap("test-colormap2.png");
-        return graph.setEdgesAndColors(edges);
+        return graph.setEdges(edges);
     });
 }
 
@@ -131,7 +130,7 @@ function loadRectangle(graph, dataset) {
             true);
     return graph.setPoints(new Float32Array(_.flatten(points)))
         .then(function () {
-            return graph.setEdgesAndColors(new Uint32Array([0,1]));
+            return graph.setEdges(new Uint32Array([0,1]));
         });
 }
 
@@ -201,13 +200,20 @@ function loadSocioPLT(graph, dataset) {
 function loadGeo(graph, dataset) {
     debug("Loading Geo");
 
-    var geoData = MatrixLoader.loadGeo(dataset.Body);
-    var processedData = MatrixLoader.processGeo(geoData, 0.3);
+    return MatrixLoader.loadGeo(dataset.file)
+    .then(function(geoData) {
+        var processedData = MatrixLoader.processGeo(geoData, 0.3);
 
-    debug("Processed %d/%d nodes/edges", processedData.points.length, processedData.edges.length);
+        debug("Processed %d/%d nodes/edges", processedData.points.length, processedData.edges.length);
 
-    return graph.setPoints(processedData.points)
-    .then(_.constant(processedData))
+        return graph.setPoints(processedData.points)
+            .then(function () {
+                return graph.setLabels(processedData.points.map(function (v, i) {
+                    return '<b>' + i + '</b><hr/>' + v[0].toFixed(4) + ', ' + v[1].toFixed(4);
+                }));
+            })
+            .then(_.constant(processedData))
+    })
     .then(function(processedData) {
 
         var position = function (points, edges) {
@@ -226,7 +232,7 @@ function loadGeo(graph, dataset) {
                 .setColorMap("test-colormap2.png", {clusters: clusters, points: processedData.points, edges: processedData.edges})
                 .then(function () {
                     debug("Setting edges");
-                    return graph.setEdgesAndColors(processedData.edges);
+                    return graph.setEdges(processedData.edges);
                 });
     })
     .then(function() {
@@ -255,7 +261,7 @@ function loadMatrix(graph, dataset) {
 
     return graph.setPoints(points)
     .then(function() {
-        return graph.setEdgesAndColors(graphFile.edges);
+        return graph.setEdges(graphFile.edges);
     })
     .then(function() {
         return graph;

@@ -4,11 +4,12 @@ var $ = require('jquery');
 var Q = require('q');
 var _ = require('underscore');
 var fs = require('fs');
-var debug = require("debug")("graphistry:graph-viz:data-loader");
+var debug = require("debug")("graphistry:graph-viz:data:vgraphloader");
 var pb = require("protobufjs");
 var zlib = require("zlib");
 var path = require('path');
 var config  = require('config')();
+var util = require('../util.js');
 
 var builder = null;
 var pb_root = null;
@@ -48,9 +49,15 @@ var attributeLoaders = function(graph) {
         },
         edgeColor: {
             load: graph.setEdgeColors,
-            type: "[number, number]",
+            type: "number",
             default: graph.setEdgeColors,
             target: EDGE,
+            values: undefined
+        },
+        pointLabel: {
+            load: graph.setLabels,
+            type: "string",
+            target: VERTEX,
             values: undefined
         }
     };
@@ -190,6 +197,21 @@ var testMapper = {
             transform: function (v) {
                 return normalizeUInt8(logTransform(v), 5)
             }
+        },
+        pointLabel: {
+            name: "label"
+        },
+        pointColor: {
+            name: "community_spinglass",
+            transform: function (v) {
+                return int2color(v);
+            }
+        },
+        edgeColor: {
+            name: "weight",
+            tranform: function (v) {
+                return int2color(v);
+            }
         }
     },
 
@@ -199,12 +221,13 @@ var testMapper = {
             if (a in testMapper.mappings) {
                 var loader = loaders[a];
                 var mapping = testMapper.mappings[a];
-                if (mapping.transform) {
-                    var oldLoad = loader.load;
-                    loader.load = function (data) {oldLoad(mapping.transform(data))}
-                }
                 res[mapping.name] = loader;
-                debug("Mapping " + mapping.name + " as " + a); 
+
+                if ('transform' in mapping) 
+                    // Helper function to work around dubious JS scoping
+                    doWrap(res, mapping, loader.load);
+                
+                debug("Mapping " + mapping.name + " to " + a); 
             } else
                 res[a] = loaders[a];
         }
@@ -212,27 +235,39 @@ var testMapper = {
     }
 }
 
+function doWrap(res, mapping, oldLoad) {
+    res[mapping.name].load = function (data) {
+        oldLoad(mapping.transform(data));
+    }
+}
+
 var mappers = {
     "opentsdbflowdump_1hrMapper": testMapper
 }
 
-function logTransform(array) {
-    var res = [];
-    for (var i = 0; i < array.length; i++)
-        res[i] = (array[i] <= 0 ? 0 : Math.log(array[i]))
-    return res;
+function logTransform(values) {
+    return _.map(values, function (val) {
+        return val <= 0 ? 0 : Math.log(val);
+    });
 }
 
 function normalizeUInt8(array, minimum) {
     var max = _.max(array);
     var min = _.min(array);
-
     var scaleFactor = (Math.pow(2, 8) - minimum) / (max - min + 1)
 
-    var res = [];
-    for (var i = 0; i < array.length; i++)
-        res[i] = minimum + Math.floor((array[i] - min) * scaleFactor);
-    return res;
+    return _.map(array, function (val) {
+        return minimum + Math.floor((val - min) * scaleFactor);
+    });
+}
+    
+function int2color(values) {
+    var palette = [util.rgb(234,87,61), util.rgb(251,192,99), util.rgb(100,176,188),
+                   util.rgb(68,102,153), util.rgb(85,85,119)];
+    var ncolors = palette.length;
+    return _.map(values, function (val) {
+        return palette[val % ncolors];
+    });
 }
 
 module.exports = {

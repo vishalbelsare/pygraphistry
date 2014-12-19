@@ -3,7 +3,7 @@
 var Q = require('q');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');
-var debug = require("debug")("graphistry:graph-viz:cl");
+var debug = require("debug")("graphistry:graph-viz:cl:cl");
 var util = require('util');
 var utiljs = require('./util.js');
 
@@ -37,7 +37,7 @@ function setKernelArgs(kernels, simulator, kernelName) {
     var args = kEntry.args;
     var types = kEntry.types;
     if (order == undefined || args == undefined || types == undefined)
-        utiljs.die("kEntry incomplete for kernel %s", kernelName)
+        utiljs.die("kEntry incomplete for kernel %s: %o", kernelName, kEntry);
         
 
     debug("Setting Kernel Args for %s %o", kernelName, args)
@@ -554,8 +554,8 @@ var write = Q.promised(function write(buffer, data) {
 var read = Q.promised(function (buffer, target, optStartIdx, optLen) {
     return buffer.acquire()
         .then(function() {
-            var start = Math.min(optStartIdx | 0, target.length);
-            var len = optLen !== undefined ? optLen : buffer.size - start;
+            var start = Math.min(optStartIdx || 0, buffer.size);
+            var len = optLen !== undefined ? optLen : (buffer.size - start);
             buffer.cl.queue.enqueueReadBuffer(buffer.buffer, true, start, len, target);
             return buffer.release();
         })

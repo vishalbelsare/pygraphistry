@@ -100,7 +100,6 @@ button.btn-default {
     margin-top: 1.5em;
 
     position: absolute;
-    max-width: 5em;
     color: rgba(255,255,234,0.9);
     font-size: 0.8em;
     text-shadow: 0 0 3px rgba(20,20,20,1.0);
@@ -112,7 +111,6 @@ button.btn-default {
 
     opacity: 0.8;
 
-    max-width: 7em;
     overflow: hidden;
     height: 2em;
 

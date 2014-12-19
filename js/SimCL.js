@@ -4,7 +4,7 @@ var Q = require('q');
 var util = require('./util.js');
 var cljs = require('./cl.js');
 var _ = require('underscore');
-var debug = require("debug")("graphistry:graph-viz:simcl");
+var debug = require("debug")("graphistry:graph-viz:graph:simcl");
 
 if (typeof(window) == 'undefined') {
     var webcl = require('node-webcl');
@@ -49,6 +49,8 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
             simObj.setColors = setColors.bind(this, simObj);
             simObj.setEdges = setEdges.bind(this, renderer, simObj);
             simObj.setEdgeColors = setEdgeColors.bind(this, simObj);
+            simObj.setMidEdgeColors = setMidEdgeColors.bind(this, simObj);
+            simObj.setLabels = setLabels.bind(this, simObj);
             simObj.setLocked = setLocked.bind(this, simObj);
             simObj.setPhysics = setPhysics.bind(this, simObj);
             simObj.setTimeSubset = setTimeSubset.bind(this, renderer, simObj);
@@ -63,9 +65,9 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
             simObj.numBackwardsWorkItems = 0;
             simObj.numMidPoints = 0;
             simObj.numMidEdges = 0;
-            simObj.postSlider = true; // Enable/Disable Leo's slider
             simObj.locked = locked || {};
-            simObj.physics = {};
+            simObj.labels = [];
+
 
             simObj.bufferHostCopies = {
                 forwardsEdges: null
@@ -115,7 +117,7 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
 
 
 /**
- * Simulator * [ String ] * ?int -> ()
+ * Simulator * ?[ String ] * ?int -> ()
  * Increase buffer version to tick number, signifying its contents may have changed
  * (Same version number signifies no change since last read of that buffer)
  * If not tick provided, increment global and use that
@@ -128,10 +130,15 @@ var tickBuffers = function (simulator, bufferNames, tick) {
         tick = simulator.versions.tick;
     }
 
-    if (bufferNames.length) {
+    if (bufferNames) {
         bufferNames.forEach(function (name) {
-            simulator.versions.buffers[name] = simulator.versions.tick;
-       })
+            simulator.versions.buffers[name] = tick;
+        });
+    } else {
+        _.keys(simulator.versions.buffers).forEach(function (name) {
+            simulator.versions.buffers[name] = tick;
+            console.log('tick', name, tick);
+        });
     }
 
 };
@@ -263,8 +270,6 @@ function setSizes(simulator, pointSizes) {
 function setColors(simulator, pointColors) {
     simulator.buffersLocal.pointColors = pointColors;
 
-    simulator.resetBuffers([simulator.buffers.pointColors])
-
     // Create buffers and write initial data to them, then set
     simulator.tickBuffers(['pointColors']);
 
@@ -277,6 +282,11 @@ function setColors(simulator, pointColors) {
     }).fail(function (err) {
         console.error("ERROR Failure in SimCl.setColors", (err||{}).stack)
     });
+}
+
+//Simulator * ?[HtmlString] -> ()
+function setLabels(simulator, labels) {
+    simulator.labels = labels || [];
 }
 
 /**
@@ -399,8 +409,7 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints)
                 }));
     })
     .then(function () {
-        if (simulator.postSlider)
-            setTimeSubset(renderer, simulator, simulator.timeSubset.relRange);
+        setTimeSubset(renderer, simulator, simulator.timeSubset.relRange);
         return simulator;
     })
     .fail(function (err) {
@@ -417,6 +426,7 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints)
  */
 function setEdgeColors(simulator, edgeColors) {
     if (!edgeColors) {
+        debug('Using default edge colors')
         var forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
         edgeColors = new Uint32Array(forwardsEdges.edgesTyped.length);
         for (var i = 0; i < edgeColors.length; i++) {
@@ -424,9 +434,16 @@ function setEdgeColors(simulator, edgeColors) {
             edgeColors[i] = simulator.buffersLocal.pointColors[nodeIdx];
         }
     }
-    simulator.tickBuffers(['edgeColors']);
+
+
     simulator.buffersLocal.edgeColors = edgeColors;
+    simulator.tickBuffers(['edgeColors']);
+
     return simulator;
+}
+
+function setMidEdgeColors(simulator, midEdgeColors) {
+    console.error("TODO: Code setMidEdgeColors")
 }
 
 function setLocked(simulator, cfg) {
@@ -447,7 +464,7 @@ function setTimeSubset(renderer, simulator, range) {
 
     //points
     var startIdx = Math.round(renderer.numPoints * 0.01 * range.min);
-    var len = Math.round(renderer.numPoints * 0.01 * range.max) - startIdx;
+    var numPoints = Math.round(renderer.numPoints * 0.01 * range.max) - startIdx;
 
 
     var pointToEdgeIdx = function (ptIdx) {
@@ -463,14 +480,28 @@ function setTimeSubset(renderer, simulator, range) {
 
     simulator.timeSubset =
         {relRange: range, //%
-         pointsRange:       {startIdx: startIdx, len: len},
+         pointsRange:       {startIdx: startIdx, len: numPoints},
          edgeRange:         {startIdx: startEdgeIdx, len: numEdges},
          midPointsRange:    {
                 startIdx: startIdx      * simulator.numSplits,
-                len: len                * simulator.numSplits},
+                len: numPoints          * simulator.numSplits},
          midEdgeRange:      {
-                startIdx: startEdgeIdx  * (1+simulator.numSplits),
-                len: numEdges           * (1+simulator.numSplits)}};
+                startIdx: startEdgeIdx  * (1 + simulator.numSplits),
+                len: numEdges           * (1 + simulator.numSplits)}};
+
+
+    simulator.tickBuffers([
+        //points/edges
+        'curPoints', 'nextPoints', 'springsPos',
+
+        //style
+        'pointSizes', 'pointColors', 'edgeColors',
+
+        //midpoints/midedges
+        'curMidPoints', 'nextMidPoints', 'curMidPoints', 'midSpringsPos', 'midSpringsColorCoord'
+
+        ]);
+
 }
 
 
@@ -519,12 +550,13 @@ function tick(simulator, stepNumber) {
 
 
 module.exports = {
-    "create": create,
-    "setLocked": setLocked,
-    "setPoints": setPoints,
-    "setSizes": setSizes,
-    "setColors": setColors,
-    "setEdges": setEdges,
-    "setEdgeColors": setEdgeColors,
-    "tick": tick
+    'create': create,
+    'setLocked': setLocked,
+    'setPoints': setPoints,
+    'setSizes': setSizes,
+    'setColors': setColors,
+    'setEdges': setEdges,
+    'setLabels': setLabels,
+    'setEdgeColors': setEdgeColors,
+    'tick': tick
 };
