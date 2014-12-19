@@ -161,12 +161,13 @@ function bindProgram(state, program, programName, bindings, buffers, modelSettin
     _.each(bindings.attributes, function(binding, attribute) {
 
         var element = modelSettings[binding[0]][binding[1]];
-        var datasource = element.datasource || 'SERVER';
+        var datasource = element.datasource;
         var glBuffer =
-              datasource === 'SERVER'       ? buffers[binding[0]]
+              datasource === 'HOST'         ? buffers[binding[0]]
+            : datasource === 'DEVICE'       ? buffers[binding[0]]
             : datasource === 'VERTEX_INDEX' ? indexGlBuffers[1]
             : datasource === 'EDGE_INDEX'   ? indexGlBuffers[2]
-            : datasource === 'LOCAL'        ?
+            : datasource === 'CLIENT'       ? 
                 localGlBuffers[state.get('config').get('models').get(binding[0]).get(binding[1]).get('localName')]
             : (function () { throw new Error('unknown datasource ' + datasource); }());
 
@@ -747,8 +748,8 @@ function getServerBufferNames (config) {
             .filter(function (bindingPair) {
                 var modelName = bindingPair[1][0];
                 var attribName = bindingPair[1][1];
-                var datasource = config.models[modelName][attribName].datasource || 'SERVER';
-                return datasource === 'SERVER';
+                var datasource = config.models[modelName][attribName].datasource;
+                return (datasource === 'HOST' || datasource === 'DEVICE');
             })
             .map(function (bindingPair) {
                 var modelName = bindingPair[1][0];
@@ -765,7 +766,9 @@ function getServerBufferNames (config) {
 function getServerTextureNames (config) {
     return _.chain(_.pairs(config.textures))
         .filter(function (pair) {
-            return (pair[1].datasource || 'SERVER') === 'SERVER'; })
+            var datasource = pair[1].datasource;
+            return datasource === 'SERVER'; 
+        })
         .pluck('0')
         .filter(function (name) {
             var matchingItems = config.render.map(function (itemName) {
@@ -793,7 +796,7 @@ function getActiveIndices (config) {
                 var attribName = bindingPair[1][1];
                 debug('bindingPair', bindingPair);
                 debug('datasource', config.models[modelName][attribName].datasource);
-                var datasource = config.models[modelName][attribName].datasource || 'SERVER';
+                var datasource = config.models[modelName][attribName].datasource;
                 return datasource;
             })
             .map(function (datasource) {

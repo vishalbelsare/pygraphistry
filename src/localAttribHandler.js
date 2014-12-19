@@ -20,11 +20,11 @@ function getActiveLocalAttributes (config) {
                 debug('datasource', config.models[modelName][attribName].datasource);
                 debug('localName', config.models[modelName][attribName].localName);
                 return {
-                    datasource: config.models[modelName][attribName].datasource || 'SERVER',
+                    datasource: config.models[modelName][attribName].datasource,
                     localName: config.models[modelName][attribName].localName
                 };
             })
-            .filter(function (binding) { return binding.datasource === 'LOCAL'; })
+            .filter(function (binding) { return binding.datasource === 'CLIENT'; })
             .map(function (binding) { return binding.localName; });
     });
 
