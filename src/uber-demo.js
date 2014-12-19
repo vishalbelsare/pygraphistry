@@ -412,11 +412,13 @@ function init(socket, $elt, renderState) {
       });
 
 
+
     var timeSlide = new Rx.Subject();
     //FIXME: replace $OLD w/ browserfied jquery+jqrangeslider
     window.$OLD('#timeSlider').on('valuesChanging', function (e, data) {
-        timeSlide.onNext({min: data.values.min, max: data.values.max});
-    });
+            timeSlide.onNext({min: 0, max: data.values.max});
+        });
+
     timeSlide.sample(3)
         .do(function (when) {
             socket.emit('graph_settings', {timeSubset: {min: when.min, max: when.max}});
