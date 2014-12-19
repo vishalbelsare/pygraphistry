@@ -21,6 +21,39 @@ body {
     font-variant: small-caps;
 }
 
+
+.legend-container {
+    position: absolute;
+    bottom: 1em;
+    right: 1em;
+    padding: 1em;
+
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,244,0.9);
+    background-color: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 10px rgba(255,255,255,0.75);
+
+}
+
+.legend .label {
+    color: rgb(51,51,102);
+    font-weight: bold;
+    font-size: 1em;
+}
+.tick {
+    display: inline-block;
+    width: 50px;
+    height: 10px;
+    border: 1px solid rgb(51,51,102);
+}
+
+.tick1 { background-color: rgb(234,87,61); }
+.tick2 { background-color: rgb(251,192,99); }
+.tick3 { background-color: rgb(100,176,188); }
+.tick4 { background-color: rgb(68,102,153); }
+.tick5 { background-color: rgb(85,85,119); }
+
+
 .ui-rangeSlider .ui-rangeSlider-innerBar {
     background-color: rgba(196, 212, 222, 0.3);
     border: 1px solid rgba(51, 51, 102, 0.5);
@@ -56,7 +89,7 @@ body {
 }
 
 .ui-rangeSlider-handle.ui-rangeSlider-leftHandle {
-    display: none;
+    visibility: hidden
 }
 
 .ui-rangeSlider .ui-rangeSlider-ba {
