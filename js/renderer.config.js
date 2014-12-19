@@ -86,12 +86,14 @@ var programs = {
     }
 }
 
+/* datasource can be either SERVER or CLIENT */
+
 var textures = {
     'pointHitmap': {
-        'datasource': 'LOCAL',
+        'datasource': 'CLIENT',
     },
     'pointHitmapDownsampled': {
-        'datasource': 'LOCAL',
+        'datasource': 'CLIENT',
         'width': {'unit': 'percent', 'value': 5},
         'height': {'unit': 'percent', 'value': 5}
     },
@@ -101,9 +103,16 @@ var textures = {
     }
 }
 
+
+/* datasource can be
+ * DEVICE -> OpenCL server buffer
+ * HOST   -> plain server buffer
+ * CLIENT -> computed on client
+ */
 var models = {
     'springsPos': {
         'curPos': {
+            'datasource': 'DEVICE',
             'type': 'FLOAT',
             'count': 2,
             'offset': 0,
@@ -113,6 +122,7 @@ var models = {
     },
     'midSpringsPos': {
         'curPos': {
+            'datasource': 'DEVICE',
             'type': 'FLOAT',
             'count': 2,
             'offset': 0,
@@ -122,6 +132,7 @@ var models = {
     },
     'midSpringsColorCoord': {
         'colorCoord': {
+            'datasource': 'DEVICE',
             'type': 'FLOAT',
             'count': 2,
             'offset': 0,
@@ -131,6 +142,7 @@ var models = {
     },
     'curPoints': {
         'curPos': {
+            'datasource': 'DEVICE',
             'type': 'FLOAT',
             'count': 2,
             'offset': 0,
@@ -140,6 +152,7 @@ var models = {
     },
     'pointSizes': {
         'pointSize':  {
+            'datasource': 'HOST',
             'type': 'UNSIGNED_BYTE',
             'count': 1,
             'offset': 0,
@@ -149,6 +162,7 @@ var models = {
     },
     'edgeColors': {
         'edgeColor':  {
+            'datasource': 'HOST',
             'type': 'UNSIGNED_BYTE',
             'count': 4,
             'offset': 0,
@@ -158,6 +172,7 @@ var models = {
     },
     'pointColors': {
         'pointColor':  {
+            'datasource': 'HOST',
             'type': 'UNSIGNED_BYTE',
             'count': 4,
             'offset': 0,
@@ -167,6 +182,7 @@ var models = {
     },
     'curMidPoints': {
         'curPos': {
+            'datasource': 'DEVICE',
             'type': 'FLOAT',
             'count': 2,
             'offset': 0,
@@ -186,10 +202,8 @@ var models = {
     },
     'highlightedPoint': {
         'isHighlighted':  {
-
-            'datasource': 'LOCAL',
+            'datasource': 'CLIENT',
             'localName': 'highlights',
-
             'type': 'FLOAT',
             'count': 1,
             'offset': 0,
@@ -199,7 +213,7 @@ var models = {
     },
     'allHighlighted': {
         'allHighlighted':  {
-            'datasource': 'LOCAL',
+            'datasource': 'CLIENT',
             'localName': 'allHighlighted',
             'type': 'FLOAT',
             'count': 1,
@@ -376,7 +390,7 @@ function saneTexture(texture, texName) {
 
 function saneModel(model, modName) {
     _.each(model, function (buffer, bufName) {
-        _.each([], function (field) {
+        _.each(['datasource', 'type', 'count', 'offset', 'stride', 'normalize'], function (field) {
             if (!(field in buffer))
                 util.die('Buffer "%s" in model "%s" must have field "%s"', bufName, modName, field);
         });
@@ -512,7 +526,19 @@ function gl2Bytes(type) {
     return types[type];
 }
 
+function isBufClientSide(buf) {
+    var datasource = _.values(buf)[0].datasource;
+    return (datasource == "CLIENT" || datasource == "VERTEX_INDEX");
+}
+
+function isBufServerSide(buf) {
+    var datasource = _.values(buf)[0].datasource;
+    return (datasource == "HOST" || datasource == "DEVICE");
+}
+
 module.exports = {
     'scenes': generateAllConfigs(programs, textures, models, items, scenes),
-    'gl2Bytes': gl2Bytes
+    'gl2Bytes': gl2Bytes,
+    'isBufClientSide': isBufClientSide,
+    'isBufServerSide': isBufServerSide
 };
