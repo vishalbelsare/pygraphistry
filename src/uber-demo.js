@@ -406,9 +406,9 @@ function init(socket, $elt, renderState) {
     window.$OLD('#timeSlider').rangeSlider({
          bounds: {min: 0, max: 100},
          arrows: false,
-         defaultValues: {min: 30, max: 40},
+         defaultValues: {min: 0, max: 30},
          valueLabels: 'hide', //show, change, hide
-         wheelMode: 'zoom'
+         //wheelMode: 'zoom'
       });
 
 
