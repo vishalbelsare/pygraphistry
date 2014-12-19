@@ -1,0 +1,32 @@
+.graph-label h2 {
+    text-align: left;
+    font-size: 1em;
+}
+
+.stat-flows tr td:first-child {
+    white-space: nowrap;
+    padding-right: 0.5em;
+}
+
+.stat-flows {
+    max-height: 10em;
+    overflow: auto;
+}
+
+.stat-flows table {
+    counter-reset: rowNumber;
+}
+
+.stat-flows table tbody tr {
+    counter-increment: rowNumber;
+}
+
+.stat-flows table tbody tr td:first-child::before {
+    content: counter(rowNumber);
+    min-width: 1em;
+    margin-right: 0.5em;
+}
+
+.stat-flows tbody td {
+    text-align: left;
+}
