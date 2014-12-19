@@ -8,29 +8,46 @@
 
 var debug       = require('debug')('graphistry:StreamGL:labels');
 var _           = require('underscore');
+var Rx          = require('rx');
+var $           = require('jquery');
 
 var picking     = require('./picking.js');
 
 //0--1: the closer to 1, the more likely that unsampled points disappear
 var APPROX = 0.3;
+var MAX_LABELS = 20;
+
+
+function makeErrorHandler(name) {
+    return function (err) {
+        console.error(name, err, (err || {}).stack);
+    };
+}
+
+
 
 //renderState * String -> {<idx> -> True}
 //dict of points that are on screen -- approx may skip some
 function getActiveApprox(renderState, textureName) {
 
-    var samples = renderState.get('pixelreads')[textureName];
-    var samples32 = new Uint32Array(samples.buffer);
+    var samples32 = new Uint32Array(renderState.get('pixelreads')[textureName].buffer);
     var hits = {};
     for (var i = 0; i < samples32.length; i++) {
-        if (Math.random() > APPROX) {
-            hits[picking.uint32ToIdx(samples32[i])] =  true;
-        }
-    }
-    if (hits['-1']) {
-        delete hits['-1'];
+        hits[picking.uint32ToIdx(samples32[i])] =  true;
     }
 
-    return hits;
+    //only use first MAX_LABEL (sort to make deterministic)
+    var vals = _.keys(hits).map(function (v) { return parseInt(v); });
+    vals.sort();
+    vals = vals.slice(0, MAX_LABELS);
+    var res = _.object(vals.map(function (idx) { return [idx, true]; }));
+
+    //remove null
+    if (res['-1']) {
+        delete res['-1'];
+    }
+
+    return res;
 }
 
 
@@ -53,7 +70,7 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
             var pos = camera.canvasCoords(points[2 * lbl.idx], -points[2 * lbl.idx + 1], 1, cnv, mtx);
 
             var isOffScreen = pos.x < 0 || pos.y < 0 || pos.x > cnv.clientWidth || pos.y > cnv.clientHeight;
-            var isDecayed = Math.random() > 1 - APPROX;
+            var isDecayed = (Math.random() > 1 - APPROX) || (_.keys(activeLabels).length > MAX_LABELS);
 
             if (isOffScreen || isDecayed) {
                 //remove
@@ -70,17 +87,81 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
     return toClear;
 }
 
+//DOM =======================
+
+//create label, attach to dom
+//label texts defined externall; can change idx to update
+function genLabel (instance, $labelCont, idx) {
+
+
+    var setter = new Rx.ReplaySubject(1);
+
+    var $elt = $('<div>')
+        .addClass('graph-label')
+        .css('display', 'none')
+        .empty()
+        .html('' + idx);
+
+    $labelCont.append($elt);
+
+
+    var res = {
+        idx: idx,
+        elt: $elt,
+        setIdx: setter.onNext.bind(setter)
+    };
+
+    setter
+        .sample(3)
+        .do(function (idx) {
+            res.idx = idx;
+        })
+        .flatMapLatest(instance.getLabelText)
+        .do(function (htmlStr) {
+            $elt.html(htmlStr ? htmlStr : '');
+        })
+        .subscribe(_.identity, makeErrorHandler('genLabel fetcher'));
+
+    return res;
+}
+
+
+
+//NETWORK ===================
+
+//instance * int -> ReplaySubject_1 ?HtmlString
+//TODO batch fetches
+function getLabelText (instance, idx) {
+    if (!instance.state.labelCache[idx]) {
+        instance.state.labelCache[idx] = new Rx.ReplaySubject(1);
+        instance.state.socket.emit('get_labels', [idx], function (err, data) {
+            if (err) {
+                console.error('get_labels', err);
+            } else {
+                instance.state.labelCache[idx].onNext(data);
+            }
+        });
+    }
+    return instance.state.labelCache[idx];
+}
 
 
 
 
-
-function init () {
+function init (socket) {
     debug('initializing label engine');
 
-    var instance = {
+    var instance = { };
+
+    _.extend(instance, {
 
         state: {
+
+            socket: socket,
+
+            //[ ReplaySubject_1 ?HtmlString ]
+            labelCache: [],
+
             //{<int> -> {elt: $DOM, idx: int} }
             activeLabels: {},
 
@@ -89,14 +170,22 @@ function init () {
 
         },
 
+        MAX_LABELS: MAX_LABELS,
+
         // {<int> -> {elt: $DOM, idx: int} } -> ()
         resetActiveLabels: function (activeLabels) {
             instance.state.activeLabels = activeLabels;
         },
 
+        //int -> Subject ?HtmlString
+        getLabelText: getLabelText.bind('', instance),
+
         getActiveApprox: getActiveApprox,
-        finishApprox: finishApprox
-    };
+        finishApprox: finishApprox,
+
+        //$DOM * idx -> {elt: $DOM, idx: int, setIdx: Subject int}
+        genLabel: genLabel.bind('', instance)
+    });
 
     return instance;
 

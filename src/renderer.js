@@ -161,12 +161,13 @@ function bindProgram(state, program, programName, bindings, buffers, modelSettin
     _.each(bindings.attributes, function(binding, attribute) {
 
         var element = modelSettings[binding[0]][binding[1]];
-        var datasource = element.datasource || 'SERVER';
+        var datasource = element.datasource;
         var glBuffer =
-              datasource === 'SERVER'       ? buffers[binding[0]]
+              datasource === 'HOST'         ? buffers[binding[0]]
+            : datasource === 'DEVICE'       ? buffers[binding[0]]
             : datasource === 'VERTEX_INDEX' ? indexGlBuffers[1]
             : datasource === 'EDGE_INDEX'   ? indexGlBuffers[2]
-            : datasource === 'LOCAL'        ?
+            : datasource === 'CLIENT'       ? 
                 localGlBuffers[state.get('config').get('models').get(binding[0]).get(binding[1]).get('localName')]
             : (function () { throw new Error('unknown datasource ' + datasource); }());
 
@@ -196,11 +197,11 @@ function bindProgram(state, program, programName, bindings, buffers, modelSettin
 
     _.each(bindings.textureBindings || {}, function (binding, textureName) {
 
-        debug('  binding texture', binding, textureName, state.get('textures').get(binding[0]));
+        debug('  binding texture', binding, textureName, state.get('textures').get(binding));
 
         var location = getUniformLocationFast(gl, program, programName, textureName);
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, state.get('textures').get(binding[0]));
+        gl.bindTexture(gl.TEXTURE_2D, state.get('textures').get(binding));
         gl.uniform1i(location, 0);
 
     });
@@ -296,7 +297,6 @@ function createContext(canvas) {
 
 //RenderState * canvas * string -> {width: float, height: float}
 function getTextureDims(config, canvas, name) {
-
     if (!name || name === 'CANVAS') {
         return {width: canvas.width, height: canvas.height};
     }
@@ -321,8 +321,8 @@ function createRenderTargets(config, canvas, gl) {
 
     var neededTextures =
         _.chain(
-            config.get('scene').get('render')
-            .map(function (itemName) { return config.get('scene').get('items').get(itemName); })
+            config.get('render')
+            .map(function (itemName) { return config.get('items').get(itemName); })
             .map(function (item) { return item.get('renderTarget') || 'CANVAS'; })
             .filter(function (renderTarget) { return renderTarget !== 'CANVAS'; })
             .toJS())
@@ -661,9 +661,9 @@ function setNumElements(newNumElements) {
 
 
 /**
- * Render one or more items as specified in render config's scene.render array
+ * Render one or more items as specified in render config's render array
  * @param {Renderer} state - initialized renderer
- * @param {(string[])} [renderListOverride] - optional override of the scene.render array
+ * @param {(string[])} [renderListOverride] - optional override of the render array
  */
 var lastRenderTarget = {};
 function render(state, renderListOverride) {
@@ -677,7 +677,7 @@ function render(state, renderListOverride) {
 
     var clearedFBOs = { };
 
-    var toRender = renderListOverride || config.scene.render;
+    var toRender = renderListOverride || config.render;
     _.each(toRender, function(item) {
 
         if(typeof numElements[item] === 'undefined' || numElements[item] < 1) {
@@ -688,7 +688,7 @@ function render(state, renderListOverride) {
 
         debug('Rendering item "%s" (%d elements)', item, numElements[item]);
 
-        var renderItem = config.scene.items[item];
+        var renderItem = config.items[item];
         var renderTarget = renderItem.renderTarget === 'CANVAS' ? null : renderItem.renderTarget;
 
         //change viewport in case of downsampled target
@@ -715,6 +715,8 @@ function render(state, renderListOverride) {
                 textureBindings: renderItem.textureBindings
             },
             buffers, config.models);
+
+        debug('Done binding, drawing now...');
         gl.drawArrays(gl[renderItem.drawType], 0, numElements[item]);
 
         if (renderTarget && (renderTarget !== 'CANVAS')) {
@@ -739,15 +741,15 @@ function render(state, renderListOverride) {
 // RenderOptions -> [ string ]
 function getServerBufferNames (config) {
 
-    var renderItems = config.scene.render;
+    var renderItems = config.render;
     var bufferNamesLists = renderItems.map(function (itemName) {
-        var bindings = config.scene.items[itemName].bindings;
+        var bindings = config.items[itemName].bindings;
         return _.pairs(bindings)
             .filter(function (bindingPair) {
                 var modelName = bindingPair[1][0];
                 var attribName = bindingPair[1][1];
-                var datasource = config.models[modelName][attribName].datasource || 'SERVER';
-                return datasource === 'SERVER';
+                var datasource = config.models[modelName][attribName].datasource;
+                return (datasource === 'HOST' || datasource === 'DEVICE');
             })
             .map(function (bindingPair) {
                 var modelName = bindingPair[1][0];
@@ -764,13 +766,15 @@ function getServerBufferNames (config) {
 function getServerTextureNames (config) {
     return _.chain(_.pairs(config.textures))
         .filter(function (pair) {
-            return (pair[1].datasource || 'SERVER') === 'SERVER'; })
+            var datasource = pair[1].datasource;
+            return datasource === 'SERVER'; 
+        })
         .pluck('0')
         .filter(function (name) {
-            var matchingItems = config.scene.render.map(function (itemName) {
-                var matchingItemTextures = _.values(((config.scene.items[itemName] || {}).textureBindings))
+            var matchingItems = config.render.map(function (itemName) {
+                var matchingItemTextures = _.values(((config.items[itemName] || {}).textureBindings))
                     .filter(function (boundTexture) {
-                        return boundTexture[0] === name;
+                        return boundTexture === name;
                     });
                 return matchingItemTextures.length;
             }).filter(function (hits) { return hits; });
@@ -783,16 +787,16 @@ function getServerTextureNames (config) {
 function getActiveIndices (config) {
     config = config.toJS();
 
-    var renderItems = config.scene.render;
+    var renderItems = config.render;
     var activeIndexModesLists = renderItems.map(function (itemName) {
-        var bindings = config.scene.items[itemName].bindings;
+        var bindings = config.items[itemName].bindings;
         return _.pairs(bindings)
             .map(function (bindingPair) {
                 var modelName = bindingPair[1][0];
                 var attribName = bindingPair[1][1];
                 debug('bindingPair', bindingPair);
                 debug('datasource', config.models[modelName][attribName].datasource);
-                var datasource = config.models[modelName][attribName].datasource || 'SERVER';
+                var datasource = config.models[modelName][attribName].datasource;
                 return datasource;
             })
             .map(function (datasource) {

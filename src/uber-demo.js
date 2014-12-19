@@ -11,7 +11,8 @@ var Slider  = require('bootstrap-slider');
 
 var interaction = require('./interaction.js');
 var renderer    = require('./renderer');
-var poi      = require('./poi.js')();
+var poiLib      = require('./poi.js');
+var poi;
 
 
 
@@ -40,23 +41,6 @@ function makeErrorHandler(name) {
 
 //Observable DOM
 var labelHover = new Rx.Subject();
-
-//create label, attach to dom, and on hover, notify labelHover
-function genLabel ($labelCont, txt) {
-
-    var res = $('<div>')
-        .addClass('graph-label')
-        .css('display', 'none')
-        .empty()
-        .append(txt)
-        .on('mouseover', function () {
-            labelHover.onNext(this);
-        });
-
-    $labelCont.append(res);
-
-    return res;
-}
 
 // $DOM * RendererState  -> ()
 // Immediately reposition each label based on camera and curPoints buffer
@@ -173,28 +157,23 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIdx) {
     //select label elts (and make active if needed)
     var toShow = [];
     var labels = _.keys(hits)
-        .map(function (idx) {
+        .map(function (idxStr) {
+            var idx = parseInt(idxStr);
             if (poi.state.activeLabels[idx]) {
                 return poi.state.activeLabels[idx];
+            } else if ((_.keys(poi.state.activeLabels).length > poi.MAX_LABELS) && (labelIdx !== idx)) {
+                return null;
+            } else if (!poi.state.inactiveLabels.length) {
+                var res = poi.genLabel($labelCont, idx);
+                res.elt.on('mouseover', function () {
+                    labelHover.onNext(this);
+                });
+                return res;
             } else {
 
-                var points = new Float32Array(curPoints.buffer);
-                var lblText = ' (' + points[2*idx].toFixed(3) + ', ' + points[2*idx+1].toFixed(3) + ')';
-
-                var contents = $('<div>')
-                                .append($('<span>').text(idx))
-                                .append($('<hr>'))
-                                .append($('<span>').text(lblText));
-
-                if (!poi.state.inactiveLabels.length) {
-                    return {
-                        idx: parseInt(idx),
-                        elt:  genLabel($labelCont, contents)
-                    };
-                }
                 var lbl = poi.state.inactiveLabels.pop();
-                lbl.idx = parseInt(idx);
-                lbl.elt.empty().append(contents);
+                lbl.idx = idx;
+                lbl.setIdx(idx);
                 toShow.push(lbl);
                 return lbl;
             }
@@ -246,7 +225,7 @@ lastRender
 
             var cfg = mostRecent;
 
-            var items = cfg.currentState.get('config').get('scene').get('render').toJS()
+            var items = cfg.currentState.get('config').get('render').toJS()
                 .filter(function (v) { return v !== 'pointpicking'; });
             cfg.renderer.render(cfg.currentState, items);
             renderCursor(cfg.currentState, new Float32Array(cfg.points.buffer), cfg.highlightIdx);
@@ -395,6 +374,8 @@ function setupInteractions($eventTarget, renderState) {
 
 
 function init(socket, $elt, renderState) {
+
+    poi = poiLib(socket);
 
     setupInteractions($elt, renderState);
 

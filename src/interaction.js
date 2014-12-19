@@ -8,6 +8,7 @@ var debug    = require('debug')('StreamGL:interaction');
 var renderer = require('./renderer');
 
 require('rx-jquery');
+require('jquery-mousewheel')($);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -66,17 +67,17 @@ function setupMousemove($eventTarget, renderState, texture) {
         });
 }
 
-
 function setupScroll($eventTarget, camera) {
-
-    return Rx.Observable.merge(
-            Rx.Observable.fromEvent($eventTarget[0], 'wheel'), //ffox/chrome
-            Rx.Observable.fromEvent($eventTarget[0], 'mousewheel')) //safari/chrome
+    //var bounds = $('canvas', $eventTarget[0])[0].getBoundingClientRect();
+    return $eventTarget.onAsObservable('mousewheel')
         .do(function (wheelEvent) {
             wheelEvent.preventDefault();
         })
         .sample(1)
         .map(function(wheelEvent) {
+
+            //OLD
+            if (false) {
             var aspectRatio = camera.width / camera.height;
             var scrollY =
                 wheelEvent.wheelDeltaY ||
@@ -87,7 +88,29 @@ function setupScroll($eventTarget, camera) {
 
             camera.width -= camera.width * (scrollY / 100.0);
             camera.height = camera.width / aspectRatio;
+            return camera;
+            }
 
+
+            var zoomBase = 1.1; 
+            var zoomFactor = (wheelEvent.deltaY < 0 ? zoomBase : 1.0 / zoomBase) || 1.0;
+            
+            /* FIXME Attemp to implement "follow mouse" zoom.
+             * Camera.center is clearly not what I think it is.
+             *
+            
+            var pos = {
+                x: (wheelEvent.clientX - bounds.left) / bounds.width,
+                y: -1.0 * (wheelEvent.clientY - bounds.top) / bounds.height
+            };
+            var xoffset = pos.x - camera.center.x;
+            var yoffset = pos.y - camera.center.y;
+            camera.center.x += xoffset * (1.0 - zoomFactor);
+            camera.center.y += yoffset * (1.0 - zoomFactor);
+            */ 
+
+            camera.width = camera.width * zoomFactor;
+            camera.height = camera.height * zoomFactor;
             return camera;
         });
 }

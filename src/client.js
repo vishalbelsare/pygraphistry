@@ -38,7 +38,9 @@ function makeFetcher (fragment, url) {
                 debug('got texture/vbo data', bufferName, Date.now() - now, 'ms');
 
                 var arrayBuffer = oReq.response; // Note: not oReq.responseText
-                var trimmedArray = new Uint8Array(arrayBuffer, 0, bufferByteLengths[bufferName]);
+                var blength = bufferByteLengths[bufferName];
+                debug('Buffer length (%s): %d', bufferName, blength);
+                var trimmedArray = new Uint8Array(arrayBuffer, 0, blength);
 
                 res.onNext(trimmedArray);
 
@@ -178,7 +180,7 @@ function handleVboUpdates(socket, renderState) {
     var lastHandshake = Date.now();
     var renderedFrame = new Rx.BehaviorSubject(0);
 
-    var previousVersions = {};
+    var previousVersions = {buffers: {}, textures: {}};
     socket.on('vbo_update', function (data, handshake) {
         try {
             debug('VBO update');
@@ -257,7 +259,12 @@ function handleVboUpdates(socket, renderState) {
                 readyTextures.onNext();
             });
 
-            previousVersions = data.versions || {};
+            _.keys(data.versions).forEach(function (mode) {
+                previousVersions[mode] = previousVersions[mode] || {};
+                _.keys(data.versions[mode]).forEach(function (name) {
+                    previousVersions[mode][name] = (data.versions[mode] || {})[name] || previousVersions[mode][name];
+                });
+            });
 
         } catch (e) {
             debug('ERROR vbo_update', e, e.stack);
