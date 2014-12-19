@@ -107,9 +107,8 @@ function decode0(graph, vg, config)  {
     var yObj = _.find(vg.double_vectors, function (o) { return o.name === 'y'; });
     if (xObj && yObj) {
         debug('WARNING: hardcoding 2 dimensions');
-        console.log('got', [xObj.values[0]/5, yObj.values[0]/5])
         for (var i = 0; i < vg.nvertices; i++) {
-            vertices.push([xObj.values[i]/5, yObj.values[i]/5]);
+            vertices.push([xObj.values[i]/10, yObj.values[i]/10]);
         }
     } else {
         for (var i = 0; i < vg.nvertices; i++) {
