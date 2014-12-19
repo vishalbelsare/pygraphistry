@@ -103,11 +103,20 @@ function decode0(graph, vg, config)  {
     var edges = []
     var dimensions = [1, 1]; 
 
-    for (var i = 0; i < vg.nvertices; i++) {
-        var vertex = [];
-        for (var j = 0; j < dimensions.length; j++)
-            vertex.push(Math.random() * dimensions[j]);
-        vertices.push(vertex);
+    var xObj = _.find(vg.double_vectors, function (o) { return o.name === 'x'; });
+    var yObj = _.find(vg.double_vectors, function (o) { return o.name === 'y'; });
+    if (xObj && yObj) {
+        debug('WARNING: hardcoding 2 dimensions');
+        for (var i = 0; i < vg.nvertices; i++) {
+            vertices.push([xObj.values[i]/5, yObj.values[i]/5]);
+        }
+    } else {
+        for (var i = 0; i < vg.nvertices; i++) {
+            var vertex = [];
+            for (var j = 0; j < dimensions.length; j++)
+                vertex.push(Math.random() * dimensions[j]);
+            vertices.push(vertex);
+        }
     }
 
     for (var i = 0; i < vg.edges.length; i++) {
@@ -217,6 +226,18 @@ var testMapper = {
     }
 }
 
+var testMapperDemo = {
+    wrap: testMapper.wrap,
+    mappings: _.extend({}, testMapper.mappings, {
+        x: {
+            name: 'x'
+        },
+        y: {
+            name: 'y'
+        }
+    })
+}
+
 function doWrap(res, mapping, oldLoad) {
     res[mapping.name].load = function (data) {
         oldLoad(mapping.transform(data));
@@ -224,7 +245,8 @@ function doWrap(res, mapping, oldLoad) {
 }
 
 var mappers = {
-    "opentsdbflowdump_1hrMapper": testMapper
+    "opentsdbflowdump_1hrMapper": testMapper,
+    "opentsdbflowdump_1hrMapperDemo": testMapperDemo,
 }
 
 function logTransform(values) {
