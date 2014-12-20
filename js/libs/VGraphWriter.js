@@ -78,7 +78,7 @@ var uploadBuffers = Q.promised(function (graph, vectors) {
             if (err) { return done.reject(new Error(err)); }
 
             var savedName = graph.metadata.name.replace('.serialized','') + ".serialized"
-            debug('saving as ' + savedName);
+            console.log('saving as ' + savedName);
             var params = {
                 Bucket: config.BUCKET,
                 Key: savedName,
@@ -94,7 +94,7 @@ var uploadBuffers = Q.promised(function (graph, vectors) {
             config.S3.putObject(params, function(err, data) {
                 if (err) { return done.reject(new Error(err)); }
 
-                debug("saved and uploaded " + savedName);
+                console.log('saved and uploaded ' + savedName);
                 Q.resolve();
             });
         });
