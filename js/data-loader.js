@@ -54,6 +54,7 @@ function downloadDataset(datasetname) {
 
 function loadDatasetIntoSim(graph, dataset) {
     debug("Loading data: %o", dataset);
+    graph.metadata = dataset.Metadata;
     return loaders[dataset.Metadata.type](graph, dataset);
 }
 
