@@ -162,20 +162,12 @@ function decode0(graph, vg, config)  {
             for (var el in graph.vg.int32_buffer_vectors) {
                 if (graph.vg.int32_buffer_vectors[el].name == index) {
 
-
                     var buffer = graph.simulator.buffers[index];
                     var raw = graph.vg.int32_buffer_vectors[el].values;
                     var data = new Float32Array(raw);
-                    var normalArray = Array.prototype.slice.call(data);
 
-                    // sanity check
-                    var total = normalArray.reduce(function(a, b) {
-                      return a + b;
-                    });
-                    console.log(index, total, normalArray.length)
-
-                    // Write the data to the buffer
                     try {
+                        // Write the data to the buffer
                         return buffer.write(data).then(function(buf) {
                             console.log('loaded ' + index)
                             return buf;

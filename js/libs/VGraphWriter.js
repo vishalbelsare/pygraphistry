@@ -47,12 +47,6 @@ function readBuffers(buffers) {
             vector.name = index;
             vectors.push(vector);
 
-            // sanity check
-            console.log('sanity checking TODO remove', index, '/', Object.keys(buffers).length);
-            var total = normalArray.reduce(function(a, b) {
-              return a + b;
-            });
-            debug('readBuffer verif', index, total, normalArray.length);
             return target;
         })
     })
