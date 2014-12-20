@@ -91,7 +91,7 @@ var netflowControls = {
         lockMidedges: true
     },
     global: {
-        simulationTime: 10000, //milliseconds
+        simulationTime: 5000, //milliseconds
         dimensions: [1, 1]
     }
 }
