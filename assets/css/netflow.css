@@ -182,6 +182,10 @@ body {
     text-align: left;
 }
 
+.stat-extra {
+    margin-left: 2.7em;
+}
+
 .graph-label h2 {
     text-align: left;
     font-size: 1em;
