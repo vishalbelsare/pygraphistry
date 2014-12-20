@@ -454,8 +454,9 @@ function setLocked(simulator, cfg) {
 
 function setPhysics(simulator, cfg) {
     _.each(simulator.layoutAlgorithms, function (algo) {
-        if (algo.name in cfg)
-            algo.setPhysics(cfg.name)
+        if (algo.name in cfg) {
+            algo.setPhysics(cfg[algo.name]);
+        }
     });
 }
 
