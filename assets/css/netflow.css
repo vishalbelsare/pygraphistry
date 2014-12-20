@@ -1,0 +1,255 @@
+html {
+    height: 100%;
+}
+body {
+    background: linear-gradient(to bottom, rgba(242,246,248,1) 0%, rgba(216,225,231,1) 5%, rgba(181,198,208,1) 5%, rgba(224,239,249,1) 79%, rgba(245,251,255,1) 88%);
+    height: 100%;
+}
+
+
+.heading {
+    padding-top: 0.5em;
+    text-align: center;
+    background: rgba(242,246,248,0.7);
+    font-family: 'Nunito', sans-serif;
+    letter-spacing: -0.03em;
+    color: rgb(51, 51, 102);
+}
+
+.heading span {
+    font-size: 0.75em;
+    font-variant: small-caps;
+}
+
+
+.legend-container {
+    position: absolute;
+    bottom: 1em;
+    right: 1em;
+    padding: 1em;
+
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,244,0.9);
+    background-color: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 10px rgba(255,255,255,0.75);
+
+}
+
+.legend .label {
+    color: rgb(51,51,102);
+    font-weight: bold;
+    font-size: 1em;
+}
+.tick {
+    display: inline-block;
+    width: 50px;
+    height: 10px;
+    border: 1px solid rgb(51,51,102);
+}
+
+.tick5 { background-color: rgb(165,0,38); }
+.tick4 { background-color: rgb(244,109,67); }
+.tick3 { background-color: rgb(255,255,191); }
+.tick2 { background-color: rgb(166,217,106); }
+.tick1 { background-color: rgb(26,152,80); }
+
+
+.ui-rangeSlider .ui-rangeSlider-innerBar {
+    background-color: rgba(196, 212, 222, 0.3);
+    border: 1px solid rgba(51, 51, 102, 0.5);
+}
+
+
+.ui-rangeSlider .ui-rangeSlider-bar {
+    background-color: rgba(255,255,255,0.7);
+    box-shadow: 0 0 10px rgba(255,255,255,0.75);
+    border: 1px solid rgba(51, 51, 102, 0.5);
+}
+
+.ui-rangeSlider-bar {
+    text-align: left;
+}
+.ui-rangeSlider-bar:hover {
+        cursor: default;
+}
+.ui-rangeSlider-bar:before {
+    margin-left: 1em;
+    content: 'TIME';
+    font-size: 0.8em;
+    color: rgba(51, 51, 102, 0.5);
+}
+
+.ui-rangeSlider .ui-rangeSlider-bar:hover {
+
+}
+
+.ui-rangeSlider .ui-rangeSlider-handle.ui-rangeSlider-leftHandle,
+.ui-rangeSlider .ui-rangeSlider-handle.ui-rangeSlider-rightHandle {
+    width: 10px;
+    background-color: rgba(51, 51, 102, 1);
+    border-radius: 3px;
+}
+
+.ui-rangeSlider-handle.ui-rangeSlider-leftHandle:hover,
+.ui-rangeSlider-handle.ui-rangeSlider-rightHandle:hover {
+    background-color: rgba(71, 71, 122, 1);
+    box-shadow: 0 0 10px rgba(71, 71, 122, 0.75);
+}
+
+.ui-rangeSlider-handle.ui-rangeSlider-leftHandle {
+    visibility: hidden
+}
+
+.ui-rangeSlider .ui-rangeSlider-ba {
+    background-color: white;
+}
+
+
+.menu {
+    z-index: 100001;
+}
+.accordion {
+    background-color: rgba(196, 212, 222, 0.72);
+}
+
+.control-label {
+    color: rgb(51, 51, 102);
+}
+.slider-handle {
+    background-image: linear-gradient(to bottom, #149bdf 0%, rgb(51, 51, 102) 100%)
+}
+.form-group button.btn {
+    border-color: rgba(255,255,255,0.5);
+}
+.form-group button.btn:hover {
+    color: white;
+    background-color: transparent;
+    box-shadow: 0 0 20px rgba(255,255,255,0.75);
+}
+
+
+.stat-top { margin: 0;}
+.stat-top h2, .stat-flows thead {
+    background-color: rgba(255,255,255,0.3);
+    padding: 0.2em;
+    border: 1px solid rgba(255,255,255,0.4);
+    margin: 0;
+    margin-bottom: 0.2em;
+    font-weight: bold;
+}
+
+.stat-flows thead tr td:first-child {
+    text-align: left
+}
+.stat-flows thead tr td:first-child:before {
+    content: ' [-] ';
+    padding-left: 0.2em;
+}
+
+.stat-flows tbody tr td:first-child {
+    padding-left: 0.5em;
+}
+
+.stat-top h2:before {
+    content: ' [+] ';
+}
+
+.stat-flows td {
+    white-space: nowrap;
+    padding-right: 0.5em;
+}
+
+.stat-flows {
+    max-height: 10em;
+    overflow: auto;
+}
+
+.stat-flows table {
+    counter-reset: rowNumber;
+}
+
+.stat-flows table tbody tr {
+    counter-increment: rowNumber;
+}
+
+.stat-flows table tbody tr td:first-child::before {
+    content: counter(rowNumber);
+    min-width: 1em;
+    margin-right: 0.5em;
+}
+
+.stat-flows tbody td {
+    text-align: left;
+}
+
+.stat-extra {
+    margin-left: 2.7em;
+}
+
+.graph-label h2 {
+    text-align: left;
+    font-size: 1em;
+}
+
+.graph-label {
+    text-align:left;
+    padding-left: 0;
+    padding-right: 0;
+}
+.graph-label td {
+    text-align: center;
+}
+
+.graph-label-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.graph-label {
+
+    margin-top: 1.5em;
+
+    position: absolute;
+    color: rgb(51, 51, 102);
+    font-weight: bold;
+    font-size: 0.8em;
+    text-shadow: 0 0 5px rgba(255,255,255,1.0);
+    padding: 0.5em;
+
+    border-radius: 10px;
+
+    border: 1px solid transparent;
+
+    opacity: 0.8;
+
+    overflow: hidden;
+    height: 2em;
+
+    z-index: 10000;
+
+    color: rgb(51, 51, 102);
+
+}
+
+.graph-label.on {
+
+    opacity: 1.0;
+
+    background-color: rgba(255, 255, 255, 0.85);
+    border-color: rgba(255,255,244,0.9);
+
+
+    width: auto;
+    height: auto;
+    overflow: auto;
+
+    box-shadow: 0 0 10px rgba(255,255,255,0.75);
+
+    z-index: 100000;
+
+}
+
+.graph-label.on hr { margin: 0; margin-bottom: 0.3em;}
+.graph-label.on > div:first-child { margin-bottom: 0.5em; }
+

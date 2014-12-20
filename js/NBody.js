@@ -20,42 +20,33 @@ var elementsPerPoint = 2;
  * @param bgColor - [0--255,0--255,0--255,0--1]
  * @param [dimensions=\[1,1\]] - a two element array [width,height] used for internal posituin calculations.
  */
-function create(renderer, document, canvas, bgColor, dimensions, numSplits) {
-    dimensions = dimensions || [1,1];
-    numSplits = numSplits || 0;
+function create(renderer, dimensions, numSplits, simulationTime) {
+    var graph = {
+        "renderer": renderer,
+        "simulator": undefined,
+    };
+ 
+    graph.initSimulation = initSimulation.bind(this, graph);
+    graph.setPoints = setPoints.bind(this, graph);
+    graph.setVertices = setVertices.bind(this, graph);
+    graph.setSizes = setSizes.bind(this, graph);
+    graph.setColors = setColors.bind(this, graph);
+    graph.setLabels = setLabels.bind(this, graph);
+    graph.setEdges = setEdges.bind(this, graph);
+    graph.setEdgesAndColors = setEdgesAndColors.bind(this, graph);
+    graph.setEdgeColors = setEdgeColors.bind(this, graph);
+    graph.setMidEdgeColors = setMidEdgeColors.bind(this, graph);
+    graph.setLocked = setLocked.bind(this, graph);
+    graph.setColorMap = setColorMap.bind(this, graph);
+    graph.tick = tick.bind(this, graph);
+    graph.stepNumber = 0;
+    graph.dimensions = dimensions;
+    graph.numSplits = numSplits;
+    graph.simulationTime = simulationTime;
 
-    return renderer
-        .create(document, canvas, bgColor, dimensions)
-        .then(function(rend) {
-            debug("Created renderer");
-            var graph = {
-                "renderer": rend,
-                "simulator": undefined,
-            };
-            
-            graph.initSimulation = initSimulation.bind(this, graph);
-            graph.setPoints = setPoints.bind(this, graph);
-            graph.setVertices = setVertices.bind(this, graph);
-            graph.setSizes = setSizes.bind(this, graph);
-            graph.setColors = setColors.bind(this, graph);
-            graph.setLabels = setLabels.bind(this, graph);
-            graph.setEdges = setEdges.bind(this, graph);
-            graph.setEdgesAndColors = setEdgesAndColors.bind(this, graph);
-            graph.setEdgeColors = setEdgeColors.bind(this, graph);
-            graph.setMidEdgeColors = setMidEdgeColors.bind(this, graph);
-            graph.setLocked = setLocked.bind(this, graph);
-            graph.setColorMap = setColorMap.bind(this, graph);
-            graph.tick = tick.bind(this, graph);
-            graph.stepNumber = 0;
-            graph.dimensions = dimensions;
-            graph.numSplits = numSplits;
+    graph.updateSettings = updateSettings.bind(this, graph);
 
-            graph.updateSettings = updateSettings.bind(this, graph);
-
-            return graph;
-        }).fail(function (err) {
-            console.error("ERROR Cannot create graph. ", (err||{}).stack);
-        });
+    return graph;
 }
 
 function initSimulation(graph, simulator, layoutAlgorithms, locked) {
@@ -140,6 +131,7 @@ function setColors(graph, pointColors) {
     if (!pointColors)
         return setDefaultColors(graph.simulator);
 
+    debug('Loading pointColors');
     var npoints = graph.simulator.numPoints;
 
     var pc = new Uint32Array(npoints);

@@ -34,11 +34,13 @@
 	<link rel="stylesheet" href="libs/bootstrap-slider/css/bootstrap-slider.css">
 
 	<link rel="stylesheet" href="libs/font-awesome/css/font-awesome.css">
+	<link href='http://fonts.googleapis.com/css?family=Nunito:400,700' rel='stylesheet' type='text/css'>
 
 
 	<!-- App -->
 	<link rel="stylesheet" href="css/gpustreaming.css" type="text/css" media="screen" charset="utf-8">
 	<link rel="stylesheet" href="css/graph.css" type="text/css" media="screen" charset="utf-8">
+	<link rel="stylesheet" href="css/netflow.css" type="text/css" media="screen" charset="utf-8">
 
 	<!-- FIXME: Include fpsmeter as part of the StreamGL bundle -->
 	<script type="text/javascript" src="libs/fpsmeter.js" charset="utf-8"></script>
@@ -79,22 +81,16 @@
 
 	</div>
 
-
-	<div id="main">
+	<div>
 		<div class="heading">
-			<h1 class="title">Uber Trips Across SF</h1>
-			<h3>Edge Bundling: a physics simulation over 100K midpoints</h3>
-
+			<h1 class="title">Graphistry <span>netflow explorer</span></h1>
  			<div class="controls">
 			  <button type=button id="do-disconnect" class="control-button">Disconnect</button>
 			</div>
 
-			<div class="hit-label">&nbsp;</div>
-
             <div id="timeSlider"></div>
 		</div>
 	</div>
-
 
 	<div class='section'>
 		<div class="menu" style="padding: 1em; margin: 1em;">
@@ -109,6 +105,16 @@
 
 				    <div id="renderingItems" class="accordion-body collapse">
 						<div class="form-horizontal">
+
+							<div class="form-group">
+					            <label for="chargeSlider" class="control-label col-xs-2">Charge strength</label>
+					            <div class="col-xs-10">
+						            <!-- 0 - 10 -->
+					                <input class="menu-slider" id="chargeSlider" data-slider-id='chargeSliderD' type="text" data-slider-min="-0.0002" data-slider-max="-0.0000" data-slider-step="0.000001" data-slider-value="0"/>
+					            </div>
+					        </div>  <!-- /form-group -->
+
+
 
 							<div class="form-group">
 					            <label for="edgeStrengthSlider" class="control-label col-xs-2">Spring strength</label>
@@ -152,6 +158,23 @@
 	</div> <!-- /section -->
 
 	<div class="status-bar"></div>
+
+
+	<div class="legend-container">
+			<div class="legend">
+				<span class="label">edge: amount of data sent</span>
+				<span class="tick tick1"></span>
+				<span class="tick tick2"></span>
+				<span class="tick tick3"></span>
+				<span class="tick tick4"></span>
+				<span class="tick tick5"></span>
+			</div>
+
+			<div class="legend">
+				<span class="label">node: color shows cluster, size shows # connections</span>
+			</div>
+	</div>
+
 </body>
 
 
