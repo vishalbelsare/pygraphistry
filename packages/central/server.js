@@ -172,7 +172,7 @@ app.get('*/StreamGL.map', function(req, res) {
 app.use('/horizon', express.static(HORIZON_STATIC_PATH));
 // Serve graph static assets
 app.use('/graph', function (req, res, next) {
-    if (req.path == '/index.html' || req.path == '/') {
+    if (['/index.html', '/', '/uber.html', '/netflow.html'].indexOf(req.path) > -1) {
         config.DATASETNAME = req.param('datasetname');
         config.DATASETIDX = req.param('datasetidx');
     }
