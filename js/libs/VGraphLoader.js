@@ -186,7 +186,7 @@ var testMapper = {
         pointSize: {
             name: "degree",
             transform: function (v) {
-                return normalizeUInt8(logTransform(v), 5)
+                return normalize(logTransform(v), 5, Math.pow(2, 8))
             }
         },
         pointLabel: {
@@ -195,13 +195,13 @@ var testMapper = {
         pointColor: {
             name: "community_spinglass",
             transform: function (v) {
-                return int2color(v);
+                return int2color(v, qual_palette);
             }
         },
         edgeColor: {
             name: "weight",
-            tranform: function (v) {
-                return int2color(v);
+            transform: function (v) {
+                return int2color(normalize(logTransform(v), 0, 11), green2red_palette);
             }
         }
     },
@@ -255,19 +255,43 @@ function logTransform(values) {
     });
 }
 
-function normalizeUInt8(array, minimum) {
+function normalize(array, minimum, maximum) {
     var max = _.max(array);
     var min = _.min(array);
-    var scaleFactor = (Math.pow(2, 8) - minimum) / (max - min + 1)
+    var scaleFactor = (maximum - minimum) / (max - min + 1);
 
     return _.map(array, function (val) {
         return minimum + Math.floor((val - min) * scaleFactor);
     });
 }
 
-function int2color(values) {
-    var palette = [util.rgb(234,87,61), util.rgb(251,192,99), util.rgb(100,176,188),
-                   util.rgb(68,102,153), util.rgb(85,85,119)];
+
+var rgb = util.rgb;
+var palette1 = [
+    rgb(234,87,61), rgb(251,192,99), rgb(100,176,188), rgb(68,102,153),
+    rgb(85,85,119)
+];
+var blue_palette = [
+    rgb(247,252,240), rgb(224,243,219), rgb(204,235,197), rgb(168,221,181),
+    rgb(123,204,196), rgb(78,179,211), rgb(43,140,190), rgb(8,104,172),
+    rgb(8,64,129)
+];
+var green2red_palette = [
+    rgb(165,0,38), rgb(215,48,39), rgb(244,109,67), rgb(253,174,97),
+    rgb(254,224,139), rgb(255,255,191), rgb(217,239,139), rgb(166,217,106),
+    rgb(102,189,99), rgb(26,152,80), rgb(0,104,55)
+].reverse();
+var qual_palette = [
+    rgb(141,211,199), rgb(255,255,179), rgb(190,186,218), rgb(251,128,114),
+    rgb(128,177,211), rgb(253,180,98), rgb(179,222,105), rgb(252,205,229),
+    rgb(217,217,217), rgb(188,128,189), rgb(204,235,197), rgb(255,237,111)
+];
+
+function int2color(values, palette) {
+    palette = palette || palette1;
+
+    debug("Palette: %o", palette)
+
     var ncolors = palette.length;
     return _.map(values, function (val) {
         return palette[val % ncolors];

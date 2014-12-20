@@ -129,6 +129,7 @@ function setColors(graph, pointColors) {
     if (!pointColors)
         return setDefaultColors(graph.simulator);
 
+    debug('Loading pointColors');
     var npoints = graph.simulator.numPoints;
 
     var pc = new Uint32Array(npoints);
