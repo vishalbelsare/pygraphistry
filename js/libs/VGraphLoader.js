@@ -153,19 +153,19 @@ function decode0(graph, vg, config)  {
     }).then(function () {
         runLoaders(eloaders);
     }).then(function(){
+        debug('writing into graph.simulator.buffers');
         // Copy all serialized data to simulator buffers if data is present
         // The serialized data lives in graph.vg
         var arrs = Object.keys(graph.simulator.buffers).map(function(index){
-            var buffer = graph.simulator.buffers[index];
-            var data;
-    
+
             // find the element with the index. TODO: make this a dict somehow?
             for (var el in graph.vg.int32_buffer_vectors) {
                 if (graph.vg.int32_buffer_vectors[el].name == index) {
+
+
+                    var buffer = graph.simulator.buffers[index];
                     var raw = graph.vg.int32_buffer_vectors[el].values;
-
-                    data = new Float32Array(raw);
-
+                    var data = new Float32Array(raw);
                     var normalArray = Array.prototype.slice.call(data);
 
                     // sanity check
