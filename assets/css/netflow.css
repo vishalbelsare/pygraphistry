@@ -47,11 +47,11 @@ body {
     border: 1px solid rgb(51,51,102);
 }
 
-.tick1 { background-color: rgb(234,87,61); }
-.tick2 { background-color: rgb(251,192,99); }
-.tick3 { background-color: rgb(100,176,188); }
-.tick4 { background-color: rgb(68,102,153); }
-.tick5 { background-color: rgb(85,85,119); }
+.tick5 { background-color: rgb(165,0,38); }
+.tick4 { background-color: rgb(244,109,67); }
+.tick3 { background-color: rgb(255,255,191); }
+.tick2 { background-color: rgb(166,217,106); }
+.tick1 { background-color: rgb(26,152,80); }
 
 
 .ui-rangeSlider .ui-rangeSlider-innerBar {
