@@ -20,7 +20,7 @@ function sendSetting(socket, name, value) {
     var payload = {};
     payload[name] = value;
 
-    socket.emit('graph_settings', payload);
+    socket.emit('graph_settings', {gaussSeidel: payload, edgeBundling: payload});
     debug('settings', payload);
 }
 
@@ -397,7 +397,7 @@ function init(socket, $elt, renderState) {
     } catch (e) { }
 
     var elts = {
-        nodeSlider: 'charge',
+        chargeSlider: 'charge',
         edgeStrengthSlider: 'edgeStrength',
         edgeDistSlider: 'edgeDistance',
         gravitySlider: 'gravity'
