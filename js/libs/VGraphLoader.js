@@ -104,7 +104,7 @@ function decode0(graph, vg, config)  {
             for (var j = 0; j < dimensions.length; j++)
                 vertex.push(Math.random() * dimensions[j]);
             vertices.push(vertex);
-        }        
+        }
     }
 
     for (var i = 0; i < vg.edges.length; i++) {
@@ -113,7 +113,7 @@ function decode0(graph, vg, config)  {
     }
 
     var loaders = attributeLoaders(graph);
-    var mapper = undefined; 
+    var mapper = undefined;
     if (config.mapper) {
         mapper = mappers[config.mapper]
         if (mapper)
@@ -121,11 +121,11 @@ function decode0(graph, vg, config)  {
         else
             console.warn("WARNING Unknown mapper ", config.mapper);
     }
-    
+
     debug("Attribute loaders: %o", loaders)
-    
+
     for (var vname in amap) {
-        if (!(vname in loaders)) 
+        if (!(vname in loaders))
             continue;
         var loader = loaders[vname];
 
@@ -167,7 +167,7 @@ function decode0(graph, vg, config)  {
                     data = new Float32Array(raw);
 
                     var normalArray = Array.prototype.slice.call(data);
-                    
+
                     // sanity check
                     var total = normalArray.reduce(function(a, b) {
                       return a + b;
@@ -179,16 +179,17 @@ function decode0(graph, vg, config)  {
                         return buffer.write(data).then(function(buf) {
                             console.log('loaded ' + index)
                             return buf;
-                        })                            
+                        })
                     } catch (e) {
                         console.log(e)
                     }
                     break;
                 }
             }
-        })
+        });
         return Q.all(arrs);
     }).then(function () {
+        debug('all written');
         _.each(graph.simulator.layoutAlgorithms, function (la) {
             la.setPoints(graph.simulator);
         });
@@ -199,7 +200,7 @@ function decode0(graph, vg, config)  {
         });
         return graph;
     }).then(function (graph) {
-        // graph.simulator.setTimeSubset(graph.simulator.renderer, graph.simulator, graph.simulator.timeSubset.relRange);            
+        // graph.simulator.setTimeSubset(graph.simulator.renderer, graph.simulator, graph.simulator.timeSubset.relRange);
         return graph;
     })
     .then(function(graph){
@@ -252,11 +253,11 @@ var testMapper = {
                 var mapping = testMapper.mappings[a];
                 res[mapping.name] = loader;
 
-                if ('transform' in mapping) 
+                if ('transform' in mapping)
                     // Helper function to work around dubious JS scoping
                     doWrap(res, mapping, loader.load);
-                
-                debug("Mapping " + mapping.name + " to " + a); 
+
+                debug("Mapping " + mapping.name + " to " + a);
             } else
                 res[a] = loaders[a];
         }
@@ -289,7 +290,7 @@ function normalizeUInt8(array, minimum) {
         return minimum + Math.floor((val - min) * scaleFactor);
     });
 }
-    
+
 function int2color(values) {
     var palette = [util.rgb(234,87,61), util.rgb(251,192,99), util.rgb(100,176,188),
                    util.rgb(68,102,153), util.rgb(85,85,119)];

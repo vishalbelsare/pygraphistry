@@ -32,13 +32,13 @@ function setKernelArgs(kernels, simulator, kernelName) {
     var kEntry = _.find(kernels, function (k) {return k.name == kernelName});
     if (!kEntry)
         utiljs.die("No kernel named " + kernelName);
-    
+
     var order = kEntry.order;
     var args = kEntry.args;
     var types = kEntry.types;
     if (order == undefined || args == undefined || types == undefined)
         utiljs.die("kEntry incomplete for kernel %s: %o", kernelName, kEntry);
-        
+
 
     debug("Setting Kernel Args for %s %o", kernelName, args)
 
@@ -58,12 +58,12 @@ function setKernelArgs(kernels, simulator, kernelName) {
 
         if (type === undefined)
             utiljs.die("Cannot find type of argument " + arg + " for " + kernelName);
-        if (val === null) 
+        if (val === null)
             console.warn("WARNING In kernel %s, attribute %s is null", kernelName, arg);
         argArray.push(val);
         typeArray.push(type);
     }
-    
+
     var kernel = simulator.kernels[kernelName];
     if (!kernel)
         utiljs.die("Simulator has no kernel " + kernelName);
@@ -94,7 +94,7 @@ function createCLContextNode(renderer) {
     var devices = clDevices.map(function(d) {
     // var devices = platform.getDevices(DEVICE_TYPE).map(function(d) {
         debug("Found device %s", util.inspect(d, {depth: null, showHidden: true, colors: true}));
-        
+
         var typeToString = function (v) {
             return v === 2 ? 'CPU'
                 : v === 4 ? 'GPU'
@@ -540,6 +540,8 @@ var write = Q.promised(function write(buffer, data) {
     debug("Writing to buffer %s", buffer.name);
     return buffer.acquire()
         .then(function () {
+            console.log('writing', buffer.name, buffer.size, 'bytes');
+            console.log('data nfo', data.byteLength, data.constructor);
             buffer.cl.queue.enqueueWriteBuffer(buffer.buffer, true, 0, data.byteLength, data);
             return buffer.release();
         })
