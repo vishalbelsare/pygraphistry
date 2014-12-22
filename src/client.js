@@ -159,7 +159,7 @@ function createRenderer(socket, canvas) {
  * @param  {socket.io socket} socket - socket.io socket created when we connected to the server.
  * @param  {renderer} renderState    - The renderer object returned by renderer.create().
  *
- * @return {Rx.BehaviorSubject} Rx subject that fires every time a frame is rendered.
+ * @return {Rx.BehaviorSubject} {'start', 'received', 'rendered'} Rx subject that fires every time a frame is rendered.
  */
 function handleVboUpdates(socket, renderState) {
     //string * {<name> -> int} * name -> Subject ArrayBuffer
@@ -183,6 +183,7 @@ function handleVboUpdates(socket, renderState) {
     socket.on('vbo_update', function (data, handshake) {
         try {
             debug('VBO update');
+            renderedFrame.onNext('start');
 
             var now = new Date().getTime();
             debug('got VBO update message', now - lastHandshake, data, 'ms');
@@ -202,9 +203,10 @@ function handleVboUpdates(socket, renderState) {
                     debug('All buffers and textures received, completing');
                     handshake(Date.now() - lastHandshake);
                     lastHandshake = Date.now();
+                    renderedFrame.onNext('received');
                     renderer.render(renderState);
+                    renderedFrame.onNext('rendered');
                 });
-            readyToRender.subscribe(renderedFrame);
 
             var bufferVBOs = Rx.Observable.zipArray(
                 [Rx.Observable.return()]

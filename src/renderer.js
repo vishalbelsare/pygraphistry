@@ -220,6 +220,9 @@ function bindProgram(state, program, programName, bindings, buffers, modelSettin
 function init(config, canvas) {
     config = Immutable.fromJS(config);
 
+
+    var renderPipeline = new Rx.ReplaySubject(1);
+
     var state = Immutable.Map({
         config: config,
 
@@ -247,7 +250,12 @@ function init(config, canvas) {
         activeIndices:  getActiveIndices(config),
         activeLocalAttributes: localAttribHandler.getActiveLocalAttributes(config),
 
-        rendered: new Rx.Subject()
+        //Observable {?start: [...], ?rendered: [...]}
+        renderPipeline: renderPipeline,
+
+        //Observable [...]
+        rendered: renderPipeline.pluck('rendered').filter(_.identity)
+
     });
 
     debug('Active indices', state.get('activeIndices'));
@@ -678,6 +686,9 @@ function render(state, renderListOverride) {
     var clearedFBOs = { };
 
     var toRender = renderListOverride || config.render;
+
+    state.get('renderPipeline').onNext({start: toRender});
+
     _.each(toRender, function(item) {
 
         if(typeof numElements[item] === 'undefined' || numElements[item] < 1) {
@@ -731,7 +742,7 @@ function render(state, renderListOverride) {
 
     });
 
-    state.get('rendered').onNext(toRender);
+    state.get('renderPipeline').onNext({rendered: toRender});
 
     gl.flush();
 }
