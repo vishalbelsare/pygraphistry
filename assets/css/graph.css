@@ -76,3 +76,22 @@ button.btn-default {
     width: 5px;
     height: 5px;
 }
+
+
+.meter {
+    position: fixed;
+    bottom: 3em;
+    opacity: 0.75;
+}
+.meter-fps {
+    left: 1em;
+}
+.meter-network {
+    left: 11em;
+}
+.meter .flavor, .meter div {
+    color: white !important;
+    text-transform: uppercase !important;
+    text-shadow: rgba(0, 0, 0, 0.498039) 1px 1px 0px !important;
+    font-weight: bold !important;
+}

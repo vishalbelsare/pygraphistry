@@ -39,7 +39,7 @@ body {
 	right: 5px;
 	top: -15px;
 }
-.debug .controls { display: block; }
+//.debug .controls { display: block; }
 
 .controls button {
 	color: buttontext;
