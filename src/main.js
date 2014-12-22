@@ -118,7 +118,7 @@ window.addEventListener('load', function(){
 
             maxFps: 45,
             decimals: 0,
-            smoothing: 5,
+            smoothing: 3,
             show: 'fps',
 
             theme: 'transparent',
