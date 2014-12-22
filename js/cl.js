@@ -400,8 +400,9 @@ var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
 function setArgs(kernel, args, argTypes) {
     argTypes = argTypes || [];
 
+    var i;
     try {
-        for (var i = 0; i < args.length; i++) {
+        for (i = 0; i < args.length; i++) {
             if(args[i] !== null) {
                 if(NODEJS) {
                     kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i] || undefined);
@@ -411,7 +412,10 @@ function setArgs(kernel, args, argTypes) {
             }
         }
     } catch (e) {
-        console.error('Error setting kernel args::', kernel.name, '::', e, e.stack);
+        console.error('Error setting kernel args::', kernel.name, '::arg ', i, '::', e, e.stack);
+        console.error('NODEJS?', NODEJS);
+        console.error('args', args);
+        console.error('types', argTypes);
         throw new Error(e);
     }
 

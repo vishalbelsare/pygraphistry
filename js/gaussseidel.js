@@ -99,13 +99,13 @@ module.exports = {
 
     setPhysics: function (cfg) {
         if ('charge' in cfg)
-            gsPoints.charge = cfg.charge;
+            gsPoints.charge = webcl.type ? [cfg.charge] : new Float32Array([cfg.charge]);
         if ('gravity' in cfg)
-            gsPoints.gravity = cfg.gravity;
+            gsPoints.gravity = webcl.type ? [cfg.gravity] : new Float32Array([cfg.gravity]);
         if ('edgeDistance' in cfg)
-          gsSprings.springDistance = cfg.edgeDistance;
+          gsSprings.springDistance = webcl.type ? [cfg.edgeDistance] : new Float32Array([cfg.edgeDistance]);
         if ('edgeStrength' in cfg)
-          gsSprings.springStrength = cfg.edgeStrength;
+          gsSprings.springStrength = webcl.type ? [cfg.edgeStrength]  : new Float32Array([cfg.edgeStrength]);
     },
 
     setPoints: function (simulator) {
