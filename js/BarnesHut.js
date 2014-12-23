@@ -1,25 +1,126 @@
-
+'use strict';
 
 var debug = require("debug")("graphistry:graph-viz:cl:barneshut"),
-    _ = require('underscore');
-    Q = require('q');
-
-
-var cljs = require('./cl.js');
+    _     = require('underscore'),
+    cljs  = require('./cl.js'),
+    gs    = require('./gaussseidel.js');
 
 
 if (typeof(window) == 'undefined') {
-  var webcl = require('node-webcl');
+    var webcl = require('node-webcl');
 } else if (typeof(webcl) == 'undefined') {
-  var webcl = window.webcl;
+    var webcl = window.webcl;
 }
 
-//corresponds to apply-forces.cl
-//webcl.type ? [1] : new Uint32Array([localPosSize]),
-var graphArgs =
-webcl.type ? [[1], [1], [0], [0]]
-: [new Float32Array([1]), new Float32Array([1]), new Uint32Array([0]), new Uint32Array([0])];
-var graphArgs_t = webcl.type ? [cljs.types.float_t, cljs.types.float_t, cljs.types.uint_t, cljs.types.uint_t] : null;
+var graphParams = {
+    scalingRatio: null,
+    gravity: null,
+    edgeInfluence: null,
+    flags: null
+};
+
+var toBarnesLayout = {};
+_.extend(toBarnesLayout, graphParams, {
+    numPoints: null,
+    inputPositions: null,
+    xCoords: null,
+    yCoords: null,
+    mass: null,
+    blocked: null,
+    maxDepth: null,
+    stepNumber: null
+});
+var toBarnesLayoutOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints',
+                          'inputPositions', 'xCoords', 'yCoords', 'mass', 'blocked', 'maxDepth',
+                           'stepNumber'];
+Object.seal(toBarnesLayout);
+
+var barnesKernels = {};
+_.extend(barnesKernels, graphParams, {
+    xCoords: null,
+    yCoords: null,
+    accX: null,
+    axxY: null,
+    children: null,
+    mass: null,
+    start: null,
+    sort: null,
+    globalXMin: null,
+    globalXMax: null,
+    globalYMin: null,
+    globalYMax: null,
+    count: null,
+    blocked: null,
+    step: null,
+    bottom: null,
+    maxDepth: null,
+    radius: null,
+    stepNumber: null,
+    width: null,
+    heigth: null,
+    numBodies: null,
+    numNodes: null
+});
+var barnesKernelsOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
+                          'yCoords', 'xCoords', 'accX', 'accY', 'children', 'mass', 'start',
+                          'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
+                          'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'stepNumber',
+                          'width', 'height', 'numBodies', 'numNodes'];
+Object.seal(barnesKernels);
+
+var fromBarnesLayout = {};
+_.extend(fromBarnesLayout, graphParams, {
+    numPoints: null,
+    outputPositions: null,
+    xCoords: null,
+    yCoords: null,
+    mass: null,
+    blocked: null,
+    maxDepth: null,
+    stepNumber: null
+});
+var fromBarnesLayoutOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints',
+                          'outputPositions', 'xCoords', 'yCoords', 'mass', 'blocked', 'maxDepth',
+                           'stepNumber'];
+Object.seal(fromBarnesLayout);
+
+
+var faEdges = {};
+_.extend(faEdges, graphParams, {
+    springs: null,
+    workList: null,
+    inputPoints: null,
+    stepNumber: null,
+    outputPoints: null
+});
+var faEdgesOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'springs',
+                    'workList', 'inputPoints', 'stepNumber', 'outputPoints'];
+Object.seal(faEdges);
+
+var gsSpringsGather = {}
+_.extend(gsSpringsGather, gs.gsSpringsGather);
+
+var argsType = {
+    scalingRatio: cljs.types.float_t,
+    gravity: cljs.types.float_t,
+    edgeInfluence: cljs.types.uint_t,
+    flags: cljs.types.uint_t,
+    numPoints: cljs.types.uint_t,
+    tilePointsParam: cljs.types.local_t,
+    tilePointsParam2: cljs.types.local_t,
+    tilePointsParam3: cljs.types.local_t,
+    inputPositions: null,
+    outputPositions: null,
+    width: cljs.types.float_t,
+    height: cljs.types.float_t,
+    stepNumber: cljs.types.uint_t,
+    inDegrees: null,
+    outDegrees: null,
+    springs: null,
+    workList: null,
+    inputPoints: null,
+    outputPoints: null,
+}
 
 
 function printBuffer(buffer) {
@@ -46,7 +147,7 @@ var setupTempBuffers = function(simulator, tempBuffers) {
     numBodies = num_bodies;
     // TODO (paden) Use actual number of workgroups. Don't hardcode
     var num_work_groups = 128;
-    
+
 
     return Q.all(
         [
@@ -234,7 +335,7 @@ module.exports = {
   setPoints:_.identity,
 
   setEdges: function (simulator) {
-    
+
 
     simulator.kernels.forceAtlasEdges.setArgs(
         graphArgs.concat([
@@ -321,7 +422,7 @@ module.exports = {
           tempBuffers.maxdepth.buffer,
           webcl.type ? [stepNumber] : new Uint32Array([stepNumber])
           ),
-        // TODO (paden) This should 
+        // TODO (paden) This should
         webcl.type ? graphArgs_t.concat(webcl.type.UINT, null, null, null, null, null, null, webcl.type.UINT) : undefined
 
         );
