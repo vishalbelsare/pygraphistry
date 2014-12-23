@@ -322,7 +322,7 @@ module.exports = {
         if ('edgeInfluence' in cfg) {
             var val = webcl.type ? [cfg.edgeInfluence] : new Uint32Array([cfg.edgeInfluence]);
             toBarnesLayout.edgeInfluence = val;
-            fromBarnesLayout.edgeInflunce = val;
+            fromBarnesLayout.edgeInfluence = val;
             barnesKernels.edgeInfluence = val;
             faEdges.edgeInfluence = val;
         }
@@ -367,11 +367,10 @@ module.exports = {
         barnesKernels.globalYMax = tempBuffers.ymax.buffer;
         barnesKernels.count = tempBuffers.count.buffer;
         barnesKernels.blocked = tempBuffers.blocked.buffer;
-        barnesKernels.stepNumber = tempBuffers.step.buffer;
         barnesKernels.bottom = tempBuffers.bottom.buffer;
+        barnesKernels.step = tempBuffers.step.buffer;
         barnesKernels.maxDepth = tempBuffers.maxdepth.buffer;
         barnesKernels.radius = tempBuffers.radius.buffer;
-        barnesKernels.stepNumber = webcl.type ? [0] : new Uint32Array([0]);
         barnesKernels.width = webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]);
         barnesKernels.height = webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]);
         barnesKernels.numBodies = webcl.type ? [numBodies] : new Uint32Array([numBodies]);
@@ -379,12 +378,11 @@ module.exports = {
 
         toBarnesLayout.xCoords = tempBuffers.x_cords.buffer;
         toBarnesLayout.yCoords = tempBuffers.y_cords.buffer;
-        toBarnesLayout.mass = tempBuffers.mass.buffer.buffer;
+        toBarnesLayout.mass = tempBuffers.mass.buffer;
         toBarnesLayout.blocked = tempBuffers.blocked.buffer;
         toBarnesLayout.maxDepth = tempBuffers.maxdepth.buffer;
         toBarnesLayout.numPoints = webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]);
         toBarnesLayout.inputPositions = simulator.buffers.curPoints.buffer;
-        toBarnesLayout.stepNumber = webcl.type ? [0] : new Uint32Array([0]);
 
         fromBarnesLayout.xCoords = tempBuffers.x_cords.buffer;
         fromBarnesLayout.yCoords = tempBuffers.y_cords.buffer;
@@ -393,7 +391,6 @@ module.exports = {
         fromBarnesLayout.maxDepth = tempBuffers.maxdepth.buffer;
         fromBarnesLayout.numPoints = webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]);
         fromBarnesLayout.outputPositions = simulator.buffers.nextPoints.buffer;
-        fromBarnesLayout.stepNumber = webcl.type ? [0] : new Uint32Array([0]);
 
     })
 
@@ -404,9 +401,24 @@ module.exports = {
   tick: function (simulator, stepNumber) {
     //
     // TODO (paden) Can set arguements outside of tick
+    console.log("tick");
     simulator.tickBuffers(['nextPoints', 'curPoints', 'springsPos'])
     var totalTime = Date.now()
     var resources = [simulator.buffers.curPoints];
+
+    toBarnesLayout.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
+    fromBarnesLayout.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
+    barnesKernels.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
+
+    setKernelArgs(simulator, "to_barnes_layout");
+    setKernelArgs(simulator, "bound_box");
+    setKernelArgs(simulator, "from_barnes_layout");
+    setKernelArgs(simulator, "build_tree");
+    setKernelArgs(simulator, "compute_sums");
+    setKernelArgs(simulator, "sort");
+    setKernelArgs(simulator, "calculate_forces");
+    setKernelArgs(simulator, "move_bodies");
+
     var layoutKernelSeq = simulator.kernels.to_barnes_layout.call(256, resources);
 
     var atlasEdgesKernelSeq = function (edges, workItems, numWorkItems, fromPoints, toPoints) {
@@ -429,18 +441,6 @@ module.exports = {
         return simulator.kernels.forceAtlasEdges.call(numWorkItems, resources);
     };
 
-
-    toBarnesLayout.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
-    fromBarnesLayout.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
-    barnesKernels.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
-    setKernelArgs(simulator, "bound_box");
-    setKernelArgs(simulator, "from_barnes_layout");
-    setKernelArgs(simulator, "build_tree");
-    setKernelArgs(simulator, "compute_sums");
-    setKernelArgs(simulator, "sort");
-    setKernelArgs(simulator, "calculate_forces");
-    setKernelArgs(simulator, "move_bodies");
-    setKernelArgs(simulator, "from_barnes_layout");
     return layoutKernelSeq
     .then(function() {
         resources = [];
@@ -468,8 +468,7 @@ module.exports = {
     .then (function () {
       return simulator.cl.queue.finish()
     })
-    .then(function () {
-
+    .then(function() {
       if(simulator.numEdges > 0) {
         return atlasEdgesKernelSeq(
             simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
@@ -481,7 +480,9 @@ module.exports = {
           })
         .then(function () {
           return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-        })
+        }).fail(function (err) {
+          console.error("ERROR: appliedForces failed ", (err|{}).stack);
+        });
       }
     })
     .then(function () {
@@ -490,9 +491,14 @@ module.exports = {
         var resources = [simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems,
         simulator.buffers.curPoints, simulator.buffers.springsPos];
 
-        return simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources)
+        setKernelArgs(simulator, 'gaussSeidelSpringsGather');
+
+        debug("Running gaussSeidelSpringsGather (forceatlas) kernel");
+        return simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources);
       }
-    })
-  }
+    }).fail(function (err) {
+      console.error("ERROR forcealtas tick failed: ", (err||{}).stack);
+    });
+    }
   };
 var setKernelArgs = cljs.setKernelArgs.bind('', module.exports.kernels)
