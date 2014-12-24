@@ -98,21 +98,13 @@ function decode0(graph, vg, config)  {
     var yObj = _.find(vg.double_vectors, function (o) { return o.name === 'y'; });
 
     // Load vertices from protobuf Vertex message
-    if (vg.vertices.length != 0) {
-        debug("Loading previous vertices");
-        vg.vertices.forEach(function(el) {
-            vertices.push([el.x, el.y])
-        });
-    
-    // Load them from vanilla double_vector message. TODO: get rid of this
-    } else if (xObj && yObj) {
+    if (xObj && yObj) {
         debug('Loading previous vertices from xObj');
         for (var i = 0; i < vg.nvertices; i++) {
             vertices.push([xObj.values[i]/10, yObj.values[i]/10]);
         }
-        
-    // Generate them randomly
     } else {
+        // Generate them randomly
         debug('Generating random vertices')
         for (var i = 0; i < vg.nvertices; i++) {
             var vertex = [];

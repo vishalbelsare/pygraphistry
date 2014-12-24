@@ -45,10 +45,4 @@ message VectorGraph {
   }
 
   repeated Float32BufferVector float32_buffer_vectors = 10;
-
-  message Vertex {
-    required float x = 1;
-    required float y = 2;
-  }
-  repeated Vertex vertices = 11;
 }

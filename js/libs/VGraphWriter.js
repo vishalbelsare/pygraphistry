@@ -115,11 +115,18 @@ function write(graph) {
             continue;
         }
 
-        // Save the vertices to a vertex message in the protobuff
-        var vertexMessage = new pb_root.VectorGraph.Vertex();
-        vertexMessage.x = graph.__pointsHostBuffer[index];
-        vertexMessage.y = graph.__pointsHostBuffer[index+1];
-        graph.vg.vertices.push(vertexMessage);
+        // Save the vertices to a double_vector in the protobuf
+        var x = new pb_root.VectorGraph.DoubleAttributeVector();
+        x.name = "x";
+        x.values = graph.__pointsHostBuffer[index];
+        x.target = pb_root.VectorGraph.AttributeTarget.VERTEX;
+        graph.vg.double_vectors.push(x);
+
+        var y = new pb_root.VectorGraph.DoubleAttributeVector();
+        y.name = "y";
+        y.values = graph.__pointsHostBuffer[index+1];
+        y.target = pb_root.VectorGraph.AttributeTarget.VERTEX;
+        graph.vg.double_vectors.push(y);
     }
 
     if (graph.vg) {
