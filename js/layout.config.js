@@ -1,37 +1,29 @@
 'use strict';
 
-var SimCL = require("./SimCL.js")
+var _ = require('underscore');
+var SimCL = require('./SimCL.js');
+var util = require('./util.js');
 var forceAtlas = require('./forceatlas.js'),
     gaussSeidel = require('./gaussseidel.js'),
     edgeBundling = require('./edgebundling.js'),
     barnesHut = require('./BarnesHut.js');
 
-/* ForceAtlas params
- *  scalingRatio: 1.0,
- *  edgeInfluence: 0,
- *  forceAtlas: false,
- *  preventOverlap: false,
- *  strongGravity: false,
- *  dissuadeHubs: false,
- *  linLog: false,
-*/
-
-var defaultControls = {
+var uberControls = {
     simulator: SimCL,
     layoutAlgorithms: [
-        {   
+        {
             algo: gaussSeidel,
             params: {
-                charge: -0.000029360001841802474, 
-                gravity: 0.020083175556898723, 
+                charge: -0.000029360001841802474,
+                gravity: 0.020083175556898723,
                 edgeStrength: 4.292198241799153,
                 edgeDistance: 0.0000158
             }
         },{
             algo: edgeBundling,
             params: {
-                charge: -0.000029360001841802474, 
-                gravity: 0.020083175556898723, 
+                charge: -0.000029360001841802474,
+                gravity: 0.020083175556898723,
                 edgeStrength: 4.292198241799153,
                 edgeDistance: 0.0000158,
             }
@@ -41,8 +33,96 @@ var defaultControls = {
         lockPoints: true,
         lockEdges: true,
         lockMidpoints: false,
-        lockMidedges: false  
+        lockMidedges: false
+    },
+    global: {
+        simulationTime: 3000, //milliseconds
+        dimensions: [1, 1],
+        numSplits: 3
     }
 }
 
-exports.default = defaultControls;
+var testControls = {
+    simulator: SimCL,
+    layoutAlgorithms: [
+        {
+            algo: forceAtlas,
+            params: {
+                gravity: 0.020083175556898723,
+                scalingRatio: 1.0,
+                edgeInfluence: 0,
+                preventOverlap: false,
+                strongGravity: false,
+                dissuadeHubs: false,
+                linLog: false
+            }
+        }
+    ],
+    locks: {
+        lockPoints: false,
+        lockEdges: false,
+        lockMidpoints: false,
+        lockMidedges: false
+    },
+    global: {
+        simulationTime: 3000, //milliseconds
+        dimensions: [1, 1],
+        numSplits: 3
+    }
+}
+
+var netflowControls = {
+    simulator: SimCL,
+    layoutAlgorithms: [
+        {
+            algo: gaussSeidel,
+            params: {
+                charge: -0.000029360001841802474,
+                gravity: 0.020083175556898723,
+                edgeStrength: 4.292198241799153,
+                edgeDistance: 0.0000158
+            }
+        }
+    ],
+    locks: {
+        lockPoints: false,
+        lockEdges: false,
+        lockMidpoints: true,
+        lockMidedges: true
+    },
+    global: {
+        simulationTime: 5000, //milliseconds
+        dimensions: [1, 1]
+    }
+}
+
+var controls = {
+    'default': uberControls,
+    'uber': uberControls,
+    'netflow': netflowControls,
+    'test': netflowControls
+}
+
+function saneControl(control, name) {
+    _.each(['simulator', 'layoutAlgorithms', 'locks', 'global'], function (field) {
+        if (!(field in control))
+            util.die('In control %s, block %s missing', name, field);
+    });
+
+    _.each(['lockPoints', 'lockEdges', 'lockMidpoints', 'lockMidedges'], function (field) {
+        if (!(field in control.locks))
+            util.die('In control %s, lock %s missing', name, field);
+    });
+
+    _.each(['simulationTime'], function (field) {
+        if (!(field in control.global))
+            util.die('In control %s.global, lock %s missing', name, field);
+    });
+}
+
+function getControls(controls) {
+    _.each(controls, saneControl);
+    return controls;
+}
+
+exports.controls = getControls(controls);

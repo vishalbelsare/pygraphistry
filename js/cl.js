@@ -3,7 +3,7 @@
 var Q = require('q');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');
-var debug = require("debug")("graphistry:graph-viz:cl");
+var debug = require("debug")("graphistry:graph-viz:cl:cl");
 var util = require('util');
 var utiljs = require('./util.js');
 
@@ -32,13 +32,13 @@ function setKernelArgs(kernels, simulator, kernelName) {
     var kEntry = _.find(kernels, function (k) {return k.name == kernelName});
     if (!kEntry)
         utiljs.die("No kernel named " + kernelName);
-    
+
     var order = kEntry.order;
     var args = kEntry.args;
     var types = kEntry.types;
     if (order == undefined || args == undefined || types == undefined)
-        utiljs.die("kEntry incomplete for kernel %s", kernelName)
-        
+        utiljs.die("kEntry incomplete for kernel %s: %o", kernelName, kEntry);
+
 
     debug("Setting Kernel Args for %s %o", kernelName, args)
 
@@ -58,12 +58,12 @@ function setKernelArgs(kernels, simulator, kernelName) {
 
         if (type === undefined)
             utiljs.die("Cannot find type of argument " + arg + " for " + kernelName);
-        if (val === null) 
+        if (val === null)
             console.warn("WARNING In kernel %s, attribute %s is null", kernelName, arg);
         argArray.push(val);
         typeArray.push(type);
     }
-    
+
     var kernel = simulator.kernels[kernelName];
     if (!kernel)
         utiljs.die("Simulator has no kernel " + kernelName);
@@ -94,7 +94,7 @@ function createCLContextNode(renderer) {
     var devices = clDevices.map(function(d) {
     // var devices = platform.getDevices(DEVICE_TYPE).map(function(d) {
         debug("Found device %s", util.inspect(d, {depth: null, showHidden: true, colors: true}));
-        
+
         var typeToString = function (v) {
             return v === 2 ? 'CPU'
                 : v === 4 ? 'GPU'
@@ -400,8 +400,9 @@ var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
 function setArgs(kernel, args, argTypes) {
     argTypes = argTypes || [];
 
+    var i;
     try {
-        for (var i = 0; i < args.length; i++) {
+        for (i = 0; i < args.length; i++) {
             if(args[i] !== null) {
                 if(NODEJS) {
                     kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i] || undefined);
@@ -411,7 +412,10 @@ function setArgs(kernel, args, argTypes) {
             }
         }
     } catch (e) {
-        console.error('Error setting kernel args::', kernel.name, '::', e, e.stack);
+        console.error('Error setting kernel args::', kernel.name, '::arg ', i, '::', e, e.stack);
+        console.error('NODEJS?', NODEJS);
+        console.error('args', args);
+        console.error('types', argTypes);
         throw new Error(e);
     }
 
@@ -540,6 +544,8 @@ var write = Q.promised(function write(buffer, data) {
     debug("Writing to buffer %s", buffer.name);
     return buffer.acquire()
         .then(function () {
+            console.log('writing', buffer.name, buffer.size, 'bytes');
+            console.log('data nfo', data.byteLength, data.constructor);
             buffer.cl.queue.enqueueWriteBuffer(buffer.buffer, true, 0, data.byteLength, data);
             return buffer.release();
         })
@@ -554,8 +560,8 @@ var write = Q.promised(function write(buffer, data) {
 var read = Q.promised(function (buffer, target, optStartIdx, optLen) {
     return buffer.acquire()
         .then(function() {
-            var start = Math.min(optStartIdx | 0, target.length);
-            var len = optLen !== undefined ? optLen : buffer.size - start;
+            var start = Math.min(optStartIdx || 0, buffer.size);
+            var len = optLen !== undefined ? optLen : (buffer.size - start);
             buffer.cl.queue.enqueueReadBuffer(buffer.buffer, true, start, len, target);
             return buffer.release();
         })

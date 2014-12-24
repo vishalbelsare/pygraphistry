@@ -2,7 +2,7 @@
 
 var _       = require('underscore'),
     Q       = require('q'),
-    debug   = require('debug')('graphistry:graph-viz:edgebundling'),
+    debug   = require('debug')('graphistry:graph-viz:cl:edgebundling'),
     cljs    = require('./cl.js');
 
 
@@ -27,6 +27,7 @@ var gsMidpoints = {
 };
 var gsMidpointsOrder = ['numPoints', 'numSplits', 'inputMidPoints', 'outputMidPoints', 'tilePointsParam', 
                         'width', 'height', 'charge', 'gravity', 'randValues', 'stepNumber'];
+Object.seal(gsMidpoints);
 
 var gsMidsprings = {
     numSplits: null,
@@ -44,6 +45,7 @@ var gsMidsprings = {
 var gsMidspringsOrder = ['numSplits', 'springs', 'workList', 'inputPoints', 'inputMidPoints', 
                          'outputMidPoints', 'springMidPositions', 'midSpringsColorCoords', 
                          'springStrength', 'springDistance', 'stepNumber'];
+Object.seal(gsMidsprings);
 
 var argsType = {
     numPoints: cljs.types.uint_t,
@@ -67,6 +69,7 @@ var argsType = {
     springStrength: cljs.types.float_t,
     springDistance: cljs.types.float_t,
 }
+Object.seal(argsType);
 
 module.exports = {
     name: "edgeBundling",

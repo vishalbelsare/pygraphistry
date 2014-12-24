@@ -11,79 +11,39 @@ var Q = require("q"),
     _ = require('underscore'),
 
     request = require('request'),
-    debug = require("debug")("graphistry:graph-viz:node-driver"),
+    debug = require("debug")("graphistry:graph-viz:driver:node-driver"),
+    util = require('./util.js'),
 
     NBody = require("./NBody.js"),
     RenderNull = require('./RenderNull.js'),
     SimCL = require("./SimCL.js"),
+    rConf = require('./renderer.config.js'),
+    lConf = require('./layout.config.js'),
 
     metrics = require("./metrics.js"),
     loader = require("./data-loader.js");
 
 
-var renderConfig = require('./renderer.config.graph.js');
-
-
 metrics.init('StreamGL:driver');
-
-var WIDTH = 600,
-    HEIGHT = 600;
-
-var SIMULATION_TIME = 3000; //seconds
-var dimensions = [1,1];
-
-
-//========== HARDCODED RENDER CONFIG BINDINGS
-
-var TYPE_TO_BYTE_LENGTH = {
-    'FLOAT': 4,
-    'UNSIGNED_BYTE': 1
-};
-
-var DEVICE_BUFFER_NAMES = ['curPoints', 'springsPos', 'midSpringsPos', 'curMidPoints', 'midSpringsColorCoord'];
-var LOCAL_BUFFER_NAMES  = ['pointSizes', 'pointColors', 'edgeColors'];
-
-
 
 
 
 //number/offset of graph elements and how they relate to various models
 //graph -> {<model>: {num: int, offset: int}
 function graphCounts(graph) {
+    var numPoints   = graph.simulator.timeSubset.pointsRange.len;
+    var numEdges    = graph.simulator.timeSubset.edgeRange.len;
+    var offsetPoint     = graph.simulator.timeSubset.pointsRange.startIdx;
+    var offsetEdge      = graph.simulator.timeSubset.edgeRange.startIdx;
+    var numMidPoints    = graph.simulator.timeSubset.midPointsRange.len;
+    var numMidEdges     = graph.simulator.timeSubset.midEdgeRange.len;
+    var offsetMidPoints = graph.simulator.timeSubset.midPointsRange.startIdx;
+    var offsetMidEdges  = graph.simulator.timeSubset.midEdgeRange.startIdx;
 
-    var offsetPoint;
-    var offsetEdge;
-    var numMidPoints;
-    var numMidEdges;
-    var offsetMidPoints;
-    var offsetMidEdges;
-    if (graph.simulator.postSlider) {
-        var numPoints   = graph.simulator.timeSubset.pointsRange.len;
-        var numEdges    = graph.simulator.timeSubset.edgeRange.len;
-        offsetPoint     = graph.simulator.timeSubset.pointsRange.startIdx;
-        offsetEdge      = graph.simulator.timeSubset.edgeRange.startIdx;
-        numMidPoints    = graph.simulator.timeSubset.midPointsRange.len;
-        numMidEdges     = graph.simulator.timeSubset.midEdgeRange.len;
-        offsetMidPoints = graph.simulator.timeSubset.midPointsRange.startIdx;
-        offsetMidEdges  = graph.simulator.timeSubset.midEdgeRange.startIdx;
-    } else {
-        var numPoints = graph.simulator.numPoints;
-        var numEdges = graph.simulator.numEdges;
-        offsetPoint = 0;
-        offsetEdge = 0;
-        //Number of mid/points edges is directly related so just scale
-        numMidPoints =
-            Math.round((numPoints / graph.renderer.numPoints) * graph.renderer.numMidPoints);
-        numMidEdges =
-            Math.round((numEdges / graph.renderer.numEdges) * graph.renderer.numMidEdges);
-        offsetMidPoints = 0;
-        offsetMidEdges  = 0;
-    }
-
-    var point       = {num: numPoints,      offset: 0};
-    var edge        = {num: numEdges,       offset: 0};
-    var midPoint    = {num: numMidPoints,   offset: 0};
-    var midEdge     = {num: numMidEdges,    offset: 0};
+    var point       = {num: numPoints,      offset: offsetPoint};
+    var edge        = {num: numEdges,       offset: offsetMidEdges};
+    var midPoint    = {num: numMidPoints,   offset: offsetMidPoints};
+    var midEdge     = {num: numMidEdges,    offset: offsetMidEdges};
 
     return {
         curPoints: point,
@@ -99,111 +59,95 @@ function graphCounts(graph) {
 }
 
 
-function applyControls(graph, cfgName) {
-    var controls = require('./layout.config.js');
-    var cfg = cfgName ? controls.cfgName : controls.default;
-
-    debug("Applying layout settings: %o", cfg);
-
-    var simulator = cfg.simulator || SimCL
-    var algoEntries = cfg.layoutAlgorithms || [];
-    var layoutAlgorithms = []
-
-    for (var i = 0; i < algoEntries.length; i++) {
-        var entry = algoEntries[i];
-        var params = entry.params || {}
-        entry.algo.setPhysics(params)
-        layoutAlgorithms.push(entry.algo);
-    }
-
-    var lockCtrl = cfg.locks || controls.default.lockCtrl;
-    return graph.initSimulation(simulator, layoutAlgorithms, lockCtrl);
-}
-
 
 function getBufferVersion (graph, bufferName) {
+    var buffers = graph.simulator.versions.buffers;
+    if (!(bufferName in buffers))
+        util.die('Cannot find version of buffer %s', bufferName);
 
-    if (DEVICE_BUFFER_NAMES.indexOf(bufferName) > -1) {
-        return graph.simulator.versions.buffers[bufferName];
-    } else if (LOCAL_BUFFER_NAMES.indexOf(bufferName) > -1) {
-        return graph.simulator.versions.buffers[bufferName];
-    } else {
-        throw new Error("could not find buffer", bufferName);
-    }
+    return buffers[bufferName];
 }
 
 
 
 // ... -> {<name>: {buffer: ArrayBuffer, version: int}}
-function fetchVBOs(graph, bufferNames) {
-
+function fetchVBOs(graph, renderConfig, bufferNames) {
     var targetArrays = {};
-
-    var bufferSizes = fetchBufferByteLengths(graph);
+    var bufferSizes = fetchBufferByteLengths(graph, renderConfig);
     var counts = graphCounts(graph);
+
+    var layouts = _.object(_.map(bufferNames, function (name) {
+        var model = renderConfig.models[name];
+        if (_.values(model).length != 1)
+            util.die('Currently assumes one view per model');
+
+        return [name, _.values(model)[0]];
+
+    }));
+    var hostBufs = _.omit(layouts, function (layout) {
+        return layout.datasource !== 'HOST';
+    });
+    var devBufs = _.omit(layouts, function (layout) {
+        return layout.datasource !== 'DEVICE';
+    });
 
     // TODO: Instead of doing blocking CL reads, use CL events and wait on those.
     // node-webcl's event arguments to enqueue commands seems busted at the moment, but
     // maybe enqueueing a event barrier and using its event might work?
     return Q.all(
-        DEVICE_BUFFER_NAMES
-        .filter(function (name) { return bufferNames.indexOf(name) != -1; })
-        .map(function(name) {
-            targetArrays[name] = {
-                buffer: new ArrayBuffer(bufferSizes[name]),
-                version: graph.simulator.versions.buffers[name]
-            };
+            _.map(devBufs, function (layout, name) {
+                var stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
 
-            if (graph.simulator.postSlider) {
-                var model = renderConfig.models[name];
-                var layout = _.values(model)[0];
-                var stride = layout.stride
-                    || (layout.count * TYPE_TO_BYTE_LENGTH[layout.type]);
-                if (_.values(model).length != 1) {
-                    console.error('Currently assumes one view per model');
-                    throw new Error('Currently assumes one view per model');
-                }
+                targetArrays[name] = {
+                    buffer: new ArrayBuffer(bufferSizes[name]),
+                    version: graph.simulator.versions.buffers[name]
+                };
+
+                debug('Reading device buffer %s', name);
                 return graph.simulator.buffers[name].read(
                     new Float32Array(targetArrays[name].buffer),
-                    counts[name].offset,
+                    counts[name].offset * stride,
                     counts[name].num * stride);
-            } else {
-                return graph.simulator.buffers[name].read(
-                    new Float32Array(targetArrays[name].buffer));
-            }
-    }))
-    .then(function() {
-        LOCAL_BUFFER_NAMES
-            .filter(function (name) { return bufferNames.indexOf(name) != -1; })
-            .forEach(function (name) {
+            })
+        ).then(function () {
+            _.each(hostBufs, function (layout, name) {
+                var stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
+
+                debug('Fetching host buffer %s', name);
+                if (!graph.simulator.buffersLocal[name]) {
+                    throw new Error('missing buffersLocal base buffer: ' + name);
+                }
+
                 targetArrays[name] = {
-                    buffer: graph.simulator.buffersLocal[name],
+                    buffer: new graph.simulator.buffersLocal[name].constructor(
+                        graph.simulator.buffersLocal[name],
+                        counts[name].offset * stride,
+                        counts[name].num * stride),
                     version: graph.simulator.versions.buffers[name]
                 };
             });
-        return targetArrays;
-    });
+            return targetArrays;
+        }).fail(function (err) {
+            console.error("ERROR Failure in node-driver.fetchVBO ", (err||{}).stack);
+        });
 }
 
 
 
 //graph -> {<itemName>: int}
 //For each render item, find a serverside model and send its count
-function fetchNumElements(graph) {
+function fetchNumElements(graph, renderConfig) {
 
     var counts = graphCounts(graph);
 
     return _.object(
-        _.keys(renderConfig.scene.items)
+        _.keys(renderConfig.items)
             .map(function (item) {
                 var serversideModelBindings =
-                    _.values(renderConfig.scene.items[item].bindings)
+                    _.values(renderConfig.items[item].bindings)
                         .filter(function (binding) {
                             var model = renderConfig.models[binding[0]];
-                            var serverLayouts =
-                                _.values(model)
-                                    .filter(function (layout) { return layout.datasource !== 'LOCAL'; });
-                            return serverLayouts.length;
+                            return rConf.isBufServerSide(model);
                         });
                 var aServersideModelName = serversideModelBindings[0][0];
                 return [item, counts[aServersideModelName].num];
@@ -214,41 +158,71 @@ function fetchNumElements(graph) {
 
 //graph -> {<model>: int}
 //Find num bytes needed for each model
-function fetchBufferByteLengths(graph) {
+function fetchBufferByteLengths(graph, renderConfig) {
 
     var counts = graphCounts(graph);
 
-    return _.object(
-            _.pairs(counts)
-                .map(function (pair) {
-                    var name = pair[0];
-                    var count = pair[1].num;
-                    var model = renderConfig.models[name];
-                    var layout = _.values(model)[0];
-                    return [
-                        name,
-                        count * (layout.stride || (TYPE_TO_BYTE_LENGTH[layout.type] * layout.count))];
-                }));
+    return _.chain(renderConfig.models).omit(function (model, name) {
+        return rConf.isBufClientSide(model);
+    }).map(function (model, name) {
+        var layout = _.values(model)[0];
+        var count = counts[name].num;
+        return [name, count * (layout.stride || (rConf.gl2Bytes(layout.type) * layout.count))];
+    }).object().value();
 }
 
 
-function init() {
-    debug("Running Naive N-body simulation");
-    console.log("Running Naive N-body simulation");
+function init(cfg) {
+    debug("Starting initialization");
+    var global = cfg.global
 
+    /* Example of RenderGL instatiation. 
+     * Left for historical purposes, probably broken!
+     *
     var document = null;
-    var canvasStandin = {
-        width: WIDTH,
-        height: HEIGHT,
-        clientWidth: WIDTH,
-        clientHeight: HEIGHT
-    };
+    var canvasStandin = {width: WIDTH, height: HEIGHT, clientWidth: WIDTH,
+                         clientHeight: HEIGHT};
+    var bgColor = [255, 255, 255, 1.0];
+    RenderGl.create(document, canvasStandin, bgColor, global.dimensions);
+    */
 
-    return NBody.create(RenderNull, document, canvasStandin, [255,255,255,1.0], dimensions, 3)
-        .fail(function (err) {
-            console.error("ERROR Nbody.create failed ", (err||{}).stack);
+    return RenderNull.create(
+            null
+        ).then(function (renderer) {
+            var graph = NBody.create(renderer, global.dimensions, global.numSplits,
+                                     global.simulationTime);
+            return initSimulator(graph, cfg);
+        }).fail(function (err) {
+            console.error("ERROR Failure in NBody creation ", (err||{}).stack);
         });
 }
+
+
+
+function getControls(cfgName) {
+    var cfg = lConf.controls.default;
+    if (cfgName in lConf.controls)
+        cfg = lConf.controls[cfgName];
+    else
+        console.warn('WARNING Unknown simControls "%s", using defaults.', cfgName)
+
+    return cfg;
+}
+
+
+function initSimulator(graph, cfg) {
+    debug('Applying layout settings: %o', cfg);
+    var layoutAlgorithms = []
+
+    for (var i = 0; i < cfg.layoutAlgorithms.length; i++) {
+        var entry = cfg.layoutAlgorithms[i];
+        entry.algo.setPhysics(entry.params)
+        layoutAlgorithms.push(entry.algo);
+    }
+
+    return graph.initSimulation(cfg.simulator, layoutAlgorithms, cfg.locks);
+}
+
 
 
 /**
@@ -281,7 +255,7 @@ function delayObservableGenerator(delay, value, cb) {
 ///////////////////////////////////////////////////////////////////////////
 
 
-function createAnimation(config) {
+function createAnimation(theDataset) {
     debug("STARTING DRIVER");
 
     var userInteractions = new Rx.Subject();
@@ -289,28 +263,15 @@ function createAnimation(config) {
     // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
     // the contents of each VBO
     var animStepSubj = new Rx.BehaviorSubject(null);
+    var theGraph = Q.defer();
 
-    //animStepSubj.subscribe(function () {
-    //    debug("NOTIFYING OF BIG STEP")
-    //})
-
-    var dataConfig = {
-        'listURI': config.DATALISTURI,
-        'name': config.DATASETNAME,
-        'idx': config.DATASETIDX
-    }
-    
-    debug(dataConfig)
-
-    var theDataset = loader.getDataset(dataConfig);
-    var theGraph = init();
-
-    Q.all([theGraph, theDataset]).spread(function (graph, dataset) {
+    theDataset.then(function (dataset) {
         debug("Dataset %o", dataset);
-        return Q.all([
-            applyControls(graph, dataset.config['simControls']),
-            dataset
-        ]);
+
+        var cfg = getControls(dataset.Metadata.config['simControls']);
+
+        theGraph.resolve(init(cfg));
+        return Q.all([theGraph.promise, dataset]);
     }).spread(function (graph, dataset) {
         userInteractions.subscribe(function (settings){
             debug('Updating settings..');
@@ -329,7 +290,7 @@ function createAnimation(config) {
                     .map(_.constant(true)),
                 //...  but stop a bit after last one
                 userInteractions.merge(Rx.Observable.return())
-                    .throttle(SIMULATION_TIME).map(_.constant(false)));
+                    .throttle(graph.simulationTime).map(_.constant(false)));
 
         var isRunningRecent = new Rx.ReplaySubject(1);
 
@@ -383,7 +344,7 @@ function createAnimation(config) {
             userInteractions.onNext(settings);
         },
         ticks: animStepSubj.skip(1),
-        graph: theGraph
+        graph: theGraph.promise
     }
 }
 
@@ -394,7 +355,7 @@ function createAnimation(config) {
  * property set to an Object mapping buffer names to ArrayBuffer data; and the 'elements' Object
  * mapping render item names to number of elements that should be rendered for the given buffers.
  */
-function fetchData(graph, compress, bufferNames, bufferVersions, programNames) {
+function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, programNames) {
 
     bufferVersions = bufferVersions || _.object(bufferNames.map(function (name) { return [name, -1]}));
 
@@ -407,7 +368,7 @@ function fetchData(graph, compress, bufferNames, bufferVersions, programNames) {
     bufferNames = neededBuffers;
 
     var now = Date.now();
-    return Rx.Observable.fromPromise(fetchVBOs(graph, bufferNames))
+    return Rx.Observable.fromPromise(fetchVBOs(graph, renderConfig, bufferNames))
         .flatMap(function (vbos) {
             //metrics.info({metric: {'fetchVBOs_lastVersions': bufferVersions}});
             metrics.info({metric: {'fetchVBOs_buffers': bufferNames}});
@@ -415,7 +376,7 @@ function fetchData(graph, compress, bufferNames, bufferVersions, programNames) {
 
             bufferNames.forEach(function (bufferName) {
                 if (!vbos.hasOwnProperty(bufferName)) {
-                    throw new Error('vbos does not have buffer', bufferName);
+                    util.die('Vbos does not have buffer %s', bufferName);
                 }
             })
 
@@ -429,7 +390,7 @@ function fetchData(graph, compress, bufferNames, bufferVersions, programNames) {
                         {output: new Buffer(
                             Math.max(1024, Math.round(vbos[bufferName].buffer.byteLength * 1.5)))})
                         .map(function (compressed) {
-                            debug('compress bufferName', bufferName);
+                            debug('compress bufferName %s (size %d)', bufferName,vbos[bufferName].buffer.byteLength);
                             metrics.info({metric: {'compress_buffer': bufferName} });
                             metrics.info({metric: {'compress_inputBytes': vbos[bufferName].buffer.byteLength} });
                             metrics.info({metric: {'compress_outputBytes': compressed.length} });
@@ -454,10 +415,14 @@ function fetchData(graph, compress, bufferNames, bufferVersions, programNames) {
                         bufferNames,
                         bufferNames.map(function (_, i) {  return compressedVbos[i].version; })));
 
+            //want all versions
+            _.extend(versions, graph.simulator.versions.buffers);
+
             return {
                 compressed: buffers,
-                elements: _.pick(fetchNumElements(graph), programNames),
-                bufferByteLengths: _.pick(fetchBufferByteLengths(graph), bufferNames),
+                elements: _.pick(fetchNumElements(graph, renderConfig), programNames),
+                bufferByteLengths: _.pick(fetchBufferByteLengths(graph, renderConfig), 
+                                          bufferNames),
                 versions: versions
             };
 
@@ -465,15 +430,5 @@ function fetchData(graph, compress, bufferNames, bufferVersions, programNames) {
 }
 
 
-
 exports.create = createAnimation;
 exports.fetchData = fetchData;
-
-
-// If the user invoked this script directly from the terminal, run init()
-if(require.main === module) {
-    var config  = require('./config.js')();
-    var vbosUpdated = createAnimation(config);
-
-    vbosUpdated.subscribe(function() { debug("Got updated VBOs"); } );
-}

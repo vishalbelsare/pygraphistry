@@ -6,8 +6,7 @@ var Q = require('q'),
 var RenderBase = require('./RenderBase.js');
 var glMatrix = require('gl-matrix');
 var util = require('./util.js');
-var debug = require("debug")("N-body:RenderGL");
-
+var debug = require('debug')('graphistry:graph-viz:render:rendergl');
 
 var create = Q.promised(function(document, canvas, bgColor, dimensions, visible) {
     visible = visible || {};
@@ -282,7 +281,7 @@ var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
 
 //async (may trigger a write)
 var createBuffer = Q.promised(function(renderer, data) {
-    debug("Creating gl buffer of type %s. Constructor: %o", typeof(data), data.constructor);
+    debug("Creating gl buffer of type %s. Constructor: %o", typeof(data), (data||{}).constructor);
 
     var buffer = renderer.gl.createBuffer();
     var bufObj = {

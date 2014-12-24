@@ -3,8 +3,10 @@
 var fs = require('fs');
 var path = require('path');
 var Q = require('q');
-var debug = require("debug")("graphistry:graph-viz:data-loader");
+var debug = require("debug")("graphistry:graph-viz:data:data-loader");
 var _ = require('underscore');
+var config  = require('config')();
+var zlib = require("zlib");
 
 var MatrixLoader = require('./libs/MatrixLoader.js'),
     VGraphLoader = require('./libs/VGraphLoader.js'),
@@ -19,27 +21,35 @@ var loaders = {
     "OBSOLETE_rectangle" : loadRectangle
 };
 
-function getDataset(dataConfig) {
-    return loadDataList(dataConfig.listURI).then(function (datalist) {
-        // Try to find a dataset by name first
-        if (dataConfig.name) {
-            debug("Loading dataset by name");
-            var match = _.find(datalist, function (dataset) {return dataset.name == dataConfig.name;});
-            if (match)
-                return match;
+/**
+ * Download raw data from S3 and unzip
+**/
+function downloadDataset(datasetname) {
+    debug("Loading dataset " + datasetname);
+
+    var params = {
+      Bucket: config.BUCKET,
+      Key: datasetname,
+    };
+
+    var res = Q.defer();
+    config.S3.getObject(params, function(err, data) {
+        if (err) {
+            debug(err);
+        } else {
+            if (data.Metadata.config != 'undefined') {
+                data.Metadata.config = JSON.parse(data.Metadata.config);
+            }
+            data.Metadata.name = datasetname;
+            Q.denodeify(zlib.gunzip)(data.Body)
+            .then(function (unzipped) {
+                data.Body = unzipped;
+                res.resolve(data);
+            })
         }
-        
-        // Then by index
-        var idx = parseInt(dataConfig.idx)
-        if (!isNaN(idx) && idx < datalist.length) {
-            debug("Loading dataset by index");
-            return datalist[idx];
-        }
-          
-        // Otherwise the first listed
-        debug("Loading first dataset");
-        return datalist[0];
-    });
+    })
+
+    return res.promise;
 }
 
 function loadDatasetIntoSim(graph, dataset) {
@@ -69,6 +79,8 @@ function fetchDataList(listURI) {
                 return dataset;
             });
         });
+    graph.metadata = dataset.Metadata;
+    return loaders[dataset.Metadata.type](graph, dataset);
 }
 
 
@@ -86,18 +98,6 @@ function normalizeDataset(dataset) {
     }
 
     return dataset;
-}
-
-
-/**
- * Populate the data list dropdown menu with available data, and setup actions to load the data
- * when the user selects one of the options.
- */
-function loadDataList(dataListURI) {
-    return fetchDataList(path.resolve(__dirname, '..', dataListURI))
-        .then(function (datalist) {
-            return _.map(datalist, normalizeDataset);
-        });
 }
 
 
@@ -129,19 +129,19 @@ function createEdges(amount, numNodes) {
 
 
 function loadRandom(graph, dataset) {
-    var cfg = dataset.config
+    var cfg = dataset.Metadata.config
     var points = createPoints(cfg.npoints, cfg.dimensions);
     var edges = createEdges(cfg.nedges, cfg.npoints);
 
     return graph.setPoints(points).then(function() {
         graph.setColorMap("test-colormap2.png");
-        return graph.setEdgesAndColors(edges);
+        return graph.setEdges(edges);
     });
 }
 
 
 function loadRectangle(graph, dataset) {
-    var cfg = dataset.config
+    var cfg = dataset.Metadata.config
     debug("Loading rectangle", cfg.rows, cfg.columns);
 
     var points =
@@ -156,7 +156,7 @@ function loadRectangle(graph, dataset) {
             true);
     return graph.setPoints(new Float32Array(_.flatten(points)))
         .then(function () {
-            return graph.setEdgesAndColors(new Uint32Array([0,1]));
+            return graph.setEdges(new Uint32Array([0,1]));
         });
 }
 
@@ -164,7 +164,7 @@ function loadRectangle(graph, dataset) {
 function loadSocioPLT(graph, dataset) {
     debug("Loading SocioPLT");
 
-    var data = require('./libs/socioplt/generateGraph.js').process(dataset.file);
+    var data = require('./libs/socioplt/generateGraph.js').process(dataset.Body);
 
     var nodesPerRow = Math.floor(Math.sqrt(data.nodes.length));
     var points =
@@ -233,6 +233,11 @@ function loadGeo(graph, dataset) {
         debug("Processed %d/%d nodes/edges", processedData.points.length, processedData.edges.length);
 
         return graph.setPoints(processedData.points)
+            .then(function () {
+                return graph.setLabels(processedData.points.map(function (v, i) {
+                    return '<b>' + i + '</b><hr/>' + v[0].toFixed(4) + ', ' + v[1].toFixed(4);
+                }));
+            })
             .then(_.constant(processedData))
     })
     .then(function(processedData) {
@@ -253,7 +258,7 @@ function loadGeo(graph, dataset) {
                 .setColorMap("test-colormap2.png", {clusters: clusters, points: processedData.points, edges: processedData.edges})
                 .then(function () {
                     debug("Setting edges");
-                    return graph.setEdgesAndColors(processedData.edges);
+                    return graph.setEdges(processedData.edges);
                 });
     })
     .then(function() {
@@ -269,22 +274,20 @@ function loadGeo(graph, dataset) {
 function loadMatrix(graph, dataset) {
     var graphFile;
 
-    debug("Loading file %s", dataset.file);
+    debug("Loading dataset %s", dataset.Body);
 
-    return MatrixLoader.loadBinary(dataset.file)
-    .then(function (v) {
-        graphFile = v;
-        if (typeof($) != 'undefined') {
-            $('#filenodes').text('Nodes: ' + v.numNodes);
-            $('#fileedges').text('Edges: ' + v.numEdges);
-        }
+    var v = MatrixLoader.loadBinary(dataset.Body)
+    var graphFile = v;
+    if (typeof($) != 'undefined') {
+        $('#filenodes').text('Nodes: ' + v.numNodes);
+        $('#fileedges').text('Edges: ' + v.numEdges);
+    }
 
-        var points = createPoints(graphFile.numNodes, graph.dimensions);
+    var points = createPoints(graphFile.numNodes, graph.dimensions);
 
-        return graph.setPoints(points);
-    })
+    return graph.setPoints(points)
     .then(function() {
-        return graph.setEdgesAndColors(graphFile.edges);
+        return graph.setEdges(graphFile.edges);
     })
     .then(function() {
         return graph;
@@ -296,7 +299,7 @@ module.exports = {
     createPoints: createPoints,
     createEdges: createEdges,
     loadDatasetIntoSim: loadDatasetIntoSim,
-    getDataset: getDataset
+    downloadDataset: downloadDataset
 };
 
 // vim: set et ff=unix ts=8 sw=4 fdm=syntax: 

@@ -3,7 +3,8 @@
 var $ = require('jquery');
 var Q = require('q');
 var Long = require('./Long.js');
-var debug = require("debug")("graphistry:graph-viz:data-loader");
+var debug = require("debug")("graphistry:graph-viz:data:matrixloader");
+var zlib = require("zlib");
 
 var exports = {
     ls: function (matrixJson) {
@@ -13,9 +14,7 @@ var exports = {
         parts.pop();
         var base = parts.join('/') + '/';
 
-        var file = typeof window == 'undefined' ?
-                Q.denodeify(require('fs').readFile)(matrixJson, {encoding: 'utf8'})
-            :   Q($.ajax(matrixJson, {dataType: "text"}));
+        var file = Q.denodeify(require('fs').readFile)(matrixJson, {encoding: 'utf8'})
 
         return file
             .then(eval)
@@ -27,8 +26,8 @@ var exports = {
     },
 
 
-    loadBinary: function (file) { // -> Promise Binary
-        debug("Loading binary file %s", file);
+    loadBinary: function (nodeBuffer) { // -> Promise Binary
+        debug("Loading binary");
 
         var t0 = new Date().getTime();
 
@@ -42,67 +41,41 @@ var exports = {
             };
         }
 
-        if (typeof window == 'undefined') {
-            var file = Q.denodeify(require('fs').readFile)(file)
-
-            return file
-                .then(function (nodeBuffer) {
-                    return Binary(new Uint32Array((new Uint8Array(nodeBuffer)).buffer));
-                });
-        } else {
-            var res = Q.defer();
-
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', file, true);
-            xhr.responseType = 'arraybuffer';
-            xhr.onload = function(e) {
-                res.resolve(Binary(new Uint32Array(this.response)));
-            };
-            xhr.send();
-
-            return res.promise;
-
-        }
-
+        return Binary(new Uint32Array((new Uint8Array(nodeBuffer)).buffer));
     },
 
 
-    load: function (file) {
+    load: function (str) {
         var t0 = new Date().getTime();
 
-        return typeof(window) == 'undefined' ?
-                Q.denodeify(require('fs').readFile)(file, {encoding: 'utf8'})
-            : Q($.ajax(file, {dataType: "text"}))
-        .then(function (str) {
-            //http://bl.ocks.org/mbostock/2846454
-            var nodes = [];
-            var links = str
-              .split(/\n/g) // split lines
-              .filter(function(d) { return d.charAt(0) != "%"; }) // skip comments
-              .slice(1, -1) // skip header line, last line
-              .map(function(d) {
-                d = d.split(/\s+/g);
-                var source = d[0] - 1, target = d[1] - 1;
-                return {
-                    source: nodes[source] || (nodes[source] = {index: source}),
-                    target: nodes[target] || (nodes[target] = {index: target})
-                };
-            });
-
-            debug("Did naive parse & transform in %d ms", new Date().getTime() - t0);
-
+        //http://bl.ocks.org/mbostock/2846454
+        var nodes = [];
+        var links = str
+          .split(/\n/g) // split lines
+          .filter(function(d) { return d.charAt(0) != "%"; }) // skip comments
+          .slice(1, -1) // skip header line, last line
+          .map(function(d) {
+            d = d.split(/\s+/g);
+            var source = d[0] - 1, target = d[1] - 1;
             return {
-              nodes: nodes,
-              links: links
+                source: nodes[source] || (nodes[source] = {index: source}),
+                target: nodes[target] || (nodes[target] = {index: target})
             };
         });
+
+        debug("Did naive parse & transform in %d ms", new Date().getTime() - t0);
+
+        return {
+          nodes: nodes,
+          links: links
+        };
     }, //load
 
 
-    loadGeo: function(file) { // -> Promise Binary
+    loadGeo: function(nodeBuffer) { // -> Promise Binary
         var t0 = new Date().getTime();
 
-        debug("Loading Geo file %s", file);
+        debug("Loading Geo file %s");
 
         function Binary (buf) {
             var f32 = new Float32Array(buf.buffer);
@@ -133,30 +106,8 @@ var exports = {
             };
         }
 
-        var res = Q.defer();
-
-        if (typeof(window) == 'undefined') {
-            debug("Loading geo data with node.js fs module");
-
-            return Q.denodeify(require('fs').readFile)(file)
-                .then(function (nodeBuffer) {
-                    return Binary(new Uint32Array((new Uint8Array(nodeBuffer)).buffer));
-                }, function (err) {
-                    console.error("Error loading geo data with fs module:", err);
-                });
-        } else {
-            debug("Loading geo data with XHR");
-
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', file, true);
-            xhr.responseType = 'arraybuffer';
-            xhr.onload = function(e) {
-                res.resolve(Binary(new Uint32Array(this.response)));
-            };
-            xhr.send();
-        }
-
-        return res.promise;
+        debug("Loading geo data with node.js fs module");
+        return Binary(new Uint32Array((new Uint8Array(nodeBuffer)).buffer));
     },
 
 

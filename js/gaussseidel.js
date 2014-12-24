@@ -1,6 +1,6 @@
 'use strict';
 
-var debug = require("debug")("graphistry:graph-viz:gaussseidel")
+var debug = require("debug")("graphistry:graph-viz:cl:gaussseidel")
 var Q = require('q');
 var _ = require('underscore');
 var cljs = require('./cl.js');
@@ -25,6 +25,8 @@ var gsPoints = {
 };
 var gsPointsOrder = ['numPoints',  'inputPositions', 'outputPositions', 'tilePointsParam', 'width', 
                       'height', 'charge', 'gravity', 'randValues', 'stepNumber'];
+Object.seal(gsPoints);
+
 
 var gsSprings = {
     springs: null,
@@ -37,6 +39,7 @@ var gsSprings = {
 };
 var gsSpringsOrder = ['springs', 'workList', 'inputPoints', 'outputPoints', 
                       'springStrength', 'springDistance','stepNumber'];
+Object.seal(gsSprings);
 
 var gsSpringsGather = {
     springs: null,
@@ -45,6 +48,7 @@ var gsSpringsGather = {
     springPositions: null
 };
 var gsSpringsGatherOrder = ['springs', 'workList', 'inputPoints', 'springPositions'];
+Object.seal(gsSpringsGather);
 
 var argsType = {
     numPoints: cljs.types.uint_t,
@@ -65,6 +69,7 @@ var argsType = {
     springDistance: cljs.types.float_t,
     springPositions: null 
 }
+Object.seal(argsType);
 
 module.exports = {
     name: "gaussSeidel",
@@ -86,16 +91,21 @@ module.exports = {
             types: argsType
         }
     ],
-    
+
+    // Also used by forceatlas
+    gsSpringsGather: gsSpringsGather, 
+    gsSpringsGatherOrder: gsSpringsGatherOrder, 
+    argsType: argsType, 
+
     setPhysics: function (cfg) {
         if ('charge' in cfg)
-            gsPoints.charge = cfg.charge;
+            gsPoints.charge = webcl.type ? [cfg.charge] : new Float32Array([cfg.charge]);
         if ('gravity' in cfg)
-            gsPoints.gravity = cfg.gravity;
+            gsPoints.gravity = webcl.type ? [cfg.gravity] : new Float32Array([cfg.gravity]);
         if ('edgeDistance' in cfg)
-          gsSprings.springDistance = cfg.edgeDistance;
+          gsSprings.springDistance = webcl.type ? [cfg.edgeDistance] : new Float32Array([cfg.edgeDistance]);
         if ('edgeStrength' in cfg)
-          gsSprings.springStrength = cfg.edgeStrength;
+          gsSprings.springStrength = webcl.type ? [cfg.edgeStrength]  : new Float32Array([cfg.edgeStrength]);
     },
 
     setPoints: function (simulator) {

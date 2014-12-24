@@ -4,9 +4,9 @@ var Q = require('q');
 var glMatrix = require('gl-matrix');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');
-var debug = require("debug")("N-body:main");
+var debug = require("debug")("graphistry:graph-viz:graph:nbody");
+var util = require('./util.js');
 
-var STEP_NUMBER_ON_CHANGE = 30;
 var elementsPerPoint = 2;
 
 
@@ -20,40 +20,33 @@ var elementsPerPoint = 2;
  * @param bgColor - [0--255,0--255,0--255,0--1]
  * @param [dimensions=\[1,1\]] - a two element array [width,height] used for internal posituin calculations.
  */
-function create(renderer, document, canvas, bgColor, dimensions, numSplits) {
-    dimensions = dimensions || [1,1];
-    numSplits = numSplits || 0;
+function create(renderer, dimensions, numSplits, simulationTime) {
+    var graph = {
+        "renderer": renderer,
+        "simulator": undefined,
+    };
+ 
+    graph.initSimulation = initSimulation.bind(this, graph);
+    graph.setPoints = setPoints.bind(this, graph);
+    graph.setVertices = setVertices.bind(this, graph);
+    graph.setSizes = setSizes.bind(this, graph);
+    graph.setColors = setColors.bind(this, graph);
+    graph.setLabels = setLabels.bind(this, graph);
+    graph.setEdges = setEdges.bind(this, graph);
+    graph.setEdgesAndColors = setEdgesAndColors.bind(this, graph);
+    graph.setEdgeColors = setEdgeColors.bind(this, graph);
+    graph.setMidEdgeColors = setMidEdgeColors.bind(this, graph);
+    graph.setLocked = setLocked.bind(this, graph);
+    graph.setColorMap = setColorMap.bind(this, graph);
+    graph.tick = tick.bind(this, graph);
+    graph.stepNumber = 0;
+    graph.dimensions = dimensions;
+    graph.numSplits = numSplits;
+    graph.simulationTime = simulationTime;
 
-    return renderer
-        .create(document, canvas, bgColor, dimensions)
-        .then(function(rend) {
-            debug("Created renderer");
-            var graph = {
-                "renderer": rend,
-                "simulator": undefined,
-            };
-            
-            graph.initSimulation = initSimulation.bind(this, graph);
-            graph.setPoints = setPoints.bind(this, graph);
-            graph.setVertices = setVertices.bind(this, graph);
-            graph.setSizes = setSizes.bind(this, graph);
-            graph.setColors = setColors.bind(this, graph);
-            graph.setEdges = setEdges.bind(this, graph);
-            graph.setEdgesAndColors = setEdgesAndColors.bind(this, graph);
-            graph.setEdgeColors = setEdgeColors.bind(this, graph);
-            graph.setLocked = setLocked.bind(this, graph);
-            graph.setColorMap = setColorMap.bind(this, graph);
-            graph.tick = tick.bind(this, graph);
-            graph.stepNumber = 0;
-            graph.dimensions = dimensions;
-            graph.numSplits = numSplits;
-            graph.datasetname = "";
-            graph.updateSettings = updateSettings.bind(this, graph);
+    graph.updateSettings = updateSettings.bind(this, graph);
 
-            return graph;
-        }).fail(function (err) {
-            console.error("ERROR Cannot create graph. ", (err||{}).stack);
-        });
+    return graph;
 }
 
 function initSimulation(graph, simulator, layoutAlgorithms, locked) {
@@ -99,6 +92,8 @@ function setPoints(graph, points, pointSizes, pointColors) {
 
 function setVertices(graph, points) {
     debug("Loading Vertices")
+
+    // This flattens out the points array
     if(!(points instanceof Float32Array)) {
         points = _toTypedArray(points, Float32Array);
     }
@@ -136,15 +131,20 @@ function setColors(graph, pointColors) {
     if (!pointColors)
         return setDefaultColors(graph.simulator);
 
-    console.error("ERROR TODO SET COLORS");
-    process.abort();
+    debug('Loading pointColors');
+    var npoints = graph.simulator.numPoints;
+
+    var pc = new Uint32Array(npoints);
+    for (var i = 0; i < npoints; i++)
+        pc[i] = pointColors[i];
+    return graph.simulator.setColors(pc);
 }
 
 function setDefaultColors(simulator) {
     debug("Using default node colors");
     var pointColors = new Uint32Array(simulator.numPoints);
     for (var i = 0; i < simulator.numPoints; i++)
-        pointColors[i] = (255 << 24) | (102 << 16) | (102 << 8) | 255;
+        pointColors[i] = util.rgb(102, 102, 255);
 
     return simulator.setColors(pointColors);
 }
@@ -153,7 +153,7 @@ function setDefaultColors(simulator) {
 function setEdgesAndColors(graph, edges, edgeColors) {
     return setEdges(graph, edges)
     .then(function () {
-        setEdgeColors(graph, edgeColors)
+        setMidEdgeColors(graph, edgeColors)
     });
 }
 
@@ -279,7 +279,42 @@ var setEdges = Q.promised(function(graph, edges) {
 
 function setEdgeColors(graph, edgeColors) {
     debug("Loading edgeColors");
-    return graph.simulator.setEdgeColors(edgeColors);
+    var nedges = graph.simulator.numEdges;
+
+    if (edgeColors.length != nedges)
+       console.error("ERROR: setEdgeColors expects one color per edge.");
+    
+    // Internaly we have two colors, one per endpoint.
+    var ec = new Uint32Array(nedges * 2);
+    for (var i = 0; i < nedges; i++) {
+        ec[2*i] = edgeColors[i];
+        ec[2*i + 1] = edgeColors[i];
+    }
+
+    return graph.simulator.setEdgeColors(ec);
+}
+
+function setMidEdgeColors(graph, midEdgeColors) {
+    debug("Loading midEdgeColors");
+
+    var numMidEdges = graph.simulator.numMidEdges;
+
+    if (midEdgeColors.length != numMidEdges)
+       console.error("ERROR: setMidEdgeColors expects one color per midEdge.");
+    
+    // Internaly we have two colors, one per endpoint.
+    var ec = new Uint32Array(numMidEdges * 2);
+    for (var i = 0; i < numMidEdges; i++) {
+        ec[2*i] = midEdgeColors[i];
+        ec[2*i + 1] = midEdgeColors[i];
+    }
+
+    return graph.simulator.setMidEdgeColors(ec);
+}
+
+function setLabels(graph, pointLabels) {
+    debug('setLabels', pointLabels ? pointLabels.length : 'none');
+    return graph.simulator.setLabels(pointLabels);
 }
 
 function setLocked(graph, opts) {
