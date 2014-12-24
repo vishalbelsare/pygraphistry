@@ -94,18 +94,31 @@ function decode0(graph, vg, config)  {
     var dimensions = [1, 1];
 
     // Do the vertices already exist in the serialized version?
+    var xObj = _.find(vg.double_vectors, function (o) { return o.name === 'x'; });
+    var yObj = _.find(vg.double_vectors, function (o) { return o.name === 'y'; });
+
+    // Load vertices from protobuf Vertex message
     if (vg.vertices.length != 0) {
+        debug("Loading previous vertices");
         vg.vertices.forEach(function(el) {
             vertices.push([el.x, el.y])
         });
+    
+    // Load them from vanilla double_vector message. TODO: get rid of this
+    } else if (xObj && yObj) {
+        debug('Loading previous vertices from xObj');
+        for (var i = 0; i < vg.nvertices; i++) {
+            vertices.push([xObj.values[i]/10, yObj.values[i]/10]);
+        }
+        
+    // Generate them randomly
     } else {
-        var xObj = _.find(vg.double_vectors, function (o) { return o.name === 'x'; });
-        var yObj = _.find(vg.double_vectors, function (o) { return o.name === 'y'; });
-        if (xObj && yObj) {
-            debug('WARNING: hardcoding 2 dimensions');
-            for (var i = 0; i < vg.nvertices; i++) {
-                vertices.push([xObj.values[i]/10, yObj.values[i]/10]);
-            }
+        debug('Generating random vertices')
+        for (var i = 0; i < vg.nvertices; i++) {
+            var vertex = [];
+            for (var j = 0; j < dimensions.length; j++)
+                vertex.push(Math.random() * dimensions[j]);
+            vertices.push(vertex);
         }
     }
 
@@ -161,21 +174,22 @@ function decode0(graph, vg, config)  {
         var arrs = Object.keys(graph.simulator.buffers).map(function(index){
 
             // find the element with the index. TODO: make this a dict somehow?
-            for (var el in graph.vg.int32_buffer_vectors) {
-                if (graph.vg.int32_buffer_vectors[el].name == index) {
+            for (var el in graph.vg.float32_buffer_vectors) {
+                debug(el)
+                if (graph.vg.float32_buffer_vectors[el].name == index) {
 
                     var buffer = graph.simulator.buffers[index];
-                    var raw = graph.vg.int32_buffer_vectors[el].values;
+                    var raw = graph.vg.float32_buffer_vectors[el].values;
                     var data = new Float32Array(raw);
 
                     try {
                         // Write the data to the buffer
                         return buffer.write(data).then(function(buf) {
-                            console.log('loaded ' + index)
+                            debug('loaded ' + index)
                             return buf;
                         })
                     } catch (e) {
-                        console.log(e)
+                        debug(e)
                     }
                     break;
                 }

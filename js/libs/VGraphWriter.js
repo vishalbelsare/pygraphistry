@@ -40,7 +40,7 @@ function readBuffers(buffers) {
 
         // Read the buffer data into a typed array and push to vectors array
         return buffer.read(target).then(function(buf) {
-            var vector = new pb_root.VectorGraph.Int32BufferVector();
+            var vector = new pb_root.VectorGraph.Float32BufferVector();
             var normalArray = Array.prototype.slice.call(target);
 
             vector.values = normalArray;
@@ -62,7 +62,7 @@ var uploadBuffers = Q.promised(function (graph, vectors) {
 
     try {
         // Set the data vectors on the VGraph
-        graph.vg.int32_buffer_vectors = vectors;
+        graph.vg.float32_buffer_vectors = vectors;
 
         // Encode the protobuf
         var byteBuffer = graph.vg.encode();
@@ -72,7 +72,6 @@ var uploadBuffers = Q.promised(function (graph, vectors) {
             if (err) { return done.reject(new Error(err)); }
 
             var savedName = graph.metadata.name.replace('.serialized','') + ".serialized"
-            console.log('saving as ' + savedName);
             var params = {
                 Bucket: config.BUCKET,
                 Key: savedName,
@@ -88,7 +87,7 @@ var uploadBuffers = Q.promised(function (graph, vectors) {
             config.S3.putObject(params, function(err, data) {
                 if (err) { return done.reject(new Error(err)); }
 
-                console.log('saved and uploaded ' + savedName);
+                debug('saved and uploaded ' + savedName);
                 Q.resolve();
             });
         });
@@ -116,6 +115,7 @@ function write(graph) {
             continue;
         }
 
+        // Save the vertices to a vertex message in the protobuff
         var vertexMessage = new pb_root.VectorGraph.Vertex();
         vertexMessage.x = graph.__pointsHostBuffer[index];
         vertexMessage.y = graph.__pointsHostBuffer[index+1];

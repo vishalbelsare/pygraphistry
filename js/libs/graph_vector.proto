@@ -39,12 +39,12 @@ message VectorGraph {
   repeated DoubleAttributeVector double_vectors = 8;
   repeated StringAttributeVector string_vectors = 9;
   
-  message Int32BufferVector {
+  message Float32BufferVector {
     required string name = 1;
     repeated float values = 2 [packed=true];
   }
 
-  repeated Int32BufferVector int32_buffer_vectors = 10;
+  repeated Float32BufferVector float32_buffer_vectors = 10;
 
   message Vertex {
     required float x = 1;

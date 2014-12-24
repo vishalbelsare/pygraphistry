@@ -541,11 +541,9 @@ var copyBuffer = Q.promised(function (cl, source, destination) {
 
 
 var write = Q.promised(function write(buffer, data) {
-    debug("Writing to buffer %s", buffer.name);
+    debug('Writing to buffer', buffer.name, buffer.size, 'bytes');
     return buffer.acquire()
         .then(function () {
-            console.log('writing', buffer.name, buffer.size, 'bytes');
-            console.log('data nfo', data.byteLength, data.constructor);
             buffer.cl.queue.enqueueWriteBuffer(buffer.buffer, true, 0, data.byteLength, data);
             return buffer.release();
         })

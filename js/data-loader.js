@@ -54,8 +54,9 @@ function downloadDataset(datasetname) {
 
 function loadDatasetIntoSim(graph, dataset) {
     debug("Loading data: %o", dataset);
-    graph.datasetname = dataset.name;
-    return loaders[dataset.type](graph, dataset);
+    // TODO: This stuff should come from Mongo, not S3
+    graph.metadata = dataset.Metadata;
+    return loaders[dataset.Metadata.type](graph, dataset);
 }
 
 
