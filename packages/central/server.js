@@ -129,10 +129,9 @@ function assign_worker(req, res) {
                                 var port = results[j]['port'];
 
                                 // Todo: ping process first for safety
-                                debug("Assigning client '%s' to viz server on %s, port %d", req.ip, ip, port);
+                                debug("Assigning client '%s' to viz server on %s, port %d with dataset %s", req.ip, ip, port, datasetname);
                                 res.json({'hostname': ip,
                                           'port': port,
-                                          'datasetname': datasetname,
                                           'timestamp': Date.now()
                                           });
                                 res.end();
@@ -150,8 +149,7 @@ function assign_worker(req, res) {
     } else {
         debug("Assigning client '%s' to viz server on %s, port %d", req.ip, VIZ_SERVER_HOST, VIZ_SERVER_PORT);
         res.json({'hostname': VIZ_SERVER_HOST,
-                  'port': VIZ_SERVER_PORT,
-                  'datasetname': datasetname
+                  'port': VIZ_SERVER_PORT
                  });
     }
 }
