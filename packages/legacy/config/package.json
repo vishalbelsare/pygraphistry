@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
+    "aws-sdk": "*",
     "debug": "^2.1.0",
     "underscore": "^1.7.0"
   }

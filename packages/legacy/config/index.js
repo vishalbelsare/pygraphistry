@@ -3,6 +3,9 @@
 
 var debug = require('debug')('graphistry:config');
 var _ = require('underscore');
+var AWS = require('aws-sdk');
+AWS.config.update({accessKeyId: 'AKIAJSGVPK46VRVYMU2A', secretAccessKey: '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'});
+AWS.config.update({region: 'us-west-1'});
 
 
 // TODO: Should we seal the final options object we return? Or make option lookup use dynamic
@@ -28,7 +31,8 @@ function defaults() {
         HTTP_LISTEN_ADDRESS: 'localhost',
         HTTP_LISTEN_PORT: 3000,
 
-        DATALISTURI: 'node_modules/datasets/all.json',
+        BUCKET: 'graphistry.data',
+        S3: new AWS.S3(),
 
         MONGO_SERVER: 'mongodb://localhost/graphistry-local',
         DATABASE: 'graphistry-local',
