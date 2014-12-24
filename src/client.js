@@ -14,6 +14,7 @@ var io           = require('socket.io-client');
 var renderer     = require('./renderer.js');
 var ui           = require('./ui.js');
 
+// Get URL query params to send over to the worker via socket
 var datasetname = getUrlParameter('datasetname');
 
 //string * {socketHost: string, socketPort: int} -> (... -> ...)
@@ -114,8 +115,8 @@ function connect(vizType) {
         .flatMap(function(params) {
 
             debug('got params', params);
-            //i don't want to have to send it to both socket and not http. but i need it in http for the databae reqest. hmrmrmrmrmrmr
-            var socket = io(params.url, { query: 'datasetname=' + datasetname, 
+
+            var socket = io(params.url, { query: 'datasetname=' + datasetname,
                                           reconnection: false, 
                                           transports: ['websocket']
                                         });
