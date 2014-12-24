@@ -55,8 +55,12 @@ function get_likely_local_ip() {
 
 function assign_worker(req, res) {
     var datasetname = req.query.datasetname;
+    // need to route based on data size.
+    // TODO: S3 -> mongo information. This will not work in production.
     if(config.ENVIRONMENT === 'production' || config.ENVIRONMENT === 'staging') {
-        db.collection('data_info').findOne({"name": "UberSaved"}, function(err, doc) {
+        console.log("WARNING: fix this. Needs S3 -> Mongo integration for datablob sizes")
+        datasetname = "uber";
+        db.collection('data_info').findOne({"name": datasetname}, function(err, doc) {
             if (err) {
                 debug(err);
                 res.send('Problem with query');
@@ -128,6 +132,7 @@ function assign_worker(req, res) {
                                 debug("Assigning client '%s' to viz server on %s, port %d", req.ip, ip, port);
                                 res.json({'hostname': ip,
                                           'port': port,
+                                          'datasetname': datasetname,
                                           'timestamp': Date.now()
                                           });
                                 res.end();
@@ -172,10 +177,6 @@ app.get('*/StreamGL.map', function(req, res) {
 app.use('/horizon', express.static(HORIZON_STATIC_PATH));
 // Serve graph static assets
 app.use('/graph', function (req, res, next) {
-    if (['/index.html', '/', '/uber.html', '/netflow.html'].indexOf(req.path) > -1) {
-        config.DATASETNAME = req.param('datasetname');
-        config.DATASETIDX = req.param('datasetidx');
-    }
     return express.static(GRAPH_STATIC_PATH)(req, res, next);
 });
 // Serve uber static assets
