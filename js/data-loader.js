@@ -227,8 +227,8 @@ function loadSocioPLT(graph, dataset) {
 function loadGeo(graph, dataset) {
     debug("Loading Geo");
 
-    return MatrixLoader.loadGeo(dataset.file)
-    .then(function(geoData) {
+    return Q(MatrixLoader.loadGeo(dataset.Body))
+     .then(function(geoData) {
         var processedData = MatrixLoader.processGeo(geoData, 0.3);
 
         debug("Processed %d/%d nodes/edges", processedData.points.length, processedData.edges.length);
