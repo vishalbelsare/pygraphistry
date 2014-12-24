@@ -22,64 +22,90 @@ var loaders = {
 };
 
 /**
- * Download raw data from S3 and unzip
+ * Kick off the download process. This checks the 
+ * modified time and fetches from S3 accordingly.
 **/
 function downloadDataset(datasetname) {
-    debug("Loading dataset " + datasetname);
-
+    debug("Attempting to load dataset " + datasetname);
     var params = {
       Bucket: config.BUCKET,
-      Key: datasetname,
+      Key: datasetname
     };
 
+    // look at date on disk
     var res = Q.defer();
-    config.S3.getObject(params, function(err, data) {
-        if (err) {
-            debug(err);
-        } else {
-            if (data.Metadata.config != 'undefined') {
-                data.Metadata.config = JSON.parse(data.Metadata.config);
-            }
-            data.Metadata.name = datasetname;
-            Q.denodeify(zlib.gunzip)(data.Body)
-            .then(function (unzipped) {
-                data.Body = unzipped;
-                res.resolve(data);
-            })
-        }
-    })
+    fs.stat('/tmp/' + datasetname, function(err, data){
 
+        // The data exists locally - check if it's recent or 
+        // not using the IfModifiedSince header
+        if (!err) {
+            params.IfModifiedSince = data.mtime;
+        }
+
+        // Attempt the download
+        config.S3.getObject(params, function(err, data) {
+            // Error getting the file from S3, either because the on 
+            // disk version is newer or the S3 connection is unavailable
+            // In this case, read the data from disk.
+            if (err) {
+                debug("Loading " + datasetname + " from cache");
+
+                // Read the metadata
+                fs.readFile('/tmp/' + datasetname + '.metadata', function (err, metadata) {
+                    if (err) { debug(err); }
+
+                    // Read the buffer data
+                    fs.readFile('/tmp/' + datasetname, function (err, buffer) {
+                        if (err) { debug(err); }
+
+                        // Simulate an S3 object
+                        var result = {}
+                        result.Metadata = JSON.parse(metadata);
+                        result.Metadata.name = datasetname;
+                        result.Body = buffer
+                        res.resolve(result);
+                    });
+                });
+            } else {
+                if (data.Metadata.config != 'undefined') {
+                    data.Metadata.config = JSON.parse(data.Metadata.config);
+                }
+                data.Metadata.name = datasetname;
+
+                // Unzip the data and save to disk as a cacche
+                Q.denodeify(zlib.gunzip)(data.Body)
+                .then(function (unzipped) {
+                    data.Body = unzipped;
+
+                    // Write the metadata to disk
+                    fs.writeFile("/tmp/" + datasetname + '.metadata', JSON.stringify(data.Metadata), function(err) {
+                        if(err) {
+                            debug("Couldn't save metadata to cache" + err);
+                        } else {
+                            debug("Saved " + datasetname + " metadata to cache");
+                        }
+                    });
+
+                    // Write the data to disk
+                    fs.writeFile("/tmp/" + datasetname, data.Body, function(err) {
+                        if(err) {
+                            debug("Couldn't save data to cache" + err);
+                        } else {
+                            debug("Saved " + datasetname + " to cache");
+                        }
+                    });
+
+                    res.resolve(data);
+                })
+            }
+        })
+    });
     return res.promise;
 }
 
 function loadDatasetIntoSim(graph, dataset) {
     debug("Loading data: %o", dataset);
     // TODO: This stuff should come from Mongo, not S3
-    graph.metadata = dataset.Metadata;
-    return loaders[dataset.Metadata.type](graph, dataset);
-}
-
-
-// Given a URI of a JSON data index, return an array of objects, with keys for display name,
-// file URI, and data size
-function fetchDataList(listURI) {
-    debug("Listing datasets in " + listURI);
-    var file = (typeof(window) == 'undefined') ?
-                Q.denodeify(require('fs').readFile)(listURI, {encoding: 'utf8'}) :
-                Q($.ajax(listURI, {dataType: "text"}));
-
-    return file
-        .then(function (s) {
-            return _.map(JSON.parse(s), function (dataset) {
-                if ("file" in dataset) { // Resolve relative paths
-                    var parts = listURI.split('/');
-                    parts.pop();
-                    var base = parts.join('/') + '/';
-                    dataset.file = base + dataset.file;
-                }
-                return dataset;
-            });
-        });
     graph.metadata = dataset.Metadata;
     return loaders[dataset.Metadata.type](graph, dataset);
 }
