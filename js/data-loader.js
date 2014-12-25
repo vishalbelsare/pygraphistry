@@ -111,23 +111,6 @@ function loadDatasetIntoSim(graph, dataset) {
 }
 
 
-function normalizeDataset(dataset) {
-    var defaultFields = {
-        "KB" : "?", 
-        "name": "?",
-        "file" : "none",
-        "config": {}
-    };
-
-    for (var field in defaultFields) {
-        if (!(field in dataset))
-            dataset[field] = defaultFields[field];
-    }
-
-    return dataset;
-}
-
-
 // Generates `amount` number of random points
 function createPoints(amount, dim) {
     // Allocate 2 elements for each point (x, y)
