@@ -42,35 +42,6 @@ var uberControls = {
     }
 }
 
-var testControls = {
-    simulator: SimCL,
-    layoutAlgorithms: [
-        {
-            algo: forceAtlas,
-            params: {
-                gravity: 0.020083175556898723,
-                scalingRatio: 1.0,
-                edgeInfluence: 0,
-                preventOverlap: false,
-                strongGravity: false,
-                dissuadeHubs: false,
-                linLog: false
-            }
-        }
-    ],
-    locks: {
-        lockPoints: false,
-        lockEdges: false,
-        lockMidpoints: false,
-        lockMidedges: false
-    },
-    global: {
-        simulationTime: 3000, //milliseconds
-        dimensions: [1, 1],
-        numSplits: 3
-    }
-}
-
 var netflowControls = {
     simulator: SimCL,
     layoutAlgorithms: [
@@ -96,11 +67,68 @@ var netflowControls = {
     }
 }
 
+var atlasControls = {
+    simulator: SimCL,
+    layoutAlgorithms: [
+        {
+            algo: forceAtlas,
+            params: {
+                gravity: 0.020083175556898723,
+                scalingRatio: 1.0,
+                edgeInfluence: 0,
+                preventOverlap: false,
+                strongGravity: false,
+                dissuadeHubs: true,
+                linLog: true
+            }
+        }
+    ],
+    locks: {
+        lockPoints: false,
+        lockEdges: false,
+        lockMidpoints: true,
+        lockMidedges: true
+    },
+    global: {
+        simulationTime: 30000, //milliseconds
+        dimensions: [1, 1]
+    }
+}
+
+var barnesControls = {
+    simulator: SimCL,
+    layoutAlgorithms: [
+        {
+            algo: barnesHut,
+            params: {
+                gravity: 0.020083175556898723,
+                scalingRatio: 1.0,
+                edgeInfluence: 0,
+                preventOverlap: false,
+                strongGravity: false,
+                dissuadeHubs: false,
+                linLog: false
+            }
+        }
+    ],
+    locks: {
+        lockPoints: false,
+        lockEdges: false,
+        lockMidpoints: true,
+        lockMidedges: true
+    },
+    global: {
+        simulationTime: 5000, //milliseconds
+        dimensions: [1, 1]
+    }
+}
+
 var controls = {
     'default': uberControls,
     'uber': uberControls,
     'netflow': netflowControls,
-    'test': netflowControls
+    'atlas': atlasControls,
+    'barneshut': barnesControls
 }
 
 function saneControl(control, name) {
@@ -114,7 +142,7 @@ function saneControl(control, name) {
             util.die('In control %s, lock %s missing', name, field);
     });
 
-    _.each(['simulationTime'], function (field) {
+    _.each(['simulationTime', 'dimensions'], function (field) {
         if (!(field in control.global))
             util.die('In control %s.global, lock %s missing', name, field);
     });
