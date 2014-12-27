@@ -7,6 +7,7 @@ var debug = require("debug")("graphistry:graph-viz:data:data-loader");
 var _ = require('underscore');
 var config  = require('config')();
 var zlib = require("zlib");
+var Rx = require('rx');
 
 var MatrixLoader = require('./libs/MatrixLoader.js'),
     VGraphLoader = require('./libs/VGraphLoader.js'),
@@ -42,30 +43,39 @@ function downloadDataset(datasetname) {
             params.IfModifiedSince = data.mtime;
         }
 
-        // Attempt the download
+        // Attempt the download, and if fail (no internet / stale), use local
         config.S3.getObject(params, function(err, data) {
             // Error getting the file from S3, either because the on 
             // disk version is newer or the S3 connection is unavailable
             // In this case, read the data from disk.
             if (err) {
-                debug("Loading " + datasetname + " from cache");
 
-                // Read the metadata
-                fs.readFile('/tmp/' + datasetname + '.metadata', function (err, metadata) {
-                    if (err) { debug(err); }
+                debug("Loading " + datasetname + " metadata from cache");
+                debug("  (Cause:", err, ")");
+                Rx.Observable.fromNodeCallback(fs.readFile)('/tmp/' + datasetname + '.metadata')
+                    .flatMap(function (metadata) {
 
-                    // Read the buffer data
-                    fs.readFile('/tmp/' + datasetname, function (err, buffer) {
-                        if (err) { debug(err); }
+                        debug("Loading " + datasetname + " buffer from cache");
+                        return Rx.Observable.fromNodeCallback(fs.readFile)('/tmp/' + datasetname)
+                            .map(function (buffer) {
+                                var result = {}
+                                result.Metadata = JSON.parse(metadata);
+                                result.Metadata.name = datasetname;
+                                result.Body = buffer
+                                return result;
+                            });
+                    })
+                    .take(1)
+                    .subscribe(
+                        function (result) {
+                            debug('successfully resolving', datasetname);
+                            res.resolve(result);
+                        },
+                        function (err) {
+                            debug('error resolving', datasetname);
+                            res.reject(new Error(err));
+                        });
 
-                        // Simulate an S3 object
-                        var result = {}
-                        result.Metadata = JSON.parse(metadata);
-                        result.Metadata.name = datasetname;
-                        result.Body = buffer
-                        res.resolve(result);
-                    });
-                });
             } else {
                 if (data.Metadata.config != 'undefined') {
                     data.Metadata.config = JSON.parse(data.Metadata.config);
