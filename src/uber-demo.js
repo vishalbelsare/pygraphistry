@@ -48,7 +48,7 @@ var renderLabelsRan = false;
 function renderLabels($labelCont, renderState, labelIdx) {
 
     debug('rendering labels');
-    
+
     var curPoints = renderState.get('hostBuffers').curPoints;
     if (!curPoints) {
         console.warn('renderLabels called before curPoints available');
@@ -79,8 +79,6 @@ function renderLabels($labelCont, renderState, labelIdx) {
 function renderCursor (renderState, points, idx, sizes) {
 
     debug('Enlarging current mouseover point', idx);
-    debug('TESTTEST Sizes: %o', sizes);
-
 
     if (idx <= 0) {
         return;
@@ -91,17 +89,26 @@ function renderCursor (renderState, points, idx, sizes) {
     var mtx = camera.getMatrix();
 
     var pos = camera.canvasCoords(points[2 * idx], -points[2 * idx + 1], 1, cnv, mtx);
+    var size = Math.min(sizes[idx], 50); // Clamp like in pointculled shader
+    var offset = size / 2.0 - 1;
 
     $('#highlighted-point-cont').css({
         top: pos.y,
         left: pos.x
     });
     $('.highlighted-point').css({
-        'width': 50,
-        'height': 50,
-        'border-radius': 25
+        'left' : -offset,
+        'top' : -offset,
+        'width': size,
+        'height': size,
+        'border-radius': size / 2
     });
 
+    var csize = parseInt($('.highlighted-point-center').css('width'), 10);
+    $('.highlighted-point-center').css({
+        'left' : offset - csize / 2.0,
+        'top' : offset - csize / 2.0
+    });
 }
 
 
@@ -235,7 +242,8 @@ lastRender
             var items = cfg.currentState.get('config').get('render').toJS()
                 .filter(function (v) { return v !== 'pointpicking'; });
             cfg.renderer.render(cfg.currentState, items);
-            renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer), cfg.data.highlightIdx, new Uint8Array(cfg.data.pointSizes.buffer));
+            renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer), 
+                         cfg.data.highlightIdx, new Uint8Array(cfg.data.pointSizes.buffer));
         });
     })
     .sample(100)
@@ -380,7 +388,8 @@ function setupInteractions($eventTarget, renderState) {
             $('.hit-label').text('Location ID: ' + lblText);
 
             if (idx > -1) {
-                renderCursor(renderState, new Float32Array(points.buffer), idx, new Uint8Array(prevCur.pointSizes.buffer));
+                renderCursor(renderState, new Float32Array(points.buffer), idx, 
+                             new Uint8Array(prevCur.pointSizes.buffer));
             }
         })
         .subscribe(_.identity, makeErrorHandler('mouse move err'));
