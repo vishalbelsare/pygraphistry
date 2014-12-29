@@ -103,7 +103,10 @@ function renderCursor (renderState, points, idx, sizes) {
         'height': size,
         'border-radius': size / 2
     });
-
+    
+    /* Ideally, highlighted-point-center would be a child of highlighted-point-cont
+     * instead of highlighted-point. I ran into tricky CSS absolute positioning 
+     * issues when I tried that. */  
     var csize = parseInt($('.highlighted-point-center').css('width'), 10);
     $('.highlighted-point-center').css({
         'left' : offset - csize / 2.0,
