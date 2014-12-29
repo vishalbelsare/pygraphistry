@@ -50,10 +50,15 @@ function displayErrors(socket, $canvas) {
 }
 
 
+//CanvasD * <string> ->
+//  Replay_1 {
+//      vboUpdates: Observable {'start', 'received', 'rendered'},
+//      renderState: renderState
+//  }
 function init(canvas, vizType) {
     debug('Initializing client networking driver', vizType);
 
-    var renderedFrame = new Rx.BehaviorSubject(0);
+    var initialized = new Rx.ReplaySubject(1);
 
     streamClient.connect(vizType)
         .flatMap(function(nfo) {
@@ -74,41 +79,97 @@ function init(canvas, vizType) {
                 var socket = v.socket;
                 var renderState = v.renderState;
 
-                streamClient.handleVboUpdates(socket, renderState).subscribe(renderedFrame);
+                var vboUpdates = streamClient.handleVboUpdates(socket, renderState);
 
                 uberDemo(socket, $('.sim-container'), v.renderState);
+
+                initialized.onNext({
+                    vboUpdates: vboUpdates,
+                    renderState: renderState
+                });
+
             },
             function (err) {
                 console.error('error connecting stream client', err, err.stack);
             });
 
-    return renderedFrame;
+    return initialized;
 }
 
 
 window.addEventListener('load', function(){
-    var renderedFrame = init($('#simulation')[0], 'graph');
+    var app = init($('#simulation')[0], 'graph');
 
     if(DEBUG_MODE) {
         $('html').addClass('debug');
 
-        var meter = new FPSMeter($('body')[0], {
-            top: 'auto',
-            right: '5px',
-            left: 'auto',
-            bottom: '5px',
+
+        var renderMeterD =
+            $('<div>')
+                .addClass('meter').addClass('meter-fps')
+                .append(
+                    $('<span>')
+                        .addClass('flavor')
+                        .text('render'));
+        $('body').append(renderMeterD);
+        var renderMeter = new FPSMeter(renderMeterD.get(0), {
+            heat: 1,
+            graph: 1,
+
+            maxFps: 45,
+            decimals: 0,
+            smoothing: 3,
+            show: 'fps',
+
+            theme: 'transparent',
+        });
+        app.subscribe(function (app) {
+            app.renderState.get('renderPipeline').subscribe(function (evt) {
+                if (evt.start) {
+//                    renderMeter.resume();
+//                    renderMeter.tickStart();
+                } else if (evt.rendered) {
+                    renderMeter.tick();
+//                    renderMeter.pause();
+                }
+            });
+        });
+
+
+        var networkMeterD =
+            $('<div>')
+                .addClass('meter').addClass('meter-network')
+                .append(
+                    $('<span>')
+                        .addClass('flavor')
+                        .text('network'));
+        $('body').append(networkMeterD);
+        var networkMeter = new FPSMeter(networkMeterD.get(0), {
+            heat: 1,
+            graph: 1,
 
             maxFps: 10,
-            decimals: 2,
+            decimals: 0,
+            smoothing: 5,
+            show: 'fps',
 
-            theme: 'light',
-            heat: true,
-            graph: true
+            theme: 'transparent',
+        });
+        app.subscribe(function (app) {
+            app.vboUpdates.subscribe(function(evt) {
+                switch (evt) {
+                    case 'start':
+                        networkMeter.resume();
+                        networkMeter.tickStart();
+                        break;
+                    case 'received':
+                        networkMeter.tick();
+                        networkMeter.pause();
+                        break;
+                }
+            });
         });
 
-        renderedFrame.subscribe(function() {
-            meter.tick();
-        });
     }
 
 });

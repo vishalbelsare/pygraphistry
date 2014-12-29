@@ -115,6 +115,7 @@ function genLabel (instance, $labelCont, idx) {
         .sample(3)
         .do(function (idx) {
             res.idx = idx;
+            $elt.html('');
         })
         .flatMapLatest(instance.getLabelText)
         .do(function (htmlStr) {

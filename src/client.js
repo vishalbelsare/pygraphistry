@@ -14,6 +14,7 @@ var io           = require('socket.io-client');
 var renderer     = require('./renderer.js');
 var ui           = require('./ui.js');
 
+// Get URL query params to send over to the worker via socket
 var datasetname = getUrlParameter('datasetname');
 
 //string * {socketHost: string, socketPort: int} -> (... -> ...)
@@ -37,7 +38,9 @@ function makeFetcher (fragment, url) {
                 debug('got texture/vbo data', bufferName, Date.now() - now, 'ms');
 
                 var arrayBuffer = oReq.response; // Note: not oReq.responseText
-                var trimmedArray = new Uint8Array(arrayBuffer, 0, bufferByteLengths[bufferName]);
+                var blength = bufferByteLengths[bufferName];
+                debug('Buffer length (%s): %d', bufferName, blength);
+                var trimmedArray = new Uint8Array(arrayBuffer, 0, blength);
 
                 res.onNext(trimmedArray);
 
@@ -112,8 +115,8 @@ function connect(vizType) {
         .flatMap(function(params) {
 
             debug('got params', params);
-            //i don't want to have to send it to both socket and not http. but i need it in http for the databae reqest. hmrmrmrmrmrmr
-            var socket = io(params.url, { query: 'datasetname=' + datasetname, 
+
+            var socket = io(params.url, { query: 'datasetname=' + datasetname,
                                           reconnection: false, 
                                           transports: ['websocket']
                                         });
@@ -157,7 +160,7 @@ function createRenderer(socket, canvas) {
  * @param  {socket.io socket} socket - socket.io socket created when we connected to the server.
  * @param  {renderer} renderState    - The renderer object returned by renderer.create().
  *
- * @return {Rx.BehaviorSubject} Rx subject that fires every time a frame is rendered.
+ * @return {Rx.BehaviorSubject} {'start', 'received', 'rendered'} Rx subject that fires every time a frame is rendered.
  */
 function handleVboUpdates(socket, renderState) {
     //string * {<name> -> int} * name -> Subject ArrayBuffer
@@ -181,6 +184,7 @@ function handleVboUpdates(socket, renderState) {
     socket.on('vbo_update', function (data, handshake) {
         try {
             debug('VBO update');
+            renderedFrame.onNext('start');
 
             var now = new Date().getTime();
             debug('got VBO update message', now - lastHandshake, data, 'ms');
@@ -200,9 +204,10 @@ function handleVboUpdates(socket, renderState) {
                     debug('All buffers and textures received, completing');
                     handshake(Date.now() - lastHandshake);
                     lastHandshake = Date.now();
+                    renderedFrame.onNext('received');
                     renderer.render(renderState);
+                    renderedFrame.onNext('rendered');
                 });
-            readyToRender.subscribe(renderedFrame);
 
             var bufferVBOs = Rx.Observable.zipArray(
                 [Rx.Observable.return()]

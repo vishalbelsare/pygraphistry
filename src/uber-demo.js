@@ -2,7 +2,7 @@
 
 // FIXME: Move this to graph-viz repo -- it shouldn't be a part of the core StreamGL library
 
-var debug   = require('debug')('uber:main');
+var debug   = require('debug')('graphistry:uber:main');
 var Rx      = require('rx');
 var $       = require('jquery');
 var _       = require('underscore');
@@ -20,7 +20,7 @@ function sendSetting(socket, name, value) {
     var payload = {};
     payload[name] = value;
 
-    socket.emit('graph_settings', payload);
+    socket.emit('graph_settings', {gaussSeidel: payload, edgeBundling: payload});
     debug('settings', payload);
 }
 
@@ -232,7 +232,7 @@ lastRender
 
             var cfg = mostRecent;
 
-            var items = cfg.currentState.get('config').get('scene').get('render').toJS()
+            var items = cfg.currentState.get('config').get('render').toJS()
                 .filter(function (v) { return v !== 'pointpicking'; });
             cfg.renderer.render(cfg.currentState, items);
             renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer), cfg.data.highlightIdx, new Uint8Array(cfg.data.pointSizes.buffer));
@@ -413,7 +413,7 @@ function init(socket, $elt, renderState) {
     } catch (e) { }
 
     var elts = {
-        nodeSlider: 'charge',
+        chargeSlider: 'charge',
         edgeStrengthSlider: 'edgeStrength',
         edgeDistSlider: 'edgeDistance',
         gravitySlider: 'gravity'
@@ -422,17 +422,19 @@ function init(socket, $elt, renderState) {
     window.$OLD('#timeSlider').rangeSlider({
          bounds: {min: 0, max: 100},
          arrows: false,
-         defaultValues: {min: 30, max: 40},
+         defaultValues: {min: 0, max: 30},
          valueLabels: 'hide', //show, change, hide
-         wheelMode: 'zoom'
+         //wheelMode: 'zoom'
       });
+
 
 
     var timeSlide = new Rx.Subject();
     //FIXME: replace $OLD w/ browserfied jquery+jqrangeslider
     window.$OLD('#timeSlider').on('valuesChanging', function (e, data) {
-        timeSlide.onNext({min: data.values.min, max: data.values.max});
-    });
+            timeSlide.onNext({min: 0, max: data.values.max});
+        });
+
     timeSlide.sample(3)
         .do(function (when) {
             socket.emit('graph_settings', {timeSubset: {min: when.min, max: when.max}});
