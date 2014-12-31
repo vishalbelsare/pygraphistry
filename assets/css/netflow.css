@@ -144,20 +144,15 @@ body {
     font-weight: bold;
 }
 
+.graph-label.on .stat-port .stat-source:after {
+    content: ' (PORT)';
+}
 .stat-flows thead tr td:first-child {
     text-align: left
-}
-.stat-flows thead tr td:first-child:before {
-    content: ' [-] ';
-    padding-left: 0.2em;
 }
 
 .stat-flows tbody tr td:first-child {
     padding-left: 0.5em;
-}
-
-.stat-top h2:before {
-    content: ' [+] ';
 }
 
 .stat-flows td {
@@ -190,6 +185,28 @@ body {
 
 .stat-extra {
     margin-left: 2.7em;
+}
+
+.graph-label:not(.on) .stat-host-ip {
+    background-color: rgba(255, 255, 255, 0.85);
+    border-color: rgba(255,255,244,0.9);
+    box-shadow: 0 0 10px rgba(235,235,245,0.75);
+    border-radius: 10px;
+}
+.graph-label.on .stat-host-ip:after {
+    content: ' (HOST)';
+}
+
+.stat-host-ports {
+    content: 'ports';
+}
+.stat-host-ports {
+    display: inline-block;
+    min-width: 12em;
+    margin-left: 0.5em;
+}
+.stat-host-more {
+    display: block;
 }
 
 .graph-label h2 {
