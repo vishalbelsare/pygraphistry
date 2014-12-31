@@ -147,6 +147,13 @@ body {
 .graph-label.on .stat-port .stat-source:after {
     content: ' (PORT)';
 }
+
+.stat-port .stat-ip {
+    margin-left: 0.2em;
+}
+.stat-port .stat-ip:before {
+    content: 'IP: ';
+}
 .stat-flows thead tr td:first-child {
     text-align: left
 }
@@ -189,10 +196,11 @@ body {
 
 .graph-label:not(.on) .stat-host-ip {
     background-color: rgba(255, 255, 255, 0.85);
-    border-color: rgba(255,255,244,0.9);
+    border-color: 1px solid rgba(255,255,255,0.9);
     box-shadow: 0 0 10px rgba(235,235,245,0.75);
     border-radius: 10px;
 }
+
 .graph-label.on .stat-host-ip:after {
     content: ' (HOST)';
 }
