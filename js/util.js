@@ -75,10 +75,10 @@ function die() {
 }
 
 function rgb(r, g, b, a) {
-    if (!a)
+    if (a === undefined)
         a = 255;
     // Assume little endian machines
-    return (a << 24) | (b << 16) | (g << 8) | r; 
+    return (a << 24) | (b << 16) | (g << 8) | r;
 }
 
 
