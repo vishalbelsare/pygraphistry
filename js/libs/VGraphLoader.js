@@ -228,13 +228,15 @@ var testMapper = {
         pointColor: {
             name: "community_spinglass",
             transform: function (v) {
-                return int2color(normalize(v, 0, 12), qual_palette2);
+                var palette = qual_palette2;
+                return int2color(normalize(v, 0, palette.length - 1), palette);
             }
         },
         edgeColor: {
             name: "weight",
             transform: function (v) {
-                return int2color(normalize(logTransform(v), 0, 11), green2red_palette);
+                var palette = green2red_palette;
+                return int2color(normalize(logTransform(v), 0, palette.length - 1), palette);
             }
         }
     },
