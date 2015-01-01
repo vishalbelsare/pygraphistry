@@ -20,17 +20,36 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
     .then(function(cl) {
         debug("Creating CL object with GL context");
 
-        var kernelNames = _.chain(layoutAlgorithms)
-                .pluck("kernels").flatten().pluck("name").flatten().value();
+        var kernels = _.chain(layoutAlgorithms).pluck('kernels').flatten().value();
+        var kernelFileMap = {};
 
-        // Compile the WebCL kernels
-        return util.getSource("apply-forces.cl")
-        .then(function(source) {
-            debug("CL kernel source retrieved");
-            return cl.compile(source, kernelNames);
+        _.each(kernels, function (kernel) {
+            if (!(kernelFileMap[kernel.file]))
+                kernelFileMap[kernel.file] = [kernel.name];
+            else
+                kernelFileMap[kernel.file].push(kernel.name);
         })
-        .then(function(kernels) {
-            debug("Compiled kernel source");
+        debug('Kernels selected for compilation: %o', kernelFileMap);
+
+        return Q.all(_.map(kernelFileMap, function (kName, kFile) {
+            debug('Retrieving kernel source: %s', kFile);
+
+            // Temporary Hack to avoid interfering with Paden's work
+            var loader = (kFile === 'apply-forces.cl') ? util.getShaderSource : util.getKernelSource;
+
+            return loader(kFile).then(function (source) {
+                return cl.compile(source, kernelFileMap[kFile]);
+            }).fail(function (err) {
+                console.error("Failure while compiling kernels ", (err||{}).stack);
+            });
+        })).then(function (compiledKernels) {
+            debug("All kernels successfully compiled");
+            var mergedKernels = {};
+            for (var i = 0; i < compiledKernels.length; i++)
+                _.extend(mergedKernels, compiledKernels[i]);
+            return mergedKernels;
+        }).then(function(kernels) {
+            debug("Creating SimCL...")
 
             var simObj = {
                 renderer: renderer,
@@ -108,11 +127,10 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
 
             debug("WebCL simulator created");
             return simObj
-        }, function (err) {
-            console.error('Could not compile sim', err)
-        });
-    })
-
+        })
+    }).fail(function (err) {
+        console.error("Cannot create SimCL ", (err||{}).stack);
+    });
 }
 
 
@@ -237,7 +255,7 @@ function setPoints(simulator, points) {
         return simulator;
     })
     .fail(function (err) {
-        console.error("Failure in SimCl.setPoints ", (err||{}).stack)
+        console.error("Failure in SimCl.setPoints ", (err||{}).stack);
     });
 }
 
