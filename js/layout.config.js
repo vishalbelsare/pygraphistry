@@ -126,7 +126,7 @@ var barnesControls = {
 var controls = {
     'default': uberControls,
     'uber': uberControls,
-    'netflow': atlasControls,
+    'netflow': netflowControls,
     'atlas': atlasControls,
     'barneshut': barnesControls
 }
