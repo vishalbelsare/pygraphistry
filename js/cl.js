@@ -5,6 +5,7 @@ var events = require('./SimpleEvents.js');
 var _ = require('underscore');
 var debug = require("debug")("graphistry:graph-viz:cl:cl");
 var util = require('util');
+var path = require('path');
 var utiljs = require('./util.js');
 
 
@@ -301,7 +302,8 @@ var compile = Q.promised(function (cl, source, kernels) {
 
     try {
         var program = cl.context.createProgram("#define NODECL\n\n" + source);
-        program.build([cl.device]);
+        var includeDir = path.resolve(__dirname, '..', 'kernels');
+        program.build([cl.device], '-I ' + includeDir);
 
         if (typeof kernels === "string") {
 
