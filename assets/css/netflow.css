@@ -106,14 +106,28 @@ body {
 }
 
 
-#main:hover, #menuState:hover {
+#main:hover, #menuState:hover, #controlState:hover {
     box-shadow: 0 0 10px rgba(235,235,245,0.75);
 }
 
 
+#menus {
+    position: absolute;
+    width: 100%;
+}
 .menu {
     z-index: 100001;
 }
+
+#controlState {
+    position: absolute;
+    right: 1em;
+    display: inline-block;
+    top: 0em;
+    margin: 1em;
+    padding: 0.5em;
+}
+
 .accordion {
     background-color: rgba(196, 212, 222, 0.72);
 }
