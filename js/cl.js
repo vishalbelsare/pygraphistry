@@ -299,12 +299,20 @@ function createCLContextBrowser(renderer) {
  */
 var compile = Q.promised(function (cl, source, kernels) {
     debug("Compiling kernels");
+    var program;
 
     try {
-        var program = cl.context.createProgram("#define NODECL\n\n" + source);
+        program = cl.context.createProgram("#define NODECL\n\n" + source);
         var includeDir = path.resolve(__dirname, '..', 'kernels');
         program.build([cl.device], '-I ' + includeDir);
+    } catch (e) {
+        console.error('OpenCL compilation error:', e.stack);
+        var log = program.getBuildInfo(cl.device, webcl.PROGRAM_BUILD_LOG)
+        console.error('Build Log: %o', log);
+        throw e;
+    }
 
+    try {
         if (typeof kernels === "string") {
 
             debug('    Compiling unknown kernel');
@@ -341,8 +349,7 @@ var compile = Q.promised(function (cl, source, kernels) {
             return kernelObjs;
         }
     } catch (e) {
-        console.error('Kernel compilation error:', e.stack);
-        console.error(kernels);
+        console.error('Kernel creation error:', kernels, e.stack);
         throw e;
     }
 });
