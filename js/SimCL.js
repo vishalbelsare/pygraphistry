@@ -506,9 +506,10 @@ function setTimeSubset(renderer, simulator, range) {
 }
 
 
+//simulator * int * {play: bool, layout: bool} -> ()
 //input positions: curPoints
 //output positions: nextPoints
-function tick(simulator, stepNumber) {
+function tick(simulator, stepNumber, cfg) {
 
     // If there are no points in the graph, don't run the simulation
     if(simulator.numPoints < 1) {
@@ -516,6 +517,12 @@ function tick(simulator, stepNumber) {
     }
 
     simulator.versions.tick++;
+
+    if (!cfg.layout) {
+        debug('No layout algs to run, early exit');
+        return Q(simulator);
+    }
+
 
     //run each algorithm to completion before calling next
     var tickAllHelper = function (remainingAlgorithms) {

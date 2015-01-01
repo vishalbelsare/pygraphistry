@@ -344,11 +344,12 @@ function _toTypedArray(array, cons) {
 }
 
 
-function tick(graph) {
+//graph * {play: bool, layout: bool} -> ()
+function tick(graph, cfg) {
     events.fire("tickBegin");
     events.fire("simulateBegin");
 
-    return graph.simulator.tick(graph.stepNumber++)
+    return graph.simulator.tick(graph.stepNumber++, cfg)
     .then(function() {
         events.fire("simulateEnd");
         events.fire("renderBegin");

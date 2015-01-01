@@ -258,6 +258,9 @@ function delayObservableGenerator(delay, value, cb) {
 function createAnimation(theDataset) {
     debug("STARTING DRIVER");
 
+    //Observable {play: bool, layout: bool, ... cfg settings ...}
+    //  play: animation stream
+    //  layout: whether to actually call layout algs (e.g., don't for filtering)
     var userInteractions = new Rx.Subject();
 
     // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
@@ -283,14 +286,16 @@ function createAnimation(theDataset) {
     }).then(function (graph) {
         debug("ANIMATING");
 
+        var play = userInteractions.filter(function (o) { return o && o.play; });
+
+        //Observable {play: bool, layout: bool}
         var isRunning =
             Rx.Observable.merge(
                 //run beginning & after every interaction
-                userInteractions.merge(Rx.Observable.return())
-                    .map(_.constant(true)),
+                play.merge(Rx.Observable.return({play: true, layout: true})),
                 //...  but stop a bit after last one
-                userInteractions.merge(Rx.Observable.return())
-                    .throttle(graph.simulationTime).map(_.constant(false)));
+                play.merge(Rx.Observable.return({play: false, layout: false}))
+                    .throttle(graph.simulationTime));
 
         var isRunningRecent = new Rx.ReplaySubject(1);
 
@@ -302,7 +307,9 @@ function createAnimation(theDataset) {
 
         // Loop simulation by recursively expanding each tick event into a new sequence
         // Gate by isRunning
-        Rx.Observable.fromPromise(graph.tick())
+        Rx.Observable.return().flatMap(function () {
+                return Rx.Observable.fromPromise(graph.tick(0, {play: true, layout: true}));
+            })
             .expand(function() {
                 var now = Date.now();
                 //return (Rx.Observable.fromCallback(graph.renderer.document.requestAnimationFrame))()
@@ -312,13 +319,13 @@ function createAnimation(theDataset) {
                         return delayObservableGenerator(16, false);
                     })
                     .flatMap(function () {
-                        return isRunningRecent.filter(_.identity).take(1);
+                        return isRunningRecent.filter(function (o) { return o.play; }).take(1);
                     })
                     .flatMap(function(v) {
                         //debug('step..')
                         return (Rx.Observable.fromPromise(
                             graph
-                                .tick()
+                                .tick(v)
                                 .then(function () {
                                     //debug('ticked');
                                     metrics.info({metric: {'tick_durationMS': Date.now() - now} });
@@ -327,7 +334,12 @@ function createAnimation(theDataset) {
                     })
                     .map(_.constant(graph));
             })
-            .subscribe(animStepSubj);
+            .subscribe(
+                animStepSubj,
+                function (err) {
+                    console.error('Error ticking');
+                    console.error(err, (err||{}).stack);
+                });
 
     })
     .then(function (graph) {
