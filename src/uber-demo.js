@@ -283,6 +283,7 @@ function setupLabels ($labelCont, latestState, latestHighlightedPoint) {
 //Changes either from point mouseover or a label mouseover
 function getLatestHighlightedPoint ($eventTarget, renderState, labelHover) {
     var res = new Rx.ReplaySubject(1);
+    res.onNext(-1);
 
     interaction.setupMousemove($eventTarget, renderState, 'pointHitmap')
         .filter(function (v) { return v > -1; })
