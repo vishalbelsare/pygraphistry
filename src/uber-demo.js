@@ -20,7 +20,7 @@ function sendSetting(socket, name, value) {
     var payload = {};
     payload[name] = value;
 
-    socket.emit('graph_settings', {gaussSeidel: payload, edgeBundling: payload});
+    socket.emit('graph_settings', {play: true, layout: true, gaussSeidel: payload, edgeBundling: payload});
     debug('settings', payload);
 }
 
@@ -408,7 +408,7 @@ function init(socket, $elt, renderState) {
     setupInteractions($elt, renderState);
 
     //trigger animation on server
-    socket.emit('graph_settings', {});
+    socket.emit('graph_settings', {layout: true, play: true});
 
     //TODO try/catch because sc.html does not have tooltip
     try {
@@ -449,7 +449,7 @@ function init(socket, $elt, renderState) {
 
     timeSlide.sample(3)
         .do(function (when) {
-            socket.emit('graph_settings', {timeSubset: {min: when.min, max: when.max}});
+            socket.emit('graph_settings', {play: true, layout: false, timeSubset: {min: when.min, max: when.max}});
         })
         .subscribe(_.identity, makeErrorHandler('timeSlide'));
 
