@@ -292,10 +292,11 @@ function createAnimation(theDataset) {
         var isRunning =
             Rx.Observable.merge(
                 //run beginning & after every interaction
-                play.merge(Rx.Observable.return({play: true, layout: true})),
+                play.merge(Rx.Observable.return({play: true, layout: false})),
                 //...  but stop a bit after last one
-                play.merge(Rx.Observable.return({play: false, layout: false}))
-                    .throttle(graph.simulationTime));
+                play.merge(Rx.Observable.return())
+                    .throttle(graph.simulationTime)
+                    .map(_.constant({play: false, layout: false})));
 
         var isRunningRecent = new Rx.ReplaySubject(1);
 
