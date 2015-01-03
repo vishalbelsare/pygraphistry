@@ -1,23 +1,15 @@
 'use strict';
 
-var _       = require('underscore');
-
 
 var debug   = require('debug')('graphistry:StreamGL:picking');
 
 
 function uint32ToIdx (raw) {
 
-    //swizzle because point shader is funny
-    //reverse..
-    var parts = _.range(0,4).map(function (_, i) {
-            return (raw >> (8 * i)) & 255;
-        });
-    var shuffled = parts;//[parts[0], parts[1], parts[2], parts[3]];
-    var r = 0,//shuffled[4],
-        g = 0,//shuffled[3],
-        b = shuffled[2],
-        a = shuffled[1];
+    var r = 0;
+    var g = 0;
+    var b = (raw >> (8 * 2)) & 255;
+    var a = (raw >> (8 * 1)) & 255;
 
     return ((r << 24) | (g << 16) | (b << 8) | a) - 1;
 

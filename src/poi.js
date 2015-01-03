@@ -26,21 +26,36 @@ function makeErrorHandler(name) {
 
 
 
+
+function markHits(samples32) {
+    var hits = {};
+    for (var i = 0; i < samples32.length; i++) {
+        hits[picking.uint32ToIdx(samples32[i])] =  true;
+    }
+    return hits;
+}
+
+function topHits(hits) {
+    var vals = _.keys(hits).map(function (v) { return parseInt(v); });
+    vals.sort();
+    vals = vals.slice(0, MAX_LABELS);
+    return vals;
+}
+
 //renderState * String -> {<idx> -> True}
 //dict of points that are on screen -- approx may skip some
 function getActiveApprox(renderState, textureName) {
 
     var samples32 = new Uint32Array(renderState.get('pixelreads')[textureName].buffer);
-    var hits = {};
-    for (var i = 0; i < samples32.length; i++) {
-        hits[picking.uint32ToIdx(samples32[i])] =  true;
-    }
+    var hits = markHits(samples32);
 
     //only use first MAX_LABEL (sort to make deterministic)
-    var vals = _.keys(hits).map(function (v) { return parseInt(v); });
-    vals.sort();
-    vals = vals.slice(0, MAX_LABELS);
-    var res = _.object(vals.map(function (idx) { return [idx, true]; }));
+    var vals = topHits(hits);
+
+    var res = {};
+    vals.forEach(function (v) {
+        res[v] = true;
+    });
 
     //remove null
     if (res['-1']) {
@@ -64,12 +79,15 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
 
     var toClear = [];
 
+
+    var cnvCached = {clientWidth: cnv.clientWidth, clientHeight: cnv.clientHeight};
+
     _.values(activeLabels).forEach(function (lbl) {
         if (!hits[lbl.idx]) {
 
-            var pos = camera.canvasCoords(points[2 * lbl.idx], -points[2 * lbl.idx + 1], 1, cnv, mtx);
+            var pos = camera.canvasCoords(points[2 * lbl.idx], -points[2 * lbl.idx + 1], 1, cnvCached, mtx);
 
-            var isOffScreen = pos.x < 0 || pos.y < 0 || pos.x > cnv.clientWidth || pos.y > cnv.clientHeight;
+            var isOffScreen = pos.x < 0 || pos.y < 0 || pos.x > cnvCached.clientWidth || pos.y > cnvCached.clientHeight;
             var isDecayed = (Math.random() > 1 - APPROX) || (_.keys(activeLabels).length > MAX_LABELS);
 
             if (isOffScreen || isDecayed) {
@@ -115,11 +133,15 @@ function genLabel (instance, $labelCont, idx) {
         .sample(3)
         .do(function (idx) {
             res.idx = idx;
-            $elt.html('');
+            $elt.empty();
         })
         .flatMapLatest(instance.getLabelText)
         .do(function (htmlStr) {
-            $elt.html(htmlStr ? htmlStr : '');
+            if (htmlStr) {
+                $elt.html(htmlStr);
+            } else {
+                $elt.empty();
+            }
         })
         .subscribe(_.identity, makeErrorHandler('genLabel fetcher'));
 
