@@ -409,7 +409,7 @@ function init(socket, $elt, renderState) {
     setupInteractions($elt, renderState);
 
     //trigger animation on server
-    socket.emit('graph_settings', {layout: true, play: true});
+    //socket.emit('graph_settings', {layout: true, play: true});
 
     //TODO try/catch because sc.html does not have tooltip
     try {
@@ -454,6 +454,10 @@ function init(socket, $elt, renderState) {
         })
         .subscribe(_.identity, makeErrorHandler('timeSlide'));
 
+
+    $('#simulate').on('click', function () {
+        socket.emit('graph_settings', {play: true, layout: true, gaussSeidel: {}, edgeBundling: {}});
+    });
 
     $('.menu-slider').each(function () {
         var slider = new Slider(this);
