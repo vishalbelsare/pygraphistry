@@ -266,15 +266,14 @@ function createAnimation(theDataset) {
     // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
     // the contents of each VBO
     var animStepSubj = new Rx.BehaviorSubject(null);
-    var theGraph = Q.defer();
 
-    theDataset.then(function (dataset) {
+    var graph = theDataset.then(function (dataset) {
         debug("Dataset %o", dataset);
+
 
         var cfg = getControls(dataset.Metadata.config['simControls']);
 
-        theGraph.resolve(init(cfg));
-        return Q.all([theGraph.promise, dataset]);
+        return Q.all([init(cfg), dataset]);
     }).spread(function (graph, dataset) {
         userInteractions.subscribe(function (settings){
             debug('Updating settings..');
@@ -294,8 +293,13 @@ function createAnimation(theDataset) {
                 //run beginning & after every interaction
                 play.merge(Rx.Observable.return({play: true, layout: false})),
                 //...  but stop a bit after last one
-                play.merge(Rx.Observable.return())
+                play.filter(function (o) { return o && o.layout; })
+                    .merge(Rx.Observable.return())
                     .throttle(graph.simulationTime)
+                    .map(_.constant({play: false, layout: false})),
+                play.filter(function (o) { return !o || !o.layout; })
+                    .merge(Rx.Observable.return())
+                    .delay(4)
                     .map(_.constant({play: false, layout: false})));
 
         var isRunningRecent = new Rx.ReplaySubject(1);
@@ -308,27 +312,26 @@ function createAnimation(theDataset) {
 
         // Loop simulation by recursively expanding each tick event into a new sequence
         // Gate by isRunning
-        Rx.Observable.return().flatMap(function () {
-                return Rx.Observable.fromPromise(graph.tick(0, {play: true, layout: true}));
-            })
-            .expand(function() {
+        Rx.Observable.return(graph)
+            //.flatMap(function () {
+            //    return Rx.Observable.fromPromise(graph.tick(0, {play: true, layout: false}));
+            //})
+            .expand(function(graph) {
                 var now = Date.now();
                 //return (Rx.Observable.fromCallback(graph.renderer.document.requestAnimationFrame))()
                 return Rx.Observable.return()
                     // Add in a delay to allow nodejs' event loop some breathing room
                     .flatMap(function() {
-                        return delayObservableGenerator(16, false);
+                        return delayObservableGenerator(1, false);
                     })
                     .flatMap(function () {
                         return isRunningRecent.filter(function (o) { return o.play; }).take(1);
                     })
                     .flatMap(function(v) {
-                        //debug('step..')
                         return (Rx.Observable.fromPromise(
                             graph
                                 .tick(v)
                                 .then(function () {
-                                    //debug('ticked');
                                     metrics.info({metric: {'tick_durationMS': Date.now() - now} });
                                 })
                         ));
@@ -341,6 +344,7 @@ function createAnimation(theDataset) {
                     console.error('Error ticking');
                     console.error(err, (err||{}).stack);
                 });
+        return graph;
 
     })
     .then(function (graph) {
@@ -357,7 +361,7 @@ function createAnimation(theDataset) {
             userInteractions.onNext(settings);
         },
         ticks: animStepSubj.skip(1),
-        graph: theGraph.promise
+        graph: graph
     }
 }
 
