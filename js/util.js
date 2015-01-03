@@ -1,9 +1,9 @@
 "use strict";
 
-var debug = require("debug")("N-body:utils");
-var path = require('path');
-
-var $ = require('jquery'),
+var debug = require("debug")("graphistry:util"),
+    path = require('path'),
+    fs = require('fs'),
+    $ = require('jquery'),
     Q = require('q'),
     nodeutil = require('util');
 
@@ -18,28 +18,17 @@ if (typeof(window) == 'undefined') {
 }
 
 
+function getShaderSource(id) {
+    var shader_path = path.resolve(__dirname, '..' ,'shaders', id);
+    debug('Fetching source for shader %s at path %s, using fs read', id, shader_path);
+    return Q.denodeify(fs.readFile)(shader_path, {encoding: 'utf8'});
+}
 
 
-function getSource(id) {
-    // TODO: Could we use HTML <script> elements instead of AJAX fetches? We could possibly
-    // set the src of the script to our content, the type to something other than JS. Then, we
-    // listen for the onload event. In this way, we may be able to load content from disk
-    // without running a server.
-
-    if (typeof window == 'undefined') {
-        var fs = require('fs');
-        var shader_path = path.resolve(__dirname, '..' ,'shaders', id);
-
-        debug('Fetching shader source for shader %s at path %s, using fs read', id, shader_path)
-
-        return Q.denodeify(fs.readFile)(shader_path, {encoding: 'utf8'});
-    } else {
-        var url = "shaders/" + id;
-
-        debug('Fetching shader source for shader %s at url %s, using AJAX', id, url)
-
-        return Q($.ajax(url, {dataType: "text"}));
-    }
+function getKernelSource(id) {
+    var kernel_path = path.resolve(__dirname, '..' ,'kernels', id);
+    debug('Fetching source for kernel %s at path %s, using fs read', id, kernel_path);
+    return Q.denodeify(fs.readFile)(kernel_path, {encoding: 'utf8'});
 }
 
 /**
@@ -83,7 +72,8 @@ function rgb(r, g, b, a) {
 
 
 module.exports = {
-    "getSource": getSource,
+    "getShaderSource": getShaderSource,
+    "getKernelSource": getKernelSource,
     "getImage": getImage,
     "die": die,
     "rgb": rgb

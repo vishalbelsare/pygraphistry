@@ -78,17 +78,20 @@ module.exports = {
             name: "gaussSeidelPoints",
             args: gsPoints,
             order: gsPointsOrder,
-            types: argsType
+            types: argsType,
+            file: 'gaussSeidel.cl'
         },{
             name: "gaussSeidelSprings",
             args: gsSprings,
             order: gsSpringsOrder,
-            types: argsType
+            types: argsType,
+            file: 'gaussSeidel.cl'
         },{
             name: "gaussSeidelSpringsGather",
             args: gsSpringsGather,
             order: gsSpringsGatherOrder,
-            types: argsType
+            types: argsType,
+            file: 'gaussSeidel.cl'
         }
     ],
 

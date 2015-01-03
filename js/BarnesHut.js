@@ -246,52 +246,62 @@ module.exports = {
             name: "to_barnes_layout",
             args: toBarnesLayout,
             order: toBarnesLayoutOrder,
-            types: argsType
+            types: argsType,
+            file: 'apply-forces.cl'
         }, {
             name: "from_barnes_layout",
             args: fromBarnesLayout,
             order: fromBarnesLayoutOrder,
-            types: argsType
+            types: argsType,
+            file: 'apply-forces.cl'
         }, {
             name: "bound_box",
             args: barnesKernels,
             order: barnesKernelsOrder,
-            types: argsType
+            types: argsType,
+            file: 'apply-forces.cl'
         }, {
             name: "build_tree",
             args: barnesKernels,
             order: barnesKernelsOrder,
-            types: argsType
+            types: argsType,
+            file: 'apply-forces.cl'
         }, {
             name: "compute_sums",
             args: barnesKernels,
             order: barnesKernelsOrder,
-            types: argsType
+            types: argsType,
+            file: 'apply-forces.cl'
         }, {
             name: "sort",
             args: barnesKernels,
             order: barnesKernelsOrder,
-            types: argsType
+            types: argsType,
+            file: 'apply-forces.cl'
         }, {
             name: "calculate_forces",
             args: barnesKernels,
             order: barnesKernelsOrder,
-            types: argsType
+            types: argsType,
+            file: 'apply-forces.cl'
         }, {
             name: "move_bodies",
             args: barnesKernels,
             order: barnesKernelsOrder,
-            types: argsType
+            types: argsType,
+            file: 'apply-forces.cl'
         },{
             name: "forceAtlasEdges",
             args: faEdges,
             order: faEdgesOrder,
-            types: argsType
+            types: argsType,
+            file: 'apply-forces.cl'
         },{
             name: "gaussSeidelSpringsGather",
             args: gsSpringsGather,
             order: gs.gsSpringsGatherOrder,
-            types: gs.argsType
+            types: gs.argsType,
+            file: 'apply-forces.cl'
         }
     ],
 

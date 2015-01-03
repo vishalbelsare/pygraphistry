@@ -77,23 +77,26 @@ var argsType = {
 Object.seal(argsType);
 
 module.exports = {
-    name: "forceAtlas",
+    name: 'forceAtlas',
     kernels: [
         {
             name: "forceAtlasPoints",
             args: faPoints,
             order: faPointsOrder,
-            types: argsType
+            types: argsType,
+            file: 'forceAtlas.cl'
         },{
             name: "forceAtlasEdges",
             args: faEdges,
             order: faEdgesOrder,
-            types: argsType
+            types: argsType,
+            file: 'forceAtlas.cl'
         },{
             name: "gaussSeidelSpringsGather",
             args: gsSpringsGather,
             order: gs.gsSpringsGatherOrder,
-            types: gs.argsType
+            types: gs.argsType,
+            file: 'gaussSeidel.cl'
         }
     ],
 

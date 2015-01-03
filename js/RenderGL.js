@@ -103,8 +103,8 @@ function createProgram(renderer, vertexShaderID, fragmentShaderID) {
     pragObj.attributes = {};
 
     return Q.all([
-        util.getSource(vertexShaderID + ".glsl"),
-        util.getSource(fragmentShaderID + ".glsl")
+        util.getShaderSource(vertexShaderID + ".glsl"),
+        util.getShaderSource(fragmentShaderID + ".glsl")
     ])
     .spread(function(vertShaderSource, fragShaderSource) {
 

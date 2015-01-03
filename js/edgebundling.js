@@ -78,12 +78,14 @@ module.exports = {
             name: "gaussSeidelMidpoints",
             args: gsMidpoints,
             order: gsMidpointsOrder,
-            types: argsType
+            types: argsType,
+            file: 'apply-forces.cl'
         },{
             name: "gaussSeidelMidsprings",
             args: gsMidsprings,
             order: gsMidspringsOrder,
-            types: argsType
+            types: argsType,
+            file: 'apply-forces.cl'
         }
     ],
 
