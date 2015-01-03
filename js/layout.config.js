@@ -8,6 +8,8 @@ var forceAtlas = require('./forceatlas.js'),
     edgeBundling = require('./edgebundling.js'),
     barnesHut = require('./BarnesHut.js');
 
+var SIMULATION_TIME = 6000;
+
 var uberControls = {
     simulator: SimCL,
     layoutAlgorithms: [
@@ -36,7 +38,7 @@ var uberControls = {
         lockMidedges: false
     },
     global: {
-        simulationTime: 3000, //milliseconds
+        simulationTime: SIMULATION_TIME, //milliseconds
         dimensions: [1, 1],
         numSplits: 3
     }
@@ -62,7 +64,7 @@ var netflowControls = {
         lockMidedges: true
     },
     global: {
-        simulationTime: 5000, //milliseconds
+        simulationTime: SIMULATION_TIME, //milliseconds
         dimensions: [1, 1]
     }
 }
@@ -90,7 +92,7 @@ var atlasControls = {
         lockMidedges: true
     },
     global: {
-        simulationTime: 30000, //milliseconds
+        simulationTime: SIMULATION_TIME, //milliseconds
         dimensions: [1, 1]
     }
 }
@@ -118,7 +120,7 @@ var barnesControls = {
         lockMidedges: true
     },
     global: {
-        simulationTime: 5000, //milliseconds
+        simulationTime: SIMULATION_TIME, //milliseconds
         dimensions: [1, 1]
     }
 }
