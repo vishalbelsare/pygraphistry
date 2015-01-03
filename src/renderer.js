@@ -4,7 +4,7 @@ var _           = require('underscore');
 // TODO: Upgrade to immutable v3 (from v2) -- breaking changes; our usage must be updated to match
 var Immutable   = require('immutable');
 var Rx          = require('rx');
-var debug       = require('debug')('StreamGL:renderer');
+var debug       = require('debug')('graphistry:StreamGL:renderer');
 
 var Cameras             = require('./camera.js');
 var localAttribHandler  = require('./localAttribHandler.js');
