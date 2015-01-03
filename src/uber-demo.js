@@ -455,9 +455,22 @@ function init(socket, $elt, renderState) {
         .subscribe(_.identity, makeErrorHandler('timeSlide'));
 
 
-    $('#simulate').on('click', function () {
-        socket.emit('graph_settings', {play: true, layout: true, gaussSeidel: {}, edgeBundling: {}});
-    });
+
+    var downing =
+        Rx.Observable.fromEvent($('#simulate'), 'mousedown')
+            .map(function () { return Rx.Observable.interval(50); });
+    var releasing =
+        Rx.Observable.fromEvent($('#simulate'), 'mouseup')
+            .map(function () { return Rx.Observable.return(); });
+    downing.merge(releasing).flatMapLatest(_.identity)
+        .subscribe(
+            function () {
+                socket.emit('graph_settings', {play: true, layout: true, gaussSeidel: {}, edgeBundling: {}});
+            },
+            function (err) {
+                console.error('Error stimulating graph', err, (err||{}).stack);
+            });
+
 
     $('.menu-slider').each(function () {
         var slider = new Slider(this);
