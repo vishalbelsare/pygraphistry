@@ -191,12 +191,31 @@ body {
     margin-left: 2.7em;
 }
 
-.graph-label:not(.on) .stat-host-ip {
-    background-color: rgba(255, 255, 255, 0.85);
+
+.graph-label:not(.on) {
+    height: 3em;
+}
+.graph-label .stat-host-ip,
+.graph-label .stat-source {
+    font-size: 1.3em;
+}
+.graph-label:not(.on) .stat-host-ip,
+.graph-label:not(.on) .stat-source {
     border-color: 1px solid rgba(255,255,255,0.9);
     box-shadow: 0 0 10px rgba(235,235,245,0.75);
     border-radius: 10px;
 }
+
+.graph-label:not(.on) .stat-source {
+    background-color: rgba(25, 25, 75, 0.85);
+    color: white;
+    font-weight: normal;
+}
+.graph-label:not(.on) .stat-host-ip {
+    background-color: rgba(255, 255, 255, 0.85);
+}
+
+
 
 .graph-label.on .stat-host-ip:after {
     content: ' (HOST)';
