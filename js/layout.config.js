@@ -8,7 +8,7 @@ var forceAtlas = require('./forceatlas.js'),
     edgeBundling = require('./edgebundling.js'),
     barnesHut = require('./BarnesHut.js');
 
-var SIMULATION_TIME = 6000;
+var SIMULATION_TIME = 100;
 
 var uberControls = {
     simulator: SimCL,
