@@ -16,7 +16,6 @@ var Q = require("q"),
 
     NBody = require("./NBody.js"),
     RenderNull = require('./RenderNull.js'),
-    SimCL = require("./SimCL.js"),
     rConf = require('./renderer.config.js'),
     lConf = require('./layout.config.js'),
 
