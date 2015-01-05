@@ -174,7 +174,7 @@ var resetBuffers = function(simulator, buffers) {
     }
 
     var buffNames = buffers
-        .filter(function(val) { return !(!val); })
+        .filter(_.identity)
         .map(function (buffer) {
             for(var buff in simulator.buffers) {
                 if(simulator.buffers.hasOwnProperty(buff) && simulator.buffers[buff] == buffer) {
@@ -577,12 +577,4 @@ function tick(simulator, stepNumber, cfg) {
 
 module.exports = {
     'create': create,
-    'setLocked': setLocked,
-    'setPoints': setPoints,
-    'setSizes': setSizes,
-    'setColors': setColors,
-    'setEdges': setEdges,
-    'setLabels': setLabels,
-    'setEdgeColors': setEdgeColors,
-    'tick': tick
 };
