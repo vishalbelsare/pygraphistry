@@ -137,6 +137,7 @@ function createCLContextNode(renderer) {
 
         try {
             if(renderer.gl !== null) {
+                debug('Device with gl');
                 if(wrapped.device.getInfo(webcl.DEVICE_EXTENSIONS).search(/gl.sharing/i) == -1) {
                     debug("Skipping device %d due to no sharing. %o", i, wrapped);
                     continue;
@@ -425,6 +426,7 @@ function setArgs(kernel, args, argTypes) {
         console.error('NODEJS?', NODEJS);
         console.error('args', args);
         console.error('types', argTypes);
+        console.error('arg/type', args ? args[i] : 'no args', argTypes ? argTypes[i] : 'no types');
         throw new Error(e);
     }
 
