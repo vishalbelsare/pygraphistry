@@ -479,16 +479,25 @@ function setTimeSubset(renderer, simulator, range) {
     var numPoints = Math.round(renderer.numPoints * 0.01 * range.max) - startIdx;
 
 
-    var pointToEdgeIdx = function (ptIdx) {
+    var pointToEdgeIdx = function (ptIdx, includeLen) {
         var edgeList = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[ptIdx];
-        return simulator.bufferHostCopies.forwardsEdges.workItemsTyped[2 * edgeList];
+        var firstEdge = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[2 * edgeList];
+        if (!includeLen) {
+            return firstEdge;
+        } else {
+            var len = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[2 * edgeList + 1];
+            return firstEdge + len;
+        }
     };
 
     //edges: sorted by start, so just compare start vs stop
-    var startEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.min));
-    var endEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.max));
+    var startEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.min), false);
+    var endEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.max), true);
 
-    var numEdges = endEdgeIdx - startEdgeIdx;
+    var numEdges = endEdgeIdx - startEdgeIdx
+
+
+    debug('setTimeSubset numEdges:', range, simulator.numEdges, startEdgeIdx, endEdgeIdx, numEdges);
 
     simulator.timeSubset =
         {relRange: range, //%
