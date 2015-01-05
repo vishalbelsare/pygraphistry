@@ -28,6 +28,8 @@ metrics.init('StreamGL:driver');
 
 
 //number/offset of graph elements and how they relate to various models
+//num: # of vertices
+//offset: in vertices
 //graph -> {<model>: {num: int, offset: int}
 function graphCounts(graph) {
     var numPoints   = graph.simulator.timeSubset.pointsRange.len;
@@ -40,9 +42,9 @@ function graphCounts(graph) {
     var offsetMidEdges  = graph.simulator.timeSubset.midEdgeRange.startIdx;
 
     var point       = {num: numPoints,      offset: offsetPoint};
-    var edge        = {num: numEdges,       offset: offsetMidEdges};
+    var edge        = {num: numEdges * 2,       offset: offsetMidEdges};
     var midPoint    = {num: numMidPoints,   offset: offsetMidPoints};
-    var midEdge     = {num: numMidEdges,    offset: offsetMidEdges};
+    var midEdge     = {num: numMidEdges * 2,    offset: offsetMidEdges};
 
     return {
         curPoints: point,
@@ -102,7 +104,7 @@ function fetchVBOs(graph, renderConfig, bufferNames) {
                     version: graph.simulator.versions.buffers[name]
                 };
 
-                debug('Reading device buffer %s', name);
+                debug('Reading device buffer %s, stride %d', name, stride);
                 return graph.simulator.buffers[name].read(
                     new Float32Array(targetArrays[name].buffer),
                     counts[name].offset * stride,
