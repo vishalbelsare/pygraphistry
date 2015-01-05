@@ -7,7 +7,7 @@ var _ = require('underscore');
 var debug = require("debug")("graphistry:graph-viz:graph:nbody");
 var util = require('./util.js');
 
-var elementsPerPoint = 2;
+var ELEMENTS_PER_POINTS = 2;
 
 
 /**
@@ -378,13 +378,13 @@ function setColorMap(graph, imageURL, maybeClusters) {
 }
 
 
-// Turns an array of vec3's into a Float32Array with elementsPerPoint values for each element in
+// Turns an array of vec3's into a Float32Array with ELEMENTS_PER_POINTS values for each element in
 // the input array.
 function _toTypedArray(array, cons) {
-    var floats = new cons(array.length * elementsPerPoint);
+    var floats = new cons(array.length * ELEMENTS_PER_POINTS);
 
     for(var i = 0; i < array.length; i++) {
-        var ii = i * elementsPerPoint;
+        var ii = i * ELEMENTS_PER_POINTS;
         floats[ii + 0] = array[i][0];
         floats[ii + 1] = array[i][1];
     }
@@ -414,11 +414,4 @@ function tick(graph, cfg) {
 }
 
 
-module.exports = {
-    "elementsPerPoint": elementsPerPoint,
-    "create": create,
-    "setPoints": setPoints,
-    "setEdges": setEdges,
-    "setColorMap": setColorMap,
-    "tick": tick
-};
+module.exports = {create: create};
