@@ -191,12 +191,22 @@ module.exports = {
         setKernelArgs(simulator, "forceAtlasPoints");
 
         simulator.tickBuffers(['nextPoints', 'curPoints', 'springsPos'])
+
         debug("Running kernel forceAtlasPoints");
-        var appliedForces = simulator.kernels.forceAtlasPoints.call(simulator.numPoints, resources);
+        var appliedForces;
+        if (simulator.locked.lockPoints) {
+            debug('Locked points, skipping');
+            appliedForces = simulator.buffers.curPoints.copyInto(simulator.buffers.nextPoints);
+        } else {
+            appliedForces = simulator.kernels.forceAtlasPoints.call(simulator.numPoints, resources);
+        }
 
         return appliedForces
             .then(function() {
-                if(simulator.numEdges > 0) {
+                if (simulator.locked.lockEdges) {
+                    debug('Locked edges, skipping');
+                    return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
+                } else if(simulator.numEdges > 0) {
                     return atlasEdgesKernelSeq(
                             simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
                             simulator.buffers.nextPoints, simulator.buffers.curPoints)
