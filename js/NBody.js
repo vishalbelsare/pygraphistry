@@ -21,9 +21,14 @@ var elementsPerPoint = 2;
  * @param [dimensions=\[1,1\]] - a two element array [width,height] used for internal posituin calculations.
  */
 function create(renderer, dimensions, numSplits, simulationTime) {
+
     var graph = {
-        "renderer": renderer,
-        "simulator": undefined,
+        renderer: renderer,
+        simulator: undefined,
+        stepNumber: 0,
+        dimensions: dimensions,
+        numSplits: numSplits,
+        simulationTime: simulationTime
     };
  
     graph.initSimulation = initSimulation.bind(this, graph);

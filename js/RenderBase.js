@@ -3,21 +3,22 @@
 
 'use strict';
 
-function create() {
+var _ = require('underscore');
+
+//[string] -> Renderer
+function create(clglBufferNames) {
     var renderer = {
         gl: null,
         document: null,
         canvas: null,
 
-        buffers: {
+        buffers: _.extend({
             curPoints: null,
-            pointSizes: null,
-            pointColors: null,
             springs: null,
             curMidPoints: null,
             midSprings: null,
             midSpringsColorCoord: null
-        },
+        }, _.object((clglBufferNames||[]).map(function (name) { return [name, null]; }))),
 
         programs: {
             points: null,

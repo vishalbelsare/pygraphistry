@@ -7,9 +7,9 @@ var RenderBase = require('./RenderBase.js');
 var Q = require('q');
 var debug = require('debug')('graphistry:graph-viz:render:rendernull');
 
-
-var create = Q.promised(function(document) {
-    var renderer = RenderBase.create();
+//[string] * document -> Promise Renderer
+var create = Q.promised(function(clglBufferNames, document) {
+    var renderer = RenderBase.create(clglBufferNames);
     debug("Created renderer RenderNull");
 
     renderer.document = document;

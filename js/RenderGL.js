@@ -8,10 +8,11 @@ var glMatrix = require('gl-matrix');
 var util = require('./util.js');
 var debug = require('debug')('graphistry:graph-viz:render:rendergl');
 
-var create = Q.promised(function(document, canvas, bgColor, dimensions, visible) {
+//[string] * document * canvas * int * [number, number] * {<string>: bool} -> Promise Renderer
+var create = Q.promised(function(clglBufferNames, document, canvas, bgColor, dimensions, visible) {
     visible = visible || {};
 
-    var renderer = RenderBase.create();
+    var renderer = RenderBase.create(clglBufferNames);
     renderer.document = document;
     renderer.canvas = canvas;
 

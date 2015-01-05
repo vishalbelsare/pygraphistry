@@ -15,6 +15,15 @@ if (typeof(window) == 'undefined') {
 Q.longStackSupport = true;
 var randLength = 73;
 
+
+//CL+GL+local vbos & setters will be created/exported, no need to modify anything else
+var NAMED_CLGL_BUFFERS = {
+    'pointColors': 'setColors',
+    'pointSizes': 'setSizes',
+    'pointTags': 'setPointTags',
+    'edgeTags': 'setEdgeTags'
+};
+
 function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
     return cljs.create(renderer)
     .then(function(cl) {
@@ -53,6 +62,7 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
 
             var simObj = {
                 renderer: renderer,
+                NAMED_CLGL_BUFFERS: NAMED_CLGL_BUFFERS,
                 cl: cl,
                 elementsPerPoint: 2,
                 kernels: kernels,
@@ -577,4 +587,5 @@ function tick(simulator, stepNumber, cfg) {
 
 module.exports = {
     'create': create,
+    NAMED_CLGL_BUFFERS: NAMED_CLGL_BUFFERS
 };
