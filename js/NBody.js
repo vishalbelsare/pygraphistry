@@ -144,9 +144,9 @@ function setPoints(graph, points, pointSizes, pointColors) {
     // FIXME: If there is already data loaded, we should to free it before loading new data
     return setVertices(graph, points)
     .then(function (simulator) {
-        return setSizes(graph, pointSizes);        
+        return boundBuffers.pointSizes.setter(graph, pointSizes);
     }).then(function (simulator) {
-        return setColors(graph, pointColors);
+        return boundBuffers.pointColors.setter(graph, pointColors);
     })
     .then(function() {
         return graph;
