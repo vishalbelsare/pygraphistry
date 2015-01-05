@@ -5,8 +5,10 @@
 
 var _ = require('underscore');
 
+var NAMED_CLGL_BUFFERS = require('./buffers.js').NAMED_CLGL_BUFFERS;
+
 //[string] -> Renderer
-function create(clglBufferNames) {
+function create() {
     var renderer = {
         gl: null,
         document: null,
@@ -18,7 +20,7 @@ function create(clglBufferNames) {
             curMidPoints: null,
             midSprings: null,
             midSpringsColorCoord: null
-        }, _.object((clglBufferNames||[]).map(function (name) { return [name, null]; }))),
+        }, _.object(_.keys(NAMED_CLGL_BUFFERS).map(function (name) { return [name, null]; }))),
 
         programs: {
             points: null,

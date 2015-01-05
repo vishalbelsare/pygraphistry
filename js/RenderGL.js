@@ -9,10 +9,10 @@ var util = require('./util.js');
 var debug = require('debug')('graphistry:graph-viz:render:rendergl');
 
 //[string] * document * canvas * int * [number, number] * {<string>: bool} -> Promise Renderer
-var create = Q.promised(function(clglBufferNames, document, canvas, bgColor, dimensions, visible) {
+var create = Q.promised(function(document, canvas, bgColor, dimensions, visible) {
     visible = visible || {};
 
-    var renderer = RenderBase.create(clglBufferNames);
+    var renderer = RenderBase.create();
     renderer.document = document;
     renderer.canvas = canvas;
 

@@ -182,10 +182,10 @@ function init(cfg) {
     var canvasStandin = {width: WIDTH, height: HEIGHT, clientWidth: WIDTH,
                          clientHeight: HEIGHT};
     var bgColor = [255, 255, 255, 1.0];
-    RenderGl.create(_.keys(cfg.simulator.NAMED_CLGL_BUFFERS), document, canvasStandin, bgColor, global.dimensions);
+    RenderGl.create(document, canvasStandin, bgColor, global.dimensions);
     */
 
-    return RenderNull.create(_.keys(cfg.simulator.NAMED_CLGL_BUFFERS), null)
+    return RenderNull.create(null)
         .then(function (renderer) {
             var graph = NBody.create(
                 renderer, global.dimensions, global.numSplits, global.simulationTime);

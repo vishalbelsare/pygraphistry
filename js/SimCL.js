@@ -16,13 +16,7 @@ Q.longStackSupport = true;
 var randLength = 73;
 
 
-//CL+GL+local vbos & setters will be created/exported, no need to modify anything else
-var NAMED_CLGL_BUFFERS = {
-    'pointColors': 'setColors',
-    'pointSizes': 'setSizes',
-    'pointTags': 'setPointTags',
-    'edgeTags': 'setEdgeTags'
-};
+var NAMED_CLGL_BUFFERS = require('./buffers.js').NAMED_CLGL_BUFFERS;
 
 function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
     return cljs.create(renderer)
@@ -62,7 +56,6 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
 
             var simObj = {
                 renderer: renderer,
-                NAMED_CLGL_BUFFERS: NAMED_CLGL_BUFFERS,
                 cl: cl,
                 elementsPerPoint: 2,
                 kernels: kernels,
@@ -300,8 +293,8 @@ function makeSetter(simulator, name) {
 
 // ex:  simulator.setSizes(pointSizes).then(...)
 function createSetters (simulator) {
-    _.each(NAMED_CLGL_BUFFERS, function (setterName, bufferName) {
-        simulator[setterName] = makeSetter(simulator, bufferName);
+    _.each(NAMED_CLGL_BUFFERS, function (cfg, bufferName) {
+        simulator[cfg.setter] = makeSetter(simulator, bufferName);
     });
 }
 
@@ -559,8 +552,8 @@ function tick(simulator, stepNumber, cfg) {
     };
 
     var res = Q()
-    .then(function () { 
-        return tickAllHelper(simulator.layoutAlgorithms.slice(0)); 
+    .then(function () {
+        return tickAllHelper(simulator.layoutAlgorithms.slice(0));
     }).then(function() {
         // This cl.queue.finish() needs to be here because, without it, the queue appears to outside
         // code as running really fast, and tons of ticks will be called, flooding the GPU/CPU with
@@ -579,6 +572,5 @@ function tick(simulator, stepNumber, cfg) {
 
 
 module.exports = {
-    'create': create,
-    NAMED_CLGL_BUFFERS: NAMED_CLGL_BUFFERS
+    'create': create
 };

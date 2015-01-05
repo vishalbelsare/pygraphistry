@@ -8,8 +8,8 @@ var Q = require('q');
 var debug = require('debug')('graphistry:graph-viz:render:rendernull');
 
 //[string] * document -> Promise Renderer
-var create = Q.promised(function(clglBufferNames, document) {
-    var renderer = RenderBase.create(clglBufferNames);
+var create = Q.promised(function(document) {
+    var renderer = RenderBase.create();
     debug("Created renderer RenderNull");
 
     renderer.document = document;
