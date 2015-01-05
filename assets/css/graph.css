@@ -20,8 +20,8 @@
     border-radius: 7px;
 }
 
-#main:hover, #menuState:hover, #controlState:hover {
-    box-shadow: 0 0 10px rgba(255,255,255,0.75);
+#main:hover, #menuState:hover, #controlState a:hover, #controlState a.on {
+    text-shadow: 0 0 10px rgba(255,255,255,0.75);
 }
 
 
@@ -37,6 +37,26 @@
     top: 1em;
     margin: 1em;
     padding: 0.5em;
+}
+
+
+#controlState a {
+    display: block;
+    text-align: center;
+    padding: 0.2em;
+}
+
+
+
+.selectable {
+    display: inline-block;
+    width: 1.3em;
+    height: 1.3em;
+    border: 1px dashed white;
+}
+.selectable.on, .selectable:hover {
+        box-shadow: 0 0 10px rgba(255,255,255,0.75);
+
 }
 
 
