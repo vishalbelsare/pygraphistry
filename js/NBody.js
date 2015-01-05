@@ -30,26 +30,27 @@ function create(renderer, dimensions, numSplits, simulationTime) {
         numSplits: numSplits,
         simulationTime: simulationTime
     };
- 
-    graph.initSimulation = initSimulation.bind(this, graph);
-    graph.setPoints = setPoints.bind(this, graph);
-    graph.setVertices = setVertices.bind(this, graph);
-    graph.setSizes = setSizes.bind(this, graph);
-    graph.setColors = setColors.bind(this, graph);
-    graph.setLabels = setLabels.bind(this, graph);
-    graph.setEdges = setEdges.bind(this, graph);
-    graph.setEdgesAndColors = setEdgesAndColors.bind(this, graph);
-    graph.setEdgeColors = setEdgeColors.bind(this, graph);
-    graph.setMidEdgeColors = setMidEdgeColors.bind(this, graph);
-    graph.setLocked = setLocked.bind(this, graph);
-    graph.setColorMap = setColorMap.bind(this, graph);
-    graph.tick = tick.bind(this, graph);
-    graph.stepNumber = 0;
-    graph.dimensions = dimensions;
-    graph.numSplits = numSplits;
-    graph.simulationTime = simulationTime;
 
-    graph.updateSettings = updateSettings.bind(this, graph);
+    _.each({
+        initSimulation: initSimulation,
+        setPoints: setPoints,
+        setVertices: setVertices,
+        setSizes: setSizes,
+        setColors: setColors,
+        setPointTags: setPointTags,
+        setEdgeTags: setEdgeTags,
+        setLabels: setLabels,
+        setEdges: setEdges,
+        setEdgesAndColors: setEdgesAndColors,
+        setEdgeColors: setEdgeColors,
+        setMidEdgeColors: setMidEdgeColors,
+        setLocked: setLocked,
+        setColorMap: setColorMap,
+        tick: tick,
+        updateSettings: updateSettings
+    }, function (setter, setterName) {
+        graph[setterName] = setter.bind('', graph);
+    });
 
     return graph;
 }
@@ -78,6 +79,78 @@ function updateSettings (graph, cfg) {
         graph.simulator.setTimeSubset(cfg.timeSubset);
     }
 }
+
+
+
+//str * TypedArrayConstructor * {'numPoints', 'numEdges'} * {'set...'} * 'a
+//  -> simulator -> Q simulator
+//Create default setter
+function makeDefaultSetter (name, arrConstructor, dimName, passthrough, v) {
+    return function (simulator) {
+        debug("Using default %s", name);
+        var elts = simulator[dimName];
+        var arr = new arrConstructor(elts);
+        if (v) {
+            for (var i = 0; i < elts; i++)
+                arr[i] = v;
+        }
+        return simulator[passthrough](arr);
+    };
+}
+
+var setDefaultSizes     = makeDefaultSetter(
+    'node sizes', Uint8Array,  'numPoints', 'setSizes', 4);
+
+var setDefaultColors    = makeDefaultSetter(
+    'node color', Uint32Array, 'numPoints', 'setColors', util.rgb(102, 102, 255));
+
+var setDefaultPointTags = makeDefaultSetter(
+    'node tag',   Uint8Array,  'numPoints', 'setPointTags', 0);
+
+var setDefaultEdgeTags = makeDefaultSetter(
+    'edge tag',   Uint8Array,  'numEdges', 'setEdgeTags', 0);
+
+
+
+function makeSetter (name, defSetter, arrConstructor, dimName, passthrough) {
+
+    return function (graph, rawArr) {
+
+        debug('Loading %s', name);
+
+        if (!rawArr) {
+            return defSetter(graph.simulator);
+        }
+
+        var arr;
+        if (rawArr.constructor == arrConstructor) {
+            arr = rawArr;
+        } else {
+            var len = graph.simulator[dimName];
+            arr = new arrConstructor(len);
+            for (var i = 0; i < len; i++) {
+                arr[i] = rawArr[i];
+            }
+        }
+
+        graph.simulator[passthrough](arr);
+
+    };
+}
+
+var setColors       = makeSetter(
+    'pointColors',  setDefaultColors,       Uint32Array,    'numPoints',    'setColors');
+
+var setPointTags    = makeSetter(
+    'pointTags',    setDefaultPointTags,    Uint8Array,     'numPoints',    'setPointTags');
+
+
+var setEdgeTags     = makeSetter(
+    'edgeTags',     setDefaultEdgeTags,     Uint8Array,     'numEdges',     'setEdgeTags');
+
+
+
+
 
 // TODO Deprecate and remove. Left for Uber compatibitily
 function setPoints(graph, points, pointSizes, pointColors) {
@@ -123,36 +196,7 @@ function setSizes(graph, pointSizes) {
     return graph.simulator.setSizes(_pointSizes)
 }
 
-function setDefaultSizes(simulator) {
-    debug("Using default node sizes");
-    var pointSizes = new Uint8Array(simulator.numPoints);
-    for (var i = 0; i < simulator.numPoints; i++)
-        pointSizes[i] = 4;
 
-    return simulator.setSizes(pointSizes);
-}
-
-function setColors(graph, pointColors) {
-    if (!pointColors)
-        return setDefaultColors(graph.simulator);
-
-    debug('Loading pointColors');
-    var npoints = graph.simulator.numPoints;
-
-    var pc = new Uint32Array(npoints);
-    for (var i = 0; i < npoints; i++)
-        pc[i] = pointColors[i];
-    return graph.simulator.setColors(pc);
-}
-
-function setDefaultColors(simulator) {
-    debug("Using default node colors");
-    var pointColors = new Uint32Array(simulator.numPoints);
-    for (var i = 0; i < simulator.numPoints; i++)
-        pointColors[i] = util.rgb(102, 102, 255);
-
-    return simulator.setColors(pointColors);
-}
 
 // TODO Deprecate and remove. Left for Uber compatibility
 function setEdgesAndColors(graph, edges, edgeColors) {

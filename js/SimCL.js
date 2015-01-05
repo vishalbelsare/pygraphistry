@@ -72,10 +72,16 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
                 },
                 layoutAlgorithms: layoutAlgorithms
             };
+
+
+            simObj.buffersLocal = {};
+            createSetters(simObj);
+
+
             simObj.tick = tick.bind(this, simObj);
+
             simObj.setPoints = setPoints.bind(this, simObj);
-            simObj.setSizes = setSizes.bind(this, simObj);
-            simObj.setColors = setColors.bind(this, simObj);
+
             simObj.setEdges = setEdges.bind(this, renderer, simObj);
             simObj.setEdgeColors = setEdgeColors.bind(this, simObj);
             simObj.setMidEdgeColors = setMidEdgeColors.bind(this, simObj);
@@ -117,11 +123,6 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
                 midSpringsColorCoord: null,
                 nextMidPoints: null,
                 curMidPoints: null
-            };
-            //constant
-            simObj.buffersLocal = {
-                pointSizes: null,
-                pointColors: null
             };
 
             simObj.timeSubset = {
@@ -269,46 +270,38 @@ function setPoints(simulator, points) {
     });
 }
 
-/**
- * Set the initial sizes of the points in the NBody simulation (pointSizes)
- * @param simulator - the simulator object created by SimCL.create()
- * @param {Float32Array} sizes - a typed array containing one element for every point
- *
- * @returns a promise fulfilled by with the given simulator object
- */
-function setSizes(simulator, pointSizes) {
-    simulator.buffersLocal.pointSizes = pointSizes;
 
-    simulator.resetBuffers([simulator.buffers.pointSizes])
+//string -> simulator * typedarray -> Q simulator
+// Create and store buffer on host and device with passed in defaults
+// returns corresponding setter
+function makeSetter(simulator, name) {
 
-    // Create buffers and write initial data to them, then set
-    simulator.tickBuffers(['pointSizes']);
+    return function (data) {
 
-    return simulator.renderer.createBuffer(pointSizes, 'pointSizes')
-    .then(function(pointSizesVBO) {
-        debug('Created sizes VBO');
+        simulator.buffersLocal[name] = null;
+        simulator.renderer.buffers[name] = null;
 
-        simulator.renderer.buffers.pointSizes = pointSizesVBO;
-        return simulator;
-    }).fail(function (err) {
-        console.error("ERROR Failure in SimCl.setSizes", (err||{}).stack)
-    });
+        simulator.buffersLocal[name] = data;
+        simulator.resetBuffers([simulator.buffers[name]])
+        simulator.tickBuffers([name]);
+
+        return simulator.renderer.createBuffer(data, name)
+        .then(function(vbo) {
+            debug('Created %s VBO', name);
+            simulator.renderer.buffers[name] = vbo;
+            return simulator;
+        }).fail(function (err) {
+            console.error("ERROR Failure in SimCl.set %s", name, (err||{}).stack)
+        });
+
+    };
 }
 
-function setColors(simulator, pointColors) {
-    simulator.buffersLocal.pointColors = pointColors;
 
-    // Create buffers and write initial data to them, then set
-    simulator.tickBuffers(['pointColors']);
-
-    return simulator.renderer.createBuffer(pointColors, 'pointColors')
-    .then(function(pointColorsVBO) {
-        debug('Created colors VBO');
-
-        simulator.renderer.buffers.pointColors = pointColorsVBO;
-        return simulator;
-    }).fail(function (err) {
-        console.error("ERROR Failure in SimCl.setColors", (err||{}).stack)
+// ex:  simulator.setSizes(pointSizes).then(...)
+function createSetters (simulator) {
+    _.each(NAMED_CLGL_BUFFERS, function (setterName, bufferName) {
+        simulator[setterName] = makeSetter(simulator, bufferName);
     });
 }
 
@@ -524,12 +517,12 @@ function setTimeSubset(renderer, simulator, range) {
         'curPoints', 'nextPoints', 'springsPos',
 
         //style
-        'pointSizes', 'pointColors', 'edgeColors',
+        'edgeColors',
 
         //midpoints/midedges
         'curMidPoints', 'nextMidPoints', 'curMidPoints', 'midSpringsPos', 'midSpringsColorCoord'
 
-        ]);
+        ].concat(_.keys(NAMED_CLGL_BUFFERS)));
 
 }
 
