@@ -9,6 +9,11 @@ var util = require('./util.js');
 
 var ELEMENTS_PER_POINTS = 2;
 
+var NAMED_CLGL_BUFFERS = require('./buffers.js').NAMED_CLGL_BUFFERS;
+
+
+//for each named_clgl_buffer, its setter
+var boundBuffers = {};
 
 /**
  * Create a new N-body graph and return a promise for the graph object
@@ -35,10 +40,6 @@ function create(renderer, dimensions, numSplits, simulationTime) {
         initSimulation: initSimulation,
         setPoints: setPoints,
         setVertices: setVertices,
-        setSizes: setSizes,
-        setColors: setColors,
-        setPointTags: setPointTags,
-        setEdgeTags: setEdgeTags,
         setLabels: setLabels,
         setEdges: setEdges,
         setEdgesAndColors: setEdgesAndColors,
@@ -50,6 +51,10 @@ function create(renderer, dimensions, numSplits, simulationTime) {
         updateSettings: updateSettings
     }, function (setter, setterName) {
         graph[setterName] = setter.bind('', graph);
+    });
+
+    _.each(NAMED_CLGL_BUFFERS, function (cfg, name) {
+        graph[cfg.setterName] = boundBuffers[name].setter.bind('', graph);
     });
 
     return graph;
@@ -98,20 +103,6 @@ function makeDefaultSetter (name, arrConstructor, dimName, passthrough, v) {
     };
 }
 
-var setDefaultSizes     = makeDefaultSetter(
-    'node sizes', Uint8Array,  'numPoints', 'setSizes', 4);
-
-var setDefaultColors    = makeDefaultSetter(
-    'node color', Uint32Array, 'numPoints', 'setColors', util.rgb(102, 102, 255));
-
-var setDefaultPointTags = makeDefaultSetter(
-    'node tag',   Uint8Array,  'numPoints', 'setPointTags', 0);
-
-var setDefaultEdgeTags = makeDefaultSetter(
-    'edge tag',   Uint8Array,  'numEdges', 'setEdgeTags', 0);
-
-
-
 function makeSetter (name, defSetter, arrConstructor, dimName, passthrough) {
 
     return function (graph, rawArr) {
@@ -138,17 +129,13 @@ function makeSetter (name, defSetter, arrConstructor, dimName, passthrough) {
     };
 }
 
-var setColors       = makeSetter(
-    'pointColors',  setDefaultColors,       Uint32Array,    'numPoints',    'setColors');
-
-var setPointTags    = makeSetter(
-    'pointTags',    setDefaultPointTags,    Uint8Array,     'numPoints',    'setPointTags');
-
-
-var setEdgeTags     = makeSetter(
-    'edgeTags',     setDefaultEdgeTags,     Uint8Array,     'numEdges',     'setEdgeTags');
-
-
+//Create stock setters
+//other setters may use, must do here
+_.each(NAMED_CLGL_BUFFERS, function (cfg, name) {
+    var defaultSetter = makeDefaultSetter(name, cfg.arrType, cfg.dims, cfg.setterName, cfg.defV);
+    var setter = makeSetter(name, defaultSetter, cfg.arrType, cfg.dims, cfg.setterName);
+    boundBuffers[name] = {setter: setter}
+});
 
 
 
@@ -181,21 +168,6 @@ function setVertices(graph, points) {
     graph.stepNumber = 0;
     return graph.simulator.setPoints(points)
 }
-
-function setSizes(graph, pointSizes) {
-    if (!pointSizes)
-        return setDefaultSizes(graph.simulator);
-
-    debug("Loading pointSizes")
-    var _pointSizes = new Uint8Array(graph.simulator.numPoints);
-    var min = 0, max = Math.pow(2, 8) - 1;
-    if (!_.all(pointSizes, function (s) {return s >= min && s <= max}))
-        console.warn("WARNING Point size out of range, capping to 8 bits")
-    for (var i = 0; i < graph.simulator.numPoints; i++)
-        _pointSizes[i] = Math.min(max, Math.max(min, pointSizes[i]));
-    return graph.simulator.setSizes(_pointSizes)
-}
-
 
 
 // TODO Deprecate and remove. Left for Uber compatibility

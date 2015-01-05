@@ -271,9 +271,6 @@ function makeSetter(simulator, name) {
 
     return function (data) {
 
-        simulator.buffersLocal[name] = null;
-        simulator.renderer.buffers[name] = null;
-
         simulator.buffersLocal[name] = data;
         simulator.resetBuffers([simulator.buffers[name]])
         simulator.tickBuffers([name]);
@@ -294,7 +291,7 @@ function makeSetter(simulator, name) {
 // ex:  simulator.setSizes(pointSizes).then(...)
 function createSetters (simulator) {
     _.each(NAMED_CLGL_BUFFERS, function (cfg, bufferName) {
-        simulator[cfg.setter] = makeSetter(simulator, bufferName);
+        simulator[cfg.setterName] = makeSetter(simulator, bufferName);
     });
 }
 
