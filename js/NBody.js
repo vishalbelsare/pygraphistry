@@ -302,6 +302,9 @@ function setEdgeColors(graph, edgeColors) {
     debug("Loading edgeColors");
     var nedges = graph.simulator.numEdges;
 
+    if (!edgeColors) // Use default Colors
+        return graph.simulator.setEdgeColors(undefined);
+
     if (edgeColors.length != nedges)
        console.error("ERROR: setEdgeColors expects one color per edge.");
     
