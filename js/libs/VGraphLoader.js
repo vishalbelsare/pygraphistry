@@ -139,7 +139,7 @@ function decode0(graph, vg, config)  {
     if (config.mapper) {
         mapper = mappers[config.mapper]
         if (mapper)
-            loaders = mapper.wrap(loaders)
+            loaders = wrap(mapper.mappings, loaders)
         else
             console.warn("WARNING Unknown mapper ", config.mapper);
     }
@@ -261,29 +261,9 @@ var testMapper = {
             }
         }
     },
-
-    wrap: function(loaders) {
-        var res = {}
-        for (var a in loaders) {
-            if (a in testMapper.mappings) {
-                var loader = loaders[a];
-                var mapping = testMapper.mappings[a];
-                res[mapping.name] = loader;
-
-                if ('transform' in mapping)
-                    // Helper function to work around dubious JS scoping
-                    doWrap(res, mapping, loader.load);
-
-                debug("Mapping " + mapping.name + " to " + a);
-            } else
-                res[a] = loaders[a];
-        }
-        return res;
-    }
 }
 
 var testMapperDemo = {
-    wrap: testMapper.wrap,
     mappings: _.extend({}, testMapper.mappings, {
         x: {
             name: 'x'
@@ -291,7 +271,37 @@ var testMapperDemo = {
         y: {
             name: 'y'
         }
-    })
+    }),
+}
+
+var debugMapper = {
+    mappings: {
+        pointLabel: {
+            name: "label"
+        },
+        pointSize: {
+            name: "size"
+        }
+    },
+}
+
+function wrap(mappings, loaders) {
+    var res = {}
+    for (var a in loaders) {
+        if (a in mappings) {
+            var loader = loaders[a];
+            var mapping = mappings[a];
+            res[mapping.name] = loader;
+
+            if ('transform' in mapping)
+                // Helper function to work around dubious JS scoping
+                doWrap(res, mapping, loader.load);
+
+            debug("Mapping " + mapping.name + " to " + a);
+        } else
+            res[a] = loaders[a];
+    }
+    return res;
 }
 
 function doWrap(res, mapping, oldLoad) {
@@ -303,6 +313,7 @@ function doWrap(res, mapping, oldLoad) {
 var mappers = {
     "opentsdbflowdump_1hrMapper": testMapper,
     "opentsdbflowdump_1hrMapperDemo": testMapperDemo,
+    "debugMapper": debugMapper
 }
 
 function logTransform(values) {
