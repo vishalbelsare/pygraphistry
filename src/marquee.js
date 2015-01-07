@@ -65,7 +65,10 @@ function marqueeSelections ($cont, $elt, isOn) {
                 debug('start listening for marquee selections');
                 var firstRunSinceMousedown;
                 return Rx.Observable.fromEvent($cont, 'mousedown')
-                        .do(function (evt) { evt.stopPropagation(); })
+                        .do(function (evt) {
+                            evt.stopPropagation();
+                            $('body').addClass('noselect');
+                        })
                     .map(toPoint.bind('', $cont))
                         .do(function () {
                             debug('marquee instance started, listening');
@@ -79,9 +82,10 @@ function marqueeSelections ($cont, $elt, isOn) {
                                 return toRect(startPoint, toPoint($cont, moveEvt));
                             })
                             .takeUntil(Rx.Observable.fromEvent($cont, 'mouseup')
-                                .do(function (evt) { evt.stopPropagation(); })
-                                .do(function () {
+                                .do(function (evt) {
+                                    evt.stopPropagation();
                                     debug('drag marquee finished, ending instance & hiding');
+                                    $('body').removeClass('noselect');
                                     $elt.removeClass('on').addClass('off');
                                 }));
                     })
@@ -135,7 +139,8 @@ function init ($cont, toggle, cfg) {
 
     return {
         selections: bounds,
-        $elt: $elt
+        $elt: $elt,
+        isOn: toggle
     };
 
 }
