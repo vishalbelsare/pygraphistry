@@ -117,6 +117,9 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
                 nextMidPoints: null,
                 curMidPoints: null
             };
+            _.extend(
+                simObj.buffers,
+                _.object(_.keys(NAMED_CLGL_BUFFERS).map(function (name) { return [name, null]; })));
 
             simObj.timeSubset = {
                 relRange: {min: 0, max: 100},
@@ -279,8 +282,13 @@ function makeSetter(simulator, name) {
         .then(function(vbo) {
             debug('Created %s VBO', name);
             simulator.renderer.buffers[name] = vbo;
+            return simulator.cl.createBufferGL(vbo, name);
+        })
+        .then(function (buffer) {
+            simulator.buffers[name] = buffer;
             return simulator;
-        }).fail(function (err) {
+        })
+        .fail(function (err) {
             console.error("ERROR Failure in SimCl.set %s", name, (err||{}).stack)
         });
 
