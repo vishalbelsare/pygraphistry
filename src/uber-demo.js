@@ -177,17 +177,23 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIdx) {
         .map(function (idxStr) {
             var idx = parseInt(idxStr);
             if (poi.state.activeLabels[idx]) {
-                return poi.state.activeLabels[idx];
+                //label already on, resuse
+                var alreadyActiveLabel = poi.state.activeLabels[idx];
+                toShow.push(alreadyActiveLabel);
+                return alreadyActiveLabel;
             } else if ((_.keys(poi.state.activeLabels).length > poi.MAX_LABELS) && (labelIdx !== idx)) {
+                //no label but too many on screen, don't create new
                 return null;
             } else if (!poi.state.inactiveLabels.length) {
-                var res = poi.genLabel($labelCont, idx);
-                res.elt.on('mouseover', function () {
+                //no label and no preallocated elts, create new
+                var freshLabel = poi.genLabel($labelCont, idx);
+                freshLabel.elt.on('mouseover', function () {
                     labelHover.onNext(this);
                 });
-                return res;
+                toShow.push(freshLabel);
+                return freshLabel;
             } else {
-
+                //no label and available inactive preallocated, reuse
                 var lbl = poi.state.inactiveLabels.pop();
                 lbl.idx = idx;
                 lbl.setIdx(idx);

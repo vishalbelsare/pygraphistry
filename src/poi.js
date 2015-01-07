@@ -145,6 +145,8 @@ function genLabel (instance, $labelCont, idx) {
         })
         .subscribe(_.identity, makeErrorHandler('genLabel fetcher'));
 
+    res.setIdx(idx);
+
     return res;
 }
 
@@ -161,7 +163,7 @@ function getLabelText (instance, idx) {
             if (err) {
                 console.error('get_labels', err);
             } else {
-                instance.state.labelCache[idx].onNext(data);
+                instance.state.labelCache[idx].onNext(data[0]);
             }
         });
     }
