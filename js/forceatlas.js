@@ -3,7 +3,8 @@
 var debug = require("debug")("graphistry:graph-viz:cl:forceatlas"),
     _     = require('underscore'),
     cljs  = require('./cl.js'),
-    gs    = require('./gaussseidel.js');
+    gs    = require('./gaussseidel.js'),
+    Q     = require('q');
 
 
 if (typeof(window) == 'undefined') {
@@ -207,11 +208,24 @@ module.exports = {
                     debug('Locked edges, skipping');
                     return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
                 } else if(simulator.numEdges > 0) {
-                    return atlasEdgesKernelSeq(
-                            simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
-                            simulator.buffers.nextPoints, simulator.buffers.curPoints)
+                    return Q()
                         .then(function () {
-                              return atlasEdgesKernelSeq(
+                            //debug('SKIP FORWARDS');
+                            //return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
+                            debug('forwards');
+                            return atlasEdgesKernelSeq(
+                                simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
+                                simulator.buffers.nextPoints, simulator.buffers.curPoints)
+
+                        })
+                        .then(function () {
+                            //FIXME this shouldn't be necessary -- is the next kernel not copying existing vals or swapping buffers somehow?
+                            return simulator.buffers.curPoints.copyInto(simulator.buffers.nextPoints);
+                        })
+                        .then(function () {
+                            //debug('SKIP BACKWARDS');
+                            //return simulator.buffers.curPoints.copyInto(simulator.buffers.nextPoints);
+                            return atlasEdgesKernelSeq(
                                 simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
                                 simulator.buffers.curPoints, simulator.buffers.nextPoints);
                         })
