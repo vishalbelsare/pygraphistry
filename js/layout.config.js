@@ -26,8 +26,8 @@ var uberControls = {
             params: {
                 charge: -0.000029360001841802474,
                 gravity: 0.020083175556898723,
-                edgeStrength: 4.292198241799153,
-                edgeDistance: 0.0000158,
+                edgeStrength0: 4.292198241799153,
+                edgeDistance0: 0.0000158,
             }
         }
     ],
@@ -52,8 +52,10 @@ var netflowControls = {
             params: {
                 charge: -0.000029360001841802474,
                 gravity: 0.020083175556898723,
-                edgeStrength: 4.292198241799153,
-                edgeDistance: 0.0000158
+                edgeStrength0: 4.292198241799153,
+                edgeDistance0: 0.0000158,
+                edgeStrength1: 4.292198241799153,
+                edgeDistance1: 0.0000158
             }
         }
     ],

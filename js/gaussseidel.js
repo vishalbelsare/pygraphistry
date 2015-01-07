@@ -11,47 +11,25 @@ if (typeof(window) == 'undefined') {
     var webcl = window.webcl;
 }
 
-var gsPoints = {
-    numPoints: null,
-    inputPositions: null,
-    outputPositions: null,
-    tilePointsParam: null,
-    width: null,
-    height: null,
-    charge: null,
-    gravity: null,
-    randValues: null,
-    stepNumber: null
-};
-var gsPointsOrder = ['numPoints',  'inputPositions', 'outputPositions', 'tilePointsParam', 'width', 
+var gsPointsOrder = ['numPoints',  'inputPositions', 'outputPositions', 'tilePointsParam', 'width',
                       'height', 'charge', 'gravity', 'randValues', 'stepNumber'];
+var gsPoints = _.object(gsPointsOrder.map(function (name) { return [name, null]; }));
 Object.seal(gsPoints);
 
 
-var gsSprings = {
-    springs: null,
-    workList: null,
-    inputPoints: null,
-    outputPoints: null,
-    springStrength: null,
-    springDistance: null,
-    stepNumber: null
-};
-var gsSpringsOrder = ['springs', 'workList', 'inputPoints', 'outputPoints', 
-                      'springStrength', 'springDistance','stepNumber'];
+var gsSpringsOrder = ['springs', 'workList', 'edgeTags', 'inputPoints', 'outputPoints',
+                      'edgeStrength0', 'edgeDistance0', 'edgeStrength1', 'edgeDistance1',
+                      'stepNumber'];
+var gsSprings = _.object(gsSpringsOrder.map(function (name) { return [name, null]; }));
 Object.seal(gsSprings);
 
-var gsSpringsGather = {
-    springs: null,
-    workList: null,
-    inputPoints: null,
-    springPositions: null
-};
 var gsSpringsGatherOrder = ['springs', 'workList', 'inputPoints', 'springPositions'];
+var gsSpringsGather = _.object(gsSpringsGatherOrder.map(function (name) { return [name, null]; }));
 Object.seal(gsSpringsGather);
 
 var argsType = {
     numPoints: cljs.types.uint_t,
+    edgeTags: null,
     inputPositions: null,
     outputPositions: null,
     tilePointsParam: cljs.types.local_t,
@@ -61,14 +39,16 @@ var argsType = {
     gravity: cljs.types.float_t,
     randValues: null,
     stepNumber: cljs.types.uint_t,
-    springs: null, 
+    springs: null,
     workList: null,
     inputPoints: null,
     outputPoints: null,
-    springStrength: cljs.types.float_t,
-    springDistance: cljs.types.float_t,
-    springPositions: null 
-}
+    edgeStrength0: cljs.types.float_t,
+    edgeDistance0: cljs.types.float_t,
+    edgeStrength1: cljs.types.float_t,
+    edgeDistance1: cljs.types.float_t,
+    springPositions: null
+};
 Object.seal(argsType);
 
 module.exports = {
@@ -96,19 +76,20 @@ module.exports = {
     ],
 
     // Also used by forceatlas
-    gsSpringsGather: gsSpringsGather, 
-    gsSpringsGatherOrder: gsSpringsGatherOrder, 
-    argsType: argsType, 
+    gsSpringsGather: gsSpringsGather,
+    gsSpringsGatherOrder: gsSpringsGatherOrder,
+    argsType: argsType,
 
     setPhysics: function (cfg) {
-        if ('charge' in cfg)
-            gsPoints.charge = webcl.type ? [cfg.charge] : new Float32Array([cfg.charge]);
-        if ('gravity' in cfg)
-            gsPoints.gravity = webcl.type ? [cfg.gravity] : new Float32Array([cfg.gravity]);
-        if ('edgeDistance' in cfg)
-          gsSprings.springDistance = webcl.type ? [cfg.edgeDistance] : new Float32Array([cfg.edgeDistance]);
-        if ('edgeStrength' in cfg)
-          gsSprings.springStrength = webcl.type ? [cfg.edgeStrength]  : new Float32Array([cfg.edgeStrength]);
+        [ [gsPoints, ['charge', 'gravity']],
+          [gsSprings, ['edgeDistance0', 'edgeStrength0', 'edgeDistance1', 'edgeStrength1']] ]
+            .forEach(function (kernelPair) {
+                kernelPair[1].forEach(function (arg) {
+                    if (arg in cfg) {
+                        kernelPair[0][arg] = webcl.type ? [cfg[arg]] : new Float32Array([cfg[arg]]);
+                    }
+                });
+            });
     },
 
     setPoints: function (simulator) {
@@ -153,8 +134,9 @@ module.exports = {
             gsSprings.workList = workItems.buffer;
             gsSprings.inputPoints = fromPoints.buffer;
             gsSprings.outputPoints = toPoints.buffer;
-            gsSprings.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]); 
-            
+            gsSprings.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
+            gsSprings.edgeTags = simulator.buffers.edgeTags.buffer;
+
             setKernelArgs(simulator, "gaussSeidelSprings");
 
             simulator.tickBuffers(

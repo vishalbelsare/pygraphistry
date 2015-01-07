@@ -94,10 +94,10 @@ module.exports = {
             gsMidpoints.charge = webcl.type ? [cfg.charge] : new Float32Array([cfg.charge]);
         if ('gravity' in cfg)
             gsMidpoints.gravity = webcl.type ? [cfg.gravity] : new Float32Array([cfg.gravity]);
-        if ('edgeDistance' in cfg)
-            gsMidsprings.springDistance = webcl.type ? [cfg.edgeDistance] : new Float32Array([cfg.edgeDistance]);
-        if ('edgeStrength' in cfg)
-            gsMidsprings.springStrength = webcl.type ? [cfg.edgeStrength] : new Float32Array([cfg.edgeStrength]);
+        if ('edgeDistance0' in cfg)
+            gsMidsprings.springDistance = webcl.type ? [cfg.edgeDistance0] : new Float32Array([cfg.edgeDistance0]);
+        if ('edgeStrength0' in cfg)
+            gsMidsprings.springStrength = webcl.type ? [cfg.edgeStrength0] : new Float32Array([cfg.edgeStrength0]);
 
     },
 
