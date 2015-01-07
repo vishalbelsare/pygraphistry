@@ -302,7 +302,7 @@ function getLatestHighlightedPoint ($eventTarget, renderState, labelHover) {
     return res;
 }
 
-function setupInteractions($eventTarget, renderState) {
+function setupDragHoverInteractions($eventTarget, renderState) {
     //var currentState = renderState;
 
     var stateStream = new Rx.Subject();
@@ -402,28 +402,59 @@ function setupInteractions($eventTarget, renderState) {
 }
 
 
-function setupMarquee() {
+//Observable bool -> { ... }
+function setupMarquee(isOn) {
     //{selections: Observable [ [int, int] ]}
     var selections = marquee(
         $('#marquee'),
-        Rx.Observable.fromEvent($('#marqueerectangle'), 'click')
-            .scan(false, function (acc) { return !acc;}),
+        isOn,
         {transform: _.identity});
 
     selections.selections.subscribe(function (points) {
         console.log('selected bounds', points);
     });
+
+    return selections;
 }
 
+// -> Observable DOM
+//Return which mouse group element selected
+//Side effect: highlight that element
+function makeMouseSwitchboard() {
+
+    var mouseElts = $('#marqueerectangle, #mouser');
+
+    //$DOM * Observable DOM -> ()
+    //Highlight selected mouse menu button and disable rest
+    var mouseSwitchboard = function (onElt) {
+        mouseElts.each(function () {
+            debug('toggle', this.id, onElt.id, this.id===onElt.id);
+            $(this)[this.id === onElt.id ? 'addClass' : 'removeClass']('on');
+        });
+    };
+
+    var onElt = Rx.Observable.merge.apply(Rx.Observable,
+            mouseElts.get().map(function (elt) {
+                return Rx.Observable.fromEvent(elt, 'click').map(_.constant(elt));
+            }))
+            .merge(Rx.Observable.return($('#mouser')[0]));
+
+    onElt.subscribe(mouseSwitchboard, makeErrorHandler('mouseSwitchboard'));
+
+    return onElt;
+}
 
 function init(socket, $elt, renderState) {
 
     poi = poiLib(socket);
 
-    setupInteractions($elt, renderState);
+    var onElt = makeMouseSwitchboard();
 
+    var turnOnMarquee = onElt.map(function (elt) { return elt === $('#marqueerectangle')[0]; });
+    setupMarquee(turnOnMarquee);
 
-    setupMarquee();
+    setupDragHoverInteractions($elt, renderState);
+
 
     //trigger animation on server
     //socket.emit('graph_settings', {layout: true, play: true});
