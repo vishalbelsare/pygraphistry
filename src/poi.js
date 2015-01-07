@@ -6,7 +6,7 @@
 //      -- if label switched from on-to-off, check if sampling missed
 
 
-var debug       = require('debug')('graphistry:StreamGL:labels');
+var debug       = require('debug')('graphistry:StreamGL:poi');
 var _           = require('underscore');
 var Rx          = require('rx');
 var $           = require('jquery');

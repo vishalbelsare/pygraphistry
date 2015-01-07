@@ -2,7 +2,7 @@
 
 // FIXME: Move this to graph-viz repo -- it shouldn't be a part of the core StreamGL library
 
-var debug   = require('debug')('graphistry:uber:main');
+var debug   = require('debug')('graphistry:StreamGL:uber-demo');
 var Rx      = require('rx');
 var $       = require('jquery');
 var _       = require('underscore');
