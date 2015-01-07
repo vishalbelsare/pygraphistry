@@ -13,6 +13,7 @@ var interaction = require('./interaction.js');
 var renderer    = require('./renderer');
 var poiLib      = require('./poi.js');
 var poi;
+var marquee     = require('./marquee.js');
 
 
 
@@ -401,12 +402,28 @@ function setupInteractions($eventTarget, renderState) {
 }
 
 
+function setupMarquee() {
+    //{selections: Observable [ [int, int] ]}
+    var selections = marquee(
+        $('#marquee'),
+        Rx.Observable.fromEvent($('#marqueerectangle'), 'click')
+            .scan(false, function (acc) { return !acc;}),
+        {transform: _.identity});
+
+    selections.selections.subscribe(function (points) {
+        console.log('selected bounds', points);
+    });
+}
+
 
 function init(socket, $elt, renderState) {
 
     poi = poiLib(socket);
 
     setupInteractions($elt, renderState);
+
+
+    setupMarquee();
 
     //trigger animation on server
     //socket.emit('graph_settings', {layout: true, play: true});
