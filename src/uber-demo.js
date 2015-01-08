@@ -433,8 +433,10 @@ function init(socket, $elt, renderState) {
 
     var elts = {
         chargeSlider: 'charge',
-        edgeStrengthSlider: 'edgeStrength',
-        edgeDistSlider: 'edgeDistance',
+        edgeStrength0Slider: 'edgeStrength0',
+        edgeDist0Slider: 'edgeDistance0',
+        edgeStrength1Slider: 'edgeStrength1',
+        edgeDist1Slider: 'edgeDistance1',
         gravitySlider: 'gravity'
     };
 
