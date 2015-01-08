@@ -6,7 +6,7 @@
 //      -- if label switched from on-to-off, check if sampling missed
 
 
-var debug       = require('debug')('graphistry:StreamGL:labels');
+var debug       = require('debug')('graphistry:StreamGL:poi');
 var _           = require('underscore');
 var Rx          = require('rx');
 var $           = require('jquery');
@@ -145,6 +145,8 @@ function genLabel (instance, $labelCont, idx) {
         })
         .subscribe(_.identity, makeErrorHandler('genLabel fetcher'));
 
+    res.setIdx(idx);
+
     return res;
 }
 
@@ -161,7 +163,7 @@ function getLabelText (instance, idx) {
             if (err) {
                 console.error('get_labels', err);
             } else {
-                instance.state.labelCache[idx].onNext(data);
+                instance.state.labelCache[idx].onNext(data[0]);
             }
         });
     }

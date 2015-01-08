@@ -178,17 +178,23 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIdx) {
         .map(function (idxStr) {
             var idx = parseInt(idxStr);
             if (poi.state.activeLabels[idx]) {
-                return poi.state.activeLabels[idx];
+                //label already on, resuse
+                var alreadyActiveLabel = poi.state.activeLabels[idx];
+                toShow.push(alreadyActiveLabel);
+                return alreadyActiveLabel;
             } else if ((_.keys(poi.state.activeLabels).length > poi.MAX_LABELS) && (labelIdx !== idx)) {
+                //no label but too many on screen, don't create new
                 return null;
             } else if (!poi.state.inactiveLabels.length) {
-                var res = poi.genLabel($labelCont, idx);
-                res.elt.on('mouseover', function () {
+                //no label and no preallocated elts, create new
+                var freshLabel = poi.genLabel($labelCont, idx);
+                freshLabel.elt.on('mouseover', function () {
                     labelHover.onNext(this);
                 });
-                return res;
+                toShow.push(freshLabel);
+                return freshLabel;
             } else {
-
+                //no label and available inactive preallocated, reuse
                 var lbl = poi.state.inactiveLabels.pop();
                 lbl.idx = idx;
                 lbl.setIdx(idx);
@@ -475,8 +481,10 @@ function init(socket, $elt, renderState) {
 
     var elts = {
         chargeSlider: 'charge',
-        edgeStrengthSlider: 'edgeStrength',
-        edgeDistSlider: 'edgeDistance',
+        edgeStrength0Slider: 'edgeStrength0',
+        edgeDist0Slider: 'edgeDistance0',
+        edgeStrength1Slider: 'edgeStrength1',
+        edgeDist1Slider: 'edgeDistance1',
         gravitySlider: 'gravity'
     };
 
@@ -508,8 +516,8 @@ function init(socket, $elt, renderState) {
         Rx.Observable.fromEvent($('#simulate'), 'mousedown')
             .map(function () { return Rx.Observable.interval(50); });
     var releasing =
-        Rx.Observable.fromEvent($('#simulate'), 'mouseup')
-            .map(function () { return Rx.Observable.return(); });
+        Rx.Observable.fromEvent($('body'), 'mouseup')
+            .map(function () { return Rx.Observable.empty(); });
     downing.merge(releasing).flatMapLatest(_.identity)
         .subscribe(
             function () {

@@ -1,6 +1,6 @@
 'use strict';
 
-var debug = require('debug')('graphistry:StreamGL:renderer'),
+var debug = require('debug')('graphistry:StreamGL:localAttribHandler'),
     _     = require('underscore');
 
 

@@ -4,7 +4,7 @@
     Client networking layer for connecting a local canvas to remote layout engine
 */
 
-var debug        = require('debug')('graphistry:StreamGL:main');
+var debug        = require('debug')('graphistry:StreamGL:client');
 var $            = require('jquery');
 var Rx           = require('rx');
                    require('rx-jquery');
