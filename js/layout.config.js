@@ -70,12 +70,12 @@ var atlasControls = {
             algo: forceAtlas,
             params: {
                 gravity: 1,
-                scalingRatio: 2.0,
+                scalingRatio: 0.3,
                 edgeInfluence: 0,
                 preventOverlap: false,
                 strongGravity: false,
                 dissuadeHubs: false,
-                linLog: false
+                linLog: true
             }
         }
     ],
