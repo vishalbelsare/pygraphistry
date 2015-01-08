@@ -184,8 +184,7 @@ module.exports = {
             simulator.buffers.curPoints,
             simulator.buffers.forwardsDegrees,
             simulator.buffers.backwardsDegrees,
-            simulator.buffers.nextPoints,
-            simulator.buffers.springsPos
+            simulator.buffers.nextPoints
         ];
 
         faPoints.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
@@ -199,7 +198,11 @@ module.exports = {
             debug('Locked points, skipping');
             appliedForces = simulator.buffers.curPoints.copyInto(simulator.buffers.nextPoints);
         } else {
-            appliedForces = simulator.kernels.forceAtlasPoints.call(simulator.numPoints, resources);
+            appliedForces = simulator.kernels.forceAtlasPoints.call(simulator.numPoints, resources)
+            .then(function () {
+                //FIXME this shouldn't be necessary -- is the next kernel not copying existing vals or swapping buffers somehow?
+                return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
+            });
         }
 
         return appliedForces
