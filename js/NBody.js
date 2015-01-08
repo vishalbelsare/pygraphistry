@@ -194,8 +194,10 @@ var setEdges = Q.promised(function(graph, edges) {
 
         //[[src idx, dest idx]]
         var edgeList = new Array(edges.length / 2);
-        for (var i = 0; i < edges.length/2; i++)
+        for (var i = 0; i < edges.length/2; i++) {
             edgeList[i] = [edges[2 * i], edges[2 * i + 1]];
+            edgeList[i].original = i;
+        }
 
         //sort by src idx
         edgeList.sort(function(a, b) {
@@ -203,6 +205,13 @@ var setEdges = Q.promised(function(graph, edges) {
                 : a[0] > b[0] ? 1
                 : a[1] - b[1];
         });
+
+        var edgePermutationTyped = new Uint32Array(edgeList.length);
+        var edgePermutationInverseTyped = new Uint32Array(edgeList.length);
+        edgeList.forEach(function (edge, i) {
+            edgePermutationTyped[edge.original] = i;
+            edgePermutationInverseTyped[i] = edge.original;
+        })
 
         //[ [first edge number from src idx, numEdges from source idx, source idx], ... ]
         var workItems = [ [0, 1, edgeList[0][0]] ];
@@ -262,6 +271,12 @@ var setEdges = Q.promised(function(graph, edges) {
             //Uint32Array [(srcIdx, dstIdx), ...]
             //(edges ordered by src idx)
             edgesTyped: edgesTyped,
+
+            //Uint32Array [where unsorted edge now sits]
+            edgePermutation: edgePermutationTyped,
+
+            //Uint32Array [where sorted edge used to it]
+            edgePermutationInverseTyped: edgePermutationInverseTyped,
 
             //Uint32Array [(edge number, number of sibling edges), ... ]
             numWorkItems: workItemsTyped.length,
