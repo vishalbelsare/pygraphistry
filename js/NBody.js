@@ -87,6 +87,13 @@ function updateSettings (graph, cfg) {
 
 
 
+function passthroughSetter(simulator, dimName, arr, passthrough) {
+        simulator[passthrough](arr, true);
+        if (dimName == 'numEdges') {
+            simulator[passthrough](arr, false);
+        }
+}
+
 //str * TypedArrayConstructor * {'numPoints', 'numEdges'} * {'set...'} * 'a
 //  -> simulator -> Q simulator
 //Create default setter
@@ -99,7 +106,7 @@ function makeDefaultSetter (name, arrConstructor, dimName, passthrough, v) {
             for (var i = 0; i < elts; i++)
                 arr[i] = v;
         }
-        return simulator[passthrough](arr);
+        passthroughSetter(simulator, dimName, arr, passthrough);
     };
 }
 
@@ -131,10 +138,7 @@ function makeSetter (name, defSetter, arrConstructor, dimName, passthrough) {
             }
         }
 
-        graph.simulator[passthrough](arr, true);
-        if (dimName == 'numEdges') {
-            graph.simulator[passthrough](arr, false);
-        }
+        passthroughSetter(graph.simulator, dimName, arr, passthrough);
 
     };
 }

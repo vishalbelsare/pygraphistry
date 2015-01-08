@@ -126,7 +126,9 @@ module.exports = {
 
     tick: function (simulator, stepNumber) {
 
-        var edgeKernelSeq = function  (edges, workItems, numWorkItems, fromPoints, toPoints) {
+        var edgeKernelSeq = function  (edges, workItems, numWorkItems, fromPoints, toPoints, edgeTags) {
+
+            debug('edgeKernelSeq');
 
             var resources = [edges, workItems, fromPoints, toPoints, simulator.buffers.springsPos];
 
