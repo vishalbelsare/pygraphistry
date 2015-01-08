@@ -105,12 +105,6 @@ body {
     background-color: white;
 }
 
-
-#main:hover, #menuState:hover, #controlState:hover {
-    box-shadow: 0 0 10px rgba(235,235,245,0.75);
-}
-
-
 .accordion {
     background-color: rgba(196, 212, 222, 0.72);
 }
