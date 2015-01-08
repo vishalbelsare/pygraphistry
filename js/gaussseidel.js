@@ -135,7 +135,7 @@ module.exports = {
             gsSprings.inputPoints = fromPoints.buffer;
             gsSprings.outputPoints = toPoints.buffer;
             gsSprings.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
-            gsSprings.edgeTags = simulator.buffers.edgeTags.buffer;
+            gsSprings.edgeTags = edgeTags.buffer;
 
             setKernelArgs(simulator, "gaussSeidelSprings");
 
@@ -179,11 +179,11 @@ module.exports = {
             if(simulator.numEdges > 0) {
                 return edgeKernelSeq(
                         simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
-                        simulator.buffers.curPoints, simulator.buffers.nextPoints)
+                        simulator.buffers.curPoints, simulator.buffers.nextPoints, simulator.buffers.edgeTags)
                     .then(function () {
                          return edgeKernelSeq(
                             simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
-                            simulator.buffers.nextPoints, simulator.buffers.curPoints); 
+                            simulator.buffers.nextPoints, simulator.buffers.curPoints, simulator.buffers.edgeTags_reverse);
                     }).fail(function (err) {
                         console.error("ERROR edgeKernelSeq failed ", (err||{}).stack)
                     });

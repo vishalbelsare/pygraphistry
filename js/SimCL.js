@@ -119,7 +119,10 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
             };
             _.extend(
                 simObj.buffers,
-                _.object(_.keys(NAMED_CLGL_BUFFERS).map(function (name) { return [name, null]; })));
+                _.object(_.keys(NAMED_CLGL_BUFFERS).map(function (name) { return [name, null]; })),
+                _.object(_.keys(NAMED_CLGL_BUFFERS)
+                    .filter(function (name) { return NAMED_CLGL_BUFFERS[name].dims === 'numEdges'; })
+                    .map(function (name) { return [name + '_reverse', null]; })));
 
             simObj.timeSubset = {
                 relRange: {min: 0, max: 100},
@@ -270,26 +273,30 @@ function setPoints(simulator, points) {
 //string -> simulator * typedarray -> Q simulator
 // Create and store buffer on host and device with passed in defaults
 // returns corresponding setter
-function makeSetter(simulator, name) {
+function makeSetter(simulator, name, dimName) {
 
-    return function (data) {
+    return function (data, isReverse) {
 
-        simulator.buffersLocal[name] = data;
-        simulator.resetBuffers([simulator.buffers[name]])
-        simulator.tickBuffers([name]);
+        var buffName = name + (dimName === 'numEdges' && !isReverse ? '_reverse' : '');
 
-        return simulator.renderer.createBuffer(data, name)
+        console.log('saving', buffName);
+
+        simulator.buffersLocal[buffName] = data;
+        simulator.resetBuffers([simulator.buffers[buffName]])
+        simulator.tickBuffers([buffName]);
+
+        return simulator.renderer.createBuffer(data, buffName)
         .then(function(vbo) {
-            debug('Created %s VBO', name);
-            simulator.renderer.buffers[name] = vbo;
-            return simulator.cl.createBufferGL(vbo, name);
+            debug('Created %s VBO', buffName);
+            simulator.renderer.buffers[buffName] = vbo;
+            return simulator.cl.createBufferGL(vbo, buffName);
         })
         .then(function (buffer) {
-            simulator.buffers[name] = buffer;
+            simulator.buffers[buffName] = buffer;
             return simulator;
         })
         .fail(function (err) {
-            console.error("ERROR Failure in SimCl.set %s", name, (err||{}).stack)
+            console.error("ERROR Failure in SimCl.set %s", buffName, (err||{}).stack)
         });
 
     };
@@ -299,7 +306,7 @@ function makeSetter(simulator, name) {
 // ex:  simulator.setSizes(pointSizes).then(...)
 function createSetters (simulator) {
     _.each(NAMED_CLGL_BUFFERS, function (cfg, bufferName) {
-        simulator[cfg.setterName] = makeSetter(simulator, bufferName);
+        simulator[cfg.setterName] = makeSetter(simulator, bufferName, cfg.dims);
     });
 }
 

@@ -114,9 +114,16 @@ function makeSetter (name, defSetter, arrConstructor, dimName, passthrough) {
         }
 
         var arr;
-        if (rawArr.constructor == arrConstructor) {
+        if (rawArr.constructor == arrConstructor && dimName == 'numPoints') {
             arr = rawArr;
-        } else {
+        } else if (false && dimName == 'numEdges') {
+            var len = graph.simulator[dimName];
+            arr = new arrConstructor(len);
+            var map = graph.simulator.bufferHostCopies.forwardsEdges.edgePermutation;
+            for (var i = 0; i < len; i++) {
+                arr[map[i]] = rawArr[i];
+            }
+        }else {
             var len = graph.simulator[dimName];
             arr = new arrConstructor(len);
             for (var i = 0; i < len; i++) {
@@ -124,7 +131,10 @@ function makeSetter (name, defSetter, arrConstructor, dimName, passthrough) {
             }
         }
 
-        graph.simulator[passthrough](arr);
+        graph.simulator[passthrough](arr, true);
+        if (dimName == 'numEdges') {
+            graph.simulator[passthrough](arr, false);
+        }
 
     };
 }
