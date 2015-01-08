@@ -466,8 +466,8 @@ function init(socket, $elt, renderState) {
         Rx.Observable.fromEvent($('#simulate'), 'mousedown')
             .map(function () { return Rx.Observable.interval(50); });
     var releasing =
-        Rx.Observable.fromEvent($('#simulate'), 'mouseup')
-            .map(function () { return Rx.Observable.return(); });
+        Rx.Observable.fromEvent($('body'), 'mouseup')
+            .map(function () { return Rx.Observable.empty(); });
     downing.merge(releasing).flatMapLatest(_.identity)
         .subscribe(
             function () {
