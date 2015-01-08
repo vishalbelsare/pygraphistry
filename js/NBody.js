@@ -189,11 +189,6 @@ var setEdges = Q.promised(function(graph, edges) {
 
     debug("Number of edges: %d", edges.length / 2)
 
-    var edgesFlipped = new Uint32Array(edges.length);
-    for (var i = 0; i < edges.length; i++)
-        edgesFlipped[i] = edges[edges.length - 1 - i];
-
-
     //FIXME THIS SHOULD WORK BUT CRASHES SAFARI
     var encapsulate = function (edges) {
 
@@ -235,7 +230,7 @@ var setEdges = Q.promised(function(graph, edges) {
         });
         */
 
-        var degreesFlattened = new Uint32Array(graph.__pointsHostBuffer.length);
+        var degreesTyped = new Uint32Array(graph.__pointsHostBuffer.length);
         //to closeset workItem in case src has none
         var srcToWorkItem = new Int32Array(graph.__pointsHostBuffer.length);
         for (var i = 0; i < srcToWorkItem.length; i++) {
@@ -243,7 +238,7 @@ var setEdges = Q.promised(function(graph, edges) {
         }
         workItems.forEach(function (edgeList, idx) {
             srcToWorkItem[edgeList[2]] = idx;
-            degreesFlattened[edgeList[2]] = edgeList[1];
+            degreesTyped[edgeList[2]] = edgeList[1];
         });
         for (var i = 0; i < srcToWorkItem.length; i++) {
             if (srcToWorkItem[i] == -1) {
@@ -254,20 +249,34 @@ var setEdges = Q.promised(function(graph, edges) {
         //Uint32Array [first edge number from src idx, number of edges from src idx]
         //fetch edge to find src and dst idx (all src same)
         //num edges > 0
-        var workItemsFlattened =
+        var workItemsTyped =
             new Uint32Array(
                 _.flatten(workItems.map(function (o) { return [o[0], o[1]]})));
 
-        var edgesFlattened = new Uint32Array(_.flatten(edgeList));
+        var edgesTyped = new Uint32Array(_.flatten(edgeList));
 
         return {
-            degreesTyped: degreesFlattened,
-            edgesTyped: edgesFlattened,
-            numWorkItems: workItemsFlattened.length,
-            workItemsTyped: new Uint32Array(workItemsFlattened),
+            //Uint32Array
+            degreesTyped: degreesTyped,
+
+            //Uint32Array [(srcIdx, dstIdx), ...]
+            //(edges ordered by src idx)
+            edgesTyped: edgesTyped,
+
+            //Uint32Array [(edge number, number of sibling edges), ... ]
+            numWorkItems: workItemsTyped.length,
+
+            //Uint32Array [(first edge number, number of sibling edges)]
+            workItemsTyped: new Uint32Array(workItemsTyped),
+
+            //Uint32Array [workitem number node belongs to]
             srcToWorkItem: srcToWorkItem
         };
     }
+
+    var edgesFlipped = new Uint32Array(edges.length);
+    for (var i = 0; i < edges.length; i++)
+        edgesFlipped[i] = edges[edges.length - 1 - i];
 
     var forwardEdges = encapsulate(edges);
     var backwardsEdges = encapsulate(edgesFlipped);
