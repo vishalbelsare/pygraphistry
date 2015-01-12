@@ -353,7 +353,10 @@ var stdOptions = {
 
 var camera2D = {
     'type': '2d',
-    'init': [{'top': -1, 'left': 0, 'bottom': 0, 'right': 1}]
+    //'bounds': 'CANVAS', // Use runtime dimensions of canvas element
+    'bounds': {'top': -1, 'left': 0, 'bottom': 0, 'right': 1},
+    'nearPlane': -1,
+    'farPlane': 10
 }
 
 var sceneUber = {
