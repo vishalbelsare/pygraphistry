@@ -6,7 +6,7 @@ var Immutable   = require('immutable');
 var Rx          = require('rx');
 var debug       = require('debug')('graphistry:StreamGL:renderer');
 
-var Cameras             = require('./camera.js');
+var cameras             = require('./camera.js');
 var localAttribHandler  = require('./localAttribHandler.js');
 var bufferProxy         = require('./bufferproxy.js').bufferProxy;
 var picking             = require('./picking.js');
@@ -225,8 +225,9 @@ function init(config, canvas) {
 
     var state = Immutable.Map({
         config: config,
+        canvas: canvas,
 
-        gl: createContext(canvas),
+        gl: undefined,
         programs:       Immutable.Map({}),
         buffers:        Immutable.Map({}),
         //TODO make immutable
@@ -261,35 +262,36 @@ function init(config, canvas) {
     debug('Active indices', state.get('activeIndices'));
     debug('Active attributes', state.get('activeLocalAttributes'));
 
+    var gl = createContext(state);
+    state = state.set('gl', gl);
     setGlOptions(state);
 
     state = createPrograms(state);
     state = createBuffers(state);
 
-    var gl = state.get('gl');
-
-    var camera = new Cameras.Camera2d(config.get('camera').get('init').get(0).toJS());
-    setCamera(config.toJS(), gl, state.get('programs').toJS(), camera);
-
     debug('precreated', state.toJS());
-
+    var camera = createCamera(state);
     state = state.set('camera', camera);
+    setCamera(state);
+
+    resizeCanvas(state);
+    window.addEventListener('resize', function () {
+        resizeCanvas(state);
+    });
+
     debug('state pre', state.toJS());
     state = state.mergeDeep(createRenderTargets(config, canvas, gl));
+
     debug('state pre b', state.toJS());
     state = state.mergeDeep(createStandardTextures(config, canvas, gl));
-    debug('state pre c', state.toJS());
-    debug('created', state.toJS());
 
+    debug('created', state.toJS());
     return state;
 }
 
-
-function createContext(canvas) {
-    canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
-
+function createContext(state) {
     var gl = null;
+    var canvas = state.get('canvas');
 
     gl = canvas.getContext('webgl', {antialias: true, premultipliedAlpha: false});
     if(gl === null) {
@@ -297,9 +299,51 @@ function createContext(canvas) {
     }
     if(gl === null) { throw new Error('Could not initialize WebGL'); }
 
-    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     return gl;
+}
+
+
+function createCamera(state) {
+    var canvas = state.get('canvas');
+    var camConfig = state.get('config').get('camera');
+
+    if (camConfig.get('type') !== '2d') {
+        throw new Error ('Unknown camera type');
+    }
+    var near = camConfig.get('near');
+    var far = camConfig.get('far');
+
+    if (camConfig.get('bounds') === 'CANVAS') {
+        return new cameras.Camera2d(0, canvas.width, 0, canvas.height,
+                                    near, far);
+    } else {
+        var b = camConfig.get('bounds');
+        return new cameras.Camera2d(b.get('left'), b.get('right'),
+                                    b.get('top'), b.get('bottom'),
+                                    near, far);
+    }
+}
+
+
+/*
+ * Update the size of the canvas to match what is visible
+ */
+function resizeCanvas(state) {
+    var canvas = state.get('canvas');
+    var camera = state.get('camera');
+
+    var width = canvas.clientWidth;
+    var height = canvas.clientHeight;
+    debug('Resize: old=(%d,%d) new=(%d,%d)', canvas.width, canvas.height, width, height);
+    if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+        camera.resize(width, height);
+        setCamera(state);
+        render(state);
+    }
 }
 
 
@@ -639,7 +683,12 @@ function updateIndexBuffer(gl, length, repetition) {
 
 
 
-function setCamera(config, gl, programs, camera) {
+function setCamera(state) {
+    var config = state.get('config').toJS();
+    var gl = state.get('gl');
+    var programs = state.get('programs').toJS();
+    var camera = state.get('camera');
+
     _.each(config.programs, function(programConfig, programName) {
         debug('Setting camera for program %s', programName);
         var program = programs[programName];
@@ -653,10 +702,9 @@ function setCamera(config, gl, programs, camera) {
 
 // Wrapper for setCamera which takes an Immutable renderState (returned by init()) and a camera
 function setCameraIm(renderState, camera) {
-    setCamera(renderState.get('config').toJS(), renderState.get('gl'),
-        renderState.get('programs').toJS(), camera);
-
-    return renderState.set('camera', camera);
+    var newState = renderState.set('camera', camera);
+    setCamera(newState);
+    return newState;
 }
 
 
@@ -836,7 +884,6 @@ module.exports = {
     loadBuffers: loadBuffers,
     loadBuffer: loadBuffer,
     loadTextures: loadTextures,
-    setCamera: setCamera,
     setCameraIm: setCameraIm,
     setNumElements: setNumElements,
     render: render,

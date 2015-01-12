@@ -5,6 +5,8 @@
 (function() {
     'use strict';
 
+    var debug = require('debug')('graphistry:StreamGL:camera');
+
     var glMatrix, mat4, vec3, vec4;
     if(typeof window === 'undefined' || !window.glMatrix) {
         glMatrix = require('gl-matrix');
@@ -83,34 +85,22 @@
     };
 
 
-    //{left: int, right: int, bottom: int, top: int} -> ()
-    function Camera2d(rawBounds) {
-        var bounds = {
-            left: 0,
-            right: 1,
-            bottom: 1,
-            top: 0
-        };
-        for (var i in rawBounds) {
-            bounds[i] = rawBounds[i];
-        }
-
-        this.fromBounds(bounds.left, bounds.right, bounds.bottom, bounds.top);
-    }
-
-
-    Camera2d.prototype.fromBounds = function(left, right, bottom,  top) {
+    function Camera2d(left, right, top, bottom, near, far) {
         this.width = right - left;
         this.height = bottom - top;
         this.center = {
-            x: left + (this.width/2),
-            y: top + (this.height/2)
+            x: left + (this.width / 2.0),
+            y: top + (this.height / 2.0)
         };
-    };
+        this.near = near;
+        this.far = far;
+    }
 
 
-    Camera2d.prototype.fromCanvas = function(canvas) {
-        this.fromBounds(0, canvas.width, canvas.height, 0);
+    Camera2d.prototype.resize = function(width, height) {
+        debug('Updating camera dimensions');
+        var aspectRatio = width / height;
+        this.width = aspectRatio * this.height;
     };
 
 
@@ -119,8 +109,10 @@
         // Choose arbitrary near and far planes (0, 20)
         // We purposelly swap and negate the top and bottom arguments so that the matrix follows
         // HTML-style coordinates (top-left corner at 0,0) vs. than GL coordinates (bottom-left 0,0)
-        mat4.ortho(projectionMatrix, this.center.x - (this.width / 2), this.center.x + (this.width / 2),
-            -this.center.y - (this.height / 2), -this.center.y + (this.height / 2), -1, 10);
+        mat4.ortho(projectionMatrix,
+                   this.center.x - (this.width / 2), this.center.x + (this.width / 2),
+                   -this.center.y - (this.height / 2), -this.center.y + (this.height / 2),
+                   this.near, this.far);
 
         return projectionMatrix;
     };
@@ -156,8 +148,8 @@
         canvasCoords.x = (canvasCoords.x + 1) / 2;
         canvasCoords.y = (canvasCoords.y + 1) / 2;
 
-        canvasCoords.x = canvasCoords.x * canvas.clientWidth;
-        canvasCoords.y = canvasCoords.y * canvas.clientHeight;
+        canvasCoords.x = canvasCoords.x * canvas.width;
+        canvasCoords.y = canvasCoords.y * canvas.height;
 
         return canvasCoords;
     };

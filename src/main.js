@@ -49,7 +49,6 @@ function displayErrors(socket, $canvas) {
     });
 }
 
-
 //CanvasD * <string> ->
 //  Replay_1 {
 //      vboUpdates: Observable {'start', 'received', 'rendered'},
@@ -97,79 +96,80 @@ function init(canvas, vizType) {
 }
 
 
-window.addEventListener('load', function(){
-    var app = init($('#simulation')[0], 'graph');
+function createDebugOverlay(app) {
+    $('html').addClass('debug');
 
-    if(DEBUG_MODE) {
-        $('html').addClass('debug');
+    var renderMeterD =
+        $('<div>')
+            .addClass('meter').addClass('meter-fps')
+            .append(
+                $('<span>')
+                    .addClass('flavor')
+                    .text('render'));
+    $('body').append(renderMeterD);
+    var renderMeter = new FPSMeter(renderMeterD.get(0), {
+        heat: 1,
+        graph: 1,
 
+        maxFps: 45,
+        decimals: 0,
+        smoothing: 3,
+        show: 'fps',
 
-        var renderMeterD =
-            $('<div>')
-                .addClass('meter').addClass('meter-fps')
-                .append(
-                    $('<span>')
-                        .addClass('flavor')
-                        .text('render'));
-        $('body').append(renderMeterD);
-        var renderMeter = new FPSMeter(renderMeterD.get(0), {
-            heat: 1,
-            graph: 1,
-
-            maxFps: 45,
-            decimals: 0,
-            smoothing: 3,
-            show: 'fps',
-
-            theme: 'transparent',
-        });
-        app.subscribe(function (app) {
-            app.renderState.get('renderPipeline').subscribe(function (evt) {
-                if (evt.start) {
+        theme: 'transparent',
+    });
+    app.subscribe(function (app) {
+        app.renderState.get('renderPipeline').subscribe(function (evt) {
+            if (evt.start) {
 //                    renderMeter.resume();
 //                    renderMeter.tickStart();
-                } else if (evt.rendered) {
-                    renderMeter.tick();
+            } else if (evt.rendered) {
+                renderMeter.tick();
 //                    renderMeter.pause();
-                }
-            });
+            }
         });
+    });
 
 
-        var networkMeterD =
-            $('<div>')
-                .addClass('meter').addClass('meter-network')
-                .append(
-                    $('<span>')
-                        .addClass('flavor')
-                        .text('network'));
-        $('body').append(networkMeterD);
-        var networkMeter = new FPSMeter(networkMeterD.get(0), {
-            heat: 1,
-            graph: 1,
+    var networkMeterD =
+        $('<div>')
+            .addClass('meter').addClass('meter-network')
+            .append(
+                $('<span>')
+                    .addClass('flavor')
+                    .text('network'));
+    $('body').append(networkMeterD);
+    var networkMeter = new FPSMeter(networkMeterD.get(0), {
+        heat: 1,
+        graph: 1,
 
-            maxFps: 10,
-            decimals: 0,
-            smoothing: 5,
-            show: 'fps',
+        maxFps: 10,
+        decimals: 0,
+        smoothing: 5,
+        show: 'fps',
 
-            theme: 'transparent',
+        theme: 'transparent',
+    });
+    app.subscribe(function (app) {
+        app.vboUpdates.subscribe(function(evt) {
+            switch (evt) {
+                case 'start':
+                    networkMeter.resume();
+                    networkMeter.tickStart();
+                    break;
+                case 'received':
+                    networkMeter.tick();
+                    networkMeter.pause();
+                    break;
+            }
         });
-        app.subscribe(function (app) {
-            app.vboUpdates.subscribe(function(evt) {
-                switch (evt) {
-                    case 'start':
-                        networkMeter.resume();
-                        networkMeter.tickStart();
-                        break;
-                    case 'received':
-                        networkMeter.tick();
-                        networkMeter.pause();
-                        break;
-                }
-            });
-        });
+    });
+}
 
+window.addEventListener('load', function() {
+    var app = init($('#simulation')[0], 'graph');
+
+    if (DEBUG_MODE) {
+        createDebugOverlay(app);
     }
-
 });

@@ -135,9 +135,6 @@ function connect(vizType) {
 
 
 function createRenderer(socket, canvas) {
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
-
     var rcObsv = Rx.Observable.fromCallback(socket.on, socket, function(renderConf) {
             debug('Received render-config from server', renderConf[0]);
             var renderState = renderer.init(renderConf[0], canvas);
