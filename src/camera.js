@@ -85,15 +85,15 @@
     };
 
 
-    function Camera2d(left, right, top, bottom, near, far) {
+    function Camera2d(left, right, top, bottom, nearPlane, farPlane) {
         this.width = right - left;
         this.height = bottom - top;
         this.center = {
             x: left + (this.width / 2.0),
             y: top + (this.height / 2.0)
         };
-        this.near = near;
-        this.far = far;
+        this.nearPlane = nearPlane;
+        this.farPlane = farPlane;
     }
 
 
@@ -112,7 +112,7 @@
         mat4.ortho(projectionMatrix,
                    this.center.x - (this.width / 2), this.center.x + (this.width / 2),
                    -this.center.y - (this.height / 2), -this.center.y + (this.height / 2),
-                   this.near, this.far);
+                   this.nearPlane, this.farPlane);
 
         return projectionMatrix;
     };

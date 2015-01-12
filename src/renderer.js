@@ -306,24 +306,29 @@ function createContext(state) {
 
 
 function createCamera(state) {
+    var camera;
     var canvas = state.get('canvas');
     var camConfig = state.get('config').get('camera');
 
-    if (camConfig.get('type') !== '2d') {
+    var bounds = camConfig.get('bounds');
+    if (bounds === 'CANVAS') {
+        bounds = Immutable.fromJS({
+            left: 0, right: canvas.width,
+            top: 0, bottom: canvas.height
+        });
+    }
+
+    if (camConfig.get('type') === '2d') {
+        var nearPlane = camConfig.get('nearPlane');
+        var farPlane = camConfig.get('farPlane');
+        camera = new cameras.Camera2d(bounds.get('left'), bounds.get('right'),
+                                      bounds.get('top'), bounds.get('bottom'),
+                                      nearPlane, farPlane);
+    } else {
         throw new Error ('Unknown camera type');
     }
-    var near = camConfig.get('near');
-    var far = camConfig.get('far');
 
-    if (camConfig.get('bounds') === 'CANVAS') {
-        return new cameras.Camera2d(0, canvas.width, 0, canvas.height,
-                                    near, far);
-    } else {
-        var b = camConfig.get('bounds');
-        return new cameras.Camera2d(b.get('left'), b.get('right'),
-                                    b.get('top'), b.get('bottom'),
-                                    near, far);
-    }
+    return camera;
 }
 
 
