@@ -163,6 +163,17 @@
     };
 
 
+    /** Given (x,y,w) coordinates in canvas space, transforms them to coordinates for world space */
+    //TODO multiply by w somewhere? what about the matrix?
+    Camera2d.prototype.fromCanvasCoords = function (x, y, w, canvas) {
+        return {
+            x: this.center.x + this.width * ((x/canvas.clientWidth) - 0.5),
+            y: this.center.y + this.height * ((y/canvas.clientHeight) - 0.5)
+        };
+    };
+
+
+
     //FIXME should not depend on SC
     if(typeof Superconductor !== 'undefined') {
         Superconductor.Cameras = {
