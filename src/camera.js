@@ -98,9 +98,9 @@
 
 
     Camera2d.prototype.resize = function(width, height) {
-        debug('Updating camera dimensions');
         var aspectRatio = width / height;
         this.width = aspectRatio * this.height;
+        debug('Updating camera dimensions to (%f,%f)', this.width, this.height);
     };
 
 
