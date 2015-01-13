@@ -109,6 +109,8 @@
 
 body {
     background-color: #223 !important;
+    height: 100%;
+    overflow:hidden;
 }
 
 label {
