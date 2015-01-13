@@ -317,6 +317,7 @@ function setupDragHoverInteractions($eventTarget, renderState) {
     stateStream.onNext(renderState);
 
     var camera = renderState.get('camera');
+    var canvas = renderState.get('canvas');
 
     //pan/zoom
     //Observable Event
@@ -329,7 +330,7 @@ function setupDragHoverInteractions($eventTarget, renderState) {
     } else {
         debug('Detected mouse-based device. Setting up mouse interaction event handlers.');
         interactions = interaction.setupDrag($eventTarget, camera)
-            .merge(interaction.setupScroll($eventTarget, camera));
+            .merge(interaction.setupScroll($eventTarget, canvas, camera));
     }
 
 
@@ -420,7 +421,7 @@ function setupMarquee(isOn, renderState) {
     var cnv = $('#simulation').get(0);
 
     selections.selections.sample(10).subscribe(function (points) {
-        console.log('selected bounds', points, camera.fromCanvasCoords(points.left + points.width, points.top + points.height, 1, cnv));
+        console.log('selected bounds', points, camera.fromCanvasCoords(points.left + points.width, points.top + points.height, cnv));
     });
 
     return selections;
