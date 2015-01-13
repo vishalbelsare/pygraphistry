@@ -409,15 +409,18 @@ function setupDragHoverInteractions($eventTarget, renderState) {
 
 
 //Observable bool -> { ... }
-function setupMarquee(isOn) {
+function setupMarquee(isOn, renderState) {
     //{selections: Observable [ [int, int] ]}
     var selections = marquee(
         $('#marquee'),
         isOn,
         {transform: _.identity});
 
-    selections.selections.subscribe(function (points) {
-        console.log('selected bounds', points);
+    var camera = renderState.get('camera');
+    var cnv = $('#simulation').get(0);
+
+    selections.selections.sample(10).subscribe(function (points) {
+        console.log('selected bounds', points, camera.fromCanvasCoords(points.left + points.width, points.top + points.height, 1, cnv));
     });
 
     return selections;
@@ -457,7 +460,7 @@ function init(socket, $elt, renderState) {
     var onElt = makeMouseSwitchboard();
 
     var turnOnMarquee = onElt.map(function (elt) { return elt === $('#marqueerectangle')[0]; });
-    setupMarquee(turnOnMarquee);
+    setupMarquee(turnOnMarquee, renderState);
 
     setupDragHoverInteractions($elt, renderState);
 
