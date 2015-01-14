@@ -404,7 +404,7 @@ function setupDragHoverInteractions($eventTarget, renderState) {
             $('.hit-label').text('Location ID: ' + lblText);
 
             if (idx > -1) {
-                renderCursor(renderState, new Float32Array(points.buffer), idx, 
+                renderCursor(renderState, points, idx,
                              new Uint8Array(prevCur.pointSizes.buffer));
             }
         })
