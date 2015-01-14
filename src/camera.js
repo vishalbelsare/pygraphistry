@@ -126,7 +126,7 @@
     Camera2d.prototype.deviceCoords = function(x, y,optMtx) {
         var matrix = optMtx || this.getMatrix();
         // We need to flip 'y' to match what our shader does
-        var worldCoords = vec4.fromValues(x, -1 * y, 0, 1);
+        var worldCoords = vec4.fromValues(x, y, 0, 1);
         var screenCoords = vec4.create();
         vec4.transformMat4(screenCoords, worldCoords, matrix);
 
@@ -145,7 +145,7 @@
         // the top-left.
         var canvasCoords = {
             'x': (deviceCoords.x / deviceCoords.w),
-            'y': ((deviceCoords.y / deviceCoords.w) * -1)
+            'y': ((deviceCoords.y / deviceCoords.w) * -1.0)
         };
 
         // Translate x and y from being in [-1, 1] to [0, 1]
