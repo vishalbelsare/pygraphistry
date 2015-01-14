@@ -177,7 +177,7 @@ function init(cfg) {
     debug("Starting initialization");
     var global = cfg.global
 
-    /* Example of RenderGL instatiation. 
+    /* Example of RenderGL instatiation.
      * Left for historical purposes, probably broken!
      *
     var document = null;
@@ -434,7 +434,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
             return {
                 compressed: buffers,
                 elements: _.pick(fetchNumElements(graph, renderConfig), programNames),
-                bufferByteLengths: _.pick(fetchBufferByteLengths(graph, renderConfig), 
+                bufferByteLengths: _.pick(fetchBufferByteLengths(graph, renderConfig),
                                           bufferNames),
                 versions: versions
             };
