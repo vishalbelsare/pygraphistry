@@ -86,17 +86,31 @@
 
 
     function Camera2d(left, right, top, bottom, nearPlane, farPlane) {
-        this.nearPlane = nearPlane;
-        this.farPlane = farPlane;
-        this.centerOn(left, right, top, bottom);
-    }
-
-    Camera2d.prototype.centerOn = function(left, right, top, bottom) {
         this.width = right - left;
         this.height = bottom - top;
         this.center = {
             x: left + (this.width / 2.0),
             y: top + (this.height / 2.0)
+        };
+        this.nearPlane = nearPlane;
+        this.farPlane = farPlane;
+    }
+
+    Camera2d.prototype.centerOn = function(left, right, top, bottom) {
+        var nwidth = right - left;
+        var nheight = bottom - top;
+        var aspectRatio = this.width/ this.height;
+
+        if (nwidth / nheight > aspectRatio) {
+            this.width = nwidth;
+            this.height = nwidth / aspectRatio;
+        } else {
+            this.height = nheight;
+            this.width = nheight * aspectRatio;
+        }
+        this.center = {
+            x: left + (nwidth / 2.0),
+            y: top + (nheight / 2.0)
         };
     };
 
