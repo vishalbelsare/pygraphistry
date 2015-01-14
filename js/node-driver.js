@@ -256,7 +256,7 @@ function delayObservableGenerator(delay, value, cb) {
 ///////////////////////////////////////////////////////////////////////////
 
 
-function createAnimation(theDataset) {
+function createAnimation(dataset) {
     debug("STARTING DRIVER");
 
     //Observable {play: bool, layout: bool, ... cfg settings ...}
@@ -267,15 +267,10 @@ function createAnimation(theDataset) {
     // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
     // the contents of each VBO
     var animStepSubj = new Rx.BehaviorSubject(null);
+    var cfg = getControls(dataset.Metadata.config['simControls']);
 
-    var graph = theDataset.then(function (dataset) {
+    var graph = init(cfg).then(function (graph) {
         debug("Dataset %o", dataset);
-
-
-        var cfg = getControls(dataset.Metadata.config['simControls']);
-
-        return Q.all([init(cfg), dataset]);
-    }).spread(function (graph, dataset) {
         userInteractions.subscribe(function (settings){
             debug('Updating settings..');
             graph.updateSettings(settings);
