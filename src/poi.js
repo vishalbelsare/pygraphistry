@@ -85,7 +85,7 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
     _.values(activeLabels).forEach(function (lbl) {
         if (!hits[lbl.idx]) {
 
-            var pos = camera.canvasCoords(points[2 * lbl.idx], -points[2 * lbl.idx + 1], 1, cnvCached, mtx);
+            var pos = camera.canvasCoords(points[2 * lbl.idx], -points[2 * lbl.idx + 1], cnvCached, mtx);
 
             var isOffScreen = pos.x < 0 || pos.y < 0 || pos.x > cnvCached.clientWidth || pos.y > cnvCached.clientHeight;
             var isDecayed = (Math.random() > 1 - APPROX) || (_.keys(activeLabels).length > MAX_LABELS);

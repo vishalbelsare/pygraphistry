@@ -101,6 +101,33 @@ function setupScroll($eventTarget, canvas, camera) {
 }
 
 
+function setupCenter($toggle, curPoints, camera) {
+    return $toggle.onAsObservable('click')
+        .sample(1)
+        .flatMapLatest(function () {
+            debug('click on center');
+            return curPoints.take(1).map(function (curPoints) {
+                var points = new Float32Array(curPoints.buffer);
+                var bbox = {
+                    left: Number.MAX_VALUE, right: Number.MIN_VALUE,
+                    top: Number.MAX_VALUE, bottom: Number.MIN_VALUE
+                };
+
+                for (var i = 0; i < points.length; i+=2) {
+                    var x = points[i];
+                    var y = points[i+1];
+                    bbox.left = x < bbox.left ? x : bbox.left;
+                    bbox.right = x > bbox.right ? x : bbox.right;
+                    bbox.top = y < bbox.top ? y : bbox.top;
+                    bbox.bottom = y > bbox.bottom ? y : bbox.bottom;
+                }
+
+                debug('Bounding box: ', bbox);
+                camera.centerOn(bbox.left, bbox.right, bbox.bottom * -1, bbox.top * -1);
+                return camera;
+            });
+        });
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Touch event handlers
@@ -230,6 +257,7 @@ module.exports = {
     setupDrag: setupDrag,
     setupMousemove: setupMousemove,
     setupScroll: setupScroll,
+    setupCenter: setupCenter,
     setupSwipe: setupSwipe,
     setupPinch: setupPinch,
 

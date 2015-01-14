@@ -89,7 +89,7 @@ function renderCursor (renderState, points, idx, sizes) {
     var cnv = $('#simulation').get(0);
     var mtx = camera.getMatrix();
 
-    var pos = camera.canvasCoords(points[2 * idx], -points[2 * idx + 1], 1, cnv, mtx);
+    var pos = camera.canvasCoords(points[2 * idx], -points[2 * idx + 1], cnv, mtx);
     var size = Math.min(sizes[idx], 50); // Clamp like in pointculled shader
     var offset = size / 2.0 - 1;
 
@@ -128,7 +128,7 @@ function newLabelPositions(renderState, labels, points) {
     var newPos = new Float32Array(labels.length * 2);
     for (var i = 0; i < labels.length; i++) {
         var idx = labels[i].idx;
-        var pos = camera.canvasCoords(points[2 * idx], -points[2 * idx + 1], 1, cnv, mtx);
+        var pos = camera.canvasCoords(points[2 * idx], -points[2 * idx + 1], cnv, mtx);
         newPos[2 * i] = pos.x;
         newPos[2 * i + 1] = pos.y;
     }
@@ -332,7 +332,11 @@ function setupDragHoverInteractions($eventTarget, renderState) {
         interactions = interaction.setupDrag($eventTarget, camera)
             .merge(interaction.setupScroll($eventTarget, canvas, camera));
     }
-
+    interactions = interactions.merge(
+        interaction.setupCenter($('#center'),
+                                renderState.get('hostBuffers').curPoints,
+                                camera)
+    );
 
     //Observable int
     //Either from point mouseover or label mouseover

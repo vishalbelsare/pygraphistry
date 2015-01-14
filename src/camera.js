@@ -86,15 +86,19 @@
 
 
     function Camera2d(left, right, top, bottom, nearPlane, farPlane) {
+        this.nearPlane = nearPlane;
+        this.farPlane = farPlane;
+        this.centerOn(left, right, top, bottom);
+    }
+
+    Camera2d.prototype.centerOn = function(left, right, top, bottom) {
         this.width = right - left;
         this.height = bottom - top;
         this.center = {
             x: left + (this.width / 2.0),
             y: top + (this.height / 2.0)
         };
-        this.nearPlane = nearPlane;
-        this.farPlane = farPlane;
-    }
+    };
 
 
     Camera2d.prototype.resize = function(width, height) {
@@ -119,10 +123,10 @@
 
 
     /** Takes an (x,y) world coordinate and returns the translation into device coordinates */
-    Camera2d.prototype.deviceCoords = function(x, y, w, optMtx) {
+    Camera2d.prototype.deviceCoords = function(x, y,optMtx) {
         var matrix = optMtx || this.getMatrix();
         // We need to flip 'y' to match what our shader does
-        var worldCoords = vec4.fromValues(x, -1 * y, 0, w);
+        var worldCoords = vec4.fromValues(x, -1 * y, 0, 1);
         var screenCoords = vec4.create();
         vec4.transformMat4(screenCoords, worldCoords, matrix);
 
@@ -135,8 +139,8 @@
 
 
     /** Given (x,y, w) coordinates in world space, transforms them to coordinates for a canvas */
-    Camera2d.prototype.canvasCoords = function(x, y, w, canvas, optMtx) {
-        var deviceCoords = this.deviceCoords(x, y, w, optMtx);
+    Camera2d.prototype.canvasCoords = function(x, y, canvas, optMtx) {
+        var deviceCoords = this.deviceCoords(x, y, optMtx);
         // We need to flip 'y' because GL puts (0,0) at the bottom-left, and <canvas> puts it at
         // the top-left.
         var canvasCoords = {
