@@ -86,7 +86,7 @@ function renderCursor (renderState, points, idx, sizes) {
     }
 
     var camera = renderState.get('camera');
-    var cnv = $('#simulation').get(0);
+    var cnv = renderState.get('canvas');
     var mtx = camera.getMatrix();
 
     var pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
@@ -122,7 +122,7 @@ function renderCursor (renderState, points, idx, sizes) {
 function newLabelPositions(renderState, labels, points) {
 
     var camera = renderState.get('camera');
-    var cnv = $('#simulation').get(0);
+    var cnv = renderState.get('canvas');
     var mtx = camera.getMatrix();
 
     var newPos = new Float32Array(labels.length * 2);
@@ -422,7 +422,7 @@ function setupMarquee(isOn, renderState) {
         {transform: _.identity});
 
     var camera = renderState.get('camera');
-    var cnv = $('#simulation').get(0);
+    var cnv = renderState.get('canvas');
 
     selections.selections.sample(10).subscribe(function (points) {
         console.log('selected bounds', points, camera.fromCanvasCoords(points.left + points.width, points.top + points.height, cnv));

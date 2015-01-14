@@ -102,7 +102,7 @@
         var nheight = (bottom - top) * 1.1;
         left = left - nwidth * 0.05;
         top = top - nheight * 0.05;
-        var aspectRatio = this.width/ this.height;
+        var aspectRatio = this.width / this.height;
 
         if (nwidth / nheight > aspectRatio) {
             this.width = nwidth;
