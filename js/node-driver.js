@@ -345,12 +345,12 @@ function createAnimation(dataset) {
     })
     .then(function (graph) {
         debug("Graph created");
+        return graph;
     }, function (err) {
         console.error("\n\n~~~~~ SETUP ERROR\n", err, ". Stack:", err.stack);
         console.error("\n\nEXITING\n\n");
         process.exit(-1);
-    })
-    .done();
+    });
 
     return {
         proxy: function (settings) {
