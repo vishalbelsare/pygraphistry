@@ -121,6 +121,10 @@ label {
     color: white;
 }
 
+i.fa {
+   display: inline-block;
+}
+
 button.btn-default {
     background-color: transparent;
     color: white;

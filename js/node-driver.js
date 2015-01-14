@@ -177,7 +177,7 @@ function init(cfg) {
     debug("Starting initialization");
     var global = cfg.global
 
-    /* Example of RenderGL instatiation. 
+    /* Example of RenderGL instatiation.
      * Left for historical purposes, probably broken!
      *
     var document = null;
@@ -256,7 +256,7 @@ function delayObservableGenerator(delay, value, cb) {
 ///////////////////////////////////////////////////////////////////////////
 
 
-function createAnimation(theDataset) {
+function createAnimation(dataset) {
     debug("STARTING DRIVER");
 
     //Observable {play: bool, layout: bool, ... cfg settings ...}
@@ -267,15 +267,10 @@ function createAnimation(theDataset) {
     // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
     // the contents of each VBO
     var animStepSubj = new Rx.BehaviorSubject(null);
+    var cfg = getControls(dataset.Metadata.config['simControls']);
 
-    var graph = theDataset.then(function (dataset) {
+    var graph = init(cfg).then(function (graph) {
         debug("Dataset %o", dataset);
-
-
-        var cfg = getControls(dataset.Metadata.config['simControls']);
-
-        return Q.all([init(cfg), dataset]);
-    }).spread(function (graph, dataset) {
         userInteractions.subscribe(function (settings){
             debug('Updating settings..');
             graph.updateSettings(settings);
@@ -439,7 +434,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
             return {
                 compressed: buffers,
                 elements: _.pick(fetchNumElements(graph, renderConfig), programNames),
-                bufferByteLengths: _.pick(fetchBufferByteLengths(graph, renderConfig), 
+                bufferByteLengths: _.pick(fetchBufferByteLengths(graph, renderConfig),
                                           bufferNames),
                 versions: versions
             };
