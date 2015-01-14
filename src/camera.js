@@ -97,8 +97,11 @@
     }
 
     Camera2d.prototype.centerOn = function(left, right, top, bottom) {
-        var nwidth = right - left;
-        var nheight = bottom - top;
+        // Add 10% for margins
+        var nwidth = (right - left) * 1.1;
+        var nheight = (bottom - top) * 1.1;
+        left = left - nwidth * 0.05;
+        top = top - nheight * 0.05;
         var aspectRatio = this.width/ this.height;
 
         if (nwidth / nheight > aspectRatio) {
