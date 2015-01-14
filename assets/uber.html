@@ -48,13 +48,6 @@
 
 	<script type="text/javascript">
 		window.addEventListener("beforeunload", function(){console.clear();})
-
-		// FIXME: Move this to StreamGL
-		window.addEventListener("resize", function () {
-			var cnv = document.getElementById("simulation");
-			cnv.width = cnv.clientWidth = window.innerWidth;
-			cnv.height = cnv.clientHeight = window.innerHeight;
-		});
 	</script>
 
 </head>
