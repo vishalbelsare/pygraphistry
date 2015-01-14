@@ -36,7 +36,7 @@ var sendToBoundary = function(entry) {
             if (!error && response.statusCode == 200) {
                 return;
             } else {
-                console.log('boundary API error', body)
+                console.log('Boundary API error:', body, '; Data sent to boundary:', data);
             }
         }
     );
