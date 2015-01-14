@@ -48,7 +48,9 @@
 
 
 	<script type="text/javascript">
-		window.addEventListener("beforeunload", function(){console.clear();})
+		window.addEventListener("beforeunload", function(){console.clear();});
+		window.addEventListener("DOMContentLoaded", function() {$('[data-toggle="tooltip"]').tooltip();});
+
 	</script>
 
 </head>
@@ -95,19 +97,19 @@
 
 			    <div class="accordion-heading">
 
-			      <a href="#" id="mouser">
+			      <a href="#" id="mouser" data-container="body" data-toggle="tooltip" data-placement="left" title="Scroll and Zoom">
 			        <i class="fa fa-arrows fa-2x"></i>
 			      </a>
 
-				  <a href="#" id="marqueerectangle">
+				  <a href="#" id="marqueerectangle" data-container="body" data-toggle="tooltip" data-placement="left" title="Select Subset">
 			        <i class="selectable"></i>
 			      </a>
 
-			      <a href="#" id="simulate">
+			      <a href="#" id="simulate" data-container="body" data-toggle="tooltip" data-placement="left" title="Run Layout Engine">
 			        <i class="fa fa-bolt fa-2x"></i>
 			      </a>
 
-                  <a href="#" id="center">
+                  <a href="#" id="center" data-container="body" data-toggle="tooltip" data-placement="left" title="Center View">
                       <i class="fa fa-crosshairs fa-2x"></i>
                   </a>
 			    </div>
