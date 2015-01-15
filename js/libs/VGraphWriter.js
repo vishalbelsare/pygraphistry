@@ -110,6 +110,10 @@ function write(graph) {
     // Add vertices. It's a flattened array, so compose into tuples.
     var untypedVertices = Array.prototype.slice.call(graph.__pointsHostBuffer);
 
+    if (graph.vg.double_vectors === undefined) {
+        graph.vg.double_vectors = new pb_root.VectorGraph.DoubleBufferVector();
+    }
+
     for (var index = 0; index < untypedVertices.length; index++) {
         if (index % 2 != 0) {
             continue;
