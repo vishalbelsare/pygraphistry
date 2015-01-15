@@ -4,10 +4,10 @@
 
 var $        = require('jquery');
 var Rx       = require('rx');
+               require('rx-jquery');
 var debug    = require('debug')('graphistry:StreamGL:interaction');
 var renderer = require('./renderer');
 
-require('rx-jquery');
 require('jquery-mousewheel')($);
 
 
@@ -78,7 +78,7 @@ function setupScroll($eventTarget, canvas, camera) {
         .map(function(wheelEvent) {
             var bounds = $eventTarget[0].getBoundingClientRect();
             var zoomFactor = (wheelEvent.deltaY < 0 ? zoomBase : 1.0 / zoomBase) || 1.0;
-            
+
             var canvasPos = {
                 x: (wheelEvent.clientX - bounds.left),
                 y: (wheelEvent.clientY - bounds.top)

@@ -167,7 +167,7 @@ function bindProgram(state, program, programName, bindings, buffers, modelSettin
             : datasource === 'DEVICE'       ? buffers[binding[0]]
             : datasource === 'VERTEX_INDEX' ? indexGlBuffers[1]
             : datasource === 'EDGE_INDEX'   ? indexGlBuffers[2]
-            : datasource === 'CLIENT'       ? 
+            : datasource === 'CLIENT'       ?
                 localGlBuffers[state.get('config').get('models').get(binding[0]).get(binding[1]).get('localName')]
             : (function () { throw new Error('unknown datasource ' + datasource); }());
 
@@ -831,7 +831,7 @@ function getServerTextureNames (config) {
     return _.chain(_.pairs(config.textures))
         .filter(function (pair) {
             var datasource = pair[1].datasource;
-            return datasource === 'SERVER'; 
+            return datasource === 'SERVER';
         })
         .pluck('0')
         .filter(function (name) {

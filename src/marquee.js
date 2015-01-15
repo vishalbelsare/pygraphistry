@@ -1,9 +1,10 @@
 'use strict';
 
 var debug = require('debug')('graphistry:StreamGL:marquee');
-var Rx = require('rx');
-var _ = require('underscore');
-var $ = require('jquery');
+var $     = require('jquery');
+var Rx    = require('rx');
+            require('rx-jquery');
+var _     = require('underscore');
 
 
 

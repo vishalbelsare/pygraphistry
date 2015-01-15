@@ -12,6 +12,7 @@
 var $               = require('jquery'),
     Rx              = require('rx'),
     debug           = require('debug')('graphistry:StreamGL:main');
+                      require('rx-jquery');
 
 var streamClient    = require('./client.js'),
     ui              = require('./ui.js'),

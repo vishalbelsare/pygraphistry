@@ -117,7 +117,7 @@ function connect(vizType) {
             debug('got params', params);
 
             var socket = io(params.url, { query: 'datasetname=' + datasetname,
-                                          reconnection: false, 
+                                          reconnection: false,
                                           transports: ['websocket']
                                         });
 

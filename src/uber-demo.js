@@ -3,8 +3,9 @@
 // FIXME: Move this to graph-viz repo -- it shouldn't be a part of the core StreamGL library
 
 var debug   = require('debug')('graphistry:StreamGL:uber-demo');
-var Rx      = require('rx');
 var $       = require('jquery');
+var Rx      = require('rx');
+              require('rx-jquery');
 var _       = require('underscore');
 var Slider  = require('bootstrap-slider');
 
@@ -106,7 +107,7 @@ function renderCursor (renderState, points, idx, sizes) {
     });
 
     /* Ideally, highlighted-point-center would be a child of highlighted-point-cont
-     * instead of highlighted-point. I ran into tricky CSS absolute positioning 
+     * instead of highlighted-point. I ran into tricky CSS absolute positioning
      * issues when I tried that. */
     var csize = parseInt($('.highlighted-point-center').css('width'), 10);
     $('.highlighted-point-center').css({
@@ -252,7 +253,7 @@ lastRender
             var items = cfg.currentState.get('config').get('render').toJS()
                 .filter(function (v) { return v !== 'pointpicking'; });
             cfg.renderer.render(cfg.currentState, items);
-            renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer), 
+            renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer),
                          cfg.data.highlightIdx, new Uint8Array(cfg.data.pointSizes.buffer));
         });
     })
