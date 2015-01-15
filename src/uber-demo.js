@@ -14,7 +14,7 @@ var interaction = require('./interaction.js');
 var renderer    = require('./renderer');
 var poiLib      = require('./poi.js');
 var poi;
-var marquee     = require('./marquee.js');
+var marqueeFact = require('./marquee.js');
 
 
 
@@ -417,19 +417,22 @@ function setupDragHoverInteractions($eventTarget, renderState) {
 //Observable bool -> { ... }
 function setupMarquee(isOn, renderState) {
     //{selections: Observable [ [int, int] ]}
-    var selections = marquee(
-        $('#marquee'),
-        isOn,
-        {transform: _.identity});
+    var marquee = marqueeFact($('#marquee'), isOn, {transform: _.identity});
 
     var camera = renderState.get('camera');
     var cnv = renderState.get('canvas');
 
-    selections.selections.sample(10).subscribe(function (points) {
+    marquee.selections.subscribe(function (points) {
         console.log('selected bounds', points, camera.fromCanvasCoords(points.left + points.width, points.top + points.height, cnv));
     });
 
-    return selections;
+    marquee.drags.subscribe(function (drag) {
+        var start = camera.fromCanvasCoords(drag.start.x, drag.start.y, cnv);
+        var end = camera.fromCanvasCoords(drag.end.x, drag.end.y, cnv);
+        console.log('drag action', drag, end.x - start.x, end.y - start.y);
+    });
+
+    return marquee;
 }
 
 // -> Observable DOM
