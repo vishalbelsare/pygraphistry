@@ -85,12 +85,12 @@ function marqueeSelections ($cont, $elt, isOn) {
                             .takeUntil(Rx.Observable.fromEvent($cont, 'mouseup')
                                 .do(function (evt) {
                                     evt.stopPropagation();
-                                    debug('drag marquee finished, ending instance & hiding');
+                                    debug('drag marquee finished');
+                                    $elt.addClass('draggable');
                                     $('body').removeClass('noselect');
-                                    $elt.removeClass('on').addClass('off');
+                                    $elt.removeClass('on').addClass('done');
                                 }));
-                    })
-                    .do(function (rect) {
+                    }).do(function (rect) {
                         if (firstRunSinceMousedown) {
                             debug('show marquee instance on first bound calc');
                             $elt.removeClass('off').addClass('on');
@@ -99,13 +99,72 @@ function marqueeSelections ($cont, $elt, isOn) {
                         debug('moving marquee');
                         $elt.css(rect);
                     });
+
             }
         });
 
+    var boundsA = new Rx.ReplaySubject(1);
+    bounds.subscribe(boundsA, makeErrorHandler('boundsA'));
+
+    var finalBounds = Rx.Observable.fromEvent($cont, 'mouseup')
+                                   .flatMapLatest(boundsA.take(1));
+
     var boundsB = new Rx.ReplaySubject(1);
-    bounds.subscribe(boundsB, makeErrorHandler('boundsB'));
+    finalBounds.subscribe(boundsB, makeErrorHandler('boundsB'));
 
     return boundsB;
+}
+
+function marqueeInteractions(selections, $cont, $elt) {
+    var drags = selections.flatMapLatest(function (selection) {
+        var firstRunSinceMousedown = true;
+        return Rx.Observable.fromEvent($elt, 'mousedown')
+            .do(function (evt) {
+                evt.stopPropagation();
+                $('body').addClass('noselect');
+            })
+            .map(toPoint.bind('', $cont))
+            .flatMapLatest(function (startPoint) {
+                debug('Startpoint: ', startPoint);
+                return Rx.Observable.fromEvent($cont, 'mousemove')
+                    .do(function (evt) {
+                        evt.stopPropagation();
+                    })
+                    .sample(1)
+                    .map(function (evt) {
+                        var endPoint = toPoint($cont, evt);
+                        return {x: endPoint.x - startPoint.x,
+                                y: endPoint.y - startPoint.y };
+                    })
+                    .takeUntil(
+                        Rx.Observable.fromEvent($elt, 'mouseup')
+                        .do(function () {
+                            $elt.removeClass('dragging').removeClass('done').addClass('off');
+                            $('body').removeClass('noselect');
+                        })
+                    );
+            }).do(function (drag) {
+                if (firstRunSinceMousedown) {
+                    firstRunSinceMousedown = false;
+                    $elt.removeClass('draggable').addClass('dragging');
+                }
+                $elt.css({
+                    left: selection.left + drag.x,
+                    top: selection.top + drag.y
+                });
+            });
+    });
+
+    var dragsA = new Rx.ReplaySubject(1);
+    drags.subscribe(dragsA, makeErrorHandler('dragsA'));
+
+    var finalDrags = Rx.Observable.fromEvent($cont, 'mouseup')
+                                   .flatMapLatest(dragsA.take(1));
+
+    var dragsB = new Rx.ReplaySubject(1);
+    finalDrags.subscribe(dragsB, makeErrorHandler('dragsB'));
+
+    return dragsB;
 }
 
 function createElt() {
@@ -137,6 +196,10 @@ function init ($cont, toggle, cfg) {
     $cont.append($elt);
     maintainContainerStyle($cont, isOn);
     var bounds = marqueeSelections($cont, $elt, isOn);
+    var interactions = marqueeInteractions(bounds, $cont, $elt);
+    interactions.subscribe(function (x) {
+        debug('Interaction: ', x);
+    });
 
     return {
         selections: bounds,
