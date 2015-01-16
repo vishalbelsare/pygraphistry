@@ -82,6 +82,7 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
             simObj.setLocked = setLocked.bind(this, simObj);
             simObj.setPhysics = setPhysics.bind(this, simObj);
             simObj.setTimeSubset = setTimeSubset.bind(this, renderer, simObj);
+            simObj.recolor = recolor.bind(this, simObj);
             simObj.resetBuffers = resetBuffers.bind(this, simObj);
             simObj.tickBuffers = tickBuffers.bind(this, simObj);
 
@@ -536,6 +537,26 @@ function setTimeSubset(renderer, simulator, range) {
 
         ].concat(_.keys(NAMED_CLGL_BUFFERS)));
 
+}
+
+
+function recolor(simulator, marquee) {
+    console.log('TODO Recoloring', marquee);
+
+    /*var pos = new ArrayBuffer(128);
+    simulator.buffers.curPoints.read(new Float32Array(pos), 0, 128);
+
+    var sel = [];
+    var bounds = marquee.selection;
+    for (var i = 0; i < simulator.numPoints; i++) {
+        var x = simulator.buffers.curPoints.buffer[2*i];
+        var y = simulator.buffers.curPoints.buffer[2*i + 1];
+        //if (x > bounds.tl.x && x < bounds.br.x || y > bounds.tl.y && y < bounds.br.y) {
+            sel.push([i,x,y]);
+        //}
+    }
+
+    console.log('Selection', sel);*/
 }
 
 

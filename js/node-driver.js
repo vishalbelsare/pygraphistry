@@ -353,7 +353,7 @@ function createAnimation(dataset) {
     });
 
     return {
-        proxy: function (settings) {
+        interact: function (settings) {
             userInteractions.onNext(settings);
         },
         ticks: animStepSubj.skip(1),

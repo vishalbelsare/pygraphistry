@@ -62,7 +62,7 @@ function create(renderer, dimensions, numSplits, simulationTime) {
 
 function initSimulation(graph, simulator, layoutAlgorithms, locked) {
     debug('Creating Simulator')
-    return simulator.create(graph.renderer, graph.dimensions, 
+    return simulator.create(graph.renderer, graph.dimensions,
                             graph.numSplits, locked, layoutAlgorithms)
         .then(function(sim) {
             debug("Created simulator");
@@ -74,14 +74,19 @@ function initSimulation(graph, simulator, layoutAlgorithms, locked) {
 }
 
 function updateSettings (graph, cfg) {
-    debug("Updating settings");
-
-    graph.simulator.setPhysics(cfg);
-    graph.simulator.setLocked(cfg);
-    graph.renderer.setVisible(cfg);
+    debug("Updating simulation settings");
+    if (cfg.simControls) {
+        graph.simulator.setPhysics(cfg.simControls);
+        graph.simulator.setLocked(cfg.simControls);
+        graph.renderer.setVisible(cfg.simControls);
+    }
 
     if (cfg.timeSubset) {
         graph.simulator.setTimeSubset(cfg.timeSubset);
+    }
+
+    if (cfg.marquee) {
+        graph.simulator.recolor(cfg.marquee);
     }
 }
 
@@ -329,8 +334,8 @@ var setEdges = Q.promised(function(graph, edges) {
     debug("Number of control points, splits: %d, %d", edges.length * graph.numSplits, graph.numSplits);
 
     return graph.simulator.setEdges(forwardEdges, backwardsEdges, midPoints)
-    .then(function() { 
-        return graph; 
+    .then(function() {
+        return graph;
     }).fail(function (err) {
         console.error("ERROR Failure in NBody.setEdges ", (err||{}).stack);
     });
@@ -345,7 +350,7 @@ function setEdgeColors(graph, edgeColors) {
 
     if (edgeColors.length != nedges)
        console.error("ERROR: setEdgeColors expects one color per edge.");
-    
+
     // Internaly we have two colors, one per endpoint.
     var ec = new Uint32Array(nedges * 2);
     for (var i = 0; i < nedges; i++) {
@@ -363,7 +368,7 @@ function setMidEdgeColors(graph, midEdgeColors) {
 
     if (midEdgeColors.length != numMidEdges)
        console.error("ERROR: setMidEdgeColors expects one color per midEdge.");
-    
+
     // Internaly we have two colors, one per endpoint.
     var ec = new Uint32Array(numMidEdges * 2);
     for (var i = 0; i < numMidEdges; i++) {
