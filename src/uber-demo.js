@@ -19,10 +19,19 @@ var marqueeFact = require('./marquee.js');
 
 
 function sendSetting(socket, name, value) {
-    var payload = {};
-    payload[name] = value;
+    var update = {};
+    update[name] = value;
 
-    socket.emit('graph_settings', {play: true, layout: true, gaussSeidel: payload, edgeBundling: payload});
+    var payload = {
+        play: true,
+        layout: true,
+        simControls: {
+            gaussSeidel: update,
+            edgeBundling: update
+        }
+    };
+
+    socket.emit('interaction', payload);
     debug('settings', payload);
 }
 
@@ -475,7 +484,7 @@ function init(socket, $elt, renderState) {
 
 
     //trigger animation on server
-    //socket.emit('graph_settings', {layout: true, play: true});
+    //socket.emit('interaction', {layout: true, play: true});
 
     //TODO try/catch because sc.html does not have tooltip
     try {
@@ -518,7 +527,11 @@ function init(socket, $elt, renderState) {
 
     timeSlide.sample(3)
         .do(function (when) {
-            socket.emit('graph_settings', {play: true, layout: false, timeSubset: {min: when.min, max: when.max}});
+            var payload = {
+                play: true, layout: false,
+                timeSubset: {min: when.min, max: when.max}
+            };
+            socket.emit('interaction', payload);
         })
         .subscribe(_.identity, makeErrorHandler('timeSlide'));
 
@@ -533,7 +546,7 @@ function init(socket, $elt, renderState) {
     downing.merge(releasing).flatMapLatest(_.identity)
         .subscribe(
             function () {
-                socket.emit('graph_settings', {play: true, layout: true, gaussSeidel: {}, edgeBundling: {}});
+                socket.emit('interaction', {play: true, layout: true});
             },
             function (err) {
                 console.error('Error stimulating graph', err, (err||{}).stack);
@@ -567,7 +580,8 @@ function init(socket, $elt, renderState) {
         marquee.drags.flatMapLatest(marquee.selections.take(1)),
         function(a, b) { return {drag: a, selection: b}; }
     ).subscribe(function (move) {
-        socket.emit('marquee_move', move);
+        var payload = {play: true, layout: false, marquee: move};
+        socket.emit('interaction', payload);
     });
 }
 
