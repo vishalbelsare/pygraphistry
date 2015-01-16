@@ -416,20 +416,20 @@ function setupDragHoverInteractions($eventTarget, renderState) {
 
 //Observable bool -> { ... }
 function setupMarquee(isOn, renderState) {
-    //{selections: Observable [ [int, int] ]}
-    var marquee = marqueeFact($('#marquee'), isOn, {transform: _.identity});
-
     var camera = renderState.get('camera');
     var cnv = renderState.get('canvas');
+    var transform = function (point) {
+        return camera.fromCanvasCoords(point.x, point.y, cnv);
+    };
 
-    marquee.selections.subscribe(function (points) {
-        console.log('selected bounds', points, camera.fromCanvasCoords(points.left + points.width, points.top + points.height, cnv));
+    var marquee = marqueeFact($('#marquee'), isOn, {transform: transform});
+
+    marquee.selections.subscribe(function (sel) {
+        console.log('selected bounds', sel);
     });
 
     marquee.drags.subscribe(function (drag) {
-        var start = camera.fromCanvasCoords(drag.start.x, drag.start.y, cnv);
-        var end = camera.fromCanvasCoords(drag.end.x, drag.end.y, cnv);
-        console.log('drag action', drag, end.x - start.x, end.y - start.y);
+        console.log('drag action', drag.start, drag.end);
     });
 
     return marquee;
@@ -469,7 +469,7 @@ function init(socket, $elt, renderState) {
     var onElt = makeMouseSwitchboard();
 
     var turnOnMarquee = onElt.map(function (elt) { return elt === $('#marqueerectangle')[0]; });
-    setupMarquee(turnOnMarquee, renderState);
+    var marquee = setupMarquee(turnOnMarquee, renderState);
 
     setupDragHoverInteractions($elt, renderState);
 
@@ -560,6 +560,14 @@ function init(socket, $elt, renderState) {
                 sendSetting(socket, name, val);
             })
             .subscribe(_.identity, makeErrorHandler('menu slider'));
+    });
+
+
+    marquee.drags.zip(
+        marquee.drags.flatMapLatest(marquee.selections.take(1)),
+        function(a, b) { return {drag: a, selection: b}; }
+    ).subscribe(function (move) {
+        socket.emit('marquee_move', move);
     });
 }
 

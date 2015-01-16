@@ -14,18 +14,17 @@ function toPoint ($cont, evt) {
     return {x: evt.pageX - offset.left, y: evt.pageY - offset.top};
 }
 
-//{x: num, y: num} * {x: num, y: num} -> {top,left,width,height}
+//{x: num, y: num} * {x: num, y: num} -> {tl: {x: num, y:num}, br: {x: num, y:num}}
 function toRect (pointA, pointB) {
     var left    = Math.min(pointA.x, pointB.x);
     var right   = Math.max(pointA.x, pointB.x);
 
     var top     = Math.min(pointA.y, pointB.y);
     var bottom  = Math.max(pointA.y, pointB.y);
+
     var pos = {
-        top:    top,
-        left:   left,
-        width:  right - left,
-        height: bottom - top
+        tl: {x: left, y: top},
+        br: {x: right, y: bottom}
     };
     return pos;
 }
@@ -82,7 +81,12 @@ function marqueeSelections ($cont, $elt, isOn) {
                                     $elt.removeClass('off').addClass('on');
                                     firstRunSinceMousedown = false;
                                 }
-                                $elt.css(rect);
+                                $elt.css({
+                                    left: rect.tl.x,
+                                    top: rect.tl.y,
+                                    width: rect.br.x - rect.tl.x,
+                                    height: rect.br.y - rect.tl.y
+                                });
                             }).takeUntil(Rx.Observable.fromEvent($cont, 'mouseup')
                                 .do(function (evt) {
                                     evt.stopPropagation();
@@ -102,7 +106,7 @@ function marqueeSelections ($cont, $elt, isOn) {
     return boundsA;
 }
 
-function toDrag(startPoint, endPoint) {
+function toDelta(startPoint, endPoint) {
     return {x: endPoint.x - startPoint.x,
             y: endPoint.y - startPoint.y};
 }
@@ -124,8 +128,9 @@ function marqueeDrags(selections, $cont, $elt) {
                     })
                     .sample(1)
                     .map(function (evt) {
-                        var endPoint = toPoint($cont, evt);
-                        var drag = toDrag(startPoint, endPoint);
+                        return {start: startPoint, end: toPoint($cont, evt)};
+                    }).do(function (drag) {
+                        var delta = toDelta(drag.start, drag.end);
 
                         // Side effects
                         if (firstRunSinceMousedown) {
@@ -133,11 +138,9 @@ function marqueeDrags(selections, $cont, $elt) {
                             $elt.removeClass('draggable').addClass('dragging');
                         }
                         $elt.css({
-                            left: selection.left + drag.x,
-                            top: selection.top + drag.y
+                            left: selection.tl.x + delta.x,
+                            top: selection.tl.y + delta.y
                         });
-
-                        return {start: startPoint, end: endPoint};
                     }).takeUntil(Rx.Observable.fromEvent($elt, 'mouseup')
                         .do(function () {
                             debug('End of drag');
@@ -181,11 +184,18 @@ function init ($cont, toggle, cfg) {
     //Effect scene
     $cont.append($elt);
     maintainContainerStyle($cont, isOn);
+
+    var transformAll = function(obj) {
+        return _.object(_.map(obj, function (val, key) {
+            return [key, cfg.transform(val)];
+        }));
+    };
     var bounds = marqueeSelections($cont, $elt, isOn);
-    var drags = marqueeDrags(bounds, $cont, $elt);
+    var drags = marqueeDrags(bounds, $cont, $elt).map(transformAll);
+    var selections = bounds.map(transformAll);
 
     return {
-        selections: bounds,
+        selections: selections,
         drags: drags,
         $elt: $elt,
         isOn: toggle

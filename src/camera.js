@@ -176,7 +176,7 @@
     };
 
 
-    /** Given (x,y,w) coordinates in canvas space, transforms them to coordinates for world space */
+    /** Given (x,y) coordinates in canvas space, transforms them to coordinates for world space */
     //TODO multiply by w somewhere? what about the matrix?
     Camera2d.prototype.fromCanvasCoords = function (x, y, canvas) {
         return {
