@@ -428,7 +428,7 @@ function setupMarquee(isOn, renderState) {
     var camera = renderState.get('camera');
     var cnv = renderState.get('canvas');
     var transform = function (point) {
-        return camera.fromCanvasCoords(point.x, point.y, cnv);
+        return camera.canvas2WorldCoords(point.x, point.y, cnv);
     };
 
     var marquee = marqueeFact($('#marquee'), isOn, {transform: transform});

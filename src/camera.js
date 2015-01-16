@@ -178,13 +178,18 @@
 
     /** Given (x,y) coordinates in canvas space, transforms them to coordinates for world space */
     //TODO multiply by w somewhere? what about the matrix?
-    Camera2d.prototype.fromCanvasCoords = function (x, y, canvas) {
+    Camera2d.prototype.canvas2ScreenCoords = function (x, y, canvas) {
         return {
             x: this.center.x + this.width * ((x / canvas.width) - 0.5),
             y: this.center.y + this.height * ((y / canvas.height) - 0.5)
         };
     };
 
+    Camera2d.prototype.canvas2WorldCoords = function (x, y, canvas) {
+        var screenCoords = this.canvas2ScreenCoords(x, y, canvas);
+        screenCoords.y = screenCoords.y * -1.0;
+        return screenCoords;
+    };
 
 
     //FIXME should not depend on SC

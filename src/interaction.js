@@ -84,7 +84,7 @@ function setupScroll($eventTarget, canvas, camera) {
                 y: (wheelEvent.clientY - bounds.top)
             };
 
-            var screenPos = camera.fromCanvasCoords(canvasPos.x, canvasPos.y, canvas);
+            var screenPos = camera.canvas2ScreenCoords(canvasPos.x, canvasPos.y, canvas);
             debug('Mouse screen pos=(%f,%f)', screenPos.x, screenPos.y);
 
             var xoffset = screenPos.x - camera.center.x;
