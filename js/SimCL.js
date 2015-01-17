@@ -541,22 +541,30 @@ function setTimeSubset(renderer, simulator, range) {
 
 
 function recolor(simulator, marquee) {
-    console.log('TODO Recoloring', marquee);
+    console.log('Recoloring', marquee);
 
-    /*var pos = new ArrayBuffer(128);
-    simulator.buffers.curPoints.read(new Float32Array(pos), 0, 128);
+    var positions = new ArrayBuffer(simulator.numPoints * 4 * 2);
 
-    var sel = [];
+    var selectedIdx = [];
     var bounds = marquee.selection;
-    for (var i = 0; i < simulator.numPoints; i++) {
-        var x = simulator.buffers.curPoints.buffer[2*i];
-        var y = simulator.buffers.curPoints.buffer[2*i + 1];
-        //if (x > bounds.tl.x && x < bounds.br.x || y > bounds.tl.y && y < bounds.br.y) {
-            sel.push([i,x,y]);
-        //}
-    }
+    simulator.buffers.curPoints.read(new Float32Array(positions), 0).then(function () {
+        var pos = new Float32Array(positions);
+        for (var i = 0; i < simulator.numPoints; i++) {
+            var x = pos[2*i];
+            var y = pos[2*i + 1];
+            if (x > bounds.tl.x && x < bounds.br.x && y < bounds.tl.y && y > bounds.br.y) {
+                selectedIdx.push(i);
+            }
+        }
+        console.log('Selection', selectedIdx);
 
-    console.log('Selection', sel);*/
+        //for (var i = 0; i < selectedIdx.length; i++) {
+        //    simulator.buffersLocal.pointSizes[i] = 255;
+        //}
+        //simulator.tickBuffers(['pointSizes']);
+    }).fail(function (err) {
+        console.log('Read failed', err, (err || {}).stack);
+    })
 }
 
 
