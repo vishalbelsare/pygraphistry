@@ -56,29 +56,26 @@ function readBuffers(buffers) {
 }
 
 //Promise? graph * Promise? [ ProtobufVector ] -> Promise
-var uploadBuffers = Q.promised(function (graph, vectors) {
+var uploadVGraph = Q.promised(function (vg, metadata) {
 
     var done = Q.defer();
 
     try {
-        // Set the data vectors on the VGraph
-        graph.vg.float32_buffer_vectors = vectors;
-
         // Encode the protobuf
-        var byteBuffer = graph.vg.encode();
+        var byteBuffer = vg.encode();
 
         // Gzip and upload to S3
         zlib.gzip(byteBuffer.toBuffer(), function(err, zipped){
             if (err) { return done.reject(new Error(err)); }
 
-            var savedName = graph.metadata.name.replace('.serialized','') + ".serialized"
+            var savedName = metadata.name.replace('.serialized','') + ".serialized"
             var params = {
                 Bucket: config.BUCKET,
                 Key: savedName,
                 ACL: 'private',
                 Metadata: {
-                    type: graph.metadata.type,
-                    config: JSON.stringify(graph.metadata.config)
+                    type: metadata.type,
+                    config: JSON.stringify(metadata.config)
                 },
                 Body: zipped,
                 ServerSideEncryption: 'AES256'
@@ -99,6 +96,11 @@ var uploadBuffers = Q.promised(function (graph, vectors) {
     return done.promise;
 });
 
+
+function uploadBuffers(graph, vectors) {
+    graph.vg.float32_buffer_vectors = vectors;
+    return uploadVGraph(graph.vg, graph.metadata);
+}
 
 // Graph -> Promise
 function write(graph) {
@@ -142,4 +144,5 @@ function write(graph) {
 
 module.exports = {
     write: write,
+    uploadVGraph: uploadVGraph
 };
