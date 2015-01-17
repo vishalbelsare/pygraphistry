@@ -24,6 +24,10 @@ message VectorGraph {
     required AttributeTarget target = 2;
     repeated uint32 values = 3 [packed=true];
   }
+  message Float32BufferVector {
+    required string name = 1;
+    repeated float values = 2 [packed=true];
+  }
   message DoubleAttributeVector {
     required string name = 1;
     required AttributeTarget target = 2;
@@ -38,11 +42,5 @@ message VectorGraph {
   repeated Int32AttributeVector int32_vectors = 7;
   repeated DoubleAttributeVector double_vectors = 8;
   repeated StringAttributeVector string_vectors = 9;
-  
-  message Float32BufferVector {
-    required string name = 1;
-    repeated float values = 2 [packed=true];
-  }
-
   repeated Float32BufferVector float32_buffer_vectors = 10;
 }
