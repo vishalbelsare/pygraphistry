@@ -85,7 +85,7 @@ var uploadVGraph = Q.promised(function (vg, metadata) {
                 if (err) { return done.reject(new Error(err)); }
 
                 debug('saved and uploaded ' + savedName);
-                Q.resolve();
+                done.resolve();
             });
         });
 
