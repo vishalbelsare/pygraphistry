@@ -13,10 +13,20 @@ var config      = require('config')();
 
 debug("Config set to %j", config);
 
-
 var express = require('express'),
     app = express(),
     http = require('http').Server(app);
+
+
+//needed for splunk API
+//TODO can we tighten so only for API?
+var allowCrossOrigin = function  (req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'X-Requested-With,Content-Type,Authorization');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,PATCH,POST,DELETE');
+    next();
+};
+app.use(allowCrossOrigin);
 
 
 var db;
@@ -26,6 +36,7 @@ var MAIN_STATIC_PATH    = path.resolve(__dirname, 'assets');
 var GRAPH_STATIC_PATH   = path.resolve(require('graph-viz').staticFilePath(), 'assets');
 var HORIZON_STATIC_PATH = path.resolve(require('horizon-viz').staticFilePath(), 'assets');
 var UBER_STATIC_PATH   = path.resolve(require('uber-viz').staticFilePath(), 'assets');
+var SPLUNK_STATIC_PATH   = path.resolve(require('splunk-viz').staticFilePath(), 'assets');
 
 var HTTP_SERVER_LISTEN_ADDRESS = config.HTTP_LISTEN_ADDRESS;
 var HTTP_SERVER_LISTEN_PORT = config.HTTP_LISTEN_PORT;
@@ -179,6 +190,8 @@ app.use('/graph', function (req, res, next) {
 });
 // Serve uber static assets
 app.use('/uber',   express.static(UBER_STATIC_PATH));
+// Serve splunk static assets
+app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
 
 
 // Default '/' static assets

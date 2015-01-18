@@ -10,6 +10,7 @@
     "express": "*",
     "graph-viz": "git+ssh://git@github.com:graphistry/graph-viz.git#master",
     "horizon-viz": "git+ssh://git@github.com:graphistry/horizon-viz.git#master",
+    "splunk-viz": "git+ssh://git@github.com:graphistry/splunk-viz.git#master",
     "mongodb": "^1.4.23",
     "rx": "^2.3.17",
     "uber-viz": "git+ssh://git@github.com:graphistry/uber-viz.git#master",
