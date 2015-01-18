@@ -68,10 +68,9 @@ var uploadVGraph = Q.promised(function (vg, metadata) {
         zlib.gzip(byteBuffer.toBuffer(), function(err, zipped){
             if (err) { return done.reject(new Error(err)); }
 
-            var savedName = metadata.name.replace('.serialized','') + ".serialized"
             var params = {
                 Bucket: config.BUCKET,
-                Key: savedName,
+                Key: metadata.name,
                 ACL: 'private',
                 Metadata: {
                     type: metadata.type,
@@ -84,7 +83,7 @@ var uploadVGraph = Q.promised(function (vg, metadata) {
             config.S3.putObject(params, function(err, data) {
                 if (err) { return done.reject(new Error(err)); }
 
-                debug('saved and uploaded ' + savedName);
+                debug('saved and uploaded ' + metadata.name);
                 done.resolve();
             });
         });
@@ -99,7 +98,9 @@ var uploadVGraph = Q.promised(function (vg, metadata) {
 
 function uploadBuffers(graph, vectors) {
     graph.vg.float32_buffer_vectors = vectors;
-    return uploadVGraph(graph.vg, graph.metadata);
+    var metadata = graph.metadata;
+    metadata.name = metadata.name.replace('.serialized','') + '.serialized';
+    return uploadVGraph(graph.vg, metadata);
 }
 
 // Graph -> Promise
