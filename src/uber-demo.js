@@ -5,7 +5,8 @@
 var debug   = require('debug')('graphistry:StreamGL:uber-demo');
 var $       = require('jquery');
 var Rx      = require('rx');
-              require('rx-jquery');
+              require('./rx-jquery-stub');
+
 var _       = require('underscore');
 var Slider  = require('bootstrap-slider');
 

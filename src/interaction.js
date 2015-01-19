@@ -4,7 +4,7 @@
 
 var $        = require('jquery');
 var Rx       = require('rx');
-               require('rx-jquery');
+               require('./rx-jquery-stub');
 var debug    = require('debug')('graphistry:StreamGL:interaction');
 var renderer = require('./renderer');
 

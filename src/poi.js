@@ -10,7 +10,7 @@ var debug       = require('debug')('graphistry:StreamGL:poi');
 var _           = require('underscore');
 var $           = require('jquery');
 var Rx          = require('rx');
-                  require('rx-jquery');
+                  require('./rx-jquery-stub');
 
 var picking     = require('./picking.js');
 
