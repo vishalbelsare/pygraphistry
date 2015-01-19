@@ -32,6 +32,9 @@ app.use(allowCrossOrigin);
 app.options('/api/v0.2/splunk/html/graph.fragment.html', function(req, res) {
     res.sendStatus(200);
 });
+app.options('/api/v0.2/splunk/html/index.fragment.html', function(req, res) {
+    res.sendStatus(200);
+});
 
 
 var db;
