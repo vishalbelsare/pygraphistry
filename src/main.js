@@ -75,7 +75,7 @@ function init(canvas, vizType) {
                     return {socket: socket, renderState: renderState};
                 });
         })
-        .subscribe(
+        .do(
             function(v) {
                 var socket = v.socket;
                 var renderState = v.renderState;
@@ -89,7 +89,9 @@ function init(canvas, vizType) {
                     renderState: renderState
                 });
 
-            },
+            })
+        .subscribe(
+            _.identity,
             function (err) {
                 console.error('error connecting stream client', err, err.stack);
             });
