@@ -1,8 +1,8 @@
 'use strict';
 
-/* global $$ */
 
-var $        = require('jquery');
+var $$       = window.Quo;
+var $        = window.$;
 var Rx       = require('rx');
                require('./rx-jquery-stub');
 var debug    = require('debug')('graphistry:StreamGL:interaction');

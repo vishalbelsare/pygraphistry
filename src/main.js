@@ -9,7 +9,8 @@
  */
 
 
-var $               = require('jquery'),
+var $               = window.$,
+    _               = require('underscore'),
     Rx              = require('rx'),
     debug           = require('debug')('graphistry:StreamGL:main');
                       require('./rx-jquery-stub');

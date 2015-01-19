@@ -1,14 +1,6 @@
 'use strict';
 
-var $ = require('jquery');
-
-try {
-    if (typeof($) === 'undefined') {
-        $ = require('jquery');
-    }
-} catch (e) {
-    //do not need jquery
-}
+var $ = window.$;
 
 
 exports.error = function() {

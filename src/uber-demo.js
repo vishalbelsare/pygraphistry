@@ -3,7 +3,7 @@
 // FIXME: Move this to graph-viz repo -- it shouldn't be a part of the core StreamGL library
 
 var debug   = require('debug')('graphistry:StreamGL:uber-demo');
-var $       = require('jquery');
+var $       = window.$;
 var Rx      = require('rx');
               require('./rx-jquery-stub');
 
