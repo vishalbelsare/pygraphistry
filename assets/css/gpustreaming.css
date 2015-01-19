@@ -3,7 +3,7 @@ html {
     padding: 0;
 }
 
-body {
+.graphistry-body {
     background-color: rgb(255, 255, 255);
     font-family: "Source Sans Pro", sans-serif;
     font-size: 15px;

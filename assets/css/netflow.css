@@ -1,7 +1,7 @@
 html {
     height: 100%;
 }
-body {
+.graphistry-body {
     background: linear-gradient(to bottom, rgba(242,246,248,1) 0%, rgba(216,225,231,1) 6%, rgba(181,198,208,1) 6%, rgba(214,229,239,1) 79%, rgba(244, 250, 255, 1) 88%);
 }
 
