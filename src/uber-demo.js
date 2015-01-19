@@ -8,7 +8,6 @@ var Rx      = require('rx');
               require('./rx-jquery-stub');
 
 var _       = require('underscore');
-var Slider  = require('bootstrap-slider');
 
 
 var interaction = require('./interaction.js');
@@ -510,7 +509,7 @@ function init(socket, $elt, renderState) {
         gravitySlider: 'gravity'
     };
 
-    window.$OLD('#timeSlider').rangeSlider({
+    $('#timeSlider').rangeSlider({
          bounds: {min: 0, max: 100},
          arrows: false,
          defaultValues: {min: 0, max: 30},
@@ -522,7 +521,7 @@ function init(socket, $elt, renderState) {
 
     var timeSlide = new Rx.Subject();
     //FIXME: replace $OLD w/ browserfied jquery+jqrangeslider
-    window.$OLD('#timeSlider').on('valuesChanging', function (e, data) {
+    $('#timeSlider').on('valuesChanging', function (e, data) {
             timeSlide.onNext({min: 0, max: data.values.max});
         });
 
@@ -555,7 +554,8 @@ function init(socket, $elt, renderState) {
 
 
     $('.menu-slider').each(function () {
-        var slider = new Slider(this);
+        var slider = $(this).bootstrapSlider({});
+        slider.data('slider');
         var name = elts[this.id];
 
         var slide = Rx.Observable.fromEventPattern(
@@ -568,7 +568,7 @@ function init(socket, $elt, renderState) {
             .sample(10)
             .merge(Rx.Observable.just(0))   // Send the current value on load
             .map(function() {
-                return slider.getValue() / 1000;
+                return slider.val() / 1000;
             })
             .do(function (val) {
                 sendSetting(socket, name, val);

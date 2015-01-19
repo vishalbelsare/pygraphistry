@@ -8,8 +8,6 @@ var Rx       = require('rx');
 var debug    = require('debug')('graphistry:StreamGL:interaction');
 var renderer = require('./renderer');
 
-require('jquery-mousewheel')($);
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Mouse event handlers
