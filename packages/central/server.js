@@ -22,11 +22,16 @@ var express = require('express'),
 //TODO can we tighten so only for API?
 var allowCrossOrigin = function  (req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'X-Requested-With,Content-Type,Authorization');
+    res.header('Access-Control-Allow-Headers', 'X-Requested-With,Content-Type,Authorization,X-Splunk-Form-Key,X-CSRFToken');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,PATCH,POST,DELETE');
     next();
 };
 app.use(allowCrossOrigin);
+
+
+app.options('/api/v0.2/splunk/html/graph.fragment.html', function(req, res) {
+    res.sendStatus(200);
+});
 
 
 var db;
