@@ -10,6 +10,7 @@ var Rx          = require('rx');
 var os          = require('os');
 var _           = require('underscore');
 var config      = require('config')();
+var etl         = require('./etl/etl.js');
 
 debug("Config set to %j", config);
 
@@ -201,6 +202,8 @@ app.use('/uber',   express.static(UBER_STATIC_PATH));
 // Serve splunk static assets
 app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
 
+// Temporarly handle ETL request from Splunk
+app.post('/etl', etl.post);
 
 // Default '/' static assets
 app.use('/', express.static(MAIN_STATIC_PATH));
