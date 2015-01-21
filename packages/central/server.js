@@ -2,7 +2,7 @@
 'use strict';
 
 var path        = require('path');
-var debug       = require('debug')('StreamGL:master_server');
+var debug       = require('debug')('graphistry:master_server');
 var mongo       = require('mongodb');
 var MongoClient = mongo.MongoClient;
 var assert      = require('assert');
