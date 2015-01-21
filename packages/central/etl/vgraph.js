@@ -20,7 +20,9 @@ pb.loadProtoFile(protoFile, function (err, builder_) {
     }
 });
 
-function fromEdgeList(elist, name) {
+// Simple (and dumb) conversion of JSON edge lists to VGraph
+// JSON * String * String * String -> VGraph
+function fromEdgeList(elist, srcField, dstField, name) {
     var node2Idx = {};
     var nodeCount = 0;
     var edges = [];
@@ -50,7 +52,7 @@ function fromEdgeList(elist, name) {
             } else {
                 vector = new pb_root.VectorGraph.StringAttributeVector();
                 vector.dest = 'string_vectors';
-                vector.transform = _.identity;
+                vector.transform = JSON.stringify;
             }
 
             vector.name = key;
@@ -71,8 +73,8 @@ function fromEdgeList(elist, name) {
 
     for (var i = 0; i < elist.length; i++) {
         var entry = elist[i];
-        var node0 = entry.srcIp + ':0';
-        var node1 = entry.dstIp + ':' + entry.dstPort;
+        var node0 = entry[srcField];
+        var node1 = entry[dstField];
         addNode(node0);
         addNode(node1);
         addEdge(node0, node1);
