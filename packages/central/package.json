@@ -3,6 +3,9 @@
   "description": "central-app",
   "version": "0.0.1",
   "private": true,
+  "scripts": {
+    "test": "echo \"No tests available.\""
+  },
   "dependencies": {
     "StreamGL": "git+ssh://git@github.com:graphistry/StreamGL.git#master",
     "config": "git+ssh://git@github.com:graphistry/config.git#master",
