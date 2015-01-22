@@ -3,8 +3,10 @@ var _        = require('underscore');
 
 var vgraph   = require('./vgraph.js');
 var vgwriter = require('../node_modules/graph-viz/js/libs/VGraphWriter.js');
+var config   = require('config')();
 
-// Convert JSON edgelist to VGraph then upload VGraph to S3
+
+// Convert JSON edgelist to VGraph then upload VGraph to S3 and local /tmp
 // JSON * HTTP.Response
 function etl(msg, res) {
     debug('ETL for', msg.name);
@@ -29,12 +31,10 @@ function etl(msg, res) {
         }
     };
 
-    vgwriter.uploadVGraph(vg, metadata).done(function () {
-        res.send({
-            sucess: true,
-            datasetName: metadata.name
-        });
-    })
+    var cmd = config.HTTP_LISTEN_ADDRESS === 'localhost' ? 'cacheVGraph' : 'uploadVGraph';
+    return vgwriter[cmd](vg, metadata)
+        .then(_.constant(msg));
+
 }
 
 // Handler for ETL requests on central/etl
@@ -46,14 +46,26 @@ function post(req, res) {
     });
 
     req.on('end', function () {
-        try {
-            etl(JSON.parse(data), res);
-        } catch (err) {
-            debug('Reporting failure', err, (err || {}).stack);
+        var fail = function (err) {
+            console.error('etl post fail', (err||{}).stack);
             res.send({
                 sucess: false,
                 msg: JSON.stringify(err)
             });
+        };
+
+        try {
+            etl(JSON.parse(data))
+                .then(
+                    function (msg) {
+                        debug('etl done, notifying client to proceed');
+                        debug('msg', msg);
+                        res.send({ success: true, datasetName: msg.name });
+                        debug('notified');
+                    })
+                .then(function () { debug('notified'); }, fail);
+        } catch (err) {
+            fail(err);
         }
     });
 }
