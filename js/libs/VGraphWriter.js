@@ -92,15 +92,12 @@ var cacheVGraph = Q.promised(function (vg, metadata) {
 //Promise? graph * Promise? [ ProtobufVector ] -> Promise
 var uploadVGraph = Q.promised(function (vg, metadata) {
 
-    var done = Q.defer();
+    debug('uploading VGraph', metadata.name);
 
-    try {
-        // Encode the protobuf
-        var byteBuffer = vg.encode();
-
-        // Gzip and upload to S3
-        zlib.gzip(byteBuffer.toBuffer(), function(err, zipped){
-            if (err) { return done.reject(new Error(err)); }
+    return Q()
+        .then(function () { return vg.encode().toBuffer(); })
+        .then(Q.nfcall.bind('', zlib.gzip))
+        .then(function (zipped) {
 
             var params = {
                 Bucket: config.BUCKET,
@@ -114,19 +111,9 @@ var uploadVGraph = Q.promised(function (vg, metadata) {
                 ServerSideEncryption: 'AES256'
             };
 
-            config.S3.putObject(params, function(err, data) {
-                if (err) { return done.reject(new Error(err)); }
-
-                debug('saved and uploaded ' + metadata.name);
-                done.resolve();
-            });
-        });
-
-    } catch (e) {
-        done.reject(new Error(e));
-    }
-
-    return done.promise;
+            return Q.nfcall(config.S3.putObject.bind(config.S3), params);
+        })
+        .then(function () { debug('  uploaded', metadata.name); });
 });
 
 
