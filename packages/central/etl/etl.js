@@ -1,6 +1,8 @@
+var debug    = require('debug')('graphistry:central:etl:etl');
+var _        = require('underscore');
+
 var vgraph   = require('./vgraph.js');
 var vgwriter = require('../node_modules/graph-viz/js/libs/VGraphWriter.js');
-var debug    = require('debug')('graphistry:etl:etl');
 
 // Convert JSON edgelist to VGraph then upload VGraph to S3
 // JSON * HTTP.Response
