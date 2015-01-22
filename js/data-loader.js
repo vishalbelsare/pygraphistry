@@ -11,6 +11,7 @@ var Rx = require('rx');
 
 var MatrixLoader = require('./libs/MatrixLoader.js'),
     VGraphLoader = require('./libs/VGraphLoader.js'),
+    VGraphWriter = require('./libs/VGraphWriter.js'),
     kmeans = require('./libs/kmeans.js');
 
 var loaders = {
@@ -85,28 +86,11 @@ function downloadDataset(datasetname) {
                 // Unzip the data and save to disk as a cache
                 Q.denodeify(zlib.gunzip)(data.Body)
                 .then(function (unzipped) {
-                    data.Body = unzipped;
-
-                    // Write the metadata to disk
-                    fs.writeFile("/tmp/" + datasetname + '.metadata', JSON.stringify(data.Metadata), function(err) {
-                        if(err) {
-                            debug("Couldn't save metadata to cache" + err);
-                        } else {
-                            debug("Saved " + datasetname + " metadata to cache");
-                        }
-                    });
-
-                    // Write the data to disk
-                    fs.writeFile("/tmp/" + datasetname, data.Body, function(err) {
-                        if(err) {
-                            debug("Couldn't save data to cache" + err);
-                        } else {
-                            debug("Saved " + datasetname + " to cache");
-                        }
-                    });
-
-                    res.resolve(data);
+                    return VGraphWriter.cacheVGraph(data.Body, data.Metadata)
                 })
+                .then(
+                    function () { res.resolve(data); },
+                    function (err) { res.reject(err); });
             }
         })
     });
