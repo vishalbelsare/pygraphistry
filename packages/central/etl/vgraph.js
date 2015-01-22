@@ -20,9 +20,37 @@ pb.loadProtoFile(protoFile, function (err, builder_) {
     }
 });
 
+// String * String -> Vector
+function makeVector(name, value, target) {
+    var vector;
+
+    if (!isNaN(Number(value))) {
+        vector = new pb_root.VectorGraph.DoubleAttributeVector();
+        vector.dest = 'double_vectors';
+        vector.transform = parseFloat;
+    } else {
+        vector = new pb_root.VectorGraph.StringAttributeVector();
+        vector.dest = 'string_vectors';
+        vector.transform = JSON.stringify;
+    }
+
+    vector.name = name;
+    vector.target = target;
+    vector.values = [];
+    return vector;
+}
+
+// JSON -> [String * Vector]
+function getAttributeVectors(entry, target) {
+    return _.object(_.map(_.keys(entry), function (key) {
+        var vec = makeVector(key, entry[key], target);
+        return [ key, vec];
+    }));
+}
+
 // Simple (and dumb) conversion of JSON edge lists to VGraph
 // JSON * String * String * String -> VGraph
-function fromEdgeList(elist, srcField, dstField, name) {
+function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
     var node2Idx = {};
     var nodeCount = 0;
     var edges = [];
@@ -40,47 +68,29 @@ function fromEdgeList(elist, srcField, dstField, name) {
         edges.push(e);
     }
 
-    function getAttributeVectors(entry) {
-        return _.object(_.map(_.keys(entry), function (key) {
-            var vector;
-            var val = entry[key];
-
-            if (!isNaN(Number(val))) {
-                vector = new pb_root.VectorGraph.DoubleAttributeVector();
-                vector.dest = 'double_vectors';
-                vector.transform = parseFloat;
-            } else {
-                vector = new pb_root.VectorGraph.StringAttributeVector();
-                vector.dest = 'string_vectors';
-                vector.transform = JSON.stringify;
-            }
-
-            vector.name = key;
-            vector.target = pb_root.VectorGraph.AttributeTarget.EDGE;
-            vector.values = [];
-            return [key, vector];
-        }));
-    }
-
-    function addAttributes(entry) {
+    function addAttributes(vectors, entry) {
         _.each(entry, function (val, key) {
             var vector = vectors[key];
             vector.values.push(vector.transform(val));
         });
     }
 
-    var vectors = getAttributeVectors(elist[0]);
+    var evectors = getAttributeVectors(elist[0] || {},
+                                       pb_root.VectorGraph.AttributeTarget.EDGE);
+    var nvectors = getAttributeVectors(nlabels[0] || {},
+                                       pb_root.VectorGraph.AttributeTarget.VERTEX);
 
-    for (var i = 0; i < elist.length; i++) {
-        var entry = elist[i];
+    _.each(elist, function (entry) {
         var node0 = entry[srcField];
         var node1 = entry[dstField];
         addNode(node0);
         addNode(node1);
         addEdge(node0, node1);
         // Assumes that all edges have the same attributes.
-        addAttributes(entry);
-    }
+        addAttributes(evectors, entry);
+    });
+
+    _.each(nlabels, addAttributes.bind('', nvectors));
 
     var vg = new pb_root.VectorGraph();
     vg.version = 0;
@@ -90,9 +100,12 @@ function fromEdgeList(elist, srcField, dstField, name) {
     vg.nedges = edges.length;
     vg.edges = edges;
 
-    _.each(vectors, function (vector) {
+    _.each(evectors, function (vector) {
         vg[vector.dest].push(vector);
-    })
+    });
+    _.each(nvectors, function (vector) {
+        vg[vector.dest].push(vector);
+    });
 
     debug('VectorGraph', vg);
 

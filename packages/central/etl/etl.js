@@ -6,15 +6,16 @@ var debug    = require('debug')('graphistry:etl:etl');
 // JSON * HTTP.Response
 function etl(msg, res) {
     debug('ETL for', msg.name);
-    //debug('Data', msg.graph);
+    //debug('Data', msg.labels);
 
     var vg = vgraph.fromEdgeList(
         msg.graph,
+        msg.labels,
         msg.bindings.sourceField,
         msg.bindings.destinationField,
+        msg.bindings.idField,
         msg.name
     );
-    debug('VG', vg);
 
     var metadata = {
         name: msg.name,
@@ -46,7 +47,7 @@ function post(req, res) {
         try {
             etl(JSON.parse(data), res);
         } catch (err) {
-            debug('Reporting failure', err);
+            debug('Reporting failure', err, (err || {}).stack);
             res.send({
                 sucess: false,
                 msg: JSON.stringify(err)
