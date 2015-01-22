@@ -82,7 +82,7 @@ function downloadDataset(datasetname) {
                 }
                 data.Metadata.name = datasetname;
 
-                // Unzip the data and save to disk as a cacche
+                // Unzip the data and save to disk as a cache
                 Q.denodeify(zlib.gunzip)(data.Body)
                 .then(function (unzipped) {
                     data.Body = unzipped;
