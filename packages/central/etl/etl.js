@@ -9,6 +9,7 @@ var config   = require('config')();
 // Convert JSON edgelist to VGraph then upload VGraph to S3 and local /tmp
 // JSON * HTTP.Response
 function etl(msg, res) {
+    var name = decodeURIComponent(msg.name);
     debug('ETL for', msg.name);
     //debug('Data', msg.labels);
 
@@ -18,11 +19,11 @@ function etl(msg, res) {
         msg.bindings.sourceField,
         msg.bindings.destinationField,
         msg.bindings.idField,
-        msg.name
+        name
     );
 
     var metadata = {
-        name: msg.name,
+        name: name,
         type: 'vgraph',
         config: {
             simControls: 'netflow',
