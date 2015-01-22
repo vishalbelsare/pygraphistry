@@ -55,6 +55,40 @@ function readBuffers(buffers) {
 
 }
 
+//Promise? graph * Promise ? [ProtobufVector ] -> Promise
+var cacheVGraph = Q.promised(function (vg, metadata) {
+
+    debug('caching VGraph', metadata.name);
+
+    var data = Q().then(function () {
+
+        console.log('NAME', vg.constructor.name);
+
+        return {
+            datasetName: metadata.name,
+            byteBuffer: vg.encode ? vg.encode().toBuffer() : vg
+        };
+
+    });
+
+    var wroteMetaData = data.then(function (data) {
+        return Q.nfcall(
+            fs.writeFile,
+            '/tmp/' + data.datasetName + '.metadata',
+            JSON.stringify(metadata));
+    });
+
+    var wroteData = data.then(function (data) {
+        return Q.nfcall(
+            fs.writeFile,
+            '/tmp/' + data.datasetName, data.byteBuffer);
+    });
+
+    return Q.all([wroteMetaData, wroteData])
+        .then(function () { debug('  cached', metadata.name); });
+
+});
+
 //Promise? graph * Promise? [ ProtobufVector ] -> Promise
 var uploadVGraph = Q.promised(function (vg, metadata) {
 
@@ -145,5 +179,6 @@ function write(graph) {
 
 module.exports = {
     write: write,
-    uploadVGraph: uploadVGraph
+    uploadVGraph: uploadVGraph,
+    cacheVGraph: cacheVGraph
 };
