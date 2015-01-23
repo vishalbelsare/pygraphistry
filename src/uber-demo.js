@@ -27,7 +27,8 @@ function sendSetting(socket, name, value) {
         layout: true,
         simControls: {
             gaussSeidel: update,
-            edgeBundling: update
+            edgeBundling: update,
+            forceAtlas: update
         }
     };
 
@@ -506,6 +507,7 @@ function init(socket, $elt, renderState) {
         edgeDist0Slider: 'edgeDistance0',
         edgeStrength1Slider: 'edgeStrength1',
         edgeDist1Slider: 'edgeDistance1',
+        scalingRatioSlider: 'scalingRatio',
         gravitySlider: 'gravity'
     };
 
