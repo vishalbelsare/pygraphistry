@@ -273,16 +273,16 @@ function create(dataset) {
     var cfg = getControls(dataset.Metadata.config['simControls']);
 
     var graph = init(cfg).then(function (graph) {
-        debug("Dataset %o", dataset);
+        debug('Dataset %o', dataset);
         userInteractions.subscribe(function (settings){
             debug('Updating settings..');
             graph.updateSettings(settings);
         })
 
-        debug("LOADING DATASET");
+        debug('LOADING DATASET');
         return loader.loadDatasetIntoSim(graph, dataset)
     }).then(function (graph) {
-        debug("ANIMATING");
+        debug('ANIMATING');
 
         var play = userInteractions.filter(function (o) { return o && o.play; });
 
