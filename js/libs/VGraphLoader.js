@@ -288,26 +288,38 @@ var debugMapper = {
 var splunkMapper = {
     mappings: {
         pointSize: {
-            name: "degree",
+            name: "pointSize",
             transform: function (v) {
                 return normalize(logTransform(v), 5, Math.pow(2, 8))
             }
         },
         pointLabel: {
-            name: "label"
+            name: "pointLabel"
         },
         pointColor: {
-            name: "color",
+            name: "pointColor",
             transform: function (v) {
                 var palette = qual_palette2;
                 return int2color(normalize(v, 0, palette.length - 1), palette);
             }
         },
         edgeColor: {
-            name: "bytes",
+            name: "edgeColor",
             transform: function (v) {
                 var palette = green2red_palette;
                 return int2color(normalize(logTransform(v), 0, palette.length - 1), palette);
+            }
+        },
+        pointTag: {
+            name: "pointType",
+            transform: function (v) {
+                return normalize(v, 0, 2);
+            }
+        },
+        edgeTag: {
+            name: "edgeType",
+            transform: function (v) {
+                return normalize(v, 0, 2);
             }
         }
     }
