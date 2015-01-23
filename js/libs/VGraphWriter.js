@@ -66,22 +66,21 @@ var cacheVGraph = Q.promised(function (vg, metadata) {
 
         return {
             datasetName: metadata.name,
+            basePath: '/tmp/' + encodeURIComponent(metadata.name),
             byteBuffer: vg.encode ? vg.encode().toBuffer() : vg
         };
 
     });
 
     var wroteMetaData = data.then(function (data) {
-        return Q.nfcall(
-            fs.writeFile,
-            '/tmp/' + data.datasetName + '.metadata',
-            JSON.stringify(metadata));
+        var path = data.basePath + '.metadata';
+        debug('  writing', path);
+        return Q.nfcall(fs.writeFile, path, JSON.stringify(metadata));
     });
 
     var wroteData = data.then(function (data) {
-        return Q.nfcall(
-            fs.writeFile,
-            '/tmp/' + data.datasetName, data.byteBuffer);
+        debug('  writing', data.basePath);
+        return Q.nfcall(fs.writeFile, data.basePath, data.byteBuffer);
     });
 
     return Q.all([wroteMetaData, wroteData])

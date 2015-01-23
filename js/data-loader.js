@@ -51,13 +51,16 @@ function downloadDataset(datasetname) {
             // In this case, read the data from disk.
             if (err) {
 
-                debug("Loading " + datasetname + " metadata from cache");
-                debug("  (Cause:", err, ")");
-                Rx.Observable.fromNodeCallback(fs.readFile)('/tmp/' + datasetname + '.metadata')
+                var basePath = '/tmp/' + encodeURIComponent(datasetname);
+                var metaPath = basePath + '.metadata';
+                debug('Loading ' + datasetname + ' metadata from cache (%s)', metaPath);
+                debug('  (Cause:', err, ')');
+                Rx.Observable.fromNodeCallback(fs.readFile)(metaPath)
                     .flatMap(function (metadata) {
 
-                        debug("Loading " + datasetname + " buffer from cache");
-                        return Rx.Observable.fromNodeCallback(fs.readFile)('/tmp/' + datasetname)
+                        debug('Loading ' + datasetname + ' buffer from cache (%s)', basePath);
+
+                        return Rx.Observable.fromNodeCallback(fs.readFile)(basePath)
                             .map(function (buffer) {
                                 var result = {}
                                 result.Metadata = JSON.parse(metadata);
