@@ -24,7 +24,7 @@ var loaders = {
 };
 
 /**
- * Kick off the download process. This checks the 
+ * Kick off the download process. This checks the
  * modified time and fetches from S3 accordingly.
 **/
 function downloadDataset(datasetname) {
@@ -38,7 +38,7 @@ function downloadDataset(datasetname) {
     var res = Q.defer();
     fs.stat('/tmp/' + datasetname, function(err, data){
 
-        // The data exists locally - check if it's recent or 
+        // The data exists locally - check if it's recent or
         // not using the IfModifiedSince header
         if (!err) {
             params.IfModifiedSince = data.mtime;
@@ -46,7 +46,7 @@ function downloadDataset(datasetname) {
 
         // Attempt the download, and if fail (no internet / stale), use local
         config.S3.getObject(params, function(err, data) {
-            // Error getting the file from S3, either because the on 
+            // Error getting the file from S3, either because the on
             // disk version is newer or the S3 connection is unavailable
             // In this case, read the data from disk.
             if (err) {
@@ -306,4 +306,4 @@ module.exports = {
     downloadDataset: downloadDataset
 };
 
-// vim: set et ff=unix ts=8 sw=4 fdm=syntax: 
+// vim: set et ff=unix ts=8 sw=4 fdm=syntax:
