@@ -285,6 +285,34 @@ var debugMapper = {
     },
 }
 
+var splunkMapper = {
+    mappings: {
+        pointSize: {
+            name: "degree",
+            transform: function (v) {
+                return normalize(logTransform(v), 5, Math.pow(2, 8))
+            }
+        },
+        pointLabel: {
+            name: "label"
+        },
+        pointColor: {
+            name: "color",
+            transform: function (v) {
+                var palette = qual_palette2;
+                return int2color(normalize(v, 0, palette.length - 1), palette);
+            }
+        },
+        edgeColor: {
+            name: "bytes",
+            transform: function (v) {
+                var palette = green2red_palette;
+                return int2color(normalize(logTransform(v), 0, palette.length - 1), palette);
+            }
+        }
+    }
+}
+
 function wrap(mappings, loaders) {
     var res = {}
     for (var a in loaders) {
@@ -313,7 +341,8 @@ function doWrap(res, mapping, oldLoad) {
 var mappers = {
     "opentsdbflowdump_1hrMapper": testMapper,
     "opentsdbflowdump_1hrMapperDemo": testMapperDemo,
-    "debugMapper": debugMapper
+    "debugMapper": debugMapper,
+    "splunkMapper": splunkMapper
 }
 
 function logTransform(values) {
