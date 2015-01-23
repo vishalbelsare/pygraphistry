@@ -394,7 +394,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
             })
 
             //[ {buffer, version, compressed} ] ordered by bufferName
-            var now = Date.now();
+            var nowPreCompress = Date.now();
             var compressed =
                 bufferNames.map(function (bufferName) {
                     var now = Date.now();
@@ -413,7 +413,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
                 });
 
             return Rx.Observable.zipArray(compressed).take(1)
-                .do(function () { metrics.info({metric: {'compressAll_durationMS': Date.now() - now} }) });
+                .do(function () { metrics.info({metric: {'compressAll_durationMS': Date.now() - nowPreCompress} }) });
 
         })
         .map(function(compressedVbos) {
