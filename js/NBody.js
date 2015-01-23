@@ -74,7 +74,7 @@ function initSimulation(graph, simulator, layoutAlgorithms, locked) {
 }
 
 function updateSettings (graph, cfg) {
-    debug("Updating simulation settings");
+    debug('Updating simulation settings, %o', cfg);
     if (cfg.simControls) {
         graph.simulator.setPhysics(cfg.simControls);
         graph.simulator.setLocked(cfg.simControls);
