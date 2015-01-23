@@ -259,7 +259,7 @@ function delayObservableGenerator(delay, value, cb) {
 ///////////////////////////////////////////////////////////////////////////
 
 
-function createAnimation(dataset) {
+function create(dataset) {
     debug("STARTING DRIVER");
 
     //Observable {play: bool, layout: bool, ... cfg settings ...}
@@ -446,5 +446,5 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
 }
 
 
-exports.create = createAnimation;
+exports.create = create;
 exports.fetchData = fetchData;
