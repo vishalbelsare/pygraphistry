@@ -116,7 +116,7 @@ function decode0(graph, vg, config)  {
     if (xObj && yObj) {
         debug('Loading previous vertices from xObj');
         for (var i = 0; i < vg.nvertices; i++) {
-            vertices.push([xObj.values[i]/10, yObj.values[i]/10]);
+            vertices.push([xObj.values[i], yObj.values[i]]);
         }
     } else {
         // Generate them randomly
