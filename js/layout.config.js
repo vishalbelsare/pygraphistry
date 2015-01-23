@@ -59,7 +59,8 @@ var netflowControls = {
     },
     global: {
         simulationTime: SIMULATION_TIME, //milliseconds
-        dimensions: [1, 1]
+        dimensions: [1, 1],
+        numSplits: 1
     }
 }
 
@@ -87,7 +88,8 @@ var atlasControls = {
     },
     global: {
         simulationTime: SIMULATION_TIME, //milliseconds
-        dimensions: [1, 1]
+        dimensions: [1, 1],
+        numSplits: 1
     }
 }
 
@@ -115,7 +117,8 @@ var barnesControls = {
     },
     global: {
         simulationTime: SIMULATION_TIME, //milliseconds
-        dimensions: [1, 1]
+        dimensions: [1, 1],
+        numSplits: 1
     }
 }
 
