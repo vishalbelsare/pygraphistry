@@ -28,7 +28,7 @@ function etl(msg, res) {
         config: {
             simControls: 'netflow',
             scene: 'netflow',
-            mapper: 'debugMapper'
+            mapper: 'splunkMapper'
         }
     };
 
