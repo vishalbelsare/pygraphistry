@@ -58,11 +58,10 @@ function readBuffers(buffers) {
 //Promise? graph * Promise ? [ProtobufVector ] -> Promise
 var cacheVGraph = Q.promised(function (vg, metadata) {
 
-    debug('caching VGraph', metadata.name);
 
     var data = Q().then(function () {
 
-        console.log('NAME', vg.constructor.name);
+        debug('caching VGraph', metadata.name);
 
         return {
             datasetName: metadata.name,
