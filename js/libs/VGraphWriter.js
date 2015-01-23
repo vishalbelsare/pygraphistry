@@ -66,7 +66,7 @@ var cacheVGraph = Q.promised(function (vg, metadata) {
         return {
             datasetName: metadata.name,
             basePath: '/tmp/' + encodeURIComponent(metadata.name),
-            byteBuffer: vg.encode ? vg.encode().toBuffer() : vg
+            byteBuffer: vg.constructor === Buffer ? vg : (vg.encode().toBuffer())
         };
 
     });
@@ -93,7 +93,7 @@ var uploadVGraph = Q.promised(function (vg, metadata) {
     debug('uploading VGraph', metadata.name);
 
     return Q()
-        .then(function () { return vg.encode().toBuffer(); })
+        .then(function () { return vg.constructor === Buffer ? vg : (vg.encode().toBuffer()); })
         .then(Q.nfcall.bind('', zlib.gzip))
         .then(function (zipped) {
 
