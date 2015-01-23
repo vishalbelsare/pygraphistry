@@ -50,7 +50,7 @@ function post(req, res) {
         var fail = function (err) {
             console.error('etl post fail', (err||{}).stack);
             res.send({
-                sucess: false,
+                success: false,
                 msg: JSON.stringify(err)
             });
         };
