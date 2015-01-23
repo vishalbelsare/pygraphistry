@@ -213,6 +213,9 @@ function getControls(cfgName) {
 
 function initSimulator(graph, cfg) {
     debug('Applying layout settings: %o', cfg);
+    (cfg.layoutAlgorithms||[]).forEach(function (alg) {
+        debug('  layout algorithm %s: %o', alg.algo.name, alg.params);
+    });
     var layoutAlgorithms = []
 
     for (var i = 0; i < cfg.layoutAlgorithms.length; i++) {
