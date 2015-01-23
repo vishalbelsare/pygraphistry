@@ -89,7 +89,7 @@ function downloadDataset(datasetname) {
                 // Unzip the data and save to disk as a cache
                 Q.denodeify(zlib.gunzip)(data.Body)
                 .then(function (unzipped) {
-                    return VGraphWriter.cacheVGraph(data.Body, data.Metadata)
+                    return VGraphWriter.cacheVGraph(unzipped, data.Metadata)
                 })
                 .then(
                     function () { res.resolve(data); },
