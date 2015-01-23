@@ -57,14 +57,13 @@ function post(req, res) {
 
         try {
             etl(JSON.parse(data))
-                .then(
+                .done(
                     function (msg) {
                         debug('etl done, notifying client to proceed');
                         debug('msg', msg);
                         res.send({ success: true, datasetName: msg.name });
                         debug('notified');
-                    })
-                .then(function () { debug('notified'); }, fail);
+                    }, fail);
         } catch (err) {
             fail(err);
         }
