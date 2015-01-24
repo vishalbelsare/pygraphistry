@@ -9,10 +9,30 @@ var path = require('path');
 var utiljs = require('./util.js');
 
 
-var NODEJS = typeof(window) === 'undefined';
 var DEVICE_TYPE = null;
-var types = {};
 
+console.debug = console.log;
+debug("Initializing node-webcl flavored cl.js");
+var webcl = require('node-webcl');
+var types = {
+    char_t: webcl.type.CHAR,
+    double_t: webcl.type.DOUBLE,
+    float_t: webcl.type.FLOAT,
+    half_t: webcl.type.HALF,
+    int_t: webcl.type.INT,
+    local_t: webcl.type.LOCAL_MEMORY_SIZE,
+    long_t: webcl.type.LONG,
+    short_t: webcl.type.SHORT,
+    uchar_t: webcl.type.UCHAR,
+    uint_t: webcl.type.UINT,
+    ulong_t: webcl.type.ULONG,
+    ushort_t: webcl.type.USHORT,
+    float2_t: webcl.type.VEC2,
+    float3_t: webcl.type.VEC3,
+    float4_t: webcl.type.VEC4,
+    float8_t: webcl.type.VEC8,
+    float16_t: webcl.type.VEC16
+};
 
 
 // TODO: in call() and setargs(), we currently requires a `argTypes` argument becuase older WebCL
@@ -22,11 +42,7 @@ var types = {};
 // argument and fill in that information automatically, when required by old WebCL versions.
 
 var create = Q.promised(function(renderer) {
-    if (NODEJS) {
-        return createCLContextNode(renderer);
-    } else {
-        return createCLContextBrowser(renderer);
-    }
+    return createCLContextNode(renderer);
 });
 
 function setKernelArgs(kernels, simulator, kernelName) {
@@ -195,98 +211,6 @@ function createCLContextNode(renderer) {
 };
 
 
-function createCLContextBrowser(renderer) {
-    if (typeof(webcl) === "undefined") {
-        throw new Error("WebCL does not appear to be supported in your browser");
-    }
-
-    var cl = webcl;
-    if (cl === null) {
-        throw new Error("Can't access WebCL object");
-    }
-
-    var platforms = cl.getPlatforms();
-    if (platforms.length === 0) {
-        throw new Error("Can't find any WebCL platforms");
-    }
-    var platform = platforms[0];
-
-    //sort by number of compute units and use first non-failing device
-    var devices = platform.getDevices(DEVICE_TYPE).map(function (d) {
-
-        function typeToString (v) {
-            return v === 2 ? 'CPU'
-                : v === 4 ? 'GPU'
-                : v === 8 ? 'ACCELERATOR'
-                : ('unknown type: ' + v);
-        }
-
-        var workItems = d.getInfo(cl.DEVICE_MAX_WORK_ITEM_SIZES);
-
-        return {
-            device: d,
-            DEVICE_TYPE: typeToString(d.getInfo(cl.DEVICE_TYPE)),
-            DEVICE_MAX_WORK_ITEM_SIZES: workItems,
-            computeUnits: [].slice.call(workItems, 0).reduce(function (a, b) { return a * b; })
-        };
-    });
-
-    devices.sort(function (a, b) { return b.computeUnits - a.computeUnits; });
-
-    if(devices.length < 1) {
-        throw new Error("No WebCL devices of specified type (" + DEVICE_TYPE + ") found");
-    }
-
-    var deviceWrapper = null, err = null;
-    for (var i = 0; i < devices.length && deviceWrapper === null; i++) {
-        var wrapped = devices[i];
-
-        try {
-            if(renderer.gl !== null) {
-                cl.enableExtension("KHR_gl_sharing");
-                wrapped.device.enableExtension("KHR_gl_sharing");
-                return cl.createContext(renderer.gl, [wrapped.device]);
-            } else {
-                return cl.createContext([wrapped.device]);
-            }
-
-            if (wrapped.context === null) {
-                throw new Error("Error creating WebCL context");
-            }
-
-            wrapped.queue = wrapped.context.createCommandQueue(wrapped.device);
-            deviceWrapper = wrapped;
-        } catch (e) {
-            debug("Skipping device %d due to error %o. %o", i, e, wrapped);
-            err = e;
-        }
-    }
-
-    if (deviceWrapper === null) {
-        throw err;
-    }
-
-    debug("Device set. Device: %o", deviceWrapper);
-
-    var clObj = {
-        "renderer": renderer,
-        "cl": cl,
-        "context": deviceWrapper.context,
-        "device": deviceWrapper.device,
-        "queue": deviceWrapper.queue,
-        "maxThreads": deviceWrapper.device.getInfo(cl.DEVICE_MAX_WORK_GROUP_SIZE),
-        "numCores": deviceWrapper.device.getInfo(cl.DEVICE_MAX_COMPUTE_UNITS)
-    };
-
-    clObj.compile = compile.bind(this, clObj);
-    clObj.createBuffer = createBuffer.bind(this, clObj);
-    clObj.createBufferGL = createBufferGL.bind(this, clObj);
-
-    return clObj;
-}
-
-
-
 /**
  * Compile the WebCL program source and return the kernel(s) requested
  *
@@ -378,28 +302,16 @@ var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
     return acquire(buffers)
         .then(function () {
             var workgroup;
-            if(NODEJS) {
-               if (localSize === undefined) {
-                 workgroup = null;
-               } else {
-                 workgroup = [localSize];
-               }
-                var global = [globalSize];
-                kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, global, workgroup);
+            if (localSize === undefined) {
+                workgroup = null;
             } else {
-                var workgroupSize = new Int32Array([threads]);
-                kernel.cl.queue.enqueueNDRangeKernel(
-                    kernel.kernel,
-                    workgroupSize.length,
-                    [],
-                    workgroupSize,
-                    []
-                );
+                workgroup = [localSize];
             }
-
+            var global = [globalSize];
+            kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, global, workgroup);
         })
         .catch (function(error) {
-          console.log(error);
+            console.log(error);
         })
         .then(release.bind('', buffers))
         // .then(function () { kernel.cl.queue.finish(); })
@@ -414,16 +326,11 @@ function setArgs(kernel, args, argTypes) {
     try {
         for (i = 0; i < args.length; i++) {
             if(args[i] !== null) {
-                if(NODEJS) {
-                    kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i] || undefined);
-                } else {
-                    kernel.kernel.setArg(i, args[i]);
-                }
+                kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i] || undefined);
             }
         }
     } catch (e) {
         console.error('Error setting kernel args::', kernel.name, '::arg ', i, '::', e, e.stack);
-        console.error('NODEJS?', NODEJS);
         console.error('args', args);
         console.error('types', argTypes);
         console.error('arg/type', args ? args[i] : 'no args', argTypes ? argTypes[i] : 'no types');
@@ -582,35 +489,6 @@ var read = Q.promised(function (buffer, target, optStartIdx, optLen) {
         });
 });
 
-
-if (NODEJS) {
-    console.debug = console.log;
-    debug("Initializing node-webcl flavored cl.js");
-    var webcl = require('node-webcl');
-
-    types = {
-        char_t: webcl.type.CHAR,
-        double_t: webcl.type.DOUBLE,
-        float_t: webcl.type.FLOAT,
-        half_t: webcl.type.HALF,
-        int_t: webcl.type.INT,
-        local_t: webcl.type.LOCAL_MEMORY_SIZE,
-        long_t: webcl.type.LONG,
-        short_t: webcl.type.SHORT,
-        uchar_t: webcl.type.UCHAR,
-        uint_t: webcl.type.UINT,
-        ulong_t: webcl.type.ULONG,
-        ushort_t: webcl.type.USHORT,
-        float2_t: webcl.type.VEC2,
-        float3_t: webcl.type.VEC3,
-        float4_t: webcl.type.VEC4,
-        float8_t: webcl.type.VEC8,
-        float16_t: webcl.type.VEC16
-    };
-} else if (typeof(webcl) == 'undefined') {
-    debug("Initializing web browser flavored cl.js");
-    var webcl = window.webcl;
-}
 
 
 DEVICE_TYPE = webcl.DEVICE_TYPE_ALL;
