@@ -28,15 +28,18 @@ function makeVector(name, value, target) {
         vector = new pb_root.VectorGraph.DoubleAttributeVector();
         vector.dest = 'double_vectors';
         vector.transform = parseFloat;
+        vector.default = 0.0;
     } else {
         vector = new pb_root.VectorGraph.StringAttributeVector();
         vector.dest = 'string_vectors';
-        vector.transform = JSON.stringify;
+        vector.transform = function (x) { return String(x); };
+        vector.default = 'undefined';
     }
 
     vector.name = name;
     vector.target = target;
     vector.values = [];
+    vector.map = {};
     return vector;
 }
 
@@ -44,7 +47,7 @@ function makeVector(name, value, target) {
 function getAttributeVectors(entry, target) {
     return _.object(_.map(_.keys(entry), function (key) {
         var vec = makeVector(key, entry[key], target);
-        return [ key, vec];
+        return [key, vec];
     }));
 }
 
@@ -68,11 +71,19 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
         edges.push(e);
     }
 
-    function addAttributes(vectors, entry) {
+    function addEdgeAttributes(vectors, entry) {
         _.each(entry, function (val, key) {
             var vector = vectors[key];
             vector.values.push(vector.transform(val));
         });
+    }
+
+    function addNodeAttributes(vectors, idField, entry) {
+        var id = entry[idField];
+        _.each(entry, function (val, key) {
+            var vector = vectors[key];
+            vector.map[id] = vector.transform(val);
+        })
     }
 
     var evectors = getAttributeVectors(elist[0] || {},
@@ -87,10 +98,10 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
         addNode(node1);
         addEdge(node0, node1);
         // Assumes that all edges have the same attributes.
-        addAttributes(evectors, entry);
+        addEdgeAttributes(evectors, entry);
     });
 
-    _.each(nlabels, addAttributes.bind('', nvectors));
+    _.each(nlabels, addNodeAttributes.bind('', nvectors, idField));
 
     var vg = new pb_root.VectorGraph();
     vg.version = 0;
@@ -100,10 +111,15 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
     vg.nedges = edges.length;
     vg.edges = edges;
 
-    _.each(evectors, function (vector) {
+    _.each(_.omit(evectors, srcField, dstField), function (vector) {
         vg[vector.dest].push(vector);
     });
-    _.each(nvectors, function (vector) {
+
+    _.each(_.omit(nvectors, idField), function (vector) {
+        _.each(node2Idx, function (idx, nodeId) {
+            var val = (nodeId in vector.map) ? vector.map[nodeId] : vector.default;
+            vector.values.push(val);
+        })
         vg[vector.dest].push(vector);
     });
 
