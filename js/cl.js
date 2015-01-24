@@ -238,27 +238,13 @@ var compile = Q.promised(function (cl, source, kernels) {
     }
 
     try {
-        if (typeof kernels === "string") {
 
-            debug('    Compiling unknown kernel');
+        var kernelsObjs = typeof kernels === "string" ? [ 'unknown' ] : kernels;
 
-            var kernelObj = {};
-            kernelObj.name = undefined;
-            kernelObj.kernel = program.createKernel(kernels);
-            kernelObj.cl = cl;
-            kernelObj.call = call.bind(this, kernelObj);
-            kernelObj.setArgs = setArgs.bind(this, kernelObj);
-
-            return kernelObj;
-        } else {
-            var kernelObjs = {};
-
-            for(var i = 0; i < kernels.length; i++) {
-                var kernelName = kernels[i];
-                var kernelObj = {};
-
+        var compiled = _.object(kernelsObjs.map(function (kernelName) {
                 debug('    Compiling ', kernelName);
 
+                var kernelObj = {};
 
                 kernelObj.name = kernelName;
                 kernelObj.kernel = program.createKernel(kernelName);
@@ -266,13 +252,14 @@ var compile = Q.promised(function (cl, source, kernels) {
                 kernelObj.call = call.bind(this, kernelObj);
                 kernelObj.setArgs = setArgs.bind(this, kernelObj);
 
-                kernelObjs[kernelName] = kernelObj;
-            }
+                return [kernelName, kernelObj];
+        }));
 
-            debug('  Compiled kernels');
 
-            return kernelObjs;
-        }
+        debug('  Compiled kernels');
+
+        return typeof kernels === "string" ? compiled.unknown : compiled;
+
     } catch (e) {
         console.error('Kernel creation error:', kernels, e.stack);
         throw e;
