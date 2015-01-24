@@ -8,12 +8,10 @@ var util = require('util');
 var path = require('path');
 var utiljs = require('./util.js');
 
-
-var DEVICE_TYPE = null;
-
 console.debug = console.log;
 debug("Initializing node-webcl flavored cl.js");
 var webcl = require('node-webcl');
+
 var types = {
     char_t: webcl.type.CHAR,
     double_t: webcl.type.DOUBLE,
@@ -33,6 +31,10 @@ var types = {
     float8_t: webcl.type.VEC8,
     float16_t: webcl.type.VEC16
 };
+
+
+var DEVICE_TYPE = webcl.DEVICE_TYPE_ALL;
+
 
 
 // TODO: in call() and setargs(), we currently requires a `argTypes` argument becuase older WebCL
@@ -475,10 +477,6 @@ var read = Q.promised(function (buffer, target, optStartIdx, optLen) {
             console.error("Read error for buffer " + buffer.name + ":", err);
         });
 });
-
-
-
-DEVICE_TYPE = webcl.DEVICE_TYPE_ALL;
 
 
 module.exports = {
