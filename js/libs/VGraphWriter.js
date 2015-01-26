@@ -40,7 +40,7 @@ function readBuffers(buffers) {
 
         // Read the buffer data into a typed array and push to vectors array
         return buffer.read(target).then(function(buf) {
-            var vector = new pb_root.VectorGraph.Float32BufferVector();
+            var vector = new pb_root.VectorGraph.FloatAttributeVector();
             var normalArray = Array.prototype.slice.call(target);
 
             vector.values = normalArray;
@@ -116,7 +116,7 @@ var uploadVGraph = Q.promised(function (vg, metadata) {
 
 
 function uploadBuffers(graph, vectors) {
-    graph.vg.float32_buffer_vectors = vectors;
+    graph.vg.float_vectors = vectors;
     var metadata = graph.metadata;
     metadata.name = metadata.name.replace('.serialized','') + '.serialized';
     return uploadVGraph(graph.vg, metadata);

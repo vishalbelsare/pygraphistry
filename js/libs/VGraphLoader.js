@@ -116,7 +116,7 @@ function decode0(graph, vg, config)  {
     if (xObj && yObj) {
         debug('Loading previous vertices from xObj');
         for (var i = 0; i < vg.nvertices; i++) {
-            vertices.push([xObj.values[i]/10, yObj.values[i]/10]);
+            vertices.push([xObj.values[i], yObj.values[i]]);
         }
     } else {
         // Generate them randomly
@@ -181,12 +181,12 @@ function decode0(graph, vg, config)  {
         var arrs = Object.keys(graph.simulator.buffers).map(function(index){
 
             // find the element with the index. TODO: make this a dict somehow?
-            for (var el in graph.vg.float32_buffer_vectors) {
+            for (var el in graph.vg.float_vectors) {
                 debug(el)
-                if (graph.vg.float32_buffer_vectors[el].name == index) {
+                if (graph.vg.float_vectors[el].name == index) {
 
                     var buffer = graph.simulator.buffers[index];
-                    var raw = graph.vg.float32_buffer_vectors[el].values;
+                    var raw = graph.vg.float_vectors[el].values;
                     var data = new Float32Array(raw);
 
                     try {

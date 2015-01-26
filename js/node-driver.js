@@ -213,6 +213,9 @@ function getControls(cfgName) {
 
 function initSimulator(graph, cfg) {
     debug('Applying layout settings: %o', cfg);
+    (cfg.layoutAlgorithms||[]).forEach(function (alg) {
+        debug('  layout algorithm %s: %o', alg.algo.name, alg.params);
+    });
     var layoutAlgorithms = []
 
     for (var i = 0; i < cfg.layoutAlgorithms.length; i++) {
@@ -256,7 +259,7 @@ function delayObservableGenerator(delay, value, cb) {
 ///////////////////////////////////////////////////////////////////////////
 
 
-function createAnimation(dataset) {
+function create(dataset) {
     debug("STARTING DRIVER");
 
     //Observable {play: bool, layout: bool, ... cfg settings ...}
@@ -270,16 +273,16 @@ function createAnimation(dataset) {
     var cfg = getControls(dataset.Metadata.config['simControls']);
 
     var graph = init(cfg).then(function (graph) {
-        debug("Dataset %o", dataset);
+        debug('Dataset %o', dataset);
         userInteractions.subscribe(function (settings){
             debug('Updating settings..');
             graph.updateSettings(settings);
         })
 
-        debug("LOADING DATASET");
+        debug('LOADING DATASET');
         return loader.loadDatasetIntoSim(graph, dataset)
     }).then(function (graph) {
-        debug("ANIMATING");
+        debug('ANIMATING');
 
         var play = userInteractions.filter(function (o) { return o && o.play; });
 
@@ -443,5 +446,5 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
 }
 
 
-exports.create = createAnimation;
+exports.create = create;
 exports.fetchData = fetchData;
