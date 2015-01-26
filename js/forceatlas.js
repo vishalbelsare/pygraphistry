@@ -5,13 +5,7 @@ var debug = require("debug")("graphistry:graph-viz:cl:forceatlas"),
     cljs  = require('./cl.js'),
     gs    = require('./gaussseidel.js'),
     Q     = require('q');
-
-
-if (typeof(window) == 'undefined') {
-    var webcl = require('node-webcl');
-} else if (typeof(webcl) == 'undefined') {
-    var webcl = window.webcl;
-}
+    webcl = require('node-webcl');
 
 var graphParams = {
     scalingRatio: null,
@@ -21,7 +15,7 @@ var graphParams = {
 };
 
 var faPoints = {};
-_.extend(faPoints, graphParams, { 
+_.extend(faPoints, graphParams, {
     tilePointsParam: null,
     tilePointsParam2: null,
     tilePointsParam3: null,
@@ -47,7 +41,7 @@ _.extend(faEdges, graphParams, {
     stepNumber: null,
     outputPoints: null
 });
-var faEdgesOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'springs', 
+var faEdgesOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'springs',
                     'workList', 'inputPoints', 'stepNumber', 'outputPoints'];
 Object.seal(faEdges);
 
@@ -70,7 +64,7 @@ var argsType = {
     stepNumber: cljs.types.uint_t,
     inDegrees: null,
     outDegrees: null,
-    springs: null, 
+    springs: null,
     workList: null,
     inputPoints: null,
     outputPoints: null,
@@ -164,9 +158,9 @@ module.exports = {
 
             var resources = [edges, workItems, fromPoints, toPoints];
 
-            faEdges.springs = edges.buffer; 
+            faEdges.springs = edges.buffer;
             faEdges.workList = workItems.buffer;
-            faEdges.inputPoints = fromPoints.buffer; 
+            faEdges.inputPoints = fromPoints.buffer;
             faEdges.outputPoints = toPoints.buffer;
             faEdges.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
             setKernelArgs(simulator, 'forceAtlasEdges');

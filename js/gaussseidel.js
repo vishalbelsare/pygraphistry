@@ -4,12 +4,7 @@ var debug = require("debug")("graphistry:graph-viz:cl:gaussseidel")
 var Q = require('q');
 var _ = require('underscore');
 var cljs = require('./cl.js');
-
-if (typeof(window) == 'undefined') {
-    var webcl = require('node-webcl');
-} else if (typeof(webcl) == 'undefined') {
-    var webcl = window.webcl;
-}
+var webcl = require('node-webcl');
 
 var gsPointsOrder = ['numPoints',  'inputPositions', 'outputPositions', 'tilePointsParam', 'width',
                       'height', 'charge', 'gravity', 'randValues', 'stepNumber'];
@@ -118,9 +113,9 @@ module.exports = {
         gsSprings.outputPoints = null;
         gsSprings.stepNumber = null;
 
-        gsSpringsGather.springs = simulator.buffers.forwardsEdges.buffer; 
-        gsSpringsGather.workList = simulator.buffers.forwardsWorkItems.buffer; 
-        gsSpringsGather.inputPoints = simulator.buffers.curPoints.buffer; 
+        gsSpringsGather.springs = simulator.buffers.forwardsEdges.buffer;
+        gsSpringsGather.workList = simulator.buffers.forwardsWorkItems.buffer;
+        gsSpringsGather.inputPoints = simulator.buffers.curPoints.buffer;
         gsSpringsGather.springPositions = simulator.buffers.springsPos.buffer;
     },
 
@@ -168,7 +163,7 @@ module.exports = {
                 debug("Running gaussSeidelPoints");
                 return simulator.kernels.gaussSeidelPoints.call(simulator.numPoints, resources)
                     .then(function () {
-                        return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints); 
+                        return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
                     }).fail(function (err) {
                         console.error("ERROR Kernel gaussSeidelPoints failed ", (err||{}).stack)
                     });
@@ -198,7 +193,7 @@ module.exports = {
                     simulator.buffers.curPoints, simulator.buffers.springsPos];
 
                 simulator.tickBuffers(['springsPos']);
-                
+
                 gsSpringsGather.springs = simulator.buffers.forwardsEdges.buffer;
                 gsSpringsGather.workList = simulator.buffers.forwardsWorkItems.buffer;
                 gsSpringsGather.inputPoints = simulator.buffers.curPoints.buffer;
