@@ -116,7 +116,13 @@ function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
                 midSpringsPos: null,
                 midSpringsColorCoord: null,
                 nextMidPoints: null,
-                curMidPoints: null
+                curMidPoints: null,
+                partialForces1: null,
+                partialForces2: null,
+                curForces: null,
+                prevForces: null,
+                swings: null,
+                tractions: null,
             };
             _.extend(
                 simObj.buffers,
@@ -224,7 +230,13 @@ function setPoints(simulator, points) {
     simulator.resetBuffers([
         simulator.buffers.nextPoints,
         simulator.buffers.randValues,
-        simulator.buffers.curPoints])
+        simulator.buffers.curPoints,
+        simulator.buffers.partialForces1,
+        simulator.buffers.partialForces2,
+        simulator.buffers.curForces,
+        simulator.buffers.prevForces,
+        simulator.buffers.swings,
+        simulator.buffers.tractions])
 
     simulator.numPoints = points.length / simulator.elementsPerPoint;
     simulator.renderer.numPoints = simulator.numPoints;
@@ -234,27 +246,48 @@ function setPoints(simulator, points) {
     // Create buffers and write initial data to them, then set
     simulator.tickBuffers(['curPoints', 'randValues']);
 
+    var swingsBytes = simulator.numPoints * Float32Array.BYTES_PER_ELEMENT;
+    var randBufBytes = randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
+
     return Q.all([
         simulator.renderer.createBuffer(points, 'curPoints'),
         simulator.cl.createBuffer(points.byteLength, 'nextPoints'),
-        simulator.cl.createBuffer(randLength * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT,
-            'randValues')])
-    .spread(function(pointsVBO, nextPointsBuffer, randBuffer) {
+        simulator.cl.createBuffer(points.byteLength, 'partialForces1'),
+        simulator.cl.createBuffer(points.byteLength, 'partialForces2'),
+        simulator.cl.createBuffer(points.byteLength, 'curForces'),
+        simulator.cl.createBuffer(points.byteLength, 'prevForces'),
+        simulator.cl.createBuffer(swingsBytes, 'swings'),
+        simulator.cl.createBuffer(swingsBytes, 'tractions'),
+        simulator.cl.createBuffer(randBufBytes, 'randValues')])
+    .spread(function(pointsVBO, nextPointsBuf, partialForces1Buf, partialForces2Buf,
+                     curForcesBuf, prevForcesBuf, swingsBuf, tractionsBuf, randBuf) {
         debug('Created most of the points');
-        simulator.buffers.nextPoints = nextPointsBuffer;
+        simulator.buffers.nextPoints = nextPointsBuf;
+        simulator.buffers.partialForces1 = partialForces1Buf;
+        simulator.buffers.partialForces2 = partialForces2Buf;
+        simulator.buffers.curForces = curForcesBuf;
+        simulator.buffers.prevForces = prevForcesBuf;
+        simulator.buffers.swings = swingsBuf;
+        simulator.buffers.tractions = tractionsBuf;
 
         simulator.renderer.buffers.curPoints = pointsVBO;
 
         // Generate an array of random values we will write to the randValues buffer
-        simulator.buffers.randValues = randBuffer;
+        simulator.buffers.randValues = randBuf;
         var rands = new Float32Array(randLength * simulator.elementsPerPoint);
         for(var i = 0; i < rands.length; i++) {
             rands[i] = Math.random();
         }
 
+        var zeros = new Float32Array(simulator.numPoints * simulator.elementsPerPoint);
+        for (var i = 0; i < zeros.length; i++) {
+            zeros[i] = 0;
+        }
+
         return Q.all([
             simulator.cl.createBufferGL(pointsVBO, 'curPoints'),
-            simulator.buffers.randValues.write(rands)]);
+            simulator.buffers.randValues.write(rands),
+            simulator.buffers.prevForces.write(zeros)]);
     })
     .spread(function(pointsBuf, randValues) {
         simulator.buffers.curPoints = pointsBuf;

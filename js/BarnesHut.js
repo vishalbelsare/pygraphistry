@@ -4,7 +4,7 @@ var debug = require("debug")("graphistry:graph-viz:cl:barneshut"),
     _     = require('underscore'),
     cljs  = require('./cl.js'),
     Q = require('q'),
-    gs    = require('./gaussseidel.js');
+    gs    = require('./gaussseidel.js'),
     webcl = require('node-webcl');
 
 var graphParams = {

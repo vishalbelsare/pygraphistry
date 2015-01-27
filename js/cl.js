@@ -300,10 +300,10 @@ var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
             kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, global, workgroup);
         })
         .catch (function(error) {
-            console.log(error);
+            console.err('Kernel error', error);
         })
         .then(release.bind('', buffers))
-        // .then(function () { kernel.cl.queue.finish(); })
+        .then(function () { kernel.cl.queue.finish(); })
         .then(_.constant(kernel));
 });
 

@@ -3,12 +3,13 @@
 var _ = require('underscore');
 var SimCL = require('./SimCL.js');
 var util = require('./util.js');
-var forceAtlas = require('./forceatlas.js'),
-    gaussSeidel = require('./gaussseidel.js'),
+var forceAtlas   = require('./forceatlas.js'),
+    forceAtlas2  = require('./forceatlas2.js'),
+    gaussSeidel  = require('./gaussseidel.js'),
     edgeBundling = require('./edgebundling.js'),
-    barnesHut = require('./BarnesHut.js');
+    barnesHut    = require('./BarnesHut.js');
 
-var SIMULATION_TIME = 100;
+var SIMULATION_TIME = 1;
 
 var uberControls = {
     simulator: SimCL,
@@ -68,15 +69,15 @@ var atlasControls = {
     simulator: SimCL,
     layoutAlgorithms: [
         {
-            algo: forceAtlas,
+            algo: forceAtlas2,
             params: {
                 gravity: 1,
-                scalingRatio: 0.3,
+                scalingRatio: 100,
                 edgeInfluence: 0,
                 preventOverlap: false,
                 strongGravity: false,
                 dissuadeHubs: false,
-                linLog: true
+                linLog: false
             }
         }
     ],

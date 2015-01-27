@@ -5,6 +5,7 @@ var debug = require("debug")("graphistry:util"),
     fs = require('fs'),
     $ = require('jquery'),
     Q = require('q'),
+    _ = require('underscore'),
     nodeutil = require('util');
 
 var Image, webgl;
@@ -70,11 +71,27 @@ function rgb(r, g, b, a) {
     return (a << 24) | (b << 16) | (g << 8) | r;
 }
 
+/* Check that kernel argument lists are typo-free */
+function saneKernels(kernels) {
+    _.each(kernels, function (kernel) {
+        _.each(kernel.args, function (def, arg) {
+            if (!_.contains(kernel.order, arg))
+                die('In kernel %s, no order for argument %s', kernel.name, arg);
+            if (!(arg in kernel.types))
+                die('In kernel %s, no type for argument %s', kernel.name, arg);
+        });
+        _.each(kernel.order, function (arg) {
+            if (!(arg in kernel.args))
+                die('In kernel %s, unknown argument %s', kernel.name, arg);
+        });
+    });
+}
 
 module.exports = {
-    "getShaderSource": getShaderSource,
-    "getKernelSource": getKernelSource,
-    "getImage": getImage,
-    "die": die,
-    "rgb": rgb
+    'getShaderSource': getShaderSource,
+    'getKernelSource': getKernelSource,
+    'getImage': getImage,
+    'die': die,
+    'rgb': rgb,
+    'saneKernels' : saneKernels
 };

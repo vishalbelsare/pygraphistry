@@ -4,7 +4,7 @@ var debug = require("debug")("graphistry:graph-viz:cl:forceatlas"),
     _     = require('underscore'),
     cljs  = require('./cl.js'),
     gs    = require('./gaussseidel.js'),
-    Q     = require('q');
+    Q     = require('q'),
     webcl = require('node-webcl');
 
 var graphParams = {
