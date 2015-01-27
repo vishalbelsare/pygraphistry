@@ -290,7 +290,7 @@ var splunkMapper = {
         pointSize: {
             name: "pointSize",
             transform: function (v) {
-                return normalize(logTransform(v), 5, Math.pow(2, 8))
+                return normalize(v, 5, Math.pow(2, 8))
             }
         },
         pointLabel: {
@@ -307,7 +307,7 @@ var splunkMapper = {
             name: "edgeColor",
             transform: function (v) {
                 var palette = green2red_palette;
-                return int2color(normalize(logTransform(v), 0, palette.length - 1), palette);
+                return int2color(normalize(v, 0, palette.length - 1), palette);
             }
         },
         pointTag: {
