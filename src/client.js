@@ -14,9 +14,6 @@ var io           = require('socket.io-client');
 var renderer     = require('./renderer.js');
 var ui           = require('./ui.js');
 
-// Get URL query params to send over to the worker via socket
-var datasetname = getUrlParameter('datasetname');
-
 //string * {socketHost: string, socketPort: int} -> (... -> ...)
 // where fragment == 'vbo?buffer' or 'texture?name'
 function makeFetcher (fragment, url) {
@@ -70,24 +67,25 @@ function getUpdatedNames (names, originalVersions, newVersions) {
 /**
  * Gets the URL param for the dataset
  */
-function getUrlParameter(sParam) {
+function getUrlParameters() {
     var sPageURL = window.location.search.substring(1);
     var sURLVariables = sPageURL.split('&');
+    var params = {};
     for (var i = 0; i < sURLVariables.length; i++){
         var sParameterName = sURLVariables[i].split('=');
-        if (sParameterName[0] === sParam) {
-            return sParameterName[1];
-        }
+        params[sParameterName[0]] = sParameterName[1];
     }
+
+    return params;
 }
 
 
 /**
  * Fetches the URL for the viz server to use
  */
-function getVizServerParams() {
+function getVizServerParams(args) {
     return $.ajaxAsObservable({
-            url: '/vizaddr/graph?datasetname=' + datasetname,
+            url: '/vizaddr/graph?' + args,
             dataType: 'json'
         })
         .map(function(reply) {
@@ -111,12 +109,27 @@ function connect(vizType) {
         throw new Error('need vizType');
     }
 
-    return getVizServerParams()
+    // Get URL query params to send over to the worker via socket
+    var workerParams = ['dataset', 'scene', 'device', 'controls'];
+    var params = getUrlParameters();
+
+    // For compatibility with old way of specifying dataset
+    if ('datasetname' in params) {
+        params.dataset = params.datasetname;
+    }
+
+    var workersArgs = _.map(workerParams, function (param) {
+        return param + '=' + params[param];
+    }).join('&');
+    console.log('Args', workersArgs);
+
+
+    return getVizServerParams(workersArgs)
         .flatMap(function(params) {
 
             debug('got params', params);
 
-            var socket = io(params.url, { query: 'datasetname=' + datasetname,
+            var socket = io(params.url, { query: workersArgs,
                                           reconnection: false,
                                           transports: ['websocket']
                                         });
