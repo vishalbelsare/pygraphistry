@@ -192,7 +192,7 @@ function createCLContextNode(renderer) {
     var vendor = deviceWrapper.device.getInfo(webcl.DEVICE_VENDOR);
     var type = deviceWrapper.deviceType;
     var computeUnits = deviceWrapper.computeUnits;
-    console.log('OpenCL Vendor: %s\tType: %s\t CU:%d', vendor, type, computeUnits);
+    console.log('OpenCL Vendor:%s\tType:%s\tCU:%d', vendor, type, computeUnits);
 
     var res = {
         renderer: renderer,
