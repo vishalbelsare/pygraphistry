@@ -70,7 +70,7 @@ var kernels = [
 ];
 util.saneKernels(kernels);
 
-var setKernelArgs = cljs.setKernelArgs.bind('', kernels)
+var setKernelArgs = cljs.setKernelArgs.bind('', kernels);
 
 function setPhysics(cfg) {
     [
