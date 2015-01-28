@@ -4,14 +4,8 @@ var _       = require('underscore'),
     Q       = require('q'),
     debug   = require('debug')('graphistry:graph-viz:cl:edgebundling'),
     cljs    = require('./cl.js'),
-    util    = require('./util.js');
-
-
-if (typeof(window) == 'undefined') {
-    var webcl = require('node-webcl');
-} else if (typeof(webcl) == 'undefined') {
-    var webcl = window.webcl;
-}
+    util    = require('./util.js'),
+    webcl = require('node-webcl');
 
 var gsMidpoints = {
     numPoints: null,
@@ -26,8 +20,9 @@ var gsMidpoints = {
     randValues: null,
     stepNumber: null
 };
-var gsMidpointsOrder = ['numPoints', 'numSplits', 'inputMidPoints', 'outputMidPoints', 'tilePointsParam',
-                        'width', 'height', 'charge', 'gravity', 'randValues', 'stepNumber'];
+var gsMidpointsOrder = ['numPoints', 'numSplits', 'inputMidPoints',
+                        'outputMidPoints', 'tilePointsParam', 'width',
+                        'height', 'charge', 'gravity', 'randValues', 'stepNumber'];
 Object.seal(gsMidpoints);
 
 var gsMidsprings = {
@@ -94,13 +89,13 @@ var setKernelArgs = cljs.setKernelArgs.bind('', kernels)
 
 function setPhysics(cfg) {
     if ('charge' in cfg)
-        gsMidpoints.charge = webcl.type ? [cfg.charge] : new Float32Array([cfg.charge]);
+        gsMidpoints.charge = [cfg.charge];
     if ('gravity' in cfg)
-        gsMidpoints.gravity = webcl.type ? [cfg.gravity] : new Float32Array([cfg.gravity]);
+        gsMidpoints.gravity = [cfg.gravity];
     if ('edgeDistance0' in cfg)
-        gsMidsprings.springDistance = webcl.type ? [cfg.edgeDistance0] : new Float32Array([cfg.edgeDistance0]);
+        gsMidsprings.springDistance = [cfg.edgeDistance0];
     if ('edgeStrength0' in cfg)
-        gsMidsprings.springStrength = webcl.type ? [cfg.edgeStrength0] : new Float32Array([cfg.edgeStrength0]);
+        gsMidsprings.springStrength = [cfg.edgeStrength0];
 }
 
 function setEdges(simulator) {
@@ -109,16 +104,16 @@ function setEdges(simulator) {
         * simulator.elementsPerPoint
         * Float32Array.BYTES_PER_ELEMENT;
 
-    gsMidpoints.numPoints = webcl.type ? [simulator.numMidPoints] : new Uint32Array([simulator.numMidPoints]);
-    gsMidpoints.numSplits = webcl.type ? [simulator.numSplits] : new Uint32Array([simulator.numSplits]);
+    gsMidpoints.numPoints = [simulator.numMidPoints];
+    gsMidpoints.numSplits = [simulator.numSplits];
     gsMidpoints.inputMidPoints = simulator.buffers.curMidPoints.buffer;
     gsMidpoints.outputMidPoints = simulator.buffers.nextMidPoints.buffer;
-    gsMidpoints.tilePointsParam = webcl.type ? [localPosSize] : new Uint32Array([localPosSize]);
-    gsMidpoints.width = webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]);
-    gsMidpoints.height = webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]);
+    gsMidpoints.tilePointsParam = [localPosSize];
+    gsMidpoints.width = [simulator.dimensions[0]];
+    gsMidpoints.height = [simulator.dimensions[1]];
     gsMidpoints.randValues = simulator.buffers.randValues.buffer;
 
-    gsMidsprings.numSplits = webcl.type ? [simulator.numSplits] : new Uint32Array([simulator.numSplits]);
+    gsMidsprings.numSplits = [simulator.numSplits];
     gsMidsprings.springs = simulator.buffers.forwardsEdges.buffer;
     gsMidsprings.workList = simulator.buffers.forwardsWorkItems.buffer;
     gsMidsprings.inputPoints = simulator.buffers.curPoints.buffer;
@@ -148,7 +143,7 @@ function tick(simulator, stepNumber) {
                 simulator.buffers.midSpringsColorCoord
             ];
 
-            gsMidpoints.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
+            gsMidpoints.stepNumber = [stepNumber];
             setKernelArgs(simulator, 'gaussSeidelMidpoints');
             simulator.tickBuffers(['curMidPoints', 'nextMidPoints']);
 
@@ -169,7 +164,7 @@ function tick(simulator, stepNumber) {
                 simulator.buffers.midSpringsColorCoord
             ];
 
-            gsMidsprings.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
+            gsMidsprings.stepNumber = [stepNumber];
 
             setKernelArgs(simulator, 'gaussSeidelMidsprings');
             simulator.tickBuffers(['curMidPoints', 'midSpringsPos', 'midSpringsColorCoord']);
