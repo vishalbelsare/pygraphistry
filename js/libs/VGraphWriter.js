@@ -124,6 +124,12 @@ function uploadBuffers(graph, vectors) {
 
 // Graph -> Promise
 function write(graph) {
+    // Disable buggy serialization
+    if (true || !graph.vg) {
+        return Q();
+    }
+
+    // FIXME: Very buggy
     debug('serializing and saving state...')
 
     // Grab the buffers from the simulator
@@ -133,7 +139,7 @@ function write(graph) {
     var untypedVertices = Array.prototype.slice.call(graph.__pointsHostBuffer);
 
     if (graph.vg.double_vectors === undefined) {
-        graph.vg.double_vectors = new pb_root.VectorGraph.DoubleBufferVector();
+        graph.vg.double_vectors = [];
     }
 
     for (var index = 0; index < untypedVertices.length; index++) {
@@ -155,11 +161,8 @@ function write(graph) {
         graph.vg.double_vectors.push(y);
     }
 
-    if (graph.vg) {
-        return uploadBuffers(graph, readBuffers(buffers));
-    } else {
-        return Q();
-    }
+
+    return uploadBuffers(graph, readBuffers(buffers));
 }
 
 module.exports = {
