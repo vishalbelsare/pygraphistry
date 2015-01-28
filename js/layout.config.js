@@ -72,7 +72,7 @@ var atlasControls = {
             algo: forceAtlas2,
             params: {
                 gravity: 1,
-                scalingRatio: 100,
+                scalingRatio: 1,
                 edgeInfluence: 0,
                 preventOverlap: false,
                 strongGravity: false,

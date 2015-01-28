@@ -366,7 +366,7 @@ function setLabels(simulator, labels) {
 function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints) {
     //edges, workItems
     var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
-    var elementsPerWorkItem = 2;
+    var elementsPerWorkItem = 4;
 
     if(forwardsEdges.edgesTyped.length < 1) {
         throw new Error("The edge buffer is empty");
@@ -537,9 +537,12 @@ function setTimeSubset(renderer, simulator, range) {
         }
     };
 
-    //edges: sorted by start, so just compare start vs stop
+    /*FIXME: Handle worklist with empty item for node without edges
+    edges: sorted by start, so just compare start vs stop
     var startEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.min), false);
-    var endEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.max), true);
+    var endEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.max), true);*/
+    var endEdgeIdx = simulator.numEdges;
+    var startEdgeIdx = 0;
 
     var numEdges = endEdgeIdx - startEdgeIdx
 
