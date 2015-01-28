@@ -18,8 +18,8 @@ var randLength = 73;
 
 var NAMED_CLGL_BUFFERS = require('./buffers.js').NAMED_CLGL_BUFFERS;
 
-function create(renderer, dimensions, numSplits, locked, layoutAlgorithms) {
-    return cljs.create(renderer)
+function create(renderer, dimensions, numSplits, device, locked, layoutAlgorithms) {
+    return cljs.create(renderer, device)
     .then(function(cl) {
         debug("Creating CL object with GL context");
 

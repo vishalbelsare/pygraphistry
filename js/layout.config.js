@@ -128,7 +128,7 @@ var barnesControls = {
 var controls = {
     'default': uberControls,
     'uber': uberControls,
-    'netflow': gsControls,
+    'gauss': gsControls,
     'atlas': atlasControls(forceAtlas),
     'atlas2': atlasControls(forceAtlas2),
     'barneshut': barnesControls

@@ -173,7 +173,7 @@ function fetchBufferByteLengths(graph, renderConfig) {
 }
 
 
-function init(cfg) {
+function init(device, cfg) {
     debug("Starting initialization");
     var global = cfg.global
 
@@ -191,7 +191,7 @@ function init(cfg) {
         .then(function (renderer) {
             var graph = NBody.create(
                 renderer, global.dimensions, global.numSplits, global.simulationTime);
-            return initSimulator(graph, cfg);
+            return initSimulator(graph, device, cfg);
         })
         .fail(function (err) {
             console.error("ERROR Failure in NBody creation ", (err||{}).stack);
@@ -211,7 +211,7 @@ function getControls(cfgName) {
 }
 
 
-function initSimulator(graph, cfg) {
+function initSimulator(graph, device, cfg) {
     debug('Applying layout settings: %o', cfg);
     (cfg.layoutAlgorithms||[]).forEach(function (alg) {
         debug('  layout algorithm %s: %o', alg.algo.name, alg.params);
@@ -224,7 +224,7 @@ function initSimulator(graph, cfg) {
         layoutAlgorithms.push(entry.algo);
     }
 
-    return graph.initSimulation(cfg.simulator, layoutAlgorithms, cfg.locks);
+    return graph.initSimulation(cfg.simulator, device, layoutAlgorithms, cfg.locks);
 }
 
 
@@ -271,8 +271,9 @@ function create(dataset) {
     // the contents of each VBO
     var animStepSubj = new Rx.BehaviorSubject(null);
     var cfg = getControls(dataset.Metadata.config.controls);
+    var device = dataset.Metadata.config.device;
 
-    var graph = init(cfg).then(function (graph) {
+    var graph = init(device, cfg).then(function (graph) {
         debug('Dataset %o', dataset);
         userInteractions.subscribe(function (settings){
             debug('Updating settings..');

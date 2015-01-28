@@ -33,8 +33,12 @@ var types = {
 };
 
 
-var DEVICE_TYPE = webcl.DEVICE_TYPE_ALL;
-
+var clDeviceType = {
+    'cpu': webcl.DEVICE_TYPE_CPU,
+    'gpu': webcl.DEVICE_TYPE_GPU,
+    'all': webcl.DEVICE_TYPE_ALL,
+    'any': webcl.DEVICE_TYPE_ALL
+};
 
 
 // TODO: in call() and setargs(), we currently requires a `argTypes` argument becuase older WebCL
@@ -43,8 +47,14 @@ var DEVICE_TYPE = webcl.DEVICE_TYPE_ALL;
 // that argument, even on old versions. Instead, we should query the kernel for the types of each
 // argument and fill in that information automatically, when required by old WebCL versions.
 
-var create = Q.promised(function(renderer) {
-    return createCLContextNode(renderer);
+var create = Q.promised(function(renderer, device) {
+    device = device || 'all';
+    var clDevice = clDeviceType[device.toLowerCase()];
+    if (!clDevice) {
+        console.warn('WARNING Unknown device %s, using "all"', device)
+        clDevice = clDeviceType.all;
+    }
+    return createCLContextNode(renderer, clDevice);
 });
 
 function setKernelArgs(kernels, simulator, kernelName) {
@@ -90,7 +100,7 @@ function setKernelArgs(kernels, simulator, kernelName) {
     kernel.setArgs(argArray, typeArray);
 }
 
-function createCLContextNode(renderer) {
+function createCLContextNode(renderer, DEVICE_TYPE) {
     if (typeof webcl === "undefined") {
         throw new Error("WebCL does not appear to be supported in your browser");
     } else if (webcl === null) {
@@ -192,7 +202,7 @@ function createCLContextNode(renderer) {
     var vendor = deviceWrapper.device.getInfo(webcl.DEVICE_VENDOR);
     var type = deviceWrapper.deviceType;
     var computeUnits = deviceWrapper.computeUnits;
-    console.log('OpenCL Vendor:%s\tType:%s\tCU:%d', vendor, type, computeUnits);
+    console.log('OpenCL Info    Vendor:%s  Type:%s  CU:%d', vendor, type, computeUnits);
 
     var res = {
         renderer: renderer,
