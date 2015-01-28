@@ -26,8 +26,9 @@ function etl(msg, res) {
         name: name,
         type: 'vgraph',
         config: {
-            simControls: 'netflow',
+            device: 'all',
             scene: 'netflow',
+            simControls: 'gauss',
             mapper: 'splunkMapper'
         }
     };

@@ -74,7 +74,7 @@ function get_likely_local_ip() {
 
 
 function assign_worker(req, res) {
-    var datasetname = req.query.datasetname;
+    var datasetname = req.query.dataset;
     // need to route based on data size.
     // TODO: S3 -> mongo information. This will not work in production.
     if(config.ENVIRONMENT === 'production' || config.ENVIRONMENT === 'staging') {
