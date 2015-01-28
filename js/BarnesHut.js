@@ -4,15 +4,8 @@ var debug = require("debug")("graphistry:graph-viz:cl:barneshut"),
     _     = require('underscore'),
     cljs  = require('./cl.js'),
     Q = require('q'),
-    gs    = require('./gaussseidel.js');
-
-
-
-if (typeof(window) == 'undefined') {
-    var webcl = require('node-webcl');
-} else if (typeof(webcl) == 'undefined') {
-    var webcl = window.webcl;
-}
+    gs    = require('./gaussseidel.js'),
+    webcl = require('node-webcl');
 
 var graphParams = {
     scalingRatio: null,
@@ -435,9 +428,9 @@ module.exports = {
 
         var resources = [edges, workItems, fromPoints, toPoints];
 
-        faEdges.springs = edges.buffer; 
+        faEdges.springs = edges.buffer;
         faEdges.workList = workItems.buffer;
-        faEdges.inputPoints = fromPoints.buffer; 
+        faEdges.inputPoints = fromPoints.buffer;
         faEdges.outputPoints = toPoints.buffer;
         faEdges.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
         setKernelArgs(simulator, 'forceAtlasEdges');

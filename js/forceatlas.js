@@ -4,14 +4,9 @@ var debug = require("debug")("graphistry:graph-viz:cl:forceatlas"),
     _     = require('underscore'),
     cljs  = require('./cl.js'),
     gs    = require('./gaussseidel.js'),
-    Q     = require('q');
-
-
-if (typeof(window) == 'undefined') {
-    var webcl = require('node-webcl');
-} else if (typeof(webcl) == 'undefined') {
-    var webcl = window.webcl;
-}
+    Q     = require('q'),
+    util  = require('./util.js'),
+    webcl = require('node-webcl');
 
 var graphParams = {
     scalingRatio: null,
@@ -21,7 +16,7 @@ var graphParams = {
 };
 
 var faPoints = {};
-_.extend(faPoints, graphParams, { 
+_.extend(faPoints, graphParams, {
     tilePointsParam: null,
     tilePointsParam2: null,
     tilePointsParam3: null,
@@ -47,7 +42,7 @@ _.extend(faEdges, graphParams, {
     stepNumber: null,
     outputPoints: null
 });
-var faEdgesOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'springs', 
+var faEdgesOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'springs',
                     'workList', 'inputPoints', 'stepNumber', 'outputPoints'];
 Object.seal(faEdges);
 
@@ -70,189 +65,190 @@ var argsType = {
     stepNumber: cljs.types.uint_t,
     inDegrees: null,
     outDegrees: null,
-    springs: null, 
+    springs: null,
     workList: null,
     inputPoints: null,
     outputPoints: null,
 }
 Object.seal(argsType);
 
+var kernels = [
+    {
+        name: "forceAtlasPoints",
+        args: faPoints,
+        order: faPointsOrder,
+        types: argsType,
+        file: 'forceAtlas.cl'
+    },{
+        name: "forceAtlasEdges",
+        args: faEdges,
+        order: faEdgesOrder,
+        types: argsType,
+        file: 'forceAtlas.cl'
+    },{
+        name: "gaussSeidelSpringsGather",
+        args: gsSpringsGather,
+        order: gs.gsSpringsGatherOrder,
+        types: gs.argsType,
+        file: 'gaussSeidel.cl'
+    }
+]
+util.saneKernels(kernels);
+
+var setKernelArgs = cljs.setKernelArgs.bind('', kernels);
+
+function setPhysics(cfg) {
+    if ('scalingRatio' in cfg) {
+        faPoints.scalingRatio = [cfg.scalingRatio];
+        faEdges.scalingRatio = [cfg.scalingRatio];
+    }
+    if ('gravity' in cfg) {
+        faPoints.gravity = [cfg.gravity];
+        faEdges.gravity = [cfg.gravity];
+    }
+    if ('edgeInfluence' in cfg) {
+        faPoints.edgeInfluence = [cfg.edgeInfluence];
+        faEdges.edgeInfluence = [cfg.edgeInfluence];
+    }
+
+    var mask = 0;
+    var flags = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'];
+    flags.forEach(function (flag, i) {
+        var isOn = cfg.hasOwnProperty(flag) ? cfg[flag] : false;
+        if (isOn) {
+            mask = mask | (1 << i);
+        }
+    });
+    faPoints.flags = [mask];
+    faEdges.flags = [mask];
+}
+
+function setEdges(simulator) {
+    var localPosSize =
+        Math.min(simulator.cl.maxThreads, simulator.numMidPoints)
+        * simulator.elementsPerPoint
+        * Float32Array.BYTES_PER_ELEMENT;
+
+    faPoints.tilePointsParam = [1];
+    faPoints.tilePointsParam2 = [1];
+    faPoints.tilePointsParam3 = [1];
+    faPoints.numPoints = [simulator.numPoints];
+    faPoints.inputPositions = simulator.buffers.curPoints.buffer;
+    faPoints.width = [simulator.dimensions[0]];
+    faPoints.height = [simulator.dimensions[1]];
+    faPoints.inDegrees = simulator.buffers.forwardsDegrees.buffer;
+    faPoints.outDegrees = simulator.buffers.backwardsDegrees.buffer;
+    faPoints.outputPositions = simulator.buffers.nextPoints.buffer;
+
+    gsSpringsGather.springs = simulator.buffers.forwardsEdges.buffer;
+    gsSpringsGather.workList = simulator.buffers.forwardsWorkItems.buffer;
+    gsSpringsGather.inputPoints = simulator.buffers.curPoints.buffer;
+    gsSpringsGather.springPositions = simulator.buffers.springsPos.buffer;
+}
+
+function tick(simulator, stepNumber) {
+    var tickTime = Date.now()
+
+    var atlasEdgesKernelSeq = function (edges, workItems, numWorkItems, fromPoints, toPoints) {
+
+        var resources = [edges, workItems, fromPoints, toPoints];
+
+        faEdges.springs = edges.buffer;
+        faEdges.workList = workItems.buffer;
+        faEdges.inputPoints = fromPoints.buffer;
+        faEdges.outputPoints = toPoints.buffer;
+        faEdges.stepNumber = [stepNumber];
+        setKernelArgs(simulator, 'forceAtlasEdges');
+
+        simulator.tickBuffers(
+            _.keys(simulator.buffers).filter(function (name) {
+                return simulator.buffers[name] == toPoints;
+            }));
+
+        debug("Running kernel forceAtlasEdges");
+        return simulator.kernels.forceAtlasEdges.call(numWorkItems, resources);
+    };
+
+    var resources = [
+        simulator.buffers.curPoints,
+        simulator.buffers.forwardsDegrees,
+        simulator.buffers.backwardsDegrees,
+        simulator.buffers.nextPoints
+    ];
+
+    faPoints.stepNumber = [stepNumber];
+    setKernelArgs(simulator, "forceAtlasPoints");
+
+    simulator.tickBuffers(['nextPoints', 'curPoints', 'springsPos'])
+
+    debug("Running kernel forceAtlasPoints");
+    var appliedForces;
+    if (simulator.locked.lockPoints) {
+        debug('Locked points, skipping');
+        appliedForces = simulator.buffers.curPoints.copyInto(simulator.buffers.nextPoints);
+    } else {
+        appliedForces = simulator.kernels.forceAtlasPoints.call(simulator.numPoints, resources)
+        .then(function () {
+            //FIXME this shouldn't be necessary -- is the next kernel not copying existing vals or swapping buffers somehow?
+            return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
+        });
+    }
+
+    return appliedForces
+        .then(function() {
+            if (simulator.locked.lockEdges) {
+                debug('Locked edges, skipping');
+                return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
+            } else if(simulator.numEdges > 0) {
+                return Q()
+                    .then(function () {
+                        //debug('SKIP FORWARDS');
+                        //return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
+                        debug('forwards');
+                        return atlasEdgesKernelSeq(
+                            simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
+                            simulator.buffers.nextPoints, simulator.buffers.curPoints)
+
+                    })
+                    .then(function () {
+                        //FIXME this shouldn't be necessary -- is the next kernel not copying existing vals or swapping buffers somehow?
+                        return simulator.buffers.curPoints.copyInto(simulator.buffers.nextPoints);
+                    })
+                    .then(function () {
+                        //debug('SKIP BACKWARDS');
+                        //return simulator.buffers.curPoints.copyInto(simulator.buffers.nextPoints);
+                        return atlasEdgesKernelSeq(
+                            simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
+                            simulator.buffers.curPoints, simulator.buffers.nextPoints);
+                    })
+                    .then(function () {
+                        return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
+                    }).fail(function (err) {
+                        console.error("ERROR: appliedForces failed ", (err|{}).stack);
+                    });
+            }
+        })
+        .then(function () {
+            if (simulator.numEdges > 0) {
+
+                var resources = [simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems,
+                    simulator.buffers.curPoints, simulator.buffers.springsPos];
+
+                setKernelArgs(simulator, 'gaussSeidelSpringsGather');
+
+                debug("Running gaussSeidelSpringsGather (forceatlas) kernel");
+                return simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources);
+            }
+        }).fail(function (err) {
+            console.error("ERROR forcealtas tick failed: ", (err||{}).stack);
+        });
+}
+
 module.exports = {
     name: 'forceAtlas',
-    kernels: [
-        {
-            name: "forceAtlasPoints",
-            args: faPoints,
-            order: faPointsOrder,
-            types: argsType,
-            file: 'forceAtlas.cl'
-        },{
-            name: "forceAtlasEdges",
-            args: faEdges,
-            order: faEdgesOrder,
-            types: argsType,
-            file: 'forceAtlas.cl'
-        },{
-            name: "gaussSeidelSpringsGather",
-            args: gsSpringsGather,
-            order: gs.gsSpringsGatherOrder,
-            types: gs.argsType,
-            file: 'gaussSeidel.cl'
-        }
-    ],
-
-    setPhysics: function (cfg) {
-        if ('scalingRatio' in cfg) {
-            var val = webcl.type ? [cfg.scalingRatio] : new Float32Array([cfg.scalingRatio]);
-            faPoints.scalingRatio = val;
-            faEdges.scalingRatio = val;
-        }
-        if ('gravity' in cfg) {
-            var val = webcl.type ? [cfg.gravity] : new Float32Array([cfg.gravity]);
-            faPoints.gravity = val;
-            faEdges.gravity = val;
-        }
-        if ('edgeInfluence' in cfg) {
-            var val = webcl.type ? [cfg.edgeInfluence] : new Uint32Array([cfg.edgeInfluence]);
-            faPoints.edgeInfluence = val;
-            faEdges.edgeInfluence = val;
-        }
-
-        var mask = 0;
-        var flags = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'];
-        flags.forEach(function (flag, i) {
-            var isOn = cfg.hasOwnProperty(flag) ? cfg[flag] : false;
-            if (isOn) {
-                mask = mask | (1 << i);
-            }
-        });
-        var val = webcl.type ? [mask] : new Uint32Array([mask]);
-        faPoints.flags = val;
-        faEdges.flags = val;
-    },
-
+    kernels: kernels,
+    setPhysics: setPhysics,
     setPoints: _.identity,
-
-    setEdges: function (simulator) {
-
-        var localPosSize =
-            Math.min(simulator.cl.maxThreads, simulator.numMidPoints)
-            * simulator.elementsPerPoint
-            * Float32Array.BYTES_PER_ELEMENT;
-
-        faPoints.tilePointsParam = webcl.type ? [1] : new Uint32Array([localPosSize]);
-        faPoints.tilePointsParam2 = webcl.type ? [1] : new Uint32Array([localPosSize]);
-        faPoints.tilePointsParam3 = webcl.type ? [1] : new Uint32Array([localPosSize]);
-        faPoints.numPoints = webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]);
-        faPoints.inputPositions = simulator.buffers.curPoints.buffer;
-        faPoints.width = webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]);
-        faPoints.height = webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]);
-        faPoints.inDegrees = simulator.buffers.forwardsDegrees.buffer;
-        faPoints.outDegrees = simulator.buffers.backwardsDegrees.buffer;
-        faPoints.outputPositions = simulator.buffers.nextPoints.buffer;
-
-        gsSpringsGather.springs = simulator.buffers.forwardsEdges.buffer;
-        gsSpringsGather.workList = simulator.buffers.forwardsWorkItems.buffer;
-        gsSpringsGather.inputPoints = simulator.buffers.curPoints.buffer;
-        gsSpringsGather.springPositions = simulator.buffers.springsPos.buffer;
-    },
-
-    tick: function (simulator, stepNumber) {
-        var tickTime = Date.now()
-
-        var atlasEdgesKernelSeq = function (edges, workItems, numWorkItems, fromPoints, toPoints) {
-
-            var resources = [edges, workItems, fromPoints, toPoints];
-
-            faEdges.springs = edges.buffer; 
-            faEdges.workList = workItems.buffer;
-            faEdges.inputPoints = fromPoints.buffer; 
-            faEdges.outputPoints = toPoints.buffer;
-            faEdges.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
-            setKernelArgs(simulator, 'forceAtlasEdges');
-
-            simulator.tickBuffers(
-                _.keys(simulator.buffers).filter(function (name) {
-                    return simulator.buffers[name] == toPoints;
-                }));
-
-            debug("Running kernel forceAtlasEdges");
-            return simulator.kernels.forceAtlasEdges.call(numWorkItems, resources);
-        };
-
-        var resources = [
-            simulator.buffers.curPoints,
-            simulator.buffers.forwardsDegrees,
-            simulator.buffers.backwardsDegrees,
-            simulator.buffers.nextPoints
-        ];
-
-        faPoints.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
-        setKernelArgs(simulator, "forceAtlasPoints");
-
-        simulator.tickBuffers(['nextPoints', 'curPoints', 'springsPos'])
-
-        debug("Running kernel forceAtlasPoints");
-        var appliedForces;
-        if (simulator.locked.lockPoints) {
-            debug('Locked points, skipping');
-            appliedForces = simulator.buffers.curPoints.copyInto(simulator.buffers.nextPoints);
-        } else {
-            appliedForces = simulator.kernels.forceAtlasPoints.call(simulator.numPoints, resources)
-            .then(function () {
-                //FIXME this shouldn't be necessary -- is the next kernel not copying existing vals or swapping buffers somehow?
-                return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-            });
-        }
-
-        return appliedForces
-            .then(function() {
-                if (simulator.locked.lockEdges) {
-                    debug('Locked edges, skipping');
-                    return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-                } else if(simulator.numEdges > 0) {
-                    return Q()
-                        .then(function () {
-                            //debug('SKIP FORWARDS');
-                            //return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-                            debug('forwards');
-                            return atlasEdgesKernelSeq(
-                                simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
-                                simulator.buffers.nextPoints, simulator.buffers.curPoints)
-
-                        })
-                        .then(function () {
-                            //FIXME this shouldn't be necessary -- is the next kernel not copying existing vals or swapping buffers somehow?
-                            return simulator.buffers.curPoints.copyInto(simulator.buffers.nextPoints);
-                        })
-                        .then(function () {
-                            //debug('SKIP BACKWARDS');
-                            //return simulator.buffers.curPoints.copyInto(simulator.buffers.nextPoints);
-                            return atlasEdgesKernelSeq(
-                                simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
-                                simulator.buffers.curPoints, simulator.buffers.nextPoints);
-                        })
-                        .then(function () {
-                            return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-                        }).fail(function (err) {
-                            console.error("ERROR: appliedForces failed ", (err|{}).stack);
-                        });
-                }
-            })
-            .then(function () {
-                if (simulator.numEdges > 0) {
-
-                    var resources = [simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems,
-                        simulator.buffers.curPoints, simulator.buffers.springsPos];
-
-                    setKernelArgs(simulator, 'gaussSeidelSpringsGather');
-
-                    debug("Running gaussSeidelSpringsGather (forceatlas) kernel");
-                    return simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources);
-                }
-            }).fail(function (err) {
-                console.error("ERROR forcealtas tick failed: ", (err||{}).stack);
-            });
-    }
+    setEdges: setEdges,
+    tick: tick
 };
-var setKernelArgs = cljs.setKernelArgs.bind('', module.exports.kernels)

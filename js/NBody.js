@@ -233,13 +233,15 @@ var setEdges = Q.promised(function(graph, edges) {
         })
 
         //[ [first edge number from src idx, numEdges from source idx, source idx], ... ]
-        var workItems = [ [0, 1, edgeList[0][0]] ];
-        var sourceHasEdge = {};
+        var workItems = [[0, 0, edgeList[0][0]]];
+        var sourceHasEdge = [];
+        _.each(_.range(graph.simulator.numPoints), function () {
+            sourceHasEdge.push(false);
+        });
         edgeList.forEach(function (edge, i) {
             sourceHasEdge[edge[0]] = true;
         });
         edgeList.forEach(function (edge, i) {
-            if (i == 0) return;
             var prev = workItems[workItems.length - 1];
             if(edge[0] == prev[2]) {
                 prev[1]++;
@@ -247,7 +249,10 @@ var setEdges = Q.promised(function(graph, edges) {
                 workItems.push([i, 1, edge[0]])
             }
         });
-
+        _.each(sourceHasEdge, function (hasEdge, src) {
+            if (!hasEdge)
+                workItems.push([-1, 0, src]);
+        });
 
         //DISABLED: keeping ordered to streamline time-based filtering
         /*
@@ -258,14 +263,14 @@ var setEdges = Q.promised(function(graph, edges) {
         });
         */
 
-        var degreesTyped = new Uint32Array(graph.__pointsHostBuffer.length);
+        var degreesTyped = new Uint32Array(graph.simulator.numPoints);
         //to closeset workItem in case src has none
-        var srcToWorkItem = new Int32Array(graph.__pointsHostBuffer.length);
+        var srcToWorkItem = new Int32Array(graph.simulator.numPoints);
         for (var i = 0; i < srcToWorkItem.length; i++) {
             srcToWorkItem[i] = -1;
         }
         workItems.forEach(function (edgeList, idx) {
-            srcToWorkItem[edgeList[2]] = idx;
+            srcToWorkItem[edgeList[2]] = edgeList[0];
             degreesTyped[edgeList[2]] = edgeList[1];
         });
         for (var i = 0; i < srcToWorkItem.length; i++) {
@@ -277,9 +282,13 @@ var setEdges = Q.promised(function(graph, edges) {
         //Uint32Array [first edge number from src idx, number of edges from src idx]
         //fetch edge to find src and dst idx (all src same)
         //num edges > 0
-        var workItemsTyped =
-            new Uint32Array(
-                _.flatten(workItems.map(function (o) { return [o[0], o[1]]})));
+        var workItemsTyped = new Uint32Array(
+            _.flatten(
+                workItems.map(function (o) {
+                    return [o[0], o[1], o[2], 666];
+                })
+            )
+        );
 
         var edgesTyped = new Uint32Array(_.flatten(edgeList));
 
