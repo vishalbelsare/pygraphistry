@@ -189,9 +189,10 @@ function createCLContextNode(renderer) {
         throw (err !== null ? err : new Error("A context could not be created from an available device"));
     }
 
-    debug("Device set. Vendor: %s. Device: %o", deviceWrapper.device.getInfo(webcl.DEVICE_VENDOR), deviceWrapper);
-    if (deviceWrapper.deviceType === "CPU")
-        console.warn("WARNING using CPU driver for OpenCL");
+    var vendor = deviceWrapper.device.getInfo(webcl.DEVICE_VENDOR);
+    var type = deviceWrapper.deviceType;
+    var computeUnits = deviceWrapper.computeUnits;
+    console.log('OpenCL Vendor: %s\tType: %s\t CU:%d', vendor, type, computeUnits);
 
     var res = {
         renderer: renderer,
