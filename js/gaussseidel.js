@@ -79,7 +79,7 @@ function setPhysics(cfg) {
     ].forEach(function (kernelPair) {
         kernelPair[1].forEach(function (arg) {
             if (arg in cfg) {
-                kernelPair[0][arg] = webcl.type ? [cfg[arg]] : new Float32Array([cfg[arg]]);
+                kernelPair[0][arg] = [cfg[arg]];
             }
         });
     });
@@ -93,14 +93,14 @@ function setPoints(simulator) {
 
     debug("Setting point 0. FIXME: dyn alloc __local, not hardcode in kernel");
 
-    gsPoints.numPoints = webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]);
+    gsPoints.numPoints = [simulator.numPoints];
     gsPoints.inputPositions = simulator.buffers.curPoints.buffer;
     gsPoints.outputPositions = simulator.buffers.nextPoints.buffer;
-    gsPoints.tilePointsParam = webcl.type ? [1] : new Uint32Array([localPosSize]);
-    gsPoints.width = webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]);
-    gsPoints.height = webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]);
+    gsPoints.tilePointsParam = [1];
+    gsPoints.width = [simulator.dimensions[0]];
+    gsPoints.height = [simulator.dimensions[1]];
     gsPoints.randValues = simulator.buffers.randValues.buffer;
-    gsPoints.stepNumber = webcl.type ? [0] : new Uint32Array([0]);
+    gsPoints.stepNumber = [0];
 }
 
 function setEdges(simulator) {
@@ -127,7 +127,7 @@ function tick(simulator, stepNumber) {
         gsSprings.workList = workItems.buffer;
         gsSprings.inputPoints = fromPoints.buffer;
         gsSprings.outputPoints = toPoints.buffer;
-        gsSprings.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
+        gsSprings.stepNumber = [stepNumber];
         gsSprings.edgeTags = edgeTags.buffer;
 
         setKernelArgs(simulator, "gaussSeidelSprings");
@@ -151,7 +151,7 @@ function tick(simulator, stepNumber) {
 
             var resources = [simulator.buffers.curPoints, simulator.buffers.nextPoints, simulator.buffers.randValues];
 
-            gsPoints.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
+            gsPoints.stepNumber = [stepNumber];
             setKernelArgs(simulator, "gaussSeidelPoints");
 
             simulator.tickBuffers(['nextPoints', 'curPoints']);
@@ -219,5 +219,4 @@ module.exports = {
     gsSpringsGather: gsSpringsGather,
     gsSpringsGatherOrder: gsSpringsGatherOrder,
     argsType: argsType,
-
 }
