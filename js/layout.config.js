@@ -69,7 +69,7 @@ var atlasControls = {
     simulator: SimCL,
     layoutAlgorithms: [
         {
-            algo: forceAtlas2,
+            algo: forceAtlas,
             params: {
                 gravity: 1,
                 scalingRatio: 1,
