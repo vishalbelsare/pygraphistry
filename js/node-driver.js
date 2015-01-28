@@ -205,7 +205,7 @@ function getControls(cfgName) {
     if (cfgName in lConf.controls)
         cfg = lConf.controls[cfgName];
     else
-        console.warn('WARNING Unknown simControls "%s", using defaults.', cfgName)
+        console.warn('WARNING Unknown controls "%s", using defaults.', cfgName)
 
     return cfg;
 }
@@ -270,7 +270,7 @@ function create(dataset) {
     // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
     // the contents of each VBO
     var animStepSubj = new Rx.BehaviorSubject(null);
-    var cfg = getControls(dataset.Metadata.config['simControls']);
+    var cfg = getControls(dataset.Metadata.config.controls);
 
     var graph = init(cfg).then(function (graph) {
         debug('Dataset %o', dataset);
