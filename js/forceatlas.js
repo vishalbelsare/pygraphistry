@@ -97,19 +97,16 @@ module.exports = {
 
     setPhysics: function (cfg) {
         if ('scalingRatio' in cfg) {
-            var val = webcl.type ? [cfg.scalingRatio] : new Float32Array([cfg.scalingRatio]);
-            faPoints.scalingRatio = val;
-            faEdges.scalingRatio = val;
+            faPoints.scalingRatio = [cfg.scalingRatio];
+            faEdges.scalingRatio = [cfg.scalingRatio];
         }
         if ('gravity' in cfg) {
-            var val = webcl.type ? [cfg.gravity] : new Float32Array([cfg.gravity]);
-            faPoints.gravity = val;
-            faEdges.gravity = val;
+            faPoints.gravity = [cfg.gravity];
+            faEdges.gravity = [cfg.gravity];
         }
         if ('edgeInfluence' in cfg) {
-            var val = webcl.type ? [cfg.edgeInfluence] : new Uint32Array([cfg.edgeInfluence]);
-            faPoints.edgeInfluence = val;
-            faEdges.edgeInfluence = val;
+            faPoints.edgeInfluence = [cfg.edgeInfluence];
+            faEdges.edgeInfluence = [cfg.edgeInfluence];
         }
 
         var mask = 0;
@@ -120,9 +117,8 @@ module.exports = {
                 mask = mask | (1 << i);
             }
         });
-        var val = webcl.type ? [mask] : new Uint32Array([mask]);
-        faPoints.flags = val;
-        faEdges.flags = val;
+        faPoints.flags = [mask];
+        faEdges.flags = [mask];
     },
 
     setPoints: _.identity,
@@ -134,13 +130,13 @@ module.exports = {
             * simulator.elementsPerPoint
             * Float32Array.BYTES_PER_ELEMENT;
 
-        faPoints.tilePointsParam = webcl.type ? [1] : new Uint32Array([localPosSize]);
-        faPoints.tilePointsParam2 = webcl.type ? [1] : new Uint32Array([localPosSize]);
-        faPoints.tilePointsParam3 = webcl.type ? [1] : new Uint32Array([localPosSize]);
-        faPoints.numPoints = webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]);
+        faPoints.tilePointsParam = [1];
+        faPoints.tilePointsParam2 = [1];
+        faPoints.tilePointsParam3 = [1];
+        faPoints.numPoints = [simulator.numPoints];
         faPoints.inputPositions = simulator.buffers.curPoints.buffer;
-        faPoints.width = webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]);
-        faPoints.height = webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]);
+        faPoints.width = [simulator.dimensions[0]];
+        faPoints.height = [simulator.dimensions[1]];
         faPoints.inDegrees = simulator.buffers.forwardsDegrees.buffer;
         faPoints.outDegrees = simulator.buffers.backwardsDegrees.buffer;
         faPoints.outputPositions = simulator.buffers.nextPoints.buffer;
@@ -162,7 +158,7 @@ module.exports = {
             faEdges.workList = workItems.buffer;
             faEdges.inputPoints = fromPoints.buffer;
             faEdges.outputPoints = toPoints.buffer;
-            faEdges.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
+            faEdges.stepNumber = [stepNumber];
             setKernelArgs(simulator, 'forceAtlasEdges');
 
             simulator.tickBuffers(
@@ -181,7 +177,7 @@ module.exports = {
             simulator.buffers.nextPoints
         ];
 
-        faPoints.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
+        faPoints.stepNumber = [stepNumber];
         setKernelArgs(simulator, "forceAtlasPoints");
 
         simulator.tickBuffers(['nextPoints', 'curPoints', 'springsPos'])
