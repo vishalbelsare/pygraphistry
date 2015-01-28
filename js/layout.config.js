@@ -65,33 +65,35 @@ var netflowControls = {
     }
 }
 
-var atlasControls = {
-    simulator: SimCL,
-    layoutAlgorithms: [
-        {
-            algo: forceAtlas,
-            params: {
-                gravity: 1,
-                scalingRatio: 1,
-                edgeInfluence: 0,
-                preventOverlap: false,
-                strongGravity: false,
-                dissuadeHubs: false,
-                linLog: false
+function atlasControls(algo1) {
+    return {
+        simulator: SimCL,
+        layoutAlgorithms: [
+            {
+                algo: algo1,
+                params: {
+                    gravity: 1,
+                    scalingRatio: 1,
+                    edgeInfluence: 0,
+                    preventOverlap: false,
+                    strongGravity: false,
+                    dissuadeHubs: false,
+                    linLog: false
+                }
             }
+        ],
+        locks: {
+            lockPoints: false,
+            lockEdges: false,
+            lockMidpoints: true,
+            lockMidedges: true
+        },
+        global: {
+            simulationTime: SIMULATION_TIME, //milliseconds
+            dimensions: [1, 1],
+            numSplits: 1
         }
-    ],
-    locks: {
-        lockPoints: false,
-        lockEdges: false,
-        lockMidpoints: true,
-        lockMidedges: true
-    },
-    global: {
-        simulationTime: SIMULATION_TIME, //milliseconds
-        dimensions: [1, 1],
-        numSplits: 1
-    }
+    };
 }
 
 var barnesControls = {
@@ -127,7 +129,8 @@ var controls = {
     'default': uberControls,
     'uber': uberControls,
     'netflow': netflowControls,
-    'atlas': atlasControls,
+    'atlas': atlasControls(forceAtlas),
+    'atlas2': atlasControls(forceAtlas2),
     'barneshut': barnesControls
 }
 
