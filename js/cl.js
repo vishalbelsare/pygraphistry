@@ -241,6 +241,7 @@ var compile = Q.promised(function (cl, source, kernels) {
 
     try {
         program = cl.context.createProgram("#define NODECL\n\n" + source);
+        // Note: Include dir is not official webcl, won't work in the browser.
         var includeDir = path.resolve(__dirname, '..', 'kernels');
         program.build([cl.device], '-I ' + includeDir);
     } catch (e) {
