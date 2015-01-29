@@ -1,5 +1,6 @@
 var debug    = require('debug')('graphistry:central:etl:etl');
 var _        = require('underscore');
+var Q        = require('q');
 
 var vgraph   = require('./vgraph.js');
 var vgwriter = require('../node_modules/graph-viz/js/libs/VGraphWriter.js');
@@ -32,11 +33,15 @@ function etl(msg, res) {
             mapper: 'splunkMapper'
         }
     };
-
-    var cmd = config.HTTP_LISTEN_ADDRESS === 'localhost' ? 'cacheVGraph' : 'uploadVGraph';
-    return vgwriter[cmd](vg, metadata)
-        .then(_.constant(msg));
-
+    return Q().then(function () {
+        if (config.ENVIRONMENT === 'local') {
+            return vgwriter.cacheVGraph(vg, metadata);
+        }
+    }).then(function () {
+        vgwriter.uploadVGraph(vg, metadata).fail(function () {
+            console.log('S3 Upload failed');
+        });
+    }).then(_.constant(msg));
 }
 
 // Handler for ETL requests on central/etl
