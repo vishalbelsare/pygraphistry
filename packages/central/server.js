@@ -14,9 +14,10 @@ var etl         = require('./etl/etl.js');
 
 debug("Config set to %j", config);
 
-var express = require('express'),
-    app = express(),
-    http = require('http').Server(app);
+var express     = require('express');
+var app         = express();
+var http        = require('http').Server(app);
+var bodyParser   = require('body-parser');
 
 
 //needed for splunk API
@@ -36,7 +37,6 @@ app.options('/api/v0.2/splunk/html/graph.fragment.html', function(req, res) {
 app.options('/api/v0.2/splunk/html/index.fragment.html', function(req, res) {
     res.sendStatus(200);
 });
-
 
 var db;
 
@@ -203,7 +203,7 @@ app.use('/uber',   express.static(UBER_STATIC_PATH));
 app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
 
 // Temporarly handle ETL request from Splunk
-app.post('/etl', express.bodyParser({limit: '5mb'}), etl.post);
+app.post('/etl', bodyParser.json({limit: '50mb'}), etl.post);
 
 // Default '/' static assets
 app.use('/', express.static(MAIN_STATIC_PATH));

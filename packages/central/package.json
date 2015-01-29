@@ -8,16 +8,17 @@
   },
   "dependencies": {
     "StreamGL": "git+ssh://git@github.com:graphistry/StreamGL.git#master",
+    "body-parser": "^1.10.2",
     "config": "git+ssh://git@github.com:graphistry/config.git#master",
     "debug": "^2.1.0",
     "express": "*",
     "graph-viz": "git+ssh://git@github.com:graphistry/graph-viz.git#master",
     "horizon-viz": "git+ssh://git@github.com:graphistry/horizon-viz.git#master",
-    "splunk-viz": "git+ssh://git@github.com:graphistry/splunk-viz.git#master",
     "mongodb": "^1.4.23",
     "protobufjs": "3.8.x",
     "q": "^1.0.1",
     "rx": "^2.3.17",
+    "splunk-viz": "git+ssh://git@github.com:graphistry/splunk-viz.git#master",
     "uber-viz": "git+ssh://git@github.com:graphistry/uber-viz.git#master",
     "underscore": "^1.7.0"
   },
