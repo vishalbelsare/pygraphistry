@@ -106,6 +106,7 @@ function create(renderer, dimensions, numSplits, device, locked, layoutAlgorithm
                 nextPoints: null,
                 randValues: null,
                 curPoints: null,
+                degrees: null,
                 forwardsEdges: null,
                 forwardsDegrees: null,
                 forwardsWorkItems: null,
@@ -363,7 +364,7 @@ function setLabels(simulator, labels) {
  * @param {Float32Array} midPoints - dense array of control points (packed sequence of nDim structs)
  * @returns {Q.promise} a promise for the simulator object
  */
-function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints) {
+function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, degrees, midPoints) {
     //edges, workItems
     var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
     var elementsPerWorkItem = 4;
@@ -384,6 +385,7 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints)
     simulator.bufferHostCopies.forwardsEdges = forwardsEdges;
 
     simulator.resetBuffers([
+        simulator.buffers.degrees,
         simulator.buffers.forwardsEdges,
         simulator.buffers.forwardsDegrees,
         simulator.buffers.forwardsWorkItems,
@@ -410,6 +412,7 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints)
 
         // Create buffers
         return Q.all([
+            simulator.cl.createBuffer(degrees.byteLength, 'degrees'),
             simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'forwardsEdges'),
             simulator.cl.createBuffer(forwardsEdges.degreesTyped.byteLength, 'forwardsDegrees'),
             simulator.cl.createBuffer(forwardsEdges.workItemsTyped.byteLength, 'forwardsWorkItems'),
@@ -422,11 +425,13 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints)
             simulator.renderer.createBuffer(simulator.numMidEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 'midSprings'),
             simulator.renderer.createBuffer(simulator.numMidEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 'midSpringsColorCoord')]);
     })
-    .spread(function(forwardsEdgesBuffer, forwardsDegreesBuffer, forwardsWorkItemsBuffer,
+    .spread(function(degreesBuffer,
+                     forwardsEdgesBuffer, forwardsDegreesBuffer, forwardsWorkItemsBuffer,
                      backwardsEdgesBuffer, backwardsDegreesBuffer, backwardsWorkItemsBuffer,
                      nextMidPointsBuffer, springsVBO,
                      midPointsVBO, midSpringsVBO, midSpringsColorCoordVBO) {
         // Bind buffers
+        simulator.buffers.degrees = degreesBuffer;
         simulator.buffers.forwardsEdges = forwardsEdgesBuffer;
         simulator.buffers.forwardsDegrees = forwardsDegreesBuffer;
         simulator.buffers.forwardsWorkItems = forwardsWorkItemsBuffer;
@@ -445,6 +450,7 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, midPoints)
             simulator.cl.createBufferGL(midPointsVBO, 'curMidPoints'),
             simulator.cl.createBufferGL(midSpringsVBO, 'midSpringsPos'),
             simulator.cl.createBufferGL(midSpringsColorCoordVBO, 'midSpringsColorCoord'),
+            simulator.buffers.degrees.write(degrees),
             simulator.buffers.forwardsEdges.write(forwardsEdges.edgesTyped),
             simulator.buffers.forwardsDegrees.write(forwardsEdges.degreesTyped),
             simulator.buffers.forwardsWorkItems.write(forwardsEdges.workItemsTyped),

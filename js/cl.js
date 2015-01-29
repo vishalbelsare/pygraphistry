@@ -311,7 +311,7 @@ var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
             kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, global, workgroup);
         })
         .catch (function(error) {
-            console.err('Kernel error', error);
+            console.error('Kernel error', error);
         })
         .then(release.bind('', buffers))
         .then(function () { kernel.cl.queue.finish(); })

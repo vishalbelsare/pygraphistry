@@ -19,19 +19,17 @@ var faPoints = {};
 _.extend(faPoints, graphParams, {
     tilePointsParam: null,
     tilePointsParam2: null,
-    tilePointsParam3: null,
     numPoints: null,
     inputPositions: null,
     width: null,
     height: null,
     stepNumber: null,
-    inDegrees: null,
-    outDegrees: null,
+    pointDegrees: null,
     pointForces: null
 });
 var faPointsOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'tilePointsParam',
-                     'tilePointsParam2', 'tilePointsParam3', 'numPoints', 'inputPositions',
-                     'width', 'height', 'stepNumber', 'inDegrees', 'outDegrees', 'pointForces'];
+                     'tilePointsParam2', 'numPoints', 'inputPositions',
+                     'width', 'height', 'stepNumber', 'pointDegrees', 'pointForces'];
 Object.seal(faPoints);
 
 var faEdges = {};
@@ -59,13 +57,12 @@ Object.seal(faSwings);
 var faSpeed = {
     tau: null,
     numPoints: null,
-    inDegrees: null,
-    outDegrees: null,
+    pointDegrees: null,
     swings: null,
     tractions: null,
     gSpeeds : null
 }
-var faSpeedOrder = ['tau', 'numPoints', 'inDegrees', 'outDegrees', 'swings',
+var faSpeedOrder = ['tau', 'numPoints', 'pointDegrees', 'swings',
                     'tractions', 'gSpeeds'];
 Object.seal(faSpeed);
 
@@ -80,6 +77,20 @@ var faIntegrateOrder = ['gSpeed', 'inputPositions', 'curForces', 'swings',
                         'outputPositions'];
 Object.seal(faIntegrate);
 
+var faIntegrate2 = {
+    numPoints: null,
+    tau: null,
+    inputPositions: null,
+    pointDegrees: null,
+    curForces: null,
+    swings: null,
+    tractions: null,
+    outputPositions: null
+}
+var faIntegrate2Order = ['numPoints', 'tau', 'inputPositions', 'pointDegrees',
+                         'curForces', 'swings', 'tractions', 'outputPositions'];
+Object.seal(faIntegrate2);
+
 var gsSpringsGather = {}
 _.extend(gsSpringsGather, gs.gsSpringsGather);
 
@@ -91,7 +102,6 @@ var argsType = {
     numPoints: cljs.types.uint_t,
     tilePointsParam: cljs.types.local_t,
     tilePointsParam2: cljs.types.local_t,
-    tilePointsParam3: cljs.types.local_t,
     inputPositions: null,
     pointForces: null,
     partialForces: null,
@@ -100,8 +110,7 @@ var argsType = {
     width: cljs.types.float_t,
     height: cljs.types.float_t,
     stepNumber: cljs.types.uint_t,
-    inDegrees: null,
-    outDegrees: null,
+    pointDegrees: null,
     edges: null,
     workList: null,
     inputPoints: null,
@@ -145,6 +154,12 @@ var kernels = [
         name: 'faIntegrate',
         args: faIntegrate,
         order: faIntegrateOrder,
+        types: argsType,
+        file: 'forceAtlas2.cl'
+    },{
+        name: 'faIntegrate2',
+        args: faIntegrate2,
+        order: faIntegrate2Order,
         types: argsType,
         file: 'forceAtlas2.cl'
     },{
@@ -201,13 +216,11 @@ function setEdges(simulator) {
 
         faPoints.tilePointsParam =[1];
         faPoints.tilePointsParam2 = [1];
-        faPoints.tilePointsParam3 = [1];
         faPoints.numPoints = [simulator.numPoints];
         faPoints.inputPositions = simulator.buffers.curPoints.buffer;
         faPoints.width = [simulator.dimensions[0]];
         faPoints.height = [simulator.dimensions[1]];
-        faPoints.inDegrees = simulator.buffers.forwardsDegrees.buffer;
-        faPoints.outDegrees = simulator.buffers.backwardsDegrees.buffer;
+        faPoints.pointDegrees = simulator.buffers.degrees.buffer;
         faPoints.pointForces = simulator.buffers.partialForces1.buffer;
 
         gsSpringsGather.springs = simulator.buffers.forwardsEdges.buffer;
@@ -232,7 +245,7 @@ function pointForces(simulator, stepNumber) {
     debug("Running kernel faPointForces");
     return simulator.kernels.faPointForces.call(simulator.numPoints, resources)
         .fail(function (err) {
-            console.err('Kernel faPointForces failed', err, (err||{}).stack);
+            console.error('Kernel faPointForces failed', err, (err||{}).stack);
         });
 }
 
@@ -272,7 +285,7 @@ function edgeForces(simulator, stepNumber) {
                                 buffers.curPoints, stepNumber,
                                 buffers.partialForces2, buffers.curForces);
     }).fail(function (err) {
-        console.err('Kernel faPointEdges failed', err, (err||{}).stack);
+        console.error('Kernel faPointEdges failed', err, (err||{}).stack);
     });
 }
 
@@ -297,7 +310,7 @@ function swingsTractions(simulator) {
     debug("Running kernel faSwingsTractions");
     return simulator.kernels.faSwingsTractions.call(simulator.numPoints, resources)
         .fail(function (err) {
-            console.err('Kernel faSwingsTractions failed', err, (err||{}).stack);
+            console.error('Kernel faSwingsTractions failed', err, (err||{}).stack);
         });
 }
 
@@ -323,7 +336,39 @@ function integrate(simulator) {
     debug("Running kernel faIntegrate");
     return simulator.kernels.faIntegrate.call(simulator.numPoints, resources)
         .fail(function (err) {
-            console.err('Kernel faIntegrate failed', err, (err||{}).stack);
+            console.error('Kernel faIntegrate failed', err, (err||{}).stack);
+        });
+}
+
+function integrate2(simulator) {
+    var buffers = simulator.buffers;
+    faIntegrate2.numPoints = [simulator.numPoints];
+    faIntegrate2.tau = [1.0];
+    faIntegrate2.inputPositions = buffers.curPoints.buffer;
+    faIntegrate2.pointDegrees = buffers.degrees.buffer;
+    faIntegrate2.curForces = buffers.curForces.buffer;
+    faIntegrate2.swings = buffers.swings.buffer;
+    faIntegrate2.tractions = buffers.tractions.buffer;
+    faIntegrate2.outputPositions = buffers.nextPoints.buffer;
+
+    var resources = [
+        buffers.curPoints,
+        buffers.forwardsDegrees,
+        buffers.backwardsDegrees,
+        buffers.curForces,
+        buffers.swings,
+        buffers.tractions,
+        buffers.nextPoints
+    ];
+
+    setKernelArgs(simulator, 'faIntegrate2');
+
+    simulator.tickBuffers(['nextPoints']);
+
+    debug("Running kernel faIntegrate2");
+    return simulator.kernels.faIntegrate2.call(simulator.numPoints, resources)
+        .fail(function (err) {
+            console.error('Kernel faIntegrate2 failed', err, (err||{}).stack);
         });
 }
 

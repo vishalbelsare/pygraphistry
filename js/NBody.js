@@ -324,6 +324,11 @@ var setEdges = Q.promised(function(graph, edges) {
     var forwardEdges = encapsulate(edges);
     var backwardsEdges = encapsulate(edgesFlipped);
 
+    var degrees = new Uint32Array(graph.simulator.numPoints);
+    for (var i = 0; i < graph.simulator.numPoints; i++) {
+        degrees[i] = forwardEdges.degreesTyped[i] + backwardsEdges.degreesTyped[i];
+    }
+
     var nDim = graph.dimensions.length;
     var midPoints = new Float32Array((edges.length / 2) * graph.numSplits * nDim || 1);
     if (graph.numSplits) {
@@ -342,7 +347,7 @@ var setEdges = Q.promised(function(graph, edges) {
     }
     debug("Number of control points, splits: %d, %d", edges.length * graph.numSplits, graph.numSplits);
 
-    return graph.simulator.setEdges(forwardEdges, backwardsEdges, midPoints)
+    return graph.simulator.setEdges(forwardEdges, backwardsEdges, degrees, midPoints)
     .then(function() {
         return graph;
     }).fail(function (err) {
