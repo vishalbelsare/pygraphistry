@@ -203,7 +203,7 @@ app.use('/uber',   express.static(UBER_STATIC_PATH));
 app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
 
 // Temporarly handle ETL request from Splunk
-app.post('/etl', etl.post);
+app.post('/etl', express.bodyParser({limit: '5mb'}), etl.post);
 
 // Default '/' static assets
 app.use('/', express.static(MAIN_STATIC_PATH));
