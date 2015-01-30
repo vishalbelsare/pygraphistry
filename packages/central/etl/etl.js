@@ -29,7 +29,7 @@ function etl(msg, res) {
         config: {
             device: 'all',
             scene: 'netflow',
-            controls: 'gauss',
+            controls: 'atlas2',
             mapper: 'splunkMapper'
         }
     };
