@@ -8,17 +8,42 @@ var debug = require("debug")("graphistry:graph-viz:cl:forceatlas"),
     util  = require('./util.js'),
     webcl = require('node-webcl');
 
+var graphParams = {
+    scalingRatio: null,
+    gravity: null,
+    edgeInfluence: null,
+    flags: null
+};
 
-
-var faPointsOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', /*'tilePointsParam',
-                     'tilePointsParam2', 'tilePointsParam3',*/ 'numPoints', 'inputPositions',
+var faPoints = {};
+_.extend(faPoints, graphParams, {
+    tilePointsParam: null,
+    tilePointsParam2: null,
+    tilePointsParam3: null,
+    numPoints: null,
+    inputPositions: null,
+    width: null,
+    height: null,
+    stepNumber: null,
+    inDegrees: null,
+    outDegrees: null,
+    outputPositions: null
+});
+var faPointsOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'tilePointsParam',
+                     'tilePointsParam2', 'tilePointsParam3', 'numPoints', 'inputPositions',
                      'width', 'height', 'stepNumber', 'inDegrees', 'outDegrees', 'outputPositions'];
-var faPoints = _.object(faPointsOrder.map(function (name) { return [name, null]; }));
 Object.seal(faPoints);
 
+var faEdges = {};
+_.extend(faEdges, graphParams, {
+    springs: null,
+    workList: null,
+    inputPoints: null,
+    stepNumber: null,
+    outputPoints: null
+});
 var faEdgesOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'springs',
                     'workList', 'inputPoints', 'stepNumber', 'outputPoints'];
-var faEdges = _.object(faEdgesOrder.map(function (name) { return [name, null]; }));
 Object.seal(faEdges);
 
 var gsSpringsGather = {}
@@ -33,17 +58,17 @@ var argsType = {
     tilePointsParam: cljs.types.local_t,
     tilePointsParam2: cljs.types.local_t,
     tilePointsParam3: cljs.types.local_t,
-    inputPositions: cljs.types.global_t,
-    outputPositions: cljs.types.global_t,
+    inputPositions: null,
+    outputPositions: null,
     width: cljs.types.float_t,
     height: cljs.types.float_t,
     stepNumber: cljs.types.uint_t,
-    inDegrees: cljs.types.global_t,
-    outDegrees: cljs.types.global_t,
-    springs: cljs.types.global_t,
-    workList: cljs.types.global_t,
-    inputPoints: cljs.types.global_t,
-    outputPoints: cljs.types.global_t,
+    inDegrees: null,
+    outDegrees: null,
+    springs: null,
+    workList: null,
+    inputPoints: null,
+    outputPoints: null,
 }
 Object.seal(argsType);
 
@@ -74,16 +99,16 @@ var setKernelArgs = cljs.setKernelArgs.bind('', kernels);
 
 function setPhysics(cfg) {
     if ('scalingRatio' in cfg) {
-        faPoints.scalingRatio = cfg.scalingRatio;
-        faEdges.scalingRatio = cfg.scalingRatio;
+        faPoints.scalingRatio = [cfg.scalingRatio];
+        faEdges.scalingRatio = [cfg.scalingRatio];
     }
     if ('gravity' in cfg) {
-        faPoints.gravity = cfg.gravity;
-        faEdges.gravity = cfg.gravity;
+        faPoints.gravity = [cfg.gravity];
+        faEdges.gravity = [cfg.gravity];
     }
     if ('edgeInfluence' in cfg) {
-        faPoints.edgeInfluence = cfg.edgeInfluence;
-        faEdges.edgeInfluence = cfg.edgeInfluence;
+        faPoints.edgeInfluence = [cfg.edgeInfluence];
+        faEdges.edgeInfluence = [cfg.edgeInfluence];
     }
 
     var mask = 0;
@@ -94,8 +119,8 @@ function setPhysics(cfg) {
             mask = mask | (1 << i);
         }
     });
-    faPoints.flags = mask;
-    faEdges.flags = mask;
+    faPoints.flags = [mask];
+    faEdges.flags = [mask];
 }
 
 function setEdges(simulator) {
@@ -104,13 +129,13 @@ function setEdges(simulator) {
         * simulator.elementsPerPoint
         * Float32Array.BYTES_PER_ELEMENT;
 
-    //faPoints.tilePointsParam = [1];
-    //faPoints.tilePointsParam2 = [1];
-    //faPoints.tilePointsParam3 = [1];
-    faPoints.numPoints = simulator.numPoints;
+    faPoints.tilePointsParam = [1];
+    faPoints.tilePointsParam2 = [1];
+    faPoints.tilePointsParam3 = [1];
+    faPoints.numPoints = [simulator.numPoints];
     faPoints.inputPositions = simulator.buffers.curPoints.buffer;
-    faPoints.width = simulator.dimensions[0];
-    faPoints.height = simulator.dimensions[1];
+    faPoints.width = [simulator.dimensions[0]];
+    faPoints.height = [simulator.dimensions[1]];
     faPoints.inDegrees = simulator.buffers.forwardsDegrees.buffer;
     faPoints.outDegrees = simulator.buffers.backwardsDegrees.buffer;
     faPoints.outputPositions = simulator.buffers.nextPoints.buffer;
@@ -132,7 +157,7 @@ function tick(simulator, stepNumber) {
         faEdges.workList = workItems.buffer;
         faEdges.inputPoints = fromPoints.buffer;
         faEdges.outputPoints = toPoints.buffer;
-        faEdges.stepNumber = stepNumber;
+        faEdges.stepNumber = [stepNumber];
         setKernelArgs(simulator, 'forceAtlasEdges');
 
         simulator.tickBuffers(
@@ -151,7 +176,7 @@ function tick(simulator, stepNumber) {
         simulator.buffers.nextPoints
     ];
 
-    faPoints.stepNumber = stepNumber;
+    faPoints.stepNumber = [stepNumber];
     setKernelArgs(simulator, "forceAtlasPoints");
 
     simulator.tickBuffers(['nextPoints', 'curPoints', 'springsPos'])

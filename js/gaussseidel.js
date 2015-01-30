@@ -7,8 +7,8 @@ var cljs = require('./cl.js');
 var webcl = require('node-webcl');
 var util = require('./util');
 
-var gsPointsOrder = ['numPoints',  'inputPositions', 'outputPositions', /*'tilePointsParam',*/
-                     'width', 'height', 'charge', 'gravity', 'randValues', 'stepNumber'];
+var gsPointsOrder = ['numPoints',  'inputPositions', 'outputPositions', 'tilePointsParam', 'width',
+                      'height', 'charge', 'gravity', 'randValues', 'stepNumber'];
 var gsPoints = _.object(gsPointsOrder.map(function (name) { return [name, null]; }));
 Object.seal(gsPoints);
 
@@ -25,25 +25,25 @@ Object.seal(gsSpringsGather);
 
 var argsType = {
     numPoints: cljs.types.uint_t,
-    edgeTags: cljs.types.global_t,
-    inputPositions: cljs.types.global_t,
-    outputPositions: cljs.types.global_t,
+    edgeTags: null,
+    inputPositions: null,
+    outputPositions: null,
     tilePointsParam: cljs.types.local_t,
     width: cljs.types.float_t,
     height: cljs.types.float_t,
     charge: cljs.types.float_t,
     gravity: cljs.types.float_t,
-    randValues: cljs.types.global_t,
+    randValues: null,
     stepNumber: cljs.types.uint_t,
-    springs: cljs.types.global_t,
-    workList: cljs.types.global_t,
-    inputPoints: cljs.types.global_t,
-    outputPoints: cljs.types.global_t,
+    springs: null,
+    workList: null,
+    inputPoints: null,
+    outputPoints: null,
     edgeStrength0: cljs.types.float_t,
     edgeDistance0: cljs.types.float_t,
     edgeStrength1: cljs.types.float_t,
     edgeDistance1: cljs.types.float_t,
-    springPositions: cljs.types.global_t
+    springPositions: null
 };
 Object.seal(argsType);
 
@@ -79,7 +79,7 @@ function setPhysics(cfg) {
     ].forEach(function (kernelPair) {
         kernelPair[1].forEach(function (arg) {
             if (arg in cfg) {
-                kernelPair[0][arg] = cfg[arg];
+                kernelPair[0][arg] = [cfg[arg]];
             }
         });
     });
@@ -93,13 +93,14 @@ function setPoints(simulator) {
 
     debug("Setting point 0. FIXME: dyn alloc __local, not hardcode in kernel");
 
-    gsPoints.numPoints = simulator.numPoints;
+    gsPoints.numPoints = [simulator.numPoints];
     gsPoints.inputPositions = simulator.buffers.curPoints.buffer;
     gsPoints.outputPositions = simulator.buffers.nextPoints.buffer;
-    //gsPoints.tilePointsParam = [1];
-    gsPoints.width = simulator.dimensions[0];
-    gsPoints.height = simulator.dimensions[1];
+    gsPoints.tilePointsParam = [1];
+    gsPoints.width = [simulator.dimensions[0]];
+    gsPoints.height = [simulator.dimensions[1]];
     gsPoints.randValues = simulator.buffers.randValues.buffer;
+    gsPoints.stepNumber = [0];
 }
 
 function setEdges(simulator) {
@@ -126,7 +127,7 @@ function tick(simulator, stepNumber) {
         gsSprings.workList = workItems.buffer;
         gsSprings.inputPoints = fromPoints.buffer;
         gsSprings.outputPoints = toPoints.buffer;
-        gsSprings.stepNumber = stepNumber;
+        gsSprings.stepNumber = [stepNumber];
         gsSprings.edgeTags = edgeTags.buffer;
 
         setKernelArgs(simulator, "gaussSeidelSprings");
@@ -150,7 +151,7 @@ function tick(simulator, stepNumber) {
 
             var resources = [simulator.buffers.curPoints, simulator.buffers.nextPoints, simulator.buffers.randValues];
 
-            gsPoints.stepNumber = stepNumber;
+            gsPoints.stepNumber = [stepNumber];
             setKernelArgs(simulator, "gaussSeidelPoints");
 
             simulator.tickBuffers(['nextPoints', 'curPoints']);
