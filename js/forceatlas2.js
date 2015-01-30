@@ -8,87 +8,32 @@ var debug = require("debug")("graphistry:graph-viz:cl:forceatlas2"),
     util  = require('./util.js'),
     webcl = require('node-webcl');
 
-var graphParams = {
-    scalingRatio: null,
-    gravity: null,
-    edgeInfluence: null,
-    flags: null
-};
 
-var faPoints = {};
-_.extend(faPoints, graphParams, {
-    tilePointsParam: null,
-    tilePointsParam2: null,
-    numPoints: null,
-    inputPositions: null,
-    width: null,
-    height: null,
-    stepNumber: null,
-    pointDegrees: null,
-    pointForces: null
-});
-var faPointsOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'tilePointsParam',
-                     'tilePointsParam2', 'numPoints', 'inputPositions',
+
+var faPointsOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', /*'tilePointsParam',
+                     'tilePointsParam2',*/ 'numPoints', 'inputPositions',
                      'width', 'height', 'stepNumber', 'pointDegrees', 'pointForces'];
+var faPoints = _.object(faPointsOrder.map(function (name) { return [name, null]; }));
 Object.seal(faPoints);
 
-var faEdges = {};
-_.extend(faEdges, graphParams, {
-    edges: null,
-    workList: null,
-    inputPoints: null,
-    partialForces: null,
-    stepNumber: null,
-    outputForces: null
-});
+
 var faEdgesOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges',
                     'workList', 'inputPoints', 'partialForces', 'stepNumber', 'outputForces'];
+var faEdges = _.object(faEdgesOrder.map(function (name) { return [name, null]; }));
 Object.seal(faEdges);
 
-var faSwings = {
-    prevForces: null,
-    curForces: null,
-    swings: null,
-    tractions: null
-}
 var faSwingsOrder = ['prevForces', 'curForces', 'swings' , 'tractions'];
+var faSwings = _.object(faSwingsOrder.map(function (name) { return [name, null]; }));
 Object.seal(faSwings);
 
-var faSpeed = {
-    tau: null,
-    numPoints: null,
-    pointDegrees: null,
-    swings: null,
-    tractions: null,
-    gSpeeds : null
-}
-var faSpeedOrder = ['tau', 'numPoints', 'pointDegrees', 'swings',
-                    'tractions', 'gSpeeds'];
-Object.seal(faSpeed);
-
-var faIntegrate = {
-    gSpeed: null,
-    inputPositions: null,
-    curForces: null,
-    swings: null,
-    outputPositions: null
-}
 var faIntegrateOrder = ['gSpeed', 'inputPositions', 'curForces', 'swings',
                         'outputPositions'];
+var faIntegrate = _.object(faIntegrateOrder.map(function (name) { return [name, null]; }));
 Object.seal(faIntegrate);
 
-var faIntegrate2 = {
-    numPoints: null,
-    tau: null,
-    inputPositions: null,
-    pointDegrees: null,
-    curForces: null,
-    swings: null,
-    tractions: null,
-    outputPositions: null
-}
 var faIntegrate2Order = ['numPoints', 'tau', 'inputPositions', 'pointDegrees',
                          'curForces', 'swings', 'tractions', 'outputPositions'];
+var faIntegrate2 = _.object(faIntegrate2Order.map(function (name) { return [name, null]; }));
 Object.seal(faIntegrate2);
 
 var gsSpringsGather = {}
@@ -102,24 +47,24 @@ var argsType = {
     numPoints: cljs.types.uint_t,
     tilePointsParam: cljs.types.local_t,
     tilePointsParam2: cljs.types.local_t,
-    inputPositions: null,
-    pointForces: null,
-    partialForces: null,
-    outputForces: null,
-    outputPositions: null,
+    inputPositions: cljs.types.global_t,
+    pointForces: cljs.types.global_t,
+    partialForces: cljs.types.global_t,
+    outputForces: cljs.types.global_t,
+    outputPositions: cljs.types.global_t,
     width: cljs.types.float_t,
     height: cljs.types.float_t,
     stepNumber: cljs.types.uint_t,
-    pointDegrees: null,
-    edges: null,
-    workList: null,
-    inputPoints: null,
-    outputPoints: null,
-    curForces: null,
-    prevForces: null,
-    swings: null,
-    tractions: null,
-    gSpeeds: null,
+    pointDegrees: cljs.types.global_t,
+    edges: cljs.types.global_t,
+    workList: cljs.types.global_t,
+    inputPoints: cljs.types.global_t,
+    outputPoints: cljs.types.global_t,
+    curForces: cljs.types.global_t,
+    prevForces: cljs.types.global_t,
+    swings: cljs.types.global_t,
+    tractions: cljs.types.global_t,
+    gSpeeds: cljs.types.global_t,
     tau: cljs.types.float_t,
     gSpeed: cljs.types.float_t
 }
@@ -142,12 +87,6 @@ var kernels = [
         name: 'faSwingsTractions',
         args: faSwings,
         order: faSwingsOrder,
-        types: argsType,
-        file: 'forceAtlas2.cl'
-    },{
-        name: 'faGlobalSpeed',
-        args: faSpeed,
-        order: faSpeedOrder,
         types: argsType,
         file: 'forceAtlas2.cl'
     },{
@@ -176,19 +115,16 @@ var setKernelArgs = cljs.setKernelArgs.bind('', kernels);
 
 function setPhysics(cfg) {
     if ('scalingRatio' in cfg) {
-        var val = [cfg.scalingRatio];
-        faPoints.scalingRatio = val;
-        faEdges.scalingRatio = val;
+        faPoints.scalingRatio = cfg.scalingRatio;
+        faEdges.scalingRatio = cfg.scalingRatio;
     }
     if ('gravity' in cfg) {
-        var val = [cfg.gravity];
-        faPoints.gravity = val;
-        faEdges.gravity = val;
+        faPoints.gravity = cfg.gravity;
+        faEdges.gravity = cfg.gravity;
     }
     if ('edgeInfluence' in cfg) {
-        var val =[cfg.edgeInfluence];
-        faPoints.edgeInfluence = val;
-        faEdges.edgeInfluence = val;
+        faPoints.edgeInfluence = cfg.edgeInfluence;
+        faEdges.edgeInfluence = cfg.edgeInfluence;
     }
 
     var mask = 0;
@@ -199,9 +135,8 @@ function setPhysics(cfg) {
             mask = mask | (1 << i);
         }
     });
-    var val = [mask];
-    faPoints.flags = val;
-    faEdges.flags = val;
+    faPoints.flags = mask;
+    faEdges.flags = mask;
 }
 
 
@@ -214,12 +149,12 @@ function setEdges(simulator) {
             * simulator.elementsPerPoint
             * Float32Array.BYTES_PER_ELEMENT;
 
-        faPoints.tilePointsParam =[1];
-        faPoints.tilePointsParam2 = [1];
-        faPoints.numPoints = [simulator.numPoints];
+        //faPoints.tilePointsParam = [1];
+        //faPoints.tilePointsParam2 = [1];
+        faPoints.numPoints = simulator.numPoints;
         faPoints.inputPositions = simulator.buffers.curPoints.buffer;
-        faPoints.width = [simulator.dimensions[0]];
-        faPoints.height = [simulator.dimensions[1]];
+        faPoints.width = simulator.dimensions[0];
+        faPoints.height = simulator.dimensions[1];
         faPoints.pointDegrees = simulator.buffers.degrees.buffer;
         faPoints.pointForces = simulator.buffers.partialForces1.buffer;
 
@@ -237,7 +172,7 @@ function pointForces(simulator, stepNumber) {
         simulator.buffers.partialForces1
     ];
 
-    faPoints.stepNumber = [stepNumber];
+    faPoints.stepNumber = stepNumber;
     setKernelArgs(simulator, 'faPointForces');
 
     simulator.tickBuffers(['partialForces1']);
@@ -254,7 +189,7 @@ function edgeForcesOneWay(simulator, edges, workItems, numWorkItems, points,
     faEdges.edges = edges.buffer;
     faEdges.workList = workItems.buffer;
     faEdges.inputPoints = points.buffer;
-    faEdges.stepNumber = [stepNumber];
+    faEdges.stepNumber = stepNumber;
     faEdges.partialForces = partialForces.buffer;
     faEdges.outputForces = outputForces.buffer;
 
@@ -316,7 +251,7 @@ function swingsTractions(simulator) {
 
 function integrate(simulator) {
     var buffers = simulator.buffers;
-    faIntegrate.gSpeed = [1.0];
+    faIntegrate.gSpeed = 1.0;
     faIntegrate.inputPositions = buffers.curPoints.buffer;
     faIntegrate.curForces = buffers.curForces.buffer;
     faIntegrate.swings = buffers.swings.buffer;
@@ -342,8 +277,8 @@ function integrate(simulator) {
 
 function integrate2(simulator) {
     var buffers = simulator.buffers;
-    faIntegrate2.numPoints = [simulator.numPoints];
-    faIntegrate2.tau = [1.0];
+    faIntegrate2.numPoints = simulator.numPoints;
+    faIntegrate2.tau = 1.0;
     faIntegrate2.inputPositions = buffers.curPoints.buffer;
     faIntegrate2.pointDegrees = buffers.degrees.buffer;
     faIntegrate2.curForces = buffers.curForces.buffer;
@@ -397,7 +332,7 @@ function tick(simulator, stepNumber) {
     }).then(function () {
         return swingsTractions(simulator);
     }).then(function () {
-        return integrate(simulator);
+        return integrate2(simulator);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);

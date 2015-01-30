@@ -7,61 +7,39 @@ var _       = require('underscore'),
     util    = require('./util.js'),
     webcl = require('node-webcl');
 
-var gsMidpoints = {
-    numPoints: null,
-    numSplits: null,
-    inputMidPoints: null,
-    outputMidPoints: null,
-    tilePointsParam: null,
-    width: null,
-    height: null,
-    charge: null,
-    gravity: null,
-    randValues: null,
-    stepNumber: null
-};
+
+
 var gsMidpointsOrder = ['numPoints', 'numSplits', 'inputMidPoints',
-                        'outputMidPoints', 'tilePointsParam', 'width',
+                        'outputMidPoints', /*'tilePointsParam',*/ 'width',
                         'height', 'charge', 'gravity', 'randValues', 'stepNumber'];
+var gsMidpoints = _.object(gsMidpointsOrder.map(function (name) { return [name, null]; }));
 Object.seal(gsMidpoints);
 
-var gsMidsprings = {
-    numSplits: null,
-    springs: null,
-    workList: null,
-    inputPoints: null,
-    inputMidPoints: null,
-    outputMidPoints: null,
-    springMidPositions: null,
-    midSpringsColorCoords: null,
-    springStrength: null,
-    springDistance: null,
-    stepNumber: null
-};
 var gsMidspringsOrder = ['numSplits', 'springs', 'workList', 'inputPoints', 'inputMidPoints',
                          'outputMidPoints', 'springMidPositions', 'midSpringsColorCoords',
                          'springStrength', 'springDistance', 'stepNumber'];
+var gsMidsprings = _.object(gsMidspringsOrder.map(function (name) { return [name, null]; }));
 Object.seal(gsMidsprings);
 
 var argsType = {
     numPoints: cljs.types.uint_t,
     numSplits: cljs.types.uint_t,
-    inputMidPositions: null,
-    outputMidPositions: null,
+    inputMidPositions: cljs.types.global_t,
+    outputMidPositions: cljs.types.global_t,
     tilePointsParam: cljs.types.local_t,
     width: cljs.types.float_t,
     height: cljs.types.float_t,
     charge: cljs.types.float_t,
     gravity: cljs.types.float_t,
-    randValues: null,
+    randValues: cljs.types.global_t,
     stepNumber: cljs.types.uint_t,
-    springs: null,
-    workList: null,
-    inputPoints: null,
-    inputMidPoints: null,
-    outputMidPoints: null,
-    springMidPositions: null,
-    midSpringsColorCoords: null,
+    springs: cljs.types.global_t,
+    workList: cljs.types.global_t,
+    inputPoints: cljs.types.global_t,
+    inputMidPoints: cljs.types.global_t,
+    outputMidPoints: cljs.types.global_t,
+    springMidPositions: cljs.types.global_t,
+    midSpringsColorCoords: cljs.types.global_t,
     springStrength: cljs.types.float_t,
     springDistance: cljs.types.float_t,
 }
@@ -89,13 +67,13 @@ var setKernelArgs = cljs.setKernelArgs.bind('', kernels)
 
 function setPhysics(cfg) {
     if ('charge' in cfg)
-        gsMidpoints.charge = [cfg.charge];
+        gsMidpoints.charge = cfg.charge;
     if ('gravity' in cfg)
-        gsMidpoints.gravity = [cfg.gravity];
+        gsMidpoints.gravity = cfg.gravity;
     if ('edgeDistance0' in cfg)
-        gsMidsprings.springDistance = [cfg.edgeDistance0];
+        gsMidsprings.springDistance = cfg.edgeDistance0;
     if ('edgeStrength0' in cfg)
-        gsMidsprings.springStrength = [cfg.edgeStrength0];
+        gsMidsprings.springStrength = cfg.edgeStrength0;
 }
 
 function setEdges(simulator) {
@@ -104,16 +82,16 @@ function setEdges(simulator) {
         * simulator.elementsPerPoint
         * Float32Array.BYTES_PER_ELEMENT;
 
-    gsMidpoints.numPoints = [simulator.numMidPoints];
-    gsMidpoints.numSplits = [simulator.numSplits];
+    gsMidpoints.numPoints = simulator.numMidPoints;
+    gsMidpoints.numSplits = simulator.numSplits;
     gsMidpoints.inputMidPoints = simulator.buffers.curMidPoints.buffer;
     gsMidpoints.outputMidPoints = simulator.buffers.nextMidPoints.buffer;
-    gsMidpoints.tilePointsParam = [localPosSize];
-    gsMidpoints.width = [simulator.dimensions[0]];
-    gsMidpoints.height = [simulator.dimensions[1]];
+    //gsMidpoints.tilePointsParam = [localPosSize];
+    gsMidpoints.width = simulator.dimensions[0];
+    gsMidpoints.height = simulator.dimensions[1];
     gsMidpoints.randValues = simulator.buffers.randValues.buffer;
 
-    gsMidsprings.numSplits = [simulator.numSplits];
+    gsMidsprings.numSplits = simulator.numSplits;
     gsMidsprings.springs = simulator.buffers.forwardsEdges.buffer;
     gsMidsprings.workList = simulator.buffers.forwardsWorkItems.buffer;
     gsMidsprings.inputPoints = simulator.buffers.curPoints.buffer;
@@ -143,7 +121,7 @@ function tick(simulator, stepNumber) {
                 simulator.buffers.midSpringsColorCoord
             ];
 
-            gsMidpoints.stepNumber = [stepNumber];
+            gsMidpoints.stepNumber = stepNumber;
             setKernelArgs(simulator, 'gaussSeidelMidpoints');
             simulator.tickBuffers(['curMidPoints', 'nextMidPoints']);
 
@@ -164,7 +142,7 @@ function tick(simulator, stepNumber) {
                 simulator.buffers.midSpringsColorCoord
             ];
 
-            gsMidsprings.stepNumber = [stepNumber];
+            gsMidsprings.stepNumber = stepNumber;
 
             setKernelArgs(simulator, 'gaussSeidelMidsprings');
             simulator.tickBuffers(['curMidPoints', 'midSpringsPos', 'midSpringsColorCoord']);

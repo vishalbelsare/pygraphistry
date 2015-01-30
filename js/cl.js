@@ -13,23 +13,10 @@ debug("Initializing node-webcl flavored cl.js");
 var webcl = require('node-webcl');
 
 var types = {
-    char_t: webcl.type.CHAR,
-    double_t: webcl.type.DOUBLE,
-    float_t: webcl.type.FLOAT,
-    half_t: webcl.type.HALF,
-    int_t: webcl.type.INT,
-    local_t: webcl.type.LOCAL_MEMORY_SIZE,
-    long_t: webcl.type.LONG,
-    short_t: webcl.type.SHORT,
-    uchar_t: webcl.type.UCHAR,
-    uint_t: webcl.type.UINT,
-    ulong_t: webcl.type.ULONG,
-    ushort_t: webcl.type.USHORT,
-    float2_t: webcl.type.VEC2,
-    float3_t: webcl.type.VEC3,
-    float4_t: webcl.type.VEC4,
-    float8_t: webcl.type.VEC8,
-    float16_t: webcl.type.VEC16
+    float_t:  function (x) { return new Float32Array([x]); },
+    uint_t:   function (x) { return new Uint32Array([x]); },
+    local_t:  _.identity,
+    global_t: _.identity
 };
 
 
@@ -79,6 +66,9 @@ function setKernelArgs(kernels, simulator, kernelName) {
 
     var argArray = [];
     var typeArray = [];
+    var kernel = simulator.kernels[kernelName];
+    if (!kernel)
+        utiljs.die("Simulator has no kernel " + kernelName);
 
     for (var i = 0; i < order.length; i++) {
         var arg = order[i];
@@ -89,13 +79,10 @@ function setKernelArgs(kernels, simulator, kernelName) {
             utiljs.die("Cannot find type of argument " + arg + " for " + kernelName);
         if (val === null)
             console.warn("WARNING In kernel %s, attribute %s is null", kernelName, arg);
+
         argArray.push(val);
         typeArray.push(type);
     }
-
-    var kernel = simulator.kernels[kernelName];
-    if (!kernel)
-        utiljs.die("Simulator has no kernel " + kernelName);
 
     kernel.setArgs(argArray, typeArray);
 }
@@ -162,25 +149,21 @@ function createCLContextNode(renderer, DEVICE_TYPE) {
 
     for (var i = 0; i < devices.length && deviceWrapper === null; i++) {
         var wrapped = devices[i];
-
+        debug('Supported extensions:', wrapped.device.getSupportedExtensions());
         try {
-            if(renderer.gl !== null) {
+            // Note: Sharing extension is only required for 'desktop' mode.
+            // Disabling for now.
+            if(false && renderer.gl !== null) {
                 debug('Device with gl');
-                if(wrapped.device.getInfo(webcl.DEVICE_EXTENSIONS).search(/gl.sharing/i) == -1) {
+                if(wrapped.device.getSupportedExtensions().search(/gl.sharing/i) == -1) {
                     debug("Skipping device %d due to no sharing. %o", i, wrapped);
                     continue;
                 }
 
-                wrapped.context = webcl.createContext({
-                    devices: [ wrapped.device ],
-                    shareGroup: renderer.gl,
-                    platform: platform
-                });
+                wrapped.context = webcl.createContext(renderer.gl, wrapped.device);
             } else {
-                wrapped.context = webcl.createContext({
-                    devices: [ wrapped.device ],
-                    platform: platform
-                });
+                debug('Creating cl context')
+                wrapped.context = webcl.createContext(wrapped.device);
             }
 
             if (wrapped.context === null) {
@@ -309,7 +292,7 @@ var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
                 workgroup = [localSize];
             }
             var global = [globalSize];
-            kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, global, workgroup);
+            kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, 1, null, global, workgroup);
         })
         .catch (function(error) {
             console.error('Kernel error', error);
@@ -327,7 +310,8 @@ function setArgs(kernel, args, argTypes) {
     try {
         for (i = 0; i < args.length; i++) {
             if(args[i] !== null) {
-                kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i] || undefined);
+                var val = argTypes[i] ? argTypes[i](args[i]) : args[i];
+                kernel.kernel.setArg(i, val);
             }
         }
     } catch (e) {
@@ -499,7 +483,6 @@ module.exports = {
     "createBuffer": createBuffer,
     "createBufferGL": createBufferGL,
     "release": release,
-    "setArgs": setArgs,
     "setKernelArgs": setKernelArgs,
     "types": types,
     "write": write,
