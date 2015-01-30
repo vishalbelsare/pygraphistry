@@ -397,7 +397,7 @@ function tick(simulator, stepNumber) {
     }).then(function () {
         return swingsTractions(simulator);
     }).then(function () {
-        return integrate(simulator);
+        return integrate2(simulator);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);
