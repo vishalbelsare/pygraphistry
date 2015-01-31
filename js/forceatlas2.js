@@ -20,6 +20,7 @@ _.extend(faPoints, graphParams, {
     tilePointsParam: null,
     tilePointsParam2: null,
     numPoints: null,
+    tilesPerIteration: null,
     inputPositions: null,
     width: null,
     height: null,
@@ -28,7 +29,7 @@ _.extend(faPoints, graphParams, {
     pointForces: null
 });
 var faPointsOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'tilePointsParam',
-                     'tilePointsParam2', 'numPoints', 'inputPositions',
+                     'tilePointsParam2', 'numPoints', 'tilesPerIteration', 'inputPositions',
                      'width', 'height', 'stepNumber', 'pointDegrees', 'pointForces'];
 Object.seal(faPoints);
 
@@ -100,6 +101,7 @@ var argsType = {
     edgeInfluence: cljs.types.uint_t,
     flags: cljs.types.uint_t,
     numPoints: cljs.types.uint_t,
+    tilesPerIteration: cljs.types.uint_t,
     tilePointsParam: cljs.types.local_t,
     tilePointsParam2: cljs.types.local_t,
     inputPositions: null,
@@ -216,6 +218,7 @@ function setEdges(simulator) {
 
         faPoints.tilePointsParam =[1];
         faPoints.tilePointsParam2 = [1];
+        faPoints.tilesPerIteration = [simulator.tilesPerIteration];
         faPoints.numPoints = [simulator.numPoints];
         faPoints.inputPositions = simulator.buffers.curPoints.buffer;
         faPoints.width = [simulator.dimensions[0]];

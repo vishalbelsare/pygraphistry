@@ -7,15 +7,15 @@ var cljs = require('./cl.js');
 var webcl = require('node-webcl');
 var util = require('./util');
 
-var gsPointsOrder = ['numPoints',  'inputPositions', 'outputPositions', 'tilePointsParam', 'width',
-                      'height', 'charge', 'gravity', 'randValues', 'stepNumber'];
+var gsPointsOrder = ['numPoints', 'tilesPerIteration', 'inputPositions',
+                     'outputPositions', 'tilePointsParam', 'width',
+                     'height', 'charge', 'gravity', 'randValues', 'stepNumber'];
 var gsPoints = _.object(gsPointsOrder.map(function (name) { return [name, null]; }));
 Object.seal(gsPoints);
 
 
-var gsSpringsOrder = ['springs', 'workList', 'edgeTags', 'inputPoints', 'outputPoints',
-                      'edgeStrength0', 'edgeDistance0', 'edgeStrength1', 'edgeDistance1',
-                      'stepNumber'];
+var gsSpringsOrder = ['tilesPerIteration', 'springs', 'workList', 'edgeTags',
+                      'inputPoints', 'outputPoints', 'edgeStrength0', 'edgeDistance0', 'edgeStrength1', 'edgeDistance1', 'stepNumber'];
 var gsSprings = _.object(gsSpringsOrder.map(function (name) { return [name, null]; }));
 Object.seal(gsSprings);
 
@@ -25,6 +25,7 @@ Object.seal(gsSpringsGather);
 
 var argsType = {
     numPoints: cljs.types.uint_t,
+    tilesPerIteration: cljs.types.uint_t,
     edgeTags: null,
     inputPositions: null,
     outputPositions: null,
@@ -94,6 +95,7 @@ function setPoints(simulator) {
     debug("Setting point 0. FIXME: dyn alloc __local, not hardcode in kernel");
 
     gsPoints.numPoints = [simulator.numPoints];
+    gsPoints.tilesPerIteration = [simulator.tilesPerIteration];
     gsPoints.inputPositions = simulator.buffers.curPoints.buffer;
     gsPoints.outputPositions = simulator.buffers.nextPoints.buffer;
     gsPoints.tilePointsParam = [1];
@@ -110,6 +112,8 @@ function setEdges(simulator) {
     gsSprings.outputPoints = null;
     gsSprings.stepNumber = null;
 
+
+    gsSprings.tilesPerIteration = [simulator.tilesPerIteration];
     gsSpringsGather.springs = simulator.buffers.forwardsEdges.buffer;
     gsSpringsGather.workList = simulator.buffers.forwardsWorkItems.buffer;
     gsSpringsGather.inputPoints = simulator.buffers.curPoints.buffer;

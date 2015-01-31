@@ -41,7 +41,7 @@ function create(renderer, dimensions, numSplits, device, locked, layoutAlgorithm
             var loader = (kFile === 'apply-forces.cl') ? util.getShaderSource : util.getKernelSource;
 
             return loader(kFile).then(function (source) {
-                return cl.compile(source, kernelFileMap[kFile]);
+                return cl.compile(source, kernelFileMap[kFile], {});
             }).fail(function (err) {
                 console.error("Failure while compiling kernels ", (err||{}).stack);
             });
@@ -66,7 +66,7 @@ function create(renderer, dimensions, numSplits, device, locked, layoutAlgorithm
                 layoutAlgorithms: layoutAlgorithms
             };
 
-
+            simObj.tilesPerIteration = 1;
             simObj.buffersLocal = {};
             createSetters(simObj);
 
@@ -240,6 +240,13 @@ function setPoints(simulator, points) {
         simulator.buffers.tractions])
 
     simulator.numPoints = points.length / simulator.elementsPerPoint;
+
+    //FIXME HACK:
+    var guess = (simulator.numPoints * -0.00625 + 210).toFixed(0);
+    console.log('Points:%d\tGuess:%d', simulator.numPoints, guess);
+    simulator.tilesPerIteration = Math.min(Math.max(16, guess), 512);
+    console.log('Using %d tiles per iterations', simulator.tilesPerIteration);
+
     simulator.renderer.numPoints = simulator.numPoints;
 
     debug("Number of points in simulation: %d", simulator.renderer.numPoints);
