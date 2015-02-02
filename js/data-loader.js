@@ -44,43 +44,70 @@ function downloadDataset(datasetname) {
             params.IfModifiedSince = data.mtime;
         }
 
+
+        var continueLocal = function () {
+
+            debug('taking graph from /tmp/');
+
+            var basePath = '/tmp/' + encodeURIComponent(datasetname);
+            var metaPath = basePath + '.metadata';
+            debug('Loading ' + datasetname + ' metadata from cache (%s)', metaPath);
+            debug('  (Cause:', err, ')');
+            return Rx.Observable.fromNodeCallback(fs.readFile)(metaPath)
+                .flatMap(function (metadata) {
+
+                    debug('Loading ' + datasetname + ' buffer from cache (%s)', basePath);
+
+                    return Rx.Observable.fromNodeCallback(fs.readFile)(basePath)
+                        .map(function (buffer) {
+                            var result = {}
+                            result.Metadata = JSON.parse(metadata);
+                            result.Metadata.name = datasetname;
+                            result.Body = buffer
+                            return result;
+                        });
+                })
+                .take(1)
+                .subscribe(
+                    function (result) {
+                        debug('successfully resolving', datasetname);
+                        res.resolve(result);
+                    },
+                    function (err) {
+                        debug('error resolving', datasetname);
+                        res.reject(new Error(err));
+                    });
+        };
+
+        var done = false;
+        var timeout = setTimeout(function () {
+
+            done = true;
+            continueLocal();
+
+        }, 5000);
+
+
         // Attempt the download, and if fail (no internet / stale), use local
         config.S3.getObject(params, function(err, data) {
+
+            if (done) {
+                debug('(S3 result came too late, discarding)')
+                return;
+            }
+
+            clearTimeout(timeout);
+            done = true;
+
+
             // Error getting the file from S3, either because the on
             // disk version is newer or the S3 connection is unavailable
             // In this case, read the data from disk.
             if (err) {
-
-                var basePath = '/tmp/' + encodeURIComponent(datasetname);
-                var metaPath = basePath + '.metadata';
-                debug('Loading ' + datasetname + ' metadata from cache (%s)', metaPath);
-                debug('  (Cause:', err, ')');
-                Rx.Observable.fromNodeCallback(fs.readFile)(metaPath)
-                    .flatMap(function (metadata) {
-
-                        debug('Loading ' + datasetname + ' buffer from cache (%s)', basePath);
-
-                        return Rx.Observable.fromNodeCallback(fs.readFile)(basePath)
-                            .map(function (buffer) {
-                                var result = {}
-                                result.Metadata = JSON.parse(metadata);
-                                result.Metadata.name = datasetname;
-                                result.Body = buffer
-                                return result;
-                            });
-                    })
-                    .take(1)
-                    .subscribe(
-                        function (result) {
-                            debug('successfully resolving', datasetname);
-                            res.resolve(result);
-                        },
-                        function (err) {
-                            debug('error resolving', datasetname);
-                            res.reject(new Error(err));
-                        });
-
+                debug('S3 errored, use local');
+                continueLocal();
             } else {
+                debug('Got s3, caching');
                 if (data.Metadata.config != 'undefined') {
                     data.Metadata.config = JSON.parse(data.Metadata.config);
                 }
@@ -92,7 +119,7 @@ function downloadDataset(datasetname) {
                     data.Body = unzipped;
                     return VGraphWriter.cacheVGraph(unzipped, data.Metadata)
                 })
-                .then(
+                .done(
                     function () { res.resolve(data); },
                     function (err) { res.reject(err); });
             }
