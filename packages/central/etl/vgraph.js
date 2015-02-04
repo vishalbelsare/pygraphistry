@@ -55,6 +55,7 @@ function getAttributeVectors(entry, target) {
 // JSON * String * String * String -> VGraph
 function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
     var node2Idx = {};
+    var idx2Node = {};
     var nodeCount = 0;
     var edges = [];
     // For detecting duplicate edges.
@@ -62,7 +63,9 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
 
     function addNode(node) {
         if (!(node in node2Idx)) {
-            node2Idx[node] = nodeCount++;
+            idx2Node[nodeCount] = node;
+            node2Idx[node] = nodeCount;
+            nodeCount++;
         }
     }
 
@@ -135,10 +138,11 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
     });
 
     _.each(_.omit(nvectors, idField), function (vector) {
-        _.each(node2Idx, function (idx, nodeId) {
+        for (var i = 0; i <= Object.keys(node2Idx).length; i++) {
+            var nodeId = idx2Node[i];
             var val = (nodeId in vector.map) ? vector.map[nodeId] : vector.default;
             vector.values.push(val);
-        })
+        }
         vg[vector.dest].push(vector);
     });
 
