@@ -57,10 +57,24 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
     var node2Idx = {};
     var nodeCount = 0;
     var edges = [];
+    // For detecting duplicate edges.
+    var edgeMap = {}
 
     function addNode(node) {
         if (!(node in node2Idx)) {
             node2Idx[node] = nodeCount++;
+        }
+    }
+
+    function warnIfDuplicated(src, dst) {
+        var dsts = edgeMap[src] || {};
+        if (dst in dsts) {
+            console.warn('Edge %s -> %s is duplicated', src, dst);
+        }
+
+        var srcs = edgeMap[dst] || {};
+        if (src in srcs) {
+            console.warn('Edge %s <-> %s has both directions', src, dst)
         }
     }
 
@@ -69,6 +83,11 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
         e.src = node2Idx[node0];
         e.dst = node2Idx[node1];
         edges.push(e);
+
+        warnIfDuplicated(node0, node1);
+        var dsts = edgeMap[node0] || {};
+        dsts[node1] = true;
+        edgeMap[node0] = dsts;
     }
 
     function addEdgeAttributes(vectors, entry) {
