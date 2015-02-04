@@ -318,8 +318,10 @@ var setEdges = Q.promised(function(graph, edges) {
     }
 
     var edgesFlipped = new Uint32Array(edges.length);
-    for (var i = 0; i < edges.length; i++)
-        edgesFlipped[i] = edges[edges.length - 1 - i];
+    for (var i = 0; i < edges.length/2; i++) {
+        edgesFlipped[2 * i] = edges[2 * i + 1];
+        edgesFlipped[2 * i + 1] = edges[2 * i];
+    }
 
     var forwardEdges = encapsulate(edges);
     var backwardsEdges = encapsulate(edgesFlipped);
