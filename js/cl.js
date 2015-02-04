@@ -29,7 +29,8 @@ var types = {
     float3_t: webcl.type.VEC3,
     float4_t: webcl.type.VEC4,
     float8_t: webcl.type.VEC8,
-    float16_t: webcl.type.VEC16
+    float16_t: webcl.type.VEC16,
+    define: '#define',
 };
 
 

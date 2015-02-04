@@ -5,7 +5,7 @@ var SimCL = require('./SimCL.js');
 var util = require('./util.js');
 var forceAtlas   = require('./forceatlas.js'),
     forceAtlas2  = require('./forceatlas2.js'),
-    gaussSeidel  = require('./gaussseidel.js'),
+    gaussSeidel  = require('./gaussseidel2.js'),
     edgeBundling = require('./edgebundling.js'),
     barnesHut    = require('./BarnesHut.js');
 

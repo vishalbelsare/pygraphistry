@@ -23,7 +23,7 @@ function create(renderer, dimensions, numSplits, device, locked, layoutAlgorithm
     .then(function(cl) {
         debug("Creating CL object with GL context");
 
-        var kernels = _.chain(layoutAlgorithms).pluck('kernels').flatten().value();
+        /*var kernels = _.chain(layoutAlgorithms).pluck('kernels').flatten().value();
         var kernelFileMap = {};
 
         _.each(kernels, function (kernel) {
@@ -51,6 +51,10 @@ function create(renderer, dimensions, numSplits, device, locked, layoutAlgorithm
             for (var i = 0; i < compiledKernels.length; i++)
                 _.extend(mergedKernels, compiledKernels[i]);
             return mergedKernels;
+        */
+        return Q().then(function () {
+            _.each(layoutAlgorithms, function (la) {la.setClContext(cl);});
+            return null;
         }).then(function(kernels) {
             debug("Creating SimCL...")
 
