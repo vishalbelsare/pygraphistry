@@ -83,7 +83,9 @@ function init(canvas, vizType) {
 
                 var vboUpdates = streamClient.handleVboUpdates(socket, renderState);
 
-                uberDemo(socket, $('.sim-container'), v.renderState);
+
+                uberDemo(socket, $('.sim-container'), v.renderState,
+                         streamClient.urlParams);
 
                 initialized.onNext({
                     vboUpdates: vboUpdates,

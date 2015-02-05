@@ -14,6 +14,9 @@ var io           = require('socket.io-client');
 var renderer     = require('./renderer.js');
 var ui           = require('./ui.js');
 
+// Exported Global
+var urlParams = getUrlParameters();
+
 //string * {socketHost: string, socketPort: int} -> (... -> ...)
 // where fragment == 'vbo?buffer' or 'texture?name'
 function makeFetcher (fragment, url) {
@@ -111,15 +114,14 @@ function connect(vizType) {
 
     // Get URL query params to send over to the worker via socket
     var workerParams = ['dataset', 'scene', 'device', 'controls'];
-    var params = getUrlParameters();
 
     // For compatibility with old way of specifying dataset
-    if ('datasetname' in params) {
-        params.dataset = params.datasetname;
+    if ('datasetname' in urlParams) {
+        urlParams.dataset = urlParams.datasetname;
     }
 
     var workersArgs = _.map(workerParams, function (param) {
-        return param + '=' + params[param];
+        return param + '=' + urlParams[param];
     }).join('&');
     console.log('Args', workersArgs);
 
@@ -291,5 +293,6 @@ function handleVboUpdates(socket, renderState) {
 module.exports = {
     connect: connect,
     createRenderer: createRenderer,
-    handleVboUpdates: handleVboUpdates
+    handleVboUpdates: handleVboUpdates,
+    urlParams: urlParams
 };

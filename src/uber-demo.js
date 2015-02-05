@@ -472,7 +472,7 @@ function makeMouseSwitchboard() {
     return onElt;
 }
 
-function init(socket, $elt, renderState) {
+function init(socket, $elt, renderState, urlParams) {
 
     poi = poiLib(socket);
 
@@ -586,6 +586,26 @@ function init(socket, $elt, renderState) {
         var payload = {play: true, layout: false, marquee: move};
         socket.emit('interaction', payload);
     });
+
+    var $tooltips = $('[data-toggle="tooltip"]');
+    $tooltips.tooltip('show');
+    var numTicks = urlParams.play || 0;
+    Rx.Observable.interval(500).take(numTicks).subscribe(
+        function (count) {
+            var payload = {play: true, layout: true};
+            socket.emit('interaction', payload);
+            if (count < 3  ||
+                (count % 2 === 0 && count < 10) ||
+                count % 10 === 0) {
+                $('#center').trigger('click');
+            }
+        },
+        null,
+        function () {
+            $('#center').trigger('click');
+            $tooltips.tooltip('hide');
+        }
+    );
 }
 
 
