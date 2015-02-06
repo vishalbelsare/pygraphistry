@@ -78,6 +78,7 @@ function deployEnv(options) {
     var cloudOptions = {
         MONGO_USERNAME: 'graphistry',
         MONGO_PASSWORD: 'graphtheplanet',
+
         MONGO_HOSTS: ['lighthouse.2.mongolayer.com:10048', 'lighthouse.3.mongolayer.com:10048']
     };
 
@@ -97,10 +98,10 @@ function deployEnv(options) {
 
     switch(options.ENVIRONMENT) {
         case 'staging':
-            return resolve(cloudOptions, stagingOptions);
+            return resolve({}, cloudOptions, stagingOptions);
             break;
         case 'production':
-            return resolve(cloudOptions, prodOptions);
+            return resolve({}, cloudOptions, prodOptions);
             break;
         default:  // 'local'
             return {};
