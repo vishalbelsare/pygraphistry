@@ -71,7 +71,7 @@ var programs = {
             'vertex': fs.readFileSync(__dirname + '/../shaders/point.vertex.glsl', 'utf8').toString('ascii'),
             'fragment': fs.readFileSync(__dirname + '/../shaders/point.fragment.glsl', 'utf8').toString('ascii')
         },
-        'attributes': ['curPos', 'pointSize', 'pointColor'],
+        'attributes': ['isHighlighted', 'curPos', 'pointSize', 'pointColor'],
         'camera': 'mvp',
         'uniforms': []
     },
@@ -305,7 +305,8 @@ var items = {
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
-            'pointColor':   ['pointColors', 'pointColor']
+            'pointColor':   ['pointColors', 'pointColor'],
+            'isHighlighted':   ['highlightedPoint', 'isHighlighted']
         },
         'drawType': 'POINTS',
         'glOptions': {}
