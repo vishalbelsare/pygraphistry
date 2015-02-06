@@ -592,7 +592,7 @@ function init(socket, $elt, renderState, urlParams) {
     $tooltips.tooltip('show');
     $bolt.css({color: '#333366'});
     var numTicks = urlParams.play || 0;
-    Rx.Observable.interval(100).take(numTicks).subscribe(
+    Rx.Observable.interval(100).delay(500).take(numTicks).subscribe(
         function (count) {
             var payload = {play: true, layout: true};
             socket.emit('interaction', payload);
