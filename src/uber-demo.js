@@ -590,7 +590,7 @@ function init(socket, $elt, renderState, urlParams) {
     var $tooltips = $('[data-toggle="tooltip"]');
     var $bolt = $('#simulate').find('.fa');
     $tooltips.tooltip('show');
-    $bolt.css({color: '#333366'});
+    $bolt.addClass('automode');//css({color: '#333366'});
     var numTicks = urlParams.play || 0;
     Rx.Observable.interval(100).delay(500).take(numTicks).subscribe(
         function (count) {
@@ -606,7 +606,7 @@ function init(socket, $elt, renderState, urlParams) {
         function () {
             $('#center').trigger('click');
             $tooltips.tooltip('hide');
-            $bolt.css({color: 'white'});
+            $bolt.removeClass('automode');//css({color: 'white'});
         }
     );
 }
