@@ -92,6 +92,13 @@ function getVizServerParams(args) {
             dataType: 'json'
         })
         .map(function(reply) {
+
+            if (!reply || reply.error) {
+                console.error('vizaddr returned error', (reply||{}).error);
+                alert('Too many users, please contact help@graphistry.com for private access');
+                return;
+            }
+
             debug('Got viz server params');
 
             console.log('routed in ' + ( Date.now() - parseFloat(reply.data.timestamp) ) + ' ms');
