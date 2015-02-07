@@ -135,8 +135,9 @@ function assign_worker(req, res) {
 
                         // Are all processes busy or dead?
                         if (results.length == 0) {
-                            debug('There is space on a server, but all workers in the fleet are busy or dead (have not pinged home in over 30 seconds).');
-                            res.send('There is space on a server, but all workers in the fleet are busy or dead (have not pinged home in over 30 seconds)');
+                            var msg = 'There is space on a server, but all workers in the fleet are busy or dead (have not pinged home in over 30 seconds).'
+                            debug(msg);
+                            res.json({error: msg});
                             res.end();
                             return;
                         }
