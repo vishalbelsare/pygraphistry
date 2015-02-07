@@ -146,7 +146,8 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
         vg[vector.dest].push(vector);
     });
 
-    debug('VectorGraph', vg);
+    //debug('VectorGraph', vg);
+    debug('VectorGraph done');
 
     return vg;
 }

@@ -66,7 +66,7 @@ function post(req, res) {
                 .done(
                     function (msg) {
                         debug('etl done, notifying client to proceed');
-                        debug('msg', msg);
+                        //debug('msg', msg);
                         res.send({ success: true, datasetName: msg.name });
                         debug('notified');
                     }, fail);
