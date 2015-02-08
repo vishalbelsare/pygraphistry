@@ -87,16 +87,34 @@ function getUrlParameters() {
  * Fetches the URL for the viz server to use
  */
 function getVizServerParams(args) {
+
+    var attempt = 0;
+
     return $.ajaxAsObservable({
             url: '/vizaddr/graph?' + args,
             dataType: 'json'
         })
-        .map(function(reply) {
+        .flatMap(function(reply) {
 
-            if (!reply || reply.error) {
+            console.log('reply', reply);
+
+            attempt++;
+
+            var ret = Rx.Observable.return(reply);
+            return attempt === 1 ?  ret : (ret.delay(1000));
+
+        })
+        .map(function (reply) {
+
+            console.log('reply2', reply);
+
+            if (!reply.data || reply.data.error) {
                 console.error('vizaddr returned error', (reply||{}).error);
-                alert('Too many users, please contact help@graphistry.com for private access');
-                return;
+                var msg = 'Too many users, please contact help@graphistry.com for private access';
+                if (attempt === 3) {
+                    alert(msg);
+                }
+                throw new Error(new Error(msg));
             }
 
             debug('Got viz server params');
@@ -108,7 +126,9 @@ function getVizServerParams(args) {
                 'port': reply.data.port,
                 'url': '//' + reply.data.hostname + ':' + reply.data.port
             };
+
         })
+        .retry(3)
         .take(1);
 }
 
