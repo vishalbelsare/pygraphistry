@@ -300,7 +300,7 @@ var splunkMapper = {
             name: "pointColor",
             transform: function (v) {
                 var palette = qual_palette2;
-                return int2color(normalize(v, 0, palette.length - 1), palette);
+                return int2color(groupRoundAndClamp(v, 0, palette.length - 1), palette);
             }
         },
         edgeColor: {
@@ -363,6 +363,7 @@ function logTransform(values) {
     });
 }
 
+// rescale array of [a,b] range values to [minimum, maximum]
 function normalize(array, minimum, maximum) {
     var max = _.max(array);
     var min = _.min(array);
@@ -370,6 +371,14 @@ function normalize(array, minimum, maximum) {
 
     return _.map(array, function (val) {
         return minimum + Math.floor((val - min) * scaleFactor);
+    });
+}
+
+// map values to integers between minimum and maximum
+function groupRoundAndClamp(array, minimum, maximum) {
+    return array.map(function (v) {
+        var x = Math.round(v);
+        return Math.max(minimum, Math.min(maximum, x));
     });
 }
 
