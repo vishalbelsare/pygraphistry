@@ -90,9 +90,13 @@ function getVizServerParams(args) {
 
     var attempt = 0;
 
-    return $.ajaxAsObservable({
-            url: '/vizaddr/graph?' + args,
-            dataType: 'json'
+    return Rx.Observable.return().flatMap(function () {
+            //wrap so can retry if claim race failure
+            debug('Asking /vizaddr');
+            return $.ajaxAsObservable({
+                url: '/vizaddr/graph?' + args,
+                dataType: 'json'
+            });
         })
         .flatMap(function(reply) {
 
@@ -105,7 +109,7 @@ function getVizServerParams(args) {
         .map(function (reply) {
 
             if (!reply.data || reply.data.error) {
-                console.error('vizaddr returned error', (reply||{}).error);
+                console.error('vizaddr returned error', reply, (reply||{}).error);
                 var msg = 'Too many users, please contact help@graphistry.com for private access';
                 if (attempt === 3) {
                     alert(msg);
@@ -149,7 +153,16 @@ function connect(vizType) {
     console.log('Args', workersArgs);
 
 
+    var attempt = 0;
     return getVizServerParams(workersArgs)
+        .do(function () {
+            attempt++;
+            if (attempt === 3) {
+                console.error('Last attempt failed');
+                alert('Stopping all attempts to connect.');
+                throw new Error('exhausted connection attempts');
+            }
+        })
         .flatMap(function(params) {
 
             debug('got params', params);
@@ -161,14 +174,26 @@ function connect(vizType) {
 
             socket.io.engine.binaryType = 'arraybuffer';
 
+            socket.io.on('connect_error', function () {
+                console.error('error, socketio failed connect');
+                alert('Failed to connect to GPU cluster; please reload or contact an administrator');
+            });
+
             debug('Stream client websocket connected to visualization server', vizType);
 
-            return Rx.Observable.fromNodeCallback(socket.emit.bind(socket, 'viz'))(vizType)
-                .do(function () {
-                    debug('notified viz type');
+            return Rx.Observable.fromCallback(socket.emit.bind(socket, 'viz'))(vizType)
+                .do(function (v) {
+                    debug('notified viz type', v);
+                })
+                .map(function (ret) {
+                    if (ret.error) {
+                        console.error('Viz rejected (likely due to multiple claimants');
+                        throw new Error('raced worker claim');
+                    }
                 })
                 .map(_.constant({params: params, socket: socket}));
-        });
+        })
+        .retry(3);
 }
 
 
