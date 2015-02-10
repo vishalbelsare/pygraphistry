@@ -76,6 +76,52 @@ function get_likely_local_ip() {
 }
 
 
+//string -> Observable {ips: ..., results: ...}
+function getIPs(datasetname) {
+
+    var infoCollection = db.collection('data_info');
+
+    return Rx.Observable.fromNodeCallback(
+            infoCollection.findOne.bind(infoCollection))({"name": datasetname})
+        .flatMap(function (doc) {
+            if (!doc) { throw new Error('no pings doc'); }
+
+            // Query only for gpus that have been updated within 30 secs
+            var d = new Date();
+            d.setSeconds(d.getSeconds() - 30);
+
+            var res = new Rx.Subject();
+
+            var monitorCollection = db.collection('gpu_monitor')
+                .find({'gpu_memory_free': {'$gt': doc.size},
+                       'updated':         {'$gt': d}},
+                      {'sort': [['gpu_memory_free', 'desc']]});
+
+            return Rx.Observable.fromNodeCallback(monitorCollection.toArray.bind(monitorCollection))();
+        })
+        .flatMap(function (ips) {
+            if (!ips.length) { throw new Error('All GPUs out of space!'); }
+
+            // Query only for workers that have been updated within 30 secs
+            var d = new Date();
+            d.setSeconds(d.getSeconds() - 30);
+
+            // Find all idle node processes
+            var nodeCollection = db.collection('node_monitor').find({'active': false,
+                                                    'updated': {'$gt': d}});
+
+            return Rx.Observable.fromNodeCallback(nodeCollection.toArray.bind(nodeCollection))()
+                .map(function (results) {
+                    if (!results.length) {
+                        var msg = 'There is space on a server, but all workers in the fleet are busy or dead (have not pinged home in over 30 seconds).';
+                        throw new Error(msg);
+                    }
+                    return {ips: ips, results: results};
+                });
+        });
+}
+
+
 function assign_worker(req, res) {
     var datasetname = req.query.dataset;
     // need to route based on data size.
@@ -83,93 +129,47 @@ function assign_worker(req, res) {
     if(config.ENVIRONMENT === 'production' || config.ENVIRONMENT === 'staging') {
         console.log("WARNING: fix this. Needs S3 -> Mongo integration for datablob sizes")
         datasetname = "uber";
-        db.collection('data_info').findOne({"name": datasetname}, function(err, doc) {
-            if (err) {
-                debug(err);
-                res.send('Problem with query');
+
+        var ips = getIPs(datasetname)
+            .map(function (o) {
+
+                // Try each IP in order of free space
+                var ips = o.ips;
+                var results = o.results;
+                for (var i in ips) {
+                    var ip = ips[i]['ip'];
+
+                    for (var j in results) {
+
+                        if (results[j]['ip'] != ip) {
+                            continue;
+                        }
+
+                        return {'hostname': ip,
+                                'port': results[j]['port'],
+                                'timestamp': Date.now()
+                                };
+                    }
+                }
+
+                throw new Error('no IPs');
+
+            });
+
+        ips.do(function (msg) {
+                debug("Assigning client '%s' to viz server on %s, port %d with dataset %s",
+                    req.ip, msg.hostname, msg.port, datasetname);
+                res.json(msg);
                 res.end();
-                return;
-            }
-            if (doc) {
-                // Query only for gpus that have been updated within 30 secs
-                var d = new Date();
-                d.setSeconds(d.getSeconds() - 30);
-
-                // Get all GPUs that have free memory that can fit the data
-                db.collection('gpu_monitor')
-                      .find({'gpu_memory_free': {'$gt': doc.size},
-                             'updated': {'$gt': d}, },
-                             {'sort': [['gpu_memory_free', 'desc']]})
-                      .toArray(function(err, ips) {
-
-                    if (err) {
-                        debug(err);
-                        res.send('Problem with query');
-                        res.end();
-                        return;
-                    }
-
-                    // Are there no servers with enough space?
-                    if (ips.length == 0) {
-                        debug("All GPUs out of space!");
-                        res.send('No servers can fit the data :/');
-                        res.end();
-                        return;
-                    }
-
-                    // Query only for workers that have been updated within 30 secs
-                    var d = new Date();
-                    d.setSeconds(d.getSeconds() - 30);
-
-                    // Find all idle node processes
-                    db.collection('node_monitor').find({'active': false,
-                                                        'updated': {'$gt': d}})
-                                                     .toArray(function(err, results) {
-
-                        if (err) {
-                            debug(err);
-                            res.send('Problem with query');
-                            res.end();
-                            return;
-                        }
-
-                        // Are all processes busy or dead?
-                        if (results.length == 0) {
-                            var msg = 'There is space on a server, but all workers in the fleet are busy or dead (have not pinged home in over 30 seconds).'
-                            debug(msg);
-                            res.json({error: msg});
-                            res.end();
-                            return;
-                        }
-
-                        // Try each IP in order of free space
-                        for (var i in ips) {
-                            var ip = ips[i]['ip'];
-
-                            for (var j in results) {
-                                if (results[j]['ip'] != ip) continue;
-
-                                // We found a match
-                                var port = results[j]['port'];
-
-                                // Todo: ping process first for safety
-                                debug("Assigning client '%s' to viz server on %s, port %d with dataset %s", req.ip, ip, port, datasetname);
-                                res.json({'hostname': ip,
-                                          'port': port,
-                                          'timestamp': Date.now()
-                                          });
-                                res.end();
-                                return;
-                            }
-                        }
-                    });
+            })
+            .subscribe(
+                _.identity,
+                function (err) {
+                    console.error('assign_worker error', err, (err || {}).stack);
+                    res.json({error: {v: msg}});
+                    res.end();
                 });
-            } else {
-                res.send('Couldn\'t find that dataset');
-                res.end();
-                return;
-            }
-        });
+
     } else {
         debug("Assigning client '%s' to viz server on %s, port %d", req.ip, VIZ_SERVER_HOST, VIZ_SERVER_PORT);
         res.json({'hostname': VIZ_SERVER_HOST,
