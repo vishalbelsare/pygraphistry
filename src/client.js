@@ -150,25 +150,36 @@ function connect(vizType) {
 
 
     return getVizServerParams(workersArgs)
-        .flatMap(function(params) {
-
+        .map(function(params) {
             debug('got params', params);
-
             var socket = io(params.url, { query: workersArgs,
                                           reconnection: false,
                                           transports: ['websocket']
                                         });
-
             socket.io.engine.binaryType = 'arraybuffer';
-
+            return {params: params, socket: socket};
+        })
+        .flatMap(function (conn) {
+            return Rx.Observable.fromNodeCallback(conn.socket.on.bind(conn.socket, 'connectionAck'))()
+                .map(function (status) {
+                    if (status !== 'succeed') {
+                        console.error('viz worker rejected connection, retrying', status);
+                        throw new Error(status);
+                    }
+                })
+                .map(_.constant(conn));
+        })
+        //retries at vizaddr, not just connectionAck
+        .retry(10)
+        .flatMap(function (conn) {
             debug('Stream client websocket connected to visualization server', vizType);
-
-            return Rx.Observable.fromNodeCallback(socket.emit.bind(socket, 'viz'))(vizType)
+            return Rx.Observable.fromNodeCallback(conn.socket.emit.bind(conn.socket, 'viz'))(vizType)
                 .do(function () {
                     debug('notified viz type');
                 })
-                .map(_.constant({params: params, socket: socket}));
+                .map(_.constant(conn));
         });
+
 }
 
 
