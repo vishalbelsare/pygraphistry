@@ -114,7 +114,7 @@ function getVizServerParams(args) {
                 if (attempt === 3) {
                     alert(msg);
                 }
-                throw new Error(new Error(msg));
+                throw new Error({msg: msg, data: reply});
             }
 
             debug('Got viz server params');
@@ -186,9 +186,9 @@ function connect(vizType) {
                     debug('notified viz type', v);
                 })
                 .map(function (ret) {
-                    if (ret.error) {
+                    if (!ret || ret.error) {
                         console.error('Viz rejected (likely due to multiple claimants');
-                        throw new Error('raced worker claim');
+                        throw new Error({msg: 'raced worker claim', data: ret});
                     }
                 })
                 .map(_.constant({params: params, socket: socket}));
