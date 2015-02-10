@@ -267,7 +267,8 @@ function handleVboUpdates(socket, renderState) {
                     renderedFrame.onNext('received');
                     renderer.render(renderState);
                     renderedFrame.onNext('rendered');
-                });
+                },
+                function (err) { console.error('readyToRender error', err, (err||{}).stack); });
 
             var bufferVBOs = Rx.Observable.zipArray(
                 [Rx.Observable.return()]
@@ -292,7 +293,8 @@ function handleVboUpdates(socket, renderState) {
                         ui.error('Render error on loading data into WebGL:', e, e.stack);
                     }
 
-                });
+                },
+                function (err) { console.error('bufferVBOs error', err, (err||{}).stack); });
 
             var textureLengths =
                 _.object(_.pairs(_.pick(data.textures, changedTextureNames))
@@ -319,7 +321,7 @@ function handleVboUpdates(socket, renderState) {
                 renderer.loadTextures(renderState, bindings);
 
                 readyTextures.onNext();
-            });
+            }, function (err) { console.error('readyToRender error', err, (err||{}).stack); });
 
             _.keys(data.versions).forEach(function (mode) {
                 previousVersions[mode] = previousVersions[mode] || {};

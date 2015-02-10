@@ -134,8 +134,9 @@ function createDebugOverlay(app) {
                 renderMeter.tick();
 //                    renderMeter.pause();
             }
-        });
-    });
+        },
+        function (err) { console.error('renderPipeline error', err, (err||{}).stack); });
+    }, function (err) { console.error('app error', err, (err||{}).stack); });
 
 
     var networkMeterD =
@@ -169,8 +170,9 @@ function createDebugOverlay(app) {
                     networkMeter.pause();
                     break;
             }
-        });
-    });
+        },
+        function (err) { console.error('vboUpdates error', err, (err||{}).stack); });
+    }, function (err) { console.error('app vboUpdates error', err, (err||{}).stack); });
 }
 
 window.addEventListener('load', function() {

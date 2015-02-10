@@ -435,11 +435,11 @@ function setupMarquee(isOn, renderState) {
     var marquee = marqueeFact($('#marquee'), isOn, {transform: transform});
 
     marquee.selections.subscribe(function (sel) {
-        console.log('selected bounds', sel);
+        debug('selected bounds', sel);
     });
 
     marquee.drags.subscribe(function (drag) {
-        console.log('drag action', drag.start, drag.end);
+        debug('drag action', drag.start, drag.end);
     });
 
     return marquee;
@@ -585,7 +585,7 @@ function init(socket, $elt, renderState, urlParams) {
     ).subscribe(function (move) {
         var payload = {play: true, layout: false, marquee: move};
         socket.emit('interaction', payload);
-    });
+    }, function (err) { console.error('marquee payload', err, (err||{}).stack); });
 
     var $tooltips = $('[data-toggle="tooltip"]');
     var $bolt = $('#simulate').find('.fa');
