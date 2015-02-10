@@ -4,7 +4,7 @@ var _ = require('underscore');
 var SimCL = require('./SimCL.js');
 var util = require('./util.js');
 var forceAtlas   = require('./forceatlas.js'),
-    forceAtlas2  = require('./forceatlas2.js'),
+    ForceAtlas2  = require('./forceatlas2.js'),
     GaussSeidel  = require('./gaussseidel2.js'),
     edgeBundling = require('./edgebundling.js'),
     barnesHut    = require('./BarnesHut.js');
@@ -130,7 +130,7 @@ var controls = {
     'uber': uberControls,
     'gauss': gsControls,
     'atlas': atlasControls(forceAtlas),
-    'atlas2': atlasControls(forceAtlas2),
+    'atlas2': atlasControls(ForceAtlas2),
     'barneshut': barnesControls
 }
 

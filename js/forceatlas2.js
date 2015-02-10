@@ -3,99 +3,63 @@
 var debug = require("debug")("graphistry:graph-viz:cl:forceatlas2"),
     _     = require('underscore'),
     cljs  = require('./cl.js'),
-    gs    = require('./gaussseidel.js'),
+    GaussSeidel = require('./gaussseidel2.js'),
     Q     = require('q'),
     util  = require('./util.js'),
-    webcl = require('node-webcl');
+    webcl = require('node-webcl'),
+    Kernel = require('./kernel.js');
 
-var graphParams = {
-    scalingRatio: null,
-    gravity: null,
-    edgeInfluence: null,
-    flags: null
-};
 
-var faPoints = {};
-_.extend(faPoints, graphParams, {
-    tilePointsParam: null,
-    tilePointsParam2: null,
-    numPoints: null,
-    tilesPerIteration: null,
-    inputPositions: null,
-    width: null,
-    height: null,
-    stepNumber: null,
-    pointDegrees: null,
-    pointForces: null
-});
-var faPointsOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'tilePointsParam',
-                     'tilePointsParam2', 'numPoints', 'tilesPerIteration', 'inputPositions',
-                     'width', 'height', 'stepNumber', 'pointDegrees', 'pointForces'];
-Object.seal(faPoints);
+var ForceAtlas2 = function (clContext) {
+    this.faPoints = new Kernel('faPointForces', ForceAtlas2.argsPoints,
+                               ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
 
-var faEdges = {};
-_.extend(faEdges, graphParams, {
-    edges: null,
-    workList: null,
-    inputPoints: null,
-    partialForces: null,
-    stepNumber: null,
-    outputForces: null
-});
-var faEdgesOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges',
-                    'workList', 'inputPoints', 'partialForces', 'stepNumber', 'outputForces'];
-Object.seal(faEdges);
+    this.faEdges = new Kernel('faEdgeForces', ForceAtlas2.argsEdges,
+                               ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
 
-var faSwings = {
-    prevForces: null,
-    curForces: null,
-    swings: null,
-    tractions: null
+    this.faSwings = new Kernel('faSwingsTractions', ForceAtlas2.argsSwings,
+                               ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
+
+    this.faSpeed = new Kernel('faGlobalSpeed', ForceAtlas2.argsSpeed,
+                               ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
+
+    this.faIntegrate = new Kernel('faIntegrate', ForceAtlas2.argsIntegrate,
+                               ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
+
+    this.faIntegrate2 = new Kernel('faIntegrate2', ForceAtlas2.argsIntegrate2,
+                               ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
+
+    this.gsGather = new Kernel('gaussSeidelSpringsGather', GaussSeidel.argsGather,
+                               GaussSeidel.argsType, 'gaussSeidel.cl', clContext);
 }
-var faSwingsOrder = ['prevForces', 'curForces', 'swings' , 'tractions'];
-Object.seal(faSwings);
 
-var faSpeed = {
-    tau: null,
-    numPoints: null,
-    pointDegrees: null,
-    swings: null,
-    tractions: null,
-    gSpeeds : null
-}
-var faSpeedOrder = ['tau', 'numPoints', 'pointDegrees', 'swings',
-                    'tractions', 'gSpeeds'];
-Object.seal(faSpeed);
+ForceAtlas2.argsPoints = [
+    'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'tilePointsParam',
+    'tilePointsParam2', 'numPoints', 'tilesPerIteration', 'inputPositions',
+    'width', 'height', 'stepNumber', 'pointDegrees', 'pointForces'
+];
 
-var faIntegrate = {
-    gSpeed: null,
-    inputPositions: null,
-    curForces: null,
-    swings: null,
-    outputPositions: null
-}
-var faIntegrateOrder = ['gSpeed', 'inputPositions', 'curForces', 'swings',
-                        'outputPositions'];
-Object.seal(faIntegrate);
+ForceAtlas2.argsEdges = [
+    'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges',
+    'workList', 'inputPoints', 'partialForces', 'stepNumber', 'outputForces'
+];
 
-var faIntegrate2 = {
-    numPoints: null,
-    tau: null,
-    inputPositions: null,
-    pointDegrees: null,
-    curForces: null,
-    swings: null,
-    tractions: null,
-    outputPositions: null
-}
-var faIntegrate2Order = ['numPoints', 'tau', 'inputPositions', 'pointDegrees',
-                         'curForces', 'swings', 'tractions', 'outputPositions'];
-Object.seal(faIntegrate2);
+ForceAtlas2.argsSwings = ['prevForces', 'curForces', 'swings' , 'tractions'];
 
-var gsSpringsGather = {}
-_.extend(gsSpringsGather, gs.gsSpringsGather);
+ForceAtlas2.argsSpeed = [
+    'tau', 'numPoints', 'pointDegrees', 'swings', 'tractions', 'gSpeeds'
+];
 
-var argsType = {
+ForceAtlas2.argsIntegrate = [
+    'gSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'
+];
+
+ForceAtlas2.argsIntegrate2 = [
+    'numPoints', 'tau', 'inputPositions', 'pointDegrees', 'curForces', 'swings',
+    'tractions', 'outputPositions'
+];
+
+ForceAtlas2.argsType = {
     scalingRatio: cljs.types.float_t,
     gravity: cljs.types.float_t,
     edgeInfluence: cljs.types.uint_t,
@@ -125,72 +89,23 @@ var argsType = {
     tau: cljs.types.float_t,
     gSpeed: cljs.types.float_t
 }
-Object.seal(argsType);
 
-var kernels = [
-    {
-        name: 'faPointForces',
-        args: faPoints,
-        order: faPointsOrder,
-        types: argsType,
-        file: 'forceAtlas2.cl'
-    },{
-        name: 'faEdgeForces',
-        args: faEdges,
-        order: faEdgesOrder,
-        types: argsType,
-        file: 'forceAtlas2.cl'
-    },{
-        name: 'faSwingsTractions',
-        args: faSwings,
-        order: faSwingsOrder,
-        types: argsType,
-        file: 'forceAtlas2.cl'
-    },{
-        name: 'faGlobalSpeed',
-        args: faSpeed,
-        order: faSpeedOrder,
-        types: argsType,
-        file: 'forceAtlas2.cl'
-    },{
-        name: 'faIntegrate',
-        args: faIntegrate,
-        order: faIntegrateOrder,
-        types: argsType,
-        file: 'forceAtlas2.cl'
-    },{
-        name: 'faIntegrate2',
-        args: faIntegrate2,
-        order: faIntegrate2Order,
-        types: argsType,
-        file: 'forceAtlas2.cl'
-    },{
-        name: 'gaussSeidelSpringsGather',
-        args: gsSpringsGather,
-        order: gs.gsSpringsGatherOrder,
-        types: gs.argsType,
-        file: 'gaussSeidel.cl'
-    }
-];
-util.saneKernels(kernels);
 
-var setKernelArgs = cljs.setKernelArgs.bind('', kernels);
-
-function setPhysics(cfg) {
+ForceAtlas2.prototype.setPhysics = function(cfg) {
     if ('scalingRatio' in cfg) {
         var val = [cfg.scalingRatio];
-        faPoints.scalingRatio = val;
-        faEdges.scalingRatio = val;
+        this.faPoints.set({scalingRatio: val});
+        this.faEdges.set({scalingRatio: val});
     }
     if ('gravity' in cfg) {
         var val = [cfg.gravity];
-        faPoints.gravity = val;
-        faEdges.gravity = val;
+        this.faPoints.set({gravity: val});
+        this.faEdges.set({gravity: val});
     }
     if ('edgeInfluence' in cfg) {
         var val =[cfg.edgeInfluence];
-        faPoints.edgeInfluence = val;
-        faEdges.edgeInfluence = val;
+        this.faPoints.set({edgeInfluence: val});
+        this.faEdges.set({edgeInfluence: val});
     }
 
     var mask = 0;
@@ -202,37 +117,42 @@ function setPhysics(cfg) {
         }
     });
     var val = [mask];
-    faPoints.flags = val;
-    faEdges.flags = val;
+    this.faPoints.set({flags: val});
+    this.faEdges.set({flags: val});
 }
 
 
-function setPoints() {}
+ForceAtlas2.prototype.setPoints = function() {}
 
 
-function setEdges(simulator) {
+ForceAtlas2.prototype.setEdges = function(simulator) {
         var localPosSize =
             Math.min(simulator.cl.maxThreads, simulator.numMidPoints)
             * simulator.elementsPerPoint
             * Float32Array.BYTES_PER_ELEMENT;
 
-        faPoints.tilePointsParam =[1];
-        faPoints.tilePointsParam2 = [1];
-        faPoints.tilesPerIteration = [simulator.tilesPerIteration];
-        faPoints.numPoints = [simulator.numPoints];
-        faPoints.inputPositions = simulator.buffers.curPoints.buffer;
-        faPoints.width = [simulator.dimensions[0]];
-        faPoints.height = [simulator.dimensions[1]];
-        faPoints.pointDegrees = simulator.buffers.degrees.buffer;
-        faPoints.pointForces = simulator.buffers.partialForces1.buffer;
+        this.faPoints.set({
+            tilePointsParam: [1],
+            tilePointsParam2: [1],
+            tilesPerIteration: [simulator.tilesPerIteration],
+            numPoints: [simulator.numPoints],
+            inputPositions: simulator.buffers.curPoints.buffer,
+            width: [simulator.dimensions[0]],
+            height: [simulator.dimensions[1]],
+            pointDegrees: simulator.buffers.degrees.buffer,
+            pointForces: simulator.buffers.partialForces1.buffer
+        });
 
-        gsSpringsGather.springs = simulator.buffers.forwardsEdges.buffer;
-        gsSpringsGather.workList = simulator.buffers.forwardsWorkItems.buffer;
-        gsSpringsGather.inputPoints = simulator.buffers.curPoints.buffer;
-        gsSpringsGather.springPositions = simulator.buffers.springsPos.buffer;
+        this.gsGather.set({
+            springs: simulator.buffers.forwardsEdges.buffer,
+            workList: simulator.buffers.forwardsWorkItems.buffer,
+            inputPoints: simulator.buffers.curPoints.buffer,
+            springPositions: simulator.buffers.springsPos.buffer
+        });
 }
 
-function pointForces(simulator, stepNumber) {
+
+function pointForces(simulator, faPoints, stepNumber) {
     var resources = [
         simulator.buffers.curPoints,
         simulator.buffers.forwardsDegrees,
@@ -240,28 +160,28 @@ function pointForces(simulator, stepNumber) {
         simulator.buffers.partialForces1
     ];
 
-    faPoints.stepNumber = [stepNumber];
-    setKernelArgs(simulator, 'faPointForces');
+    faPoints.set({stepNumber: [stepNumber]});
 
     simulator.tickBuffers(['partialForces1']);
 
     debug("Running kernel faPointForces");
-    return simulator.kernels.faPointForces.call(simulator.numPoints, resources)
+    return faPoints.exec([simulator.numPoints], resources)
         .fail(function (err) {
             console.error('Kernel faPointForces failed', err, (err||{}).stack);
         });
 }
 
-function edgeForcesOneWay(simulator, edges, workItems, numWorkItems, points,
-                          stepNumber, partialForces, outputForces) {
-    faEdges.edges = edges.buffer;
-    faEdges.workList = workItems.buffer;
-    faEdges.inputPoints = points.buffer;
-    faEdges.stepNumber = [stepNumber];
-    faEdges.partialForces = partialForces.buffer;
-    faEdges.outputForces = outputForces.buffer;
 
-    setKernelArgs(simulator, 'faEdgeForces');
+function edgeForcesOneWay(simulator, faEdges, edges, workItems, numWorkItems,
+                          points, stepNumber, partialForces, outputForces) {
+    faEdges.set({
+        edges: edges.buffer,
+        workList: workItems.buffer,
+        inputPoints: points.buffer,
+        stepNumber: [stepNumber],
+        partialForces: partialForces.buffer,
+        outputForces: outputForces.buffer
+    });
 
     var resources = [edges, workItems, points, partialForces, outputForces];
 
@@ -272,18 +192,20 @@ function edgeForcesOneWay(simulator, edges, workItems, numWorkItems, points,
     );
 
     debug("Running kernel faEdgeForces");
-    return simulator.kernels.faEdgeForces.call(numWorkItems, resources);
+    return faEdges.exec([numWorkItems], resources);
 }
 
-function edgeForces(simulator, stepNumber) {
+
+function edgeForces(simulator, faEdges, stepNumber) {
     var buffers = simulator.buffers;
-    return edgeForcesOneWay(simulator, buffers.forwardsEdges, buffers.forwardsWorkItems,
-                            simulator.numForwardsWorkItems, buffers.curPoints,
-                            stepNumber,
+    return edgeForcesOneWay(simulator, faEdges,
+                            buffers.forwardsEdges, buffers.forwardsWorkItems,
+                            simulator.numForwardsWorkItems,
+                            buffers.curPoints, stepNumber,
                             buffers.partialForces1, buffers.partialForces2)
     .then(function () {
-        return edgeForcesOneWay(simulator, buffers.backwardsEdges,
-                                buffers.backwardsWorkItems,
+        return edgeForcesOneWay(simulator, faEdges,
+                                buffers.backwardsEdges, buffers.backwardsWorkItems,
                                 simulator.numBackwardsWorkItems,
                                 buffers.curPoints, stepNumber,
                                 buffers.partialForces2, buffers.curForces);
@@ -292,12 +214,15 @@ function edgeForces(simulator, stepNumber) {
     });
 }
 
-function swingsTractions(simulator) {
+
+function swingsTractions(simulator, faSwings) {
     var buffers = simulator.buffers;
-    faSwings.prevForces = buffers.prevForces.buffer;
-    faSwings.curForces = buffers.curForces.buffer;
-    faSwings.swings = buffers.swings.buffer;
-    faSwings.tractions = buffers.tractions.buffer;
+    faSwings.set({
+        prevForces: buffers.prevForces.buffer,
+        curForces: buffers.curForces.buffer,
+        swings: buffers.swings.buffer,
+        tractions: buffers.tractions.buffer
+    });
 
     var resources = [
         buffers.prevForces,
@@ -306,24 +231,25 @@ function swingsTractions(simulator) {
         buffers.tractions
     ];
 
-    setKernelArgs(simulator, 'faSwingsTractions');
-
     simulator.tickBuffers(['swings', 'tractions']);
 
     debug("Running kernel faSwingsTractions");
-    return simulator.kernels.faSwingsTractions.call(simulator.numPoints, resources)
+    return faSwings.exec([simulator.numPoints], resources)
         .fail(function (err) {
             console.error('Kernel faSwingsTractions failed', err, (err||{}).stack);
         });
 }
 
-function integrate(simulator) {
+
+function integrate(simulator, faIntegrate) {
     var buffers = simulator.buffers;
-    faIntegrate.gSpeed = [1.0];
-    faIntegrate.inputPositions = buffers.curPoints.buffer;
-    faIntegrate.curForces = buffers.curForces.buffer;
-    faIntegrate.swings = buffers.swings.buffer;
-    faIntegrate.outputPositions = buffers.nextPoints.buffer;
+    faIntegrate.set({
+        gSpeed: [1.0],
+        inputPositions: buffers.curPoints.buffer,
+        curForces: buffers.curForces.buffer,
+        swings: buffers.swings.buffer,
+        outputPositions: buffers.nextPoints.buffer
+    });
 
     var resources = [
         buffers.curPoints,
@@ -332,12 +258,10 @@ function integrate(simulator) {
         buffers.nextPoints
     ];
 
-    setKernelArgs(simulator, 'faIntegrate');
-
     simulator.tickBuffers(['nextPoints']);
 
     debug("Running kernel faIntegrate");
-    return simulator.kernels.faIntegrate.call(simulator.numPoints, resources)
+    return faIntegrate.exec([simulator.numPoints], resources)
         .fail(function (err) {
             console.error('Kernel faIntegrate failed', err, (err||{}).stack);
         });
@@ -375,7 +299,7 @@ function integrate2(simulator) {
         });
 }
 
-function gatherEdges(simulator) {
+function gatherEdges(simulator, gsGather) {
     var buffers = simulator.buffers;
     var resources = [
         buffers.forwardsEdges,
@@ -386,21 +310,20 @@ function gatherEdges(simulator) {
 
     simulator.tickBuffers(['springsPos']);
 
-    setKernelArgs(simulator, 'gaussSeidelSpringsGather');
-
     debug("Running gaussSeidelSpringsGather (forceatlas2) kernel");
-    return simulator.kernels.gaussSeidelSpringsGather.call(simulator.numForwardsWorkItems, resources);
+    return gsGather.exec([simulator.numForwardsWorkItems], resources);
 }
 
-function tick(simulator, stepNumber) {
+ForceAtlas2.prototype.tick = function(simulator, stepNumber) {
+    var that = this;
     var tickTime = Date.now();
-    return pointForces(simulator, stepNumber)
+    return pointForces(simulator, that.faPoints, stepNumber)
     .then(function () {
-        return edgeForces(simulator, stepNumber);
+        return edgeForces(simulator, that.faEdges, stepNumber);
     }).then(function () {
-        return swingsTractions(simulator);
+        return swingsTractions(simulator, that.faSwings);
     }).then(function () {
-        return integrate(simulator);
+        return integrate(simulator, that.faIntegrate);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);
@@ -409,19 +332,11 @@ function tick(simulator, stepNumber) {
             buffers.curForces.copyInto(buffers.prevForces)
         ]);
     }).then(function () {
-        return gatherEdges(simulator);
+        return gatherEdges(simulator, that.gsGather);
     }).then(function () {
-
+        return simulator;
     });
 }
 
 
-module.exports = {
-    name: 'forceAtlas2',
-    kernels: kernels,
-    setPhysics: setPhysics,
-    setPoints: setPoints,
-    setEdges: setEdges,
-    tick: tick
-};
-
+module.exports = ForceAtlas2;

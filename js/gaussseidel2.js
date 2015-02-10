@@ -8,7 +8,28 @@ var webcl = require('node-webcl');
 var util = require('./util');
 var Kernel = require('./kernel.js');
 
-var argsType = {
+var GaussSeidel = function(clContext) {
+    debug('Creating GaussSeidel kernels');
+    this.gsPoints = new Kernel('gaussSeidelPoints', GaussSeidel.argsPoints,
+                               GaussSeidel.argsType, 'gaussSeidel.cl', clContext);
+
+    this.gsSprings = new Kernel('gaussSeidelSprings', GaussSeidel.argsSprings,
+                                GaussSeidel.argsType, 'gaussSeidel.cl', clContext);
+
+    this.gsGather = new Kernel('gaussSeidelSpringsGather', GaussSeidel.argsGather,
+                               GaussSeidel.argsType, 'gaussSeidel.cl', clContext);
+};
+
+GaussSeidel.argsPoints = ['numPoints', 'tilesPerIteration', 'inputPositions',
+                          'outputPositions', 'tilePointsParam', 'width', 'height',
+                          'charge', 'gravity', 'randValues', 'stepNumber'];
+
+GaussSeidel.argsSprings = ['tilesPerIteration', 'springs', 'workList', 'edgeTags',
+                           'inputPoints', 'outputPoints', 'edgeStrength0', 'edgeDistance0', 'edgeStrength1', 'edgeDistance1', 'stepNumber'];
+
+GaussSeidel.argsGather = ['springs', 'workList', 'inputPoints', 'springPositions'];
+
+GaussSeidel.argsType = {
     numPoints: cljs.types.uint_t,
     tilesPerIteration: cljs.types.uint_t,
     edgeTags: null,
@@ -30,29 +51,6 @@ var argsType = {
     edgeStrength1: cljs.types.float_t,
     edgeDistance1: cljs.types.float_t,
     springPositions: null
-};
-Object.seal(argsType);
-
-var GaussSeidel = function(clContext) {
-
-    var argsPoints = ['numPoints', 'tilesPerIteration', 'inputPositions', 'outputPositions',
-        'tilePointsParam', 'width', 'height', 'charge', 'gravity', 'randValues',
-        'stepNumber'];
-
-    var argsSprings = ['tilesPerIteration', 'springs', 'workList', 'edgeTags',
-                      'inputPoints', 'outputPoints', 'edgeStrength0', 'edgeDistance0', 'edgeStrength1', 'edgeDistance1', 'stepNumber'];
-
-    var argsSpringsGather = ['springs', 'workList', 'inputPoints', 'springPositions'];
-
-    debug('Creating GaussSeidel kernels');
-    this.gsPoints = new Kernel('gaussSeidelPoints', argsPoints, argsType,
-                            'gaussSeidel.cl', clContext);
-
-    this.gsSprings = new Kernel('gaussSeidelSprings', argsSprings, argsType,
-                        'gaussSeidel.cl', clContext);
-
-    this.gsSpringsGather = new Kernel('gaussSeidelSpringsGather', argsSpringsGather, argsType,
-                                'gaussSeidel.cl', clContext);
 };
 
 
@@ -96,7 +94,7 @@ GaussSeidel.prototype.setEdges = function(simulator) {
     this.gsSprings.set({
         tilesPerIteration: [simulator.tilesPerIteration]
     });
-    this.gsSpringsGather.set({
+    this.gsGather.set({
         springs: simulator.buffers.forwardsEdges.buffer,
         workList: simulator.buffers.forwardsWorkItems.buffer,
         inputPoints: simulator.buffers.curPoints.buffer,
@@ -147,7 +145,7 @@ function edgeKernelSeq(simulator, gsSprings, stepNumber, edges, workItems,
 }
 
 
-function gatherKernel(simulator, gsSpringsGather) {
+function gatherKernel(simulator, gsGather) {
     var resources = [
         simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems,
         simulator.buffers.curPoints, simulator.buffers.springsPos
@@ -155,7 +153,7 @@ function gatherKernel(simulator, gsSpringsGather) {
 
     simulator.tickBuffers(['springsPos']);
 
-    gsSpringsGather.set({
+    gsGather.set({
         springs: simulator.buffers.forwardsEdges.buffer,
         workList: simulator.buffers.forwardsWorkItems.buffer,
         inputPoints: simulator.buffers.curPoints.buffer,
@@ -164,7 +162,7 @@ function gatherKernel(simulator, gsSpringsGather) {
 
 
     debug("Running gaussSeidelSpringsGather");
-    return gsSpringsGather.exec([simulator.numForwardsWorkItems], resources);
+    return gsGather.exec([simulator.numForwardsWorkItems], resources);
 }
 
 
@@ -196,7 +194,7 @@ GaussSeidel.prototype.tick = function(simulator, stepNumber) {
     }).then(function() {
         if ((!simulator.locked.lockPoints || !simulator.locked.lockEdges)
             && simulator.numEdges > 0) {
-            return gatherKernel(simulator, that.gsSpringsGather)
+            return gatherKernel(simulator, that.gsGather)
         }
     }).then(function () {
         return simulator;
