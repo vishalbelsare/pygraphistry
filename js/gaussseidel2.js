@@ -173,7 +173,6 @@ GaussSeidel.prototype.tick = function(simulator, stepNumber) {
     return Q().then(function () {
         if (simulator.locked.lockPoints) {
             debug("Points are locked, nothing to do.")
-            return;
         } else {
             return pointKernel(simulator, that.gsPoints, stepNumber);
         }
