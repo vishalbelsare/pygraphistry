@@ -219,9 +219,9 @@ function setPoints(simulator, points) {
 
     //FIXME HACK:
     var guess = (simulator.numPoints * -0.00625 + 210).toFixed(0);
-    console.log('Points:%d\tGuess:%d', simulator.numPoints, guess);
+    debug('Points:%d\tGuess:%d', simulator.numPoints, guess);
     simulator.tilesPerIteration = Math.min(Math.max(16, guess), 512);
-    console.log('Using %d tiles per iterations', simulator.tilesPerIteration);
+    debug('Using %d tiles per iterations', simulator.tilesPerIteration);
 
     simulator.renderer.numPoints = simulator.numPoints;
 

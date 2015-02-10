@@ -71,7 +71,7 @@ var programs = {
             'vertex': fs.readFileSync(__dirname + '/../shaders/point.vertex.glsl', 'utf8').toString('ascii'),
             'fragment': fs.readFileSync(__dirname + '/../shaders/point.fragment.glsl', 'utf8').toString('ascii')
         },
-        'attributes': ['curPos', 'pointSize', 'pointColor'],
+        'attributes': ['isHighlighted', 'curPos', 'pointSize', 'pointColor'],
         'camera': 'mvp',
         'uniforms': []
     },
@@ -305,7 +305,8 @@ var items = {
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
-            'pointColor':   ['pointColors', 'pointColor']
+            'pointColor':   ['pointColors', 'pointColor'],
+            'isHighlighted':   ['highlightedPoint', 'isHighlighted']
         },
         'drawType': 'POINTS',
         'glOptions': {}
@@ -368,7 +369,7 @@ var sceneUber = {
 var sceneNetflow = {
     'options': stdOptions,
     'camera': camera2D,
-    'render': ['pointpicking', 'pointsampling', 'edgeculled', 'pointculled']
+    'render': ['pointpicking', 'pointsampling', 'edgeculled', 'points']
 }
 
 var scenes = {
@@ -405,7 +406,7 @@ function saneItem(programs, textures, models, item, itemName) {
         if (!(field in item))
             util.die('Item "%s" must have field "%s"', itemName, field);
     });
-            
+
     var progName = item.program;
     if (!(progName in programs))
         util.die('In item "%s", undeclared program "%s"', itemName, progName);
@@ -422,7 +423,7 @@ function saneItem(programs, textures, models, item, itemName) {
         });
         _.each(item.textureBindings, function (texName, texPname) {
             if (!_.contains(program.textures, texPname))
-                util.die('Program "%s" does not declare texture named "%s" bound by item "%s"', 
+                util.die('Program "%s" does not declare texture named "%s" bound by item "%s"',
                         progName, texPname, itemName);
             if (!(texName in textures))
                 util.die('In item "%s", undeclared texture "%s"', itemName, texName);
@@ -431,12 +432,12 @@ function saneItem(programs, textures, models, item, itemName) {
 
     _.each(program.attributes, function (attr) {
         if (!(attr in item.bindings))
-            util.die('In item "%s", program attribute "%s" (of program "%s") is not bound', 
+            util.die('In item "%s", program attribute "%s" (of program "%s") is not bound',
                     itemName, progName, attr);
     });
     _.each(item.bindings, function (modelNames, attr) {
         if (!_.contains(program.attributes, attr))
-            util.die('Program %s does not declare attribute %s bound by item %s', 
+            util.die('Program %s does not declare attribute %s bound by item %s',
                         progName, attr, itemName);
         if (!(modelNames[0] in models) || !(modelNames[1] in models[modelNames[0]]))
             util.die('In item "%s", undeclared model "%s"', itemName, modelNames);

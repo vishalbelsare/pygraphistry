@@ -128,7 +128,7 @@ function makeSetter (name, defSetter, arrConstructor, dimName, passthrough) {
         var arr;
         if (rawArr.constructor == arrConstructor && dimName == 'numPoints') {
             arr = rawArr;
-        } else if (false && dimName == 'numEdges') {
+        } else if (dimName == 'numEdges') {
             var len = graph.simulator[dimName];
             arr = new arrConstructor(len);
             var map = graph.simulator.bufferHostCopies.forwardsEdges.edgePermutation;
@@ -318,8 +318,10 @@ var setEdges = Q.promised(function(graph, edges) {
     }
 
     var edgesFlipped = new Uint32Array(edges.length);
-    for (var i = 0; i < edges.length; i++)
-        edgesFlipped[i] = edges[edges.length - 1 - i];
+    for (var i = 0; i < edges.length/2; i++) {
+        edgesFlipped[2 * i] = edges[2 * i + 1];
+        edgesFlipped[2 * i + 1] = edges[2 * i];
+    }
 
     var forwardEdges = encapsulate(edges);
     var backwardsEdges = encapsulate(edgesFlipped);
@@ -366,10 +368,15 @@ function setEdgeColors(graph, edgeColors) {
        console.error("ERROR: setEdgeColors expects one color per edge.");
 
     // Internaly we have two colors, one per endpoint.
+    // Edges may be permuted, use forward permutation
+
+
     var ec = new Uint32Array(nedges * 2);
-    for (var i = 0; i < nedges; i++) {
-        ec[2*i] = edgeColors[i];
-        ec[2*i + 1] = edgeColors[i];
+    var map = graph.simulator.bufferHostCopies.forwardsEdges.edgePermutation;
+    for (var edge = 0; edge < nedges; edge++) {
+        var spot = 2 * map[edge];
+        ec[spot] = edgeColors[edge];
+        ec[spot + 1] = edgeColors[edge];
     }
 
     return graph.simulator.setEdgeColors(ec);
