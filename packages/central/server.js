@@ -7,7 +7,10 @@ var mongo       = require('mongodb');
 var MongoClient = mongo.MongoClient;
 var assert      = require('assert');
 var Rx          = require('rx');
+var Q           = require('q');
 var os          = require('os');
+var fs          = require('fs');
+var path        = require('path')
 var _           = require('underscore');
 var config      = require('config')();
 var etl         = require('./etl/etl.js');
@@ -178,6 +181,38 @@ function assign_worker(req, res) {
     }
 }
 
+function logClientError(req, res) {
+    function writeError(msg) {
+        debug('Logging client error', msg);
+        if(config.ENVIRONMENT === 'local') {
+            console.error('Client Error', msg);
+            return;
+        }
+        var logFile = path.resolve('/', 'var', 'log', 'clients' ,'clients.log');
+        return Q.denodeify(fs.appendFile)(logFile, JSON.stringify(msg) + '\n')
+            .fail(function (err) {
+                console.error('Error writing client error', err, (err||{}).stack);
+            });
+    }
+
+    var data = '';
+
+    req.on('data', function (chunk) {
+        data += chunk;
+    });
+
+    req.on('end', function () {
+        try {
+            writeError(JSON.parse(data)).done(function () {
+                res.status(200).end();
+            });
+        } catch(err) {
+            console.error('Error logging client error', err, (err||{}).stack);
+            res.status(500).end();
+        }
+    });
+}
+
 app.get('/vizaddr/graph', function(req, res) {
     assign_worker(req, res);
 });
@@ -208,6 +243,9 @@ app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
 
 // Temporarly handle ETL request from Splunk
 app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), etl.post);
+
+// Store client errors in a log file (indexed by Splunk)
+app.post('/error', bodyParser.json({type: '*', limit: '64mb'}), logClientError);
 
 // Default '/' static assets
 app.use('/', express.static(MAIN_STATIC_PATH));
