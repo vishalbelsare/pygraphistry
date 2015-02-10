@@ -33,42 +33,38 @@ var argsType = {
 };
 Object.seal(argsType);
 
+var GaussSeidel = function(clContext) {
 
-var argsPoints = ['numPoints', 'tilesPerIteration', 'inputPositions', 'outputPositions',
+    var argsPoints = ['numPoints', 'tilesPerIteration', 'inputPositions', 'outputPositions',
         'tilePointsParam', 'width', 'height', 'charge', 'gravity', 'randValues',
         'stepNumber'];
 
-var argsSprings = ['tilesPerIteration', 'springs', 'workList', 'edgeTags',
+    var argsSprings = ['tilesPerIteration', 'springs', 'workList', 'edgeTags',
                       'inputPoints', 'outputPoints', 'edgeStrength0', 'edgeDistance0', 'edgeStrength1', 'edgeDistance1', 'stepNumber'];
 
-var argsSpringsGather = ['springs', 'workList', 'inputPoints', 'springPositions'];
+    var argsSpringsGather = ['springs', 'workList', 'inputPoints', 'springPositions'];
 
-debug('Init gaussSeidel');
-var gsPoints = new Kernel('gaussSeidelPoints', argsPoints, argsType,
-                        'gaussSeidel.cl');
+    debug('Creating GaussSeidel kernels');
+    this.gsPoints = new Kernel('gaussSeidelPoints', argsPoints, argsType,
+                            'gaussSeidel.cl', clContext);
 
-var gsSprings = new Kernel('gaussSeidelSprings', argsSprings, argsType,
-                        'gaussSeidel.cl');
+    this.gsSprings = new Kernel('gaussSeidelSprings', argsSprings, argsType,
+                        'gaussSeidel.cl', clContext);
 
-var gsSpringsGather = new Kernel('gaussSeidelSpringsGather', argsSpringsGather, argsType,
-                                'gaussSeidel.cl');
-
-function setClContext(clContext) {
-    gsPoints.clContext = clContext;
-    gsSprings.clContext = clContext;
-    gsSpringsGather.clContext = clContext;
-}
+    this.gsSpringsGather = new Kernel('gaussSeidelSpringsGather', argsSpringsGather, argsType,
+                                'gaussSeidel.cl', clContext);
+};
 
 
-function setPhysics(cfg) {
+GaussSeidel.prototype.setPhysics = function(cfg) {
     [
-        [ gsPoints, ['charge', 'gravity'] ],
-        [ gsSprings, ['edgeDistance0', 'edgeStrength0', 'edgeDistance1', 'edgeStrength1'] ]
+        [ this.gsPoints, ['charge', 'gravity'] ],
+        [ this.gsSprings, ['edgeDistance0', 'edgeStrength0', 'edgeDistance1', 'edgeStrength1'] ]
     ].forEach(function (kernelPair) {
         kernelPair[1].forEach(function (arg) {
             if (arg in cfg) {
                 var args = {}
-                args[arg] = cfg[arg];
+                args[arg] = [cfg[arg]];
                 kernelPair[0].set(args);
             }
         });
@@ -76,13 +72,13 @@ function setPhysics(cfg) {
 }
 
 
-function setPoints(simulator) {
+GaussSeidel.prototype.setPoints = function(simulator) {
     var localPosSize =
         Math.min(simulator.cl.maxThreads, simulator.numPoints)
         * simulator.elementsPerPoint
         * Float32Array.BYTES_PER_ELEMENT;
 
-    gsPoints.set({
+    this.gsPoints.set({
         numPoints: [simulator.numPoints],
         tilesPerIteration: [simulator.tilesPerIteration],
         inputPositions: simulator.buffers.curPoints.buffer,
@@ -96,11 +92,11 @@ function setPoints(simulator) {
 }
 
 
-function setEdges(simulator) {
-    gsSprings.set({
+GaussSeidel.prototype.setEdges = function(simulator) {
+    this.gsSprings.set({
         tilesPerIteration: [simulator.tilesPerIteration]
     });
-    gsSpringsGather.set({
+    this.gsSpringsGather.set({
         springs: simulator.buffers.forwardsEdges.buffer,
         workList: simulator.buffers.forwardsWorkItems.buffer,
         inputPoints: simulator.buffers.curPoints.buffer,
@@ -108,8 +104,26 @@ function setEdges(simulator) {
     });
 }
 
+function pointKernel(simulator, gsPoints, stepNumber) {
+    var resources = [simulator.buffers.curPoints, simulator.buffers.nextPoints,
+                     simulator.buffers.randValues];
 
-function edgeKernelSeq(edges, workItems, numWorkItems, fromPoints, toPoints, edgeTags) {
+    gsPoints.set({stepNumber: [stepNumber]});
+
+    simulator.tickBuffers(['nextPoints', 'curPoints']);
+
+    debug("Running gaussSeidelPoints");
+    return gsPoints.exec([simulator.numPoints], resources)
+        .then(function () {
+            return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
+        }).fail(function (err) {
+            console.error("ERROR Kernel gaussSeidelPoints failed ", (err||{}).stack)
+        });
+}
+
+
+function edgeKernelSeq(simulator, gsSprings, stepNumber, edges, workItems,
+                       numWorkItems, fromPoints, toPoints, edgeTags) {
     debug('edgeKernelSeq');
 
     var resources = [edges, workItems, fromPoints, toPoints, simulator.buffers.springsPos];
@@ -132,74 +146,64 @@ function edgeKernelSeq(edges, workItems, numWorkItems, fromPoints, toPoints, edg
     return gsSprings.exec([numWorkItems], resources);
 }
 
-function tick(simulator, stepNumber) {
+
+function gatherKernel(simulator, gsSpringsGather) {
+    var resources = [
+        simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems,
+        simulator.buffers.curPoints, simulator.buffers.springsPos
+    ];
+
+    simulator.tickBuffers(['springsPos']);
+
+    gsSpringsGather.set({
+        springs: simulator.buffers.forwardsEdges.buffer,
+        workList: simulator.buffers.forwardsWorkItems.buffer,
+        inputPoints: simulator.buffers.curPoints.buffer,
+        springPositions: simulator.buffers.springsPos.buffer,
+    });
+
+
+    debug("Running gaussSeidelSpringsGather");
+    return gsSpringsGather.exec([simulator.numForwardsWorkItems], resources);
+}
+
+
+GaussSeidel.prototype.tick = function(simulator, stepNumber) {
+    var that = this;
     return Q().then(function () {
         if (simulator.locked.lockPoints) {
             debug("Points are locked, nothing to do.")
             return;
         } else {
-            var resources = [simulator.buffers.curPoints, simulator.buffers.nextPoints, simulator.buffers.randValues];
-
-            gsPoints.set({stepNumber: [stepNumber]});
-
-            simulator.tickBuffers(['nextPoints', 'curPoints']);
-
-            debug("Running gaussSeidelPoints");
-            return gsPoints.exec([simulator.numPoints], resources)
-                .then(function () {
-                    return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-                }).fail(function (err) {
-                    console.error("ERROR Kernel gaussSeidelPoints failed ", (err||{}).stack)
-                });
+            return pointKernel(simulator, that.gsPoints, stepNumber);
         }
     }).then(function() {
         if (simulator.numEdges <= 0 || simulator.locked.lockEdges) {
             debug("Edges are locked, nothing to do.")
             return simulator;
         }
-        if(simulator.numEdges > 0) {
-            return edgeKernelSeq(
-                    simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
-                    simulator.buffers.curPoints, simulator.buffers.nextPoints, simulator.buffers.edgeTags)
-                .then(function () {
-                        return edgeKernelSeq(
-                        simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
-                        simulator.buffers.nextPoints, simulator.buffers.curPoints, simulator.buffers.edgeTags_reverse);
-                }).fail(function (err) {
-                    console.error("ERROR edgeKernelSeq failed ", (err||{}).stack)
-                });
-        }
+        return edgeKernelSeq(
+                simulator, that.gsSprings, stepNumber,
+                simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems, simulator.numForwardsWorkItems,
+                simulator.buffers.curPoints, simulator.buffers.nextPoints, simulator.buffers.edgeTags)
+            .then(function () {
+                    return edgeKernelSeq(
+                    simulator, that.gsSprings, stepNumber,
+                    simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
+                    simulator.buffers.nextPoints, simulator.buffers.curPoints, simulator.buffers.edgeTags_reverse);
+            }).fail(function (err) {
+                console.error("ERROR edgeKernelSeq failed ", (err||{}).stack)
+            });
     }).then(function() {
         if ((!simulator.locked.lockPoints || !simulator.locked.lockEdges)
             && simulator.numEdges > 0) {
-
-            var resources = [simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems,
-                simulator.buffers.curPoints, simulator.buffers.springsPos];
-
-            simulator.tickBuffers(['springsPos']);
-
-            gsSpringsGather.set({
-                springs: simulator.buffers.forwardsEdges.buffer,
-                workList: simulator.buffers.forwardsWorkItems.buffer,
-                inputPoints: simulator.buffers.curPoints.buffer,
-                springPositions: simulator.buffers.springsPos.buffer,
-            });
-
-
-            debug("Running gaussSeidelSpringsGather");
-            return gsSpringsGather.exec([simulator.numForwardsWorkItems], resources);
-        } else {
-            return simulator;
+            return gatherKernel(simulator, that.gsSpringsGather)
         }
+    }).then(function () {
+        return simulator;
     }).fail(function (err) {
         console.error("ERROR GaussSeidel tick failed ", (err||{}).stack)
     });
 }
 
-module.exports = {
-    setClContext: setClContext,
-    setPhysics: setPhysics,
-    setPoints: setPoints,
-    setEdges: setEdges,
-    tick: tick,
-}
+module.exports = GaussSeidel;

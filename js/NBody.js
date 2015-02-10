@@ -63,7 +63,7 @@ function create(renderer, dimensions, numSplits, simulationTime) {
 function initSimulation(graph, simulator, device, layoutAlgorithms, locked) {
     debug('Creating Simulator')
     return simulator.create(graph.renderer, graph.dimensions, graph.numSplits,
-                            device, locked, layoutAlgorithms)
+                            device, layoutAlgorithms, locked)
         .then(function(sim) {
             debug("Created simulator");
             graph.simulator = sim;

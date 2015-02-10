@@ -8,11 +8,10 @@ var cljs = require('./cl.js');
 
 
 // String * [String] * {String: Type} * string * clCtx
-var Kernel = function (name, argNames, argTypes, file) {
+var Kernel = function (name, argNames, argTypes, file, clContext) {
     var that = this;
     this.name = name;
     var source = util.getKernelSource(file);
-    that.clContext = null;
     var mustRecompile = true;
     var clKernel = null;
     var synchronous = true;
@@ -27,7 +26,7 @@ var Kernel = function (name, argNames, argTypes, file) {
         return argTypes[arg] === cljs.types.define;
     };
     var args = _.reject(argNames, isDefine);
-    var defines = _.filter(argNames, isDefine);
+    var defines = _.filter(argNames, isDefine).concat(['NODECL']);
 
     var argValues = _.object(
         _.map(args, function (name) { return [name, null]; })
@@ -60,7 +59,7 @@ var Kernel = function (name, argNames, argTypes, file) {
             if (val === null)
                 util.die('Define %s of kernel %s was never set', arg, name);
         })
-        return that.clContext.compile(source, [name], defines)
+        return clContext.compile(source, [name], defValues)
             .then(function (wrappedKernel) {
                 return wrappedKernel[name].kernel;
             });
@@ -89,7 +88,7 @@ var Kernel = function (name, argNames, argTypes, file) {
     function call(WorkItems, buffers) {
         return cljs.acquire(buffers)
             .then(function () {
-                var queue = that.clContext.queue;
+                var queue = clContext.queue;
                 debug('Enqueuing kernel %s', that.name);
                 queue.enqueueNDRangeKernel(clKernel, null, WorkItems, null);
             }).catch (function(error) {
@@ -97,19 +96,21 @@ var Kernel = function (name, argNames, argTypes, file) {
             }).then(function () {
                 if (synchronous) {
                     debug('Waiting for kernel to finish');
-                    that.clContext.queue.finish();
+                    clContext.queue.finish();
                 }
-                cljs.release(buffers);
+                return cljs.release(buffers);
             }).then(_.constant(this));
     }
 
     // Int * [String] -> Promise[Kernel]
     this.exec = function(numWorkItems, resources) {
         return Q().then(function () {
-            if (mustRecompile)
+            if (mustRecompile) {
+                mustRecompile = false;
                 return compile();
-            else
+            } else {
                 return clKernel;
+            }
         }).then(function (k) {
             debug('Kernel', k)
             clKernel = k;

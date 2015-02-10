@@ -18,58 +18,30 @@ var randLength = 73;
 
 var NAMED_CLGL_BUFFERS = require('./buffers.js').NAMED_CLGL_BUFFERS;
 
-function create(renderer, dimensions, numSplits, device, locked, layoutAlgorithms) {
+function create(renderer, dimensions, numSplits, device, layoutAlgorithms, locked) {
     return cljs.create(renderer, device)
     .then(function(cl) {
-        debug("Creating CL object with GL context");
-
-        /*var kernels = _.chain(layoutAlgorithms).pluck('kernels').flatten().value();
-        var kernelFileMap = {};
-
-        _.each(kernels, function (kernel) {
-            if (!(kernelFileMap[kernel.file]))
-                kernelFileMap[kernel.file] = [kernel.name];
-            else
-                kernelFileMap[kernel.file].push(kernel.name);
-        })
-        debug('Kernels selected for compilation: %o', kernelFileMap);
-
-        return Q.all(_.map(kernelFileMap, function (kName, kFile) {
-            debug('Retrieving kernel source: %s', kFile);
-
-            // Temporary Hack to avoid interfering with Paden's work
-            var loader = (kFile === 'apply-forces.cl') ? util.getShaderSource : util.getKernelSource;
-
-            return loader(kFile).then(function (source) {
-                return cl.compile(source, kernelFileMap[kFile], {});
-            }).fail(function (err) {
-                console.error("Failure while compiling kernels ", (err||{}).stack);
-            });
-        })).then(function (compiledKernels) {
-            debug("All kernels successfully compiled");
-            var mergedKernels = {};
-            for (var i = 0; i < compiledKernels.length; i++)
-                _.extend(mergedKernels, compiledKernels[i]);
-            return mergedKernels;
-        */
         return Q().then(function () {
-            _.each(layoutAlgorithms, function (la) {la.setClContext(cl);});
-            return null;
-        }).then(function(kernels) {
+            debug('Instantiating layout algorithms: %o', layoutAlgorithms);
+            return _.map(layoutAlgorithms, function (entry) {
+                var algo = new entry.algo(cl)
+                algo.setPhysics(entry.params)
+                return algo;
+            });
+        }).then(function(algos) {
             debug("Creating SimCL...")
 
             var simObj = {
                 renderer: renderer,
                 cl: cl,
                 elementsPerPoint: 2,
-                kernels: kernels,
+                kernels: null,
                 versions: {
                     tick: 0,
                     buffers: { }
                 },
-                layoutAlgorithms: layoutAlgorithms
+                layoutAlgorithms: algos
             };
-
             simObj.tilesPerIteration = 1;
             simObj.buffersLocal = {};
             createSetters(simObj);

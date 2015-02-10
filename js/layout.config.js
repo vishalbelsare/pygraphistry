@@ -5,7 +5,7 @@ var SimCL = require('./SimCL.js');
 var util = require('./util.js');
 var forceAtlas   = require('./forceatlas.js'),
     forceAtlas2  = require('./forceatlas2.js'),
-    gaussSeidel  = require('./gaussseidel2.js'),
+    GaussSeidel  = require('./gaussseidel2.js'),
     edgeBundling = require('./edgebundling.js'),
     barnesHut    = require('./BarnesHut.js');
 
@@ -41,7 +41,7 @@ var gsControls = {
     simulator: SimCL,
     layoutAlgorithms: [
         {
-            algo: gaussSeidel,
+            algo: GaussSeidel,
             params: {
                 charge: -0.000029360001841802474,
                 gravity: 0.020083175556898723,
