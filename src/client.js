@@ -96,8 +96,6 @@ function getVizServerParams(args) {
         })
         .flatMap(function(reply) {
 
-            console.log('reply', reply);
-
             attempt++;
 
             var ret = Rx.Observable.return(reply);
@@ -105,8 +103,6 @@ function getVizServerParams(args) {
 
         })
         .map(function (reply) {
-
-            console.log('reply2', reply);
 
             if (!reply.data || reply.data.error) {
                 console.error('vizaddr returned error', (reply||{}).error);
