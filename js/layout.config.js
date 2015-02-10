@@ -3,11 +3,12 @@
 var _ = require('underscore');
 var SimCL = require('./SimCL.js');
 var util = require('./util.js');
-var forceAtlas   = require('./forceatlas.js'),
-    forceAtlas2  = require('./forceatlas2.js'),
-    gaussSeidel  = require('./gaussseidel.js'),
-    edgeBundling = require('./edgebundling.js'),
-    barnesHut    = require('./BarnesHut.js');
+var forceAtlas          = require('./forceatlas.js'),
+    forceAtlas2         = require('./forceatlas2.js'),
+    forceAtlasBarnes    = require('./forceatlasbarnes.js'),
+    gaussSeidel         = require('./gaussseidel.js'),
+    edgeBundling        = require('./edgebundling.js'),
+    barnesHut           = require('./BarnesHut.js');
 
 var SIMULATION_TIME = 1;
 
@@ -102,7 +103,8 @@ var barnesControls = {
         {
             algo: barnesHut,
             params: {
-                gravity: 0.020083175556898723,
+                //gravity: 0.020083175556898723,
+                gravity: 1,
                 scalingRatio: 1.0,
                 edgeInfluence: 0,
                 preventOverlap: false,
@@ -131,6 +133,7 @@ var controls = {
     'gauss': gsControls,
     'atlas': atlasControls(forceAtlas),
     'atlas2': atlasControls(forceAtlas2),
+    'atlasbarnes': atlasControls(forceAtlasBarnes),
     'barneshut': barnesControls
 }
 
