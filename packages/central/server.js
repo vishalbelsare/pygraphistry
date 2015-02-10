@@ -17,7 +17,8 @@ debug("Config set to %j", config);
 var express     = require('express');
 var app         = express();
 var http        = require('http').Server(app);
-var bodyParser   = require('body-parser');
+var bodyParser  = require('body-parser');
+var request     = require('request');
 
 
 //needed for splunk API
@@ -122,60 +123,96 @@ function getIPs(datasetname) {
 }
 
 
+
+//{hostname, port} -> Observable bool
+//TODO protocol as part of handshake (http vs https)
+function handshakeIp (workerNfo) {
+    var url = 'http://' + workerNfo.hostname + ':' + workerNfo.port + '/claim';
+    var cfg = {url: url, json: true, timeout: 500};
+    debug('Trying worker', cfg);
+    return Rx.Observable.fromNodeCallback(request.get.bind(request))(cfg)
+        .pluck(1)
+        .map(function (resp) {
+            debug('Worker response', resp);
+            return resp.succeed;
+        });
+}
+
+// ... -> [{hostname,port,timestamp}]
+function listIps (o) {
+
+    var workers = [];
+
+    // Try each IP in order of free space
+    var ips = o.ips;
+    var results = o.results;
+    for (var i in ips) {
+        var ip = ips[i]['ip'];
+
+        for (var j in results) {
+
+            if (results[j]['ip'] != ip) {
+                continue;
+            }
+
+            workers.push(
+                {'hostname': ip,
+                 'port': results[j]['port'],
+                 'timestamp': Date.now()
+                });
+        }
+    }
+
+    return workers;//{i: 0, workers: workers, worker: null};
+}
+
+
 function assign_worker(req, res) {
     var datasetname = req.query.dataset;
+
+    var ips;
     // need to route based on data size.
     // TODO: S3 -> mongo information. This will not work in production.
     if(config.ENVIRONMENT === 'production' || config.ENVIRONMENT === 'staging') {
         console.log("WARNING: fix this. Needs S3 -> Mongo integration for datablob sizes")
         datasetname = "uber";
 
-        var ips = getIPs(datasetname)
-            .map(function (o) {
+        ips = getIPs(datasetname)
+            .flatMap(function (o) {
+                return Rx.Observable.fromArray(listIps(o));
+            });
+    } else {
+        debug('Using local hostname/port');
+        ips = Rx.Observable.return({hostname: VIZ_SERVER_HOST, port: VIZ_SERVER_PORT});
+    }
 
-                // Try each IP in order of free space
-                var ips = o.ips;
-                var results = o.results;
-                for (var i in ips) {
-                    var ip = ips[i]['ip'];
+    var ip = ips
+        .flatMap(function (workerNfo) {
+            return handshakeIp(workerNfo)
+                .filter(_.identity)
+                .map(_.constant(workerNfo));
+        })
+        .take(1);
 
-                    for (var j in results) {
-
-                        if (results[j]['ip'] != ip) {
-                            continue;
-                        }
-
-                        return {'hostname': ip,
-                                'port': results[j]['port'],
-                                'timestamp': Date.now()
-                                };
-                    }
+    var count = 0;
+    ip.do(function (worker) {
+            debug("Assigning client '%s' to viz server on %s, port %d with dataset %s",
+                req.ip, worker.hostname, worker.port, datasetname);
+            res.json(worker);
+        })
+        .subscribe(
+            function () { count++; },
+            function (err) {
+                console.error('assign_worker error', err, (err || {}).stack);
+                res.json({error: {v: worker}});
+            },
+            function () {
+                if (!count) {
+                    console.error('assign_worker exhausted search');
+                    res.json({error: 'none available'});
                 }
-
-                throw new Error('no IPs');
-
             });
 
-        ips.do(function (msg) {
-                debug("Assigning client '%s' to viz server on %s, port %d with dataset %s",
-                    req.ip, msg.hostname, msg.port, datasetname);
-                res.json(msg);
-                res.end();
-            })
-            .subscribe(
-                _.identity,
-                function (err) {
-                    console.error('assign_worker error', err, (err || {}).stack);
-                    res.json({error: {v: msg}});
-                    res.end();
-                });
-
-    } else {
-        debug("Assigning client '%s' to viz server on %s, port %d", req.ip, VIZ_SERVER_HOST, VIZ_SERVER_PORT);
-        res.json({'hostname': VIZ_SERVER_HOST,
-                  'port': VIZ_SERVER_PORT
-                 });
-    }
 }
 
 app.get('/vizaddr/graph', function(req, res) {
