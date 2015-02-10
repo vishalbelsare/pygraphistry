@@ -56,13 +56,14 @@ _.extend(barnesKernels, graphParams, {
     width: null,
     height: null,
     numBodies: null,
-    numNodes: null
+    numNodes: null,
+    pointForces: null
 });
 var barnesKernelsOrder = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
                           'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
                           'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
                           'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'stepNumber',
-                          'width', 'height', 'numBodies', 'numNodes'];
+                          'width', 'height', 'numBodies', 'numNodes', 'pointForces'];
 Object.seal(barnesKernels);
 
 var fromBarnesLayout = {};
@@ -486,6 +487,8 @@ function setEdges(simulator) {
         barnesKernels.height = webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]);
         barnesKernels.numBodies = webcl.type ? [numBodies] : new Uint32Array([numBodies]);
         barnesKernels.numNodes = webcl.type ? [numNodes] : new Uint32Array([numNodes]);
+        barnesKernels.pointForces = simulator.buffers.partialForces1.buffer;
+
 
         toBarnesLayout.xCoords = tempBuffers.x_cords.buffer;
         toBarnesLayout.yCoords = tempBuffers.y_cords.buffer;
@@ -495,7 +498,6 @@ function setEdges(simulator) {
         toBarnesLayout.numPoints = webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]);
         toBarnesLayout.inputPositions = simulator.buffers.curPoints.buffer;
         toBarnesLayout.pointDegrees = simulator.buffers.degrees.buffer;
-
 
         fromBarnesLayout.xCoords = tempBuffers.x_cords.buffer;
         fromBarnesLayout.yCoords = tempBuffers.y_cords.buffer;
@@ -673,7 +675,7 @@ function tick(simulator, stepNumber) {
     var tickTime = Date.now();
     simulator.tickBuffers(['partialForces1']);
     var barnesResources = [simulator.buffers.curPoints, simulator.buffers.forwardsDegrees,
-            simulator.buffers.backwardsDegrees];
+            simulator.buffers.backwardsDegrees, simulator.buffers.partialForces1];
     // var barnesResources = [simulator.buffers.curPoints];
 
     toBarnesLayout.stepNumber = webcl.type ? [stepNumber] : new Uint32Array([stepNumber]);
@@ -694,7 +696,7 @@ function tick(simulator, stepNumber) {
 
     return layoutKernelSeq
     .then(function() {
-        barnesResources = [];
+        //barnesResources = [];
         return simulator.kernels.bound_box.call(256*10, barnesResources, 256);
     })
     .then(function(){
