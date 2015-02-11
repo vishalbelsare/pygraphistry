@@ -23,9 +23,6 @@ function ForceAtlas2(clContext) {
     this.faSwings = new Kernel('faSwingsTractions', ForceAtlas2.argsSwings,
                                ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
 
-    this.faSpeed = new Kernel('faGlobalSpeed', ForceAtlas2.argsSpeed,
-                               ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
-
     this.faIntegrate = new Kernel('faIntegrate', ForceAtlas2.argsIntegrate,
                                ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
 
@@ -53,10 +50,6 @@ ForceAtlas2.argsEdges = [
 ];
 
 ForceAtlas2.argsSwings = ['prevForces', 'curForces', 'swings' , 'tractions'];
-
-ForceAtlas2.argsSpeed = [
-    'tau', 'numPoints', 'pointDegrees', 'swings', 'tractions', 'gSpeeds'
-];
 
 ForceAtlas2.argsIntegrate = [
     'gSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'
@@ -93,7 +86,6 @@ ForceAtlas2.argsType = {
     prevForces: null,
     swings: null,
     tractions: null,
-    gSpeeds: null,
     tau: cljs.types.float_t,
     gSpeed: cljs.types.float_t
 }
