@@ -190,8 +190,6 @@ window.addEventListener('load', function() {
         }));
     });
 
-    console.error('This is a test', ' rest of', ' message');
-
     var app = init($('#simulation')[0], 'graph');
 
     if (DEBUG_MODE) {
