@@ -222,7 +222,11 @@ function logClientError(req, res) {
     function writeError(msg) {
         debug('Logging client error', msg);
         if(config.ENVIRONMENT === 'local') {
-            console.error('Client Error', msg);
+            if (msg.content) {
+                console.error('[Client]', msg.content);
+            } else {
+                console.error('[Client]', JSON.stringify(msg, null, 2));
+            }
             return Q();
         }
         var logFile = path.resolve('/', 'var', 'log', 'clients' ,'clients.log');
