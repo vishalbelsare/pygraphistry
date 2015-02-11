@@ -180,17 +180,15 @@ function createDebugOverlay(app) {
 window.addEventListener('load', function() {
     // Patch console calls to forward errors to central
     var loggedFuns = ['error', 'warn'];
-    if (_.contains(prodHosts, window.location.host)) {
-        _.each(loggedFuns, function (fun) {
-            monkey.patch(console, fun, monkey.after(function () {
-                var msg = {
-                    type: 'console.' + fun,
-                    content: util.format.apply(this, arguments)
-                };
-                $.post(window.location.origin + '/error', JSON.stringify(msg));
-            }));
-        });
-    }
+    _.each(loggedFuns, function (fun) {
+        monkey.patch(console, fun, monkey.after(function () {
+            var msg = {
+                type: 'console.' + fun,
+                content: util.format.apply(this, arguments)
+            };
+            $.post(window.location.origin + '/error', JSON.stringify(msg));
+        }));
+    });
 
     console.error('This is a test', ' rest of', ' message');
 
