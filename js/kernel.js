@@ -12,6 +12,7 @@ var cljs = require('./cl.js');
 var Kernel = function (name, argNames, argTypes, file, clContext) {
     var that = this;
     this.name = name;
+    this.argNames = argNames;
     var source = util.getKernelSource(file);
     var mustRecompile = true;
     var clKernel = null;
@@ -47,7 +48,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     this.set = function (args) {
         _.each(args, function (val, arg) {
             if (arg in argValues) {
-                argValues[arg] = val;
+                argValues[arg] = (typeof val === 'number') ? [val] : val;
             } else if (arg in defValues) {
                 if (val !== defValues[arg])
                     mustRecompile = true;

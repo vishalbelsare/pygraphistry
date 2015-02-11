@@ -1,49 +1,41 @@
 'use strict';
 
-var _       = require('underscore'),
-    Q       = require('q'),
-    debug   = require('debug')('graphistry:graph-viz:cl:edgebundling'),
-    cljs    = require('./cl.js'),
-    util    = require('./util.js'),
-    webcl = require('node-webcl');
+var _          = require('underscore'),
+    Q          = require('q'),
+    debug      = require('debug')('graphistry:graph-viz:cl:edgebundling'),
+    cljs       = require('./cl.js'),
+    util       = require('./util.js'),
+    webcl      = require('node-webcl'),
+    Kernel     = require('./kernel.js'),
+    LayoutAlgo = require('./layoutAlgo.js');
 
-var gsMidpoints = {
-    numPoints: null,
-    numSplits: null,
-    inputMidPoints: null,
-    outputMidPoints: null,
-    tilePointsParam: null,
-    width: null,
-    height: null,
-    charge: null,
-    gravity: null,
-    randValues: null,
-    stepNumber: null
-};
-var gsMidpointsOrder = ['numPoints', 'numSplits', 'inputMidPoints',
-                        'outputMidPoints', 'tilePointsParam', 'width',
-                        'height', 'charge', 'gravity', 'randValues', 'stepNumber'];
-Object.seal(gsMidpoints);
 
-var gsMidsprings = {
-    numSplits: null,
-    springs: null,
-    workList: null,
-    inputPoints: null,
-    inputMidPoints: null,
-    outputMidPoints: null,
-    springMidPositions: null,
-    midSpringsColorCoords: null,
-    springStrength: null,
-    springDistance: null,
-    stepNumber: null
-};
-var gsMidspringsOrder = ['numSplits', 'springs', 'workList', 'inputPoints', 'inputMidPoints',
-                         'outputMidPoints', 'springMidPositions', 'midSpringsColorCoords',
-                         'springStrength', 'springDistance', 'stepNumber'];
-Object.seal(gsMidsprings);
+function EdgeBundling(clContext) {
+    LayoutAlgo.call(this, 'EdgeBundling');
 
-var argsType = {
+    debug('Creating GaussSeidel kernels');
+    this.ebMidpoints = new Kernel('gaussSeidelMidpoints', EdgeBundling.argsMidpoints,
+                                   EdgeBundling.argsType, 'edgeBundling.cl', clContext);
+
+    this.ebMidsprings = new Kernel('gaussSeidelMidsprings', EdgeBundling.argsMidsprings,
+                                   EdgeBundling.argsType, 'edgeBundling.cl', clContext);
+
+    this.kernels = this.kernels.concat([this.ebMidpoints, this.ebMidsprings]);
+}
+EdgeBundling.prototype = Object.create(LayoutAlgo.prototype);
+EdgeBundling.prototype.constructor = EdgeBundling;
+
+
+EdgeBundling.argsMidpoints = ['numPoints', 'numSplits', 'inputMidPoints',
+                              'outputMidPoints', 'tilePointsParam', 'width',
+                              'height', 'charge', 'gravity', 'randValues', 'stepNumber'];
+
+EdgeBundling.argsMidsprings = ['numSplits', 'springs', 'workList', 'inputPoints',
+                               'inputMidPoints', 'outputMidPoints', 'springMidPositions',
+                               'midSpringsColorCoords', 'springStrength', 'springDistance',
+                               'stepNumber'];
+
+EdgeBundling.argsType = {
     numPoints: cljs.types.uint_t,
     numSplits: cljs.types.uint_t,
     inputMidPositions: null,
@@ -65,129 +57,94 @@ var argsType = {
     springStrength: cljs.types.float_t,
     springDistance: cljs.types.float_t,
 }
-Object.seal(argsType);
-
-var kernels = [
-    {
-        name: 'gaussSeidelMidpoints',
-        args: gsMidpoints,
-        order: gsMidpointsOrder,
-        types: argsType,
-        file: 'edgeBundling.cl'
-    },{
-        name: 'gaussSeidelMidsprings',
-        args: gsMidsprings,
-        order: gsMidspringsOrder,
-        types: argsType,
-        file: 'edgeBundling.cl'
-    }
-]
-util.saneKernels(kernels);
-
-var setKernelArgs = cljs.setKernelArgs.bind('', kernels)
 
 
-function setPhysics(cfg) {
-    if ('charge' in cfg)
-        gsMidpoints.charge = [cfg.charge];
-    if ('gravity' in cfg)
-        gsMidpoints.gravity = [cfg.gravity];
-    if ('edgeDistance0' in cfg)
-        gsMidsprings.springDistance = [cfg.edgeDistance0];
-    if ('edgeStrength0' in cfg)
-        gsMidsprings.springStrength = [cfg.edgeStrength0];
-}
-
-function setEdges(simulator) {
+EdgeBundling.prototype.setEdges = function (simulator) {
     var localPosSize =
         Math.min(simulator.cl.maxThreads, simulator.numMidPoints)
         * simulator.elementsPerPoint
         * Float32Array.BYTES_PER_ELEMENT;
 
-    gsMidpoints.numPoints = [simulator.numMidPoints];
-    gsMidpoints.numSplits = [simulator.numSplits];
-    gsMidpoints.inputMidPoints = simulator.buffers.curMidPoints.buffer;
-    gsMidpoints.outputMidPoints = simulator.buffers.nextMidPoints.buffer;
-    gsMidpoints.tilePointsParam = [localPosSize];
-    gsMidpoints.width = [simulator.dimensions[0]];
-    gsMidpoints.height = [simulator.dimensions[1]];
-    gsMidpoints.randValues = simulator.buffers.randValues.buffer;
+    this.ebMidpoints.set({
+        numPoints: simulator.numMidPoints,
+        numSplits: simulator.numSplits,
+        inputMidPoints: simulator.buffers.curMidPoints.buffer,
+        outputMidPoints: simulator.buffers.nextMidPoints.buffer,
+        tilePointsParam: localPosSize,
+        width: simulator.dimensions[0],
+        height: simulator.dimensions[1],
+        randValues: simulator.buffers.randValues.buffer
+    });
 
-    gsMidsprings.numSplits = [simulator.numSplits];
-    gsMidsprings.springs = simulator.buffers.forwardsEdges.buffer;
-    gsMidsprings.workList = simulator.buffers.forwardsWorkItems.buffer;
-    gsMidsprings.inputPoints = simulator.buffers.curPoints.buffer;
-    gsMidsprings.inputMidPoints = simulator.buffers.nextMidPoints.buffer;
-    gsMidsprings.outputMidPoints = simulator.buffers.curMidPoints.buffer;
-    gsMidsprings.springMidPositions = simulator.buffers.midSpringsPos.buffer;
-    gsMidsprings.midSpringsColorCoords = simulator.buffers.midSpringsColorCoord.buffer;
+    this.ebMidsprings.set({
+        numSplits: simulator.numSplits,
+        springs: simulator.buffers.forwardsEdges.buffer,
+        workList: simulator.buffers.forwardsWorkItems.buffer,
+        inputPoints: simulator.buffers.curPoints.buffer,
+        inputMidPoints: simulator.buffers.nextMidPoints.buffer,
+        outputMidPoints: simulator.buffers.curMidPoints.buffer,
+        springMidPositions: simulator.buffers.midSpringsPos.buffer,
+        midSpringsColorCoords: simulator.buffers.midSpringsColorCoord.buffer
+    });
 }
 
-function tick(simulator, stepNumber) {
+function midPoints(simulator, ebMidpoints, stepNumber) {
+    var resources = [
+        simulator.buffers.curMidPoints,
+        simulator.buffers.nextMidPoints,
+        simulator.buffers.midSpringsColorCoord
+    ];
+
+    ebMidpoints.set({stepNumber: stepNumber});
+    simulator.tickBuffers(['curMidPoints', 'nextMidPoints']);
+
+    debug('Running kernel gaussSeidelMidpoints')
+    return ebMidpoints.exec([simulator.numMidPoints], resources);
+}
+
+function midEdges(simulator, ebMidsprings, stepNumber) {
+    var resources = [
+        simulator.buffers.forwardsEdges,
+        simulator.buffers.forwardsWorkItems,
+        simulator.buffers.curPoints,
+        simulator.buffers.nextMidPoints,
+        simulator.buffers.curMidPoints,
+        simulator.buffers.midSpringsPos,
+        simulator.buffers.midSpringsColorCoord
+    ];
+
+    ebMidsprings.set({stepNumber: stepNumber});
+
+    simulator.tickBuffers(['curMidPoints', 'midSpringsPos', 'midSpringsColorCoord']);
+
+    debug('Running kernel gaussSeidelMidsprings')
+    return ebMidsprings.exec([simulator.numForwardsWorkItems], resources);
+}
+
+EdgeBundling.prototype.tick = function(simulator, stepNumber) {
+    var that = this;
     if (simulator.locked.lockMidpoints && simulator.locked.lockMidedges) {
         debug('LOCKED, EARLY EXIT');
         return Q();
     }
 
-    return Q()
-    .then(function () {
-
+    return Q().then(function () {
         if (simulator.locked.lockMidpoints) {
             simulator.tickBuffers(['nextMidPoints']);
             return simulator.buffers.curMidPoints.copyInto(simulator.buffers.nextMidPoints);
         } else {
-
-            var resources = [
-                simulator.buffers.curMidPoints,
-                simulator.buffers.nextMidPoints,
-                simulator.buffers.midSpringsColorCoord
-            ];
-
-            gsMidpoints.stepNumber = [stepNumber];
-            setKernelArgs(simulator, 'gaussSeidelMidpoints');
-            simulator.tickBuffers(['curMidPoints', 'nextMidPoints']);
-
-            debug('Running kernel gaussSeidelMidpoints')
-            return simulator.kernels.gaussSeidelMidpoints.call(simulator.numMidPoints, resources);
+            return midPoints(simulator, that.ebMidpoints, stepNumber);
         }
-    })
-    //TODO do both forwards and backwards?
-    .then(function () {
+    }).then(function () { //TODO do both forwards and backwards?
         if (simulator.numEdges > 0 && !simulator.locked.lockMidedges) {
-            var resources = [
-                simulator.buffers.forwardsEdges,
-                simulator.buffers.forwardsWorkItems,
-                simulator.buffers.curPoints,
-                simulator.buffers.nextMidPoints,
-                simulator.buffers.curMidPoints,
-                simulator.buffers.midSpringsPos,
-                simulator.buffers.midSpringsColorCoord
-            ];
-
-            gsMidsprings.stepNumber = [stepNumber];
-
-            setKernelArgs(simulator, 'gaussSeidelMidsprings');
-            simulator.tickBuffers(['curMidPoints', 'midSpringsPos', 'midSpringsColorCoord']);
-
-            debug('Running kernel gaussSeidelMidsprings')
-            return simulator.kernels.gaussSeidelMidsprings.call(simulator.numForwardsWorkItems, resources);
+            return midEdges(simulator, that.ebMidsprings, stepNumber);
         } else {
-
             simulator.tickBuffers(['curMidPoints']);
-
             return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
         }
     }).fail(function (err) {
         console.error('ERROR edgebundling tick ', (err||{}).stack)
     });
-
 }
 
-module.exports = {
-    name: 'edgeBundling',
-    kernels: kernels,
-    setPhysics: setPhysics,
-    setPoints: _.identity,
-    setEdges: setEdges,
-    tick: tick
-};
+module.exports = EdgeBundling;

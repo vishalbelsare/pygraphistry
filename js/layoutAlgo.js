@@ -19,9 +19,15 @@ LayoutAlgo.prototype.runtimeStats = function() {
 }
 
 
-// Methods to override when creating new layout algorithms.
+/*
+ * Methods to override when creating new layout algorithms.
+ */
 LayoutAlgo.prototype.setPhysics = function (cfg) {
-    debug('Default stub for setPhysics');
+    debug('Default implementation for setPhysics');
+    // Set all kernel args matching with matching entry
+    _.each(this.kernels, function (k) {
+        k.set(_.pick(cfg, k.argNames))
+    })
 }
 LayoutAlgo.prototype.setPoints = function (simulator) {
     debug('Default stub for setPoints');

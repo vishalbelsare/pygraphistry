@@ -100,21 +100,7 @@ ForceAtlas2.argsType = {
 
 
 ForceAtlas2.prototype.setPhysics = function(cfg) {
-    if ('scalingRatio' in cfg) {
-        var val = [cfg.scalingRatio];
-        this.faPoints.set({scalingRatio: val});
-        this.faEdges.set({scalingRatio: val});
-    }
-    if ('gravity' in cfg) {
-        var val = [cfg.gravity];
-        this.faPoints.set({gravity: val});
-        this.faEdges.set({gravity: val});
-    }
-    if ('edgeInfluence' in cfg) {
-        var val =[cfg.edgeInfluence];
-        this.faPoints.set({edgeInfluence: val});
-        this.faEdges.set({edgeInfluence: val});
-    }
+    LayoutAlgo.prototype.setPhysics.call(this, cfg)
 
     var mask = 0;
     var flags = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'];
@@ -124,9 +110,8 @@ ForceAtlas2.prototype.setPhysics = function(cfg) {
             mask = mask | (1 << i);
         }
     });
-    var val = [mask];
-    this.faPoints.set({flags: val});
-    this.faEdges.set({flags: val});
+    this.faPoints.set({flags: mask});
+    this.faEdges.set({flags: mask});
 }
 
 
@@ -137,13 +122,13 @@ ForceAtlas2.prototype.setEdges = function(simulator) {
             * Float32Array.BYTES_PER_ELEMENT;
 
         this.faPoints.set({
-            tilePointsParam: [1],
-            tilePointsParam2: [1],
-            tilesPerIteration: [simulator.tilesPerIteration],
-            numPoints: [simulator.numPoints],
+            tilePointsParam: 1,
+            tilePointsParam2: 1,
+            tilesPerIteration: simulator.tilesPerIteration,
+            numPoints: simulator.numPoints,
             inputPositions: simulator.buffers.curPoints.buffer,
-            width: [simulator.dimensions[0]],
-            height: [simulator.dimensions[1]],
+            width: simulator.dimensions[0],
+            height: simulator.dimensions[1],
             pointDegrees: simulator.buffers.degrees.buffer,
             pointForces: simulator.buffers.partialForces1.buffer
         });
@@ -165,7 +150,7 @@ function pointForces(simulator, faPoints, stepNumber) {
         simulator.buffers.partialForces1
     ];
 
-    faPoints.set({stepNumber: [stepNumber]});
+    faPoints.set({stepNumber: stepNumber});
 
     simulator.tickBuffers(['partialForces1']);
 
@@ -183,7 +168,7 @@ function edgeForcesOneWay(simulator, faEdges, edges, workItems, numWorkItems,
         edges: edges.buffer,
         workList: workItems.buffer,
         inputPoints: points.buffer,
-        stepNumber: [stepNumber],
+        stepNumber: stepNumber,
         partialForces: partialForces.buffer,
         outputForces: outputForces.buffer
     });
@@ -249,7 +234,7 @@ function swingsTractions(simulator, faSwings) {
 function integrate(simulator, faIntegrate) {
     var buffers = simulator.buffers;
     faIntegrate.set({
-        gSpeed: [1.0],
+        gSpeed: 1.0,
         inputPositions: buffers.curPoints.buffer,
         curForces: buffers.curForces.buffer,
         swings: buffers.swings.buffer,
@@ -275,7 +260,7 @@ function integrate(simulator, faIntegrate) {
 function integrate2(simulator) {
     var buffers = simulator.buffers;
     faIntegrate2.numPoints = [simulator.numPoints];
-    faIntegrate2.tau = [1.0];
+    faIntegrate2.tau = 1.0;
     faIntegrate2.inputPositions = buffers.curPoints.buffer;
     faIntegrate2.pointDegrees = buffers.degrees.buffer;
     faIntegrate2.curForces = buffers.curForces.buffer;

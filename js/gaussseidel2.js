@@ -62,22 +62,6 @@ GaussSeidel.argsType = {
 };
 
 
-GaussSeidel.prototype.setPhysics = function(cfg) {
-    [
-        [ this.gsPoints, ['charge', 'gravity'] ],
-        [ this.gsSprings, ['edgeDistance0', 'edgeStrength0', 'edgeDistance1', 'edgeStrength1'] ]
-    ].forEach(function (kernelPair) {
-        kernelPair[1].forEach(function (arg) {
-            if (arg in cfg) {
-                var args = {}
-                args[arg] = [cfg[arg]];
-                kernelPair[0].set(args);
-            }
-        });
-    });
-}
-
-
 GaussSeidel.prototype.setPoints = function(simulator) {
     var localPosSize =
         Math.min(simulator.cl.maxThreads, simulator.numPoints)
@@ -85,22 +69,22 @@ GaussSeidel.prototype.setPoints = function(simulator) {
         * Float32Array.BYTES_PER_ELEMENT;
 
     this.gsPoints.set({
-        numPoints: [simulator.numPoints],
-        tilesPerIteration: [simulator.tilesPerIteration],
+        numPoints: simulator.numPoints,
+        tilesPerIteration: simulator.tilesPerIteration,
         inputPositions: simulator.buffers.curPoints.buffer,
         outputPositions: simulator.buffers.nextPoints.buffer,
-        tilePointsParam: [1],
-        width: [simulator.dimensions[0]],
-        height: [simulator.dimensions[1]],
+        tilePointsParam: 1,
+        width: simulator.dimensions[0],
+        height: simulator.dimensions[1],
         randValues: simulator.buffers.randValues.buffer,
-        stepNumber: [0],
+        stepNumber: 0,
     });
 }
 
 
 GaussSeidel.prototype.setEdges = function(simulator) {
     this.gsSprings.set({
-        tilesPerIteration: [simulator.tilesPerIteration]
+        tilesPerIteration: simulator.tilesPerIteration
     });
     this.gsGather.set({
         springs: simulator.buffers.forwardsEdges.buffer,
@@ -114,7 +98,7 @@ function pointKernel(simulator, gsPoints, stepNumber) {
     var resources = [simulator.buffers.curPoints, simulator.buffers.nextPoints,
                      simulator.buffers.randValues];
 
-    gsPoints.set({stepNumber: [stepNumber]});
+    gsPoints.set({stepNumber: stepNumber});
 
     simulator.tickBuffers(['nextPoints', 'curPoints']);
 
@@ -139,7 +123,7 @@ function edgeKernelSeq(simulator, gsSprings, stepNumber, edges, workItems,
         workList: workItems.buffer,
         inputPoints: fromPoints.buffer,
         outputPoints: toPoints.buffer,
-        stepNumber: [stepNumber],
+        stepNumber: stepNumber,
         edgeTags: edgeTags.buffer,
     });
 
