@@ -316,43 +316,43 @@ var kernels = [
         args: toBarnesLayout,
         order: toBarnesLayoutOrder,
         types: argsType,
-        file: 'apply-forces.cl'
+        file: 'barnesHut.cl'
     },{
         name: 'from_barnes_layout',
         args: fromBarnesLayout,
         order: fromBarnesLayoutOrder,
         types: argsType,
-        file: 'apply-forces.cl'
+        file: 'barnesHut.cl'
     },{
         name: 'bound_box',
         args: barnesKernels,
         order: barnesKernelsOrder,
         types: argsType,
-        file: 'apply-forces.cl'
+        file: 'barnesHut.cl'
     },{
         name: 'build_tree',
         args: barnesKernels,
         order: barnesKernelsOrder,
         types: argsType,
-        file: 'apply-forces.cl'
+        file: 'barnesHut.cl'
     },{
         name: 'compute_sums',
         args: barnesKernels,
         order: barnesKernelsOrder,
         types: argsType,
-        file: 'apply-forces.cl'
+        file: 'barnesHut.cl'
     },{
         name: 'sort',
         args: barnesKernels,
         order: barnesKernelsOrder,
         types: argsType,
-        file: 'apply-forces.cl'
+        file: 'barnesHut.cl'
     },{
         name: 'calculate_forces',
         args: barnesKernels,
         order: barnesKernelsOrder,
         types: argsType,
-        file: 'apply-forces.cl'
+        file: 'barnesHut.cl'
     },{
         name: 'faEdgeForces',
         args: faEdges,
