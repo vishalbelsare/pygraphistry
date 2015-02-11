@@ -14,16 +14,13 @@ GaussSeidel = require('./gaussseidel.js'),
 function ForceAtlas2(clContext) {
     LayoutAlgo.call(this, 'ForceAtlas2');
 
-    debug('Creating GaussSeidel kernels');
+    debug('Creating ForceAtlas2 kernels');
     this.faPoints = new Kernel('faPointForces', ForceAtlas2.argsPoints,
                                ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
     this.faEdges = new Kernel('faEdgeForces', ForceAtlas2.argsEdges,
                                ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
 
     this.faSwings = new Kernel('faSwingsTractions', ForceAtlas2.argsSwings,
-                               ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
-
-    this.faSpeed = new Kernel('faGlobalSpeed', ForceAtlas2.argsSpeed,
                                ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
 
     this.faIntegrate = new Kernel('faIntegrate', ForceAtlas2.argsIntegrate,
@@ -53,10 +50,6 @@ ForceAtlas2.argsEdges = [
 ];
 
 ForceAtlas2.argsSwings = ['prevForces', 'curForces', 'swings' , 'tractions'];
-
-ForceAtlas2.argsSpeed = [
-    'tau', 'numPoints', 'pointDegrees', 'swings', 'tractions', 'gSpeeds'
-];
 
 ForceAtlas2.argsIntegrate = [
     'gSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'
@@ -93,7 +86,6 @@ ForceAtlas2.argsType = {
     prevForces: null,
     swings: null,
     tractions: null,
-    gSpeeds: null,
     tau: cljs.types.float_t,
     gSpeed: cljs.types.float_t
 }
@@ -257,16 +249,19 @@ function integrate(simulator, faIntegrate) {
         });
 }
 
-function integrate2(simulator) {
+function integrate2(simulator, faIntegrate2) {
     var buffers = simulator.buffers;
-    faIntegrate2.numPoints = [simulator.numPoints];
-    faIntegrate2.tau = 1.0;
-    faIntegrate2.inputPositions = buffers.curPoints.buffer;
-    faIntegrate2.pointDegrees = buffers.degrees.buffer;
-    faIntegrate2.curForces = buffers.curForces.buffer;
-    faIntegrate2.swings = buffers.swings.buffer;
-    faIntegrate2.tractions = buffers.tractions.buffer;
-    faIntegrate2.outputPositions = buffers.nextPoints.buffer;
+
+    faIntegrate2.set({
+        numPoints: simulator.numPoints,
+        tau: 1.0,
+        inputPositions: buffers.curPoints.buffer,
+        pointDegrees: buffers.degrees.buffer,
+        curForces: buffers.curForces.buffer,
+        swings: buffers.swings.buffer,
+        tractions: buffers.tractions.buffer,
+        outputPositions: buffers.nextPoints.buffer
+    });
 
     var resources = [
         buffers.curPoints,
@@ -278,12 +273,10 @@ function integrate2(simulator) {
         buffers.nextPoints
     ];
 
-    setKernelArgs(simulator, 'faIntegrate2');
-
     simulator.tickBuffers(['nextPoints']);
 
-    debug("Running kernel faIntegrate2");
-    return simulator.kernels.faIntegrate2.call(simulator.numPoints, resources)
+    debug('Running kernel faIntegrate2');
+    return faIntegrate2.exec([simulator.numPoints], resources)
         .fail(function (err) {
             console.error('Kernel faIntegrate2 failed', err, (err||{}).stack);
         });
@@ -315,6 +308,7 @@ ForceAtlas2.prototype.tick = function(simulator, stepNumber) {
         return swingsTractions(simulator, that.faSwings);
     }).then(function () {
         return integrate(simulator, that.faIntegrate);
+        //return integrate2(simulator, that.faIntegrate2);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);
