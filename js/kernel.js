@@ -3,11 +3,12 @@
 var _ = require('underscore');
 var Q = require('q');
 var debug = require("debug")("graphistry:graph-viz:cl:kernel");
+var sprintf = require("sprintf-js").sprintf;
 var util = require('./util');
 var cljs = require('./cl.js');
 
 
-// String * [String] * {String: Type} * string * clCtx
+// String * [String] * {String: Type} * String * clCtx
 var Kernel = function (name, argNames, argTypes, file, clContext) {
     var that = this;
     this.name = name;
@@ -15,6 +16,11 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     var mustRecompile = true;
     var clKernel = null;
     var synchronous = true;
+
+    // For gathering performance data
+    this.timings = [];
+    this.totalRuns = 0;
+    var maxTimings = 100
 
     // Sanity Checks
     _.each(argNames, function (arg) {
@@ -90,19 +96,24 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
             .then(function () {
                 var queue = clContext.queue;
                 debug('Enqueuing kernel %s', that.name);
+                var start = process.hrtime();
                 queue.enqueueNDRangeKernel(clKernel, null, WorkItems, null);
+                return start;
             }).catch (function(error) {
                 console.error('Kernel %s error', that.name, error);
-            }).then(function () {
+            }).then(function (start) {
                 if (synchronous) {
                     debug('Waiting for kernel to finish');
                     clContext.queue.finish();
+                    var diff = process.hrtime(start);
+                    that.timings[that.totalRuns % maxTimings] = (diff[0] * 1000 + diff[1] / 1000000);
                 }
+                that.totalRuns++;
                 return cljs.release(buffers);
             }).then(_.constant(this));
     }
 
-    // Int * [String] -> Promise[Kernel]
+    // [Int] * [String] -> Promise[Kernel]
     this.exec = function(numWorkItems, resources) {
         return Q().then(function () {
             if (mustRecompile) {
@@ -120,5 +131,23 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     }
 }
 
-module.exports = Kernel;
+Kernel.prototype.runtimeStats = function () {
+    var runs = this.timings.length;
+    var mean =  _.reduce(this.timings, function (a, b) {return a + b;}, 0) / runs;
+    var stdDev =
+        _.reduce(this.timings, function (acc, t) {
+            return acc + (t - mean) * (t - mean);
+        }, 0) / (runs > 1 ? runs - 1 : runs);
 
+    var pretty = sprintf('%25s:%4s ± %03s    #runs:%d', this.name,
+                         mean.toFixed(0), stdDev.toFixed(0), this.totalRuns);
+    return {
+        name: this.name,
+        runs: this.totalRuns,
+        mean: mean,
+        stdDev: stdDev,
+        pretty: pretty
+    }
+}
+
+module.exports = Kernel;

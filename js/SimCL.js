@@ -4,7 +4,8 @@ var Q = require('q');
 var util = require('./util.js');
 var cljs = require('./cl.js');
 var _ = require('underscore');
-var debug = require("debug")("graphistry:graph-viz:graph:simcl");
+var debug = require('debug')('graphistry:graph-viz:graph:simcl');
+var perf  = require('debug')('perf');
 
 if (typeof(window) == 'undefined') {
     var webcl = require('node-webcl');
@@ -624,10 +625,18 @@ function tick(simulator, stepNumber, cfg) {
             });
     };
 
-    var res = Q()
-    .then(function () {
+    return Q().then(function () {
         return tickAllHelper(simulator.layoutAlgorithms.slice(0));
     }).then(function() {
+        if (stepNumber % 20 === 0 && stepNumber !== 0) {
+            perf('Layout Perf Report (step: %d)', stepNumber);
+            _.each(simulator.layoutAlgorithms, function (la) {
+                perf('  ' + la.name + ' [ms]:');
+                _.each(la.runtimeStats(), function (stats) {
+                    perf('\t' + stats.pretty);
+                });
+           });
+        }
         // This cl.queue.finish() needs to be here because, without it, the queue appears to outside
         // code as running really fast, and tons of ticks will be called, flooding the GPU/CPU with
         // more stuff than they can handle.
@@ -639,8 +648,6 @@ function tick(simulator, stepNumber, cfg) {
     }).fail(function (err) {
         console.error('SimCl tick fail! ', err, (err||{}).stack);
     })
-
-    return res;
 }
 
 

@@ -6,9 +6,12 @@ var _ = require('underscore');
 var cljs = require('./cl.js');
 var webcl = require('node-webcl');
 var util = require('./util');
+var LayoutAlgo = require('./layoutAlgo.js');
 var Kernel = require('./kernel.js');
 
-var GaussSeidel = function(clContext) {
+function GaussSeidel(clContext) {
+    LayoutAlgo.call(this, 'GaussSeidel');
+
     debug('Creating GaussSeidel kernels');
     this.gsPoints = new Kernel('gaussSeidelPoints', GaussSeidel.argsPoints,
                                GaussSeidel.argsType, 'gaussSeidel.cl', clContext);
@@ -18,7 +21,12 @@ var GaussSeidel = function(clContext) {
 
     this.gsGather = new Kernel('gaussSeidelSpringsGather', GaussSeidel.argsGather,
                                GaussSeidel.argsType, 'gaussSeidel.cl', clContext);
-};
+
+    this.kernels = this.kernels.concat([this.gsPoints, this.gsSprings, this.gsGather]);
+}
+GaussSeidel.prototype = Object.create(LayoutAlgo.prototype);
+GaussSeidel.prototype.constructor = GaussSeidel;
+
 
 GaussSeidel.argsPoints = ['numPoints', 'tilesPerIteration', 'inputPositions',
                           'outputPositions', 'tilePointsParam', 'width', 'height',

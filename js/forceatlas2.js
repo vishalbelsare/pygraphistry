@@ -1,19 +1,22 @@
 'use strict';
 
-var debug = require("debug")("graphistry:graph-viz:cl:forceatlas2"),
-    _     = require('underscore'),
-    cljs  = require('./cl.js'),
-    GaussSeidel = require('./gaussseidel2.js'),
-    Q     = require('q'),
-    util  = require('./util.js'),
-    webcl = require('node-webcl'),
-    Kernel = require('./kernel.js');
+var   debug = require("debug")("graphistry:graph-viz:cl:forceatlas2"),
+          _ = require('underscore'),
+       cljs = require('./cl.js'),
+GaussSeidel = require('./gaussseidel2.js'),
+          Q = require('q'),
+       util = require('./util.js'),
+      webcl = require('node-webcl'),
+ LayoutAlgo = require('./layoutAlgo.js'),
+     Kernel = require('./kernel.js');
 
 
-var ForceAtlas2 = function (clContext) {
+function ForceAtlas2(clContext) {
+    LayoutAlgo.call(this, 'ForceAtlas2');
+
+    debug('Creating GaussSeidel kernels');
     this.faPoints = new Kernel('faPointForces', ForceAtlas2.argsPoints,
                                ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
-
     this.faEdges = new Kernel('faEdgeForces', ForceAtlas2.argsEdges,
                                ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
 
@@ -31,7 +34,12 @@ var ForceAtlas2 = function (clContext) {
 
     this.gsGather = new Kernel('gaussSeidelSpringsGather', GaussSeidel.argsGather,
                                GaussSeidel.argsType, 'gaussSeidel.cl', clContext);
+
+    this.kernels = this.kernels.concat([this.faPoints, this.faEdges, this.faSwings,
+                                       this.faIntegrate, this.faIntegrate2, this.gsGather]);
 }
+ForceAtlas2.prototype = Object.create(LayoutAlgo.prototype);
+ForceAtlas2.prototype.constructor = ForceAtlas2;
 
 ForceAtlas2.argsPoints = [
     'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'tilePointsParam',
@@ -120,9 +128,6 @@ ForceAtlas2.prototype.setPhysics = function(cfg) {
     this.faPoints.set({flags: val});
     this.faEdges.set({flags: val});
 }
-
-
-ForceAtlas2.prototype.setPoints = function() {}
 
 
 ForceAtlas2.prototype.setEdges = function(simulator) {
@@ -313,6 +318,7 @@ function gatherEdges(simulator, gsGather) {
     debug("Running gaussSeidelSpringsGather (forceatlas2) kernel");
     return gsGather.exec([simulator.numForwardsWorkItems], resources);
 }
+
 
 ForceAtlas2.prototype.tick = function(simulator, stepNumber) {
     var that = this;
