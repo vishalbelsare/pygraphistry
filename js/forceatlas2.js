@@ -3,7 +3,7 @@
 var   debug = require("debug")("graphistry:graph-viz:cl:forceatlas2"),
           _ = require('underscore'),
        cljs = require('./cl.js'),
-GaussSeidel = require('./gaussseidel2.js'),
+GaussSeidel = require('./gaussseidel.js'),
           Q = require('q'),
        util = require('./util.js'),
       webcl = require('node-webcl'),
