@@ -3,7 +3,7 @@
 var debug = require("debug")("graphistry:graph-viz:cl:forceatlas2barnes"),
     _     = require('underscore'),
     cljs  = require('./cl.js'),
-    gs    = require('./gaussseidel.js'),
+    GaussSeidel = require('./gaussseidel.js'),
     Q     = require('q'),
     util  = require('./util.js'),
     webcl = require('node-webcl'),
@@ -14,26 +14,26 @@ function ForceAtlas2Barnes(clContext) {
     LayoutAlgo.call(this, 'ForceAtlasBarnes');
 
     debug('Creating ForceAtlasBarnes kernels');
-    this.toBarnesLayout = new Kernel('toBarnesLayout', ForceAtlas2Barnes.argsToBarnesLayout,
-                               ForceAtlas2Barnes.argsType, 'apply-forces.cl', clContext);
+    this.toBarnesLayout = new Kernel('to_barnes_layout', ForceAtlas2Barnes.argsToBarnesLayout,
+                               ForceAtlas2Barnes.argsType, 'barnesHut.cl', clContext);
 
-    this.boundBox = new Kernel('boundBox', ForceAtlas2Barnes.argsBarnes,
-                               ForceAtlas2Barnes.argsType, 'apply-forces.cl', clContext);
+    this.boundBox = new Kernel('bound_box', ForceAtlas2Barnes.argsBarnes,
+                               ForceAtlas2Barnes.argsType, 'barnesHut.cl', clContext);
 
-    this.buildTree = new Kernel('buildTree', ForceAtlas2Barnes.argsBarnes,
-                               ForceAtlas2Barnes.argsType, 'apply-forces.cl', clContext);
+    this.buildTree = new Kernel('build_tree', ForceAtlas2Barnes.argsBarnes,
+                               ForceAtlas2Barnes.argsType, 'barnesHut.cl', clContext);
 
-    this.computeSums = new Kernel('computeSums', ForceAtlas2Barnes.argsBarnes,
-                               ForceAtlas2Barnes.argsType, 'apply-forces.cl', clContext);
+    this.computeSums = new Kernel('compute_sums', ForceAtlas2Barnes.argsBarnes,
+                               ForceAtlas2Barnes.argsType, 'barnesHut.cl', clContext);
 
     this.sort = new Kernel('sort', ForceAtlas2Barnes.argsBarnes,
-                               ForceAtlas2Barnes.argsType, 'apply-forces.cl', clContext);
+                               ForceAtlas2Barnes.argsType, 'barnesHut.cl', clContext);
 
-    this.calculateForces = new Kernel('calculateForces', ForceAtlas2Barnes.argsBarnes,
-                               ForceAtlas2Barnes.argsType, 'apply-forces.cl', clContext);
+    this.calculateForces = new Kernel('calculate_forces', ForceAtlas2Barnes.argsBarnes,
+                               ForceAtlas2Barnes.argsType, 'barnesHut.cl', clContext);
 
-    this.move = new Kernel('calculateForces', ForceAtlas2Barnes.argsBarnes,
-                               ForceAtlas2Barnes.argsType, 'apply-forces.cl', clContext);
+    this.move = new Kernel('move', ForceAtlas2Barnes.argsBarnes,
+                               ForceAtlas2Barnes.argsType, 'barnesHut.cl', clContext);
 
     this.faEdges = new Kernel('faEdgeForces', ForceAtlas2Barnes.argsEdges,
                                ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
@@ -50,11 +50,13 @@ function ForceAtlas2Barnes(clContext) {
     this.faIntegrate2 = new Kernel('faIntegrate2', ForceAtlas2Barnes.argsIntegrate2,
                                ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
 
-    this.gsGather = new Kernel('gaussSeidelSpringsGather', GaussSeidelBarnes.argsGather,
+    this.gsGather = new Kernel('gaussSeidelSpringsGather', GaussSeidel.argsGather,
                                GaussSeidel.argsType, 'gaussSeidel.cl', clContext);
 
-    this.kernels = this.kernels.concat([this.faPoints, this.faEdges, this.faSwings,
-                                       this.faIntegrate, this.faIntegrate2, this.gsGather]);
+    this.kernels = this.kernels.concat([this.toBarnesLayout, this.boundBox, this.buildTree,
+                                        this.computeSums, this.sort, this.calculateForces,
+                                      this.faEdges, this.faSwings, this.faIntegrate, this.faIntegrate2,
+                                      this.gsGather]);
 }
 
 ForceAtlas2Barnes.prototype = Object.create(LayoutAlgo.prototype);
@@ -194,8 +196,8 @@ var setupTempBuffers = function(simulator) {
     while ((num_nodes & (WARPSIZE - 1)) != 0) num_nodes++;
     num_nodes--;
     var num_bodies = simulator.numPoints;
-    numNodes = num_nodes;
-    numBodies = num_bodies;
+    var numNodes = num_nodes;
+    var numBodies = num_bodies;
     // TODO (paden) Use actual number of workgroups. Don't hardcode
     var num_work_groups = 128;
 
@@ -242,6 +244,8 @@ var setupTempBuffers = function(simulator) {
       tempBuffers.bottom = bottom;
       tempBuffers.maxdepth = maxdepth;
       tempBuffers.radius = radius;
+      tempBuffers.numNodes = numNodes;
+      tempBuffers.numBodies = numBodies;
       return tempBuffers;
     })
     .catch(function(error) {
@@ -261,50 +265,52 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
         inputPoints: simulator.buffers.curPoints.buffer,
         springPositions: simulator.buffers.springsPos.buffer
     });
+    var that = this;
 
-    return setupTempBuffers(simulator, tempBuffers).then(function (tempBuffers) {
+    return setupTempBuffers(simulator).then(function (tempBuffers) {
 
-        toBarnesLayout.set({xCoords: tempBuffers.x_cords.buffer, yCoords:tempBuffers.y_cords.buffer, mass:tempBuffers.mass.buffer,
+        that.toBarnesLayout.set({xCoords: tempBuffers.x_cords.buffer,
+          yCoords:tempBuffers.y_cords.buffer, mass:tempBuffers.mass.buffer,
                             blocked:tempBuffers.blocked.buffer, maxDepth:tempBuffers.maxdepth.buffer,
                             numPoints:webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
-                            inputPositions: simulator.buffers.curPoints.buffer, pointDegree: simulator.buffers.degrees.buffer});
+                            inputPositions: simulator.buffers.curPoints.buffer, pointDegrees: simulator.buffers.degrees.buffer});
 
         function setBarnesKernelArgs(kernel, buffers) {
+            //console.log(buffers);
             kernel.set({xCoords:buffers.x_cords.buffer,
                         yCoords:buffers.y_cords.buffer,
-                        accX:buffers.accX.buffer,
-                        accY:buffers.accY.buffer,
+                        accX:buffers.accx.buffer,
+                        accY:buffers.accx.buffer,
                         children:buffers.children.buffer,
                         mass:buffers.mass.buffer,
                         start:buffers.start.buffer,
                         sort:buffers.sort.buffer,
-                        globalXMin:buffers.globalXMin.buffer,
-                        globalXMax:buffers.globalXMax.buffer,
-                        globalYMin:buffers.globalYMin.buffer,
-                        globalYMax:buffers.globalYMax.buffer,
+                        globalXMin:buffers.xmin.buffer,
+                        globalXMax:buffers.xmax.buffer,
+                        globalYMin:buffers.ymin.buffer,
+                        globalYMax:buffers.ymax.buffer,
                         count:buffers.count.buffer,
                         blocked:buffers.blocked.buffer,
                         bottom:buffers.bottom.buffer,
                         step:buffers.step.buffer,
                         maxDepth:buffers.maxdepth.buffer,
                         radius:buffers.radius.buffer,
-                        width:buffers.width.buffer,
-                        height:buffers.height.buffer,
-                        numBodies:buffers.numBodies.buffer,
-                        numNodes:buffers.numNodes.buffer,
-                        pointForces:buffers.pointForces.buffer})
+                        width:webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
+                        height:webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
+                        numBodies:webcl.type ? [buffers.numBodies] : new Uint32Array([numBodies]),
+                        numNodes:webcl.type ? [buffers.numNodes] : new Uint32Array([numNodes]),
+                        pointForces:simulator.buffers.partialForces1.buffer})
         };
-        setBarnesKernelArgs(this.toBarnesLayout);
-        setBarnesKernelArgs(this.boundBox);
-        setBarnesKernelArgs(this.buildTree);
-        setBarnesKernelArgs(this.computeSums);
-        setBarnesKernelArgs(this.sort);
-        setBarnesKernelArgs(this.calculateForces);
+        setBarnesKernelArgs(that.boundBox, tempBuffers);
+        setBarnesKernelArgs(that.buildTree, tempBuffers);
+        setBarnesKernelArgs(that.computeSums, tempBuffers);
+        setBarnesKernelArgs(that.sort, tempBuffers);
+        setBarnesKernelArgs(that.calculateForces, tempBuffers);
     });
 }
 
 function pointForces(simulator, toBarnesLayout, boundBox, buildTree,
-    computeSums, calculateForces, stepNumber) {
+    computeSums, sort, calculateForces, stepNumber) {
     var resources = [
         simulator.buffers.curPoints,
         simulator.buffers.forwardsDegrees,
@@ -312,12 +318,12 @@ function pointForces(simulator, toBarnesLayout, boundBox, buildTree,
         simulator.buffers.partialForces1
     ];
 
-    toBarnesLayout.set({flags: mask});
-    boundBox.set({flags: mask});
-    buildTree.set({flags: mask});
-    computeSums.set({flags: mask});
-    sort.set({flags: mask});
-    calculateForces.set({flags: mask});
+    toBarnesLayout.set({stepNumber: stepNumber});
+    boundBox.set({stepNumber: stepNumber});
+    buildTree.set({stepNumber: stepNumber});
+    computeSums.set({stepNumber: stepNumber});
+    sort.set({stepNumber: stepNumber});
+    calculateForces.set({stepNumber: stepNumber});
 
     simulator.tickBuffers(['partialForces1']);
 
@@ -325,22 +331,27 @@ function pointForces(simulator, toBarnesLayout, boundBox, buildTree,
     return toBarnesLayout.exec([simulator.numPoints], resources)
 
     .then(function () {
+      console.log("layout done");
       return boundBox.exec([simulator.numPoints], resources);
     })
 
     .then(function () {
+      console.log("bound box done");
       return buildTree.exec([simulator.numPoints], resources);
     })
 
     .then(function () {
+      console.log("build tree done");
       return computeSums.exec([simulator.numPoints], resources);
     })
 
     .then(function () {
+      console.log("compute Sum done");
       return sort.exec([simulator.numPoints], resources);
     })
 
     .then(function () {
+      console.log("sort done");
       return calculateForces.exec([simulator.numPoints], resources);
     })
 
@@ -493,7 +504,7 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var that = this;
     var tickTime = Date.now();
     return pointForces(simulator, that.toBarnesLayout, that.boundBox,
-        that.buildTree, that.sort, that.calculateForces, stepNumber)
+        that.buildTree, that.computeSums, that.sort, that.calculateForces, stepNumber)
     .then(function () {
         return edgeForces(simulator, that.faEdges, stepNumber);
     }).then(function () {
