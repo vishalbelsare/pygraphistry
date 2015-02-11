@@ -111,7 +111,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 }
                 that.totalRuns++;
                 return cljs.release(buffers);
-            }).then(_.constant(this));
+            }).then(_.constant(that));
     }
 
     // [Int] * [String] -> Promise[Kernel]
@@ -132,6 +132,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     }
 }
 
+// () -> Stats
 Kernel.prototype.runtimeStats = function () {
     var runs = this.timings.length;
     var mean =  _.reduce(this.timings, function (a, b) {return a + b;}, 0) / runs;
