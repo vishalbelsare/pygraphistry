@@ -223,7 +223,7 @@ function logClientError(req, res) {
         debug('Logging client error', msg);
         if(config.ENVIRONMENT === 'local') {
             console.error('Client Error', msg);
-            return;
+            return Q();
         }
         var logFile = path.resolve('/', 'var', 'log', 'clients' ,'clients.log');
         return Q.denodeify(fs.appendFile)(logFile, JSON.stringify(msg) + '\n')
