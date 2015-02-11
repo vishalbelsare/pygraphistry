@@ -236,18 +236,12 @@ function createCLContextNode(renderer, DEVICE_TYPE) {
  *          single kernel. If kernels was an array of kernel names, returns an object with each
  *          kernel name mapped to its kernel object.
  */
-var compile = Q.promised(function (cl, source, kernels, defines) {
+var compile = Q.promised(function (cl, source, kernels) {
     debug("Compiling kernels");
-
-    defines['NODECL'] = null;
-    var prefix = _.map(defines, function (val, key) {
-        var bound = (typeof val === 'string' ? ' ' + val : '');
-        return '#define ' + key + bound;
-    }).join('\n');
 
     var program;
     try {
-        program = cl.context.createProgram(prefix + '\n' + source);
+        program = cl.context.createProgram(source);
         // Note: Include dir is not official webcl, won't work in the browser.
         var includeDir = path.resolve(__dirname, '..', 'kernels');
         program.build([cl.device], '-I ' + includeDir);

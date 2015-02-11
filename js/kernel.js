@@ -2,8 +2,10 @@
 
 var _ = require('underscore');
 var Q = require('q');
-var debug = require("debug")("graphistry:graph-viz:cl:kernel");
-var sprintf = require("sprintf-js").sprintf;
+var debug = require('debug')('graphistry:graph-viz:cl:kernel');
+var sprintf = require('sprintf-js').sprintf;
+var path = require('path');
+var fs = require('fs');
 var util = require('./util');
 var cljs = require('./cl.js');
 
@@ -65,8 +67,26 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         _.each(defValues, function (arg, val) {
             if (val === null)
                 util.die('Define %s of kernel %s was never set', arg, name);
-        })
-        return clContext.compile(source, [name], defValues)
+        });
+
+        var prefix = _.flatten(_.map(defValues, function (val, key) {
+            if (typeof val === 'string' || typeof val === 'number' || val === true) {
+                return ['#define ' + key + ' ' + val];
+            } else if (val === null) {
+                return ['#define ' + key];
+            } else {
+                return [];
+            }
+        })).join('\n');
+        debug('Prefix', prefix);
+
+        var processedSource = prefix + '\n\n' + source;
+        if (debug.enabled) {
+            var debugFile = path.resolve(__dirname, '..', 'kernels', 'debug.' + file);
+            fs.writeFileSync(debugFile, processedSource);
+        }
+
+        return clContext.compile(processedSource, [name])
             .then(function (wrappedKernel) {
                 return wrappedKernel[name].kernel;
             });
