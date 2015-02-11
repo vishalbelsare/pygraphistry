@@ -8,6 +8,7 @@ var path = require('path');
 var fs = require('fs');
 var util = require('./util');
 var cljs = require('./cl.js');
+var config = require('config')();
 
 
 // String * [String] * {String: Type} * String * clCtx
@@ -81,7 +82,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         debug('Prefix', prefix);
 
         var processedSource = prefix + '\n\n' + source;
-        if (debug.enabled) {
+        if (debug.enabled && config.ENVIRONMENT === 'local') {
             var debugFile = path.resolve(__dirname, '..', 'kernels', 'debug.' + file);
             fs.writeFileSync(debugFile, processedSource);
         }
