@@ -3,10 +3,11 @@
 var _ = require('underscore');
 var SimCL = require('./SimCL.js');
 var util = require('./util.js');
-var ForceAtlas2  = require('./forceatlas2.js'),
-    GaussSeidel  = require('./gaussseidel2.js'),
-    EdgeBundling = require('./edgebundling.js'),
-    barnesHut    = require('./BarnesHut.js');
+var ForceAtlas2         = require('./forceatlas2.js'),
+    forceAtlasBarnes    = require('./forceatlasbarnes.js'),
+    GaussSeidel         = require('./gaussseidel.js'),
+    EdgeBundling        = require('./edgebundling.js'),
+    barnesHut           = require('./BarnesHut.js');
 
 var SIMULATION_TIME = 1;
 
@@ -64,33 +65,35 @@ var gsControls = {
     }
 }
 
-var atlasControls = {
-    simulator: SimCL,
-    layoutAlgorithms: [
-        {
-            algo: ForceAtlas2,
-            params: {
-                gravity: 1,
-                scalingRatio: 1,
-                edgeInfluence: 0,
-                preventOverlap: false,
-                strongGravity: false,
-                dissuadeHubs: false,
-                linLog: false
+function atlasControls(algo) {
+    return {
+        simulator: SimCL,
+        layoutAlgorithms: [
+            {
+                algo: algo,
+                params: {
+                    gravity: 1,
+                    scalingRatio: 1,
+                    edgeInfluence: 0,
+                    preventOverlap: false,
+                    strongGravity: false,
+                    dissuadeHubs: false,
+                    linLog: false
+                }
             }
+        ],
+        locks: {
+            lockPoints: false,
+            lockEdges: false,
+            lockMidpoints: true,
+            lockMidedges: true
+        },
+        global: {
+            simulationTime: SIMULATION_TIME, //milliseconds
+            dimensions: [1, 1],
+            numSplits: 1
         }
-    ],
-    locks: {
-        lockPoints: false,
-        lockEdges: false,
-        lockMidpoints: true,
-        lockMidedges: true
-    },
-    global: {
-        simulationTime: SIMULATION_TIME, //milliseconds
-        dimensions: [1, 1],
-        numSplits: 1
-    }
+    };
 }
 
 var barnesControls = {
@@ -99,7 +102,8 @@ var barnesControls = {
         {
             algo: barnesHut,
             params: {
-                gravity: 0.020083175556898723,
+                //gravity: 0.020083175556898723,
+                gravity: 1,
                 scalingRatio: 1.0,
                 edgeInfluence: 0,
                 preventOverlap: false,
@@ -126,8 +130,9 @@ var controls = {
     'default': uberControls,
     'uber': uberControls,
     'gauss': gsControls,
-    'atlas': atlasControls,
-    'atlas2': atlasControls,
+    'atlas': atlasControls(ForceAtlas2),
+    'atlas2': atlasControls(ForceAtlas2),
+    'atlasbarnes': atlasControls(forceAtlasBarnes),
     'barneshut': barnesControls
 }
 
