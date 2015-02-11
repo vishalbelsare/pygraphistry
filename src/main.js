@@ -12,13 +12,15 @@
 var $               = window.$,
     _               = require('underscore'),
     Rx              = require('rx'),
+    util            = require('util'),
     debug           = require('debug')('graphistry:StreamGL:main');
                       require('./rx-jquery-stub');
 
 
 var streamClient    = require('./client.js'),
     ui              = require('./ui.js'),
-    uberDemo        = require('./uber-demo.js');
+    uberDemo        = require('./uber-demo.js'),
+    monkey          = require('./monkey.js');
 
 /*
 Enable debuging output in the console by running:
@@ -176,6 +178,22 @@ function createDebugOverlay(app) {
 }
 
 window.addEventListener('load', function() {
+    // Patch console calls to forward errors to central
+    var loggedFuns = ['error', 'warn'];
+    if (_.contains(prodHosts, window.location.host)) {
+        _.each(loggedFuns, function (fun) {
+            monkey.patch(console, fun, monkey.after(function () {
+                var msg = {
+                    type: 'console.' + fun,
+                    content: util.format.apply(this, arguments)
+                };
+                $.post(window.location.origin + '/error', JSON.stringify(msg));
+            }));
+        });
+    }
+
+    console.error('This is a test', ' rest of', ' message');
+
     var app = init($('#simulation')[0], 'graph');
 
     if (DEBUG_MODE) {
