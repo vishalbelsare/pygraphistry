@@ -630,10 +630,23 @@ function tick(simulator, stepNumber, cfg) {
     }).then(function() {
         if (stepNumber % 20 === 0 && stepNumber !== 0) {
             perf('Layout Perf Report (step: %d)', stepNumber);
+
+            var sumOfMeans = {};
+            // Compute sum of means so we can print percentage of runtime
+            _.each(simulator.layoutAlgorithms, function (la) {
+               sumOfMeans[la.name] = 0;
+                _.each(la.runtimeStats(), function (stats) {
+                    if (!isNaN(stats.mean)) {
+                        sumOfMeans[la.name] += stats.mean;
+                    }
+                });
+            });
+
             _.each(simulator.layoutAlgorithms, function (la) {
                 perf('  ' + la.name + ' [ms]:');
                 _.each(la.runtimeStats(), function (stats) {
-                    perf('\t' + stats.pretty);
+                    var percentage = ((stats.mean / sumOfMeans[la.name]) * 100).toFixed(2);
+                    perf('\t' + stats.pretty + 'pct: ' + percentage + '% ');
                 });
            });
         }
