@@ -32,16 +32,13 @@ function ForceAtlas2Barnes(clContext) {
     this.calculateForces = new Kernel('calculate_forces', ForceAtlas2Barnes.argsBarnes,
                                ForceAtlas2Barnes.argsType, 'barnesHut.cl', clContext);
 
-    this.move = new Kernel('move', ForceAtlas2Barnes.argsBarnes,
+    this.move = new Kernel('move_bodies', ForceAtlas2Barnes.argsBarnes,
                                ForceAtlas2Barnes.argsType, 'barnesHut.cl', clContext);
 
     this.faEdges = new Kernel('faEdgeForces', ForceAtlas2Barnes.argsEdges,
                                ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
 
     this.faSwings = new Kernel('faSwingsTractions', ForceAtlas2Barnes.argsSwings,
-                               ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
-
-    this.faSpeed = new Kernel('faGlobalSpeed', ForceAtlas2Barnes.argsSpeed,
                                ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
 
     this.faIntegrate = new Kernel('faIntegrate', ForceAtlas2Barnes.argsIntegrate,
@@ -330,30 +327,30 @@ function pointForces(simulator, toBarnesLayout, boundBox, buildTree,
     simulator.tickBuffers(['partialForces1']);
 
     debug("Running Force Atlas2 with BarnesHut Kernels");
-    return toBarnesLayout.exec([256], resources, 256)
+    return toBarnesLayout.exec([256], resources, [256])
 
     .then(function () {
       simulator.cl.queue.finish();
     })
 
     .then(function () {
-      return boundBox.exec([10*256], resources, 256);
+      return boundBox.exec([10*256], resources, [256]);
     })
 
     .then(function () {
-      return buildTree.exec([4*256], resources, 256);
+      return buildTree.exec([4*256], resources, [256]);
     })
 
     .then(function () {
-      return computeSums.exec([4*256], resources, 256);
+      return computeSums.exec([4*256], resources, [256]);
     })
 
     .then(function () {
-      return sort.exec([4*256], resources, 256);
+      return sort.exec([4*256], resources, [256]);
     })
 
     .then(function () {
-      return calculateForces.exec([40*256], resources, 256);
+      return calculateForces.exec([40*256], resources, [256]);
     })
 
     .fail(function (err) {

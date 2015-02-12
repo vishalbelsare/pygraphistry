@@ -109,6 +109,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     };
 
     function setAllArgs(clKernel) {
+        debug('Setting arguments for kernel', name)
         var i;
         try {
             for (i = 0; i < args.length; i++) {
@@ -128,13 +129,13 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         }
     };
 
-    function call(workItems, buffers, workGroupSize) {
+    function call(kernel, workItems, buffers, workGroupSize) {
         return cljs.acquire(buffers)
             .then(function () {
                 var queue = clContext.queue;
-                debug('Enqueuing kernel %s', that.name, clKernel);
+                debug('Enqueuing kernel %s', that.name, kernel);
                 var start = process.hrtime();
-                queue.enqueueNDRangeKernel(clKernel, null, workItems, workGroupSize || null);
+                queue.enqueueNDRangeKernel(kernel, null, workItems, workGroupSize || null);
                 return start;
             }).catch (function(error) {
                 console.error('Kernel %s error', that.name, error);
@@ -152,13 +153,13 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
 
     // [Int] * [String] -> Promise[Kernel]
     this.exec = function(numWorkItems, resources, workGroupSize) {
-        return clKernel.then(function (k) {
-            if (k === null) {
+        return clKernel.then(function (kernel) {
+            if (kernel === null) {
                 console.error('Kernel is not compiled, aborting');
                 return Q();
             } else {
-                setAllArgs(k);
-                return call(k, numWorkItems, resources, workGroupSize);
+                setAllArgs(kernel);
+                return call(kernel, numWorkItems, resources, workGroupSize);
             }
         });
     }
