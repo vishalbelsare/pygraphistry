@@ -13,12 +13,12 @@ var config = require('config')();
 
 // String * [String] * {String: Type} * String * clCtx
 var Kernel = function (name, argNames, argTypes, file, clContext) {
+    debug('Creating Kernel', name);
+
     var that = this;
     this.name = name;
     this.argNames = argNames;
     var source = util.getKernelSource(file);
-    var mustRecompile = true;
-    var clKernel = null;
     var synchronous = true;
 
     // For gathering performance data
@@ -47,24 +47,37 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     Object.seal(argValues);
     Object.seal(defValues);
 
+    // If kernel has no defines, compile right away
+    var clKernel = _.without(defines, 'NODECL').length === 0 ? compile() : Q(null);
+
     // {String -> Value} -> Kernel
     this.set = function (args) {
+        debug('Setting args for kernel', this.name);
+
+        var mustRecompile = false;
         _.each(args, function (val, arg) {
             if (arg in argValues) {
                 argValues[arg] = (typeof val === 'number') ? [val] : val;
             } else if (arg in defValues) {
-                if (val !== defValues[arg])
+                if (val !== defValues[arg]) {
                     mustRecompile = true;
+                }
                 defValues[arg] = val;
             } else {
                 util.die('Kernel %s has no argument/define named %s', name, arg);
             }
         });
 
+        if (mustRecompile) {
+            clKernel = compile();
+        }
+
         return this;
     };
 
     function compile () {
+        debug('Compiling kernel', that.name);
+
         _.each(defValues, function (arg, val) {
             if (val === null)
                 util.die('Define %s of kernel %s was never set', arg, name);
@@ -81,19 +94,21 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         })).join('\n');
         debug('Prefix', prefix);
 
-        var processedSource = prefix + '\n\n' + source;
-        if (debug.enabled && config.ENVIRONMENT === 'local') {
-            var debugFile = path.resolve(__dirname, '..', 'kernels', 'debug.' + file);
-            fs.writeFileSync(debugFile, processedSource);
-        }
+        return source.then(function (source) {
+            var processedSource = prefix + '\n\n' + source;
+            if (debug.enabled && config.ENVIRONMENT === 'local') {
+                var debugFile = path.resolve(__dirname, '..', 'kernels', 'debug.' + file);
+                fs.writeFileSync(debugFile, processedSource);
+            }
 
-        return clContext.compile(processedSource, [name])
-            .then(function (wrappedKernel) {
-                return wrappedKernel[name].kernel;
-            });
+            return clContext.compile(processedSource, [name])
+                .then(function (wrappedKernel) {
+                    return wrappedKernel[name].kernel;
+                });
+        });
     };
 
-    function setAllArgs() {
+    function setAllArgs(clKernel) {
         var i;
         try {
             for (i = 0; i < args.length; i++) {
@@ -113,13 +128,13 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         }
     };
 
-    function call(WorkItems, buffers) {
+    function call(clKernel, workItems, buffers) {
         return cljs.acquire(buffers)
             .then(function () {
                 var queue = clContext.queue;
-                debug('Enqueuing kernel %s', that.name);
+                debug('Enqueuing kernel %s', that.name, clKernel);
                 var start = process.hrtime();
-                queue.enqueueNDRangeKernel(clKernel, null, WorkItems, null);
+                queue.enqueueNDRangeKernel(clKernel, null, workItems, null);
                 return start;
             }).catch (function(error) {
                 console.error('Kernel %s error', that.name, error);
@@ -137,18 +152,14 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
 
     // [Int] * [String] -> Promise[Kernel]
     this.exec = function(numWorkItems, resources) {
-        return Q().then(function () {
-            if (mustRecompile) {
-                mustRecompile = false;
-                return compile();
+        return clKernel.then(function (k) {
+            if (k === null) {
+                console.error('Kernel is not compiled, aborting');
+                return Q();
             } else {
-                return clKernel;
+                setAllArgs(k);
+                return call(k, numWorkItems, resources);
             }
-        }).then(function (k) {
-            debug('Kernel', k)
-            clKernel = k;
-            setAllArgs();
-            return call(numWorkItems, resources);
         });
     }
 }
