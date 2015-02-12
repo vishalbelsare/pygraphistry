@@ -12,7 +12,7 @@ GaussSeidel = require('./gaussseidel.js'),
 
 
 function ForceAtlas2(clContext) {
-    LayoutAlgo.call(this, 'ForceAtlas2');
+    LayoutAlgo.call(this, 'ForceAtlas2Fast');
 
     debug('Creating ForceAtlas2 kernels');
     this.faPoints = new Kernel('faPointForces', ForceAtlas2.argsPoints,

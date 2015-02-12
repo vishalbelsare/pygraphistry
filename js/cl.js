@@ -244,7 +244,7 @@ var compile = Q.promised(function (cl, source, kernels) {
         program = cl.context.createProgram(source);
         // Note: Include dir is not official webcl, won't work in the browser.
         var includeDir = path.resolve(__dirname, '..', 'kernels');
-        program.build([cl.device], '-I ' + includeDir);
+        program.build([cl.device], '-I ' + includeDir + ' -cl-fast-relaxed-math');
     } catch (e) {
         console.error('OpenCL compilation error:', e.stack);
         var log = program.getBuildInfo(cl.device, webcl.PROGRAM_BUILD_LOG)
