@@ -309,8 +309,8 @@ ForceAtlas2.prototype.tick = function(simulator, stepNumber) {
     }).then(function () {
         return swingsTractions(simulator, that.faSwings);
     }).then(function () {
-        //return integrate(simulator, that.faIntegrate);
-        return integrate2(simulator, that.faIntegrate2);
+        return integrate(simulator, that.faIntegrate);
+        //return integrate2(simulator, that.faIntegrate2);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);
