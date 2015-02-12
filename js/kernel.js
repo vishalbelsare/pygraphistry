@@ -174,7 +174,7 @@ Kernel.prototype.runtimeStats = function () {
             return acc + (t - mean) * (t - mean);
         }, 0) / (runs > 1 ? runs - 1 : runs);
 
-    var pretty = sprintf('%25s:%4s ±%4s    #runs:%4d', this.name,
+    var pretty = sprintf('%25s:%4s ±%4s        #runs:%4d', this.name,
                          mean.toFixed(0), stdDev.toFixed(0), this.totalRuns);
     return {
         name: this.name,

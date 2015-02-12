@@ -651,7 +651,7 @@ function tick(simulator, stepNumber, cfg) {
                 perf(sprintf('  %s (Total:%f) [ms]', la.name, total.toFixed(0)));
                 _.each(la.runtimeStats(), function (stats) {
                     var percentage = (stats.mean * stats.runs / totals[la.name] * 100);
-                    perf(sprintf('\t%s    pct:%4.1f%%', stats.pretty, percentage));
+                    perf(sprintf('\t%s        pct:%4.1f%%', stats.pretty, percentage));
                 });
            });
         }
