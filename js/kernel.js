@@ -92,13 +92,18 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         }
     };
 
-    function call(WorkItems, buffers) {
+    function call(WorkItems, buffers, WorkGroupSize) {
         return cljs.acquire(buffers)
             .then(function () {
                 var queue = clContext.queue;
                 debug('Enqueuing kernel %s', that.name);
                 var start = process.hrtime();
-                queue.enqueueNDRangeKernel(clKernel, null, WorkItems, null);
+                if (WorkGroupSize == undefined) {
+                  WorkGroupSize = null;
+                } else {
+                  WorkGroupSize = [WorkGroupSize];
+                }
+                queue.enqueueNDRangeKernel(clKernel, null, WorkItems, WorkGroupSize);
                 return start;
             }).catch (function(error) {
                 console.error('Kernel %s error', that.name, error);
@@ -115,7 +120,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     }
 
     // [Int] * [String] -> Promise[Kernel]
-    this.exec = function(numWorkItems, resources) {
+    this.exec = function(numWorkItems, resources, WorkGroupSize) {
         return Q().then(function () {
             if (mustRecompile) {
                 mustRecompile = false;
@@ -127,7 +132,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
             debug('Kernel', k)
             clKernel = k;
             setAllArgs();
-            return call(numWorkItems, resources);
+            return call(numWorkItems, resources, WorkGroupSize);
         });
     }
 }
