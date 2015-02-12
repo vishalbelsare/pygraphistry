@@ -327,6 +327,8 @@ function pointForces(simulator, toBarnesLayout, boundBox, buildTree,
     simulator.tickBuffers(['partialForces1']);
 
     debug("Running Force Atlas2 with BarnesHut Kernels");
+
+    // For all calls, we must have the # work items be a multiple of the workgroup size.
     return toBarnesLayout.exec([256], resources, [256])
 
     .then(function () {
@@ -510,8 +512,8 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     }).then(function () {
         return swingsTractions(simulator, that.faSwings);
     }).then(function () {
-        return integrate(simulator, that.faIntegrate);
-        //return integrate2(simulator, that.faIntegrate2);
+        //return integrate(simulator, that.faIntegrate);
+        return integrate2(simulator, that.faIntegrate2);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);
