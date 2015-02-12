@@ -6,6 +6,7 @@ var cljs = require('./cl.js');
 var _ = require('underscore');
 var debug = require('debug')('graphistry:graph-viz:graph:simcl');
 var perf  = require('debug')('perf');
+var sprintf = require('sprintf-js').sprintf;
 
 if (typeof(window) == 'undefined') {
     var webcl = require('node-webcl');
@@ -631,22 +632,26 @@ function tick(simulator, stepNumber, cfg) {
         if (stepNumber % 20 === 0 && stepNumber !== 0) {
             perf('Layout Perf Report (step: %d)', stepNumber);
 
-            var sumOfMeans = {};
+            var totals = {};
+            var runs = {}
             // Compute sum of means so we can print percentage of runtime
             _.each(simulator.layoutAlgorithms, function (la) {
-               sumOfMeans[la.name] = 0;
+               totals[la.name] = 0;
+               runs[la.name] = 0;
                 _.each(la.runtimeStats(), function (stats) {
                     if (!isNaN(stats.mean)) {
-                        sumOfMeans[la.name] += stats.mean;
+                        totals[la.name] += stats.mean * stats.runs;
+                        runs[la.name] += stats.runs;
                     }
                 });
             });
 
             _.each(simulator.layoutAlgorithms, function (la) {
-                perf('  ' + la.name + ' [ms] (Total: ' + sumOfMeans[la.name].toFixed(2) + 'ms)');
+                var total = totals[la.name] / stepNumber;
+                perf(sprintf('  %s (Total:%f) [ms]', la.name, total.toFixed(0)));
                 _.each(la.runtimeStats(), function (stats) {
-                    var percentage = ((stats.mean / sumOfMeans[la.name]) * 100).toFixed(2);
-                    perf('\t' + stats.pretty + 'pct: ' + percentage + '% ');
+                    var percentage = (stats.mean * stats.runs / totals[la.name] * 100);
+                    perf(sprintf('\t%s    pct:%4.1f%%', stats.pretty, percentage));
                 });
            });
         }
