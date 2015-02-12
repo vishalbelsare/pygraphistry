@@ -102,8 +102,8 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
             }
 
             return clContext.compile(processedSource, [name])
-                .then(function (wrappedKernel) {
-                    return wrappedKernel[name].kernel;
+                .then(function (kernels) {
+                    return kernels[name];
                 });
         });
     };

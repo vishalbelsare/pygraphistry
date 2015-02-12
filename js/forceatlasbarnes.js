@@ -451,16 +451,20 @@ function integrate(simulator, faIntegrate) {
         });
 }
 
-function integrate2(simulator) {
+
+function integrate2(simulator, faIntegrate2) {
     var buffers = simulator.buffers;
-    faIntegrate2.numPoints = [simulator.numPoints];
-    faIntegrate2.tau = 1.0;
-    faIntegrate2.inputPositions = buffers.curPoints.buffer;
-    faIntegrate2.pointDegrees = buffers.degrees.buffer;
-    faIntegrate2.curForces = buffers.curForces.buffer;
-    faIntegrate2.swings = buffers.swings.buffer;
-    faIntegrate2.tractions = buffers.tractions.buffer;
-    faIntegrate2.outputPositions = buffers.nextPoints.buffer;
+
+    faIntegrate2.set({
+        numPoints: simulator.numPoints,
+        tau: 1.0,
+        inputPositions: buffers.curPoints.buffer,
+        pointDegrees: buffers.degrees.buffer,
+        curForces: buffers.curForces.buffer,
+        swings: buffers.swings.buffer,
+        tractions: buffers.tractions.buffer,
+        outputPositions: buffers.nextPoints.buffer
+    });
 
     var resources = [
         buffers.curPoints,
@@ -472,12 +476,10 @@ function integrate2(simulator) {
         buffers.nextPoints
     ];
 
-    setKernelArgs(simulator, 'faIntegrate2');
-
     simulator.tickBuffers(['nextPoints']);
 
-    debug("Running kernel faIntegrate2");
-    return simulator.kernels.faIntegrate2.call(simulator.numPoints, resources)
+    debug('Running kernel faIntegrate2');
+    return faIntegrate2.exec([simulator.numPoints], resources)
         .fail(function (err) {
             console.error('Kernel faIntegrate2 failed', err, (err||{}).stack);
         });
@@ -509,6 +511,7 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
         return swingsTractions(simulator, that.faSwings);
     }).then(function () {
         return integrate(simulator, that.faIntegrate);
+        //return integrate2(simulator, that.faIntegrate2);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);
