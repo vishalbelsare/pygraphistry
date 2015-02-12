@@ -128,13 +128,13 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         }
     };
 
-    function call(clKernel, workItems, buffers) {
+    function call(workItems, buffers, workGroupSize) {
         return cljs.acquire(buffers)
             .then(function () {
                 var queue = clContext.queue;
                 debug('Enqueuing kernel %s', that.name, clKernel);
                 var start = process.hrtime();
-                queue.enqueueNDRangeKernel(clKernel, null, workItems, null);
+                queue.enqueueNDRangeKernel(clKernel, null, workItems, workGroupSize || null);
                 return start;
             }).catch (function(error) {
                 console.error('Kernel %s error', that.name, error);
@@ -151,14 +151,14 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     }
 
     // [Int] * [String] -> Promise[Kernel]
-    this.exec = function(numWorkItems, resources) {
+    this.exec = function(numWorkItems, resources, workGroupSize) {
         return clKernel.then(function (k) {
             if (k === null) {
                 console.error('Kernel is not compiled, aborting');
                 return Q();
             } else {
                 setAllArgs(k);
-                return call(k, numWorkItems, resources);
+                return call(k, numWorkItems, resources, workGroupSize);
             }
         });
     }
