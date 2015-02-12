@@ -6,6 +6,7 @@ var cljs = require('./cl.js');
 var _ = require('underscore');
 var debug = require('debug')('graphistry:graph-viz:graph:simcl');
 var perf  = require('debug')('perf');
+var sprintf = require('sprintf-js').sprintf;
 
 if (typeof(window) == 'undefined') {
     var webcl = require('node-webcl');
@@ -645,8 +646,9 @@ function tick(simulator, stepNumber, cfg) {
             _.each(simulator.layoutAlgorithms, function (la) {
                 perf('  ' + la.name + ' [ms] (Total: ' + sumOfMeans[la.name].toFixed(2) + 'ms)');
                 _.each(la.runtimeStats(), function (stats) {
-                    var percentage = ((stats.mean / sumOfMeans[la.name]) * 100).toFixed(2);
-                    perf('\t' + stats.pretty + 'pct: ' + percentage + '% ');
+                    var percentage = ((stats.mean / sumOfMeans[la.name]) * 100);
+                    var entry = sprintf('\t%s    pct:%4.1f%%', stats.pretty, percentage);
+                    perf(entry);
                 });
            });
         }
