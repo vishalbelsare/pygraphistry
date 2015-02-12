@@ -58,48 +58,6 @@ var create = Q.promised(function(renderer, device) {
     return createCLContextNode(renderer, clDevice);
 });
 
-function setKernelArgs(kernels, simulator, kernelName) {
-    var kEntry = _.find(kernels, function (k) {return k.name == kernelName});
-    if (!kEntry)
-        utiljs.die("No kernel named " + kernelName);
-
-    var order = kEntry.order;
-    var args = kEntry.args;
-    var types = kEntry.types;
-    if (order == undefined || args == undefined || types == undefined)
-        utiljs.die("kEntry incomplete for kernel %s: %o", kernelName, kEntry);
-
-
-    debug("Setting Kernel Args for %s %o", kernelName, args)
-
-    if (order.length != Object.keys(args).length) {
-        console.error("Order %o", order)
-        console.error("Args %o", args)
-        utiljs.die("Mismatch between order/args for " + kernelName);
-    }
-
-    var argArray = [];
-    var typeArray = [];
-
-    for (var i = 0; i < order.length; i++) {
-        var arg = order[i];
-        var val = args[arg];
-        var type = types[arg];
-
-        if (type === undefined)
-            utiljs.die("Cannot find type of argument " + arg + " for " + kernelName);
-        if (val === null)
-            console.warn("WARNING In kernel %s, attribute %s is null", kernelName, arg);
-        argArray.push(val);
-        typeArray.push(type);
-    }
-
-    var kernel = simulator.kernels[kernelName];
-    if (!kernel)
-        utiljs.die("Simulator has no kernel " + kernelName);
-
-    kernel.setArgs(argArray, typeArray);
-}
 
 function createCLContextNode(renderer, DEVICE_TYPE) {
     if (typeof webcl === "undefined") {
@@ -258,16 +216,7 @@ var compile = Q.promised(function (cl, source, kernels) {
 
         var compiled = _.object(kernelsObjs.map(function (kernelName) {
                 debug('    Compiling ', kernelName);
-
-                var kernelObj = {};
-
-                kernelObj.name = kernelName;
-                kernelObj.kernel = program.createKernel(kernelName);
-                kernelObj.cl = cl;
-                kernelObj.call = call.bind(this, kernelObj);
-                kernelObj.setArgs = setArgs.bind(this, kernelObj);
-
-                return [kernelName, kernelObj];
+                return [kernelName, program.createKernel(kernelName)];
         }));
 
 
@@ -319,29 +268,6 @@ var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
         .then(function () { kernel.cl.queue.finish(); })
         .then(_.constant(kernel));
 });
-
-
-function setArgs(kernel, args, argTypes) {
-    argTypes = argTypes || [];
-
-    var i;
-    try {
-        for (i = 0; i < args.length; i++) {
-            if(args[i] !== null) {
-                kernel.kernel.setArg(i, args[i].length ? args[i][0] : args[i], argTypes[i] || undefined);
-            }
-        }
-    } catch (e) {
-        console.error('Error setting kernel args::', kernel.name, '::arg ', i, '::', e, e.stack);
-        console.error('args', args);
-        console.error('types', argTypes);
-        console.error('arg/type', args ? args[i] : 'no args', argTypes ? argTypes[i] : 'no types');
-        throw new Error(e);
-    }
-
-    debug('Set kernel args');
-    return kernel;
-};
 
 
 var createBuffer = Q.promised(function(cl, size, name) {
@@ -500,8 +426,6 @@ module.exports = {
     "createBuffer": createBuffer,
     "createBufferGL": createBufferGL,
     "release": release,
-    "setArgs": setArgs,
-    "setKernelArgs": setKernelArgs,
     "types": types,
     "write": write,
     "read": read
