@@ -12,22 +12,22 @@ GaussSeidel = require('./gaussseidel.js'),
 
 
 function ForceAtlas2(clContext) {
-    LayoutAlgo.call(this, 'ForceAtlas2');
+    LayoutAlgo.call(this, 'ForceAtlas2Fast');
 
     debug('Creating ForceAtlas2 kernels');
     this.faPoints = new Kernel('faPointForces', ForceAtlas2.argsPoints,
-                               ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
+                               ForceAtlas2.argsType, 'forceAtlas2Fast.cl', clContext);
     this.faEdges = new Kernel('faEdgeForces', ForceAtlas2.argsEdges,
-                               ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
+                               ForceAtlas2.argsType, 'forceAtlas2Fast.cl', clContext);
 
     this.faSwings = new Kernel('faSwingsTractions', ForceAtlas2.argsSwings,
-                               ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
+                               ForceAtlas2.argsType, 'forceAtlas2Fast.cl', clContext);
 
     this.faIntegrate = new Kernel('faIntegrate', ForceAtlas2.argsIntegrate,
-                               ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
+                               ForceAtlas2.argsType, 'forceAtlas2Fast.cl', clContext);
 
     this.faIntegrate2 = new Kernel('faIntegrate2', ForceAtlas2.argsIntegrate2,
-                               ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
+                               ForceAtlas2.argsType, 'forceAtlas2Fast.cl', clContext);
 
     this.gsGather = new Kernel('gaussSeidelSpringsGather', GaussSeidel.argsGather,
                                GaussSeidel.argsType, 'gaussSeidel.cl', clContext);
@@ -39,7 +39,8 @@ ForceAtlas2.prototype = Object.create(LayoutAlgo.prototype);
 ForceAtlas2.prototype.constructor = ForceAtlas2;
 
 ForceAtlas2.argsPoints = [
-    'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'tilePointsParam',
+    'preventOverlap', 'strongGravity', 'scalingRatio', 'gravity',
+    'edgeInfluence', 'tilePointsParam',
     'tilePointsParam2', 'numPoints', 'tilesPerIteration', 'inputPositions',
     'width', 'height', 'stepNumber', 'pointDegrees', 'pointForces'
 ];
@@ -65,6 +66,8 @@ ForceAtlas2.argsType = {
     gravity: cljs.types.float_t,
     edgeInfluence: cljs.types.uint_t,
     flags: cljs.types.uint_t,
+    preventOverlap: cljs.types.define,
+    strongGravity: cljs.types.define,
     numPoints: cljs.types.uint_t,
     tilesPerIteration: cljs.types.uint_t,
     tilePointsParam: cljs.types.local_t,
@@ -95,14 +98,13 @@ ForceAtlas2.prototype.setPhysics = function(cfg) {
     LayoutAlgo.prototype.setPhysics.call(this, cfg)
 
     var mask = 0;
-    var flags = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'];
+    var flags = ['dissuadeHubs', 'linLog'];
     flags.forEach(function (flag, i) {
         var isOn = cfg.hasOwnProperty(flag) ? cfg[flag] : false;
         if (isOn) {
             mask = mask | (1 << i);
         }
     });
-    this.faPoints.set({flags: mask});
     this.faEdges.set({flags: mask});
 }
 
@@ -307,8 +309,8 @@ ForceAtlas2.prototype.tick = function(simulator, stepNumber) {
     }).then(function () {
         return swingsTractions(simulator, that.faSwings);
     }).then(function () {
-        return integrate(simulator, that.faIntegrate);
-        //return integrate2(simulator, that.faIntegrate2);
+        //return integrate(simulator, that.faIntegrate);
+        return integrate2(simulator, that.faIntegrate2);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);

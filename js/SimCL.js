@@ -4,7 +4,9 @@ var Q = require('q');
 var util = require('./util.js');
 var cljs = require('./cl.js');
 var _ = require('underscore');
-var debug = require("debug")("graphistry:graph-viz:graph:simcl");
+var debug = require('debug')('graphistry:graph-viz:graph:simcl');
+var perf  = require('debug')('perf');
+var sprintf = require('sprintf-js').sprintf;
 
 if (typeof(window) == 'undefined') {
     var webcl = require('node-webcl');
@@ -18,54 +20,30 @@ var randLength = 73;
 
 var NAMED_CLGL_BUFFERS = require('./buffers.js').NAMED_CLGL_BUFFERS;
 
-function create(renderer, dimensions, numSplits, device, locked, layoutAlgorithms) {
+function create(renderer, dimensions, numSplits, device, layoutAlgorithms, locked) {
     return cljs.create(renderer, device)
     .then(function(cl) {
-        debug("Creating CL object with GL context");
-
-        var kernels = _.chain(layoutAlgorithms).pluck('kernels').flatten().value();
-        var kernelFileMap = {};
-
-        _.each(kernels, function (kernel) {
-            if (!(kernelFileMap[kernel.file]))
-                kernelFileMap[kernel.file] = [kernel.name];
-            else
-                kernelFileMap[kernel.file].push(kernel.name);
-        })
-        debug('Kernels selected for compilation: %o', kernelFileMap);
-
-        return Q.all(_.map(kernelFileMap, function (kName, kFile) {
-            debug('Retrieving kernel source: %s', kFile);
-
-            // Temporary Hack to avoid interfering with Paden's work
-            var loader = (kFile === 'apply-forces.cl') ? util.getShaderSource : util.getKernelSource;
-
-            return loader(kFile).then(function (source) {
-                return cl.compile(source, kernelFileMap[kFile], {});
-            }).fail(function (err) {
-                console.error("Failure while compiling kernels ", (err||{}).stack);
+        return Q().then(function () {
+            debug('Instantiating layout algorithms: %o', layoutAlgorithms);
+            return _.map(layoutAlgorithms, function (entry) {
+                var algo = new entry.algo(cl)
+                algo.setPhysics(entry.params)
+                return algo;
             });
-        })).then(function (compiledKernels) {
-            debug("All kernels successfully compiled");
-            var mergedKernels = {};
-            for (var i = 0; i < compiledKernels.length; i++)
-                _.extend(mergedKernels, compiledKernels[i]);
-            return mergedKernels;
-        }).then(function(kernels) {
+        }).then(function(algos) {
             debug("Creating SimCL...")
 
             var simObj = {
                 renderer: renderer,
                 cl: cl,
                 elementsPerPoint: 2,
-                kernels: kernels,
+                kernels: null,
                 versions: {
                     tick: 0,
                     buffers: { }
                 },
-                layoutAlgorithms: layoutAlgorithms
+                layoutAlgorithms: algos
             };
-
             simObj.tilesPerIteration = 1;
             simObj.buffersLocal = {};
             createSetters(simObj);
@@ -648,10 +626,35 @@ function tick(simulator, stepNumber, cfg) {
             });
     };
 
-    var res = Q()
-    .then(function () {
+    return Q().then(function () {
         return tickAllHelper(simulator.layoutAlgorithms.slice(0));
     }).then(function() {
+        if (stepNumber % 20 === 0 && stepNumber !== 0) {
+            perf('Layout Perf Report (step: %d)', stepNumber);
+
+            var totals = {};
+            var runs = {}
+            // Compute sum of means so we can print percentage of runtime
+            _.each(simulator.layoutAlgorithms, function (la) {
+               totals[la.name] = 0;
+               runs[la.name] = 0;
+                _.each(la.runtimeStats(), function (stats) {
+                    if (!isNaN(stats.mean)) {
+                        totals[la.name] += stats.mean * stats.runs;
+                        runs[la.name] += stats.runs;
+                    }
+                });
+            });
+
+            _.each(simulator.layoutAlgorithms, function (la) {
+                var total = totals[la.name] / stepNumber;
+                perf(sprintf('  %s (Total:%f) [ms]', la.name, total.toFixed(0)));
+                _.each(la.runtimeStats(), function (stats) {
+                    var percentage = (stats.mean * stats.runs / totals[la.name] * 100);
+                    perf(sprintf('\t%s        pct:%4.1f%%', stats.pretty, percentage));
+                });
+           });
+        }
         // This cl.queue.finish() needs to be here because, without it, the queue appears to outside
         // code as running really fast, and tons of ticks will be called, flooding the GPU/CPU with
         // more stuff than they can handle.
@@ -663,8 +666,6 @@ function tick(simulator, stepNumber, cfg) {
     }).fail(function (err) {
         console.error('SimCl tick fail! ', err, (err||{}).stack);
     })
-
-    return res;
 }
 
 

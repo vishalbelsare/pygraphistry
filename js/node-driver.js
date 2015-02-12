@@ -189,9 +189,10 @@ function init(device, cfg) {
 
     return RenderNull.create(null)
         .then(function (renderer) {
-            var graph = NBody.create(
-                renderer, global.dimensions, global.numSplits, global.simulationTime);
-            return initSimulator(graph, device, cfg);
+            var graph = NBody.create(renderer, global.dimensions, global.numSplits,
+                                     global.simulationTime);
+            return graph.initSimulation(cfg.simulator, device, cfg.layoutAlgorithms,
+                                        cfg.locks);
         })
         .fail(function (err) {
             console.error("ERROR Failure in NBody creation ", (err||{}).stack);
@@ -209,24 +210,6 @@ function getControls(cfgName) {
 
     return cfg;
 }
-
-
-function initSimulator(graph, device, cfg) {
-    debug('Applying layout settings: %o', cfg);
-    (cfg.layoutAlgorithms||[]).forEach(function (alg) {
-        debug('  layout algorithm %s: %o', alg.algo.name, alg.params);
-    });
-    var layoutAlgorithms = []
-
-    for (var i = 0; i < cfg.layoutAlgorithms.length; i++) {
-        var entry = cfg.layoutAlgorithms[i];
-        entry.algo.setPhysics(entry.params)
-        layoutAlgorithms.push(entry.algo);
-    }
-
-    return graph.initSimulation(cfg.simulator, device, layoutAlgorithms, cfg.locks);
-}
-
 
 
 /**
