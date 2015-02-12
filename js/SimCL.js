@@ -643,7 +643,7 @@ function tick(simulator, stepNumber, cfg) {
             });
 
             _.each(simulator.layoutAlgorithms, function (la) {
-                perf('  ' + la.name + ' [ms]:');
+                perf('  ' + la.name + ' [ms] (Total: ' + sumOfMeans[la.name].toFixed(2) + 'ms)');
                 _.each(la.runtimeStats(), function (stats) {
                     var percentage = ((stats.mean / sumOfMeans[la.name]) * 100).toFixed(2);
                     perf('\t' + stats.pretty + 'pct: ' + percentage + '% ');
