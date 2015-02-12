@@ -588,7 +588,7 @@ function init(socket, $elt, renderState, urlParams) {
     }, function (err) { console.error('marquee payload', err, (err||{}).stack); });
 
     var $tooltips = $('[data-toggle="tooltip"]');
-    var $bolt = $('#simulate').find('.fa');
+    var $bolt = $('#simulate, #center').find('.fa');
     $tooltips.tooltip('show');
     $bolt.addClass('automode');//css({color: '#333366'});
     var numTicks = urlParams.play || 0;
