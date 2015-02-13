@@ -46,7 +46,7 @@ ForceAtlas2.argsPoints = [
 
 ForceAtlas2.argsEdges = [
     'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges',
-    'workList', 'inputPoints', 'partialForces', 'stepNumber', 'outputForces'
+    'workList', 'inputPoints', 'partialForces', 'stepNumber', 'numWorkItems', 'outputForces'
 ];
 
 ForceAtlas2.argsSwings = ['prevForces', 'curForces', 'swings' , 'tractions'];
@@ -87,7 +87,8 @@ ForceAtlas2.argsType = {
     swings: null,
     tractions: null,
     tau: cljs.types.float_t,
-    gSpeed: cljs.types.float_t
+    gSpeed: cljs.types.float_t,
+    numWorkItems: cljs.types.uint_t
 }
 
 
@@ -161,6 +162,7 @@ function edgeForcesOneWay(simulator, faEdges, edges, workItems, numWorkItems,
         workList: workItems.buffer,
         inputPoints: points.buffer,
         stepNumber: stepNumber,
+        numWorkItems: numWorkItems,
         partialForces: partialForces.buffer,
         outputForces: outputForces.buffer
     });

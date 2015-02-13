@@ -74,7 +74,7 @@ ForceAtlas2Barnes.argsBarnes = ['scalingRatio', 'gravity', 'edgeInfluence', 'fla
 
 ForceAtlas2Barnes.argsEdges = [
     'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges',
-    'workList', 'inputPoints', 'partialForces', 'stepNumber', 'outputForces'
+    'workList', 'inputPoints', 'partialForces', 'stepNumber', 'numWorkItems', 'outputForces'
 ];
 
 ForceAtlas2Barnes.argsSwings = ['prevForces', 'curForces', 'swings' , 'tractions'];
@@ -141,7 +141,8 @@ ForceAtlas2Barnes.argsType = {
     maxDepth: null,
     radius: null,
     numBodies: cljs.types.uint_t,
-    numNodes: cljs.types.uint_t
+    numNodes: cljs.types.uint_t,
+    numWorkItems: cljs.types.uint_t
 }
 
 ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
@@ -367,6 +368,7 @@ function edgeForcesOneWay(simulator, faEdges, edges, workItems, numWorkItems,
         workList: workItems.buffer,
         inputPoints: points.buffer,
         stepNumber: stepNumber,
+        numWorkItems: numWorkItems,
         partialForces: partialForces.buffer,
         outputForces: outputForces.buffer
     });
@@ -381,6 +383,8 @@ function edgeForcesOneWay(simulator, faEdges, edges, workItems, numWorkItems,
 
     debug("Running kernel faEdgeForces");
     return faEdges.exec([numWorkItems], resources);
+    //return faEdges.exec([256], resources);
+
 }
 
 function edgeForces(simulator, faEdges, stepNumber) {
@@ -512,8 +516,8 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     }).then(function () {
         return swingsTractions(simulator, that.faSwings);
     }).then(function () {
-        //return integrate(simulator, that.faIntegrate);
-        return integrate2(simulator, that.faIntegrate2);
+        return integrate(simulator, that.faIntegrate);
+        //return integrate2(simulator, that.faIntegrate2);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);
