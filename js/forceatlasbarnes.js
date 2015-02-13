@@ -356,7 +356,7 @@ function pointForces(simulator, toBarnesLayout, boundBox, buildTree,
     })
 
     .fail(function (err) {
-        console.error('Kernel faPointForces failed', err, (err||{}).stack);
+        console.error('Computing pointForces failed', err, (err||{}).stack);
     });
 }
 
