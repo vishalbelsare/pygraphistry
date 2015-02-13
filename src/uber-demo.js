@@ -445,6 +445,17 @@ function setupMarquee(isOn, renderState) {
     return marquee;
 }
 
+function setupZoomButtons($elt) {
+    Rx.Observable.fromEvent($('#zoomin'), 'click')
+    .subscribe(function () {
+        console.log('Zooming in');
+        var e = $.Event('mousewheel', {delta: -10});
+        $elt.trigger(e);
+    }, function (err) {
+        console.error('Error in ZoomIn handler', err, (err||{}).stack);
+    });
+}
+
 // -> Observable DOM
 //Return which mouse group element selected
 //Side effect: highlight that element
@@ -477,6 +488,7 @@ function init(socket, $elt, renderState, urlParams) {
     poi = poiLib(socket);
 
     var onElt = makeMouseSwitchboard();
+    setupZoomButtons($elt);
 
     var turnOnMarquee = onElt.map(function (elt) { return elt === $('#marqueerectangle')[0]; });
     var marquee = setupMarquee(turnOnMarquee, renderState);
