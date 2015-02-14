@@ -70,7 +70,7 @@ ForceAtlas2Barnes.argsBarnes = ['scalingRatio', 'gravity', 'edgeInfluence', 'fla
                           'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
                           'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
                           'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
-                          'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'prevForces', 'tau'];
+                          'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau'];
 
 ForceAtlas2Barnes.argsEdges = [
     'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges',
@@ -325,11 +325,11 @@ function pointForces(simulator, toBarnesLayout, boundBox, buildTree,
     ];
 
     toBarnesLayout.set({stepNumber: stepNumber});
-    boundBox.set({stepNumber: stepNumber, prevForces: simulator.buffers.prevForces.buffer});
-    buildTree.set({stepNumber: stepNumber, prevForces: simulator.buffers.prevForces.buffer});
-    computeSums.set({stepNumber: stepNumber, prevForces: simulator.buffers.prevForces.buffer});
-    sort.set({stepNumber: stepNumber, prevForces: simulator.buffers.prevForces.buffer});
-    calculateForces.set({stepNumber: stepNumber, prevForces: simulator.buffers.prevForces.buffer});
+    boundBox.set({stepNumber: stepNumber});
+    buildTree.set({stepNumber: stepNumber});
+    computeSums.set({stepNumber: stepNumber});
+    sort.set({stepNumber: stepNumber});
+    calculateForces.set({stepNumber: stepNumber});
 
 
     simulator.tickBuffers(['partialForces1']);
