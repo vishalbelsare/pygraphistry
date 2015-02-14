@@ -129,7 +129,6 @@ ForceAtlas2.prototype.setEdges = function(simulator) {
 
         this.gsGather.set({
             springs: simulator.buffers.forwardsEdges.buffer,
-            workList: simulator.buffers.forwardsWorkItems.buffer,
             inputPoints: simulator.buffers.curPoints.buffer,
             springPositions: simulator.buffers.springsPos.buffer
         });
@@ -288,10 +287,12 @@ function gatherEdges(simulator, gsGather) {
     var buffers = simulator.buffers;
     var resources = [
         buffers.forwardsEdges,
-        buffers.forwardsWorkItems,
         buffers.curPoints,
         buffers.springsPos
     ];
+
+    var numSprings = simulator.buffers.forwardsEdges.cl.renderer.numEdges; // TODO: Get this a proper way.
+    gsGather.set({numSprings: numSprings});
 
     simulator.tickBuffers(['springsPos']);
 

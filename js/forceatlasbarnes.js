@@ -261,7 +261,6 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
             * Float32Array.BYTES_PER_ELEMENT;
     this.gsGather.set({
         springs: simulator.buffers.forwardsEdges.buffer,
-        workList: simulator.buffers.forwardsWorkItems.buffer,
         inputPoints: simulator.buffers.curPoints.buffer,
         springPositions: simulator.buffers.springsPos.buffer
     });
@@ -495,15 +494,19 @@ function gatherEdges(simulator, gsGather) {
     var buffers = simulator.buffers;
     var resources = [
         buffers.forwardsEdges,
-        buffers.forwardsWorkItems,
         buffers.curPoints,
         buffers.springsPos
     ];
 
+    var numSprings = simulator.buffers.forwardsEdges.cl.renderer.numEdges; // TODO: Get this a proper way.
+    gsGather.set({numSprings: numSprings});
+
     simulator.tickBuffers(['springsPos']);
 
     debug("Running gaussSeidelSpringsGather (forceatlas2) kernel");
-    return gsGather.exec([simulator.numForwardsWorkItems], resources);
+    // return gsGather.exec([simulator.numForwardsWorkItems], resources);
+    return gsGather.exec([256], resources);
+
 }
 
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {

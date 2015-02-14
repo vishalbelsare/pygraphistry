@@ -35,7 +35,7 @@ GaussSeidel.argsPoints = ['numPoints', 'tilesPerIteration', 'inputPositions',
 GaussSeidel.argsSprings = ['tilesPerIteration', 'springs', 'workList', 'edgeTags',
                            'inputPoints', 'outputPoints', 'edgeStrength0', 'edgeDistance0', 'edgeStrength1', 'edgeDistance1', 'stepNumber'];
 
-GaussSeidel.argsGather = ['springs', 'workList', 'inputPoints', 'springPositions'];
+GaussSeidel.argsGather = ['springs', 'inputPoints', 'numSprings', 'springPositions'];
 
 GaussSeidel.argsType = {
     numPoints: cljs.types.uint_t,
@@ -58,6 +58,7 @@ GaussSeidel.argsType = {
     edgeDistance0: cljs.types.float_t,
     edgeStrength1: cljs.types.float_t,
     edgeDistance1: cljs.types.float_t,
+    numSprings: cljs.types.uint_t,
     springPositions: null
 };
 
@@ -139,7 +140,7 @@ function edgeKernelSeq(simulator, gsSprings, stepNumber, edges, workItems,
 
 function gatherKernel(simulator, gsGather) {
     var resources = [
-        simulator.buffers.forwardsEdges, simulator.buffers.forwardsWorkItems,
+        simulator.buffers.forwardsEdges,
         simulator.buffers.curPoints, simulator.buffers.springsPos
     ];
 
@@ -147,11 +148,12 @@ function gatherKernel(simulator, gsGather) {
 
     gsGather.set({
         springs: simulator.buffers.forwardsEdges.buffer,
-        workList: simulator.buffers.forwardsWorkItems.buffer,
         inputPoints: simulator.buffers.curPoints.buffer,
         springPositions: simulator.buffers.springsPos.buffer,
     });
 
+    var numSprings = simulator.buffers.forwardsEdges.cl.renderer.numEdges; // TODO: Get this a proper way.
+    gsGather.set({numSprings: numSprings});
 
     debug("Running gaussSeidelSpringsGather");
     return gsGather.exec([simulator.numForwardsWorkItems], resources);
