@@ -69,7 +69,7 @@ ForceAtlas2Barnes.argsToBarnesLayout = [
 ForceAtlas2Barnes.argsBarnes = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
                           'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
                           'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
-                          'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'stepNumber',
+                          'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
                           'width', 'height', 'numBodies', 'numNodes', 'pointForces'];
 
 ForceAtlas2Barnes.argsEdges = [
@@ -142,7 +142,8 @@ ForceAtlas2Barnes.argsType = {
     radius: null,
     numBodies: cljs.types.uint_t,
     numNodes: cljs.types.uint_t,
-    numWorkItems: cljs.types.uint_t
+    numWorkItems: cljs.types.uint_t,
+    globalSpeed: cljs.types.float_t
 }
 
 ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
@@ -222,10 +223,11 @@ var setupTempBuffers = function(simulator) {
         simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'step'),
         simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'bottom'),
         simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'maxdepth'),
-        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'radius')
+        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'radius'),
+        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed')
         ])
     .spread(function (x_cords, y_cords, accx, accy, children, mass, start, sort, xmin, xmax, ymin, ymax, count,
-          blocked, step, bottom, maxdepth, radius) {
+          blocked, step, bottom, maxdepth, radius, globalSpeed) {
       tempBuffers.x_cords = x_cords;
       tempBuffers.y_cords = y_cords;
       tempBuffers.accx = accx;
@@ -246,6 +248,7 @@ var setupTempBuffers = function(simulator) {
       tempBuffers.radius = radius;
       tempBuffers.numNodes = numNodes;
       tempBuffers.numBodies = numBodies;
+      tempBuffers.globalSpeed = globalSpeed;
       return tempBuffers;
     })
     .catch(function(error) {
@@ -294,6 +297,7 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
                         step:buffers.step.buffer,
                         maxDepth:buffers.maxdepth.buffer,
                         radius:buffers.radius.buffer,
+                        globalSpeed: buffers.globalSpeed.buffer,
                         width:webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
                         height:webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
                         numBodies:webcl.type ? [buffers.numBodies] : new Uint32Array([numBodies]),
@@ -505,7 +509,7 @@ function gatherEdges(simulator, gsGather) {
 
     debug("Running gaussSeidelSpringsGather (forceatlas2) kernel");
     // return gsGather.exec([simulator.numForwardsWorkItems], resources);
-    return gsGather.exec([256], resources);
+    return gsGather.exec([1024], resources);
 
 }
 
