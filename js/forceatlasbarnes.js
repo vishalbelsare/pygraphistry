@@ -47,13 +47,16 @@ function ForceAtlas2Barnes(clContext) {
     this.faIntegrate2 = new Kernel('faIntegrate2', ForceAtlas2Barnes.argsIntegrate2,
                                ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
 
+    this.faIntegrate3 = new Kernel('faIntegrate3', ForceAtlas2Barnes.argsIntegrate3,
+                               ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
+
     this.gsGather = new Kernel('gaussSeidelSpringsGather', GaussSeidel.argsGather,
                                GaussSeidel.argsType, 'gaussSeidel.cl', clContext);
 
     this.kernels = this.kernels.concat([this.toBarnesLayout, this.boundBox, this.buildTree,
                                         this.computeSums, this.sort, this.calculateForces,
                                       this.faEdges, this.faSwings, this.faIntegrate, this.faIntegrate2,
-                                      this.gsGather]);
+                                      this.faIntegrate3, this.gsGather]);
 }
 
 ForceAtlas2Barnes.prototype = Object.create(LayoutAlgo.prototype);
@@ -91,6 +94,11 @@ ForceAtlas2Barnes.argsIntegrate2 = [
     'numPoints', 'tau', 'inputPositions', 'pointDegrees', 'curForces', 'swings',
     'tractions', 'outputPositions'
 ];
+
+ForceAtlas2Barnes.argsIntegrate3 = [
+    'globalSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'
+];
+
 
 ForceAtlas2Barnes.argsType = {
     scalingRatio: cljs.types.float_t,
@@ -143,7 +151,7 @@ ForceAtlas2Barnes.argsType = {
     numBodies: cljs.types.uint_t,
     numNodes: cljs.types.uint_t,
     numWorkItems: cljs.types.uint_t,
-    globalSpeed: cljs.types.float_t
+    globalSpeed: null
 }
 
 ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
@@ -440,6 +448,7 @@ function swingsTractions(simulator, faSwings) {
 
 function integrate(simulator, faIntegrate) {
     var buffers = simulator.buffers;
+
     faIntegrate.set({
         gSpeed: 1.0,
         inputPositions: buffers.curPoints.buffer,
@@ -464,6 +473,32 @@ function integrate(simulator, faIntegrate) {
         });
 }
 
+function integrate3(simulator, faIntegrate3) {
+    var buffers = simulator.buffers;
+
+    faIntegrate3.set({
+        globalSpeed: tempBuffers.globalSpeed.buffer,
+        inputPositions: buffers.curPoints.buffer,
+        curForces: buffers.curForces.buffer,
+        swings: buffers.swings.buffer,
+        outputPositions: buffers.nextPoints.buffer
+    });
+
+    var resources = [
+        buffers.curPoints,
+        buffers.curForces,
+        buffers.swings,
+        buffers.nextPoints
+    ];
+
+    simulator.tickBuffers(['nextPoints']);
+
+    debug("Running kernel faIntegrate");
+    return faIntegrate3.exec([simulator.numPoints], resources)
+        .fail(function (err) {
+            console.error('Kernel faIntegrate3 failed', err, (err||{}).stack);
+        });
+}
 
 function integrate2(simulator, faIntegrate2) {
     var buffers = simulator.buffers;
@@ -527,8 +562,9 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     }).then(function () {
         return swingsTractions(simulator, that.faSwings);
     }).then(function () {
-        return integrate(simulator, that.faIntegrate);
+        // return integrate(simulator, that.faIntegrate);
         // return integrate2(simulator, that.faIntegrate2);
+        return integrate3(simulator, that.faIntegrate3);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);
