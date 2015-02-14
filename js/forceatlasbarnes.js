@@ -68,9 +68,9 @@ ForceAtlas2Barnes.argsToBarnesLayout = [
 // All BarnesHut Kernels have the same arguements
 ForceAtlas2Barnes.argsBarnes = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
                           'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
-                          'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
+                          'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
                           'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
-                          'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'prevForces'];
+                          'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'prevForces', 'tau'];
 
 ForceAtlas2Barnes.argsEdges = [
     'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges',
@@ -291,6 +291,8 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
                         globalXMax:buffers.xmax.buffer,
                         globalYMin:buffers.ymin.buffer,
                         globalYMax:buffers.ymax.buffer,
+                        swings:simulator.buffers.swings.buffer,
+                        tractions:simulator.buffers.tractions.buffer,
                         count:buffers.count.buffer,
                         blocked:buffers.blocked.buffer,
                         bottom:buffers.bottom.buffer,
@@ -302,7 +304,8 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
                         height:webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
                         numBodies:webcl.type ? [buffers.numBodies] : new Uint32Array([numBodies]),
                         numNodes:webcl.type ? [buffers.numNodes] : new Uint32Array([numNodes]),
-                        pointForces:simulator.buffers.partialForces1.buffer})
+                        pointForces:simulator.buffers.partialForces1.buffer,
+                        tau:1.0})
         };
         setBarnesKernelArgs(that.boundBox, tempBuffers);
         setBarnesKernelArgs(that.buildTree, tempBuffers);
