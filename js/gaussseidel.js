@@ -152,7 +152,7 @@ function gatherKernel(simulator, gsGather) {
         springPositions: simulator.buffers.springsPos.buffer,
     });
 
-    var numSprings = simulator.buffers.forwardsEdges.cl.renderer.numEdges; // TODO: Get this a proper way.
+    var numSprings = simulator.numEdges;
     gsGather.set({numSprings: numSprings});
 
     debug("Running gaussSeidelSpringsGather");

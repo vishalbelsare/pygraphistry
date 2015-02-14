@@ -291,7 +291,7 @@ function gatherEdges(simulator, gsGather) {
         buffers.springsPos
     ];
 
-    var numSprings = simulator.buffers.forwardsEdges.cl.renderer.numEdges; // TODO: Get this a proper way.
+    var numSprings = simulator.numEdges;
     gsGather.set({numSprings: numSprings});
 
     simulator.tickBuffers(['springsPos']);
