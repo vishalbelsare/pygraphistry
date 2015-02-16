@@ -661,7 +661,9 @@ function tick(simulator, stepNumber, cfg) {
         // What we really want here is to give finish() a callback and resolve the promise when it's
         // called, but node-webcl is out-of-date and doesn't support WebCL 1.0's optional callback
         // argument to finish().
+
         simulator.cl.queue.finish();
+        perf('Tick Finished.');
         simulator.renderer.finish();
     }).fail(function (err) {
         console.error('SimCl tick fail! ', err, (err||{}).stack);
