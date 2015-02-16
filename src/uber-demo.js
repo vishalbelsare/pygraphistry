@@ -38,6 +38,7 @@ function sendSetting(socket, name, value) {
 
 
 var HIGHLIGHT_SIZE = 20;
+var INTERACTION_INTERVAL = 50;
 
 
 function makeErrorHandler(name) {
@@ -538,10 +539,9 @@ function init(socket, $elt, renderState, urlParams) {
         .subscribe(_.identity, makeErrorHandler('timeSlide'));
 
 
-
     var downing =
         Rx.Observable.fromEvent($('#simulate'), 'mousedown')
-            .map(function () { return Rx.Observable.interval(50); });
+            .map(function () { return Rx.Observable.interval(INTERACTION_INTERVAL); });
     var releasing =
         Rx.Observable.fromEvent($('body'), 'mouseup')
             .map(function () { return Rx.Observable.empty(); });
