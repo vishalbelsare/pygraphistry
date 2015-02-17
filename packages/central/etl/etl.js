@@ -38,9 +38,11 @@ function etl(msg, res) {
             return vgwriter.cacheVGraph(vg, metadata);
         }
     }).then(function () {
-        vgwriter.uploadVGraph(vg, metadata).fail(function () {
-            console.log('S3 Upload failed');
-        });
+        if (config.ENVIRONMENT !== 'local') {
+            vgwriter.uploadVGraph(vg, metadata).fail(function () {
+                console.log('S3 Upload failed');
+            });
+        }
     }).then(_.constant(msg));
 }
 
