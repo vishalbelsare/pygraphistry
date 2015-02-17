@@ -222,7 +222,7 @@ function assign_worker(req, res) {
 }
 
 function logClientError(req, res) {
-    function writeError(msg) {
+    var writeError = function (msg) {
         debug('Logging client error', msg);
         if(config.ENVIRONMENT === 'local') {
             if (msg.content) {
@@ -237,7 +237,7 @@ function logClientError(req, res) {
             .fail(function (err) {
                 console.error('Error writing client error', err, (err||{}).stack);
             });
-    }
+    };
 
     var data = '';
 
