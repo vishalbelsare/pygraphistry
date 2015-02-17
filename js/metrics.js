@@ -7,12 +7,6 @@ var config = require('config')();
 var debug = require('debug')('boundary:metrics');
 
 
-/***** 2/17 *****
- * DISABLED FOR NOW TO AVOID POLUTTING LOGS WITH ERRORS
- *
- * (See module.exports to re-enable)
- */
-
 // TODO: Import via config file, this should be in Ansible
 var boundaryUrl = 'https://abe@graphistry.com:api.fc39b94e8f-3713@premium-api.boundary.com/v1/measurements';
 
@@ -72,8 +66,6 @@ var init = function(name){
 }
 
 module.exports = {
-    //'info': info,
-    //'init': init
-    init: function () {},
-    info: function () {}
+    "info": info,
+    "init": init
 };
