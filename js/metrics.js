@@ -33,10 +33,12 @@ var sendToBoundary = function(entry) {
         method: 'POST',
         },
         function (error, response, body) {
-            if (!error && response.statusCode == 200) {
-                return;
+            if (error) {
+                console.error('Error posting to boundary', error);
             } else {
-                console.log('Boundary API error:', body, '; Data sent to boundary:', data);
+                if (response.statusCode !== 200) {
+                    console.error('Boundary returned error', response);
+                }
             }
         }
     );
