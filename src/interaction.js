@@ -85,17 +85,36 @@ function setupScroll($eventTarget, canvas, camera) {
             var screenPos = camera.canvas2ScreenCoords(canvasPos.x, canvasPos.y, canvas);
             debug('Mouse screen pos=(%f,%f)', screenPos.x, screenPos.y);
 
-            var xoffset = screenPos.x - camera.center.x;
-            var yoffset = screenPos.y - camera.center.y;
-            camera.center.x += xoffset * (1.0 - zoomFactor);
-            camera.center.y += yoffset * (1.0 - zoomFactor);
-            camera.width = camera.width * zoomFactor;
-            camera.height = camera.height * zoomFactor;
-
-            debug('New Camera center=(%f, %f) size=(%f , %f)',
-                  camera.center.x, camera.center.y, camera.width, camera.height);
-            return camera;
+            return zoom(camera, zoomFactor, screenPos);
         });
+}
+
+function setupZoomButton($elt, camera, zoomFactor) {
+    return Rx.Observable.fromEvent($elt, 'click')
+        .map(function () {
+            return zoom(camera, zoomFactor);
+        });
+}
+
+// Camera * Float * {x : Float, y: Float}
+// Zoom in/out on zoomPoint (specified in screen coordinates)
+function zoom(camera, zoomFactor, zoomPoint) {
+    var xoffset = 0;
+    var yoffset = 0;
+    if (zoomPoint !== undefined) {
+        xoffset = zoomPoint.x - camera.center.x;
+        yoffset = zoomPoint.y - camera.center.y;
+    }
+
+    camera.center.x += xoffset * (1.0 - zoomFactor);
+    camera.center.y += yoffset * (1.0 - zoomFactor);
+    camera.width = camera.width * zoomFactor;
+    camera.height = camera.height * zoomFactor;
+
+    debug('New Camera center=(%f, %f) size=(%f , %f)',
+                  camera.center.x, camera.center.y, camera.width, camera.height);
+
+    return camera;
 }
 
 
@@ -258,6 +277,7 @@ module.exports = {
     setupCenter: setupCenter,
     setupSwipe: setupSwipe,
     setupPinch: setupPinch,
+    setupZoomButton: setupZoomButton,
 
     isTouchBased: touchBased
 };

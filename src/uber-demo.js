@@ -344,10 +344,13 @@ function setupDragHoverInteractions($eventTarget, renderState) {
         interactions = interaction.setupDrag($eventTarget, camera)
             .merge(interaction.setupScroll($eventTarget, canvas, camera));
     }
-    interactions = interactions.merge(
+    interactions = Rx.Observable.merge(
+        interactions,
         interaction.setupCenter($('#center'),
                                 renderState.get('hostBuffers').curPoints,
-                                camera)
+                                camera),
+        interaction.setupZoomButton($('#zoomin'), camera, 1 / 1.25),
+        interaction.setupZoomButton($('#zoomout'), camera, 1.25)
     );
 
     //Observable int
@@ -445,6 +448,7 @@ function setupMarquee(isOn, renderState) {
 
     return marquee;
 }
+
 
 // -> Observable DOM
 //Return which mouse group element selected
