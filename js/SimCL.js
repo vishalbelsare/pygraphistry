@@ -519,20 +519,25 @@ function setTimeSubset(renderer, simulator, range) {
 
     var pointToEdgeIdx = function (ptIdx, includeLen) {
         var edgeList = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[ptIdx];
-        var firstEdge = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[2 * edgeList];
+        if (ptIdx == renderer.numPoints) {
+            //FIXME some reason first run on ptIdx==numPoints gives undefined here
+            //WORKAROUND: show second to last edge
+            edgeList = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[Math.max(ptIdx - 1, 0)]
+        }
+        var firstEdge = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * edgeList];
         if (!includeLen) {
             return firstEdge;
         } else {
-            var len = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[2 * edgeList + 1];
+            var len = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * edgeList + 1];
             return firstEdge + len;
         }
     };
 
     /*FIXME: Handle worklist with empty item for node without edges
-    edges: sorted by start, so just compare start vs stop
-    var startEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.min), false);
-    var endEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.max), true);*/
-    var endEdgeIdx = simulator.numEdges;
+    edges: sorted by start, so just compare start vs stop*/
+    //var startEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.min), false);
+    var endEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.max), true);
+    //var endEdgeIdx = simulator.numEdges;
     var startEdgeIdx = 0;
 
     var numEdges = endEdgeIdx - startEdgeIdx
