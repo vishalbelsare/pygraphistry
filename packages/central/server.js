@@ -18,11 +18,14 @@ var etl         = require('./etl/etl.js');
 debug("Config set to %j", config);
 
 var express     = require('express');
+var compression    = require('compression');
 var app         = express();
 var http        = require('http').Server(app);
 var bodyParser  = require('body-parser');
 var request     = require('request');
 
+
+app.use(compression());
 
 //needed for splunk API
 //TODO can we tighten so only for API?

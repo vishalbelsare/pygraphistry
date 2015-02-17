@@ -9,6 +9,7 @@
   "dependencies": {
     "StreamGL": "git+ssh://git@github.com:graphistry/StreamGL.git#master",
     "body-parser": "^1.10.2",
+    "compression": "^1.4.1",
     "config": "git+ssh://git@github.com:graphistry/config.git#master",
     "debug": "^2.1.0",
     "express": "*",
