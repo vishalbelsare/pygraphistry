@@ -116,7 +116,6 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 var arg = args[i];
                 var val = argValues[arg];
                 var type = argTypes[arg];
-                debug('Setting no %d named %s of type %s with value %o', i, arg, type, val);
                 if (val === null)
                     console.warn("WARNING In kernel %s, argument %s is null", name, arg);
 
