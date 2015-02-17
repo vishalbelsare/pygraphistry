@@ -89,8 +89,8 @@ GaussSeidel.prototype.setEdges = function(simulator) {
     });
     this.gsGather.set({
         springs: simulator.buffers.forwardsEdges.buffer,
-        workList: simulator.buffers.forwardsWorkItems.buffer,
         inputPoints: simulator.buffers.curPoints.buffer,
+        numSprings: simulator.numEdges,
         springPositions: simulator.buffers.springsPos.buffer,
     });
 }
