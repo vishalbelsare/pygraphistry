@@ -7,13 +7,13 @@ var debug = require('debug')('graphistry:graph-viz:cl:layoutalgo');
 /* Abtract class for layout algorithms
  * GaussSeidel, ForceAtlas, etc. are subclasses of it */
 var LayoutAlgo = function (name) {
-    this.name = name
+    this.name = name;
     this.kernels = [];
 }
 
 // Return the runtime statistics of each kernel
-LayoutAlgo.prototype.runtimeStats = function() {
-    return _.map(this.kernels, function (k) {
+LayoutAlgo.prototype.runtimeStats = function(extraKernels) {
+    return _.map(this.kernels.concat(extraKernels), function (k) {
         return k.runtimeStats();
     });
 }

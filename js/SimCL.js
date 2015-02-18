@@ -668,13 +668,14 @@ function tick(simulator, stepNumber, cfg) {
         if (stepNumber % 20 === 0 && stepNumber !== 0) {
             perf('Layout Perf Report (step: %d)', stepNumber);
 
+            var extraKernels = [simulator.otherKernels.springsGather.gather];
             var totals = {};
             var runs = {}
             // Compute sum of means so we can print percentage of runtime
             _.each(simulator.layoutAlgorithms, function (la) {
                totals[la.name] = 0;
                runs[la.name] = 0;
-                _.each(la.runtimeStats(), function (stats) {
+                _.each(la.runtimeStats(extraKernels), function (stats) {
                     if (!isNaN(stats.mean)) {
                         totals[la.name] += stats.mean * stats.runs;
                         runs[la.name] += stats.runs;
@@ -685,7 +686,7 @@ function tick(simulator, stepNumber, cfg) {
             _.each(simulator.layoutAlgorithms, function (la) {
                 var total = totals[la.name] / stepNumber;
                 perf(sprintf('  %s (Total:%f) [ms]', la.name, total.toFixed(0)));
-                _.each(la.runtimeStats(), function (stats) {
+                _.each(la.runtimeStats(extraKernels), function (stats) {
                     var percentage = (stats.mean * stats.runs / totals[la.name] * 100);
                     perf(sprintf('\t%s        pct:%4.1f%%', stats.pretty, percentage));
                 });
