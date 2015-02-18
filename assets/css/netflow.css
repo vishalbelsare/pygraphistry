@@ -95,10 +95,6 @@ html {
     box-shadow: 0 0 10px rgba(71, 71, 122, 0.75);
 }
 
-.ui-rangeSlider-handle.ui-rangeSlider-leftHandle {
-    visibility: hidden
-}
-
 .ui-rangeSlider .ui-rangeSlider-ba {
     background-color: white;
 }

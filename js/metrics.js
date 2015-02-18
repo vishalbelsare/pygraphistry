@@ -5,43 +5,56 @@ var Rx = require("rx");
 var request = require('request');
 var config = require('config')();
 var debug = require('debug')('boundary:metrics');
+var _ = require('underscore');
+var dns = require('dns');
 
 
-// TODO: Import via config file, this should be in Ansible
-var boundaryUrl = 'https://abe@graphistry.com:api.fc39b94e8f-3713@premium-api.boundary.com/v1/measurements';
+console.error('FIXME reject expired certs (currently relaxing for Boundary)');
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 
-var sendToBoundary = function(entry) {
-    if(config.ENVIRONMENT === 'local') {
+var IS_ONLINE = false;
+require('dns').resolve('www.graphistry.com', function (err) {
+    if (!err) {
+        IS_ONLINE = true;
+    }
+});
+
+function sendToBoundary (entry) {
+
+    if (!config.BOUNDARY || (config.ENVIRONMENT === 'local' && !IS_ONLINE)) {
         debug(entry);
         return;
     }
 
-    var data = {}
-    for ( var property in entry ) {
-        data['measure'] = entry[property];
-        data['metric'] = property.toUpperCase();
-    }
-    data['timestamp'] = Date.now() / 1000;
-    data['source'] = config.HOSTNAME;
-    request({
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        uri: boundaryUrl,
-        body: JSON.stringify(data),
-        method: 'POST',
+    var property = _.keys(entry)[0];
+    var data = {
+        measure: entry[property],
+        metric: property.toUpperCase(),
+        timestamp: Date.now() / 1000,
+        source: config.HOSTNAME
+    };
+
+    request.post(
+        {
+            url: config.BOUNDARY.ENDPOINT,
+            auth: config.BOUNDARY.AUTH,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            json: true,
+            body: data,
         },
         function (error, response, body) {
             if (error) {
-                console.error('Error posting to boundary', error);
+                console.error('Error posting to boundary', error.body);
             } else {
                 if (response.statusCode !== 200) {
-                    console.error('Boundary returned error', response);
+                    console.error('Boundary returned error', response.body);
                 }
             }
-        }
-    );
+        });
+
 };
 
 

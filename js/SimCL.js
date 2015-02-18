@@ -343,7 +343,7 @@ function setLabels(simulator, labels) {
  * Sets the edge list for the graph
  *
  * @param simulator - the simulator object to set the edges for
- * @param {edgesTyped: {Uint32Array}, numWorkItems: uint, workItemsTyped: {Uint32Array} } forwardsEdges -
+ * @param {edgesTyped: {Uint32Array}, numWorkItems: uint, workItemsTyped: {Int32Array} } forwardsEdges -
  *        Edge list as represented in input graph.
  *        edgesTyped is buffer where every two items contain the index of the source
  *        node for an edge, and the index of the target node of the edge.
@@ -518,33 +518,39 @@ function setPhysics(simulator, cfg) {
 //renderer * simulator * {min: 0--100, max: 0--100}
 function setTimeSubset(renderer, simulator, range) {
 
-    //points
+
+    //first point
     var startIdx = Math.round(renderer.numPoints * 0.01 * range.min);
-    var numPoints = Math.round(renderer.numPoints * 0.01 * range.max) - startIdx;
 
+    //all points before this
+    var endIdx = Math.round((renderer.numPoints) * (0.01 * range.max));
 
-    var pointToEdgeIdx = function (ptIdx, includeLen) {
-        var edgeList = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[ptIdx];
-        var firstEdge = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[2 * edgeList];
-        if (!includeLen) {
-            return firstEdge;
-        } else {
-            var len = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[2 * edgeList + 1];
-            return firstEdge + len;
+    var numPoints = endIdx - startIdx;
+
+    var pointToEdgeIdx = function (ptIdx, isBeginning) {
+
+        var workItem = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[ptIdx];
+        var idx = workItem;
+        while (idx > 0 && (simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx] === -1)) {
+            idx--;
         }
+
+        var firstEdge = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx];
+        if (!isBeginning) {
+            var len = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx + 1];
+            firstEdge += len - 1;
+        }
+
+        return firstEdge;
     };
 
-    /*FIXME: Handle worklist with empty item for node without edges
-    edges: sorted by start, so just compare start vs stop
-    var startEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.min), false);
-    var endEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.max), true);*/
-    var endEdgeIdx = simulator.numEdges;
-    var startEdgeIdx = 0;
+    //first edge
+    var startEdgeIdx = pointToEdgeIdx(startIdx, false);
 
-    var numEdges = endEdgeIdx - startEdgeIdx
+    //all edges before this
+    var endEdgeIdx = endIdx > 0 ? (pointToEdgeIdx(endIdx - 1, true) + 1) : startEdgeIdx;
 
-
-    debug('setTimeSubset numEdges:', range, simulator.numEdges, startEdgeIdx, endEdgeIdx, numEdges);
+    var numEdges = endEdgeIdx - startEdgeIdx;
 
     simulator.timeSubset =
         {relRange: range, //%
@@ -556,6 +562,8 @@ function setTimeSubset(renderer, simulator, range) {
          midEdgeRange:      {
                 startIdx: startEdgeIdx  * (1 + simulator.numSplits),
                 len: numEdges           * (1 + simulator.numSplits)}};
+
+    debug('subset', simulator.timeSubset);
 
 
     simulator.tickBuffers([
