@@ -40,7 +40,16 @@ function defaults() {
         MONGO_USERNAME: '',
         MONGO_PASSWORD: '',
         MONGO_HOSTS: ['localhost'],
-        MONGO_DATABASE: 'graphistry-local'
+        MONGO_DATABASE: 'graphistry-local',
+
+        BOUNDARY: {
+            ENDPOINT: 'https://api.graphdat.com/v1/measurements',
+            AUTH: {
+                user: 'boundary@graphistry.com',
+                pass: 'api.62fb69d814-3713'
+            }
+        }
+
     };
 }
 
