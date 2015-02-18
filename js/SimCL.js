@@ -513,9 +513,12 @@ function setPhysics(simulator, cfg) {
 function setTimeSubset(renderer, simulator, range) {
 
 
-    //points
+    //first point
     var startIdx = Math.round(renderer.numPoints * 0.01 * range.min);
-    var endIdx = Math.round((renderer.numPoints - 1) * (0.01 * range.max));
+
+    //all points before this
+    var endIdx = Math.round((renderer.numPoints) * (0.01 * range.max));
+
     var numPoints = endIdx - startIdx;
 
     var pointToEdgeIdx = function (ptIdx, includeLen) {
@@ -537,10 +540,13 @@ function setTimeSubset(renderer, simulator, range) {
 
     };
 
+    //first edge
     var startEdgeIdx = pointToEdgeIdx(startIdx, false);
-    var endEdgeIdx = pointToEdgeIdx(endIdx, true);
 
-    var numEdges = endEdgeIdx - startEdgeIdx
+    //all edges before this
+    var endEdgeIdx = endIdx > 0 ? (pointToEdgeIdx(endIdx - 1, true) + 1) : startEdgeIdx;
+
+    var numEdges = endEdgeIdx - startEdgeIdx;
 
     simulator.timeSubset =
         {relRange: range, //%
