@@ -512,38 +512,38 @@ function setPhysics(simulator, cfg) {
 //renderer * simulator * {min: 0--100, max: 0--100}
 function setTimeSubset(renderer, simulator, range) {
 
+
     //points
     var startIdx = Math.round(renderer.numPoints * 0.01 * range.min);
-    var numPoints = Math.round(renderer.numPoints * 0.01 * range.max) - startIdx;
-
+    var endIdx = Math.round((renderer.numPoints - 1) * (0.01 * range.max));
+    var numPoints = endIdx - startIdx;
 
     var pointToEdgeIdx = function (ptIdx, includeLen) {
-        var edgeList = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[ptIdx];
-        if (ptIdx == renderer.numPoints) {
-            //FIXME some reason first run on ptIdx==numPoints gives undefined here
-            //WORKAROUND: show second to last edge
-            edgeList = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[Math.max(ptIdx - 1, 0)]
-        }
-        var firstEdge = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * edgeList];
-        if (!includeLen) {
-            return firstEdge;
+        var workItem = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[ptIdx];
+        var firstEdge = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * workItem];
+
+        var res;
+        if (firstEdge === -1) {
+            var idx = workItem;
+            while (idx > 0 && (simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx] === -1)) {
+                idx--;
+            }
+            res = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx];
+        } else if (includeLen) {
+            var len = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * workItem + 1];
+            res = firstEdge + len;
         } else {
-            var len = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * edgeList + 1];
-            return firstEdge + len;
+            res = firstEdge;
         }
+
+        return res;
+
     };
 
-    /*FIXME: Handle worklist with empty item for node without edges
-    edges: sorted by start, so just compare start vs stop*/
-    //var startEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.min), false);
-    var endEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.max), true);
-    //var endEdgeIdx = simulator.numEdges;
-    var startEdgeIdx = 0;
+    var startEdgeIdx = pointToEdgeIdx(startIdx, false);
+    var endEdgeIdx = pointToEdgeIdx(endIdx, true);
 
     var numEdges = endEdgeIdx - startEdgeIdx
-
-
-    debug('setTimeSubset numEdges:', range, simulator.numEdges, startEdgeIdx, endEdgeIdx, numEdges);
 
     simulator.timeSubset =
         {relRange: range, //%
@@ -555,6 +555,8 @@ function setTimeSubset(renderer, simulator, range) {
          midEdgeRange:      {
                 startIdx: startEdgeIdx  * (1 + simulator.numSplits),
                 len: numEdges           * (1 + simulator.numSplits)}};
+
+    debug('subset', simulator.timeSubset);
 
 
     simulator.tickBuffers([
