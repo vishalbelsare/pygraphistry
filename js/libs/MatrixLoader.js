@@ -1,6 +1,5 @@
 "use strict";
 
-var $ = require('jquery');
 var Q = require('q');
 var Long = require('./Long.js');
 var debug = require("debug")("graphistry:graph-viz:data:matrixloader");
