@@ -522,21 +522,18 @@ function setTimeSubset(renderer, simulator, range) {
         var workItem = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[ptIdx];
         var firstEdge = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * workItem];
 
-        var res;
         if (firstEdge === -1) {
             var idx = workItem;
             while (idx > 0 && (simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx] === -1)) {
                 idx--;
             }
-            res = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx];
+            return simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx];
         } else if (includeLen) {
             var len = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * workItem + 1];
-            res = firstEdge + len;
+            return firstEdge + len;
         } else {
-            res = firstEdge;
+            return firstEdge;
         }
-
-        return res;
 
     };
 
