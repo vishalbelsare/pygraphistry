@@ -3,7 +3,6 @@
 var debug = require("debug")("graphistry:util"),
     path = require('path'),
     fs = require('fs'),
-    $ = require('jquery'),
     Q = require('q'),
     _ = require('underscore'),
     nodeutil = require('util');

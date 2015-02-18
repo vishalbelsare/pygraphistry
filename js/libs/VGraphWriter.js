@@ -1,6 +1,5 @@
 "use strict";
 
-var $ = require('jquery');
 var Q = require('q');
 var _ = require('underscore');
 var fs = require('fs');
