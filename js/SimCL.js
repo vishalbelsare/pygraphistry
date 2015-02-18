@@ -521,23 +521,21 @@ function setTimeSubset(renderer, simulator, range) {
 
     var numPoints = endIdx - startIdx;
 
-    var pointToEdgeIdx = function (ptIdx, includeLen) {
-        var workItem = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[ptIdx];
-        var firstEdge = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * workItem];
+    var pointToEdgeIdx = function (ptIdx, isBeginning) {
 
-        if (firstEdge === -1) {
-            var idx = workItem;
-            while (idx > 0 && (simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx] === -1)) {
-                idx--;
-            }
-            return simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx];
-        } else if (includeLen) {
-            var len = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * workItem + 1];
-            return firstEdge + len;
-        } else {
-            return firstEdge;
+        var workItem = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[ptIdx];
+        var idx = workItem;
+        while (idx > 0 && (simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx] === -1)) {
+            idx--;
         }
 
+        var firstEdge = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx];
+        if (!isBeginning) {
+            var len = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx + 1];
+            firstEdge += len - 1;
+        }
+
+        return firstEdge;
     };
 
     //first edge
