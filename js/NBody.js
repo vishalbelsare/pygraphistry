@@ -86,7 +86,7 @@ function updateSettings (graph, cfg) {
     }
 
     if (cfg.marquee) {
-        graph.simulator.recolor(cfg.marquee);
+        graph.simulator.moveNodes(cfg.marquee);
     }
 }
 

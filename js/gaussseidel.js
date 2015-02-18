@@ -108,7 +108,7 @@ function pointKernel(simulator, gsPoints, stepNumber) {
         .then(function () {
             return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
         }).fail(function (err) {
-            console.error("ERROR Kernel gaussSeidelPoints failed ", (err||{}).stack)
+            console.error("ERROR Kernel gaussSeidelPoints failed ", (err||{}).stack);
         });
 }
 
@@ -134,7 +134,10 @@ function edgeKernelSeq(simulator, gsSprings, stepNumber, edges, workItems,
         }));
 
     debug('Running gaussSeidelSprings');
-    return gsSprings.exec([numWorkItems], resources);
+    return gsSprings.exec([numWorkItems], resources)
+        .fail(function (err) {
+            console.error("ERROR Kernel gaussSeidelSprings failed ", (err||{}).stack);
+        });
 }
 
 
@@ -156,7 +159,10 @@ function gatherKernel(simulator, gsGather) {
     gsGather.set({numSprings: numSprings});
 
     debug("Running gaussSeidelSpringsGather");
-    return gsGather.exec([simulator.numForwardsWorkItems], resources);
+    return gsGather.exec([simulator.numForwardsWorkItems], resources)
+        .fail(function (err) {
+            console.error("ERROR Kernel gaussSeidelGather failed ", (err||{}).stack);
+        });
 }
 
 
@@ -183,17 +189,17 @@ GaussSeidel.prototype.tick = function(simulator, stepNumber) {
                     simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
                     simulator.buffers.nextPoints, simulator.buffers.curPoints, simulator.buffers.edgeTags_reverse);
             }).fail(function (err) {
-                console.error("ERROR edgeKernelSeq failed ", (err||{}).stack)
+                console.error("ERROR edgeKernelSeq failed ", (err||{}).stack);
             });
     }).then(function() {
         if ((!simulator.locked.lockPoints || !simulator.locked.lockEdges)
             && simulator.numEdges > 0) {
-            return gatherKernel(simulator, that.gsGather)
+            return gatherKernel(simulator, that.gsGather);
         }
     }).then(function () {
         return simulator;
     }).fail(function (err) {
-        console.error("ERROR GaussSeidel tick failed ", (err||{}).stack)
+        console.error("ERROR GaussSeidel tick failed ", (err||{}).stack);
     });
 }
 

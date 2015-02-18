@@ -48,7 +48,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     Object.seal(defValues);
 
     // If kernel has no defines, compile right away
-    var clKernel = _.without(defines, 'NODECL').length === 0 ? compile() : Q(null);
+    var qKernel = _.without(defines, 'NODECL').length === 0 ? compile() : Q(null);
 
     // {String -> Value} -> Kernel
     this.set = function (args) {
@@ -69,7 +69,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         });
 
         if (mustRecompile) {
-            clKernel = compile();
+            qKernel = compile();
         }
 
         return this;
@@ -108,7 +108,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         });
     };
 
-    function setAllArgs(clKernel) {
+    function setAllArgs(kernel) {
         debug('Setting arguments for kernel', name)
         var i;
         try {
@@ -117,9 +117,10 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 var val = argValues[arg];
                 var type = argTypes[arg];
                 if (val === null)
-                    console.warn("WARNING In kernel %s, argument %s is null", name, arg);
+                    console.warn('WARNING In kernel %s, argument %s is null', name, arg);
 
-                clKernel.setArg(i, val.length ? val[0] : val, type || undefined);
+                debug('Setting arg %d with value', i, val);
+                kernel.setArg(i, val.length ? val[0] : val, type || undefined);
             }
 
         } catch (e) {
@@ -152,7 +153,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
 
     // [Int] * [String] -> Promise[Kernel]
     this.exec = function(numWorkItems, resources, workGroupSize) {
-        return clKernel.then(function (kernel) {
+        return qKernel.then(function (kernel) {
             if (kernel === null) {
                 console.error('Kernel is not compiled, aborting');
                 return Q();

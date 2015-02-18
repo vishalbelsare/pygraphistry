@@ -3,6 +3,7 @@
 var Q = require('q');
 var util = require('./util.js');
 var cljs = require('./cl.js');
+var MoveNodes = require('./moveNodes.js');
 var _ = require('underscore');
 var debug = require('debug')('graphistry:graph-viz:graph:simcl');
 var perf  = require('debug')('perf');
@@ -37,7 +38,9 @@ function create(renderer, dimensions, numSplits, device, layoutAlgorithms, locke
                 renderer: renderer,
                 cl: cl,
                 elementsPerPoint: 2,
-                kernels: null,
+                otherKernels: {
+                    moveNodes: new MoveNodes(cl)
+                },
                 versions: {
                     tick: 0,
                     buffers: { }
@@ -61,6 +64,7 @@ function create(renderer, dimensions, numSplits, device, layoutAlgorithms, locke
             simObj.setPhysics = setPhysics.bind(this, simObj);
             simObj.setTimeSubset = setTimeSubset.bind(this, renderer, simObj);
             simObj.recolor = recolor.bind(this, simObj);
+            simObj.moveNodes = moveNodes.bind(this, simObj);
             simObj.resetBuffers = resetBuffers.bind(this, simObj);
             simObj.tickBuffers = tickBuffers.bind(this, simObj);
 
@@ -566,6 +570,19 @@ function setTimeSubset(renderer, simulator, range) {
 
 }
 
+function moveNodes(simulator, marqueeEvent) {
+    debug('marqueeEvent', marqueeEvent);
+
+    var drag = marqueeEvent.drag;
+    var delta = {
+        x: drag.end.x - drag.start.x,
+        y: drag.end.y - drag.start.y,
+    };
+
+
+    var moveNodes = simulator.otherKernels.moveNodes;
+    return moveNodes.move(simulator, marqueeEvent.selection, delta);
+}
 
 function recolor(simulator, marquee) {
     console.log('Recoloring', marquee);
@@ -583,14 +600,15 @@ function recolor(simulator, marquee) {
                 selectedIdx.push(i);
             }
         }
-        console.log('Selection', selectedIdx);
 
-        //for (var i = 0; i < selectedIdx.length; i++) {
-        //    simulator.buffersLocal.pointSizes[i] = 255;
-        //}
-        //simulator.tickBuffers(['pointSizes']);
+        _.each(selectedIdx, function (idx) {
+            simulator.buffersLocal.pointSizes[idx] = 255;
+            console.log('Selected', simulator.labels[idx]);
+        })
+
+        simulator.tickBuffers(['pointSizes']);
     }).fail(function (err) {
-        console.log('Read failed', err, (err || {}).stack);
+        console.error('Read failed', err, (err || {}).stack);
     })
 }
 
