@@ -50,7 +50,7 @@ function sendToBoundary (entry) {
                 console.error('Error posting to boundary', error.body);
             } else {
                 if (response.statusCode !== 200) {
-                    console.error('Boundary returned error', response);
+                    console.error('Boundary returned error', response.body);
                 }
             }
         });
