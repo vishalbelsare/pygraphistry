@@ -529,7 +529,7 @@ function init(socket, $elt, renderState, urlParams) {
     var timeSlide = new Rx.Subject();
     //FIXME: replace $OLD w/ browserfied jquery+jqrangeslider
     $('#timeSlider').on('valuesChanging', function (e, data) {
-            timeSlide.onNext({min: 0, max: data.values.max});
+            timeSlide.onNext({min: data.values.min, max: data.values.max});
         });
 
     timeSlide.sample(3)
