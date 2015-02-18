@@ -273,7 +273,7 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
         that.toBarnesLayout.set({xCoords: tempBuffers.x_cords.buffer,
           yCoords:tempBuffers.y_cords.buffer, mass:tempBuffers.mass.buffer,
                             blocked:tempBuffers.blocked.buffer, maxDepth:tempBuffers.maxdepth.buffer,
-                            numPoints:webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
+                            numPoints:simulator.numPoints,
                             inputPositions: simulator.buffers.curPoints.buffer, pointDegrees: simulator.buffers.degrees.buffer});
 
         function setBarnesKernelArgs(kernel, buffers) {
@@ -299,10 +299,10 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
                         maxDepth:buffers.maxdepth.buffer,
                         radius:buffers.radius.buffer,
                         globalSpeed: buffers.globalSpeed.buffer,
-                        width:webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
-                        height:webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
-                        numBodies:webcl.type ? [buffers.numBodies] : new Uint32Array([numBodies]),
-                        numNodes:webcl.type ? [buffers.numNodes] : new Uint32Array([numNodes]),
+                        width:simulator.dimensions[0],
+                        height:simulator.dimensions[1],
+                        numBodies:buffers.numBodies,
+                        numNodes:buffers.numNodes,
                         pointForces:simulator.buffers.partialForces1.buffer,
                         tau:1.0})
         };
