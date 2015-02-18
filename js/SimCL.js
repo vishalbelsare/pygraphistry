@@ -337,7 +337,7 @@ function setLabels(simulator, labels) {
  * Sets the edge list for the graph
  *
  * @param simulator - the simulator object to set the edges for
- * @param {edgesTyped: {Uint32Array}, numWorkItems: uint, workItemsTyped: {Uint32Array} } forwardsEdges -
+ * @param {edgesTyped: {Uint32Array}, numWorkItems: uint, workItemsTyped: {Int32Array} } forwardsEdges -
  *        Edge list as represented in input graph.
  *        edgesTyped is buffer where every two items contain the index of the source
  *        node for an edge, and the index of the target node of the edge.

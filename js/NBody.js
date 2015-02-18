@@ -279,10 +279,10 @@ var setEdges = Q.promised(function(graph, edges) {
             }
         }
 
-        //Uint32Array [first edge number from src idx, number of edges from src idx]
+        //Uint32Array [first edge number from src idx, number of edges from src idx, src idx, 666]
         //fetch edge to find src and dst idx (all src same)
         //num edges > 0
-        var workItemsTyped = new Uint32Array(
+        var workItemsTyped = new Int32Array(
             _.flatten(
                 workItems.map(function (o) {
                     return [o[0], o[1], o[2], 666];
@@ -309,8 +309,8 @@ var setEdges = Q.promised(function(graph, edges) {
             //Uint32Array [(edge number, number of sibling edges), ... ]
             numWorkItems: workItemsTyped.length,
 
-            //Uint32Array [(first edge number, number of sibling edges)]
-            workItemsTyped: new Uint32Array(workItemsTyped),
+            //Int32Array [(first edge number, number of sibling edges)]
+            workItemsTyped: workItemsTyped,
 
             //Uint32Array [workitem number node belongs to]
             srcToWorkItem: srcToWorkItem
