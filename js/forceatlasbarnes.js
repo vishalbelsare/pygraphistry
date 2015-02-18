@@ -3,7 +3,6 @@
 var debug = require("debug")("graphistry:graph-viz:cl:forceatlas2barnes"),
     _     = require('underscore'),
     cljs  = require('./cl.js'),
-    GaussSeidel = require('./gaussseidel.js'),
     Q     = require('q'),
     util  = require('./util.js'),
     LayoutAlgo = require('./layoutAlgo.js'),
@@ -49,13 +48,10 @@ function ForceAtlas2Barnes(clContext) {
     this.faIntegrate3 = new Kernel('faIntegrate3', ForceAtlas2Barnes.argsIntegrate3,
                                ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
 
-    this.gsGather = new Kernel('gaussSeidelSpringsGather', GaussSeidel.argsGather,
-                               GaussSeidel.argsType, 'gaussSeidel.cl', clContext);
-
     this.kernels = this.kernels.concat([this.toBarnesLayout, this.boundBox, this.buildTree,
                                         this.computeSums, this.sort, this.calculateForces,
-                                      this.faEdges, this.faSwings, this.faIntegrate, this.faIntegrate2,
-                                      this.faIntegrate3, this.gsGather]);
+                                        this.faEdges, this.faSwings, this.faIntegrate,
+                                        this.faIntegrate2, this.faIntegrate3]);
 }
 
 ForceAtlas2Barnes.prototype = Object.create(LayoutAlgo.prototype);
@@ -265,15 +261,11 @@ var setupTempBuffers = function(simulator) {
 
 
 ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
-        var localPosSize =
+    var localPosSize =
             Math.min(simulator.cl.maxThreads, simulator.numMidPoints)
             * simulator.elementsPerPoint
             * Float32Array.BYTES_PER_ELEMENT;
-    this.gsGather.set({
-        springs: simulator.buffers.forwardsEdges.buffer,
-        inputPoints: simulator.buffers.curPoints.buffer,
-        springPositions: simulator.buffers.springsPos.buffer
-    });
+
     var that = this;
 
     return setupTempBuffers(simulator).then(function (tempBuffers) {
@@ -532,24 +524,6 @@ function integrate2(simulator, faIntegrate2) {
         });
 }
 
-function gatherEdges(simulator, gsGather) {
-    var buffers = simulator.buffers;
-    var resources = [
-        buffers.forwardsEdges,
-        buffers.curPoints,
-        buffers.springsPos
-    ];
-
-    var numSprings = simulator.numEdges;
-    gsGather.set({numSprings: numSprings});
-
-    simulator.tickBuffers(['springsPos']);
-
-    debug("Running gaussSeidelSpringsGather (forceatlas2) kernel");
-    // return gsGather.exec([simulator.numForwardsWorkItems], resources);
-    return gsGather.exec([1024], resources);
-
-}
 
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var that = this;
@@ -571,8 +545,6 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
             buffers.nextPoints.copyInto(buffers.curPoints),
             buffers.curForces.copyInto(buffers.prevForces)
         ]);
-    }).then(function () {
-        return gatherEdges(simulator, that.gsGather);
     }).then(function () {
         return simulator;
     });

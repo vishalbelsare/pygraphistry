@@ -3,7 +3,6 @@
 var   debug = require("debug")("graphistry:graph-viz:cl:forceatlas2"),
           _ = require('underscore'),
        cljs = require('./cl.js'),
-GaussSeidel = require('./gaussseidel.js'),
           Q = require('q'),
        util = require('./util.js'),
  LayoutAlgo = require('./layoutAlgo.js'),
@@ -28,11 +27,8 @@ function ForceAtlas2(clContext) {
     this.faIntegrate2 = new Kernel('faIntegrate2', ForceAtlas2.argsIntegrate2,
                                ForceAtlas2.argsType, 'forceAtlas2Fast.cl', clContext);
 
-    this.gsGather = new Kernel('gaussSeidelSpringsGather', GaussSeidel.argsGather,
-                               GaussSeidel.argsType, 'gaussSeidel.cl', clContext);
-
     this.kernels = this.kernels.concat([this.faPoints, this.faEdges, this.faSwings,
-                                       this.faIntegrate, this.faIntegrate2, this.gsGather]);
+                                       this.faIntegrate, this.faIntegrate2]);
 }
 ForceAtlas2.prototype = Object.create(LayoutAlgo.prototype);
 ForceAtlas2.prototype.constructor = ForceAtlas2;
@@ -109,28 +105,22 @@ ForceAtlas2.prototype.setPhysics = function(cfg) {
 
 
 ForceAtlas2.prototype.setEdges = function(simulator) {
-        var localPosSize =
-            Math.min(simulator.cl.maxThreads, simulator.numMidPoints)
-            * simulator.elementsPerPoint
-            * Float32Array.BYTES_PER_ELEMENT;
+    var localPosSize =
+        Math.min(simulator.cl.maxThreads, simulator.numMidPoints)
+        * simulator.elementsPerPoint
+        * Float32Array.BYTES_PER_ELEMENT;
 
-        this.faPoints.set({
-            tilePointsParam: 1,
-            tilePointsParam2: 1,
-            tilesPerIteration: simulator.tilesPerIteration,
-            numPoints: simulator.numPoints,
-            inputPositions: simulator.buffers.curPoints.buffer,
-            width: simulator.dimensions[0],
-            height: simulator.dimensions[1],
-            pointDegrees: simulator.buffers.degrees.buffer,
-            pointForces: simulator.buffers.partialForces1.buffer
-        });
-
-        this.gsGather.set({
-            springs: simulator.buffers.forwardsEdges.buffer,
-            inputPoints: simulator.buffers.curPoints.buffer,
-            springPositions: simulator.buffers.springsPos.buffer
-        });
+    this.faPoints.set({
+        tilePointsParam: 1,
+        tilePointsParam2: 1,
+        tilesPerIteration: simulator.tilesPerIteration,
+        numPoints: simulator.numPoints,
+        inputPositions: simulator.buffers.curPoints.buffer,
+        width: simulator.dimensions[0],
+        height: simulator.dimensions[1],
+        pointDegrees: simulator.buffers.degrees.buffer,
+        pointForces: simulator.buffers.partialForces1.buffer
+    });
 }
 
 
@@ -282,23 +272,6 @@ function integrate2(simulator, faIntegrate2) {
         });
 }
 
-function gatherEdges(simulator, gsGather) {
-    var buffers = simulator.buffers;
-    var resources = [
-        buffers.forwardsEdges,
-        buffers.curPoints,
-        buffers.springsPos
-    ];
-
-    var numSprings = simulator.numEdges;
-    gsGather.set({numSprings: numSprings});
-
-    simulator.tickBuffers(['springsPos']);
-
-    debug("Running gaussSeidelSpringsGather (forceatlas2) kernel");
-    return gsGather.exec([simulator.numForwardsWorkItems], resources);
-}
-
 
 ForceAtlas2.prototype.tick = function(simulator, stepNumber) {
     var that = this;
@@ -318,8 +291,6 @@ ForceAtlas2.prototype.tick = function(simulator, stepNumber) {
             buffers.nextPoints.copyInto(buffers.curPoints),
             buffers.curForces.copyInto(buffers.prevForces)
         ]);
-    }).then(function () {
-        return gatherEdges(simulator, that.gsGather);
     }).then(function () {
         return simulator;
     });

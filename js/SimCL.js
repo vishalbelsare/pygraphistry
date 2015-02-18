@@ -1,9 +1,10 @@
-"use strict";
+'use strict';
 
 var Q = require('q');
 var util = require('./util.js');
 var cljs = require('./cl.js');
 var MoveNodes = require('./moveNodes.js');
+var SpringsGather = require('./springsGather.js');
 var _ = require('underscore');
 var debug = require('debug')('graphistry:graph-viz:graph:simcl');
 var perf  = require('debug')('perf');
@@ -39,7 +40,8 @@ function create(renderer, dimensions, numSplits, device, layoutAlgorithms, locke
                 cl: cl,
                 elementsPerPoint: 2,
                 otherKernels: {
-                    moveNodes: new MoveNodes(cl)
+                    moveNodes: new MoveNodes(cl),
+                    springsGather: new SpringsGather(cl)
                 },
                 versions: {
                     tick: 0,
@@ -579,9 +581,15 @@ function moveNodes(simulator, marqueeEvent) {
         y: drag.end.y - drag.start.y,
     };
 
-
     var moveNodes = simulator.otherKernels.moveNodes;
-    return moveNodes.move(simulator, marqueeEvent.selection, delta);
+    var springsGather = simulator.otherKernels.springsGather;
+
+    return moveNodes.run(simulator, marqueeEvent.selection, delta)
+        .then(function () {
+            return springsGather.tick(simulator);
+        }).fail(function (err) {
+            console.error('Error trying to move nodes', (err||{}).stack);
+        });
 }
 
 function recolor(simulator, marquee) {
@@ -641,6 +649,8 @@ function tick(simulator, stepNumber, cfg) {
             })
             .then(function () {
                 return tickAllHelper(remainingAlgorithms);
+            }).then(function () {
+                return simulator.otherKernels.springsGather.tick(simulator);
             });
     };
 
