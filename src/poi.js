@@ -155,23 +155,43 @@ function genLabel (instance, $labelCont, idx) {
 
 //NETWORK ===================
 
+
+function fetchText (instance, idx) {
+
+    instance.state.socket.emit('get_labels', [idx], function (err, data) {
+        if (err) {
+            console.error('get_labels', err);
+        } else {
+            instance.state.labelCache[idx].onNext(data[0]);
+        }
+    });
+
+}
+
 //instance * int -> ReplaySubject_1 ?HtmlString
 //TODO batch fetches
 function getLabelText (instance, idx) {
     if (!instance.state.labelCache[idx]) {
         instance.state.labelCache[idx] = new Rx.ReplaySubject(1);
-        instance.state.socket.emit('get_labels', [idx], function (err, data) {
-            if (err) {
-                console.error('get_labels', err);
-            } else {
-                instance.state.labelCache[idx].onNext(data[0]);
-            }
-        });
+        fetchText(instance, idx);
     }
     return instance.state.labelCache[idx];
 }
 
 
+// ?[ idx ] -> bool
+function invalidateCache (instance, idxs) {
+    var indices = idxs ? idxs : _.keys(instance.state.labelCache);
+    indices.forEach(function (idx) {
+        idx = parseInt(idx);
+
+        //TODO to be correct, we should mark existing remapping ones as inprogress
+        //however, chances are, it won't move, so this avoids *some* flickr, though we still see some
+        //instance.state.labelCache[idx].onNext('(fetching)');
+
+        fetchText(instance, idx);
+    });
+}
 
 
 function init (socket) {
@@ -210,7 +230,10 @@ function init (socket) {
         finishApprox: finishApprox,
 
         //$DOM * idx -> {elt: $DOM, idx: int, setIdx: Subject int}
-        genLabel: genLabel.bind('', instance)
+        genLabel: genLabel.bind('', instance),
+
+        // ?[ idx ] -> bool
+        invalidateCache: invalidateCache.bind('', instance)
     });
 
     return instance;

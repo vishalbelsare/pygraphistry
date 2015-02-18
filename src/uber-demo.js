@@ -530,6 +530,7 @@ function init(socket, $elt, renderState, urlParams) {
     //FIXME: replace $OLD w/ browserfied jquery+jqrangeslider
     $('#timeSlider').on('valuesChanging', function (e, data) {
             timeSlide.onNext({min: data.values.min, max: data.values.max});
+            poi.invalidateCache();
         });
 
     timeSlide.sample(3)
