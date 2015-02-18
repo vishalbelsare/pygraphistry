@@ -582,14 +582,17 @@ function init(socket, $elt, renderState, urlParams) {
             .subscribe(_.identity, makeErrorHandler('menu slider'));
     });
 
-
-    marquee.drags.zip(
-        marquee.drags.flatMapLatest(marquee.selections.take(1)),
+    Rx.Observable.zip(
+        marquee.drags,
+        marquee.drags.flatMapLatest(function () {
+            return marquee.selections.take(1);
+        }),
         function(a, b) { return {drag: a, selection: b}; }
     ).subscribe(function (move) {
-        var payload = {play: true, layout: false, marquee: move};
+        var payload = {play: true, layout: true, marquee: move};
         socket.emit('interaction', payload);
-    }, function (err) { console.error('marquee payload', err, (err||{}).stack); });
+    }, makeErrorHandler('marquee error'));
+
 
     var $tooltips = $('[data-toggle="tooltip"]');
     var $bolt = $('#simulate, #center').find('.fa');
