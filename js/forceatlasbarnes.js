@@ -7,30 +7,16 @@ var debug = require("debug")("graphistry:graph-viz:cl:forceatlas2barnes"),
     util  = require('./util.js'),
     LayoutAlgo = require('./layoutAlgo.js'),
     Kernel = require('./kernel.js'),
-    BarnesKernels = require('./javascript_kernels/barnes_kernels.js');
+    BarnesKernelSeq = require('./javascript_kernels/barnesKernelSeq.js'),
+    EdgeKernelSeq = require('./javascript_kernels/edgeKernelSeq.js');
 
 function ForceAtlas2Barnes(clContext) {
     LayoutAlgo.call(this, 'ForceAtlasBarnes');
 
     debug('Creating ForceAtlasBarnes kernels');
-    this.barnesKernels = new BarnesKernels(clContext);
+    this.barnesKernelSeq = new BarnesKernelSeq(clContext);
 
-    this.toBarnesLayout = this.barnesKernels.toBarnesLayout;
-
-    this.boundBox = this.barnesKernels.boundBox;
-
-    this.buildTree = this.barnesKernels.buildTree;
-
-    this.computeSums = this.barnesKernels.computeSums;
-
-    this.sort = this.barnesKernels.sort;
-
-    this.calculateForces = this.barnesKernels.calculateForces;
-
-    this.move = this.barnesKernels.move;
-
-    this.faEdges = new Kernel('faEdgeForces', ForceAtlas2Barnes.argsEdges,
-                               ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
+    this.edgeKernelSeq = new EdgeKernelSeq(clContext);
 
     this.faSwings = new Kernel('faSwingsTractions', ForceAtlas2Barnes.argsSwings,
                                ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
@@ -44,20 +30,12 @@ function ForceAtlas2Barnes(clContext) {
     this.faIntegrate3 = new Kernel('faIntegrate3', ForceAtlas2Barnes.argsIntegrate3,
                                ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
 
-    this.kernels = this.kernels.concat([this.toBarnesLayout, this.boundBox, this.buildTree,
-                                        this.computeSums, this.sort, this.calculateForces,
-                                        this.faEdges, this.faSwings, this.faIntegrate,
+    this.kernels = this.kernels.concat([this.faSwings, this.faIntegrate,
                                         this.faIntegrate2, this.faIntegrate3]);
 }
 
 ForceAtlas2Barnes.prototype = Object.create(LayoutAlgo.prototype);
 ForceAtlas2Barnes.prototype.constructor = ForceAtlas2Barnes;
-
-// All BarnesHut Kernels have the same arguements
-ForceAtlas2Barnes.argsEdges = [
-    'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges',
-    'workList', 'inputPoints', 'partialForces', 'stepNumber', 'numWorkItems', 'outputForces'
-];
 
 ForceAtlas2Barnes.argsSwings = ['prevForces', 'curForces', 'swings' , 'tractions'];
 
@@ -120,42 +98,24 @@ ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
             mask = mask | (1 << i);
         }
     });
-    this.toBarnesLayout.set({flags: mask});
-    this.boundBox.set({flags: mask});
-    this.buildTree.set({flags: mask});
-    this.computeSums.set({flags: mask});
-    this.sort.set({flags: mask});
-    this.calculateForces.set({flags: mask});
-    this.faEdges.set({flags: mask});
+
+    this.barnesKernelSeq.setPhysics(cfg, mask);
+    this.edgeKernelSeq.setPhysics(cfg, mask);
 }
 
-var tempBuffers  = {
-    x_cords: null, //cl.createBuffer(cl, 0, "x_cords"),
-    y_cords: null,
-    velx: null,
-    vely: null,
-    accx: null,
-    accy: null,
-    children: null,
-    global_x_mins: null,
-    global_y_mins: null,
-    global_x_maxs: null,
-    global_y_maxs: null,
-    count: null,
-    blocked: null,
-    step: null,
-    bottom: null,
-    maxdepth: null,
+// Contains any temporary buffers needed for layout
+var tempLayoutBuffers  = {
 };
 
-var setupTempBuffers = function(simulator) {
+// Create temporary buffers needed for layout
+var setupTempLayoutBuffers = function(simulator) {
     return Q.all(
         [
         simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed')
         ])
     .spread(function (globalSpeed) {
-      tempBuffers.globalSpeed = globalSpeed;
-      return tempBuffers;
+      tempLayoutBuffers.globalSpeed = globalSpeed;
+      return tempLayoutBuffers;
     })
     .catch(function(error) {
       console.log(error);
@@ -171,54 +131,36 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
 
     var that = this;
 
-    return setupTempBuffers(simulator).then(function (layoutBuffers) {
-      that.barnesKernels.setEdges(simulator, layoutBuffers);
+    return setupTempLayoutBuffers(simulator).then(function (layoutBuffers) {
+      that.barnesKernelSeq.setEdges(simulator, layoutBuffers);
 
     });
 }
 
-function pointForces(simulator, barnesKernels, stepNumber) {
-     console.log(barnesKernels);
-     return barnesKernels.exec_kernels(simulator, stepNumber)
+function pointForces(simulator, barnesKernelSeq, stepNumber) {
+     return barnesKernelSeq.exec_kernels(simulator, stepNumber)
     .fail(function (err) {
         console.error('Computing pointForces failed', err, (err||{}).stack);
     });
 }
 
-function edgeForcesOneWay(simulator, faEdges, edges, workItems, numWorkItems,
+function edgeForcesOneWay(simulator, edgeKernelSeq, edges, workItems, numWorkItems,
                           points, stepNumber, partialForces, outputForces) {
-    faEdges.set({
-        edges: edges.buffer,
-        workList: workItems.buffer,
-        inputPoints: points.buffer,
-        stepNumber: stepNumber,
-        numWorkItems: numWorkItems,
-        partialForces: partialForces.buffer,
-        outputForces: outputForces.buffer
-    });
 
-    var resources = [edges, workItems, points, partialForces, outputForces];
+     return edgeKernelSeq.execKernels(simulator, edges, workItems, numWorkItems, points, stepNumber,
+                               partialForces, outputForces);
 
-    simulator.tickBuffers(
-        _.keys(simulator.buffers).filter(function (name) {
-            return simulator.buffers[name] == outputForces;
-        })
-    );
-
-    debug("Running kernel faEdgeForces");
-    // 30:52, 60:50, 90:51, 120:49, 150:49, 256:48, 512:49
-    return faEdges.exec([256*256], resources, [256]);
 }
 
-function edgeForces(simulator, faEdges, stepNumber) {
+function edgeForces(simulator, edgeKernelSeq, stepNumber) {
     var buffers = simulator.buffers;
-    return edgeForcesOneWay(simulator, faEdges,
+    return edgeForcesOneWay(simulator, edgeKernelSeq,
                             buffers.forwardsEdges, buffers.forwardsWorkItems,
                             simulator.numForwardsWorkItems,
                             buffers.curPoints, stepNumber,
                             buffers.partialForces1, buffers.partialForces2)
     .then(function () {
-        return edgeForcesOneWay(simulator, faEdges,
+        return edgeForcesOneWay(simulator, edgeKernelSeq,
                                 buffers.backwardsEdges, buffers.backwardsWorkItems,
                                 simulator.numBackwardsWorkItems,
                                 buffers.curPoints, stepNumber,
@@ -285,7 +227,7 @@ function integrate3(simulator, faIntegrate3) {
     var buffers = simulator.buffers;
 
     faIntegrate3.set({
-        globalSpeed: tempBuffers.globalSpeed.buffer,
+        globalSpeed: tempLayoutBuffers.globalSpeed.buffer,
         inputPositions: buffers.curPoints.buffer,
         curForces: buffers.curForces.buffer,
         swings: buffers.swings.buffer,
@@ -344,9 +286,9 @@ function integrate2(simulator, faIntegrate2) {
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var that = this;
     var tickTime = Date.now();
-    return pointForces(simulator, that.barnesKernels, stepNumber)
+    return pointForces(simulator, that.barnesKernelSeq, stepNumber)
     .then(function () {
-       return edgeForces(simulator, that.faEdges, stepNumber);
+       return edgeForces(simulator, that.edgeKernelSeq, stepNumber);
     }).then(function () {
         return swingsTractions(simulator, that.faSwings);
     }).then(function () {

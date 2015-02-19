@@ -4,7 +4,7 @@ var Kernel = require('../kernel.js'),
     _     = require('underscore'),
     cljs  = require('../cl.js');
 
-var BarnesKernels = function (clContext) {
+var BarnesKernelSeq = function (clContext) {
 
     this.argsToBarnesLayout = [
         'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints',
@@ -292,5 +292,5 @@ var BarnesKernels = function (clContext) {
 
 };
 
-module.exports = BarnesKernels;
+module.exports = BarnesKernelSeq;
 
