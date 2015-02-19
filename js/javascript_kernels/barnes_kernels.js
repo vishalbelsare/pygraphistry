@@ -1,11 +1,12 @@
-var Kernel = require('../kernel.js');
-
-console.log(Kernel);
-
+var Kernel = require('../kernel.js'),
+    Q = require('q'),
+    debug = require("debug")("graphistry:graph-viz:cl:barensKernels"),
+    cljs  = require('../cl.js');
 
 var BarnesKernels = function (clContext) {
+    console.log("HEre");
 
-    var this.argsToBarnesLayout = [
+    this.argsToBarnesLayout = [
         'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints',
         'inputPositions', 'xCoords', 'yCoords', 'mass', 'blocked', 'maxDepth',
         'pointDegrees', 'stepNumber'
@@ -17,7 +18,7 @@ var BarnesKernels = function (clContext) {
     'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
         'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau'];
 
-    var this.argsType = {
+    this.argsType = {
         scalingRatio: cljs.types.float_t,
         gravity: cljs.types.float_t,
         edgeInfluence: cljs.types.uint_t,
@@ -71,8 +72,8 @@ var BarnesKernels = function (clContext) {
         globalSpeed: null
     }
 
-    this.toBarnesLayout = new Kernel('to_barnes_layout', argsToBarnesLayout,
-            argsType, 'barnesHut.cl', clContext);
+    this.toBarnesLayout = new Kernel('to_barnes_layout', this.argsToBarnesLayout,
+            this.argsType, 'barnesHut.cl', clContext);
 
     this.boundBox = new Kernel('bound_box', this.argsBarnes,
             this.argsType, 'barnesHut.cl', clContext);
@@ -152,7 +153,7 @@ var BarnesKernels = function (clContext) {
                     simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed')
                         ])
                         .spread(function (x_cords, y_cords, accx, accy, children, mass, start, sort, xmin, xmax, ymin, ymax, count,
-                                    blocked, step, bottom, maxdepth, radius, globalSpeed) {
+                                    blocked, step, bottom, maxdepth, radius) {
                             tempBuffers.x_cords = x_cords;
                             tempBuffers.y_cords = y_cords;
                             tempBuffers.accx = accx;
@@ -173,7 +174,6 @@ var BarnesKernels = function (clContext) {
                             tempBuffers.radius = radius;
                             tempBuffers.numNodes = numNodes;
                             tempBuffers.numBodies = numBodies;
-                            tempBuffers.globalSpeed = globalSpeed;
                             return tempBuffers;
                         })
         .catch(function(error) {
@@ -181,45 +181,45 @@ var BarnesKernels = function (clContext) {
         });
     };
 
-    var setEdges = function(simulator) {
+    this.setEdges = function(simulator, layoutBuffers) {
+        var that = this;
         return setupTempBuffers(simulator).then(function (tempBuffers) {
 
-            that.toBarnesLayout.set({xCoords: tempBuffers.x_cords.buffer,
-                yCoords:tempBuffers.y_cords.buffer, mass:tempBuffers.mass.buffer,
-                blocked:tempBuffers.blocked.buffer, maxDepth:tempBuffers.maxdepth.buffer,
-                numPoints:webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
-                inputPositions: simulator.buffers.curPoints.buffer, pointDegrees: simulator.buffers.degrees.buffer});
+        console.log("In set edges");
+        that.toBarnesLayout.set({xCoords: tempBuffers.x_cords.buffer,
+          yCoords:tempBuffers.y_cords.buffer, mass:tempBuffers.mass.buffer,
+                            blocked:tempBuffers.blocked.buffer, maxDepth:tempBuffers.maxdepth.buffer,
+                            numPoints:simulator.numPoints,
+                            inputPositions: simulator.buffers.curPoints.buffer, pointDegrees: simulator.buffers.degrees.buffer});
 
-            var that = this;
             function setBarnesKernelArgs(kernel, buffers) {
                 //console.log(buffers);
-                kernel.set({xCoords:buffers.x_cords.buffer,
-                    yCoords:buffers.y_cords.buffer,
-                    accX:buffers.accx.buffer,
-                    accY:buffers.accy.buffer,
-                    children:buffers.children.buffer,
-                    mass:buffers.mass.buffer,
-                    start:buffers.start.buffer,
-                    sort:buffers.sort.buffer,
-                    globalXMin:buffers.xmin.buffer,
-                    globalXMax:buffers.xmax.buffer,
-                    globalYMin:buffers.ymin.buffer,
-                    globalYMax:buffers.ymax.buffer,
-                    swings:simulator.buffers.swings.buffer,
-                    tractions:simulator.buffers.tractions.buffer,
-                    count:buffers.count.buffer,
-                    blocked:buffers.blocked.buffer,
-                    bottom:buffers.bottom.buffer,
-                    step:buffers.step.buffer,
-                    maxDepth:buffers.maxdepth.buffer,
-                    radius:buffers.radius.buffer,
-                    globalSpeed: buffers.globalSpeed.buffer,
-                    width:webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
-                    height:webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
-                    numBodies:webcl.type ? [buffers.numBodies] : new Uint32Array([numBodies]),
-                    numNodes:webcl.type ? [buffers.numNodes] : new Uint32Array([numNodes]),
-                    pointForces:simulator.buffers.partialForces1.buffer,
-                    tau:1.0})
+              kernel.set({xCoords:buffers.x_cords.buffer,
+                yCoords:buffers.y_cords.buffer,
+                accX:buffers.accx.buffer,
+                accY:buffers.accy.buffer,
+                children:buffers.children.buffer,
+                mass:buffers.mass.buffer,
+                start:buffers.start.buffer,
+                sort:buffers.sort.buffer,
+                globalXMin:buffers.xmin.buffer,
+                globalXMax:buffers.xmax.buffer,
+                globalYMin:buffers.ymin.buffer,
+                globalYMax:buffers.ymax.buffer,
+                swings:simulator.buffers.swings.buffer,
+                tractions:simulator.buffers.tractions.buffer,
+                count:buffers.count.buffer,
+                blocked:buffers.blocked.buffer,
+                bottom:buffers.bottom.buffer,
+                step:buffers.step.buffer,
+                maxDepth:buffers.maxdepth.buffer,
+                radius:buffers.radius.buffer,
+                globalSpeed: layoutBuffers.globalSpeed.buffer,
+                width:simulator.dimensions[0],
+                height:simulator.dimensions[1],
+                numBodies:buffers.numBodies,
+                numNodes:buffers.numNodes,
+                pointForces:simulator.buffers.partialForces1.buffer})
             };
             setBarnesKernelArgs(that.boundBox, tempBuffers);
             setBarnesKernelArgs(that.buildTree, tempBuffers);
@@ -229,7 +229,7 @@ var BarnesKernels = function (clContext) {
         });
     };
 
-    var exec_kernels(stepNumber) {
+    this.exec_kernels = function(simulator, stepNumber) {
 
         var resources = [
             simulator.buffers.curPoints,
@@ -238,42 +238,38 @@ var BarnesKernels = function (clContext) {
                 simulator.buffers.partialForces1
         ];
 
-        toBarnesLayout.set({stepNumber: stepNumber});
-        boundBox.set({stepNumber: stepNumber});
-        buildTree.set({stepNumber: stepNumber});
-        computeSums.set({stepNumber: stepNumber});
-        sort.set({stepNumber: stepNumber});
-        calculateForces.set({stepNumber: stepNumber});
+        this.toBarnesLayout.set({stepNumber: stepNumber});
+        this.boundBox.set({stepNumber: stepNumber});
+        this.buildTree.set({stepNumber: stepNumber});
+        this.computeSums.set({stepNumber: stepNumber});
+        this.sort.set({stepNumber: stepNumber});
+        this.calculateForces.set({stepNumber: stepNumber});
 
         simulator.tickBuffers(['partialForces1']);
 
         debug("Running Force Atlas2 with BarnesHut Kernels");
 
         // For all calls, we must have the # work items be a multiple of the workgroup size.
-        return toBarnesLayout.exec([256], resources, [256])
-
-            .then(function () {
-                simulator.cl.queue.finish();
-            })
-
+        var that = this;
+        return this.toBarnesLayout.exec([256], resources, [256])
         .then(function () {
-            return boundBox.exec([10*256], resources, [256]);
+            return that.boundBox.exec([10*256], resources, [256]);
         })
 
         .then(function () {
-            return buildTree.exec([4*256], resources, [256]);
+            return that.buildTree.exec([4*256], resources, [256]);
         })
 
         .then(function () {
-            return computeSums.exec([4*256], resources, [256]);
+            return that.computeSums.exec([4*256], resources, [256]);
         })
 
         .then(function () {
-            return sort.exec([4*256], resources, [256]);
+            return that.sort.exec([4*256], resources, [256]);
         })
 
         .then(function () {
-            return calculateForces.exec([40*256], resources, [256]);
+            return that.calculateForces.exec([40*256], resources, [256]);
         })
 
         .fail(function (err) {
@@ -283,7 +279,5 @@ var BarnesKernels = function (clContext) {
 
 };
 
-module.exports = {
-    BarnesKernels
-}
+module.exports = BarnesKernels;
 
