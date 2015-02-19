@@ -241,34 +241,40 @@ function handleVboUpdates(socket, renderState) {
     var renderedFrame = new Rx.BehaviorSubject(0);
 
     var previousVersions = {buffers: {}, textures: {}};
+
+    var vbo_update_step = 0;
+
     socket.on('vbo_update', function (data, handshake) {
+
+        var thisStep = {step: vbo_update_step++, data: data.step};
+
         try {
-            debug('VBO update');
+            debug('1. VBO update', thisStep);
             renderedFrame.onNext('start');
 
             var now = new Date().getTime();
-            debug('got VBO update message', now - lastHandshake, data, 'ms');
+            debug('2. got VBO update message', now - lastHandshake, data, 'ms', thisStep);
 
             var changedBufferNames  = getUpdatedNames(bufferNames,  previousVersions.buffers,  data.versions ? data.versions.buffers : null);
             var changedTextureNames = getUpdatedNames(textureNames, previousVersions.textures, data.versions ? data.versions.textures : null);
 
             socket.emit('planned_binary_requests', {buffers: changedBufferNames, textures: changedTextureNames});
 
-            debug('changed buffers/textures', previousVersions, data.versions, changedBufferNames, changedTextureNames);
+            debug('3. changed buffers/textures', previousVersions, data.versions, changedBufferNames, changedTextureNames, thisStep);
 
             var readyBuffers = new Rx.ReplaySubject(1);
             var readyTextures = new Rx.ReplaySubject(1);
 
             var readyToRender = Rx.Observable.zip(readyBuffers, readyTextures, _.identity).share();
             readyToRender.subscribe(function () {
-                    debug('All buffers and textures received, completing');
+                    debug('6. All buffers and textures received, completing', thisStep);
                     handshake(Date.now() - lastHandshake);
                     lastHandshake = Date.now();
                     renderedFrame.onNext('received');
                     renderer.render(renderState);
                     renderedFrame.onNext('rendered');
                 },
-                function (err) { console.error('readyToRender error', err, (err||{}).stack); });
+                function (err) { console.error('6 err. readyToRender error', err, (err||{}).stack, thisStep); });
 
             var bufferVBOs = Rx.Observable.zipArray(
                 [Rx.Observable.return()]
@@ -279,10 +285,10 @@ function handleVboUpdates(socket, renderState) {
                 .subscribe(function (vbos) {
                     vbos.shift();
 
-                    debug('Got VBOs:', vbos.length);
+                    debug('4a. Got VBOs:', vbos.length, thisStep);
                     var bindings = _.object(_.zip(changedBufferNames, vbos));
 
-                    debug('got all VBO data', Date.now() - now, 'ms', bindings);
+                    debug('5a. got all VBO data', Date.now() - now, 'ms', bindings, thisStep);
                     socket.emit('received_buffers'); //TODO fire preemptively based on guess
 
                     try {
@@ -290,11 +296,11 @@ function handleVboUpdates(socket, renderState) {
                         renderer.setNumElements(data.elements);
                         readyBuffers.onNext();
                     } catch (e) {
-                        ui.error('Render error on loading data into WebGL:', e, e.stack);
+                        ui.error('5a err. Render error on loading data into WebGL:', e, e.stack, thisStep);
                     }
 
                 },
-                function (err) { console.error('bufferVBOs error', err, (err||{}).stack); });
+                function (err) { console.error('bufferVBOs error', err, (err||{}).stack, thisStep); });
 
             var textureLengths =
                 _.object(_.pairs(_.pick(data.textures, changedTextureNames))
@@ -317,11 +323,11 @@ function handleVboUpdates(socket, renderState) {
 
                 var bindings = _.object(_.zip(changedTextureNames, textureNfos));
 
-                debug('Got textures', textures);
+                debug('4b. Got textures', textures, thisStep);
                 renderer.loadTextures(renderState, bindings);
 
                 readyTextures.onNext();
-            }, function (err) { console.error('readyToRender error', err, (err||{}).stack); });
+            }, function (err) { console.error('5b.readyToRender error', err, (err||{}).stack, thisStep); });
 
             _.keys(data.versions).forEach(function (mode) {
                 previousVersions[mode] = previousVersions[mode] || {};
@@ -331,7 +337,7 @@ function handleVboUpdates(socket, renderState) {
             });
 
         } catch (e) {
-            debug('ERROR vbo_update', e, e.stack);
+            debug('ERROR vbo_update', e, e.stack, thisStep);
         }
     });
 
