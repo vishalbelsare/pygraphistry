@@ -476,6 +476,7 @@ function makeMouseSwitchboard() {
     return onElt;
 }
 
+
 function init(socket, $elt, renderState, urlParams) {
 
     poi = poiLib(socket);
@@ -485,6 +486,7 @@ function init(socket, $elt, renderState, urlParams) {
     var marqueeIsOn = false;
     var turnOnMarquee = onElt.map(function (elt) {
         if (elt === $('#marqueerectangle')[0]) {
+            $(elt).children('i').toggleClass('toggle-on');
             marqueeIsOn = !marqueeIsOn;
         }
         return marqueeIsOn;
@@ -553,12 +555,11 @@ function init(socket, $elt, renderState, urlParams) {
     var runLayout =
         Rx.Observable.fromEvent($('#simulate'), 'click')
             .map(function () {
+                $('#simulate > i').toggleClass('toggle-on');
                 if (currentlyLayingOut) {
-                    // TODO: Unstyle
                     currentlyLayingOut = false;
                     return Rx.Observable.empty();
                 } else {
-                    // TODO: Style
                     currentlyLayingOut = true;
                     return Rx.Observable.interval(INTERACTION_INTERVAL);
                 }
