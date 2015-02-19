@@ -1,8 +1,10 @@
-"use strict";
+'use strict';
 
 var Q = require('q');
 var util = require('./util.js');
 var cljs = require('./cl.js');
+var MoveNodes = require('./moveNodes.js');
+var SpringsGather = require('./springsGather.js');
 var _ = require('underscore');
 var debug = require('debug')('graphistry:graph-viz:graph:simcl');
 var perf  = require('debug')('perf');
@@ -37,7 +39,10 @@ function create(renderer, dimensions, numSplits, device, layoutAlgorithms, locke
                 renderer: renderer,
                 cl: cl,
                 elementsPerPoint: 2,
-                kernels: null,
+                otherKernels: {
+                    moveNodes: new MoveNodes(cl),
+                    springsGather: new SpringsGather(cl)
+                },
                 versions: {
                     tick: 0,
                     buffers: { }
@@ -61,6 +66,7 @@ function create(renderer, dimensions, numSplits, device, layoutAlgorithms, locke
             simObj.setPhysics = setPhysics.bind(this, simObj);
             simObj.setTimeSubset = setTimeSubset.bind(this, renderer, simObj);
             simObj.recolor = recolor.bind(this, simObj);
+            simObj.moveNodes = moveNodes.bind(this, simObj);
             simObj.resetBuffers = resetBuffers.bind(this, simObj);
             simObj.tickBuffers = tickBuffers.bind(this, simObj);
 
@@ -337,7 +343,7 @@ function setLabels(simulator, labels) {
  * Sets the edge list for the graph
  *
  * @param simulator - the simulator object to set the edges for
- * @param {edgesTyped: {Uint32Array}, numWorkItems: uint, workItemsTyped: {Uint32Array} } forwardsEdges -
+ * @param {edgesTyped: {Uint32Array}, numWorkItems: uint, workItemsTyped: {Int32Array} } forwardsEdges -
  *        Edge list as represented in input graph.
  *        edgesTyped is buffer where every two items contain the index of the source
  *        node for an edge, and the index of the target node of the edge.
@@ -512,33 +518,44 @@ function setPhysics(simulator, cfg) {
 //renderer * simulator * {min: 0--100, max: 0--100}
 function setTimeSubset(renderer, simulator, range) {
 
-    //points
+
+    //first point
     var startIdx = Math.round(renderer.numPoints * 0.01 * range.min);
-    var numPoints = Math.round(renderer.numPoints * 0.01 * range.max) - startIdx;
 
+    //all points before this
+    var endIdx = Math.round((renderer.numPoints) * (0.01 * range.max));
 
-    var pointToEdgeIdx = function (ptIdx, includeLen) {
-        var edgeList = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[ptIdx];
-        var firstEdge = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[2 * edgeList];
-        if (!includeLen) {
-            return firstEdge;
+    var numPoints = endIdx - startIdx;
+
+    var pointToEdgeIdx = function (ptIdx, isBeginning) {
+
+        var workItem = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[ptIdx];
+        var idx = workItem;
+        while (idx > 0 && (simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx] === -1)) {
+            idx--;
+        }
+
+        var firstEdge = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx];
+
+        if (idx == 0 && firstEdge == -1) {
+            return 0;
         } else {
-            var len = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[2 * edgeList + 1];
-            return firstEdge + len;
+            if (!isBeginning) {
+                var len = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx + 1];
+                console.log('add len - 1', {len: len});
+                firstEdge += len - 1;
+            }
+            return firstEdge;
         }
     };
 
-    /*FIXME: Handle worklist with empty item for node without edges
-    edges: sorted by start, so just compare start vs stop
-    var startEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.min), false);
-    var endEdgeIdx = pointToEdgeIdx(Math.round(renderer.numPoints * 0.01 * range.max), true);*/
-    var endEdgeIdx = simulator.numEdges;
-    var startEdgeIdx = 0;
+    //first edge
+    var startEdgeIdx = pointToEdgeIdx(startIdx, false);
 
-    var numEdges = endEdgeIdx - startEdgeIdx
+    //all edges before this
+    var endEdgeIdx = endIdx > 0 ? (pointToEdgeIdx(endIdx - 1, true) + 1) : startEdgeIdx;
 
-
-    debug('setTimeSubset numEdges:', range, simulator.numEdges, startEdgeIdx, endEdgeIdx, numEdges);
+    var numEdges = endEdgeIdx - startEdgeIdx;
 
     simulator.timeSubset =
         {relRange: range, //%
@@ -550,6 +567,8 @@ function setTimeSubset(renderer, simulator, range) {
          midEdgeRange:      {
                 startIdx: startEdgeIdx  * (1 + simulator.numSplits),
                 len: numEdges           * (1 + simulator.numSplits)}};
+
+    debug('subset', simulator.timeSubset);
 
 
     simulator.tickBuffers([
@@ -566,6 +585,25 @@ function setTimeSubset(renderer, simulator, range) {
 
 }
 
+function moveNodes(simulator, marqueeEvent) {
+    debug('marqueeEvent', marqueeEvent);
+
+    var drag = marqueeEvent.drag;
+    var delta = {
+        x: drag.end.x - drag.start.x,
+        y: drag.end.y - drag.start.y,
+    };
+
+    var moveNodes = simulator.otherKernels.moveNodes;
+    var springsGather = simulator.otherKernels.springsGather;
+
+    return moveNodes.run(simulator, marqueeEvent.selection, delta)
+        .then(function () {
+            return springsGather.tick(simulator);
+        }).fail(function (err) {
+            console.error('Error trying to move nodes', (err||{}).stack);
+        });
+}
 
 function recolor(simulator, marquee) {
     console.log('Recoloring', marquee);
@@ -583,14 +621,15 @@ function recolor(simulator, marquee) {
                 selectedIdx.push(i);
             }
         }
-        console.log('Selection', selectedIdx);
 
-        //for (var i = 0; i < selectedIdx.length; i++) {
-        //    simulator.buffersLocal.pointSizes[i] = 255;
-        //}
-        //simulator.tickBuffers(['pointSizes']);
+        _.each(selectedIdx, function (idx) {
+            simulator.buffersLocal.pointSizes[idx] = 255;
+            console.log('Selected', simulator.labels[idx]);
+        })
+
+        simulator.tickBuffers(['pointSizes']);
     }).fail(function (err) {
-        console.log('Read failed', err, (err || {}).stack);
+        console.error('Read failed', err, (err || {}).stack);
     })
 }
 
@@ -623,6 +662,8 @@ function tick(simulator, stepNumber, cfg) {
             })
             .then(function () {
                 return tickAllHelper(remainingAlgorithms);
+            }).then(function () {
+                return simulator.otherKernels.springsGather.tick(simulator);
             });
     };
 
@@ -632,13 +673,14 @@ function tick(simulator, stepNumber, cfg) {
         if (stepNumber % 20 === 0 && stepNumber !== 0) {
             perf('Layout Perf Report (step: %d)', stepNumber);
 
+            var extraKernels = [simulator.otherKernels.springsGather.gather];
             var totals = {};
             var runs = {}
             // Compute sum of means so we can print percentage of runtime
             _.each(simulator.layoutAlgorithms, function (la) {
                totals[la.name] = 0;
                runs[la.name] = 0;
-                _.each(la.runtimeStats(), function (stats) {
+                _.each(la.runtimeStats(extraKernels), function (stats) {
                     if (!isNaN(stats.mean)) {
                         totals[la.name] += stats.mean * stats.runs;
                         runs[la.name] += stats.runs;
@@ -649,7 +691,7 @@ function tick(simulator, stepNumber, cfg) {
             _.each(simulator.layoutAlgorithms, function (la) {
                 var total = totals[la.name] / stepNumber;
                 perf(sprintf('  %s (Total:%f) [ms]', la.name, total.toFixed(0)));
-                _.each(la.runtimeStats(), function (stats) {
+                _.each(la.runtimeStats(extraKernels), function (stats) {
                     var percentage = (stats.mean * stats.runs / totals[la.name] * 100);
                     perf(sprintf('\t%s        pct:%4.1f%%', stats.pretty, percentage));
                 });
@@ -661,7 +703,9 @@ function tick(simulator, stepNumber, cfg) {
         // What we really want here is to give finish() a callback and resolve the promise when it's
         // called, but node-webcl is out-of-date and doesn't support WebCL 1.0's optional callback
         // argument to finish().
+
         simulator.cl.queue.finish();
+        perf('Tick Finished.');
         simulator.renderer.finish();
     }).fail(function (err) {
         console.error('SimCl tick fail! ', err, (err||{}).stack);

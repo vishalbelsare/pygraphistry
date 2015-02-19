@@ -85,8 +85,12 @@ function updateSettings (graph, cfg) {
         graph.simulator.setTimeSubset(cfg.timeSubset);
     }
 
+    // Since moving nodes implies running an opencl kernel, return
+    // a promise fulfilled when moving is done.
     if (cfg.marquee) {
-        graph.simulator.recolor(cfg.marquee);
+        return graph.simulator.moveNodes(cfg.marquee);
+    } else {
+        return Q();
     }
 }
 
@@ -253,6 +257,12 @@ var setEdges = Q.promised(function(graph, edges) {
             if (!hasEdge)
                 workItems.push([-1, 0, src]);
         });
+        //keep items contiguous to filter based on them
+        workItems.sort(function (a, b) {
+            return a[2] < b[2] ? -1
+                : a[2] > b[2] ? 1
+                : 0;
+        });
 
         //DISABLED: keeping ordered to streamline time-based filtering
         /*
@@ -264,25 +274,16 @@ var setEdges = Q.promised(function(graph, edges) {
         */
 
         var degreesTyped = new Uint32Array(graph.simulator.numPoints);
-        //to closeset workItem in case src has none
         var srcToWorkItem = new Int32Array(graph.simulator.numPoints);
-        for (var i = 0; i < srcToWorkItem.length; i++) {
-            srcToWorkItem[i] = -1;
-        }
         workItems.forEach(function (edgeList, idx) {
-            srcToWorkItem[edgeList[2]] = edgeList[0];
+            srcToWorkItem[edgeList[2]] = idx;
             degreesTyped[edgeList[2]] = edgeList[1];
         });
-        for (var i = 0; i < srcToWorkItem.length; i++) {
-            if (srcToWorkItem[i] == -1) {
-                srcToWorkItem[i] = i == 0 ? 0 : srcToWorkItem[i - 1];
-            }
-        }
 
-        //Uint32Array [first edge number from src idx, number of edges from src idx]
+        //Uint32Array [first edge number from src idx, number of edges from src idx, src idx, 666]
         //fetch edge to find src and dst idx (all src same)
         //num edges > 0
-        var workItemsTyped = new Uint32Array(
+        var workItemsTyped = new Int32Array(
             _.flatten(
                 workItems.map(function (o) {
                     return [o[0], o[1], o[2], 666];
@@ -309,8 +310,8 @@ var setEdges = Q.promised(function(graph, edges) {
             //Uint32Array [(edge number, number of sibling edges), ... ]
             numWorkItems: workItemsTyped.length,
 
-            //Uint32Array [(first edge number, number of sibling edges)]
-            workItemsTyped: new Uint32Array(workItemsTyped),
+            //Int32Array [(first edge number, number of sibling edges)]
+            workItemsTyped: workItemsTyped,
 
             //Uint32Array [workitem number node belongs to]
             srcToWorkItem: srcToWorkItem

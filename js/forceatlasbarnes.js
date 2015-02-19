@@ -3,10 +3,8 @@
 var debug = require("debug")("graphistry:graph-viz:cl:forceatlas2barnes"),
     _     = require('underscore'),
     cljs  = require('./cl.js'),
-    GaussSeidel = require('./gaussseidel.js'),
     Q     = require('q'),
     util  = require('./util.js'),
-    webcl = require('node-webcl'),
     LayoutAlgo = require('./layoutAlgo.js'),
     Kernel = require('./kernel.js');
 
@@ -47,13 +45,13 @@ function ForceAtlas2Barnes(clContext) {
     this.faIntegrate2 = new Kernel('faIntegrate2', ForceAtlas2Barnes.argsIntegrate2,
                                ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
 
-    this.gsGather = new Kernel('gaussSeidelSpringsGather', GaussSeidel.argsGather,
-                               GaussSeidel.argsType, 'gaussSeidel.cl', clContext);
+    this.faIntegrate3 = new Kernel('faIntegrate3', ForceAtlas2Barnes.argsIntegrate3,
+                               ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
 
     this.kernels = this.kernels.concat([this.toBarnesLayout, this.boundBox, this.buildTree,
                                         this.computeSums, this.sort, this.calculateForces,
-                                      this.faEdges, this.faSwings, this.faIntegrate, this.faIntegrate2,
-                                      this.gsGather]);
+                                        this.faEdges, this.faSwings, this.faIntegrate,
+                                        this.faIntegrate2, this.faIntegrate3]);
 }
 
 ForceAtlas2Barnes.prototype = Object.create(LayoutAlgo.prototype);
@@ -68,9 +66,9 @@ ForceAtlas2Barnes.argsToBarnesLayout = [
 // All BarnesHut Kernels have the same arguements
 ForceAtlas2Barnes.argsBarnes = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
                           'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
-                          'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
-                          'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'stepNumber',
-                          'width', 'height', 'numBodies', 'numNodes', 'pointForces'];
+                          'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
+                          'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
+                          'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau'];
 
 ForceAtlas2Barnes.argsEdges = [
     'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges',
@@ -78,10 +76,6 @@ ForceAtlas2Barnes.argsEdges = [
 ];
 
 ForceAtlas2Barnes.argsSwings = ['prevForces', 'curForces', 'swings' , 'tractions'];
-
-ForceAtlas2Barnes.argsSpeed = [
-    'tau', 'numPoints', 'pointDegrees', 'swings', 'tractions', 'gSpeeds'
-];
 
 ForceAtlas2Barnes.argsIntegrate = [
     'gSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'
@@ -91,6 +85,11 @@ ForceAtlas2Barnes.argsIntegrate2 = [
     'numPoints', 'tau', 'inputPositions', 'pointDegrees', 'curForces', 'swings',
     'tractions', 'outputPositions'
 ];
+
+ForceAtlas2Barnes.argsIntegrate3 = [
+    'globalSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'
+];
+
 
 ForceAtlas2Barnes.argsType = {
     scalingRatio: cljs.types.float_t,
@@ -142,7 +141,8 @@ ForceAtlas2Barnes.argsType = {
     radius: null,
     numBodies: cljs.types.uint_t,
     numNodes: cljs.types.uint_t,
-    numWorkItems: cljs.types.uint_t
+    numWorkItems: cljs.types.uint_t,
+    globalSpeed: null
 }
 
 ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
@@ -222,10 +222,11 @@ var setupTempBuffers = function(simulator) {
         simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'step'),
         simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'bottom'),
         simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'maxdepth'),
-        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'radius')
+        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'radius'),
+        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed')
         ])
     .spread(function (x_cords, y_cords, accx, accy, children, mass, start, sort, xmin, xmax, ymin, ymax, count,
-          blocked, step, bottom, maxdepth, radius) {
+          blocked, step, bottom, maxdepth, radius, globalSpeed) {
       tempBuffers.x_cords = x_cords;
       tempBuffers.y_cords = y_cords;
       tempBuffers.accx = accx;
@@ -246,6 +247,7 @@ var setupTempBuffers = function(simulator) {
       tempBuffers.radius = radius;
       tempBuffers.numNodes = numNodes;
       tempBuffers.numBodies = numBodies;
+      tempBuffers.globalSpeed = globalSpeed;
       return tempBuffers;
     })
     .catch(function(error) {
@@ -255,16 +257,11 @@ var setupTempBuffers = function(simulator) {
 
 
 ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
-        var localPosSize =
+    var localPosSize =
             Math.min(simulator.cl.maxThreads, simulator.numMidPoints)
             * simulator.elementsPerPoint
             * Float32Array.BYTES_PER_ELEMENT;
-    this.gsGather.set({
-        springs: simulator.buffers.forwardsEdges.buffer,
-        workList: simulator.buffers.forwardsWorkItems.buffer,
-        inputPoints: simulator.buffers.curPoints.buffer,
-        springPositions: simulator.buffers.springsPos.buffer
-    });
+
     var that = this;
 
     return setupTempBuffers(simulator).then(function (tempBuffers) {
@@ -272,7 +269,7 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
         that.toBarnesLayout.set({xCoords: tempBuffers.x_cords.buffer,
           yCoords:tempBuffers.y_cords.buffer, mass:tempBuffers.mass.buffer,
                             blocked:tempBuffers.blocked.buffer, maxDepth:tempBuffers.maxdepth.buffer,
-                            numPoints:webcl.type ? [simulator.numPoints] : new Uint32Array([simulator.numPoints]),
+                            numPoints:simulator.numPoints,
                             inputPositions: simulator.buffers.curPoints.buffer, pointDegrees: simulator.buffers.degrees.buffer});
 
         function setBarnesKernelArgs(kernel, buffers) {
@@ -289,16 +286,19 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
                         globalXMax:buffers.xmax.buffer,
                         globalYMin:buffers.ymin.buffer,
                         globalYMax:buffers.ymax.buffer,
+                        swings:simulator.buffers.swings.buffer,
+                        tractions:simulator.buffers.tractions.buffer,
                         count:buffers.count.buffer,
                         blocked:buffers.blocked.buffer,
                         bottom:buffers.bottom.buffer,
                         step:buffers.step.buffer,
                         maxDepth:buffers.maxdepth.buffer,
                         radius:buffers.radius.buffer,
-                        width:webcl.type ? [simulator.dimensions[0]] : new Float32Array([simulator.dimensions[0]]),
-                        height:webcl.type ? [simulator.dimensions[1]] : new Float32Array([simulator.dimensions[1]]),
-                        numBodies:webcl.type ? [buffers.numBodies] : new Uint32Array([numBodies]),
-                        numNodes:webcl.type ? [buffers.numNodes] : new Uint32Array([numNodes]),
+                        globalSpeed: buffers.globalSpeed.buffer,
+                        width:simulator.dimensions[0],
+                        height:simulator.dimensions[1],
+                        numBodies:buffers.numBodies,
+                        numNodes:buffers.numNodes,
                         pointForces:simulator.buffers.partialForces1.buffer})
         };
         setBarnesKernelArgs(that.boundBox, tempBuffers);
@@ -325,35 +325,53 @@ function pointForces(simulator, toBarnesLayout, boundBox, buildTree,
     sort.set({stepNumber: stepNumber});
     calculateForces.set({stepNumber: stepNumber});
 
+
     simulator.tickBuffers(['partialForces1']);
 
     debug("Running Force Atlas2 with BarnesHut Kernels");
 
     // For all calls, we must have the # work items be a multiple of the workgroup size.
-    return toBarnesLayout.exec([256], resources, [256])
+    // Above each call, I listed some benchmarks for numbers of workgroups
+    // (numWorkItems = numWorkGroups * workGroupSize).
+    // These are measured in ms on staging for NetflowHuge.
+    // Lower these values if it's crashing on your local macbook.
+
+    // If one is commented out, it's ideal for server but won't run locally
+    // It's replaced by default with a very similar performance setting
+    // that runs locally.
+
+    return toBarnesLayout.exec([30*256], resources, [256])
 
     .then(function () {
       simulator.cl.queue.finish();
     })
 
     .then(function () {
-      return boundBox.exec([10*256], resources, [256]);
+      return boundBox.exec([30*256], resources, [256]);
     })
 
+    // 4:49, 10:38, 20:31, 30:30, 40:31, 60:43
     .then(function () {
-      return buildTree.exec([4*256], resources, [256]);
+      return buildTree.exec([30*256], resources, [256]);
     })
 
+    // 4:21, 10:14, 20:13, 30:13, 40:14, 60:18
     .then(function () {
-      return computeSums.exec([4*256], resources, [256]);
+      // return computeSums.exec([20*256], resources, [256]);
+      return computeSums.exec([10*256], resources, [256]);
     })
 
+    // 4:16, 10:10, 20:8, 30:8, 40:9, 60:13,
     .then(function () {
-      return sort.exec([4*256], resources, [256]);
+      // return sort.exec([30*256], resources, [256]);
+      return sort.exec([16*256], resources, [256]);
     })
 
+    // 60:42, 70:62, 80:57, 100:48, 120:42, 140:49, 160:45,
+    // 200:45, 240:41, 280:43, 320:41, 360:41, 400:42
     .then(function () {
-      return calculateForces.exec([40*256], resources, [256]);
+      // return calculateForces.exec([120*256], resources, [256]);
+      return calculateForces.exec([60*256], resources, [256]);
     })
 
     .fail(function (err) {
@@ -382,9 +400,8 @@ function edgeForcesOneWay(simulator, faEdges, edges, workItems, numWorkItems,
     );
 
     debug("Running kernel faEdgeForces");
-    //return faEdges.exec([numWorkItems], resources);
-    return faEdges.exec([256], resources, [256]);
-
+    // 30:52, 60:50, 90:51, 120:49, 150:49, 256:48, 512:49
+    return faEdges.exec([256*256], resources, [256]);
 }
 
 function edgeForces(simulator, faEdges, stepNumber) {
@@ -433,6 +450,7 @@ function swingsTractions(simulator, faSwings) {
 
 function integrate(simulator, faIntegrate) {
     var buffers = simulator.buffers;
+
     faIntegrate.set({
         gSpeed: 1.0,
         inputPositions: buffers.curPoints.buffer,
@@ -457,13 +475,38 @@ function integrate(simulator, faIntegrate) {
         });
 }
 
+function integrate3(simulator, faIntegrate3) {
+    var buffers = simulator.buffers;
+
+    faIntegrate3.set({
+        globalSpeed: tempBuffers.globalSpeed.buffer,
+        inputPositions: buffers.curPoints.buffer,
+        curForces: buffers.curForces.buffer,
+        swings: buffers.swings.buffer,
+        outputPositions: buffers.nextPoints.buffer
+    });
+
+    var resources = [
+        buffers.curPoints,
+        buffers.curForces,
+        buffers.swings,
+        buffers.nextPoints
+    ];
+
+    simulator.tickBuffers(['nextPoints']);
+
+    debug("Running kernel faIntegrate");
+    return faIntegrate3.exec([simulator.numPoints], resources)
+        .fail(function (err) {
+            console.error('Kernel faIntegrate3 failed', err, (err||{}).stack);
+        });
+}
 
 function integrate2(simulator, faIntegrate2) {
     var buffers = simulator.buffers;
 
     faIntegrate2.set({
         numPoints: simulator.numPoints,
-        tau: 1.0,
         inputPositions: buffers.curPoints.buffer,
         pointDegrees: buffers.degrees.buffer,
         curForces: buffers.curForces.buffer,
@@ -491,20 +534,6 @@ function integrate2(simulator, faIntegrate2) {
         });
 }
 
-function gatherEdges(simulator, gsGather) {
-    var buffers = simulator.buffers;
-    var resources = [
-        buffers.forwardsEdges,
-        buffers.forwardsWorkItems,
-        buffers.curPoints,
-        buffers.springsPos
-    ];
-
-    simulator.tickBuffers(['springsPos']);
-
-    debug("Running gaussSeidelSpringsGather (forceatlas2) kernel");
-    return gsGather.exec([simulator.numForwardsWorkItems], resources);
-}
 
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var that = this;
@@ -516,8 +545,9 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     }).then(function () {
         return swingsTractions(simulator, that.faSwings);
     }).then(function () {
-        return integrate(simulator, that.faIntegrate);
+        // return integrate(simulator, that.faIntegrate);
         // return integrate2(simulator, that.faIntegrate2);
+        return integrate3(simulator, that.faIntegrate3);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);
@@ -525,8 +555,6 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
             buffers.nextPoints.copyInto(buffers.curPoints),
             buffers.curForces.copyInto(buffers.prevForces)
         ]);
-    }).then(function () {
-        return gatherEdges(simulator, that.gsGather);
     }).then(function () {
         return simulator;
     });
