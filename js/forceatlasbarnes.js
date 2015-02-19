@@ -336,30 +336,47 @@ function pointForces(simulator, toBarnesLayout, boundBox, buildTree,
     debug("Running Force Atlas2 with BarnesHut Kernels");
 
     // For all calls, we must have the # work items be a multiple of the workgroup size.
-    return toBarnesLayout.exec([256], resources, [256])
+    // Above each call, I listed some benchmarks for numbers of workgroups
+    // (numWorkItems = numWorkGroups * workGroupSize).
+    // These are measured in ms on staging for NetflowHuge.
+    // Lower these values if it's crashing on your local macbook.
+
+    // If one is commented out, it's ideal for server but won't run locally
+    // It's replaced by default with a very similar performance setting
+    // that runs locally.
+
+    return toBarnesLayout.exec([30*256], resources, [256])
 
     .then(function () {
       simulator.cl.queue.finish();
     })
 
     .then(function () {
-      return boundBox.exec([10*256], resources, [256]);
+      return boundBox.exec([30*256], resources, [256]);
     })
 
+    // 4:49, 10:38, 20:31, 30:30, 40:31, 60:43
     .then(function () {
-      return buildTree.exec([4*256], resources, [256]);
+      return buildTree.exec([30*256], resources, [256]);
     })
 
+    // 4:21, 10:14, 20:13, 30:13, 40:14, 60:18
     .then(function () {
-      return computeSums.exec([4*256], resources, [256]);
+      // return computeSums.exec([20*256], resources, [256]);
+      return computeSums.exec([10*256], resources, [256]);
     })
 
+    // 4:16, 10:10, 20:8, 30:8, 40:9, 60:13,
     .then(function () {
-      return sort.exec([4*256], resources, [256]);
+      // return sort.exec([30*256], resources, [256]);
+      return sort.exec([16*256], resources, [256]);
     })
 
+    // 60:42, 70:62, 80:57, 100:48, 120:42, 140:49, 160:45,
+    // 200:45, 240:41, 280:43, 320:41, 360:41, 400:42
     .then(function () {
-      return calculateForces.exec([40*256], resources, [256]);
+      // return calculateForces.exec([120*256], resources, [256]);
+      return calculateForces.exec([60*256], resources, [256]);
     })
 
     .fail(function (err) {
@@ -388,9 +405,8 @@ function edgeForcesOneWay(simulator, faEdges, edges, workItems, numWorkItems,
     );
 
     debug("Running kernel faEdgeForces");
-    //return faEdges.exec([numWorkItems], resources);
-    return faEdges.exec([256], resources, [256]);
-
+    // 30:52, 60:50, 90:51, 120:49, 150:49, 256:48, 512:49
+    return faEdges.exec([256*256], resources, [256]);
 }
 
 function edgeForces(simulator, faEdges, stepNumber) {

@@ -536,12 +536,17 @@ function setTimeSubset(renderer, simulator, range) {
         }
 
         var firstEdge = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx];
-        if (!isBeginning) {
-            var len = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx + 1];
-            firstEdge += len - 1;
-        }
 
-        return firstEdge;
+        if (idx == 0 && firstEdge == -1) {
+            return 0;
+        } else {
+            if (!isBeginning) {
+                var len = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx + 1];
+                console.log('add len - 1', {len: len});
+                firstEdge += len - 1;
+            }
+            return firstEdge;
+        }
     };
 
     //first edge
