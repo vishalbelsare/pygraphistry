@@ -85,8 +85,12 @@ function updateSettings (graph, cfg) {
         graph.simulator.setTimeSubset(cfg.timeSubset);
     }
 
+    // Since moving nodes implies running an opencl kernel, return
+    // a promise fulfilled when moving is done.
     if (cfg.marquee) {
-        graph.simulator.moveNodes(cfg.marquee);
+        return graph.simulator.moveNodes(cfg.marquee);
+    } else {
+        return Q();
     }
 }
 

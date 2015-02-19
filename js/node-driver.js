@@ -258,9 +258,9 @@ function create(dataset) {
 
     var graph = init(device, cfg).then(function (graph) {
         debug('Dataset %o', dataset);
-        userInteractions.subscribe(function (settings){
-            debug('Updating settings..');
-            graph.updateSettings(settings);
+        userInteractions.subscribe(function (settings) {
+            //debug('Updating settings..');
+            //graph.updateSettings(settings);
         })
 
         debug('LOADING DATASET');
@@ -278,7 +278,7 @@ function create(dataset) {
                 //...  but stop a bit after last one
                 play.filter(function (o) { return o && o.layout; })
                     .merge(Rx.Observable.return())
-                    .throttle(graph.simulationTime)
+                    .delay(graph.simulationTime)
                     .map(_.constant({play: false, layout: false})),
                 play.filter(function (o) { return !o || !o.layout; })
                     .merge(Rx.Observable.return())
@@ -311,32 +311,27 @@ function create(dataset) {
                         return isRunningRecent.filter(function (o) { return o.play; }).take(1);
                     })
                     .flatMap(function(v) {
-                        return (Rx.Observable.fromPromise(
-                            graph
-                                .tick(v)
-                                .then(function () {
-                                    metrics.info({metric: {'tick_durationMS': Date.now() - now} });
-                                })
-                        ));
+                        return Rx.Observable.fromPromise(
+                            graph.updateSettings(v).then(function () {
+                                return graph.tick(v);
+                            }).then(function () {
+                                metrics.info({metric: {'tick_durationMS': Date.now() - now} });
+                            })
+                        );
                     })
                     .map(_.constant(graph));
             })
             .subscribe(
                 animStepSubj,
                 function (err) {
-                    console.error('Error ticking');
-                    console.error(err, (err||{}).stack);
-                });
-        return graph;
+                    console.error('Error ticking', err, (err||{}).stack);
+                }
+            );
 
-    })
-    .then(function (graph) {
-        debug("Graph created");
+        debug('Graph created');
         return graph;
-    }, function (err) {
-        console.error("\n\n~~~~~ SETUP ERROR\n", err, ". Stack:", err.stack);
-        console.error("\n\nEXITING\n\n");
-        process.exit(-1);
+    }).fail(function (err) {
+        util.die('\n\n~~~~~ SETUP ERROR\n', err, '\nStack: ', (err||{}).stack);
     });
 
     return {
