@@ -242,11 +242,11 @@ function handleVboUpdates(socket, renderState) {
 
     var previousVersions = {buffers: {}, textures: {}};
 
-    var vbo_update_step = 0;
+    var vboUpdateStep = 0;
 
     socket.on('vbo_update', function (data, handshake) {
 
-        var thisStep = {step: vbo_update_step++, data: data.step};
+        var thisStep = {step: vboUpdateStep++, data: data.step};
 
         try {
             debug('1. VBO update', thisStep);
