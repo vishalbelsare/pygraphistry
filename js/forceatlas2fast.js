@@ -244,7 +244,6 @@ function integrate2(simulator, faIntegrate2) {
 
     faIntegrate2.set({
         numPoints: simulator.numPoints,
-        tau: 1.0,
         inputPositions: buffers.curPoints.buffer,
         pointDegrees: buffers.degrees.buffer,
         curForces: buffers.curForces.buffer,

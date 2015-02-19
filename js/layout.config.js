@@ -72,6 +72,7 @@ function atlasControls(algo) {
             {
                 algo: algo,
                 params: {
+                    tau: 1.0,
                     gravity: 1,
                     scalingRatio: 1,
                     edgeInfluence: 0,

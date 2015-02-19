@@ -77,10 +77,6 @@ ForceAtlas2Barnes.argsEdges = [
 
 ForceAtlas2Barnes.argsSwings = ['prevForces', 'curForces', 'swings' , 'tractions'];
 
-ForceAtlas2Barnes.argsSpeed = [
-    'tau', 'numPoints', 'pointDegrees', 'swings', 'tractions', 'gSpeeds'
-];
-
 ForceAtlas2Barnes.argsIntegrate = [
     'gSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'
 ];
@@ -303,8 +299,7 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
                         height:simulator.dimensions[1],
                         numBodies:buffers.numBodies,
                         numNodes:buffers.numNodes,
-                        pointForces:simulator.buffers.partialForces1.buffer,
-                        tau:1.0})
+                        pointForces:simulator.buffers.partialForces1.buffer})
         };
         setBarnesKernelArgs(that.boundBox, tempBuffers);
         setBarnesKernelArgs(that.buildTree, tempBuffers);
@@ -512,7 +507,6 @@ function integrate2(simulator, faIntegrate2) {
 
     faIntegrate2.set({
         numPoints: simulator.numPoints,
-        tau: 1.0,
         inputPositions: buffers.curPoints.buffer,
         pointDegrees: buffers.degrees.buffer,
         curForces: buffers.curForces.buffer,
