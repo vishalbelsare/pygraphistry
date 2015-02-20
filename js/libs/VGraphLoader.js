@@ -341,7 +341,7 @@ function doWrap(res, mapping, oldLoad) {
 }
 
 var mappers = {
-    'opentsdbr': testMapper,
+    'opentsdb': testMapper,
     'opentsdbDemo': testMapperDemo,
     'debug': debugMapper,
     'splunk': splunkMapper,
