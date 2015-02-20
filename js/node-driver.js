@@ -176,7 +176,7 @@ function fetchBufferByteLengths(graph, renderConfig) {
 
 function init(device, vendor, cfg) {
     debug("Starting initialization");
-    var global = cfg.global
+    var global = cfg[0].global
 
     /* Example of RenderGL instatiation.
      * Left for historical purposes, probably broken!
@@ -192,8 +192,9 @@ function init(device, vendor, cfg) {
         .then(function (renderer) {
             var graph = NBody.create(renderer, global.dimensions, global.numSplits,
                                      global.simulationTime);
-            return graph.initSimulation(cfg.simulator, device, vendor, cfg.layoutAlgorithms,
-                                        cfg.locks);
+            return graph.initSimulation(device, vendor, cfg);
+
+
         })
         .fail(function (err) {
             console.error("ERROR Failure in NBody creation ", (err||{}).stack);
@@ -202,20 +203,7 @@ function init(device, vendor, cfg) {
 
 
 
-function getControls(cfgName, metadata) {
-
-    // Temporarily prevent running atlasbarnes when CPU is
-    // requested / only available device.
-    // TODO: Generalize or fix atlasbarnes.
-    var platform = webcl.getPlatforms()[0];
-    var hasGpu = metadata.device.toLowerCase().indexOf('cpu') == -1
-        && platform.getDevices(webcl.DEVICE_TYPE_GPU).length > 0;
-    if (!hasGpu &&
-            (cfgName.toLowerCase().indexOf('atlasbarnes') != -1 ||
-             cfgName.toLowerCase().indexOf('default') != -1)) {
-
-        cfgName = 'atlas2fast';
-    }
+function getControls(cfgName) {
 
     var cfg = lConf.controls.default;
     if (cfgName in lConf.controls)
@@ -268,7 +256,7 @@ function create(dataset) {
     // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
     // the contents of each VBO
     var animStepSubj = new Rx.BehaviorSubject(null);
-    var cfg = getControls(dataset.metadata.controls, dataset.metadata);
+    var cfg = getControls(dataset.metadata.controls);
     var device = dataset.metadata.device;
     var vendor = dataset.metadata.vendor;
 

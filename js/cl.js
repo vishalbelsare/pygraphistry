@@ -185,6 +185,7 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
         device: deviceWrapper.device,
         queue: deviceWrapper.queue,
         deviceProps: deviceProps,
+        deviceType: type,
         maxThreads: deviceWrapper.device.getInfo(webcl.DEVICE_MAX_WORK_GROUP_SIZE),
         numCores: deviceWrapper.device.getInfo(webcl.DEVICE_MAX_COMPUTE_UNITS)
     };

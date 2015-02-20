@@ -34,7 +34,8 @@ var uberControls = {
         simulationTime: SIMULATION_TIME, //milliseconds
         dimensions: [1, 1],
         numSplits: 3
-    }
+    },
+    devices: ['CPU', 'GPU']
 }
 
 var gsControls = {
@@ -62,10 +63,19 @@ var gsControls = {
         simulationTime: SIMULATION_TIME, //milliseconds
         dimensions: [1, 1],
         numSplits: 1
-    }
+    },
+    devices: ['CPU', 'GPU']
 }
 
 function atlasControls(algo) {
+
+    var devices;
+    if (algo == forceAtlasBarnes) {
+        devices = ['GPU'];
+    } else {
+        devices = ['CPU', 'GPU'];
+    }
+
     return {
         simulator: SimCL,
         layoutAlgorithms: [
@@ -93,35 +103,38 @@ function atlasControls(algo) {
             simulationTime: SIMULATION_TIME, //milliseconds
             dimensions: [1, 1],
             numSplits: 1
-        }
+        },
+        devices: devices
     };
 }
 
 
 var controls = {
-    'default': atlasControls(ForceAtlas2Fast),
-    'uber': uberControls,
-    'gauss': gsControls,
-    'atlas': atlasControls(ForceAtlas2),
-    'atlas2': atlasControls(ForceAtlas2),
-    'atlas2fast': atlasControls(ForceAtlas2Fast),
-    'atlasbarnes': atlasControls(forceAtlasBarnes),
+    'default': [atlasControls(forceAtlasBarnes), atlasControls(ForceAtlas2Fast)],
+    'uber': [uberControls],
+    'gauss': [gsControls],
+    'atlas': [atlasControls(forceAtlasBarnes), atlasControls(ForceAtlas2Fast)],
+    'atlas2': [atlasControls(ForceAtlas2)],
+    'atlas2fast': [atlasControls(ForceAtlas2Fast)],
+    'atlasbarnes': [atlasControls(forceAtlasBarnes)]
 }
 
 function saneControl(control, name) {
-    _.each(['simulator', 'layoutAlgorithms', 'locks', 'global'], function (field) {
-        if (!(field in control))
-            util.die('In control %s, block %s missing', name, field);
-    });
+    _.each(control, function(control) {
+        _.each(['simulator', 'layoutAlgorithms', 'locks', 'global'], function (field) {
+            if (!(field in control))
+                util.die('In control %s, block %s missing', name, field);
+        });
 
-    _.each(['lockPoints', 'lockEdges', 'lockMidpoints', 'lockMidedges'], function (field) {
-        if (!(field in control.locks))
-            util.die('In control %s, lock %s missing', name, field);
-    });
+        _.each(['lockPoints', 'lockEdges', 'lockMidpoints', 'lockMidedges'], function (field) {
+            if (!(field in control.locks))
+                util.die('In control %s, lock %s missing', name, field);
+        });
 
-    _.each(['simulationTime', 'dimensions'], function (field) {
-        if (!(field in control.global))
-            util.die('In control %s.global, lock %s missing', name, field);
+        _.each(['simulationTime', 'dimensions'], function (field) {
+            if (!(field in control.global))
+                util.die('In control %s.global, lock %s missing', name, field);
+        });
     });
 }
 

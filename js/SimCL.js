@@ -22,9 +22,19 @@ var randLength = 73;
 
 var NAMED_CLGL_BUFFERS = require('./buffers.js').NAMED_CLGL_BUFFERS;
 
-function create(renderer, dimensions, numSplits, device, vendor, layoutAlgorithms, locked) {
+function create(renderer, dimensions, numSplits, device, vendor, cfg) {
     return cljs.create(renderer, device, vendor)
     .then(function(cl) {
+
+        // Pick the first layout algorithm that matches our device type
+        var type = cl.deviceType.trim();
+        var controls = _.filter(cfg, function(algo) {
+            return _.contains(algo.devices, type);
+        })[0];
+
+        var layoutAlgorithms = controls.layoutAlgorithms;
+        var locked = controls.locks;
+
         return Q().then(function () {
             debug('Instantiating layout algorithms: %o', layoutAlgorithms);
             return _.map(layoutAlgorithms, function (entry) {

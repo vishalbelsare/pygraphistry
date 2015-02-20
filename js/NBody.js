@@ -60,10 +60,12 @@ function create(renderer, dimensions, numSplits, simulationTime) {
     return graph;
 }
 
-function initSimulation(graph, simulator, device, vendor, layoutAlgorithms, locked) {
+function initSimulation(graph, device, vendor, cfg) {
     debug('Creating Simulator')
+    var simulator = cfg[0].simulator;
+
     return simulator.create(graph.renderer, graph.dimensions, graph.numSplits,
-                            device, vendor, layoutAlgorithms, locked)
+                            device, vendor, cfg)
         .then(function(sim) {
             debug("Created simulator");
             graph.simulator = sim;
