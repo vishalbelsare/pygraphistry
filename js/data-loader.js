@@ -46,6 +46,7 @@ function downloadDataset(query) {
     config.controls = hasParam(query.controls) ? query.controls : 'default';
     config.mapper   = hasParam(query.mapper)   ? query.mapper   : 'default';
     config.device   = hasParam(query.device)   ? query.device   : 'default';
+    config.vendor   = hasParam(query.vendor)   ? query.vendor   : 'default';
     config.type     = hasParam(query.type)     ? query.type     : 'default';
 
     console.info('scene:%s  controls:%s  mapper:%s  device:%s',

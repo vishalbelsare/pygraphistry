@@ -173,7 +173,7 @@ function fetchBufferByteLengths(graph, renderConfig) {
 }
 
 
-function init(device, cfg) {
+function init(device, vendor, cfg) {
     debug("Starting initialization");
     var global = cfg.global
 
@@ -191,7 +191,7 @@ function init(device, cfg) {
         .then(function (renderer) {
             var graph = NBody.create(renderer, global.dimensions, global.numSplits,
                                      global.simulationTime);
-            return graph.initSimulation(cfg.simulator, device, cfg.layoutAlgorithms,
+            return graph.initSimulation(cfg.simulator, device, vendor, cfg.layoutAlgorithms,
                                         cfg.locks);
         })
         .fail(function (err) {
@@ -255,8 +255,9 @@ function create(dataset) {
     var animStepSubj = new Rx.BehaviorSubject(null);
     var cfg = getControls(dataset.metadata.controls);
     var device = dataset.metadata.device;
+    var vendor = dataset.metadata.vendor;
 
-    var graph = init(device, cfg).then(function (graph) {
+    var graph = init(device, vendor, cfg).then(function (graph) {
         debug('LOADING DATASET');
         return loader.loadDatasetIntoSim(graph, dataset)
     }).then(function (graph) {

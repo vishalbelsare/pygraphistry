@@ -33,6 +33,7 @@ var types = {
     define: '#define',
 };
 
+var defaultVendor = 'nvidia';
 
 var clDeviceType = {
     'cpu': webcl.DEVICE_TYPE_CPU,
@@ -49,18 +50,19 @@ var clDeviceType = {
 // that argument, even on old versions. Instead, we should query the kernel for the types of each
 // argument and fill in that information automatically, when required by old WebCL versions.
 
-var create = Q.promised(function(renderer, device) {
+var create = Q.promised(function(renderer, device, vendor) {
+    vendor = vendor || 'default';
     device = device || 'all';
     var clDevice = clDeviceType[device.toLowerCase()];
     if (!clDevice) {
         console.warn('WARNING Unknown device %s, using "all"', device)
         clDevice = clDeviceType.all;
     }
-    return createCLContextNode(renderer, clDevice);
+    return createCLContextNode(renderer, clDevice, vendor.toLowerCase());
 });
 
 
-function createCLContextNode(renderer, DEVICE_TYPE) {
+function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
     if (typeof webcl === "undefined") {
         throw new Error("WebCL does not appear to be supported in your browser");
     } else if (webcl === null) {
@@ -104,10 +106,14 @@ function createCLContextNode(renderer, DEVICE_TYPE) {
         };
     });
 
+    if (vendor === 'default') {
+        vendor = defaultVendor;
+    }
+
     devices.sort(function(a, b) {
-        var nameA = a.device.getInfo(webcl.DEVICE_VENDOR);
-        var nameB = b.device.getInfo(webcl.DEVICE_VENDOR);
-        var vendor = "NVIDIA";
+        var nameA = a.device.getInfo(webcl.DEVICE_VENDOR).toLowerCase();
+        var nameB = b.device.getInfo(webcl.DEVICE_VENDOR).toLowerCase();
+
         if (nameA.indexOf(vendor) != -1 && nameB.indexOf(vendor) == -1) {
             return -1;
         } else if (nameB.indexOf(vendor) != -1 && nameA.indexOf(vendor) == -1) {
@@ -178,6 +184,7 @@ function createCLContextNode(renderer, DEVICE_TYPE) {
         context: deviceWrapper.context,
         device: deviceWrapper.device,
         queue: deviceWrapper.queue,
+        deviceVendor: vendor,
         maxThreads: deviceWrapper.device.getInfo(webcl.DEVICE_MAX_WORK_GROUP_SIZE),
         numCores: deviceWrapper.device.getInfo(webcl.DEVICE_MAX_COMPUTE_UNITS)
     };
