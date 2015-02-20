@@ -38,7 +38,8 @@ var clDeviceType = {
     'cpu': webcl.DEVICE_TYPE_CPU,
     'gpu': webcl.DEVICE_TYPE_GPU,
     'all': webcl.DEVICE_TYPE_ALL,
-    'any': webcl.DEVICE_TYPE_ALL
+    'any': webcl.DEVICE_TYPE_ALL,
+    'default': webcl.DEVICE_TYPE_ALL
 };
 
 

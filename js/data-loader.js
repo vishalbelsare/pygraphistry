@@ -2,12 +2,17 @@
 
 var fs = require('fs');
 var path = require('path');
+var http = require('http');
+var crypto = require('crypto');
 var Q = require('q');
-var debug = require("debug")("graphistry:graph-viz:data:data-loader");
+var debug = require('debug')('graphistry:graph-viz:data:data-loader');
 var _ = require('underscore');
 var config  = require('config')();
-var zlib = require("zlib");
+var zlib = require('zlib');
 var Rx = require('rx');
+var urllib = require('url');
+
+var cacheDir = '/tmp'
 
 var MatrixLoader = require('./libs/MatrixLoader.js'),
     VGraphLoader = require('./libs/VGraphLoader.js'),
@@ -15,124 +20,168 @@ var MatrixLoader = require('./libs/MatrixLoader.js'),
     kmeans = require('./libs/kmeans.js');
 
 var loaders = {
-    "vgraph": VGraphLoader.load,
-    "matrix" : loadMatrix,
-    "random" : loadRandom,
-    "OBSOLETE_geo": loadGeo,
-    "OBSOLETE_socioPLT" : loadSocioPLT,
-    "OBSOLETE_rectangle" : loadRectangle
+    'default': VGraphLoader.load,
+    'vgraph': VGraphLoader.load,
+    'matrix': loadMatrix,
+    'random': loadRandom,
+    'OBSOLETE_geo': loadGeo,
+    'OBSOLETE_socioPLT': loadSocioPLT,
+    'OBSOLETE_rectangle': loadRectangle
 };
 
-/**
- * Kick off the download process. This checks the
- * modified time and fetches from S3 accordingly.
-**/
-function downloadDataset(datasetname) {
-    debug("Attempting to load dataset " + datasetname);
-    var params = {
-      Bucket: config.BUCKET,
-      Key: datasetname
-    };
+var downloader = {
+    'http:': httpDownloader,
+    'null': graphistryS3Downloader // For legacy compatibility
+}
 
-    // look at date on disk
+function downloadDataset(query) {
+    var url = urllib.parse(decodeURIComponent(query.dataset));
+
+    function hasParam(param) { return param !== undefined && param !== 'undefined' }
+    var config = {};
+
+    config.scene    = hasParam(query.scene)    ? query.scene    : 'default';
+    config.controls = hasParam(query.controls) ? query.controls : 'default';
+    config.mapper   = hasParam(query.mapper)   ? query.mapper   : 'default';
+    config.device   = hasParam(query.device)   ? query.device   : 'default';
+    config.type     = hasParam(query.type)     ? query.type     : 'default';
+
+    console.info('scene:%s  controls:%s  mapper:%s  device:%s',
+                  config.scene, config.controls, config.mapper, config.device);
+
+    return downloader[url.protocol](url).then(function (data) {
+        return { body: data, metadata: config };
+    })
+}
+
+function getCacheFile(url) {
+    var hash = crypto.createHash('sha1').update(url.href).digest('hex');
+    var fileName = encodeURIComponent(url.pathname) + '.' + hash;
+    return path.resolve(cacheDir, fileName);
+}
+
+function readCache(url, timestamp) {
     var res = Q.defer();
-    fs.stat('/tmp/' + datasetname, function(err, data){
 
-        // The data exists locally - check if it's recent or
-        // not using the IfModifiedSince header
-        if (!err) {
-            params.IfModifiedSince = data.mtime;
+    var filePath = getCacheFile(url);
+    Q.denodeify(fs.stat)(filePath).then(function (stats) {
+        if (!stats.isFile()) {
+            console.error('Error: Cached dataset is not a file!');
+            res.reject();
+        } else if (stats.mtime.getTime() > timestamp.getTime()) {
+            debug('Found up-to-date dataset in cache');
+            res.resolve(fs.readFileSync(filePath));
+        } else {
+            debug('Found obsolete dataset in cache, ignoring...');
+            res.reject();
         }
-
-
-        var continueLocal = function () {
-
-            debug('taking graph from /tmp/');
-
-            var basePath = '/tmp/' + encodeURIComponent(datasetname);
-            var metaPath = basePath + '.metadata';
-            debug('Loading ' + datasetname + ' metadata from cache (%s)', metaPath);
-            debug('  (Cause:', err, ')');
-            return Rx.Observable.fromNodeCallback(fs.readFile)(metaPath)
-                .flatMap(function (metadata) {
-
-                    debug('Loading ' + datasetname + ' buffer from cache (%s)', basePath);
-
-                    return Rx.Observable.fromNodeCallback(fs.readFile)(basePath)
-                        .map(function (buffer) {
-                            var result = {}
-                            result.Metadata = JSON.parse(metadata);
-                            result.Metadata.name = datasetname;
-                            result.Body = buffer
-                            return result;
-                        });
-                })
-                .take(1)
-                .subscribe(
-                    function (result) {
-                        debug('successfully resolving', datasetname);
-                        res.resolve(result);
-                    },
-                    function (err) {
-                        debug('error resolving', datasetname);
-                        res.reject(new Error(err));
-                    });
-        };
-
-        var done = false;
-        var timeout = setTimeout(function () {
-
-            done = true;
-            continueLocal();
-
-        }, 5000);
-
-
-        // Attempt the download, and if fail (no internet / stale), use local
-        config.S3.getObject(params, function(err, data) {
-
-            if (done) {
-                debug('(S3 result came too late, discarding)')
-                return;
-            }
-
-            clearTimeout(timeout);
-            done = true;
-
-
-            // Error getting the file from S3, either because the on
-            // disk version is newer or the S3 connection is unavailable
-            // In this case, read the data from disk.
-            if (err) {
-                debug('S3 errored, use local');
-                continueLocal();
-            } else {
-                debug('Got s3, caching');
-                if (data.Metadata.config != 'undefined') {
-                    data.Metadata.config = JSON.parse(data.Metadata.config);
-                }
-                data.Metadata.name = datasetname;
-
-                // Unzip the data and save to disk as a cache
-                Q.denodeify(zlib.gunzip)(data.Body)
-                .then(function (unzipped) {
-                    data.Body = unzipped;
-                    return VGraphWriter.cacheVGraph(unzipped, data.Metadata)
-                })
-                .done(
-                    function () { res.resolve(data); },
-                    function (err) { res.reject(err); });
-            }
-        })
+    }).fail(function (err) {
+        debug('No matching dataset found in cache');
+        res.reject();
     });
+
     return res.promise;
 }
 
+function cache(data, url) {
+    var path = getCacheFile(url);
+    Q.denodeify(fs.writeFile)(path, data, {encoding: 'utf8'}).done(
+        function () {
+            debug('Dataset saved in cache:', path);
+        },
+        function (err) {
+            console.error('Error caching dataset', err);
+        }
+    );
+}
+
+function httpDownloader(url) {
+    debug('Attemping to download dataset using HTTP');
+    var result = Q.defer();
+
+    // Q.denodeify fails http.get because it does not follow
+    // the usual nodejs conventions
+    var req = http.request(_.extend(url, {method: 'HEAD'}), function (res) {
+        var mtime = new Date(res.headers['last-modified']);
+        //Try to read from cache otherwise download the dataset
+        readCache(url, mtime).then(function (data) {
+            result.resolve(data);
+        }).fail(function () {
+            http.get(url.href, function (res) {
+                console.log('Headers', res.headers);
+                res.setEncoding('binary');
+                var mtime = new Date(res.headers['last-modified']);
+
+                var data = '';
+                res.on('data', function (chunk) {
+                    data += chunk;
+                });
+
+                res.on('end', function () {
+                    var buffer = new Buffer(data, 'binary');
+                    cache(buffer, url);
+                    result.resolve(buffer);
+                });
+            }).on('error', function (err) {
+                console.error('Cannot download dataset at', url.href, err.message);
+                result.reject();
+            });
+        })
+    }).on('error', function (err) {
+        console.error('Cannot fetch headers from', url.href, err.message);
+        result.reject();
+    })
+
+    req.end();
+
+    return result.promise;
+}
+
+/*
+ * Kick off the download process. This checks the
+ * modified time and fetches from S3 accordingly.
+**/
+function graphistryS3Downloader(url) {
+    debug('Attempting to download from S3 ' + url.href);
+    var params = {
+      Bucket: config.BUCKET,
+      Key: url.href
+    };
+    var res = Q.defer();
+
+    // Attempt the download, and if fail (no internet / stale), use local
+    config.S3.getObject(params, function(err, data) {
+        if (err) {
+            debug('S3 errored, use local');
+
+            // Try to load from cache regardless of timestamp.
+            res.resolve(readCache(url, new Date(0)));
+        } else {
+            debug('Successful S3 download');
+            cache(data.Body, url);
+            res.resolve(data.Body);
+        }
+    })
+
+    return res.promise;
+}
+
+
 function loadDatasetIntoSim(graph, dataset) {
-    debug("Loading data: %o", dataset);
-    // TODO: This stuff should come from Mongo, not S3
-    graph.metadata = dataset.Metadata;
-    return loaders[dataset.Metadata.type](graph, dataset);
+    debug('Loading dataset: %o', dataset);
+
+    var loader = loaders[dataset.metadata.type];
+
+    // If body is gzipped, decompress transparently
+    if (dataset.body.readUInt16BE(0) === 0x1f8b) { //Do we care about big endian? ARM?
+        debug('Dataset body is gzipped, decompressing');
+        return Q.denodeify(zlib.gunzip)(dataset.body).then(function (gunzipped) {
+            dataset.body = gunzipped;
+            return loader(graph, dataset);
+        });
+    } else {
+        return loader(graph, dataset);
+    }
 }
 
 
@@ -199,7 +248,7 @@ function loadRectangle(graph, dataset) {
 function loadSocioPLT(graph, dataset) {
     debug("Loading SocioPLT");
 
-    var data = require('./libs/socioplt/generateGraph.js').process(dataset.Body);
+    var data = require('./libs/socioplt/generateGraph.js').process(dataset.body);
 
     var nodesPerRow = Math.floor(Math.sqrt(data.nodes.length));
     var points =
@@ -261,7 +310,7 @@ function loadSocioPLT(graph, dataset) {
 function loadGeo(graph, dataset) {
     debug("Loading Geo");
 
-    return Q(MatrixLoader.loadGeo(dataset.Body))
+    return Q(MatrixLoader.loadGeo(dataset.body))
      .then(function(geoData) {
         var processedData = MatrixLoader.processGeo(geoData, 0.3);
 
@@ -309,9 +358,9 @@ function loadGeo(graph, dataset) {
 function loadMatrix(graph, dataset) {
     var graphFile;
 
-    debug("Loading dataset %s", dataset.Body);
+    debug("Loading dataset %s", dataset.body);
 
-    var v = MatrixLoader.loadBinary(dataset.Body)
+    var v = MatrixLoader.loadBinary(dataset.body)
     var graphFile = v;
     if (typeof($) != 'undefined') {
         $('#filenodes').text('Nodes: ' + v.numNodes);

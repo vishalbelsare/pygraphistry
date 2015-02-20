@@ -253,16 +253,10 @@ function create(dataset) {
     // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
     // the contents of each VBO
     var animStepSubj = new Rx.BehaviorSubject(null);
-    var cfg = getControls(dataset.Metadata.config.controls);
-    var device = dataset.Metadata.config.device;
+    var cfg = getControls(dataset.metadata.controls);
+    var device = dataset.metadata.device;
 
     var graph = init(device, cfg).then(function (graph) {
-        debug('Dataset %o', dataset);
-        userInteractions.subscribe(function (settings) {
-            //debug('Updating settings..');
-            //graph.updateSettings(settings);
-        })
-
         debug('LOADING DATASET');
         return loader.loadDatasetIntoSim(graph, dataset)
     }).then(function (graph) {

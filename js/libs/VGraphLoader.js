@@ -81,8 +81,8 @@ var attributeLoaders = function(graph) {
  * Load the raw data from the dataset object from S3
 **/
 function load(graph, dataset) {
-    graph.vg = pb_root.VectorGraph.decode(dataset.Body)
-    return decoders[graph.vg.version](graph, graph.vg, dataset.Metadata.config);
+    graph.vg = pb_root.VectorGraph.decode(dataset.body)
+    return decoders[graph.vg.version](graph, graph.vg, dataset.metadata);
 }
 
 function getAttributeMap(vg) {
@@ -97,7 +97,7 @@ function getAttributeMap(vg) {
     return map;
 }
 
-function decode0(graph, vg, config)  {
+function decode0(graph, vg, metadata)  {
     debug("Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)",
           vg.version, vg.name, vg.nvertices, vg.nedges);
 
@@ -134,16 +134,13 @@ function decode0(graph, vg, config)  {
     }
 
     var loaders = attributeLoaders(graph);
-    var mapper = undefined;
-    if (config.mapper) {
-        mapper = mappers[config.mapper]
-        if (mapper)
-            loaders = wrap(mapper.mappings, loaders)
-        else
-            console.warn("WARNING Unknown mapper ", config.mapper);
+    var mapper = mappers[metadata.mapper];
+    if (!mapper) {
+        console.warn('WARNING Unknown mapper', metadata.mapper, 'using "default"');
+        mapper = mappers['default'];
     }
-
-    debug("Attribute loaders: %o", loaders)
+    loaders = wrap(mapper.mappings, loaders);
+    debug('Attribute loaders: %o', loaders);
 
     for (var vname in amap) {
         if (!(vname in loaders))
@@ -353,7 +350,8 @@ var mappers = {
     "opentsdbflowdump_1hrMapper": testMapper,
     "opentsdbflowdump_1hrMapperDemo": testMapperDemo,
     "debugMapper": debugMapper,
-    "splunkMapper": splunkMapper
+    "splunkMapper": splunkMapper,
+    'default': splunkMapper
 }
 
 function logTransform(values) {
