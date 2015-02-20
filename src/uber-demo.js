@@ -94,8 +94,11 @@ function renderCursor (renderState, points, idx, sizes) {
     debug('Enlarging current mouseover point', idx);
 
     if (idx <= 0) {
+        $('#highlighted-point-cont').css({display: 'none'});
         return;
     }
+
+    $('#highlighted-point-cont').css({display: 'block'});
 
     var camera = renderState.get('camera');
     var cnv = renderState.get('canvas');
@@ -306,6 +309,8 @@ function getLatestHighlightedPoint ($eventTarget, renderState, labelHover) {
 
     interaction.setupMousemove($eventTarget, renderState, 'pointHitmap')
         .filter(function (v) { return v > -1; })
+        .merge($eventTarget.mousedownAsObservable()
+            .map(_.constant(-1)))
         .merge(
             labelHover
                 .map(function (elt) {
