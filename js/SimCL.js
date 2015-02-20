@@ -542,7 +542,6 @@ function setTimeSubset(renderer, simulator, range) {
         } else {
             if (!isBeginning) {
                 var len = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx + 1];
-                console.log('add len - 1', {len: len});
                 firstEdge += len - 1;
             }
             return firstEdge;

@@ -164,6 +164,14 @@ function createCLContextNode(renderer, DEVICE_TYPE) {
     var computeUnits = deviceWrapper.computeUnits;
     console.log('OpenCL Info    Vendor:%s  Type:%s  CU:%d', vendor, type, computeUnits);
 
+    var attribs = ['TYPE', 'VENDOR_ID', 'NAME', 'VENDOR', 'VERSION', 'PROFILE', 'PLATFORM']
+        .map(function (suffix) { return 'DEVICE_' + suffix; });
+    attribs.sort();
+    var deviceProps = _.object(attribs.map(function (name) {
+        return [name, deviceWrapper.device.getInfo(webcl[name])];
+    }));
+    console.log(deviceProps);
+
     var res = {
         renderer: renderer,
         cl: webcl,
