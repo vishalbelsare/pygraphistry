@@ -10,6 +10,9 @@ var _ = require('underscore');
 var debug = require('debug')('graphistry:graph-viz:driver:config');
 var util = require('./util.js');
 
+
+var STROKE_WIDTH = 4.0;
+
 var programs = {
     'edgeculled': {
         'sources': {
@@ -251,7 +254,23 @@ var items = {
             'isHighlighted':   ['highlightedPoint', 'isHighlighted']
         },
         'uniforms': {
-            'fog': { 'uniformType': '1f', 'values': [10.0] }
+            'fog': { 'uniformType': '1f', 'values': [10.0] },
+            'stroke': { 'uniformType': '1f', 'values': [0] }
+        },
+        'drawType': 'POINTS',
+        'glOptions': {},
+    },
+    'pointoutline': {
+        'program': 'pointculled',
+        'bindings': {
+            'curPos':       ['curPoints', 'curPos'],
+            'pointSize':    ['pointSizes', 'pointSize'],
+            'pointColor':   ['pointColors', 'pointColor'],
+            'isHighlighted':   ['highlightedPoint', 'isHighlighted']
+        },
+        'uniforms': {
+            'fog': { 'uniformType': '1f', 'values': [10.0] },
+            'stroke': { 'uniformType': '1f', 'values': [STROKE_WIDTH] }
         },
         'drawType': 'POINTS',
         'glOptions': {},
@@ -265,7 +284,8 @@ var items = {
             'isHighlighted':   ['highlightedPoint', 'isHighlighted']
         },
         'uniforms': {
-            'fog': { 'uniformType': '1f', 'values': [0.0] }
+            'fog': { 'uniformType': '1f', 'values': [0.0] },
+            'stroke': { 'uniformType': '1f', 'values': [STROKE_WIDTH] }
         },
         'drawType': 'POINTS',
         'glOptions': {},
@@ -279,7 +299,8 @@ var items = {
             'isHighlighted':   ['highlightedPoint', 'isHighlighted']
         },
         'uniforms': {
-            'fog': { 'uniformType': '1f', 'values': [0.0] }
+            'fog': { 'uniformType': '1f', 'values': [0.0] },
+            'stroke': { 'uniformType': '1f', 'values': [STROKE_WIDTH] }
         },
         'drawType': 'POINTS',
         'glOptions': {},
@@ -294,7 +315,8 @@ var items = {
             'isHighlighted':   ['highlightedPoint', 'isHighlighted']
         },
         'uniforms': {
-            'fog': { 'uniformType': '1f', 'values': [0.0] }
+            'fog': { 'uniformType': '1f', 'values': [0.0] },
+            'stroke': { 'uniformType': '1f', 'values': [STROKE_WIDTH] }
         },
         'drawType': 'POINTS',
         'glOptions': {},
@@ -369,7 +391,7 @@ var sceneUber = {
 var sceneNetflow = {
     'options': stdOptions,
     'camera': camera2D,
-    'render': ['pointpicking', 'pointsampling', 'edgeculled', 'pointculled']
+    'render': ['pointpicking', 'pointsampling', 'edgeculled', 'pointoutline', 'pointculled']
 }
 
 var scenes = {
