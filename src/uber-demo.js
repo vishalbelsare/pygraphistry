@@ -94,8 +94,11 @@ function renderCursor (renderState, points, idx, sizes) {
     debug('Enlarging current mouseover point', idx);
 
     if (idx <= 0) {
+        $('#highlighted-point-cont').css({display: 'none'});
         return;
     }
+
+    $('#highlighted-point-cont').css({display: 'block'});
 
     var camera = renderState.get('camera');
     var cnv = renderState.get('canvas');
@@ -306,6 +309,8 @@ function getLatestHighlightedPoint ($eventTarget, renderState, labelHover) {
 
     interaction.setupMousemove($eventTarget, renderState, 'pointHitmap')
         .filter(function (v) { return v > -1; })
+        .merge($eventTarget.mousedownAsObservable()
+            .map(_.constant(-1)))
         .merge(
             labelHover
                 .map(function (elt) {
@@ -455,7 +460,7 @@ function setupMarquee(isOn, renderState) {
 //Side effect: highlight that element
 function makeMouseSwitchboard() {
 
-    var mouseElts = $('#marqueerectangle, #mouser');
+    var mouseElts = $('#marqueerectangle');
 
     //$DOM * Observable DOM -> ()
     //Highlight selected mouse menu button and disable rest
@@ -469,13 +474,13 @@ function makeMouseSwitchboard() {
     var onElt = Rx.Observable.merge.apply(Rx.Observable,
             mouseElts.get().map(function (elt) {
                 return Rx.Observable.fromEvent(elt, 'click').map(_.constant(elt));
-            }))
-            .merge(Rx.Observable.return($('#mouser')[0]));
+            }));
 
     onElt.subscribe(mouseSwitchboard, makeErrorHandler('mouseSwitchboard'));
 
     return onElt;
 }
+
 
 function init(socket, $elt, renderState, urlParams) {
 
@@ -483,7 +488,15 @@ function init(socket, $elt, renderState, urlParams) {
 
     var onElt = makeMouseSwitchboard();
 
-    var turnOnMarquee = onElt.map(function (elt) { return elt === $('#marqueerectangle')[0]; });
+    var marqueeIsOn = false;
+    var turnOnMarquee = onElt.map(function (elt) {
+        if (elt === $('#marqueerectangle')[0]) {
+            $(elt).children('i').toggleClass('toggle-on');
+            marqueeIsOn = !marqueeIsOn;
+        }
+        return marqueeIsOn;
+    });
+
     var marquee = setupMarquee(turnOnMarquee, renderState);
 
     setupDragHoverInteractions($elt, renderState);
@@ -529,7 +542,8 @@ function init(socket, $elt, renderState, urlParams) {
     var timeSlide = new Rx.Subject();
     //FIXME: replace $OLD w/ browserfied jquery+jqrangeslider
     $('#timeSlider').on('valuesChanging', function (e, data) {
-            timeSlide.onNext({min: 0, max: data.values.max});
+            timeSlide.onNext({min: data.values.min, max: data.values.max});
+            poi.invalidateCache();
         });
 
     timeSlide.sample(3)
@@ -542,14 +556,21 @@ function init(socket, $elt, renderState, urlParams) {
         })
         .subscribe(_.identity, makeErrorHandler('timeSlide'));
 
+    var currentlyLayingOut = false;
+    var runLayout =
+        Rx.Observable.fromEvent($('#simulate'), 'click')
+            .map(function () {
+                $('#simulate > i').toggleClass('toggle-on');
+                if (currentlyLayingOut) {
+                    currentlyLayingOut = false;
+                    return Rx.Observable.empty();
+                } else {
+                    currentlyLayingOut = true;
+                    return Rx.Observable.interval(INTERACTION_INTERVAL);
+                }
+            });
 
-    var downing =
-        Rx.Observable.fromEvent($('#simulate'), 'mousedown')
-            .map(function () { return Rx.Observable.interval(INTERACTION_INTERVAL); });
-    var releasing =
-        Rx.Observable.fromEvent($('body'), 'mouseup')
-            .map(function () { return Rx.Observable.empty(); });
-    downing.merge(releasing).flatMapLatest(_.identity)
+    runLayout.flatMapLatest(_.identity)
         .subscribe(
             function () {
                 socket.emit('interaction', {play: true, layout: true});
