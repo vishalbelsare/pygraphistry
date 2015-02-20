@@ -18,6 +18,7 @@ var Q = require("q"),
     RenderNull = require('./RenderNull.js'),
     rConf = require('./renderer.config.js'),
     lConf = require('./layout.config.js'),
+    webcl = require('node-webcl'),
 
     metrics = require("./metrics.js"),
     loader = require("./data-loader.js");
@@ -201,7 +202,18 @@ function init(device, vendor, cfg) {
 
 
 
-function getControls(cfgName) {
+function getControls(cfgName, metadata) {
+
+    // Temporarily prevent running atlasbarnes when CPU is
+    // requested / only available device.
+    // TODO: Generalize or fix atlasbarnes.
+    var platform = webcl.getPlatforms()[0];
+    var hasGpu = metadata.device.toLowerCase().indexOf('cpu') == -1
+        && platform.getDevices(webcl.DEVICE_TYPE_GPU).length > 0;
+    if (!hasGpu && cfgName.toLowerCase().indexOf('atlasbarnes') != -1){
+        cfgName = 'atlas2';
+    }
+
     var cfg = lConf.controls.default;
     if (cfgName in lConf.controls)
         cfg = lConf.controls[cfgName];
@@ -253,7 +265,7 @@ function create(dataset) {
     // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
     // the contents of each VBO
     var animStepSubj = new Rx.BehaviorSubject(null);
-    var cfg = getControls(dataset.metadata.controls);
+    var cfg = getControls(dataset.metadata.controls, dataset.metadata);
     var device = dataset.metadata.device;
     var vendor = dataset.metadata.vendor;
 
