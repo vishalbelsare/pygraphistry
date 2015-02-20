@@ -347,11 +347,11 @@ function doWrap(res, mapping, oldLoad) {
 }
 
 var mappers = {
-    "opentsdbflowdump_1hrMapper": testMapper,
-    "opentsdbflowdump_1hrMapperDemo": testMapperDemo,
-    "debugMapper": debugMapper,
-    "splunkMapper": splunkMapper,
-    'default': splunkMapper
+    'opentsdbflowdump_1hrMapper': testMapper,
+    'opentsdbflowdump_1hrMapperDemo': testMapperDemo,
+    'debugMapper': debugMapper,
+    'splunkMapper': splunkMapper,
+    'default': testMapper
 }
 
 function logTransform(values) {
