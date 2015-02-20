@@ -249,6 +249,10 @@ function handleVboUpdates(socket, renderState) {
 
         var thisStep = {step: vboUpdateStep++, data: data.step};
 
+        $('#graph-node-count').text(data.elements.pointculled);
+        $('#graph-edge-count').text(data.elements.edgeculled/2);
+
+
         try {
             debug('1. VBO update', thisStep);
             renderedFrame.onNext('start');
