@@ -3,6 +3,7 @@
 var fs = require('fs');
 var path = require('path');
 var http = require('http');
+var https = require('https');
 var crypto = require('crypto');
 var Q = require('q');
 var debug = require('debug')('graphistry:graph-viz:data:data-loader');
@@ -30,7 +31,8 @@ var loaders = {
 };
 
 var downloader = {
-    'http:': httpDownloader,
+    'http:': httpDownloader.bind(undefined, http),
+    'https:': httpDownloader.bind(undefined, https),
     'null': graphistryS3Downloader // For legacy compatibility
 }
 
@@ -95,7 +97,7 @@ function cache(data, url) {
     );
 }
 
-function httpDownloader(url) {
+function httpDownloader(http, url) {
     debug('Attemping to download dataset using HTTP');
     var result = Q.defer();
 
@@ -108,7 +110,6 @@ function httpDownloader(url) {
             result.resolve(data);
         }).fail(function () {
             http.get(url.href, function (res) {
-                console.log('Headers', res.headers);
                 res.setEncoding('binary');
                 var mtime = new Date(res.headers['last-modified']);
 
@@ -133,7 +134,6 @@ function httpDownloader(url) {
     })
 
     req.end();
-
     return result.promise;
 }
 
