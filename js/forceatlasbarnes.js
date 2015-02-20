@@ -60,6 +60,7 @@ ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
 
 // Contains any temporary buffers needed for layout
 var tempLayoutBuffers  = {
+  globalSpeed: null
 };
 
 // Create temporary buffers needed for layout
@@ -130,7 +131,7 @@ function edgeForces(simulator, edgeKernelSeq, stepNumber) {
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var that = this;
     var tickTime = Date.now();
-    return pointForces(simulator, that.barnesKernelSeq, stepNumber)
+    return that.barnesKernelSeq.execKernels(simulator, stepNumber)
     .then(function () {
        return edgeForces(simulator, that.edgeKernelSeq, stepNumber);
     }).then(function () {
