@@ -354,38 +354,38 @@ function pointForces(simulator, toBarnesLayout, boundBox, buildTree,
     // It's replaced by default with a very similar performance setting
     // that runs locally.
 
-    return toBarnesLayout.exec([10*256], resources, [256])
+    return toBarnesLayout.exec([30*256], resources, [256])
 
     .then(function () {
       simulator.cl.queue.finish();
     })
 
     .then(function () {
-      return boundBox.exec([10*256], resources, [256]);
+      return boundBox.exec([30*256], resources, [256]);
     })
 
     // 4:49, 10:38, 20:31, 30:30, 40:31, 60:43
     .then(function () {
-      return buildTree.exec([10*256], resources, [256]);
+      return buildTree.exec([30*256], resources, [256]);
     })
 
     // 4:21, 10:14, 20:13, 30:13, 40:14, 60:18
     .then(function () {
       // return computeSums.exec([20*256], resources, [256]);
-      return computeSums.exec([4*256], resources, [256]);
+      return computeSums.exec([10*256], resources, [256]);
     })
 
     // 4:16, 10:10, 20:8, 30:8, 40:9, 60:13,
     .then(function () {
       // return sort.exec([30*256], resources, [256]);
-      return sort.exec([8*256], resources, [256]);
+      return sort.exec([16*256], resources, [256]);
     })
 
     // 60:42, 70:62, 80:57, 100:48, 120:42, 140:49, 160:45,
     // 200:45, 240:41, 280:43, 320:41, 360:41, 400:42
     .then(function () {
       // return calculateForces.exec([120*256], resources, [256]);
-      return calculateForces.exec([40*256], resources, [256]);
+      return calculateForces.exec([60*256], resources, [256]);
     })
 
     .fail(function (err) {
