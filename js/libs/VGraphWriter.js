@@ -54,37 +54,6 @@ function readBuffers(buffers) {
 
 }
 
-//Promise? graph * Promise ? [ProtobufVector ] -> Promise
-var cacheVGraph = Q.promised(function (vg, metadata) {
-
-
-    var data = Q().then(function () {
-
-        debug('caching VGraph', metadata.name);
-
-        return {
-            datasetName: metadata.name,
-            basePath: '/tmp/' + encodeURIComponent(metadata.name),
-            byteBuffer: vg.constructor === Buffer ? vg : (vg.encode().toBuffer())
-        };
-
-    });
-
-    var wroteMetaData = data.then(function (data) {
-        var path = data.basePath + '.metadata';
-        debug('  writing', path);
-        return Q.nfcall(fs.writeFile, path, JSON.stringify(metadata));
-    });
-
-    var wroteData = data.then(function (data) {
-        debug('  writing', data.basePath);
-        return Q.nfcall(fs.writeFile, data.basePath, data.byteBuffer);
-    });
-
-    return Q.all([wroteMetaData, wroteData])
-        .then(function () { debug('  cached', metadata.name); });
-
-});
 
 //Promise? graph * Promise? [ ProtobufVector ] -> Promise
 var uploadVGraph = Q.promised(function (vg, metadata) {
@@ -100,10 +69,7 @@ var uploadVGraph = Q.promised(function (vg, metadata) {
                 Bucket: config.BUCKET,
                 Key: metadata.name,
                 ACL: 'private',
-                Metadata: {
-                    type: metadata.type,
-                    config: JSON.stringify(metadata.config)
-                },
+                Metadata: metadata,
                 Body: zipped,
                 ServerSideEncryption: 'AES256'
             };
@@ -168,5 +134,4 @@ function write(graph) {
 module.exports = {
     write: write,
     uploadVGraph: uploadVGraph,
-    cacheVGraph: cacheVGraph
 };
