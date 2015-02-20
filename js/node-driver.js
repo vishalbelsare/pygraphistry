@@ -210,9 +210,13 @@ function getControls(cfgName, metadata) {
     var platform = webcl.getPlatforms()[0];
     var hasGpu = metadata.device.toLowerCase().indexOf('cpu') == -1
         && platform.getDevices(webcl.DEVICE_TYPE_GPU).length > 0;
-    if (!hasGpu && cfgName.toLowerCase().indexOf('atlasbarnes') != -1){
-        cfgName = 'atlas2';
+    if (!hasGpu &&
+            (cfgName.toLowerCase().indexOf('atlasbarnes') != -1 ||
+             cfgName.toLowerCase().indexOf('default') != -1)) {
+
+        cfgName = 'atlas2fast';
     }
+    console.log('cfgName: ', cfgName);
 
     var cfg = lConf.controls.default;
     if (cfgName in lConf.controls)
