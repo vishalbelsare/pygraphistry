@@ -131,6 +131,10 @@ label {
     color: rgba(255,255,255,0.9);
 }
 
+.accordion-heading a:hover .fa {
+    color: rgb(15, 165, 197);
+}
+
 .accordion-heading .fa {
     color: rgba(255,255,255,0.9);
 }
