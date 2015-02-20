@@ -216,7 +216,6 @@ function getControls(cfgName, metadata) {
 
         cfgName = 'atlas2fast';
     }
-    console.log('cfgName: ', cfgName);
 
     var cfg = lConf.controls.default;
     if (cfgName in lConf.controls)
