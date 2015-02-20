@@ -99,7 +99,7 @@ function atlasControls(algo) {
 
 
 var controls = {
-    'default': uberControls,
+    'default': atlasControls(ForceAtlas2Fast),
     'uber': uberControls,
     'gauss': gsControls,
     'atlas': atlasControls(ForceAtlas2),

@@ -170,7 +170,7 @@ function createCLContextNode(renderer, DEVICE_TYPE) {
     var deviceProps = _.object(attribs.map(function (name) {
         return [name, deviceWrapper.device.getInfo(webcl[name])];
     }));
-    console.log(deviceProps);
+    debug(deviceProps);
 
     var res = {
         renderer: renderer,

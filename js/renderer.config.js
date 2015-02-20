@@ -395,7 +395,7 @@ var sceneNetflow = {
 }
 
 var scenes = {
-    'default': sceneUber,
+    'default': sceneNetflow,
     'uber' : sceneUber,
     'netflow': sceneNetflow
 }
