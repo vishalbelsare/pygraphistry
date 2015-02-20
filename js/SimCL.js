@@ -22,8 +22,8 @@ var randLength = 73;
 
 var NAMED_CLGL_BUFFERS = require('./buffers.js').NAMED_CLGL_BUFFERS;
 
-function create(renderer, dimensions, numSplits, device, layoutAlgorithms, locked) {
-    return cljs.create(renderer, device)
+function create(renderer, dimensions, numSplits, device, vendor, layoutAlgorithms, locked) {
+    return cljs.create(renderer, device, vendor)
     .then(function(cl) {
         return Q().then(function () {
             debug('Instantiating layout algorithms: %o', layoutAlgorithms);

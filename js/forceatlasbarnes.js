@@ -8,6 +8,33 @@ var debug = require("debug")("graphistry:graph-viz:cl:forceatlas2barnes"),
     LayoutAlgo = require('./layoutAlgo.js'),
     Kernel = require('./kernel.js');
 
+
+function getNumWorkitemsByHardware(deviceProps, workGroupSize) {
+    var numWorkGroups = {
+        toBarnesLayout: 30,
+        boundBox: 30,
+        buildTree: 30,
+        computeSums: 10,
+        sort: 16,
+        calculateForces: 60
+    }
+
+    // console.log("DEVICE NAME: ", deviceProps.DEVICE_NAME);
+    if (deviceProps.DEVICE_NAME.indexOf('GeForce GT 650M') != -1) {
+        numWorkGroups.buildTree = 1;
+        numWorkGroups.computeSums = 1;
+
+    } else if (deviceProps.DEVICE_NAME.indexOf('Iris Pro') != -1) {
+        numWorkGroups.computeSums = 6;
+        numWorkGroups.sort = 8;
+    }
+
+    return _.mapObject(numWorkGroups, function(val, key) {
+        return workGroupSize * val;
+    });
+}
+
+
 function ForceAtlas2Barnes(clContext) {
     LayoutAlgo.call(this, 'ForceAtlasBarnes');
 
@@ -60,7 +87,7 @@ ForceAtlas2Barnes.prototype.constructor = ForceAtlas2Barnes;
 ForceAtlas2Barnes.argsToBarnesLayout = [
     'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints',
     'inputPositions', 'xCoords', 'yCoords', 'mass', 'blocked', 'maxDepth',
-    'pointDegrees', 'stepNumber'
+    'pointDegrees', 'stepNumber', 'WARPSIZE'
 ];
 
 // All BarnesHut Kernels have the same arguements
@@ -68,7 +95,7 @@ ForceAtlas2Barnes.argsBarnes = ['scalingRatio', 'gravity', 'edgeInfluence', 'fla
                           'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
                           'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
                           'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
-                          'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau'];
+                          'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau', 'WARPSIZE'];
 
 ForceAtlas2Barnes.argsEdges = [
     'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges',
@@ -142,7 +169,8 @@ ForceAtlas2Barnes.argsType = {
     numBodies: cljs.types.uint_t,
     numNodes: cljs.types.uint_t,
     numWorkItems: cljs.types.uint_t,
-    globalSpeed: null
+    globalSpeed: null,
+    WARPSIZE: cljs.types.define
 }
 
 ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
@@ -264,13 +292,25 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
 
     var that = this;
 
+    var vendor = simulator.cl.deviceProps.DEVICE_VENDOR.toLowerCase();
+    var warpsize = 1; // Always correct
+    if (vendor.indexOf('intel') != -1) {
+        warpsize = 16;
+    } else if (vendor.indexOf('nvidia') != -1) {
+        warpsize = 32;
+    } else if (vendor.indexOf('amd') != -1) {
+        warpsize = 64;
+    }
+
     return setupTempBuffers(simulator).then(function (tempBuffers) {
 
         that.toBarnesLayout.set({xCoords: tempBuffers.x_cords.buffer,
           yCoords:tempBuffers.y_cords.buffer, mass:tempBuffers.mass.buffer,
                             blocked:tempBuffers.blocked.buffer, maxDepth:tempBuffers.maxdepth.buffer,
                             numPoints:simulator.numPoints,
-                            inputPositions: simulator.buffers.curPoints.buffer, pointDegrees: simulator.buffers.degrees.buffer});
+                            inputPositions: simulator.buffers.curPoints.buffer,
+                            pointDegrees: simulator.buffers.degrees.buffer,
+                            WARPSIZE: warpsize});
 
         function setBarnesKernelArgs(kernel, buffers) {
             //console.log(buffers);
@@ -299,7 +339,8 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
                         height:simulator.dimensions[1],
                         numBodies:buffers.numBodies,
                         numNodes:buffers.numNodes,
-                        pointForces:simulator.buffers.partialForces1.buffer})
+                        pointForces:simulator.buffers.partialForces1.buffer,
+                        WARPSIZE: warpsize});
         };
         setBarnesKernelArgs(that.boundBox, tempBuffers);
         setBarnesKernelArgs(that.buildTree, tempBuffers);
@@ -340,38 +381,41 @@ function pointForces(simulator, toBarnesLayout, boundBox, buildTree,
     // It's replaced by default with a very similar performance setting
     // that runs locally.
 
-    return toBarnesLayout.exec([30*256], resources, [256])
+    var workGroupSize = 256;
+    var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps, workGroupSize);
+
+    return toBarnesLayout.exec([workItems.toBarnesLayout], resources, [workGroupSize])
 
     .then(function () {
       simulator.cl.queue.finish();
     })
 
     .then(function () {
-      return boundBox.exec([30*256], resources, [256]);
+      return boundBox.exec([workItems.boundBox], resources, [workGroupSize]);
     })
 
     // 4:49, 10:38, 20:31, 30:30, 40:31, 60:43
     .then(function () {
-      return buildTree.exec([30*256], resources, [256]);
+      return buildTree.exec([workItems.buildTree], resources, [workGroupSize]);
     })
 
     // 4:21, 10:14, 20:13, 30:13, 40:14, 60:18
     .then(function () {
       // return computeSums.exec([20*256], resources, [256]);
-      return computeSums.exec([10*256], resources, [256]);
+      return computeSums.exec([workItems.computeSums], resources, [workGroupSize]);
     })
 
     // 4:16, 10:10, 20:8, 30:8, 40:9, 60:13,
     .then(function () {
       // return sort.exec([30*256], resources, [256]);
-      return sort.exec([16*256], resources, [256]);
+      return sort.exec([workItems.sort], resources, [workGroupSize]);
     })
 
     // 60:42, 70:62, 80:57, 100:48, 120:42, 140:49, 160:45,
     // 200:45, 240:41, 280:43, 320:41, 360:41, 400:42
     .then(function () {
       // return calculateForces.exec([120*256], resources, [256]);
-      return calculateForces.exec([60*256], resources, [256]);
+      return calculateForces.exec([workItems.calculateForces], resources, [workGroupSize]);
     })
 
     .fail(function (err) {
