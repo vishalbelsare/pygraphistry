@@ -12,6 +12,7 @@ var BarnesKernelSeq = function (clContext) {
         'pointDegrees', 'stepNumber'
     ];
 
+    // All Barnes kernels have same arguements
     this.argsBarnes = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
     'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
     'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
@@ -242,7 +243,7 @@ var BarnesKernelSeq = function (clContext) {
         });
     };
 
-    this.exec_kernels = function(simulator, stepNumber) {
+    this.execKernels = function(simulator, stepNumber) {
 
         var resources = [
             simulator.buffers.curPoints,

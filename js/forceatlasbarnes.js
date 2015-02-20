@@ -8,7 +8,11 @@ var debug = require("debug")("graphistry:graph-viz:cl:forceatlas2barnes"),
     LayoutAlgo = require('./layoutAlgo.js'),
     Kernel = require('./kernel.js'),
     BarnesKernelSeq = require('./javascript_kernels/barnesKernelSeq.js'),
-    EdgeKernelSeq = require('./javascript_kernels/edgeKernelSeq.js');
+    EdgeKernelSeq = require('./javascript_kernels/edgeKernelSeq.js'),
+    faSwingsKernel = require('./javascript_kernels/faSwingsKernel.js'),
+    integrate1Kernel = require('./javascript_kernels/integrate1Kernel.js'),
+    integrate2Kernel = require('./javascript_kernels/integrate2Kernel.js'),
+    integrate3Kernel = require('./javascript_kernels/integrate3Kernel.js');
 
 function ForceAtlas2Barnes(clContext) {
     LayoutAlgo.call(this, 'ForceAtlasBarnes');
@@ -18,74 +22,25 @@ function ForceAtlas2Barnes(clContext) {
 
     this.edgeKernelSeq = new EdgeKernelSeq(clContext);
 
-    this.faSwings = new Kernel('faSwingsTractions', ForceAtlas2Barnes.argsSwings,
-                               ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
+    this.faSwingsKernel = new faSwingsKernel(clContext);
 
-    this.faIntegrate = new Kernel('faIntegrate', ForceAtlas2Barnes.argsIntegrate,
-                               ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
+    this.integrate1Kernel = new integrate1Kernel(clContext);
 
-    this.faIntegrate2 = new Kernel('faIntegrate2', ForceAtlas2Barnes.argsIntegrate2,
-                               ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
+    this.integrate2Kernel = new integrate2Kernel(clContext);
 
-    this.faIntegrate3 = new Kernel('faIntegrate3', ForceAtlas2Barnes.argsIntegrate3,
-                               ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
+    this.integrate3Kernel = new integrate3Kernel(clContext);
 
-    this.kernels = this.kernels.concat([this.faSwings, this.faIntegrate,
-                                        this.faIntegrate2, this.faIntegrate3]);
+
+    this.kernels = this.kernels.concat([this.barnesKernelSeq.toBarnesLayout, this.barnesKernelSeq.boundBox,
+                                        this.barnesKernelSeq.buildTree, this.barnesKernelSeq.computeSums,
+                                        this.barnesKernelSeq.sort, this.barnesKernelSeq.calculateForces,
+                                        this.barnesKernelSeq.move, this.edgeKernelSeq.faEdges,
+                                        this.faSwingsKernel.faSwings, this.integrate1Kernel.faIntegrate,
+                                        this.integrate2Kernel.faIntegrate2, this.integrate3Kernel.faIntegrate3]);
 }
 
 ForceAtlas2Barnes.prototype = Object.create(LayoutAlgo.prototype);
 ForceAtlas2Barnes.prototype.constructor = ForceAtlas2Barnes;
-
-ForceAtlas2Barnes.argsSwings = ['prevForces', 'curForces', 'swings' , 'tractions'];
-
-ForceAtlas2Barnes.argsIntegrate = [
-    'gSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'
-];
-
-ForceAtlas2Barnes.argsIntegrate2 = [
-    'numPoints', 'tau', 'inputPositions', 'pointDegrees', 'curForces', 'swings',
-    'tractions', 'outputPositions'
-];
-
-ForceAtlas2Barnes.argsIntegrate3 = [
-    'globalSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'
-];
-
-
-ForceAtlas2Barnes.argsType = {
-    scalingRatio: cljs.types.float_t,
-    gravity: cljs.types.float_t,
-    edgeInfluence: cljs.types.uint_t,
-    flags: cljs.types.uint_t,
-    numPoints: cljs.types.uint_t,
-    tilesPerIteration: cljs.types.uint_t,
-    tilePointsParam: cljs.types.local_t,
-    tilePointsParam2: cljs.types.local_t,
-    inputPositions: null,
-    pointForces: null,
-    partialForces: null,
-    outputForces: null,
-    outputPositions: null,
-    width: cljs.types.float_t,
-    height: cljs.types.float_t,
-    stepNumber: cljs.types.uint_t,
-    pointDegrees: null,
-    edges: null,
-    workList: null,
-    inputPoints: null,
-    outputPoints: null,
-    curForces: null,
-    prevForces: null,
-    swings: null,
-    tractions: null,
-    gSpeeds: null,
-    tau: cljs.types.float_t,
-    gSpeed: cljs.types.float_t,
-    springs: null,
-    numWorkItems: cljs.types.uint_t,
-    globalSpeed: null
-}
 
 ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
     LayoutAlgo.prototype.setPhysics.call(this, cfg)
@@ -138,7 +93,7 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
 }
 
 function pointForces(simulator, barnesKernelSeq, stepNumber) {
-     return barnesKernelSeq.exec_kernels(simulator, stepNumber)
+     return barnesKernelSeq.execKernels(simulator, stepNumber)
     .fail(function (err) {
         console.error('Computing pointForces failed', err, (err||{}).stack);
     });
@@ -170,117 +125,6 @@ function edgeForces(simulator, edgeKernelSeq, stepNumber) {
     });
 }
 
-function swingsTractions(simulator, faSwings) {
-    var buffers = simulator.buffers;
-    faSwings.set({
-        prevForces: buffers.prevForces.buffer,
-        curForces: buffers.curForces.buffer,
-        swings: buffers.swings.buffer,
-        tractions: buffers.tractions.buffer
-    });
-
-    var resources = [
-        buffers.prevForces,
-        buffers.curForces,
-        buffers.swings,
-        buffers.tractions
-    ];
-
-    simulator.tickBuffers(['swings', 'tractions']);
-
-    debug("Running kernel faSwingsTractions");
-    return faSwings.exec([simulator.numPoints], resources)
-        .fail(function (err) {
-            console.error('Kernel faSwingsTractions failed', err, (err||{}).stack);
-        });
-}
-
-
-function integrate(simulator, faIntegrate) {
-    var buffers = simulator.buffers;
-
-    faIntegrate.set({
-        gSpeed: 1.0,
-        inputPositions: buffers.curPoints.buffer,
-        curForces: buffers.curForces.buffer,
-        swings: buffers.swings.buffer,
-        outputPositions: buffers.nextPoints.buffer
-    });
-
-    var resources = [
-        buffers.curPoints,
-        buffers.curForces,
-        buffers.swings,
-        buffers.nextPoints
-    ];
-
-    simulator.tickBuffers(['nextPoints']);
-
-    debug("Running kernel faIntegrate");
-    return faIntegrate.exec([simulator.numPoints], resources)
-        .fail(function (err) {
-            console.error('Kernel faIntegrate failed', err, (err||{}).stack);
-        });
-}
-
-function integrate3(simulator, faIntegrate3) {
-    var buffers = simulator.buffers;
-
-    faIntegrate3.set({
-        globalSpeed: tempLayoutBuffers.globalSpeed.buffer,
-        inputPositions: buffers.curPoints.buffer,
-        curForces: buffers.curForces.buffer,
-        swings: buffers.swings.buffer,
-        outputPositions: buffers.nextPoints.buffer
-    });
-
-    var resources = [
-        buffers.curPoints,
-        buffers.curForces,
-        buffers.swings,
-        buffers.nextPoints
-    ];
-
-    simulator.tickBuffers(['nextPoints']);
-
-    debug("Running kernel faIntegrate");
-    return faIntegrate3.exec([simulator.numPoints], resources)
-        .fail(function (err) {
-            console.error('Kernel faIntegrate3 failed', err, (err||{}).stack);
-        });
-}
-
-function integrate2(simulator, faIntegrate2) {
-    var buffers = simulator.buffers;
-
-    faIntegrate2.set({
-        numPoints: simulator.numPoints,
-        inputPositions: buffers.curPoints.buffer,
-        pointDegrees: buffers.degrees.buffer,
-        curForces: buffers.curForces.buffer,
-        swings: buffers.swings.buffer,
-        tractions: buffers.tractions.buffer,
-        outputPositions: buffers.nextPoints.buffer
-    });
-
-    var resources = [
-        buffers.curPoints,
-        buffers.forwardsDegrees,
-        buffers.backwardsDegrees,
-        buffers.curForces,
-        buffers.swings,
-        buffers.tractions,
-        buffers.nextPoints
-    ];
-
-    simulator.tickBuffers(['nextPoints']);
-
-    debug('Running kernel faIntegrate2');
-    return faIntegrate2.exec([simulator.numPoints], resources)
-        .fail(function (err) {
-            console.error('Kernel faIntegrate2 failed', err, (err||{}).stack);
-        });
-}
 
 
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
@@ -290,11 +134,12 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     .then(function () {
        return edgeForces(simulator, that.edgeKernelSeq, stepNumber);
     }).then(function () {
-        return swingsTractions(simulator, that.faSwings);
+        return that.faSwingsKernel.execKernels(simulator);
     }).then(function () {
         // return integrate(simulator, that.faIntegrate);
         // return integrate2(simulator, that.faIntegrate2);
-        return integrate3(simulator, that.faIntegrate3);
+        return that.integrate3Kernel.execKernels(simulator, tempLayoutBuffers);
+        //return integrate3(simulator, that.faIntegrate3);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);
