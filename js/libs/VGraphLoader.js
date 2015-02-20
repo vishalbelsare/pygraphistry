@@ -10,17 +10,11 @@ var path = require('path');
 var config  = require('config')();
 var util = require('../util.js');
 
-var builder = null;
-var pb_root = null;
-pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'), function (err, builder_) {
-    if (err) {
-        console.error('could not build proto', err, err.stack);
-        return;
-    } else {
-        builder = builder_;
-        pb_root = builder.build();
-    }
-});
+var builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
+if (builder === null) {
+    util.die('Could not find protobuf definition');
+}
+var pb_root = builder.build();
 
 // TODO: Figure out how to read enum from protobuf
 var VERTEX = 0;
@@ -347,10 +341,10 @@ function doWrap(res, mapping, oldLoad) {
 }
 
 var mappers = {
-    'opentsdbflowdump_1hrMapper': testMapper,
-    'opentsdbflowdump_1hrMapperDemo': testMapperDemo,
-    'debugMapper': debugMapper,
-    'splunkMapper': splunkMapper,
+    'opentsdbr': testMapper,
+    'opentsdbDemo': testMapperDemo,
+    'debug': debugMapper,
+    'splunk': splunkMapper,
     'default': testMapper
 }
 

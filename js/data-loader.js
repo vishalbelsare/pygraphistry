@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 var fs = require('fs');
 var path = require('path');
@@ -53,6 +53,8 @@ function downloadDataset(query) {
 
     return downloader[url.protocol](url).then(function (data) {
         return { body: data, metadata: config };
+    }).fail(function (err) {
+        console.error('Failure while retrieving dataset', err, (err||{}).stack);
     })
 }
 
@@ -68,18 +70,17 @@ function readCache(url, timestamp) {
     var filePath = getCacheFile(url);
     Q.denodeify(fs.stat)(filePath).then(function (stats) {
         if (!stats.isFile()) {
-            console.error('Error: Cached dataset is not a file!');
-            res.reject();
+            res.reject('Error: Cached dataset is not a file!');
         } else if (stats.mtime.getTime() > timestamp.getTime()) {
             debug('Found up-to-date dataset in cache');
             res.resolve(fs.readFileSync(filePath));
         } else {
-            debug('Found obsolete dataset in cache, ignoring...');
+            debug('Found obsolete dataset in cache (%s), ignoring...', stats.mtime);
             res.reject();
         }
     }).fail(function (err) {
-        debug('No matching dataset found in cache');
-        res.reject();
+        debug('No matching dataset found in cache', err);
+        res.reject(err);
     });
 
     return res.promise;
@@ -87,7 +88,7 @@ function readCache(url, timestamp) {
 
 function cache(data, url) {
     var path = getCacheFile(url);
-    Q.denodeify(fs.writeFile)(path, data, {encoding: 'utf8'}).done(
+    return Q.denodeify(fs.writeFile)(path, data, {encoding: 'utf8'}).then(
         function () {
             debug('Dataset saved in cache:', path);
         },
@@ -103,7 +104,7 @@ function httpDownloader(http, url) {
 
     // Q.denodeify fails http.get because it does not follow
     // the usual nodejs conventions
-    var req = http.request(_.extend(url, {method: 'HEAD'}), function (res) {
+    http.request(_.extend(url, {method: 'HEAD'}), function (res) {
         var mtime = new Date(res.headers['last-modified']);
         //Try to read from cache otherwise download the dataset
         readCache(url, mtime).then(function (data) {
@@ -125,15 +126,14 @@ function httpDownloader(http, url) {
                 });
             }).on('error', function (err) {
                 console.error('Cannot download dataset at', url.href, err.message);
-                result.reject();
+                result.reject(err);
             });
         })
     }).on('error', function (err) {
         console.error('Cannot fetch headers from', url.href, err.message);
-        result.reject();
-    })
+        result.reject(err);
+    }).end();
 
-    req.end();
     return result.promise;
 }
 
@@ -149,19 +149,32 @@ function graphistryS3Downloader(url) {
     };
     var res = Q.defer();
 
-    // Attempt the download, and if fail (no internet / stale), use local
-    config.S3.getObject(params, function(err, data) {
+    // Attempt to download headers
+    config.S3.headObject(params, function (err, data) {
         if (err) {
-            debug('S3 errored, use local');
-
+            debug('Could not fetch S3 header', err.message)
+            debug('Falling back on local cache');
             // Try to load from cache regardless of timestamp.
             res.resolve(readCache(url, new Date(0)));
         } else {
-            debug('Successful S3 download');
-            cache(data.Body, url);
-            res.resolve(data.Body);
+            var mtime = new Date(data['LastModified']);
+            debug('Got S3 headers, dataset was last modified on', mtime);
+            readCache(url, mtime).then(function (data) {
+                res.resolve(data);
+            }).fail(function () { // Not in cache of stale
+                config.S3.getObject(params, function(err, data) {
+                    if (err) {
+                        console.error('S3 Download failed', err.message);
+                        res.reject();
+                    } else {
+                        debug('Successful S3 download');
+                        cache(data.Body, url);
+                        res.resolve(data.Body);
+                    }
+                });
+            });
         }
-    })
+    });
 
     return res.promise;
 }
@@ -383,7 +396,8 @@ module.exports = {
     createPoints: createPoints,
     createEdges: createEdges,
     loadDatasetIntoSim: loadDatasetIntoSim,
-    downloadDataset: downloadDataset
+    downloadDataset: downloadDataset,
+    cache: cache
 };
 
 // vim: set et ff=unix ts=8 sw=4 fdm=syntax:
