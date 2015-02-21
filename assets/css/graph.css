@@ -63,7 +63,7 @@
 
 #main, #menuState, #controlState {
     border: 1px solid rgba(0, 0, 0, 0.3);
-    background-color: rgba(51, 51, 102, 0.1);
+    background-color: rgba(51, 51, 102, 0.4);
     border-radius: 7px;
 }
 
