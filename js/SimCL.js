@@ -108,6 +108,11 @@ function create(renderer, dimensions, numSplits, device, layoutAlgorithms, locke
                 prevForces: null,
                 swings: null,
                 tractions: null,
+                outputEdgeForcesMap: null,
+                globalCarryOut: null,
+                forwardsEdgeStartEndIdxs: null,
+                backwardsEdgeStartEndIdxs: null
+                 
             };
             _.extend(
                 simObj.buffers,
@@ -383,8 +388,11 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, degrees, m
         simulator.buffers.backwardsEdges,
         simulator.buffers.backwardsDegrees,
         simulator.buffers.backwardsWorkItems,
+        simulator.buffers.outputEdgeForcesMap,
         simulator.buffers.springsPos,
         simulator.buffers.midSpringsPos,
+        simulator.buffers.forwardsEdgeStartEndIdxs,
+        simulator.buffers.backwardsStartEndIdxs,
         simulator.buffers.midSpringsColorCoord]);
 
     return Q().then(function() {
@@ -414,13 +422,18 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, degrees, m
             simulator.renderer.createBuffer(simulator.numEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 'springs'),
             simulator.renderer.createBuffer(midPoints, 'curMidPoints'),
             simulator.renderer.createBuffer(simulator.numMidEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 'midSprings'),
-            simulator.renderer.createBuffer(simulator.numMidEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 'midSpringsColorCoord')]);
+            simulator.renderer.createBuffer(simulator.numMidEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 'midSpringsColorCoord'),
+            simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'outputEdgeForcesMap'),
+            simulator.cl.createBuffer(1 + Math.ceil(simulator.numEdges / 256), 'globalCarryIn'),
+            simulator.cl.createBuffer(forwardsEdges.edgeStartEndIdxsTyped.byteLength, 'forwardsEdgeStartEndIdxs'),
+            simulator.cl.createBuffer(backwardsEdges.edgeStartEndIdxsTyped.byteLength, 'backwardsEdgeStartEndIdxs')])
     })
     .spread(function(degreesBuffer,
                      forwardsEdgesBuffer, forwardsDegreesBuffer, forwardsWorkItemsBuffer,
                      backwardsEdgesBuffer, backwardsDegreesBuffer, backwardsWorkItemsBuffer,
                      nextMidPointsBuffer, springsVBO,
-                     midPointsVBO, midSpringsVBO, midSpringsColorCoordVBO) {
+                     midPointsVBO, midSpringsVBO, midSpringsColorCoordVBO,
+                     outputEdgeForcesMap, globalCarryOut, forwardsEdgeStartEndIdxs, backwardsEdgeStartEndIdxs) {
         // Bind buffers
         simulator.buffers.degrees = degreesBuffer;
         simulator.buffers.forwardsEdges = forwardsEdgesBuffer;
@@ -430,6 +443,11 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, degrees, m
         simulator.buffers.backwardsDegrees = backwardsDegreesBuffer;
         simulator.buffers.backwardsWorkItems = backwardsWorkItemsBuffer;
         simulator.buffers.nextMidPoints = nextMidPointsBuffer;
+        simulator.buffers.outputEdgeForcesMap = outputEdgeForcesMap;
+        simulator.buffers.globalCarryOut = globalCarryOut;
+        simulator.buffers.forwardsEdgeStartEndIdxs = forwardsEdgeStartEndIdxs;
+        simulator.buffers.backwardsEdgeStartEndIdxs = backwardsEdgeStartEndIdxs;
+
 
         simulator.renderer.buffers.springs = springsVBO;
         simulator.renderer.buffers.curMidPoints = midPointsVBO;
@@ -448,6 +466,8 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, degrees, m
             simulator.buffers.backwardsEdges.write(backwardsEdges.edgesTyped),
             simulator.buffers.backwardsDegrees.write(backwardsEdges.degreesTyped),
             simulator.buffers.backwardsWorkItems.write(backwardsEdges.workItemsTyped),
+            simulator.buffers.forwardsEdgeStartEndIdxs.write(forwardsEdges.edgeStartEndIdxsTyped),
+            simulator.buffers.backwardsEdgeStartEndIdxs.write(backwardsEdges.edgeStartEndIdxsTyped)
         ]);
     })
     .spread(function(springsBuffer, midPointsBuf, midSpringsBuffer, midSpringsColorCoordBuffer) {

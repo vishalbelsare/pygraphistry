@@ -33,7 +33,13 @@ function ForceAtlas2Barnes(clContext) {
     this.move = new Kernel('move_bodies', ForceAtlas2Barnes.argsBarnes,
                                ForceAtlas2Barnes.argsType, 'barnesHut.cl', clContext);
 
-    this.faEdges = new Kernel('faEdgeForces', ForceAtlas2Barnes.argsEdges,
+    //this.faEdges = new Kernel('faEdgeForces', ForceAtlas2Barnes.argsEdges,
+                               //ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
+                               //
+    this.segReduce = new Kernel("segReduce", ForceAtlas2Barnes.argsSegReduce,
+                                ForceAtlas2Barnes.argsType, 'segReduce.cl', clContext);
+
+    this.faEdges = new Kernel('faEdgeMap', ForceAtlas2Barnes.argsEdgesMap,
                                ForceAtlas2Barnes.argsType, 'forceAtlas2.cl', clContext);
 
     this.faSwings = new Kernel('faSwingsTractions', ForceAtlas2Barnes.argsSwings,
@@ -50,7 +56,7 @@ function ForceAtlas2Barnes(clContext) {
 
     this.kernels = this.kernels.concat([this.toBarnesLayout, this.boundBox, this.buildTree,
                                         this.computeSums, this.sort, this.calculateForces,
-                                        this.faEdges, this.faSwings, this.faIntegrate,
+                                        this.faEdges, this.segReduce, this.faSwings, this.faIntegrate,
                                         this.faIntegrate2, this.faIntegrate3]);
 }
 
@@ -63,6 +69,11 @@ ForceAtlas2Barnes.argsToBarnesLayout = [
     'pointDegrees', 'stepNumber'
 ];
 
+ForceAtlas2Barnes.argsSegReduce = [
+    'scalingRatio', 'gravity', 'edgeInfluence', 'flags',
+    'numInput', 'input', 'edgeStartEndIdxs','workList',  'numOutput', 'carryOut_global', 'output', 'partialForces'
+];
+
 // All BarnesHut Kernels have the same arguements
 ForceAtlas2Barnes.argsBarnes = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
                           'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
@@ -70,9 +81,14 @@ ForceAtlas2Barnes.argsBarnes = ['scalingRatio', 'gravity', 'edgeInfluence', 'fla
                           'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
                           'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau'];
 
-ForceAtlas2Barnes.argsEdges = [
-    'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges',
-    'workList', 'inputPoints', 'partialForces', 'stepNumber', 'numWorkItems', 'outputForces'
+//ForceAtlas2Barnes.argsEdges = [
+    //'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges',
+    //'workList', 'inputPoints', 'partialForces', 'stepNumber', 'numWorkItems', 'outputForces'
+//];
+
+ForceAtlas2Barnes.argsEdgesMap = [
+    'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges', 'numEdges',
+    'workList', 'inputPoints', 'stepNumber', 'numWorkItems', 'outputForcesMap'
 ];
 
 ForceAtlas2Barnes.argsSwings = ['prevForces', 'curForces', 'swings' , 'tractions'];
@@ -142,7 +158,16 @@ ForceAtlas2Barnes.argsType = {
     numBodies: cljs.types.uint_t,
     numNodes: cljs.types.uint_t,
     numWorkItems: cljs.types.uint_t,
-    globalSpeed: null
+    globalSpeed: null,
+    outputForcesMap: null,
+    numInput: cljs.types.uint_t,
+    numEdges: cljs.types.uint_t,
+    numOutput: cljs.types.uint_t,
+    input: null,
+    output: null,
+    segStart: null,
+    carryOut_global: null,
+    edgeStartEndIdxs: null
 }
 
 ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
@@ -163,6 +188,7 @@ ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
     this.sort.set({flags: mask});
     this.calculateForces.set({flags: mask});
     this.faEdges.set({flags: mask});
+    this.segReduce.set({flags:mask});
 }
 
 var tempBuffers  = {
@@ -379,16 +405,16 @@ function pointForces(simulator, toBarnesLayout, boundBox, buildTree,
     });
 }
 
-function edgeForcesOneWay(simulator, faEdges, edges, workItems, numWorkItems,
+function edgeForcesOneWay(simulator, faEdges, segReduce, edges, startEnd, workItems, numWorkItems,
                           points, stepNumber, partialForces, outputForces) {
     faEdges.set({
+        numEdges: simulator.numEdges,
         edges: edges.buffer,
         workList: workItems.buffer,
         inputPoints: points.buffer,
         stepNumber: stepNumber,
         numWorkItems: numWorkItems,
-        partialForces: partialForces.buffer,
-        outputForces: outputForces.buffer
+        outputForcesMap: simulator.buffers.outputEdgeForcesMap.buffer
     });
 
     var resources = [edges, workItems, points, partialForces, outputForces];
@@ -401,19 +427,33 @@ function edgeForcesOneWay(simulator, faEdges, edges, workItems, numWorkItems,
 
     debug("Running kernel faEdgeForces");
     // 30:52, 60:50, 90:51, 120:49, 150:49, 256:48, 512:49
-    return faEdges.exec([256*256], resources, [256]);
+    return faEdges.exec([256*256], resources, [256]).then(function () {
+      segReduce.set({
+        edgeStartEndIdxs: startEnd.buffer,
+        input: simulator.buffers.outputEdgeForcesMap.buffer,
+        numInput:simulator.numEdges,
+        numOutput:simulator.numPoints,
+        workList: workItems.buffer,
+        output: outputForces.buffer,
+        partialForces:partialForces.buffer,
+        carryOut_global: simulator.buffers.globalCarryOut.buffer
+      })
+
+      return segReduce.exec([2000*256], resources, [256]);
+    })
 }
 
-function edgeForces(simulator, faEdges, stepNumber) {
+function edgeForces(simulator, faEdges, segReduce, stepNumber) {
     var buffers = simulator.buffers;
-    return edgeForcesOneWay(simulator, faEdges,
-                            buffers.forwardsEdges, buffers.forwardsWorkItems,
+    return edgeForcesOneWay(simulator, faEdges, segReduce,
+                            buffers.forwardsEdges, buffers.forwardsEdgeStartEndIdxs, buffers.forwardsWorkItems,
                             simulator.numForwardsWorkItems,
                             buffers.curPoints, stepNumber,
                             buffers.partialForces1, buffers.partialForces2)
     .then(function () {
-        return edgeForcesOneWay(simulator, faEdges,
-                                buffers.backwardsEdges, buffers.backwardsWorkItems,
+        return edgeForcesOneWay(simulator, faEdges, segReduce,
+                                buffers.backwardsEdges, buffers.backwardsEdgeStartEndIdxs, 
+                                buffers.backwardsWorkItems,
                                 simulator.numBackwardsWorkItems,
                                 buffers.curPoints, stepNumber,
                                 buffers.partialForces2, buffers.curForces);
@@ -541,7 +581,10 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     return pointForces(simulator, that.toBarnesLayout, that.boundBox,
         that.buildTree, that.computeSums, that.sort, that.calculateForces, stepNumber)
     .then(function () {
-       return edgeForces(simulator, that.faEdges, stepNumber);
+       return edgeForces(simulator, that.faEdges, that.segReduce, stepNumber);
+    })
+    .then(function () {
+      simulator.cl.queue.finish()
     }).then(function () {
         return swingsTractions(simulator, that.faSwings);
     }).then(function () {
