@@ -71,7 +71,7 @@ ForceAtlas2Barnes.argsToBarnesLayout = [
 
 ForceAtlas2Barnes.argsSegReduce = [
     'scalingRatio', 'gravity', 'edgeInfluence', 'flags',
-    'numInput', 'input', 'edgeStartEndIdxs','workList',  'numOutput', 'carryOut_global', 'output', 'partialForces'
+    'numInput', 'input', 'edgeStartEndIdxs', 'segStart', 'workList',  'numOutput', 'carryOut_global', 'output', 'partialForces'
 ];
 
 // All BarnesHut Kernels have the same arguements
@@ -167,7 +167,8 @@ ForceAtlas2Barnes.argsType = {
     output: null,
     segStart: null,
     carryOut_global: null,
-    edgeStartEndIdxs: null
+    edgeStartEndIdxs: null,
+     
 }
 
 ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
@@ -431,6 +432,7 @@ function edgeForcesOneWay(simulator, faEdges, segReduce, edges, startEnd, workIt
       segReduce.set({
         edgeStartEndIdxs: startEnd.buffer,
         input: simulator.buffers.outputEdgeForcesMap.buffer,
+        segStart: simulator.buffers.segStart.buffer,
         numInput:simulator.numEdges,
         numOutput:simulator.numPoints,
         workList: workItems.buffer,
