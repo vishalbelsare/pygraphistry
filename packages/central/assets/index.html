@@ -2,6 +2,25 @@
 <head>
 <link href="css/main.css" rel="stylesheet" type="text/css">
 <link href='http://fonts.googleapis.com/css?family=Nunito:300' rel='stylesheet' type='text/css'>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script>
+
+function jump() {
+
+    var controls = $('#controls').val();
+
+    var args = [
+        'dataset=' + encodeURIComponent($('#dataset').val()),
+        'controls=' + controls,
+        'scene=' + (controls === 'uber' ? 'uber' : 'netflow'),
+        'play=100'
+    ];
+    console.log(window.origin)
+    var url = '/graph/netflow.html?' + args.join('&');
+    window.open(url, '_blank');
+}
+
+</script>
 </head>
 <body>
 
@@ -28,6 +47,21 @@ graphistry
         <div>
             <span style="color: rgba(51, 102, 153, 0.5">singapore</span>
         </div>
+    </div>
+
+    <div class="loader">
+        <h3>load your data</h3>
+        <span> graph:
+            <input id="dataset" type="text" size="64" name="url" value="https://s3-us-west-1.amazonaws.com/graphistry.data.public/lesmiserables.vgraph.gz" />
+        </span>
+        <span> clustering:
+            <select id="controls" >
+                <option value="atlas">Force Atlas 2</option>
+                <option value="gauss">Gauss-Seidel</option>
+                <option value="uber">Edge Bundling</option>
+            </select>
+        </span>
+        <button type="button" onclick="jump();">go</button>
     </div>
 </div>
 
