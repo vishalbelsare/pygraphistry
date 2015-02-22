@@ -381,6 +381,7 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, degrees, m
     }
 
     simulator.bufferHostCopies.forwardsEdges = forwardsEdges;
+    simulator.bufferHostCopies.backwardsEdges = backwardsEdges;
 
     simulator.resetBuffers([
         simulator.buffers.degrees,
