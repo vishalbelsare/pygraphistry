@@ -12,7 +12,7 @@
     "compression": "^1.4.1",
     "config": "git+ssh://git@github.com:graphistry/config.git#master",
     "debug": "^2.1.0",
-    "express": "*",
+    "express": "~4.10.0",
     "graph-viz": "git+ssh://git@github.com:graphistry/graph-viz.git#master",
     "horizon-viz": "git+ssh://git@github.com:graphistry/horizon-viz.git#master",
     "mongodb": "^1.4.23",
