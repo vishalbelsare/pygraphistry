@@ -76,8 +76,8 @@ var NAMED_CLGL_BUFFERS_SETUP = {
                 maxDegree = Math.max(maxDegree, degree);
             }
 
-            var offset = 10 - minDegree;
-            var scalar = 20 / (maxDegree - minDegree);
+            var offset = 5 - minDegree;
+            var scalar = 20 / Math.max((maxDegree - minDegree),1);
 
             for (var i = 0; i < len; i++) {
                 var degree = getDegree(simulator, i);
