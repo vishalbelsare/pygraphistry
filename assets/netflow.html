@@ -220,18 +220,22 @@
     <div class="status-bar"></div>
 
 
-    <div class="legend-container">
+    <div id="graph-legend" class="legend-container">
+            <h3 class="legend-title">OpenTSDB Data</h3>
+
             <div class="legend">
-                <span class="label">edge: amount of data sent</span>
+                <span class="label">Nodes</span>
+                <span class="legend-nodes">Color shows cluster, size shows #connections</span>
+            </div>
+
+            <div class="legend">
+                <span class="label">Edges</span>
+                <span class="legend-edges">Amount of data sent</span>
                 <span class="tick tick1"></span>
                 <span class="tick tick2"></span>
                 <span class="tick tick3"></span>
                 <span class="tick tick4"></span>
                 <span class="tick tick5"></span>
-            </div>
-
-            <div class="legend">
-                <span class="label">node: color shows cluster, size shows # connections</span>
             </div>
     </div>
 
