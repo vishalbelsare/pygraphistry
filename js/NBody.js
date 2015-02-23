@@ -163,15 +163,23 @@ _.each(NAMED_CLGL_BUFFERS, function (cfg, name) {
 });
 
 
-
 // TODO Deprecate and remove. Left for Uber compatibitily
 function setPoints(graph, points, pointSizes, pointColors) {
     // FIXME: If there is already data loaded, we should to free it before loading new data
     return setVertices(graph, points)
     .then(function (simulator) {
-        return boundBuffers.pointSizes.setter(graph, pointSizes);
+        if (pointSizes) {
+            return boundBuffers.pointSizes.setter(graph, pointSizes);
+        }  else {
+            //set after edges, in order to incorporate edge structure
+        }
+
     }).then(function (simulator) {
-        return boundBuffers.pointColors.setter(graph, pointColors);
+        if (pointColors) {
+            return boundBuffers.pointColors.setter(graph, pointColors);
+        } else {
+            //set after edges, in order to incorporate edge structure
+        }
     })
     .then(function() {
         return graph;
