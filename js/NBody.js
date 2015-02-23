@@ -99,25 +99,24 @@ function updateSettings (graph, cfg) {
 
 
 function passthroughSetter(simulator, dimName, arr, passthrough) {
-        simulator[passthrough](arr, true);
-        if (dimName == 'numEdges') {
-            simulator[passthrough](arr, false);
-        }
+    simulator[passthrough](arr, true);
+    if (dimName == 'numEdges') {
+        simulator[passthrough](arr, false);
+    }
 }
 
-//str * TypedArrayConstructor * {'numPoints', 'numEdges'} * {'set...'} * 'a
+//str * TypedArrayConstructor * {'numPoints', 'numEdges'} * {'set...'} * ?(simulator * array * len -> ())
 //  -> simulator -> Q simulator
 //Create default setter
-function makeDefaultSetter (name, arrConstructor, dimName, passthrough, v) {
+function makeDefaultSetter (name, arrConstructor, dimName, passthrough, f) {
     return function (simulator) {
         debug("Using default %s", name);
         var elts = simulator[dimName];
         var arr = new arrConstructor(elts);
-        if (v) {
-            for (var i = 0; i < elts; i++)
-                arr[i] = v;
+        if (f) {
+            f(simulator, arr, elts);
         }
-        passthroughSetter(simulator, dimName, arr, passthrough);
+        return passthroughSetter(simulator, dimName, arr, passthrough);
     };
 }
 
@@ -149,7 +148,7 @@ function makeSetter (name, defSetter, arrConstructor, dimName, passthrough) {
             }
         }
 
-        passthroughSetter(graph.simulator, dimName, arr, passthrough);
+        return passthroughSetter(graph.simulator, dimName, arr, passthrough);
 
     };
 }
@@ -163,15 +162,26 @@ _.each(NAMED_CLGL_BUFFERS, function (cfg, name) {
 });
 
 
-
 // TODO Deprecate and remove. Left for Uber compatibitily
 function setPoints(graph, points, pointSizes, pointColors) {
+
+    debug('setPoints (DEPRECATED)');
+
     // FIXME: If there is already data loaded, we should to free it before loading new data
     return setVertices(graph, points)
     .then(function (simulator) {
-        return boundBuffers.pointSizes.setter(graph, pointSizes);
+        if (pointSizes) {
+            return boundBuffers.setSizes.setter(graph, pointSizes);
+        } else {
+            debug('no point sizes, deferring');
+        }
+
     }).then(function (simulator) {
-        return boundBuffers.pointColors.setter(graph, pointColors);
+        if (pointColors) {
+            return boundBuffers.setColors.setter(graph, pointColors);
+        } else {
+            debug('no point colors, deferring');
+        }
     })
     .then(function() {
         return graph;
@@ -199,7 +209,7 @@ function setVertices(graph, points) {
 function setEdgesAndColors(graph, edges, edgeColors) {
     return setEdges(graph, edges)
     .then(function () {
-        setMidEdgeColors(graph, edgeColors)
+        return setMidEdgeColors(graph, edgeColors);
     });
 }
 

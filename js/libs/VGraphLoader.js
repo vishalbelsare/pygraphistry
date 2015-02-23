@@ -160,9 +160,9 @@ function decode0(graph, vg, metadata)  {
 
     return graph.setVertices(vertices)
     .then(function () {
-        runLoaders(vloaders);
         return graph.setEdges(edges);
     }).then(function () {
+        runLoaders(vloaders);
         runLoaders(eloaders);
     }).then(function(){
         debug('writing into graph.simulator.buffers');
@@ -239,14 +239,14 @@ var testMapper = {
         pointColor: {
             name: "community_spinglass",
             transform: function (v) {
-                var palette = qual_palette2;
+                var palette = util.palettes.qual_palette2;
                 return int2color(normalize(v, 0, palette.length - 1), palette);
             }
         },
         edgeColor: {
             name: "weight",
             transform: function (v) {
-                var palette = green2red_palette;
+                var palette = util.palettes.green2red_palette;
                 return int2color(normalize(logTransform(v), 0, palette.length - 1), palette);
             }
         }
@@ -289,14 +289,14 @@ var splunkMapper = {
         pointColor: {
             name: "pointColor",
             transform: function (v) {
-                var palette = qual_palette2;
+                var palette = util.palettes.qual_palette2;
                 return int2color(groupRoundAndClamp(v, 0, palette.length - 1), palette);
             }
         },
         edgeColor: {
             name: "edgeColor",
             transform: function (v) {
-                var palette = green2red_palette;
+                var palette = util.palettes.green2red_palette;
                 return int2color(normalize(v, 0, palette.length - 1), palette);
             }
         },
@@ -373,42 +373,7 @@ function groupRoundAndClamp(array, minimum, maximum) {
     });
 }
 
-var rgb = util.rgb;
-var palette1 = [
-    rgb(234,87,61), rgb(251,192,99), rgb(100,176,188), rgb(68,102,153),
-    rgb(85,85,119)
-];
-var blue_palette = [
-    rgb(247,252,240), rgb(224,243,219), rgb(204,235,197), rgb(168,221,181),
-    rgb(123,204,196), rgb(78,179,211), rgb(43,140,190), rgb(8,104,172),
-    rgb(8,64,129)
-];
-var green2red_palette = [
-    rgb(165,0,38), rgb(215,48,39), rgb(244,109,67), rgb(253,174,97),
-    rgb(254,224,139), rgb(255,255,191), rgb(217,239,139), rgb(166,217,106),
-    rgb(102,189,99), rgb(26,152,80), rgb(0,104,55)
-].reverse();
-var qual_palette1 = [
-    rgb(141,211,199), rgb(255,255,179), rgb(190,186,218), rgb(251,128,114),
-    rgb(128,177,211), rgb(253,180,98), rgb(179,222,105), rgb(252,205,229),
-    rgb(217,217,217), rgb(188,128,189), rgb(204,235,197), rgb(255,237,111)
-];
-var qual_palette2 = [
-    rgb(166,206,227), rgb(31,120,180), rgb(178,223,138), rgb(51,160,44),
-    rgb(251,154,153), rgb(227,26,28), rgb(253,191,111), rgb(255,127,0),
-    rgb(202,178,214), rgb(106,61,154), rgb(255,255,153), rgb(177,89,40)
-];
-
-function int2color(values, palette) {
-    palette = palette || palette1;
-
-    debug("Palette: %o", palette)
-
-    var ncolors = palette.length;
-    return _.map(values, function (val) {
-        return palette[val % ncolors];
-    });
-}
+var int2color = util.int2color;
 
 module.exports = {
     load: load,

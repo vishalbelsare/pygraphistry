@@ -12,6 +12,7 @@ var config  = require('config')();
 var zlib = require('zlib');
 var Rx = require('rx');
 var urllib = require('url');
+var util = require('./util.js');
 
 var cacheDir = '/tmp'
 
@@ -354,9 +355,22 @@ function loadGeo(graph, dataset) {
 
         return graph
                 .setColorMap("test-colormap2.png", {clusters: clusters, points: processedData.points, edges: processedData.edges})
+                .then(function () { return graph.setEdges(processedData.edges); })
                 .then(function () {
-                    debug("Setting edges");
-                    return graph.setEdges(processedData.edges);
+                    var sizes = [];
+                    for (var i = 0; i < processedData.edges.length; i++) {
+                        sizes.push(3);
+                    }
+                    return graph.setSizes(sizes); })
+                .then(function () {
+                    var colors = [];
+                    var yellow = util.palettes.qual_palette1[1];
+                    var red = util.palettes.qual_palette1[3];
+                    for (var i = 0; i < processedData.edges.length; i++) {
+                        colors.push(yellow);
+                        colors.push(red);
+                    }
+                    return graph.setColors(colors);
                 });
     })
     .then(function() {

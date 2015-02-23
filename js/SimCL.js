@@ -91,9 +91,9 @@ function create(renderer, dimensions, numSplits, device, vendor, cfg) {
             simObj.locked = locked || {};
             simObj.labels = [];
 
-
             simObj.bufferHostCopies = {
-                forwardsEdges: null
+                forwardsEdges: null,
+                backwardsEdges: null
             };
 
             simObj.buffers = {
@@ -384,6 +384,7 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, degrees, m
     }
 
     simulator.bufferHostCopies.forwardsEdges = forwardsEdges;
+    simulator.bufferHostCopies.backwardsEdges = backwardsEdges;
 
     simulator.resetBuffers([
         simulator.buffers.degrees,
