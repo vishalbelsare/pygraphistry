@@ -9,7 +9,7 @@
   "dependencies": {
     "aws-sdk": "*",
     "debug": "^2.1.0",
-    "underscore": "^1.7.0",
+    "underscore": "~1.8.0",
     "aws-sdk": "^2.1.4"
   }
 }
