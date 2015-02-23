@@ -8,11 +8,83 @@ var _       = require('underscore');
 var util    = require('./util.js');
 
 
+
+// (simulator * array * int -> () ) U 'a ->
+//   (simulator * array * int -> () )
+function makeMapper(v) {
+    if (typeof(v) == 'function') {
+        return v;
+    } else {
+        return function (simulator, outArr, len) {
+            for (var i = 0; i < len; i++) {
+                outArr[i] =v;
+            }
+        }
+    }
+}
+
+
+function getDegree(simulator, i) {
+    return simulator.bufferHostCopies.forwardsEdges.degreesTyped[i]
+        + simulator.bufferHostCopies.backwardsEdges.degreesTyped[i];
+}
+
 //CL+GL+local vbos & setters will be created/exported, no need to modify anything else
 var FIELDS =     ['setterName',     'arrType',      'dims',     'defV'];
 var NAMED_CLGL_BUFFERS_SETUP = {
-    pointColors: ['setColors',      Uint32Array,    'numPoints', util.rgb(102, 102, 255)],
-    pointSizes:  ['setSizes',       Uint8Array,     'numPoints', 4],
+    pointColors: ['setColors',      Uint32Array,    'numPoints',
+        function (simulator, outArr, len) {
+
+            //use hash of highest degree neighbor
+
+            var compare = function (initBest, simulator, buffers, i) {
+                var best = initBest;
+
+                var worklist = buffers.srcToWorkItem[i];
+                var firstEdge = buffers.workItemsTyped[i * 4];
+                var numEdges = buffers.workItemsTyped[i * 4 + 1];
+                for (var j = 0; j < numEdges; j++) {
+                    var dst = buffers.edgesTyped[firstEdge*2 + j*2 + 1];
+                    var degree = getDegree(simulator, dst);
+                    if (   (degree > best.degree)
+                        || (degree == best.degree && dst > best.id)) {
+                        best = {id: dst, degree: degree};
+                    }
+                }
+
+                return best;
+            };
+
+            var palette = util.palettes.qual_palette2;
+            var pLen = palette.length;
+            for (var i = 0; i < len; i++) {
+                var best = {id: i, degree: getDegree(simulator, i)};
+                var bestOut = compare(best, simulator, simulator.bufferHostCopies.forwardsEdges, i);
+                var bestIn = compare(bestOut, simulator, simulator.bufferHostCopies.backwardsEdges, i);
+                var color = palette[bestIn.id % pLen];
+                outArr[i] = color;
+            }
+        }],
+    pointSizes:  ['setSizes',       Uint8Array,     'numPoints',
+        function (simulator, outArr, len) {
+
+            var minDegree = Number.MAX_VALUE;
+            var maxDegree = 0;
+            for (var i = 0; i < len; i++) {
+                var degree = getDegree(simulator, i);
+                minDegree = Math.min(minDegree, degree);
+                maxDegree = Math.max(maxDegree, degree);
+            }
+
+            var offset = 10 - minDegree;
+            var scalar = 20 / (maxDegree - minDegree);
+
+            for (var i = 0; i < len; i++) {
+                var degree = getDegree(simulator, i);
+                outArr[i] = (degree + offset) + (degree - minDegree) * scalar;
+            }
+        }
+    ],
     pointTags:   ['setPointTags',   Uint8Array,     'numPoints', 0],
     edgeTags:    ['setEdgeTags',    Uint8Array,     'numEdges',  0]
 };

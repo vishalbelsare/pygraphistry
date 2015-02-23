@@ -105,17 +105,16 @@ function passthroughSetter(simulator, dimName, arr, passthrough) {
         }
 }
 
-//str * TypedArrayConstructor * {'numPoints', 'numEdges'} * {'set...'} * 'a
+//str * TypedArrayConstructor * {'numPoints', 'numEdges'} * {'set...'} * ?(simulator * array * len -> ())
 //  -> simulator -> Q simulator
 //Create default setter
-function makeDefaultSetter (name, arrConstructor, dimName, passthrough, v) {
+function makeDefaultSetter (name, arrConstructor, dimName, passthrough, f) {
     return function (simulator) {
         debug("Using default %s", name);
         var elts = simulator[dimName];
         var arr = new arrConstructor(elts);
-        if (v) {
-            for (var i = 0; i < elts; i++)
-                arr[i] = v;
+        if (f) {
+            f(simulator, arr, elts);
         }
         passthroughSetter(simulator, dimName, arr, passthrough);
     };
