@@ -160,9 +160,9 @@ function decode0(graph, vg, metadata)  {
 
     return graph.setVertices(vertices)
     .then(function () {
-        runLoaders(vloaders);
         return graph.setEdges(edges);
     }).then(function () {
+        runLoaders(vloaders);
         runLoaders(eloaders);
     }).then(function(){
         debug('writing into graph.simulator.buffers');
