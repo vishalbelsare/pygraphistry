@@ -360,7 +360,8 @@ var setEdges = Q.promised(function(graph, edges) {
             }
         }
     }
-    debug("Number of control points, splits: %d, %d", edges.length * graph.numSplits, graph.numSplits);
+    console.log('Dataset    nodes:%d  edges:%d  splits:%d',
+                graph.simulator.numPoints, edges.length, graph.numSplits);
 
     return graph.simulator.setEdges(forwardEdges, backwardsEdges, degrees, midPoints)
     .then(function() {
