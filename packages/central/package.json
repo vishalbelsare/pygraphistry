@@ -16,7 +16,7 @@
     "graph-viz": "git+ssh://git@github.com:graphistry/graph-viz.git#master",
     "horizon-viz": "git+ssh://git@github.com:graphistry/horizon-viz.git#master",
     "mongodb": "~1.4.0",
-    "protobufjs": "3.8.x",
+    "protobufjs": "~3.8.0",
     "q": "~1.1.0",
     "request": "~2.53.0",
     "rx": "~2.3.0",
