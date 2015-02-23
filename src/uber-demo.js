@@ -481,8 +481,36 @@ function makeMouseSwitchboard() {
     return onElt;
 }
 
+function createLegend($elt, urlParams) {
+    if (!urlParams.legend) {
+        return;
+    }
+
+    var legend;
+    try {
+        legend = JSON.parse(decodeURIComponent(urlParams.legend));
+    } catch (err) {
+        console.error('Error parsing legend', err);
+        return;
+    }
+
+    var $title = $elt.children('.legend-title');
+    if (legend.title) {
+        $title.text(legend.title);
+    }
+    if (legend.subtitle) {
+        $title.after('<p>' + legend.subtitle + '</p>');
+    }
+    if (legend.nodes) {
+        $elt.find('.legend-nodes').text(legend.nodes);
+    }
+    if (legend.edges) {
+        $elt.find('.legend-edges').text(legend.edges);
+    }
+}
 
 function init(socket, $elt, renderState, urlParams) {
+    createLegend($('#graph-legend'), urlParams);
 
     poi = poiLib(socket);
 
