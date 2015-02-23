@@ -99,10 +99,10 @@ function updateSettings (graph, cfg) {
 
 
 function passthroughSetter(simulator, dimName, arr, passthrough) {
-        simulator[passthrough](arr, true);
-        if (dimName == 'numEdges') {
-            simulator[passthrough](arr, false);
-        }
+    simulator[passthrough](arr, true);
+    if (dimName == 'numEdges') {
+        simulator[passthrough](arr, false);
+    }
 }
 
 //str * TypedArrayConstructor * {'numPoints', 'numEdges'} * {'set...'} * ?(simulator * array * len -> ())
@@ -116,7 +116,7 @@ function makeDefaultSetter (name, arrConstructor, dimName, passthrough, f) {
         if (f) {
             f(simulator, arr, elts);
         }
-        passthroughSetter(simulator, dimName, arr, passthrough);
+        return passthroughSetter(simulator, dimName, arr, passthrough);
     };
 }
 
@@ -148,7 +148,7 @@ function makeSetter (name, defSetter, arrConstructor, dimName, passthrough) {
             }
         }
 
-        passthroughSetter(graph.simulator, dimName, arr, passthrough);
+        return passthroughSetter(graph.simulator, dimName, arr, passthrough);
 
     };
 }
@@ -164,20 +164,23 @@ _.each(NAMED_CLGL_BUFFERS, function (cfg, name) {
 
 // TODO Deprecate and remove. Left for Uber compatibitily
 function setPoints(graph, points, pointSizes, pointColors) {
+
+    debug('setPoints (DEPRECATED)');
+
     // FIXME: If there is already data loaded, we should to free it before loading new data
     return setVertices(graph, points)
     .then(function (simulator) {
         if (pointSizes) {
-            return boundBuffers.pointSizes.setter(graph, pointSizes);
-        }  else {
-            //set after edges, in order to incorporate edge structure
+            return boundBuffers.setSizes.setter(graph, pointSizes);
+        } else {
+            debug('no point sizes, deferring');
         }
 
     }).then(function (simulator) {
         if (pointColors) {
-            return boundBuffers.pointColors.setter(graph, pointColors);
+            return boundBuffers.setColors.setter(graph, pointColors);
         } else {
-            //set after edges, in order to incorporate edge structure
+            debug('no point colors, deferring');
         }
     })
     .then(function() {
@@ -206,7 +209,7 @@ function setVertices(graph, points) {
 function setEdgesAndColors(graph, edges, edgeColors) {
     return setEdges(graph, edges)
     .then(function () {
-        setMidEdgeColors(graph, edgeColors)
+        return setMidEdgeColors(graph, edgeColors);
     });
 }
 
