@@ -496,16 +496,16 @@ function createLegend($elt, urlParams) {
 
     var $title = $elt.children('.legend-title');
     if (legend.title) {
-        $title.text(legend.title);
+        $title.append(legend.title);
     }
     if (legend.subtitle) {
-        $title.after('<p>' + legend.subtitle + '</p>');
+        $title.after(legend.subtitle);
     }
     if (legend.nodes) {
-        $elt.find('.legend-nodes').text(legend.nodes);
+        $elt.find('.legend-nodes').append(legend.nodes);
     }
     if (legend.edges) {
-        $elt.find('.legend-edges').text(legend.edges);
+        $elt.find('.legend-edges').append(legend.edges);
     }
 
     $elt.show();
