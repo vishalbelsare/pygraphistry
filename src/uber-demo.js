@@ -106,7 +106,7 @@ function renderCursor (renderState, points, idx, sizes) {
 
     var pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
     var size = Math.max(5, Math.min(sizes[idx], 50)); // Clamp like in pointculled shader
-    var offset = size / 2.0 - 0;
+    var offset = size / 2.0;
 
     $('#highlighted-point-cont').css({
         top: pos.y,
