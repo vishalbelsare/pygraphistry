@@ -255,7 +255,7 @@ var items = {
         },
         'uniforms': {
             'fog': { 'uniformType': '1f', 'values': [10.0] },
-            'stroke': { 'uniformType': '1f', 'values': [0] }
+            'stroke': { 'uniformType': '1f', 'values': [-STROKE_WIDTH] }
         },
         'drawType': 'POINTS',
         'glOptions': {},
