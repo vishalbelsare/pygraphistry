@@ -507,6 +507,8 @@ function createLegend($elt, urlParams) {
     if (legend.edges) {
         $elt.find('.legend-edges').text(legend.edges);
     }
+
+    $elt.show();
 }
 
 function init(socket, $elt, renderState, urlParams) {
