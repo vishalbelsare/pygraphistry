@@ -304,6 +304,24 @@ var setEdges = Q.promised(function(graph, edges) {
         );
 
         var edgesTyped = new Uint32Array(_.flatten(edgeList));
+        var index = 0;
+        var edgeStartEndIdxs = [];
+        for(var i = 0; i < workItems.length - 1; i++) {
+          var start = workItems[i][0];
+          if (start == -1) {
+            edgeStartEndIdxs.push([-1, -1]);
+          } else {
+            var end = workItems[i+1][0];
+            var j = i+1;
+            while (end < 0 && ((j + 1)< workItems.length)) {
+              end = workItems[j + 1][0];
+              j = j + 1;
+            }
+            edgeStartEndIdxs.push([start, end]);
+          }
+        }
+        edgeStartEndIdxs.push([workItems[workItems.length - 1][0], edges.length /2]);
+        var edgeStartEndIdxsTyped = new Uint32Array(_.flatten(edgeStartEndIdxs));
 
         return {
             //Uint32Array
@@ -326,7 +344,9 @@ var setEdges = Q.promised(function(graph, edges) {
             workItemsTyped: workItemsTyped,
 
             //Uint32Array [workitem number node belongs to]
-            srcToWorkItem: srcToWorkItem
+            srcToWorkItem: srcToWorkItem,
+
+            edgeStartEndIdxsTyped: edgeStartEndIdxsTyped
         };
     }
 
