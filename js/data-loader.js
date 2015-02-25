@@ -2,6 +2,7 @@
 
 var fs = require('fs');
 var path = require('path');
+var fstools = require('fs-tools');
 var http = require('http');
 var https = require('https');
 var crypto = require('crypto');
@@ -14,12 +15,13 @@ var Rx = require('rx');
 var urllib = require('url');
 var util = require('./util.js');
 
-var cacheDir = '/tmp'
-
 var MatrixLoader = require('./libs/MatrixLoader.js'),
     VGraphLoader = require('./libs/VGraphLoader.js'),
     VGraphWriter = require('./libs/VGraphWriter.js'),
     kmeans = require('./libs/kmeans.js');
+
+// Make sure caching directory exists
+fstools.mkdirSync(config.LOCAL_CACHE_DIR, '0777');
 
 var loaders = {
     'default': VGraphLoader.load,
@@ -63,7 +65,7 @@ function downloadDataset(query) {
 function getCacheFile(url) {
     var hash = crypto.createHash('sha1').update(url.href).digest('hex');
     var fileName = encodeURIComponent(url.pathname) + '.' + hash;
-    return path.resolve(cacheDir, fileName);
+    return path.resolve(config.LOCAL_CACHE_DIR, fileName);
 }
 
 function readCache(url, timestamp) {
@@ -89,6 +91,9 @@ function readCache(url, timestamp) {
 }
 
 function cache(data, url) {
+    if (!config.LOCAL_CACHE)
+        return Q();
+
     var path = getCacheFile(url);
     return Q.denodeify(fs.writeFile)(path, data, {encoding: 'utf8'}).then(
         function () {
