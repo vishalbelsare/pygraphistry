@@ -48,7 +48,7 @@ var edgeKernelSeqFast = function (clContext) {
         return Q.all([
             simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'outputEdgeForcesMap'),
             simulator.cl.createBuffer(1 + Math.ceil(simulator.numEdges / 256), 'globalCarryIn'),
-            simulator.cl.createBuffer(forwardsEdges.tartEndIdxsTyped.byteLength, 'forwardsEdgeStartEndIdxs'),
+            simulator.cl.createBuffer(forwardsEdges.edgeStartEndIdxsTyped.byteLength, 'forwardsEdgeStartEndIdxs'),
             simulator.cl.createBuffer(backwardsEdges.edgeStartEndIdxsTyped.byteLength, 'backwardsEdgeStartEndIdxs'),
             simulator.cl.createBuffer((simulator.numPoints * Float32Array.BYTES_PER_ELEMENT) / 2, 'segStart')])
     .spread(function(outputEdgeForcesMap, globalCarryOut, forwardsEdgeStartEndIdxs, backwardsEdgeStartEndIdxs,
@@ -75,7 +75,7 @@ var edgeKernelSeqFast = function (clContext) {
           buffers.curPoints, stepNumber, buffers.partialForces1, buffers.partialForces2, this.tempBuffers.forwardsEdgeStartEndIdxs)
         .then(function () {
           return that.edgeForcesOneWay(simulator, backwardsEdges, backwardsWorkItems, numBackwardsWorkItems,
-              buffers.curPoints, stepNumber, buffers.curForcesssss, that.tempBuffers.backwardsEdgeStartEndIdxs);
+              buffers.curPoints, stepNumber, buffers.partialForces2, buffers.curForces, that.tempBuffers.backwardsEdgeStartEndIdxs);
         });
         }
 
