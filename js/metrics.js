@@ -22,7 +22,7 @@ require('dns').resolve('www.graphistry.com', function (err) {
 
 function sendToBoundary (entry) {
 
-    if (!config.BOUNDARY || (config.ENVIRONMENT === 'local' && !IS_ONLINE)) {
+    if (!config.BOUNDARY || (config.ENVIRONMENT === 'local' /*&& !IS_ONLINE*/)) {
         debug(entry);
         return;
     }
