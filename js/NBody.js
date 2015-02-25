@@ -320,7 +320,12 @@ var setEdges = Q.promised(function(graph, edges) {
             edgeStartEndIdxs.push([start, end]);
           }
         }
+        if (workItems[workItems.length - 1][0] != -1) { 
         edgeStartEndIdxs.push([workItems[workItems.length - 1][0], edges.length /2]);
+        } else {
+          edgeStartEndIdxs.push([-1, -1]);
+        }
+        console.log(edgeStartEndIdxs[edgeStartEndIdxs.length - 1])
         var edgeStartEndIdxsTyped = new Uint32Array(_.flatten(edgeStartEndIdxs));
 
         return {
