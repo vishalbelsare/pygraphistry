@@ -102,7 +102,7 @@ var edgeKernelSeqFast = function (clContext) {
 
       debug("Running kernel faEdgeForces");
       var that = this;
-      return this.mapEdges.exec([10000*256], resources, [256]).then(function () {
+      return this.mapEdges.exec([100*256], resources, [256]).then(function () {
         that.segReduce.set({
           edgeStartEndIdxs: startEnd.buffer,
           input: simulator.buffers.outputEdgeForcesMap.buffer,

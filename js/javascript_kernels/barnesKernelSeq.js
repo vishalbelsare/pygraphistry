@@ -265,25 +265,25 @@ var BarnesKernelSeq = function (clContext) {
 
         // For all calls, we must have the # work items be a multiple of the workgroup size.
         var that = this;
-        return this.toBarnesLayout.exec([256], resources, [256])
+        return this.toBarnesLayout.exec([30*256], resources, [256])
         .then(function () {
-            return that.boundBox.exec([10*256], resources, [256]);
+            return that.boundBox.exec([30*256], resources, [256]);
         })
 
         .then(function () {
-            return that.buildTree.exec([4*256], resources, [256]);
+            return that.buildTree.exec([30*256], resources, [256]);
         })
 
         .then(function () {
-            return that.computeSums.exec([4*256], resources, [256]);
+            return that.computeSums.exec([10*256], resources, [256]);
         })
 
         .then(function () {
-            return that.sort.exec([4*256], resources, [256]);
+            return that.sort.exec([16*256], resources, [256]);
         })
 
         .then(function () {
-            return that.calculateForces.exec([40*256], resources, [256]);
+            return that.calculateForces.exec([60*256], resources, [256]);
         })
 
         .fail(function (err) {
