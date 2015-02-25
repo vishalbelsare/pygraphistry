@@ -48,7 +48,10 @@ function defaults() {
                 user: 'boundary@graphistry.com',
                 pass: 'api.62fb69d814-3713'
             }
-        }
+        },
+
+        LOCAL_CACHE: true,
+        LOCAL_CACHE_DIR: '/tmp/graphistry/data_cache',
 
     };
 }
