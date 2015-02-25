@@ -17,10 +17,10 @@ var edgeKernelSeqFast = function (clContext) {
         'edgeStartEndIdxs', 'segStart', 'workList', 'numOutput', 'carryOutGlobal', 'output', 'partialForces'];
 
 
-    this.mapEdges = new Kernel('faEdgeMap', this.argsMapEdges, ArgsType, 'forceatlas2.cl', clContext);
+    this.mapEdges = new Kernel('faEdgeMap', this.argsMapEdges, ArgsType, 'forceAtlas2.cl', clContext);
 
     this.segReduce = new Kernel("segReduce", this.argsSegReduce,
-                                ArgsType, 'segreduce.cl', clContext);
+                                ArgsType, 'segReduce.cl', clContext);
 
 
     this.kernels = [this.mapEdges, this.segReduce];
@@ -66,7 +66,7 @@ var edgeKernelSeqFast = function (clContext) {
     })
     };
 
-    this.execKernels = function(simulator, forwardsEdges, forwardsWorkItems, numForwardsWorkItems, 
+    this.execKernels = function(simulator, forwardsEdges, forwardsWorkItems, numForwardsWorkItems,
                                 backwardsEdges, backwardsWorkItems, numBackwardsWorkItems, points,
                                 stepNumber) {
       var buffers = simulator.buffers;
