@@ -126,7 +126,11 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
         warpsize = 64;
     }
 
-    return setupTempBuffers(simulator).then(function (tempBuffers) {
+    var that = this;
+    return setupTempLayoutBuffers(simulator).then(function (tempBuffers) {
+      that.edgeKernelSeq.setEdges(simulator, tempBuffers);
+      that.barnesKernelSeq.setEdges(simulator, tempBuffers);
+      
 
     });
 }
@@ -151,6 +155,8 @@ function edgeForces(simulator, edgeKernelSeq, stepNumber) {
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var that = this;
     var tickTime = Date.now();
+    var workGroupSize = 256;
+    var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps, workGroupSize);
     return that.barnesKernelSeq.execKernels(simulator, stepNumber)
     .then(function () {
        return edgeForces(simulator, that.edgeKernelSeq, stepNumber);
