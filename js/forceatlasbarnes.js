@@ -157,7 +157,7 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var tickTime = Date.now();
     var workGroupSize = 256;
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps, workGroupSize);
-    return that.barnesKernelSeq.execKernels(simulator, stepNumber)
+    return that.barnesKernelSeq.execKernels(simulator, stepNumber, workItems)
     .then(function () {
        return edgeForces(simulator, that.edgeKernelSeq, stepNumber);
     }).then(function () {
