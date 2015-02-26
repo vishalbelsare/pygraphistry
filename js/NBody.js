@@ -2,6 +2,7 @@
 
 var Q = require('q');
 var glMatrix = require('gl-matrix');
+var lConf = require('./layout.config.js');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');
 var debug = require("debug")("graphistry:graph-viz:graph:nbody");
@@ -25,19 +26,15 @@ var boundBuffers = {};
  * @param bgColor - [0--255,0--255,0--255,0--1]
  * @param [dimensions=\[1,1\]] - a two element array [width,height] used for internal posituin calculations.
  */
-function create(renderer, dimensions, numSplits, simulationTime) {
+function create(renderer, device, vendor, controls) {
 
     var graph = {
         renderer: renderer,
-        simulator: undefined,
         stepNumber: 0,
-        dimensions: dimensions,
-        numSplits: numSplits,
-        simulationTime: simulationTime
+        __pointsHostBuffer: undefined
     };
 
     _.each({
-        initSimulation: initSimulation,
         setPoints: setPoints,
         setVertices: setVertices,
         setLabels: setLabels,
@@ -45,7 +42,6 @@ function create(renderer, dimensions, numSplits, simulationTime) {
         setEdgesAndColors: setEdgesAndColors,
         setEdgeColors: setEdgeColors,
         setMidEdgeColors: setMidEdgeColors,
-        setLocked: setLocked,
         setColorMap: setColorMap,
         tick: tick,
         updateSettings: updateSettings
@@ -57,40 +53,44 @@ function create(renderer, dimensions, numSplits, simulationTime) {
         graph[cfg.setterName] = boundBuffers[name].setter.bind('', graph);
     });
 
-    return graph;
+    return createSimulator(renderer, device, vendor, controls).then(function (simulator) {
+        graph.simulator = simulator;
+        graph.globalControls = simulator.controls.global;
+    }).then(function () {
+        Object.seal(graph);
+        return graph;
+    }).fail(util.makeErrorHandler('Error initializing nbody'));
 }
 
-function initSimulation(graph, device, vendor, cfg) {
+function createSimulator(renderer, device, vendor, controls) {
     debug('Creating Simulator')
-    var simulator = cfg[0].simulator;
 
-    return simulator.create(graph.renderer, graph.dimensions, graph.numSplits,
-                            device, vendor, cfg)
-        .then(function(sim) {
-            debug("Created simulator");
-            graph.simulator = sim;
-            return graph;
-        }).fail(function (err) {
-            console.error("ERROR Cannot create simulator. ", (err||{}).stack)
+    // Hack, but making simulator depend on CL device it not worth the work.
+    var simulator = controls[0].simulator;
+
+    return simulator.create(renderer, device, vendor, controls)
+        .fail(function (err) {
+            console.error('ERROR Cannot create simulator. ', (err||{}).stack)
         });
 }
 
-function updateSettings (graph, cfg) {
-    debug('Updating simulation settings, %o', cfg);
-    if (cfg.simControls) {
-        graph.simulator.setPhysics(cfg.simControls);
-        graph.simulator.setLocked(cfg.simControls);
-        graph.renderer.setVisible(cfg.simControls);
+function updateSettings (graph, newCfg) {
+    debug('Updating simulation settings', newCfg);
+    if (newCfg.simControls) {
+        var cfg = lConf.fromClient(graph.simulator.controls, newCfg.simControls);
+        graph.simulator.setPhysics(cfg);
+        graph.simulator.setLocks(cfg);
+        graph.renderer.setVisible(cfg);
     }
 
-    if (cfg.timeSubset) {
-        graph.simulator.setTimeSubset(cfg.timeSubset);
+    if (newCfg.timeSubset) {
+        graph.simulator.setTimeSubset(newCfg.timeSubset);
     }
 
     // Since moving nodes implies running an opencl kernel, return
     // a promise fulfilled when moving is done.
-    if (cfg.marquee) {
-        return graph.simulator.moveNodes(cfg.marquee);
+    if (newCfg.marquee) {
+        return graph.simulator.moveNodes(newCfg.marquee);
     } else {
         return Q();
     }
@@ -344,24 +344,25 @@ var setEdges = Q.promised(function(graph, edges) {
         degrees[i] = forwardEdges.degreesTyped[i] + backwardsEdges.degreesTyped[i];
     }
 
-    var nDim = graph.dimensions.length;
-    var midPoints = new Float32Array((edges.length / 2) * graph.numSplits * nDim || 1);
-    if (graph.numSplits) {
+    var nDim = graph.globalControls.dimensions.length;
+    var numSplits = graph.globalControls.numSplits;
+    var midPoints = new Float32Array((edges.length / 2) * numSplits * nDim || 1);
+    if (numSplits) {
         for (var i = 0; i < edges.length; i+=2) {
             var src = edges[i];
             var dst = edges[i + 1];
             for (var d = 0; d < nDim; d++) {
                 var start = graph.__pointsHostBuffer[src * nDim + d];
                 var end = graph.__pointsHostBuffer[dst * nDim + d];
-                var step = (end - start) / (graph.numSplits + 1);
-                for (var q = 0; q < graph.numSplits; q++) {
-                    midPoints[(i * graph.numSplits + q) * nDim + d] = start + step * (q + 1);
+                var step = (end - start) / (numSplits + 1);
+                for (var q = 0; q < numSplits; q++) {
+                    midPoints[(i * numSplits + q) * nDim + d] = start + step * (q + 1);
                 }
             }
         }
     }
     console.log('Dataset    nodes:%d  edges:%d  splits:%d',
-                graph.simulator.numPoints, edges.length, graph.numSplits);
+                graph.simulator.numPoints, edges.length, numSplits);
 
     return graph.simulator.setEdges(forwardEdges, backwardsEdges, degrees, midPoints)
     .then(function() {
@@ -417,11 +418,6 @@ function setMidEdgeColors(graph, midEdgeColors) {
 function setLabels(graph, pointLabels) {
     debug('setLabels', pointLabels ? pointLabels.length : 'none');
     return graph.simulator.setLabels(pointLabels);
-}
-
-function setLocked(graph, opts) {
-    //TODO reset step number?
-    graph.simulator.setLocked(opts);
 }
 
 

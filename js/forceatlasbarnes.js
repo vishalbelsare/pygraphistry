@@ -38,7 +38,7 @@ function getNumWorkitemsByHardware(deviceProps, workGroupSize) {
 
 
 function ForceAtlas2Barnes(clContext) {
-    LayoutAlgo.call(this, 'ForceAtlasBarnes');
+    LayoutAlgo.call(this, ForceAtlas2Barnes.name);
 
     debug('Creating ForceAtlasBarnes kernels');
     this.toBarnesLayout = new Kernel('to_barnes_layout', ForceAtlas2Barnes.argsToBarnesLayout,
@@ -86,6 +86,7 @@ function ForceAtlas2Barnes(clContext) {
 ForceAtlas2Barnes.prototype = Object.create(LayoutAlgo.prototype);
 ForceAtlas2Barnes.prototype.constructor = ForceAtlas2Barnes;
 
+ForceAtlas2Barnes.name = 'ForceAtlas2Barnes';
 ForceAtlas2Barnes.argsToBarnesLayout = [
     'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints',
     'inputPositions', 'xCoords', 'yCoords', 'mass', 'blocked', 'maxDepth',
@@ -292,6 +293,7 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
             * simulator.elementsPerPoint
             * Float32Array.BYTES_PER_ELEMENT;
 
+    var global = simulator.controls.global;
     var that = this;
 
     var vendor = simulator.cl.deviceProps.DEVICE_VENDOR.toLowerCase();
@@ -337,8 +339,8 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
                         maxDepth:buffers.maxdepth.buffer,
                         radius:buffers.radius.buffer,
                         globalSpeed: buffers.globalSpeed.buffer,
-                        width:simulator.dimensions[0],
-                        height:simulator.dimensions[1],
+                        width:global.dimensions[0],
+                        height:global.dimensions[1],
                         numBodies:buffers.numBodies,
                         numNodes:buffers.numNodes,
                         pointForces:simulator.buffers.partialForces1.buffer,

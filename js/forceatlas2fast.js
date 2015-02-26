@@ -10,7 +10,7 @@ var   debug = require("debug")("graphistry:graph-viz:cl:forceatlas2"),
 
 
 function ForceAtlas2(clContext) {
-    LayoutAlgo.call(this, 'ForceAtlas2Fast');
+    LayoutAlgo.call(this, ForceAtlas2.name);
 
     debug('Creating ForceAtlas2 kernels');
     this.faPoints = new Kernel('faPointForces', ForceAtlas2.argsPoints,
@@ -33,6 +33,7 @@ function ForceAtlas2(clContext) {
 ForceAtlas2.prototype = Object.create(LayoutAlgo.prototype);
 ForceAtlas2.prototype.constructor = ForceAtlas2;
 
+ForceAtlas2.name = 'ForceAtlas2Fast';
 ForceAtlas2.argsPoints = [
     'preventOverlap', 'strongGravity', 'scalingRatio', 'gravity',
     'edgeInfluence', 'tilePointsParam',
@@ -110,14 +111,16 @@ ForceAtlas2.prototype.setEdges = function(simulator) {
         * simulator.elementsPerPoint
         * Float32Array.BYTES_PER_ELEMENT;
 
+    var global = simulator.controls.global;
+
     this.faPoints.set({
         tilePointsParam: 1,
         tilePointsParam2: 1,
         tilesPerIteration: simulator.tilesPerIteration,
         numPoints: simulator.numPoints,
         inputPositions: simulator.buffers.curPoints.buffer,
-        width: simulator.dimensions[0],
-        height: simulator.dimensions[1],
+        width: global.dimensions[0],
+        height: global.dimensions[1],
         pointDegrees: simulator.buffers.degrees.buffer,
         pointForces: simulator.buffers.partialForces1.buffer
     });

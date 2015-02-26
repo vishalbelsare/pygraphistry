@@ -300,26 +300,7 @@ function loadSocioPLT(graph, dataset) {
             return graph.setEdgesAndColors(
                 new Uint32Array(edges),//new Uint32Array(_.flatten(edges).map(function (idx, i) { return idx; })),
                 new Uint32Array(edgeColors));
-        })
-        .then(function () {
-
-
-            graph.setPhysics({forceAtlas: 0});
-            graph.setLocked({
-                lockPoints:     false,
-                lockEdges:      false,
-                lockMidpoints:  true,
-                lockMidedges:   true
-            });
-
-            graph.setPhysics({
-                charge: -0.001,
-                gravity: 0.1,
-                edgeStrength: 0.001,
-                edgeDistance: 0.001
-            });
-
-
+        }).then(function () {
             return graph;
         }, function (err) {
             throw err;

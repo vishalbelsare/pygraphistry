@@ -57,6 +57,9 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         var mustRecompile = false;
         _.each(args, function (val, arg) {
             if (arg in argValues) {
+                if (typeof val === 'undefined' || typeof val === 'null') {
+                    console.warn('WARNING Setting argument %s to %s', arg, val);
+                }
                 argValues[arg] = (typeof val === 'number') ? [val] : val;
             } else if (arg in defValues) {
                 if (val !== defValues[arg]) {
