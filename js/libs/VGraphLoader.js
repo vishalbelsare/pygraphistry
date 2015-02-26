@@ -132,11 +132,12 @@ function decode0(graph, vg, metadata)  {
             cumulativePoints += components.components[i].size;
         }
 
+        var initSize = 5 * Math.sqrt(vg.nvertices);
         for (var i = 0; i < vg.nvertices; i++) {
             var c = components.nodeToComponent[i];
-            var vertex = [ (componentOffsets[c].rollingSum + components.components[c].size * Math.random()) / vg.nvertices ];
+            var vertex = [ initSize * (componentOffsets[c].rollingSum + components.components[c].size * Math.random()) / vg.nvertices ];
             for (var j = 1; j < dimensions.length; j++)
-                vertex.push(Math.random());
+                vertex.push(initSize * Math.random());
             vertices.push(vertex);
         }
     }
