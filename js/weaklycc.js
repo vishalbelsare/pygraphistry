@@ -1,3 +1,4 @@
+var _ = require('underscore');
 var debug = require("debug")("graphistry:graph-viz:weaklycc");
 
 // Compute undired weakly connected components
@@ -32,6 +33,7 @@ module.exports = function weaklycc (numPoints, edges) {
         for (var i = 0; i < edges.length; i++) {
             var dst = edges[i];
             if (!done[dst]) {
+                done[dst] = 1; // Avoid queuing the same node multiple times.
                 q.push(dst);
             }
         }
