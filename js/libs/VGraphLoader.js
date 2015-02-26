@@ -7,8 +7,10 @@ var debug = require('debug')('graphistry:graph-viz:data:vgraphloader');
 var pb = require('protobufjs');
 var zlib = require('zlib');
 var path = require('path');
+
 var config  = require('config')();
 var util = require('../util.js');
+var weakcc = require('../weaklycc.js');
 
 var builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
 if (builder === null) {
@@ -101,30 +103,43 @@ function decode0(graph, vg, metadata)  {
     var edges = []
     var dimensions = [1, 1];
 
+    for (var i = 0; i < vg.edges.length; i++) {
+        var e = vg.edges[i];
+        edges.push([e.src, e.dst]);
+    }
+
+
     // Do the vertices already exist in the serialized version?
     var xObj = _.find(vg.double_vectors, function (o) { return o.name === 'x'; });
     var yObj = _.find(vg.double_vectors, function (o) { return o.name === 'y'; });
 
     // Load vertices from protobuf Vertex message
-    if (xObj && yObj) {
+    if (false && xObj && yObj) {
         debug('Loading previous vertices from xObj');
         for (var i = 0; i < vg.nvertices; i++) {
             vertices.push([xObj.values[i], yObj.values[i]]);
         }
     } else {
-        // Generate them randomly
-        debug('Generating random vertices')
+        debug('Running component analysis');
+        var components = weakcc(vg.nvertices, edges);
+
+        var componentOffsets = [];
+        var cumulativePoints = 0;
+        for (var i = 0; i < components.components.length; i++) {
+            componentOffsets.push({
+                rollingSum: cumulativePoints
+            });
+            cumulativePoints += components.components[i].size;
+        }
+
+        var initSize = 5 * Math.sqrt(vg.nvertices);
         for (var i = 0; i < vg.nvertices; i++) {
-            var vertex = [];
-            for (var j = 0; j < dimensions.length; j++)
-                vertex.push(Math.random() * dimensions[j]);
+            var c = components.nodeToComponent[i];
+            var vertex = [ initSize * (componentOffsets[c].rollingSum + components.components[c].size * Math.random()) / vg.nvertices ];
+            for (var j = 1; j < dimensions.length; j++)
+                vertex.push(initSize * Math.random());
             vertices.push(vertex);
         }
-    }
-
-    for (var i = 0; i < vg.edges.length; i++) {
-        var e = vg.edges[i];
-        edges.push([e.src, e.dst]);
     }
 
     var loaders = attributeLoaders(graph);

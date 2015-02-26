@@ -573,6 +573,8 @@ function setTimeSubset(renderer, simulator, range) {
 
         var firstEdge = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx];
 
+        debug('pointToEdgeIdx', {ptIdx: ptIdx, workItem: workItem, idx: idx, firstEdge: firstEdge, isBeginning: isBeginning});
+
         if (idx == 0 && firstEdge == -1) {
             return 0;
         } else {
@@ -585,10 +587,10 @@ function setTimeSubset(renderer, simulator, range) {
     };
 
     //first edge
-    var startEdgeIdx = pointToEdgeIdx(startIdx, false);
+    var startEdgeIdx = pointToEdgeIdx(startIdx, true);
 
     //all edges before this
-    var endEdgeIdx = endIdx > 0 ? (pointToEdgeIdx(endIdx - 1, true) + 1) : startEdgeIdx;
+    var endEdgeIdx = endIdx > 0 ? (pointToEdgeIdx(endIdx - 1, false) + 1) : startEdgeIdx;
 
     var numEdges = endEdgeIdx - startEdgeIdx;
 
@@ -603,6 +605,7 @@ function setTimeSubset(renderer, simulator, range) {
                 startIdx: startEdgeIdx  * (1 + simulator.numSplits),
                 len: numEdges           * (1 + simulator.numSplits)}};
 
+    debug('subset args', {numPoints: renderer.numPoints, numEdges: renderer.numEdges, startEdgeIdx: startEdgeIdx, endIdx: endIdx, endEdgeIdx: endEdgeIdx});
     debug('subset', simulator.timeSubset);
 
 
@@ -622,6 +625,7 @@ function setTimeSubset(renderer, simulator, range) {
 
 function moveNodes(simulator, marqueeEvent) {
     debug('marqueeEvent', marqueeEvent);
+    console.log('selection', marqueeEvent.selection);
 
     var drag = marqueeEvent.drag;
     var delta = {
