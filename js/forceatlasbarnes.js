@@ -218,7 +218,7 @@ var setupTempBuffers = function(simulator) {
     simulator.resetBuffers(tempBuffers);
     var blocks = 8; //TODO (paden) should be set to multiprocecessor count
 
-    var num_nodes = simulator.numPoints * 4;
+    var num_nodes = simulator.numPoints * 5;
     // TODO (paden) make this into a definition
     var WARPSIZE = 16;
     if (num_nodes < 1024*blocks) num_nodes = 1024*blocks;
