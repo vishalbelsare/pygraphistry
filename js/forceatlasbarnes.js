@@ -130,7 +130,7 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
     return setupTempLayoutBuffers(simulator).then(function (tempBuffers) {
       that.edgeKernelSeq.setEdges(simulator, tempBuffers);
       that.barnesKernelSeq.setEdges(simulator, tempBuffers);
-      
+
 
     });
 }
