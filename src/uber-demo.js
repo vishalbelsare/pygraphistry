@@ -18,22 +18,21 @@ var marqueeFact = require('./marquee.js');
 
 
 
-function sendSetting(socket, name, value) {
+function sendLayoutSetting(socket, algo, param, value) {
     var update = {};
-    update[name] = value;
+    var controls = {};
+
+    update[param] = value;
+    controls[algo] = update;
 
     var payload = {
         play: true,
         layout: true,
-        simControls: {
-            gaussSeidel: update,
-            edgeBundling: update,
-            forceAtlas: update
-        }
+        simControls: controls,
     };
 
+    debug('Sending layout settings', payload);
     socket.emit('interaction', payload);
-    debug('settings', payload);
 }
 
 
@@ -511,6 +510,60 @@ function createLegend($elt, urlParams) {
     $elt.show();
 }
 
+
+function createControls(socket) {
+    var rxObsv = Rx.Observable.fromCallback(socket.on, socket, function(layoutControls) {
+        debug('Received layoutConstrols from server', layoutControls);
+        return layoutControls[0];
+    })('layout_controls');
+
+    var $anchor = $('#renderingItems').children('.form-horizontal').empty();
+    rxObsv.subscribe(function (controls) {
+        // Assuming a single layout algorithm for now
+        var la = controls[0];
+
+        _.each(la.params, function (param) {
+            var $input;
+            if (param.type === 'continuous') {
+                $input = $('<input>').attr({
+                    class: 'menu-slider',
+                    id: param.name,
+                    type: 'text',
+                    'data-slider-id': param.name + 'Slider',
+                    'data-slider-min': 0,
+                    'data-slider-max': 100,
+                    'data-slider-step': 1,
+                    'data-slider-value': param.value
+                }).data('param', param);
+            } else if (param.type === 'bool') {
+                $input = $('<input>').attr({
+                    id: param.name,
+                    type: 'checkbox',
+                    checked: param.value
+                }).data('param', param);
+            } else {
+                console.warn('Ignoring param of unknown type', param);
+                $input = $('<div>').text('Unknown setting type' + param.type);
+            }
+            var $col = $('<div>').addClass('col-xs-9').append($input);
+            var $label = $('<label>').attr({
+                for: param.name,
+                class: 'control-label col-xs-3',
+            }).text(param.prettyName);
+
+            var $entry = $('<div>').addClass('form-group').append($label, $col);
+
+            $anchor.append($entry);
+        });
+
+    }, function (err) {console.error(err);});
+
+    debug('Getting layout controls from server');
+    socket.emit('get_layout_controls');
+    return rxObsv;
+}
+
+
 function init(socket, $elt, renderState, urlParams) {
     createLegend($('#graph-legend'), urlParams);
 
@@ -549,15 +602,6 @@ function init(socket, $elt, renderState, urlParams) {
             });
     } catch (e) { }
 
-    var elts = {
-        chargeSlider: 'charge',
-        edgeStrength0Slider: 'edgeStrength0',
-        edgeDist0Slider: 'edgeDistance0',
-        edgeStrength1Slider: 'edgeStrength1',
-        edgeDist1Slider: 'edgeDistance1',
-        scalingRatioSlider: 'scalingRatio',
-        gravitySlider: 'gravity'
-    };
 
     $('#timeSlider').rangeSlider({
          bounds: {min: 0, max: 100},
@@ -586,29 +630,35 @@ function init(socket, $elt, renderState, urlParams) {
         })
         .subscribe(_.identity, makeErrorHandler('timeSlide'));
 
+    createControls(socket).subscribe(function () {
+        $('#renderingItems').find('[type=checkbox]').each(function () {
+            var input = this;
+            var param = $(input).data('param');
+            $(input).onAsObservable('change').subscribe(
+                function () {
+                    sendLayoutSetting(socket, param.algoName, param.name, input.checked);
+                },
+                makeErrorHandler('menu checkbox')
+            );
+        });
 
+        $('.menu-slider').each(function () {
+            var $slider = $(this).bootstrapSlider({});
+            var param = $slider.data('param');
 
-    $('.menu-slider').each(function () {
-        var slider = $(this).bootstrapSlider({});
-        slider.data('slider');
-        var name = elts[this.id];
-
-        var slide = Rx.Observable.fromEventPattern(
-            function(h) { slider.on('slide', h); },
-            function() { /* No 'off' fn in bootstrap-slider */ return; });
-
-        //send to server
-        slide
-            .distinctUntilChanged()
-            .sample(10)
-            .merge(Rx.Observable.just(0))   // Send the current value on load
-            .map(function() {
-                return slider.val() / 1000;
-            })
-            .do(function (val) {
-                sendSetting(socket, name, val);
-            })
-            .subscribe(_.identity, makeErrorHandler('menu slider'));
+            Rx.Observable.merge(
+                $slider.onAsObservable('slide'),
+                $slider.onAsObservable('slideStop')
+            ).distinctUntilChanged()
+            .sample(50)
+            .subscribe(
+                function () {
+                    sendLayoutSetting(socket, param.algoName,
+                                    param.name, Number($slider.val()));
+                },
+                makeErrorHandler('menu slider')
+            );
+        });
     });
 
     Rx.Observable.zip(

@@ -151,7 +151,6 @@ function connect(vizType) {
     var workersArgs = _.map(workerParams, function (param) {
         return param + '=' + urlParams[param];
     }).join('&');
-    console.log('Args', workersArgs);
 
 
     var attempt = 0;
@@ -212,6 +211,7 @@ function createRenderer(socket, canvas) {
 
     return rcObsv;
 }
+
 
 
 /**
