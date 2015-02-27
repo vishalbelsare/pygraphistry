@@ -586,28 +586,6 @@ function init(socket, $elt, renderState, urlParams) {
         })
         .subscribe(_.identity, makeErrorHandler('timeSlide'));
 
-    var currentlyLayingOut = false;
-    var runLayout =
-        Rx.Observable.fromEvent($('#simulate'), 'click')
-            .map(function () {
-                $('#simulate > i').toggleClass('toggle-on');
-                if (currentlyLayingOut) {
-                    currentlyLayingOut = false;
-                    return Rx.Observable.empty();
-                } else {
-                    currentlyLayingOut = true;
-                    return Rx.Observable.interval(INTERACTION_INTERVAL);
-                }
-            });
-
-    runLayout.flatMapLatest(_.identity)
-        .subscribe(
-            function () {
-                socket.emit('interaction', {play: true, layout: true});
-            },
-            function (err) {
-                console.error('Error stimulating graph', err, (err||{}).stack);
-            });
 
 
     $('.menu-slider').each(function () {
@@ -646,60 +624,91 @@ function init(socket, $elt, renderState, urlParams) {
 
 
     var $tooltips = $('[data-toggle="tooltip"]');
-    var $bolt = $('#simulate, #center').find('.fa');
+    var $bolt = $('#simulate .fa');
+    var $shrinkToFit = $('#center .fa');
+
     $tooltips.tooltip('show');
-    $bolt.addClass('automode');//css({color: '#333366'});
+    $bolt.toggleClass('automode', true).toggleClass('toggle-on', true);
+    $shrinkToFit.toggleClass('automode', true).toggleClass('toggle-on', true);
+
     var numTicks = urlParams.play || 0;
 
-
+    //tick stream until canceled/timed out (end with 'false')
     var autoLayingOut =
         Rx.Observable.merge(
-            Rx.Observable.return()
-                .map(function () {
-                    return Rx.Observable.interval(100).delay(500).take(numTicks); }),
-                $('#simulate').onAsObservable('click')
-                    .filter(function (evt){ return evt.originalEvent !== undefined; })
-                    .take(1)
-                .map(_.constant(Rx.Observable.empty())))
-        .flatMapLatest(_.identity);
-    var autoCentering =
-        Rx.Observable.merge(
-            Rx.Observable.return()
-                .map(function () {
-                    return Rx.Observable.interval(100).delay(500).take(numTicks); }),
+            Rx.Observable.return(Rx.Observable.interval(20)),
             Rx.Observable.merge(
-                    Rx.Observable.fromEvent($('#center'), 'click'),
-                    $('#simulation').onAsObservable('mousewheel'),
-                    $('#zoomin').onAsObservable('click'),
-                    $('#zoomout').onAsObservable('click'))
-                //skip events autoplay triggers
-                .filter(function (evt){ return evt.originalEvent !== undefined; })
+                    $('#simulate').onAsObservable('click')
+                        .filter(function (evt){ return evt.originalEvent !== undefined; }),
+                    Rx.Observable.timer(numTicks))
                 .take(1)
                 .map(_.constant(Rx.Observable.return(false))))
         .flatMapLatest(_.identity);
-    var autoCentered = new Rx.ReplaySubject(1);
-    autoCentering.subscribe(autoCentered);
+
+    //tick stream until canceled/timed out (end with 'false')
+    var autoCentering =
+        Rx.Observable.merge(
+            Rx.Observable.return(Rx.Observable.interval(1000)),
+            Rx.Observable.merge(
+                    Rx.Observable.merge(
+                            Rx.Observable.fromEvent($('#center'), 'click'),
+                            Rx.Observable.fromEvent($('#simulate'), 'click'),
+                            $('#simulation').onAsObservable('mousewheel'),
+                            $('#simulation').onAsObservable('mousedown'),
+                            $('#zoomin').onAsObservable('click'),
+                            $('#zoomout').onAsObservable('click'))
+                        //skip events autoplay triggers
+                        .filter(function (evt){ return evt.originalEvent !== undefined; }),
+                    Rx.Observable.timer(numTicks))
+                .take(1)
+                .map(_.constant(Rx.Observable.return(false))))
+        .flatMapLatest(_.identity);
+    var isAutoCentering = new Rx.ReplaySubject(1);
+    autoCentering.subscribe(isAutoCentering);
+
+
+    var runLayout =
+        Rx.Observable.fromEvent($('#simulate'), 'click')
+            .map(function () { return $bolt.hasClass('toggle-on'); })
+            .do(function (wasOn) {
+                $bolt.toggleClass('toggle-on', !wasOn);
+            })
+            .flatMapLatest(function (wasOn) {
+                var isOn = !wasOn;
+                return isOn ? Rx.Observable.interval(INTERACTION_INTERVAL) : Rx.Observable.empty();
+            });
+
+    runLayout
+        .subscribe(
+            function () {
+                socket.emit('interaction', {play: true, layout: true});
+            },
+            function (err) {
+                console.error('Error stimulating graph', err, (err||{}).stack);
+            });
 
     autoLayingOut.subscribe(
-        function () {
-            var payload = {play: true, layout: true};
-            socket.emit('interaction', payload);
+        function (evt) {
+            if (evt !== false) {
+                var payload = {play: true, layout: true};
+                socket.emit('interaction', payload);
+            }
         },
         function (err) { console.error('autoLayingOut error', err, (err||{}).stack); },
         function () {
-            autoCentering.take(1).subscribe(function (v) {
-                if (v) {
+            isAutoCentering.take(1).subscribe(function (v) {
+                if (v !== false) {
                     $('#center').trigger('click');
                 }
             });
             $tooltips.tooltip('hide');
-            $bolt.removeClass('automode');
+            $bolt.removeClass('automode').removeClass('toggle-on');
         }
     );
 
     autoCentering.subscribe(
         function (count) {
-            if (count < 3  ||
+            if (count === false || count < 3  ||
                 (count % 2 === 0 && count < 10) ||
                 count % 10 === 0) {
                 $('#center').trigger('click');
@@ -707,7 +716,7 @@ function init(socket, $elt, renderState, urlParams) {
         },
         function (err) { console.error('autoCentering error', err, (err||{}).stack); },
         function () {
-            $('#center').find('.fa').removeClass('automode');
+            $shrinkToFit.toggleClass('automode', false).toggleClass('toggle-on', false);
         });
 }
 
