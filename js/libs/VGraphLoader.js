@@ -123,24 +123,66 @@ function decode0(graph, vg, metadata)  {
         debug('Running component analysis');
 
         var components = weakcc(vg.nvertices, edges, 2);
+        var pointsPerRow = vg.nvertices / (Math.round(Math.sqrt(components.components.length)) + 1);
 
         var t0 = Date.now();
         var componentOffsets = [];
         var cumulativePoints = 0;
+        var row = 0;
+        var col = 0;
+        var pointsInRow = 0;
+        var maxPointsInRow = 0;
+        var rowYOffset = 0;
+        var rollingMax = 0;
         for (var i = 0; i < components.components.length; i++) {
+
+            maxPointsInRow = Math.max(maxPointsInRow, components.components[i].size);
+
             componentOffsets.push({
-                rollingSum: cumulativePoints
+                rollingSum: cumulativePoints,
+                rowYOffset: rowYOffset,
+                rowRollingSum: pointsInRow,
+                rollingMaxInRow: maxPointsInRow,
+                row: row,
+                col: col
             });
+
             cumulativePoints += components.components[i].size;
+            if (pointsInRow > pointsPerRow) {
+                row++;
+                rowYOffset += maxPointsInRow;
+                col = 0;
+                pointsInRow = 0;
+                maxPointsInRow = 0;
+            } else {
+                col++;
+                pointsInRow += components.components[i].size;
+            }
         }
+        for (var i = components.components.length - 1; i >= 0; i--) {
+            components.components[i].rowHeight =
+                Math.max(components.components[i].size,
+                    i + 1 < components.components.length
+                    && components.components[i+1].row == components.components[i].row ?
+                        components.components[i].rollingMaxInRow :
+                        0);
+        }
+
+//        console.log('components', componentOffsets);
+//        throw new Error('naa')
+
 
         var initSize = 5 * Math.sqrt(vg.nvertices);
         for (var i = 0; i < vg.nvertices; i++) {
             var c = components.nodeToComponent[i];
-            var vertex = [ initSize * (componentOffsets[c].rollingSum + 0.6 * components.components[c].size * Math.random()) / vg.nvertices ];
-            for (var j = 1; j < dimensions.length; j++)
-                vertex.push(initSize * Math.random());
+            var offset = componentOffsets[c];
+            var vertex = [ initSize * (offset.rowRollingSum + 0.9 * components.components[c].size * Math.random()) / vg.nvertices ];
+            for (var j = 1; j < dimensions.length; j++) {
+                vertex.push(initSize * (offset.rowYOffset + 0.9 * components.components[c].size * Math.random()) / vg.nvertices);
+            }
             vertices.push(vertex);
+            //if (i < 10) console.log(vertices[vertices.length -1]);
+            //else throw new Error('nooo')
         }
         debug('weakcc postprocess', Date.now() - t0);
     }
