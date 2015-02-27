@@ -6,7 +6,10 @@ var debug = require("debug")("graphistry:graph-viz:weaklycc");
 //   {  nodeToComponent: Uint32Array,
 //      components: [{root: int, component: int, size: int}]
 //   }
-module.exports = function weaklycc (numPoints, edges) {
+module.exports = function weaklycc (numPoints, edges, depth) {
+
+    depth = depth || Number.MAX_VALUE;
+
 
     var nodeToComponent = new Uint32Array(numPoints);
     //{root: int, component: int, size: int}
@@ -29,11 +32,9 @@ module.exports = function weaklycc (numPoints, edges) {
     // int * int * Array int -> int
     var enqueueEdges = function (label, src, q) {
         var edges = edgeList[src];
-
         for (var i = 0; i < edges.length; i++) {
             var dst = edges[i];
             if (!done[dst]) {
-                done[dst] = 1; // Avoid queuing the same node multiple times.
                 q.push(dst);
             }
         }
@@ -43,26 +44,46 @@ module.exports = function weaklycc (numPoints, edges) {
     //TODO: worth cutting search @ some depth in case few clusters?
     // int * int -> int
     var traverse = function (root, label) {
-        //[ int ]
-        var q = [ root ];
+
         var traversed = 0;
 
-        while (q.length > 0) {
-            var src = q.pop();
-            done[src] = 1;
-            nodeToComponent[src] = label;
-            enqueueEdges(label, src, q);
-            traversed++;
+        //[ int ]
+        var roots = [ root ];
+
+        for (var level = 0; level < depth && roots.length; level++) {
+            var nextLevel = [];
+            while (roots.length > 0) {
+                var src = roots.pop();
+                done[src] = 1;
+                nodeToComponent[src] = label;
+                enqueueEdges(label, src, nextLevel);
+                traversed++;
+            }
+            roots = nextLevel;
         }
 
         return traversed;
     };
 
+    //sort roots by degree
+    var degrees = new Uint32Array(numPoints);
+    for (var i = 0; i < numPoints; i++) {
+        degrees[i] = edgeList[i].length;
+    }
+    var roots = new Array(numPoints);
+    for (var i = 0; i < numPoints; i++) {
+        roots.push(i);
+    }
+    roots.sort(function (a, b) {
+        return degrees[b] - degrees[a];
+    });
+
     var all0 = Date.now();
     for (var i = 0; i < numPoints; i++) {
-        if (!done[i]) {
-            var size = traverse(i, components.length);
-            components.push({root: i, component: components.length, size: size})
+        var root = roots[i];
+        if (!done[root]) {
+            var size = traverse(root, components.length);
+            components.push({root: root, component: components.length, size: size})
         }
     }
     debug('weaklycc', Date.now() - all0, 'ms');
