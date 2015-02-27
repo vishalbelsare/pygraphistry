@@ -650,23 +650,65 @@ function init(socket, $elt, renderState, urlParams) {
     $tooltips.tooltip('show');
     $bolt.addClass('automode');//css({color: '#333366'});
     var numTicks = urlParams.play || 0;
-    Rx.Observable.interval(100).delay(500).take(numTicks).subscribe(
-        function (count) {
+
+
+    var autoLayingOut =
+        Rx.Observable.merge(
+            Rx.Observable.return()
+                .map(function () {
+                    return Rx.Observable.interval(100).delay(500).take(numTicks); }),
+                $('#simulate').onAsObservable('click')
+                    .filter(function (evt){ return evt.originalEvent !== undefined; })
+                    .take(1)
+                .map(_.constant(Rx.Observable.empty())))
+        .flatMapLatest(_.identity);
+    var autoCentering =
+        Rx.Observable.merge(
+            Rx.Observable.return()
+                .map(function () {
+                    return Rx.Observable.interval(100).delay(500).take(numTicks); }),
+            Rx.Observable.merge(
+                    Rx.Observable.fromEvent($('#center'), 'click'),
+                    $('#simulation').onAsObservable('mousewheel'),
+                    $('#zoomin').onAsObservable('click'),
+                    $('#zoomout').onAsObservable('click'))
+                //skip events autoplay triggers
+                .filter(function (evt){ return evt.originalEvent !== undefined; })
+                .take(1)
+                .map(_.constant(Rx.Observable.return(false))))
+        .flatMapLatest(_.identity);
+    var autoCentered = new Rx.ReplaySubject(1);
+    autoCentering.subscribe(autoCentered);
+
+    autoLayingOut.subscribe(
+        function () {
             var payload = {play: true, layout: true};
             socket.emit('interaction', payload);
+        },
+        function (err) { console.error('autoLayingOut error', err, (err||{}).stack); },
+        function () {
+            autoCentering.take(1).subscribe(function (v) {
+                if (v) {
+                    $('#center').trigger('click');
+                }
+            });
+            $tooltips.tooltip('hide');
+            $bolt.removeClass('automode');
+        }
+    );
+
+    autoCentering.subscribe(
+        function (count) {
             if (count < 3  ||
                 (count % 2 === 0 && count < 10) ||
                 count % 10 === 0) {
                 $('#center').trigger('click');
             }
         },
-        null,
+        function (err) { console.error('autoCentering error', err, (err||{}).stack); },
         function () {
-            $('#center').trigger('click');
-            $tooltips.tooltip('hide');
-            $bolt.removeClass('automode');//css({color: 'white'});
-        }
-    );
+            $('#center').find('.fa').removeClass('automode');
+        });
 }
 
 
