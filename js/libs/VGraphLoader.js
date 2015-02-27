@@ -122,11 +122,9 @@ function decode0(graph, vg, metadata)  {
     } else {
         debug('Running component analysis');
 
-        var t0 = Date.now();
         var components = weakcc(vg.nvertices, edges, 2);
-        var t1 = Date.now();
-        console.log('weakcc', t1 - t0, components.components.length);
 
+        var t0 = Date.now();
         var componentOffsets = [];
         var cumulativePoints = 0;
         for (var i = 0; i < components.components.length; i++) {
@@ -139,13 +137,12 @@ function decode0(graph, vg, metadata)  {
         var initSize = 5 * Math.sqrt(vg.nvertices);
         for (var i = 0; i < vg.nvertices; i++) {
             var c = components.nodeToComponent[i];
-            var jitter = Math.random();
-            var vertex = [ initSize * (componentOffsets[c].rollingSum + 0.6 * components.components[c].size * jitter) / vg.nvertices ];
+            var vertex = [ initSize * (componentOffsets[c].rollingSum + 0.6 * components.components[c].size * Math.random()) / vg.nvertices ];
             for (var j = 1; j < dimensions.length; j++)
-                vertex.push(initSize * jitter);
+                vertex.push(initSize * Math.random());
             vertices.push(vertex);
         }
-        console.log(Date.now() - t1);
+        debug('weakcc postprocess', Date.now() - t0);
     }
 
     var loaders = attributeLoaders(graph);
