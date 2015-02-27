@@ -13,7 +13,7 @@ function jump() {
         'dataset=' + encodeURIComponent($('#dataset').val()),
         'controls=' + controls,
         'scene=' + (controls === 'uber' ? 'uber' : 'netflow'),
-        'play=100'
+        'play=5000'
     ];
     console.log(window.origin)
     var url = '/graph/netflow.html?' + args.join('&');
@@ -38,7 +38,7 @@ graphistry
             <b>california</b>
             <div style="font-size: 0.5em; padding-top: 0.3em">
                 <a href="graph/uber.html?dataset=Uber&type=OBSOLETE_geo&scene=uber&controls=uber&debug=true">uber</a>
-                <a href="graph/netflow.html?dataset=NetflowDemo&scene=netflow&controls=atlas&mapper=opentsdb&debug=true">netflow</a>
+                <a href="graph/netflow.html?dataset=NetflowLarge&scene=netflow&controls=atlas&mapper=opentsdb&debug=true&play=10000">netflow</a>
             </div>
         </div>
         <div>
