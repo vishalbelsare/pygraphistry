@@ -9,6 +9,7 @@ var _ = require('underscore');
 var debug = require('debug')('graphistry:graph-viz:graph:simcl');
 var perf  = require('debug')('perf');
 var sprintf = require('sprintf-js').sprintf;
+var dijkstra = require('dijkstra');
 
 if (typeof(window) == 'undefined') {
     var webcl = require('node-webcl');
@@ -79,6 +80,7 @@ function create(renderer, dimensions, numSplits, device, vendor, cfg) {
             simObj.moveNodes = moveNodes.bind(this, simObj);
             simObj.resetBuffers = resetBuffers.bind(this, simObj);
             simObj.tickBuffers = tickBuffers.bind(this, simObj);
+            simObj.highlightShortestPaths = highlightShortestPaths.bind(this, renderer, simObj);
 
             simObj.dimensions = dimensions;
             simObj.numSplits = numSplits;
@@ -145,6 +147,52 @@ function create(renderer, dimensions, numSplits, device, vendor, cfg) {
     });
 }
 
+
+
+var highlightShortestPaths = function (renderer, simulator, pair) {
+    console.log('highlighting');
+    var graph = new dijkstra.Graph();
+
+    for (var v = 0; v < renderer.numPoints; v++) {
+        graph.addVertex(v);
+    }
+    for (var e = 0; e < renderer.numEdges; e++) {
+        var src = simulator.bufferHostCopies.forwardsEdges.edgesTyped[2 * e];
+        var dst = simulator.bufferHostCopies.forwardsEdges.edgesTyped[2 * e + 1];
+        graph.addEdge(src, dst, 1);
+        graph.addEdge(dst, src, 1);
+    }
+
+    var paths = [];
+    var t0 = Date.now();
+    var ok = true;
+    while (ok && (Date.now() - t0 < 20 * 1000)) {
+
+        var path = dijkstra.dijkstra(graph, pair[0]);
+
+        if (path[pair[1]] != -1) {
+            var steps = [];
+            var step = pair[1];
+            while (step != pair[0]) {
+                steps.push(step);
+                step = path[step];
+            }
+            steps.push(pair[0]);
+            steps.reverse();
+            paths.push(steps);
+
+            for (var i = 0; i < steps.length - 1; i++) {
+                graph.removeEdge(steps[i], steps[i+1]);
+            }
+
+        } else {
+            ok = false;
+        }
+    }
+
+    console.log('paths', paths.length, ':', paths, Date.now() - t0, 'ms');
+
+};
 
 /**
  * Simulator * ?[ String ] * ?int -> ()
