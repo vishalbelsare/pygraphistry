@@ -15,6 +15,7 @@ var renderer    = require('./renderer');
 var poiLib      = require('./poi.js');
 var poi;
 var marqueeFact = require('./marquee.js');
+var shortestpaths = require('./shortestpaths.js');
 
 
 
@@ -430,6 +431,8 @@ function setupDragHoverInteractions($eventTarget, renderState) {
         })
         .subscribe(_.identity, makeErrorHandler('mouse move err'));
 
+    return latestHighlightedPoint;
+
 }
 
 
@@ -530,6 +533,8 @@ function init(socket, $elt, renderState, urlParams) {
     var marquee = setupMarquee(turnOnMarquee, renderState);
 
     setupDragHoverInteractions($elt, renderState);
+
+    shortestpaths($('#shortestpath'), poi, socket);
 
 
     //trigger animation on server
