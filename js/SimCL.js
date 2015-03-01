@@ -10,6 +10,7 @@ var debug = require('debug')('graphistry:graph-viz:graph:simcl');
 var perf  = require('debug')('perf');
 var sprintf = require('sprintf-js').sprintf;
 var dijkstra = require('dijkstra');
+var util = require('./util.js');
 
 if (typeof(window) == 'undefined') {
     var webcl = require('node-webcl');
@@ -81,6 +82,7 @@ function create(renderer, dimensions, numSplits, device, vendor, cfg) {
             simObj.resetBuffers = resetBuffers.bind(this, simObj);
             simObj.tickBuffers = tickBuffers.bind(this, simObj);
             simObj.highlightShortestPaths = highlightShortestPaths.bind(this, renderer, simObj);
+            simObj.setColor = setColor.bind(this, renderer, simObj);
 
             simObj.dimensions = dimensions;
             simObj.numSplits = numSplits;
@@ -147,6 +149,24 @@ function create(renderer, dimensions, numSplits, device, vendor, cfg) {
     });
 }
 
+
+var setColor = function (renderer, simulator, colorObj) {
+
+    //TODO why are these reversed?
+    var rgb =
+        (colorObj.rgb.r << 0)
+        + (colorObj.rgb.g << 8)
+        + (colorObj.rgb.b << 16);
+
+    for (var v = 0; v < renderer.numPoints; v++) {
+        simulator.buffersLocal.pointColors[v] = rgb;
+    }
+    for (var e = 0; e < renderer.numEdges; e++) {
+        simulator.buffersLocal.edgeColors[2*e] = rgb;
+        simulator.buffersLocal.edgeColors[2*e+1] = rgb;
+    }
+    simulator.tickBuffers(['pointColors', 'edgeColors']);
+};
 
 
 var highlightShortestPaths = function (renderer, simulator, pair) {
