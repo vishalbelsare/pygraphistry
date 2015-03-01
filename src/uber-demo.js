@@ -9,6 +9,7 @@ var Rx      = require('rx');
 
 var _       = require('underscore');
 
+var colorpicker     = require('./colorpicker.js');
 
 var interaction = require('./interaction.js');
 var renderer    = require('./renderer');
@@ -535,6 +536,7 @@ function init(socket, $elt, renderState, urlParams) {
     setupDragHoverInteractions($elt, renderState);
 
     shortestpaths($('#shortestpath'), poi, socket);
+    colorpicker($('#foregroundColor'), $('#backgroundColor'), socket);
 
 
     //trigger animation on server
