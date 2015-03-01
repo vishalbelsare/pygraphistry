@@ -35,11 +35,16 @@ module.exports = function ($btn, poi, socket) {
 
             console.log('started', poi);
 
+            //TODO why is this red?
+            var RED = 255 << 8;
+
             return nextSelectedLabel(poi)
                 .flatMap(function (startIdx) {
                     console.log('first point', startIdx);
+                    socket.emit('highlight_points', [{index: startIdx, color: RED}]);
                     return nextSelectedLabel(poi)
                         .map(function (endIdx) {
+                            socket.emit('highlight_points', [{index: endIdx, color: RED}]);
                             console.log('second point', endIdx);
                             return [startIdx, endIdx];
                         });
