@@ -245,8 +245,8 @@ var highlightShortestPaths = function (renderer, simulator, pair) {
 
     var paths = [];
     var t0 = Date.now();
-    var ok = true;
-    while (ok && (Date.now() - t0 < 20 * 1000)) {
+    var ok = pair[0] != pair[1];
+    while (ok && (Date.now() - t0 < 20 * 1000) && paths.length < MAX_PATHS) {
 
         var path = dijkstra.dijkstra(graph, pair[0]);
 
