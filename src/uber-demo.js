@@ -6,17 +6,16 @@ var debug   = require('debug')('graphistry:StreamGL:uber-demo');
 var $       = window.$;
 var Rx      = require('rx');
               require('./rx-jquery-stub');
-
 var _       = require('underscore');
 
+var interaction     = require('./interaction.js');
+var renderer        = require('./renderer');
+var poiLib          = require('./poi.js');
+var marqueeFact     = require('./marquee.js');
+var shortestpaths   = require('./shortestpaths.js');
 var colorpicker     = require('./colorpicker.js');
 
-var interaction = require('./interaction.js');
-var renderer    = require('./renderer');
-var poiLib      = require('./poi.js');
 var poi;
-var marqueeFact = require('./marquee.js');
-var shortestpaths = require('./shortestpaths.js');
 
 
 
