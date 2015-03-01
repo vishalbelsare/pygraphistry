@@ -456,7 +456,7 @@ function makeSetter(simulator, name, dimName) {
 
     return function (data, isReverse) {
 
-        var buffName = name + (dimName === 'numEdges' && !isReverse ? '_reverse' : '');
+        var buffName = name + (dimName === 'numEdges' && !!isReverse ? '_reverse' : '');
 
         simulator.buffersLocal[buffName] = data;
         simulator.resetBuffers([simulator.buffers[buffName]])
