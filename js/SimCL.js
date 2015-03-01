@@ -169,8 +169,68 @@ var setColor = function (renderer, simulator, colorObj) {
 };
 
 
+//Simulator * int * int -> int U exn
+var findEdgeDirected = function (simulator, src, dst) {
+    var buffers = simulator.bufferHostCopies.forwardsEdges
+
+    var workItem = buffers.srcToWorkItem[ src ];
+    var firstEdge = buffers.workItemsTyped[4 * workItem];
+    var numSiblings = buffers.workItemsTyped[4 * workItem + 1];
+
+    if (firstEdge === -1) {
+        throw new Error('not found');
+    }
+
+    for (var sibling = 0; sibling < numSiblings; sibling++) {
+        var edge = firstEdge + sibling;
+        var sink = buffers.edgesTyped[2 * edge + 1];
+        if (sink === dst) {
+            return edge;
+        }
+    }
+
+    throw new Error('not found');
+};
+
+//Simulator * int * int -> int U exn
+var findEdgeUndirected = function (simulator, src, dst) {
+    try {
+        console.log('guessing forwards', src, dst);
+        return findEdgeDirected(simulator, src, dst);
+    } catch (e) {
+        console.log('  was backwards');
+        return findEdgeDirected(simulator, dst, src);
+    }
+}
+
+var highlightPath = function (renderer, simulator, path, i) {
+    if (path.length < 2) {
+        return;
+    }
+
+    var COLOR = -1 * util.palettes.qual_palette1[i];
+
+    var points = _.union(edges);
+    points.forEach(function (point) {
+        console.log('change point', point, COLOR);
+        simulator.buffersLocal.pointColors[point] = COLOR;
+    });
+
+    var edges = _.zip(path.slice(0, -1), path.slice(1));
+    console.log('drawing path', path, i);
+    edges.forEach(function (pair, i) {
+        var edge = findEdgeUndirected(simulator, pair[0], pair[1]);
+        console.log('  drawing edge', i, '(', pair, ') ->', edge, COLOR);
+        simulator.buffersLocal.edgeColors[2 * edge] = COLOR;
+        simulator.buffersLocal.edgeColors[2 * edge + 1] = COLOR;
+    });
+}
+
 var highlightShortestPaths = function (renderer, simulator, pair) {
     console.log('highlighting');
+
+    var MAX_PATHS = 5;
+
     var graph = new dijkstra.Graph();
 
     for (var v = 0; v < renderer.numPoints; v++) {
@@ -210,7 +270,22 @@ var highlightShortestPaths = function (renderer, simulator, pair) {
         }
     }
 
-    console.log('paths', paths.length, ':', paths, Date.now() - t0, 'ms');
+    console.log('paths', paths.length, ' (MAX: ' + MAX_PATHS + '):', paths, Date.now() - t0, 'ms');
+
+    if (paths.length) {
+        paths.forEach(highlightPath.bind('', renderer, simulator));
+        simulator.tickBuffers(['pointColors', 'edgeColors']);
+    }
+
+    var biggestPoint = Math.max(
+        simulator.buffersLocal.pointSizes[pair[0]],
+        simulator.buffersLocal.pointSizes[pair[1]]);
+    for (var i = 0; i < Math.min(10000, renderer.numPoints); i++) {
+        biggestPoint = Math.max(biggestPoint, simulator.buffersLocal.pointSizes[i]);
+    }
+    simulator.buffersLocal.pointSizes[pair[0]] = biggestPoint;
+    simulator.buffersLocal.pointSizes[pair[1]] = biggestPoint;
+    simulator.tickBuffers(['pointSizes']);
 
 };
 
