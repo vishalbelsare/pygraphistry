@@ -4,8 +4,6 @@ var $               = window.$;
 var Rx              = require('rx');
                       require('./rx-jquery-stub');
 var _               = require('underscore');
-var jsColorPicker   = window.jsColorPicker;
-
 
 
 //$DOM * hex -> Observable hex
