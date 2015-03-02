@@ -538,6 +538,18 @@ function createControls(socket) {
                     'data-slider-step': 1,
                     'data-slider-value': param.value
                 }).data('param', param);
+            } else if (param.type === 'discrete') {
+                $input = $('<input>').attr({
+                    class: 'menu-slider',
+                    id: param.name,
+                    type: 'text',
+                    'data-slider-id': param.name + 'Slider',
+                    'data-slider-min': param.min,
+                    'data-slider-max': param.max,
+                    'data-slider-step': param.step,
+                    'data-slider-value': param.value
+                }).data('param', param);
+
             } else if (param.type === 'bool') {
                 $input = $('<input>').attr({
                     id: param.name,
