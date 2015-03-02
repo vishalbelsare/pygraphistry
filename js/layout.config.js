@@ -16,13 +16,13 @@ function Param(type, prettyName, defValue, toSlider, fromSlider) {
     this.type = type;
     this.prettyName = prettyName;
     this.fromSlider = fromSlider || _.identity;
+    this.toSlider = toSlider || _.identity;
     this.value = defValue;
-    this.sliderValue = (toSlider || _.identity)(defValue);
 }
 Param.prototype.toClient = function(name, algoName) {
     return {
         name: name, algoName: algoName,
-        prettyName: this.prettyName, type: this.type, value: this.sliderValue,
+        prettyName: this.prettyName, type: this.type, value: this.toSlider(this.value),
     };
 }
 Param.prototype.set = function(v) {
