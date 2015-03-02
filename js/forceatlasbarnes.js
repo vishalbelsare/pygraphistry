@@ -19,12 +19,14 @@ function getNumWorkitemsByHardware(deviceProps, workGroupSize) {
         calculateForces: 60
     }
 
-    // console.log("DEVICE NAME: ", deviceProps.DEVICE_NAME);
+    //console.log("DEVICE NAME: ", deviceProps.DEVICE_NAME);
     if (deviceProps.DEVICE_NAME.indexOf('GeForce GT 650M') != -1) {
         numWorkGroups.buildTree = 1;
         numWorkGroups.computeSums = 1;
-
     } else if (deviceProps.DEVICE_NAME.indexOf('Iris Pro') != -1) {
+        numWorkGroups.computeSums = 6;
+        numWorkGroups.sort = 8;
+    } else if (deviceProps.DEVICE_NAME.indexOf('Iris') != -1) {
         numWorkGroups.computeSums = 6;
         numWorkGroups.sort = 8;
     } else if (deviceProps.DEVICE_NAME.indexOf('HD Graphics 4000') != -1) {
