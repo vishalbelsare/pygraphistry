@@ -6,13 +6,13 @@ var debug   = require('debug')('graphistry:StreamGL:picking');
 
 function uint32ToIdx (raw) {
 
-    var r = 0;
-    var g = 0;
-    var b = (raw >> (8 * 2)) & 255;
-    var a = (raw >> (8 * 1)) & 255;
+    var MAX = 255 | (255 << 8) | (255 << 16);
 
-    return ((r << 24) | (g << 16) | (b << 8) | a) - 1;
+    if (raw === 0 || raw === MAX || raw === undefined) {
+        return -1;
+    }
 
+    return (raw & MAX) - 1;
 }
 
 
