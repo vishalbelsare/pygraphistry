@@ -217,18 +217,14 @@ var highlightPath = function (renderer, simulator, path, i) {
     });
 
     var edges = _.zip(path.slice(0, -1), path.slice(1));
-    console.log('drawing path', path, i);
     edges.forEach(function (pair, i) {
         var edge = findEdgeUndirected(simulator, pair[0], pair[1]);
-        console.log('  drawing edge', i, '(', pair, ') ->', edge, COLOR);
         simulator.buffersLocal.edgeColors[2 * edge] = COLOR;
         simulator.buffersLocal.edgeColors[2 * edge + 1] = COLOR;
     });
 }
 
 var highlightShortestPaths = function (renderer, simulator, pair) {
-    console.log('highlighting');
-
     var MAX_PATHS = 5;
 
     var graph = new dijkstra.Graph();
@@ -270,12 +266,7 @@ var highlightShortestPaths = function (renderer, simulator, pair) {
         }
     }
 
-    console.log('paths', paths.length, ' (MAX: ' + MAX_PATHS + '):', paths, Date.now() - t0, 'ms');
-
-    if (paths.length) {
-        paths.forEach(highlightPath.bind('', renderer, simulator));
-        simulator.tickBuffers(['pointColors', 'edgeColors']);
-    }
+    paths.forEach(highlightPath.bind('', renderer, simulator));
 
     var biggestPoint = Math.max(
         simulator.buffersLocal.pointSizes[pair[0]],
@@ -285,8 +276,8 @@ var highlightShortestPaths = function (renderer, simulator, pair) {
     }
     simulator.buffersLocal.pointSizes[pair[0]] = biggestPoint;
     simulator.buffersLocal.pointSizes[pair[1]] = biggestPoint;
-    simulator.tickBuffers(['pointSizes']);
 
+    simulator.tickBuffers(['pointSizes', 'pointColors', 'edgeColors']);
 };
 
 /**
