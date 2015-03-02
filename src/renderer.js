@@ -10,6 +10,7 @@ var cameras             = require('./camera.js');
 var localAttribHandler  = require('./localAttribHandler.js');
 var bufferProxy         = require('./bufferproxy.js').bufferProxy;
 var picking             = require('./picking.js');
+var semanticZoom        = require('./semanticZoom.js');
 
 
 
@@ -731,10 +732,10 @@ function render(state, renderListOverride) {
     debug('========= Rendering a frame');
 
     var config      = state.get('config').toJS(),
+        camera      = state.get('camera'),
         gl          = state.get('gl'),
         programs    = state.get('programs').toJS(),
         buffers     = state.get('buffers').toJS();
-
 
     var clearedFBOs = { };
 
@@ -769,6 +770,12 @@ function render(state, renderListOverride) {
             debug('  clearing render target', renderTarget);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             clearedFBOs[renderTarget] = true;
+        }
+
+        // Set zoomScalingFactor uniform if it exists.
+        var scalingFactor = semanticZoom.pointZoomScalingFactor(camera.width, camera.height, numElements[item]);
+        if (renderItem.uniforms && renderItem.uniforms.zoomScalingFactor) {
+            renderItem.uniforms.zoomScalingFactor.values = [scalingFactor];
         }
 
         bindProgram(

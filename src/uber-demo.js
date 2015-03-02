@@ -14,6 +14,7 @@ var poiLib          = require('./poi.js');
 var marqueeFact     = require('./marquee.js');
 var shortestpaths   = require('./shortestpaths.js');
 var colorpicker     = require('./colorpicker.js');
+var semanticZoom    = require('./semanticZoom.js');
 
 var poi;
 
@@ -105,7 +106,8 @@ function renderCursor (renderState, points, idx, sizes) {
     var mtx = camera.getMatrix();
 
     var pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
-    var size = Math.max(5, Math.min(sizes[idx], 50)); // Clamp like in pointculled shader
+    var scalingFactor = semanticZoom.pointZoomScalingFactor(camera.width, camera.height, sizes.length);
+    var size = Math.max(5, Math.min(scalingFactor * sizes[idx], 50)); // Clamp like in pointculled shader
     var offset = size / 2.0;
 
     $('#highlighted-point-cont').css({
