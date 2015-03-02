@@ -207,7 +207,7 @@ var highlightPath = function (renderer, simulator, path, i) {
         return;
     }
 
-    var COLOR = -1 * util.palettes.qual_palette1[i];
+    var COLOR = -1 * util.palettes.qual_palette1[i % util.palettes.qual_palette1.length];
 
     var points = _.union(path);
     points.forEach(function (point) {
@@ -225,7 +225,7 @@ var highlightPath = function (renderer, simulator, path, i) {
 }
 
 var highlightShortestPaths = function (renderer, simulator, pair) {
-    var MAX_PATHS = 5;
+    var MAX_PATHS = util.palettes.qual_palette1.length * 2;
 
     var graph = new dijkstra.Graph();
 
