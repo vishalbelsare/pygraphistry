@@ -209,10 +209,11 @@ var highlightPath = function (renderer, simulator, path, i) {
 
     var COLOR = -1 * util.palettes.qual_palette1[i];
 
-    var points = _.union(edges);
+    var points = _.union(path);
     points.forEach(function (point) {
-        console.log('change point', point, COLOR);
-        simulator.buffersLocal.pointColors[point] = COLOR;
+        if (point !== path[0] && point !== path[path.length -1]) {
+            simulator.buffersLocal.pointColors[point] = COLOR;
+        }
     });
 
     var edges = _.zip(path.slice(0, -1), path.slice(1));
