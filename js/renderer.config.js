@@ -354,8 +354,8 @@ var stdOptions = {
     'blendFuncSeparate': [['SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'ONE', 'ONE']],
     'blendEquationSeparate': [['FUNC_ADD', 'FUNC_ADD']],
     'depthFunc': [['LEQUAL']],
-    'clearColor': [[0, 0, 0, 0.0]],
-    'lineWidth': [[2]]
+    'clearColor': [[255, 255, 255, 0.0]],
+    'lineWidth': [[3]]
 }
 
 var camera2D = {
