@@ -134,6 +134,18 @@ function saneKernels(kernels) {
     });
 }
 
+
+// (->) * string * (->) * ... -> ()
+// Run function and print timing data
+// Curry to create a timed function wrapper
+function perf (perf, name, fn /* args */) {
+    var t0 = Date.now();
+    var res = fn.apply({}, Array.prototype.slice.call(arguments, 3));
+    perf(name, Date.now() - t0, 'ms');
+    return res;
+}
+
+
 module.exports = {
     getShaderSource: getShaderSource,
     getKernelSource: getKernelSource,
@@ -143,5 +155,6 @@ module.exports = {
     rgb: rgb,
     saneKernels: saneKernels,
     palettes: palettes,
-    int2color: int2color
+    int2color: int2color,
+    perf: perf
 };
