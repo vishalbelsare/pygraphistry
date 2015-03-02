@@ -44,14 +44,18 @@ function ContinuousParam(prettyName, value, min, max) {
 ContinuousParam.prototype = Object.create(Param.prototype);
 ContinuousParam.prototype.constructor = ContinuousParam;
 
-function DiscreteParam(prettyName, value, min, max, inc) {
+function DiscreteParam(prettyName, value, min, max, step) {
     Param.call(this, 'discrete', prettyName, value);
     this.min = min;
     this.max = max;
-    this.inc = inc;
+    this.step = step;
 }
 DiscreteParam.prototype = Object.create(Param.prototype);
 DiscreteParam.prototype.constructor = DiscreteParam;
+DiscreteParam.prototype.toClient = function (name, algoName) {
+    var base = Param.prototype.toClient.call(this, name, algoName);
+    return _.extend(base, {min: this.min, max: this.max, step: this.step});
+}
 
 function BoolParam(name, value) {
     Param.call(this, 'bool', name, value);
@@ -129,7 +133,7 @@ function atlasControls(algo) {
         tau: new ContinuousParam('Speed', 1.0, 0.1, 10),
         gravity: new ContinuousParam('Gravity', 1.0, 0.01, 100),
         scalingRatio: new ContinuousParam('Scaling', 1.0, 0.01, 100),
-        edgeInfluence: new DiscreteParam('Edge Influence', 0, 0, 5, 1),
+        edgeInfluence: new DiscreteParam('Edge Influence', 1, 0, 5, 1),
         preventOverlap: new BoolParam('Prevent Overlap', false),
         strongGravity: new BoolParam('Strong Gravity', false),
         dissuadeHubs: new BoolParam('Dissuade Hubs', false),
