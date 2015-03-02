@@ -21,7 +21,7 @@ var NAMED_CLGL_BUFFERS = require('./buffers.js').NAMED_CLGL_BUFFERS;
 function create(renderer, device, vendor, cfg) {
     return cljs.create(renderer, device, vendor).then(function(cl) {
         // Pick the first layout algorithm that matches our device type
-        var type = cl.deviceType.trim();
+        var type = cl.deviceProps.TYPE.trim();
         var availableControls = _.filter(cfg, function(algo) {
             return _.contains(algo.devices, type);
         });

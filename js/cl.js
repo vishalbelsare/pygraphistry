@@ -3,7 +3,8 @@
 var Q = require('q');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');
-var debug = require("debug")("graphistry:graph-viz:cl:cl");
+var debug = require('debug')('graphistry:graph-viz:cl:cl');
+var perf = require('debug')('perf');
 var util = require('util');
 var path = require('path');
 var utiljs = require('./util.js');
@@ -165,18 +166,28 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
         throw (err !== null ? err : new Error("A context could not be created from an available device"));
     }
 
-    var vendor = deviceWrapper.device.getInfo(webcl.DEVICE_VENDOR);
-    var type = deviceWrapper.deviceType;
-    var computeUnits = deviceWrapper.computeUnits;
-    console.log('OpenCL Info    Vendor:%s  Type:%s  CU:%d', vendor, type, computeUnits);
+    var attribs = [
+        'NAME', 'VENDOR', 'VERSION', 'PROFILE', 'PLATFORM',
+        'MAX_WORK_GROUP_SIZE', 'MAX_WORK_ITEM_SIZES', 'MAX_MEM_ALLOC_SIZE',
+        'GLOBAL_MEM_SIZE', 'LOCAL_MEM_SIZE','MAX_CONSTANT_BUFFER_SIZE',
+        'MAX_CONSTANT_BUFFER_SIZE', 'PROFILE', 'PROFILING_TIMER_RESOLUTION'
+    ];
 
-    var attribs = ['TYPE', 'VENDOR_ID', 'NAME', 'VENDOR', 'VERSION', 'PROFILE', 'PLATFORM']
-        .map(function (suffix) { return 'DEVICE_' + suffix; });
-    attribs.sort();
-    var deviceProps = _.object(attribs.map(function (name) {
-        return [name, deviceWrapper.device.getInfo(webcl[name])];
+    var props = _.object(attribs.map(function (name) {
+        return [name, deviceWrapper.device.getInfo(webcl['DEVICE_' + name])];
     }));
-    debug(deviceProps);
+    props.TYPE = deviceWrapper.deviceType;
+
+    console.log('OpenCL Info    Type:%s  Vendor:%s  Device:%s',
+                props.TYPE, props.VENDOR, props.NAME);
+
+    perf('Device Sizes   WorkGroup:%d  WorkItem:%s', props.MAX_WORK_GROUP_SIZE,
+         props.MAX_WORK_ITEM_SIZES);
+    perf('Max Mem (kB)   Global:%d  Alloc:%d  Local:%d  Constant:%d',
+          props.GLOBAL_MEM_SIZE / 1024, props.MAX_MEM_ALLOC_SIZE / 1024,
+          props.LOCAL_MEM_SIZE / 1024, props.MAX_CONSTANT_BUFFER_SIZE / 1024);
+    perf('Profile (ns)   Type:%s  Resolution:%d',
+         props.PROFILE, props.PROFILING_TIMER_RESOLUTION);
 
     var res = {
         renderer: renderer,
@@ -184,8 +195,7 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
         context: deviceWrapper.context,
         device: deviceWrapper.device,
         queue: deviceWrapper.queue,
-        deviceProps: deviceProps,
-        deviceType: type,
+        deviceProps: props,
         maxThreads: deviceWrapper.device.getInfo(webcl.DEVICE_MAX_WORK_GROUP_SIZE),
         numCores: deviceWrapper.device.getInfo(webcl.DEVICE_MAX_COMPUTE_UNITS)
     };

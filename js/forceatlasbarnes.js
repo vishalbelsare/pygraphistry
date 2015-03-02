@@ -19,18 +19,18 @@ function getNumWorkitemsByHardware(deviceProps, workGroupSize) {
         calculateForces: 60
     }
 
-    //console.log("DEVICE NAME: ", deviceProps.DEVICE_NAME);
-    if (deviceProps.DEVICE_NAME.indexOf('GeForce GT 650M') != -1) {
+    //console.log("DEVICE NAME: ", deviceProps.NAME);
+    if (deviceProps.NAME.indexOf('GeForce GT 650M') != -1) {
         numWorkGroups.buildTree = 1;
         numWorkGroups.computeSums = 1;
-    } else if (deviceProps.DEVICE_NAME.indexOf('Iris Pro') != -1) {
+    } else if (deviceProps.NAME.indexOf('Iris Pro') != -1) {
         numWorkGroups.computeSums = 6;
         numWorkGroups.sort = 8;
-    } else if (deviceProps.DEVICE_NAME.indexOf('Iris') != -1) {
+    } else if (deviceProps.NAME.indexOf('Iris') != -1) {
         numWorkGroups.computeSums = 6;
         numWorkGroups.sort = 8;
-    } else if (deviceProps.DEVICE_NAME.indexOf('HD Graphics 4000') != -1) {
-        throw new Error('Unsupported device config: ' + deviceProps.DEVICE_NAME);
+    } else if (deviceProps.NAME.indexOf('HD Graphics 4000') != -1) {
+        throw new Error('Unsupported device config: ' + deviceProps.NAME);
     }
 
     return _.mapObject(numWorkGroups, function(val, key) {
@@ -298,7 +298,7 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
     var global = simulator.controls.global;
     var that = this;
 
-    var vendor = simulator.cl.deviceProps.DEVICE_VENDOR.toLowerCase();
+    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
     var warpsize = 1; // Always correct
     if (vendor.indexOf('intel') != -1) {
         warpsize = 16;
