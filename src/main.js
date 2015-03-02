@@ -69,7 +69,6 @@ function init(canvas, vizType) {
             debug('Creating renderer');
 
             var socket  = nfo.socket;
-
             displayErrors(socket, $(canvas));
 
             return streamClient.createRenderer(socket, canvas)
@@ -77,29 +76,26 @@ function init(canvas, vizType) {
                     debug('Renderer created');
                     return {socket: socket, renderState: renderState};
                 });
-        })
-        .do(
-            function(v) {
-                var socket = v.socket;
-                var renderState = v.renderState;
+        }).do(function(v) {
+            var socket = v.socket;
+            var renderState = v.renderState;
 
-                var vboUpdates = streamClient.handleVboUpdates(socket, renderState);
+            var vboUpdates = streamClient.handleVboUpdates(socket, renderState);
 
+            uberDemo(socket, $('.sim-container'), v.renderState,
+                        streamClient.urlParams);
 
-                uberDemo(socket, $('.sim-container'), v.renderState,
-                         streamClient.urlParams);
+            initialized.onNext({
+                vboUpdates: vboUpdates,
+                renderState: renderState
+            });
 
-                initialized.onNext({
-                    vboUpdates: vboUpdates,
-                    renderState: renderState
-                });
-
-            })
-        .subscribe(
+        }).subscribe(
             _.identity,
             function (err) {
                 console.error('error connecting stream client', err, err.stack);
-            });
+            }
+        );
 
     return initialized;
 }
