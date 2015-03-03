@@ -2,6 +2,7 @@ var Kernel = require('../kernel.js'),
     Q = require('q'),
     debug = require("debug")("graphistry:graph-viz:cl:barensKernels"),
     _     = require('underscore'),
+    util  = require('../util.js'),
     cljs  = require('../cl.js');
 
 var BarnesKernelSeq = function (clContext) {
@@ -9,7 +10,7 @@ var BarnesKernelSeq = function (clContext) {
     this.argsToBarnesLayout = [
         'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints',
         'inputPositions', 'xCoords', 'yCoords', 'mass', 'blocked', 'maxDepth',
-        'pointDegrees', 'stepNumber'
+        'pointDegrees', 'stepNumber', 'WARPSIZE'
     ];
 
     // All Barnes kernels have same arguements
@@ -17,7 +18,7 @@ var BarnesKernelSeq = function (clContext) {
     'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
     'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
     'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
-        'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau'];
+        'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau', 'WARPSIZE'];
 
     this.argsType = {
         scalingRatio: cljs.types.float_t,
@@ -70,7 +71,8 @@ var BarnesKernelSeq = function (clContext) {
         numBodies: cljs.types.uint_t,
         numNodes: cljs.types.uint_t,
         numWorkItems: cljs.types.uint_t,
-        globalSpeed: null
+        globalSpeed: null,
+        WARPSIZE: cljs.types.define
     }
 
     this.toBarnesLayout = new Kernel('to_barnes_layout', this.argsToBarnesLayout,
@@ -197,7 +199,7 @@ var BarnesKernelSeq = function (clContext) {
         });
     };
 
-    this.setEdges = function(simulator, layoutBuffers) {
+    this.setEdges = function(simulator, layoutBuffers, warpsize) {
         var that = this;
         return setupTempBuffers(simulator).then(function (tempBuffers) {
 
@@ -205,10 +207,11 @@ var BarnesKernelSeq = function (clContext) {
           yCoords:tempBuffers.y_cords.buffer, mass:tempBuffers.mass.buffer,
                             blocked:tempBuffers.blocked.buffer, maxDepth:tempBuffers.maxdepth.buffer,
                             numPoints:simulator.numPoints,
-                            inputPositions: simulator.buffers.curPoints.buffer, pointDegrees: simulator.buffers.degrees.buffer});
+                            inputPositions: simulator.buffers.curPoints.buffer,
+                            pointDegrees: simulator.buffers.degrees.buffer, WARPSIZE: warpsize});
 
-            function setBarnesKernelArgs(kernel, buffers) {
-              kernel.set({xCoords:buffers.x_cords.buffer,
+            var setBarnesKernelArgs = function(kernel, buffers) {
+              var setArgs = {xCoords:buffers.x_cords.buffer,
                 yCoords:buffers.y_cords.buffer,
                 accX:buffers.accx.buffer,
                 accY:buffers.accy.buffer,
@@ -229,18 +232,23 @@ var BarnesKernelSeq = function (clContext) {
                 maxDepth:buffers.maxdepth.buffer,
                 radius:buffers.radius.buffer,
                 globalSpeed: layoutBuffers.globalSpeed.buffer,
-                width:simulator.dimensions[0],
-                height:simulator.dimensions[1],
+                width:simulator.controls.global.dimensions[0],
+                height:simulator.controls.global.dimensions[1],
                 numBodies:buffers.numBodies,
                 numNodes:buffers.numNodes,
-                pointForces:simulator.buffers.partialForces1.buffer})
+                pointForces:simulator.buffers.partialForces1.buffer,
+                WARPSIZE:warpsize};
+
+              kernel.set(setArgs);
             };
+
             setBarnesKernelArgs(that.boundBox, tempBuffers);
             setBarnesKernelArgs(that.buildTree, tempBuffers);
             setBarnesKernelArgs(that.computeSums, tempBuffers);
             setBarnesKernelArgs(that.sort, tempBuffers);
             setBarnesKernelArgs(that.calculateForces, tempBuffers);
-        });
+
+        }).fail(util.makeErrorHandler('setupTempBuffers'));
     };
 
     this.execKernels = function(simulator, stepNumber, workItems) {

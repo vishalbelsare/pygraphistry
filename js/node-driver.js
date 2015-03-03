@@ -174,9 +174,8 @@ function fetchBufferByteLengths(graph, renderConfig) {
 }
 
 
-function init(device, vendor, cfg) {
+function init(device, vendor, controls) {
     debug("Starting initialization");
-    var global = cfg[0].global
 
     /* Example of RenderGL instatiation.
      * Left for historical purposes, probably broken!
@@ -190,11 +189,7 @@ function init(device, vendor, cfg) {
 
     return RenderNull.create(null)
         .then(function (renderer) {
-            var graph = NBody.create(renderer, global.dimensions, global.numSplits,
-                                     global.simulationTime);
-            return graph.initSimulation(device, vendor, cfg);
-
-
+            return NBody.create(renderer, device, vendor, controls);
         })
         .fail(function (err) {
             console.error("ERROR Failure in NBody creation ", (err||{}).stack);
@@ -203,15 +198,14 @@ function init(device, vendor, cfg) {
 
 
 
-function getControls(cfgName) {
-
-    var cfg = lConf.controls.default;
-    if (cfgName in lConf.controls)
-        cfg = lConf.controls[cfgName];
+function getControls(controlsName) {
+    var controls = lConf.controls.default;
+    if (controlsName in lConf.controls)
+        controls = lConf.controls[controlsName];
     else
-        console.warn('WARNING Unknown controls "%s", using defaults.', cfgName)
+        console.warn('WARNING Unknown controls "%s", using defaults.', controlsName);
 
-    return cfg;
+    return controls;
 }
 
 
@@ -256,11 +250,11 @@ function create(dataset) {
     // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
     // the contents of each VBO
     var animStepSubj = new Rx.BehaviorSubject(null);
-    var cfg = getControls(dataset.metadata.controls);
+    var controls = getControls(dataset.metadata.controls);
     var device = dataset.metadata.device;
     var vendor = dataset.metadata.vendor;
 
-    var graph = init(device, vendor, cfg).then(function (graph) {
+    var graph = init(device, vendor, controls).then(function (graph) {
         debug('LOADING DATASET');
         return loader.loadDatasetIntoSim(graph, dataset)
     }).then(function (graph) {
@@ -276,7 +270,7 @@ function create(dataset) {
                 //...  but stop a bit after last one
                 play.filter(function (o) { return o && o.layout; })
                     .merge(Rx.Observable.return())
-                    .delay(graph.simulationTime)
+                    .delay(graph.globalControls.simulationTime)
                     .map(_.constant({play: false, layout: false})),
                 play.filter(function (o) { return !o || !o.layout; })
                     .merge(Rx.Observable.return())

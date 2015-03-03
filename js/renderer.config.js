@@ -65,16 +65,16 @@ var programs = {
             'vertex': fs.readFileSync(__dirname + '/../shaders/pointculled.vertex.glsl', 'utf8').toString('ascii'),
             'fragment': fs.readFileSync(__dirname + '/../shaders/pointculled.fragment.glsl', 'utf8').toString('ascii')
         },
-        'attributes': ['isHighlighted', 'curPos', 'pointSize', 'pointColor'],
+        'attributes': ['curPos', 'pointSize', 'pointColor'],
         'camera': 'mvp',
-        'uniforms': ['highlightedPoint', 'fog']
+        'uniforms': ['highlightedPoint', 'fog', 'zoomScalingFactor']
     },
     'points': {
         'sources': {
             'vertex': fs.readFileSync(__dirname + '/../shaders/point.vertex.glsl', 'utf8').toString('ascii'),
             'fragment': fs.readFileSync(__dirname + '/../shaders/point.fragment.glsl', 'utf8').toString('ascii')
         },
-        'attributes': ['isHighlighted', 'curPos', 'pointSize', 'pointColor'],
+        'attributes': ['curPos', 'pointSize', 'pointColor'],
         'camera': 'mvp',
         'uniforms': []
     },
@@ -250,12 +250,12 @@ var items = {
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
-            'pointColor':   ['pointColors', 'pointColor'],
-            'isHighlighted':   ['highlightedPoint', 'isHighlighted']
+            'pointColor':   ['pointColors', 'pointColor']
         },
         'uniforms': {
             'fog': { 'uniformType': '1f', 'values': [10.0] },
-            'stroke': { 'uniformType': '1f', 'values': [-STROKE_WIDTH] }
+            'stroke': { 'uniformType': '1f', 'values': [-STROKE_WIDTH] },
+            'zoomScalingFactor': { 'uniformType': '1f', 'values': [1.0] }
         },
         'drawType': 'POINTS',
         'glOptions': {},
@@ -265,8 +265,7 @@ var items = {
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
-            'pointColor':   ['pointColors', 'pointColor'],
-            'isHighlighted':   ['highlightedPoint', 'isHighlighted']
+            'pointColor':   ['pointColors', 'pointColor']
         },
         'uniforms': {
             'fog': { 'uniformType': '1f', 'values': [10.0] },
@@ -276,47 +275,32 @@ var items = {
         'glOptions': {},
     },
     'pointpickingScreen': {
-        'program': 'pointculled',
+        'program': 'points',
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
-            'pointColor':   ['vertexIndices', 'pointColor'],
-            'isHighlighted':   ['highlightedPoint', 'isHighlighted']
-        },
-        'uniforms': {
-            'fog': { 'uniformType': '1f', 'values': [0.0] },
-            'stroke': { 'uniformType': '1f', 'values': [STROKE_WIDTH] }
+            'pointColor':   ['vertexIndices', 'pointColor']
         },
         'drawType': 'POINTS',
         'glOptions': {},
     },
     'pointpicking': {
-        'program': 'pointculled',
+        'program': 'points',
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
-            'pointColor':   ['vertexIndices', 'pointColor'],
-            'isHighlighted':   ['highlightedPoint', 'isHighlighted']
-        },
-        'uniforms': {
-            'fog': { 'uniformType': '1f', 'values': [0.0] },
-            'stroke': { 'uniformType': '1f', 'values': [STROKE_WIDTH] }
+            'pointColor':   ['vertexIndices', 'pointColor']
         },
         'drawType': 'POINTS',
         'glOptions': {},
         'renderTarget': 'pointHitmap',
     },
     'pointsampling': {
-        'program': 'pointculled',
+        'program': 'points',
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
-            'pointColor':   ['vertexIndices', 'pointColor'],
-            'isHighlighted':   ['highlightedPoint', 'isHighlighted']
-        },
-        'uniforms': {
-            'fog': { 'uniformType': '1f', 'values': [0.0] },
-            'stroke': { 'uniformType': '1f', 'values': [STROKE_WIDTH] }
+            'pointColor':   ['vertexIndices', 'pointColor']
         },
         'drawType': 'POINTS',
         'glOptions': {},
@@ -327,8 +311,10 @@ var items = {
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
-            'pointColor':   ['pointColors', 'pointColor'],
-            'isHighlighted':   ['highlightedPoint', 'isHighlighted']
+            'pointColor':   ['pointColors', 'pointColor']
+        },
+        'uniforms': {
+            'zoomScalingFactor': { 'uniformType': '1f', 'values': [1.0]}
         },
         'drawType': 'POINTS',
         'glOptions': {}
@@ -370,8 +356,8 @@ var stdOptions = {
     'blendFuncSeparate': [['SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'ONE', 'ONE']],
     'blendEquationSeparate': [['FUNC_ADD', 'FUNC_ADD']],
     'depthFunc': [['LEQUAL']],
-    'clearColor': [[0, 0, 0, 0.0]],
-    'lineWidth': [[2]]
+    'clearColor': [[255, 255, 255, 0.0]],
+    'lineWidth': [[3]]
 }
 
 var camera2D = {

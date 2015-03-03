@@ -10,7 +10,7 @@ var LayoutAlgo = require('./layoutAlgo.js');
 var Kernel = require('./kernel.js');
 
 function GaussSeidel(clContext) {
-    LayoutAlgo.call(this, 'GaussSeidel');
+    LayoutAlgo.call(this, GaussSeidel.name);
 
     debug('Creating GaussSeidel kernels');
     this.gsPoints = new Kernel('gaussSeidelPoints', GaussSeidel.argsPoints,
@@ -24,7 +24,7 @@ function GaussSeidel(clContext) {
 GaussSeidel.prototype = Object.create(LayoutAlgo.prototype);
 GaussSeidel.prototype.constructor = GaussSeidel;
 
-
+GaussSeidel.name = 'GaussSeidel';
 GaussSeidel.argsPoints = ['numPoints', 'tilesPerIteration', 'inputPositions',
                           'outputPositions', 'tilePointsParam', 'width', 'height',
                           'charge', 'gravity', 'randValues', 'stepNumber'];
@@ -70,8 +70,8 @@ GaussSeidel.prototype.setPoints = function(simulator) {
         inputPositions: simulator.buffers.curPoints.buffer,
         outputPositions: simulator.buffers.nextPoints.buffer,
         tilePointsParam: 1,
-        width: simulator.dimensions[0],
-        height: simulator.dimensions[1],
+        width: simulator.controls.global.dimensions[0],
+        height: simulator.controls.global.dimensions[1],
         randValues: simulator.buffers.randValues.buffer,
         stepNumber: 0,
     });
@@ -132,14 +132,15 @@ function edgeKernelSeq(simulator, gsSprings, stepNumber, edges, workItems,
 
 GaussSeidel.prototype.tick = function(simulator, stepNumber) {
     var that = this;
+    var locks = simulator.controls.locks;
     return Q().then(function () {
-        if (simulator.locked.lockPoints) {
+        if (locks.lockPoints) {
             debug("Points are locked, nothing to do.")
         } else {
             return pointKernel(simulator, that.gsPoints, stepNumber);
         }
     }).then(function() {
-        if (simulator.numEdges <= 0 || simulator.locked.lockEdges) {
+        if (simulator.numEdges <= 0 || locks.lockEdges) {
             debug("Edges are locked, nothing to do.")
             return simulator;
         }

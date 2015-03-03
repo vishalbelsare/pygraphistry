@@ -25,16 +25,18 @@ function getNumWorkitemsByHardware(deviceProps, workGroupSize) {
         calculateForces: 60
     }
 
-    // console.log("DEVICE NAME: ", deviceProps.DEVICE_NAME);
-    if (deviceProps.DEVICE_NAME.indexOf('GeForce GT 650M') != -1) {
+    //console.log("DEVICE NAME: ", deviceProps.NAME);
+    if (deviceProps.NAME.indexOf('GeForce GT 650M') != -1) {
         numWorkGroups.buildTree = 1;
         numWorkGroups.computeSums = 1;
-
-    } else if (deviceProps.DEVICE_NAME.indexOf('Iris Pro') != -1) {
+    } else if (deviceProps.NAME.indexOf('Iris Pro') != -1) {
         numWorkGroups.computeSums = 6;
         numWorkGroups.sort = 8;
-    } else if (deviceProps.DEVICE_NAME.indexOf('HD Graphics 4000') != -1) {
-        throw new Error('Unsupported device config: ' + deviceProps.DEVICE_NAME);
+    } else if (deviceProps.NAME.indexOf('Iris') != -1) {
+        numWorkGroups.computeSums = 6;
+        numWorkGroups.sort = 8;
+    } else if (deviceProps.NAME.indexOf('HD Graphics 4000') != -1) {
+        throw new Error('Unsupported device config: ' + deviceProps.NAME);
     }
 
     return _.mapObject(numWorkGroups, function(val, key) {
@@ -44,7 +46,7 @@ function getNumWorkitemsByHardware(deviceProps, workGroupSize) {
 
 
 function ForceAtlas2Barnes(clContext) {
-    LayoutAlgo.call(this, 'ForceAtlasBarnes');
+    LayoutAlgo.call(this, ForceAtlas2Barnes.name);
 
     debug('Creating ForceAtlasBarnes kernels');
     this.barnesKernelSeq = new BarnesKernelSeq(clContext);
@@ -70,6 +72,7 @@ function ForceAtlas2Barnes(clContext) {
 ForceAtlas2Barnes.prototype = Object.create(LayoutAlgo.prototype);
 ForceAtlas2Barnes.prototype.constructor = ForceAtlas2Barnes;
 
+ForceAtlas2Barnes.name = 'ForceAtlas2Barnes';
 
 ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
     LayoutAlgo.prototype.setPhysics.call(this, cfg)
@@ -102,9 +105,7 @@ var setupTempLayoutBuffers = function(simulator) {
       tempLayoutBuffers.globalSpeed = globalSpeed;
       return tempLayoutBuffers;
     })
-    .catch(function(error) {
-      console.log(error);
-    });
+    .catch(util.makeErrorHandler('setupTempBuffers'));
 };
 
 
@@ -114,9 +115,10 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
             * simulator.elementsPerPoint
             * Float32Array.BYTES_PER_ELEMENT;
 
+    var global = simulator.controls.global;
     var that = this;
 
-    var vendor = simulator.cl.deviceProps.DEVICE_VENDOR.toLowerCase();
+    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
     var warpsize = 1; // Always correct
     if (vendor.indexOf('intel') != -1) {
         warpsize = 16;
@@ -129,8 +131,7 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
     var that = this;
     return setupTempLayoutBuffers(simulator).then(function (tempBuffers) {
       that.edgeKernelSeq.setEdges(simulator, tempBuffers);
-      that.barnesKernelSeq.setEdges(simulator, tempBuffers);
-
+      that.barnesKernelSeq.setEdges(simulator, tempBuffers, warpsize);
 
     });
 }

@@ -57,11 +57,21 @@ function getImage(url) {
     return deferred.promise;
 }
 
+
 function die() {
     var msg = nodeutil.format.apply(this, arguments)
     console.error("FATAL ERROR: ", (new Error(msg)).stack)
     process.exit(1);
 }
+
+
+function makeErrorHandler() {
+    var msg = nodeutil.format.apply(this, arguments);
+    return function (err) {
+        console.error(msg, err, (err||{}).stack);
+    };
+}
+
 
 function rgb(r, g, b, a) {
     if (a === undefined)
@@ -124,13 +134,27 @@ function saneKernels(kernels) {
     });
 }
 
+
+// (->) * string * (->) * ... -> ()
+// Run function and print timing data
+// Curry to create a timed function wrapper
+function perf (perf, name, fn /* args */) {
+    var t0 = Date.now();
+    var res = fn.apply({}, Array.prototype.slice.call(arguments, 3));
+    perf(name, Date.now() - t0, 'ms');
+    return res;
+}
+
+
 module.exports = {
-    'getShaderSource': getShaderSource,
-    'getKernelSource': getKernelSource,
-    'getImage': getImage,
-    'die': die,
-    'rgb': rgb,
-    'saneKernels': saneKernels,
+    getShaderSource: getShaderSource,
+    getKernelSource: getKernelSource,
+    getImage: getImage,
+    die: die,
+    makeErrorHandler: makeErrorHandler,
+    rgb: rgb,
+    saneKernels: saneKernels,
     palettes: palettes,
-    int2color: int2color
+    int2color: int2color,
+    perf: perf
 };

@@ -11,7 +11,7 @@ var _          = require('underscore'),
 
 
 function EdgeBundling(clContext) {
-    LayoutAlgo.call(this, 'EdgeBundling');
+    LayoutAlgo.call(this, EdgeBundling.name);
 
     debug('Creating GaussSeidel kernels');
     this.ebMidpoints = new Kernel('gaussSeidelMidpoints', EdgeBundling.argsMidpoints,
@@ -25,7 +25,7 @@ function EdgeBundling(clContext) {
 EdgeBundling.prototype = Object.create(LayoutAlgo.prototype);
 EdgeBundling.prototype.constructor = EdgeBundling;
 
-
+EdgeBundling.name = 'EdgeBundling';
 EdgeBundling.argsMidpoints = ['numPoints', 'numSplits', 'inputMidPoints',
                               'outputMidPoints', 'tilePointsParam', 'width',
                               'height', 'charge', 'gravity', 'randValues', 'stepNumber'];
@@ -65,19 +65,21 @@ EdgeBundling.prototype.setEdges = function (simulator) {
         * simulator.elementsPerPoint
         * Float32Array.BYTES_PER_ELEMENT;
 
+    var global = simulator.controls.global;
+
     this.ebMidpoints.set({
         numPoints: simulator.numMidPoints,
-        numSplits: simulator.numSplits,
+        numSplits: global.numSplits,
         inputMidPoints: simulator.buffers.curMidPoints.buffer,
         outputMidPoints: simulator.buffers.nextMidPoints.buffer,
         tilePointsParam: localPosSize,
-        width: simulator.dimensions[0],
-        height: simulator.dimensions[1],
+        width: global.dimensions[0],
+        height: global.dimensions[1],
         randValues: simulator.buffers.randValues.buffer
     });
 
     this.ebMidsprings.set({
-        numSplits: simulator.numSplits,
+        numSplits: global.numSplits,
         springs: simulator.buffers.forwardsEdges.buffer,
         workList: simulator.buffers.forwardsWorkItems.buffer,
         inputPoints: simulator.buffers.curPoints.buffer,
@@ -123,20 +125,21 @@ function midEdges(simulator, ebMidsprings, stepNumber) {
 
 EdgeBundling.prototype.tick = function(simulator, stepNumber) {
     var that = this;
-    if (simulator.locked.lockMidpoints && simulator.locked.lockMidedges) {
+    var locks = simulator.controls.locks;
+    if (locks.lockMidpoints && locks.lockMidedges) {
         debug('LOCKED, EARLY EXIT');
         return Q();
     }
 
     return Q().then(function () {
-        if (simulator.locked.lockMidpoints) {
+        if (locks.lockMidpoints) {
             simulator.tickBuffers(['nextMidPoints']);
             return simulator.buffers.curMidPoints.copyInto(simulator.buffers.nextMidPoints);
         } else {
             return midPoints(simulator, that.ebMidpoints, stepNumber);
         }
     }).then(function () { //TODO do both forwards and backwards?
-        if (simulator.numEdges > 0 && !simulator.locked.lockMidedges) {
+        if (simulator.numEdges > 0 && !locks.lockMidedges) {
             return midEdges(simulator, that.ebMidsprings, stepNumber);
         } else {
             simulator.tickBuffers(['curMidPoints']);

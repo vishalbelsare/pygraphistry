@@ -77,8 +77,8 @@ var attributeLoaders = function(graph) {
  * Load the raw data from the dataset object from S3
 **/
 function load(graph, dataset) {
-    graph.vg = pb_root.VectorGraph.decode(dataset.body)
-    return decoders[graph.vg.version](graph, graph.vg, dataset.metadata);
+    var vg = pb_root.VectorGraph.decode(dataset.body)
+    return decoders[vg.version](graph, vg, dataset.metadata);
 }
 
 function getAttributeMap(vg) {
@@ -224,7 +224,7 @@ function decode0(graph, vg, metadata)  {
     }).then(function () {
         runLoaders(vloaders);
         runLoaders(eloaders);
-    }).then(function(){
+    /*}).then(function(){ // BUGGY THUS DISABLED
         debug('writing into graph.simulator.buffers');
         // Copy all serialized data to simulator buffers if data is present
         // The serialized data lives in graph.vg
@@ -252,7 +252,7 @@ function decode0(graph, vg, metadata)  {
                 }
             }
         });
-        return Q.all(arrs);
+        return Q.all(arrs);*/
     }).then(function () {
         debug('all written');
         _.each(graph.simulator.layoutAlgorithms, function (la) {

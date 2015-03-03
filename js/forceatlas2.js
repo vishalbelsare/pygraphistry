@@ -10,7 +10,7 @@ var   debug = require("debug")("graphistry:graph-viz:cl:forceatlas2"),
 
 
 function ForceAtlas2(clContext) {
-    LayoutAlgo.call(this, 'ForceAtlas2');
+    LayoutAlgo.call(this, ForceAtlas2.name);
 
     debug('Creating ForceAtlas2 kernels');
     this.faPoints = new Kernel('faPointForces', ForceAtlas2.argsPoints,
@@ -33,6 +33,7 @@ function ForceAtlas2(clContext) {
 ForceAtlas2.prototype = Object.create(LayoutAlgo.prototype);
 ForceAtlas2.prototype.constructor = ForceAtlas2;
 
+ForceAtlas2.name = 'ForceAtlas2';
 ForceAtlas2.argsPoints = [
     'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'tilePointsParam',
     'tilePointsParam2', 'numPoints', 'tilesPerIteration', 'inputPositions',
@@ -104,22 +105,24 @@ ForceAtlas2.prototype.setPhysics = function(cfg) {
 
 
 ForceAtlas2.prototype.setEdges = function(simulator) {
-        var localPosSize =
-            Math.min(simulator.cl.maxThreads, simulator.numMidPoints)
-            * simulator.elementsPerPoint
-            * Float32Array.BYTES_PER_ELEMENT;
+    var localPosSize =
+        Math.min(simulator.cl.maxThreads, simulator.numMidPoints)
+        * simulator.elementsPerPoint
+        * Float32Array.BYTES_PER_ELEMENT;
 
-        this.faPoints.set({
-            tilePointsParam: 1,
-            tilePointsParam2: 1,
-            tilesPerIteration: simulator.tilesPerIteration,
-            numPoints: simulator.numPoints,
-            inputPositions: simulator.buffers.curPoints.buffer,
-            width: simulator.dimensions[0],
-            height: simulator.dimensions[1],
-            pointDegrees: simulator.buffers.degrees.buffer,
-            pointForces: simulator.buffers.partialForces1.buffer
-        });
+    var global = simulator.controls.global;
+
+    this.faPoints.set({
+        tilePointsParam: 1,
+        tilePointsParam2: 1,
+        tilesPerIteration: simulator.tilesPerIteration,
+        numPoints: simulator.numPoints,
+        inputPositions: simulator.buffers.curPoints.buffer,
+        width: global.dimensions[0],
+        height: global.dimensions[1],
+        pointDegrees: simulator.buffers.degrees.buffer,
+        pointForces: simulator.buffers.partialForces1.buffer
+    });
 }
 
 

@@ -1,20 +1,16 @@
 'use strict';
 
+var _ = require('underscore');
 var Q = require('q');
+var debug = require('debug')('graphistry:graph-viz:graph:simcl');
+var perf  = require('debug')('perf');
+var sprintf = require('sprintf-js').sprintf;
+var dijkstra = require('dijkstra');
 var util = require('./util.js');
 var cljs = require('./cl.js');
 var MoveNodes = require('./moveNodes.js');
 var SpringsGather = require('./springsGather.js');
-var _ = require('underscore');
-var debug = require('debug')('graphistry:graph-viz:graph:simcl');
-var perf  = require('debug')('perf');
-var sprintf = require('sprintf-js').sprintf;
-
-if (typeof(window) == 'undefined') {
-    var webcl = require('node-webcl');
-} else if (typeof(webcl) == 'undefined') {
-    var webcl = window.webcl;
-}
+var webcl = require('node-webcl');
 
 Q.longStackSupport = true;
 var randLength = 73;
@@ -22,73 +18,76 @@ var randLength = 73;
 
 var NAMED_CLGL_BUFFERS = require('./buffers.js').NAMED_CLGL_BUFFERS;
 
-function create(renderer, dimensions, numSplits, device, vendor, cfg) {
-    return cljs.create(renderer, device, vendor)
-    .then(function(cl) {
-
+function create(renderer, device, vendor, cfg) {
+    return cljs.create(renderer, device, vendor).then(function(cl) {
         // Pick the first layout algorithm that matches our device type
-        var type = cl.deviceType.trim();
-        var controls = _.filter(cfg, function(algo) {
+        var type = cl.deviceProps.TYPE.trim();
+        var availableControls = _.filter(cfg, function(algo) {
             return _.contains(algo.devices, type);
-        })[0];
-
+        });
+        if (availableControls.length === 0) {
+            util.die('No layout controls satisfying device/vendor requirements', device, vendor);
+        }
+        var controls = availableControls[0];
         var layoutAlgorithms = controls.layoutAlgorithms;
-        var locked = controls.locks;
+
+        var simObj = {
+            renderer: renderer,
+            cl: cl,
+            otherKernels: {
+                moveNodes: new MoveNodes(cl),
+                springsGather: new SpringsGather(cl)
+            },
+            elementsPerPoint: 2,
+            versions: {
+                tick: 0,
+                buffers: { }
+            },
+            controls: controls,
+        };
 
         return Q().then(function () {
             debug('Instantiating layout algorithms: %o', layoutAlgorithms);
-            return _.map(layoutAlgorithms, function (entry) {
-                var algo = new entry.algo(cl)
-                algo.setPhysics(entry.params)
+            return _.map(layoutAlgorithms, function (la) {
+                var algo = new la.algo(cl);
+                var params = _.object(_.map(la.params, function (param, key) {
+                    return [key, param.value];
+                }));
+                algo.setPhysics(_.object(_.map(la.params, function (p, name) {
+                    return [name, p.value];
+                })));
                 return algo;
             });
         }).then(function(algos) {
             debug("Creating SimCL...")
 
-            var simObj = {
-                renderer: renderer,
-                cl: cl,
-                elementsPerPoint: 2,
-                otherKernels: {
-                    moveNodes: new MoveNodes(cl),
-                    springsGather: new SpringsGather(cl)
-                },
-                versions: {
-                    tick: 0,
-                    buffers: { }
-                },
-                layoutAlgorithms: algos
-            };
+            simObj.layoutAlgorithms = algos;
             simObj.tilesPerIteration = 1;
             simObj.buffersLocal = {};
             createSetters(simObj);
 
-
             simObj.tick = tick.bind(this, simObj);
-
             simObj.setPoints = setPoints.bind(this, simObj);
-
             simObj.setEdges = setEdges.bind(this, renderer, simObj);
             simObj.setEdgeColors = setEdgeColors.bind(this, simObj);
             simObj.setMidEdgeColors = setMidEdgeColors.bind(this, simObj);
             simObj.setLabels = setLabels.bind(this, simObj);
-            simObj.setLocked = setLocked.bind(this, simObj);
+            simObj.setLocks = setLocks.bind(this, simObj);
             simObj.setPhysics = setPhysics.bind(this, simObj);
             simObj.setTimeSubset = setTimeSubset.bind(this, renderer, simObj);
             simObj.recolor = recolor.bind(this, simObj);
             simObj.moveNodes = moveNodes.bind(this, simObj);
             simObj.resetBuffers = resetBuffers.bind(this, simObj);
             simObj.tickBuffers = tickBuffers.bind(this, simObj);
+            simObj.highlightShortestPaths = highlightShortestPaths.bind(this, renderer, simObj);
+            simObj.setColor = setColor.bind(this, renderer, simObj);
 
-            simObj.dimensions = dimensions;
-            simObj.numSplits = numSplits;
             simObj.numPoints = 0;
             simObj.numEdges = 0;
             simObj.numForwardsWorkItems = 0;
             simObj.numBackwardsWorkItems = 0;
             simObj.numMidPoints = 0;
             simObj.numMidEdges = 0;
-            simObj.locked = locked || {};
             simObj.labels = [];
 
             simObj.bufferHostCopies = {
@@ -137,21 +136,154 @@ function create(renderer, dimensions, numSplits, device, vendor, cfg) {
                 relRange: {min: 0, max: 100},
                 pointsRange:    {startIdx: 0, len: renderer.numPoints},
                 edgeRange:      {startIdx: 0, len: renderer.numEdges},
-                midPointsRange: {startIdx: 0, len: renderer.numPoints * numSplits},
-                midEdgeRange:   {startIdx: 0, len: renderer.numEdges * numSplits}
+                midPointsRange: {
+                    startIdx: 0,
+                    len: renderer.numPoints * controls.global.numSplits
+                },
+                midEdgeRange:   {
+                    startIdx: 0,
+                    len: renderer.numEdges * controls.global.numSplits
+                }
             };
 
             Object.seal(simObj.buffers);
             Object.seal(simObj);
 
-            debug("WebCL simulator created");
+            debug('Simulator created');
             return simObj
         })
-    }).fail(function (err) {
-        console.error("Cannot create SimCL ", (err||{}).stack);
+    }).fail(util.makeErrorHandler('Cannot create SimCL'));
+}
+
+
+var setColor = function (renderer, simulator, colorObj) {
+
+    //TODO why are these reversed?
+    var rgb =
+        (colorObj.rgb.r << 0)
+        + (colorObj.rgb.g << 8)
+        + (colorObj.rgb.b << 16);
+
+    for (var v = 0; v < renderer.numPoints; v++) {
+        simulator.buffersLocal.pointColors[v] = rgb;
+    }
+    for (var e = 0; e < renderer.numEdges; e++) {
+        simulator.buffersLocal.edgeColors[2*e] = rgb;
+        simulator.buffersLocal.edgeColors[2*e+1] = rgb;
+    }
+    simulator.tickBuffers(['pointColors', 'edgeColors']);
+};
+
+
+//Simulator * int * int -> int U exn
+var findEdgeDirected = function (simulator, src, dst) {
+    var buffers = simulator.bufferHostCopies.forwardsEdges
+
+    var workItem = buffers.srcToWorkItem[ src ];
+    var firstEdge = buffers.workItemsTyped[4 * workItem];
+    var numSiblings = buffers.workItemsTyped[4 * workItem + 1];
+
+    if (firstEdge === -1) {
+        throw new Error('not found');
+    }
+
+    for (var sibling = 0; sibling < numSiblings; sibling++) {
+        var edge = firstEdge + sibling;
+        var sink = buffers.edgesTyped[2 * edge + 1];
+        if (sink === dst) {
+            return edge;
+        }
+    }
+
+    throw new Error('not found');
+};
+
+//Simulator * int * int -> int U exn
+var findEdgeUndirected = function (simulator, src, dst) {
+    try {
+        return findEdgeDirected(simulator, src, dst);
+    } catch (e) {
+        return findEdgeDirected(simulator, dst, src);
+    }
+}
+
+var highlightPath = function (renderer, simulator, path, i) {
+    if (path.length < 2) {
+        return;
+    }
+
+    var COLOR = -1 * util.palettes.qual_palette1[i % util.palettes.qual_palette1.length];
+
+    var points = _.union(path);
+    points.forEach(function (point) {
+        if (point !== path[0] && point !== path[path.length -1]) {
+            simulator.buffersLocal.pointColors[point] = COLOR;
+        }
+    });
+
+    var edges = _.zip(path.slice(0, -1), path.slice(1));
+    edges.forEach(function (pair, i) {
+        var edge = findEdgeUndirected(simulator, pair[0], pair[1]);
+        simulator.buffersLocal.edgeColors[2 * edge] = COLOR;
+        simulator.buffersLocal.edgeColors[2 * edge + 1] = COLOR;
     });
 }
 
+var highlightShortestPaths = function (renderer, simulator, pair) {
+    var MAX_PATHS = util.palettes.qual_palette1.length * 2;
+
+    var graph = new dijkstra.Graph();
+
+    for (var v = 0; v < renderer.numPoints; v++) {
+        graph.addVertex(v);
+    }
+    for (var e = 0; e < renderer.numEdges; e++) {
+        var src = simulator.bufferHostCopies.forwardsEdges.edgesTyped[2 * e];
+        var dst = simulator.bufferHostCopies.forwardsEdges.edgesTyped[2 * e + 1];
+        graph.addEdge(src, dst, 1);
+        graph.addEdge(dst, src, 1);
+    }
+
+    var paths = [];
+    var t0 = Date.now();
+    var ok = pair[0] != pair[1];
+    while (ok && (Date.now() - t0 < 20 * 1000) && paths.length < MAX_PATHS) {
+
+        var path = dijkstra.dijkstra(graph, pair[0]);
+
+        if (path[pair[1]] != -1) {
+            var steps = [];
+            var step = pair[1];
+            while (step != pair[0]) {
+                steps.push(step);
+                step = path[step];
+            }
+            steps.push(pair[0]);
+            steps.reverse();
+            paths.push(steps);
+
+            for (var i = 0; i < steps.length - 1; i++) {
+                graph.removeEdge(steps[i], steps[i+1]);
+            }
+
+        } else {
+            ok = false;
+        }
+    }
+
+    paths.forEach(highlightPath.bind('', renderer, simulator));
+
+    var biggestPoint = Math.max(
+        simulator.buffersLocal.pointSizes[pair[0]],
+        simulator.buffersLocal.pointSizes[pair[1]]);
+    for (var i = 0; i < Math.min(10000, renderer.numPoints); i++) {
+        biggestPoint = Math.max(biggestPoint, simulator.buffersLocal.pointSizes[i]);
+    }
+    simulator.buffersLocal.pointSizes[pair[0]] = biggestPoint;
+    simulator.buffersLocal.pointSizes[pair[1]] = biggestPoint;
+
+    simulator.tickBuffers(['pointSizes', 'pointColors', 'edgeColors']);
+};
 
 /**
  * Simulator * ?[ String ] * ?int -> ()
@@ -320,7 +452,7 @@ function makeSetter(simulator, name, dimName) {
 
     return function (data, isReverse) {
 
-        var buffName = name + (dimName === 'numEdges' && !isReverse ? '_reverse' : '');
+        var buffName = name + (dimName === 'numEdges' && !!isReverse ? '_reverse' : '');
 
         simulator.buffersLocal[buffName] = data;
         simulator.resetBuffers([simulator.buffers[buffName]])
@@ -537,13 +669,14 @@ function setMidEdgeColors(simulator, midEdgeColors) {
     console.error("TODO: Code setMidEdgeColors")
 }
 
-function setLocked(simulator, cfg) {
-    _.extend(simulator.locked, cfg || {});
+function setLocks(simulator, cfg) {
+    _.extend(simulator.controls.locks, cfg || {});
 }
 
 
 
 function setPhysics(simulator, cfg) {
+    debug('Simcl set physics', cfg)
     _.each(simulator.layoutAlgorithms, function (algo) {
         if (algo.name in cfg) {
             algo.setPhysics(cfg[algo.name]);
