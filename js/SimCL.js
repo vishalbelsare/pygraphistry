@@ -194,10 +194,8 @@ var findEdgeDirected = function (simulator, src, dst) {
 //Simulator * int * int -> int U exn
 var findEdgeUndirected = function (simulator, src, dst) {
     try {
-        console.log('guessing forwards', src, dst);
         return findEdgeDirected(simulator, src, dst);
     } catch (e) {
-        console.log('  was backwards');
         return findEdgeDirected(simulator, dst, src);
     }
 }
