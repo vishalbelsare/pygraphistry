@@ -95,6 +95,9 @@ var textures = {
     'pointHitmap': {
         'datasource': 'CLIENT',
     },
+    'pointTexture': {
+        'datasource': 'CLIENT',
+    },
     'pointHitmapDownsampled': {
         'datasource': 'CLIENT',
         'width': {'unit': 'percent', 'value': 5},
@@ -230,6 +233,7 @@ var models = {
 var items = {
     'edgeculled': {
         'program': 'edgeculled',
+        'trigger': 'renderScene',
         'bindings': {
             'curPos': ['springsPos', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
@@ -239,6 +243,7 @@ var items = {
     },
     'edges': {
         'program': 'edges',
+        'trigger': 'renderScene',
         'bindings': {
             'curPos': ['springsPos', 'curPos'],
         },
@@ -247,6 +252,7 @@ var items = {
     },
     'pointculled': {
         'program': 'pointculled',
+        'trigger': 'renderScene',
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -262,6 +268,7 @@ var items = {
     },
     'pointoutline': {
         'program': 'pointculled',
+        'trigger': 'renderScene',
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -277,6 +284,7 @@ var items = {
     },
     'pointpickingScreen': {
         'program': 'points',
+        'trigger': 'renderScene',
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -287,6 +295,7 @@ var items = {
     },
     'pointpicking': {
         'program': 'points',
+        'trigger': 'picking',
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -296,8 +305,21 @@ var items = {
         'glOptions': {},
         'renderTarget': 'pointHitmap',
     },
+    'pointculledtexture': {
+        'program': 'points',
+        'trigger': 'renderScene',
+        'bindings': {
+            'curPos':       ['curPoints', 'curPos'],
+            'pointSize':    ['pointSizes', 'pointSize'],
+            'pointColor':   ['pointColors', 'pointColor']
+        },
+        'drawType': 'POINTS',
+        'glOptions': {},
+        'renderTarget': 'pointTexture',
+    },
     'pointsampling': {
         'program': 'points',
+        'trigger': 'renderScene',
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -309,6 +331,7 @@ var items = {
     },
     'points': {
         'program': 'points',
+        'trigger': 'renderScene',
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -319,6 +342,7 @@ var items = {
     },
     'midpoints': {
         'program': 'midpoints',
+        'trigger': 'renderScene',
         'bindings': {
             'curPos': ['curMidPoints', 'curPos']
         },
@@ -327,6 +351,7 @@ var items = {
     },
     'midedgetextured': {
         'program': 'midedgetextured',
+        'trigger': 'renderScene',
         'bindings': {
             'curPos': ['midSpringsPos', 'curPos'],
             'aColorCoord': ['midSpringsColorCoord', 'colorCoord']
@@ -339,6 +364,7 @@ var items = {
     },
     'midedgeculled': {
         'program': 'midedgeculled',
+        'trigger': 'renderScene',
         'bindings': {
             'curPos': ['midSpringsPos', 'curPos'],
             'edgeColor' : ['edgeColors', 'edgeColor']
@@ -375,7 +401,8 @@ var sceneUber = {
 var sceneNetflow = {
     'options': stdOptions,
     'camera': camera2D,
-    'render': ['pointpicking', 'pointsampling', 'edgeculled', 'pointoutline', 'pointculled']
+    'render': ['pointpicking', 'pointsampling', 'pointculledtexture',
+               'edgeculled', 'pointoutline', 'pointculled']
 }
 
 var scenes = {
@@ -408,7 +435,7 @@ function saneModel(model, modName) {
 }
 
 function saneItem(programs, textures, models, item, itemName) {
-    _.each(['program', 'bindings', 'drawType', 'glOptions'], function (field) {
+    _.each(['program', 'trigger', 'bindings', 'drawType', 'glOptions'], function (field) {
         if (!(field in item))
             util.die('Item "%s" must have field "%s"', itemName, field);
     });
