@@ -36,7 +36,7 @@ function getNumWorkitemsByHardware(deviceProps, workGroupSize) {
         numWorkGroups.computeSums = 6;
         numWorkGroups.sort = 8;
     } else if (deviceProps.NAME.indexOf('HD Graphics 4000') != -1) {
-        throw new Error('Unsupported device config: ' + deviceProps.NAME);
+        console.warn('Expected slow kernels: sort, calculate_forces');
     }
 
     return _.mapObject(numWorkGroups, function(val, key) {
