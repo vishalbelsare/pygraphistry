@@ -17,11 +17,15 @@ function getLabelIndex(poi, elt) {
 
 // poi -> Observable int
 function nextSelectedLabel (poi) {
-    return Rx.Observable.fromEvent($('body'), 'click')
-        .pluck('target')
-        .filter(function (v) { return v && $(v).hasClass('graph-label'); })
-        .take(1)
-        .map(getLabelIndex.bind('', poi));
+    return Rx.Observable.merge(
+        Rx.Observable.fromEvent($('#highlighted-point-cont'), 'click')
+            .map(function () { return parseInt($('#highlighted-point-cont').attr('pointIdx')); })
+            .filter(function (v) { return !isNaN(v); }),
+        Rx.Observable.fromEvent($('body'), 'click')
+            .pluck('target')
+            .filter(function (v) { return v && $(v).hasClass('graph-label'); })
+            .map(getLabelIndex.bind('', poi)))
+        .take(1);
 }
 
 

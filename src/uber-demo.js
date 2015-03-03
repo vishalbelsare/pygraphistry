@@ -110,7 +110,9 @@ function renderCursor (renderState, points, idx, sizes) {
     var size = Math.max(5, Math.min(scalingFactor * sizes[idx], 50)); // Clamp like in pointculled shader
     var offset = size / 2.0;
 
-    $('#highlighted-point-cont').css({
+    $('#highlighted-point-cont')
+    .attr('pointIdx', idx)
+    .css({
         top: pos.y,
         left: pos.x
     });
