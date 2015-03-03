@@ -264,9 +264,15 @@ lastRender
 
             var cfg = mostRecent;
 
-            var items = cfg.currentState.get('config').get('render').toJS()
-                .filter(function (v) { return v !== 'pointpicking'; });
-            cfg.renderer.render(cfg.currentState, items);
+            var items = cfg.currentState.get('config').get('items').toJS();
+            var renderItems = _.chain(items).pick(function (i) {
+                return i.trigger === 'renderScene';
+            }).map(function (i, name) {
+                return name;
+            }).value();
+
+            var orderedItems = cfg.currentState.get('config').get('render').toJS();
+            cfg.renderer.render(cfg.currentState, _.intersection(orderedItems, renderItems));
             renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer),
                          cfg.data.highlightIdx, new Uint8Array(cfg.data.pointSizes.buffer));
         });
@@ -578,6 +584,52 @@ function createControls(socket) {
     return rxObsv;
 }
 
+function marqueeTest(renderState, sel) {
+    console.log('MarqueeTest', sel);
+
+    var map = renderState.get('pixelreads').pointTexture;
+    if (!map) {
+        console.log('error reading texture');
+        return;
+    }
+    console.log('texture read');
+
+    var w = 200;
+    var h = 200;
+
+    var map32 = new Uint32Array(map.length / 4);
+    var dst = new Uint32Array(w*h);
+
+    for (var i = 0; i < map32.length; i++) {
+        var r = map[4*i+3];
+        var g = map[4*i+2];
+        var b = map[4*i+1];
+        var a = map[4*i];
+        map32[i] = (100 << 24) | (255 << 16) | (b << 8) | 100;
+    }
+
+    for (var x = 0; x < w; x++) {
+        for (var y = 0; y < h; y++) {
+
+        }
+    }
+
+    var canvas = renderState.get('gl').canvas;
+
+    var imgCanvas = document.createElement('canvas');
+    imgCanvas.width = 200;
+    imgCanvas.height = 200;
+    var ctx = imgCanvas.getContext('2d');
+
+    var imgData = ctx.createImageData(canvas.width, canvas.height);
+    imgData.data.set(map32);
+    ctx.putImageData(imgData, 0, 0);
+    var img = new Image();
+    img.src = imgCanvas.toDataURL();
+
+    $('.heading').append(img);
+}
+
 
 function init(socket, $elt, renderState, urlParams) {
     createLegend($('#graph-legend'), urlParams);
@@ -690,6 +742,9 @@ function init(socket, $elt, renderState, urlParams) {
         socket.emit('interaction', payload);
     }, makeErrorHandler('marquee error'));
 
+    marquee.bounds.subscribe(function (sel) {
+        marqueeTest(renderState, sel);
+    });
 
     var $tooltips = $('[data-toggle="tooltip"]');
     var $bolt = $('#simulate .fa');

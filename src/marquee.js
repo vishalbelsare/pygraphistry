@@ -196,6 +196,7 @@ function init ($cont, toggle, cfg) {
 
     return {
         selections: selections,
+        bounds: bounds,
         drags: drags,
         $elt: $elt,
         isOn: toggle
