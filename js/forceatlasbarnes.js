@@ -234,7 +234,7 @@ var setupTempBuffers = function(simulator) {
     var num_work_groups = 128;
 
 
-    console.log(num_nodes + 1);
+    debug(num_nodes + 1);
     return Q.all(
         [
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT,  'x_cords'),
@@ -283,9 +283,7 @@ var setupTempBuffers = function(simulator) {
       tempBuffers.globalSpeed = globalSpeed;
       return tempBuffers;
     })
-    .catch(function(error) {
-      console.log(error);
-    });
+    .catch(util.makeErrorHandler('setupTempBuffers'));
 };
 
 
