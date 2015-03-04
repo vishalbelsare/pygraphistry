@@ -2,7 +2,6 @@
 
 var debug   = require('debug')('graphistry:StreamGL:shortestpaths');
 var $       = window.$;
-var _       = require('underscore');
 var Rx      = require('rx');
               require('./rx-jquery-stub');
 
