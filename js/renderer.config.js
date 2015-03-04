@@ -260,7 +260,8 @@ var items = {
         },
         'uniforms': {
             'fog': { 'uniformType': '1f', 'values': [10.0] },
-            'stroke': { 'uniformType': '1f', 'values': [-STROKE_WIDTH] }
+            'stroke': { 'uniformType': '1f', 'values': [-STROKE_WIDTH] },
+            'zoomScalingFactor': { 'uniformType': '1f', 'values': [1.0] }
         },
         'drawType': 'POINTS',
         'glOptions': {},
