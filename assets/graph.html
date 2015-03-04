@@ -1,166 +1,69 @@
-<!--
-
-
-
-
-
-
-
-
-
-
-
-I AM DEPRECATED
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-I AM DEPRECATED
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-I AM DEPRECATED
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-I AM DEPRECATED
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-I AM DEPRECATED
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
--->
-
-
-
-
-<!DOCTYPE html>
-<html>
-
-<head>
-    <script>
-        console.error("file deprecated");
+<body class="graphistry-body">
+
+    <script type="text/javascript" src="libs/jquery-2.1.1.js"></script>
+
+    <!-- copied from index.fragment.handlebars -->
+    <script type="text/javascript">
+
+        var templatePaths = {
+            API_ROOT: window.location.protocol + "//" + window.location.host + "/"
+        };
+
+        window.heap=window.heap||[],heap.load=function(t,e){window.heap.appid=t,window.heap.config=e;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https:":"http:")+"//cdn.heapanalytics.com/js/heap.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n);for(var o=function(t){return function(){heap.push([t].concat(Array.prototype.slice.call(arguments,0)))}},p=["clearEventProperties","identify","setEventProperties","track","unsetEventProperty"],c=0;c<p.length;c++)heap[p[c]]=o(p[c])};
+        heap.load("348604669");
+
+        // Track JavaScript errors
+        window.addEventListener('error', function(e) {
+            var msg = {
+                type: 'JSError',
+                content: {
+                    message: e.message,
+                    location: e.filename + ':  ' + e.lineno,
+                    error: e.error
+                }
+            }
+
+            $.post(templatePaths.API_ROOT + 'error', JSON.stringify(msg));
+            window.heap.track('error', msg.content);
+        });
+
+        // Track AJAX errors (jQuery API)
+        $(document).ajaxError(function(e, request, settings) {
+            var msg = {
+                type: 'AjaxError',
+                content: {
+                    url: settings.url,
+                    result: e.result
+                }
+            }
+
+            $.post(templatePaths.API_ROOT + 'error', JSON.stringify(msg));
+            window.heap.track('error', msg.content);
+        });
     </script>
-    <meta charset="utf-8">
-    <title>GPU Remote Streaming Demo</title>
+
+    <!-- copied from index.fragment.handlebars -->
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-59712214-1', 'auto');
+      ga('require', 'linkid', 'linkid.js');
+      ga('send', 'pageview');
+
+    </script>
 
     <!-- Libs (bootstrap etc.) -->
 
     <!-- FIXME: We already bundle jQuery with StreamGL, but bootstrap complains because no global
     '$' is defined. Find a way to only include jQuery once, and have it found by both. -->
-    <script type="text/javascript" src="libs/jquery-2.1.1.js"></script>
 
     <script type="text/javascript" src="libs/jquery-ui-1.10.4.min.js"></script>
     <script type="text/javascript" src="libs/jquery.mousewheel-3.1.9.js"></script>
     <script type="text/javascript" src="libs/jQRangeSlider-5.6.0/jQAllRangeSliders-min.js"></script>
     <script type="text/javascript" src="libs/colorpicker/colorpicker.js"></script>
-    <script type="text/javascript">
-        window.$OLD = $;
-    </script>
 
 
     <!-- FIXME: Package Quo and bundle with StreamGL -->
@@ -170,7 +73,7 @@ I AM DEPRECATED
 
     <link rel="stylesheet" href="css/jquery-ui-1.10.4.css">
     <link rel="stylesheet" href="libs/jQRangeSlider-5.6.0/css/classic-min.css">
-
+    <link rel="stylesheet" href="libs/colorpicker/colorpicker.css">
 
     <link rel="stylesheet" href="libs/bootstrap/css/bootstrap.css">
     <script type="text/javascript" src="libs/bootstrap/js/bootstrap.js"></script>
@@ -185,7 +88,6 @@ I AM DEPRECATED
     <!-- App -->
     <link rel="stylesheet" href="css/gpustreaming.css" type="text/css" media="screen" charset="utf-8">
     <link rel="stylesheet" href="css/graph.css" type="text/css" media="screen" charset="utf-8">
-    <link rel="stylesheet" href="css/netflow.css" type="text/css" media="screen" charset="utf-8">
 
     <!-- FIXME: Include fpsmeter as part of the StreamGL bundle -->
     <script type="text/javascript" src="libs/fpsmeter.js" charset="utf-8"></script>
@@ -195,14 +97,8 @@ I AM DEPRECATED
     <script type="text/javascript">
         window.addEventListener("beforeunload", function(){console.clear();});
         window.addEventListener("DOMContentLoaded", function() {$('[data-toggle="tooltip"]').tooltip();});
-
     </script>
 
-</head>
-
-
-
-<body class="graphistry-body">
 
     <div class="content">
         <div class="sim-container">
@@ -225,7 +121,6 @@ I AM DEPRECATED
 
     <div>
         <div class="heading">
-            <h1 class="title">Graphistry <span>netflow explorer</span></h1>
             <div class="controls">
               <button type=button id="do-disconnect" class="control-button">Disconnect</button>
             </div>
@@ -242,6 +137,9 @@ I AM DEPRECATED
 
                 <div class="accordion-heading">
 
+                  <a href="#" id="mouser" data-container="body" data-toggle="tooltip" data-placement="left" title="Scroll and Pan">
+                    <i class="fa fa-arrows fa-2x"></i>
+                  </a>
 
                   <a href="#" id="zoomin" data-container="body" data-toggle="tooltip" data-placement="left" title="Zoom in">
                     <i class="fa fa-search-plus fa-2x"></i>
@@ -251,17 +149,65 @@ I AM DEPRECATED
                     <i class="fa fa-search-minus fa-2x"></i>
                   </a>
 
-                  <a href="#" id="center" data-container="body" data-toggle="tooltip" data-placement="left" title="Center View">
-                      <i class="fa fa-crosshairs fa-2x"></i>
-                  </a>
-
                   <a href="#" id="marqueerectangle" data-container="body" data-toggle="tooltip" data-placement="left" title="Select Subset">
                     <i class="selectable"></i>
                   </a>
 
-                  <a href="#" id="simulate" data-container="body" data-toggle="tooltip" data-placement="left" title="Run Layout Engine">
+                  <a href="#" id="simulate" data-container="body" data-toggle="tooltip" data-placement="left" title="Start/Stop Visual Clustering">
                     <i class="fa fa-bolt fa-2x"></i>
                   </a>
+
+                  <a href="#" id="center" data-container="body" data-toggle="tooltip" data-placement="left" title="Center View">
+                      <i class="fa fa-compress fa-2x"></i>
+                  </a>
+
+                  <a href="#" id="shortestpath" data-container="body" data-toggle="tooltip" data-placement="left" title="Find routes between two points by clicking on them">
+                      <i class="fa fa-road fa-2x"></i>
+                  </a>
+
+<style>
+.colorpicker {
+    z-index: 100000;
+    right: 7em;
+}
+
+#colorpickers .colorSelector {
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 36px;
+    height: 36px;
+    background: url(libs/images/select2.png);
+}
+
+#colorpickers .colorSelector div {
+    position: relative;
+    top: 4px;
+    left: 4px;
+    width: 28px;
+    height: 28px;
+    background: url(libs/images/select2.png) center;
+}
+</style>
+
+                  <div id="colorpickers">
+                        <div id="foregroundColor">
+
+                            <div class="colorSelector">
+                                <div style="opacity: 0.3; background-color: #000"></div>
+                            </div>
+                            <div class="colorHolder"></div>
+
+                        </div>
+                        <div id="backgroundColor">
+
+                            <div class="colorSelector">
+                                <div style="opacity: 0.3; background-color: #fff"></div>
+                            </div>
+                            <div class="colorHolder"></div>
+
+                        </div>
+                  </div>
 
                 </div>
 
@@ -326,14 +272,6 @@ I AM DEPRECATED
                             </div>  <!-- /form-group -->
 
 
-                            <div class="form-group">
-                                <label for="scalingRatioSlider" class="control-label col-xs-2">Scaling ratio</label>
-                                <div class="col-xs-10">
-                                    <!-- -0.1 - 0.1 -->
-                                    <input class="menu-slider" id="scalingRatioSlider" data-slider-id='scalingRatioSliderD' type="text" data-slider-min="0.1" data-slider-max="10" data-slider-step="0.1" data-slider-value="0.3"/>
-                                </div>
-                            </div>  <!-- /form-group -->
-
 
 
                             <div class="form-group">
@@ -364,26 +302,50 @@ I AM DEPRECATED
     <div class="status-bar"></div>
 
 
-    <div id="graph-legend" class="legend-container">
-            <h3 class="legend-title">OpenTSDB Data</h3>
-
-            <div class="legend">
-                <span class="label">Nodes</span>
-                <span class="legend-nodes">Color shows cluster, size shows #connections</span>
-            </div>
-
-            <div class="legend">
-                <span class="label">Edges</span>
-                <span class="legend-edges">Amount of data sent</span>
-                <span class="tick tick1"></span>
-                <span class="tick tick2"></span>
-                <span class="tick tick3"></span>
-                <span class="tick tick4"></span>
-                <span class="tick tick5"></span>
-            </div>
+    <div id="graph-legend" class="legend-container on">
+        <div class="toggles">
+            <a href="#hideLegend"><i class="fa fa-minus-square hider" style="color: rgb(51,51,102)"></i></a>
+            <a href="#revealLegend"><i class="fa fa-plus-square revealer" style="color: rgb(51,51,102)"></i></a>
+        </div>
+        <div class="legend-title"></div>
+        <table>
+            <tr>
+                <td><span class="legend-label">Nodes</span></td>
+                <td><span class="legend-nodes"></span></td>
+            </tr>
+            <tr>
+                <td><span class="legend-label">Edges</span></td>
+                <td><span class="legend-edges"></span></td>
+            </tr>
+        </table>
     </div>
 
+    <script>
+    $(function () {
+        var legend = $('#graph-legend');
+        $('.hider', legend).on('click', function () {
+            legend.removeClass('on').addClass('off');
+        });
+        $('.revealer', legend).on('click', function () {
+            legend.removeClass('off').addClass('on');
+        });
+    });
+    </script>
+
+</div>
+
+<div class="meter meter-graphnodes" style="left: 21em;">
+    <span class="flavor">graph</span>
+    <div style="padding: 0px; min-width: 95px; height: 30px; line-height: 30px; text-align: right; text-shadow: rgba(0, 0, 0, 0.498039) 1px 1px 0px; color: rgb(255, 255, 255); position: absolute; z-index: 10; left: 5px; top: 5px; right: auto; bottom: auto; margin: 0px; cursor: pointer;">
+        <div style="position: absolute; top: 0px; right: 0px; padding: 0px 5px; height: 40px; font-size: 24px; font-family: Consolas, 'Andale Mono', monospace; z-index: 2; line-height: 27px; text-align: right">
+            <span id="graph-node-count">0</span>
+        </div>
+        <div style="position: absolute; top: 20px; right: 0px; padding: 0px 5px; height: 40px; font-size: 24px; font-family: Consolas, 'Andale Mono', monospace; z-index: 2; line-height: 27px; text-align: right">
+            <span id="graph-edge-count">0</span>
+        </div>
+        <div style="position: absolute; top: 15px; left: 0px; padding: 0px 5px; height: 40px; font-size: 12px; line-height: 15px; font-family: sans-serif; text-align: left; z-index: 2;">nodes<br/>edges</div>
+        <div style="position: relative; height: 40px; z-index: 1; width: 145px;">&nbsp;</div>
+    </div>
+</div>
+
 </body>
-
-
-</html>

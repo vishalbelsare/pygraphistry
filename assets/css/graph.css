@@ -1,206 +1,274 @@
 #marquee {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    z-index: 100100;
-    top: 0;
-    left: 0;
-}
-#marquee.off {
-    display: none;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  z-index: 100100;
+  top: 0;
+  left: 0;
 }
 #marquee.on {
-    display: block;
+  display: block;
 }
-
-
+#marquee.off {
+  display: none;
+}
 .noselect {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
-
 .selection {
-    position: relative;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    background-color: rgba(255,255,255,0.3);
-    box-shadow: 0 0 10px rgba(255,255,255,0.75);
+  position: relative;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.75);
 }
-
 .selection.off {
-    display: none;
+  display: none;
 }
-
 .selection.on {
-    display: block;
-    border: 1px dashed rgba(51,51,153, 0.75);
+  display: block;
+  border: 1px dashed rgba(51, 51, 153, 0.75);
 }
 .selection.done {
-    border: 3px dashed rgba(51,51,153, 0.75);
+  border: 3px dashed rgba(51, 51, 153, 0.75);
 }
-
 .content {
-    position: absolute;
-    left: 0;
-    top: 0;
+  position: absolute;
+  left: 0;
+  top: 0;
 }
-
 .status-bar {
-    max-height: 1.5em;
-    background-color: rgba(51,51,153, 0.3);
+  max-height: 1.5em;
+  background-color: rgba(51, 51, 153, 0.3);
 }
-
-#main, .accordion {
-    background-color: rgba(204, 204, 204, 0.3);
-    color: #EEF;
-    padding: 0.5em;
+#main,
+.accordion {
+  background-color: rgba(204, 204, 204, 0.3);
+  color: #EEF;
+  padding: 0.5em;
 }
-
-#main, #menuState, #controlState {
-    border: 1px solid rgba(0, 0, 0, 0.3);
-    background-color: rgba(51, 51, 102, 0.4);
-    border-radius: 7px;
-}
-
-#main:hover, #menuState:hover, #controlState a:hover, #controlState a.on {
-    text-shadow: 0 0 10px rgba(255,255,255,0.75);
-}
-
-
-#menus {
-    position: absolute;
-    width: 100%;
-    z-index: 1000000;
-}
-
+#main,
+#menuState,
 #controlState {
-    position: absolute;
-    right: 1em;
-    display: inline-block;
-    top: 1em;
-    margin: 1em;
-    padding: 0.5em;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  background-color: rgba(51, 51, 102, 0.4);
+  border-radius: 7px;
 }
-
-
+#main:hover,
+#menuState:hover,
+#controlState a:hover,
+#controlState a.on {
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.75);
+}
+#menus {
+  position: absolute;
+  width: 100%;
+  z-index: 1000000;
+}
+#controlState {
+  position: absolute;
+  right: 1em;
+  display: inline-block;
+  top: 1em;
+  margin: 1em;
+  padding: 0.5em;
+}
 #controlState a {
-    display: block;
-    text-align: center;
-    padding: 0.2em;
+  display: block;
+  text-align: center;
+  padding: 0.2em;
 }
-
-
-
 .selectable {
-    display: inline-block;
-    width: 1.3em;
-    height: 1.3em;
-    border: 1px dashed white;
+  display: inline-block;
+  width: 1.3em;
+  height: 1.3em;
+  border: 1px dashed white;
 }
-
-#marqueerectangle.on .selectable, .selectable:hover {
-    box-shadow: 0 0 10px rgba(255,255,255,0.75);
+#marqueerectangle.on .selectable,
+.selectable:hover {
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.75);
 }
-
 .draggable {
-    cursor:pointer;
+  cursor: pointer;
 }
-
 .dragging {
-    cursor:move !important;
+  cursor: move !important;
 }
-
 .menu {
-    position: absolute;
-    z-index: 100001;
-    left: 0;
+  position: absolute;
+  z-index: 100001;
+  left: 0;
 }
-
 .graphistry-body {
-    background-color: #223 !important;
-    height: 100%;
-    overflow:hidden;
+  background-color: #223 !important;
+  height: 100%;
+  overflow: hidden;
 }
-
 label {
-    color: rgba(255,255,255,0.9);
+  color: rgba(255, 255, 255, 0.9);
 }
-
 .accordion-heading a:hover .fa {
-    color: rgb(15, 165, 197);
+  color: #0fa5c5;
 }
-
 .accordion-heading .fa {
-    color: rgba(255,255,255,0.9);
+  color: rgba(255, 255, 255, 0.9);
 }
-
 .accordion-heading .toggle-on {
-    text-shadow: 0px 0px 5px white;
-    color: rgb(15,165,197);
+  text-shadow: 0px 0px 5px white;
+  color: #0fa5c5;
 }
-
 .accordion-heading #marqueerectangle .toggle-on {
-    background-color: rgba(15,165,197,0.5);
+  background-color: rgba(15, 165, 197, 0.5);
 }
-
 i.fa {
-   display: inline-block;
+  display: inline-block;
 }
-
 button.btn-default {
-    background-color: transparent;
-    color: white;
+  background-color: transparent;
+  color: white;
 }
-
-
-
 #highlighted-point-cont {
-    position: absolute;
-    top: -10px;
-    left: -10px;
+  position: absolute;
+  top: -10px;
+  left: -10px;
 }
-
 .highlighted-point {
-    position: relative;
-    left: -9px;
-    top: -9px;
-    border: 1px solid rgba(255,255,255,0.8);
-    border-radius: 10px;
-    width: 20px;
-    height: 20px;
-    box-shadow: 0 0 10px rgba(255,255,255,0.75);
+  position: relative;
+  left: -9px;
+  top: -9px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 10px;
+  width: 20px;
+  height: 20px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.75);
 }
-
 .highlighted-point-center {
-    position: relative;
-    left: 7px;
-    top: 7px;
-    border-radius: 4px;
-    background-color: white;
-    width: 5px;
-    height: 5px;
-    border: 1px solid rgb(51,51,102);
+  position: relative;
+  left: 7px;
+  top: 7px;
+  border-radius: 4px;
+  background-color: white;
+  width: 5px;
+  height: 5px;
+  border: 1px solid #333366;
 }
-
 .meter {
-    position: fixed;
-    bottom: 3em;
-    opacity: 0.75;
+  position: fixed;
+  bottom: 3em;
+  opacity: 0.75;
+  color: #333366 !important;
+}
+.meter .flavor,
+.meter div {
+  color: #333366;
+  text-transform: uppercase !important;
+  font-weight: bold !important;
+  text-shadow: none;
 }
 .meter-fps {
-    left: 1em;
+  left: 1em;
 }
 .meter-network {
-    left: 11em;
+  left: 11em;
 }
-.meter .flavor, .meter div {
-    color: white !important;
-    text-transform: uppercase !important;
-    text-shadow: rgba(0, 0, 0, 0.498039) 1px 1px 0px !important;
-    font-weight: bold !important;
+/*******/
+html {
+  overflow: hidden;
+}
+#simulation {
+  border: 0px;
+}
+#timeSlider {
+  display: none;
+}
+#menuState {
+  display: none;
+}
+#marqueerectangle,
+#mouser {
+  display: none !important;
+}
+.graphistry-body {
+  background: linear-gradient(to bottom, #edf8ff 0%, #f0f4f9 100%);
+}
+.graphistry-body .heading {
+  background: none;
+}
+.graph-label {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+.legend-container {
+  display: none;
+  position: absolute;
+  bottom: 1em;
+  right: 1em;
+  padding: 1em;
+  max-width: 40em;
+  min-width: 20em;
+  z-index: 20000;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 244, 0.9);
+  background-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 10px rgba(235, 235, 245, 0.75);
+}
+.legend-container.off {
+  overflow: hidden;
+  height: 2.4em;
+  width: 1em;
+  min-width: 1em;
+}
+.legend-container h3 {
+  margin-top: 0;
+  margin-bottom: 5px;
+  color: #333366;
+  font-weight: bold;
+  font-size: 1.3em;
+}
+.legend-container table {
+  border-collapse: separate;
+  border-spacing: 0 0.4em;
+}
+.legend-container tr {
+  margin-top: 1em;
+}
+.legend-container tr td:first-child {
+  vertical-align: top;
+}
+.legend-container .legend-label {
+  margin-right: 0.4em;
+  color: #333366;
+  font-weight: bold;
+}
+.legend-container .toggles {
+  text-align: right;
+}
+.legend-container.on .revealer,
+.legend-container.off .hider {
+  display: none;
+}
+.automode {
+  animation: pulsate 1s linear infinite;
+  -webkit-animation: pulsate 1s linear infinite;
+}
+@keyframes "pulsate" {
+  0% {
+    color: #05a8c9;
+  }
+  100% {
+    color: #FFF;
+  }
+}
+@-webkit-keyframes "pulsate" {
+  0% {
+    color: #05a8c9;
+  }
+  100% {
+    color: #FFF;
+  }
 }
