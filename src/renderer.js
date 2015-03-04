@@ -808,7 +808,7 @@ function render(state, renderListOverride, readPixelsOverride) {
         gl.drawArrays(gl[renderItem.drawType], 0, numElements[item]);
 
         if (renderTarget !== null && renderItem.readTarget) {
-            console.log('  reading back texture', item, renderTarget);
+            debug('  reading back texture', item, renderTarget);
 
             var pixelreads = state.get('pixelreads');
             var texture = pixelreads[renderTarget];
