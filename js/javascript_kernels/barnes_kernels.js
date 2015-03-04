@@ -191,9 +191,7 @@ var BarnesKernels = function (clContext) {
                             tempBuffers.numBodies = numBodies;
                             return tempBuffers;
                         })
-        .catch(function(error) {
-            console.log(error);
-        });
+        .fail(util.makeErrorHandler('setupTempBuffers'));
     };
 
     this.setEdges = function(simulator, layoutBuffers) {
