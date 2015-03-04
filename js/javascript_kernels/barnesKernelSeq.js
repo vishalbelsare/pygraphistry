@@ -130,15 +130,13 @@ var BarnesKernelSeq = function (clContext) {
         bottom: null,
         maxdepth: null,
     };
-    var setupTempBuffers = function(simulator) {
+    var setupTempBuffers = function(simulator, warpsize) {
         simulator.resetBuffers(tempBuffers);
         var blocks = 8; //TODO (paden) should be set to multiprocecessor count
 
         var num_nodes = simulator.numPoints * 5;
-        // TODO (paden) make this into a definition
-        var WARPSIZE = 16;
         if (num_nodes < 1024*blocks) num_nodes = 1024*blocks;
-        while ((num_nodes & (WARPSIZE - 1)) != 0) num_nodes++;
+        while ((num_nodes & (warpsize - 1)) != 0) num_nodes++;
         num_nodes--;
         var num_bodies = simulator.numPoints;
         var numNodes = num_nodes;
@@ -201,7 +199,7 @@ var BarnesKernelSeq = function (clContext) {
 
     this.setEdges = function(simulator, layoutBuffers, warpsize) {
         var that = this;
-        return setupTempBuffers(simulator).then(function (tempBuffers) {
+        return setupTempBuffers(simulator, warpsize).then(function (tempBuffers) {
 
         that.toBarnesLayout.set({xCoords: tempBuffers.x_cords.buffer,
           yCoords:tempBuffers.y_cords.buffer, mass:tempBuffers.mass.buffer,
