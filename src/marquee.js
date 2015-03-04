@@ -109,7 +109,9 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                                 var ghost = createGhostImg(renderState, rect);
                                 $(ghost).css({
                                     'pointer-events': 'none',
-                                    'transform': 'scaleY(-1)'
+                                    'transform': 'scaleY(-1)',
+                                    'filter': 'blur(4px)',
+                                    '-webkit-filter': 'blur(4px)',
                                 });
                                 $elt.append(ghost);
                             });
@@ -203,20 +205,6 @@ function createGhostImg(renderState, sel) {
     };
 
     var texture = getTexture(renderState, dims);
-
-    /*var subset = new Uint8Array(h * w * 4);
-    for (var i = 0; i < h; i++) {
-        for (var j = 0; j < w; j++) {
-            var ty = canvas.height - sel.tl.y - i;
-            var tx = j + sel.tl.x;
-            subset[i*w*4 + j*4]     = texture[ty*canvas.width*4 + tx*4];
-            subset[i*w*4 + j*4 + 1] = texture[ty*canvas.width*4 + tx*4 + 1];
-            subset[i*w*4 + j*4 + 2] = texture[ty*canvas.width*4 + tx*4 + 2];
-            subset[i*w*4 + j*4 + 3] = texture[ty*canvas.width*4 + tx*4 + 3];
-        }
-    }*/
-
-
 
     var imgCanvas = document.createElement('canvas');
     imgCanvas.width = dims.width;
