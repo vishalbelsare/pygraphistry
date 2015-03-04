@@ -507,6 +507,12 @@ function saneItem(programs, textures, models, item, itemName) {
             util.die('Item "%s" does not bind uniform "%s"', itemName, uniform);
     });
 
+    _.each(item.uniforms, function (binding, uniform) {
+        if (!_.contains(program.uniforms, uniform))
+            util.die('Item "%s" binds uniform "%s" not declared by program "%s"',
+                     itemName, uniform, progName)
+    })
+
     _.each(program.attributes, function (attr) {
         if (!(attr in item.bindings))
             util.die('In item "%s", program attribute "%s" (of program "%s") is not bound',
