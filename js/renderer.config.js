@@ -257,7 +257,6 @@ var items = {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
             'pointColor':   ['pointColors', 'pointColor'],
-            'isHighlighted':   ['highlightedPoint', 'isHighlighted']
         },
         'uniforms': {
             'fog': { 'uniformType': '1f', 'values': [10.0] },
@@ -304,7 +303,6 @@ var items = {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
             'pointColor':   ['pointColors', 'pointColor'],
-            'isHighlighted':   ['highlightedPoint', 'isHighlighted']
         },
         'uniforms': {
             'fog': { 'uniformType': '1f', 'values': [10.0] },
