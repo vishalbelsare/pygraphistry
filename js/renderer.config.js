@@ -282,6 +282,22 @@ var items = {
         'drawType': 'POINTS',
         'glOptions': {},
     },
+    'pointoutlinetexture': {
+        'program': 'pointculled',
+        'bindings': {
+            'curPos':       ['curPoints', 'curPos'],
+            'pointSize':    ['pointSizes', 'pointSize'],
+            'pointColor':   ['pointColors', 'pointColor'],
+            'isHighlighted':   ['highlightedPoint', 'isHighlighted']
+        },
+        'uniforms': {
+            'fog': { 'uniformType': '1f', 'values': [10.0] },
+            'stroke': { 'uniformType': '1f', 'values': [STROKE_WIDTH] }
+        },
+        'drawType': 'POINTS',
+        'glOptions': {},
+        'renderTarget': 'pointTexture',
+    },
     'pointpickingScreen': {
         'program': 'points',
         'trigger': 'renderScene',
@@ -295,7 +311,6 @@ var items = {
     },
     'pointpicking': {
         'program': 'points',
-        'trigger': 'picking',
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -306,12 +321,16 @@ var items = {
         'renderTarget': 'pointHitmap',
     },
     'pointculledtexture': {
-        'program': 'points',
-        'trigger': 'renderScene',
+        'program': 'pointculled',
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
-            'pointColor':   ['pointColors', 'pointColor']
+            'pointColor':   ['pointColors', 'pointColor'],
+            'isHighlighted':   ['highlightedPoint', 'isHighlighted']
+        },
+        'uniforms': {
+            'fog': { 'uniformType': '1f', 'values': [10.0] },
+            'stroke': { 'uniformType': '1f', 'values': [-STROKE_WIDTH] }
         },
         'drawType': 'POINTS',
         'glOptions': {},
@@ -331,7 +350,6 @@ var items = {
     },
     'points': {
         'program': 'points',
-        'trigger': 'renderScene',
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -435,7 +453,7 @@ function saneModel(model, modName) {
 }
 
 function saneItem(programs, textures, models, item, itemName) {
-    _.each(['program', 'trigger', 'bindings', 'drawType', 'glOptions'], function (field) {
+    _.each(['program', 'bindings', 'drawType', 'glOptions'], function (field) {
         if (!(field in item))
             util.die('Item "%s" must have field "%s"', itemName, field);
     });

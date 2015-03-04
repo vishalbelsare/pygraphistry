@@ -735,7 +735,6 @@ function setTimeSubset(renderer, simulator, range) {
 
 function moveNodes(simulator, marqueeEvent) {
     debug('marqueeEvent', marqueeEvent);
-    console.log('selection', marqueeEvent.selection);
 
     var drag = marqueeEvent.drag;
     var delta = {
