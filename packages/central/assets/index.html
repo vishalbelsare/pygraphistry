@@ -17,7 +17,7 @@ function jump() {
         'play=5000'
     ];
     console.log(window.origin)
-    var url = '/graph/netflow.html?' + args.join('&');
+    var url = '/graph/graph.html?' + args.join('&');
     window.open(url, '_blank');
 }
 
@@ -39,7 +39,7 @@ graphistry
             <b>california</b>
             <div style="font-size: 0.5em; padding-top: 0.3em">
                 <a href="graph/uber.html?dataset=Uber&type=OBSOLETE_geo&scene=uber&controls=uber&debug=true">uber</a>
-                <a href="graph/netflow.html?dataset=NetflowLarge&scene=netflow&controls=atlas&mapper=opentsdb&debug=true&play=10000">netflow</a>
+                <a href="graph/graph.html?dataset=NetflowLarge&scene=netflow&controls=atlas&mapper=opentsdb&debug=true&play=10000">netflow</a>
             </div>
         </div>
         <div>
