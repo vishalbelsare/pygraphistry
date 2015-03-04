@@ -65,9 +65,9 @@ var programs = {
             'vertex': fs.readFileSync(__dirname + '/../shaders/pointculled.vertex.glsl', 'utf8').toString('ascii'),
             'fragment': fs.readFileSync(__dirname + '/../shaders/pointculled.fragment.glsl', 'utf8').toString('ascii')
         },
-        'attributes': ['isHighlighted', 'curPos', 'pointSize', 'pointColor'],
+        'attributes': ['curPos', 'pointSize', 'pointColor'],
         'camera': 'mvp',
-        'uniforms': ['highlightedPoint', 'fog']
+        'uniforms': ['highlightedPoint', 'fog', 'zoomScalingFactor']
     },
     'points': {
         'sources': {
@@ -271,12 +271,12 @@ var items = {
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
-            'pointColor':   ['pointColors', 'pointColor'],
-            'isHighlighted':   ['highlightedPoint', 'isHighlighted']
+            'pointColor':   ['pointColors', 'pointColor']
         },
         'uniforms': {
             'fog': { 'uniformType': '1f', 'values': [10.0] },
-            'stroke': { 'uniformType': '1f', 'values': [-STROKE_WIDTH] }
+            'stroke': { 'uniformType': '1f', 'values': [-STROKE_WIDTH] },
+            'zoomScalingFactor': { 'uniformType': '1f', 'values': [1.0] }
         },
         'drawType': 'POINTS',
         'glOptions': {},
@@ -289,8 +289,7 @@ var items = {
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
-            'pointColor':   ['pointColors', 'pointColor'],
-            'isHighlighted':   ['highlightedPoint', 'isHighlighted']
+            'pointColor':   ['pointColors', 'pointColor']
         },
         'uniforms': {
             'fog': { 'uniformType': '1f', 'values': [10.0] },
@@ -358,6 +357,9 @@ var items = {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
             'pointColor':   ['pointColors', 'pointColor']
+        },
+        'uniforms': {
+            'zoomScalingFactor': { 'uniformType': '1f', 'values': [1.0]}
         },
         'drawType': 'POINTS',
         'glOptions': {}

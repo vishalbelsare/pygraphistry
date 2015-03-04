@@ -9,7 +9,7 @@ var ForceAtlas2         = require('./forceatlas2.js'),
     GaussSeidel         = require('./gaussseidel.js'),
     EdgeBundling        = require('./edgebundling.js');
 
-var SIMULATION_TIME = 1;
+var SIMULATION_TIME = 100;
 
 
 function Param(type, prettyName, defValue, toSlider, fromSlider) {

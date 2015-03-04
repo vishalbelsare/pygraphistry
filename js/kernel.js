@@ -29,7 +29,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     // Sanity Checks
     _.each(argNames, function (arg) {
         if (!(arg in argTypes))
-            utiljs.die('In Kernel %s, argument %s has no type', name, arg);
+            util.die('In Kernel %s, argument %s has no type', name, arg);
     });
 
     function isDefine(arg) {
