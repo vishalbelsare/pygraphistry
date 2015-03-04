@@ -1,6 +1,8 @@
 'use strict';
 
+var debug   = require('debug')('graphistry:StreamGL:shortestpaths');
 var $       = window.$;
+var _       = require('underscore');
 var Rx      = require('rx');
               require('./rx-jquery-stub');
 
@@ -17,11 +19,15 @@ function getLabelIndex(poi, elt) {
 
 // poi -> Observable int
 function nextSelectedLabel (poi) {
-    return Rx.Observable.fromEvent($('body'), 'click')
-        .pluck('target')
-        .filter(function (v) { return v && $(v).hasClass('graph-label'); })
-        .take(1)
-        .map(getLabelIndex.bind('', poi));
+    return Rx.Observable.merge(
+        Rx.Observable.fromEvent($('#highlighted-point-cont'), 'click')
+            .map(function () { return parseInt($('#highlighted-point-cont').attr('pointIdx')); })
+            .filter(function (v) { return !isNaN(v); }),
+        Rx.Observable.fromEvent($('body'), 'click')
+            .pluck('target')
+            .filter(function (v) { return v && $(v).hasClass('graph-label'); })
+            .map(getLabelIndex.bind('', poi)))
+        .take(1);
 }
 
 
@@ -33,30 +39,26 @@ module.exports = function ($btn, poi, socket) {
         })
         .flatMapLatest(function () {
 
-            console.log('started', poi);
-
             //TODO why is this red?
             var RED = 255 << 8;
 
             return nextSelectedLabel(poi)
                 .flatMap(function (startIdx) {
-                    console.log('first point', startIdx);
                     socket.emit('highlight_points', [{index: startIdx, color: RED}]);
                     return nextSelectedLabel(poi)
                         .map(function (endIdx) {
                             socket.emit('highlight_points', [{index: endIdx, color: RED}]);
-                            console.log('second point', endIdx);
                             return [startIdx, endIdx];
                         });
                 });
         })
         .do(function (pair) {
-            console.log('highlighting path..');
+            debug('run shortestpaths', pair);
             $btn.find('.fa').toggleClass('toggle-on', false);
             socket.emit('shortest_path', pair);
         })
         .subscribe(
-            function (v) { console.log('hit', v); },
+            function (v) { debug('shortestpaths', v); },
             function (err) { console.error('err', err); });
 
 };
