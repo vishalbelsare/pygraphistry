@@ -19,7 +19,13 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     this.name = name;
     this.argNames = argNames;
     var source = util.getKernelSource(file);
-    var synchronous = true;
+
+    // Set synchronous based on debug value
+    var synchronous = false;
+    if (process.env.DEBUG && process.env.DEBUG.indexOf('perf') != -1) {
+        console.warn('Kernel ' + name + ' is synchronous because DEBUG=perf');
+        synchronous = true;
+    }
 
     // For gathering performance data
     this.timings = [];
@@ -60,12 +66,14 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 if (typeof val === 'undefined' || typeof val === 'null') {
                     console.warn('WARNING Setting argument %s to %s', arg, val);
                 }
-                argValues[arg] = (typeof val === 'number') ? [val] : val;
+
+                var arrayWrappedValue = (typeof val === 'number') ? [val] : val;
+                argValues[arg] = {dirty: true, val: arrayWrappedValue};
             } else if (arg in defValues) {
                 if (val !== defValues[arg]) {
                     mustRecompile = true;
                 }
-                defValues[arg] = val;
+                defValues[arg] = {dirty: true, val: val};
             } else {
                 util.die('Kernel %s has no argument/define named %s', name, arg);
             }
@@ -81,12 +89,13 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     function compile () {
         debug('Compiling kernel', that.name);
 
-        _.each(defValues, function (arg, val) {
-            if (val === null)
+        _.each(defValues, function (arg, wrappedVal) {
+            if (wrappedVal.val === null)
                 util.die('Define %s of kernel %s was never set', arg, name);
         });
 
-        var prefix = _.flatten(_.map(defValues, function (val, key) {
+        var prefix = _.flatten(_.map(defValues, function (wrappedVal, key) {
+            var val = wrappedVal && wrappedVal.val;
             if (typeof val === 'string' || typeof val === 'number' || val === true) {
                 return ['#define ' + key + ' ' + val];
             } else if (val === null) {
@@ -117,13 +126,17 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         try {
             for (i = 0; i < args.length; i++) {
                 var arg = args[i];
-                var val = argValues[arg];
+                var val = argValues[arg].val;
+                var dirty = argValues[arg].dirty;
                 var type = argTypes[arg];
                 if (val === null)
                     console.warn('WARNING In kernel %s, argument %s is null', name, arg);
 
-                debug('Setting arg %d with value', i, val);
-                kernel.setArg(i, val.length ? val[0] : val, type || undefined);
+                if (dirty) {
+                    debug('Setting arg %d with value', i, val);
+                    kernel.setArg(i, val.length ? val[0] : val, type || undefined);
+                    argValues[arg].dirty = false;
+                }
             }
 
         } catch (e) {
