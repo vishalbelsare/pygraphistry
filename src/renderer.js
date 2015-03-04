@@ -761,7 +761,6 @@ function render(state, renderListOverride, readPixelsOverride) {
     state.get('renderPipeline').onNext({start: toRender});
 
     _.each(toRender, function(item) {
-
         if(typeof numElements[item] === 'undefined' || numElements[item] < 1) {
             debug('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
                 item);
@@ -801,8 +800,8 @@ function render(state, renderListOverride, readPixelsOverride) {
         debug('Done binding, drawing now...');
         gl.drawArrays(gl[renderItem.drawType], 0, numElements[item]);
 
-        if (renderTarget && (renderTarget !== 'CANVAS')) {
-            debug('  reading back texture', item, renderTarget);
+        if (renderTarget !== null && renderItem.readTarget) {
+            console.log('  reading back texture', item, renderTarget);
 
             var pixelreads = state.get('pixelreads');
             var texture = pixelreads[renderTarget];
