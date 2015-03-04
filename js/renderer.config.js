@@ -67,7 +67,7 @@ var programs = {
         },
         'attributes': ['curPos', 'pointSize', 'pointColor'],
         'camera': 'mvp',
-        'uniforms': ['highlightedPoint', 'fog', 'zoomScalingFactor']
+        'uniforms': ['fog', 'stroke', 'zoomScalingFactor']
     },
     'points': {
         'sources': {
@@ -76,7 +76,7 @@ var programs = {
         },
         'attributes': ['curPos', 'pointSize', 'pointColor'],
         'camera': 'mvp',
-        'uniforms': []
+        'uniforms': ['zoomScalingFactor']
     },
     'midpoints': {
         'sources': {
