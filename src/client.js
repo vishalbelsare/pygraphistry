@@ -297,8 +297,8 @@ function handleVboUpdates(socket, renderState) {
                     socket.emit('received_buffers'); //TODO fire preemptively based on guess
 
                     try {
-                        renderer.loadBuffers(renderState, buffers, bindings);
                         renderer.setNumElements(data.elements);
+                        renderer.loadBuffers(renderState, buffers, bindings);
                         readyBuffers.onNext();
                     } catch (e) {
                         ui.error('5a err. Render error on loading data into WebGL:', e, e.stack, thisStep);

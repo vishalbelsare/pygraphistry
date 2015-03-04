@@ -10,7 +10,6 @@ var cameras             = require('./camera.js');
 var localAttribHandler  = require('./localAttribHandler.js');
 var bufferProxy         = require('./bufferproxy.js').bufferProxy;
 var picking             = require('./picking.js');
-var semanticZoom        = require('./semanticZoom.js');
 
 
 
@@ -141,12 +140,13 @@ var programBindings = {};
  * @param {Object.<string, WebGLBuffer>} buffers - Mapping of created buffer names to WebGL buffers
  * @param {Object} modelSettings - The 'models' object from the rendering config
  */
-function bindProgram(state, program, programName, bindings, buffers, modelSettings) {
+function bindProgram(state, program, programName, itemName, bindings, buffers, modelSettings) {
     bindings = bindings || {};
     bindings.attributes = bindings.attributes || {};
     bindings.uniforms = bindings.uniforms || {};
 
     var gl = state.get('gl');
+    var uniforms = state.get('uniforms');
 
     debug('Binding program %s', programName);
 
@@ -191,9 +191,8 @@ function bindProgram(state, program, programName, bindings, buffers, modelSettin
         debug('  binding uniform', binding, uniformName);
 
         var location = getUniformLocationFast(gl, program, programName, uniformName);
-
-        gl['uniform' + binding.uniformType]
-            .apply(gl, [location].concat(binding.values));
+        var values = uniforms[itemName][uniformName];
+        gl['uniform' + binding.uniformType].apply(gl, [location].concat(values));
     });
 
     _.each(bindings.textureBindings || {}, function (binding, textureName) {
@@ -241,6 +240,7 @@ function init(config, canvas) {
         fbos:           Immutable.Map({}),
         renderBuffers:  Immutable.Map({}),
         pixelreads:     {},
+        uniforms:       undefined,
 
         boundBuffer: undefined,
         bufferSize: Immutable.Map({}),
@@ -272,6 +272,7 @@ function init(config, canvas) {
 
     state = createPrograms(state);
     state = createBuffers(state);
+    state = createUniforms(state);
 
     debug('precreated', state.toJS());
     var camera = createCamera(state);
@@ -564,6 +565,19 @@ function createBuffers(state) {
 }
 
 
+function createUniforms(state) {
+    var items = state.get('config').get('items').toJS();
+    var uniforms = _.object(_.map(items, function (itemDef, itemName) {
+        var map = _.object(_.map(itemDef.uniforms, function (binding, uniform) {
+            return [uniform, binding.defaultvalues];
+        }));
+        return [itemName, map];
+    }));
+
+    return state.set('uniforms', uniforms);
+}
+
+
 function loadTextures(state, bindings) {
     _.each(bindings, loadTexture.bind('', state));
 }
@@ -705,13 +719,28 @@ function updateIndexBuffer(gl, length, repetition) {
 }
 
 
+/** A mapping of scene items to the number of elements that should be rendered for them */
+var numElements = {};
+function setNumElements(newNumElements) {
+    numElements = newNumElements;
+}
 
 
 function setCamera(state) {
     var config = state.get('config').toJS();
     var gl = state.get('gl');
     var programs = state.get('programs').toJS();
+    var uniforms = state.get('uniforms');
     var camera = state.get('camera');
+
+    // Set zoomScalingFactor uniform if it exists.
+
+    _.each(uniforms, function (map, item) {
+        if ('zoomScalingFactor' in map) {
+            var scalingFactor = camera.semanticZooom(numElements[item]);
+            map.zoomScalingFactor = [scalingFactor];
+        }
+    });
 
     _.each(config.programs, function(programConfig, programName) {
         debug('Setting camera for program %s', programName);
@@ -729,14 +758,6 @@ function setCameraIm(renderState, camera) {
     var newState = renderState.set('camera', camera);
     setCamera(newState);
     return newState;
-}
-
-
-
-/** A mapping of scene items to the number of elements that should be rendered for them */
-var numElements = {};
-function setNumElements(newNumElements) {
-    numElements = newNumElements;
 }
 
 
@@ -761,68 +782,14 @@ function render(state, renderListOverride, readPixelsOverride) {
 
     state.get('renderPipeline').onNext({start: toRender});
 
-    _.each(toRender, function(item) {
+    toRender.forEach(function(item) {
         if(typeof numElements[item] === 'undefined' || numElements[item] < 1) {
             debug('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
                 item);
             return false;
         }
 
-        debug('Rendering item "%s" (%d elements)', item, numElements[item]);
-
-        var renderItem = config.items[item];
-        var renderTarget = renderItem.renderTarget === 'CANVAS' ? null : renderItem.renderTarget;
-
-        //change viewport in case of downsampled target
-        var dims = getTextureDims(config, gl.canvas, renderTarget);
-        gl.viewport(0, 0, dims.width, dims.height);
-
-        if (renderTarget !== lastRenderTarget) {
-            debug('  changing fbo', renderTarget);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
-            lastRenderTarget = renderTarget;
-        }
-
-        if (!clearedFBOs[renderTarget]) {
-            debug('  clearing render target', renderTarget);
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            clearedFBOs[renderTarget] = true;
-        }
-
-        // Set zoomScalingFactor uniform if it exists.
-        var scalingFactor = semanticZoom.pointZoomScalingFactor(camera.width, camera.height, numElements[item]);
-        if (renderItem.uniforms && renderItem.uniforms.zoomScalingFactor) {
-            renderItem.uniforms.zoomScalingFactor.values = [scalingFactor];
-        }
-
-        bindProgram(
-            state, programs[renderItem.program], renderItem.program,
-            {
-                attributes: renderItem.bindings,
-                uniforms: renderItem.uniforms,
-                textureBindings: renderItem.textureBindings
-            },
-            buffers, config.models);
-
-        debug('Done binding, drawing now...');
-        gl.drawArrays(gl[renderItem.drawType], 0, numElements[item]);
-
-        if (renderTarget !== null && renderItem.readTarget) {
-            debug('  reading back texture', item, renderTarget);
-
-            var pixelreads = state.get('pixelreads');
-            var texture = pixelreads[renderTarget];
-            var readDims = readPixelsOverride || { x: 0, y: 0, width: dims.width, height: dims.height };
-
-            if (!texture || texture.length !== readDims.width * readDims.height * 4) {
-                debug('reallocating buffer', texture.length, readDims.width * readDims.height * 4);
-                texture = new Uint8Array(readDims.width * readDims.height * 4);
-                pixelreads[renderTarget] = texture;
-            }
-
-            gl.readPixels(readDims.x, readDims.y, readDims.width, readDims.height,
-                          gl.RGBA, gl.UNSIGNED_BYTE, texture);
-        }
+        renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, readPixelsOverride, item);
 
     });
 
@@ -831,6 +798,58 @@ function render(state, renderListOverride, readPixelsOverride) {
     gl.flush();
 }
 
+
+function renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, readPixelsOverride, item) {
+    debug('Rendering item "%s" (%d elements)', item, numElements[item]);
+
+    var itemDef = config.items[item];
+    var renderTarget = itemDef.renderTarget === 'CANVAS' ? null : itemDef.renderTarget;
+
+    //change viewport in case of downsampled target
+    var dims = getTextureDims(config, gl.canvas, renderTarget);
+    gl.viewport(0, 0, dims.width, dims.height);
+
+    if (renderTarget !== lastRenderTarget) {
+        debug('  changing fbo', renderTarget);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
+        lastRenderTarget = renderTarget;
+    }
+
+    if (!clearedFBOs[renderTarget]) {
+        debug('  clearing render target', renderTarget);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        clearedFBOs[renderTarget] = true;
+    }
+
+    bindProgram(
+        state, programs[itemDef.program], itemDef.program, item,
+        {
+            attributes: itemDef.bindings,
+            uniforms: itemDef.uniforms,
+            textureBindings: itemDef.textureBindings
+        },
+        buffers, config.models);
+
+    debug('Done binding, drawing now...');
+    gl.drawArrays(gl[itemDef.drawType], 0, numElements[item]);
+
+    if (renderTarget !== null && itemDef.readTarget) {
+        debug('  reading back texture', item, renderTarget);
+
+        var pixelreads = state.get('pixelreads');
+        var texture = pixelreads[renderTarget];
+        var readDims = readPixelsOverride || { x: 0, y: 0, width: dims.width, height: dims.height };
+
+        if (!texture || texture.length !== readDims.width * readDims.height * 4) {
+            debug('reallocating buffer', texture.length, readDims.width * readDims.height * 4);
+            texture = new Uint8Array(readDims.width * readDims.height * 4);
+            pixelreads[renderTarget] = texture;
+        }
+
+        gl.readPixels(readDims.x, readDims.y, readDims.width, readDims.height,
+                        gl.RGBA, gl.UNSIGNED_BYTE, texture);
+    }
+}
 
 // Get names of buffers needed from server
 // RenderOptions -> [ string ]
