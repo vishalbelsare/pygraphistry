@@ -5,6 +5,7 @@ var $     = window.$;
 var Rx    = require('rx');
             require('./rx-jquery-stub');
 var _     = require('underscore');
+var renderer = require('./renderer.js');
 
 
 
@@ -53,7 +54,7 @@ function maintainContainerStyle($cont, isOn) {
 
 //$DOM * $DOM * Observable bool -> Observable_1 {top, left, width, height}
 //track selections and affect $elt style/class
-function marqueeSelections ($cont, $elt, isOn) {
+function marqueeSelections (renderState, $cont, $elt, isOn) {
     var bounds = isOn.flatMapLatest(function (isOn) {
             if (!isOn) {
                 debug('stop listening for marquee selections');
@@ -65,6 +66,8 @@ function marqueeSelections ($cont, $elt, isOn) {
                     .do(function (evt) {
                         evt.stopPropagation();
                         $('body').addClass('noselect');
+                        $elt.empty();
+                        $elt.removeClass('draggable').removeClass('dragging').removeClass('done');
                     }).map(toPoint.bind('', $cont))
                     .do(function () {
                             debug('marquee instance started, listening');
@@ -91,11 +94,25 @@ function marqueeSelections ($cont, $elt, isOn) {
                                 .do(function (evt) {
                                     evt.stopPropagation();
                                     debug('drag marquee finished');
-                                    $elt.addClass('draggable');
-                                    $('body').removeClass('noselect');
-                                    $elt.removeClass('on').addClass('done');
                                 })
-                            ).takeLast(1);
+                            ).takeLast(1)
+                            .do(function (rect) {
+                                $('body').removeClass('noselect');
+                                $elt.addClass('draggable').removeClass('on').addClass('done');
+                                $elt.css({ // Take border sizes into account when aligning ghost image
+                                    left: rect.tl.x - 2,
+                                    top: rect.tl.y - 2,
+                                    width: rect.br.x - rect.tl.x + 4,
+                                    height: rect.br.y - rect.tl.y + 4
+                                });
+
+                                var ghost = createGhostImg(renderState, rect);
+                                $(ghost).css({
+                                    'pointer-events': 'none',
+                                    'transform': 'scaleY(-1)'
+                                });
+                                $elt.append(ghost);
+                            });
                     });
 
             }
@@ -165,9 +182,60 @@ function createElt() {
 }
 
 
+function getTexture(renderState, dims) {
+    renderer.render(renderState, ['pointoutlinetexture', 'pointculledtexture'], dims);
+    var texture = renderState.get('pixelreads').pointTexture;
+    if (!texture) {
+        console.error('error reading texture');
+    }
+    return texture;
+}
+
+
+function createGhostImg(renderState, sel) {
+    var canvas = renderState.get('gl').canvas;
+
+    var dims = {
+        x: sel.tl.x,
+        y: canvas.height - sel.tl.y - Math.abs(sel.tl.y - sel.br.y), // Flip y coordinate
+        width: Math.max(1, Math.abs(sel.tl.x - sel.br.x)),
+        height: Math.max(1, Math.abs(sel.tl.y - sel.br.y))
+    };
+
+    var texture = getTexture(renderState, dims);
+
+    /*var subset = new Uint8Array(h * w * 4);
+    for (var i = 0; i < h; i++) {
+        for (var j = 0; j < w; j++) {
+            var ty = canvas.height - sel.tl.y - i;
+            var tx = j + sel.tl.x;
+            subset[i*w*4 + j*4]     = texture[ty*canvas.width*4 + tx*4];
+            subset[i*w*4 + j*4 + 1] = texture[ty*canvas.width*4 + tx*4 + 1];
+            subset[i*w*4 + j*4 + 2] = texture[ty*canvas.width*4 + tx*4 + 2];
+            subset[i*w*4 + j*4 + 3] = texture[ty*canvas.width*4 + tx*4 + 3];
+        }
+    }*/
+
+
+
+    var imgCanvas = document.createElement('canvas');
+    imgCanvas.width = dims.width;
+    imgCanvas.height = dims.height;
+    var ctx = imgCanvas.getContext('2d');
+
+    var imgData = ctx.createImageData(dims.width, dims.height);
+    imgData.data.set(texture);
+    ctx.putImageData(imgData, 0, 0);
+    var img = new Image();
+    img.src = imgCanvas.toDataURL();
+
+    return img;
+}
+
+
 //$DOM * Observable bool * ?{?transform: [num, num] -> [num, num]}
 // -> {selections: Observable [ [num, num] ] }
-function init ($cont, toggle, cfg) {
+function init (renderState, $cont, toggle, cfg) {
 
     debug('init marquee');
 
@@ -190,7 +258,7 @@ function init ($cont, toggle, cfg) {
             return [key, cfg.transform(val)];
         }));
     };
-    var bounds = marqueeSelections($cont, $elt, isOn);
+    var bounds = marqueeSelections(renderState, $cont, $elt, isOn);
     var drags = marqueeDrags(bounds, $cont, $elt).map(transformAll);
     var selections = bounds.map(transformAll);
 

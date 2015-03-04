@@ -229,10 +229,11 @@ function init(config, canvas) {
 
         gl: undefined,
         programs:       Immutable.Map({}),
+        defaultItems:   undefined,
         buffers:        Immutable.Map({}),
         //TODO make immutable
         hostBuffers:    {},
-        camera: undefined,
+        camera:         undefined,
 
         //{item -> gl obj}
         textures:       Immutable.Map({}),
@@ -262,6 +263,8 @@ function init(config, canvas) {
     debug('Active indices', state.get('activeIndices'));
     debug('Active attributes', state.get('activeLocalAttributes'));
 
+    state = state.set('defaultItems', getDefaultItems(state));
+
     var gl = createContext(state);
     state = state.set('gl', gl);
     setGlOptions(state);
@@ -288,6 +291,7 @@ function init(config, canvas) {
     debug('created', state.toJS());
     return state;
 }
+
 
 function createContext(state) {
     var gl = null;
@@ -331,6 +335,20 @@ function createCamera(state) {
     return camera;
 }
 
+/*
+ * Return the items to render when no override is given to render()
+ */
+function getDefaultItems(state) {
+    var items = state.get('config').get('items').toJS();
+    var renderItems = _.chain(items).pick(function (i) {
+        return i.trigger === 'renderScene';
+    }).map(function (i, name) {
+        return name;
+    }).value();
+
+    var orderedItems = state.get('config').get('render').toJS();
+    return _.intersection(orderedItems, renderItems);
+}
 
 /*
  * Update the size of the canvas to match what is visible
@@ -352,7 +370,7 @@ function resizeCanvas(state) {
 }
 
 
-//RenderState * canvas * string -> {width: float, height: float}
+//RenderState * canvas * string -> {x: int, y:int, width: float, height: float}
 function getTextureDims(config, canvas, name) {
     if (!name || name === 'CANVAS') {
         return {width: canvas.width, height: canvas.height};
@@ -369,7 +387,7 @@ function getTextureDims(config, canvas, name) {
             Math.round(0.01 * textureConfig.height.value * canvas.height)
         : canvas.height;
 
-    return {width: width, height: height};
+    return { width: width, height: height };
 }
 
 // create for each texture rendertarget, an offscreen fbo, texture, renderbuffer, and host buffer
@@ -727,7 +745,7 @@ function setNumElements(newNumElements) {
  * @param {(string[])} [renderListOverride] - optional override of the render array
  */
 var lastRenderTarget = {};
-function render(state, renderListOverride) {
+function render(state, renderListOverride, readPixelsOverride) {
     debug('========= Rendering a frame');
 
     var config      = state.get('config').toJS(),
@@ -738,7 +756,7 @@ function render(state, renderListOverride) {
 
     var clearedFBOs = { };
 
-    var toRender = renderListOverride || config.render;
+    var toRender = renderListOverride || state.get('defaultItems');
 
     state.get('renderPipeline').onNext({start: toRender});
 
@@ -784,13 +802,20 @@ function render(state, renderListOverride) {
         gl.drawArrays(gl[renderItem.drawType], 0, numElements[item]);
 
         if (renderTarget && (renderTarget !== 'CANVAS')) {
-            debug('  reading back texture', item);
-            var pixelreads = state.get('pixelreads')[renderTarget];
-            if (pixelreads.length < dims.width * dims.height * 4) {
-                state.get('pixelreads')[item] = pixelreads =
-                    new Uint8Array(dims.width * dims.height * 4);
+            debug('  reading back texture', item, renderTarget);
+
+            var pixelreads = state.get('pixelreads');
+            var texture = pixelreads[renderTarget];
+            var readDims = readPixelsOverride || { x: 0, y: 0, width: dims.width, height: dims.height };
+
+            if (!texture || texture.length !== readDims.width * readDims.height * 4) {
+                debug('reallocating buffer', texture.length, readDims.width * readDims.height * 4);
+                texture = new Uint8Array(readDims.width * readDims.height * 4);
+                pixelreads[renderTarget] = texture;
             }
-            gl.readPixels(0, 0, dims.width, dims.height, gl.RGBA, gl.UNSIGNED_BYTE, pixelreads);
+
+            gl.readPixels(readDims.x, readDims.y, readDims.width, readDims.height,
+                          gl.RGBA, gl.UNSIGNED_BYTE, texture);
         }
 
     });
