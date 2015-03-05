@@ -119,7 +119,7 @@ function createProgram(renderer, vertexShaderID, fragmentShaderID) {
             renderer.gl.shaderSource(shader, sanitizedShaderSource);
             renderer.gl.compileShader(shader);
             if(!renderer.gl.getShaderParameter(shader, renderer.gl.COMPILE_STATUS)) {
-                console.error(renderer.gl.getShaderInfoLog(shader));
+                util.error(renderer.gl.getShaderInfoLog(shader));
                 throw new Error("Error compiling WebGL shader (shader type: " + shaderType + ")");
             }
             if(!renderer.gl.isShader(shader)) {
@@ -259,8 +259,7 @@ var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
             debug("Using preset colors from %s", imageURL);
         }
         } catch (e) {
-            console.error('bad cluster load', e, e.stack);
-            throw e;
+            util.makeErrorHandler('bad cluster load')(e);
         }
 
 

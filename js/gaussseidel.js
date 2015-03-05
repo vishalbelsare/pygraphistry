@@ -96,9 +96,7 @@ function pointKernel(simulator, gsPoints, stepNumber) {
     return gsPoints.exec([simulator.numPoints], resources)
         .then(function () {
             return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-        }).fail(function (err) {
-            console.error("ERROR Kernel gaussSeidelPoints failed ", (err||{}).stack);
-        });
+        }).fail(util.makeErrorHandler('Kernel gaussSeidelPoints failed'));
 }
 
 
@@ -124,9 +122,7 @@ function edgeKernelSeq(simulator, gsSprings, stepNumber, edges, workItems,
 
     debug('Running gaussSeidelSprings');
     return gsSprings.exec([numWorkItems], resources)
-        .fail(function (err) {
-            console.error("ERROR Kernel gaussSeidelSprings failed ", (err||{}).stack);
-        });
+        .fail(util.makeErrorHandler('Kernel gaussSeidelSprings failed'));
 }
 
 
@@ -153,14 +149,10 @@ GaussSeidel.prototype.tick = function(simulator, stepNumber) {
                     simulator, that.gsSprings, stepNumber,
                     simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
                     simulator.buffers.nextPoints, simulator.buffers.curPoints, simulator.buffers.edgeTags_reverse);
-            }).fail(function (err) {
-                console.error("ERROR edgeKernelSeq failed ", (err||{}).stack);
-            });
+            }).fail(util.makeErrorHandler('edgeKernelSeq failed'));
     }).then(function () {
         return simulator;
-    }).fail(function (err) {
-        console.error("ERROR GaussSeidel tick failed ", (err||{}).stack);
-    });
+    }).fail(util.makeErrorHandler('GaussSeidel tick failed'));
 }
 
 module.exports = GaussSeidel;
