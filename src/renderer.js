@@ -790,7 +790,7 @@ function render(state, renderListOverride, readPixelsOverride, maybeClearColor) 
     state.get('renderPipeline').onNext({start: toRender});
 
     if (maybeClearColor) {
-        console.log('using clear as', maybeClearColor);
+        debug('using clear as', maybeClearColor);
         gl.clearColor.apply(gl, maybeClearColor);
     }
 
