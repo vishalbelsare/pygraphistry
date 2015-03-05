@@ -71,7 +71,7 @@ function makeErrorHandler() {
 
     return function (err) {
         var content = err ? (err.stack || err) : undefined;
-        if (false && config.ENVIRONMENT === 'local') {
+        if (config.ENVIRONMENT === 'local') {
             console.error('ERROR', msg, content);
         } else {
             var payload = {
@@ -83,6 +83,10 @@ function makeErrorHandler() {
             console.error(JSON.stringify(payload));
         }
     }
+}
+
+function error(msg) {
+    makeErrorHandler(msg)(new Error());
 }
 
 
@@ -165,6 +169,7 @@ module.exports = {
     getImage: getImage,
     die: die,
     makeErrorHandler: makeErrorHandler,
+    error: error,
     rgb: rgb,
     saneKernels: saneKernels,
     palettes: palettes,
