@@ -32,20 +32,27 @@ function makeInspector ($elt, color) {
 
 module.exports = function ($fg, $bg, socket) {
 
-    //node/edge color
+    var foregroundColor = new Rx.ReplaySubject(1);
+    foregroundColor.onNext({r: 0, g: 0, b: 0});
     makeInspector($fg, '#000')
         .sample(10)
         .do(function (rgb) {
             socket.emit('set_colors', {rgb: rgb});
         })
-        .subscribe(_.identity, function (err) { console.error('bad fg color', err, (err||{}).stack); });
+        .subscribe(foregroundColor, function (err) { console.error('bad fg color', err, (err||{}).stack); });
 
-    //canvas color
+    var backgroundColor = new Rx.ReplaySubject(1);
+    backgroundColor.onNext({r: 255, g: 255, b: 255});
     makeInspector($bg, '#fff')
         .sample(10)
         .do(function (rgb) {
             $('#simulation').css('backgroundColor', 'rgb(' + [rgb.r, rgb.g, rgb.b].join(',') + ')');
         })
-        .subscribe(_.identity, function (err) { console.error('bad bg color', err, (err||{}).stack); });
+        .subscribe(backgroundColor, function (err) { console.error('bad bg color', err, (err||{}).stack); });
+
+    return {
+        foregroundColor: foregroundColor,
+        backgroundColor: backgroundColor
+    };
 
 };
