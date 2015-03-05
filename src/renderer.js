@@ -733,13 +733,21 @@ function setCamera(state) {
     var uniforms = state.get('uniforms');
     var camera = state.get('camera');
 
+    var numVertices;
+
     // Set zoomScalingFactor uniform if it exists.
     _.each(uniforms, function (map, item) {
         if ('zoomScalingFactor' in map) {
-            var scalingFactor = camera.semanticZoom(numElements[item]);
+            numVertices = numElements[item];
+            var scalingFactor = camera.semanticZoom(numVertices);
             map.zoomScalingFactor = [scalingFactor];
         }
     });
+
+    //HACK: we should have line shaders, and pass this as a uniform
+    if (numVertices !== undefined) {
+        gl.lineWidth(camera.semanticZoomEdges(numVertices));
+    }
 
     _.each(config.programs, function(programConfig, programName) {
         debug('Setting camera for program %s', programName);

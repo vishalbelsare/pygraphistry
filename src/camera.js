@@ -213,6 +213,23 @@
         return normalizedScalingFactor;
     };
 
+    Camera2d.prototype.semanticZoomEdges = function (numPoints) {
+
+        var pointSizeConstantBig = 2.0;
+        var pointSizeConstantSmall = 20;
+        var numPointsOffset = Math.max(numPoints - 150, 10);
+        var alpha = Math.min(1, Math.log(numPointsOffset)/Math.log(1000000));
+
+        var area = this.width * this.height;
+        var scalingFactor = Math.sqrt(Math.sqrt(numPoints/area));
+
+        var normalizedScalingFactor =
+            scalingFactor * ((1-alpha)*pointSizeConstantSmall + alpha*pointSizeConstantBig);
+
+
+        return normalizedScalingFactor;
+    };
+
     //FIXME should not depend on SC
     if(typeof Superconductor !== 'undefined') {
         Superconductor.Cameras = {
