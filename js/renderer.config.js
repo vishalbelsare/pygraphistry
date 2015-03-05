@@ -28,7 +28,7 @@ var programs = {
             'vertex': fs.readFileSync(__dirname + '/../shaders/edge.vertex.glsl', 'utf8').toString('ascii'),
             'fragment': fs.readFileSync(__dirname + '/../shaders/edge.fragment.glsl', 'utf8').toString('ascii')
         },
-        'attributes': ['curPos'],
+        'attributes': ['edgeColor', 'curPos'],
         'camera': 'mvp',
         'uniforms': []
     },
@@ -274,7 +274,7 @@ var items = {
         'readTarget': true,
     },
     'edgesampling': {
-        'program': 'edgeculled',
+        'program': 'edges',
         'trigger': 'renderScene',
         'bindings': {
             'curPos': ['springsPos', 'curPos'],
@@ -286,7 +286,7 @@ var items = {
         'readTarget': true
     },
     'edgepicking': {
-        'program': 'edgeculled',
+        'program': 'edges',
         'bindings': {
             'curPos': ['springsPos', 'curPos'],
             'edgeColor': ['edgeIndices', 'edgeColor']
@@ -301,6 +301,7 @@ var items = {
         'trigger': 'renderScene',
         'bindings': {
             'curPos': ['springsPos', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
         },
         'drawType': 'LINES',
         'glOptions': {}
