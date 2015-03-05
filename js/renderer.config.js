@@ -217,6 +217,16 @@ var models = {
             'normalize': true
         }
     },
+    'edgeIndices': {
+        'edgeColor': {
+            'datasource': 'EDGE_INDEX',
+            'type': 'UNSIGNED_BYTE',
+            'count': 4,
+            'offset': 0,
+            'stride': 0,
+            'normalize': true
+        }
+    },
     'highlightedPoint': {
         'isHighlighted':  {
             'datasource': 'CLIENT',
@@ -268,7 +278,7 @@ var items = {
         'trigger': 'renderScene',
         'bindings': {
             'curPos': ['springsPos', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor']
+            'edgeColor': ['edgeIndices', 'edgeColor']
         },
         'drawType': 'LINES',
         'glOptions': {},
@@ -279,7 +289,7 @@ var items = {
         'program': 'edgeculled',
         'bindings': {
             'curPos': ['springsPos', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor']
+            'edgeColor': ['edgeIndices', 'edgeColor']
         },
         'drawType': 'LINES',
         'glOptions': {},
@@ -660,7 +670,7 @@ function gl2Bytes(type) {
 
 function isBufClientSide(buf) {
     var datasource = _.values(buf)[0].datasource;
-    return (datasource == "CLIENT" || datasource == "VERTEX_INDEX");
+    return (datasource == "CLIENT" || datasource == "VERTEX_INDEX" || datasource == "EDGE_INDEX");
 }
 
 function isBufServerSide(buf) {
