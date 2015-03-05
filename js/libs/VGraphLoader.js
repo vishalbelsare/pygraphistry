@@ -261,9 +261,7 @@ function decode0(graph, vg, metadata)  {
             la.setEdges(graph.simulator);
         });
         return graph;
-    }).catch(function (error) {
-        console.error("ERROR Failure in VGraphLoader ", error.stack)
-    })
+    }).fail(util.makeErrorHandler('Failure in VGraphLoader'));
 }
 
 function runLoaders(loaders) {

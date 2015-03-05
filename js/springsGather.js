@@ -2,6 +2,7 @@
 
 var   debug = require('debug')('graphistry:graph-viz:cl:springsgather'),
        cljs = require('./cl.js'),
+       util = require('./util.js'),
           Q = require('q'),
      Kernel = require('./kernel.js');
 
@@ -39,9 +40,7 @@ SpringsGather.prototype.tick = function(simulator) {
 
     debug('Running SpringsGather kernel');
     return this.gather.exec([simulator.numForwardsWorkItems], resources)
-        .fail(function (err) {
-            console.error('ERROR Kernel springGather failed ', (err||{}).stack);
-        });
+        .fail(util.makeErrorHandler('Kernel springGather failed'));
 }
 
 module.exports = SpringsGather;

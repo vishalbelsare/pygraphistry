@@ -2,6 +2,7 @@
 
 var   debug = require("debug")("graphistry:graph-viz:cl:movenodes"),
        cljs = require('./cl.js'),
+       util = require('./util.js'),
           Q = require('q'),
      Kernel = require('./kernel.js');
 
@@ -21,10 +22,6 @@ function MoveNodes(clContext) {
         outputPositions: null
     }
     this.moveNodes = new Kernel('moveNodes', args, argsType, 'moveNodes.cl', clContext);
-}
-
-function move(moveNodes, simulator, selection, delta) {
-
 }
 
 
@@ -49,9 +46,7 @@ MoveNodes.prototype.run = function (simulator, selection, delta) {
     return this.moveNodes.exec([simulator.numPoints], resources)
         .then(function () {
             return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-        }).fail(function (err) {
-            console.error('ERROR Kernel moveNodes failed ', (err||{}).stack);
-        });
+        }).fail(util.makeErrorHandler('Kernel moveNodes failed'));
 }
 
 module.exports = MoveNodes;
