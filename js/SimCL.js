@@ -654,7 +654,15 @@ function setEdgeColors(simulator, edgeColors) {
         edgeColors = new Uint32Array(forwardsEdges.edgesTyped.length);
         for (var i = 0; i < edgeColors.length; i++) {
             var nodeIdx = forwardsEdges.edgesTyped[i];
-            edgeColors[i] = simulator.buffersLocal.pointColors[nodeIdx];
+            var color = simulator.buffersLocal.pointColors[nodeIdx];
+            var dimmed =
+                0
+                | (((color >> 24)&255) * 0.9) << 24
+                | (((color >> 16)&255) * 0.9) << 16
+                | (((color >> 8) &255) * 0.9) << 8
+                | (((color >> 0) &255) * 0.9)
+                ;
+            edgeColors[i] = dimmed;
         }
     }
 
