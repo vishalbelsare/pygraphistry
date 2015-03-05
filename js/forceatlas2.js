@@ -140,9 +140,7 @@ function pointForces(simulator, faPoints, stepNumber) {
 
     debug("Running kernel faPointForces");
     return faPoints.exec([simulator.numPoints], resources)
-        .fail(function (err) {
-            console.error('Kernel faPointForces failed', err, (err||{}).stack);
-        });
+        .fail(util.makeErrorHandler('Kernel faPointForces failed'));
 }
 
 
@@ -184,9 +182,7 @@ function edgeForces(simulator, faEdges, stepNumber) {
                                 simulator.numBackwardsWorkItems,
                                 buffers.curPoints, stepNumber,
                                 buffers.partialForces2, buffers.curForces);
-    }).fail(function (err) {
-        console.error('Kernel faPointEdges failed', err, (err||{}).stack);
-    });
+    }).fail(util.makeErrorHandler('Kernel faPointEdges failed'));
 }
 
 
@@ -210,9 +206,7 @@ function swingsTractions(simulator, faSwings) {
 
     debug("Running kernel faSwingsTractions");
     return faSwings.exec([simulator.numPoints], resources)
-        .fail(function (err) {
-            console.error('Kernel faSwingsTractions failed', err, (err||{}).stack);
-        });
+        .fail(util.makeErrorHandler('Kernel faSwingsTractions failed'));
 }
 
 
@@ -237,9 +231,7 @@ function integrate(simulator, faIntegrate) {
 
     debug("Running kernel faIntegrate");
     return faIntegrate.exec([simulator.numPoints], resources)
-        .fail(function (err) {
-            console.error('Kernel faIntegrate failed', err, (err||{}).stack);
-        });
+        .fail(util.makeErrorHandler('Kernel faIntegrate failed'));
 }
 
 function integrate2(simulator, faIntegrate2) {
@@ -269,9 +261,7 @@ function integrate2(simulator, faIntegrate2) {
 
     debug('Running kernel faIntegrate2');
     return faIntegrate2.exec([simulator.numPoints], resources)
-        .fail(function (err) {
-            console.error('Kernel faIntegrate2 failed', err, (err||{}).stack);
-        });
+        .fail(util.makeErrorHandler('Kernel faIntegrate2 failed'));
 }
 
 ForceAtlas2.prototype.tick = function(simulator, stepNumber) {
