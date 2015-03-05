@@ -405,7 +405,7 @@ var mappers = {
     'opentsdbDemo': testMapperDemo,
     'debug': debugMapper,
     'splunk': splunkMapper,
-    'default': testMapper
+    'default': splunkMapper
 }
 
 function logTransform(values) {
