@@ -103,6 +103,17 @@ var textures = {
         'width': {'unit': 'percent', 'value': 5},
         'height': {'unit': 'percent', 'value': 5}
     },
+    'edgeHitmap': {
+        'datasource': 'CLIENT',
+    },
+    'edgeTexture': {
+        'datasource': 'CLIENT',
+    },
+    'edgeHitmapDownsampled': {
+        'datasource': 'CLIENT',
+        'width': {'unit': 'percent', 'value': 5},
+        'height': {'unit': 'percent', 'value': 5}
+    },
     'colorMap': {
         'datasource': 'SERVER',
         'path': 'test-colormap2.png'
@@ -240,6 +251,40 @@ var items = {
         },
         'drawType': 'LINES',
         'glOptions': {}
+    },
+    'edgeculledtexture': {
+        'program': 'edgeculled',
+        'bindings': {
+            'curPos': ['springsPos', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'drawType': 'LINES',
+        'glOptions': {},
+        'renderTarget': 'edgeTexture',
+        'readTarget': true,
+    },
+    'edgesampling': {
+        'program': 'edgeculled',
+        'trigger': 'renderScene',
+        'bindings': {
+            'curPos': ['springsPos', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'drawType': 'LINES',
+        'glOptions': {},
+        'renderTarget': 'edgeHitmapDownsampled',
+        'readTarget': true
+    },
+    'edgepicking': {
+        'program': 'edgeculled',
+        'bindings': {
+            'curPos': ['springsPos', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'drawType': 'LINES',
+        'glOptions': {},
+        'renderTarget': 'edgeHitmap',
+        'readTarget': true
     },
     'edges': {
         'program': 'edges',
@@ -436,7 +481,8 @@ var sceneNetflow = {
     'options': stdOptions,
     'camera': camera2D,
     'render': ['pointpicking', 'pointsampling', 'pointculledtexture', 'pointoutlinetexture',
-               'edgeculled', 'pointoutline', 'pointculled']
+               'edgeculled', 'edgeculledtexture', 'edgesampling', 'edgepicking',
+               'pointoutline', 'pointculled']
 }
 
 var scenes = {
