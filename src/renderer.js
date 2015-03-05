@@ -733,13 +733,21 @@ function setCamera(state) {
     var uniforms = state.get('uniforms');
     var camera = state.get('camera');
 
+    var numVertices;
+
     // Set zoomScalingFactor uniform if it exists.
     _.each(uniforms, function (map, item) {
         if ('zoomScalingFactor' in map) {
-            var scalingFactor = camera.semanticZoom(numElements[item]);
+            numVertices = numElements[item];
+            var scalingFactor = camera.semanticZoom(numVertices);
             map.zoomScalingFactor = [scalingFactor];
         }
     });
+
+    //HACK: we should have line shaders, and pass this as a uniform
+    if (numVertices !== undefined) {
+        gl.lineWidth(camera.semanticZoomEdges(numVertices));
+    }
 
     _.each(config.programs, function(programConfig, programName) {
         debug('Setting camera for program %s', programName);
@@ -766,7 +774,7 @@ function setCameraIm(renderState, camera) {
  * @param {(string[])} [renderListOverride] - optional override of the render array
  */
 var lastRenderTarget = {};
-function render(state, renderListOverride, readPixelsOverride) {
+function render(state, renderListOverride, readPixelsOverride, maybeClearColor) {
     debug('========= Rendering a frame');
 
     var config      = state.get('config').toJS(),
@@ -780,6 +788,11 @@ function render(state, renderListOverride, readPixelsOverride) {
     var toRender = renderListOverride || state.get('defaultItems');
 
     state.get('renderPipeline').onNext({start: toRender});
+
+    if (maybeClearColor) {
+        console.log('using clear as', maybeClearColor);
+        gl.clearColor.apply(gl, maybeClearColor);
+    }
 
     toRender.forEach(function(item) {
         if(typeof numElements[item] === 'undefined' || numElements[item] < 1) {

@@ -102,7 +102,6 @@ function init(canvas, vizType) {
 
 
 function createDebugOverlay(app) {
-    $('html').addClass('debug');
 
     var renderMeterD =
         $('<div>')
@@ -188,7 +187,10 @@ window.addEventListener('load', function() {
 
     var app = init($('#simulation')[0], 'graph');
 
+    createDebugOverlay(app);
+
     if (DEBUG_MODE) {
-        createDebugOverlay(app);
+        $('html').addClass('debug');
     }
+
 });
