@@ -569,7 +569,7 @@ function createUniforms(state) {
     var items = state.get('config').get('items').toJS();
     var uniforms = _.object(_.map(items, function (itemDef, itemName) {
         var map = _.object(_.map(itemDef.uniforms, function (binding, uniform) {
-            return [uniform, binding.defaultvalues];
+            return [uniform, binding.defaultValues];
         }));
         return [itemName, map];
     }));
@@ -734,10 +734,9 @@ function setCamera(state) {
     var camera = state.get('camera');
 
     // Set zoomScalingFactor uniform if it exists.
-
     _.each(uniforms, function (map, item) {
         if ('zoomScalingFactor' in map) {
-            var scalingFactor = camera.semanticZooom(numElements[item]);
+            var scalingFactor = camera.semanticZoom(numElements[item]);
             map.zoomScalingFactor = [scalingFactor];
         }
     });
