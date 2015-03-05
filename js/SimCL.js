@@ -122,8 +122,8 @@ function create(renderer, device, vendor, cfg) {
                 forwardsEdgeStartEndIdxs: null,
                 backwardsEdgeStartEndIdxs: null,
                 segStart: null
-                 
-                 
+
+
             };
             _.extend(
                 simObj.buffers,
@@ -438,10 +438,7 @@ function setPoints(simulator, points) {
             la.setPoints(simulator);
         });
         return simulator;
-    })
-    .fail(function (err) {
-        console.error("Failure in SimCl.setPoints ", (err||{}).stack);
-    });
+    }).fail(util.makeErrorHandler('Failure in SimCl.setPoints'));
 }
 
 
@@ -463,15 +460,10 @@ function makeSetter(simulator, name, dimName) {
             debug('Created %s VBO', buffName);
             simulator.renderer.buffers[buffName] = vbo;
             return simulator.cl.createBufferGL(vbo, buffName);
-        })
-        .then(function (buffer) {
+        }).then(function (buffer) {
             simulator.buffers[buffName] = buffer;
             return simulator;
-        })
-        .fail(function (err) {
-            console.error("ERROR Failure in SimCl.set %s", buffName, (err||{}).stack)
-        });
-
+        }).fail(util.makeErrorHandler('ERROR Failure in SimCl.set %s', buffName));
     };
 }
 
@@ -635,9 +627,7 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, degrees, m
         setTimeSubset(renderer, simulator, simulator.timeSubset.relRange);
         return simulator;
     })
-    .fail(function (err) {
-        console.error('ERROR in SetEdges ', (err||{}).stack);
-    });
+    .fail(util.makeErrorHandler('Failure in SimCL.setEdges'));
 }
 
 
@@ -674,7 +664,7 @@ function setEdgeColors(simulator, edgeColors) {
 }
 
 function setMidEdgeColors(simulator, midEdgeColors) {
-    console.error("TODO: Code setMidEdgeColors")
+    util.error('TODO: Code setMidEdgeColors');
 }
 
 function setLocks(simulator, cfg) {
@@ -779,9 +769,7 @@ function moveNodes(simulator, marqueeEvent) {
     return moveNodes.run(simulator, marqueeEvent.selection, delta)
         .then(function () {
             return springsGather.tick(simulator);
-        }).fail(function (err) {
-            console.error('Error trying to move nodes', (err||{}).stack);
-        });
+        }).fail(util.makeErrorHandler('Failure trying to move nodes'));
 }
 
 function recolor(simulator, marquee) {
@@ -807,9 +795,7 @@ function recolor(simulator, marquee) {
         })
 
         simulator.tickBuffers(['pointSizes']);
-    }).fail(function (err) {
-        console.error('Read failed', err, (err || {}).stack);
-    })
+    }).fail(util.makeErrorHandler('Read failed'));
 }
 
 
@@ -886,9 +872,7 @@ function tick(simulator, stepNumber, cfg) {
         simulator.cl.queue.finish();
         perf('Tick Finished.');
         simulator.renderer.finish();
-    }).fail(function (err) {
-        console.error('SimCl tick fail! ', err, (err||{}).stack);
-    })
+    }).fail(util.makeErrorHandler('SimCl tick failed'));
 }
 
 
