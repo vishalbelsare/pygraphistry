@@ -301,30 +301,14 @@ function setupLabels ($labelCont, latestState, latestHighlightedPoint) {
         .subscribe(_.identity, makeErrorHandler('setuplabels'));
 }
 
-//$DOM * RenderState -> Observable int
+
+//$DOM * RenderState * Observable DOM * textureName-> Observable int
 //Changes either from point mouseover or a label mouseover
-function getLatestHighlightedPoint ($eventTarget, renderState, labelHover) {
+function getLatestHighlightedObject ($eventTarget, renderState, labelHover, textureName) {
     var res = new Rx.ReplaySubject(1);
     res.onNext(-1);
 
-    interaction.setupMousemove($eventTarget, renderState, 'edgeHitmap')
-        .do(function () { console.log('Testing Edge');})
-        .filter(function (v) { return v > -1; })
-        .do(function () { console.log('Hit Edge');})
-        .merge($eventTarget.mousedownAsObservable()
-            .map(_.constant(-1)))
-        .merge(
-            labelHover
-                .map(function (elt) {
-                    return _.values(poi.state.activeLabels)
-                        .filter(function (lbl) { return lbl.elt.get(0) === elt; });
-                })
-                .filter(function (highlightedLabels) { return highlightedLabels.length; })
-                .map(function (highlightedLabels) { return highlightedLabels[0].idx; }))
-        .sample(10)
-        .subscribe(res, makeErrorHandler('getLatestHighlightedPoint'));
-
-    interaction.setupMousemove($eventTarget, renderState, 'pointHitmap')
+    interaction.setupMousemove($eventTarget, renderState, textureName)
         .filter(function (v) { return v > -1; })
         .merge($eventTarget.mousedownAsObservable()
             .map(_.constant(-1)))
@@ -337,10 +321,11 @@ function getLatestHighlightedPoint ($eventTarget, renderState, labelHover) {
                 .filter(function (highlightedLabels) { return highlightedLabels.length; })
                 .map(function (highlightedLabels) { return highlightedLabels[0].idx; }))
         .sample(10)
-        .subscribe(res, makeErrorHandler('getLatestHighlightedPoint'));
+        .subscribe(res, makeErrorHandler('getLatestHighlightedObject'));
 
     return res;
 }
+
 
 function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
     //var currentState = renderState;
@@ -377,7 +362,7 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
 
     //Observable int
     //Either from point mouseover or label mouseover
-    var latestHighlightedPoint = getLatestHighlightedPoint($eventTarget, renderState, labelHover);
+    var latestHighlightedPoint = getLatestHighlightedObject($eventTarget, renderState, labelHover, 'pointHitmap');
 
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
