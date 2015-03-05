@@ -140,8 +140,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
             }
 
         } catch (e) {
-            console.error('Error setting argument %s of kernel %s', args[i], name);
-            throw new Error(e);
+            util.error('Error setting argument %s of kernel %s', args[i], name);
         }
     };
 
@@ -153,9 +152,9 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 var start = process.hrtime();
                 queue.enqueueNDRangeKernel(kernel, null, workItems, workGroupSize || null);
                 return start;
-            }).catch (function(error) {
-                console.error('Kernel %s error', that.name, error);
-            }).then(function (start) {
+            }).fail(
+                util.makeErrorHandler('Kernel %s error', that.name)
+            ).then(function (start) {
                 if (synchronous) {
                     debug('Waiting for kernel to finish');
                     clContext.queue.finish();
@@ -171,7 +170,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     this.exec = function(numWorkItems, resources, workGroupSize) {
         return qKernel.then(function (kernel) {
             if (kernel === null) {
-                console.error('Kernel is not compiled, aborting');
+                util.error('Kernel is not compiled, aborting');
                 return Q();
             } else {
                 setAllArgs(kernel);
