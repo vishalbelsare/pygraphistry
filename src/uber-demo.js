@@ -273,7 +273,7 @@ lastRender
     })
     .sample(100)
     .do(function (cfg) {
-        cfg.renderer.render(cfg.currentState, ['pointpicking']);
+        cfg.renderer.render(cfg.currentState, ['pointpicking', 'edgepicking']);
     })
     .subscribe(_.identity, makeErrorHandler('render effect'));
 
@@ -306,6 +306,23 @@ function setupLabels ($labelCont, latestState, latestHighlightedPoint) {
 function getLatestHighlightedPoint ($eventTarget, renderState, labelHover) {
     var res = new Rx.ReplaySubject(1);
     res.onNext(-1);
+
+    interaction.setupMousemove($eventTarget, renderState, 'edgeHitmap')
+        .do(function () { console.log('Testing Edge');})
+        .filter(function (v) { return v > -1; })
+        .do(function () { console.log('Hit Edge');})
+        .merge($eventTarget.mousedownAsObservable()
+            .map(_.constant(-1)))
+        .merge(
+            labelHover
+                .map(function (elt) {
+                    return _.values(poi.state.activeLabels)
+                        .filter(function (lbl) { return lbl.elt.get(0) === elt; });
+                })
+                .filter(function (highlightedLabels) { return highlightedLabels.length; })
+                .map(function (highlightedLabels) { return highlightedLabels[0].idx; }))
+        .sample(10)
+        .subscribe(res, makeErrorHandler('getLatestHighlightedPoint'));
 
     interaction.setupMousemove($eventTarget, renderState, 'pointHitmap')
         .filter(function (v) { return v > -1; })
