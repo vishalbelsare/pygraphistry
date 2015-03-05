@@ -129,9 +129,7 @@ function fetchVBOs(graph, renderConfig, bufferNames) {
                 };
             });
             return targetArrays;
-        }).fail(function (err) {
-            console.error("ERROR Failure in node-driver.fetchVBO ", (err||{}).stack);
-        });
+        }).fail(util.makeErrorHandler('node-driver.fetchVBO'));
 }
 
 
@@ -190,10 +188,7 @@ function init(device, vendor, controls) {
     return RenderNull.create(null)
         .then(function (renderer) {
             return NBody.create(renderer, device, vendor, controls);
-        })
-        .fail(function (err) {
-            console.error("ERROR Failure in NBody creation ", (err||{}).stack);
-        });
+        }).fail(util.makeErrorHandler('Failure in NBody creation'));
 }
 
 
@@ -315,9 +310,7 @@ function create(dataset) {
             })
             .subscribe(
                 animStepSubj,
-                function (err) {
-                    console.error('Error ticking', err, (err||{}).stack);
-                }
+                util.makeErrorHandler('node-driver: tick failed')
             );
 
         debug('Graph created');
