@@ -188,7 +188,6 @@ window.addEventListener('load', function() {
 
     var app = init($('#simulation')[0], 'graph');
 
-    if (DEBUG_MODE) {
-        createDebugOverlay(app);
-    }
+    createDebugOverlay(app);
+
 });
