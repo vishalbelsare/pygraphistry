@@ -93,7 +93,7 @@ function renderCursor (renderState, points, idx, sizes) {
 
     debug('Enlarging current mouseover point', idx);
 
-    if (idx <= 0) {
+    if (idx === undefined || idx < 0) {
         $('#highlighted-point-cont').css({display: 'none'});
         return;
     }
