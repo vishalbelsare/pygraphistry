@@ -71,11 +71,12 @@ function makeErrorHandler() {
 
     return function (err) {
         var content = err ? (err.stack || err) : undefined;
-        if (config.ENVIRONMENT === 'local') {
+        if (false && config.ENVIRONMENT === 'local') {
             console.error('ERROR', msg, content);
         } else {
             var payload = {
                 type: 'ERROR',
+                pid: process.pid.toString(),
                 msg: msg,
                 error: content
             };
