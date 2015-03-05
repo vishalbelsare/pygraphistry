@@ -14,8 +14,6 @@ var io           = require('socket.io-client');
 var renderer     = require('./renderer.js');
 var ui           = require('./ui.js');
 
-// Exported Global
-var urlParams = getUrlParameters();
 
 //string * {socketHost: string, socketPort: int} -> (... -> ...)
 // where fragment == 'vbo?buffer' or 'texture?name'
@@ -65,21 +63,6 @@ function getUpdatedNames (names, originalVersions, newVersions) {
     return names.filter(function (name) {
         return newVersions.hasOwnProperty(name) && (originalVersions[name] !== newVersions[name]);
     });
-}
-
-/**
- * Gets the URL param for the dataset
- */
-function getUrlParameters() {
-    var sPageURL = window.location.search.substring(1);
-    var sURLVariables = sPageURL.split('&');
-    var params = {};
-    for (var i = 0; i < sURLVariables.length; i++){
-        var sParameterName = sURLVariables[i].split('=');
-        params[sParameterName[0]] = sParameterName[1];
-    }
-
-    return params;
 }
 
 
@@ -133,7 +116,7 @@ function getVizServerParams(args) {
 }
 
 
-function connect(vizType) {
+function connect(vizType, urlParams) {
     debug('Connecting to visualization server');
     if (!vizType) {
         throw new Error('need vizType');
@@ -354,6 +337,5 @@ function handleVboUpdates(socket, renderState) {
 module.exports = {
     connect: connect,
     createRenderer: createRenderer,
-    handleVboUpdates: handleVboUpdates,
-    urlParams: urlParams
+    handleVboUpdates: handleVboUpdates
 };

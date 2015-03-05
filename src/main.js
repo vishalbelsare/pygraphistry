@@ -16,25 +16,32 @@ var $               = window.$,
     debug           = require('debug')('graphistry:StreamGL:main');
                       require('./rx-jquery-stub');
 
-
 var streamClient    = require('./client.js'),
     ui              = require('./ui.js'),
     uberDemo        = require('./uber-demo.js'),
     monkey          = require('./monkey.js');
 
-/*
-Enable debuging output in the console by running:
-    localStorage.debug = 'StreamGL:*';
-in the console. Disable debug output by running:
-    localStorage.removeItem('debug');
-*/
 
 console.warn('%cWarning: having the console open can slow down execution significantly!',
     'font-size: 18pt; font-weight: bold; font-family: \'Helvetica Neue\', Helvetica, sans-serif; background-color: rgb(255, 242, 0);');
 
-var QUERY_PARAMS = Object.freeze(ui.getQueryParams());
-var DEBUG_MODE = (QUERY_PARAMS.hasOwnProperty('debug') && QUERY_PARAMS.debug !== 'false' &&
-        QUERY_PARAMS.debug !== '0');
+var urlParams = getUrlParameters();
+
+
+/**
+ * Gets the URL param for the dataset
+ */
+function getUrlParameters() {
+    var sPageURL = window.location.search.substring(1);
+    var sURLVariables = sPageURL.split('&');
+    var params = {};
+    for (var i = 0; i < sURLVariables.length; i++){
+        var sParameterName = sURLVariables[i].split('=');
+        params[sParameterName[0]] = sParameterName[1];
+    }
+
+    return params;
+}
 
 
 // Sets up event handlers to display socket errors + disconnects on screen
@@ -64,7 +71,7 @@ function init(canvas, vizType) {
 
     var initialized = new Rx.ReplaySubject(1);
 
-    streamClient.connect(vizType)
+    streamClient.connect(vizType, urlParams)
         .flatMap(function(nfo) {
             debug('Creating renderer');
 
@@ -82,8 +89,7 @@ function init(canvas, vizType) {
 
             var vboUpdates = streamClient.handleVboUpdates(socket, renderState);
 
-            uberDemo(socket, $('.sim-container'), v.renderState,
-                        streamClient.urlParams);
+            uberDemo(socket, $('.sim-container'), v.renderState, urlParams);
 
             initialized.onNext({
                 vboUpdates: vboUpdates,
@@ -101,7 +107,7 @@ function init(canvas, vizType) {
 }
 
 
-function createDebugOverlay(app) {
+function createInfoOverlay(app) {
 
     var renderMeterD =
         $('<div>')
@@ -187,9 +193,17 @@ window.addEventListener('load', function() {
 
     var app = init($('#simulation')[0], 'graph');
 
-    createDebugOverlay(app);
+    createInfoOverlay(app);
 
-    if (DEBUG_MODE) {
+    function isParamTrue(param) {
+        var val = (urlParams[param] || '').toLowerCase();
+        return val === 'true' || val === '1' || val === 'yes';
+    }
+
+    if (isParamTrue('info')) {
+        $('html').addClass('info');
+    }
+    if (isParamTrue('debug')) {
         $('html').addClass('debug');
     }
 
