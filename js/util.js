@@ -85,8 +85,8 @@ function makeErrorHandler() {
     }
 }
 
-function error(msg) {
-    makeErrorHandler(msg)(new Error());
+function error() {
+    makeErrorHandler.apply(this, arguments)(new Error());
 }
 
 
