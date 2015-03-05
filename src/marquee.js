@@ -58,6 +58,10 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
     var bounds = isOn.flatMapLatest(function (isOn) {
             if (!isOn) {
                 debug('stop listening for marquee selections');
+                $('#simulation').css({
+                    'filter': '',
+                    '-webkit-filter': '',
+                });
                 return Rx.Observable.empty();
             } else {
                 debug('start listening for marquee selections');
@@ -66,6 +70,10 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                     .do(function (evt) {
                         evt.stopPropagation();
                         $('body').addClass('noselect');
+                        $('#simulation').css({
+                            'filter': '',
+                            '-webkit-filter': '',
+                        });
                         $elt.empty();
                         $elt.removeClass('draggable').removeClass('dragging').removeClass('done');
                     }).map(toPoint.bind('', $cont))
@@ -98,6 +106,11 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                             ).takeLast(1)
                             .do(function (rect) {
                                 $('body').removeClass('noselect');
+                                $('#simulation').css({
+                                    'filter': 'grayscale(50%) blur(3px)',
+                                    '-webkit-filter': 'grayscale(50%) blur(3px)',
+
+                                });
                                 $elt.addClass('draggable').removeClass('on').addClass('done');
                                 $elt.css({ // Take border sizes into account when aligning ghost image
                                     left: rect.tl.x - 2,
@@ -110,8 +123,6 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                                 $(ghost).css({
                                     'pointer-events': 'none',
                                     'transform': 'scaleY(-1)',
-                                    'filter': 'blur(4px)',
-                                    '-webkit-filter': 'blur(4px)',
                                 });
                                 $elt.append(ghost);
                             });
@@ -165,6 +176,10 @@ function marqueeDrags(selections, $cont, $elt) {
                             debug('End of drag');
                             $elt.removeClass('dragging').removeClass('done').addClass('off');
                             $('body').removeClass('noselect');
+                            $('#simulation').css({
+                                'filter': '',
+                                '-webkit-filter': '',
+                            });
                         })
                     ).takeLast(1);
             });
