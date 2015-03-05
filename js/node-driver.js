@@ -198,7 +198,7 @@ function getControls(controlsName) {
     if (controlsName in lConf.controls)
         controls = lConf.controls[controlsName];
     else
-        console.warn('WARNING Unknown controls "%s", using defaults.', controlsName);
+        util.warn('Unknown controls "%s", using defaults.', controlsName);
 
     return controls;
 }

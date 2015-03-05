@@ -23,7 +23,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     // Set synchronous based on debug value
     var synchronous = false;
     if (process.env.DEBUG && process.env.DEBUG.indexOf('perf') != -1) {
-        console.warn('Kernel ' + name + ' is synchronous because DEBUG=perf');
+        util.warn('Kernel ' + name + ' is synchronous because DEBUG=perf');
         synchronous = true;
     }
 
@@ -64,7 +64,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         _.each(args, function (val, arg) {
             if (arg in argValues) {
                 if (typeof val === 'undefined' || typeof val === 'null') {
-                    console.warn('WARNING Setting argument %s to %s', arg, val);
+                    util.warn('Setting argument %s to %s', arg, val);
                 }
 
                 var arrayWrappedValue = (typeof val === 'number') ? [val] : val;
@@ -130,7 +130,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 var dirty = argValues[arg].dirty;
                 var type = argTypes[arg];
                 if (val === null)
-                    console.warn('WARNING In kernel %s, argument %s is null', name, arg);
+                    util.warn('In kernel %s, argument %s is null', name, arg);
 
                 if (dirty) {
                     debug('Setting arg %d with value', i, val);

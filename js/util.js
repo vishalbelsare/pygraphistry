@@ -6,6 +6,7 @@ var debug = require('debug')('graphistry:util'),
     Q = require('q'),
     _ = require('underscore'),
     nodeutil = require('util'),
+    chalk = require('chalk'),
     config = require('config')();
 
 var Image, webgl;
@@ -58,37 +59,48 @@ function getImage(url) {
     return deferred.promise;
 }
 
-
-function die() {
-    var msg = nodeutil.format.apply(this, arguments)
-    console.error("FATAL ERROR: ", (new Error(msg)).stack)
-    process.exit(1);
+function error2JSON(type, msg, err) {
+    var content = err ? (err.stack || err) : undefined;
+    return {
+        type: type,
+        msg: msg,
+        error: content,
+        pid: process.pid.toString(),
+    };
 }
 
-
-function makeErrorHandler() {
-    var msg = nodeutil.format.apply(this, arguments);
+function makeHandler(type, msg, style) {
+    style = style || _.identity;
 
     return function (err) {
-        var content = err ? (err.stack || err) : undefined;
+        var payload = error2JSON(type, msg, err);
         if (config.ENVIRONMENT === 'local') {
-            console.error('ERROR', msg, content);
+            console.error(style(payload.type), payload.msg, payload.error);
         } else {
-            var payload = {
-                type: 'ERROR',
-                pid: process.pid.toString(),
-                msg: msg,
-                error: content
-            };
             console.error(JSON.stringify(payload));
         }
     }
+}
+
+function makeErrorHandler() {
+    var msg = nodeutil.format.apply(this, arguments);
+    return makeHandler('NORMALERROR', msg, chalk.bold.red)
 }
 
 function error() {
     makeErrorHandler.apply(this, arguments)(new Error());
 }
 
+function die() {
+    var msg = nodeutil.format.apply(this, arguments)
+    makeHandler('FATALERROR', msg, chalk.bold.red)(new Error());
+    process.exit(1);
+}
+
+function warn() {
+    var msg = nodeutil.format.apply(this, arguments)
+    makeHandler('WARNING', msg, chalk.yellow)(new Error());
+}
 
 function rgb(r, g, b, a) {
     if (a === undefined)
@@ -170,6 +182,7 @@ module.exports = {
     die: die,
     makeErrorHandler: makeErrorHandler,
     error: error,
+    warn: warn,
     rgb: rgb,
     saneKernels: saneKernels,
     palettes: palettes,

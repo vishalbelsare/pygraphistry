@@ -55,7 +55,7 @@ var create = Q.promised(function(renderer, device, vendor) {
     device = device || 'all';
     var clDevice = clDeviceType[device.toLowerCase()];
     if (!clDevice) {
-        console.warn('WARNING Unknown device %s, using "all"', device)
+        util.warn('Unknown device %s, using "all"', device);
         clDevice = clDeviceType.all;
     }
     return createCLContextNode(renderer, clDevice, vendor.toLowerCase());

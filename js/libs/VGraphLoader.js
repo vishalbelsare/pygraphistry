@@ -187,7 +187,7 @@ function decode0(graph, vg, metadata)  {
     var loaders = attributeLoaders(graph);
     var mapper = mappers[metadata.mapper];
     if (!mapper) {
-        console.warn('WARNING Unknown mapper', metadata.mapper, 'using "default"');
+        util.warn('Unknown mapper', metadata.mapper, 'using "default"');
         mapper = mappers['default'];
     }
     loaders = wrap(mapper.mappings, loaders);
@@ -200,12 +200,12 @@ function decode0(graph, vg, metadata)  {
 
         var vec = amap[vname];
         if (vec.target != loader.target) {
-            console.warn("WARNING Vertex/Node attribute mismatch for " + vname);
+            util.warn("Vertex/Node attribute mismatch for " + vname);
             continue;
         }
 
         if (vec.type != loader.type) {
-            console.warn("WARNING Expected type " + loader.type + " but got " + vec.type);
+            util.warn("Expected type " + loader.type + " but got " + vec.type);
             continue;
         }
 
