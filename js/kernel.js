@@ -140,7 +140,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
             }
 
         } catch (e) {
-            util.error('Error setting argument %s of kernel %s', args[i], name);
+            util.makeErrorHandler('Error setting argument %s of kernel %s', args[i], name)(e);
         }
     };
 
