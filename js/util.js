@@ -1,11 +1,12 @@
 "use strict";
 
-var debug = require("debug")("graphistry:util"),
+var debug = require('debug')('graphistry:util'),
     path = require('path'),
     fs = require('fs'),
     Q = require('q'),
     _ = require('underscore'),
-    nodeutil = require('util');
+    nodeutil = require('util'),
+    config = require('config')();
 
 var Image, webgl;
 
@@ -67,9 +68,20 @@ function die() {
 
 function makeErrorHandler() {
     var msg = nodeutil.format.apply(this, arguments);
+
     return function (err) {
-        console.error(msg, err, (err||{}).stack);
-    };
+        var content = err ? (err.stack || err) : undefined;
+        if (config.ENVIRONMENT === 'local') {
+            console.error('ERROR', msg, content);
+        } else {
+            var payload = {
+                type: 'ERROR',
+                msg: msg,
+                error: content
+            };
+            console.error(JSON.stringify(payload));
+        }
+    }
 }
 
 
