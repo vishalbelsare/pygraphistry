@@ -42,11 +42,11 @@ module.exports = function ($fg, $bg, socket) {
         .subscribe(foregroundColor, function (err) { console.error('bad fg color', err, (err||{}).stack); });
 
     var backgroundColor = new Rx.ReplaySubject(1);
-    backgroundColor.onNext({r: 255, g: 255, b: 255});
+    backgroundColor.onNext({r: 237, g: 248, b: 255, a: 255});
     makeInspector($bg, '#fff')
         .sample(10)
         .do(function (rgb) {
-            $('#simulation').css('backgroundColor', 'rgb(' + [rgb.r, rgb.g, rgb.b].join(',') + ')');
+            $('#simulation').css('backgroundColor', 'rgb(' + [rgb.r, rgb.g, rgb.b, 255].join(',') + ')');
         })
         .subscribe(backgroundColor, function (err) { console.error('bad bg color', err, (err||{}).stack); });
 

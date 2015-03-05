@@ -266,7 +266,7 @@ lastRender
             lastRenderTime = t;
 
             var cfg = mostRecent;
-            cfg.renderer.render(cfg.currentState);
+            cfg.renderer.render(cfg.currentState, undefined, undefined, cfg.data.bgColor);
             renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer),
                          cfg.data.highlightIdx, new Uint8Array(cfg.data.pointSizes.buffer));
         });
@@ -325,7 +325,7 @@ function getLatestHighlightedPoint ($eventTarget, renderState, labelHover) {
     return res;
 }
 
-function setupDragHoverInteractions($eventTarget, renderState) {
+function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
     //var currentState = renderState;
 
     var stateStream = new Rx.Subject();
@@ -374,11 +374,13 @@ function setupDragHoverInteractions($eventTarget, renderState) {
                 latestHighlightedPoint,
                 renderState.get('hostBuffers').curPoints,
                 renderState.get('hostBuffers').pointSizes,
-                function (idx, curPoints, pointSizes) {
+                bgColor,
+                function (idx, curPoints, pointSizes, bgColor) {
                     return {highlightIdx: idx, camera: camera, curPoints: curPoints,
-                            pointSizes: pointSizes};
-                })
-                .take(1);
+                            pointSizes: pointSizes,
+                            bgColor: bgColor};
+                });
+                //.take(1);
         })
         .do(function(data) {
             var currentState = renderer.setCameraIm(renderState, data.camera);
@@ -395,6 +397,9 @@ function setupDragHoverInteractions($eventTarget, renderState) {
         .filter(function (prevCur) {
             debug('Point hitmap got index:', prevCur.curIdx);
             return prevCur.prevIdx !== prevCur.curIdx;
+        })
+        .filter(function (prevCur) {
+            return prevCur.curIdx < renderState.get('hostBuffers').curPoints.length;
         })
         .flatMap(function (data) {
             return renderState.get('hostBuffers').curPoints
@@ -597,11 +602,12 @@ function init(socket, $elt, renderState, urlParams) {
 
     var marquee = setupMarquee(turnOnMarquee, renderState);
 
-    setupDragHoverInteractions($elt, renderState);
+    var colors = colorpicker($('#foregroundColor'), $('#backgroundColor'), socket);
+    setupDragHoverInteractions($elt, renderState,
+        colors.backgroundColor.map(function (o) { return [o.r / 255, o.g / 255, o.b / 255, o.a]; }));
+
 
     shortestpaths($('#shortestpath'), poi, socket);
-    colorpicker($('#foregroundColor'), $('#backgroundColor'), socket);
-
 
     //trigger animation on server
     //socket.emit('interaction', {layout: true, play: true});

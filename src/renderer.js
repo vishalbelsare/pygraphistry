@@ -774,7 +774,7 @@ function setCameraIm(renderState, camera) {
  * @param {(string[])} [renderListOverride] - optional override of the render array
  */
 var lastRenderTarget = {};
-function render(state, renderListOverride, readPixelsOverride) {
+function render(state, renderListOverride, readPixelsOverride, maybeClearColor) {
     debug('========= Rendering a frame');
 
     var config      = state.get('config').toJS(),
@@ -788,6 +788,11 @@ function render(state, renderListOverride, readPixelsOverride) {
     var toRender = renderListOverride || state.get('defaultItems');
 
     state.get('renderPipeline').onNext({start: toRender});
+
+    if (maybeClearColor) {
+        console.log('using clear as', maybeClearColor);
+        gl.clearColor.apply(gl, maybeClearColor);
+    }
 
     toRender.forEach(function(item) {
         if(typeof numElements[item] === 'undefined' || numElements[item] < 1) {
