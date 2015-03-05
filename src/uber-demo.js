@@ -257,23 +257,29 @@ var reqAnimationFrame =
 var lastRenderTime = 0;
 var mostRecent = null;
 lastRender
-    .do(function (cfg) {
-        mostRecent = cfg;
+    .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
+    .do(function (pair) {
+        mostRecent = pair;
         reqAnimationFrame(function (t) {
             if (!mostRecent || t === lastRenderTime) {
                 return;
             }
             lastRenderTime = t;
 
-            var cfg = mostRecent;
-            cfg.renderer.render(cfg.currentState, undefined, undefined, cfg.data.bgColor);
+            var cfg = mostRecent.cur;
+            if (!pair.prev || cfg.data.renderTag !== mostRecent.prev.data.renderTag) {
+                cfg.renderer.render(cfg.currentState, undefined, undefined, cfg.data.bgColor);
+            }
+
             renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer),
                          cfg.data.highlightIdx, new Uint8Array(cfg.data.pointSizes.buffer));
         });
     })
     .sample(100)
-    .do(function (cfg) {
-        cfg.renderer.render(cfg.currentState, ['pointpicking']);
+    .do(function (pair) {
+        if (!pair.prev || pair.cur.data.renderTag !== pair.prev.data.renderTag) {
+            pair.cur.renderer.render(pair.cur.currentState, ['pointpicking']);
+        }
     })
     .subscribe(_.identity, makeErrorHandler('render effect'));
 
@@ -368,19 +374,24 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
 
 
     //render scene on pan/zoom (get latest points etc. at that time)
+    //tag render changes & label changes
     interactions
         .flatMapLatest(function (camera) {
             return Rx.Observable.combineLatest(
-                latestHighlightedPoint,
                 renderState.get('hostBuffers').curPoints,
                 renderState.get('hostBuffers').pointSizes,
                 bgColor,
-                function (idx, curPoints, pointSizes, bgColor) {
-                    return {highlightIdx: idx, camera: camera, curPoints: curPoints,
+                function (curPoints, pointSizes, bgColor) {
+                    return {renderTag: Date.now(),
+                            camera: camera, curPoints: curPoints,
                             pointSizes: pointSizes,
                             bgColor: bgColor};
                 });
-                //.take(1);
+        })
+        .flatMapLatest(function (data) {
+            return latestHighlightedPoint.map(function (idx) {
+                return _.extend({labelTag: Date.now(), highlightIdx: idx}, data);
+            });
         })
         .do(function(data) {
             var currentState = renderer.setCameraIm(renderState, data.camera);
