@@ -57,9 +57,7 @@ function downloadDataset(query) {
 
     return downloader[url.protocol](url).then(function (data) {
         return { body: data, metadata: config };
-    }).fail(function (err) {
-        console.error('Failure while retrieving dataset', err, (err||{}).stack);
-    })
+    }).fail(util.makeErrorHandler('Failure while retrieving dataset'));
 }
 
 function getCacheFile(url) {
@@ -99,9 +97,7 @@ function cache(data, url) {
         function () {
             debug('Dataset saved in cache:', path);
         },
-        function (err) {
-            console.error('Error caching dataset', err);
-        }
+        util.makeErrorHandler('Failure while caching dataset')
     );
 }
 
@@ -132,12 +128,12 @@ function httpDownloader(http, url) {
                     result.resolve(buffer);
                 });
             }).on('error', function (err) {
-                console.error('Cannot download dataset at', url.href, err.message);
+                util.error('Cannot download dataset at', url.href, err.message);
                 result.reject(err);
             });
         })
     }).on('error', function (err) {
-        console.error('Cannot fetch headers from', url.href, err.message);
+        util.error('Cannot fetch headers from', url.href, err.message);
         result.reject(err);
     }).end();
 
@@ -171,7 +167,7 @@ function graphistryS3Downloader(url) {
             }).fail(function () { // Not in cache of stale
                 config.S3.getObject(params, function(err, data) {
                     if (err) {
-                        console.error('S3 Download failed', err.message);
+                        util.error('S3 Download failed', err.message);
                         res.reject();
                     } else {
                         debug('Successful S3 download');
