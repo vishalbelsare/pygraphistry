@@ -87,8 +87,11 @@ function getAttributeMap(vg) {
     for (var i = 0; i < vectors.length; i++) {
         var v = vectors[i];
         if (v.values.length > 0)
-            map[v.name] = {"target" : v.target, "type": typeof(v.values[0]),
-                           "values": v.values}
+            map[v.name] = {
+                target : v.target,
+                type: typeof(v.values[0]),
+                values: v.values
+            };
     }
     return map;
 }
@@ -168,10 +171,6 @@ function decode0(graph, vg, metadata)  {
                         0);
         }
 
-//        console.log('components', componentOffsets);
-//        throw new Error('naa')
-
-
         var initSize = 5 * Math.sqrt(vg.nvertices);
         for (var i = 0; i < vg.nvertices; i++) {
             var c = components.nodeToComponent[i];
@@ -181,8 +180,6 @@ function decode0(graph, vg, metadata)  {
                 vertex.push(initSize * (offset.rowYOffset + 0.9 * components.components[c].size * Math.random()) / vg.nvertices);
             }
             vertices.push(vertex);
-            //if (i < 10) console.log(vertices[vertices.length -1]);
-            //else throw new Error('nooo')
         }
         debug('weakcc postprocess', Date.now() - t0);
     }
