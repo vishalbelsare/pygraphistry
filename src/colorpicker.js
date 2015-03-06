@@ -3,7 +3,6 @@
 var $               = window.$;
 var Rx              = require('rx');
                       require('./rx-jquery-stub');
-var _               = require('underscore');
 
 
 //$DOM * hex -> Observable hex
