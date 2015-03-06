@@ -281,7 +281,7 @@ var items = {
             'edgeColor': ['edgeIndices', 'edgeColor']
         },
         'drawType': 'LINES',
-        'glOptions': {},
+        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'edgeHitmapDownsampled',
         'readTarget': true
     },
@@ -292,7 +292,7 @@ var items = {
             'edgeColor': ['edgeIndices', 'edgeColor']
         },
         'drawType': 'LINES',
-        'glOptions': {},
+        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'edgeHitmap',
         'readTarget': true
     },
