@@ -59,6 +59,11 @@ function getImage(url) {
     return deferred.promise;
 }
 
+var usertag = 'unknown';
+function setUserTag(newtag) {
+    usertag = newtag;
+}
+
 function error2JSON(type, msg, err) {
     var content = err ? (err.stack || err) : undefined;
     return {
@@ -66,6 +71,7 @@ function error2JSON(type, msg, err) {
         msg: msg,
         error: content,
         pid: process.pid.toString(),
+        tag: usertag,
     };
 }
 
@@ -74,7 +80,7 @@ function makeHandler(type, msg, style) {
 
     return function (err) {
         var payload = error2JSON(type, msg, err);
-        if (config.ENVIRONMENT === 'local') {
+        if (false && config.ENVIRONMENT === 'local') {
             console.error(style(payload.type), payload.msg, payload.error);
         } else {
             console.error(JSON.stringify(payload));
@@ -176,6 +182,7 @@ function perf (perf, name, fn /* args */) {
 
 
 module.exports = {
+    setUserTag: setUserTag,
     getShaderSource: getShaderSource,
     getKernelSource: getKernelSource,
     getImage: getImage,
