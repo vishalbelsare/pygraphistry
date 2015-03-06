@@ -58,7 +58,7 @@ var labelHover = new Rx.Subject();
 // $DOM * RendererState  -> ()
 // Immediately reposition each label based on camera and curPoints buffer
 var renderLabelsRan = false;
-function renderLabels($labelCont, renderState, labelIdx) {
+function renderPointLabels($labelCont, renderState, labelIdx) {
 
     debug('rendering labels');
 
@@ -67,7 +67,6 @@ function renderLabels($labelCont, renderState, labelIdx) {
         console.warn('renderLabels called before curPoints available');
         return;
     }
-
     curPoints.take(1)
         .do(function (curPoints) {
 
@@ -86,6 +85,11 @@ function renderLabels($labelCont, renderState, labelIdx) {
         })
         .subscribe(_.identity, makeErrorHandler('renderLabels'));
 }
+
+function renderEdgeLabels ($labelCont, renderState, labelIdx) {
+    return;
+}
+
 
 
 //RenderState * [ float ] * int -> ()
@@ -177,7 +181,6 @@ function effectLabels(toClear, toShow, labels, newPos, labelIdx) {
 }
 
 function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIdx) {
-
     var points = new Float32Array(curPoints.buffer);
 
     var t0 = Date.now();
@@ -290,14 +293,19 @@ function setupLabels ($labelCont, latestState, latestHighlightedPoint, latestHig
                 .flatMap(function () {
                     return latestHighlightedPoint.merge(latestHighlightedEdge)
                         .map(function (lastHighlighted) {
-                            return {idx: lastHighlighted.idx, currentState: currentState};
+                            return {idx: lastHighlighted.idx, dim: lastHighlighted.dim, currentState: currentState};
                         });
                 });
         })
         .do(function (pair) {
             var currentState = pair.currentState;
             var idx = pair.idx;
-            renderLabels($labelCont, currentState, idx);
+            var dim = pair.dim;
+            if (dim === 1) {
+                renderPointLabels($labelCont, currentState, idx);
+            } else if (dim === 2) {
+                renderEdgeLabels($labelCont, currentState, idx);
+            }
         })
         .subscribe(_.identity, makeErrorHandler('setuplabels'));
 }
