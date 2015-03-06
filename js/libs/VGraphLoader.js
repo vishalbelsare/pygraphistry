@@ -87,8 +87,11 @@ function getAttributeMap(vg) {
     for (var i = 0; i < vectors.length; i++) {
         var v = vectors[i];
         if (v.values.length > 0)
-            map[v.name] = {"target" : v.target, "type": typeof(v.values[0]),
-                           "values": v.values}
+            map[v.name] = {
+                target : v.target,
+                type: typeof(v.values[0]),
+                values: v.values
+            };
     }
     return map;
 }
@@ -168,10 +171,6 @@ function decode0(graph, vg, metadata)  {
                         0);
         }
 
-//        console.log('components', componentOffsets);
-//        throw new Error('naa')
-
-
         var initSize = 5 * Math.sqrt(vg.nvertices);
         for (var i = 0; i < vg.nvertices; i++) {
             var c = components.nodeToComponent[i];
@@ -181,8 +180,6 @@ function decode0(graph, vg, metadata)  {
                 vertex.push(initSize * (offset.rowYOffset + 0.9 * components.components[c].size * Math.random()) / vg.nvertices);
             }
             vertices.push(vertex);
-            //if (i < 10) console.log(vertices[vertices.length -1]);
-            //else throw new Error('nooo')
         }
         debug('weakcc postprocess', Date.now() - t0);
     }
@@ -190,7 +187,7 @@ function decode0(graph, vg, metadata)  {
     var loaders = attributeLoaders(graph);
     var mapper = mappers[metadata.mapper];
     if (!mapper) {
-        console.warn('WARNING Unknown mapper', metadata.mapper, 'using "default"');
+        util.warn('Unknown mapper', metadata.mapper, 'using "default"');
         mapper = mappers['default'];
     }
     loaders = wrap(mapper.mappings, loaders);
@@ -203,12 +200,12 @@ function decode0(graph, vg, metadata)  {
 
         var vec = amap[vname];
         if (vec.target != loader.target) {
-            console.warn("WARNING Vertex/Node attribute mismatch for " + vname);
+            util.warn("Vertex/Node attribute mismatch for " + vname);
             continue;
         }
 
         if (vec.type != loader.type) {
-            console.warn("WARNING Expected type " + loader.type + " but got " + vec.type);
+            util.warn("Expected type " + loader.type + " but got " + vec.type);
             continue;
         }
 
@@ -264,9 +261,7 @@ function decode0(graph, vg, metadata)  {
             la.setEdges(graph.simulator);
         });
         return graph;
-    }).catch(function (error) {
-        console.error("ERROR Failure in VGraphLoader ", error.stack)
-    })
+    }).fail(util.makeErrorHandler('Failure in VGraphLoader'));
 }
 
 function runLoaders(loaders) {

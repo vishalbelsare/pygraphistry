@@ -335,7 +335,7 @@ var items = {
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] }
         },
         'drawType': 'POINTS',
-        'glOptions': {},
+        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'pointTexture',
         'readTarget': true,
     },
@@ -368,7 +368,7 @@ var items = {
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] }
         },
         'drawType': 'POINTS',
-        'glOptions': {},
+        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'pointTexture',
         'readTarget': false
     },
@@ -384,7 +384,7 @@ var items = {
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] }
         },
         'drawType': 'POINTS',
-        'glOptions': {},
+        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] }
     },
     'pointpicking': {
         'program': 'points',
@@ -397,7 +397,7 @@ var items = {
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] }
         },
         'drawType': 'POINTS',
-        'glOptions': {},
+        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'pointHitmap',
         'readTarget': true,
     },
@@ -413,7 +413,7 @@ var items = {
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] }
         },
         'drawType': 'POINTS',
-        'glOptions': {},
+        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'pointHitmapDownsampled',
         'readTarget': true,
     },
@@ -470,7 +470,7 @@ var stdOptions = {
     'blendFuncSeparate': [['SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'ONE', 'ONE']],
     'blendEquationSeparate': [['FUNC_ADD', 'FUNC_ADD']],
     'depthFunc': [['LEQUAL']],
-    'clearColor': [[255, 255, 255, 0.0]],
+    'clearColor': [[1, 1, 1, 0.0]],
     'lineWidth': [[3]]
 }
 

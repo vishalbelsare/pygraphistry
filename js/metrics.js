@@ -7,9 +7,10 @@ var config = require('config')();
 var debug = require('debug')('boundary:metrics');
 var _ = require('underscore');
 var dns = require('dns');
+var util = require('./util.js');
 
 
-console.error('FIXME reject expired certs (currently relaxing for Boundary)');
+console.log('FIXME reject expired certs (currently relaxing for Boundary)');
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 
@@ -47,10 +48,10 @@ function sendToBoundary (entry) {
         },
         function (error, response, body) {
             if (error) {
-                console.error('Error posting to boundary', error.body);
+                util.error('Error posting to boundary', error.body);
             } else {
                 if (response.statusCode !== 200) {
-                    console.error('Boundary returned error', response.body);
+                    util.error('Boundary returned error', response.body);
                 }
             }
         });

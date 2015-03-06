@@ -59,7 +59,7 @@ function create(renderer, device, vendor, controls) {
     }).then(function () {
         Object.seal(graph);
         return graph;
-    }).fail(util.makeErrorHandler('Error initializing nbody'));
+    }).fail(util.makeErrorHandler('Cannot initialize nbody'));
 }
 
 function createSimulator(renderer, device, vendor, controls) {
@@ -69,9 +69,7 @@ function createSimulator(renderer, device, vendor, controls) {
     var simulator = controls[0].simulator;
 
     return simulator.create(renderer, device, vendor, controls)
-        .fail(function (err) {
-            console.error('ERROR Cannot create simulator. ', (err||{}).stack)
-        });
+        .fail(util.makeErrorHandler('Cannot create simulator'));
 }
 
 function updateSettings (graph, newCfg) {
@@ -185,9 +183,7 @@ function setPoints(graph, points, pointSizes, pointColors) {
     })
     .then(function() {
         return graph;
-    }).fail(function (err) {
-        console.error("ERROR Failure in NBody.setPoints ", (err||{}).stack);
-    });
+    }).fail(util.makeErrorHandler('Failure in setPoints'));
 }
 
 function setVertices(graph, points) {
@@ -385,15 +381,13 @@ var setEdges = Q.promised(function(graph, edges) {
             }
         }
     }
-    console.log('Dataset    nodes:%d  edges:%d  splits:%d',
+    console.info('Dataset    nodes:%d  edges:%d  splits:%d',
                 graph.simulator.numPoints, edges.length, numSplits);
 
     return graph.simulator.setEdges(forwardEdges, backwardsEdges, degrees, midPoints)
     .then(function() {
         return graph;
-    }).fail(function (err) {
-        console.error("ERROR Failure in NBody.setEdges ", (err||{}).stack);
-    });
+    }).fail(util.makeErrorHandler('Failure in setEdges'));
 });
 
 function setEdgeColors(graph, edgeColors) {
@@ -404,7 +398,7 @@ function setEdgeColors(graph, edgeColors) {
         return graph.simulator.setEdgeColors(undefined);
 
     if (edgeColors.length != nedges)
-       console.error("ERROR: setEdgeColors expects one color per edge.");
+       util.error('setEdgeColors expects one color per edge');
 
     // Internaly we have two colors, one per endpoint.
     // Edges may be permuted, use forward permutation
@@ -427,7 +421,7 @@ function setMidEdgeColors(graph, midEdgeColors) {
     var numMidEdges = graph.simulator.numMidEdges;
 
     if (midEdgeColors.length != numMidEdges)
-       console.error("ERROR: setMidEdgeColors expects one color per midEdge.");
+       util.error('setMidEdgeColors expects one color per midEdge');
 
     // Internaly we have two colors, one per endpoint.
     var ec = new Uint32Array(numMidEdges * 2);

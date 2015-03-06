@@ -23,7 +23,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     // Set synchronous based on debug value
     var synchronous = false;
     if (process.env.DEBUG && process.env.DEBUG.indexOf('perf') != -1) {
-        console.warn('Kernel ' + name + ' is synchronous because DEBUG=perf');
+        util.info('Kernel ' + name + ' is synchronous because DEBUG=perf');
         synchronous = true;
     }
 
@@ -64,7 +64,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         _.each(args, function (val, arg) {
             if (arg in argValues) {
                 if (typeof val === 'undefined' || typeof val === 'null') {
-                    console.warn('WARNING Setting argument %s to %s', arg, val);
+                    util.warn('Setting argument %s to %s', arg, val);
                 }
 
                 var arrayWrappedValue = (typeof val === 'number') ? [val] : val;
@@ -130,7 +130,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 var dirty = argValues[arg].dirty;
                 var type = argTypes[arg];
                 if (val === null)
-                    console.warn('WARNING In kernel %s, argument %s is null', name, arg);
+                    util.warn('In kernel %s, argument %s is null', name, arg);
 
                 if (dirty) {
                     debug('Setting arg %d with value', i, val);
@@ -140,8 +140,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
             }
 
         } catch (e) {
-            console.error('Error setting argument %s of kernel %s', args[i], name);
-            throw new Error(e);
+            util.makeErrorHandler('Error setting argument %s of kernel %s', args[i], name)(e);
         }
     };
 
@@ -153,9 +152,9 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 var start = process.hrtime();
                 queue.enqueueNDRangeKernel(kernel, null, workItems, workGroupSize || null);
                 return start;
-            }).catch (function(error) {
-                console.error('Kernel %s error', that.name, error);
-            }).then(function (start) {
+            }).fail(
+                util.makeErrorHandler('Kernel %s error', that.name)
+            ).then(function (start) {
                 if (synchronous) {
                     debug('Waiting for kernel to finish');
                     clContext.queue.finish();
@@ -171,7 +170,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     this.exec = function(numWorkItems, resources, workGroupSize) {
         return qKernel.then(function (kernel) {
             if (kernel === null) {
-                console.error('Kernel is not compiled, aborting');
+                util.error('Kernel is not compiled, aborting');
                 return Q();
             } else {
                 setAllArgs(kernel);

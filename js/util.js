@@ -1,11 +1,13 @@
-"use strict";
+'use strict';
 
-var debug = require("debug")("graphistry:util"),
+var debug = require('debug')('graphistry:util'),
     path = require('path'),
     fs = require('fs'),
     Q = require('q'),
     _ = require('underscore'),
-    nodeutil = require('util');
+    nodeutil = require('util'),
+    chalk = require('chalk'),
+    config = require('config')();
 
 var Image, webgl;
 
@@ -57,21 +59,70 @@ function getImage(url) {
     return deferred.promise;
 }
 
-
-function die() {
-    var msg = nodeutil.format.apply(this, arguments)
-    console.error("FATAL ERROR: ", (new Error(msg)).stack)
-    process.exit(1);
+var usertag = 'unknown';
+function setUserTag(newtag) {
+    usertag = newtag;
 }
 
-
-function makeErrorHandler() {
-    var msg = nodeutil.format.apply(this, arguments);
-    return function (err) {
-        console.error(msg, err, (err||{}).stack);
+function error2JSON(type, msg, err) {
+    var content = err ? (err.stack || err) : '';
+    return {
+        type: type,
+        msg: msg,
+        error: content,
+        pid: process.pid.toString(),
+        tag: usertag,
     };
 }
 
+function makeHandler(type, msg, out, style) {
+    style = style || _.identity;
+
+    return function (err) {
+        var payload = error2JSON(type, msg, err);
+        if (config.ENVIRONMENT === 'local') {
+            secretConsole[out](style(payload.type), payload.msg, payload.error);
+        } else {
+            secretConsole[out](JSON.stringify(payload));
+        }
+    }
+}
+
+function makeErrorHandler() {
+    var msg = nodeutil.format.apply(this, arguments);
+    return makeHandler('ERROR', msg, 'error', chalk.bold.red)
+}
+
+function error() {
+    makeErrorHandler.apply(this, arguments)(new Error());
+}
+
+function die() {
+    var msg = nodeutil.format.apply(this, arguments)
+    makeHandler('FATALERROR', msg, 'error', chalk.bold.red)(new Error());
+    process.exit(1);
+}
+
+function warn() {
+    var msg = nodeutil.format.apply(this, arguments)
+    makeHandler('WARNING', msg, 'warn', chalk.yellow)(new Error());
+}
+
+function info() {
+    var msg = nodeutil.format.apply(this, arguments)
+    makeHandler('INFO', msg, 'info', chalk.green)();
+}
+
+// Hijack the console
+var secretConsole = {
+    info: console.info,
+    log: console.log,
+    warn: console.warn,
+    error: console.error,
+};
+console.info = info;
+console.warn = warn;
+console.error = error;
 
 function rgb(r, g, b, a) {
     if (a === undefined)
@@ -145,13 +196,16 @@ function perf (perf, name, fn /* args */) {
     return res;
 }
 
-
 module.exports = {
+    setUserTag: setUserTag,
     getShaderSource: getShaderSource,
     getKernelSource: getKernelSource,
     getImage: getImage,
     die: die,
     makeErrorHandler: makeErrorHandler,
+    error: error,
+    warn: warn,
+    info: info,
     rgb: rgb,
     saneKernels: saneKernels,
     palettes: palettes,

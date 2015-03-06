@@ -5,11 +5,10 @@ var events = require('./SimpleEvents.js');
 var _ = require('underscore');
 var debug = require('debug')('graphistry:graph-viz:cl:cl');
 var perf = require('debug')('perf');
-var util = require('util');
+var nodeutil = require('util');
 var path = require('path');
-var utiljs = require('./util.js');
+var util = require('./util.js');
 
-console.debug = console.log;
 debug("Initializing node-webcl flavored cl.js");
 var webcl = require('node-webcl');
 
@@ -56,7 +55,7 @@ var create = Q.promised(function(renderer, device, vendor) {
     device = device || 'all';
     var clDevice = clDeviceType[device.toLowerCase()];
     if (!clDevice) {
-        console.warn('WARNING Unknown device %s, using "all"', device)
+        util.warn('Unknown device %s, using "all"', device);
         clDevice = clDeviceType.all;
     }
     return createCLContextNode(renderer, clDevice, vendor.toLowerCase());
@@ -85,7 +84,7 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
 
     var devices = clDevices.map(function(d) {
     // var devices = platform.getDevices(DEVICE_TYPE).map(function(d) {
-        debug("Found device %s", util.inspect(d, {depth: null, showHidden: true, colors: true}));
+        debug("Found device %s", nodeutil.inspect(d, {depth: null, showHidden: true, colors: true}));
 
         var typeToString = function (v) {
             return v === 2 ? 'CPU'
@@ -178,7 +177,7 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
     }));
     props.TYPE = deviceWrapper.deviceType;
 
-    console.log('OpenCL Info    Type:%s  Vendor:%s  Device:%s',
+    console.info('OpenCL    Type:%s  Vendor:%s  Device:%s',
                 props.TYPE, props.VENDOR, props.NAME);
 
     perf('Device Sizes   WorkGroup:%d  WorkItem:%s', props.MAX_WORK_GROUP_SIZE,
@@ -231,9 +230,9 @@ var compile = Q.promised(function (cl, source, kernels) {
         var includeDir = path.resolve(__dirname, '..', 'kernels');
         program.build([cl.device], '-I ' + includeDir + ' -cl-fast-relaxed-math');
     } catch (e) {
-        console.error('OpenCL compilation error:', e.stack);
+        util.makeErrorHandler('OpenCL compilation error')(e);
         var log = program.getBuildInfo(cl.device, webcl.PROGRAM_BUILD_LOG)
-        console.error('Build Log: %o', log);
+        console.log('Build Log: %o', log);
         throw e;
     }
 
@@ -252,7 +251,7 @@ var compile = Q.promised(function (cl, source, kernels) {
         return typeof kernels === "string" ? compiled.unknown : compiled;
 
     } catch (e) {
-        console.error('Kernel creation error:', kernels, e.stack);
+        util.makeErrorHandler('Kernel creation error:', kernels)(e);
         throw e;
     }
 });
@@ -288,9 +287,7 @@ var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
             var global = [globalSize];
             kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, global, workgroup);
         })
-        .catch (function(error) {
-            console.error('Kernel error', error);
-        })
+        .fail(util.makeErrorHandler('Kernel error'))
         .then(release.bind('', buffers))
         .then(function () { kernel.cl.queue.finish(); })
         .then(_.constant(kernel));
@@ -438,10 +435,8 @@ var read = Q.promised(function (buffer, target, optStartIdx, optLen) {
         })
         .then(function() {
             return buffer;
-        },
-        function(err) {
-            console.error("Read error for buffer " + buffer.name + ":", err);
-        });
+        })
+        .fail(util.makeErrorHandler('Read error for buffer', buffer.name));
 });
 
 
