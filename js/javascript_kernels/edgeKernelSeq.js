@@ -54,6 +54,7 @@ var edgeKernelSeq = function (clContext) {
 
         debug("Running kernel faEdgeForces");
         return this.faEdges.exec([256*256], resources, [256]);
+        .fail(util.makeErrorHandler("Executing edgeKernelSeq failed"));
     };
 
 }

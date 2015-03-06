@@ -117,6 +117,7 @@ var edgeKernelSeqFast = function (clContext) {
 
         return that.segReduce.exec([2000*256], resources, [256]);
       })
+      .fail(util.makeErrorHandler("Executing edgeKernelSeqFast failed"));
 
     }
 }

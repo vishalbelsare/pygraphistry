@@ -3,6 +3,7 @@ var Kernel = require('../kernel.js'),
     debug = require("debug")("graphistry:graph-viz:cl:barensKernels"),
     _     = require('underscore'),
     cljs  = require('../cl.js');
+    util = require('../util.js'),
     ArgsType = require('./ArgsType.js');
 
 var integrate1Kernel = function (clContext) {
@@ -49,9 +50,7 @@ var integrate1Kernel = function (clContext) {
 
         debug("Running kernel faIntegrate");
         return this.faIntegrate.exec([simulator.numPoints], resources)
-            .fail(function (err) {
-                console.error('Kernel faIntegrate failed', err, (err||{}).stack);
-            });
+          .fail(util.makeErrorHandler('Executing Integrate1 failed'));
     }
 
 }

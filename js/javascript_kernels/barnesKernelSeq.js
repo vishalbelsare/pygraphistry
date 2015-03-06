@@ -192,9 +192,7 @@ var BarnesKernelSeq = function (clContext) {
                             tempBuffers.numBodies = numBodies;
                             return tempBuffers;
                         })
-        .catch(function(error) {
-            console.log(error);
-        });
+        .fail(util.makeErrorHandler("Setting temporary buffers for barnesHutKernelSequence failed"));
     };
 
     this.setEdges = function(simulator, layoutBuffers, warpsize) {
@@ -292,9 +290,7 @@ var BarnesKernelSeq = function (clContext) {
             return that.calculateForces.exec([workItems.calculateForces], resources, [256]);
         })
 
-        .fail(function (err) {
-            console.error('Computing pointForces failed', err, (err||{}).stack);
-        });
+        .fail(util.makeErrorHandler("Executing BarnesKernelSeq failed"));
     };
 
 };

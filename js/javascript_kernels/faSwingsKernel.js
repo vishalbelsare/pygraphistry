@@ -49,9 +49,7 @@ var faSwingKernel = function (clContext) {
 
         debug("Running kernel faSwingsTractions");
         return this.faSwings.exec([simulator.numPoints], resources)
-            .fail(function (err) {
-                console.error('Kernel faSwingsTractions failed', err, (err||{}).stack);
-            });
+        .fail(util.makeErrorHandler('Executing FaSwing failed'));
     };
 
 }
