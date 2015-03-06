@@ -315,6 +315,16 @@ function getLatestHighlightedPoint ($eventTarget, renderState, labelHover) {
     interaction.setupMousemove($eventTarget, renderState, 'pointHitmap')
         .filter(function (v) { return v > -1; })
         .merge($eventTarget.mousedownAsObservable()
+            .filter(function (evt) {
+                if (evt.target) {
+                    if ($(evt.target).hasClass('graph-label') ||
+                        $(evt.target).hasClass('highlighted-point') ||
+                        $(evt.target).hasClass('highlighted-point-center')) {
+                        return false;
+                    }
+                }
+                return true;
+            })
             .map(_.constant(-1)))
         .merge(
             labelHover
