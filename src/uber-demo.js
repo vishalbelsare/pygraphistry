@@ -268,7 +268,7 @@ lastRender
 
             var cfg = mostRecent.cur;
             if (!pair.prev || (cfg.data.renderTag !== mostRecent.prev.data.renderTag)) {
-                cfg.renderer.render(cfg.currentState, undefined, undefined, cfg.data.bgColor);
+                cfg.renderer.render(cfg.currentState, undefined, undefined);
             }
 
             renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer),
@@ -393,7 +393,18 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
             });
         })
         .do(function(data) {
+
             var currentState = renderer.setCameraIm(renderState, data.camera);
+
+            var rgb = data.bgColor;
+            var color = [[rgb.r/256, rgb.g/256, rgb.b/256, rgb.a === undefined ? 1 : rgb.a/256]];
+            var config = currentState.get('config');
+            var options = config.get('options');
+            currentState =
+                currentState.set('config',
+                    config.set('options',
+                        options.set('clearColor', color)));
+
             stateStream.onNext(currentState);
             renderScene(renderer, currentState, data);
         })
