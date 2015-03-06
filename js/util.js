@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 var debug = require('debug')('graphistry:util'),
     path = require('path'),
@@ -65,7 +65,7 @@ function setUserTag(newtag) {
 }
 
 function error2JSON(type, msg, err) {
-    var content = err ? (err.stack || err) : undefined;
+    var content = err ? (err.stack || err) : '';
     return {
         type: type,
         msg: msg,
@@ -75,22 +75,22 @@ function error2JSON(type, msg, err) {
     };
 }
 
-function makeHandler(type, msg, style) {
+function makeHandler(type, msg, out, style) {
     style = style || _.identity;
 
     return function (err) {
         var payload = error2JSON(type, msg, err);
-        if (false && config.ENVIRONMENT === 'local') {
-            console.error(style(payload.type), payload.msg, payload.error);
+        if (config.ENVIRONMENT === 'local') {
+            secretConsole[out](style(payload.type), payload.msg, payload.error);
         } else {
-            console.error(JSON.stringify(payload));
+            secretConsole[out](JSON.stringify(payload));
         }
     }
 }
 
 function makeErrorHandler() {
     var msg = nodeutil.format.apply(this, arguments);
-    return makeHandler('NORMALERROR', msg, chalk.bold.red)
+    return makeHandler('ERROR', msg, 'error', chalk.bold.red)
 }
 
 function error() {
@@ -99,14 +99,30 @@ function error() {
 
 function die() {
     var msg = nodeutil.format.apply(this, arguments)
-    makeHandler('FATALERROR', msg, chalk.bold.red)(new Error());
+    makeHandler('FATALERROR', msg, 'error', chalk.bold.red)(new Error());
     process.exit(1);
 }
 
 function warn() {
     var msg = nodeutil.format.apply(this, arguments)
-    makeHandler('WARNING', msg, chalk.yellow)(new Error());
+    makeHandler('WARNING', msg, 'warn', chalk.yellow)(new Error());
 }
+
+function info() {
+    var msg = nodeutil.format.apply(this, arguments)
+    makeHandler('INFO', msg, 'info', chalk.green)();
+}
+
+// Hijack the console
+var secretConsole = {
+    info: console.info,
+    log: console.log,
+    warn: console.warn,
+    error: console.error,
+};
+console.info = info;
+console.warn = warn;
+console.error = error;
 
 function rgb(r, g, b, a) {
     if (a === undefined)
@@ -180,7 +196,6 @@ function perf (perf, name, fn /* args */) {
     return res;
 }
 
-
 module.exports = {
     setUserTag: setUserTag,
     getShaderSource: getShaderSource,
@@ -190,6 +205,7 @@ module.exports = {
     makeErrorHandler: makeErrorHandler,
     error: error,
     warn: warn,
+    info: info,
     rgb: rgb,
     saneKernels: saneKernels,
     palettes: palettes,

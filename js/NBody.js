@@ -381,7 +381,7 @@ var setEdges = Q.promised(function(graph, edges) {
             }
         }
     }
-    console.log('Dataset    nodes:%d  edges:%d  splits:%d',
+    console.info('Dataset    nodes:%d  edges:%d  splits:%d',
                 graph.simulator.numPoints, edges.length, numSplits);
 
     return graph.simulator.setEdges(forwardEdges, backwardsEdges, degrees, midPoints)
