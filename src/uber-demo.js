@@ -260,23 +260,29 @@ var reqAnimationFrame =
 var lastRenderTime = 0;
 var mostRecent = null;
 lastRender
-    .do(function (cfg) {
-        mostRecent = cfg;
+    .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
+    .do(function (pair) {
+        mostRecent = pair;
         reqAnimationFrame(function (t) {
             if (!mostRecent || t === lastRenderTime) {
                 return;
             }
             lastRenderTime = t;
 
-            var cfg = mostRecent;
-            cfg.renderer.render(cfg.currentState, undefined, undefined, cfg.data.bgColor);
+            var cfg = mostRecent.cur;
+            if (!pair.prev || (cfg.data.renderTag !== mostRecent.prev.data.renderTag)) {
+                cfg.renderer.render(cfg.currentState, undefined, undefined);
+            }
+
             renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer),
                          cfg.data.highlightIdx, new Uint8Array(cfg.data.pointSizes.buffer));
         });
     })
     .sample(100)
-    .do(function (cfg) {
-        cfg.renderer.render(cfg.currentState, ['pointpicking', 'edgepicking']);
+    .do(function (pair) {
+        if (!pair.prev || pair.cur.data.renderTag !== pair.prev.data.renderTag) {
+            pair.cur.renderer.render(pair.cur.currentState, ['pointpicking', 'edgepicking']);
+        }
     })
     .subscribe(_.identity, makeErrorHandler('render effect'));
 
@@ -289,7 +295,6 @@ function setupLabels ($labelCont, latestState, latestHighlightedPoint, latestHig
         .flatMapLatest(function (currentState) {
             //wait until has samples
             return currentState.get('rendered')
-                .filter(function (items) { return items && (items.indexOf('pointsampling') > -1); })
                 .flatMap(function () {
                     return latestHighlightedPoint.merge(latestHighlightedEdge)
                         .map(function (lastHighlighted) {
@@ -322,6 +327,16 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
     interaction.setupMousemove($eventTarget, renderState, textureName)
         .filter(function (v) { return v > -1; })
         .merge($eventTarget.mousedownAsObservable()
+            .filter(function (evt) {
+                if (evt.target) {
+                    if ($(evt.target).hasClass('graph-label') ||
+                        $(evt.target).hasClass('highlighted-point') ||
+                        $(evt.target).hasClass('highlighted-point-center')) {
+                        return false;
+                    }
+                }
+                return true;
+            })
             .map(_.constant(-1)))
         .merge(
             labelHover
@@ -353,7 +368,7 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
 
     var stateStream = new Rx.Subject();
     var latestState = new Rx.ReplaySubject(1);
-    stateStream.subscribe(latestState);
+    stateStream.subscribe(latestState, makeErrorHandler('bad stateStream'));
     stateStream.onNext(renderState);
 
     var camera = renderState.get('camera');
@@ -396,22 +411,39 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
 
 
     //render scene on pan/zoom (get latest points etc. at that time)
+    //tag render changes & label changes
     interactions
         .flatMapLatest(function (camera) {
             return Rx.Observable.combineLatest(
-                latestHighlightedPoint.merge(latestHighlightedEdge),
                 renderState.get('hostBuffers').curPoints,
                 renderState.get('hostBuffers').pointSizes,
                 bgColor,
-                function (lastHighlighted, curPoints, pointSizes, bgColor) {
-                    return {highlightIdx: lastHighlighted.idx, camera: camera, curPoints: curPoints,
+                function (curPoints, pointSizes, bgColor) {
+                    return {renderTag: Date.now(),
+                            camera: camera, curPoints: curPoints,
                             pointSizes: pointSizes,
                             bgColor: bgColor};
                 });
-                //.take(1);
+        })
+        .flatMapLatest(function (data) {
+            // TODO: pass in dim. Handle Dim.
+            return latestHighlightedPoint.map(function (lastHighlighted) {
+                return _.extend({labelTag: Date.now(), highlightIdx: lastHighlighted.idx}, data);
+            });
         })
         .do(function(data) {
+
             var currentState = renderer.setCameraIm(renderState, data.camera);
+
+            var rgb = data.bgColor;
+            var color = [[rgb.r/256, rgb.g/256, rgb.b/256, rgb.a === undefined ? 1 : rgb.a/256]];
+            var config = currentState.get('config');
+            var options = config.get('options');
+            currentState =
+                currentState.set('config',
+                    config.set('options',
+                        options.set('clearColor', color)));
+
             stateStream.onNext(currentState);
             renderScene(renderer, currentState, data);
         })
@@ -434,11 +466,11 @@ function setupMarquee(isOn, renderState) {
 
     marquee.selections.subscribe(function (sel) {
         debug('selected bounds', sel);
-    });
+    }, makeErrorHandler('bad marquee selections'));
 
     marquee.drags.subscribe(function (drag) {
         debug('drag action', drag.start, drag.end);
-    });
+    }, makeErrorHandler('bad marquee drags'));
 
     return marquee;
 }
@@ -558,7 +590,7 @@ function createControls(socket) {
             $anchor.append($entry);
         });
 
-    }, function (err) {console.error(err);});
+    }, makeErrorHandler('createControls'));
 
     debug('Getting layout controls from server');
     socket.emit('get_layout_controls');
@@ -585,28 +617,13 @@ function init(socket, $elt, renderState, urlParams) {
     var marquee = setupMarquee(turnOnMarquee, renderState);
 
     var colors = colorpicker($('#foregroundColor'), $('#backgroundColor'), socket);
-    setupDragHoverInteractions($elt, renderState,
-        colors.backgroundColor.map(function (o) { return [o.r / 255, o.g / 255, o.b / 255, o.a]; }));
+    setupDragHoverInteractions($elt, renderState, colors.backgroundColor);
 
 
     shortestpaths($('#shortestpath'), poi, socket);
 
     //trigger animation on server
     //socket.emit('interaction', {layout: true, play: true});
-
-    //TODO try/catch because sc.html does not have tooltip
-    try {
-        $('#refresh')
-            .tooltip()
-            .on('click', function () {
-                debug('reset_graph');
-
-                socket.emit('reset_graph', {}, function () {
-                    debug('page refresh');
-                    window.location.reload();
-                });
-            });
-    } catch (e) { }
 
 
     $('#timeSlider').rangeSlider({
@@ -665,7 +682,8 @@ function init(socket, $elt, renderState, urlParams) {
                 makeErrorHandler('menu slider')
             );
         });
-    });
+    },
+    makeErrorHandler('bad controls'));
 
     Rx.Observable.zip(
         marquee.drags,
@@ -720,7 +738,7 @@ function init(socket, $elt, renderState, urlParams) {
                 .map(_.constant(Rx.Observable.return(false))))
         .flatMapLatest(_.identity);
     var isAutoCentering = new Rx.ReplaySubject(1);
-    autoCentering.subscribe(isAutoCentering);
+    autoCentering.subscribe(isAutoCentering, makeErrorHandler('bad autocenter'));
 
 
     var runLayout =
@@ -736,12 +754,8 @@ function init(socket, $elt, renderState, urlParams) {
 
     runLayout
         .subscribe(
-            function () {
-                socket.emit('interaction', {play: true, layout: true});
-            },
-            function (err) {
-                console.error('Error stimulating graph', err, (err||{}).stack);
-            });
+            function () { socket.emit('interaction', {play: true, layout: true}); },
+            makeErrorHandler('Error stimulating graph'));
 
     autoLayingOut.subscribe(
         function (evt) {
@@ -750,7 +764,7 @@ function init(socket, $elt, renderState, urlParams) {
                 socket.emit('interaction', payload);
             }
         },
-        function (err) { console.error('autoLayingOut error', err, (err||{}).stack); },
+        makeErrorHandler('autoLayingOut error'),
         function () {
             isAutoCentering.take(1).subscribe(function (v) {
                 if (v !== false) {
@@ -770,7 +784,7 @@ function init(socket, $elt, renderState, urlParams) {
                 $('#center').trigger('click');
             }
         },
-        function (err) { console.error('autoCentering error', err, (err||{}).stack); },
+        makeErrorHandler('autoCentering error'),
         function () {
             $shrinkToFit.toggleClass('automode', false).toggleClass('toggle-on', false);
         });

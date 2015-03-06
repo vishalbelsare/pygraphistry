@@ -773,7 +773,7 @@ function setCameraIm(renderState, camera) {
  * @param {(string[])} [renderListOverride] - optional override of the render array
  */
 var lastRenderTarget = {};
-function render(state, renderListOverride, readPixelsOverride, maybeClearColor) {
+function render(state, renderListOverride, readPixelsOverride) {
     debug('========= Rendering a frame');
 
     var config      = state.get('config').toJS(),
@@ -787,11 +787,6 @@ function render(state, renderListOverride, readPixelsOverride, maybeClearColor) 
     var toRender = renderListOverride || state.get('defaultItems');
 
     state.get('renderPipeline').onNext({start: toRender});
-
-    if (maybeClearColor) {
-        debug('using clear as', maybeClearColor);
-        gl.clearColor.apply(gl, maybeClearColor);
-    }
 
     toRender.forEach(function(item) {
         if(typeof numElements[item] === 'undefined' || numElements[item] < 1) {
@@ -815,6 +810,9 @@ function renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, r
 
     var itemDef = config.items[item];
     var renderTarget = itemDef.renderTarget === 'CANVAS' ? null : itemDef.renderTarget;
+
+    var clearColor = ((itemDef.glOptions || {}).clearColor || config.options.clearColor)[0];
+    gl.clearColor.apply(gl, clearColor);
 
     //change viewport in case of downsampled target
     var dims = getTextureDims(config, gl.canvas, renderTarget);
