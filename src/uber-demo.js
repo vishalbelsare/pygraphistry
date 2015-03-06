@@ -280,7 +280,7 @@ lastRender
 
 //move labels when camera moves or new highlight
 //$DOM * Observable RenderState -> ()
-function setupLabels ($labelCont, latestState, latestHighlightedPoint) {
+function setupLabels ($labelCont, latestState, latestHighlightedPoint, latestHighlightedEdge) {
 
     latestState
         .flatMapLatest(function (currentState) {
@@ -288,9 +288,10 @@ function setupLabels ($labelCont, latestState, latestHighlightedPoint) {
             return currentState.get('rendered')
                 .filter(function (items) { return items && (items.indexOf('pointsampling') > -1); })
                 .flatMap(function () {
-                    return latestHighlightedPoint.map(function (idx) {
-                        return {idx: idx, currentState: currentState};
-                    });
+                    return latestHighlightedPoint.merge(latestHighlightedEdge)
+                        .map(function (lastHighlighted) {
+                            return {idx: lastHighlighted.idx, currentState: currentState};
+                        });
                 });
         })
         .do(function (pair) {
@@ -300,6 +301,8 @@ function setupLabels ($labelCont, latestState, latestHighlightedPoint) {
         })
         .subscribe(_.identity, makeErrorHandler('setuplabels'));
 }
+
+
 
 
 //$DOM * RenderState * Observable DOM * textureName-> Observable int
@@ -320,6 +323,16 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
                 })
                 .filter(function (highlightedLabels) { return highlightedLabels.length; })
                 .map(function (highlightedLabels) { return highlightedLabels[0].idx; }))
+        .map(function (idx) {
+            //TODO: Get rid of this hacky bitshift and change the value
+            //      returned by the shader.
+            var dim = 1;
+            if (textureName === 'edgeHitmap') {
+                idx = idx >> 8;
+                dim = 2;
+            }
+            return {idx: idx, dim: dim};
+        })
         .sample(10)
         .subscribe(res, makeErrorHandler('getLatestHighlightedObject'));
 
@@ -370,20 +383,20 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
 
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
-    setupLabels($labelCont, latestState, latestHighlightedPoint);
+    setupLabels($labelCont, latestState, latestHighlightedPoint, latestHighlightedEdge);
+
 
 
     //render scene on pan/zoom (get latest points etc. at that time)
     interactions
         .flatMapLatest(function (camera) {
             return Rx.Observable.combineLatest(
-                latestHighlightedPoint,
-                latestHighlightedEdge,
+                latestHighlightedPoint.merge(latestHighlightedEdge),
                 renderState.get('hostBuffers').curPoints,
                 renderState.get('hostBuffers').pointSizes,
                 bgColor,
-                function (idx, curPoints, pointSizes, bgColor) {
-                    return {highlightIdx: idx, camera: camera, curPoints: curPoints,
+                function (lastHighlighted, curPoints, pointSizes, bgColor) {
+                    return {highlightIdx: lastHighlighted.idx, camera: camera, curPoints: curPoints,
                             pointSizes: pointSizes,
                             bgColor: bgColor};
                 });
