@@ -642,20 +642,6 @@ function init(socket, $elt, renderState, urlParams) {
     //trigger animation on server
     //socket.emit('interaction', {layout: true, play: true});
 
-    //TODO try/catch because sc.html does not have tooltip
-    try {
-        $('#refresh')
-            .tooltip()
-            .on('click', function () {
-                debug('reset_graph');
-
-                socket.emit('reset_graph', {}, function () {
-                    debug('page refresh');
-                    window.location.reload();
-                });
-            });
-    } catch (e) { }
-
 
     $('#timeSlider').rangeSlider({
          bounds: {min: 0, max: 100},
