@@ -267,7 +267,7 @@ lastRender
             lastRenderTime = t;
 
             var cfg = mostRecent.cur;
-            if (!pair.prev || cfg.data.renderTag !== mostRecent.prev.data.renderTag) {
+            if (!pair.prev || (cfg.data.renderTag !== mostRecent.prev.data.renderTag)) {
                 cfg.renderer.render(cfg.currentState, undefined, undefined, cfg.data.bgColor);
             }
 
@@ -292,7 +292,6 @@ function setupLabels ($labelCont, latestState, latestHighlightedPoint) {
         .flatMapLatest(function (currentState) {
             //wait until has samples
             return currentState.get('rendered')
-                .filter(function (items) { return items && (items.indexOf('pointsampling') > -1); })
                 .flatMap(function () {
                     return latestHighlightedPoint.map(function (idx) {
                         return {idx: idx, currentState: currentState};
