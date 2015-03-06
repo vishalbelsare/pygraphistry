@@ -93,15 +93,20 @@ ForceAtlas2.argsType = {
 ForceAtlas2.prototype.setPhysics = function(cfg) {
     LayoutAlgo.prototype.setPhysics.call(this, cfg)
 
-    var mask = 0;
-    var flags = ['dissuadeHubs', 'linLog'];
-    flags.forEach(function (flag, i) {
-        var isOn = cfg.hasOwnProperty(flag) ? cfg[flag] : false;
-        if (isOn) {
-            mask = mask | (1 << i);
+    var flags = this.faEdges.get('flags');
+    var flagNames = ['dissuadeHubs', 'linLog'];
+    _.each(cfg, function (val, flag) {
+        var idx = flagNames.indexOf(flag);
+        if (idx >= 0) {
+            var mask = 0 | (1 << idx)
+            if (val) {
+                flags |= mask;
+            } else {
+                flags &= ~mask;
+            }
         }
     });
-    this.faEdges.set({flags: mask});
+    this.faEdges.set({flags: flags});
 }
 
 

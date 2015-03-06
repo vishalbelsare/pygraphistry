@@ -44,11 +44,12 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     var args = _.reject(argNames, isDefine);
     var defines = _.filter(argNames, isDefine).concat(['NODECL']);
 
+    var defVal = {dirty: true, val: null};
     var argValues = _.object(
-        _.map(args, function (name) { return [name, null]; })
+        _.map(args, function (name) { return [name, defVal]; })
     );
     var defValues = _.object(
-        _.map(defines, function (name) { return [name, null]; })
+        _.map(defines, function (name) { return [name, defVal]; })
     );
     Object.seal(argValues);
     Object.seal(defValues);
@@ -67,8 +68,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                     util.warn('Setting argument %s to %s', arg, val);
                 }
 
-                var arrayWrappedValue = (typeof val === 'number') ? [val] : val;
-                argValues[arg] = {dirty: true, val: arrayWrappedValue};
+                argValues[arg] = {dirty: true, val: val};
             } else if (arg in defValues) {
                 if (val !== defValues[arg]) {
                     mustRecompile = true;
@@ -85,6 +85,17 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
 
         return this;
     };
+
+    this.get = function(arg) {
+        if (_.contains(defines, arg)) {
+            return defValues[arg];
+        } else if (_.contains(args, arg)) {
+            return argValues[arg].val
+        } else {
+            util.warn('Kernel %s has no parameter %s', name, arg);
+            return undefined;
+        }
+    }
 
     function compile () {
         debug('Compiling kernel', that.name);
@@ -134,7 +145,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
 
                 if (dirty) {
                     debug('Setting arg %d with value', i, val);
-                    kernel.setArg(i, val.length ? val[0] : val, type || undefined);
+                    kernel.setArg(i, val, type || undefined);
                     argValues[arg].dirty = false;
                 }
             }
