@@ -2,8 +2,14 @@
 
 var _ = require('underscore');
 
+var vgloader = require('./libs/VGraphLoader.js');
+
+
 function defaultLabels (graph, labels) {
+
     var offset = graph.simulator.timeSubset.pointsRange.startIdx;
+
+    var attribs = vgloader.getAttributeMap(graph.simulator.vgraph);
 
     return labels.map(
         function (rawIdx) {
@@ -13,10 +19,17 @@ function defaultLabels (graph, labels) {
             var inDegree = graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped[idx];
             var degree = outDegree + inDegree;
 
-            var data = [
-                {'degree': degree + ' (' + inDegree + ' in + ' + outDegree + ' out)'},
-                {'index': idx}
-            ];
+            var data = _.flatten(
+                [
+                    [
+                        {'degree': degree + ' (' + inDegree + ' in + ' + outDegree + ' out)'},
+                        {'index': idx}
+                    ],
+                    _.keys(attribs).map(function (name) {
+                        return _.object([ [name, attribs[name].values[idx]] ]);
+                    })
+                ],
+                true);
 
             return '<div class="graph-label-container graph-label-default">'
                 + '<span class="graph-label-title">node_' + (offset + idx) + '</span>'

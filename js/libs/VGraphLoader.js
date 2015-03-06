@@ -78,6 +78,8 @@ var attributeLoaders = function(graph) {
 **/
 function load(graph, dataset) {
     var vg = pb_root.VectorGraph.decode(dataset.body)
+    debug('attaching vgraph to simulator');
+    graph.simulator.vgraph = vg;
     return decoders[vg.version](graph, vg, dataset.metadata);
 }
 
@@ -432,4 +434,5 @@ var int2color = util.int2color;
 
 module.exports = {
     load: load,
+    getAttributeMap: getAttributeMap
 };
