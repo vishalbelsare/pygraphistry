@@ -363,6 +363,10 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
     //Observable int
     //Either from point mouseover or label mouseover
     var latestHighlightedPoint = getLatestHighlightedObject($eventTarget, renderState, labelHover, 'pointHitmap');
+    var latestHighlightedEdge = getLatestHighlightedObject($eventTarget, renderState, labelHover, 'edgeHitmap');
+    latestHighlightedPoint.subscribe(_.identity, makeErrorHandler('latestHighlightedPoint error'));
+    latestHighlightedEdge.subscribe(_.identity, makeErrorHandler('latestHighlightedEdge error'));
+
 
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
@@ -374,6 +378,7 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
         .flatMapLatest(function (camera) {
             return Rx.Observable.combineLatest(
                 latestHighlightedPoint,
+                latestHighlightedEdge,
                 renderState.get('hostBuffers').curPoints,
                 renderState.get('hostBuffers').pointSizes,
                 bgColor,
@@ -391,54 +396,8 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
         })
         .subscribe(_.identity, makeErrorHandler('render scene on pan/zoom'));
 
-    //change highlighted point on hover, central label
-    latestHighlightedPoint
-        .scan(
-            {prevIdx: -1, curIdx: -1},
-            function (acc, idx) { return {prevIdx: acc.curIdx, curIdx: idx}; })
-        .filter(function (prevCur) {
-            debug('Point hitmap got index:', prevCur.curIdx);
-            return prevCur.prevIdx !== prevCur.curIdx;
-        })
-        .filter(function (prevCur) {
-            return prevCur.curIdx < renderState.get('hostBuffers').curPoints.length;
-        })
-        .flatMap(function (data) {
-            return renderState.get('hostBuffers').curPoints
-                .take(1)
-                .map(function (curPoints) {
-                    return _.extend({}, data, {curPoints: curPoints});
-                });
-        })
-        .flatMap(function (data) {
-            return renderState.get('hostBuffers').pointSizes
-                .take(1)
-                .map(function (pointSizes) {
-                    return _.extend({}, data, {pointSizes: pointSizes});
-                });
-        })
-        .do(function (prevCur) {
-
-            debug('Hitmap detected mouseover on a new point with index', prevCur.curIdx);
-
-            var idx = prevCur.curIdx;
-            var curPoints = prevCur.curPoints;
-
-            var points = new Float32Array(curPoints.buffer);
-
-            var xtra = idx > -1 ? (' (' + points[2*idx].toFixed(3) + ', ' + points[2*idx+1].toFixed(3) + ')') : '';
-            var lblText = (idx > -1 ? '#' + idx.toString(16) : '') + xtra;
-            $('.hit-label').text('Location ID: ' + lblText);
-
-            if (idx > -1) {
-                renderCursor(renderState, points, idx,
-                             new Uint8Array(prevCur.pointSizes.buffer));
-            }
-        })
-        .subscribe(_.identity, makeErrorHandler('mouse move err'));
-
+    // TODO: Do we need this return?
     return latestHighlightedPoint;
-
 }
 
 
