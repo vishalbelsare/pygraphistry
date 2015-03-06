@@ -335,7 +335,7 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
 
     var stateStream = new Rx.Subject();
     var latestState = new Rx.ReplaySubject(1);
-    stateStream.subscribe(latestState);
+    stateStream.subscribe(latestState, makeErrorHandler('bad stateStream'));
     stateStream.onNext(renderState);
 
     var camera = renderState.get('camera');
@@ -473,11 +473,11 @@ function setupMarquee(isOn, renderState) {
 
     marquee.selections.subscribe(function (sel) {
         debug('selected bounds', sel);
-    });
+    }, makeErrorHandler('bad marquee selections'));
 
     marquee.drags.subscribe(function (drag) {
         debug('drag action', drag.start, drag.end);
-    });
+    }, makeErrorHandler('bad marquee drags'));
 
     return marquee;
 }
@@ -597,7 +597,7 @@ function createControls(socket) {
             $anchor.append($entry);
         });
 
-    }, function (err) {console.error(err);});
+    }, makeErrorHandler('createControls'));
 
     debug('Getting layout controls from server');
     socket.emit('get_layout_controls');
@@ -624,8 +624,7 @@ function init(socket, $elt, renderState, urlParams) {
     var marquee = setupMarquee(turnOnMarquee, renderState);
 
     var colors = colorpicker($('#foregroundColor'), $('#backgroundColor'), socket);
-    setupDragHoverInteractions($elt, renderState,
-        colors.backgroundColor.map(function (o) { return [o.r / 255, o.g / 255, o.b / 255, o.a]; }));
+    setupDragHoverInteractions($elt, renderState, colors.backgroundColor);
 
 
     shortestpaths($('#shortestpath'), poi, socket);
@@ -704,7 +703,8 @@ function init(socket, $elt, renderState, urlParams) {
                 makeErrorHandler('menu slider')
             );
         });
-    });
+    },
+    makeErrorHandler('bad controls'));
 
     Rx.Observable.zip(
         marquee.drags,
@@ -759,7 +759,7 @@ function init(socket, $elt, renderState, urlParams) {
                 .map(_.constant(Rx.Observable.return(false))))
         .flatMapLatest(_.identity);
     var isAutoCentering = new Rx.ReplaySubject(1);
-    autoCentering.subscribe(isAutoCentering);
+    autoCentering.subscribe(isAutoCentering, makeErrorHandler('bad autocenter'));
 
 
     var runLayout =
@@ -775,12 +775,8 @@ function init(socket, $elt, renderState, urlParams) {
 
     runLayout
         .subscribe(
-            function () {
-                socket.emit('interaction', {play: true, layout: true});
-            },
-            function (err) {
-                console.error('Error stimulating graph', err, (err||{}).stack);
-            });
+            function () { socket.emit('interaction', {play: true, layout: true}); },
+            makeErrorHandler('Error stimulating graph'));
 
     autoLayingOut.subscribe(
         function (evt) {
@@ -789,7 +785,7 @@ function init(socket, $elt, renderState, urlParams) {
                 socket.emit('interaction', payload);
             }
         },
-        function (err) { console.error('autoLayingOut error', err, (err||{}).stack); },
+        makeErrorHandler('autoLayingOut error'),
         function () {
             isAutoCentering.take(1).subscribe(function (v) {
                 if (v !== false) {
@@ -809,7 +805,7 @@ function init(socket, $elt, renderState, urlParams) {
                 $('#center').trigger('click');
             }
         },
-        function (err) { console.error('autoCentering error', err, (err||{}).stack); },
+        makeErrorHandler('autoCentering error'),
         function () {
             $shrinkToFit.toggleClass('automode', false).toggleClass('toggle-on', false);
         });
