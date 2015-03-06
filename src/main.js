@@ -73,11 +73,10 @@ function init(canvas, vizType) {
 
     streamClient.connect(vizType, urlParams)
         .flatMap(function(nfo) {
-            debug('Creating renderer');
-
             var socket  = nfo.socket;
             displayErrors(socket, $(canvas));
 
+            debug('Creating renderer');
             return streamClient.createRenderer(socket, canvas)
                 .map(function(renderState) {
                     debug('Renderer created');

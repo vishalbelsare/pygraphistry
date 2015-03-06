@@ -124,7 +124,7 @@ function connect(vizType, urlParams) {
 
     // Get URL query params to send over to the worker via socket
     var workerParams = ['dataset', 'scene', 'device', 'controls',
-                        'mapper', 'type', 'vendor'];
+                        'mapper', 'type', 'vendor', 'usertag'];
 
     // For compatibility with old way of specifying dataset
     if ('datasetname' in urlParams) {
