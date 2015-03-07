@@ -14,11 +14,11 @@ function defaultLabels (graph, labels) {
             var degree = outDegree + inDegree;
 
             var data = [
-                {'degree': inDegree + ' in + ' + outDegree + ' out'},
+                {'degree': degree + ' (' + inDegree + ' in + ' + outDegree + ' out)'},
                 {'index': idx}
             ];
 
-            return '<div class="graph-label-container">'
+            return '<div class="graph-label-container graph-label-default">'
                 + '<span class="graph-label-title">node_' + (offset + idx) + '</span>'
                 + '<div class="graph-label-contents">'
                 + _.map(data, function (row) {
@@ -32,8 +32,10 @@ function defaultLabels (graph, labels) {
 function presetLabels (graph, labels) {
     var offset = graph.simulator.timeSubset.pointsRange.startIdx;
 
-    var hits = labels.map(function (idx) {
-        return graph.simulator.labels[offset + idx];
+    return labels.map(function (idx) {
+        return '<div class="graph-label-container graph-label-preset"><span class="graph-label-title">'
+            + graph.simulator.labels[offset + idx]
+            + '</span></div>';
     });
 }
 
