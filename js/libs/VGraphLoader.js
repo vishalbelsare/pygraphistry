@@ -207,7 +207,7 @@ function decode0(graph, vg, metadata)  {
         }
 
         if (vec.type != loader.type) {
-            util.warn("Expected type " + loader.type + " but got " + vec.type);
+            util.warn("Expected type " + loader.type + " but got " + vec.type + " for" + vname);
             continue;
         }
 
