@@ -77,17 +77,23 @@ ForceAtlas2Barnes.name = 'ForceAtlas2Barnes';
 ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
     LayoutAlgo.prototype.setPhysics.call(this, cfg)
 
-    var mask = 0;
-    var flags = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'];
-    flags.forEach(function (flag, i) {
-        var isOn = cfg.hasOwnProperty(flag) ? cfg[flag] : false;
-        if (isOn) {
-            mask = mask | (1 << i);
+    // get the flags from previous iteration
+    var flags = this.barnesKernelSeq.toBarnesLayout.get('flags');
+    var flagNames = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'];
+    _.each(cfg, function (val, flag) {
+        var idx = flagNames.indexOf(flag);
+        if (idx >= 0) {
+            var mask = 0 | (1 << idx)
+            if (val) {
+                flags |= mask;
+            } else {
+                flags &= ~mask;
+            }
         }
     });
 
-    this.barnesKernelSeq.setPhysics(cfg, mask);
-    this.edgeKernelSeq.setPhysics(cfg, mask);
+    this.barnesKernelSeq.setPhysics(flags);
+    this.edgeKernelSeq.setPhysics(flags);
 }
 
 // Contains any temporary buffers needed for layout

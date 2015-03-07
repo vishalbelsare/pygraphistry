@@ -25,12 +25,9 @@ var edgeKernelSeqFast = function (clContext) {
 
     this.kernels = [this.mapEdges, this.segReduce];
 
-    this.setPhysics = function(cfg, mask) {
-        _.each(this.kernels, function (k) {
-            k.set(_.pick(cfg, k.argNames))
-        })
-        this.mapEdges.set({flags: mask});
-        this.segReduce.set({flags: mask});
+    this.setPhysics = function(flag) {
+        this.mapEdges.set({flags: flag});
+        this.segReduce.set({flags: flag});
     };
 
     this.tempBuffers = {

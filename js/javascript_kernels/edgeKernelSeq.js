@@ -19,11 +19,8 @@ var edgeKernelSeq = function (clContext) {
 
     this.kernels = [this.faEdges];
 
-    this.setPhysics = function(cfg, mask) {
-        _.each(this.kernels, function (k) {
-            k.set(_.pick(cfg, k.argNames))
-        })
-        this.faEdges.set({flags: mask});
+    this.setPhysics = function(flag) {
+        this.faEdges.set({flags: flag});
     };
 
 

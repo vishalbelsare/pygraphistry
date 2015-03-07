@@ -99,16 +99,15 @@ var BarnesKernelSeq = function (clContext) {
     this.kernels = [this.toBarnesLayout, this.boundBox, this.buildTree, this.computeSums,
                     this.sort, this.calculateForces, this.move];
 
-    this.setPhysics = function(cfg, mask) {
-      _.each(this.kernels, function (k) {
-        k.set(_.pick(cfg, k.argNames))
-      })
-      this.toBarnesLayout.set({flags: mask});
-      this.boundBox.set({flags: mask});
-      this.buildTree.set({flags: mask});
-      this.computeSums.set({flags: mask});
-      this.sort.set({flags: mask});
-      this.calculateForces.set({flags: mask});
+    this.setPhysics = function(flag) {
+
+        this.toBarnesLayout.set({flags: flag});
+        this.boundBox.set({flags: flag});
+        this.buildTree.set({flags: flag});
+        this.computeSums.set({flags: flag});
+        this.sort.set({flags: flag});
+        this.calculateForces.set({flags: flag});
+
     };
 
 
