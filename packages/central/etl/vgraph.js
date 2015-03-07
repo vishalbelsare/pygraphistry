@@ -24,16 +24,20 @@ pb.loadProtoFile(protoFile, function (err, builder_) {
 function makeVector(name, value, target) {
     var vector;
 
-    if (!isNaN(Number(value))) {
+    if (value !== null && value !== undefined
+            && (typeof(value) !== 'string' || value.trim() !== "")
+            && !isNaN(Number(value))) {
+        debug('make col number', name, [value]);
         vector = new pb_root.VectorGraph.DoubleAttributeVector();
         vector.dest = 'double_vectors';
         vector.transform = parseFloat;
-        vector.default = 0.0;
+        vector.default = NaN;
     } else {
+        debug('make col string', name, [value]);
         vector = new pb_root.VectorGraph.StringAttributeVector();
         vector.dest = 'string_vectors';
         vector.transform = function (x) { return String(x); };
-        vector.default = 'undefined';
+        vector.default = '';
     }
 
     vector.name = name;
