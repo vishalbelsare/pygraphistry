@@ -7,16 +7,18 @@ var debug = require('debug')('graphistry:util'),
     _ = require('underscore'),
     nodeutil = require('util'),
     chalk = require('chalk'),
+    bunyan = require('bunyan'),
     config = require('config')();
 
-var Image, webgl;
 
-if (typeof(window) == 'undefined') {
-    webgl = require('node-webgl');
-    Image = webgl.Image;
-} else {
-    webgl = window.webgl;
-    Image = window.Image;
+var logger = undefined;
+if (config.BUNYAN_LOG) {
+    logger = bunyan.createLogger({
+        name: 'graph-viz',
+        streams: [{
+            path: config.BUNYAN_LOG
+        }]
+    });
 }
 
 
@@ -64,15 +66,21 @@ function setUserTag(newtag) {
     usertag = newtag;
 }
 
-function error2JSON(type, msg, err) {
-    var content = err ? (err.stack || err) : '';
-    return {
+function error2JSON(type, msg, error) {
+    var payload = {
         type: type,
         msg: msg,
-        error: content,
         pid: process.pid.toString(),
         tag: usertag,
-    };
+    }
+
+    if (error && error.stack) {
+        payload.stack = error.stack;
+    } else if (error) {
+        payload.error = error;
+    }
+
+    return payload;
 }
 
 function makeHandler(type, msg, out, style) {
@@ -80,10 +88,10 @@ function makeHandler(type, msg, out, style) {
 
     return function (err) {
         var payload = error2JSON(type, msg, err);
-        if (config.ENVIRONMENT === 'local') {
-            secretConsole[out](style(payload.type), payload.msg, payload.error);
+        if (logger !== undefined) {
+            logger[out]({content: payload})
         } else {
-            secretConsole[out](JSON.stringify(payload));
+            secretConsole[out](style(payload.type), payload.msg, payload.stack || payload.error || '');
         }
     }
 }
@@ -99,7 +107,7 @@ function error() {
 
 function die() {
     var msg = nodeutil.format.apply(this, arguments)
-    makeHandler('FATALERROR', msg, 'error', chalk.bold.red)(new Error());
+    makeHandler('FATAL', msg, 'fatal', chalk.bold.red)(new Error());
     process.exit(1);
 }
 
@@ -119,6 +127,7 @@ var secretConsole = {
     log: console.log,
     warn: console.warn,
     error: console.error,
+    fatal: console.error
 };
 console.info = info;
 console.warn = warn;
