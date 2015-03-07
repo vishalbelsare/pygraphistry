@@ -53,6 +53,7 @@ function defaults() {
         LOCAL_CACHE: true,
         LOCAL_CACHE_DIR: '/tmp/graphistry/data_cache',
 
+        BUNYAN_LOG: undefined,
     };
 }
 
@@ -91,7 +92,8 @@ function deployEnv(options) {
         MONGO_USERNAME: 'graphistry',
         MONGO_PASSWORD: 'graphtheplanet',
 
-        MONGO_HOSTS: ['lighthouse.2.mongolayer.com:10048', 'lighthouse.3.mongolayer.com:10048']
+        MONGO_HOSTS: ['lighthouse.2.mongolayer.com:10048', 'lighthouse.3.mongolayer.com:10048'],
+        BUNYAN_LOG: '/var/log/worker/' + process.env.SUPERVISOR_PROCESS_NAME + '-error.log',
     };
 
     var stagingOptions = {
