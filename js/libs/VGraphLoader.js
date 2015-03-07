@@ -434,5 +434,9 @@ var int2color = util.int2color;
 
 module.exports = {
     load: load,
-    getAttributeMap: getAttributeMap
+    getAttributeMap: getAttributeMap,
+    types: {
+        VERTEX: VERTEX,
+        EDGE: EDGE
+    }
 };
