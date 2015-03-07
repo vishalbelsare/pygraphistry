@@ -97,19 +97,11 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
         edgeMap[node0] = dsts;
     }
 
-    function addEdgeAttributes(vectors, entry) {
+    function addAttributes(vectors, entry) {
         _.each(entry, function (val, key) {
             var vector = vectors[key];
             vector.values.push(vector.transform(val));
         });
-    }
-
-    function addNodeAttributes(vectors, idField, entry) {
-        var id = entry[idField];
-        _.each(entry, function (val, key) {
-            var vector = vectors[key];
-            vector.map[id] = vector.transform(val);
-        })
     }
 
     var evectors = getAttributeVectors(elist[0] || {},
@@ -124,10 +116,10 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
         addNode(node1);
         addEdge(node0, node1);
         // Assumes that all edges have the same attributes.
-        addEdgeAttributes(evectors, entry);
+        addAttributes(evectors, entry);
     });
 
-    _.each(nlabels, addNodeAttributes.bind('', nvectors, idField));
+    _.each(nlabels, addAttributes.bind('', nvectors));
 
     var vg = new pb_root.VectorGraph();
     vg.version = 0;
@@ -141,12 +133,7 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
         vg[vector.dest].push(vector);
     });
 
-    _.each(_.omit(nvectors, idField), function (vector) {
-        for (var i = 0; i <= Object.keys(node2Idx).length; i++) {
-            var nodeId = idx2Node[i];
-            var val = (nodeId in vector.map) ? vector.map[nodeId] : vector.default;
-            vector.values.push(val);
-        }
+    _.each(_.omit(nvectors, '_mkv_child', '_timediff'), function (vector) {
         vg[vector.dest].push(vector);
     });
 
