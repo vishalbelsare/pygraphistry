@@ -27,13 +27,13 @@ function makeVector(name, value, target) {
     if (value !== null && value !== undefined
             && (typeof(value) !== 'string' || value.trim() !== "")
             && !isNaN(Number(value))) {
-        debug('make col number', name, [value]);
+        debug('infer col as number', name, [value]);
         vector = new pb_root.VectorGraph.DoubleAttributeVector();
         vector.dest = 'double_vectors';
         vector.transform = parseFloat;
         vector.default = NaN;
     } else {
-        debug('make col string', name, [value]);
+        debug('infer col as string', name, [value]);
         vector = new pb_root.VectorGraph.StringAttributeVector();
         vector.dest = 'string_vectors';
         vector.transform = function (x) { return String(x); };
@@ -119,7 +119,14 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
         addAttributes(evectors, entry);
     });
 
-    _.each(nlabels, addAttributes.bind('', nvectors));
+    var sortedLabels = new Array(nlabels.length);
+    for (var i = 0; i < nlabels.length; i++) {
+        var label = nlabels[i];
+        var labelIdx = node2Idx[ label[idField] ];
+        sortedLabels[labelIdx] = label;
+    }
+
+    _.each(sortedLabels, addAttributes.bind('', nvectors));
 
     var vg = new pb_root.VectorGraph();
     vg.version = 0;
