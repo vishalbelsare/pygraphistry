@@ -47,7 +47,7 @@ function makeVector(name, value, target) {
     return vector;
 }
 
-// JSON -> [String * Vector]
+// JSON -> {String -> Vector}
 function getAttributeVectors(entry, target) {
     return _.object(_.map(_.keys(entry), function (key) {
         var vec = makeVector(key, entry[key], target);
@@ -108,6 +108,16 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
                                        pb_root.VectorGraph.AttributeTarget.EDGE);
     var nvectors = getAttributeVectors(nlabels[0] || {},
                                        pb_root.VectorGraph.AttributeTarget.VERTEX);
+
+    if (!evectors.hasOwnProperty(srcField)) {
+        console.warn('edges have no srcField' , srcField);
+    }
+    if (!evectors.hasOwnProperty(srcField)) {
+        console.warn('edges have no dstField' , dstField);
+    }
+    if (!nvectors.hasOwnProperty(idField)) {
+        console.warn('edges have no idField' , idField);
+    }
 
     _.each(elist, function (entry) {
         var node0 = entry[srcField];
