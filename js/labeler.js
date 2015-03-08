@@ -24,8 +24,8 @@ function defaultLabels (graph, labels) {
                     _.flatten(
                         [
                             [
-                                ['_degree', '<div style="text-align:center"><span style="float:left"><b>' + degree + '</b></span>&nbsp;(' + inDegree + ' in <span style="float:right">&nbsp;' + outDegree + ' out)</span></div>'],
-                                ['_index', idx]
+                                ['_degree', '<div style="text-align:center"><span style="float:left"><b>' + degree + '</b></span>&nbsp;(' + inDegree + ' in <span style="float:right">&nbsp;' + outDegree + ' out)</span></div>']
+                                //, ['_index', idx]
                             ],
                             _.keys(attribs)
                                 .filter(function (name) { return attribs[name].target === vgloader.types.VERTEX; })
