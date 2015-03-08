@@ -29,7 +29,10 @@ function defaultLabels (graph, labels) {
                             ],
                             _.keys(attribs)
                                 .filter(function (name) { return attribs[name].target === vgloader.types.VERTEX; })
-                                .filter(function (name) { return name !== 'pointTitle'; })
+                                .filter(function (name) {
+                                    return ['pointColor', 'pointSize', 'pointTitle', 'pointLabel']
+                                        .indexOf(name) === -1;
+                                })
                                 .filter(function (name) { return titleOverride || (name != 'node'); })
                                 .map(function (name) {
                                     return [name, attribs[name].values[idx]];
