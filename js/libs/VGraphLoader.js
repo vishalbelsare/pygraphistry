@@ -78,6 +78,8 @@ var attributeLoaders = function(graph) {
 **/
 function load(graph, dataset) {
     var vg = pb_root.VectorGraph.decode(dataset.body)
+    debug('attaching vgraph to simulator');
+    graph.simulator.vgraph = vg;
     return decoders[vg.version](graph, vg, dataset.metadata);
 }
 
@@ -205,7 +207,7 @@ function decode0(graph, vg, metadata)  {
         }
 
         if (vec.type != loader.type) {
-            util.warn("Expected type " + loader.type + " but got " + vec.type);
+            util.warn("Expected type " + loader.type + " but got " + vec.type + " for" + vname);
             continue;
         }
 
@@ -432,4 +434,9 @@ var int2color = util.int2color;
 
 module.exports = {
     load: load,
+    getAttributeMap: getAttributeMap,
+    types: {
+        VERTEX: VERTEX,
+        EDGE: EDGE
+    }
 };

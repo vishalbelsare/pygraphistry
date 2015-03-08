@@ -95,6 +95,8 @@ function create(renderer, device, vendor, cfg) {
                 backwardsEdges: null
             };
 
+            simObj.vgraph = null;
+
             simObj.buffers = {
                 nextPoints: null,
                 randValues: null,
