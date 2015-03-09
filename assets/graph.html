@@ -28,12 +28,18 @@
         });
 
         // Track AJAX errors (jQuery API)
-        $(document).ajaxError(function(e, request, settings) {
+        $(document).ajaxError(function(e, request, settings, thrownError) {
+            // Skip ajaxError caused by posting errors to /error
+            var errorPage = '/error'
+            if (settings.url.indexOf(errorPage, settings.url.length - errorPage.length) !== -1)
+                return;
+
             var msg = {
                 type: 'AjaxError',
                 content: {
                     url: settings.url,
-                    result: e.result
+                    result: e.result,
+                    error: thrownError
                 }
             }
 
