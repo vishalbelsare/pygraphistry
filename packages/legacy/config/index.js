@@ -93,7 +93,7 @@ function deployEnv(options) {
         MONGO_PASSWORD: 'graphtheplanet',
 
         MONGO_HOSTS: ['lighthouse.2.mongolayer.com:10048', 'lighthouse.3.mongolayer.com:10048'],
-        BUNYAN_LOG: '/var/log/worker/' + process.env.SUPERVISOR_PROCESS_NAME + '-error.log',
+        BUNYAN_LOG: '/var/log/worker/' + process.env.SUPERVISOR_PROCESS_NAME + '-error.jlog',
     };
 
     var stagingOptions = {
