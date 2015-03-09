@@ -427,8 +427,11 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
         })
         .flatMapLatest(function (data) {
             // TODO: pass in dim. Handle Dim.
-            return latestHighlightedPoint.map(function (lastHighlighted) {
-                return _.extend({labelTag: Date.now(), highlightIdx: lastHighlighted.idx}, data);
+            // Temporary hack -- ignore edges.
+            return latestHighlightedPoint.map(function (latestHighlighted) {
+                return _.extend({labelTag: Date.now(), highlightIdx: latestHighlighted.idx, dim: latestHighlighted.dim}, data);
+            }).filter(function (data) {
+                return (!data.dim || data.dim === 1);
             });
         })
         .do(function(data) {
