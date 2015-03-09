@@ -83,7 +83,7 @@ function error2JSON(type, msg, error) {
     return payload;
 }
 
-function makeHandler(type, msg, out, style) {
+function makeHandler(type, msg, out, rethrow, style) {
     style = style || _.identity;
 
     return function (err) {
@@ -93,12 +93,16 @@ function makeHandler(type, msg, out, style) {
         } else {
             secretConsole[out](style(payload.type), payload.msg, payload.stack || payload.error || '');
         }
+
+        if (rethrow) {
+            throw new Error(msg);
+        }
     }
 }
 
 function makeErrorHandler() {
     var msg = nodeutil.format.apply(this, arguments);
-    return makeHandler('ERROR', msg, 'error', chalk.bold.red)
+    return makeHandler('ERROR', msg, 'error', true, chalk.bold.red)
 }
 
 function error() {
@@ -107,18 +111,18 @@ function error() {
 
 function die() {
     var msg = nodeutil.format.apply(this, arguments)
-    makeHandler('FATAL', msg, 'fatal', chalk.bold.red)(new Error());
+    makeHandler('FATAL', msg, 'fatal', false, chalk.bold.red)(new Error());
     process.exit(1);
 }
 
 function warn() {
     var msg = nodeutil.format.apply(this, arguments)
-    makeHandler('WARNING', msg, 'warn', chalk.yellow)(new Error());
+    makeHandler('WARNING', msg, 'warn', false, chalk.yellow)(new Error());
 }
 
 function info() {
     var msg = nodeutil.format.apply(this, arguments)
-    makeHandler('INFO', msg, 'info', chalk.green)();
+    makeHandler('INFO', msg, 'info', false, chalk.green)();
 }
 
 // Hijack the console
