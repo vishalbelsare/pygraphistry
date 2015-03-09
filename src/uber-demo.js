@@ -569,13 +569,18 @@ function createLegend($elt, urlParams) {
 
 
 function createControls(socket) {
-    var rxObsv = Rx.Observable.fromCallback(socket.on, socket, function(layoutControls) {
-        debug('Received layoutConstrols from server', layoutControls);
-        return layoutControls[0];
-    })('layout_controls');
+    var rxControls = Rx.Observable.fromCallback(socket.emit, socket)('layout_controls', null)
+        .map(function (res) {
+            if (res && res.success) {
+                debug('Received layout controls from server', res.controls);
+                return res.controls;
+            } else {
+                throw new Error((res||{}).error || 'Cannot get layout_controls');
+            }
+        });
 
     var $anchor = $('#renderingItems').children('.form-horizontal').empty();
-    rxObsv.subscribe(function (controls) {
+    rxControls.subscribe(function (controls) {
         // Assuming a single layout algorithm for now
         var la = controls[0];
 
@@ -627,9 +632,7 @@ function createControls(socket) {
 
     }, makeErrorHandler('createControls'));
 
-    debug('Getting layout controls from server');
-    socket.emit('get_layout_controls');
-    return rxObsv;
+    return rxControls;
 }
 
 // ... -> Observable renderState

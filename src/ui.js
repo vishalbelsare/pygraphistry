@@ -5,15 +5,14 @@ var $ = window.$;
 
 exports.error = function() {
     var args = Array.prototype.slice.call(arguments);
-    args.push(new Error().stack);
     var message = args.join(' ');
 
-    console.error.apply(console, args);
-
     if (typeof($) !== 'undefined') {
+        var $icon = $('<i class="fa fa-exclamation-triangle"></i>');
+        var $text = $('<span>').text('  ' + message);
         var $msg = $('<div>')
             .addClass('status-error')
-            .text(message)
+            .append($icon, $text)
             .click(function() { $(this).slideUp(); });
 
         $('.status-bar')

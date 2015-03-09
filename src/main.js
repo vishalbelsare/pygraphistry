@@ -105,13 +105,13 @@ function init(canvas, vizType) {
         }).subscribe(
             _.identity,
             function (err) {
-                console.error('error connecting stream client', err, err.stack);
+                ui.error('Oops, something went wrong when connecting to the visualization server! Try refreshing the page...');
+                console.error('General init error', err, (err||{}).stack);
             }
         );
 
     return initialized;
 }
-
 
 function createInfoOverlay(app) {
 

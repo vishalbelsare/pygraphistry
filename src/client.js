@@ -43,7 +43,7 @@ function makeFetcher (fragment, url) {
                 res.onNext(trimmedArray);
 
             } catch (e) {
-                ui.error('Render error on loading data into WebGL:', e, e.stack);
+                console.error('Render error on loading data into WebGL:', e, e.stack);
             }
         };
 
@@ -181,18 +181,22 @@ function connect(vizType, urlParams) {
 
 
 function createRenderer(socket, canvas) {
-    var rcObsv = Rx.Observable.fromCallback(socket.on, socket, function(renderConf) {
-            debug('Received render-config from server', renderConf[0]);
-            var renderState = renderer.init(renderConf[0], canvas);
-            debug('Renderer created');
-
-            return renderState;
-        })('render_config');
-
     debug('Getting render-config from server');
-    socket.emit('get_render_config');
-
-    return rcObsv;
+    return Rx.Observable.fromCallback(socket.emit, socket)('render_config', null)
+        .map(function (res) {
+            console.log('res', res)
+            if (res && res.success) {
+                debug('Received render-config from server', res.renderConfig);
+                return res.renderConfig;
+            } else {
+                throw new Error((res||{}).error || 'Cannot get render_config')
+            }
+        }).map(function (renderConfig) {
+            console.log('Creaging renderer')
+            var renderState = renderer.init(renderConfig, canvas);
+            debug('Renderer created');
+            return renderState;
+        });
 }
 
 
@@ -297,7 +301,7 @@ function handleVboUpdates(socket, renderState, renderStateUpdates) {
                         renderer.loadBuffers(renderState, buffers, bindings);
                         readyBuffers.onNext();
                     } catch (e) {
-                        ui.error('5a err. Render error on loading data into WebGL:', e, e.stack, thisStep);
+                        console.error('5a err. Render error on loading data into WebGL:', e, e.stack, thisStep);
                     }
 
                 },
