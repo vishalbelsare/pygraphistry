@@ -381,20 +381,37 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
     $eventTarget.append($labelCont);
     setupLabels($labelCont, latestState, latestHighlightedPoint);
 
+    //TODO refactor this is out of place
+    var stateWithColor =
+        bgColor.map(function (rgb) {
+
+            var currentState = renderState;
+
+            var color = [[rgb.r/256, rgb.g/256, rgb.b/256,
+                rgb.a === undefined ? 1 : rgb.a/256]];
+
+            var config = currentState.get('config');
+            var options = config.get('options');
+
+            return currentState.set('config',
+                    config.set('options',
+                        options.set('clearColor', color)));
+        });
 
     //render scene on pan/zoom (get latest points etc. at that time)
     //tag render changes & label changes
-    interactions
+    var renderStateUpdates = interactions
         .flatMapLatest(function (camera) {
             return Rx.Observable.combineLatest(
                 renderState.get('hostBuffers').curPoints,
                 renderState.get('hostBuffers').pointSizes,
-                bgColor,
-                function (curPoints, pointSizes, bgColor) {
+                stateWithColor,
+                function (curPoints, pointSizes, renderState) {
                     return {renderTag: Date.now(),
-                            camera: camera, curPoints: curPoints,
+                            camera: camera,
+                            curPoints: curPoints,
                             pointSizes: pointSizes,
-                            bgColor: bgColor};
+                            renderState: renderState};
                 });
         })
         .flatMapLatest(function (data) {
@@ -403,22 +420,11 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
             });
         })
         .do(function(data) {
-
-            var currentState = renderer.setCameraIm(renderState, data.camera);
-
-            var rgb = data.bgColor;
-            var color = [[rgb.r/256, rgb.g/256, rgb.b/256, rgb.a === undefined ? 1 : rgb.a/256]];
-            var config = currentState.get('config');
-            var options = config.get('options');
-            currentState =
-                currentState.set('config',
-                    config.set('options',
-                        options.set('clearColor', color)));
-
+            var currentState = renderer.setCameraIm(data.renderState, data.camera);
             stateStream.onNext(currentState);
             renderScene(renderer, currentState, data);
         })
-        .subscribe(_.identity, makeErrorHandler('render scene on pan/zoom'));
+        .pluck('renderState');
 
     //change highlighted point on hover, central label
     latestHighlightedPoint
@@ -466,7 +472,7 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
         })
         .subscribe(_.identity, makeErrorHandler('mouse move err'));
 
-    return latestHighlightedPoint;
+    return renderStateUpdates;
 
 }
 
@@ -614,7 +620,7 @@ function createControls(socket) {
     return rxObsv;
 }
 
-
+// ... -> Observable renderState
 function init(socket, $elt, renderState, urlParams) {
     createLegend($('#graph-legend'), urlParams);
 
@@ -634,7 +640,7 @@ function init(socket, $elt, renderState, urlParams) {
     var marquee = setupMarquee(turnOnMarquee, renderState);
 
     var colors = colorpicker($('#foregroundColor'), $('#backgroundColor'), socket);
-    setupDragHoverInteractions($elt, renderState, colors.backgroundColor);
+    var renderStateUpdates = setupDragHoverInteractions($elt, renderState, colors.backgroundColor);
 
 
     shortestpaths($('#shortestpath'), poi, socket);
@@ -805,6 +811,8 @@ function init(socket, $elt, renderState, urlParams) {
         function () {
             $shrinkToFit.toggleClass('automode', false).toggleClass('toggle-on', false);
         });
+
+    return renderStateUpdates;
 }
 
 

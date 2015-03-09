@@ -61,7 +61,7 @@ function displayErrors(socket, $canvas) {
     });
 }
 
-//CanvasD * <string> ->
+//CanvasD * <string> * Observable renderState->
 //  Replay_1 {
 //      vboUpdates: Observable {'start', 'received', 'rendered'},
 //      renderState: renderState
@@ -86,9 +86,16 @@ function init(canvas, vizType) {
             var socket = v.socket;
             var renderState = v.renderState;
 
-            var vboUpdates = streamClient.handleVboUpdates(socket, renderState);
+            var renderStateUpdates = new Rx.Subject();
 
-            uberDemo(socket, $('.sim-container'), v.renderState, urlParams);
+            var vboUpdates = streamClient.handleVboUpdates(socket, renderState, renderStateUpdates);
+
+            //TODO merge update notifs into vboUpdates
+            var uberRenderStateUpdates = uberDemo(socket, $('.sim-container'), v.renderState, urlParams);
+            uberRenderStateUpdates
+                .subscribe(
+                    renderStateUpdates,
+                    function (err) { console.error('render scene on pan/zoom', err, (err||{}).stack); });
 
             initialized.onNext({
                 vboUpdates: vboUpdates,
