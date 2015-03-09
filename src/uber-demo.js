@@ -244,38 +244,51 @@ function renderScene(renderer, currentState, data) {
     lastRender.onNext({renderer: renderer, currentState: currentState, data: data});
 }
 
-var reqAnimationFrame =
-        window.requestAnimationFrame       ||
-        window.webkitRequestAnimationFrame ||
-        window.mozRequestAnimationFrame    ||
-        window.oRequestAnimationFrame      ||
-        window.msRequestAnimationFrame     ||
-        function (f) { setTimeout(f, 1000 / 60); };
-
 //Render gpu items, text on reqAnimFrame
 //Slower, update the pointpicking sampler (does GPU->CPU transfer)
-var lastRenderTime = 0;
-var mostRecent = null;
 lastRender
+    .bufferWithTime(10)
+    .filter(function (arr) { return arr.length; })
+    .map(function (arr) {
+        var res = arr[arr.length - 1];
+        _.extend(res.data,
+            arr.reduce(
+                function (acc, v) {
+                    return {
+                        renderTag: Math.max(v.renderTag, acc.renderTag),
+                        labelTag: Math.max(v.labelTag, acc.labelTag)
+                    };
+                },
+                {data: { renderTag: 0, labelTag: 0}}));
+        return res;
+    })
     .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
     .do(function (pair) {
-        mostRecent = pair;
-        reqAnimationFrame(function (t) {
-            if (!mostRecent || t === lastRenderTime) {
-                return;
-            }
-            lastRenderTime = t;
+        var cfg = pair.cur;
+        if (!pair.prev || (cfg.data.renderTag !== pair.prev.data.renderTag)) {
+            cfg.renderer.render(cfg.currentState, undefined, undefined);
+        }
 
-            var cfg = mostRecent.cur;
-            if (!pair.prev || (cfg.data.renderTag !== mostRecent.prev.data.renderTag)) {
-                cfg.renderer.render(cfg.currentState, undefined, undefined);
-            }
-
-            renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer),
-                         cfg.data.highlightIdx, new Uint8Array(cfg.data.pointSizes.buffer));
-        });
+        renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer),
+                     cfg.data.highlightIdx, new Uint8Array(cfg.data.pointSizes.buffer));
     })
-    .sample(100)
+    .pluck('cur')
+    .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
+    .bufferWithTime(80)
+    .filter(function (arr) { return arr.length; })
+    .map(function (arr) {
+        var res = arr[arr.length - 1];
+        _.extend(res.data,
+            arr.reduce(
+                function (acc, v) {
+                    return {
+                        renderTag: Math.max(v.renderTag, acc.renderTag),
+                        labelTag: Math.max(v.labelTag, acc.labelTag)
+                    };
+                },
+                {data: { renderTag: 0, labelTag: 0}}));
+        return res;
+    })
     .do(function (pair) {
         if (!pair.prev || pair.cur.data.renderTag !== pair.prev.data.renderTag) {
             pair.cur.renderer.render(pair.cur.currentState, ['pointpicking']);
@@ -334,7 +347,6 @@ function getLatestHighlightedPoint ($eventTarget, renderState, labelHover) {
                 })
                 .filter(function (highlightedLabels) { return highlightedLabels.length; })
                 .map(function (highlightedLabels) { return highlightedLabels[0].idx; }))
-        .sample(10)
         .subscribe(res, makeErrorHandler('getLatestHighlightedPoint'));
 
     return res;
