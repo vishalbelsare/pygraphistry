@@ -783,21 +783,30 @@ function render(state, renderListOverride, readPixelsOverride) {
         programs    = state.get('programs').toJS(),
         buffers     = state.get('buffers').toJS();
 
-    var clearedFBOs = { };
-
     var toRender = renderListOverride || state.get('defaultItems');
 
     state.get('renderPipeline').onNext({start: toRender});
 
-    toRender.forEach(function(item) {
+    var itemToTarget = function (config, itemName) {
+        var itemDef = config.items[itemName];
+        return itemDef.renderTarget === 'CANVAS' ? null : itemDef.renderTarget;
+    };
+
+    var sortedItems = toRender.slice();
+    sortedItems.sort(function (a,b) {
+        var aTarget = itemToTarget(config, a);
+        var bTarget = itemToTarget(config, b);
+        return aTarget < bTarget ? -1 : aTarget === bTarget ? 0 : 1;
+    });
+
+    var clearedFBOs = { };
+    sortedItems.forEach(function(item) {
         if(typeof numElements[item] === 'undefined' || numElements[item] < 1) {
             debug('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
                 item);
             return false;
         }
-
         renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, readPixelsOverride, item);
-
     });
 
     state.get('renderPipeline').onNext({rendered: toRender});
@@ -812,22 +821,22 @@ function renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, r
     var itemDef = config.items[item];
     var renderTarget = itemDef.renderTarget === 'CANVAS' ? null : itemDef.renderTarget;
 
-    var clearColor = ((itemDef.glOptions || {}).clearColor || config.options.clearColor)[0];
-    gl.clearColor.apply(gl, clearColor);
+    if (renderTarget !== lastRenderTarget) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
+        lastRenderTarget = renderTarget;
+    }
 
     //change viewport in case of downsampled target
     var dims = getTextureDims(config, gl.canvas, renderTarget);
     gl.viewport(0, 0, dims.width, dims.height);
 
-    if (renderTarget !== lastRenderTarget) {
-        debug('  changing fbo', renderTarget);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
-        lastRenderTarget = renderTarget;
-    }
-
     if (!clearedFBOs[renderTarget]) {
         debug('  clearing render target', renderTarget);
+
+        var clearColor = ((itemDef.glOptions || {}).clearColor || config.options.clearColor)[0];
+        gl.clearColor.apply(gl, clearColor);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
         clearedFBOs[renderTarget] = true;
     }
 
