@@ -289,24 +289,24 @@ lastRender
 
 //move labels when camera moves or new highlight
 //$DOM * Observable RenderState -> ()
-function setupLabels ($labelCont, latestState, latestHighlightedPoint, latestHighlightedEdge) {
+function setupLabels ($labelCont, latestState, latestHighlightedObject) {
 
     latestState
         .flatMapLatest(function (currentState) {
             //wait until has samples
             return currentState.get('rendered')
                 .flatMap(function () {
-                    return latestHighlightedPoint.merge(latestHighlightedEdge)
-                        .map(function (lastHighlighted) {
-                            return {idx: lastHighlighted.idx, dim: lastHighlighted.dim, currentState: currentState};
-                        });
+                    return latestHighlightedObject.map(function (latestHighlighted) {
+                        return {idx: latestHighlighted.idx, dim: latestHighlighted.dim,
+                                currentState: currentState};
+                    });
                 });
         })
         .do(function (pair) {
             var currentState = pair.currentState;
             var idx = pair.idx;
             var dim = pair.dim;
-            if (dim === 1) {
+            if (!dim || dim === 1) {
                 renderPointLabels($labelCont, currentState, idx);
             } else if (dim === 2) {
                 renderEdgeLabels($labelCont, currentState, idx);
@@ -403,10 +403,12 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
     latestHighlightedPoint.subscribe(_.identity, makeErrorHandler('latestHighlightedPoint error'));
     latestHighlightedEdge.subscribe(_.identity, makeErrorHandler('latestHighlightedEdge error'));
 
+    var latestHighlightedObject = latestHighlightedPoint.merge(latestHighlightedEdge);
+
 
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
-    setupLabels($labelCont, latestState, latestHighlightedPoint, latestHighlightedEdge);
+    setupLabels($labelCont, latestState, latestHighlightedObject);
 
 
 
@@ -428,7 +430,7 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
         .flatMapLatest(function (data) {
             // TODO: pass in dim. Handle Dim.
             // Temporary hack -- ignore edges.
-            return latestHighlightedPoint.map(function (latestHighlighted) {
+            return latestHighlightedObject.map(function (latestHighlighted) {
                 return _.extend({labelTag: Date.now(), highlightIdx: latestHighlighted.idx, dim: latestHighlighted.dim}, data);
             }).filter(function (data) {
                 return (!data.dim || data.dim === 1);
@@ -453,7 +455,7 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
         .subscribe(_.identity, makeErrorHandler('render scene on pan/zoom'));
 
     // TODO: Do we need this return?
-    return latestHighlightedPoint;
+    return latestHighlightedObject;
 }
 
 
