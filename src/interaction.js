@@ -49,7 +49,7 @@ function setupDrag($eventTarget, camera) {
 }
 
 
-function setupMousemove($eventTarget, renderState, texture) {
+function setupMousemove($eventTarget, renderState, textures) {
     debug('setupMouseover');
     var bounds = $('canvas', $eventTarget[0])[0].getBoundingClientRect();
 
@@ -61,7 +61,7 @@ function setupMousemove($eventTarget, renderState, texture) {
                 x: evt.clientX - bounds.left,
                 y: evt.clientY - bounds.top
             };
-            return renderer.hitTest(renderState, texture, pos.x, pos.y, 20);
+            return renderer.hitTest(renderState, textures, pos.x, pos.y, 20);
         });
 }
 

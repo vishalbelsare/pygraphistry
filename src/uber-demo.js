@@ -297,8 +297,7 @@ function setupLabels ($labelCont, latestState, latestHighlightedObject) {
             return currentState.get('rendered')
                 .flatMap(function () {
                     return latestHighlightedObject.map(function (latestHighlighted) {
-                        return {idx: latestHighlighted.idx, dim: latestHighlighted.dim,
-                                currentState: currentState};
+                        return _.extend(latestHighlighted, {currentState: currentState});
                     });
                 });
         })
@@ -320,12 +319,12 @@ function setupLabels ($labelCont, latestState, latestHighlightedObject) {
 
 //$DOM * RenderState * Observable DOM * textureName-> Observable int
 //Changes either from point mouseover or a label mouseover
-function getLatestHighlightedObject ($eventTarget, renderState, labelHover, textureName) {
+function getLatestHighlightedObject ($eventTarget, renderState, labelHover, textures) {
     var res = new Rx.ReplaySubject(1);
-    res.onNext(-1);
+    res.onNext({idx: -1, dim: 0});
 
-    interaction.setupMousemove($eventTarget, renderState, textureName)
-        .filter(function (v) { return v > -1; })
+    interaction.setupMousemove($eventTarget, renderState, textures)
+        .filter(function (v) { return v && v.idx > -1; })
         .merge($eventTarget.mousedownAsObservable()
             .filter(function (evt) {
                 if (evt.target) {
@@ -337,7 +336,7 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
                 }
                 return true;
             })
-            .map(_.constant(-1)))
+            .map(_.constant({dim: 0, idx: -1})))
         .merge(
             labelHover
                 .map(function (elt) {
@@ -345,16 +344,17 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
                         .filter(function (lbl) { return lbl.elt.get(0) === elt; });
                 })
                 .filter(function (highlightedLabels) { return highlightedLabels.length; })
-                .map(function (highlightedLabels) { return highlightedLabels[0].idx; }))
-        .map(function (idx) {
+                // TODO: Tag this as a point properly
+                .map(function (highlightedLabels) {
+                    return {dim: 1, idx: highlightedLabels[0].idx};
+                }))
+        .map(function (hit) {
             //TODO: Get rid of this hacky bitshift and change the value
             //      returned by the shader.
-            var dim = 1;
-            if (textureName === 'edgeHitmap') {
-                idx = idx >> 8;
-                dim = 2;
+            if (hit.dim == 2) {
+                hit.idx = hit.idx >> 8;
             }
-            return {idx: idx, dim: dim};
+            return hit;
         })
         .sample(10)
         .subscribe(res, makeErrorHandler('getLatestHighlightedObject'));
@@ -396,15 +396,12 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
         interaction.setupZoomButton($('#zoomout'), camera, 1.25)
     );
 
-    //Observable int
-    //Either from point mouseover or label mouseover
-    var latestHighlightedPoint = getLatestHighlightedObject($eventTarget, renderState, labelHover, 'pointHitmap');
-    var latestHighlightedEdge = getLatestHighlightedObject($eventTarget, renderState, labelHover, 'edgeHitmap');
-    latestHighlightedPoint.subscribe(_.identity, makeErrorHandler('latestHighlightedPoint error'));
-    latestHighlightedEdge.subscribe(_.identity, makeErrorHandler('latestHighlightedEdge error'));
-
-    var latestHighlightedObject = latestHighlightedPoint.merge(latestHighlightedEdge);
-
+    // Picks objects in priority based on order.
+    var hitMapTextures = [
+        {name: 'pointHitmap', dim: 1},
+        {name: 'edgeHitmap', dim: 2}
+    ];
+    var latestHighlightedObject = getLatestHighlightedObject($eventTarget, renderState, labelHover, hitMapTextures);
 
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
