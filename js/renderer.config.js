@@ -28,7 +28,7 @@ var programs = {
             'vertex': fs.readFileSync(__dirname + '/../shaders/edge.vertex.glsl', 'utf8').toString('ascii'),
             'fragment': fs.readFileSync(__dirname + '/../shaders/edge.fragment.glsl', 'utf8').toString('ascii')
         },
-        'attributes': ['curPos'],
+        'attributes': ['edgeColor', 'curPos'],
         'camera': 'mvp',
         'uniforms': []
     },
@@ -99,6 +99,17 @@ var textures = {
         'datasource': 'CLIENT',
     },
     'pointHitmapDownsampled': {
+        'datasource': 'CLIENT',
+        'width': {'unit': 'percent', 'value': 5},
+        'height': {'unit': 'percent', 'value': 5}
+    },
+    'edgeHitmap': {
+        'datasource': 'CLIENT',
+    },
+    'edgeTexture': {
+        'datasource': 'CLIENT',
+    },
+    'edgeHitmapDownsampled': {
         'datasource': 'CLIENT',
         'width': {'unit': 'percent', 'value': 5},
         'height': {'unit': 'percent', 'value': 5}
@@ -206,6 +217,16 @@ var models = {
             'normalize': true
         }
     },
+    'edgeIndices': {
+        'edgeColor': {
+            'datasource': 'EDGE_INDEX',
+            'type': 'UNSIGNED_BYTE',
+            'count': 4,
+            'offset': 0,
+            'stride': 0,
+            'normalize': true
+        }
+    },
     'highlightedPoint': {
         'isHighlighted':  {
             'datasource': 'CLIENT',
@@ -241,11 +262,46 @@ var items = {
         'drawType': 'LINES',
         'glOptions': {}
     },
+    'edgeculledtexture': {
+        'program': 'edgeculled',
+        'bindings': {
+            'curPos': ['springsPos', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'drawType': 'LINES',
+        'glOptions': {},
+        'renderTarget': 'edgeTexture',
+        'readTarget': true,
+    },
+    'edgesampling': {
+        'program': 'edges',
+        'trigger': 'renderScene',
+        'bindings': {
+            'curPos': ['springsPos', 'curPos'],
+            'edgeColor': ['edgeIndices', 'edgeColor']
+        },
+        'drawType': 'LINES',
+        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
+        'renderTarget': 'edgeHitmapDownsampled',
+        'readTarget': true
+    },
+    'edgepicking': {
+        'program': 'edges',
+        'bindings': {
+            'curPos': ['springsPos', 'curPos'],
+            'edgeColor': ['edgeIndices', 'edgeColor']
+        },
+        'drawType': 'LINES',
+        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
+        'renderTarget': 'edgeHitmap',
+        'readTarget': true
+    },
     'edges': {
         'program': 'edges',
         'trigger': 'renderScene',
         'bindings': {
             'curPos': ['springsPos', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
         },
         'drawType': 'LINES',
         'glOptions': {}
@@ -436,7 +492,8 @@ var sceneNetflow = {
     'options': stdOptions,
     'camera': camera2D,
     'render': ['pointpicking', 'pointsampling', 'pointculledtexture', 'pointoutlinetexture',
-               'edgeculled', 'pointoutline', 'pointculled']
+               'edgeculled', 'edgeculledtexture', 'edgesampling', 'edgepicking',
+               'pointoutline', 'pointculled']
 }
 
 var scenes = {
@@ -614,7 +671,7 @@ function gl2Bytes(type) {
 
 function isBufClientSide(buf) {
     var datasource = _.values(buf)[0].datasource;
-    return (datasource == "CLIENT" || datasource == "VERTEX_INDEX");
+    return (datasource == "CLIENT" || datasource == "VERTEX_INDEX" || datasource == "EDGE_INDEX");
 }
 
 function isBufServerSide(buf) {
