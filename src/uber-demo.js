@@ -312,6 +312,9 @@ function setupLabels ($labelCont, latestState, latestHighlightedObject) {
             var dim = pair.dim;
             if (!dim || dim === 1) {
                 renderPointLabels($labelCont, currentState, idx);
+            } else {
+                // TODO: Actually render edges and update poi.
+                renderPointLabels($labelCont, currentState, -1);
             }
         })
         .subscribe(_.identity, makeErrorHandler('setuplabels'));
@@ -448,8 +451,6 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
             // Temporary hack -- ignore edges.
             return latestHighlightedObject.map(function (latestHighlighted) {
                 return _.extend({labelTag: Date.now(), highlightIdx: latestHighlighted.idx, dim: latestHighlighted.dim}, data);
-            }).filter(function (data) {
-                return (!data.dim || data.dim === 1);
             });
         })
         .do(function(data) {
