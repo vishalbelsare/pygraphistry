@@ -209,7 +209,7 @@ function assign_worker(req, res) {
             function () { count++; },
             function (err) {
                 console.error('assign_worker error', err, (err || {}).stack);
-                res.json({success: false, error: 'Error while assigning worker'}});
+                res.json({success: false, error: 'Error while assigning worker'});
             },
             function () {
                 if (!count) {
