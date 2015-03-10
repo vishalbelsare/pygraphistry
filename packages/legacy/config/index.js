@@ -49,8 +49,12 @@ function defaults() {
                 user: 'boundary@graphistry.com',
                 pass: 'api.62fb69d814-3713'
             }
-        }
+        },
 
+        LOCAL_CACHE: true,
+        LOCAL_CACHE_DIR: '/tmp/graphistry/data_cache',
+
+        BUNYAN_LOG: undefined
     };
 }
 
@@ -90,7 +94,9 @@ function deployEnv(options) {
         MONGO_PASSWORD: 'graphtheplanet',
 
         MONGO_HOSTS: ['c48.lighthouse.3.mongolayer.com:10048', 'c48.lighthouse.2.mongolayer.com:10048'],
-        MONGO_REPLICA_SET: 'set-545152bc461811298c009c03'
+        MONGO_REPLICA_SET: 'set-545152bc461811298c009c03',
+
+        BUNYAN_LOG: '/var/log/worker/' + process.env.SUPERVISOR_PROCESS_NAME + '-error.jlog'
     };
 
     var stagingOptions = {
