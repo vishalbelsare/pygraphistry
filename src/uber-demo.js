@@ -86,11 +86,6 @@ function renderPointLabels($labelCont, renderState, labelIdx) {
         .subscribe(_.identity, makeErrorHandler('renderLabels'));
 }
 
-function renderEdgeLabels ($labelCont, renderState, labelIdx) {
-    return;
-}
-
-
 
 //RenderState * [ float ] * int -> ()
 function renderCursor (renderState, points, idx, sizes) {
@@ -136,9 +131,6 @@ function renderCursor (renderState, points, idx, sizes) {
         'top' : offset - csize / 2.0
     });
 }
-
-
-
 
 
 function newLabelPositions(renderState, labels, points) {
@@ -307,8 +299,6 @@ function setupLabels ($labelCont, latestState, latestHighlightedObject) {
             var dim = pair.dim;
             if (!dim || dim === 1) {
                 renderPointLabels($labelCont, currentState, idx);
-            } else if (dim === 2) {
-                renderEdgeLabels($labelCont, currentState, idx);
             }
         })
         .subscribe(_.identity, makeErrorHandler('setuplabels'));
@@ -351,7 +341,7 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
         .map(function (hit) {
             //TODO: Get rid of this hacky bitshift and change the value
             //      returned by the shader.
-            if (hit.dim == 2) {
+            if (hit.dim === 2) {
                 hit.idx = hit.idx >> 8;
             }
             return hit;
