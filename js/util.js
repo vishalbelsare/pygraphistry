@@ -106,22 +106,29 @@ function makeErrorHandler() {
 }
 
 function error() {
-    makeErrorHandler.apply(this, arguments)(new Error());
+    var msg = nodeutil.format.apply(this, arguments);
+    makeHandler('ERROR', msg, 'error', false, chalk.bold.red)(new Error());
+}
+
+function exception(err) {
+    var otherArgs = Array.prototype.slice.call(arguments, 1);
+    var msg = nodeutil.format.apply(this, otherArgs);
+    makeHandler('ERROR', msg, 'error', false, chalk.bold.red)(err)
 }
 
 function die() {
-    var msg = nodeutil.format.apply(this, arguments)
+    var msg = nodeutil.format.apply(this, arguments);
     makeHandler('FATAL', msg, 'fatal', false, chalk.bold.red)(new Error());
     process.exit(1);
 }
 
 function warn() {
-    var msg = nodeutil.format.apply(this, arguments)
+    var msg = nodeutil.format.apply(this, arguments);
     makeHandler('WARNING', msg, 'warn', false, chalk.yellow)(new Error());
 }
 
 function info() {
-    var msg = nodeutil.format.apply(this, arguments)
+    var msg = nodeutil.format.apply(this, arguments);
     makeHandler('INFO', msg, 'info', false, chalk.green)();
 }
 
@@ -216,6 +223,7 @@ module.exports = {
     getImage: getImage,
     die: die,
     makeErrorHandler: makeErrorHandler,
+    exception: exception,
     error: error,
     warn: warn,
     info: info,
