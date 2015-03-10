@@ -1,6 +1,6 @@
 'use strict';
 
-var   debug = require("debug")("graphistry:graph-viz:cl:movenodes"),
+var   debug = require('debug')('graphistry:graph-viz:cl:movenodes'),
        cljs = require('./cl.js'),
        util = require('./util.js'),
           Q = require('q'),
