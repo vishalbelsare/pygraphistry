@@ -610,6 +610,61 @@ function createControls(socket) {
     return rxControls;
 }
 
+function setupInspector(inspections) {
+    inspections.subscribe(function (res) {
+        console.log('Inspector got', res);
+    }, makeErrorHandler('inspector error'));
+}
+
+function testGrid() {
+    var Backgrid = window.Backgrid;
+    var Backbone = window.Backbone;
+    var columns = [{
+        name: 'id', // The key of the model attribute
+        label: 'ID', // The name to display in the header
+        editable: false, // By default every cell in a column is editable, but *ID* shouldn't be
+        // Defines a cell type, and ID is displayed as an integer without the ',' separating 1000s.
+        cell: Backgrid.IntegerCell.extend({
+        orderSeparator: ''
+        })
+    }, {
+        name: 'name',
+        label: 'Name',
+        // The cell type can be a reference of a Backgrid.Cell subclass, any Backgrid.Cell subclass instances like *id* above, or a string
+        cell: 'string' // This is converted to "StringCell" and a corresponding class in the Backgrid package namespace is looked up
+    }, {
+        name: 'pop',
+        label: 'Population',
+        cell: 'integer' // An integer cell is a number cell that displays humanized integers
+    }];
+
+    var Territory = Backbone.Model.extend({
+        defaults: {
+            id: null,
+            name: null,
+            pop: 42
+        }
+    });
+
+    var Territories = Backbone.Collection.extend({
+        model: Territory,
+    });
+
+    var territories = new Territories();
+    territories.add({id:1, name: 'First'});
+    territories.add({id:2, name: 'Second', pop:34});
+
+
+    // Initialize a new Grid instance
+    var grid = new Backgrid.Grid({
+        columns: columns,
+        collection: territories
+    });
+
+    // Render the grid and attach the root to your HTML document
+    $('#inspector').append(grid.render().el);
+}
+
 // ... -> Observable renderState
 function init(socket, $elt, renderState, urlParams) {
     createLegend($('#graph-legend'), urlParams);
@@ -708,6 +763,17 @@ function init(socket, $elt, renderState, urlParams) {
         var payload = {play: true, layout: true, marquee: move};
         socket.emit('interaction', payload);
     }, makeErrorHandler('marquee error'));
+
+    var inspections = new Rx.ReplaySubject(1);
+    setupInspector(inspections);
+    marquee.selections.subscribe(function (sel) {
+        console.log(sel);
+
+        Rx.Observable.fromCallback(socket.emit, socket)('inspect', sel).subscribe(
+            inspections,
+            makeErrorHandler('fetch data for inspector')
+        );
+    });
 
 
     var $tooltips = $('[data-toggle="tooltip"]');
