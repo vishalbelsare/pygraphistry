@@ -12,7 +12,6 @@ var _            = require('underscore');
 var io           = require('socket.io-client');
 
 var renderer     = require('./renderer.js');
-var ui           = require('./ui.js');
 
 
 //string * {socketHost: string, socketPort: int} -> (... -> ...)
@@ -91,7 +90,7 @@ function getVizServerParams(args) {
         })
         .map(function (reply) {
 
-            if (!reply.data || reply.data.error) {
+            if (!reply.data || reply.data.error) { //FIXME Check success value
                 console.error('vizaddr returned error', reply, (reply||{}).error);
                 var msg = 'Too many users, please contact help@graphistry.com for private access';
                 if (attempt === 3) {
@@ -168,13 +167,15 @@ function connect(vizType, urlParams) {
                 .do(function (v) {
                     debug('notified viz type', v);
                 })
-                .map(function (ret) {
-                    if (!ret || ret.error) {
-                        console.error('Viz rejected (likely due to multiple claimants');
-                        throw new Error({msg: 'raced worker claim', data: ret});
+                .map(function (res) {
+                    if (res && res.success) {
+                        return {params: params, socket: socket};
+                    } else {
+                        var error = (res||{}).error || '';
+                        console.error('Viz rejected (likely due to multiple claimants)', error);
+                        throw new Error('Viz Rejected' + error);
                     }
-                })
-                .map(_.constant({params: params, socket: socket}));
+                });
         })
         .retry(3);
 }
@@ -184,15 +185,13 @@ function createRenderer(socket, canvas) {
     debug('Getting render-config from server');
     return Rx.Observable.fromCallback(socket.emit, socket)('render_config', null)
         .map(function (res) {
-            console.log('res', res)
             if (res && res.success) {
                 debug('Received render-config from server', res.renderConfig);
                 return res.renderConfig;
             } else {
-                throw new Error((res||{}).error || 'Cannot get render_config')
+                throw new Error((res||{}).error || 'Cannot get render_config');
             }
         }).map(function (renderConfig) {
-            console.log('Creaging renderer')
             var renderState = renderer.init(renderConfig, canvas);
             debug('Renderer created');
             return renderState;
