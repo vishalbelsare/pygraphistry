@@ -6,7 +6,7 @@ var vgloader = require('./libs/VGraphLoader.js');
 
 
 function pickTitleField (attribs) {
-    var prioritized = ['pointTitle','node','ip'];
+    var prioritized = ['pointTitle', 'node', 'label', 'ip'];
     for (var i = 0; i < prioritized.length; i++) {
         var field = prioritized[i];
         if (attribs.hasOwnProperty(field)) {
