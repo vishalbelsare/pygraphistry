@@ -41,6 +41,7 @@ function defaults() {
         MONGO_PASSWORD: '',
         MONGO_HOSTS: ['localhost'],
         MONGO_DATABASE: 'graphistry-local',
+        MONGO_REPLICA_SET: '',
 
         BOUNDARY: {
             ENDPOINT: 'https://api.graphdat.com/v1/measurements',
@@ -88,19 +89,20 @@ function deployEnv(options) {
         MONGO_USERNAME: 'graphistry',
         MONGO_PASSWORD: 'graphtheplanet',
 
-        MONGO_HOSTS: ['lighthouse.2.mongolayer.com:10048', 'lighthouse.3.mongolayer.com:10048']
+        MONGO_HOSTS: ['c48.lighthouse.3.mongolayer.com:10048', 'c48.lighthouse.2.mongolayer.com:10048'],
+        MONGO_REPLICA_SET: 'set-545152bc461811298c009c03'
     };
 
     var stagingOptions = {
         DATABASE: 'graphistry-staging',
-        MONGO_SERVER: 'mongodb://graphistry:graphtheplanet@lighthouse.2.mongolayer.com:10048,lighthouse.3.mongolayer.com:10048/graphistry-staging',
+        MONGO_SERVER: 'mongodb://graphistry:graphtheplanet@c48.lighthouse.3.mongolayer.com:10048,c48.lighthouse.2.mongolayer.com:10048/graphistry-staging?replicaSet=set-545152bc461811298c009c03',
 
         MONGO_DATABASE: 'graphistry-staging'
     };
 
     var prodOptions = {
         DATABASE: 'graphistry-prod',
-        MONGO_SERVER: 'mongodb://graphistry:graphtheplanet@lighthouse.2.mongolayer.com:10048,lighthouse.3.mongolayer.com:10048/graphistry-prod',
+        MONGO_SERVER: 'mongodb://graphistry:graphtheplanet@@c48.lighthouse.3.mongolayer.com:10048,c48.lighthouse.2.mongolayer.com:10048/graphistry-staging?replicaSet=set-545152bc461811298c009c03',
 
         MONGO_DATABASE: 'graphistry-prod'
     };
