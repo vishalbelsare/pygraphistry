@@ -88,11 +88,11 @@ function renderPointLabels($labelCont, renderState, labelIdx) {
 
 
 //RenderState * [ float ] * int -> ()
-function renderCursor (renderState, points, idx, sizes) {
+function renderCursor (renderState, points, idx, dim, sizes) {
 
     debug('Enlarging current mouseover point', idx);
 
-    if (idx === undefined || idx < 0) {
+    if (idx === undefined || idx < 0 || dim === 2) {
         $('#highlighted-point-cont').css({display: 'none'});
         return;
     }
@@ -265,7 +265,7 @@ lastRender
         }
 
         renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer),
-                     cfg.data.highlightIdx, new Uint8Array(cfg.data.pointSizes.buffer));
+                     cfg.data.highlightIdx, cfg.data.highlightDim, new Uint8Array(cfg.data.pointSizes.buffer));
     })
     .pluck('cur')
     .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
@@ -450,7 +450,7 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
             // TODO: pass in dim. Handle Dim.
             // Temporary hack -- ignore edges.
             return latestHighlightedObject.map(function (latestHighlighted) {
-                return _.extend({labelTag: Date.now(), highlightIdx: latestHighlighted.idx, dim: latestHighlighted.dim}, data);
+                return _.extend({labelTag: Date.now(), highlightIdx: latestHighlighted.idx, highlightDim: latestHighlighted.dim}, data);
             });
         })
         .do(function(data) {
