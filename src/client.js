@@ -92,13 +92,15 @@ function getVizServerParams(args) {
         .map(function (reply) {
 
             if (!reply.data || reply.data.error) { //FIXME Check success value
-                console.error('vizaddr returned error', reply, (reply||{}).error);
-                var msg = 'Too many users, please contact help@graphistry.com for private access';
-                if (attempt === 3) {
-                    alert(msg);
-                    ui.hideSpinner();
+                console.error('vizaddr returned error', reply, (reply.data||{}).error);
+                var msg;
+                if (reply.data && reply.data.error) {
+                    msg = reply.data.error;
+                } else {
+                    msg = 'Cannot connect to visualization server (vizaddr)';
                 }
-                throw new Error({msg: msg, data: reply});
+
+                throw new Error(msg);
             }
 
             debug('Got viz server params');
@@ -138,48 +140,54 @@ function connect(vizType, urlParams) {
 
 
     var attempt = 0;
+    var latestError;
+
     return getVizServerParams(workersArgs)
-        .do(function () {
-            attempt++;
-            if (attempt === 3) {
-                console.error('Last attempt failed');
-                alert('Stopping all attempts to connect.');
-                throw new Error('exhausted connection attempts');
-            }
-        })
-        .flatMap(function(params) {
-
-            debug('got params', params);
-
-            var socket = io(params.url, { query: workersArgs,
-                                          reconnection: false,
-                                          transports: ['websocket']
-                                        });
-
-            socket.io.engine.binaryType = 'arraybuffer';
-
-            socket.io.on('connect_error', function () {
-                console.error('error, socketio failed connect');
-                alert('Failed to connect to GPU cluster; please reload or contact an administrator');
-            });
-
-            debug('Stream client websocket connected to visualization server', vizType);
-
-            return Rx.Observable.fromCallback(socket.emit.bind(socket, 'viz'))(vizType)
-                .do(function (v) {
-                    debug('notified viz type', v);
-                })
-                .map(function (res) {
-                    if (res && res.success) {
-                        return {params: params, socket: socket};
-                    } else {
-                        var error = (res||{}).error || '';
-                        console.error('Viz rejected (likely due to multiple claimants)', error);
-                        throw new Error('Viz Rejected' + error);
+        .flatMap(function (params) {
+            return Rx.Observable.return()
+                .do(function () {
+                    attempt++;
+                    if (attempt === 3) {
+                        console.error('Last attempt failed');
+                        alert('Stopping all attempts to connect.');
+                        throw new Error(latestError);
                     }
-                });
-        })
-        .retry(3);
+                })
+                .flatMap(function() {
+
+                    debug('got params', params);
+
+                    var socket = io(params.url, { query: workersArgs,
+                                                reconnection: false,
+                                                transports: ['websocket']
+                                                });
+
+                    socket.io.engine.binaryType = 'arraybuffer';
+
+                    socket.io.on('connect_error', function () { // FIXME Cannot trigger this handler when testing. Bug?
+                        console.error('error, socketio failed connect');
+                        latestError = 'Failed to connect to GPU worker. Try refreshing the page...';
+                        throw new Error(latestError);
+                    });
+
+                    debug('Stream client websocket connected to visualization server', vizType);
+
+                    return Rx.Observable.fromCallback(socket.emit.bind(socket, 'viz'))(vizType)
+                        .do(function (v) {
+                            debug('notified viz type', v);
+                        })
+                        .map(function (res) {
+                            if (res && res.success) {
+                                return {params: params, socket: socket};
+                            } else {
+                                latestError = (res||{}).error || 'Connection rejected by GPU worker. Try refreshing the page...';
+                                console.error('Viz rejected (likely due to multiple claimants)');
+                                throw new Error (latestError);
+                            }
+                        });
+                })
+                .retry(3);
+        });
 }
 
 

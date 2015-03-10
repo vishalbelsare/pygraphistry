@@ -105,7 +105,8 @@ function init(canvas, vizType) {
         }).subscribe(
             _.identity,
             function (err) {
-                ui.error('Oops, something went wrong when connecting to the visualization server! Try refreshing the page...');
+                var msg = (err||{}).message || 'Error when connecting to visualization server. Try refreshing the page...'
+                ui.error('Oops, something went wrong: ', msg);
                 ui.hideSpinner();
                 console.error('General init error', err, (err||{}).stack);
             }
