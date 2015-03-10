@@ -140,7 +140,7 @@ function handshakeIp (workerNfo) {
         .pluck(1)
         .map(function (resp) {
             debug('Worker response', resp);
-            return resp.succeed;
+            return resp.success;
         });
 }
 
