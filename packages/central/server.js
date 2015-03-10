@@ -209,12 +209,15 @@ function assign_worker(req, res) {
             function () { count++; },
             function (err) {
                 console.error('assign_worker error', err, (err || {}).stack);
-                res.json({success: false, error: 'Error while assigning worker'});
+                res.json({success: false, error: 'Error while assigning GPU workers.'});
             },
             function () {
                 if (!count) {
                     console.error('assign_worker exhausted search');
-                    res.json({success: false, error: 'Cound not find worker, too many users'});
+                    res.json({
+                        success: false,
+                        error: 'Too many users, please contact help@graphistry.com for private access.'
+                    });
                 }
             });
 
