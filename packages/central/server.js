@@ -209,12 +209,12 @@ function assign_worker(req, res) {
             function () { count++; },
             function (err) {
                 console.error('assign_worker error', err, (err || {}).stack);
-                res.json({error: {v: 'assign_worker error'}});
+                res.json({success: false, error: {v: 'assign_worker error'}});
             },
             function () {
                 if (!count) {
                     console.error('assign_worker exhausted search');
-                    res.json({error: 'none available'});
+                    res.json({success: false, error: 'Cound not find worker, too many users'});
                 }
             });
 
