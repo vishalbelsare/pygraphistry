@@ -181,7 +181,6 @@ function assign_worker(req, res) {
     // TODO: S3 -> mongo information. This will not work in production.
     if(config.ENVIRONMENT === 'production' || config.ENVIRONMENT === 'staging') {
         console.log("WARNING: fix this. Needs S3 -> Mongo integration for datablob sizes")
-        datasetname = "uber";
 
         ips = getIPs(datasetname)
             .flatMap(function (o) {
