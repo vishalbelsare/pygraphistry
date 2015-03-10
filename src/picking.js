@@ -2,7 +2,7 @@
 
 
 var debug   = require('debug')('graphistry:StreamGL:picking');
-
+var _       = require('underscore');
 
 function uint32ToIdx (raw) {
 
@@ -17,59 +17,71 @@ function uint32ToIdx (raw) {
 
 
 //returns idx or -1
-function hitTest(map, canvas, x, y) {
+function hitTest(textures, canvas, x, y) {
     // debug('hit testing', texture);
-    var idx = (canvas.height - y) * canvas.width + x;
-    var raw = map[idx];//(remapped[idx] >> 8) & (255 | (255 << 8) | (255 << 16));
-
-    return uint32ToIdx(raw);
+    var idx = -1;
+    for (var i = 0; i < textures.length; i++) {
+        var canvasIdx = (canvas.height - y) * canvas.width + x;
+        var raw = textures[i].map[canvasIdx];//(remapped[idx] >> 8) & (255 | (255 << 8) | (255 << 16));
+        idx = uint32ToIdx(raw);
+        if (idx > -1) {
+            return {idx: idx, dim: textures[i].dim};
+        }
+    }
+    return {idx: idx, dim: 0};
 }
 
 
 //hit test by sampling for a hit on circle's perimeter
 //returns idx or -1
-function hitTestCircumference(map, canvas, x, y, r) {
+function hitTestCircumference(textures, canvas, x, y, r) {
     for (var attempt = 0; attempt < r * 2 * Math.PI; attempt++) {
         var attemptX = x + r * Math.round(Math.cos(attempt / r));
         var attemptY = y + r * Math.round(Math.sin(attempt / r));
-        var hit = hitTest(map, canvas, attemptX, attemptY);
-        if (hit > -1) {
+        var hit = hitTest(textures, canvas, attemptX, attemptY);
+        if (hit.idx > -1) {
             return hit;
         }
     }
-    return -1;
+    return {idx: -1, dim: 0};
 }
 
 //hit test by sampling for closest hit in area radius r (default to 0)
 //returns idx or -1
-function hitTestN(state, texture, x, y, r) {
-
-    if (!state.get('pixelreads')[texture]) {
-        debug('no texture for hit test, escape early', texture);
-        return;
-    }
+function hitTestN(state, textures, x, y, r) {
+    _.each(textures, function (texture) {
+        if (!state.get('pixelreads')[texture.name]) {
+            debug('no texture for hit test, escape early', texture.name);
+            return;
+        }
+    });
 
     var canvas = state.get('gl').canvas;
-    var map = state.get('pixelreads')[texture];
-    if (!map) {
-        debug('not texture for hit test', texture);
-        return;
-    }
-    var remapped = new Uint32Array(map.buffer);
 
+    _.each(textures, function (texture) {
+        var rawMap = state.get('pixelreads')[texture.name];
+        if (!rawMap) {
+            debug('not texture for hit test', texture.name);
+            return;
+        }
 
+        var map = new Uint32Array(rawMap.buffer);
+        texture.map = map;
+    });
+
+    // If no r, just do plain hitTest
     if (!r) {
-        return hitTest(remapped, canvas, x, y);
+        return hitTest(textures, canvas, x, y);
     }
 
     //look up to r px away
     for (var offset = 0; offset < r; offset++) {
-        var hitOnCircle = hitTestCircumference(remapped, canvas, x, y, offset + 1);
-        if (hitOnCircle > -1) {
+        var hitOnCircle = hitTestCircumference(textures, canvas, x, y, offset + 1);
+        if (hitOnCircle.idx > -1) {
             return hitOnCircle;
         }
     }
-    return -1;
+    return {idx: -1, dim: 0};
 }
 
 module.exports = {

@@ -58,7 +58,7 @@ var labelHover = new Rx.Subject();
 // $DOM * RendererState  -> ()
 // Immediately reposition each label based on camera and curPoints buffer
 var renderLabelsRan = false;
-function renderLabels($labelCont, renderState, labelIdx) {
+function renderPointLabels($labelCont, renderState, labelIdx) {
 
     debug('rendering labels');
 
@@ -67,7 +67,6 @@ function renderLabels($labelCont, renderState, labelIdx) {
         console.warn('renderLabels called before curPoints available');
         return;
     }
-
     curPoints.take(1)
         .do(function (curPoints) {
 
@@ -134,9 +133,6 @@ function renderCursor (renderState, points, idx, sizes) {
 }
 
 
-
-
-
 function newLabelPositions(renderState, labels, points) {
 
     var camera = renderState.get('camera');
@@ -177,7 +173,6 @@ function effectLabels(toClear, toShow, labels, newPos, labelIdx) {
 }
 
 function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIdx) {
-
     var points = new Float32Array(curPoints.buffer);
 
     var t0 = Date.now();
@@ -291,7 +286,7 @@ lastRender
     })
     .do(function (pair) {
         if (!pair.prev || pair.cur.data.renderTag !== pair.prev.data.renderTag) {
-            pair.cur.renderer.render(pair.cur.currentState, ['pointpicking']);
+            pair.cur.renderer.render(pair.cur.currentState, ['pointpicking', 'edgepicking']);
         }
     })
     .subscribe(_.identity, makeErrorHandler('render effect'));
@@ -299,34 +294,40 @@ lastRender
 
 //move labels when camera moves or new highlight
 //$DOM * Observable RenderState -> ()
-function setupLabels ($labelCont, latestState, latestHighlightedPoint) {
+function setupLabels ($labelCont, latestState, latestHighlightedObject) {
 
     latestState
         .flatMapLatest(function (currentState) {
             //wait until has samples
             return currentState.get('rendered')
                 .flatMap(function () {
-                    return latestHighlightedPoint.map(function (idx) {
-                        return {idx: idx, currentState: currentState};
+                    return latestHighlightedObject.map(function (latestHighlighted) {
+                        return _.extend(latestHighlighted, {currentState: currentState});
                     });
                 });
         })
         .do(function (pair) {
             var currentState = pair.currentState;
             var idx = pair.idx;
-            renderLabels($labelCont, currentState, idx);
+            var dim = pair.dim;
+            if (!dim || dim === 1) {
+                renderPointLabels($labelCont, currentState, idx);
+            }
         })
         .subscribe(_.identity, makeErrorHandler('setuplabels'));
 }
 
-//$DOM * RenderState -> Observable int
-//Changes either from point mouseover or a label mouseover
-function getLatestHighlightedPoint ($eventTarget, renderState, labelHover) {
-    var res = new Rx.ReplaySubject(1);
-    res.onNext(-1);
 
-    interaction.setupMousemove($eventTarget, renderState, 'pointHitmap')
-        .filter(function (v) { return v > -1; })
+
+
+//$DOM * RenderState * Observable DOM * textureName-> Observable int
+//Changes either from point mouseover or a label mouseover
+function getLatestHighlightedObject ($eventTarget, renderState, labelHover, textures) {
+    var res = new Rx.ReplaySubject(1);
+    res.onNext({idx: -1, dim: 0});
+
+    interaction.setupMousemove($eventTarget, renderState, textures)
+        .filter(function (v) { return v && v.idx > -1; })
         .merge($eventTarget.mousedownAsObservable()
             .filter(function (evt) {
                 if (evt.target) {
@@ -338,7 +339,7 @@ function getLatestHighlightedPoint ($eventTarget, renderState, labelHover) {
                 }
                 return true;
             })
-            .map(_.constant(-1)))
+            .map(_.constant({dim: 0, idx: -1})))
         .merge(
             labelHover
                 .map(function (elt) {
@@ -346,11 +347,23 @@ function getLatestHighlightedPoint ($eventTarget, renderState, labelHover) {
                         .filter(function (lbl) { return lbl.elt.get(0) === elt; });
                 })
                 .filter(function (highlightedLabels) { return highlightedLabels.length; })
-                .map(function (highlightedLabels) { return highlightedLabels[0].idx; }))
-        .subscribe(res, makeErrorHandler('getLatestHighlightedPoint'));
+                // TODO: Tag this as a point properly
+                .map(function (highlightedLabels) {
+                    return {dim: 1, idx: highlightedLabels[0].idx};
+                }))
+        .map(function (hit) {
+            //TODO: Get rid of this hacky bitshift and change the value
+            //      returned by the shader.
+            if (hit.dim === 2) {
+                hit.idx = hit.idx >> 8;
+            }
+            return hit;
+        })
+        .subscribe(res, makeErrorHandler('getLatestHighlightedObject'));
 
     return res;
 }
+
 
 function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
     //var currentState = renderState;
@@ -385,13 +398,17 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
         interaction.setupZoomButton($('#zoomout'), camera, 1.25)
     );
 
-    //Observable int
-    //Either from point mouseover or label mouseover
-    var latestHighlightedPoint = getLatestHighlightedPoint($eventTarget, renderState, labelHover);
+    // Picks objects in priority based on order.
+    var hitMapTextures = [
+        {name: 'pointHitmap', dim: 1},
+        {name: 'edgeHitmap', dim: 2}
+    ];
+    var latestHighlightedObject = getLatestHighlightedObject($eventTarget, renderState, labelHover, hitMapTextures);
 
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
-    setupLabels($labelCont, latestState, latestHighlightedPoint);
+    setupLabels($labelCont, latestState, latestHighlightedObject);
+
 
     //TODO refactor this is out of place
     var stateWithColor =
@@ -427,8 +444,12 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
                 });
         })
         .flatMapLatest(function (data) {
-            return latestHighlightedPoint.map(function (idx) {
-                return _.extend({labelTag: Date.now(), highlightIdx: idx}, data);
+            // TODO: pass in dim. Handle Dim.
+            // Temporary hack -- ignore edges.
+            return latestHighlightedObject.map(function (latestHighlighted) {
+                return _.extend({labelTag: Date.now(), highlightIdx: latestHighlighted.idx, dim: latestHighlighted.dim}, data);
+            }).filter(function (data) {
+                return (!data.dim || data.dim === 1);
             });
         })
         .do(function(data) {
@@ -438,54 +459,7 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
         })
         .pluck('renderState');
 
-    //change highlighted point on hover, central label
-    latestHighlightedPoint
-        .scan(
-            {prevIdx: -1, curIdx: -1},
-            function (acc, idx) { return {prevIdx: acc.curIdx, curIdx: idx}; })
-        .filter(function (prevCur) {
-            debug('Point hitmap got index:', prevCur.curIdx);
-            return prevCur.prevIdx !== prevCur.curIdx;
-        })
-        .filter(function (prevCur) {
-            return prevCur.curIdx < renderState.get('hostBuffers').curPoints.length;
-        })
-        .flatMap(function (data) {
-            return renderState.get('hostBuffers').curPoints
-                .take(1)
-                .map(function (curPoints) {
-                    return _.extend({}, data, {curPoints: curPoints});
-                });
-        })
-        .flatMap(function (data) {
-            return renderState.get('hostBuffers').pointSizes
-                .take(1)
-                .map(function (pointSizes) {
-                    return _.extend({}, data, {pointSizes: pointSizes});
-                });
-        })
-        .do(function (prevCur) {
-
-            debug('Hitmap detected mouseover on a new point with index', prevCur.curIdx);
-
-            var idx = prevCur.curIdx;
-            var curPoints = prevCur.curPoints;
-
-            var points = new Float32Array(curPoints.buffer);
-
-            var xtra = idx > -1 ? (' (' + points[2*idx].toFixed(3) + ', ' + points[2*idx+1].toFixed(3) + ')') : '';
-            var lblText = (idx > -1 ? '#' + idx.toString(16) : '') + xtra;
-            $('.hit-label').text('Location ID: ' + lblText);
-
-            if (idx > -1) {
-                renderCursor(renderState, points, idx,
-                             new Uint8Array(prevCur.pointSizes.buffer));
-            }
-        })
-        .subscribe(_.identity, makeErrorHandler('mouse move err'));
-
     return renderStateUpdates;
-
 }
 
 
