@@ -22,6 +22,10 @@ exports.error = function() {
 };
 
 
+exports.hideSpinner = function () {
+    $('.load-spinner').empty();
+};
+
 /**
  * Convenience function callable from the browser console to enable/disable `debug()` output
  *
