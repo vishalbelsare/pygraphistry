@@ -174,7 +174,6 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
 
         debug('  binding buffer', attribute, binding, datasource, glBuffer, element.name);
 
-
         bindBuffer(gl, glBuffer);
         var location = getAttribLocationFast(gl, program, programName, attribute);
 
@@ -934,7 +933,7 @@ function getActiveIndices (config) {
             })
             .map(function (datasource) {
                 return datasource === 'VERTEX_INDEX' ? 1
-                    : datasource === 'LINE_INDEX' ? 2
+                    : datasource === 'EDGE_INDEX' ? 2
                     : 0;
             })
             .filter(function (repetition) { return repetition > 0; });
