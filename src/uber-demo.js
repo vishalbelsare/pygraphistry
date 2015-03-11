@@ -55,10 +55,10 @@ function makeErrorHandler(name) {
 //Observable DOM
 var labelHover = new Rx.Subject();
 
-// $DOM * RendererState  -> ()
+// $DOM * RendererState  * [int] * [int] -> ()
 // Immediately reposition each label based on camera and curPoints buffer
 var renderLabelsRan = false;
-function renderPointLabels($labelCont, renderState, labelIndices) {
+function renderPointLabels($labelCont, renderState, labelIndices, clicked) {
 
     debug('rendering labels');
 
@@ -80,7 +80,7 @@ function renderPointLabels($labelCont, renderState, labelIndices) {
                 }
             }
 
-            renderLabelsImmediate($labelCont, renderState, curPoints, labelIndices);
+            renderLabelsImmediate($labelCont, renderState, curPoints, labelIndices, clicked);
 
         })
         .subscribe(_.identity, makeErrorHandler('renderLabels'));
@@ -153,7 +153,7 @@ function newLabelPositions(renderState, labels, points) {
     return newPos;
 }
 
-function effectLabels(toClear, toShow, labels, newPos, labelIndices) {
+function effectLabels(toClear, toShow, labels, newPos, labelIndices, clicked) {
 
     //DOM effects: disable old, then move->enable new
     toClear.forEach(function (lbl) {
@@ -163,11 +163,18 @@ function effectLabels(toClear, toShow, labels, newPos, labelIndices) {
     labels.forEach(function (elt, i) {
         elt.elt.css('left', newPos[2 * i]).css('top', newPos[2 * i + 1]);
         elt.elt.removeClass('on');
+        elt.elt.removeClass('clicked');
     });
 
     labelIndices.forEach(function (labelIdx) {
         if (labelIdx > -1) {
-            poi.state.activeLabels[labelIdx].elt.addClass('on');
+            poi.state.activeLabels[labelIdx].elt.toggleClass('on', true);
+        }
+    });
+
+    clicked.forEach(function (labelIdx) {
+        if (labelIdx > -1) {
+            poi.state.activeLabels[labelIdx].elt.toggleClass('clicked', true);
         }
     });
 
@@ -177,7 +184,7 @@ function effectLabels(toClear, toShow, labels, newPos, labelIndices) {
 
 }
 
-function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices) {
+function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices, clicked) {
     var points = new Float32Array(curPoints.buffer);
 
     var t0 = Date.now();
@@ -232,7 +239,7 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices
 
     var t3 = Date.now();
 
-    effectLabels(toClear, toShow, labels, newPos, labelIndices);
+    effectLabels(toClear, toShow, labels, newPos, labelIndices, clicked);
 
     debug('sampling timing', t1 - t0, t2 - t1, t3 - t2, Date.now() - t3,
         'labels:', labels.length, '/', _.keys(hits).length, poi.state.inactiveLabels.length);
@@ -317,7 +324,10 @@ function setupLabels ($labelCont, latestState, latestHighlightedObject) {
             var indices = pair.highlighted.map(function (o) {
                 return !o.dim || o.dim === 1 ? o.idx : -1;
             });
-            renderPointLabels($labelCont, pair.currentState, indices);
+            var clicked = pair.highlighted
+                .filter(function (o) { return o.click; })
+                .map(function (o) { return o.idx; });
+            renderPointLabels($labelCont, pair.currentState, indices, clicked);
         })
         .subscribe(_.identity, makeErrorHandler('setuplabels'));
 }
