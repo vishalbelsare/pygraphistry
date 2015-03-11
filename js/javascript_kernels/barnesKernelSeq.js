@@ -22,6 +22,12 @@ var BarnesKernelSeq = function (clContext) {
         'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
     ];
 
+    this.argsBarnes2 = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
+    'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
+    'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
+    'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
+        'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau', 'WARPSIZE'];
+
     this.argsType = {
         scalingRatio: cljs.types.float_t,
         gravity: cljs.types.float_t,
@@ -74,6 +80,7 @@ var BarnesKernelSeq = function (clContext) {
         numNodes: cljs.types.uint_t,
         numWorkItems: cljs.types.uint_t,
         globalSpeed: null,
+        nextMidPoints: null,
         WARPSIZE: cljs.types.define,
         THREADS_BOUND: cljs.types.define,
         THREADS_FORCES: cljs.types.define,
@@ -132,15 +139,18 @@ var BarnesKernelSeq = function (clContext) {
         bottom: null,
         maxdepth: null,
     };
-    var setupTempBuffers = function(simulator, warpsize) {
+    var setupTempBuffers = function(simulator, warpsize, numPoints) {
         simulator.resetBuffers(tempBuffers);
         var blocks = 8; //TODO (paden) should be set to multiprocecessor count
 
-        var num_nodes = simulator.numPoints * 5;
+        if (numPoints === undefined) {
+          numPoints = simulator.numPoints;
+        }
+        var num_nodes = numPoints * 5;
         if (num_nodes < 1024*blocks) num_nodes = 1024*blocks;
         while ((num_nodes & (warpsize - 1)) != 0) num_nodes++;
         num_nodes--;
-        var num_bodies = simulator.numPoints;
+        var num_bodies = numPoints;
         var numNodes = num_nodes;
         var numBodies = num_bodies;
         // TODO (paden) Use actual number of workgroups. Don't hardcode
@@ -197,7 +207,66 @@ var BarnesKernelSeq = function (clContext) {
         .fail(util.makeErrorHandler("Setting temporary buffers for barnesHutKernelSequence failed"));
     };
 
+<<<<<<< HEAD
     this.setEdges = function(simulator, layoutBuffers, warpsize, workItems) {
+=======
+    this.setMidPoints = function(simulator, layoutBuffers, warpsize) {
+        var that = this;
+        console.log("Set midpoints");
+        return setupTempBuffers(simulator, warpsize).then(function (tempBuffers) {
+
+        that.toBarnesLayout.set({xCoords: tempBuffers.x_cords.buffer,
+          yCoords:tempBuffers.y_cords.buffer, mass:tempBuffers.mass.buffer,
+                            blocked:tempBuffers.blocked.buffer, maxDepth:tempBuffers.maxdepth.buffer,
+                            numPoints:simulator.numMidPoints,
+                            inputPositions: simulator.buffers.curMidPoints.buffer,
+                            pointDegrees: simulator.buffers.degrees.buffer, WARPSIZE: warpsize});
+
+            var setBarnesKernelArgs = function(kernel, buffers) {
+              var setArgs = {xCoords:buffers.x_cords.buffer,
+                yCoords:buffers.y_cords.buffer,
+                accX:buffers.accx.buffer,
+                accY:buffers.accy.buffer,
+                children:buffers.children.buffer,
+                mass:buffers.mass.buffer,
+                start:buffers.start.buffer,
+                sort:buffers.sort.buffer,
+                globalXMin:buffers.xmin.buffer,
+                globalXMax:buffers.xmax.buffer,
+                globalYMin:buffers.ymin.buffer,
+                globalYMax:buffers.ymax.buffer,
+                swings:simulator.buffers.swings.buffer,
+                tractions:simulator.buffers.tractions.buffer,
+                count:buffers.count.buffer,
+                blocked:buffers.blocked.buffer,
+                bottom:buffers.bottom.buffer,
+                step:buffers.step.buffer,
+                maxDepth:buffers.maxdepth.buffer,
+                radius:buffers.radius.buffer,
+                globalSpeed: layoutBuffers.globalSpeed.buffer,
+                width:simulator.controls.global.dimensions[0],
+                height:simulator.controls.global.dimensions[1],
+                numBodies:buffers.numBodies,
+                numNodes:buffers.numNodes,
+                nextMidPoints:simulator.buffers.nextMidPoints.buffer,
+                //pointForces:simulator.buffers.pointForces.buffer,
+                WARPSIZE:warpsize};
+
+              kernel.set(setArgs);
+            };
+
+            setBarnesKernelArgs(that.boundBox, tempBuffers);
+            setBarnesKernelArgs(that.buildTree, tempBuffers);
+            setBarnesKernelArgs(that.computeSums, tempBuffers);
+            setBarnesKernelArgs(that.sort, tempBuffers);
+            setBarnesKernelArgs(that.calculateForces, tempBuffers);
+
+        }).fail(util.makeErrorHandler('setupTempBuffers'));
+    };
+
+
+    this.setEdges = function(simulator, layoutBuffers, warpsize) {
+>>>>>>> Running barnes hut (repulsion) on midPoints.
         var that = this;
         return setupTempBuffers(simulator, warpsize).then(function (tempBuffers) {
 
@@ -252,6 +321,53 @@ var BarnesKernelSeq = function (clContext) {
             setBarnesKernelArgs(that.calculateForces, tempBuffers);
 
         }).fail(util.makeErrorHandler('setupTempBuffers'));
+    };
+
+    // TODO (paden) Can probably combine ExecKernel functions
+    this.execKernelsMidPoints = function(simulator, stepNumber, workItems) {
+
+        var resources = [
+            simulator.buffers.curMidPoints,
+            simulator.buffers.forwardsDegrees,
+            simulator.buffers.backwardsDegrees,
+                simulator.buffers.partialForces1
+        ];
+
+        this.toBarnesLayout.set({stepNumber: stepNumber});
+        this.boundBox.set({stepNumber: stepNumber});
+        this.buildTree.set({stepNumber: stepNumber});
+        this.computeSums.set({stepNumber: stepNumber});
+        this.sort.set({stepNumber: stepNumber});
+        this.calculateForces.set({stepNumber: stepNumber});
+
+        simulator.tickBuffers(['nextMidPoints']);
+
+        debug("Running Force Atlas2 with BarnesHut Kernels");
+
+        // For all calls, we must have the # work items be a multiple of the workgroup size.
+        var that = this;
+        return this.toBarnesLayout.exec([workItems.toBarnesLayout], resources, [256])
+        .then(function () {
+            return that.boundBox.exec([workItems.boundBox], resources, [256]);
+        })
+
+        .then(function () {
+            return that.buildTree.exec([workItems.buildTree], resources, [256]);
+        })
+
+        .then(function () {
+            return that.computeSums.exec([workItems.computeSums], resources, [256]);
+        })
+
+        .then(function () {
+            return that.sort.exec([workItems.sort], resources, [256]);
+        })
+
+        .then(function () {
+            return that.calculateForces.exec([workItems.calculateForces], resources, [256]);
+        })
+
+        .fail(util.makeErrorHandler("Executing BarnesKernelSeq failed"));
     };
 
     this.execKernels = function(simulator, stepNumber, workItems) {
