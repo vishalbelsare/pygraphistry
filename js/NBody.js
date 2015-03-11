@@ -376,7 +376,7 @@ var setEdges = Q.promised(function(graph, edges) {
                 var end = graph.__pointsHostBuffer[dst * nDim + d];
                 var step = (end - start) / (numSplits + 1);
                 for (var q = 0; q < numSplits; q++) {
-                    midPoints[(i * numSplits + q) * nDim + d] = start + step * (q + 1);
+                    midPoints[((i/2) * numSplits + q) * nDim + d] = start + step * (q + 1);
                 }
             }
         }
