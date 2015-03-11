@@ -6,7 +6,7 @@
 <script>
 
 
-var SUBTITLE = '<h3><a href="mailto:info@graphistry.com">email</a> for a tool preview</h3>';
+var SUBTITLE = '<p><a href="mailto:info@graphistry.com">Email</a> us for a tool preview</p>';
 
 var NETFLOW = {
     title: 'Datacenter Netflow Communication Logs',
@@ -63,7 +63,7 @@ var TITLES = {
 };
 for (var i in TITLES) {
     var o = TITLES[i];
-    o.title ='<h2>' + o.title + '</h2>';
+    o.title ='<h3>' + o.title + '</h3>';
 }
 
 
@@ -72,7 +72,7 @@ function jump() {
 
     var dataset = $('#dataset').val();
     var cfg = TITLES[dataset]  || {
-            title: '<h2>Graph: ' + dataset + '</h2>',
+            title: '<h3>Graph: ' + dataset + '</h3>',
             nodes: 'undefined',
             edges: 'undefined'
         };
@@ -184,7 +184,7 @@ window.onload = pinger;
     <div class="loader">
         <h3>+ experimental datasets</h3>
         <span>
-            <input id="dataset" list="datasets" type="text" size="64" name="url" value="https://s3-us-west-1.amazonaws.com/graphistry.data.public/lesmiserables.vgraph.gz" />
+            <input id="dataset" list="datasets" type="text" size="64" name="url" value="Miserables" />
             <datalist id="datasets">
                 <option value="Facebook">
                 <option value="Miserables">
