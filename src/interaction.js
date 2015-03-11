@@ -25,6 +25,25 @@ var renderer = require('./renderer');
  */
 function setupDrag($eventTarget, camera) {
     return $eventTarget.mousedownAsObservable()
+        .filter(function (evt) {
+
+            //allow dragging by graph label title
+            var $p = $(evt.target);
+            for (var i = 0; i < 2; i++) {
+                if ($p.hasClass('graph-label')) {
+                    return true;
+                }
+                $p = $p.parent();
+            }
+
+            for (var j = 0; j < 8; j++) {
+                if ($p.hasClass('graph-label')) {
+                    return false;
+                }
+                $p = $p.parent();
+            }
+            return true;
+        })
         .flatMapLatest(function(clickPos) {
             clickPos.preventDefault();
 
