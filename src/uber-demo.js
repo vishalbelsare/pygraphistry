@@ -346,10 +346,14 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
     var res = new Rx.ReplaySubject(1);
     res.onNext(OFF);
 
+    var $marquee = $('#marqueerectangle i.selectable');
+
     interaction.setupMousemove($eventTarget, renderState, textures)
         .filter(function (v) { return v && v.idx > -1; })
+        .filter(function () { return !$marquee.hasClass('toggle-on'); })
         .map(function (v) { return {cmd: 'hover', pt: v}; })
         .merge($eventTarget.mousedownAsObservable()
+            .filter(function () { return !$marquee.hasClass('toggle-on'); })
             .map(function (evt) {
                 var clickedLabel = $(evt.target).hasClass('graph-label') ||
                         $(evt.target).hasClass('highlighted-point') ||
@@ -369,6 +373,7 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
             }))
         .merge(
             labelHover
+                .filter(function () { return !$marquee.hasClass('toggle-on'); })
                 .map(function (elt) {
                     return _.values(poi.state.activeLabels)
                         .filter(function (lbl) { return lbl.elt.get(0) === elt; });
@@ -415,6 +420,8 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
     var camera = renderState.get('camera');
     var canvas = renderState.get('canvas');
 
+    var $marquee = $('#marqueerectangle i.selectable');
+
     //pan/zoom
     //Observable Event
     var interactions;
@@ -422,19 +429,26 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
         debug('Detected touch-based device. Setting up touch interaction event handlers.');
         var eventTarget = $eventTarget[0];
         interactions = interaction.setupSwipe(eventTarget, camera)
-            .merge(interaction.setupPinch($eventTarget, camera));
+            .merge(
+                interaction.setupPinch($eventTarget, camera)
+                .filter(function () { return !$marquee.hasClass('toggle-on'); }));
     } else {
         debug('Detected mouse-based device. Setting up mouse interaction event handlers.');
         interactions = interaction.setupDrag($eventTarget, camera)
-            .merge(interaction.setupScroll($eventTarget, canvas, camera));
+            .merge(
+                interaction.setupScroll($eventTarget, canvas, camera)
+                .filter(function () { return !$marquee.hasClass('toggle-on'); }));
+
     }
     interactions = Rx.Observable.merge(
         interactions,
         interaction.setupCenter($('#center'),
                                 renderState.get('hostBuffers').curPoints,
                                 camera),
-        interaction.setupZoomButton($('#zoomin'), camera, 1 / 1.25),
+        interaction.setupZoomButton($('#zoomin'), camera, 1 / 1.25)
+            .filter(function () { return !$marquee.hasClass('toggle-on'); }),
         interaction.setupZoomButton($('#zoomout'), camera, 1.25)
+            .filter(function () { return !$marquee.hasClass('toggle-on'); })
     );
 
     // Picks objects in priority based on order.

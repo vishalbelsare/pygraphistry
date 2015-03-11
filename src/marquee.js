@@ -81,8 +81,10 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                             debug('marquee instance started, listening');
                             firstRunSinceMousedown = true;
                     }).flatMapLatest(function (startPoint) {
-                        return Rx.Observable.fromEvent($cont, 'mousemove')
-                            .do(function (evt) { evt.stopPropagation(); })
+                        return Rx.Observable.fromEvent($(window.document), 'mousemove')
+                            .do(function (evt) {
+                                evt.stopPropagation();
+                            })
                             .sample(1)
                             .map(function (moveEvt) {
                                 return toRect(startPoint, toPoint($cont, moveEvt));
@@ -98,7 +100,7 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                                     width: rect.br.x - rect.tl.x,
                                     height: rect.br.y - rect.tl.y
                                 });
-                            }).takeUntil(Rx.Observable.fromEvent($cont, 'mouseup')
+                            }).takeUntil(Rx.Observable.fromEvent($(window.document), 'mouseup')
                                 .do(function (evt) {
                                     evt.stopPropagation();
                                     debug('drag marquee finished');
@@ -152,7 +154,7 @@ function marqueeDrags(selections, $cont, $elt) {
             .map(toPoint.bind('', $cont))
             .flatMapLatest(function (startPoint) {
                 debug('Start of drag: ', startPoint);
-                return Rx.Observable.fromEvent($cont, 'mousemove')
+                return Rx.Observable.fromEvent($(window.document), 'mousemove')
                     .do(function (evt) {
                         evt.stopPropagation();
                     })
@@ -171,7 +173,7 @@ function marqueeDrags(selections, $cont, $elt) {
                             left: selection.tl.x + delta.x,
                             top: selection.tl.y + delta.y
                         });
-                    }).takeUntil(Rx.Observable.fromEvent($elt, 'mouseup')
+                    }).takeUntil(Rx.Observable.fromEvent($(window.document), 'mouseup')
                         .do(function () {
                             debug('End of drag');
                             $elt.removeClass('dragging').removeClass('done').addClass('off');
