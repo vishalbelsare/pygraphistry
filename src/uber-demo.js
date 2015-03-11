@@ -327,6 +327,8 @@ function setupLabels ($labelCont, latestState, latestHighlightedObject) {
 
 //$DOM * RenderState * Observable DOM * textureName-> Observable [ {dim: 1, idx: int} ]
 //Changes either from point mouseover or a label mouseover
+//Clicking (coexists with hovering) will open at most 1 label
+//Most recent interaction goes at the end
 function getLatestHighlightedObject ($eventTarget, renderState, labelHover, textures) {
 
     var OFF = [{idx: -1, dim: 0}];
@@ -336,19 +338,25 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
 
     interaction.setupMousemove($eventTarget, renderState, textures)
         .filter(function (v) { return v && v.idx > -1; })
-        .map(function (v) { return [v]; })
+        .map(function (v) { return {cmd: 'hover', pt: v}; })
         .merge($eventTarget.mousedownAsObservable()
-            .filter(function (evt) {
-                if (evt.target) {
-                    if ($(evt.target).hasClass('graph-label') ||
+            .map(function (evt) {
+                var clickedLabel = $(evt.target).hasClass('graph-label') ||
                         $(evt.target).hasClass('highlighted-point') ||
-                        $(evt.target).hasClass('highlighted-point-center')) {
-                        return false;
-                    }
+                        $(evt.target).hasClass('highlighted-point-center');
+                if (!clickedLabel) {
+                    clickedLabel = $(evt.target).parents('.graph-label').length || false;
                 }
-                return true;
-            })
-            .map(_.constant(OFF)))
+                if (clickedLabel &&
+                        //allow dragging by menu title (don't stop)
+                        !$(evt.target).hasClass('graph-label') &&
+                        !$(evt.target).hasClass('graph-label-container')) {
+                    evt.stopPropagation();
+                }
+                return clickedLabel ?
+                    {cmd: 'click', pt: {dim: 1, idx: parseInt($('#highlighted-point-cont').attr('pointidx'))}}
+                    : {cmd: 'declick'};
+            }))
         .merge(
             labelHover
                 .map(function (elt) {
@@ -358,8 +366,28 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
                 .filter(function (highlightedLabels) { return highlightedLabels.length; })
                 // TODO: Tag this as a point properly
                 .map(function (highlightedLabels) {
-                    return [{dim: 1, idx: highlightedLabels[0].idx}];
+                    return {cmd: 'hover', pt: {dim: 1, idx: highlightedLabels[0].idx}};
                 }))
+        .scan([], function (acc, cmd) {
+            switch (cmd.cmd) {
+                case 'hover':
+                    return acc
+                        .filter(function (pt) { return !pt.hover; })
+                        .concat(_.extend({hover: true}, cmd.pt));
+                case 'click':
+                    return acc
+                        .filter(function (pt) { return !pt.click; })
+                        .concat(_.extend({click: true}, cmd.pt));
+                case 'declick':
+                    return [];
+            }
+        })
+        .map(function (arr) {
+            return arr.filter(function (v) { return v.idx !== -1; });
+        })
+        .map(function (arr) {
+            return arr.length ? arr : OFF;
+        })
         .subscribe(res, makeErrorHandler('getLatestHighlightedObject'));
 
     return res.map(_.identity);
