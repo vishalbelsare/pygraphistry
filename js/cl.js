@@ -220,7 +220,7 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
  *          kernel name mapped to its kernel object.
  */
 var compile = Q.promised(function (cl, source, kernels) {
-    debug("Compiling kernels");
+    debug('Compiling kernels');
 
     var program;
     try {
@@ -229,10 +229,9 @@ var compile = Q.promised(function (cl, source, kernels) {
         var includeDir = path.resolve(__dirname, '..', 'kernels');
         program.build([cl.device], '-I ' + includeDir + ' -cl-fast-relaxed-math');
     } catch (e) {
-        util.makeErrorHandler('OpenCL compilation error')(e);
         var log = program.getBuildInfo(cl.device, webcl.PROGRAM_BUILD_LOG)
         console.log('Build Log: %o', log);
-        throw e;
+        util.makeErrorHandler('OpenCL compilation error')(e);
     }
 
     try {
@@ -251,7 +250,6 @@ var compile = Q.promised(function (cl, source, kernels) {
 
     } catch (e) {
         util.makeErrorHandler('Kernel creation error:', kernels)(e);
-        throw e;
     }
 });
 

@@ -120,7 +120,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         return source.then(function (source) {
             var processedSource = prefix + '\n\n' + source;
             if (debug.enabled && config.ENVIRONMENT === 'local') {
-                var debugFile = path.resolve(__dirname, '..', 'kernels', 'debug.' + file);
+                var debugFile = path.resolve(__dirname, '..', 'kernels', file + '.debug');
                 fs.writeFileSync(debugFile, processedSource);
             }
 

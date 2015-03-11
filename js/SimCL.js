@@ -90,6 +90,7 @@ function create(renderer, device, vendor, cfg) {
             simObj.numBackwardsWorkItems = 0;
             simObj.numMidPoints = 0;
             simObj.numMidEdges = 0;
+            simObj.numSplits = controls.global.numSplits;
             simObj.labels = [];
 
             simObj.bufferHostCopies = {
@@ -547,7 +548,7 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, degrees, m
 
         simulator.numMidPoints = midPoints.length / simulator.elementsPerPoint;
         simulator.renderer.numMidPoints = simulator.numMidPoints;
-        simulator.numMidEdges = simulator.numMidPoints + simulator.numEdges;
+        simulator.numMidEdges = (simulator.numSplits + 1) * simulator.numEdges;
         simulator.renderer.numMidEdges = simulator.numMidEdges;
 
         // Create buffers
@@ -728,17 +729,18 @@ function setTimeSubset(renderer, simulator, range) {
     var endEdgeIdx = endIdx > 0 ? (pointToEdgeIdx(endIdx - 1, false) + 1) : startEdgeIdx;
 
     var numEdges = endEdgeIdx - startEdgeIdx;
+    var numSplits = simulator.controls.global.numSplits;
 
     simulator.timeSubset =
         {relRange: range, //%
          pointsRange:       {startIdx: startIdx, len: numPoints},
          edgeRange:         {startIdx: startEdgeIdx, len: numEdges},
          midPointsRange:    {
-                startIdx: startIdx      * simulator.numSplits,
-                len: numPoints          * simulator.numSplits},
+                startIdx: startIdx      * numSplits,
+                len: numPoints          * numSplits},
          midEdgeRange:      {
-                startIdx: startEdgeIdx  * (1 + simulator.numSplits),
-                len: numEdges           * (1 + simulator.numSplits)}};
+                startIdx: startEdgeIdx  * (1 + numSplits),
+                len: numEdges           * (1 + numSplits)}};
 
     debug('subset args', {numPoints: renderer.numPoints, numEdges: renderer.numEdges, startEdgeIdx: startEdgeIdx, endIdx: endIdx, endEdgeIdx: endEdgeIdx});
     debug('subset', simulator.timeSubset);
