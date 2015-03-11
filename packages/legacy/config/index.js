@@ -1,6 +1,7 @@
 /** @module config */
 'use strict';
 
+var util = require('util');
 var debug = require('debug')('graphistry:config');
 var _ = require('underscore');
 var AWS = require('aws-sdk');
@@ -123,6 +124,49 @@ function deployEnv(options) {
         default:  // 'local'
             return {};
     }
+}
+
+
+/**
+ * Sets options based off the value of existing options (except for `ENVIRONMENT`).
+ * @param  {Object} options - The set of existing options.
+ * @return {Object} A new set of options containing the existing options + new options synthesized
+ * from the existing options. The synthesized values will override any existing options of the same
+ * name.
+ */
+function synthesized(options) {
+    var mongoServer = getMongoURL(
+        options['MONGO_HOSTS'],
+        options['MONGO_USERNAME'],
+        options['MONGO_PASSWORD'],
+        options['MONGO_DATABASE'],
+        options['MONGO_REPLICA_SET']);
+
+    return {MONGO_SERVER: mongoServer};
+}
+
+
+/**
+ * Creates a MongoDB connection URL from individual parameters
+ *
+ * @param  {string[]} hosts      - List of MongoDB server hostnames
+ * @param  {string} [username]   - MongoDB username (optional)
+ * @param  {string} [password]   - MongoDB password (options; if given, username must be given)
+ * @param  {string} database     - Name of the database to authenticate against
+ * @param  {string} [replicaSet] - The replicaset to use for the MongoDB database (optional)
+ *
+ * @return {string} A URL you can pass to `MongoClient.connect()` to connect to the database with
+ * the options given.
+ */
+function getMongoURL(hosts, username, password, database, replicaSet) {
+    var passwordUrl = _.isString(password) ? util.format(':%s', password) : '';
+    var credentialsUrl = _.isString(username) ? util.format('%s%s@', username, passwordUrl) : '';
+
+    var replicaSetUrl = _.isString(replicaSet) ? util.format('?replicaSet=%s', replicaSet) : '';
+
+    var hostsUrl = hosts.join(',');
+
+    return util.format('mongodb://%s%s/%s%s', credentialsUrl, hostsUrl, database, replicaSetUrl);
 }
 
 
