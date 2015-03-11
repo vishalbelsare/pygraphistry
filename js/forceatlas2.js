@@ -14,21 +14,21 @@ function ForceAtlas2(clContext) {
 
     debug('Creating ForceAtlas2 kernels');
     this.faPoints = new Kernel('faPointForces', ForceAtlas2.argsPoints,
-                               ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
+                               ForceAtlas2.argsType, 'forceAtlas2/faPointForces.cl', clContext);
     this.faEdges = new Kernel('faEdgeForces', ForceAtlas2.argsEdges,
-                               ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
+                               ForceAtlas2.argsType, 'forceAtlas2/faEdges.cl', clContext);
 
     this.faSwings = new Kernel('faSwingsTractions', ForceAtlas2.argsSwings,
-                               ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
+                               ForceAtlas2.argsType, 'forceAtlas2/faSwingsTractions.cl', clContext);
 
-    this.faIntegrate = new Kernel('faIntegrate', ForceAtlas2.argsIntegrate,
-                               ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
+    this.faIntegrate = new Kernel('faIntegrateLegacy', ForceAtlas2.argsIntegrate,
+                               ForceAtlas2.argsType, 'forceAtlas2/faIntegrateLegacy.cl', clContext);
 
-    this.faIntegrate2 = new Kernel('faIntegrate2', ForceAtlas2.argsIntegrate2,
-                               ForceAtlas2.argsType, 'forceAtlas2.cl', clContext);
+    this.faIntegrateApprox = new Kernel('faIntegrateApprox', ForceAtlas2.argsIntegrateApprox,
+                               ForceAtlas2.argsType, 'forceAtlas2/faIntegrateApprox.cl', clContext);
 
     this.kernels = this.kernels.concat([this.faPoints, this.faEdges, this.faSwings,
-                                       this.faIntegrate, this.faIntegrate2]);
+                                       this.faIntegrate, this.faIntegrateApprox]);
 }
 ForceAtlas2.prototype = Object.create(LayoutAlgo.prototype);
 ForceAtlas2.prototype.constructor = ForceAtlas2;
@@ -51,7 +51,7 @@ ForceAtlas2.argsIntegrate = [
     'gSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'
 ];
 
-ForceAtlas2.argsIntegrate2 = [
+ForceAtlas2.argsIntegrateApprox = [
     'numPoints', 'tau', 'inputPositions', 'pointDegrees', 'curForces', 'swings',
     'tractions', 'outputPositions'
 ];
@@ -238,10 +238,10 @@ function integrate(simulator, faIntegrate) {
         .fail(util.makeErrorHandler('Kernel faIntegrate failed'));
 }
 
-function integrate2(simulator, faIntegrate2) {
+function integrateApprox(simulator, faIntegrateApprox) {
     var buffers = simulator.buffers;
 
-    faIntegrate2.set({
+    faIntegrateApprox.set({
         numPoints: simulator.numPoints,
         inputPositions: buffers.curPoints.buffer,
         pointDegrees: buffers.degrees.buffer,
@@ -263,9 +263,9 @@ function integrate2(simulator, faIntegrate2) {
 
     simulator.tickBuffers(['nextPoints']);
 
-    debug('Running kernel faIntegrate2');
-    return faIntegrate2.exec([simulator.numPoints], resources)
-        .fail(util.makeErrorHandler('Kernel faIntegrate2 failed'));
+    debug('Running kernel faIntegrateApprox');
+    return faIntegrateApprox.exec([simulator.numPoints], resources)
+        .fail(util.makeErrorHandler('Kernel faIntegrateApprox failed'));
 }
 
 ForceAtlas2.prototype.tick = function(simulator, stepNumber) {
@@ -278,7 +278,7 @@ ForceAtlas2.prototype.tick = function(simulator, stepNumber) {
         return swingsTractions(simulator, that.faSwings);
     }).then(function () {
         return integrate(simulator, that.faIntegrate);
-        //return integrate2(simulator, that.faIntegrate2);
+        // return integrateApprox(simulator, that.faIntegrateApprox);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);
