@@ -68,6 +68,7 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                 var firstRunSinceMousedown;
                 return Rx.Observable.fromEvent($cont, 'mousedown')
                     .do(function (evt) {
+                        debug('stopPropagation: marquee down');
                         evt.stopPropagation();
                         $('body').addClass('noselect');
                         $('#simulation').css({
@@ -83,6 +84,7 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                     }).flatMapLatest(function (startPoint) {
                         return Rx.Observable.fromEvent($(window.document), 'mousemove')
                             .do(function (evt) {
+                                debug('stopPropagation: marquee move');
                                 evt.stopPropagation();
                             })
                             .sample(1)
@@ -102,6 +104,7 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                                 });
                             }).takeUntil(Rx.Observable.fromEvent($(window.document), 'mouseup')
                                 .do(function (evt) {
+                                    debug('stopPropagation: marquee up');
                                     evt.stopPropagation();
                                     debug('drag marquee finished');
                                 })
@@ -148,6 +151,7 @@ function marqueeDrags(selections, $cont, $elt) {
         var firstRunSinceMousedown = true;
         return Rx.Observable.fromEvent($elt, 'mousedown')
             .do(function (evt) {
+                debug('stopPropagation: marquee down 2');
                 evt.stopPropagation();
                 $('body').addClass('noselect');
             })
@@ -156,6 +160,7 @@ function marqueeDrags(selections, $cont, $elt) {
                 debug('Start of drag: ', startPoint);
                 return Rx.Observable.fromEvent($(window.document), 'mousemove')
                     .do(function (evt) {
+                        debug('stopPropagation: marquee move 2');
                         evt.stopPropagation();
                     })
                     .sample(1)

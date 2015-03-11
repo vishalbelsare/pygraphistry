@@ -365,6 +365,7 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
                         //allow dragging by menu title (don't stop)
                         !$(evt.target).hasClass('graph-label') &&
                         !$(evt.target).hasClass('graph-label-container')) {
+                    debug('stopPropagation: highlight down');
                     evt.stopPropagation();
                 }
                 return clickedLabel ?
