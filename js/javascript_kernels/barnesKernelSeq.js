@@ -93,12 +93,9 @@ var BarnesKernelSeq = function (clContext) {
     this.calculateForces = new Kernel('calculate_forces', this.argsBarnes,
             this.argsType, 'barnesHut/calculateForces.cl', clContext);
 
-    this.move = new Kernel('move_bodies', this.argsBarnes,
-            this.argsType, 'barnesHut/moveBodies.cl', clContext);
-
 
     this.kernels = [this.toBarnesLayout, this.boundBox, this.buildTree, this.computeSums,
-                    this.sort, this.calculateForces, this.move];
+                    this.sort, this.calculateForces];
 
     this.setPhysics = function(flag) {
 

@@ -223,45 +223,6 @@ function decode0(graph, vg, metadata)  {
     }).then(function () {
         runLoaders(vloaders);
         runLoaders(eloaders);
-    /*}).then(function(){ // BUGGY THUS DISABLED
-        debug('writing into graph.simulator.buffers');
-        // Copy all serialized data to simulator buffers if data is present
-        // The serialized data lives in graph.vg
-        var arrs = Object.keys(graph.simulator.buffers).map(function(index){
-
-            // find the element with the index. TODO: make this a dict somehow?
-            for (var el in graph.vg.float_vectors) {
-                debug(el)
-                if (graph.vg.float_vectors[el].name == index) {
-
-                    var buffer = graph.simulator.buffers[index];
-                    var raw = graph.vg.float_vectors[el].values;
-                    var data = new Float32Array(raw);
-
-                    try {
-                        // Write the data to the buffer
-                        return buffer.write(data).then(function(buf) {
-                            debug('loaded ' + index)
-                            return buf;
-                        })
-                    } catch (e) {
-                        debug(e)
-                    }
-                    break;
-                }
-            }
-        });
-        return Q.all(arrs);*/
-    }).then(function () {
-        debug('all written');
-        _.each(graph.simulator.layoutAlgorithms, function (la) {
-            la.setPoints(graph.simulator);
-        });
-        return graph;
-    }).then(function (graph) {
-        _.each(graph.simulator.layoutAlgorithms, function (la) {
-            la.setEdges(graph.simulator);
-        });
         return graph;
     }).fail(util.makeErrorHandler('Failure in VGraphLoader'));
 }

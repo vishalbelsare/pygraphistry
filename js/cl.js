@@ -220,8 +220,9 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
  *          single kernel. If kernels was an array of kernel names, returns an object with each
  *          kernel name mapped to its kernel object.
  */
-var compile = Q.promised(function (cl, source, kernels) {
-    debug('Compiling kernels');
+var compile = Q.promised(util.perf.bind(null, perf, 'Compiling Kernels', function (cl, source, kernels) {
+    perf('Kernel: ', kernels[0]);
+    debug("Compiling kernels");
 
     var program;
     try {
@@ -252,7 +253,7 @@ var compile = Q.promised(function (cl, source, kernels) {
     } catch (e) {
         util.makeErrorHandler('Kernel creation error:', kernels)(e);
     }
-});
+}));
 
 
 
