@@ -58,7 +58,7 @@ var labelHover = new Rx.Subject();
 // $DOM * RendererState  -> ()
 // Immediately reposition each label based on camera and curPoints buffer
 var renderLabelsRan = false;
-function renderPointLabels($labelCont, renderState, labelIdx) {
+function renderPointLabels($labelCont, renderState, labelIndices) {
 
     debug('rendering labels');
 
@@ -80,17 +80,20 @@ function renderPointLabels($labelCont, renderState, labelIdx) {
                 }
             }
 
-            renderLabelsImmediate($labelCont, renderState, curPoints, labelIdx);
+            renderLabelsImmediate($labelCont, renderState, curPoints, labelIndices);
 
         })
         .subscribe(_.identity, makeErrorHandler('renderLabels'));
 }
 
 
-//RenderState * [ float ] * int -> ()
-function renderCursor (renderState, points, idx, dim, sizes) {
+//RenderState * [ float ] * [{dim: int, idx: int}] -> ()
+function renderCursor (renderState, points, indices, sizes) {
 
-    debug('Enlarging current mouseover point', idx);
+    var idx = indices[indices.length - 1].idx;
+    var dim = indices[indices.length - 1].dim;
+
+    debug('Enlarging current mouseover point (last)', idx);
 
     if (idx === undefined || idx < 0 || dim === 2) {
         $('#highlighted-point-cont').css({display: 'none'});
@@ -150,7 +153,7 @@ function newLabelPositions(renderState, labels, points) {
     return newPos;
 }
 
-function effectLabels(toClear, toShow, labels, newPos, labelIdx) {
+function effectLabels(toClear, toShow, labels, newPos, labelIndices) {
 
     //DOM effects: disable old, then move->enable new
     toClear.forEach(function (lbl) {
@@ -162,9 +165,11 @@ function effectLabels(toClear, toShow, labels, newPos, labelIdx) {
         elt.elt.removeClass('on');
     });
 
-    if (labelIdx > -1) {
-        poi.state.activeLabels[labelIdx].elt.addClass('on');
-    }
+    labelIndices.forEach(function (labelIdx) {
+        if (labelIdx > -1) {
+            poi.state.activeLabels[labelIdx].elt.addClass('on');
+        }
+    });
 
     toShow.forEach(function (lbl) {
         lbl.elt.css('display', 'block');
@@ -172,15 +177,17 @@ function effectLabels(toClear, toShow, labels, newPos, labelIdx) {
 
 }
 
-function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIdx) {
+function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices) {
     var points = new Float32Array(curPoints.buffer);
 
     var t0 = Date.now();
 
     var hits = poi.getActiveApprox(renderState, 'pointHitmapDownsampled');
-    if (labelIdx > -1) {
-        hits[labelIdx] = true;
-    }
+    labelIndices.forEach(function (labelIdx) {
+        if (labelIdx > -1) {
+            hits[labelIdx] = true;
+        }
+    });
     var t1 = Date.now();
 
     var toClear = poi.finishApprox(poi.state.activeLabels, poi.state.inactiveLabels, hits, renderState, points);
@@ -195,7 +202,7 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIdx) {
                 var alreadyActiveLabel = poi.state.activeLabels[idx];
                 toShow.push(alreadyActiveLabel);
                 return alreadyActiveLabel;
-            } else if ((_.keys(poi.state.activeLabels).length > poi.MAX_LABELS) && (labelIdx !== idx)) {
+            } else if ((_.keys(poi.state.activeLabels).length > poi.MAX_LABELS) && (labelIndices.indexOf(idx) === -1)) {
                 //no label but too many on screen, don't create new
                 return null;
             } else if (!poi.state.inactiveLabels.length) {
@@ -225,7 +232,7 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIdx) {
 
     var t3 = Date.now();
 
-    effectLabels(toClear, toShow, labels, newPos, labelIdx);
+    effectLabels(toClear, toShow, labels, newPos, labelIndices);
 
     debug('sampling timing', t1 - t0, t2 - t1, t3 - t2, Date.now() - t3,
         'labels:', labels.length, '/', _.keys(hits).length, poi.state.inactiveLabels.length);
@@ -265,7 +272,7 @@ lastRender
         }
 
         renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer),
-                     cfg.data.highlightIdx, cfg.data.highlightDim, new Uint8Array(cfg.data.pointSizes.buffer));
+                     cfg.data.highlightIndices, new Uint8Array(cfg.data.pointSizes.buffer));
     })
     .pluck('cur')
     .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
@@ -293,7 +300,7 @@ lastRender
 
 
 //move labels when camera moves or new highlight
-//$DOM * Observable RenderState -> ()
+//$DOM * Observable RenderState * Observable [ {dim: int, idx: int} ] -> ()
 function setupLabels ($labelCont, latestState, latestHighlightedObject) {
 
     latestState
@@ -302,20 +309,15 @@ function setupLabels ($labelCont, latestState, latestHighlightedObject) {
             return currentState.get('rendered')
                 .flatMap(function () {
                     return latestHighlightedObject.map(function (latestHighlighted) {
-                        return _.extend(latestHighlighted, {currentState: currentState});
+                        return _.extend({highlighted: latestHighlighted}, {currentState: currentState});
                     });
                 });
         })
         .do(function (pair) {
-            var currentState = pair.currentState;
-            var idx = pair.idx;
-            var dim = pair.dim;
-            if (!dim || dim === 1) {
-                renderPointLabels($labelCont, currentState, idx);
-            } else {
-                // TODO: Actually render edges and update poi.
-                renderPointLabels($labelCont, currentState, -1);
-            }
+            var indices = pair.highlighted.map(function (o) {
+                return !o.dim || o.dim === 1 ? o.idx : -1;
+            });
+            renderPointLabels($labelCont, pair.currentState, indices);
         })
         .subscribe(_.identity, makeErrorHandler('setuplabels'));
 }
@@ -323,14 +325,18 @@ function setupLabels ($labelCont, latestState, latestHighlightedObject) {
 
 
 
-//$DOM * RenderState * Observable DOM * textureName-> Observable int
+//$DOM * RenderState * Observable DOM * textureName-> Observable [ {dim: 1, idx: int} ]
 //Changes either from point mouseover or a label mouseover
 function getLatestHighlightedObject ($eventTarget, renderState, labelHover, textures) {
+
+    var OFF = [{idx: -1, dim: 0}];
+
     var res = new Rx.ReplaySubject(1);
-    res.onNext({idx: -1, dim: 0});
+    res.onNext(OFF);
 
     interaction.setupMousemove($eventTarget, renderState, textures)
         .filter(function (v) { return v && v.idx > -1; })
+        .map(function (v) { return [v]; })
         .merge($eventTarget.mousedownAsObservable()
             .filter(function (evt) {
                 if (evt.target) {
@@ -342,7 +348,7 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
                 }
                 return true;
             })
-            .map(_.constant({dim: 0, idx: -1})))
+            .map(_.constant(OFF)))
         .merge(
             labelHover
                 .map(function (elt) {
@@ -352,11 +358,11 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
                 .filter(function (highlightedLabels) { return highlightedLabels.length; })
                 // TODO: Tag this as a point properly
                 .map(function (highlightedLabels) {
-                    return {dim: 1, idx: highlightedLabels[0].idx};
+                    return [{dim: 1, idx: highlightedLabels[0].idx}];
                 }))
         .subscribe(res, makeErrorHandler('getLatestHighlightedObject'));
 
-    return res;
+    return res.map(_.identity);
 }
 
 
@@ -438,8 +444,8 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
         .flatMapLatest(function (data) {
             // TODO: pass in dim. Handle Dim.
             // Temporary hack -- ignore edges.
-            return latestHighlightedObject.map(function (latestHighlighted) {
-                return _.extend({labelTag: Date.now(), highlightIdx: latestHighlighted.idx, highlightDim: latestHighlighted.dim}, data);
+            return latestHighlightedObject.map(function (highlightIndices) {
+                return _.extend({labelTag: Date.now(), highlightIndices: highlightIndices}, data);
             });
         })
         .do(function(data) {
