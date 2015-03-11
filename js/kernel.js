@@ -49,7 +49,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         _.map(args, function (name) { return [name, defVal]; })
     );
     var defValues = _.object(
-        _.map(defines, function (name) { return [name, defVal]; })
+        _.map(defines, function (name) { return [name, null]; })
     );
     Object.seal(argValues);
     Object.seal(defValues);
@@ -73,7 +73,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 if (val !== defValues[arg]) {
                     mustRecompile = true;
                 }
-                defValues[arg] = {dirty: true, val: val};
+                defValues[arg] = val;
             } else {
                 util.die('Kernel %s has no argument/define named %s', name, arg);
             }
@@ -100,13 +100,12 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     function compile () {
         debug('Compiling kernel', that.name);
 
-        _.each(defValues, function (arg, wrappedVal) {
-            if (wrappedVal.val === null)
+        _.each(defValues, function (arg, val) {
+            if (val === null)
                 util.die('Define %s of kernel %s was never set', arg, name);
         });
 
-        var prefix = _.flatten(_.map(defValues, function (wrappedVal, key) {
-            var val = wrappedVal && wrappedVal.val;
+        var prefix = _.flatten(_.map(defValues, function (val, key) {
             if (typeof val === 'string' || typeof val === 'number' || val === true) {
                 return ['#define ' + key + ' ' + val];
             } else if (val === null) {
