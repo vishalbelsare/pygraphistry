@@ -76,25 +76,26 @@ var BarnesKernelSeq = function (clContext) {
     }
 
     this.toBarnesLayout = new Kernel('to_barnes_layout', this.argsToBarnesLayout,
-            this.argsType, 'barnesHut.cl', clContext);
+            this.argsType, 'barnesHut/toBarnesLayout.cl', clContext);
 
     this.boundBox = new Kernel('bound_box', this.argsBarnes,
-            this.argsType, 'barnesHut.cl', clContext);
+            this.argsType, 'barnesHut/boundBox.cl', clContext);
 
     this.buildTree = new Kernel('build_tree', this.argsBarnes,
-            this.argsType, 'barnesHut.cl', clContext);
+            this.argsType, 'barnesHut/buildTree.cl', clContext);
 
     this.computeSums = new Kernel('compute_sums', this.argsBarnes,
-            this.argsType, 'barnesHut.cl', clContext);
+            this.argsType, 'barnesHut/computeSums.cl', clContext);
 
     this.sort = new Kernel('sort', this.argsBarnes,
-            this.argsType, 'barnesHut.cl', clContext);
+            this.argsType, 'barnesHut/sort.cl', clContext);
 
     this.calculateForces = new Kernel('calculate_forces', this.argsBarnes,
-            this.argsType, 'barnesHut.cl', clContext);
+            this.argsType, 'barnesHut/calculateForces.cl', clContext);
 
     this.move = new Kernel('move_bodies', this.argsBarnes,
-            this.argsType, 'barnesHut.cl', clContext);
+            this.argsType, 'barnesHut/moveBodies.cl', clContext);
+
 
     this.kernels = [this.toBarnesLayout, this.boundBox, this.buildTree, this.computeSums,
                     this.sort, this.calculateForces, this.move];
