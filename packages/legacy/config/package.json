@@ -1,10 +1,11 @@
 {
   "name": "config",
-  "description": "config",
+  "description": "Graphistry configuration resolver",
   "version": "0.0.1",
   "private": true,
-  "scripts": {
-    "test": "echo \"No tests available.\""
+  "main": "./index.js",
+  "bin": {
+    "graphistry-config": "./bin/graphistry-config"
   },
   "dependencies": {
     "debug": "~2.1.0",

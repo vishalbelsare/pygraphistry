@@ -1,0 +1,7 @@
+#!/usr/bin/env node
+
+// Simple program that just writes the resolved config to STDOUT
+var util = require('util');
+var config  = require('..')();
+
+console.log(util.inspect(config, {depth: 10, colors: true}));
