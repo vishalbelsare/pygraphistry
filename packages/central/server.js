@@ -84,40 +84,31 @@ function get_likely_local_ip() {
 
 
 //string -> Observable {ips: ..., results: ...}
-function getIPs(datasetname) {
+function getIPs() {
+    // The age (in seconds) that defines 'fresh' or 'stale' pings
+    var freshSeconds = 30;
+    // The absolute Date that defines the time threshild between fresh/stale pings
+    var freshDate = new Date(Date.now() - (freshSeconds * 1000) - 1);
 
-    var infoCollection = db.collection('data_info');
 
-    return Rx.Observable.fromNodeCallback(
-            infoCollection.findOne.bind(infoCollection))({"name": datasetname})
-        .flatMap(function (doc) {
-            if (!doc) { throw new Error('no pings doc'); }
+    // Find all the server running workers, sort by available GPU memory
+    var workerServers = db.collection('gpu_monitor').find(
+            {'updated': {'$gt': freshDate}},
+            {'sort': [['gpu_memory_free', 'desc']]}
+        );
 
-            // Query only for gpus that have been updated within 30 secs
-            var d = new Date();
-            d.setSeconds(d.getSeconds() - 30);
-
-            var res = new Rx.Subject();
-
-            var monitorCollection = db.collection('gpu_monitor')
-                .find({'gpu_memory_free': {'$gt': doc.size},
-                       'updated':         {'$gt': d}},
-                      {'sort': [['gpu_memory_free', 'desc']]});
-
-            return Rx.Observable.fromNodeCallback(monitorCollection.toArray.bind(monitorCollection))();
-        })
+    return Rx.Observable
+        .fromNodeCallback(workerServers.toArray, workerServers)()
         .flatMap(function (ips) {
             if (!ips.length) { throw new Error('All GPUs out of space!'); }
 
-            // Query only for workers that have been updated within 30 secs
-            var d = new Date();
-            d.setSeconds(d.getSeconds() - 30);
-
             // Find all idle node processes
-            var nodeCollection = db.collection('node_monitor').find({'active': false,
-                                                    'updated': {'$gt': d}});
+            var nodeCollection = db.collection('node_monitor').find({
+                'active': false,
+                'updated': {'$gt': freshDate}
+            });
 
-            return Rx.Observable.fromNodeCallback(nodeCollection.toArray.bind(nodeCollection))()
+            return Rx.Observable.fromNodeCallback(nodeCollection.toArray, nodeCollection)()
                 .map(function (results) {
                     if (!results.length) {
                         var msg = 'There is space on a server, but all workers in the fleet are busy or dead (have not pinged home in over 30 seconds).';
@@ -174,15 +165,10 @@ function listIps (o) {
 
 
 function assign_worker(req, res) {
-    var datasetname = req.query.dataset;
-
     var ips;
-    // need to route based on data size.
-    // TODO: S3 -> mongo information. This will not work in production.
-    if(config.ENVIRONMENT === 'production' || config.ENVIRONMENT === 'staging') {
-        console.log("WARNING: fix this. Needs S3 -> Mongo integration for datablob sizes")
 
-        ips = getIPs(datasetname)
+    if(config.ENVIRONMENT === 'production' || config.ENVIRONMENT === 'staging') {
+        ips = getIPs()
             .flatMap(function (o) {
                 return Rx.Observable.fromArray(listIps(o));
             });
@@ -201,8 +187,8 @@ function assign_worker(req, res) {
 
     var count = 0;
     ip.do(function (worker) {
-            debug("Assigning client '%s' to viz server on %s, port %d with dataset %s",
-                req.ip, worker.hostname, worker.port, datasetname);
+            debug("Assigning client '%s' to viz server on %s, port %d",
+                req.ip, worker.hostname, worker.port);
             res.json(worker);
         })
         .subscribe(
