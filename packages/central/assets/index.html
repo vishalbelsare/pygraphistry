@@ -14,7 +14,7 @@ function jump() {
         'controls=' + controls,
         'scene=' + (controls === 'uber' ? 'uber' : 'netflow'),
         'info=true',
-        'play=5000'
+        'play=10000'
     ];
     console.log(window.origin)
     var url = '/graph/graph.html?' + args.join('&');
@@ -37,9 +37,15 @@ function jump() {
         </div>
         <div class="cali">
             <b>california</b>
-            <div style="font-size: 0.5em; padding-top: 0.3em">
-                <a href="graph/uber.html?dataset=Uber&type=OBSOLETE_geo&scene=uber&controls=uber&debug=true">uber</a>
-                <a href="graph/graph.html?dataset=NetflowLarge&scene=netflow&controls=atlas&mapper=opentsdb&debug=true&play=10000">netflow</a>
+            <div style="font-size: 0.5em; padding-top: 0.3em; text-align: center; line-height: 1.8em">
+            <!--
+                <a href="graph/uber.html?dataset=Uber&type=OBSOLETE_geo&scene=uber&controls=uber&info=true">uber</a>
+            -->
+                <a href="graph/graph.html?dataset=NetflowLarge&scene=netflow&mapper=opentsdb&info=true&play=10000&legend=%7B%22title%22%3A%22%3Ch3%3ENetflow%20Logs%3C%2Fh3%3E%22%2C%22nodes%22%3A%22Pair%20of%20(IP%2Cprotocol)%22%2C%22edges%22%3A%22Bandwidth%2C%20%3Cspan%20style%3D%5C%22color%3Agreen%5C%22%3Elow%3C%2Fspan%3E%20to%20%3Cspan%20style%3D%5C%22color%3Ared%5C%22%3Ehigh%3C%2Fspan%3E%22%7D">netflow logs</a>
+
+                <br/>
+
+                <a href="graph/graph.html?dataset=Facebook&info=true&play=20000&legend=%7B%22title%22%3A%22%3Ch3%3EFacebook%20Friends%3C%2Fh3%3E%22%2C%22nodes%22%3A%22People%22%2C%22edges%22%3A%22Friendships%22%7D">facebook friends </a>
             </div>
         </div>
         <div>
@@ -69,7 +75,7 @@ function jump() {
                 <option value="Epinions">
             </datalist>
         </span>
-        <span> graph layout:
+        <span> layout:
             <select id="controls" >
                 <option value="atlas">Force Atlas 2</option>
                 <option value="gauss">Gauss-Seidel</option>
