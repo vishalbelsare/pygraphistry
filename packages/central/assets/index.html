@@ -7,7 +7,8 @@
 
 function jump() {
 
-    var controls = $('#controls').val();
+    //var controls = $('#controls').val();
+    var controls = 'atlas';
 
     var args = [
         'dataset=' + encodeURIComponent($('#dataset').val()),
@@ -22,18 +23,64 @@ function jump() {
 }
 
 </script>
+<script>
+
+function ping(k) {
+    console.log('go');
+    var t0 = Date.now();
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'mt.html', true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4) {
+            k(Date.now() - t0);
+        }
+    };
+    xhr.send(null);
+}
+
+function pinger () {
+    var timings = [];
+    var loop = function (step) {
+        if (step) {
+            ping(function (v) {
+                timings.push(v);
+                loop(step - 1);
+            });
+        } else {
+            var sum = 0;
+            for (var i = 0; i < timings.length; i++) {
+                sum += timings[i];
+            }
+            document.getElementById('ping').innerHTML =
+                '<i>ping: ' + (sum/timings.length).toFixed(1) + 'ms rtt</i>';
+        }
+    };
+    loop(10);
+}
+
+
+window.onload = pinger;
+</script>
+
+
 </head>
 <body>
 
 <div class="banner">
     <img src="img/logo.png" style="width: 300px;" />
+    <div style="font-size:0.5em; font-weight: bold">LABS DEMOS</div>
+
+    <div style="font-size:0.5em">
+        <a href="mailto:info@graphistry.com">email</a> for tool preview
+    </div>
 </div>
 
 <div class="content">
     <div class="regions">
-
-        <div>
-            <span style="color: rgba(51, 102, 153, 0.5)">nyc</span>
+        <div class="off">
+            <span class="name">nyc</span>
+            <span class="status">offline</span>
         </div>
         <div class="cali">
             <b>california</b>
@@ -41,40 +88,46 @@ function jump() {
             <!--
                 <a href="graph/uber.html?dataset=Uber&type=OBSOLETE_geo&scene=uber&controls=uber&info=true">uber</a>
             -->
-                <a href="graph/graph.html?dataset=NetflowLarge&scene=netflow&mapper=opentsdb&info=true&play=10000&legend=%7B%22title%22%3A%22%3Ch3%3ENetflow%20Logs%3C%2Fh3%3E%22%2C%22nodes%22%3A%22Pair%20of%20(IP%2Cprotocol)%22%2C%22edges%22%3A%22Bandwidth%2C%20%3Cspan%20style%3D%5C%22color%3Agreen%5C%22%3Elow%3C%2Fspan%3E%20to%20%3Cspan%20style%3D%5C%22color%3Ared%5C%22%3Ehigh%3C%2Fspan%3E%22%7D">netflow logs</a>
+                <a href="graph/graph.html?dataset=NetflowLarge&scene=netflow&mapper=opentsdb&info=true&play=10000&legend=%7B%22title%22%3A%22%3Ch3%3ENetflow%20Logs%3C%2Fh3%3E%22%2C%22nodes%22%3A%22Pair%20of%20(IP%2Cprotocol)%22%2C%22edges%22%3A%22Bandwidth%2C%20%3Cspan%20style%3D%5C%22color%3Agreen%5C%22%3Elow%3C%2Fspan%3E%20to%20%3Cspan%20style%3D%5C%22color%3Ared%5C%22%3Ehigh%3C%2Fspan%3E%22%7D">netflow logs</a> (<a href="graph/graph.html?dataset=NetflowHuge&scene=netflow&info=true&play=120000&legend=%7B%22title%22%3A%22%3Ch3%3ENetflow%20Logs%3C%2Fh3%3E%22%2C%22nodes%22%3A%22Pair%20of%20(IP%2Cprotocol)%22%2C%22edges%22%3A%22Cluster%22%7D">huge: 2min</a>)
 
                 <br/>
 
                 <a href="graph/graph.html?dataset=Facebook&info=true&play=20000&legend=%7B%22title%22%3A%22%3Ch3%3EFacebook%20Friends%3C%2Fh3%3E%22%2C%22nodes%22%3A%22People%22%2C%22edges%22%3A%22Friendships%22%7D">facebook friends </a>
+
+                <div id="ping" style="position: absolute; padding-left: 6em; padding-top: 0.2em; font-size: 0.8em"></div>
             </div>
+
         </div>
-        <div>
-            <span style="color: rgba(51, 102, 153, 0.5)">tokyo</span>
+        <div class="off">
+            <span class="name">tokyo</span>
+            <span class="status">offline</span>
         </div>
-        <div>
-            <span style="color: rgba(51, 102, 153, 0.5">singapore</span>
+        <div class="off">
+            <span class="name">singapore</span>
+            <span class="status">offline</span>
         </div>
     </div>
 
     <div class="loader">
-        <h3>load your data</h3>
-        <span> graph:
+        <h3>+ experimental datasets</h3>
+        <span>
             <input id="dataset" list="datasets" type="text" size="64" name="url" value="https://s3-us-west-1.amazonaws.com/graphistry.data.public/lesmiserables.vgraph.gz" />
             <datalist id="datasets">
+                <option value="Facebook">
+                <option value="Miserables">
                 <option value="NetflowSmall">
                 <option value="NetflowMedium">
                 <option value="NetflowLarge">
                 <option value="NetflowHuge">
-                <option value="Miserables">
                 <option value="Enron">
                 <option value="Oregon">
                 <option value="Wikivotes">
                 <option value="Amazon">
-                <option value="Facebook">
                 <option value="Gnutella">
                 <option value="Epinions">
             </datalist>
         </span>
+        <!--
         <span> layout:
             <select id="controls" >
                 <option value="atlas">Force Atlas 2</option>
@@ -82,6 +135,7 @@ function jump() {
                 <option value="uber">Edge Bundling</option>
             </select>
         </span>
+        -->
         <button type="button" onclick="jump();">go</button>
     </div>
 </div>

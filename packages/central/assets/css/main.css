@@ -33,6 +33,17 @@ body {
     font-size: 0.7em;
 }
 
+.off .name {
+    color: rgba(51, 102, 153, 0.5);
+    display: block;
+}
+
+.off .status {
+    color: gray;
+    font-size: 0.5em;
+    display: block;
+}
+
 body, a {
     color: rgb(51, 51, 102);
 }
@@ -40,9 +51,10 @@ body, a {
 a {
     padding: 0.1em;
     text-decoration: none;
+    border-bottom: 1px dotted rgb(51,51,102);
 }
 
-a:hover {
+a:hover, .banner a:hover {
 
     border-bottom: 4px rgb(51, 51, 102) solid;
 }
