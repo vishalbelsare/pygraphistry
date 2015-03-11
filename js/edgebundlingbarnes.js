@@ -18,11 +18,11 @@ function EdgeBundling(clContext) {
     this.barnesKernelSeq = new BarnesKernelSeq(clContext);
 
     this.ebMidsprings = new Kernel('gaussSeidelMidsprings', EdgeBundling.argsMidsprings,
-                                   EdgeBundling.argsType, 'edgeBundling2.cl', clContext);
+                                   EdgeBundling.argsType, 'edgeBundling.cl', clContext);
 
     this.kernels = this.kernels.concat([this.barnesKernelSeq.toBarnesLayout, this.barnesKernelSeq.boundBox,
                                         this.barnesKernelSeq.buildTree, this.barnesKernelSeq.computeSums,
-                                        this.barnesKernelSeq.sort, this.barnesKernelSeq.calculateForces,
+                                        this.barnesKernelSeq.sort, this.barnesKernelSeq.calculateMidPoints,
                                         this.ebMidsprings]);
 }
 EdgeBundling.prototype = Object.create(LayoutAlgo.prototype);
@@ -59,7 +59,6 @@ EdgeBundling.argsType = {
 }
 
 EdgeBundling.prototype.setPhysics = function(cfg) {
-    console.log("HERE!");
     LayoutAlgo.prototype.setPhysics.call(this, cfg)
 
     // get the flags from previous iteration
@@ -155,20 +154,6 @@ EdgeBundling.prototype.setEdges = function (simulator) {
 
     });
 }
-
-//function midPoints(simulator, ebMidpoints, stepNumber) {
-    //var resources = [
-        //simulator.buffers.curMidPoints,
-        //simulator.buffers.nextMidPoints,
-        //simulator.buffers.midSpringsColorCoord
-    //];
-
-    //barnesKernelSeq.set({stepNumber: stepNumber});
-    //simulator.tickBuffers(['curMidPoints', 'nextMidPoints']);
-
-    //debug('Running kernel gaussSeidelMidpoints')
-    //return  barnesKernelSeq.exec([simulator.numMidPoints], resources);
-//}
 
 function midEdges(simulator, ebMidsprings, stepNumber) {
     var resources = [
