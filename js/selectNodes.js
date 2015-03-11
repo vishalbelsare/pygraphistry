@@ -6,7 +6,7 @@ var   debug = require('debug')('graphistry:graph-viz:cl:selectnodes'),
           Q = require('q'),
      Kernel = require('./kernel.js');
 
-function SelectNodes(simulator, clContext) {
+function SelectNodes(clContext) {
     debug('Creating selectNodes kernel');
 
     var args = ['top', 'left', 'bottom', 'right', 'positions', 'mask'];
@@ -19,19 +19,22 @@ function SelectNodes(simulator, clContext) {
         mask:null
     }
     this.selectNodes = new Kernel('selectNodes', args, argsType, 'selectNodes.cl', clContext);
-
-    this.bytes = simulator.numPoints * Uint8Array.BYTES_PER_ELEMENT;
-    this.qMask = simulator.cl.createBuffer(this.bytes, 'mask');
 }
 
 
 SelectNodes.prototype.run = function (simulator, selection, delta) {
     var that = this;
+
+    if (!that.qMask) {
+        that.bytes = simulator.numPoints * Uint8Array.BYTES_PER_ELEMENT;
+        that.qMask = simulator.cl.createBuffer(that.bytes, 'mask');
+    }
+
     return that.qMask.then(function (mask) {
         debug('Computing selection mask');
         var resources = [simulator.buffers.curPoints];
 
-        this.selectNodes.set({
+        that.selectNodes.set({
             top: selection.tl.y,
             left: selection.tl.x,
             bottom: selection.br.y,
@@ -43,10 +46,12 @@ SelectNodes.prototype.run = function (simulator, selection, delta) {
         simulator.tickBuffers(['nextPoints', 'curPoints']);
 
         debug('Running selectNodes');
-        return this.selectNodes.exec([simulator.numPoints], resources)
+        return that.selectNodes.exec([simulator.numPoints], resources)
             .then(function () {
                 var result = new Uint8Array(that.bytes);
-                return mask.read(result);
+                return mask.read(result).then(function () {
+                    return result;
+                });
             }).fail(util.makeErrorHandler('Kernel selectNodes failed'));
     }).fail(util.makeErrorHandler('Node selection failed'));
 
