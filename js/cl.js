@@ -231,10 +231,9 @@ var compile = Q.promised(util.perf.bind(null, perf, 'Compiling Kernels', functio
         var includeDir = path.resolve(__dirname, '..', 'kernels');
         program.build([cl.device], '-I ' + includeDir + ' -cl-fast-relaxed-math');
     } catch (e) {
-        util.makeErrorHandler('OpenCL compilation error')(e);
         var log = program.getBuildInfo(cl.device, webcl.PROGRAM_BUILD_LOG)
         console.log('Build Log: %o', log);
-        throw e;
+        util.makeErrorHandler('OpenCL compilation error')(e);
     }
 
     try {
@@ -253,7 +252,6 @@ var compile = Q.promised(util.perf.bind(null, perf, 'Compiling Kernels', functio
 
     } catch (e) {
         util.makeErrorHandler('Kernel creation error:', kernels)(e);
-        throw e;
     }
 }));
 
