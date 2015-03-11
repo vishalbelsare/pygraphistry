@@ -684,6 +684,16 @@ function expandHostBuffer(gl, length, repetition, oldHostBuffer) {
         var lbl = (i / repetition) + 1;
         for (var j = 0; j < repetition; j++) {
             longerBuffer[i + j] = (lbl << 8) | 255;
+
+            // Tag first bit based on repetition (e.g., point, edge, etc)
+            // Repetition of 1 has 0 on highest bit.
+            // Repetition of 2 has 1 on highest bit.
+            var highestBitMask = (1 << 31);
+            if (repetition === 1) {
+                longerBuffer[i + j] &= (~highestBitMask);
+            } else if (repetition === 2) {
+                longerBuffer[i + j] |= highestBitMask;
+            }
         }
     }
 

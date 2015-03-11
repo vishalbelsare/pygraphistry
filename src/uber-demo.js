@@ -354,14 +354,6 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
                 .map(function (highlightedLabels) {
                     return {dim: 1, idx: highlightedLabels[0].idx};
                 }))
-        .map(function (hit) {
-            //TODO: Get rid of this hacky bitshift and change the value
-            //      returned by the shader.
-            if (hit.dim === 2) {
-                hit.idx = hit.idx >> 8;
-            }
-            return hit;
-        })
         .subscribe(res, makeErrorHandler('getLatestHighlightedObject'));
 
     return res;
@@ -402,10 +394,7 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
     );
 
     // Picks objects in priority based on order.
-    var hitMapTextures = [
-        {name: 'pointHitmap', dim: 1},
-        {name: 'edgeHitmap', dim: 2}
-    ];
+    var hitMapTextures = ['hitmap'];
     var latestHighlightedObject = getLatestHighlightedObject($eventTarget, renderState, labelHover, hitMapTextures);
 
     var $labelCont = $('<div>').addClass('graph-label-container');
