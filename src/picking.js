@@ -4,7 +4,7 @@
 var debug   = require('debug')('graphistry:StreamGL:picking');
 var _       = require('underscore');
 
-function uint32ToIdx (raw) {
+function decodeGpuIndex (raw) {
     // Sit down and grab a drink. This might take a while.
     //
     // By now, I'm sure you've realized that we're checking against
@@ -61,7 +61,7 @@ function hitTest(maps, canvas, x, y) {
     for (var i = 0; i < maps.length; i++) {
         var canvasIdx = (canvas.height - y) * canvas.width + x;
         var raw = maps[i][canvasIdx];//(remapped[idx] >> 8) & (255 | (255 << 8) | (255 << 16));
-        retObj = uint32ToIdx(raw);
+        retObj = decodeGpuIndex(raw);
         if (retObj.idx > -1) {
             return retObj;
         }
@@ -127,5 +127,5 @@ module.exports = {
     hitTest: hitTest,
     hitTestCircumference: hitTestCircumference,
     hitTestN: hitTestN,
-    uint32ToIdx: uint32ToIdx
+    decodeGpuIndex: decodeGpuIndex
 };

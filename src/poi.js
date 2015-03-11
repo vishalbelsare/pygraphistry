@@ -31,7 +31,7 @@ function makeErrorHandler(name) {
 function markHits(samples32) {
     var hits = {};
     for (var i = 0; i < samples32.length; i++) {
-        hits[picking.uint32ToIdx(samples32[i])] =  true;
+        hits[picking.decodeGpuIndex(samples32[i]).idx] =  true;
     }
     return hits;
 }
