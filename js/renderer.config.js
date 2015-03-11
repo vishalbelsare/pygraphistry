@@ -92,7 +92,7 @@ var programs = {
 /* datasource can be either SERVER or CLIENT */
 
 var textures = {
-    'pointHitmap': {
+    'hitmap': {
         'datasource': 'CLIENT',
     },
     'pointTexture': {
@@ -102,9 +102,6 @@ var textures = {
         'datasource': 'CLIENT',
         'width': {'unit': 'percent', 'value': 5},
         'height': {'unit': 'percent', 'value': 5}
-    },
-    'edgeHitmap': {
-        'datasource': 'CLIENT',
     },
     'edgeTexture': {
         'datasource': 'CLIENT',
@@ -293,7 +290,7 @@ var items = {
         },
         'drawType': 'LINES',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
-        'renderTarget': 'edgeHitmap',
+        'renderTarget': 'hitmap',
         'readTarget': true
     },
     'edges': {
@@ -398,7 +395,7 @@ var items = {
         },
         'drawType': 'POINTS',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
-        'renderTarget': 'pointHitmap',
+        'renderTarget': 'hitmap',
         'readTarget': true,
     },
     'pointsampling': {
@@ -492,7 +489,7 @@ var sceneNetflow = {
     'options': stdOptions,
     'camera': camera2D,
     'render': ['pointpicking', 'pointsampling', 'pointculledtexture', 'pointoutlinetexture',
-               'edgeculled', 'edgeculledtexture', 'edgesampling', 'edgepicking',
+               'edgeculled', 'edgeculledtexture', 'edgepicking',
                'pointoutline', 'pointculled']
 }
 
