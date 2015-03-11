@@ -26,7 +26,7 @@ var BarnesKernelSeq = function (clContext) {
     'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
     'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
     'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
-        'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau', 'WARPSIZE'];
+        'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau', 'charge', 'WARPSIZE'];
 
     this.argsType = {
         scalingRatio: cljs.types.float_t,
@@ -56,6 +56,7 @@ var BarnesKernelSeq = function (clContext) {
         tractions: null,
         gSpeeds: null,
         tau: cljs.types.float_t,
+        charge: cljs.types.float_t,
         gSpeed: cljs.types.float_t,
         springs: null,
         xCoords: null,
@@ -160,6 +161,7 @@ var BarnesKernelSeq = function (clContext) {
         var numBodies = num_bodies;
         // TODO (paden) Use actual number of workgroups. Don't hardcode
         var num_work_groups = 128;
+        console.log("Num nodes", numNodes);
 
 
         return Q.all(
@@ -217,7 +219,7 @@ var BarnesKernelSeq = function (clContext) {
 =======
     this.setMidPoints = function(simulator, layoutBuffers, warpsize) {
         var that = this;
-        console.log("Set midpoints");
+        console.log("Set midpoints", simulator.numMidPoints);
         return setupTempBuffers(simulator, warpsize, simulator.numMidPoints).then(function (tempBuffers) {
 
         that.toBarnesLayout.set({xCoords: tempBuffers.x_cords.buffer,
