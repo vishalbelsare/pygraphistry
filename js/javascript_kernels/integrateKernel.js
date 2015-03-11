@@ -6,18 +6,18 @@ var Kernel = require('../kernel.js'),
     util = require('../util.js'),
     ArgsType = require('./ArgsType.js');
 
-var integrate3Kernel = function (clContext) {
+var integrateKernel = function (clContext) {
 
 
-  this.argsIntegrate3 = [
+  this.argsIntegrate = [
     'globalSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'
   ];
 
-  this.faIntegrate3 = new Kernel('faIntegrate3', this.argsIntegrate3,
-      ArgsType, 'forceAtlas2.cl', clContext);
+  this.faIntegrate = new Kernel('faIntegrate', this.argsIntegrate,
+      ArgsType, 'forceAtlas2/faIntegrate.cl', clContext);
 
 
-  this.kernels = [this.faIntegrate3];
+  this.kernels = [this.faIntegrate];
 
   this.setPhysics = function(cfg, mask) {
     _.each(this.kernels, function (k) {
@@ -30,7 +30,7 @@ var integrate3Kernel = function (clContext) {
   this.execKernels = function(simulator, tempLayoutBuffers) {
     var buffers = simulator.buffers;
 
-    this.faIntegrate3.set({
+    this.faIntegrate.set({
         globalSpeed: tempLayoutBuffers.globalSpeed.buffer,
         inputPositions: buffers.curPoints.buffer,
         curForces: buffers.curForces.buffer,
@@ -48,10 +48,10 @@ var integrate3Kernel = function (clContext) {
     simulator.tickBuffers(['nextPoints']);
 
     debug("Running kernel faIntegrate");
-    return this.faIntegrate3.exec([simulator.numPoints], resources)
-        .fail(util.makeErrorHandler('Executing Integrate3 failed'));
+    return this.faIntegrate.exec([simulator.numPoints], resources)
+        .fail(util.makeErrorHandler('Executing Integrate failed'));
 }
 
 }
 
-module.exports = integrate3Kernel;
+module.exports = integrateKernel;
