@@ -316,7 +316,7 @@ function create(dataset) {
         debug('Graph created');
         return graph;
     }).fail(function (err) {
-        util.die('\n\n~~~~~ SETUP ERROR\n', err, '\nStack: ', (err||{}).stack);
+        util.die('Driver initialization error', (err||{}).stack);
     });
 
     return {
