@@ -26,6 +26,8 @@ function defaults() {
         HOSTNAME: 'localhost',
         ENVIRONMENT: 'local',
 
+        CLUSTER: util.format('%s.local', (process.env['USER'] || 'localuser')),
+
         VIZ_LISTEN_ADDRESS: '0.0.0.0',
         VIZ_LISTEN_PORT: 10000,
 
@@ -35,14 +37,14 @@ function defaults() {
         BUCKET: 'graphistry.data',
         S3: new AWS.S3(),
 
-        MONGO_SERVER: 'mongodb://localhost/graphistry-local',
-        DATABASE: 'graphistry-local',
-
-        MONGO_USERNAME: '',
-        MONGO_PASSWORD: '',
+        MONGO_USERNAME: undefined,
+        MONGO_PASSWORD: undefined,
         MONGO_HOSTS: ['localhost'],
         MONGO_DATABASE: 'graphistry-local',
-        MONGO_REPLICA_SET: '',
+        DATABASE: 'graphistry-local',   // legacy option name
+        MONGO_REPLICA_SET: undefined,
+        // This option will be set by synthesized; it's only here for reference
+        MONGO_SERVER: 'mongodb://localhost/graphistry-local',
 
         BOUNDARY: {
             ENDPOINT: 'https://api.graphdat.com/v1/measurements',
@@ -101,16 +103,16 @@ function deployEnv(options) {
     };
 
     var stagingOptions = {
-        DATABASE: 'graphistry-staging',
-        MONGO_SERVER: 'mongodb://graphistry:graphtheplanet@c48.lighthouse.3.mongolayer.com:10048,c48.lighthouse.2.mongolayer.com:10048/graphistry-staging?replicaSet=set-545152bc461811298c009c03',
+        CLUSTER: "staging",
 
+        DATABASE: 'graphistry-staging',
         MONGO_DATABASE: 'graphistry-staging'
     };
 
     var prodOptions = {
-        DATABASE: 'graphistry-prod',
-        MONGO_SERVER: 'mongodb://graphistry:graphtheplanet@@c48.lighthouse.3.mongolayer.com:10048,c48.lighthouse.2.mongolayer.com:10048/graphistry-staging?replicaSet=set-545152bc461811298c009c03',
+        CLUSTER: "production",
 
+        DATABASE: 'graphistry-prod',
         MONGO_DATABASE: 'graphistry-prod'
     };
 
