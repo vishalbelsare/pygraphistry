@@ -57,7 +57,7 @@ function defaultLabels (graph, labels) {
             var title = maybeTitleField ? attribs[maybeTitleField].values[idx] : idx;
 
             return '<div class="graph-label-container graph-label-default">'
-                + '<span class="graph-label-title">' + title + '</span>'
+                + '<span class="graph-label-title"><i class="fa fa-lg fa-thumb-tack"></i> ' + title + '</span>'
                 + '<div class="graph-label-contents"><table>'
                 + _.map(rows, function (kvPair) {
                     return '<tr class="graph-label-pair"><td class="graph-label-key">' + kvPair[0] + '</td><td class="graph-label-value"><div class="graph-label-value-wrapper">' + kvPair[1] + '</div></td></tr>';
