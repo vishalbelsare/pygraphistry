@@ -482,7 +482,7 @@ var camera2D = {
 var sceneUber = {
     'options': stdOptions,
     'camera': camera2D,
-    'render': ['pointpicking', 'pointsampling', 'midedgetextured', 'pointculled']
+    'render': ['pointpicking', 'pointsampling', 'midedgetextured', 'pointculled', 'edgepicking']
 }
 
 var sceneNetflow = {
