@@ -100,7 +100,7 @@ function getIPs() {
     return Rx.Observable
         .fromNodeCallback(workerServers.toArray, workerServers)()
         .flatMap(function (ips) {
-            if (!ips.length) { throw new Error('All GPUs out of space!'); }
+            if (!ips.length) { throw new Error('All GPUs are out of memory, please contact help@graphistry.com for private access.'); }
 
             // Find all idle node processes
             var nodeCollection = db.collection('node_monitor').find({
@@ -111,7 +111,7 @@ function getIPs() {
             return Rx.Observable.fromNodeCallback(nodeCollection.toArray, nodeCollection)()
                 .map(function (results) {
                     if (!results.length) {
-                        var msg = 'There is space on a server, but all workers in the fleet are busy or dead (have not pinged home in over 30 seconds).';
+                        var msg = 'There is space on a server, but all GPU workers in the fleet are busy or dead.';
                         throw new Error(msg);
                     }
                     return {ips: ips, results: results};
@@ -195,7 +195,10 @@ function assign_worker(req, res) {
             function () { count++; },
             function (err) {
                 console.error('assign_worker error', err, (err || {}).stack);
-                res.json({success: false, error: 'Error while assigning GPU workers.'});
+                res.json({
+                    success: false,
+                    error: (err||{}).message || 'Error while assigning GPU workers.'
+                });
             },
             function () {
                 if (!count) {
