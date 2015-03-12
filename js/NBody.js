@@ -288,16 +288,21 @@ var setEdges = Q.promised(function(graph, edges) {
             degreesTyped[edgeList[2]] = edgeList[1];
         });
 
-        //Uint32Array [first edge number from src idx, number of edges from src idx, src idx, 666]
+        //workItemsTyped is a Uint32Array [first edge number from src idx, number of edges from src idx, src idx, 666]
         //fetch edge to find src and dst idx (all src same)
         //num edges > 0
-        var workItemsTyped = new Int32Array(
-            _.flatten(
-                workItems.map(function (o) {
-                    return [o[0], o[1], o[2], 666];
-                })
-            )
-        );
+
+        // Without Underscore and with preallocation. Less clear than a flatten + map, but better perf.
+        var flattenedLength = (workItems.length * 4);
+        var flattened = new Array(flattenedLength);
+        for (var idx = 0; idx < workItems.length ; idx++) {
+            flattened[idx*4] = workItems[idx][0];
+            flattened[idx*4 + 1] = workItems[idx][1];
+            flattened[idx*4 + 2] = workItems[idx][2];
+            flattened[idx*4 + 3] = 666;
+        }
+        var workItemsTyped = new Int32Array( flattened );
+
 
         var edgesTyped = new Uint32Array(_.flatten(edgeList));
         var index = 0;
