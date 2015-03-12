@@ -659,64 +659,6 @@ function createControls(socket) {
     return rxControls;
 }
 
-function setupInspector(inspections) {
-    inspections.do(function (data) {
-        debug('got insepcting event');
-        if (data && data.success) {
-            showGrid(data.frame);
-        } else {
-            console.error('Server error on inspect', data.error);
-        }
-    }).subscribe(_.identity, makeErrorHandler('inspector error'));
-}
-
-function showGrid(frame) {
-    var Backgrid = window.Backgrid;
-    var Backbone = window.Backbone;
-
-    if (frame.length === 0) {
-        return;
-    }
-
-    var entry0 = frame[0];
-    var columns = [{
-        name: 'title', // The key of the model attribute
-        label: 'Node', // The name to display in the header
-        cell: 'string',
-        editable: false,
-    }].concat(_.map(entry0.rows, function (pair) {
-        return {
-            name: pair[0],
-            label: pair[0],
-            cell: 'string',
-            editable: false,
-        };
-    }));
-
-    debug('columns', columns);
-
-    var DataModel = Backbone.Model.extend({});
-
-    var DataFrame = Backbone.Collection.extend({
-        model: DataModel,
-    });
-
-    var data = new DataFrame();
-    _.each(frame, function (entry) {
-        var t = _.extend({title: entry.title}, _.object(entry.rows));
-        data.add(t);
-    });
-
-    // Initialize a new Grid instance
-    var grid = new Backgrid.Grid({
-        columns: columns,
-        collection: data
-    });
-
-    // Render the grid and attach the root to your HTML document
-    $('#inspector').empty().append(grid.render().el).css({visibility: 'visible'});
-}
-
 // ... -> Observable renderState
 function init(socket, $elt, renderState, vboUpdates, urlParams) {
     createLegend($('#graph-legend'), urlParams);
@@ -813,14 +755,6 @@ function init(socket, $elt, renderState, vboUpdates, urlParams) {
         var payload = {play: true, layout: true, marquee: move};
         socket.emit('interaction', payload);
     }, makeErrorHandler('marquee error'));
-
-    var inspections = new Rx.ReplaySubject(1);
-    setupInspector(inspections);
-    marquee.selections.flatMap(function (sel) {
-        return Rx.Observable.fromCallback(socket.emit, socket)('inspect', sel);
-    }).do(function (res) {
-        debug('server reply', res);
-    }).subscribe(inspections, makeErrorHandler('fetch data for inspector'));
 
 
     var $tooltips = $('[data-toggle="tooltip"]');
