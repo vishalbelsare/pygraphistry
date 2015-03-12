@@ -48,11 +48,16 @@ function setupDrag($eventTarget, camera) {
             }
             return true;
         })
-        .flatMapLatest(function(clickPos) {
+        .do(function (clickPos) {
             clickPos.preventDefault();
-
+            $('#simulation').toggleClass('moving', true);
+        })
+        .flatMapLatest(function(clickPos) {
             return $('html').mousemoveAsObservable()
-                .takeUntil($('html').mouseupAsObservable())
+                .takeUntil($('html').mouseupAsObservable()
+                    .do(function () {
+                        $('#simulation').toggleClass('moving', false);
+                    }))
                 .distinctUntilChanged(function(pos) { return {x: pos.pageX, y: pos.pageY}; })
                 .scan({x: clickPos.pageX, y: clickPos.pageY, deltaX: 0, deltaY: 0}, function(accPos, curPos) {
                     // Calculate the distance moved (since last event) for each move event
