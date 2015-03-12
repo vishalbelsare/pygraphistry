@@ -265,8 +265,10 @@ lastRender
             arr.reduce(
                 function (acc, v) {
                     return {
-                        renderTag: Math.max(v.renderTag, acc.renderTag),
-                        labelTag: Math.max(v.labelTag, acc.labelTag)
+                        data: {
+                            renderTag: Math.max(v.data.renderTag, acc.data.renderTag),
+                            labelTag: Math.max(v.data.labelTag, acc.data.labelTag)
+                        }
                     };
                 },
                 {data: { renderTag: 0, labelTag: 0}}));
