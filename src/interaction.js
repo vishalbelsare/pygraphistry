@@ -77,6 +77,9 @@ function setupMousemove($eventTarget, renderState, textures) {
     var bounds = $('canvas', $eventTarget[0])[0].getBoundingClientRect();
 
     return $eventTarget.mousemoveAsObservable()
+        .filter(function (v) {
+            return ! $(v.target).parents('.graph-label').length;
+        })
         .sample(1)
         .map(function (evt) {
             evt.preventDefault();
