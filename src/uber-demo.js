@@ -673,8 +673,10 @@ function setupInspector(inspections) {
 function showGrid(frame) {
     var Backgrid = window.Backgrid;
     var Backbone = window.Backbone;
+    var $inspector = $('#inspector');
 
     if (frame.length === 0) {
+        $inspector.css({visibility: 'hidden'});
         return;
     }
 
@@ -714,7 +716,7 @@ function showGrid(frame) {
     });
 
     // Render the grid and attach the root to your HTML document
-    $('#inspector').empty().append(grid.render().el).css({visibility: 'visible'});
+    $inspector.empty().append(grid.render().el).css({visibility: 'visible'});
 }
 
 // ... -> Observable renderState
