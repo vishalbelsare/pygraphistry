@@ -99,11 +99,11 @@ function setupMousemove($eventTarget, renderState, textures) {
 function setupScroll($eventTarget, canvas, camera) {
 
     var zoomBase = 1.1;
-    var $marquee = $('#marqueerectangle i.selectable');
+    var $marquee = $('#marquee');
 
     return $eventTarget.onAsObservable('mousewheel')
         .sample(1)
-        .filter(function () { return !$marquee.hasClass('toggle-on'); })
+        .filter(function () { return !$marquee.hasClass('done'); })
         .filter(function (evt) {
             return ! $(evt.target).parents('.graph-label').length;
         })

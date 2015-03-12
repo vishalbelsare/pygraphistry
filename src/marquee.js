@@ -77,7 +77,8 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                         });
                         $elt.empty();
                         $elt.css({width: 0, height: 0});
-                        $elt.removeClass('draggable').removeClass('dragging').removeClass('done');
+                        $elt.removeClass('draggable').removeClass('dragging');
+                        $cont.removeClass('done');
                     }).map(toPoint.bind('', $cont))
                     .do(function () {
                             debug('marquee instance started, listening');
@@ -117,7 +118,8 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                                     '-webkit-filter': 'grayscale(50%) blur(3px)',
 
                                 });
-                                $elt.addClass('draggable').removeClass('on').addClass('done');
+                                $elt.addClass('draggable').removeClass('on');
+                                $cont.addClass('done');
                                 $elt.css({ // Take border sizes into account when aligning ghost image
                                     left: rect.tl.x - 2,
                                     top: rect.tl.y - 2,
@@ -182,7 +184,8 @@ function marqueeDrags(selections, $cont, $elt) {
                     }).takeUntil(Rx.Observable.fromEvent($(window.document), 'mouseup')
                         .do(function () {
                             debug('End of drag');
-                            $elt.removeClass('dragging').removeClass('done').addClass('off');
+                            $elt.removeClass('dragging').addClass('off');
+                            $cont.removeClass('done');
                             $('body').removeClass('noselect');
                             $('#simulation').css({
                                 'filter': '',
