@@ -24,7 +24,7 @@ exports.error = function() {
 
 exports.hideSpinnerShowBody = function () {
     $('.load-spinner').fadeOut(200, function () {
-        $('.graphistry-body').css({visibility: 'visible', display:'none'}).hide().fadeIn(400);
+        $('.graphistry-body').css('display', 'none').css('visibility', 'visible').fadeIn(400);
         $(this).empty();
     });
 };

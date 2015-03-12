@@ -101,7 +101,8 @@ function init(canvas, vizType) {
             var vboUpdates = streamClient.handleVboUpdates(socket, renderState, renderStateUpdates);
 
             //TODO merge update notifs into vboUpdates
-            var uberRenderStateUpdates = uberDemo(socket, $('.sim-container'), v.renderState, urlParams);
+            var uberRenderStateUpdates = uberDemo(socket, $('.sim-container'), v.renderState,
+                                                  vboUpdates, urlParams);
             uberRenderStateUpdates
                 .subscribe(
                     renderStateUpdates,

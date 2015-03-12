@@ -12,7 +12,6 @@ var _            = require('underscore');
 var io           = require('socket.io-client');
 
 var renderer     = require('./renderer.js');
-var ui           = require('./ui.js');
 
 
 //string * {socketHost: string, socketPort: int} -> (... -> ...)
@@ -249,8 +248,6 @@ function handleVboUpdates(socket, renderState, renderStateUpdates) {
         latestState,
         function (err) { console.error('handlevbo err', err, (err||{}).stack); });
 
-    var hidSpinner = false;
-
     socket.on('vbo_update', function (data, handshake) {
 
         var thisStep = {step: vboUpdateStep++, data: data.step};
@@ -286,10 +283,6 @@ function handleVboUpdates(socket, renderState, renderStateUpdates) {
                 .subscribe(function (pair) {
                     var renderState = pair[1];
                     debug('6. All buffers and textures received, completing', thisStep);
-                    if (!hidSpinner) {
-                        ui.hideSpinnerShowBody();
-                        hidSpinner = true;
-                    }
                     handshake(Date.now() - lastHandshake);
                     lastHandshake = Date.now();
                     renderedFrame.onNext('received');

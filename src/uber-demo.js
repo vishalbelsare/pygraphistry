@@ -14,6 +14,7 @@ var poiLib          = require('./poi.js');
 var marqueeFact     = require('./marquee.js');
 var shortestpaths   = require('./shortestpaths.js');
 var colorpicker     = require('./colorpicker.js');
+var ui              = require('./ui.js');
 
 var poi;
 
@@ -657,7 +658,7 @@ function createControls(socket) {
 }
 
 // ... -> Observable renderState
-function init(socket, $elt, renderState, urlParams) {
+function init(socket, $elt, renderState, vboUpdates, urlParams) {
     createLegend($('#graph-legend'), urlParams);
 
     poi = poiLib(socket);
@@ -683,7 +684,6 @@ function init(socket, $elt, renderState, urlParams) {
 
     //trigger animation on server
     //socket.emit('interaction', {layout: true, play: true});
-
 
     $('#timeSlider').rangeSlider({
          bounds: {min: 0, max: 100},
@@ -741,8 +741,7 @@ function init(socket, $elt, renderState, urlParams) {
                 makeErrorHandler('menu slider')
             );
         });
-    },
-    makeErrorHandler('bad controls'));
+    }, makeErrorHandler('bad controls'));
 
     Rx.Observable.zip(
         marquee.drags,
@@ -760,15 +759,23 @@ function init(socket, $elt, renderState, urlParams) {
     var $bolt = $('#simulate .fa');
     var $shrinkToFit = $('#center .fa');
 
-    $tooltips.tooltip('show');
-    $bolt.toggleClass('automode', true).toggleClass('toggle-on', true);
-    $shrinkToFit.toggleClass('automode', true).toggleClass('toggle-on', true);
+    var doneLoading = vboUpdates.filter(function (update) {
+        return update === 'rendered';
+    }).take(1).do(ui.hideSpinnerShowBody).delay(600);
 
     var numTicks = urlParams.play || 0;
 
-    //tick stream until canceled/timed out (end with 'false')
-    var autoLayingOut =
-        Rx.Observable.merge(
+    doneLoading.take(1).subscribe(function () {
+        if (numTicks > 0) {
+            $tooltips.tooltip('show');
+            $bolt.toggleClass('automode', true).toggleClass('toggle-on', true);
+            $shrinkToFit.toggleClass('automode', true).toggleClass('toggle-on', true);
+        }
+    }, makeErrorHandler('reveal scene'));
+
+    // Tick stream until canceled/timed out (end with 'false'), starts after first vbo update.
+    var autoLayingOut = doneLoading.flatMapLatest(function () {
+        return Rx.Observable.merge(
             Rx.Observable.return(Rx.Observable.interval(20)),
             Rx.Observable.merge(
                     $('#simulate').onAsObservable('click')
@@ -777,10 +784,11 @@ function init(socket, $elt, renderState, urlParams) {
                 .take(1)
                 .map(_.constant(Rx.Observable.return(false))))
         .flatMapLatest(_.identity);
+    });
 
     //tick stream until canceled/timed out (end with 'false')
-    var autoCentering =
-        Rx.Observable.merge(
+    var autoCentering = doneLoading.flatMapLatest(function () {
+        return Rx.Observable.merge(
             Rx.Observable.return(Rx.Observable.interval(1000)),
             Rx.Observable.merge(
                     Rx.Observable.merge(
@@ -796,6 +804,7 @@ function init(socket, $elt, renderState, urlParams) {
                 .take(1)
                 .map(_.constant(Rx.Observable.return(false))))
         .flatMapLatest(_.identity);
+    });
     var isAutoCentering = new Rx.ReplaySubject(1);
     autoCentering.subscribe(isAutoCentering, makeErrorHandler('bad autocenter'));
 
