@@ -17,7 +17,7 @@ function pickTitleField (attribs) {
 }
 
 
-function defaultLabels (graph, indices) {
+function infoFrame(graph, indices) {
 
     var offset = graph.simulator.timeSubset.pointsRange.startIdx;
     var attribs = vgloader.getAttributeMap(graph.simulator.vgraph);
@@ -47,12 +47,7 @@ function defaultLabels (graph, indices) {
                                 })
                                 .filter(function (name) { return name !== maybeTitleField; })
                                 .map(function (name) {
-                                    var val = attribs[name].values[idx];
-                                    if (!isNaN(val) && val % 1 !== 0) { // val is an Float but not an Int
-                                        return [name, sprintf('%.4f', val)];
-                                    } else {
-                                        return [name, sprintf('%s', val)];
-                                    }
+                                    return [name, attribs[name].values[idx]];
                                 })
                         ],
                         true),
@@ -78,11 +73,12 @@ function getLabels(graph, indices) {
     if (graph.simulator.labels.length) {
         return presetLabels(graph, indices);
     } else {
-        return defaultLabels(graph, indices);
+        return infoFrame(graph, indices);
     }
 }
 
 module.exports = {
-    getLabels: getLabels
+    getLabels: getLabels,
+    infoFrame: infoFrame
 };
 

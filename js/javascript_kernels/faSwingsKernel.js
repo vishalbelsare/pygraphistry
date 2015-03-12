@@ -11,7 +11,7 @@ var faSwingKernel = function (clContext) {
     this.argsSwings = ['prevForces', 'curForces', 'swings' , 'tractions'];
 
     this.faSwings = new Kernel('faSwingsTractions', this.argsSwings,
-                               ArgsType, 'forceAtlas2.cl', clContext);
+                               ArgsType, 'forceAtlas2/faSwingsTractions.cl', clContext);
 
 
     this.kernels = [this.faSwings];

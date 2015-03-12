@@ -14,7 +14,7 @@ var edgeKernelSeq = function (clContext) {
 
 
     this.faEdges = new Kernel('faEdgeForces', this.argsEdges,
-                               ArgsType, 'forceAtlas2.cl', clContext);
+                               ArgsType, 'forceAtlas2/faEdgeForces.cl', clContext);
 
 
     this.kernels = [this.faEdges];

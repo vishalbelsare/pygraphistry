@@ -10,9 +10,8 @@ var debug = require("debug")("graphistry:graph-viz:cl:forceatlas2barnes"),
     BarnesKernelSeq = require('./javascript_kernels/barnesKernelSeq.js'),
     EdgeKernelSeqFast = require('./javascript_kernels/edgeKernelSeqFast.js'),
     faSwingsKernel = require('./javascript_kernels/faSwingsKernel.js'),
-    integrate1Kernel = require('./javascript_kernels/integrate1Kernel.js'),
-    integrate2Kernel = require('./javascript_kernels/integrate2Kernel.js'),
-    integrate3Kernel = require('./javascript_kernels/integrate3Kernel.js');
+    integrateApproxKernel = require('./javascript_kernels/integrateApproxKernel.js'),
+    integrateKernel = require('./javascript_kernels/integrateKernel.js');
 
 
 function getNumWorkitemsByHardware(deviceProps, workGroupSize) {
@@ -55,18 +54,15 @@ function ForceAtlas2Barnes(clContext) {
 
     this.faSwingsKernel = new faSwingsKernel(clContext);
 
-    this.integrate1Kernel = new integrate1Kernel(clContext);
+    this.integrateKernel = new integrateKernel(clContext);
 
-    this.integrate2Kernel = new integrate2Kernel(clContext);
-
-    this.integrate3Kernel = new integrate3Kernel(clContext);
+    this.integrateApproxKernel = new integrateApproxKernel(clContext);
 
     this.kernels = this.kernels.concat([this.barnesKernelSeq.toBarnesLayout, this.barnesKernelSeq.boundBox,
                                         this.barnesKernelSeq.buildTree, this.barnesKernelSeq.computeSums,
                                         this.barnesKernelSeq.sort, this.barnesKernelSeq.calculateForces,
                                         this.edgeKernelSeq.mapEdges, this.edgeKernelSeq.segReduce, this.faSwingsKernel.faSwings,
-                                        this.integrate1Kernel.faIntegrate, this.integrate2Kernel.faIntegrate2,
-                                        this.integrate3Kernel.faIntegrate3]);
+                                        this.integrateKernel.faIntegrate, this.integrateApproxKernel.faIntegrateApprox]);
 }
 
 ForceAtlas2Barnes.prototype = Object.create(LayoutAlgo.prototype);
@@ -170,10 +166,8 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     }).then(function () {
         return that.faSwingsKernel.execKernels(simulator);
     }).then(function () {
-        // return integrate(simulator, that.faIntegrate);
-        // return integrate2(simulator, that.faIntegrate2);
-        return that.integrate3Kernel.execKernels(simulator, tempLayoutBuffers);
-        //return integrate3(simulator, that.faIntegrate3);
+        // return integrateApproxKernel(simulator, tempLayoutBuffers);
+        return that.integrateKernel.execKernels(simulator, tempLayoutBuffers);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);
