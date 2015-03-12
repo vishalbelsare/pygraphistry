@@ -658,58 +658,61 @@ function createControls(socket) {
 }
 
 function setupInspector(inspections) {
-    inspections.subscribe(function (res) {
-        console.log('Inspector got', res);
-    }, makeErrorHandler('inspector error'));
+    inspections.do(function (data) {
+        debug('got insepcting event');
+        if (data && data.success) {
+            showGrid(data.frame);
+        } else {
+            console.error('Server error on inspect', data.error);
+        }
+    }).subscribe(_.identity, makeErrorHandler('inspector error'));
 }
 
-function testGrid() {
+function showGrid(frame) {
     var Backgrid = window.Backgrid;
     var Backbone = window.Backbone;
+
+    if (frame.length === 0) {
+        return;
+    }
+
+    var entry0 = frame[0];
     var columns = [{
-        name: 'id', // The key of the model attribute
-        label: 'ID', // The name to display in the header
-        editable: false, // By default every cell in a column is editable, but *ID* shouldn't be
-        // Defines a cell type, and ID is displayed as an integer without the ',' separating 1000s.
-        cell: Backgrid.IntegerCell.extend({
-        orderSeparator: ''
-        })
-    }, {
-        name: 'name',
-        label: 'Name',
-        // The cell type can be a reference of a Backgrid.Cell subclass, any Backgrid.Cell subclass instances like *id* above, or a string
-        cell: 'string' // This is converted to "StringCell" and a corresponding class in the Backgrid package namespace is looked up
-    }, {
-        name: 'pop',
-        label: 'Population',
-        cell: 'integer' // An integer cell is a number cell that displays humanized integers
-    }];
+        name: 'title', // The key of the model attribute
+        label: 'Node', // The name to display in the header
+        cell: 'string',
+        editable: false,
+    }].concat(_.map(entry0.rows, function (pair) {
+        return {
+            name: pair[0],
+            label: pair[0],
+            cell: 'string',
+            editable: false,
+        };
+    }));
 
-    var Territory = Backbone.Model.extend({
-        defaults: {
-            id: null,
-            name: null,
-            pop: 42
-        }
+    debug('columns', columns);
+
+    var DataModel = Backbone.Model.extend({});
+
+    var DataFrame = Backbone.Collection.extend({
+        model: DataModel,
     });
 
-    var Territories = Backbone.Collection.extend({
-        model: Territory,
+    var data = new DataFrame();
+    _.each(frame, function (entry) {
+        var t = _.extend({title: entry.title}, _.object(entry.rows));
+        data.add(t);
     });
-
-    var territories = new Territories();
-    territories.add({id:1, name: 'First'});
-    territories.add({id:2, name: 'Second', pop:34});
-
 
     // Initialize a new Grid instance
     var grid = new Backgrid.Grid({
         columns: columns,
-        collection: territories
+        collection: data
     });
 
     // Render the grid and attach the root to your HTML document
-    $('#inspector').append(grid.render().el);
+    $('#inspector').empty().append(grid.render().el).css({visibility: 'visible'});
 }
 
 // ... -> Observable renderState
@@ -811,14 +814,11 @@ function init(socket, $elt, renderState, vboUpdates, urlParams) {
 
     var inspections = new Rx.ReplaySubject(1);
     setupInspector(inspections);
-    marquee.selections.subscribe(function (sel) {
-        console.log(sel);
-
-        Rx.Observable.fromCallback(socket.emit, socket)('inspect', sel).subscribe(
-            inspections,
-            makeErrorHandler('fetch data for inspector')
-        );
-    });
+    marquee.selections.flatMap(function (sel) {
+        return Rx.Observable.fromCallback(socket.emit, socket)('inspect', sel);
+    }).do(function (res) {
+        debug('server reply', res);
+    }).subscribe(inspections, makeErrorHandler('fetch data for inspector'));
 
 
     var $tooltips = $('[data-toggle="tooltip"]');
