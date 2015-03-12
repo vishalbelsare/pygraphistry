@@ -1,6 +1,7 @@
 "use strict";
 
 var Q = require('q');
+var events = require('./SimpleEvents.js');
 var _ = require('underscore');
 var debug = require('debug')('graphistry:graph-viz:cl:cl');
 var perf = require('debug')('perf');
