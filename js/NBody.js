@@ -331,7 +331,13 @@ var setEdges = Q.promised(function(graph, edges) {
         } else {
           edgeStartEndIdxs.push([-1, -1]);
         }
-        var edgeStartEndIdxsTyped = new Uint32Array(_.flatten(edgeStartEndIdxs));
+
+        // Flattening
+        var edgeStartEndIdxsTyped = new Uint32Array(edgeStartEndIdxs.length * 2);
+        for (var idx = 0; idx < edgeStartEndIdxs.length; idx++) {
+            edgeStartEndIdxsTyped[idx*2] = edgeStartEndIdxs[idx][0];
+            edgeStartEndIdxsTyped[idx*2 + 1] = edgeStartEndIdxs[idx][1];
+        }
 
         return {
             //Uint32Array
