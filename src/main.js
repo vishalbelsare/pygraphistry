@@ -69,6 +69,16 @@ function displayErrors(socket, $canvas) {
 function init(canvas, vizType) {
     debug('Initializing client networking driver', vizType);
 
+    var textNum = 0;
+    var loadingText = [
+        'herding stray GPUs',
+        'churning graph data'
+    ];
+    Rx.Observable.interval(1000).take(2).subscribe(function () {
+        $('#load-text').text(loadingText[textNum]);
+        textNum++;
+    });
+
     var initialized = new Rx.ReplaySubject(1);
 
     streamClient.connect(vizType, urlParams)
@@ -91,7 +101,8 @@ function init(canvas, vizType) {
             var vboUpdates = streamClient.handleVboUpdates(socket, renderState, renderStateUpdates);
 
             //TODO merge update notifs into vboUpdates
-            var uberRenderStateUpdates = uberDemo(socket, $('.sim-container'), v.renderState, urlParams);
+            var uberRenderStateUpdates = uberDemo(socket, $('.sim-container'), v.renderState,
+                                                  vboUpdates, urlParams);
             uberRenderStateUpdates
                 .subscribe(
                     renderStateUpdates,
@@ -107,7 +118,7 @@ function init(canvas, vizType) {
             function (err) {
                 var msg = (err||{}).message || 'Error when connecting to visualization server. Try refreshing the page...';
                 ui.error('Oops, something went wrong: ', msg);
-                ui.hideSpinner();
+                ui.hideSpinnerShowBody();
                 console.error('General init error', err, (err||{}).stack);
             }
         );

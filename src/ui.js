@@ -22,8 +22,11 @@ exports.error = function() {
 };
 
 
-exports.hideSpinner = function () {
-    $('.load-spinner').empty();
+exports.hideSpinnerShowBody = function () {
+    $('.load-spinner').fadeOut(200, function () {
+        $('.graphistry-body').css('display', 'none').css('visibility', 'visible').fadeIn(400);
+        $(this).empty();
+    });
 };
 
 /**

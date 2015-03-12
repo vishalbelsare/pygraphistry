@@ -68,6 +68,7 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                 var firstRunSinceMousedown;
                 return Rx.Observable.fromEvent($cont, 'mousedown')
                     .do(function (evt) {
+                        debug('stopPropagation: marquee down');
                         evt.stopPropagation();
                         $('body').addClass('noselect');
                         $('#simulation').css({
@@ -75,14 +76,18 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                             '-webkit-filter': '',
                         });
                         $elt.empty();
+                        $elt.css({width: 0, height: 0});
                         $elt.removeClass('draggable').removeClass('dragging').removeClass('done');
                     }).map(toPoint.bind('', $cont))
                     .do(function () {
                             debug('marquee instance started, listening');
                             firstRunSinceMousedown = true;
                     }).flatMapLatest(function (startPoint) {
-                        return Rx.Observable.fromEvent($cont, 'mousemove')
-                            .do(function (evt) { evt.stopPropagation(); })
+                        return Rx.Observable.fromEvent($(window.document), 'mousemove')
+                            .do(function (evt) {
+                                debug('stopPropagation: marquee move');
+                                evt.stopPropagation();
+                            })
                             .sample(1)
                             .map(function (moveEvt) {
                                 return toRect(startPoint, toPoint($cont, moveEvt));
@@ -98,8 +103,9 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                                     width: rect.br.x - rect.tl.x,
                                     height: rect.br.y - rect.tl.y
                                 });
-                            }).takeUntil(Rx.Observable.fromEvent($cont, 'mouseup')
+                            }).takeUntil(Rx.Observable.fromEvent($(window.document), 'mouseup')
                                 .do(function (evt) {
+                                    debug('stopPropagation: marquee up');
                                     evt.stopPropagation();
                                     debug('drag marquee finished');
                                 })
@@ -146,14 +152,16 @@ function marqueeDrags(selections, $cont, $elt) {
         var firstRunSinceMousedown = true;
         return Rx.Observable.fromEvent($elt, 'mousedown')
             .do(function (evt) {
+                debug('stopPropagation: marquee down 2');
                 evt.stopPropagation();
                 $('body').addClass('noselect');
             })
             .map(toPoint.bind('', $cont))
             .flatMapLatest(function (startPoint) {
                 debug('Start of drag: ', startPoint);
-                return Rx.Observable.fromEvent($cont, 'mousemove')
+                return Rx.Observable.fromEvent($(window.document), 'mousemove')
                     .do(function (evt) {
+                        debug('stopPropagation: marquee move 2');
                         evt.stopPropagation();
                     })
                     .sample(1)
@@ -171,7 +179,7 @@ function marqueeDrags(selections, $cont, $elt) {
                             left: selection.tl.x + delta.x,
                             top: selection.tl.y + delta.y
                         });
-                    }).takeUntil(Rx.Observable.fromEvent($elt, 'mouseup')
+                    }).takeUntil(Rx.Observable.fromEvent($(window.document), 'mouseup')
                         .do(function () {
                             debug('End of drag');
                             $elt.removeClass('dragging').removeClass('done').addClass('off');

@@ -24,7 +24,11 @@ var renderer = require('./renderer');
  * @return {Rx.Observable} Rx stream with Camera objects for every drag event.
  */
 function setupDrag($eventTarget, camera) {
+
+    var $marquee = $('#marqueerectangle i.selectable');
+
     return $eventTarget.mousedownAsObservable()
+        .filter(function () { return !$marquee.hasClass('toggle-on'); })
         .filter(function (evt) {
 
             //allow dragging by graph label title
@@ -44,11 +48,16 @@ function setupDrag($eventTarget, camera) {
             }
             return true;
         })
-        .flatMapLatest(function(clickPos) {
+        .do(function (clickPos) {
             clickPos.preventDefault();
-
+            $('#simulation').toggleClass('moving', true);
+        })
+        .flatMapLatest(function(clickPos) {
             return $('html').mousemoveAsObservable()
-                .takeUntil($('html').mouseupAsObservable())
+                .takeUntil($('html').mouseupAsObservable()
+                    .do(function () {
+                        $('#simulation').toggleClass('moving', false);
+                    }))
                 .distinctUntilChanged(function(pos) { return {x: pos.pageX, y: pos.pageY}; })
                 .scan({x: clickPos.pageX, y: clickPos.pageY, deltaX: 0, deltaY: 0}, function(accPos, curPos) {
                     // Calculate the distance moved (since last event) for each move event
@@ -73,6 +82,9 @@ function setupMousemove($eventTarget, renderState, textures) {
     var bounds = $('canvas', $eventTarget[0])[0].getBoundingClientRect();
 
     return $eventTarget.mousemoveAsObservable()
+        .filter(function (v) {
+            return ! $(v.target).parents('.graph-label').length;
+        })
         .sample(1)
         .map(function (evt) {
             evt.preventDefault();
@@ -85,13 +97,16 @@ function setupMousemove($eventTarget, renderState, textures) {
 }
 
 function setupScroll($eventTarget, canvas, camera) {
+
     var zoomBase = 1.1;
+    var $marquee = $('#marqueerectangle i.selectable');
 
     return $eventTarget.onAsObservable('mousewheel')
         .do(function (wheelEvent) {
             wheelEvent.preventDefault();
         })
         .sample(1)
+        .filter(function () { return !$marquee.hasClass('toggle-on'); })
         .map(function(wheelEvent) {
             var bounds = $eventTarget[0].getBoundingClientRect();
             var zoomFactor = (wheelEvent.deltaY < 0 ? zoomBase : 1.0 / zoomBase) || 1.0;

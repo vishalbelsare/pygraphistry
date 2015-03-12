@@ -14,6 +14,7 @@ var poiLib          = require('./poi.js');
 var marqueeFact     = require('./marquee.js');
 var shortestpaths   = require('./shortestpaths.js');
 var colorpicker     = require('./colorpicker.js');
+var ui              = require('./ui.js');
 
 var poi;
 
@@ -346,10 +347,14 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
     var res = new Rx.ReplaySubject(1);
     res.onNext(OFF);
 
+    var $marquee = $('#marqueerectangle i.selectable');
+
     interaction.setupMousemove($eventTarget, renderState, textures)
         .filter(function (v) { return v && v.idx > -1; })
+        .filter(function () { return !$marquee.hasClass('toggle-on'); })
         .map(function (v) { return {cmd: 'hover', pt: v}; })
         .merge($eventTarget.mousedownAsObservable()
+            .filter(function () { return !$marquee.hasClass('toggle-on'); })
             .map(function (evt) {
                 var clickedLabel = $(evt.target).hasClass('graph-label') ||
                         $(evt.target).hasClass('highlighted-point') ||
@@ -361,6 +366,7 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
                         //allow dragging by menu title (don't stop)
                         !$(evt.target).hasClass('graph-label') &&
                         !$(evt.target).hasClass('graph-label-container')) {
+                    debug('stopPropagation: highlight down');
                     evt.stopPropagation();
                 }
                 return clickedLabel ?
@@ -369,6 +375,7 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
             }))
         .merge(
             labelHover
+                .filter(function () { return !$marquee.hasClass('toggle-on'); })
                 .map(function (elt) {
                     return _.values(poi.state.activeLabels)
                         .filter(function (lbl) { return lbl.elt.get(0) === elt; });
@@ -415,6 +422,8 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
     var camera = renderState.get('camera');
     var canvas = renderState.get('canvas');
 
+    var $marquee = $('#marqueerectangle i.selectable');
+
     //pan/zoom
     //Observable Event
     var interactions;
@@ -422,19 +431,24 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
         debug('Detected touch-based device. Setting up touch interaction event handlers.');
         var eventTarget = $eventTarget[0];
         interactions = interaction.setupSwipe(eventTarget, camera)
-            .merge(interaction.setupPinch($eventTarget, camera));
+            .merge(
+                interaction.setupPinch($eventTarget, camera)
+                .filter(function () { return !$marquee.hasClass('toggle-on'); }));
     } else {
         debug('Detected mouse-based device. Setting up mouse interaction event handlers.');
         interactions = interaction.setupDrag($eventTarget, camera)
             .merge(interaction.setupScroll($eventTarget, canvas, camera));
+
     }
     interactions = Rx.Observable.merge(
         interactions,
         interaction.setupCenter($('#center'),
                                 renderState.get('hostBuffers').curPoints,
                                 camera),
-        interaction.setupZoomButton($('#zoomin'), camera, 1 / 1.25),
+        interaction.setupZoomButton($('#zoomin'), camera, 1 / 1.25)
+            .filter(function () { return !$marquee.hasClass('toggle-on'); }),
         interaction.setupZoomButton($('#zoomout'), camera, 1.25)
+            .filter(function () { return !$marquee.hasClass('toggle-on'); })
     );
 
     // Picks objects in priority based on order.
@@ -699,7 +713,7 @@ function testGrid() {
 }
 
 // ... -> Observable renderState
-function init(socket, $elt, renderState, urlParams) {
+function init(socket, $elt, renderState, vboUpdates, urlParams) {
     createLegend($('#graph-legend'), urlParams);
 
     poi = poiLib(socket);
@@ -725,7 +739,6 @@ function init(socket, $elt, renderState, urlParams) {
 
     //trigger animation on server
     //socket.emit('interaction', {layout: true, play: true});
-
 
     $('#timeSlider').rangeSlider({
          bounds: {min: 0, max: 100},
@@ -783,8 +796,7 @@ function init(socket, $elt, renderState, urlParams) {
                 makeErrorHandler('menu slider')
             );
         });
-    },
-    makeErrorHandler('bad controls'));
+    }, makeErrorHandler('bad controls'));
 
     Rx.Observable.zip(
         marquee.drags,
@@ -813,15 +825,23 @@ function init(socket, $elt, renderState, urlParams) {
     var $bolt = $('#simulate .fa');
     var $shrinkToFit = $('#center .fa');
 
-    $tooltips.tooltip('show');
-    $bolt.toggleClass('automode', true).toggleClass('toggle-on', true);
-    $shrinkToFit.toggleClass('automode', true).toggleClass('toggle-on', true);
+    var doneLoading = vboUpdates.filter(function (update) {
+        return update === 'rendered';
+    }).take(1).do(ui.hideSpinnerShowBody).delay(600);
 
     var numTicks = urlParams.play || 0;
 
-    //tick stream until canceled/timed out (end with 'false')
-    var autoLayingOut =
-        Rx.Observable.merge(
+    doneLoading.take(1).subscribe(function () {
+        if (numTicks > 0) {
+            $tooltips.tooltip('show');
+            $bolt.toggleClass('automode', true).toggleClass('toggle-on', true);
+            $shrinkToFit.toggleClass('automode', true).toggleClass('toggle-on', true);
+        }
+    }, makeErrorHandler('reveal scene'));
+
+    // Tick stream until canceled/timed out (end with 'false'), starts after first vbo update.
+    var autoLayingOut = doneLoading.flatMapLatest(function () {
+        return Rx.Observable.merge(
             Rx.Observable.return(Rx.Observable.interval(20)),
             Rx.Observable.merge(
                     $('#simulate').onAsObservable('click')
@@ -830,10 +850,11 @@ function init(socket, $elt, renderState, urlParams) {
                 .take(1)
                 .map(_.constant(Rx.Observable.return(false))))
         .flatMapLatest(_.identity);
+    });
 
     //tick stream until canceled/timed out (end with 'false')
-    var autoCentering =
-        Rx.Observable.merge(
+    var autoCentering = doneLoading.flatMapLatest(function () {
+        return Rx.Observable.merge(
             Rx.Observable.return(Rx.Observable.interval(1000)),
             Rx.Observable.merge(
                     Rx.Observable.merge(
@@ -849,6 +870,7 @@ function init(socket, $elt, renderState, urlParams) {
                 .take(1)
                 .map(_.constant(Rx.Observable.return(false))))
         .flatMapLatest(_.identity);
+    });
     var isAutoCentering = new Rx.ReplaySubject(1);
     autoCentering.subscribe(isAutoCentering, makeErrorHandler('bad autocenter'));
 
