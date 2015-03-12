@@ -330,6 +330,7 @@ function setupLabels ($labelCont, latestState, latestHighlightedObject) {
             var clicked = pair.highlighted
                 .filter(function (o) { return o.click; })
                 .map(function (o) { return o.idx; });
+
             renderPointLabels($labelCont, pair.currentState, indices, clicked);
         })
         .subscribe(_.identity, makeErrorHandler('setuplabels'));
@@ -352,7 +353,6 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
     var $marquee = $('#marqueerectangle i.selectable');
 
     interaction.setupMousemove($eventTarget, renderState, textures)
-        .filter(function (v) { return v && v.idx > -1; })
         .filter(function () { return !$marquee.hasClass('toggle-on'); })
         .map(function (v) { return {cmd: 'hover', pt: v}; })
         .merge($eventTarget.mousedownAsObservable()
