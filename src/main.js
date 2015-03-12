@@ -77,7 +77,7 @@ function init(canvas, vizType) {
     Rx.Observable.interval(1000).take(2).subscribe(function () {
         $('#load-text').text(loadingText[textNum]);
         textNum++;
-    })
+    });
 
     var initialized = new Rx.ReplaySubject(1);
 
