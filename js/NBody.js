@@ -293,18 +293,23 @@ var setEdges = Q.promised(function(graph, edges) {
         //num edges > 0
 
         // Without Underscore and with preallocation. Less clear than a flatten + map, but better perf.
-        var flattenedLength = (workItems.length * 4);
-        var flattened = new Array(flattenedLength);
+        var workItemsTyped = new Int32Array(workItems.length * 4);
         for (var idx = 0; idx < workItems.length ; idx++) {
-            flattened[idx*4] = workItems[idx][0];
-            flattened[idx*4 + 1] = workItems[idx][1];
-            flattened[idx*4 + 2] = workItems[idx][2];
-            flattened[idx*4 + 3] = 666;
+            workItemsTyped[idx*4] = workItems[idx][0];
+            workItemsTyped[idx*4 + 1] = workItems[idx][1];
+            workItemsTyped[idx*4 + 2] = workItems[idx][2];
+            workItemsTyped[idx*4 + 3] = 666;
         }
-        var workItemsTyped = new Int32Array( flattened );
+
+        // Without Underscore and with preallocation. Less clear than a flatten, but better perf.
+        // var edgesTyped = new Uint32Array(_.flatten(edgeList));
+        var edgesTyped = new Uint32Array(edgeList.length * 2);
+        for (var idx = 0; idx < edgeList.length; idx++) {
+            edgesTyped[idx*2] = edgeList[idx][0];
+            edgesTyped[idx*2 + 1] = edgeList[idx][1];
+        }
 
 
-        var edgesTyped = new Uint32Array(_.flatten(edgeList));
         var index = 0;
         var edgeStartEndIdxs = [];
         for(var i = 0; i < workItems.length - 1; i++) {
