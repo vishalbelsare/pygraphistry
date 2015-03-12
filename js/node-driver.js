@@ -310,7 +310,7 @@ function create(dataset) {
             })
             .subscribe(
                 animStepSubj,
-                util.makeErrorHandler('node-driver: tick failed')
+                util.makeRxErrorHandler('node-driver: tick failed')
             );
 
         debug('Graph created');
