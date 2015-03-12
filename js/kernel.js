@@ -18,6 +18,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     var that = this;
     this.name = name;
     this.argNames = argNames;
+    // Q promise
     var source = util.getKernelSource(file);
 
     // Set synchronous based on debug value
@@ -155,25 +156,21 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     };
 
     function call(kernel, workItems, buffers, workGroupSize) {
-        return cljs.acquire(buffers)
-            .then(function () {
-                var queue = clContext.queue;
-                debug('Enqueuing kernel %s', that.name, kernel);
-                var start = process.hrtime();
-                queue.enqueueNDRangeKernel(kernel, null, workItems, workGroupSize || null);
-                return start;
-            }).fail(
-                util.makeErrorHandler('Kernel %s error', that.name)
-            ).then(function (start) {
-                if (synchronous) {
-                    debug('Waiting for kernel to finish');
-                    clContext.queue.finish();
-                    var diff = process.hrtime(start);
-                    that.timings[that.totalRuns % maxTimings] = (diff[0] * 1000 + diff[1] / 1000000);
-                }
-                that.totalRuns++;
-                return cljs.release(buffers);
-            }).then(_.constant(that));
+        // TODO: Consider acquires and releases of buffers.
+
+        var queue = clContext.queue;
+        debug('Enqueuing kernel %s', that.name, kernel);
+        var start = process.hrtime();
+        queue.enqueueNDRangeKernel(kernel, null, workItems, workGroupSize || null);
+        if (synchronous) {
+            debug('Waiting for kernel to finish');
+            clContext.queue.finish();
+            var diff = process.hrtime(start);
+            that.timings[that.totalRuns % maxTimings] = (diff[0] * 1000 + diff[1] / 1000000);
+        }
+        that.totalRuns++;
+        return Q(that);
+
     }
 
     // [Int] * [String] -> Promise[Kernel]

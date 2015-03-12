@@ -363,7 +363,9 @@
             left: '50%' // Left position relative to parent
         };
         var spinner = new Spinner(opts).spin();
-        $('<div>').addClass('load-spinner').append(spinner.el).appendTo($('body'));
+        var $text = $('<div>').attr('id', 'load-text').text('locating graphistry\'s farm');
+        var $spinner= $(spinner.el).append($text);
+        $('<div>').addClass('load-spinner').append($spinner).appendTo($('body'));
     });
     </script>
 

@@ -105,6 +105,11 @@ function makeErrorHandler() {
     return makeHandler('ERROR', msg, 'error', true, chalk.bold.red)
 }
 
+function makeRxErrorHandler() {
+    var msg = nodeutil.format.apply(this, arguments);
+    return makeHandler('ERROR', msg, 'error', false, chalk.bold.red)
+}
+
 function error() {
     var msg = nodeutil.format.apply(this, arguments);
     makeHandler('ERROR', msg, 'error', false, chalk.bold.red)(new Error());
@@ -223,6 +228,7 @@ module.exports = {
     getImage: getImage,
     die: die,
     makeErrorHandler: makeErrorHandler,
+    makeRxErrorHandler: makeRxErrorHandler,
     exception: exception,
     error: error,
     warn: warn,

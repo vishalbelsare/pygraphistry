@@ -288,18 +288,28 @@ var setEdges = Q.promised(function(graph, edges) {
             degreesTyped[edgeList[2]] = edgeList[1];
         });
 
-        //Uint32Array [first edge number from src idx, number of edges from src idx, src idx, 666]
+        //workItemsTyped is a Uint32Array [first edge number from src idx, number of edges from src idx, src idx, 666]
         //fetch edge to find src and dst idx (all src same)
         //num edges > 0
-        var workItemsTyped = new Int32Array(
-            _.flatten(
-                workItems.map(function (o) {
-                    return [o[0], o[1], o[2], 666];
-                })
-            )
-        );
 
-        var edgesTyped = new Uint32Array(_.flatten(edgeList));
+        // Without Underscore and with preallocation. Less clear than a flatten + map, but better perf.
+        var workItemsTyped = new Int32Array(workItems.length * 4);
+        for (var idx = 0; idx < workItems.length ; idx++) {
+            workItemsTyped[idx*4] = workItems[idx][0];
+            workItemsTyped[idx*4 + 1] = workItems[idx][1];
+            workItemsTyped[idx*4 + 2] = workItems[idx][2];
+            workItemsTyped[idx*4 + 3] = 666;
+        }
+
+        // Without Underscore and with preallocation. Less clear than a flatten, but better perf.
+        // var edgesTyped = new Uint32Array(_.flatten(edgeList));
+        var edgesTyped = new Uint32Array(edgeList.length * 2);
+        for (var idx = 0; idx < edgeList.length; idx++) {
+            edgesTyped[idx*2] = edgeList[idx][0];
+            edgesTyped[idx*2 + 1] = edgeList[idx][1];
+        }
+
+
         var index = 0;
         var edgeStartEndIdxs = [];
         for(var i = 0; i < workItems.length - 1; i++) {
@@ -321,7 +331,13 @@ var setEdges = Q.promised(function(graph, edges) {
         } else {
           edgeStartEndIdxs.push([-1, -1]);
         }
-        var edgeStartEndIdxsTyped = new Uint32Array(_.flatten(edgeStartEndIdxs));
+
+        // Flattening
+        var edgeStartEndIdxsTyped = new Uint32Array(edgeStartEndIdxs.length * 2);
+        for (var idx = 0; idx < edgeStartEndIdxs.length; idx++) {
+            edgeStartEndIdxsTyped[idx*2] = edgeStartEndIdxs[idx][0];
+            edgeStartEndIdxsTyped[idx*2 + 1] = edgeStartEndIdxs[idx][1];
+        }
 
         return {
             //Uint32Array
