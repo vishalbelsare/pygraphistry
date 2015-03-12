@@ -52,6 +52,23 @@ function maintainContainerStyle($cont, isOn) {
         makeErrorHandler('$cont on/off'));
 }
 
+
+function effectCanvas(effect) {
+    if (effect === 'blur') {
+        $('#simulation').css({
+            'filter': 'grayscale(50%) blur(3px)',
+            '-webkit-filter': 'grayscale(50%) blur(3px)',
+        });
+    } else if (effect === 'clear') {
+        $('#simulation').css({
+            'filter': '',
+            '-webkit-filter': '',
+        });
+    } else {
+        console.error('effectCanvas: unknown effect', effect);
+    }
+}
+
 //$DOM * $DOM * Observable bool -> Observable_1 {top, left, width, height}
 //track selections and affect $elt style/class
 function marqueeSelections (renderState, $cont, $elt, isOn) {
@@ -62,6 +79,7 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                     'filter': '',
                     '-webkit-filter': '',
                 });
+                effectCanvas('clear');
                 return Rx.Observable.empty();
             } else {
                 debug('start listening for marquee selections');
@@ -71,10 +89,7 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                         debug('stopPropagation: marquee down');
                         evt.stopPropagation();
                         $('body').addClass('noselect');
-                        $('#simulation').css({
-                            'filter': '',
-                            '-webkit-filter': '',
-                        });
+                        effectCanvas('clear');
                         $elt.empty();
                         $elt.css({width: 0, height: 0});
                         $elt.removeClass('draggable').removeClass('dragging');
@@ -113,11 +128,7 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                             ).takeLast(1)
                             .do(function (rect) {
                                 $('body').removeClass('noselect');
-                                $('#simulation').css({
-                                    'filter': 'grayscale(50%) blur(3px)',
-                                    '-webkit-filter': 'grayscale(50%) blur(3px)',
-
-                                });
+                                effectCanvas('blur');
                                 $elt.addClass('draggable').removeClass('on');
                                 $cont.addClass('done');
                                 $elt.css({ // Take border sizes into account when aligning ghost image
@@ -187,10 +198,7 @@ function marqueeDrags(selections, $cont, $elt) {
                             $elt.removeClass('dragging').addClass('off');
                             $cont.removeClass('done');
                             $('body').removeClass('noselect');
-                            $('#simulation').css({
-                                'filter': '',
-                                '-webkit-filter': '',
-                            });
+                            effectCanvas('clear');
                         })
                     ).takeLast(1);
             });
@@ -262,6 +270,11 @@ function init (renderState, $cont, toggle, cfg) {
     var isOn = new Rx.ReplaySubject(1);
     toggle.merge(Rx.Observable.return(false)).subscribe(isOn, makeErrorHandler('on/off'));
 
+    isOn.subscribe(function (val) {
+        if (val && $cont.hasClass('done')) {
+            effectCanvas('blur');
+        }
+    }, makeErrorHandler('blur canvas'));
 
     //Effect scene
     $cont.append($elt);
