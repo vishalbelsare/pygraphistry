@@ -12,7 +12,9 @@ var MoveNodes = require('./moveNodes.js');
 var SpringsGather = require('./springsGather.js');
 var webcl = require('node-webcl');
 
-Q.longStackSupport = true;
+// Do NOT enable this in prod. It destroys performance.
+// Seriously.
+// Q.longStackSupport = true;
 var randLength = 73;
 
 
