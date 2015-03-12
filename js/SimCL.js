@@ -9,6 +9,7 @@ var dijkstra = require('dijkstra');
 var util = require('./util.js');
 var cljs = require('./cl.js');
 var MoveNodes = require('./moveNodes.js');
+var SelectNodes = require('./selectNodes.js');
 var SpringsGather = require('./springsGather.js');
 var webcl = require('node-webcl');
 
@@ -36,10 +37,6 @@ function create(renderer, device, vendor, cfg) {
         var simObj = {
             renderer: renderer,
             cl: cl,
-            otherKernels: {
-                moveNodes: new MoveNodes(cl),
-                springsGather: new SpringsGather(cl)
-            },
             elementsPerPoint: 2,
             versions: {
                 tick: 0,
@@ -64,6 +61,11 @@ function create(renderer, device, vendor, cfg) {
             debug("Creating SimCL...")
 
             simObj.layoutAlgorithms = algos;
+            simObj.otherKernels = {
+                moveNodes: new MoveNodes(cl),
+                selectNodes: new SelectNodes(cl),
+                springsGather: new SpringsGather(cl)
+            };
             simObj.tilesPerIteration = 1;
             simObj.buffersLocal = {};
             createSetters(simObj);
@@ -79,6 +81,7 @@ function create(renderer, device, vendor, cfg) {
             simObj.setTimeSubset = setTimeSubset.bind(this, renderer, simObj);
             simObj.recolor = recolor.bind(this, simObj);
             simObj.moveNodes = moveNodes.bind(this, simObj);
+            simObj.selectNodes = selectNodes.bind(this, simObj);
             simObj.resetBuffers = resetBuffers.bind(this, simObj);
             simObj.tickBuffers = tickBuffers.bind(this, simObj);
             simObj.highlightShortestPaths = highlightShortestPaths.bind(this, renderer, simObj);
@@ -776,6 +779,23 @@ function moveNodes(simulator, marqueeEvent) {
         .then(function () {
             return springsGather.tick(simulator);
         }).fail(util.makeErrorHandler('Failure trying to move nodes'));
+}
+
+function selectNodes(simulator, selection) {
+    debug('selectNodes', selection);
+
+    var selectNodes = simulator.otherKernels.selectNodes;
+
+    return selectNodes.run(simulator, selection)
+        .then(function (mask) {
+            var res = [];
+            for(var i = 0; i < mask.length; i++) {
+                if (mask[i] === 1) {
+                    res.push(i);
+                }
+            }
+            return res;
+        }).fail(util.makeErrorHandler('Failure trying to compute selection'));
 }
 
 function recolor(simulator, marquee) {
