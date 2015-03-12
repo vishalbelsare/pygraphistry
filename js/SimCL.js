@@ -782,7 +782,7 @@ function moveNodes(simulator, marqueeEvent) {
 }
 
 function selectNodes(simulator, selection) {
-    console.log('selectNodes', selection);
+    debug('selectNodes', selection);
 
     var selectNodes = simulator.otherKernels.selectNodes;
 
