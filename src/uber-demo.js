@@ -265,8 +265,10 @@ lastRender
             arr.reduce(
                 function (acc, v) {
                     return {
-                        renderTag: Math.max(v.renderTag, acc.renderTag),
-                        labelTag: Math.max(v.labelTag, acc.labelTag)
+                        data: {
+                            renderTag: Math.max(v.data.renderTag, acc.data.renderTag),
+                            labelTag: Math.max(v.data.labelTag, acc.data.labelTag)
+                        }
                     };
                 },
                 {data: { renderTag: 0, labelTag: 0}}));
@@ -328,6 +330,7 @@ function setupLabels ($labelCont, latestState, latestHighlightedObject) {
             var clicked = pair.highlighted
                 .filter(function (o) { return o.click; })
                 .map(function (o) { return o.idx; });
+
             renderPointLabels($labelCont, pair.currentState, indices, clicked);
         })
         .subscribe(_.identity, makeErrorHandler('setuplabels'));
@@ -350,7 +353,6 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
     var $marquee = $('#marqueerectangle i.selectable');
 
     interaction.setupMousemove($eventTarget, renderState, textures)
-        .filter(function (v) { return v && v.idx > -1; })
         .filter(function () { return !$marquee.hasClass('toggle-on'); })
         .map(function (v) { return {cmd: 'hover', pt: v}; })
         .merge($eventTarget.mousedownAsObservable()

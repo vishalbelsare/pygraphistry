@@ -102,11 +102,14 @@ function setupScroll($eventTarget, canvas, camera) {
     var $marquee = $('#marqueerectangle i.selectable');
 
     return $eventTarget.onAsObservable('mousewheel')
+        .sample(1)
+        .filter(function () { return !$marquee.hasClass('toggle-on'); })
+        .filter(function (evt) {
+            return ! $(evt.target).parents('.graph-label').length;
+        })
         .do(function (wheelEvent) {
             wheelEvent.preventDefault();
         })
-        .sample(1)
-        .filter(function () { return !$marquee.hasClass('toggle-on'); })
         .map(function(wheelEvent) {
             var bounds = $eventTarget[0].getBoundingClientRect();
             var zoomFactor = (wheelEvent.deltaY < 0 ? zoomBase : 1.0 / zoomBase) || 1.0;
