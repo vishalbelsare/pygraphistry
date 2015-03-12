@@ -18,6 +18,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     var that = this;
     this.name = name;
     this.argNames = argNames;
+    // Q promise
     var source = util.getKernelSource(file);
 
     // Set synchronous based on debug value
@@ -168,7 +169,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
             that.timings[that.totalRuns % maxTimings] = (diff[0] * 1000 + diff[1] / 1000000);
         }
         that.totalRuns++;
-        return Q.fcall(_.constant(that));
+        return Q(that);
 
     }
 
