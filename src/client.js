@@ -284,7 +284,7 @@ function handleVboUpdates(socket, renderState, renderStateUpdates) {
                 .subscribe(function (pair) {
                     var renderState = pair[1];
                     debug('6. All buffers and textures received, completing', thisStep);
-                    ui.hideSpinner();
+                    ui.hideSpinnerShowBody();
                     handshake(Date.now() - lastHandshake);
                     lastHandshake = Date.now();
                     renderedFrame.onNext('received');
