@@ -8,6 +8,7 @@
 
 var debug       = require('debug')('graphistry:StreamGL:poi');
 var _           = require('underscore');
+var sprintf     = require('sprintf-js').sprintf;
 var $           = window.$;
 var Rx          = require('rx');
                   require('./rx-jquery-stub');
@@ -136,10 +137,10 @@ function genLabel (instance, $labelCont, idx) {
             res.idx = idx;
             $elt.empty();
         })
-        .flatMapLatest(instance.getLabelText)
-        .do(function (htmlStr) {
-            if (htmlStr) {
-                $elt.html(htmlStr);
+        .flatMapLatest(instance.getLabelDom)
+        .do(function (domTree) {
+            if (domTree) {
+                $elt.append(domTree);
             } else {
                 $elt.empty();
             }
@@ -156,24 +157,51 @@ function genLabel (instance, $labelCont, idx) {
 //NETWORK ===================
 
 
-function fetchText (instance, idx) {
-
+function fetchLabel (instance, idx) {
     instance.state.socket.emit('get_labels', [idx], function (err, data) {
         if (err) {
             console.error('get_labels', err);
         } else {
-            instance.state.labelCache[idx].onNext(data[0]);
+            instance.state.labelCache[idx].onNext(createLabelDom(data[0]));
         }
     });
+}
 
+function createLabelDom(labelObj) {
+    var $cont = $('<div>').addClass('graph-label-container');
+    var $pin = $('<i>').addClass('fa fa-lg fa-thumb-tack');
+    var $title;
+    var $content;
+
+    if (labelObj.formatted) {
+        $cont.addClass('graph-label-preset');
+        $title = $('<span>').addClass('graph-label-title').append(labelObj.formatted);
+    } else {
+        $cont.addClass('graph-label-default');
+        $title = $('<span>').addClass('graph-label-title').append($pin).append(' ' + labelObj.title);
+        var $table= $('<table>');
+        labelObj.rows.forEach(function (pair) {
+            var $row = $('<tr>').addClass('graph-label-pair');
+            var $key = $('<td>').addClass('graph-label-key').text(pair[0]);
+            var val = pair[1];
+            var entry = (!isNaN(val) && val % 1 !== 0) ? sprintf('%.4f', val) : sprintf('%s', val);
+            var $wrap = $('<div>').addClass('graph-label-value-wrapper').text(entry);
+            var $val = $('<td>').addClass('graph-label-value').append($wrap);
+            $row.append($key).append($val);
+            $table.append($row);
+        });
+        $content = $('<div>').addClass('graph-label-contents').append($table);
+    }
+
+    return $cont.append($title).append($content);
 }
 
 //instance * int -> ReplaySubject_1 ?HtmlString
 //TODO batch fetches
-function getLabelText (instance, idx) {
+function getLabelDom (instance, idx) {
     if (!instance.state.labelCache[idx]) {
         instance.state.labelCache[idx] = new Rx.ReplaySubject(1);
-        fetchText(instance, idx);
+        fetchLabel(instance, idx);
     }
     return instance.state.labelCache[idx];
 }
@@ -189,7 +217,7 @@ function invalidateCache (instance, idxs) {
         //however, chances are, it won't move, so this avoids *some* flickr, though we still see some
         //instance.state.labelCache[idx].onNext('(fetching)');
 
-        fetchText(instance, idx);
+        fetchLabel(instance, idx);
     });
 }
 
@@ -224,7 +252,7 @@ function init (socket) {
         },
 
         //int -> Subject ?HtmlString
-        getLabelText: getLabelText.bind('', instance),
+        getLabelDom: getLabelDom.bind('', instance),
 
         getActiveApprox: getActiveApprox,
         finishApprox: finishApprox,
