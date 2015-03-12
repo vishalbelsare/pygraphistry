@@ -76,6 +76,7 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                             '-webkit-filter': '',
                         });
                         $elt.empty();
+                        $elt.css({width: 0, height: 0});
                         $elt.removeClass('draggable').removeClass('dragging').removeClass('done');
                     }).map(toPoint.bind('', $cont))
                     .do(function () {
