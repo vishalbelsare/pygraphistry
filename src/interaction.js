@@ -92,13 +92,16 @@ function setupMousemove($eventTarget, renderState, textures) {
 }
 
 function setupScroll($eventTarget, canvas, camera) {
+
     var zoomBase = 1.1;
+    var $marquee = $('#marqueerectangle i.selectable');
 
     return $eventTarget.onAsObservable('mousewheel')
         .do(function (wheelEvent) {
             wheelEvent.preventDefault();
         })
         .sample(1)
+        .filter(function () { return !$marquee.hasClass('toggle-on'); })
         .map(function(wheelEvent) {
             var bounds = $eventTarget[0].getBoundingClientRect();
             var zoomFactor = (wheelEvent.deltaY < 0 ? zoomBase : 1.0 / zoomBase) || 1.0;
