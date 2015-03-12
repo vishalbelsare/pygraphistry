@@ -24,7 +24,11 @@ var renderer = require('./renderer');
  * @return {Rx.Observable} Rx stream with Camera objects for every drag event.
  */
 function setupDrag($eventTarget, camera) {
+
+    var $marquee = $('#marqueerectangle i.selectable');
+
     return $eventTarget.mousedownAsObservable()
+        .filter(function () { return !$marquee.hasClass('toggle-on'); })
         .filter(function (evt) {
 
             //allow dragging by graph label title
