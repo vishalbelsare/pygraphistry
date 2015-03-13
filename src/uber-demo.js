@@ -822,7 +822,7 @@ function init(socket, $elt, renderState, vboUpdates, urlParams) {
         return update === 'rendered';
     }).take(1).do(ui.hideSpinnerShowBody).delay(600);
 
-    var numTicks = urlParams.play || 0;
+    var numTicks = urlParams.play !== undefined ? urlParams.play : 5000;
 
     doneLoading.take(1).subscribe(function () {
         if (numTicks > 0) {
