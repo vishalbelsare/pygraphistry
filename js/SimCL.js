@@ -789,7 +789,7 @@ function selectNodes(simulator, selection) {
     return selectNodes.run(simulator, selection)
         .then(function (mask) {
             var res = [];
-            for(var i = 0; i < mask.length; i++) {
+            for(var i = 0; i < mask.length && res.length < 50; i++) {
                 if (mask[i] === 1) {
                     res.push(i);
                 }
