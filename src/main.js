@@ -72,7 +72,7 @@ function init(canvas, vizType) {
     var textNum = 0;
     var loadingText = [
         'herding stray GPUs',
-        'churning graph data'
+        'munching graph data'
     ];
     Rx.Observable.interval(1000).take(2).subscribe(function () {
         $('#load-text').text(loadingText[textNum]);
