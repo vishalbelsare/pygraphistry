@@ -413,7 +413,7 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
 }
 
 
-function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
+function setupDragHoverInteractions($eventTarget, renderState, bgColor, settingsChanges) {
     //var currentState = renderState;
 
     var stateStream = new Rx.Subject();
@@ -592,57 +592,79 @@ function createControls(socket) {
             }
         });
 
+    var makeControl = function (param, type) {
+        var $input;
+        if (param.type === 'continuous') {
+            $input = $('<input>').attr({
+                class: type + '-menu-slider menu-slider',
+                id: param.name,
+                type: 'text',
+                'data-slider-id': param.name + 'Slider',
+                'data-slider-min': 0,
+                'data-slider-max': 100,
+                'data-slider-step': 1,
+                'data-slider-value': param.value
+            }).data('param', param);
+        } else if (param.type === 'discrete') {
+            $input = $('<input>').attr({
+                class: type + '-menu-slider menu-slider',
+                id: param.name,
+                type: 'text',
+                'data-slider-id': param.name + 'Slider',
+                'data-slider-min': param.min,
+                'data-slider-max': param.max,
+                'data-slider-step': param.step,
+                'data-slider-value': param.value
+            }).data('param', param);
+
+        } else if (param.type === 'bool') {
+            $input = $('<input>').attr({
+                id: param.name,
+                type: 'checkbox',
+                checked: param.value
+            }).data('param', param);
+        } else {
+            console.warn('Ignoring param of unknown type', param);
+            $input = $('<div>').text('Unknown setting type' + param.type);
+        }
+        var $col = $('<div>').addClass('col-xs-9').append($input);
+        var $label = $('<label>').attr({
+            for: param.name,
+            class: 'control-label col-xs-3',
+        }).text(param.prettyName);
+
+        var $entry = $('<div>').addClass('form-group').append($label, $col);
+
+        $anchor.append($entry);
+    };
+
     var $anchor = $('#renderingItems').children('.form-horizontal').empty();
     rxControls.subscribe(function (controls) {
+        // Setup layout controls
         // Assuming a single layout algorithm for now
         var la = controls[0];
 
         _.each(la.params, function (param) {
-            var $input;
-            if (param.type === 'continuous') {
-                $input = $('<input>').attr({
-                    class: 'menu-slider',
-                    id: param.name,
-                    type: 'text',
-                    'data-slider-id': param.name + 'Slider',
-                    'data-slider-min': 0,
-                    'data-slider-max': 100,
-                    'data-slider-step': 1,
-                    'data-slider-value': param.value
-                }).data('param', param);
-            } else if (param.type === 'discrete') {
-                $input = $('<input>').attr({
-                    class: 'menu-slider',
-                    id: param.name,
-                    type: 'text',
-                    'data-slider-id': param.name + 'Slider',
-                    'data-slider-min': param.min,
-                    'data-slider-max': param.max,
-                    'data-slider-step': param.step,
-                    'data-slider-value': param.value
-                }).data('param', param);
-
-            } else if (param.type === 'bool') {
-                $input = $('<input>').attr({
-                    id: param.name,
-                    type: 'checkbox',
-                    checked: param.value
-                }).data('param', param);
-            } else {
-                console.warn('Ignoring param of unknown type', param);
-                $input = $('<div>').text('Unknown setting type' + param.type);
-            }
-            var $col = $('<div>').addClass('col-xs-9').append($input);
-            var $label = $('<label>').attr({
-                for: param.name,
-                class: 'control-label col-xs-3',
-            }).text(param.prettyName);
-
-            var $entry = $('<div>').addClass('form-group').append($label, $col);
-
-            $anchor.append($entry);
+            console.log('param: ', param);
+            makeControl(param, 'layout');
         });
 
+        // Setup client side controls.
+        var localParams = [
+            {
+                name: 'pointSize',
+                prettyName: 'Point Size',
+                type: 'discrete',
+                value: 10.0,
+                step: 1,
+                max: 100.0,
+                min: 1
+            }
+        ];
+
+        _.each(localParams, function (param) {
+            makeControl(param, 'local');
+        });
     }, makeErrorHandler('createControls'));
 
     return rxControls;
@@ -708,6 +730,20 @@ function showGrid(frame) {
     $inspector.empty().append(grid.render().el).css({visibility: 'visible'});
 }
 
+function setLocalSetting(name, val, renderState, settingsChanges) {
+    var camera = renderState.get('camera');
+    val = val / 10;
+
+    if (name === 'pointSize') {
+        console.log('Setting point scaling to: ', val);
+        camera.setPointScaling(val);
+    }
+
+    settingsChanges.onNext({name: name, val: val});
+}
+
+
+
 // ... -> Observable renderState
 function init(socket, $elt, renderState, vboUpdates, urlParams) {
     createLegend($('#graph-legend'), urlParams);
@@ -726,9 +762,11 @@ function init(socket, $elt, renderState, vboUpdates, urlParams) {
     });
 
     var marquee = setupMarquee(turnOnMarquee, renderState);
+    var settingsChanges = new Rx.Subject();
+    settingsChanges.onNext({});
 
     var colors = colorpicker($('#foregroundColor'), $('#backgroundColor'), socket);
-    var renderStateUpdates = setupDragHoverInteractions($elt, renderState, colors.backgroundColor);
+    var renderStateUpdates = setupDragHoverInteractions($elt, renderState, colors.backgroundColor, settingsChanges);
 
 
     shortestpaths($('#shortestpath'), poi, socket);
@@ -776,6 +814,7 @@ function init(socket, $elt, renderState, vboUpdates, urlParams) {
         });
 
         $('.menu-slider').each(function () {
+            var $that = $(this);
             var $slider = $(this).bootstrapSlider({});
             var param = $slider.data('param');
 
@@ -786,12 +825,19 @@ function init(socket, $elt, renderState, vboUpdates, urlParams) {
             .sample(50)
             .subscribe(
                 function () {
-                    sendLayoutSetting(socket, param.algoName,
+                    if ($that.hasClass('layout-menu-slider')) {
+                        sendLayoutSetting(socket, param.algoName,
                                     param.name, Number($slider.val()));
+                    } else if ($that.hasClass('local-menu-slider')) {
+                        setLocalSetting(param.name, Number($slider.val()), renderState, settingsChanges);
+                    }
                 },
                 makeErrorHandler('menu slider')
             );
         });
+
+
+
     }, makeErrorHandler('bad controls'));
 
     Rx.Observable.zip(

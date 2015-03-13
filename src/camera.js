@@ -94,7 +94,18 @@
         };
         this.nearPlane = nearPlane;
         this.farPlane = farPlane;
+        this.pointScaling = 1.0;
+        this.edgeScaling = 1.0;
     }
+
+    Camera2d.prototype.setPointScaling = function(value) {
+        console.log('Setting point scaling to: ', value);
+        this.pointScaling = value;
+    };
+
+    Camera2d.prototype.setEdgeScaling = function(value) {
+        this.edgeScaling = value;
+    };
 
     Camera2d.prototype.centerOn = function(left, right, top, bottom) {
         // Add 10% for margins
@@ -209,8 +220,7 @@
         var normalizedScalingFactor =
             scalingFactor * ((1-alpha)*pointSizeConstantSmall + alpha*pointSizeConstantBig);
 
-
-        return normalizedScalingFactor;
+        return this.pointScaling * normalizedScalingFactor;
     };
 
     Camera2d.prototype.semanticZoomEdges = function (numPoints) {
@@ -227,7 +237,7 @@
             scalingFactor * ((1-alpha)*pointSizeConstantSmall + alpha*pointSizeConstantBig);
 
 
-        return normalizedScalingFactor;
+        return this.edgeScaling * normalizedScalingFactor;
     };
 
     //FIXME should not depend on SC
