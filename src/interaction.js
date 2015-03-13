@@ -100,11 +100,13 @@ function setupScroll($eventTarget, canvas, camera) {
 
     var zoomBase = 1.1;
     var $marquee = $('#marquee');
+    var $marqueeButton = $('#marqueerectangle i.fa');
 
     return $eventTarget.onAsObservable('mousewheel')
         .sample(1)
-        .filter(function () { return !$marquee.hasClass('done'); })
-        .filter(function (evt) {
+        .filter(function () {
+            return !($marquee.hasClass('done') && $marqueeButton.hasClass('toggle-on'));
+        }).filter(function (evt) {
             return ! $(evt.target).parents('.graph-label').length;
         })
         .do(function (wheelEvent) {

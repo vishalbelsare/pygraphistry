@@ -160,6 +160,14 @@ function toDelta(startPoint, endPoint) {
             y: endPoint.y - startPoint.y};
 }
 
+
+function clearMarquee($cont, $elt) {
+    $elt.removeClass('dragging').addClass('off');
+    $cont.removeClass('done');
+    $('body').removeClass('noselect');
+    effectCanvas('clear');
+}
+
 function marqueeDrags(selections, $cont, $elt) {
     var drags = selections.flatMapLatest(function (selection) {
         var firstRunSinceMousedown = true;
@@ -195,10 +203,7 @@ function marqueeDrags(selections, $cont, $elt) {
                     }).takeUntil(Rx.Observable.fromEvent($(window.document), 'mouseup')
                         .do(function () {
                             debug('End of drag');
-                            $elt.removeClass('dragging').addClass('off');
-                            $cont.removeClass('done');
-                            $('body').removeClass('noselect');
-                            effectCanvas('clear');
+                            clearMarquee($cont, $elt);
                         })
                     ).takeLast(1);
             });
@@ -270,9 +275,9 @@ function init (renderState, $cont, toggle, cfg) {
     var isOn = new Rx.ReplaySubject(1);
     toggle.merge(Rx.Observable.return(false)).subscribe(isOn, makeErrorHandler('on/off'));
 
-    isOn.subscribe(function (val) {
-        if (val && $cont.hasClass('done')) {
-            effectCanvas('blur');
+    isOn.subscribe(function (flag) {
+        if (!flag) {
+            clearMarquee($cont, $elt);
         }
     }, makeErrorHandler('blur canvas'));
 
