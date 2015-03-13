@@ -87,6 +87,15 @@ var programs = {
         'camera': 'mvp',
         'uniforms': ['zoomScalingFactor']
     },
+    'uberpoints': {
+        'sources': {
+            'vertex': fs.readFileSync(__dirname + '/../shaders/uberpoint.vertex.glsl', 'utf8').toString('ascii'),
+            'fragment': fs.readFileSync(__dirname + '/../shaders/uberpoint.fragment.glsl', 'utf8').toString('ascii')
+        },
+        'attributes': ['curPos', 'pointSize', 'pointColor'],
+        'camera': 'mvp',
+        'uniforms': ['zoomScalingFactor']
+    },
     'midpoints': {
         'sources': {
             'vertex': fs.readFileSync(__dirname + '/../shaders/midpoint.vertex.glsl', 'utf8').toString('ascii'),
@@ -410,6 +419,21 @@ var items = {
     },
     'pointpicking': {
         'program': 'points',
+        'bindings': {
+            'curPos':       ['curPoints', 'curPos'],
+            'pointSize':    ['pointSizes', 'pointSize'],
+            'pointColor':   ['vertexIndices', 'pointColor']
+        },
+        'uniforms': {
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'drawType': 'POINTS',
+        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
+        'renderTarget': 'hitmap',
+        'readTarget': true,
+    },
+    'uberpointpicking': {
+        'program': 'uberpoints',
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
