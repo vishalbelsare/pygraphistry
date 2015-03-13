@@ -22,6 +22,7 @@ exports.error = function() {
 };
 
 
+//FIXME return a completion event notification
 exports.hideSpinnerShowBody = function () {
     $('.load-spinner').fadeOut(200, function () {
         $('.graphistry-body').css('display', 'none').css('visibility', 'visible').fadeIn(400);

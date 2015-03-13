@@ -874,7 +874,7 @@ function init(socket, $elt, renderState, vboUpdates, urlParams) {
 
     var doneLoading = vboUpdates.filter(function (update) {
         return update === 'rendered';
-    }).take(1).do(ui.hideSpinnerShowBody).delay(600);
+    }).take(1).do(ui.hideSpinnerShowBody).delay(700);
 
     var numTicks = urlParams.play !== undefined ? urlParams.play : 5000;
 
