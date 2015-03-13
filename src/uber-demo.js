@@ -487,11 +487,13 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, settings
                 renderState.get('hostBuffers').curPoints,
                 renderState.get('hostBuffers').pointSizes,
                 stateWithColor,
-                function (curPoints, pointSizes, renderState) {
+                settingsChanges,
+                function (curPoints, pointSizes, renderState, settingsChange) {
                     return {renderTag: Date.now(),
                             camera: camera,
                             curPoints: curPoints,
                             pointSizes: pointSizes,
+                            settingsChange: settingsChange,
                             renderState: renderState};
                 });
         })
@@ -645,7 +647,6 @@ function createControls(socket) {
         var la = controls[0];
 
         _.each(la.params, function (param) {
-            console.log('param: ', param);
             makeControl(param, 'layout');
         });
 
@@ -655,7 +656,7 @@ function createControls(socket) {
                 name: 'pointSize',
                 prettyName: 'Point Size',
                 type: 'discrete',
-                value: 10.0,
+                value: 50.0,
                 step: 1,
                 max: 100.0,
                 min: 1
@@ -730,12 +731,19 @@ function showGrid(frame) {
     $inspector.empty().append(grid.render().el).css({visibility: 'visible'});
 }
 
-function setLocalSetting(name, val, renderState, settingsChanges) {
+function toLog(minPos, maxPos, minVal, maxVal, pos) {
+    var logMinVal = Math.log(minVal);
+    var logMaxVal = Math.log(maxVal);
+    var scale = (logMaxVal - logMinVal) / (maxPos - minPos);
+    return Math.exp(logMinVal + scale * (pos - minPos));
+}
+
+function setLocalSetting(name, pos, renderState, settingsChanges) {
     var camera = renderState.get('camera');
-    val = val / 10;
+    var val = 0;
 
     if (name === 'pointSize') {
-        console.log('Setting point scaling to: ', val);
+        val = toLog(1, 100, 0.1, 10, pos);
         camera.setPointScaling(val);
     }
 
@@ -762,7 +770,7 @@ function init(socket, $elt, renderState, vboUpdates, urlParams) {
     });
 
     var marquee = setupMarquee(turnOnMarquee, renderState);
-    var settingsChanges = new Rx.Subject();
+    var settingsChanges = new Rx.ReplaySubject(1);
     settingsChanges.onNext({});
 
     var colors = colorpicker($('#foregroundColor'), $('#backgroundColor'), socket);

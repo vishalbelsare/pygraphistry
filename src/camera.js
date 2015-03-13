@@ -99,7 +99,6 @@
     }
 
     Camera2d.prototype.setPointScaling = function(value) {
-        console.log('Setting point scaling to: ', value);
         this.pointScaling = value;
     };
 
