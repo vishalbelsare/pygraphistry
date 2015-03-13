@@ -350,7 +350,7 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
     var res = new Rx.ReplaySubject(1);
     res.onNext(OFF);
 
-    var $marquee = $('#marqueerectangle i.selectable');
+    var $marquee = $('#marqueerectangle i.fa');
 
     interaction.setupMousemove($eventTarget, renderState, textures)
         .filter(function () { return !$marquee.hasClass('toggle-on'); })
@@ -424,7 +424,7 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
     var camera = renderState.get('camera');
     var canvas = renderState.get('canvas');
 
-    var $marquee = $('#marqueerectangle i.selectable');
+    var $marquee = $('#marqueerectangle i.fa');
 
     //pan/zoom
     //Observable Event
@@ -542,21 +542,10 @@ function makeMouseSwitchboard() {
 
     var mouseElts = $('#marqueerectangle');
 
-    //$DOM * Observable DOM -> ()
-    //Highlight selected mouse menu button and disable rest
-    var mouseSwitchboard = function (onElt) {
-        mouseElts.each(function () {
-            debug('toggle', this.id, onElt.id, this.id===onElt.id);
-            $(this)[this.id === onElt.id ? 'addClass' : 'removeClass']('on');
-        });
-    };
-
     var onElt = Rx.Observable.merge.apply(Rx.Observable,
             mouseElts.get().map(function (elt) {
                 return Rx.Observable.fromEvent(elt, 'click').map(_.constant(elt));
             }));
-
-    onElt.subscribe(mouseSwitchboard, makeErrorHandler('mouseSwitchboard'));
 
     return onElt;
 }

@@ -25,7 +25,7 @@ var renderer = require('./renderer');
  */
 function setupDrag($eventTarget, camera) {
 
-    var $marquee = $('#marqueerectangle i.selectable');
+    var $marquee = $('#marqueerectangle i.fa');
 
     return $eventTarget.mousedownAsObservable()
         .filter(function () { return !$marquee.hasClass('toggle-on'); })
