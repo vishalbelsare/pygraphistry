@@ -70,7 +70,7 @@ var uberControls = {
         {
             algo: EdgeBundling,
             params: {
-                charge: new ContinuousParam('Charge', -0.000029360001841802474, -0.0001, 0),
+                charge: new ContinuousParam('Charge', -0.00000, -0.0001, 0),
                 gravity: new ContinuousParam('Gravity', 0.020083175556898723, 0, 0.1),
                 springStrength: new ContinuousParam('Spring Strength', 5.2921, 0, 6),
                 springDistance: new ContinuousParam('Spring Distance', 0.0001, 0, 0.001),
