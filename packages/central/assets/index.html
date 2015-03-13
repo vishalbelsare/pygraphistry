@@ -59,6 +59,11 @@ var TITLES = {
         title: 'Epinions Trust Relationships',
         nodes: 'Users',
         edges: 'Trust relationship'
+    },
+    Twitter: {
+        title: 'Network of Twitter Fake Accounts',
+        nodes: 'Accounts',
+        edges: 'Follow relationship'
     }
 };
 for (var i in TITLES) {
@@ -185,18 +190,19 @@ window.onload = pinger;
         <span>
             <input id="dataset" list="datasets" type="text" size="64" name="url" value="Miserables" />
             <datalist id="datasets">
+                <option value="Amazon">
+                <option value="Enron">
+                <option value="Epinions">
                 <option value="Facebook">
+                <option value="Gnutella">
                 <option value="Miserables">
                 <option value="NetflowSmall">
                 <option value="NetflowMedium">
                 <option value="NetflowLarge">
                 <option value="NetflowHuge">
-                <option value="Enron">
                 <option value="Oregon">
+                <option value="Twitter">
                 <option value="Wikivotes">
-                <option value="Amazon">
-                <option value="Gnutella">
-                <option value="Epinions">
             </datalist>
         </span>
         <!--
