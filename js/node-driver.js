@@ -338,6 +338,8 @@ function create(dataset) {
 function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, programNames) {
 
     bufferVersions = bufferVersions || _.object(bufferNames.map(function (name) { return [name, -1]}));
+    var bufferByteLengths = _.pick(fetchBufferByteLengths(graph, renderConfig),
+                                          bufferNames)
 
     var neededBuffers =
         bufferNames.filter(function (name) {
@@ -401,8 +403,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
             return {
                 compressed: buffers,
                 elements: _.pick(fetchNumElements(graph, renderConfig), programNames),
-                bufferByteLengths: _.pick(fetchBufferByteLengths(graph, renderConfig),
-                                          bufferNames),
+                bufferByteLengths:bufferByteLengths,
                 versions: versions
             };
 
