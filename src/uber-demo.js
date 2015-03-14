@@ -416,7 +416,7 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
 }
 
 
-function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
+function setupDragHoverInteractions($eventTarget, renderState, bgColor, settingsChanges) {
     //var currentState = renderState;
 
     var stateStream = new Rx.Subject();
@@ -490,11 +490,13 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor) {
                 renderState.get('hostBuffers').curPoints,
                 renderState.get('hostBuffers').pointSizes,
                 stateWithColor,
-                function (curPoints, pointSizes, renderState) {
+                settingsChanges,
+                function (curPoints, pointSizes, renderState, settingsChange) {
                     return {renderTag: Date.now(),
                             camera: camera,
                             curPoints: curPoints,
                             pointSizes: pointSizes,
+                            settingsChange: settingsChange,
                             renderState: renderState};
                 });
         })
@@ -553,6 +555,13 @@ function makeMouseSwitchboard() {
     return onElt;
 }
 
+function toggleLogo($cont, urlParams) {
+    if ((urlParams.logo || '').toLowerCase() === 'false') {
+
+        $cont.toggleClass('disabled', true);
+    }
+}
+
 function createLegend($elt, urlParams) {
     if (!urlParams.legend) {
         return;
@@ -595,61 +604,83 @@ function createControls(socket) {
             }
         });
 
+    var makeControl = function (param, type) {
+        var $input;
+        if (param.type === 'continuous') {
+            $input = $('<input>').attr({
+                class: type + '-menu-slider menu-slider',
+                id: param.name,
+                type: 'text',
+                'data-slider-id': param.name + 'Slider',
+                'data-slider-min': 0,
+                'data-slider-max': 100,
+                'data-slider-step': 1,
+                'data-slider-value': param.value
+            }).data('param', param);
+        } else if (param.type === 'discrete') {
+            $input = $('<input>').attr({
+                class: type + '-menu-slider menu-slider',
+                id: param.name,
+                type: 'text',
+                'data-slider-id': param.name + 'Slider',
+                'data-slider-min': param.min,
+                'data-slider-max': param.max,
+                'data-slider-step': param.step,
+                'data-slider-value': param.value
+            }).data('param', param);
+
+        } else if (param.type === 'bool') {
+            $input = $('<input>').attr({
+                id: param.name,
+                type: 'checkbox',
+                checked: param.value
+            }).data('param', param);
+        } else {
+            console.warn('Ignoring param of unknown type', param);
+            $input = $('<div>').text('Unknown setting type' + param.type);
+        }
+        var $col = $('<div>').addClass('col-xs-9').append($input);
+        var $label = $('<label>').attr({
+            for: param.name,
+            class: 'control-label col-xs-3',
+        }).text(param.prettyName);
+
+        var $entry = $('<div>').addClass('form-group').append($label, $col);
+
+        $anchor.append($entry);
+    };
+
     var $anchor = $('#renderingItems').children('.form-horizontal').empty();
     rxControls.subscribe(function (controls) {
+        // Setup layout controls
         // Assuming a single layout algorithm for now
         var la = controls[0];
 
         _.each(la.params, function (param) {
-            var $input;
-            if (param.type === 'continuous') {
-                $input = $('<input>').attr({
-                    class: 'menu-slider',
-                    id: param.name,
-                    type: 'text',
-                    'data-slider-id': param.name + 'Slider',
-                    'data-slider-min': 0,
-                    'data-slider-max': 100,
-                    'data-slider-step': 1,
-                    'data-slider-value': param.value
-                }).data('param', param);
-            } else if (param.type === 'discrete') {
-                $input = $('<input>').attr({
-                    class: 'menu-slider',
-                    id: param.name,
-                    type: 'text',
-                    'data-slider-id': param.name + 'Slider',
-                    'data-slider-min': param.min,
-                    'data-slider-max': param.max,
-                    'data-slider-step': param.step,
-                    'data-slider-value': param.value
-                }).data('param', param);
-
-            } else if (param.type === 'bool') {
-                $input = $('<input>').attr({
-                    id: param.name,
-                    type: 'checkbox',
-                    checked: param.value
-                }).data('param', param);
-            } else {
-                console.warn('Ignoring param of unknown type', param);
-                $input = $('<div>').text('Unknown setting type' + param.type);
-            }
-            var $col = $('<div>').addClass('col-xs-9').append($input);
-            var $label = $('<label>').attr({
-                for: param.name,
-                class: 'control-label col-xs-3',
-            }).text(param.prettyName);
-
-            var $entry = $('<div>').addClass('form-group').append($label, $col);
-
-            $anchor.append($entry);
+            makeControl(param, 'layout');
         });
 
+        // Setup client side controls.
+        var localParams = [
+            {
+                name: 'pointSize',
+                prettyName: 'Point Size',
+                type: 'discrete',
+                value: 50.0,
+                step: 1,
+                max: 100.0,
+                min: 1
+            }
+        ];
+
+        _.each(localParams, function (param) {
+            makeControl(param, 'local');
+        });
     }, makeErrorHandler('createControls'));
 
     return rxControls;
 }
+
 
 function setupInspector(socket, marquee) {
     var InspectData = Backbone.Model.extend({});
@@ -662,7 +693,7 @@ function setupInspector(socket, marquee) {
     }).filter(function (reply) { return reply && reply.success; })
     .map(function (data) {
         if (data && data.success) {
-            debug('Inspect Header', data.header)
+            debug('Inspect Header', data.header);
             var columns = [{
                 name: '_title', // The key of the model attribute
                 label: 'Node', // The name to display in the header
@@ -691,11 +722,12 @@ function setupInspector(socket, marquee) {
         .map(function (reply) {
             return {frame: reply.frame, columns: columns};
         }).subscribe(function (data) {
-            debug('Inspect event', data)
+            debug('Inspect event', data);
             showGrid(InspectData, data.columns, data.frame);
         }, makeErrorHandler('fetch data for inspector'));
     }).subscribe(_.identity, makeErrorHandler('fetch inspectHeader'));
 }
+
 
 function showGrid(model, columns, frame) {
     var $inspector = $('#inspector');
@@ -724,15 +756,32 @@ function showGrid(model, columns, frame) {
     $inspector.empty().append(grid.render().el).css({visibility: 'visible'});
 }
 
-/*function showPagingGrid(frame) {
-    var DataFrame = Backbone.PageableCollection.extend({
-        model: InspectData
-    });
-}*/
+
+function toLog(minPos, maxPos, minVal, maxVal, pos) {
+    var logMinVal = Math.log(minVal);
+    var logMaxVal = Math.log(maxVal);
+    var scale = (logMaxVal - logMinVal) / (maxPos - minPos);
+    return Math.exp(logMinVal + scale * (pos - minPos));
+}
+
+
+function setLocalSetting(name, pos, renderState, settingsChanges) {
+    var camera = renderState.get('camera');
+    var val = 0;
+
+    if (name === 'pointSize') {
+        val = toLog(1, 100, 0.1, 10, pos);
+        camera.setPointScaling(val);
+    }
+
+    settingsChanges.onNext({name: name, val: val});
+}
+
 
 // ... -> Observable renderState
 function init(socket, $elt, renderState, vboUpdates, urlParams) {
     createLegend($('#graph-legend'), urlParams);
+    toggleLogo($('.logo-container'), urlParams);
 
     poi = poiLib(socket);
 
@@ -750,25 +799,21 @@ function init(socket, $elt, renderState, vboUpdates, urlParams) {
     var marquee = setupMarquee(turnOnMarquee, renderState);
     setupInspector(socket, marquee);
 
+    var settingsChanges = new Rx.ReplaySubject(1);
+    settingsChanges.onNext({});
+
     var colors = colorpicker($('#foregroundColor'), $('#backgroundColor'), socket);
-    var renderStateUpdates = setupDragHoverInteractions($elt, renderState, colors.backgroundColor);
-
-
+    var renderStateUpdates = setupDragHoverInteractions($elt, renderState, colors.backgroundColor, settingsChanges);
 
     shortestpaths($('#shortestpath'), poi, socket);
 
-    //trigger animation on server
-    //socket.emit('interaction', {layout: true, play: true});
-
     $('#timeSlider').rangeSlider({
-         bounds: {min: 0, max: 100},
-         arrows: false,
-         defaultValues: {min: 0, max: 30},
-         valueLabels: 'hide', //show, change, hide
-         //wheelMode: 'zoom'
-      });
-
-
+        bounds: {min: 0, max: 100},
+        arrows: false,
+        defaultValues: {min: 0, max: 30},
+        valueLabels: 'hide', //show, change, hide
+        //wheelMode: 'zoom'
+    });
 
     var timeSlide = new Rx.Subject();
     //FIXME: replace $OLD w/ browserfied jquery+jqrangeslider
@@ -787,6 +832,7 @@ function init(socket, $elt, renderState, vboUpdates, urlParams) {
         })
         .subscribe(_.identity, makeErrorHandler('timeSlide'));
 
+
     createControls(socket).subscribe(function () {
         $('#renderingItems').find('[type=checkbox]').each(function () {
             var input = this;
@@ -800,6 +846,7 @@ function init(socket, $elt, renderState, vboUpdates, urlParams) {
         });
 
         $('.menu-slider').each(function () {
+            var $that = $(this);
             var $slider = $(this).bootstrapSlider({});
             var param = $slider.data('param');
 
@@ -810,13 +857,21 @@ function init(socket, $elt, renderState, vboUpdates, urlParams) {
             .sample(50)
             .subscribe(
                 function () {
-                    sendLayoutSetting(socket, param.algoName,
+                    if ($that.hasClass('layout-menu-slider')) {
+                        sendLayoutSetting(socket, param.algoName,
                                     param.name, Number($slider.val()));
+                    } else if ($that.hasClass('local-menu-slider')) {
+                        setLocalSetting(param.name, Number($slider.val()), renderState, settingsChanges);
+                    }
                 },
                 makeErrorHandler('menu slider')
             );
         });
+
+
+
     }, makeErrorHandler('bad controls'));
+
 
     Rx.Observable.zip(
         marquee.drags,
@@ -836,7 +891,7 @@ function init(socket, $elt, renderState, vboUpdates, urlParams) {
 
     var doneLoading = vboUpdates.filter(function (update) {
         return update === 'rendered';
-    }).take(1).do(ui.hideSpinnerShowBody).delay(600);
+    }).take(1).do(ui.hideSpinnerShowBody).delay(700);
 
     var numTicks = urlParams.play !== undefined ? urlParams.play : 5000;
 
