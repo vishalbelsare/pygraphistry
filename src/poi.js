@@ -180,7 +180,7 @@ function createLabelDom(labelObj) {
         $cont.addClass('graph-label-default');
         $title = $('<span>').addClass('graph-label-title').append($pin).append(' ' + labelObj.title);
         var $table= $('<table>');
-        labelObj.rows.forEach(function (pair) {
+        labelObj.columns.forEach(function (pair) {
             var $row = $('<tr>').addClass('graph-label-pair');
             var $key = $('<td>').addClass('graph-label-key').text(pair[0]);
             var val = pair[1];

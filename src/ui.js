@@ -15,6 +15,7 @@ exports.error = function() {
             .append($icon, $text)
             .click(function() { $(this).slideUp(); });
 
+        $('.load-spinner').hide();
         $('.status-bar')
             .append($msg)
             .css('visibility', 'visible');

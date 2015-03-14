@@ -7,6 +7,9 @@ var $       = window.$;
 var Rx      = require('rx');
               require('./rx-jquery-stub');
 var _       = require('underscore');
+var Backbone = require('backbone');
+    Backbone.$ = $;
+var Backgrid = require('backgrid');
 
 var interaction     = require('./interaction.js');
 var renderer        = require('./renderer');
@@ -648,20 +651,53 @@ function createControls(socket) {
     return rxControls;
 }
 
-function setupInspector(inspections) {
-    inspections.do(function (data) {
-        debug('got insepcting event');
-        if (data && data.success) {
-            showGrid(data.frame);
-        } else {
-            console.error('Server error on inspect', data.error);
+function setupInspector(socket, marquee) {
+    var InspectData = Backbone.Model.extend({});
+
+    Rx.Observable.fromCallback(socket.emit, socket)('inspect_header', null)
+    .do(function (reply) {
+        if (!reply || !reply.success) {
+            console.error('Server error on inspectHeader', (reply||{}).error);
         }
-    }).subscribe(_.identity, makeErrorHandler('inspector error'));
+    }).filter(function (reply) { return reply && reply.success; })
+    .map(function (data) {
+        if (data && data.success) {
+            debug('Inspect Header', data.header)
+            var columns = [{
+                name: '_title', // The key of the model attribute
+                label: 'Node', // The name to display in the header
+                cell: 'string',
+                editable: false,
+            }].concat(_.map(_.without(data.header, '_title'), function (key) {
+                return {
+                    name: key,
+                    label: key,
+                    cell: 'string',
+                    editable: false,
+                };
+            }));
+            return columns;
+        } else {
+            console.error('Server error on inspectHeader', data.error);
+        }
+    }).do(function (columns) {
+        marquee.selections.flatMap(function (sel) {
+            return Rx.Observable.fromCallback(socket.emit, socket)('inspect', sel);
+        }).do(function (reply) {
+            if (!reply || !reply.success) {
+                console.error('Server error on inspect', (reply||{}).error);
+            }
+        }).filter(function (reply) { return reply && reply.success; })
+        .map(function (reply) {
+            return {frame: reply.frame, columns: columns};
+        }).subscribe(function (data) {
+            debug('Inspect event', data)
+            showGrid(InspectData, data.columns, data.frame);
+        }, makeErrorHandler('fetch data for inspector'));
+    }).subscribe(_.identity, makeErrorHandler('fetch inspectHeader'));
 }
 
-function showGrid(frame) {
-    var Backgrid = window.Backgrid;
-    var Backbone = window.Backbone;
+function showGrid(model, columns, frame) {
     var $inspector = $('#inspector');
 
     if (frame.length === 0) {
@@ -669,33 +705,13 @@ function showGrid(frame) {
         return;
     }
 
-    var entry0 = frame[0];
-    var columns = [{
-        name: 'title', // The key of the model attribute
-        label: 'Node', // The name to display in the header
-        cell: 'string',
-        editable: false,
-    }].concat(_.map(entry0.rows, function (pair) {
-        return {
-            name: pair[0],
-            label: pair[0],
-            cell: 'string',
-            editable: false,
-        };
-    }));
-
-    debug('columns', columns);
-
-    var DataModel = Backbone.Model.extend({});
-
     var DataFrame = Backbone.Collection.extend({
-        model: DataModel,
+        model: model,
     });
 
     var data = new DataFrame();
     _.each(frame, function (entry) {
-        var t = _.extend({title: entry.title}, _.object(entry.rows));
-        data.add(t);
+        data.add(entry);
     });
 
     // Initialize a new Grid instance
@@ -707,6 +723,12 @@ function showGrid(frame) {
     // Render the grid and attach the root to your HTML document
     $inspector.empty().append(grid.render().el).css({visibility: 'visible'});
 }
+
+/*function showPagingGrid(frame) {
+    var DataFrame = Backbone.PageableCollection.extend({
+        model: InspectData
+    });
+}*/
 
 // ... -> Observable renderState
 function init(socket, $elt, renderState, vboUpdates, urlParams) {
@@ -726,9 +748,11 @@ function init(socket, $elt, renderState, vboUpdates, urlParams) {
     });
 
     var marquee = setupMarquee(turnOnMarquee, renderState);
+    setupInspector(socket, marquee);
 
     var colors = colorpicker($('#foregroundColor'), $('#backgroundColor'), socket);
     var renderStateUpdates = setupDragHoverInteractions($elt, renderState, colors.backgroundColor);
+
 
 
     shortestpaths($('#shortestpath'), poi, socket);
@@ -804,14 +828,6 @@ function init(socket, $elt, renderState, vboUpdates, urlParams) {
         var payload = {play: true, layout: true, marquee: move};
         socket.emit('interaction', payload);
     }, makeErrorHandler('marquee error'));
-
-    var inspections = new Rx.ReplaySubject(1);
-    setupInspector(inspections);
-    marquee.selections.flatMap(function (sel) {
-        return Rx.Observable.fromCallback(socket.emit, socket)('inspect', sel);
-    }).do(function (res) {
-        debug('server reply', res);
-    }).subscribe(inspections, makeErrorHandler('fetch data for inspector'));
 
 
     var $tooltips = $('[data-toggle="tooltip"]');
