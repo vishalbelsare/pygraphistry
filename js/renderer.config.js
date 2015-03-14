@@ -11,7 +11,7 @@ var debug = require('debug')('graphistry:graph-viz:driver:config');
 var util = require('./util.js');
 
 
-var STROKE_WIDTH = 1.0;
+var STROKE_WIDTH = 4.0;
 
 var programs = {
     'edgeculled': {
@@ -67,16 +67,7 @@ var programs = {
         },
         'attributes': ['curPos', 'pointSize', 'pointColor'],
         'camera': 'mvp',
-        'uniforms': ['fog', 'stroke', 'zoomScalingFactor']
-    },
-    'uberpointculled': {
-        'sources': {
-            'vertex': fs.readFileSync(__dirname + '/../shaders/uberpointculled.vertex.glsl', 'utf8').toString('ascii'),
-            'fragment': fs.readFileSync(__dirname + '/../shaders/uberpointculled.fragment.glsl', 'utf8').toString('ascii')
-        },
-        'attributes': ['curPos', 'pointSize', 'pointColor'],
-        'camera': 'mvp',
-        'uniforms': ['fog', 'stroke', 'zoomScalingFactor']
+        'uniforms': ['fog', 'stroke', 'zoomScalingFactor', 'maxPointSize']
     },
     'points': {
         'sources': {
@@ -85,16 +76,7 @@ var programs = {
         },
         'attributes': ['curPos', 'pointSize', 'pointColor'],
         'camera': 'mvp',
-        'uniforms': ['zoomScalingFactor']
-    },
-    'uberpoints': {
-        'sources': {
-            'vertex': fs.readFileSync(__dirname + '/../shaders/uberpoint.vertex.glsl', 'utf8').toString('ascii'),
-            'fragment': fs.readFileSync(__dirname + '/../shaders/uberpoint.fragment.glsl', 'utf8').toString('ascii')
-        },
-        'attributes': ['curPos', 'pointSize', 'pointColor'],
-        'camera': 'mvp',
-        'uniforms': ['zoomScalingFactor']
+        'uniforms': ['zoomScalingFactor', 'maxPointSize']
     },
     'midpoints': {
         'sources': {
@@ -332,13 +314,14 @@ var items = {
         'uniforms': {
             'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
             'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] }
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [8] }
         },
         'drawType': 'POINTS',
         'glOptions': {},
     },
     'uberpointculled': {
-        'program': 'uberpointculled',
+        'program': 'pointculled',
         'trigger': 'renderScene',
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
@@ -348,7 +331,8 @@ var items = {
         'uniforms': {
             'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
             'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] }
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [8.0] }
         },
         'drawType': 'POINTS',
         'glOptions': {},
@@ -363,7 +347,8 @@ var items = {
         'uniforms': {
             'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
             'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] }
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [8] }
         },
         'drawType': 'POINTS',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
@@ -381,7 +366,8 @@ var items = {
         'uniforms': {
             'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
             'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH] },
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] }
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [8] }
         },
         'drawType': 'POINTS',
         'glOptions': {},
@@ -396,7 +382,8 @@ var items = {
         'uniforms': {
             'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
             'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH] },
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] }
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [8] }
         },
         'drawType': 'POINTS',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
@@ -412,7 +399,8 @@ var items = {
             'pointColor':   ['vertexIndices', 'pointColor']
         },
         'uniforms': {
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] }
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50] }
         },
         'drawType': 'POINTS',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] }
@@ -425,22 +413,8 @@ var items = {
             'pointColor':   ['vertexIndices', 'pointColor']
         },
         'uniforms': {
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] }
-        },
-        'drawType': 'POINTS',
-        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
-        'renderTarget': 'hitmap',
-        'readTarget': true,
-    },
-    'uberpointpicking': {
-        'program': 'uberpoints',
-        'bindings': {
-            'curPos':       ['curPoints', 'curPos'],
-            'pointSize':    ['pointSizes', 'pointSize'],
-            'pointColor':   ['vertexIndices', 'pointColor']
-        },
-        'uniforms': {
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] }
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50] }
         },
         'drawType': 'POINTS',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
@@ -456,7 +430,8 @@ var items = {
             'pointColor':   ['vertexIndices', 'pointColor']
         },
         'uniforms': {
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] }
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50] }
         },
         'drawType': 'POINTS',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
@@ -471,7 +446,8 @@ var items = {
             'pointColor':   ['pointColors', 'pointColor']
         },
         'uniforms': {
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0]}
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0]},
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50] }
         },
         'drawType': 'POINTS',
         'glOptions': {}
@@ -531,7 +507,7 @@ var camera2D = {
 var sceneUber = {
     'options': stdOptions,
     'camera': camera2D,
-    'render': ['pointpicking', 'pointsampling', 'midedgetextured', 'edgepicking', 'uberpointculled']
+    'render': ['pointpicking',  'pointsampling', 'midedgetextured', 'edgepicking', 'uberpointculled']
 }
 
 var sceneNetflow = {
