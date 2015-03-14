@@ -350,7 +350,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
     bufferNames = neededBuffers;
 
     var now = Date.now();
-    return Rx.Observable.fromPromise(fetchVBOs(graph, renderConfig, bufferNames))
+    return Rx.Observable.fromPromise(fetchVBOs(graph, renderConfig, bufferNames, bufferByteLengths))
         .flatMap(function (vbos) {
             //metrics.info({metric: {'fetchVBOs_lastVersions': bufferVersions}});
             metrics.info({metric: {'fetchVBOs_buffers': bufferNames}});
