@@ -553,8 +553,7 @@ function makeMouseSwitchboard() {
 }
 
 function toggleLogo($cont, urlParams) {
-    if (!urlParams.logo ||
-            ((urlParams.logo || '').toLowerCase() === 'false')) {
+    if ((urlParams.logo || '').toLowerCase() === 'false') {
 
         $cont.toggleClass('disabled', true);
     }
