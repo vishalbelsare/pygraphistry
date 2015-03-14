@@ -18,46 +18,61 @@ function pickTitleField (attribs) {
 
 
 function infoFrame(graph, indices) {
-
     var offset = graph.simulator.timeSubset.pointsRange.startIdx;
     var attribs = vgloader.getAttributeMap(graph.simulator.vgraph);
 
     var titleOverride = attribs.hasOwnProperty('pointTitle');
     var maybeTitleField = pickTitleField(attribs);
 
-    return indices.map(
-        function (rawIdx) {
-            var idx = Math.max(0, Math.min(offset + rawIdx, graph.simulator.numPoints));
+    return indices.map(function (rawIdx) {
+        var idx = Math.max(0, Math.min(offset + rawIdx, graph.simulator.numPoints));
 
-            var outDegree = graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped[idx];
-            var inDegree = graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped[idx];
-            var degree = outDegree + inDegree;
+        var outDegree = graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped[idx];
+        var inDegree = graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped[idx];
+        var degree = outDegree + inDegree;
 
-            var rows = _.sortBy(
-                    _.flatten(
+        var columns = _.object(
+                _.flatten(
+                    [
                         [
-                            [
-                                ['degree', sprintf('%d (%d in, %d out)', degree, inDegree, outDegree)]
-                            ],
-                            _.keys(attribs)
-                                .filter(function (name) { return attribs[name].target === vgloader.types.VERTEX; })
-                                .filter(function (name) {
-                                    return ['pointColor', 'pointSize', 'pointTitle', 'pointLabel, degree']
-                                        .indexOf(name) === -1;
-                                })
-                                .filter(function (name) { return name !== maybeTitleField; })
-                                .map(function (name) {
-                                    return [name, attribs[name].values[idx]];
-                                })
+                            ['degree', sprintf('%d (%d in, %d out)', degree, inDegree, outDegree)],
+                            ['_title', maybeTitleField ? attribs[maybeTitleField].values[idx] : idx],
                         ],
-                        true),
-                    function (kvPair) { return kvPair[0]; });
+                        _.keys(attribs)
+                            .filter(function (name) { return attribs[name].target === vgloader.types.VERTEX; })
+                            .filter(function (name) {
+                                return ['pointColor', 'pointSize', 'pointTitle', 'pointLabel, degree']
+                                    .indexOf(name) === -1;
+                            })
+                            .filter(function (name) { return name !== maybeTitleField; })
+                            .map(function (name) {
+                                return [name, attribs[name].values[idx]];
+                            })
+                    ],
+                    true)
+                );
 
-            return {
-                title: maybeTitleField ? attribs[maybeTitleField].values[idx] : idx,
-                rows: rows,
-            };
-        });
+        return columns;
+    });
+}
+
+function frameHeader(graph) {
+    return _.sortBy(
+        _.keys(infoFrame(graph, [0])[0]),
+        _.identity
+    );
+}
+
+function defaultLabels(graph, indices) {
+    return infoFrame(graph, indices).map(function (columns) {
+        return {
+            title: columns._title,
+            columns: _.sortBy(
+                _.pairs(_.omit(columns, '_title')),
+                function (kvPair) { return kvPair[0]; }
+            ),
+        };
+    });
 }
 
 function presetLabels (graph, indices) {
@@ -73,12 +88,13 @@ function getLabels(graph, indices) {
     if (graph.simulator.labels.length) {
         return presetLabels(graph, indices);
     } else {
-        return infoFrame(graph, indices);
+        return defaultLabels(graph, indices);
     }
 }
 
 module.exports = {
     getLabels: getLabels,
-    infoFrame: infoFrame
+    infoFrame: infoFrame,
+    frameHeader: frameHeader,
 };
 
