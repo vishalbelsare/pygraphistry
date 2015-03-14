@@ -552,6 +552,14 @@ function makeMouseSwitchboard() {
     return onElt;
 }
 
+function toggleLogo($cont, urlParams) {
+    if (!urlParams.logo ||
+            ((urlParams.logo || '').toLowerCase() === 'false')) {
+
+        $cont.toggleClass('disabled', true);
+    }
+}
+
 function createLegend($elt, urlParams) {
     if (!urlParams.legend) {
         return;
@@ -755,6 +763,7 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
 // ... -> Observable renderState
 function init(socket, $elt, renderState, vboUpdates, urlParams) {
     createLegend($('#graph-legend'), urlParams);
+    toggleLogo($('.logo-container'), urlParams);
 
     poi = poiLib(socket);
 
