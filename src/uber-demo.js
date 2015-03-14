@@ -9,7 +9,9 @@ var Rx      = require('rx');
 var _       = require('underscore');
 var Backbone = require('backbone');
     Backbone.$ = $;
+    require('backbone.paginator');
 var Backgrid = require('backgrid');
+    require('backgrid-paginator');
 
 var interaction     = require('./interaction.js');
 var renderer        = require('./renderer');
@@ -723,7 +725,8 @@ function setupInspector(socket, marquee) {
             return {frame: reply.frame, columns: columns};
         }).subscribe(function (data) {
             debug('Inspect event', data);
-            showGrid(InspectData, data.columns, data.frame);
+            //showGrid(InspectData, data.columns, data.frame);
+            showPageableGrid(InspectData, data.columns, data.frame);
         }, makeErrorHandler('fetch data for inspector'));
     }).subscribe(_.identity, makeErrorHandler('fetch inspectHeader'));
 }
@@ -754,6 +757,46 @@ function showGrid(model, columns, frame) {
 
     // Render the grid and attach the root to your HTML document
     $inspector.empty().append(grid.render().el).css({visibility: 'visible'});
+}
+
+
+function showPageableGrid(model, columns, frame) {
+    var $inspector = $('#inspector');
+
+    var DataFrame = Backbone.PageableCollection.extend({
+        model: model,
+        url: '/inspect2',
+        state: {
+            pageSize: 5,
+        },
+    });
+
+    var dataFrame = new DataFrame(frame, {mode: 'client'});
+    //dataFrame.fetch({reset: true});
+
+    var grid = new Backgrid.Grid({
+        columns: columns,
+        collection: dataFrame
+    });
+
+    // Render the grid and attach the root to your HTML document
+    $inspector.empty().append(grid.render().el).css({visibility: 'visible'});
+
+    var paginator = new Backgrid.Extension.Paginator({
+        // If you anticipate a large number of pages, you can adjust
+        // the number of page handles to show. The sliding window
+        // will automatically show the next set of page handles when
+        // you click next at the end of a window.
+        windowSize: 20, // Default is 10
+
+        // Used to multiple windowSize to yield a number of pages to slide,
+        // in the case the number is 5
+        //slideScale: 0.25, // Default is 0.5
+
+        collection: dataFrame
+    });
+
+    $inspector.append(paginator.render().el);
 }
 
 
