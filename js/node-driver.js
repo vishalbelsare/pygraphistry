@@ -73,10 +73,9 @@ function getBufferVersion (graph, bufferName) {
 
 
 // ... -> {<name>: {buffer: ArrayBuffer, version: int}}
-function fetchVBOs(graph, renderConfig, bufferNames) {
+function fetchVBOs(graph, renderConfig, bufferNames, counts) {
+    var bufferSizes = fetchBufferByteLengths(counts, renderConfig);
     var targetArrays = {};
-    var bufferSizes = fetchBufferByteLengths(graph, renderConfig);
-    var counts = graphCounts(graph);
 
     var layouts = _.object(_.map(bufferNames, function (name) {
         var model = renderConfig.models[name];
@@ -134,11 +133,9 @@ function fetchVBOs(graph, renderConfig, bufferNames) {
 
 
 
-//graph -> {<itemName>: int}
+//counts -> {<itemName>: int}
 //For each render item, find a serverside model and send its count
-function fetchNumElements(graph, renderConfig) {
-
-    var counts = graphCounts(graph);
+function fetchNumElements(counts, renderConfig) {
 
     return _.object(
         _.keys(renderConfig.items)
@@ -152,15 +149,12 @@ function fetchNumElements(graph, renderConfig) {
                 var aServersideModelName = serversideModelBindings[0][0];
                 return [item, counts[aServersideModelName].num];
             }));
-
 }
 
 
-//graph -> {<model>: int}
+//counts -> {<model>: int}
 //Find num bytes needed for each model
-function fetchBufferByteLengths(graph, renderConfig) {
-
-    var counts = graphCounts(graph);
+function fetchBufferByteLengths(counts, renderConfig) {
 
     return _.chain(renderConfig.models).omit(function (model, name) {
         return rConf.isBufClientSide(model);
@@ -337,10 +331,11 @@ function create(dataset) {
  */
 function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, programNames) {
 
+    var counts = graphCounts(graph);
     bufferVersions = bufferVersions || _.object(bufferNames.map(function (name) { return [name, -1]}));
-    var bufferByteLengths = _.pick(fetchBufferByteLengths(graph, renderConfig),
-                                          bufferNames)
-
+    var bufferByteLengths = _.pick(fetchBufferByteLengths(counts, renderConfig),
+                                          bufferNames);
+    var elements = _.pick(fetchNumElements(counts, renderConfig), programNames);
     var neededBuffers =
         bufferNames.filter(function (name) {
             var clientVersion = bufferVersions[name];
@@ -350,7 +345,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
     bufferNames = neededBuffers;
 
     var now = Date.now();
-    return Rx.Observable.fromPromise(fetchVBOs(graph, renderConfig, bufferNames, bufferByteLengths))
+    return Rx.Observable.fromPromise(fetchVBOs(graph, renderConfig, bufferNames, counts))
         .flatMap(function (vbos) {
             //metrics.info({metric: {'fetchVBOs_lastVersions': bufferVersions}});
             metrics.info({metric: {'fetchVBOs_buffers': bufferNames}});
@@ -402,7 +397,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
 
             return {
                 compressed: buffers,
-                elements: _.pick(fetchNumElements(graph, renderConfig), programNames),
+                elements: elements,
                 bufferByteLengths:bufferByteLengths,
                 versions: versions
             };
