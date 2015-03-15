@@ -210,8 +210,18 @@ window.addEventListener('load', function() {
         }));
     });
 
-    var app = init($('#simulation')[0], 'graph');
+    var tag = urlParams.usertag;
+    if (tag !== undefined && tag !== '') {
+        if (window.heap) {
+            window.heap.identify({handle: tag, name: tag});
+        }
 
+        if (window.ga) {
+            window.ga('set', 'userId', tag);
+        }
+    }
+
+    var app = init($('#simulation')[0], 'graph');
     createInfoOverlay(app);
 
     function isParamTrue(param) {
