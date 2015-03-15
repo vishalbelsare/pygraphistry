@@ -315,7 +315,7 @@ var items = {
             'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
             'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [8] }
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
         },
         'drawType': 'POINTS',
         'glOptions': {},
@@ -348,7 +348,7 @@ var items = {
             'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
             'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [8] }
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
         },
         'drawType': 'POINTS',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
@@ -367,7 +367,7 @@ var items = {
             'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
             'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH] },
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [8] }
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
         },
         'drawType': 'POINTS',
         'glOptions': {},
@@ -383,7 +383,7 @@ var items = {
             'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
             'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH] },
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [8] }
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
         },
         'drawType': 'POINTS',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
@@ -400,7 +400,7 @@ var items = {
         },
         'uniforms': {
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50] }
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
         },
         'drawType': 'POINTS',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] }
@@ -414,7 +414,7 @@ var items = {
         },
         'uniforms': {
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50] }
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
         },
         'drawType': 'POINTS',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
@@ -431,7 +431,7 @@ var items = {
         },
         'uniforms': {
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50] }
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
         },
         'drawType': 'POINTS',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
@@ -447,7 +447,7 @@ var items = {
         },
         'uniforms': {
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0]},
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50] }
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
         },
         'drawType': 'POINTS',
         'glOptions': {}
