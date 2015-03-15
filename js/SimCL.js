@@ -697,6 +697,7 @@ function setTimeSubset(renderer, simulator, range) {
     //first point
     var startIdx = Math.round(renderer.numPoints * 0.01 * range.min);
 
+
     //all points before this
     var endIdx = Math.round((renderer.numPoints) * (0.01 * range.max));
 
@@ -737,15 +738,15 @@ function setTimeSubset(renderer, simulator, range) {
     simulator.timeSubset =
         {relRange: range, //%
          pointsRange:       {startIdx: startIdx, len: numPoints},
-         edgeRange:         {startIdx: startEdgeIdx, len: numEdges},
+         edgeRange:         {startIdx: startEdgeIdx * 2, len: numEdges * 2},
          midPointsRange:    {
-                startIdx: startIdx      * numSplits,
-                len: numPoints          * numSplits},
+                startIdx: startEdgeIdx *  numSplits,
+                len: numEdges          *  numSplits},
          midEdgeRange:      {
-                startIdx: startEdgeIdx  * (1 + numSplits),
-                len: numEdges           * (1 + numSplits)}};
+                startIdx: startEdgeIdx * 2 * (1 + numSplits),
+                len: numEdges * 2          * (1 + numSplits)}};
 
-    debug('subset args', {numPoints: renderer.numPoints, numEdges: renderer.numEdges, startEdgeIdx: startEdgeIdx, endIdx: endIdx, endEdgeIdx: endEdgeIdx});
+    debug('subset args', {numPoints: renderer.numPoints, numEdges: renderer.numEdges, startEdgeIdx: startEdgeIdx, endIdx: endIdx, endEdgeIdx: endEdgeIdx, numSplits:numSplits});
     debug('subset', simulator.timeSubset);
 
 

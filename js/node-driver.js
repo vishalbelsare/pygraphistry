@@ -43,15 +43,16 @@ function graphCounts(graph) {
     var offsetMidEdges  = graph.simulator.timeSubset.midEdgeRange.startIdx;
 
     var point       = {num: numPoints,      offset: offsetPoint};
-    var edge        = {num: numEdges * 2,       offset: offsetMidEdges};
+    var pointColors = {num: numPoints,      offset: offsetPoint};
+    var edge        = {num: numEdges,       offset: offsetEdge};
     var midPoint    = {num: numMidPoints,   offset: offsetMidPoints};
-    var midEdge     = {num: numMidEdges * 2,    offset: offsetMidEdges};
+    var midEdge     = {num: numMidEdges,    offset: offsetMidEdges};
 
     return {
         curPoints: point,
         springsPos: edge,
         pointSizes: point,
-        pointColors: point,
+        pointColors: pointColors,
         edgeColors: edge,
         curMidPoints: midPoint,
         midSpringsPos: midEdge,
@@ -105,10 +106,11 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                 };
 
                 debug('Reading device buffer %s, stride %d', name, stride);
+
                 return graph.simulator.buffers[name].read(
                     new Float32Array(targetArrays[name].buffer),
-                    counts[name].offset * stride,
-                    counts[name].num * stride);
+                        counts[name].offset * stride,
+                        counts[name].num * stride);
             })
         ).then(function () {
             _.each(hostBufs, function (layout, name) {
@@ -119,11 +121,16 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                     throw new Error('missing buffersLocal base buffer: ' + name);
                 }
 
+                var localBuffer = graph.simulator.buffersLocal[name];
+                var bytes_per_element = localBuffer.BYTES_PER_ELEMENT;
+
+                // This will create another array (of type buffersLocal[name]) on top
+                // of the exisiting array
                 targetArrays[name] = {
-                    buffer: new graph.simulator.buffersLocal[name].constructor(
-                        graph.simulator.buffersLocal[name],
-                        counts[name].offset * stride,
-                        counts[name].num * stride),
+                    buffer: new localBuffer.constructor(
+                        localBuffer.buffer,
+                        counts[name].offset * bytes_per_element,
+                        counts[name].num),
                     version: graph.simulator.versions.buffers[name]
                 };
             });
