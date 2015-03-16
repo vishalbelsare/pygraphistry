@@ -43,15 +43,16 @@ function graphCounts(graph) {
     var offsetMidEdges  = graph.simulator.timeSubset.midEdgeRange.startIdx;
 
     var point       = {num: numPoints,      offset: offsetPoint};
-    var edge        = {num: numEdges * 2,       offset: offsetMidEdges};
+    var pointColors = {num: numPoints,      offset: offsetPoint};
+    var edge        = {num: numEdges,       offset: offsetEdge};
     var midPoint    = {num: numMidPoints,   offset: offsetMidPoints};
-    var midEdge     = {num: numMidEdges * 2,    offset: offsetMidEdges};
+    var midEdge     = {num: numMidEdges,    offset: offsetMidEdges};
 
     return {
         curPoints: point,
         springsPos: edge,
         pointSizes: point,
-        pointColors: point,
+        pointColors: pointColors,
         edgeColors: edge,
         curMidPoints: midPoint,
         midSpringsPos: midEdge,
@@ -73,10 +74,9 @@ function getBufferVersion (graph, bufferName) {
 
 
 // ... -> {<name>: {buffer: ArrayBuffer, version: int}}
-function fetchVBOs(graph, renderConfig, bufferNames) {
+function fetchVBOs(graph, renderConfig, bufferNames, counts) {
+    var bufferSizes = fetchBufferByteLengths(counts, renderConfig);
     var targetArrays = {};
-    var bufferSizes = fetchBufferByteLengths(graph, renderConfig);
-    var counts = graphCounts(graph);
 
     var layouts = _.object(_.map(bufferNames, function (name) {
         var model = renderConfig.models[name];
@@ -106,10 +106,11 @@ function fetchVBOs(graph, renderConfig, bufferNames) {
                 };
 
                 debug('Reading device buffer %s, stride %d', name, stride);
+
                 return graph.simulator.buffers[name].read(
                     new Float32Array(targetArrays[name].buffer),
-                    counts[name].offset * stride,
-                    counts[name].num * stride);
+                        counts[name].offset * stride,
+                        counts[name].num * stride);
             })
         ).then(function () {
             _.each(hostBufs, function (layout, name) {
@@ -120,11 +121,16 @@ function fetchVBOs(graph, renderConfig, bufferNames) {
                     throw new Error('missing buffersLocal base buffer: ' + name);
                 }
 
+                var localBuffer = graph.simulator.buffersLocal[name];
+                var bytes_per_element = localBuffer.BYTES_PER_ELEMENT;
+
+                // This will create another array (of type buffersLocal[name]) on top
+                // of the exisiting array
                 targetArrays[name] = {
-                    buffer: new graph.simulator.buffersLocal[name].constructor(
-                        graph.simulator.buffersLocal[name],
-                        counts[name].offset * stride,
-                        counts[name].num * stride),
+                    buffer: new localBuffer.constructor(
+                        localBuffer.buffer,
+                        counts[name].offset * bytes_per_element,
+                        counts[name].num),
                     version: graph.simulator.versions.buffers[name]
                 };
             });
@@ -134,11 +140,9 @@ function fetchVBOs(graph, renderConfig, bufferNames) {
 
 
 
-//graph -> {<itemName>: int}
+//counts -> {<itemName>: int}
 //For each render item, find a serverside model and send its count
-function fetchNumElements(graph, renderConfig) {
-
-    var counts = graphCounts(graph);
+function fetchNumElements(counts, renderConfig) {
 
     return _.object(
         _.keys(renderConfig.items)
@@ -152,15 +156,12 @@ function fetchNumElements(graph, renderConfig) {
                 var aServersideModelName = serversideModelBindings[0][0];
                 return [item, counts[aServersideModelName].num];
             }));
-
 }
 
 
-//graph -> {<model>: int}
+//counts -> {<model>: int}
 //Find num bytes needed for each model
-function fetchBufferByteLengths(graph, renderConfig) {
-
-    var counts = graphCounts(graph);
+function fetchBufferByteLengths(counts, renderConfig) {
 
     return _.chain(renderConfig.models).omit(function (model, name) {
         return rConf.isBufClientSide(model);
@@ -337,8 +338,11 @@ function create(dataset) {
  */
 function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, programNames) {
 
+    var counts = graphCounts(graph);
     bufferVersions = bufferVersions || _.object(bufferNames.map(function (name) { return [name, -1]}));
-
+    var bufferByteLengths = _.pick(fetchBufferByteLengths(counts, renderConfig),
+                                          bufferNames);
+    var elements = _.pick(fetchNumElements(counts, renderConfig), programNames);
     var neededBuffers =
         bufferNames.filter(function (name) {
             var clientVersion = bufferVersions[name];
@@ -348,7 +352,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
     bufferNames = neededBuffers;
 
     var now = Date.now();
-    return Rx.Observable.fromPromise(fetchVBOs(graph, renderConfig, bufferNames))
+    return Rx.Observable.fromPromise(fetchVBOs(graph, renderConfig, bufferNames, counts))
         .flatMap(function (vbos) {
             //metrics.info({metric: {'fetchVBOs_lastVersions': bufferVersions}});
             metrics.info({metric: {'fetchVBOs_buffers': bufferNames}});
@@ -400,9 +404,8 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
 
             return {
                 compressed: buffers,
-                elements: _.pick(fetchNumElements(graph, renderConfig), programNames),
-                bufferByteLengths: _.pick(fetchBufferByteLengths(graph, renderConfig),
-                                          bufferNames),
+                elements: elements,
+                bufferByteLengths:bufferByteLengths,
                 versions: versions
             };
 

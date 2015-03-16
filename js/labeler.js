@@ -35,7 +35,7 @@ function infoFrame(graph, indices) {
                 _.flatten(
                     [
                         [
-                            ['degree', sprintf('%d (%d in, %d out)', degree, inDegree, outDegree)],
+                            ['degree', sprintf('%s (%s in, %s out)', degree, inDegree, outDegree)],
                             ['_title', maybeTitleField ? attribs[maybeTitleField].values[idx] : idx],
                         ],
                         _.keys(attribs)

@@ -119,7 +119,7 @@ function decode0(graph, vg, metadata)  {
     var yObj = _.find(vg.double_vectors, function (o) { return o.name === 'y'; });
 
     // Load vertices from protobuf Vertex message
-    if (false && xObj && yObj) {
+    if (xObj && yObj) {
         debug('Loading previous vertices from xObj');
         for (var i = 0; i < vg.nvertices; i++) {
             vertices.push([xObj.values[i], yObj.values[i]]);

@@ -209,6 +209,24 @@ function setEdgesAndColors(graph, edges, edgeColors) {
     });
 }
 
+
+// Uint32Array * Float32Array -> Float32Array
+function scatterEdgePos(edges, curPos) {
+    var res = new Float32Array(edges.length * 2);
+
+    for (var edge = 0; edge < edges.length/2; edge++) {
+        var src = edges[2 * edge];
+        var dst = edges[2 * edge + 1];
+
+        res[4 * edge] = curPos[2 * src];
+        res[4 * edge + 1] = curPos[2 * src + 1];
+        res[4 * edge + 2] = curPos[2 * dst];
+        res[4 * edge + 3] = curPos[2 * dst + 1];
+    }
+
+    return res;
+}
+
 var setEdges = Q.promised(function(graph, edges) {
     debug("Loading Edges")
     if (edges.length < 1)
@@ -397,10 +415,13 @@ var setEdges = Q.promised(function(graph, edges) {
             }
         }
     }
+
+    var endPoints = scatterEdgePos(edges, graph.__pointsHostBuffer);
+
     console.info('Dataset    nodes:%d  edges:%d  splits:%d',
                 graph.simulator.numPoints, edges.length, numSplits);
 
-    return graph.simulator.setEdges(forwardEdges, backwardsEdges, degrees, midPoints)
+    return graph.simulator.setEdges(forwardEdges, backwardsEdges, degrees, midPoints, endPoints)
     .then(function() {
         return graph;
     }).fail(util.makeErrorHandler('Failure in setEdges'));
