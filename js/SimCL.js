@@ -504,7 +504,7 @@ function setLabels(simulator, labels) {
  * @param {Float32Array} midPoints - dense array of control points (packed sequence of nDim structs)
  * @returns {Q.promise} a promise for the simulator object
  */
-function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, degrees, midPoints) {
+function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, degrees, midPoints, endPoints) {
     //edges, workItems
     var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
     var elementsPerWorkItem = 4;
@@ -623,6 +623,11 @@ function setEdges(renderer, simulator, forwardsEdges, backwardsEdges, degrees, m
         simulator.buffers.midSpringsPos = midSpringsBuffer;
         simulator.buffers.curMidPoints = midPointsBuf;
         simulator.buffers.midSpringsColorCoord = midSpringsColorCoordBuffer;
+    })
+    .then(function () {
+        return Q.all([
+            simulator.buffers.springsPos.write(endPoints)
+        ]);
     })
     .then( function () {
         return Q.all(
