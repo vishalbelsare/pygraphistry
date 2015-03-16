@@ -755,7 +755,12 @@ function setCamera(state) {
 
     //HACK: we should have line shaders, and pass this as a uniform
     if (numVertices !== undefined) {
-        gl.lineWidth(camera.semanticZoomEdges(numVertices));
+        // HACK: Checking if uber/geo. Should be handled as uniform
+        if (config.items.midedgetextured) {
+            gl.lineWidth(2);
+        } else {
+            gl.lineWidth(camera.semanticZoomEdges(numVertices));
+        }
     }
 
     _.each(config.programs, function(programConfig, programName) {
