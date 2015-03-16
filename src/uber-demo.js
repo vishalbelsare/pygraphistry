@@ -9,7 +9,9 @@ var Rx      = require('rx');
 var _       = require('underscore');
 var Backbone = require('backbone');
     Backbone.$ = $;
+    require('backbone.paginator');
 var Backgrid = require('backgrid');
+    require('backgrid-paginator');
 
 var interaction     = require('./interaction.js');
 var renderer        = require('./renderer');
@@ -682,7 +684,7 @@ function createControls(socket) {
 }
 
 
-function setupInspector(socket, marquee) {
+function setupInspector(socket, workerUrl, marquee) {
     var InspectData = Backbone.Model.extend({});
 
     Rx.Observable.fromCallback(socket.emit, socket)('inspect_header', null)
@@ -713,17 +715,15 @@ function setupInspector(socket, marquee) {
         }
     }).do(function (columns) {
         marquee.selections.flatMap(function (sel) {
-            return Rx.Observable.fromCallback(socket.emit, socket)('inspect', sel);
+            return Rx.Observable.fromCallback(socket.emit, socket)('set_selection', sel);
         }).do(function (reply) {
             if (!reply || !reply.success) {
-                console.error('Server error on inspect', (reply||{}).error);
+                console.error('Server error on set_selection', (reply||{}).error);
             }
         }).filter(function (reply) { return reply && reply.success; })
-        .map(function (reply) {
-            return {frame: reply.frame, columns: columns};
-        }).subscribe(function (data) {
-            debug('Inspect event', data);
-            showGrid(InspectData, data.columns, data.frame);
+        .subscribe(function (reply) {
+            debug('Setting up PageableCollection of size', reply.count);
+            showPageableGrid(workerUrl, InspectData, columns, reply.count);
         }, makeErrorHandler('fetch data for inspector'));
     }).subscribe(_.identity, makeErrorHandler('fetch inspectHeader'));
 }
@@ -757,6 +757,46 @@ function showGrid(model, columns, frame) {
 }
 
 
+function showPageableGrid(workerUrl, model, columns, count) {
+    var $inspector = $('#inspector');
+
+    var DataFrame = Backbone.PageableCollection.extend({
+        model: model,
+        url: workerUrl + '/read_selection',
+        state: {
+            pageSize: 5,
+            totalRecords: count,
+        },
+    });
+
+    var dataFrame = new DataFrame([], {mode: 'server'});
+    dataFrame.fetch({reset: true});
+
+    var grid = new Backgrid.Grid({
+        columns: columns,
+        collection: dataFrame
+    });
+
+    // Render the grid and attach the root to your HTML document
+    $inspector.empty().append(grid.render().el).css({visibility: 'visible'});
+
+    var paginator = new Backgrid.Extension.Paginator({
+        // If you anticipate a large number of pages, you can adjust
+        // the number of page handles to show. The sliding window
+        // will automatically show the next set of page handles when
+        // you click next at the end of a window.
+        windowSize: 20, // Default is 10
+
+        // Used to multiple windowSize to yield a number of pages to slide,
+        // in the case the number is 5
+        //slideScale: 0.25, // Default is 0.5
+        collection: dataFrame
+    });
+
+    $inspector.append(paginator.render().el);
+}
+
+
 function toLog(minPos, maxPos, minVal, maxVal, pos) {
     var logMinVal = Math.log(minVal);
     var logMaxVal = Math.log(maxVal);
@@ -779,7 +819,7 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
 
 
 // ... -> Observable renderState
-function init(socket, $elt, renderState, vboUpdates, urlParams) {
+function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
     createLegend($('#graph-legend'), urlParams);
     toggleLogo($('.logo-container'), urlParams);
 
@@ -797,7 +837,7 @@ function init(socket, $elt, renderState, vboUpdates, urlParams) {
     });
 
     var marquee = setupMarquee(turnOnMarquee, renderState);
-    setupInspector(socket, marquee);
+    setupInspector(socket, workerParams.url, marquee);
 
     var settingsChanges = new Rx.ReplaySubject(1);
     settingsChanges.onNext({});

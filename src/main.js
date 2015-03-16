@@ -90,7 +90,7 @@ function init(canvas, vizType) {
             return streamClient.createRenderer(socket, canvas)
                 .map(function(renderState) {
                     debug('Renderer created');
-                    return {socket: socket, renderState: renderState};
+                    return {socket: socket, workerParams: nfo.params, renderState: renderState};
                 });
         }).do(function(v) {
             var socket = v.socket;
@@ -102,7 +102,7 @@ function init(canvas, vizType) {
 
             //TODO merge update notifs into vboUpdates
             var uberRenderStateUpdates = uberDemo(socket, $('.sim-container'), v.renderState,
-                                                  vboUpdates, urlParams);
+                                                  vboUpdates, v.workerParams, urlParams);
             uberRenderStateUpdates
                 .subscribe(
                     renderStateUpdates,
@@ -210,8 +210,18 @@ window.addEventListener('load', function() {
         }));
     });
 
-    var app = init($('#simulation')[0], 'graph');
+    var tag = urlParams.usertag;
+    if (tag !== undefined && tag !== '') {
+        if (window.heap) {
+            window.heap.identify({handle: tag, name: tag});
+        }
 
+        if (window.ga) {
+            window.ga('set', 'userId', tag);
+        }
+    }
+
+    var app = init($('#simulation')[0], 'graph');
     createInfoOverlay(app);
 
     function isParamTrue(param) {
