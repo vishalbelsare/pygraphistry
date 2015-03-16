@@ -251,7 +251,7 @@ var testMapper = {
                 return normalize(logTransform(v), 5, Math.pow(2, 8))
             }
         },
-        pointLabel: {
+        pointTitle: {
             name: "label"
         },
         pointColor: {
