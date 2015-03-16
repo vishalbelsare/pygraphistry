@@ -684,7 +684,7 @@ function createControls(socket) {
 }
 
 
-function setupInspector(socket, marquee) {
+function setupInspector(socket, workerUrl, marquee) {
     var InspectData = Backbone.Model.extend({});
 
     Rx.Observable.fromCallback(socket.emit, socket)('inspect_header', null)
@@ -723,7 +723,7 @@ function setupInspector(socket, marquee) {
         }).filter(function (reply) { return reply && reply.success; })
         .subscribe(function (reply) {
             debug('Setting up PageableCollection of size', reply.count);
-            showPageableGrid(InspectData, columns, reply.count);
+            showPageableGrid(workerUrl, InspectData, columns, reply.count);
         }, makeErrorHandler('fetch data for inspector'));
     }).subscribe(_.identity, makeErrorHandler('fetch inspectHeader'));
 }
@@ -757,12 +757,12 @@ function showGrid(model, columns, frame) {
 }
 
 
-function showPageableGrid(model, columns, count) {
+function showPageableGrid(workerUrl, model, columns, count) {
     var $inspector = $('#inspector');
 
     var DataFrame = Backbone.PageableCollection.extend({
         model: model,
-        url: '/read_selection',
+        url: workerUrl + '/read_selection',
         state: {
             pageSize: 5,
             totalRecords: count,
@@ -819,7 +819,7 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
 
 
 // ... -> Observable renderState
-function init(socket, $elt, renderState, vboUpdates, urlParams) {
+function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
     createLegend($('#graph-legend'), urlParams);
     toggleLogo($('.logo-container'), urlParams);
 
@@ -837,7 +837,7 @@ function init(socket, $elt, renderState, vboUpdates, urlParams) {
     });
 
     var marquee = setupMarquee(turnOnMarquee, renderState);
-    setupInspector(socket, marquee);
+    setupInspector(socket, workerParams.url, marquee);
 
     var settingsChanges = new Rx.ReplaySubject(1);
     settingsChanges.onNext({});
