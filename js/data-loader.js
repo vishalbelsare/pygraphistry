@@ -309,7 +309,7 @@ function loadGeo(graph, dataset) {
 
     return Q(MatrixLoader.loadGeo(dataset.body))
      .then(function(geoData) {
-        var processedData = MatrixLoader.processGeo(geoData, 0.3);
+        var processedData = MatrixLoader.processGeo(geoData, 0.15);
 
         debug("Processed %d/%d nodes/edges", processedData.points.length, processedData.edges.length);
 
