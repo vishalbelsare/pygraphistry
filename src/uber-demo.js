@@ -715,18 +715,15 @@ function setupInspector(socket, marquee) {
         }
     }).do(function (columns) {
         marquee.selections.flatMap(function (sel) {
-            return Rx.Observable.fromCallback(socket.emit, socket)('inspect', sel);
+            return Rx.Observable.fromCallback(socket.emit, socket)('set_selection', sel);
         }).do(function (reply) {
             if (!reply || !reply.success) {
-                console.error('Server error on inspect', (reply||{}).error);
+                console.error('Server error on set_selection', (reply||{}).error);
             }
         }).filter(function (reply) { return reply && reply.success; })
-        .map(function (reply) {
-            return {frame: reply.frame, columns: columns};
-        }).subscribe(function (data) {
-            debug('Inspect event', data);
-            //showGrid(InspectData, data.columns, data.frame);
-            showPageableGrid(InspectData, data.columns, data.frame);
+        .subscribe(function (reply) {
+            debug('Setting up PageableCollection of size', reply.count);
+            showPageableGrid(InspectData, columns, reply.count);
         }, makeErrorHandler('fetch data for inspector'));
     }).subscribe(_.identity, makeErrorHandler('fetch inspectHeader'));
 }
@@ -760,19 +757,20 @@ function showGrid(model, columns, frame) {
 }
 
 
-function showPageableGrid(model, columns, frame) {
+function showPageableGrid(model, columns, count) {
     var $inspector = $('#inspector');
 
     var DataFrame = Backbone.PageableCollection.extend({
         model: model,
-        url: '/inspect2',
+        url: '/read_selection',
         state: {
             pageSize: 5,
+            totalRecords: count,
         },
     });
 
-    var dataFrame = new DataFrame(frame, {mode: 'client'});
-    //dataFrame.fetch({reset: true});
+    var dataFrame = new DataFrame([], {mode: 'server'});
+    dataFrame.fetch({reset: true});
 
     var grid = new Backgrid.Grid({
         columns: columns,
@@ -792,7 +790,6 @@ function showPageableGrid(model, columns, frame) {
         // Used to multiple windowSize to yield a number of pages to slide,
         // in the case the number is 5
         //slideScale: 0.25, // Default is 0.5
-
         collection: dataFrame
     });
 
