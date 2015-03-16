@@ -19,7 +19,8 @@ var TITLES = {
     Facebook: {
         title: 'Facebook friendships',
         nodes: 'People. Color indicates community and size shows popularity.',
-        edges: 'Friendships'
+        edges: 'Friendships',
+        mapper: 'opentsdb'
     },
     Miserables: {
         title: 'Characters Crossing Paths in Les Miserables',
@@ -63,7 +64,8 @@ var TITLES = {
     Twitter: {
         title: 'Network of Twitter Fake Accounts',
         nodes: 'Accounts',
-        edges: 'Follow relationship'
+        edges: 'Follow relationship',
+        mapper: 'opentsdb'
     }
 };
 for (var i in TITLES) {
@@ -166,10 +168,10 @@ window.onload = pinger;
             <!--
                 <a href="graph/uber.html?dataset=Uber&type=OBSOLETE_geo&scene=uber&controls=uber&info=true">uber</a>
             -->
-                <a href="graph/graph.html?dataset=NetflowLarge&scene=netflow&mapper=opentsdb&info=true&play=10000&legend=%7B%22title%22%3A%22%3Ch2%3EDatacenter%20Netflow%20Traffic%20Logs%3C%2Fh2%3E%22%2C%22subtitle%22%3A%22%3Ch3%3E%3Ca%20href%3D%5C%22mailto%3Ainfo%40graphistry.com%5C%22%3Eemail%3C%2Fa%3E%20for%20a%20tool%20preview%3C%2Fh3%3E%22%2C%22nodes%22%3A%22Pair%20of%20(IP%2Cprotocol)%22%2C%22edges%22%3A%22Bandwidth%20from%20%3Cspan%20style%3D%5C%22color%3Agreen%5C%22%3Elow%3C%2Fspan%3E%20to%20%3Cspan%20style%3D%5C%22color%3Ared%5C%22%3Ehigh%3C%2Fspan%3E%22%7D">netflow logs</a> (<a href="graph/graph.html?dataset=NetflowHuge&scene=netflow&info=true&play=120000&legend=%7B%22title%22%3A%22%3Ch2%3EDatacenter%20Netflow%20Traffic%20Logs%3C%2Fh2%3E%22%2C%22subtitle%22%3A%22%3Ch3%3E%3Ca%20href%3D%5C%22mailto%3Ainfo%40graphistry.com%5C%22%3Eemail%3C%2Fa%3E%20for%20a%20tool%20preview%3C%2Fh3%3E%22%2C%22nodes%22%3A%22Pair%20of%20(IP%2Cprotocol)%22%2C%22edges%22%3A%22Bandwidth%20from%20%3Cspan%20style%3D%5C%22color%3Agreen%5C%22%3Elow%3C%2Fspan%3E%20to%20%3Cspan%20style%3D%5C%22color%3Ared%5C%22%3Ehigh%3C%2Fspan%3E%22%7D">huge: 2min</a>)
+                <a href="graph/graph.html?dataset=NetflowLarge&scene=netflow&mapper=opentsdb&info=true&play=10000&legend=%7B%22title%22%3A%22%3Ch2%3EDatacenter%20Netflow%20Traffic%20Logs%3C%2Fh2%3E%22%2C%22subtitle%22%3A%22%3Ch3%3E%3Ca%20href%3D%5C%22mailto%3Ainfo%40graphistry.com%5C%22%3Eemail%3C%2Fa%3E%20for%20a%20tool%20preview%3C%2Fh3%3E%22%2C%22nodes%22%3A%22Pair%20of%20(IP%2Cprotocol)%22%2C%22edges%22%3A%22Bandwidth%20from%20%3Cspan%20style%3D%5C%22color%3Agreen%5C%22%3Elow%3C%2Fspan%3E%20to%20%3Cspan%20style%3D%5C%22color%3Ared%5C%22%3Ehigh%3C%2Fspan%3E%22%7D">netflow logs</a> (<a href="graph/graph.html?dataset=NetflowHuge&scene=netflow&mapper=opentsdb&info=true&play=120000&legend=%7B%22title%22%3A%22%3Ch2%3EDatacenter%20Netflow%20Traffic%20Logs%3C%2Fh2%3E%22%2C%22subtitle%22%3A%22%3Ch3%3E%3Ca%20href%3D%5C%22mailto%3Ainfo%40graphistry.com%5C%22%3Eemail%3C%2Fa%3E%20for%20a%20tool%20preview%3C%2Fh3%3E%22%2C%22nodes%22%3A%22Pair%20of%20(IP%2Cprotocol)%22%2C%22edges%22%3A%22Bandwidth%20from%20%3Cspan%20style%3D%5C%22color%3Agreen%5C%22%3Elow%3C%2Fspan%3E%20to%20%3Cspan%20style%3D%5C%22color%3Ared%5C%22%3Ehigh%3C%2Fspan%3E%22%7D">huge: 2min</a>)
 
                 <br/>
-                <a href="graph/graph.html?dataset=Facebook&scene=netflow&info=true&play=10000&mapper=splunk&legend=%7B%22title%22%3A%22%3Ch3%3EFacebook%20friendships%3C%2Fh3%3E%22%2C%22nodes%22%3A%22People.%20Color%20indicates%20community%20and%20size%20shows%20popularity.%22%2C%22edges%22%3A%22Friendships%22%2C%22mapper%22%3A%22splunk%22%2C%22subtitle%22%3A%22%3Cp%3E%3Ca%20href%3D%5C%22mailto%3Ainfo%40graphistry.com%5C%22%3EEmail%3C%2Fa%3E%20us%20for%20a%20tool%20preview%3C%2Fp%3E%22%7D"> facebook friendships </a>
+                <a href="graph/graph.html?dataset=Facebook&scene=netflow&info=true&play=10000&mapper=opentsdb&legend=%7B%22title%22%3A%22%3Ch3%3EFacebook%20friendships%3C%2Fh3%3E%22%2C%22nodes%22%3A%22People.%20Color%20indicates%20community%20and%20size%20shows%20popularity.%22%2C%22edges%22%3A%22Friendships%22%2C%22mapper%22%3A%22splunk%22%2C%22subtitle%22%3A%22%3Cp%3E%3Ca%20href%3D%5C%22mailto%3Ainfo%40graphistry.com%5C%22%3EEmail%3C%2Fa%3E%20us%20for%20a%20tool%20preview%3C%2Fp%3E%22%7D"> facebook friendships </a>
 
                 <div id="ping" style="position: absolute; padding-left: 6em; padding-top: 0.2em; font-size: 0.8em"></div>
             </div>
