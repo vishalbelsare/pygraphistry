@@ -15,9 +15,13 @@ var logger = undefined;
 if (config.BUNYAN_LOG) {
     logger = bunyan.createLogger({
         name: 'graph-viz',
-        streams: [{
-            path: config.BUNYAN_LOG
-        }]
+        streams: [
+            {
+                path: config.BUNYAN_LOG
+            },{
+                stream: process.stdout
+            }
+        ]
     });
 
     process.on('SIGUSR2', function () {
