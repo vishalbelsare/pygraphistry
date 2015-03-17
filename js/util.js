@@ -19,6 +19,10 @@ if (config.BUNYAN_LOG) {
             path: config.BUNYAN_LOG
         }]
     });
+
+    process.on('SIGUSR2', function () {
+        logger.reopenFileStreams();
+    });
 }
 
 
