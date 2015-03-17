@@ -672,6 +672,15 @@ function createControls(socket) {
                 step: 1,
                 max: 100.0,
                 min: 1
+            },
+            {
+                name: 'edgeSize',
+                prettyName: 'Edge Size',
+                type: 'discrete',
+                value: 50.0,
+                step: 1,
+                max: 100.0,
+                min: 1
             }
         ];
 
@@ -812,6 +821,9 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
     if (name === 'pointSize') {
         val = toLog(1, 100, 0.1, 10, pos);
         camera.setPointScaling(val);
+    } else if (name === 'edgeSize') {
+        val = toLog(1, 100, 0.1, 10, pos);
+        camera.setEdgeScaling(val);
     }
 
     settingsChanges.onNext({name: name, val: val});
