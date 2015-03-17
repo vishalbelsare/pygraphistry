@@ -106,11 +106,6 @@ var textures = {
     'edgeTexture': {
         'datasource': 'CLIENT',
     },
-    'edgeHitmapDownsampled': {
-        'datasource': 'CLIENT',
-        'width': {'unit': 'percent', 'value': 5},
-        'height': {'unit': 'percent', 'value': 5}
-    },
     'colorMap': {
         'datasource': 'SERVER',
         'path': 'test-colormap2.png'
@@ -269,18 +264,6 @@ var items = {
         'glOptions': {},
         'renderTarget': 'edgeTexture',
         'readTarget': true,
-    },
-    'edgesampling': {
-        'program': 'edges',
-        'trigger': 'renderScene',
-        'bindings': {
-            'curPos': ['springsPos', 'curPos'],
-            'edgeColor': ['edgeIndices', 'edgeColor']
-        },
-        'drawType': 'LINES',
-        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
-        'renderTarget': 'edgeHitmapDownsampled',
-        'readTarget': true
     },
     'edgepicking': {
         'program': 'edges',
