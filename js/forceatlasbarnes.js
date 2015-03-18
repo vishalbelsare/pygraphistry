@@ -14,13 +14,17 @@ var debug = require("debug")("graphistry:graph-viz:cl:forceatlas2barnes"),
     integrateKernel = require('./javascript_kernels/integrateKernel.js');
 
 
-function getNumWorkitemsByHardware(deviceProps, workGroupSize) {
+function getNumWorkitemsByHardware(deviceProps) {
+
+    var workGroupSize = 256;
     var numWorkGroups = {
         toBarnesLayout: 30,
         boundBox: 30,
         buildTree: 30,
         computeSums: 10,
         sort: 16,
+        edgeForces: 100,
+        segReduce: 1000,
         calculateForces: 60
     }
 
@@ -38,9 +42,11 @@ function getNumWorkitemsByHardware(deviceProps, workGroupSize) {
         util.warn('Expected slow kernels: sort, calculate_forces');
     }
 
-    return _.mapObject(numWorkGroups, function(val, key) {
+    var numWorkItems = _.mapObject(numWorkGroups, function(val, key) {
         return workGroupSize * val;
     });
+    numWorkItems.workGroupSize = workGroupSize;
+    return numWorkItems;
 }
 
 
@@ -146,11 +152,11 @@ function pointForces(simulator, barnesKernelSeq, stepNumber) {
 }
 
 
-function edgeForces(simulator, edgeKernelSeq, stepNumber) {
+function edgeForces(simulator, edgeKernelSeq, stepNumber, workItems) {
     var buffers = simulator.buffers;
      return edgeKernelSeq.execKernels(simulator, buffers.forwardsEdges, buffers.forwardsWorkItems,
                                       simulator.numForwardsWorkItems, buffers.backwardsEdges, buffers.backwardsWorkItems,
-                                      simulator.numBackwardsWorkItems, buffers.curPoints, stepNumber);
+                                      simulator.numBackwardsWorkItems, buffers.curPoints, stepNumber, workItems);
 }
 
 
@@ -158,16 +164,15 @@ function edgeForces(simulator, edgeKernelSeq, stepNumber) {
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var that = this;
     var tickTime = Date.now();
-    var workGroupSize = 256;
-    var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps, workGroupSize);
+    var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
     return that.barnesKernelSeq.execKernels(simulator, stepNumber, workItems)
     .then(function () {
-        return edgeForces(simulator, that.edgeKernelSeq, stepNumber);
+        return edgeForces(simulator, that.edgeKernelSeq, stepNumber, workItems);
     }).then(function () {
-        return that.faSwingsKernel.execKernels(simulator);
+        return that.faSwingsKernel.execKernels(simulator, workItems);
     }).then(function () {
         // return integrateApproxKernel(simulator, tempLayoutBuffers);
-        return that.integrateKernel.execKernels(simulator, tempLayoutBuffers);
+        return that.integrateKernel.execKernels(simulator, tempLayoutBuffers, workItems);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);

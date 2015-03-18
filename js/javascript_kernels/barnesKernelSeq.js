@@ -266,25 +266,25 @@ var BarnesKernelSeq = function (clContext) {
 
         // For all calls, we must have the # work items be a multiple of the workgroup size.
         var that = this;
-        return this.toBarnesLayout.exec([workItems.toBarnesLayout], resources, [256])
+        return this.toBarnesLayout.exec([workItems.toBarnesLayout], resources, [workItems.workGroupSize])
         .then(function () {
-            return that.boundBox.exec([workItems.boundBox], resources, [256]);
+            return that.boundBox.exec([workItems.boundBox], resources, [workItems.workGroupSize]);
         })
 
         .then(function () {
-            return that.buildTree.exec([workItems.buildTree], resources, [256]);
+            return that.buildTree.exec([workItems.buildTree], resources, [workItems.workGroupSize]);
         })
 
         .then(function () {
-            return that.computeSums.exec([workItems.computeSums], resources, [256]);
+            return that.computeSums.exec([workItems.computeSums], resources, [workItems.workGroupSize]);
         })
 
         .then(function () {
-            return that.sort.exec([workItems.sort], resources, [256]);
+            return that.sort.exec([workItems.sort], resources, [workItems.workGroupSize]);
         })
 
         .then(function () {
-            return that.calculateForces.exec([workItems.calculateForces], resources, [256]);
+            return that.calculateForces.exec([workItems.calculateForces], resources, [workItems.workGroupSize]);
         })
 
         .fail(util.makeErrorHandler("Executing BarnesKernelSeq failed"));
