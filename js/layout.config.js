@@ -130,7 +130,7 @@ function atlasControls(algo) {
     }
 
     var params = {
-        tau: new ContinuousParam('Speed', 1.0, 0.1, 10),
+        tau: new ContinuousParam('Speed', 10.0, 1.0, 25.0),
         gravity: new ContinuousParam('Gravity', 1.0, 0.01, 100),
         scalingRatio: new ContinuousParam('Scaling', 1.0, 0.01, 100),
         edgeInfluence: new DiscreteParam('Edge Influence', 1, 0, 5, 1),
