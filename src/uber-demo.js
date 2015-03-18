@@ -647,10 +647,10 @@ function createControls(socket) {
             console.warn('Ignoring param of unknown type', param);
             $input = $('<div>').text('Unknown setting type' + param.type);
         }
-        var $col = $('<div>').addClass('col-xs-9').append($input);
+        var $col = $('<div>').addClass('col-xs-8').append($input);
         var $label = $('<label>').attr({
             for: param.name,
-            class: 'control-label col-xs-3',
+            class: 'control-label col-xs-4',
         }).text(param.prettyName);
 
         var $entry = $('<div>').addClass('form-group').append($label, $col);
@@ -660,14 +660,6 @@ function createControls(socket) {
 
     var $anchor = $('#renderingItems').children('.form-horizontal').empty();
     rxControls.subscribe(function (controls) {
-        // Setup layout controls
-        // Assuming a single layout algorithm for now
-        var la = controls[0];
-
-        _.each(la.params, function (param) {
-            makeControl(param, 'layout');
-        });
-
         // Setup client side controls.
         var localParams = [
             {
@@ -690,9 +682,21 @@ function createControls(socket) {
             }
         ];
 
+        var $heading = $('<div>').addClass('control-title').text('Appearance');
+        $anchor.append($heading);
         _.each(localParams, function (param) {
             makeControl(param, 'local');
         });
+
+        // Setup layout controls
+        _.each(controls, function (la) {
+            var $heading = $('<div>').addClass('control-title').text(la.name);
+            $anchor.append($heading);
+            _.each(la.params, function (param) {
+                makeControl(param, 'layout');
+            });
+        });
+
     }, makeErrorHandler('createControls'));
 
     return rxControls;
@@ -894,8 +898,9 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
     createControls(socket).subscribe(function () {
         $('#renderingItems').find('[type=checkbox]').each(function () {
             var input = this;
+            $(input).bootstrapSwitch();
             var param = $(input).data('param');
-            $(input).onAsObservable('change').subscribe(
+            $(input).onAsObservable('switchChange.bootstrapSwitch').subscribe(
                 function () {
                     sendLayoutSetting(socket, param.algoName, param.name, input.checked);
                 },
