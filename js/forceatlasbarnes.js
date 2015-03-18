@@ -49,6 +49,15 @@ function getNumWorkitemsByHardware(deviceProps) {
         // 2:92, 6:34, 7:29, 8:26, 9:44, 10:40, 14:31, 18:41, 24:35, 30:48
         numWorkGroups.buildTree = [8, 512];
 
+        // 1024
+        // 10:36, 14:27, 15:26, 16:24, 17:39, 18:38, 20:35, 26:28, 30:25, 36:30, 40:28, 46:25, 50:28, 60:25,
+        // 70:26, 80:25, 100:26, 140:26, 200:26
+        //
+        // 512
+        // 10:65, 20:35, 26:29, 28:27, 30:26, 34:39, 40:34
+        numWorkGroups.calculateForces = [16, 1024];
+
+
 
     } else if (deviceProps.NAME.indexOf('HD Graphics 4000') != -1) {
         util.warn('Expected slow kernels: sort, calculate_forces');
