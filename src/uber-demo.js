@@ -899,7 +899,7 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
 
         $('.menu-slider').each(function () {
             var $that = $(this);
-            var $slider = $(this).bootstrapSlider({});
+            var $slider = $(this).bootstrapSlider({tooltip: 'hide'});
             var param = $slider.data('param');
 
             Rx.Observable.merge(
