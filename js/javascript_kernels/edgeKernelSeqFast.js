@@ -99,7 +99,7 @@ var edgeKernelSeqFast = function (clContext) {
 
       debug("Running kernel faEdgeForces");
       var that = this;
-      return this.mapEdges.exec([workItemsSize.edgeForces], resources, [workItemsSize.workGroupSize]).then(function () {
+      return this.mapEdges.exec([workItemsSize.edgeForces[0]], resources, [workItemsSize.edgeForces[1]]).then(function () {
         that.segReduce.set({
           edgeStartEndIdxs: startEnd.buffer,
           input: simulator.buffers.outputEdgeForcesMap.buffer,
@@ -112,7 +112,7 @@ var edgeKernelSeqFast = function (clContext) {
           carryOutGlobal: simulator.buffers.globalCarryOut.buffer
         })
 
-        return that.segReduce.exec([workItemsSize.segReduce], resources, [workItemsSize.workGroupSize]);
+        return that.segReduce.exec([workItemsSize.segReduce[0]], resources, [workItemsSize.segReduce[1]]);
       })
       .fail(util.makeErrorHandler("Executing edgeKernelSeqFast failed"));
 

@@ -16,16 +16,15 @@ var debug = require("debug")("graphistry:graph-viz:cl:forceatlas2barnes"),
 
 function getNumWorkitemsByHardware(deviceProps) {
 
-    var workGroupSize = 256;
     var numWorkGroups = {
-        toBarnesLayout: 30,
-        boundBox: 30,
-        buildTree: 30,
-        computeSums: 10,
-        sort: 16,
-        edgeForces: 100,
-        segReduce: 1000,
-        calculateForces: 60
+        toBarnesLayout: [30, 256],
+        boundBox: [30, 256],
+        buildTree: [30, 256],
+        computeSums: [10, 256],
+        sort: [16, 256],
+        edgeForces: [100, 256],
+        segReduce: [1000, 256],
+        calculateForces: [60, 256]
     }
 
     //console.log("DEVICE NAME: ", deviceProps.NAME);
@@ -42,11 +41,10 @@ function getNumWorkitemsByHardware(deviceProps) {
         util.warn('Expected slow kernels: sort, calculate_forces');
     }
 
-    var numWorkItems = _.mapObject(numWorkGroups, function(val, key) {
-        return workGroupSize * val;
+    return _.mapObject(numWorkGroups, function(val, key) {
+        val[0] = val[0] * val[1];
+        return val;
     });
-    numWorkItems.workGroupSize = workGroupSize;
-    return numWorkItems;
 }
 
 
