@@ -214,7 +214,7 @@ function assign_worker(req, res) {
 
 function logClientError(req, res) {
     var writeError = function (msg) {
-        debug('Logging client error', msg);
+        //debug('Logging client error', msg);
         if(config.ENVIRONMENT === 'local') {
             if (msg.content) {
                 console.error('[Client]', msg.content);
