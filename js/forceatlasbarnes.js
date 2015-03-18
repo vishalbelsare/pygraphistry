@@ -38,7 +38,12 @@ function getNumWorkitemsByHardware(deviceProps) {
         numWorkGroups.computeSums[0] = 6;
         numWorkGroups.sort[0] = 8;
     } else if (deviceProps.NAME.indexOf('K520') != -1) {
-        numWorkGroups.segReduce = [200, 1024];
+        // 1024
+        // 30:14.1, 36:14.3, 40:13.6, 46:14.5, 50:14.1, 60:14.1, 100:14.7,
+        //
+        // base 14.6% @ 200
+
+        numWorkGroups.segReduce = [40, 1024];
         numWorkGroups.edgeForces = [200, 1024];
 
         // 1024
@@ -57,6 +62,9 @@ function getNumWorkitemsByHardware(deviceProps) {
         // 10:65, 20:35, 26:29, 28:27, 30:26, 34:39, 40:34
         numWorkGroups.calculateForces = [16, 1024];
 
+        // 1024
+        // 6:4, 8:4, 10:5,
+        numWorkGroups.computeSums = [8, 1024];
 
 
     } else if (deviceProps.NAME.indexOf('HD Graphics 4000') != -1) {
