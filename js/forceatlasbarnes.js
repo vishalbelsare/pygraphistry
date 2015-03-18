@@ -14,32 +14,39 @@ var debug = require("debug")("graphistry:graph-viz:cl:forceatlas2barnes"),
     integrateKernel = require('./javascript_kernels/integrateKernel.js');
 
 
-function getNumWorkitemsByHardware(deviceProps, workGroupSize) {
+function getNumWorkitemsByHardware(deviceProps) {
+
     var numWorkGroups = {
-        toBarnesLayout: 30,
-        boundBox: 30,
-        buildTree: 30,
-        computeSums: 10,
-        sort: 16,
-        calculateForces: 60
+        toBarnesLayout: [30, 256],
+        boundBox: [30, 256],
+        buildTree: [30, 256],
+        computeSums: [10, 256],
+        sort: [16, 256],
+        edgeForces: [100, 256],
+        segReduce: [1000, 256],
+        calculateForces: [60, 256]
     }
 
     //console.log("DEVICE NAME: ", deviceProps.NAME);
     if (deviceProps.NAME.indexOf('GeForce GT 650M') != -1) {
-        numWorkGroups.buildTree = 1;
-        numWorkGroups.computeSums = 1;
+        numWorkGroups.buildTree[0] = 1;
+        numWorkGroups.computeSums[0] = 1;
     } else if (deviceProps.NAME.indexOf('Iris Pro') != -1) {
-        numWorkGroups.computeSums = 6;
-        numWorkGroups.sort = 8;
+        numWorkGroups.computeSums[0] = 6;
+        numWorkGroups.sort[0] = 8;
     } else if (deviceProps.NAME.indexOf('Iris') != -1) {
-        numWorkGroups.computeSums = 6;
-        numWorkGroups.sort = 8;
+        numWorkGroups.computeSums[0] = 6;
+        numWorkGroups.sort[0] = 8;
+    } else if (deviceProps.NAME.indexOf('K520') != -1) {
+        numWorkGroups.segReduce = [200, 1024];
+        numWorkGroups.edgeForces = [200, 1024];
     } else if (deviceProps.NAME.indexOf('HD Graphics 4000') != -1) {
         util.warn('Expected slow kernels: sort, calculate_forces');
     }
 
     return _.mapObject(numWorkGroups, function(val, key) {
-        return workGroupSize * val;
+        val[0] = val[0] * val[1];
+        return val;
     });
 }
 
@@ -146,11 +153,11 @@ function pointForces(simulator, barnesKernelSeq, stepNumber) {
 }
 
 
-function edgeForces(simulator, edgeKernelSeq, stepNumber) {
+function edgeForces(simulator, edgeKernelSeq, stepNumber, workItems) {
     var buffers = simulator.buffers;
      return edgeKernelSeq.execKernels(simulator, buffers.forwardsEdges, buffers.forwardsWorkItems,
                                       simulator.numForwardsWorkItems, buffers.backwardsEdges, buffers.backwardsWorkItems,
-                                      simulator.numBackwardsWorkItems, buffers.curPoints, stepNumber);
+                                      simulator.numBackwardsWorkItems, buffers.curPoints, stepNumber, workItems);
 }
 
 
@@ -158,16 +165,15 @@ function edgeForces(simulator, edgeKernelSeq, stepNumber) {
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var that = this;
     var tickTime = Date.now();
-    var workGroupSize = 256;
-    var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps, workGroupSize);
+    var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
     return that.barnesKernelSeq.execKernels(simulator, stepNumber, workItems)
     .then(function () {
-        return edgeForces(simulator, that.edgeKernelSeq, stepNumber);
+        return edgeForces(simulator, that.edgeKernelSeq, stepNumber, workItems);
     }).then(function () {
-        return that.faSwingsKernel.execKernels(simulator);
+        return that.faSwingsKernel.execKernels(simulator, workItems);
     }).then(function () {
         // return integrateApproxKernel(simulator, tempLayoutBuffers);
-        return that.integrateKernel.execKernels(simulator, tempLayoutBuffers);
+        return that.integrateKernel.execKernels(simulator, tempLayoutBuffers, workItems);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);

@@ -28,7 +28,7 @@ var faSwingKernel = function (clContext) {
     this.setEdges = function(simulator, layoutBuffers) {
     };
 
-    this.execKernels = function(simulator) {
+    this.execKernels = function(simulator, workItems) {
 
         var buffers = simulator.buffers;
         this.faSwings.set({
