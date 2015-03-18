@@ -355,13 +355,19 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
     var res = new Rx.ReplaySubject(1);
     res.onNext(OFF);
 
-    var $marquee = $('#marqueerectangle i.fa');
+    var $marqueeButton = $('#marqueerectangle i.fa');
+    var $marquee = $('#marquee');
+
+    function marqueeNotActive() {
+        return !$marqueeButton.hasClass('toggle-on') ||
+               ($marquee.hasClass('done') && !$marquee.hasClass('beingdragged'));
+    }
 
     interaction.setupMousemove($eventTarget, renderState, textures)
-        .filter(function () { return !$marquee.hasClass('toggle-on'); })
+        .filter(marqueeNotActive)
         .map(function (v) { return {cmd: 'hover', pt: v}; })
         .merge($eventTarget.mousedownAsObservable()
-            .filter(function () { return !$marquee.hasClass('toggle-on'); })
+            .filter(marqueeNotActive)
             .map(function (evt) {
                 var clickedLabel = $(evt.target).hasClass('graph-label') ||
                         $(evt.target).hasClass('highlighted-point') ||
@@ -382,7 +388,7 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
             }))
         .merge(
             labelHover
-                .filter(function () { return !$marquee.hasClass('toggle-on'); })
+                .filter(marqueeNotActive)
                 .map(function (elt) {
                     return _.values(poi.state.activeLabels)
                         .filter(function (lbl) { return lbl.elt.get(0) === elt; });

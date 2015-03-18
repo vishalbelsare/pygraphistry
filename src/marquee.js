@@ -163,7 +163,7 @@ function toDelta(startPoint, endPoint) {
 
 function clearMarquee($cont, $elt) {
     $elt.removeClass('dragging').addClass('off');
-    $cont.removeClass('done');
+    $cont.removeClass('done beingdragged');
     $('body').removeClass('noselect');
     effectCanvas('clear');
 }
@@ -176,6 +176,7 @@ function marqueeDrags(selections, $cont, $elt) {
                 debug('stopPropagation: marquee down 2');
                 evt.stopPropagation();
                 $('body').addClass('noselect');
+                $cont.addClass('beingdragged');
             })
             .map(toPoint.bind('', $cont))
             .flatMapLatest(function (startPoint) {
