@@ -40,6 +40,16 @@ function getNumWorkitemsByHardware(deviceProps) {
     } else if (deviceProps.NAME.indexOf('K520') != -1) {
         numWorkGroups.segReduce = [200, 1024];
         numWorkGroups.edgeForces = [200, 1024];
+
+        // 1024
+        // 6:35, 7:31, 8:27, 9:54, 10:50, 16:38, 20:52, 26:44
+        // 30:41, 36:46
+        //
+        // 512
+        // 2:92, 6:34, 7:29, 8:26, 9:44, 10:40, 14:31, 18:41, 24:35, 30:48
+        numWorkGroups.buildTree = [8, 512];
+
+
     } else if (deviceProps.NAME.indexOf('HD Graphics 4000') != -1) {
         util.warn('Expected slow kernels: sort, calculate_forces');
     }
