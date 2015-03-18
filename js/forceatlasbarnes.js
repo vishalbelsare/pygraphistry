@@ -29,14 +29,14 @@ function getNumWorkitemsByHardware(deviceProps) {
 
     //console.log("DEVICE NAME: ", deviceProps.NAME);
     if (deviceProps.NAME.indexOf('GeForce GT 650M') != -1) {
-        numWorkGroups.buildTree = 1;
-        numWorkGroups.computeSums = 1;
+        numWorkGroups.buildTree[0] = 1;
+        numWorkGroups.computeSums[0] = 1;
     } else if (deviceProps.NAME.indexOf('Iris Pro') != -1) {
-        numWorkGroups.computeSums = 6;
-        numWorkGroups.sort = 8;
+        numWorkGroups.computeSums[0] = 6;
+        numWorkGroups.sort[0] = 8;
     } else if (deviceProps.NAME.indexOf('Iris') != -1) {
-        numWorkGroups.computeSums = 6;
-        numWorkGroups.sort = 8;
+        numWorkGroups.computeSums[0] = 6;
+        numWorkGroups.sort[0] = 8;
     } else if (deviceProps.NAME.indexOf('HD Graphics 4000') != -1) {
         util.warn('Expected slow kernels: sort, calculate_forces');
     }
