@@ -10,15 +10,17 @@ var BarnesKernelSeq = function (clContext) {
     this.argsToBarnesLayout = [
         'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints',
         'inputPositions', 'xCoords', 'yCoords', 'mass', 'blocked', 'maxDepth',
-        'pointDegrees', 'stepNumber', 'WARPSIZE'
+        'pointDegrees', 'stepNumber', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
     ];
 
     // All Barnes kernels have same arguements
     this.argsBarnes = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
-    'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
-    'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
-    'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
-        'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau', 'WARPSIZE'];
+        'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
+        'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
+        'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
+        'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau', 'WARPSIZE',
+        'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+    ];
 
     this.argsType = {
         scalingRatio: cljs.types.float_t,
@@ -72,7 +74,10 @@ var BarnesKernelSeq = function (clContext) {
         numNodes: cljs.types.uint_t,
         numWorkItems: cljs.types.uint_t,
         globalSpeed: null,
-        WARPSIZE: cljs.types.define
+        WARPSIZE: cljs.types.define,
+        THREADS_BOUND: cljs.types.define,
+        THREADS_FORCES: cljs.types.define,
+        THREADS_SUMS: cljs.types.define
     }
 
     this.toBarnesLayout = new Kernel('to_barnes_layout', this.argsToBarnesLayout,
@@ -192,7 +197,7 @@ var BarnesKernelSeq = function (clContext) {
         .fail(util.makeErrorHandler("Setting temporary buffers for barnesHutKernelSequence failed"));
     };
 
-    this.setEdges = function(simulator, layoutBuffers, warpsize) {
+    this.setEdges = function(simulator, layoutBuffers, warpsize, workItems) {
         var that = this;
         return setupTempBuffers(simulator, warpsize).then(function (tempBuffers) {
 
@@ -201,7 +206,9 @@ var BarnesKernelSeq = function (clContext) {
                             blocked:tempBuffers.blocked.buffer, maxDepth:tempBuffers.maxdepth.buffer,
                             numPoints:simulator.numPoints,
                             inputPositions: simulator.buffers.curPoints.buffer,
-                            pointDegrees: simulator.buffers.degrees.buffer, WARPSIZE: warpsize});
+                            pointDegrees: simulator.buffers.degrees.buffer,
+                            WARPSIZE: warpsize, THREADS_SUMS: workItems.computeSums[1], THREADS_FORCES: workItems.calculateForces[1],
+                            THREADS_BOUND: workItems.boundBox[1]});
 
             var setBarnesKernelArgs = function(kernel, buffers) {
               var setArgs = {xCoords:buffers.x_cords.buffer,
@@ -230,7 +237,10 @@ var BarnesKernelSeq = function (clContext) {
                 numBodies:buffers.numBodies,
                 numNodes:buffers.numNodes,
                 pointForces:simulator.buffers.partialForces1.buffer,
-                WARPSIZE:warpsize};
+                WARPSIZE:warpsize,
+                THREADS_SUMS: workItems.computeSums[1],
+                THREADS_FORCES: workItems.calculateForces[1],
+                THREADS_BOUND: workItems.boundBox[1]};
 
               kernel.set(setArgs);
             };

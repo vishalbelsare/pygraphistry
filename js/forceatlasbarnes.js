@@ -137,10 +137,11 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
         warpsize = 64;
     }
 
+    var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
     var that = this;
     return setupTempLayoutBuffers(simulator).then(function (tempBuffers) {
       that.edgeKernelSeq.setEdges(simulator, tempBuffers);
-      that.barnesKernelSeq.setEdges(simulator, tempBuffers, warpsize);
+      that.barnesKernelSeq.setEdges(simulator, tempBuffers, warpsize, workItems);
 
     });
 }
