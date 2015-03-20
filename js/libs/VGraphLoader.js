@@ -281,7 +281,6 @@ var testMapper = {
             name: "bytes",
             transform: function (v) {
                 var return1 = normalizeFloat(logTransform(v), 0, 2)
-                console.log("V", logTransform(v), "retunr", return1);
                 return return1;
 
             }
