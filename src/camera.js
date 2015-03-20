@@ -96,6 +96,7 @@
         this.farPlane = farPlane;
         this.pointScaling = 1.0;
         this.edgeScaling = 1.0;
+        this.pixelRatio = 1.0;
     }
 
     Camera2d.prototype.setPointScaling = function(value) {
@@ -128,9 +129,10 @@
     };
 
 
-    Camera2d.prototype.resize = function(width, height) {
+    Camera2d.prototype.resize = function(width, height, pixelRatio) {
         var aspectRatio = width / height;
         this.width = aspectRatio * this.height;
+        this.pixelRatio = pixelRatio;
         debug('Updating camera dimensions to (%f,%f)', this.width, this.height);
     };
 
@@ -190,8 +192,8 @@
     //TODO multiply by w somewhere? what about the matrix?
     Camera2d.prototype.canvas2ScreenCoords = function (x, y, canvas) {
         return {
-            x: this.center.x + this.width * ((x / canvas.width) - 0.5),
-            y: this.center.y + this.height * ((y / canvas.height) - 0.5)
+            x: this.center.x + this.width * ((x * this.pixelRatio / canvas.width) - 0.5),
+            y: this.center.y + this.height * ((y * this.pixelRatio / canvas.height) - 0.5)
         };
     };
 

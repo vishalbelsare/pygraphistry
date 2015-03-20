@@ -233,6 +233,7 @@ function init(config, canvas) {
         //TODO make immutable
         hostBuffers:    {},
         camera:         undefined,
+        pixelRatio:     1,
 
         //{item -> gl obj}
         textures:       Immutable.Map({}),
@@ -358,13 +359,22 @@ function resizeCanvas(state) {
     var canvas = state.get('canvas');
     var camera = state.get('camera');
 
-    var width = canvas.clientWidth;
-    var height = canvas.clientHeight;
+    // window.devicePixelRatio should only be read one resize, when the gl backbuffer is
+    // reallocated. All other code should use renderer.pixelRatio!
+    var pixelRatio = window.devicePixelRatio || 1;
+    if (pixelRatio > 1) {
+        debug('Display has high DPI: pixel ratio is', pixelRatio);
+    }
+    state.set('pixelRatio', pixelRatio);
+
+    var width = Math.round(canvas.clientWidth * pixelRatio);
+    var height = Math.round(canvas.clientHeight * pixelRatio);
+
     debug('Resize: old=(%d,%d) new=(%d,%d)', canvas.width, canvas.height, width, height);
     if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
         canvas.height = height;
-        camera.resize(width, height);
+        camera.resize(width, height, pixelRatio);
         setCamera(state);
         render(state);
     }
