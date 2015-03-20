@@ -280,7 +280,10 @@ var testMapper = {
           //load bytes
             name: "bytes",
             transform: function (v) {
-                return normalize(logTransform(v), 5, Math.pow(2, 8))
+                var return1 = normalizeFloat(logTransform(v), 0, 2)
+                console.log("V", logTransform(v), "retunr", return1);
+                return return1;
+
             }
         }
     },
@@ -395,6 +398,17 @@ function normalize(array, minimum, maximum) {
 
     return _.map(array, function (val) {
         return minimum + Math.floor((val - min) * scaleFactor);
+    });
+}
+
+// rescale array of [a,b] range value to [minimum, maximum] with floats
+function normalizeFloat(array, minimum, maximum) {
+    var max = _.max(array);
+    var min = _.min(array);
+    var scaleFactor = (maximum - minimum) / (max - min + 1);
+
+    return _.map(array, function (val) {
+        return minimum + (val - min) * scaleFactor;
     });
 }
 

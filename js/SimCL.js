@@ -678,13 +678,11 @@ function setEdgeColors(simulator, edgeColors) {
 
 function setEdgeWeight(simulator, edgeWeights) {
     if (!edgeWeights) {
-        debug('Using default edge colors')
+        debug('Using default edge weights')
         var forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
-        edgeWeights = new Uint32Array(forwardsEdges.edgesTyped.length);
+        edgeWeights = new Float32Array(forwardsEdges.edgesTyped.length);
         for (var i = 0; i < edgeWeights.length; i++) {
-            var nodeIdx = forwardsEdges.edgesTyped[i];
-            var weights = simulator.buffersLocal.pointColors[nodeIdx];
-            edgeWeights[i] = weights;
+            edgeWeights[i] = 1.5;
         }
     }
     return simulator.cl.createBuffer(edgeWeights.byteLength, 'edgeWeights')
