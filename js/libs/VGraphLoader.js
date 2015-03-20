@@ -69,6 +69,13 @@ var attributeLoaders = function(graph) {
             type: "string",
             target: VERTEX,
             values: undefined
+        },
+        edgeWeight: {
+          load: graph.setEdgeWeight,
+          type: "number",
+          target: EDGE,
+          default: graph.setEdgeWeight,
+          values: undefined
         }
     };
 }
@@ -196,8 +203,9 @@ function decode0(graph, vg, metadata)  {
     debug('Attribute loaders: %o', loaders);
 
     for (var vname in amap) {
-        if (!(vname in loaders))
+        if (!(vname in loaders)) {
             continue;
+        }
         var loader = loaders[vname];
 
         var vec = amap[vname];
@@ -266,6 +274,13 @@ var testMapper = {
             transform: function (v) {
                 var palette = util.palettes.green2red_palette;
                 return int2color(normalize(logTransform(v), 0, palette.length - 1), palette);
+            }
+        },
+        edgeWeight: {
+          //load bytes
+            name: "bytes",
+            transform: function (v) {
+                return normalize(logTransform(v), 5, Math.pow(2, 8))
             }
         }
     },

@@ -74,6 +74,7 @@ function create(renderer, device, vendor, cfg) {
             simObj.setPoints = setPoints.bind(this, simObj);
             simObj.setEdges = setEdges.bind(this, renderer, simObj);
             simObj.setEdgeColors = setEdgeColors.bind(this, simObj);
+            simObj.setEdgeWeight = setEdgeWeight.bind(this, simObj);
             simObj.setMidEdgeColors = setMidEdgeColors.bind(this, simObj);
             simObj.setLabels = setLabels.bind(this, simObj);
             simObj.setLocks = setLocks.bind(this, simObj);
@@ -129,9 +130,8 @@ function create(renderer, device, vendor, cfg) {
                 globalCarryOut: null,
                 forwardsEdgeStartEndIdxs: null,
                 backwardsEdgeStartEndIdxs: null,
-                segStart: null
-
-
+                segStart: null,
+                edgeWeights: null
             };
             _.extend(
                 simObj.buffers,
@@ -674,6 +674,31 @@ function setEdgeColors(simulator, edgeColors) {
     simulator.tickBuffers(['edgeColors']);
 
     return simulator;
+}
+
+function setEdgeWeight(simulator, edgeWeights) {
+    if (!edgeWeights) {
+        debug('Using default edge colors')
+        var forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
+        edgeWeights = new Uint32Array(forwardsEdges.edgesTyped.length);
+        for (var i = 0; i < edgeWeights.length; i++) {
+            var nodeIdx = forwardsEdges.edgesTyped[i];
+            var weights = simulator.buffersLocal.pointColors[nodeIdx];
+            edgeWeights[i] = weights;
+        }
+    }
+    return simulator.cl.createBuffer(edgeWeights.byteLength, 'edgeWeights')
+    .then(function(edgeWeightsBuffer) {
+      return simulator.buffers.edgeWeights = edgeWeightsBuffer;
+    })
+    .then(function() {
+      return simulator.buffers.edgeWeights.write(edgeWeights)
+    }).then(function() {
+    simulator.buffersLocal.edgeWeights = edgeWeights;
+    simulator.tickBuffers(['edgeWeights']);
+
+    return simulator;
+    })
 }
 
 function setMidEdgeColors(simulator, midEdgeColors) {
