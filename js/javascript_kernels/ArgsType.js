@@ -60,6 +60,7 @@ module.exports = {
         output: null,
         segStart: null,
         carryOutGlobal: null,
-        edgeStartEndIdxs: null
+        edgeStartEndIdxs: null,
+        edgeWeights: null
     }
 

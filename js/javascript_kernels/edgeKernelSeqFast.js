@@ -9,7 +9,7 @@ var edgeKernelSeqFast = function (clContext) {
 
     this.argsMapEdges = [
     'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges', 'numEdges',
-    'workList', 'inputPoints', 'stepNumber', 'numWorkItems', 'outputForcesMap'
+    'workList', 'inputPoints', 'edgeWeights', 'stepNumber', 'numWorkItems', 'outputForcesMap'
 ];
 
     this.argsSegReduce = [
@@ -86,6 +86,7 @@ var edgeKernelSeqFast = function (clContext) {
         inputPoints: points.buffer,
         stepNumber: stepNumber,
         numWorkItems: numWorkItems,
+        edgeWeights: simulator.buffers.edgeWeights.buffer,
         outputForcesMap: simulator.buffers.outputEdgeForcesMap.buffer
       });
 
