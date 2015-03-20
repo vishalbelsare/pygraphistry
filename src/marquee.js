@@ -56,8 +56,8 @@ function maintainContainerStyle($cont, isOn) {
 function effectCanvas(effect) {
     if (effect === 'blur') {
         $('#simulation').css({
-            'filter': 'grayscale(50%) blur(3px)',
-            '-webkit-filter': 'grayscale(50%) blur(3px)',
+            'filter': 'grayscale(50%) blur(2px)',
+            '-webkit-filter': 'grayscale(50%) blur(2px)',
         });
     } else if (effect === 'clear') {
         $('#simulation').css({
@@ -131,17 +131,24 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                                 effectCanvas('blur');
                                 $elt.addClass('draggable').removeClass('on');
                                 $cont.addClass('done');
+
+                                var width = rect.br.x - rect.tl.x;
+                                var height = rect.br.y - rect.tl.y;
+                                var bw = parseInt($elt.css('border-width'));
+
                                 $elt.css({ // Take border sizes into account when aligning ghost image
-                                    left: rect.tl.x - 2,
-                                    top: rect.tl.y - 2,
-                                    width: rect.br.x - rect.tl.x + 4,
-                                    height: rect.br.y - rect.tl.y + 4
+                                    left: rect.tl.x - bw,
+                                    top: rect.tl.y - bw,
+                                    width: width + 2 * bw,
+                                    height: height + 2 * bw
                                 });
 
                                 var ghost = createGhostImg(renderState, rect);
                                 $(ghost).css({
                                     'pointer-events': 'none',
                                     'transform': 'scaleY(-1)',
+                                    'width': width,
+                                    'height': height
                                 });
                                 $elt.append(ghost);
                             });
@@ -236,12 +243,13 @@ function getTexture(renderState, dims) {
 
 function createGhostImg(renderState, sel) {
     var canvas = renderState.get('gl').canvas;
+    var pixelRatio = renderState.get('pixelRatio');
 
     var dims = {
-        x: sel.tl.x,
-        y: canvas.height - sel.tl.y - Math.abs(sel.tl.y - sel.br.y), // Flip y coordinate
-        width: Math.max(1, Math.abs(sel.tl.x - sel.br.x)),
-        height: Math.max(1, Math.abs(sel.tl.y - sel.br.y))
+        x: sel.tl.x * pixelRatio,
+        y: canvas.height - pixelRatio * (sel.tl.y + Math.abs(sel.tl.y - sel.br.y)), // Flip y coordinate
+        width: Math.max(1, pixelRatio * Math.abs(sel.tl.x - sel.br.x)),
+        height: Math.max(1, pixelRatio * Math.abs(sel.tl.y - sel.br.y))
     };
 
     var texture = getTexture(renderState, dims);
