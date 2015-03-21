@@ -750,34 +750,6 @@ function setupInspector(socket, workerUrl, marquee) {
 }
 
 
-function showGrid(model, columns, frame) {
-    var $inspector = $('#inspector');
-
-    if (frame.length === 0) {
-        $inspector.css({visibility: 'hidden'});
-        return;
-    }
-
-    var DataFrame = Backbone.Collection.extend({
-        model: model,
-    });
-
-    var data = new DataFrame();
-    _.each(frame, function (entry) {
-        data.add(entry);
-    });
-
-    // Initialize a new Grid instance
-    var grid = new Backgrid.Grid({
-        columns: columns,
-        collection: data
-    });
-
-    // Render the grid and attach the root to your HTML document
-    $inspector.empty().append(grid.render().el).css({visibility: 'visible'});
-}
-
-
 function showPageableGrid(workerUrl, model, columns, count) {
     var $inspector = $('#inspector');
 
