@@ -181,8 +181,8 @@
         canvasCoords.x = (canvasCoords.x + 1) / 2;
         canvasCoords.y = (canvasCoords.y + 1) / 2;
 
-        canvasCoords.x = canvasCoords.x * canvas.width;
-        canvasCoords.y = canvasCoords.y * canvas.height;
+        canvasCoords.x = canvasCoords.x * canvas.width / this.pixelRatio;
+        canvasCoords.y = canvasCoords.y * canvas.height / this.pixelRatio;
 
         return canvasCoords;
     };

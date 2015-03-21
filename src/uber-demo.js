@@ -110,11 +110,13 @@ function renderCursor (renderState, points, indices, sizes) {
 
     var camera = renderState.get('camera');
     var cnv = renderState.get('canvas');
+    var pixelRatio = renderState.get('pixelRatio');
     var mtx = camera.getMatrix();
 
     var pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
     var scalingFactor = camera.semanticZoom(sizes.length);
-    var size = Math.max(5, Math.min(scalingFactor * sizes[idx], 50)); // Clamp like in pointculled shader
+    // Clamp like in pointculled shader
+    var size = Math.max(5, Math.min(scalingFactor * sizes[idx], 50)) / pixelRatio;
     var offset = size / 2.0;
 
     $('#highlighted-point-cont')
