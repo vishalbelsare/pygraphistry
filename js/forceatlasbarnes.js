@@ -94,7 +94,7 @@ function ForceAtlas2Barnes(clContext) {
 
     this.kernels = this.kernels.concat([this.barnesKernelSeq.toBarnesLayout, this.barnesKernelSeq.boundBox,
                                         this.barnesKernelSeq.buildTree, this.barnesKernelSeq.computeSums,
-                                        this.barnesKernelSeq.sort, this.barnesKernelSeq.calculateForces,
+                                        this.barnesKernelSeq.sort, this.barnesKernelSeq.calculatePointForces,
                                         this.edgeKernelSeq.mapEdges, this.edgeKernelSeq.segReduce, this.faSwingsKernel.faSwings,
                                         this.integrateKernel.faIntegrate, this.integrateApproxKernel.faIntegrateApprox]);
 }

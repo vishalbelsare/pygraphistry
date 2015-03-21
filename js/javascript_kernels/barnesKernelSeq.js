@@ -26,7 +26,8 @@ var BarnesKernelSeq = function (clContext) {
     'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
     'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
     'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
-        'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau', 'charge', 'WARPSIZE'];
+        'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau', 'charge', 'WARPSIZE', 'THREADS_BOUND',
+        'THREADS_FORCES', 'THREADS_SUMS'];
 
     this.argsType = {
         scalingRatio: cljs.types.float_t,
@@ -214,20 +215,20 @@ var BarnesKernelSeq = function (clContext) {
         .fail(util.makeErrorHandler("Setting temporary buffers for barnesHutKernelSequence failed"));
     };
 
-<<<<<<< HEAD
-    this.setEdges = function(simulator, layoutBuffers, warpsize, workItems) {
-=======
-    this.setMidPoints = function(simulator, layoutBuffers, warpsize) {
+    this.setMidPoints = function(simulator, layoutBuffers, warpsize, workItems) {
         var that = this;
         console.log("Set midpoints", simulator.numMidPoints);
+        console.log("Midpoints", workItems);
         return setupTempBuffers(simulator, warpsize, simulator.numMidPoints).then(function (tempBuffers) {
 
         that.toBarnesLayout.set({xCoords: tempBuffers.x_cords.buffer,
           yCoords:tempBuffers.y_cords.buffer, mass:tempBuffers.mass.buffer,
                             blocked:tempBuffers.blocked.buffer, maxDepth:tempBuffers.maxdepth.buffer,
-                            numPoints:simulator.numMidPoints,
-                            inputPositions: simulator.buffers.curMidPoints.buffer,
-                            pointDegrees: simulator.buffers.degrees.buffer, WARPSIZE: warpsize});
+                            numPoints:simulator.numPoints,
+                            inputPositions: simulator.buffers.curPoints.buffer,
+                            pointDegrees: simulator.buffers.degrees.buffer,
+                            WARPSIZE: warpsize, THREADS_SUMS: workItems.computeSums[1], THREADS_FORCES: workItems.calculateForces[1],
+                            THREADS_BOUND: workItems.boundBox[1]});
 
             var setBarnesKernelArgs = function(kernel, buffers) {
               var setArgs = {xCoords:buffers.x_cords.buffer,
@@ -256,7 +257,11 @@ var BarnesKernelSeq = function (clContext) {
                 numBodies:buffers.numBodies,
                 numNodes:buffers.numNodes,
                 pointForces:simulator.buffers.partialForces1.buffer,
-                WARPSIZE:warpsize};
+                WARPSIZE:warpsize,
+                THREADS_SUMS: workItems.computeSums[1],
+                THREADS_FORCES: workItems.calculateForces[1],
+                THREADS_BOUND: workItems.boundBox[1]
+              };
 
               kernel.set(setArgs);
             };
@@ -295,14 +300,17 @@ var BarnesKernelSeq = function (clContext) {
                 numBodies:buffers.numBodies,
                 numNodes:buffers.numNodes,
                 nextMidPoints:simulator.buffers.nextMidPoints.buffer,
-                WARPSIZE:warpsize});
+                WARPSIZE:warpsize,
+                THREADS_SUMS: workItems.computeSums[1],
+                THREADS_FORCES: workItems.calculateForces[1],
+                THREADS_BOUND: workItems.boundBox[1]
+            });
 
         }).fail(util.makeErrorHandler('setupTempBuffers'));
     };
 
 
-    this.setEdges = function(simulator, layoutBuffers, warpsize) {
->>>>>>> Running barnes hut (repulsion) on midPoints.
+    this.setEdges = function(simulator, layoutBuffers, warpsize, workItems) {
         var that = this;
         return setupTempBuffers(simulator, warpsize).then(function (tempBuffers) {
 
@@ -383,25 +391,25 @@ var BarnesKernelSeq = function (clContext) {
         // For all calls, we must have the # work items be a multiple of the workgroup size.
         var that = this;
         return this.toBarnesLayout.exec([workItems.toBarnesLayout], resources, [256])
-        .then(function () {
-            return that.boundBox.exec([workItems.boundBox], resources, [256]);
-        })
+        //.then(function () {
+            //return that.boundBox.exec([workItems.boundBox], resources, [256]);
+        //})
 
-        .then(function () {
-            return that.buildTree.exec([workItems.buildTree], resources, [256]);
-        })
+        //.then(function () {
+            //return that.buildTree.exec([workItems.buildTree], resources, [256]);
+        //})
 
-        .then(function () {
-            return that.computeSums.exec([workItems.computeSums], resources, [256]);
-        })
+        //.then(function () {
+            //return that.computeSums.exec([workItems.computeSums], resources, [256]);
+        //})
 
-        .then(function () {
-            return that.sort.exec([workItems.sort], resources, [256]);
-        })
+        //.then(function () {
+            //return that.sort.exec([workItems.sort], resources, [256]);
+        //})
 
-        .then(function () {
-            return that.calculateMidPoints.exec([workItems.calculateForces], resources, [256]);
-        })
+        //.then(function () {
+            //return that.calculateMidPoints.exec([workItems.calculateForces], resources, [256]);
+        //})
 
         .fail(util.makeErrorHandler("Executing BarnesKernelSeq failed"));
     };
@@ -420,7 +428,7 @@ var BarnesKernelSeq = function (clContext) {
         this.buildTree.set({stepNumber: stepNumber});
         this.computeSums.set({stepNumber: stepNumber});
         this.sort.set({stepNumber: stepNumber});
-        this.calculateForces.set({stepNumber: stepNumber});
+        this.calculatePointForces.set({stepNumber: stepNumber});
 
         simulator.tickBuffers(['partialForces1']);
 
@@ -446,7 +454,7 @@ var BarnesKernelSeq = function (clContext) {
         })
 
         .then(function () {
-            return that.calculateForces.exec([workItems.calculateForces[0]], resources, [workItems.calculateForces[1]]);
+            return that.calculatePointForces.exec([workItems.calculateForces[0]], resources, [workItems.calculateForces[1]]);
         })
 
         .fail(util.makeErrorHandler("Executing BarnesKernelSeq failed"));
