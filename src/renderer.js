@@ -233,7 +233,7 @@ function init(config, canvas) {
         //TODO make immutable
         hostBuffers:    {},
         camera:         undefined,
-        pixelRatio:     1,
+        pixelRatio:     window.devicePixelRatio || 1,
 
         //{item -> gl obj}
         textures:       Immutable.Map({}),
@@ -359,13 +359,16 @@ function resizeCanvas(state) {
     var canvas = state.get('canvas');
     var camera = state.get('camera');
 
-    // window.devicePixelRatio should only be read one resize, when the gl backbuffer is
-    // reallocated. All other code should use renderer.pixelRatio!
+    // window.devicePixelRatio should only be read on resize, when the gl backbuffer is
+    // reallocated. All other code paths should use renderer.pixelRatio!
     var pixelRatio = window.devicePixelRatio || 1;
     if (pixelRatio > 1) {
-        debug('Display has high DPI: pixel ratio is', pixelRatio);
+        console.log('Display has high DPI: pixel ratio is', pixelRatio);
     }
-    state.set('pixelRatio', pixelRatio);
+
+    // FIXME: Immutable prevents mutation and update gets lost. This breaks dragging the window from
+    // retina to non-retina and vice-versa
+    state = state.set('pixelRatio', pixelRatio);
 
     var width = Math.round(canvas.clientWidth * pixelRatio);
     var height = Math.round(canvas.clientHeight * pixelRatio);
