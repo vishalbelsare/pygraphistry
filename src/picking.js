@@ -58,9 +58,10 @@ function decodeGpuIndex (raw) {
 function hitTest(maps, canvas, x, y) {
     // debug('hit testing', texture);
     var retObj = {idx: -1, dim: 0};
+
+    var canvasIdx = (canvas.height - y) * canvas.width + x;
     for (var i = 0; i < maps.length; i++) {
-        var canvasIdx = (canvas.height - y) * canvas.width + x;
-        var raw = maps[i][canvasIdx];//(remapped[idx] >> 8) & (255 | (255 << 8) | (255 << 16));
+        var raw = maps[i][canvasIdx];
         retObj = decodeGpuIndex(raw);
         if (retObj.idx > -1) {
             return retObj;
