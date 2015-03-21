@@ -110,7 +110,7 @@ function renderCursor (renderState, points, indices, sizes) {
 
     var camera = renderState.get('camera');
     var cnv = renderState.get('canvas');
-    var pixelRatio = renderState.get('pixelRatio');
+    var pixelRatio = camera.pixelRatio;
     var mtx = camera.getMatrix();
 
     var pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);

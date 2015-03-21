@@ -233,7 +233,6 @@ function init(config, canvas) {
         //TODO make immutable
         hostBuffers:    {},
         camera:         undefined,
-        pixelRatio:     window.devicePixelRatio || 1,
 
         //{item -> gl obj}
         textures:       Immutable.Map({}),
@@ -314,7 +313,7 @@ function createContext(state) {
 function createCamera(state) {
     var camera;
     var canvas = state.get('canvas');
-    var pixelRatio = state.get('pixelRatio');
+    var pixelRatio = window.devicePixelRatio || 1;
     var camConfig = state.get('config').get('camera');
 
     var bounds = camConfig.get('bounds');
@@ -364,12 +363,8 @@ function resizeCanvas(state) {
     var camera = state.get('camera');
 
     // window.devicePixelRatio should only be read on resize, when the gl backbuffer is
-    // reallocated. All other code paths should use renderer.pixelRatio!
+    // reallocated. All other code paths should use camera.pixelRatio!
     var pixelRatio = window.devicePixelRatio || 1;
-
-    // FIXME: Immutable prevents mutation and update gets lost. This breaks dragging the window from
-    // retina to non-retina and vice-versa
-    state = state.set('pixelRatio', pixelRatio);
 
     var width = Math.round(canvas.clientWidth * pixelRatio);
     var height = Math.round(canvas.clientHeight * pixelRatio);

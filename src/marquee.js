@@ -243,7 +243,7 @@ function getTexture(renderState, dims) {
 
 function createGhostImg(renderState, sel) {
     var canvas = renderState.get('gl').canvas;
-    var pixelRatio = renderState.get('pixelRatio');
+    var pixelRatio = renderState.get('camera').pixelRatio;
 
     var dims = {
         x: sel.tl.x * pixelRatio,
