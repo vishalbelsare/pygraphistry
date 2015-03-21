@@ -95,6 +95,9 @@ function hitTestN(state, textures, x, y, r) {
     });
 
     var canvas = state.get('gl').canvas;
+    var pixelRatio = state.get('camera').pixelRatio;
+    x = x * pixelRatio;
+    y = y * pixelRatio;
     var maps = [];
 
     _.each(textures, function (texture) {
