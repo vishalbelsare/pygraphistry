@@ -266,6 +266,11 @@ function init(config, canvas) {
 
     state = state.set('defaultItems', getDefaultItems(state));
 
+    resizeCanvas(state);
+    window.addEventListener('resize', function () {
+        resizeCanvas(state);
+    });
+
     var gl = createContext(state);
     state = state.set('gl', gl);
     setGlOptions(state);
@@ -278,11 +283,6 @@ function init(config, canvas) {
     var camera = createCamera(state);
     state = state.set('camera', camera);
     setCamera(state);
-
-    resizeCanvas(state);
-    window.addEventListener('resize', function () {
-        resizeCanvas(state);
-    });
 
     debug('state pre', state.toJS());
     state = state.mergeDeep(createRenderTargets(config, canvas, gl));
@@ -314,6 +314,7 @@ function createContext(state) {
 function createCamera(state) {
     var camera;
     var canvas = state.get('canvas');
+    var pixelRatio = state.get('pixelRatio');
     var camConfig = state.get('config').get('camera');
 
     var bounds = camConfig.get('bounds');
@@ -333,6 +334,9 @@ function createCamera(state) {
     } else {
         throw new Error ('Unknown camera type');
     }
+
+    console.log('Display has high DPI: pixel ratio is', pixelRatio);
+    camera.resize(canvas.width, canvas.height, pixelRatio);
 
     return camera;
 }
@@ -362,9 +366,6 @@ function resizeCanvas(state) {
     // window.devicePixelRatio should only be read on resize, when the gl backbuffer is
     // reallocated. All other code paths should use renderer.pixelRatio!
     var pixelRatio = window.devicePixelRatio || 1;
-    if (pixelRatio > 1) {
-        console.log('Display has high DPI: pixel ratio is', pixelRatio);
-    }
 
     // FIXME: Immutable prevents mutation and update gets lost. This breaks dragging the window from
     // retina to non-retina and vice-versa
@@ -377,9 +378,12 @@ function resizeCanvas(state) {
     if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
         canvas.height = height;
-        camera.resize(width, height, pixelRatio);
-        setCamera(state);
-        render(state);
+
+        if (camera !== undefined) {
+            camera.resize(width, height, pixelRatio);
+            setCamera(state);
+            render(state);
+        }
     }
 }
 
