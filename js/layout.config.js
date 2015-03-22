@@ -115,7 +115,7 @@ var gsControls = {
     global: {
         simulationTime: SIMULATION_TIME, //milliseconds
         dimensions: [1, 1],
-        numSplits: 1
+        numSplits: 0
     },
     devices: ['CPU', 'GPU']
 }
@@ -157,7 +157,7 @@ function atlasControls(algo) {
         global: {
             simulationTime: SIMULATION_TIME, //milliseconds
             dimensions: [1, 1],
-            numSplits: 1
+            numSplits: 0
         },
         devices: devices
     };
