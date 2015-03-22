@@ -129,6 +129,16 @@ var models = {
             'normalize': false
         }
     },
+    'logicalEdges': {
+        'curIdx': {
+            'datasource': 'HOST',
+            'type': 'UNSIGNED_INT',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
     'midSpringsPos': {
         'curPos': {
             'datasource': 'DEVICE',
@@ -251,6 +261,17 @@ var items = {
             'curPos': ['springsPos', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
         },
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
+    'edgeculledindexed' : {
+        'program': 'edgeculled',
+        'trigger': 'renderScene',
+        'bindings': {
+            'curPos': ['springsPos', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'index': ['logicalEdges', 'curIdx'],
         'drawType': 'LINES',
         'glOptions': {}
     },
@@ -646,8 +667,17 @@ function generateAllConfigs(programs, textures, models, items, scenes) {
                 cmodels[modelNames[0]] = wrapper;
             })
 
-            if (item.renderTarget)
+            if (item.index) {
+                var modelNames = item.index;
+                var model = models[modelNames[0]][modelNames[1]];
+                var wrapper = {};
+                wrapper[modelNames[1]] = model;
+                cmodels[modelNames[0]] = wrapper;
+            }
+
+            if (item.renderTarget) {
                 ctextures[item.renderTarget] = textures[item.renderTarget];
+            }
         });
 
         config.options = scene.options;
@@ -676,12 +706,12 @@ function gl2Bytes(type) {
 
 function isBufClientSide(buf) {
     var datasource = _.values(buf)[0].datasource;
-    return (datasource == "CLIENT" || datasource == "VERTEX_INDEX" || datasource == "EDGE_INDEX");
+    return (datasource == 'CLIENT' || datasource == 'VERTEX_INDEX' || datasource == "EDGE_INDEX");
 }
 
 function isBufServerSide(buf) {
     var datasource = _.values(buf)[0].datasource;
-    return (datasource == "HOST" || datasource == "DEVICE");
+    return (datasource == 'HOST' || datasource == 'DEVICE');
 }
 
 module.exports = {

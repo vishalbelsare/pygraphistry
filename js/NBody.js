@@ -229,7 +229,7 @@ function scatterEdgePos(edges, curPos) {
 }
 
 var setEdges = Q.promised(function(graph, edges) {
-    debug("Loading Edges")
+    debug('Loading Edges');
     if (edges.length < 1)
         return Q.fcall(function() { return graph; });
 
@@ -237,7 +237,7 @@ var setEdges = Q.promised(function(graph, edges) {
         edges = _toTypedArray(edges, Uint32Array);
     }
 
-    debug("Number of edges: %d", edges.length / 2)
+    debug('Number of edges: %d', edges.length / 2);
 
     //FIXME THIS SHOULD WORK BUT CRASHES SAFARI
     var encapsulate = function (edges) {
@@ -385,6 +385,7 @@ var setEdges = Q.promised(function(graph, edges) {
         };
     }
 
+    var logicalEdges = new Uint32Array(edges);
     var edgesFlipped = new Uint32Array(edges.length);
     for (var i = 0; i < edges.length/2; i++) {
         edgesFlipped[2 * i] = edges[2 * i + 1];
@@ -422,10 +423,12 @@ var setEdges = Q.promised(function(graph, edges) {
     console.info('Dataset    nodes:%d  edges:%d  splits:%d',
                 graph.simulator.numPoints, edges.length, numSplits);
 
-    return graph.simulator.setEdges(forwardEdges, backwardsEdges, degrees, midPoints, endPoints)
-    .then(function() {
-        return graph;
-    }).fail(util.makeErrorHandler('Failure in setEdges'));
+    return graph.simulator.setEdges(logicalEdges,
+                                    forwardEdges, backwardsEdges,
+                                    degrees, midPoints, endPoints)
+        .then(function() {
+            return graph;
+        }).fail(util.makeErrorHandler('Failure in setEdges'));
 });
 
 function setEdgeColors(graph, edgeColors) {

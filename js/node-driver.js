@@ -51,6 +51,7 @@ function graphCounts(graph) {
     return {
         curPoints: point,
         springsPos: edge,
+        logicalEdges: edge,
         pointSizes: point,
         pointColors: pointColors,
         edgeColors: edge,
