@@ -103,9 +103,6 @@ var textures = {
         'width': {'unit': 'percent', 'value': 5},
         'height': {'unit': 'percent', 'value': 5}
     },
-    'edgeTexture': {
-        'datasource': 'CLIENT',
-    },
     'colorMap': {
         'datasource': 'SERVER',
         'path': 'test-colormap2.png'
@@ -228,28 +225,6 @@ var models = {
             'stride': 0,
             'normalize': true
         }
-    },
-    'highlightedPoint': {
-        'isHighlighted':  {
-            'datasource': 'CLIENT',
-            'localName': 'highlights',
-            'type': 'FLOAT',
-            'count': 1,
-            'offset': 0,
-            'stride': 0,
-            'normalize': false
-        }
-    },
-    'allHighlighted': {
-        'allHighlighted':  {
-            'datasource': 'CLIENT',
-            'localName': 'allHighlighted',
-            'type': 'FLOAT',
-            'count': 1,
-            'offset': 0,
-            'stride': 0,
-            'normalize': false
-        }
     }
 }
 
@@ -274,17 +249,6 @@ var items = {
         'index': ['logicalEdges', 'curIdx'],
         'drawType': 'LINES',
         'glOptions': {}
-    },
-    'edgeculledtexture': {
-        'program': 'edgeculled',
-        'bindings': {
-            'curPos': ['springsPos', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor']
-        },
-        'drawType': 'LINES',
-        'glOptions': {},
-        'renderTarget': 'edgeTexture',
-        'readTarget': true,
     },
     'edgepicking': {
         'program': 'edges',
@@ -518,8 +482,7 @@ var sceneNetflow = {
     'options': stdOptions,
     'camera': camera2D,
     'render': ['pointpicking', 'pointsampling', 'pointculledtexture', 'pointoutlinetexture',
-               'edgeculled', 'edgeculledtexture', 'edgepicking',
-               'pointoutline', 'pointculled']
+               'edgeculled', 'edgepicking', 'pointoutline', 'pointculled']
 }
 
 var scenes = {
