@@ -686,7 +686,7 @@ function setEdgeWeight(simulator, edgeWeights) {
         var forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
         edgeWeights = new Float32Array(forwardsEdges.edgesTyped.length);
         for (var i = 0; i < edgeWeights.length; i++) {
-            edgeWeights[i] = 1.5;
+            edgeWeights[i] = 1.0;
         }
     }
     return simulator.cl.createBuffer(edgeWeights.byteLength, 'edgeWeights')
