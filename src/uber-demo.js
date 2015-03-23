@@ -262,18 +262,29 @@ function renderScene(renderer, currentState, data) {
 }
 
 
+// Determine if it's a quiet/noisy state
 lastRender
     .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
     .filter(function (pair) {
         return (!pair.prev || (pair.cur.data.renderTag !== pair.prev.data.renderTag));
     })
-    .sample(30)
+
+    // What to do when starting noisy/rendering state
+    .sample(60)
     .do(function () {
         $('.graph-label-container').css('display', 'none');
     })
-    .throttle(30)
+
+    // What to do when exiting noisy/rendering state
+    .debounce(60)
+    .do(function (pair) {
+        pair.cur.renderer.render(pair.cur.currentState, ['pointpicking', 'edgepicking', 'pointsampling']);
+    })
     .do(function () {
-      $('.graph-label-container').css('display', 'block');
+        // TODO: Pull this from a proper stream in a refactor instead of a global dom object
+        if (!$('#simulate .fa').hasClass('toggle-on')) {
+            $('.graph-label-container').css('display', 'block');
+        }
     })
     .subscribe(_.identity, makeErrorHandler('render label display'));
 
@@ -323,11 +334,6 @@ lastRender
                 },
                 {data: { renderTag: 0, labelTag: 0}}));
         return res;
-    })
-    .do(function (pair) {
-        if (!pair.prev || pair.cur.data.renderTag !== pair.prev.data.renderTag) {
-            pair.cur.renderer.render(pair.cur.currentState, ['pointpicking', 'edgepicking']);
-        }
     })
     .subscribe(_.identity, makeErrorHandler('render effect'));
 
