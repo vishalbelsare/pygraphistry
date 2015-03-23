@@ -273,12 +273,9 @@ var testMapper = {
             }
         },
         edgeWeight: {
-          //load bytes
             name: 'weight',
             transform: function (v) {
-                var return1 = normalizeFloat(logTransform(v), 0, 2)
-                return return1;
-
+                return normalizeFloat(logTransform(v), 0, 2)
             }
         }
     },
@@ -341,6 +338,12 @@ var splunkMapper = {
             name: 'edgeType',
             transform: function (v) {
                 return normalize(v, 0, 2);
+            }
+        },
+        edgeWeight: {
+            name: 'edgeWeight',
+            transform: function (v) {
+                return normalizeFloat(v, 0, 2)
             }
         }
     }
