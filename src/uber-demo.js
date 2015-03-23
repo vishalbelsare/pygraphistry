@@ -261,6 +261,22 @@ function renderScene(renderer, currentState, data) {
     lastRender.onNext({renderer: renderer, currentState: currentState, data: data});
 }
 
+
+lastRender
+    .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
+    .filter(function (pair) {
+        return (!pair.prev || (pair.cur.data.renderTag !== pair.prev.data.renderTag));
+    })
+    .sample(30)
+    .do(function () {
+        $('.graph-label-container').css('display', 'none');
+    })
+    .throttle(30)
+    .do(function () {
+      $('.graph-label-container').css('display', 'block');
+    })
+    .subscribe(_.identity, makeErrorHandler('render label display'));
+
 //Render gpu items, text on reqAnimFrame
 //Slower, update the pointpicking sampler (does GPU->CPU transfer)
 lastRender
