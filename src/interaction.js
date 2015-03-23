@@ -41,8 +41,9 @@ function setupDrag($eventTarget, camera) {
             }
 
             for (var j = 0; j < 8; j++) {
+                //allow dragging if not clicked
                 if ($p.hasClass('graph-label')) {
-                    return false;
+                    return !$p.hasClass('clicked');
                 }
                 $p = $p.parent();
             }
@@ -107,7 +108,7 @@ function setupScroll($eventTarget, canvas, camera) {
         .filter(function () {
             return !($marquee.hasClass('done') && $marqueeButton.hasClass('toggle-on'));
         }).filter(function (evt) {
-            return ! $(evt.target).parents('.graph-label').length;
+            return ! $(evt.target).parents('.graph-label-contents').length;
         })
         .do(function (wheelEvent) {
             wheelEvent.preventDefault();
