@@ -1,11 +1,10 @@
-"use strict";
+'use strict';
 
 var Q = require('q');
 var _ = require('underscore');
 var fs = require('fs');
 var debug = require('debug')('graphistry:graph-viz:data:vgraphloader');
 var pb = require('protobufjs');
-var zlib = require('zlib');
 var path = require('path');
 
 var config  = require('config')();
@@ -31,48 +30,48 @@ var attributeLoaders = function(graph) {
     return {
         pointTag: {
             load: graph.setPointTags,
-            type: "number",
+            type: 'number',
             default: graph.setPointTags,
             target: VERTEX,
             values: undefined
         },
         edgeTag: {
             load: graph.setEdgeTags,
-            type: "number",
+            type: 'number',
             default: graph.setEdgeTags,
             target: EDGE,
             values: undefined
         },
         pointSize: {
             load: graph.setSizes,
-            type : "number",
+            type : 'number',
             default: graph.setSizes,
             target: VERTEX,
             values: undefined
         },
         pointColor: {
             load: graph.setColors,
-            type: "number",
+            type: 'number',
             default: graph.setColors,
             target: VERTEX,
             values: undefined
         },
         edgeColor: {
             load: graph.setEdgeColors,
-            type: "number",
+            type: 'number',
             default: graph.setEdgeColors,
             target: EDGE,
             values: undefined
         },
         pointLabel: {
             load: graph.setLabels,
-            type: "string",
+            type: 'string',
             target: VERTEX,
             values: undefined
         },
         edgeWeight: {
           load: graph.setEdgeWeight,
-          type: "number",
+          type: 'number',
           target: EDGE,
           default: graph.setEdgeWeight,
           values: undefined
@@ -106,11 +105,11 @@ function getAttributeMap(vg) {
 }
 
 function decode0(graph, vg, metadata)  {
-    debug("Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)",
+    debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
           vg.version, vg.name, vg.nvertices, vg.nedges);
 
     var amap = getAttributeMap(vg);
-    debug("Graph has attribute: %o", Object.keys(amap))
+    debug('Graph has attribute: %o', Object.keys(amap))
     var vertices = [];
     var edges = []
     var dimensions = [1, 1];
@@ -204,45 +203,42 @@ function decode0(graph, vg, metadata)  {
 
     for (var vname in amap) {
         if (!(vname in loaders)) {
+            debug('Skipping unmapped attribute', vname);
             continue;
         }
-        var loader = loaders[vname];
 
         var vec = amap[vname];
-        if (vec.target != loader.target) {
-            util.warn("Vertex/Node attribute mismatch for " + vname);
-            continue;
-        }
+        var loaderArray = loaders[vname];
 
-        if (vec.type != loader.type) {
-            util.warn("Expected type " + loader.type + " but got " + vec.type + " for" + vname);
-            continue;
-        }
-
-        loaders[vname].values = vec.values;
+        _.each(loaderArray, function (loader) {
+            if (vec.target != loader.target) {
+                util.warn('Vertex/Node attribute mismatch for ' + vname);
+            } else if (vec.type != loader.type) {
+                util.warn('Expected type ' + loader.type + ' but got ' + vec.type + ' for' + vname);
+            } else {
+                loader.values = vec.values;
+            }
+        });
     }
-
-    var vloaders = _.filter(loaders, function (l) {return l.target == VERTEX;});
-    var eloaders = _.filter(loaders, function (l) {return l.target == EDGE;});
 
     return graph.setVertices(vertices)
     .then(function () {
         return graph.setEdges(edges);
     }).then(function () {
-        runLoaders(vloaders);
-        runLoaders(eloaders);
+        runLoaders(loaders);
         return graph;
     }).fail(util.makeErrorHandler('Failure in VGraphLoader'));
 }
 
 function runLoaders(loaders) {
-    for (var i = 0; i < loaders.length; i++) {
-        var loader = loaders[i];
-        if (loader.values)
-            loader.load(loader.values);
-        else if (loader.default)
-            loader.default()
-    }
+    _.each(loaders, function (loaderArray, aname) {
+        _.each(loaderArray, function (loader) {
+            if (loader.values)
+                loader.load(loader.values);
+            else if (loader.default)
+                loader.default();
+        });
+    });
 }
 
 var testMapper = {
@@ -254,23 +250,23 @@ var testMapper = {
             name: 'edgeTag'
         },
         pointSize: {
-            name: "degree",
+            name: 'degree',
             transform: function (v) {
                 return normalize(logTransform(v), 5, Math.pow(2, 8))
             }
         },
         pointTitle: {
-            name: "label"
+            name: 'label'
         },
         pointColor: {
-            name: "community_spinglass",
+            name: 'community_spinglass',
             transform: function (v) {
                 var palette = util.palettes.qual_palette2;
                 return int2color(normalize(v, 0, palette.length - 1), palette);
             }
         },
         edgeColor: {
-            name: "weight",
+            name: 'weight',
             transform: function (v) {
                 var palette = util.palettes.green2red_palette;
                 return int2color(normalize(logTransform(v), 0, palette.length - 1), palette);
@@ -278,7 +274,7 @@ var testMapper = {
         },
         edgeWeight: {
           //load bytes
-            name: "bytes",
+            name: 'weight',
             transform: function (v) {
                 var return1 = normalizeFloat(logTransform(v), 0, 2)
                 return return1;
@@ -302,10 +298,10 @@ var testMapperDemo = {
 var debugMapper = {
     mappings: {
         pointLabel: {
-            name: "label"
+            name: 'label'
         },
         pointSize: {
-            name: "size"
+            name: 'size'
         }
     },
 }
@@ -313,36 +309,36 @@ var debugMapper = {
 var splunkMapper = {
     mappings: {
         pointSize: {
-            name: "pointSize",
+            name: 'pointSize',
             transform: function (v) {
                 return normalize(v, 5, Math.pow(2, 8))
             }
         },
         pointLabel: {
-            name: "pointLabel"
+            name: 'pointLabel'
         },
         pointColor: {
-            name: "pointColor",
+            name: 'pointColor',
             transform: function (v) {
                 var palette = util.palettes.qual_palette2;
                 return int2color(groupRoundAndClamp(v, 0, palette.length - 1), palette);
             }
         },
         edgeColor: {
-            name: "edgeColor",
+            name: 'edgeColor',
             transform: function (v) {
                 var palette = util.palettes.green2red_palette;
                 return int2color(normalize(v, 0, palette.length - 1), palette);
             }
         },
         pointTag: {
-            name: "pointType",
+            name: 'pointType',
             transform: function (v) {
                 return normalize(v, 0, 2);
             }
         },
         edgeTag: {
-            name: "edgeType",
+            name: 'edgeType',
             transform: function (v) {
                 return normalize(v, 0, 2);
             }
@@ -356,23 +352,29 @@ function wrap(mappings, loaders) {
         if (a in mappings) {
             var loader = loaders[a];
             var mapping = mappings[a];
-            res[mapping.name] = loader;
 
-            if ('transform' in mapping)
-                // Helper function to work around dubious JS scoping
-                doWrap(res, mapping, loader.load);
+            // Helper function to work around dubious JS scoping
+            doWrap(res, mapping, loader);
 
-            debug("Mapping " + mapping.name + " to " + a);
+            debug('Mapping ' + mapping.name + ' to ' + a);
         } else
-            res[a] = loaders[a];
+            res[a] = [loaders[a]];
     }
     return res;
 }
 
-function doWrap(res, mapping, oldLoad) {
-    res[mapping.name].load = function (data) {
-        oldLoad(mapping.transform(data));
+function doWrap(res, mapping, loader) {
+    var mapped = res[mapping.name] || [];
+
+    if ('transform' in mapping) {
+        var oldLoad = loader.load;
+        loader.load = function (data) {
+            oldLoad(mapping.transform(data));
+        }
     }
+
+    mapped.push(loader);
+    res[mapping.name] = mapped;
 }
 
 var mappers = {
