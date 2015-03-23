@@ -100,6 +100,9 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
     function addAttributes(vectors, entry) {
         _.each(entry, function (val, key) {
             var vector = vectors[key];
+            if (!vector) {
+                return console.warn('missing' + key);
+            }
             vector.values.push(vector.transform(val));
         });
     }
