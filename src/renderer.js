@@ -284,7 +284,7 @@ function init(config, canvas) {
     setCamera(state);
 
     debug('state pre', state.toJS());
-    state = state.mergeDeep(createRenderTargets(config, canvas, gl));
+    state = state.mergeDeep(createRenderTargets(config, canvas, gl, camera));
 
     debug('state pre b', state.toJS());
     state = state.mergeDeep(createStandardTextures(config, canvas, gl));
@@ -384,28 +384,29 @@ function resizeCanvas(state) {
 
 
 //RenderState * canvas * string -> {x: int, y:int, width: float, height: float}
-function getTextureDims(config, canvas, name) {
+function getTextureDims(config, canvas, camera, name) {
     if (!name || name === 'CANVAS') {
         return {width: canvas.width, height: canvas.height};
     }
 
     var textureConfig = config.get ? config.get('textures').get(name).toJS() : config.textures[name];
+    var pixelRatio = camera.pixelRatio;
 
     var width =
         textureConfig.hasOwnProperty('width') ?
-            Math.round(0.01 * textureConfig.width.value * canvas.width)
-        : canvas.width;
+            Math.round(0.01 * textureConfig.width.value * canvas.width / pixelRatio)
+        : Math.round(canvas.width / pixelRatio);
     var height =
         textureConfig.hasOwnProperty('height') ?
-            Math.round(0.01 * textureConfig.height.value * canvas.height)
-        : canvas.height;
+            Math.round(0.01 * textureConfig.height.value * canvas.height / pixelRatio)
+        : Math.round(canvas.height / pixelRatio);
 
     return { width: width, height: height };
 }
 
 // create for each texture rendertarget, an offscreen fbo, texture, renderbuffer, and host buffer
 // note that not all textures are render targets (e.g., server reads)
-function createRenderTargets(config, canvas, gl) {
+function createRenderTargets(config, canvas, gl, camera) {
 
     var neededTextures =
         _.chain(
@@ -420,7 +421,7 @@ function createRenderTargets(config, canvas, gl) {
     var textures      = neededTextures.map(gl.createTexture.bind(gl)),
         fbos          = neededTextures.map(gl.createFramebuffer.bind(gl)),
         renderBuffers = neededTextures.map(gl.createRenderbuffer.bind(gl)),
-        dimensions    = neededTextures.map(getTextureDims.bind('', config, canvas)),
+        dimensions    = neededTextures.map(getTextureDims.bind('', config, canvas, camera)),
         pixelreads    = neededTextures.map(
                 function (_, i) {
                     return new Uint8Array(dimensions[i].width * dimensions[i].height * 4); });
@@ -853,7 +854,7 @@ function renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, r
     }
 
     //change viewport in case of downsampled target
-    var dims = getTextureDims(config, gl.canvas, renderTarget);
+    var dims = getTextureDims(config, gl.canvas, camera, renderTarget);
     gl.viewport(0, 0, dims.width, dims.height);
 
     if (!clearedFBOs[renderTarget]) {

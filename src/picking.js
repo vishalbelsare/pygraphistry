@@ -55,11 +55,11 @@ function decodeGpuIndex (raw) {
 
 
 //returns idx or -1
-function hitTest(maps, canvas, x, y) {
+function hitTest(maps, width, height, x, y) {
     // debug('hit testing', texture);
     var retObj = {idx: -1, dim: 0};
 
-    var canvasIdx = (canvas.height - y) * canvas.width + x;
+    var canvasIdx = (height - y) * width + x;
     for (var i = 0; i < maps.length; i++) {
         var raw = maps[i][canvasIdx];
         retObj = decodeGpuIndex(raw);
@@ -73,11 +73,11 @@ function hitTest(maps, canvas, x, y) {
 
 //hit test by sampling for a hit on circle's perimeter
 //returns idx or -1
-function hitTestCircumference(maps, canvas, x, y, r) {
+function hitTestCircumference(maps, width, height, x, y, r) {
     for (var attempt = 0; attempt < r * 2 * Math.PI; attempt++) {
         var attemptX = x + r * Math.round(Math.cos(attempt / r));
         var attemptY = y + r * Math.round(Math.sin(attempt / r));
-        var hit = hitTest(maps, canvas, attemptX, attemptY);
+        var hit = hitTest(maps, width, height, attemptX, attemptY);
         if (hit.idx > -1) {
             return hit;
         }
@@ -97,8 +97,9 @@ function hitTestN(state, textures, x, y, r) {
 
     var canvas = state.get('gl').canvas;
     var pixelRatio = state.get('camera').pixelRatio;
-    x = x * pixelRatio;
-    y = y * pixelRatio;
+    var cssWidth =canvas.width / pixelRatio;
+    var cssHeight = canvas.height / pixelRatio;
+
     var maps = [];
 
     _.each(textures, function (texture) {
@@ -114,12 +115,12 @@ function hitTestN(state, textures, x, y, r) {
 
     // If no r, just do plain hitTest
     if (!r) {
-        return hitTest(maps, canvas, x, y);
+        return hitTest(maps, cssWidth, cssHeight, x, y);
     }
 
     //look up to r px away
     for (var offset = 0; offset < r; offset++) {
-        var hitOnCircle = hitTestCircumference(maps, canvas, x, y, offset + 1);
+        var hitOnCircle = hitTestCircumference(maps, cssWidth, cssHeight, x, y, offset + 1);
         if (hitOnCircle.idx > -1) {
             return hitOnCircle;
         }

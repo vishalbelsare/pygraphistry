@@ -47,7 +47,6 @@ function topHits(hits) {
 //renderState * String -> {<idx> -> True}
 //dict of points that are on screen -- approx may skip some
 function getActiveApprox(renderState, textureName) {
-
     var samples32 = new Uint32Array(renderState.get('pixelreads')[textureName].buffer);
     var hits = markHits(samples32);
 
