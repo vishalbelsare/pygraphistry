@@ -97,6 +97,7 @@ var textures = {
     },
     'pointTexture': {
         'datasource': 'CLIENT',
+        'retina': true
     },
     'pointHitmapDownsampled': {
         'datasource': 'CLIENT',
