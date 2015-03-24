@@ -25,6 +25,10 @@ function etl(msg) {
         name
     );
 
+    if (vg === undefined) {
+        throw new Error('Invalid edgelist');
+    }
+
     var metadata = {name: name};
 
     function cacheLocally() {

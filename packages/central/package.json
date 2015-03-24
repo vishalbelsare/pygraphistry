@@ -21,6 +21,7 @@
     "request": "~2.53.0",
     "rx": "~2.3.0",
     "splunk-viz": "git+ssh://git@github.com:graphistry/splunk-viz.git#master",
+    "sprintf-js": "~1.0.0",
     "uber-viz": "git+ssh://git@github.com:graphistry/uber-viz.git#master",
     "underscore": "~1.8.0"
   },
