@@ -264,30 +264,47 @@ function renderScene(renderer, currentState, data) {
 
 
 // Determine if it's a quiet/noisy state
-lastRender
+var startRendering = lastRender
     .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
     .filter(function (pair) {
         return (!pair.prev || (pair.cur.data.renderTag !== pair.prev.data.renderTag));
     })
+    .sample(DEBOUNCE_TIME);
 
-    // What to do when starting noisy/rendering state
-    .sample(DEBOUNCE_TIME)
+var stopRendering = lastRender
+    .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
+    .filter(function (pair) {
+        return (!pair.prev || (pair.cur.data.renderTag !== pair.prev.data.renderTag));
+    })
+    .debounce(DEBOUNCE_TIME);
+var currentlyRendering = new Rx.ReplaySubject(1);
+
+// What to do when starting noisy/rendering state
+startRendering
     .do(function () {
         $('.graph-label-container').css('display', 'none');
     })
+    .do(function () {
+        currentlyRendering.onNext(true);
+    })
+    .subscribe(_.identity, makeErrorHandler('Start Rendering'));
 
-    // What to do when exiting noisy/rendering state
-    .debounce(DEBOUNCE_TIME)
+// What to do when exiting noisy/rendering state
+stopRendering
+    .filter(function() {
+        // TODO: Pull this from a proper stream in a refactor instead of a global dom object
+        return !$('#simulate .fa').hasClass('toggle-on');
+    })
     .do(function (pair) {
         pair.cur.renderer.render(pair.cur.currentState, ['pointpicking', 'edgepicking', 'pointsampling']);
     })
     .do(function () {
-        // TODO: Pull this from a proper stream in a refactor instead of a global dom object
-        if (!$('#simulate .fa').hasClass('toggle-on')) {
-            $('.graph-label-container').css('display', 'block');
-        }
+        $('.graph-label-container').css('display', 'block');
     })
-    .subscribe(_.identity, makeErrorHandler('render label display'));
+    .do(function () {
+        currentlyRendering.onNext(false);
+    })
+    .subscribe(_.identity, makeErrorHandler('Stop Rendering'));
 
 //Render gpu items, text on reqAnimFrame
 //Slower, update the pointpicking sampler (does GPU->CPU transfer)
@@ -339,10 +356,9 @@ lastRender
     .subscribe(_.identity, makeErrorHandler('render effect'));
 
 
-//move labels when camera moves or new highlight
+//move labels when new highlight or finish noisy rendering section
 //$DOM * Observable RenderState * Observable [ {dim: int, idx: int} ] -> ()
 function setupLabels ($labelCont, latestState, latestHighlightedObject) {
-
     latestState
         .flatMapLatest(function (currentState) {
             //wait until has samples
@@ -353,15 +369,23 @@ function setupLabels ($labelCont, latestState, latestHighlightedObject) {
                     });
                 });
         })
-        .do(function (pair) {
-            var indices = pair.highlighted.map(function (o) {
+        .flatMapLatest(function (data) {
+            return currentlyRendering.map(function (val) {
+                return _.extend({rendering: val}, data);
+            });
+        })
+        .filter(function (data) {
+            return !data.rendering;
+        })
+        .do(function (data) {
+            var indices = data.highlighted.map(function (o) {
                 return !o.dim || o.dim === 1 ? o.idx : -1;
             });
-            var clicked = pair.highlighted
+            var clicked = data.highlighted
                 .filter(function (o) { return o.click; })
                 .map(function (o) { return o.idx; });
 
-            renderPointLabels($labelCont, pair.currentState, indices, clicked);
+            renderPointLabels($labelCont, data.currentState, indices, clicked);
         })
         .subscribe(_.identity, makeErrorHandler('setuplabels'));
 }
