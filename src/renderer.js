@@ -125,8 +125,22 @@ function bindBuffer(gl, buffer) {
     return false;
 }
 
+// Polyfill to get requestAnimationFrame cross browser.
+// Falls back to setTimeout. Taken from Khronos.
+var requestAnimFrame = (function() {
+    return function(/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
+            return setTimeout(callback, 1000/60);
+         };
 
-
+    // return window.requestAnimationFrame ||
+    //      window.webkitRequestAnimationFrame ||
+    //      window.mozRequestAnimationFrame ||
+    //      window.oRequestAnimationFrame ||
+    //      window.msRequestAnimationFrame ||
+    //      function(/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
+    //        return window.setTimeout(callback, 1000/60);
+    //      };
+})();
 
 
 /** The bindings object currently in effect on a program
@@ -797,11 +811,38 @@ function setCameraIm(renderState, camera) {
 
 /**
  * Render one or more items as specified in render config's render array
+ * Implemented by queueing up a rendering task, which will lazilly be handled by
+ * the animation loop of the browser.
  * @param {Renderer} state - initialized renderer
  * @param {(string[])} [renderListOverride] - optional override of the render array
  */
 var lastRenderTarget = {};
+var lastQueuedRender = null;
+var lastRenderTimestamp = 0;
+
 function render(state, renderListOverride, readPixelsOverride) {
+    debug('Queueing a render frame');
+    lastQueuedRender = {
+        state: state,
+        renderListOverride: renderListOverride,
+        readPixelsOverride: readPixelsOverride,
+        timestamp: Date.now()
+    };
+}
+
+
+function renderLastQueued(lastQueuedRender) {
+    if (!lastQueuedRender) {
+        return;
+    }
+    if (lastRenderTimestamp >= lastQueuedRender.timestamp) {
+        return;
+    }
+
+    var state = lastQueuedRender.state;
+    var renderListOverride = lastQueuedRender.renderListOverride;
+    var readPixelsOverride = lastQueuedRender.readPixelsOverride;
+    lastRenderTimestamp = lastQueuedRender.timestamp;
     debug('========= Rendering a frame');
 
     var config      = state.get('config').toJS(),
@@ -840,6 +881,12 @@ function render(state, renderListOverride, readPixelsOverride) {
 
     gl.flush();
 }
+
+// CORE ANIMATION LOOP
+(function renderingLoop(){
+    requestAnimFrame(renderingLoop);
+    renderLastQueued(lastQueuedRender);
+})();
 
 
 function renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, readPixelsOverride, item) {
