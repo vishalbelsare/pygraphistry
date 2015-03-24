@@ -391,7 +391,6 @@ var items = {
     },
     'pointsampling': {
         'program': 'points',
-        'trigger': 'renderScene',
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
