@@ -45,6 +45,7 @@ function sendLayoutSetting(socket, algo, param, value) {
 
 var HIGHLIGHT_SIZE = 20;
 var INTERACTION_INTERVAL = 50;
+var DEBOUNCE_TIME = 60;
 
 
 function makeErrorHandler(name) {
@@ -270,13 +271,13 @@ lastRender
     })
 
     // What to do when starting noisy/rendering state
-    .sample(60)
+    .sample(DEBOUNCE_TIME)
     .do(function () {
         $('.graph-label-container').css('display', 'none');
     })
 
     // What to do when exiting noisy/rendering state
-    .debounce(60)
+    .debounce(DEBOUNCE_TIME)
     .do(function (pair) {
         pair.cur.renderer.render(pair.cur.currentState, ['pointpicking', 'edgepicking', 'pointsampling']);
     })
@@ -450,7 +451,6 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
 
 function setupDragHoverInteractions($eventTarget, renderState, bgColor, settingsChanges) {
     //var currentState = renderState;
-
     var stateStream = new Rx.Subject();
     var latestState = new Rx.ReplaySubject(1);
     stateStream.subscribe(latestState, makeErrorHandler('bad stateStream'));
