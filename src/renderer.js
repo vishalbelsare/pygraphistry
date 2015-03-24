@@ -126,20 +126,24 @@ function bindBuffer(gl, buffer) {
 }
 
 // Polyfill to get requestAnimationFrame cross browser.
-// Falls back to setTimeout. Taken from Khronos.
+// Falls back to setTimeout. Based on Khronos polyfill.
 var requestAnimFrame = (function() {
-    return function(/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
-            return setTimeout(callback, 1000/60);
-         };
 
-    // return window.requestAnimationFrame ||
-    //      window.webkitRequestAnimationFrame ||
-    //      window.mozRequestAnimationFrame ||
-    //      window.oRequestAnimationFrame ||
-    //      window.msRequestAnimationFrame ||
-    //      function(/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
-    //        return window.setTimeout(callback, 1000/60);
-    //      };
+    // Hack so we can load the bundled version of this code on server.
+    if (typeof window === 'undefined') {
+        return function(/* function FrameRequestCallback */ callback /* DOMElement Element  element*/) {
+                return setTimeout(callback, 1000/60);
+             };
+    }
+
+    return window.requestAnimationFrame ||
+         window.webkitRequestAnimationFrame ||
+         window.mozRequestAnimationFrame ||
+         window.oRequestAnimationFrame ||
+         window.msRequestAnimationFrame ||
+         function(/* function FrameRequestCallback */ callback /* DOMElement Element  element*/) {
+           return window.setTimeout(callback, 1000/60);
+         };
 })();
 
 
@@ -883,10 +887,13 @@ function renderLastQueued(lastQueuedRender) {
 }
 
 // CORE ANIMATION LOOP
-(function renderingLoop(){
+function renderingLoop(){
     requestAnimFrame(renderingLoop);
     renderLastQueued(lastQueuedRender);
-})();
+}
+if (typeof window !== 'undefined') {
+    renderingLoop();
+}
 
 
 function renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, readPixelsOverride, item) {
