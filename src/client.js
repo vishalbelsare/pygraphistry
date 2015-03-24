@@ -286,8 +286,9 @@ function handleVboUpdates(socket, renderState, renderStateUpdates) {
                     handshake(Date.now() - lastHandshake);
                     lastHandshake = Date.now();
                     renderedFrame.onNext('received');
-                    renderer.render(renderState);
-                    renderedFrame.onNext('rendered');
+                    renderer.render(renderState, 'clientNewVbos', function () {
+                        renderedFrame.onNext('rendered');
+                    });
                 },
                 function (err) { console.error('6 err. readyToRender error', err, (err||{}).stack, thisStep); });
 

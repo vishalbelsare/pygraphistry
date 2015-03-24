@@ -395,7 +395,7 @@ function resizeCanvas(state) {
         if (camera !== undefined) {
             camera.resize(width, height, pixelRatio);
             setCamera(state);
-            render(state);
+            render(state, 'resizeCanvas');
         }
     }
 }
@@ -822,75 +822,88 @@ function setCameraIm(renderState, camera) {
  * @param {(string[])} [renderListOverride] - optional override of the render array
  */
 var lastRenderTarget = {};
-var lastQueuedRender = null;
-var lastRenderTimestamp = 0;
+var lastQueuedRenders = {};
 
-function render(state, renderListOverride, readPixelsOverride) {
+function render(state, tag, cb, opts) {
     debug('Queueing a render frame');
-    lastQueuedRender = {
+
+    lastQueuedRenders[tag] = {
         state: state,
-        renderListOverride: renderListOverride,
-        readPixelsOverride: readPixelsOverride,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        cb: cb
     };
+    if (opts) {
+        _.extend(lastQueuedRenders[tag], opts);
+    }
 }
 
 
-function renderLastQueued(lastQueuedRender) {
-    if (!lastQueuedRender) {
-        return;
-    }
-    if (lastRenderTimestamp >= lastQueuedRender.timestamp) {
+function renderLastQueued() {
+    if (_.isEmpty(lastQueuedRenders)) {
         return;
     }
 
-    var state = lastQueuedRender.state;
-    var renderListOverride = lastQueuedRender.renderListOverride;
-    var readPixelsOverride = lastQueuedRender.readPixelsOverride;
-    lastRenderTimestamp = lastQueuedRender.timestamp;
-    debug('========= Rendering a frame');
+    _.each(_.keys(lastQueuedRenders), function (tag) {
+        var renderObj = lastQueuedRenders[tag];
 
-    var config      = state.get('config').toJS(),
-        camera      = state.get('camera'),
-        gl          = state.get('gl'),
-        programs    = state.get('programs').toJS(),
-        buffers     = state.get('buffers').toJS();
+        var state = renderObj.state;
+        var renderListOverride = renderObj.renderListOverride;
+        var readPixelsOverride = renderObj.readPixelsOverride;
+        var cb = renderObj.cb;
 
-    var toRender = renderListOverride || state.get('defaultItems');
+        debug('========= Rendering a frame, tag: ', tag);
 
-    state.get('renderPipeline').onNext({start: toRender});
+        var config      = state.get('config').toJS(),
+            camera      = state.get('camera'),
+            gl          = state.get('gl'),
+            programs    = state.get('programs').toJS(),
+            buffers     = state.get('buffers').toJS();
 
-    var itemToTarget = function (config, itemName) {
-        var itemDef = config.items[itemName];
-        return itemDef.renderTarget === 'CANVAS' ? null : itemDef.renderTarget;
-    };
+        var toRender = renderListOverride || state.get('defaultItems');
 
-    var sortedItems = toRender.slice();
-    sortedItems.sort(function (a,b) {
-        var aTarget = itemToTarget(config, a);
-        var bTarget = itemToTarget(config, b);
-        return aTarget < bTarget ? -1 : aTarget === bTarget ? 0 : 1;
-    });
+        state.get('renderPipeline').onNext({start: toRender});
 
-    var clearedFBOs = { };
-    sortedItems.forEach(function(item) {
-        if(typeof numElements[item] === 'undefined' || numElements[item] < 1) {
-            debug('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
-                item);
-            return false;
+        var itemToTarget = function (config, itemName) {
+            var itemDef = config.items[itemName];
+            return itemDef.renderTarget === 'CANVAS' ? null : itemDef.renderTarget;
+        };
+
+        var sortedItems = toRender.slice();
+        sortedItems.sort(function (a,b) {
+            var aTarget = itemToTarget(config, a);
+            var bTarget = itemToTarget(config, b);
+            return aTarget < bTarget ? -1 : aTarget === bTarget ? 0 : 1;
+        });
+
+        var clearedFBOs = { };
+        sortedItems.forEach(function(item) {
+            if(typeof numElements[item] === 'undefined' || numElements[item] < 1) {
+                debug('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
+                    item);
+                return false;
+            }
+            renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, readPixelsOverride, item);
+        });
+
+        state.get('renderPipeline').onNext({rendered: toRender});
+
+        gl.flush();
+
+        // Call optional callback.
+        if (cb) {
+            cb();
         }
-        renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, readPixelsOverride, item);
+
     });
 
-    state.get('renderPipeline').onNext({rendered: toRender});
-
-    gl.flush();
+    // Clear render queue
+    lastQueuedRenders = {};
 }
 
 // CORE ANIMATION LOOP
 function renderingLoop(){
     requestAnimFrame(renderingLoop);
-    renderLastQueued(lastQueuedRender);
+    renderLastQueued();
 }
 if (typeof window !== 'undefined') {
     renderingLoop();

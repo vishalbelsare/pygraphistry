@@ -143,14 +143,7 @@ function marqueeSelections (renderState, $cont, $elt, isOn) {
                                     height: height + 2 * bw
                                 });
 
-                                var ghost = createGhostImg(renderState, rect);
-                                $(ghost).css({
-                                    'pointer-events': 'none',
-                                    'transform': 'scaleY(-1)',
-                                    'width': width,
-                                    'height': height
-                                });
-                                $elt.append(ghost);
+                                createGhostImg(renderState, rect, $elt, width, height);
                             });
                     });
 
@@ -230,18 +223,23 @@ function createElt() {
 
 }
 
+// Callback takes texture as arg.
+// TODO: Consider using RX here instead of callbacks?
+function getTexture(renderState, dims, cb) {
+    var renderOpts = {renderListOverride: ['pointoutlinetexture', 'pointculledtexture'],
+            readPixelsOverride: dims};
 
-function getTexture(renderState, dims) {
-    renderer.render(renderState, ['pointoutlinetexture', 'pointculledtexture'], dims);
-    var texture = renderState.get('pixelreads').pointTexture;
-    if (!texture) {
-        console.error('error reading texture');
-    }
-    return texture;
+    renderer.render(renderState, 'marqueeGetTexture', function () {
+            var texture = renderState.get('pixelreads').pointTexture;
+            if (!texture) {
+                console.error('error reading texture');
+            }
+            cb(texture);
+        }, renderOpts);
 }
 
 
-function createGhostImg(renderState, sel) {
+function createGhostImg(renderState, sel, $elt, cssWidth, cssHeight) {
     var canvas = renderState.get('gl').canvas;
     var pixelRatio = renderState.get('camera').pixelRatio;
 
@@ -252,20 +250,26 @@ function createGhostImg(renderState, sel) {
         height: Math.max(1, pixelRatio * Math.abs(sel.tl.y - sel.br.y))
     };
 
-    var texture = getTexture(renderState, dims);
+    getTexture(renderState, dims, function (texture) {
+        var imgCanvas = document.createElement('canvas');
+        imgCanvas.width = dims.width;
+        imgCanvas.height = dims.height;
+        var ctx = imgCanvas.getContext('2d');
 
-    var imgCanvas = document.createElement('canvas');
-    imgCanvas.width = dims.width;
-    imgCanvas.height = dims.height;
-    var ctx = imgCanvas.getContext('2d');
+        var imgData = ctx.createImageData(dims.width, dims.height);
+        imgData.data.set(texture);
+        ctx.putImageData(imgData, 0, 0);
+        var img = new Image();
+        img.src = imgCanvas.toDataURL();
 
-    var imgData = ctx.createImageData(dims.width, dims.height);
-    imgData.data.set(texture);
-    ctx.putImageData(imgData, 0, 0);
-    var img = new Image();
-    img.src = imgCanvas.toDataURL();
-
-    return img;
+        $(img).css({
+            'pointer-events': 'none',
+            'transform': 'scaleY(-1)',
+            'width': cssWidth,
+            'height': cssHeight
+        });
+        $elt.append(img);
+    });
 }
 
 

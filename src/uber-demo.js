@@ -296,7 +296,8 @@ stopRendering
         return !$('#simulate .fa').hasClass('toggle-on');
     })
     .do(function (pair) {
-        pair.cur.renderer.render(pair.cur.currentState, ['pointpicking', 'edgepicking', 'pointsampling']);
+        pair.cur.renderer.render(pair.cur.currentState, 'interactionPicking', null,
+            {renderListOverride: ['pointpicking', 'edgepicking', 'pointsampling']});
     })
     .do(function () {
         $('.graph-label-container').css('display', 'block');
@@ -330,7 +331,7 @@ lastRender
     .do(function (pair) {
         var cfg = pair.cur;
         if (!pair.prev || (cfg.data.renderTag !== pair.prev.data.renderTag)) {
-            cfg.renderer.render(cfg.currentState, undefined, undefined);
+            cfg.renderer.render(cfg.currentState, 'interactionRender');
         }
 
         renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer),
