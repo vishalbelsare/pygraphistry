@@ -408,7 +408,8 @@ function getTextureDims(config, canvas, camera, name) {
     }
 
     var textureConfig = config.get ? config.get('textures').get(name).toJS() : config.textures[name];
-    var pixelRatio = camera.pixelRatio;
+    // Do not downsample texture if retina is set
+    var pixelRatio = textureConfig.retina ? 1 : camera.pixelRatio;
 
     var width =
         textureConfig.hasOwnProperty('width') ?
