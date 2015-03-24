@@ -358,21 +358,6 @@ var items = {
         'renderTarget': 'pointTexture',
         'readTarget': false
     },
-    'pointpickingScreen': {
-        'program': 'points',
-        'trigger': 'renderScene',
-        'bindings': {
-            'curPos':       ['curPoints', 'curPos'],
-            'pointSize':    ['pointSizes', 'pointSize'],
-            'pointColor':   ['vertexIndices', 'pointColor']
-        },
-        'uniforms': {
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
-        },
-        'drawType': 'POINTS',
-        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] }
-    },
     'pointpicking': {
         'program': 'points',
         'bindings': {
