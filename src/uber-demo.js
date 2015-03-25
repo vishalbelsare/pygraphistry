@@ -837,6 +837,24 @@ function showPageableGrid(workerUrl, model, columns, count) {
 }
 
 
+function setupBrush(socket, marquee) {
+    marquee.selections.flatMap(function (sel) {
+        var params = {sel: sel, attribute: 'degree'};
+        return Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params);
+    }).do(function (reply) {
+        if (!reply) {
+            console.error('Unexpected server error on aggregate');
+        } else if (reply && !reply.success) {
+            console.log('Server replied with error:', reply.error);
+        }
+    }).filter(function (reply) { return reply && reply.success; })
+    .do(function (reply) {
+        console.log('Got aggregate data', reply.data);
+        // TODO Show histogram
+    }).subscribe(_.identity, makeErrorHandler('aggregate error'));
+}
+
+
 function toLog(minPos, maxPos, minVal, maxVal, pos) {
     var logMinVal = Math.log(minVal);
     var logMaxVal = Math.log(maxVal);
@@ -881,6 +899,7 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
 
     var marquee = setupMarquee(turnOnMarquee, renderState);
     setupInspector(socket, workerParams.url, marquee);
+    setupBrush(socket, marquee);
 
     var settingsChanges = new Rx.ReplaySubject(1);
     settingsChanges.onNext({});
