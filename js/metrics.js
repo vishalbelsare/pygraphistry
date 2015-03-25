@@ -22,7 +22,6 @@ require('dns').resolve('www.graphistry.com', function (err) {
 });
 
 function sendToBoundary (entry) {
-
     if (!config.BOUNDARY || (config.ENVIRONMENT === 'local' /*&& !IS_ONLINE*/)) {
         debug(entry);
         return;
@@ -81,7 +80,14 @@ var init = function(name){
     // noop since we took out Bunyan logging. Remains for compatability reasons.
 }
 
+/* Boundary floods log with error, disabling
 module.exports = {
-    "info": info,
-    "init": init
+    'info': info,
+    'init': init
+};
+*/
+
+module.exports = {
+    'info': function () {},
+    'init': function () {}
 };
