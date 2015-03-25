@@ -307,6 +307,15 @@ function init(config, canvas) {
     debug('state pre b', state.toJS());
     state = state.mergeDeep(createStandardTextures(config, canvas, gl));
 
+    // CORE ANIMATION LOOP
+    function renderingLoop(){
+        requestAnimFrame(renderingLoop);
+        renderLastQueued();
+    }
+    if (typeof window !== 'undefined') {
+        renderingLoop();
+    }
+
     debug('created', state.toJS());
     return state;
 }
@@ -876,14 +885,39 @@ function renderLastQueued() {
         });
 
         var clearedFBOs = { };
+        var texturesToRead = [];
+
         sortedItems.forEach(function(item) {
             if(typeof numElements[item] === 'undefined' || numElements[item] < 1) {
                 debug('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
                     item);
                 return false;
             }
-            renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, readPixelsOverride, item);
+            var texture = renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, item);
+            if (texture) {
+                texturesToRead.push(texture);
+            }
         });
+
+        if (texturesToRead.length > 0) {
+            _.uniq(texturesToRead).forEach(function (renderTarget) {
+                debug('reading back texture', renderTarget);
+
+                var dims = getTextureDims(config, gl.canvas, camera, renderTarget);
+                var pixelreads = state.get('pixelreads');
+                var texture = pixelreads[renderTarget];
+                var readDims = readPixelsOverride || { x: 0, y: 0, width: dims.width, height: dims.height };
+
+                if (!texture || texture.length !== readDims.width * readDims.height * 4) {
+                    debug('reallocating buffer', texture.length, readDims.width * readDims.height * 4);
+                    texture = new Uint8Array(readDims.width * readDims.height * 4);
+                    pixelreads[renderTarget] = texture;
+                }
+
+                gl.readPixels(readDims.x, readDims.y, readDims.width, readDims.height,
+                              gl.RGBA, gl.UNSIGNED_BYTE, texture);
+            });
+        }
 
         state.get('renderPipeline').onNext({rendered: toRender});
 
@@ -900,17 +934,8 @@ function renderLastQueued() {
     lastQueuedRenders = {};
 }
 
-// CORE ANIMATION LOOP
-function renderingLoop(){
-    requestAnimFrame(renderingLoop);
-    renderLastQueued();
-}
-if (typeof window !== 'undefined') {
-    renderingLoop();
-}
 
-
-function renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, readPixelsOverride, item) {
+function renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, item) {
     debug('Rendering item "%s" (%d elements)', item, numElements[item]);
 
     var itemDef = config.items[item];
@@ -948,20 +973,9 @@ function renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, r
     gl.drawArrays(gl[itemDef.drawType], 0, numElements[item]);
 
     if (renderTarget !== null && itemDef.readTarget) {
-        debug('  reading back texture', item, renderTarget);
-
-        var pixelreads = state.get('pixelreads');
-        var texture = pixelreads[renderTarget];
-        var readDims = readPixelsOverride || { x: 0, y: 0, width: dims.width, height: dims.height };
-
-        if (!texture || texture.length !== readDims.width * readDims.height * 4) {
-            debug('reallocating buffer', texture.length, readDims.width * readDims.height * 4);
-            texture = new Uint8Array(readDims.width * readDims.height * 4);
-            pixelreads[renderTarget] = texture;
-        }
-
-        gl.readPixels(readDims.x, readDims.y, readDims.width, readDims.height,
-                        gl.RGBA, gl.UNSIGNED_BYTE, texture);
+        return renderTarget;
+    } else {
+        return undefined;
     }
 }
 
