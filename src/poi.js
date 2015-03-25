@@ -184,7 +184,7 @@ function createLabelDom(labelObj) {
             var $key = $('<td>').addClass('graph-label-key').text(pair[0]);
             var val = pair[1];
             var entry = (!isNaN(val) && val % 1 !== 0) ? sprintf('%.4f', val) : sprintf('%s', val);
-            var $wrap = $('<div>').addClass('graph-label-value-wrapper').text(entry);
+            var $wrap = $('<div>').addClass('graph-label-value-wrapper').html(entry);
             var $val = $('<td>').addClass('graph-label-value').append($wrap);
             $row.append($key).append($val);
             $table.append($row);
