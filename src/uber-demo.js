@@ -722,7 +722,7 @@ function createControls(socket) {
             },
             {
                 name: 'edgeSize',
-                prettyName: 'Edge Size',
+                prettyName: 'Edge Width',
                 type: 'discrete',
                 value: 50.0,
                 step: 1,
@@ -739,7 +739,8 @@ function createControls(socket) {
 
         // Setup layout controls
         _.each(controls, function (la) {
-            var $heading = $('<div>').addClass('control-title').text(la.name);
+            //var $heading = $('<div>').addClass('control-title').text(la.name);
+            var $heading = $('<div>').addClass('control-title').text('Physics');
             $anchor.append($heading);
             _.each(la.params, function (param) {
                 makeControl(param, 'layout');
