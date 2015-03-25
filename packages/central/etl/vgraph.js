@@ -202,7 +202,6 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
         addAttributes(evectors, entry);
     });
 
-    nlabels = nlabels.slice(50);
     debug('Loading', nlabels.length, 'labels for', nodeCount, 'nodes');
     if (nodeCount > nlabels.length) {
         console.info('There are', nodeCount - nlabels.length, 'labels missing');
