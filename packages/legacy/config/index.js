@@ -3,7 +3,7 @@
 
 var util = require('util');
 var debug = require('debug')('graphistry:config');
-var _ = require('underscore');
+var _ = require('lodash');
 var AWS = require('aws-sdk');
 AWS.config.update({accessKeyId: 'AKIAJSGVPK46VRVYMU2A', secretAccessKey: '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'});
 AWS.config.update({region: 'us-west-1'});
