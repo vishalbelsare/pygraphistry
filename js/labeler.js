@@ -92,9 +92,49 @@ function getLabels(graph, indices) {
     }
 }
 
+function histogram(graph, indices, attribute) {
+    var frame = infoFrame(graph, indices);
+    var values = _.map(frame, function (row) {
+        return row[attribute];
+    });
+
+    if (!_.all(values, function (x) { return typeof x === 'number'; })) {
+        throw new Error('not numeric');
+    }
+    values = _.filter(values, function (x) { return !isNaN(x)});
+
+    var numValues = values.length;
+    if (numValues < 1) {
+        throw new Error('no data');
+    }
+
+    var numBins = numValues > 30 ? Math.ceil(Math.log(numValues) / Math.log(2)) + 1
+                                 : Math.ceil(Math.sqrt(numValues));
+    var max = _.max(values);
+    var min = _.min(values);
+    var binWidth = Math.ceil((max - min) / numBins);
+    var bins = Array.apply(null, new Array(numBins)).map(function () { return []; });
+
+    _.each(values, function (val) {
+        var binId = Math.floor((val - min) / binWidth);
+        bins[binId].push(val)
+    })
+
+    return {
+        type: 'histogram',
+        numBins: numBins,
+        binWidth: binWidth,
+        numValues: numValues,
+        maxValue: max,
+        minValues: min,
+        bins: bins
+    };
+}
+
 module.exports = {
     getLabels: getLabels,
     infoFrame: infoFrame,
+    histogram: histogram,
     frameHeader: frameHeader,
 };
 
