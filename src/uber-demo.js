@@ -282,7 +282,7 @@ var currentlyRendering = new Rx.ReplaySubject(1);
 // What to do when starting noisy/rendering state
 startRendering
     .do(function () {
-        $('.graph-label-container').fadeOut(20);//.css('display', 'none');
+        $('.graph-label-container').fadeOut(20);
     })
     .do(function () {
         currentlyRendering.onNext(true);
@@ -300,7 +300,7 @@ stopRendering
             {renderListOverride: ['pointpicking', 'edgepicking', 'pointsampling']});
     })
     .do(function () {
-        $('.graph-label-container').fadeIn(200);//css('display', 'block');
+        $('.graph-label-container').fadeIn(200);
     })
     .do(function () {
         currentlyRendering.onNext(false);
