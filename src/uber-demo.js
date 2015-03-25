@@ -45,7 +45,7 @@ function sendLayoutSetting(socket, algo, param, value) {
 
 var HIGHLIGHT_SIZE = 20;
 var INTERACTION_INTERVAL = 50;
-var DEBOUNCE_TIME = 60;
+var DEBOUNCE_TIME = 100;
 
 
 function makeErrorHandler(name) {
@@ -282,7 +282,7 @@ var currentlyRendering = new Rx.ReplaySubject(1);
 // What to do when starting noisy/rendering state
 startRendering
     .do(function () {
-        $('.graph-label-container').css('display', 'none');
+        $('.graph-label-container').fadeOut(20);//.css('display', 'none');
     })
     .do(function () {
         currentlyRendering.onNext(true);
@@ -300,7 +300,7 @@ stopRendering
             {renderListOverride: ['pointpicking', 'edgepicking', 'pointsampling']});
     })
     .do(function () {
-        $('.graph-label-container').css('display', 'block');
+        $('.graph-label-container').fadeIn(200);//css('display', 'block');
     })
     .do(function () {
         currentlyRendering.onNext(false);
