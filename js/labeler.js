@@ -126,7 +126,7 @@ function histogram(graph, indices, attribute) {
         binWidth: binWidth,
         numValues: numValues,
         maxValue: max,
-        minValues: min,
+        minValue: min,
         bins: bins
     };
 }
