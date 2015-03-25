@@ -338,10 +338,15 @@ var setEdges = Q.promised(function(graph, edges) {
           } else {
             var end = workItems[i+1][0];
             var j = i+1;
-            while (end < 0 && ((j + 1)< workItems.length)) {
+            while (end < 0 && ((j + 1) < workItems.length)) {
               end = workItems[j + 1][0];
               j = j + 1;
             }
+
+            if (end === -1) {
+                end = edgeList.length; // Special case for last workitem
+            }
+
             edgeStartEndIdxs.push([start, end]);
           }
         }
