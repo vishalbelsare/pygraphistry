@@ -116,7 +116,7 @@ function histogram(graph, indices, attribute) {
     var bins = Array.apply(null, new Array(numBins)).map(function () { return []; });
 
     _.each(values, function (val) {
-        var binId = Math.floor((val - min) / binWidth);
+        var binId = Math.min(Math.floor((val - min) / binWidth), numBins - 1);
         bins[binId].push(val)
     })
 
