@@ -12,6 +12,7 @@ var Backbone = require('backbone');
     require('backbone.paginator');
 var Backgrid = require('backgrid');
     require('backgrid-paginator');
+var d3 = require('d3');
 
 var interaction     = require('./interaction.js');
 var renderer        = require('./renderer');
@@ -841,6 +842,8 @@ function setupBrush(socket, marquee) {
 
     var $histogram = $('#histogram');
 
+
+    // Setup Backbone for the brushing histogram
     var HistogramModel = Backbone.Model.extend({
         defaults: function() {
             return {
@@ -859,7 +862,8 @@ function setupBrush(socket, marquee) {
 
     var HistogramView = Backbone.View.extend({
         tagName: 'div',
-        template: '<p>CONTENT</p>', // TODO actually make template
+        className: 'histogramDiv',
+        template: '', // TODO actually make template
         events: { // TODO do we need any?
 
         },
@@ -868,7 +872,7 @@ function setupBrush(socket, marquee) {
             this.listenTo(this.model, 'destory', this.remove);
         },
         render: function() {
-            this.$el.html(this.template);
+            // TODO: Do something or remove
             return this;
         }
     });
@@ -890,7 +894,9 @@ function setupBrush(socket, marquee) {
         },
         addHistogram: function (histogram) {
             var view = new HistogramView({model: histogram});
-            this.$el.append(view.render().el);
+            var childEl = view.render().el;
+            this.$el.append(childEl);
+            initializeHistogramViz($(childEl), histogram); // TODO: Link to data?
         },
         addAll: function () {
             this.$el.empty();
@@ -898,6 +904,7 @@ function setupBrush(socket, marquee) {
         }
     });
     var allHistograms = new AllHistogramsView();
+
 
 
     marquee.selections.flatMap(function (sel) {
@@ -915,15 +922,85 @@ function setupBrush(socket, marquee) {
         // TODO: Massage this into a format we want.
         return reply.data;
     }).do(function (data) {
-        showHistogram(socket, marquee, histograms, data);
+        updateHistogramData(socket, marquee, histograms, data);
     }).subscribe(_.identity, makeErrorHandler('aggregate error'));
 }
 
 
-function showHistogram(socket, marquee, collection, data) {
-    console.log('Showing Histogram: ', data);
+function initializeHistogramViz($el, model) {
+    var width = $el.width();
+    var height = $el.parent().height(); // TODO: Get this more naturally.
+    var data = model.attributes;
+    var bins = data.bins;
+    console.log('Data: ', data);
+
+    var margin = {top: 10, right: 10, bottom: 20, left:20};
+    width = width - margin.left - margin.right;
+    height = height - margin.top - margin.bottom;
+
+    // TODO: Make these align between bars
+    var xScale = d3.scale.ordinal()
+        .rangeRoundBands([0, width], .1, 1);
+
+    var yScale = d3.scale.linear()
+        .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+        .scale(xScale)
+        .orient('bottom');
+
+    var yAxis = d3.svg.axis()
+        .scale(yScale)
+        .ticks(5) // TODO: Dynamic?
+        .orient('left'); // TODO: format?
+
+    var svg = d3.select($el[0]).append('svg')
+            .attr('width', width + margin.left + margin.right)
+            .attr('height', height + margin.top + margin.bottom)
+        .append('g')
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+    // TODO: Make this correct values
+    xScale.domain(_.range(data.numBins));
+    yScale.domain([0, d3.max(bins, function (d) {
+        return d.length;
+    })]);
+
+    svg.append('g')
+        .attr('class', 'x axis')
+        .attr('transform', 'translate(0,' + height + ')')
+        .call(xAxis);
+
+    svg.append('g')
+        .attr('class', 'y axis')
+        .call(yAxis);
+
+    svg.selectAll('.bar')
+            .data(bins)
+        .enter().append('rect')
+            .attr('class', 'bar')
+            .attr('x', function (d, i) {
+                return xScale(i);
+            })
+            .attr('width', xScale.rangeBand())
+            .attr('y', function (d) {
+                return yScale(d.length);
+            })
+            .attr('height', function (d) {
+                return height - yScale(d.length);
+            });
+
+
+}
+
+
+function updateHistogramData(socket, marquee, collection, data) {
+    console.log('Updating Histogram Data: ', data);
     collection.reset([data]);
 }
+
+
+
 
 
 function toLog(minPos, maxPos, minVal, maxVal, pos) {
