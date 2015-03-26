@@ -791,7 +791,7 @@ function setupInspector(socket, workerUrl, marquee) {
         }).filter(function (reply) { return reply && reply.success; })
         .subscribe(function (reply) {
             debug('Setting up PageableCollection of size', reply.count);
-            showPageableGrid(workerUrl, InspectData, columns, reply.count);
+            // showPageableGrid(workerUrl, InspectData, columns, reply.count);
         }, makeErrorHandler('fetch data for inspector'));
     }).subscribe(_.identity, makeErrorHandler('fetch inspectHeader'));
 }
@@ -838,6 +838,68 @@ function showPageableGrid(workerUrl, model, columns, count) {
 
 
 function setupBrush(socket, marquee) {
+
+    var $histogram = $('#histogram');
+
+    var HistogramModel = Backbone.Model.extend({
+        defaults: function() {
+            return {
+                active: true
+            };
+        }
+    });
+
+    var HistogramCollection = Backbone.Collection.extend({
+        model: HistogramModel,
+        active: function() {
+            return this.where({active: true});
+        }
+    });
+    var histograms = new HistogramCollection();
+
+    var HistogramView = Backbone.View.extend({
+        tagName: 'div',
+        template: '<p>CONTENT</p>', // TODO actually make template
+        events: { // TODO do we need any?
+
+        },
+        initialize: function() {
+            this.listenTo(this.model, 'change', this.render);
+            this.listenTo(this.model, 'destory', this.remove);
+        },
+        render: function() {
+            this.$el.html(this.template);
+            return this;
+        }
+    });
+
+    var AllHistogramsView = Backbone.View.extend({
+        el: $histogram,
+        initialize: function () {
+            this.listenTo(histograms, 'add', this.addHistogram);
+            this.listenTo(histograms, 'reset', this.addAll);
+            this.listenTo(histograms, 'all', this.render);
+        },
+        render: function () {
+            // TODO: Use something other than visibility
+            if (histograms.length > 0) {
+                this.$el.css('visibility', 'visible');
+            } else {
+                this.$el.hide('visibility', 'hidden');
+            }
+        },
+        addHistogram: function (histogram) {
+            var view = new HistogramView({model: histogram});
+            this.$el.append(view.render().el);
+        },
+        addAll: function () {
+            this.$el.empty();
+            histograms.each(this.addHistogram, this);
+        }
+    });
+    var allHistograms = new AllHistogramsView();
+
+
     marquee.selections.flatMap(function (sel) {
         var params = {sel: sel, attribute: 'degree'};
         return Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params);
@@ -847,11 +909,20 @@ function setupBrush(socket, marquee) {
         } else if (reply && !reply.success) {
             console.log('Server replied with error:', reply.error);
         }
+    // TODO: Do we want to treat no replies in some special way?
     }).filter(function (reply) { return reply && reply.success; })
-    .do(function (reply) {
-        console.log('Got aggregate data', reply.data);
-        // TODO Show histogram
+    .map(function (reply) {
+        // TODO: Massage this into a format we want.
+        return reply.data;
+    }).do(function (data) {
+        showHistogram(socket, marquee, histograms, data);
     }).subscribe(_.identity, makeErrorHandler('aggregate error'));
+}
+
+
+function showHistogram(socket, marquee, collection, data) {
+    console.log('Showing Histogram: ', data);
+    collection.reset([data]);
 }
 
 
