@@ -932,22 +932,25 @@ function initializeHistogramViz($el, model) {
     var height = $el.parent().height(); // TODO: Get this more naturally.
     var data = model.attributes;
     var bins = data.bins;
-    console.log('Data: ', data);
 
     var margin = {top: 10, right: 10, bottom: 20, left:20};
     width = width - margin.left - margin.right;
     height = height - margin.top - margin.bottom;
 
     // TODO: Make these align between bars
-    var xScale = d3.scale.ordinal()
-        .rangeRoundBands([0, width], .1, 1);
+    var xScale = d3.scale.linear()
+        .range([0, width]);
 
     var yScale = d3.scale.linear()
-        .range([height, 0]);
+        .range([height, 0])
 
     var xAxis = d3.svg.axis()
         .scale(xScale)
-        .orient('bottom');
+        .orient('bottom')
+        .ticks(data.numBins + 1)
+        .tickFormat(function (d) {
+            return d * data.binWidth + data.minValue;
+        });
 
     var yAxis = d3.svg.axis()
         .scale(yScale)
@@ -961,7 +964,7 @@ function initializeHistogramViz($el, model) {
             .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
     // TODO: Make this correct values
-    xScale.domain(_.range(data.numBins));
+    xScale.domain([0, data.numBins]);
     yScale.domain([0, d3.max(bins, function (d) {
         return d.length;
     })]);
@@ -982,7 +985,7 @@ function initializeHistogramViz($el, model) {
             .attr('x', function (d, i) {
                 return xScale(i);
             })
-            .attr('width', xScale.rangeBand())
+            .attr('width', Math.floor(width/data.numBins))
             .attr('y', function (d) {
                 return yScale(d.length);
             })
@@ -995,7 +998,6 @@ function initializeHistogramViz($el, model) {
 
 
 function updateHistogramData(socket, marquee, collection, data) {
-    console.log('Updating Histogram Data: ', data);
     collection.reset([data]);
 }
 
