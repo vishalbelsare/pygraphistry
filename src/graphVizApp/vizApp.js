@@ -5,7 +5,7 @@
 var debug   = require('debug')('graphistry:StreamGL:uber-demo');
 var $       = window.$;
 var Rx      = require('rx');
-              require('./rx-jquery-stub');
+              require('../rx-jquery-stub');
 var _       = require('underscore');
 var Backbone = require('backbone');
     Backbone.$ = $;
@@ -14,13 +14,13 @@ var Backgrid = require('backgrid');
     require('backgrid-paginator');
 var d3 = require('d3');
 
-var interaction     = require('./interaction.js');
-var renderer        = require('./renderer');
-var poiLib          = require('./poi.js');
-var marqueeFact     = require('./marquee.js');
-var shortestpaths   = require('./shortestpaths.js');
-var colorpicker     = require('./colorpicker.js');
-var ui              = require('./ui.js');
+var interaction     = require('../interaction.js');
+var renderer        = require('../renderer');
+var poiLib          = require('../poi.js');
+var marqueeFact     = require('../marquee.js');
+var shortestpaths   = require('../shortestpaths.js');
+var colorpicker     = require('../colorpicker.js');
+var ui              = require('../ui.js');
 
 var poi;
 
