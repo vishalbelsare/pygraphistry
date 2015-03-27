@@ -273,9 +273,49 @@ function createGhostImg(renderState, sel, $elt, cssWidth, cssHeight) {
 }
 
 
+function initBrush (renderState, $cont, toggle, cfg) {
+
+    cfg = cfg || {};
+    cfg.transform = cfg.transform || _.identity;
+    var $elt = createElt();
+
+    //starts false
+    var isOn = new Rx.ReplaySubject(1);
+    toggle.merge(Rx.Observable.return(false)).subscribe(isOn, makeErrorHandler('on/off'));
+
+    isOn.subscribe(function (flag) {
+        if (!flag) {
+            clearMarquee($cont, $elt);
+        }
+    }, makeErrorHandler('blur canvas'));
+
+    //Effect scene
+    $cont.append($elt);
+    maintainContainerStyle($cont, isOn);
+
+    var transformAll = function(obj) {
+        return _.object(_.map(obj, function (val, key) {
+            return [key, cfg.transform(val)];
+        }));
+    };
+    var bounds = marqueeSelections(renderState, $cont, $elt, isOn);
+    var drags = marqueeDrags(bounds, $cont, $elt).map(transformAll);
+    var selections = bounds.map(transformAll);
+
+    return {
+        selections: selections,
+        bounds: bounds,
+        drags: drags,
+        $elt: $elt,
+        isOn: toggle
+    };
+
+}
+
+
 //$DOM * Observable bool * ?{?transform: [num, num] -> [num, num]}
 // -> {selections: Observable [ [num, num] ] }
-function init (renderState, $cont, toggle, cfg) {
+function initMarquee (renderState, $cont, toggle, cfg) {
 
     debug('init marquee');
 
@@ -318,4 +358,7 @@ function init (renderState, $cont, toggle, cfg) {
 }
 
 
-module.exports = init;
+module.exports = {
+    initMarquee: initMarquee,
+    initBrush: initBrush
+};

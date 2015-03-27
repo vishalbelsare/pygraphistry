@@ -584,7 +584,28 @@ function setupMarquee(isOn, renderState) {
         return camera.canvas2WorldCoords(point.x, point.y, cnv);
     };
 
-    var marquee = marqueeFact(renderState, $('#marquee'), isOn, {transform: transform});
+    var marquee = marqueeFact.initMarquee(renderState, $('#marquee'), isOn, {transform: transform});
+
+    marquee.selections.subscribe(function (sel) {
+        debug('selected bounds', sel);
+    }, makeErrorHandler('bad marquee selections'));
+
+    marquee.drags.subscribe(function (drag) {
+        debug('drag action', drag.start, drag.end);
+    }, makeErrorHandler('bad marquee drags'));
+
+    return marquee;
+}
+
+// TODO: impl
+function setupBrush(isOn, renderState) {
+    var camera = renderState.get('camera');
+    var cnv = renderState.get('canvas');
+    var transform = function (point) {
+        return camera.canvas2WorldCoords(point.x, point.y, cnv);
+    };
+
+    var marquee = marqueeFact.initBrush(renderState, $('#marquee'), isOn, {transform: transform});
 
     marquee.selections.subscribe(function (sel) {
         debug('selected bounds', sel);
@@ -603,7 +624,7 @@ function setupMarquee(isOn, renderState) {
 //Side effect: highlight that element
 function makeMouseSwitchboard() {
 
-    var mouseElts = $('#marqueerectangle');
+    var mouseElts = $('#marqueerectangle').add('#histogramBrush');
 
     var onElt = Rx.Observable.merge.apply(Rx.Observable,
             mouseElts.get().map(function (elt) {
@@ -792,7 +813,7 @@ function setupInspector(socket, workerUrl, marquee) {
         }).filter(function (reply) { return reply && reply.success; })
         .subscribe(function (reply) {
             debug('Setting up PageableCollection of size', reply.count);
-            // showPageableGrid(workerUrl, InspectData, columns, reply.count);
+            showPageableGrid(workerUrl, InspectData, columns, reply.count);
         }, makeErrorHandler('fetch data for inspector'));
     }).subscribe(_.identity, makeErrorHandler('fetch inspectHeader'));
 }
@@ -838,7 +859,7 @@ function showPageableGrid(workerUrl, model, columns, count) {
 }
 
 
-function setupBrush(socket, marquee) {
+function setupHistogram(socket, marquee) {
 
     var $histogram = $('#histogram');
 
@@ -869,7 +890,7 @@ function setupBrush(socket, marquee) {
         },
         initialize: function() {
             this.listenTo(this.model, 'change', this.render);
-            this.listenTo(this.model, 'destory', this.remove);
+            this.listenTo(this.model, 'destroy', this.remove);
         },
         render: function() {
             // TODO: Do something or remove
@@ -933,7 +954,7 @@ function initializeHistogramViz($el, model) {
     var data = model.attributes;
     var bins = data.bins;
 
-    var margin = {top: 10, right: 10, bottom: 20, left:20};
+    var margin = {top: 10, right: 10, bottom: 20, left:40};
     width = width - margin.left - margin.right;
     height = height - margin.top - margin.bottom;
 
@@ -942,7 +963,7 @@ function initializeHistogramViz($el, model) {
         .range([0, width]);
 
     var yScale = d3.scale.linear()
-        .range([height, 0])
+        .range([height, 0]);
 
     var xAxis = d3.svg.axis()
         .scale(xScale)
@@ -1038,6 +1059,7 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
 
     var onElt = makeMouseSwitchboard();
 
+    // TODO: More general version for all toggle-able buttons?
     var marqueeIsOn = false;
     var turnOnMarquee = onElt.map(function (elt) {
         if (elt === $('#marqueerectangle')[0]) {
@@ -1047,9 +1069,19 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
         return marqueeIsOn;
     });
 
+    var brushIsOn = false;
+    var turnOnBrush = onElt.map(function (elt) {
+        if (elt === $('#histogramBrush')[0]) {
+            $(elt).children('i').toggleClass('toggle-on');
+            brushIsOn = !brushIsOn;
+        }
+        return brushIsOn;
+    });
+
     var marquee = setupMarquee(turnOnMarquee, renderState);
+    // var brush = setupBrush(turnOnBrush, renderState);
     setupInspector(socket, workerParams.url, marquee);
-    setupBrush(socket, marquee);
+    // setupHistogram(socket, brush);
 
     var settingsChanges = new Rx.ReplaySubject(1);
     settingsChanges.onNext({});
