@@ -446,7 +446,7 @@ var stdOptions = {
     'blendEquationSeparate': [['FUNC_ADD', 'FUNC_ADD']],
     'depthFunc': [['LEQUAL']],
     'clearColor': [[1, 1, 1, 0.0]],
-    'lineWidth': [[3]]
+    'lineWidth': [[1]]
 }
 
 var camera2D = {

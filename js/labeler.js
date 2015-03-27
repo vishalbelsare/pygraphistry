@@ -137,13 +137,26 @@ function histogram(values) {
 
     var numBins = numValues > 30 ? Math.ceil(Math.log(numValues) / Math.log(2)) + 1
                                  : Math.ceil(Math.sqrt(numValues));
+
+    numBins = Math.min(numBins, 50); // Cap number of bins.
+
     var max = _.max(values);
     var min = _.min(values);
     var binWidth = Math.ceil((max - min) / numBins);
+
+    // Guard against 0 width case
+    if (max === min) {
+        binWidth = 1;
+        numBins = 1;
+    }
     var bins = Array.apply(null, new Array(numBins)).map(function () { return []; });
+
+    // console.log('Max: ', max, ', Min: ', min, ', Width: ', binWidth);
+    // console.log('Bins: ', bins);
 
     _.each(values, function (val) {
         var binId = Math.min(Math.floor((val - min) / binWidth), numBins - 1);
+        // console.log('Val: ', val, ', binId: ', binId);
         bins[binId].push(val)
     })
 
