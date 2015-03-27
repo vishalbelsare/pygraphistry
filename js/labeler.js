@@ -92,20 +92,47 @@ function getLabels(graph, indices) {
     }
 }
 
-function histogram(graph, indices, attribute) {
-    var frame = infoFrame(graph, indices);
-    var values = _.map(frame, function (row) {
-        return row[attribute];
-    });
-
-    if (!_.all(values, function (x) { return typeof x === 'number'; })) {
-        throw new Error('not numeric');
+function aggregate(graph, indices, attribute) {
+    function process(frame, attribute) {
+        var values = _.map(frame, function (row) {
+            return row[attribute];
+        });
+        if (_.all(values, function (x) { return typeof x === 'number'; })) {
+            return histogram(values);
+        } else {
+            return countBy(values);
+        }
     }
+
+    var frame = infoFrame(graph, indices);
+    var columns = attribute ? [attribute] : frameHeader(graph);
+
+    return _.object(_.map(frameHeader(graph), function (attribute) {
+        return [attribute, process(frame, attribute)];
+    }));
+}
+
+
+function countBy(values) {
+    if (values.length === 0) {
+        return {type: 'nodata'};
+    }
+
+    var bins = _.countBy(values);
+    return {
+        type: 'countBy',
+        numBins: bins.length,
+        bins: bins,
+    };
+}
+
+
+function histogram(values) {
     values = _.filter(values, function (x) { return !isNaN(x)});
 
     var numValues = values.length;
-    if (numValues < 1) {
-        throw new Error('no data');
+    if (numValues === 0) {
+        return {type: 'nodata'};
     }
 
     var numBins = numValues > 30 ? Math.ceil(Math.log(numValues) / Math.log(2)) + 1
@@ -134,7 +161,7 @@ function histogram(graph, indices, attribute) {
 module.exports = {
     getLabels: getLabels,
     infoFrame: infoFrame,
-    histogram: histogram,
+    aggregate: aggregate,
     frameHeader: frameHeader,
 };
 
