@@ -321,7 +321,6 @@ var setEdges = Q.promised(function(graph, edges) {
         }
 
         // Without Underscore and with preallocation. Less clear than a flatten, but better perf.
-        // var edgesTyped = new Uint32Array(_.flatten(edgeList));
         var edgesTyped = new Uint32Array(edgeList.length * 2);
         for (var idx = 0; idx < edgeList.length; idx++) {
             edgesTyped[idx*2] = edgeList[idx][0];

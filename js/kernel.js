@@ -114,7 +114,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
             } else {
                 return [];
             }
-        })).join('\n');
+        }), true).join('\n');
         debug('Prefix', prefix);
 
         return source.then(function (source) {
