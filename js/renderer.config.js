@@ -232,7 +232,7 @@ var models = {
 var items = {
     'edgeculled': {
         'program': 'edgeculled',
-        //'trigger': 'renderScene',
+        'trigger': 'renderScene',
         'bindings': {
             'curPos': ['springsPos', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
