@@ -107,7 +107,7 @@ function aggregate(graph, indices, attribute) {
     var frame = infoFrame(graph, indices);
     var columns = attribute ? [attribute] : frameHeader(graph);
 
-    return _.object(_.map(frameHeader(graph), function (attribute) {
+    return _.object(_.map(columns, function (attribute) {
         return [attribute, process(frame, attribute)];
     }));
 }
