@@ -76,8 +76,8 @@ function init(socket, marquee) {
             histograms.each(this.addHistogram, this);
         }
     });
-    var allHistograms = new AllHistogramsView();
-
+    // var allHistograms = new AllHistogramsView();
+    new AllHistogramsView();
 
     marquee.selections.flatMap(function (sel) {
         var params = {sel: sel, attribute: 'degree'};

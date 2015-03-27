@@ -18,121 +18,16 @@ var controls        = require('./controls.js');
 var renderer        = require('../renderer');
 var poiLib          = require('../poi.js');
 
-var poi;
-
 
 var DEBOUNCE_TIME = 60;
 
 
-///////////////////////////////////////////////////////////////////////////////
-// Event handler setup
-///////////////////////////////////////////////////////////////////////////////
-
-// //Observable DOM
-var labelHover = new Rx.Subject();
-
-//render most of scene on refresh, but defer slow hitmap (readPixels)
-var lastRender = new Rx.Subject();
-function renderScene(renderer, currentState, data) {
+function renderScene(lastRender, renderer, currentState, data) {
     lastRender.onNext({renderer: renderer, currentState: currentState, data: data});
 }
 
 
-// Determine if it's a quiet/noisy state
-var startRendering = lastRender
-    .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
-    .filter(function (pair) {
-        return (!pair.prev || (pair.cur.data.renderTag !== pair.prev.data.renderTag));
-    })
-    .sample(DEBOUNCE_TIME);
-
-var stopRendering = lastRender
-    .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
-    .filter(function (pair) {
-        return (!pair.prev || (pair.cur.data.renderTag !== pair.prev.data.renderTag));
-    })
-    .debounce(DEBOUNCE_TIME);
-var currentlyRendering = new Rx.ReplaySubject(1);
-
-// What to do when starting noisy/rendering state
-startRendering
-    .do(function () {
-        $('.graph-label-container').css('display', 'none');
-    })
-    .do(function () {
-        currentlyRendering.onNext(true);
-    })
-    .subscribe(_.identity, util.makeErrorHandler('Start Rendering'));
-
-// What to do when exiting noisy/rendering state
-stopRendering
-    .filter(function() {
-        // TODO: Pull this from a proper stream in a refactor instead of a global dom object
-        return !$('#simulate .fa').hasClass('toggle-on');
-    })
-    .do(function (pair) {
-        pair.cur.renderer.render(pair.cur.currentState, 'interactionPicking', null,
-            {renderListOverride: ['pointpicking', 'edgepicking', 'pointsampling']});
-    })
-    .do(function () {
-        $('.graph-label-container').css('display', 'block');
-    })
-    .do(function () {
-        currentlyRendering.onNext(false);
-    })
-    .subscribe(_.identity, util.makeErrorHandler('Stop Rendering'));
-
-//Render gpu items, text on reqAnimFrame
-//Slower, update the pointpicking sampler (does GPU->CPU transfer)
-lastRender
-    .bufferWithTime(10)
-    .filter(function (arr) { return arr.length; })
-    .map(function (arr) {
-        var res = arr[arr.length - 1];
-        _.extend(res.data,
-            arr.reduce(
-                function (acc, v) {
-                    return {
-                        data: {
-                            renderTag: Math.max(v.data.renderTag, acc.data.renderTag),
-                            labelTag: Math.max(v.data.labelTag, acc.data.labelTag)
-                        }
-                    };
-                },
-                {data: { renderTag: 0, labelTag: 0}}));
-        return res;
-    })
-    .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
-    .do(function (pair) {
-        var cfg = pair.cur;
-        if (!pair.prev || (cfg.data.renderTag !== pair.prev.data.renderTag)) {
-            cfg.renderer.render(cfg.currentState, 'interactionRender');
-        }
-
-        labels.renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer),
-                     cfg.data.highlightIndices, new Uint8Array(cfg.data.pointSizes.buffer));
-    })
-    .pluck('cur')
-    .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
-    .bufferWithTime(80)
-    .filter(function (arr) { return arr.length; })
-    .map(function (arr) {
-        var res = arr[arr.length - 1];
-        _.extend(res.data,
-            arr.reduce(
-                function (acc, v) {
-                    return {
-                        renderTag: Math.max(v.renderTag, acc.renderTag),
-                        labelTag: Math.max(v.labelTag, acc.labelTag)
-                    };
-                },
-                {data: { renderTag: 0, labelTag: 0}}));
-        return res;
-    })
-    .subscribe(_.identity, util.makeErrorHandler('render effect'));
-
-
-function setupDragHoverInteractions($eventTarget, renderState, bgColor, settingsChanges) {
+function setupDragHoverInteractions($eventTarget, renderState, bgColor, settingsChanges, poi, labelHover, lastRender, currentlyRendering) {
     //var currentState = renderState;
     var stateStream = new Rx.Subject();
     var latestState = new Rx.ReplaySubject(1);
@@ -225,24 +120,134 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, settings
         .do(function(data) {
             var currentState = renderer.setCameraIm(data.renderState, data.camera);
             stateStream.onNext(currentState);
-            renderScene(renderer, currentState, data);
+            renderScene(lastRender, renderer, currentState, data);
         })
         .pluck('renderState');
 
     return renderStateUpdates;
 }
 
+
+function setupRendering(lastRender, currentlyRendering) {
+
+    // Determine if it's a quiet/noisy state
+    var startRendering = lastRender
+        .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
+        .filter(function (pair) {
+            return (!pair.prev || (pair.cur.data.renderTag !== pair.prev.data.renderTag));
+        })
+        .sample(DEBOUNCE_TIME);
+
+    var stopRendering = lastRender
+        .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
+        .filter(function (pair) {
+            return (!pair.prev || (pair.cur.data.renderTag !== pair.prev.data.renderTag));
+        })
+        .debounce(DEBOUNCE_TIME);
+
+    // What to do when starting noisy/rendering state
+    startRendering
+        .do(function () {
+            $('.graph-label-container').css('display', 'none');
+        })
+        .do(function () {
+            currentlyRendering.onNext(true);
+        })
+        .subscribe(_.identity, util.makeErrorHandler('Start Rendering'));
+
+    // What to do when exiting noisy/rendering state
+    stopRendering
+        .filter(function() {
+            // TODO: Pull this from a proper stream in a refactor instead of a global dom object
+            return !$('#simulate .fa').hasClass('toggle-on');
+        })
+        .do(function (pair) {
+            pair.cur.renderer.render(pair.cur.currentState, 'interactionPicking', null,
+                {renderListOverride: ['pointpicking', 'edgepicking', 'pointsampling']});
+        })
+        .do(function () {
+            $('.graph-label-container').css('display', 'block');
+        })
+        .do(function () {
+            currentlyRendering.onNext(false);
+        })
+        .subscribe(_.identity, util.makeErrorHandler('Stop Rendering'));
+
+    //Render gpu items, text on reqAnimFrame
+    //Slower, update the pointpicking sampler (does GPU->CPU transfer)
+    lastRender
+        .bufferWithTime(10)
+        .filter(function (arr) { return arr.length; })
+        .map(function (arr) {
+            var res = arr[arr.length - 1];
+            _.extend(res.data,
+                arr.reduce(
+                    function (acc, v) {
+                        return {
+                            data: {
+                                renderTag: Math.max(v.data.renderTag, acc.data.renderTag),
+                                labelTag: Math.max(v.data.labelTag, acc.data.labelTag)
+                            }
+                        };
+                    },
+                    {data: { renderTag: 0, labelTag: 0}}));
+            return res;
+        })
+        .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
+        .do(function (pair) {
+            var cfg = pair.cur;
+            if (!pair.prev || (cfg.data.renderTag !== pair.prev.data.renderTag)) {
+                cfg.renderer.render(cfg.currentState, 'interactionRender');
+            }
+
+            labels.renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer),
+                         cfg.data.highlightIndices, new Uint8Array(cfg.data.pointSizes.buffer));
+        })
+        .pluck('cur')
+        .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
+        .bufferWithTime(80)
+        .filter(function (arr) { return arr.length; })
+        .map(function (arr) {
+            var res = arr[arr.length - 1];
+            _.extend(res.data,
+                arr.reduce(
+                    function (acc, v) {
+                        return {
+                            renderTag: Math.max(v.renderTag, acc.renderTag),
+                            labelTag: Math.max(v.labelTag, acc.labelTag)
+                        };
+                    },
+                    {data: { renderTag: 0, labelTag: 0}}));
+            return res;
+        })
+        .subscribe(_.identity, util.makeErrorHandler('render effect'));
+}
+
+
 // ... -> Observable renderState
 function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
-    poi = poiLib(socket);
+    var poi = poiLib(socket);
 
-    // GLOBALS
-    // settingsChanges
+    //////////////////////////////////////////////////////////////////////////
+    // App State
+    //////////////////////////////////////////////////////////////////////////
 
+    // Observable DOM
+    var labelHover = new Rx.Subject();
+    var lastRender = new Rx.Subject();
+    var currentlyRendering = new Rx.ReplaySubject(1);
     var settingsChanges = new Rx.ReplaySubject(1);
     settingsChanges.onNext({});
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // Setup
+    //////////////////////////////////////////////////////////////////////////
+
+    setupRendering(lastRender, currentlyRendering);
     var colors = colorpicker($('#foregroundColor'), $('#backgroundColor'), socket);
-    var renderStateUpdates = setupDragHoverInteractions($elt, renderState, colors.backgroundColor, settingsChanges, poi);
+    var renderStateUpdates = setupDragHoverInteractions($elt, renderState, colors.backgroundColor,
+                settingsChanges, poi, labelHover, lastRender, currentlyRendering);
     shortestpaths($('#shortestpath'), poi, socket);
     controls.init(socket, $elt, renderState, vboUpdates, workerParams, urlParams, settingsChanges);
 
