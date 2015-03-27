@@ -519,7 +519,6 @@ function setGlOptions(state) {
             var newArgs = optionArgs.map(function(currentValue) {
                 return typeof currentValue === 'string' ? gl[currentValue] : currentValue;
             });
-
             gl[optionName].apply(gl, newArgs);
         });
     });
@@ -788,9 +787,7 @@ function setCamera(state) {
     //HACK: we should have line shaders, and pass this as a uniform
     if (numVertices !== undefined) {
         // HACK: Checking if uber/geo. Should be handled as uniform
-        if (config.items.midedgetextured) {
-            gl.lineWidth(2);
-        } else {
+        if (!config.items.midedgetextured) {
             gl.lineWidth(camera.semanticZoomEdges(numVertices));
         }
     }
@@ -877,6 +874,7 @@ function renderLastQueued() {
 
         var clearedFBOs = { };
         sortedItems.forEach(function(item) {
+
             if(typeof numElements[item] === 'undefined' || numElements[item] < 1) {
                 debug('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
                     item);
