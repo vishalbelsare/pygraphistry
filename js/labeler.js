@@ -154,7 +154,7 @@ function histogram(values) {
         numValues: numValues,
         maxValue: max,
         minValue: min,
-        bins: bins
+        bins: bins.map(function (b) { return b.length; })
     };
 }
 
