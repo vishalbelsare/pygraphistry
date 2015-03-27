@@ -899,9 +899,16 @@ function renderLastQueued() {
             }
         });
 
+        //TODO: these should be batched w/ corresponding renderItem() calls
         if (texturesToRead.length > 0) {
             _.uniq(texturesToRead).forEach(function (renderTarget) {
                 debug('reading back texture', renderTarget);
+
+                if (renderTarget !== lastRenderTarget) {
+                    debug('  (needed rebind)');
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
+                    lastRenderTarget = renderTarget;
+                }
 
                 var dims = getTextureDims(config, gl.canvas, camera, renderTarget);
                 var pixelreads = state.get('pixelreads');
