@@ -76,6 +76,7 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
     var platform = platforms[0];
 
     var clDevices = platform.getDevices(DEVICE_TYPE);
+
     debug("Devices found on platform: %d", clDevices.length);
     if(clDevices.length < 1) {
         throw new Error("No WebCL devices of specified type (" + DEVICE_TYPE + ") found")
