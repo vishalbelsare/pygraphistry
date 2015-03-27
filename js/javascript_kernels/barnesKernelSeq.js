@@ -163,6 +163,7 @@ var BarnesKernelSeq = function (clContext) {
         // TODO (paden) Use actual number of workgroups. Don't hardcode
         var num_work_groups = 128;
         console.log("Num nodes", numNodes);
+        console.log("Num bodies", numBodies);
 
 
         return Q.all(
@@ -224,8 +225,8 @@ var BarnesKernelSeq = function (clContext) {
         that.toBarnesLayout.set({xCoords: tempBuffers.x_cords.buffer,
           yCoords:tempBuffers.y_cords.buffer, mass:tempBuffers.mass.buffer,
                             blocked:tempBuffers.blocked.buffer, maxDepth:tempBuffers.maxdepth.buffer,
-                            numPoints:simulator.numPoints,
-                            inputPositions: simulator.buffers.curPoints.buffer,
+                            numPoints:simulator.numMidPoints,
+                            inputPositions: simulator.buffers.curMidPoints.buffer,
                             pointDegrees: simulator.buffers.degrees.buffer,
                             WARPSIZE: warpsize, THREADS_SUMS: workItems.computeSums[1], THREADS_FORCES: workItems.calculateForces[1],
                             THREADS_BOUND: workItems.boundBox[1]});
@@ -256,7 +257,7 @@ var BarnesKernelSeq = function (clContext) {
                 height:simulator.controls.global.dimensions[1],
                 numBodies:buffers.numBodies,
                 numNodes:buffers.numNodes,
-                pointForces:simulator.buffers.partialForces1.buffer,
+                pointForces:simulator.buffers.nextMidPoints.buffer,
                 WARPSIZE:warpsize,
                 THREADS_SUMS: workItems.computeSums[1],
                 THREADS_FORCES: workItems.calculateForces[1],
@@ -390,26 +391,26 @@ var BarnesKernelSeq = function (clContext) {
 
         // For all calls, we must have the # work items be a multiple of the workgroup size.
         var that = this;
-        return this.toBarnesLayout.exec([workItems.toBarnesLayout], resources, [256])
-        //.then(function () {
-            //return that.boundBox.exec([workItems.boundBox], resources, [256]);
-        //})
+        return this.toBarnesLayout.exec([workItems.toBarnesLayout[0]], resources, [workItems.toBarnesLayout[1]])
+        .then(function () {
+            return that.boundBox.exec([workItems.boundBox[0]], resources, [workItems.boundBox[1]]);
+        })
 
-        //.then(function () {
-            //return that.buildTree.exec([workItems.buildTree], resources, [256]);
-        //})
+        .then(function () {
+            return that.buildTree.exec([workItems.buildTree[0]], resources, [workItems.buildTree[1]]);
+        })
 
-        //.then(function () {
-            //return that.computeSums.exec([workItems.computeSums], resources, [256]);
-        //})
+        .then(function () {
+            return that.computeSums.exec([workItems.computeSums[0]], resources, [workItems.computeSums[1]]);
+        })
 
-        //.then(function () {
-            //return that.sort.exec([workItems.sort], resources, [256]);
-        //})
+        .then(function () {
+            return that.sort.exec([workItems.sort[0]], resources, [workItems.sort[1]]);
+        })
 
-        //.then(function () {
-            //return that.calculateMidPoints.exec([workItems.calculateForces], resources, [256]);
-        //})
+        .then(function () {
+            return that.calculateMidPoints.exec([workItems.calculateForces[0]], resources, [workItems.calculateForces[1]]);
+        })
 
         .fail(util.makeErrorHandler("Executing BarnesKernelSeq failed"));
     };
