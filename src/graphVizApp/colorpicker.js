@@ -2,7 +2,7 @@
 
 var $               = window.$;
 var Rx              = require('rx');
-                      require('./rx-jquery-stub');
+                      require('../rx-jquery-stub');
 
 
 //$DOM * hex -> Observable hex

@@ -14,12 +14,13 @@ var Backgrid = require('backgrid');
     require('backgrid-paginator');
 var d3 = require('d3');
 
-var interaction     = require('../interaction.js');
+var interaction     = require('./interaction.js');
+var marqueeFact     = require('./marquee.js');
+var shortestpaths   = require('./shortestpaths.js');
+var colorpicker     = require('./colorpicker.js');
+
 var renderer        = require('../renderer');
 var poiLib          = require('../poi.js');
-var marqueeFact     = require('../marquee.js');
-var shortestpaths   = require('../shortestpaths.js');
-var colorpicker     = require('../colorpicker.js');
 var ui              = require('../ui.js');
 
 var poi;

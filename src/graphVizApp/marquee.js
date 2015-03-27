@@ -3,9 +3,9 @@
 var debug = require('debug')('graphistry:StreamGL:marquee');
 var $     = window.$;
 var Rx    = require('rx');
-            require('./rx-jquery-stub');
+            require('../rx-jquery-stub');
 var _     = require('underscore');
-var renderer = require('./renderer.js');
+var renderer = require('../renderer.js');
 
 
 
