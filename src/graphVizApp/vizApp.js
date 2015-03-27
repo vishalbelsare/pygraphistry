@@ -2,7 +2,7 @@
 
 // FIXME: Move this to graph-viz repo -- it shouldn't be a part of the core StreamGL library
 
-var debug   = require('debug')('graphistry:StreamGL:uber-demo');
+var debug   = require('debug')('graphistry:StreamGL:graphVizApp:vizApp');
 var $       = window.$;
 var Rx      = require('rx');
               require('../rx-jquery-stub');
@@ -18,6 +18,7 @@ var interaction     = require('./interaction.js');
 var marqueeFact     = require('./marquee.js');
 var shortestpaths   = require('./shortestpaths.js');
 var colorpicker     = require('./colorpicker.js');
+var util            = require('./util.js');
 
 var renderer        = require('../renderer');
 var poiLib          = require('../poi.js');
@@ -48,13 +49,6 @@ function sendLayoutSetting(socket, algo, param, value) {
 var HIGHLIGHT_SIZE = 20;
 var INTERACTION_INTERVAL = 50;
 var DEBOUNCE_TIME = 60;
-
-
-function makeErrorHandler(name) {
-    return function (err) {
-        console.error(name, err, (err || {}).stack);
-    };
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -92,7 +86,7 @@ function renderPointLabels($labelCont, renderState, labelIndices, clicked) {
             renderLabelsImmediate($labelCont, renderState, curPoints, labelIndices, clicked);
 
         })
-        .subscribe(_.identity, makeErrorHandler('renderLabels'));
+        .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
 }
 
 
@@ -289,7 +283,7 @@ startRendering
     .do(function () {
         currentlyRendering.onNext(true);
     })
-    .subscribe(_.identity, makeErrorHandler('Start Rendering'));
+    .subscribe(_.identity, util.makeErrorHandler('Start Rendering'));
 
 // What to do when exiting noisy/rendering state
 stopRendering
@@ -307,7 +301,7 @@ stopRendering
     .do(function () {
         currentlyRendering.onNext(false);
     })
-    .subscribe(_.identity, makeErrorHandler('Stop Rendering'));
+    .subscribe(_.identity, util.makeErrorHandler('Stop Rendering'));
 
 //Render gpu items, text on reqAnimFrame
 //Slower, update the pointpicking sampler (does GPU->CPU transfer)
@@ -356,7 +350,7 @@ lastRender
                 {data: { renderTag: 0, labelTag: 0}}));
         return res;
     })
-    .subscribe(_.identity, makeErrorHandler('render effect'));
+    .subscribe(_.identity, util.makeErrorHandler('render effect'));
 
 
 //move labels when new highlight or finish noisy rendering section
@@ -390,7 +384,7 @@ function setupLabels ($labelCont, latestState, latestHighlightedObject) {
 
             renderPointLabels($labelCont, data.currentState, indices, clicked);
         })
-        .subscribe(_.identity, makeErrorHandler('setuplabels'));
+        .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
 }
 
 
@@ -470,7 +464,7 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
         .map(function (arr) {
             return arr.length ? arr : OFF;
         })
-        .subscribe(res, makeErrorHandler('getLatestHighlightedObject'));
+        .subscribe(res, util.makeErrorHandler('getLatestHighlightedObject'));
 
     return res.map(_.identity);
 }
@@ -480,7 +474,7 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, settings
     //var currentState = renderState;
     var stateStream = new Rx.Subject();
     var latestState = new Rx.ReplaySubject(1);
-    stateStream.subscribe(latestState, makeErrorHandler('bad stateStream'));
+    stateStream.subscribe(latestState, util.makeErrorHandler('bad stateStream'));
     stateStream.onNext(renderState);
 
     var camera = renderState.get('camera');
@@ -589,11 +583,11 @@ function setupMarquee(isOn, renderState) {
 
     marquee.selections.subscribe(function (sel) {
         debug('selected bounds', sel);
-    }, makeErrorHandler('bad marquee selections'));
+    }, util.makeErrorHandler('bad marquee selections'));
 
     marquee.drags.subscribe(function (drag) {
         debug('drag action', drag.start, drag.end);
-    }, makeErrorHandler('bad marquee drags'));
+    }, util.makeErrorHandler('bad marquee drags'));
 
     return marquee;
 }
@@ -610,11 +604,11 @@ function setupBrush(isOn, renderState) {
 
     marquee.selections.subscribe(function (sel) {
         debug('selected bounds', sel);
-    }, makeErrorHandler('bad marquee selections'));
+    }, util.makeErrorHandler('bad marquee selections'));
 
     marquee.drags.subscribe(function (drag) {
         debug('drag action', drag.start, drag.end);
-    }, makeErrorHandler('bad marquee drags'));
+    }, util.makeErrorHandler('bad marquee drags'));
 
     return marquee;
 }
@@ -769,7 +763,7 @@ function createControls(socket) {
             });
         });
 
-    }, makeErrorHandler('createControls'));
+    }, util.makeErrorHandler('createControls'));
 
     return rxControls;
 }
@@ -815,8 +809,8 @@ function setupInspector(socket, workerUrl, marquee) {
         .subscribe(function (reply) {
             debug('Setting up PageableCollection of size', reply.count);
             showPageableGrid(workerUrl, InspectData, columns, reply.count);
-        }, makeErrorHandler('fetch data for inspector'));
-    }).subscribe(_.identity, makeErrorHandler('fetch inspectHeader'));
+        }, util.makeErrorHandler('fetch data for inspector'));
+    }).subscribe(_.identity, util.makeErrorHandler('fetch inspectHeader'));
 }
 
 
@@ -945,7 +939,7 @@ function setupHistogram(socket, marquee) {
         return reply.data;
     }).do(function (data) {
         updateHistogramData(socket, marquee, histograms, data);
-    }).subscribe(_.identity, makeErrorHandler('aggregate error'));
+    }).subscribe(_.identity, util.makeErrorHandler('aggregate error'));
 }
 
 
@@ -1115,7 +1109,7 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
             };
             socket.emit('interaction', payload);
         })
-        .subscribe(_.identity, makeErrorHandler('timeSlide'));
+        .subscribe(_.identity, util.makeErrorHandler('timeSlide'));
 
 
     createControls(socket).subscribe(function () {
@@ -1127,7 +1121,7 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
                 function () {
                     sendLayoutSetting(socket, param.algoName, param.name, input.checked);
                 },
-                makeErrorHandler('menu checkbox')
+                util.makeErrorHandler('menu checkbox')
             );
         });
 
@@ -1150,13 +1144,13 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
                         setLocalSetting(param.name, Number($slider.val()), renderState, settingsChanges);
                     }
                 },
-                makeErrorHandler('menu slider')
+                util.makeErrorHandler('menu slider')
             );
         });
 
 
 
-    }, makeErrorHandler('bad controls'));
+    }, util.makeErrorHandler('bad controls'));
 
 
     Rx.Observable.zip(
@@ -1168,7 +1162,7 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
     ).subscribe(function (move) {
         var payload = {play: true, layout: true, marquee: move};
         socket.emit('interaction', payload);
-    }, makeErrorHandler('marquee error'));
+    }, util.makeErrorHandler('marquee error'));
 
 
     var $tooltips = $('[data-toggle="tooltip"]');
@@ -1187,7 +1181,7 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
             $bolt.toggleClass('automode', true).toggleClass('toggle-on', true);
             $shrinkToFit.toggleClass('automode', true).toggleClass('toggle-on', true);
         }
-    }, makeErrorHandler('reveal scene'));
+    }, util.makeErrorHandler('reveal scene'));
 
     // Tick stream until canceled/timed out (end with 'false'), starts after first vbo update.
     var autoLayingOut = doneLoading.flatMapLatest(function () {
@@ -1222,7 +1216,7 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
         .flatMapLatest(_.identity);
     });
     var isAutoCentering = new Rx.ReplaySubject(1);
-    autoCentering.subscribe(isAutoCentering, makeErrorHandler('bad autocenter'));
+    autoCentering.subscribe(isAutoCentering, util.makeErrorHandler('bad autocenter'));
 
 
     var runLayout =
@@ -1239,7 +1233,7 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
     runLayout
         .subscribe(
             function () { socket.emit('interaction', {play: true, layout: true}); },
-            makeErrorHandler('Error stimulating graph'));
+            util.makeErrorHandler('Error stimulating graph'));
 
     autoLayingOut.subscribe(
         function (evt) {
@@ -1248,7 +1242,7 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
                 socket.emit('interaction', payload);
             }
         },
-        makeErrorHandler('autoLayingOut error'),
+        util.makeErrorHandler('autoLayingOut error'),
         function () {
             isAutoCentering.take(1).subscribe(function (v) {
                 if (v !== false) {
@@ -1268,7 +1262,7 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
                 $('#center').trigger('click');
             }
         },
-        makeErrorHandler('autoCentering error'),
+        util.makeErrorHandler('autoCentering error'),
         function () {
             $shrinkToFit.toggleClass('automode', false).toggleClass('toggle-on', false);
         });
