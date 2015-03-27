@@ -118,8 +118,7 @@ function genLabel (instance, $labelCont, idx) {
     var $elt = $('<div>')
         .addClass('graph-label')
         .css('display', 'none')
-        .empty()
-        .html('' + idx);
+        .empty();
 
     $labelCont.append($elt);
 

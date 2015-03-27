@@ -3,7 +3,7 @@
 var debug   = require('debug')('graphistry:StreamGL:shortestpaths');
 var $       = window.$;
 var Rx      = require('rx');
-              require('./rx-jquery-stub');
+              require('../rx-jquery-stub');
 
 //poi * labelDOM -> int U exn
 function getLabelIndex(poi, elt) {

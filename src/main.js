@@ -18,7 +18,7 @@ var $               = window.$,
 
 var streamClient    = require('./client.js'),
     ui              = require('./ui.js'),
-    uberDemo        = require('./uber-demo.js'),
+    vizApp          = require('./graphVizApp/vizApp.js'),
     monkey          = require('./monkey.js');
 
 
@@ -101,9 +101,9 @@ function init(canvas, vizType) {
             var vboUpdates = streamClient.handleVboUpdates(socket, renderState, renderStateUpdates);
 
             //TODO merge update notifs into vboUpdates
-            var uberRenderStateUpdates = uberDemo(socket, $('.sim-container'), v.renderState,
+            var vizAppRenderStateUpdates = vizApp(socket, $('.sim-container'), v.renderState,
                                                   vboUpdates, v.workerParams, urlParams);
-            uberRenderStateUpdates
+            vizAppRenderStateUpdates
                 .subscribe(
                     renderStateUpdates,
                     function (err) { console.error('render scene on pan/zoom', err, (err||{}).stack); });

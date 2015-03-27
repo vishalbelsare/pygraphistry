@@ -4,9 +4,9 @@
 var $$       = window.Quo;
 var $        = window.$;
 var Rx       = require('rx');
-               require('./rx-jquery-stub');
+               require('../rx-jquery-stub');
 var debug    = require('debug')('graphistry:StreamGL:interaction');
-var renderer = require('./renderer');
+var renderer = require('../renderer');
 
 
 ///////////////////////////////////////////////////////////////////////////////
