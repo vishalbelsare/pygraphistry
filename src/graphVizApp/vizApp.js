@@ -41,7 +41,7 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
     var renderStateUpdates = canvas.setupDragHoverInteractions($elt, renderState, colors.backgroundColor,
                 settingsChanges, poi, labelHover, lastRender, currentlyRendering);
     shortestpaths($('#shortestpath'), poi, socket);
-    controls.init(socket, $elt, renderState, vboUpdates, workerParams, urlParams, settingsChanges);
+    controls.init(socket, $elt, renderState, vboUpdates, workerParams, urlParams, settingsChanges, poi);
 
     return renderStateUpdates;
 }
