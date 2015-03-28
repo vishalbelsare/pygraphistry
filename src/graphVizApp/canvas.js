@@ -21,7 +21,7 @@ function renderScene(lastRender, renderer, currentState, data) {
 }
 
 
-function setupDragHoverInteractions($eventTarget, renderState, bgColor, settingsChanges, poi, labelHover, lastRender, currentlyRendering) {
+function setupDragHoverInteractions($eventTarget, renderState, bgColor, appState) {
     //var currentState = renderState;
     var stateStream = new Rx.Subject();
     var latestState = new Rx.ReplaySubject(1);
@@ -62,11 +62,11 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, settings
 
     // Picks objects in priority based on order.
     var hitMapTextures = ['hitmap'];
-    var latestHighlightedObject = labels.getLatestHighlightedObject($eventTarget, renderState, labelHover, hitMapTextures, poi);
+    var latestHighlightedObject = labels.getLatestHighlightedObject($eventTarget, renderState, hitMapTextures, appState);
 
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
-    labels.setupLabels($labelCont, latestState, latestHighlightedObject, labelHover, currentlyRendering, poi);
+    labels.setupLabels($labelCont, latestState, latestHighlightedObject, appState);
 
 
     //TODO refactor this is out of place
@@ -94,7 +94,7 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, settings
                 renderState.get('hostBuffers').curPoints,
                 renderState.get('hostBuffers').pointSizes,
                 stateWithColor,
-                settingsChanges,
+                appState.settingsChanges,
                 function (curPoints, pointSizes, renderState, settingsChange) {
                     return {renderTag: Date.now(),
                             camera: camera,
@@ -114,7 +114,7 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, settings
         .do(function(data) {
             var currentState = renderer.setCameraIm(data.renderState, data.camera);
             stateStream.onNext(currentState);
-            renderScene(lastRender, renderer, currentState, data);
+            renderScene(appState.lastRender, renderer, currentState, data);
         })
         .pluck('renderState');
 
@@ -122,17 +122,17 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, settings
 }
 
 
-function setupRendering(lastRender, currentlyRendering) {
+function setupRendering(appState) {
 
     // Determine if it's a quiet/noisy state
-    var startRendering = lastRender
+    var startRendering = appState.lastRender
         .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
         .filter(function (pair) {
             return (!pair.prev || (pair.cur.data.renderTag !== pair.prev.data.renderTag));
         })
         .sample(DEBOUNCE_TIME);
 
-    var stopRendering = lastRender
+    var stopRendering = appState.lastRender
         .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
         .filter(function (pair) {
             return (!pair.prev || (pair.cur.data.renderTag !== pair.prev.data.renderTag));
@@ -145,7 +145,7 @@ function setupRendering(lastRender, currentlyRendering) {
             $('.graph-label-container').css('display', 'none');
         })
         .do(function () {
-            currentlyRendering.onNext(true);
+            appState.currentlyRendering.onNext(true);
         })
         .subscribe(_.identity, util.makeErrorHandler('Start Rendering'));
 
@@ -163,13 +163,13 @@ function setupRendering(lastRender, currentlyRendering) {
             $('.graph-label-container').css('display', 'block');
         })
         .do(function () {
-            currentlyRendering.onNext(false);
+            appState.currentlyRendering.onNext(false);
         })
         .subscribe(_.identity, util.makeErrorHandler('Stop Rendering'));
 
     //Render gpu items, text on reqAnimFrame
     //Slower, update the pointpicking sampler (does GPU->CPU transfer)
-    lastRender
+    appState.lastRender
         .bufferWithTime(10)
         .filter(function (arr) { return arr.length; })
         .map(function (arr) {

@@ -11,6 +11,8 @@ var d3 = require('d3');
 
 var util    = require('./util.js');
 
+var ATTRIBUTE = 'degree';
+
 function init(socket, marquee) {
     debug('Initializing histogram brush');
 
@@ -80,7 +82,7 @@ function init(socket, marquee) {
     new AllHistogramsView();
 
     marquee.selections.flatMap(function (sel) {
-        var params = {sel: sel, attribute: 'degree'};
+        var params = {sel: sel, attribute: ATTRIBUTE};
         return Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params);
     }).do(function (reply) {
         if (!reply) {
@@ -92,7 +94,7 @@ function init(socket, marquee) {
     }).filter(function (reply) { return reply && reply.success; })
     .map(function (reply) {
         // TODO: Massage this into a format we want.
-        return reply.data;
+        return reply.data[ATTRIBUTE];
     }).do(function (data) {
         updateHistogramData(socket, marquee, histograms, data);
     }).subscribe(_.identity, util.makeErrorHandler('aggregate error'));
@@ -137,9 +139,7 @@ function initializeHistogramViz($el, model) {
 
     // TODO: Make this correct values
     xScale.domain([0, data.numBins]);
-    yScale.domain([0, d3.max(bins, function (d) {
-        return d.length;
-    })]);
+    yScale.domain([0, d3.max(bins)]);
 
     svg.append('g')
         .attr('class', 'x axis')
@@ -159,10 +159,10 @@ function initializeHistogramViz($el, model) {
             })
             .attr('width', Math.floor(width/data.numBins))
             .attr('y', function (d) {
-                return yScale(d.length);
+                return yScale(d);
             })
             .attr('height', function (d) {
-                return height - yScale(d.length);
+                return height - yScale(d);
             });
 }
 

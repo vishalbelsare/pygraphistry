@@ -19,7 +19,7 @@ var HIGHLIGHT_SIZE = 20;
 // $DOM * RendererState  * [int] * [int] -> ()
 // Immediately reposition each label based on camera and curPoints buffer
 var renderLabelsRan = false;
-function renderPointLabels($labelCont, renderState, labelIndices, clicked, labelHover, poi) {
+function renderPointLabels($labelCont, renderState, labelIndices, clicked, appState) {
 
     debug('rendering labels');
 
@@ -41,7 +41,7 @@ function renderPointLabels($labelCont, renderState, labelIndices, clicked, label
                 }
             }
 
-            renderLabelsImmediate($labelCont, renderState, curPoints, labelIndices, clicked, labelHover, poi);
+            renderLabelsImmediate($labelCont, renderState, curPoints, labelIndices, clicked, appState);
 
         })
         .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
@@ -147,7 +147,8 @@ function effectLabels(toClear, toShow, labels, newPos, labelIndices, clicked, po
 
 }
 
-function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices, clicked, labelHover, poi) {
+function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices, clicked, appState) {
+    var poi = appState.poi;
     var points = new Float32Array(curPoints.buffer);
 
     var t0 = Date.now();
@@ -179,7 +180,7 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices
                 //no label and no preallocated elts, create new
                 var freshLabel = poi.genLabel($labelCont, idx);
                 freshLabel.elt.on('mouseover', function () {
-                    labelHover.onNext(this);
+                    appState.labelHover.onNext(this);
                 });
                 toShow.push(freshLabel);
                 return freshLabel;
@@ -211,7 +212,7 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices
 
 //move labels when new highlight or finish noisy rendering section
 //$DOM * Observable RenderState * Observable [ {dim: int, idx: int} ] * Observable DOM -> ()
-function setupLabels ($labelCont, latestState, latestHighlightedObject, labelHover, currentlyRendering, poi) {
+function setupLabels ($labelCont, latestState, latestHighlightedObject, appState) {
     latestState
         .flatMapLatest(function (currentState) {
             //wait until has samples
@@ -223,7 +224,7 @@ function setupLabels ($labelCont, latestState, latestHighlightedObject, labelHov
                 });
         })
         .flatMapLatest(function (data) {
-            return currentlyRendering.map(function (val) {
+            return appState.currentlyRendering.map(function (val) {
                 return _.extend({rendering: val}, data);
             });
         })
@@ -238,7 +239,7 @@ function setupLabels ($labelCont, latestState, latestHighlightedObject, labelHov
                 .filter(function (o) { return o.click; })
                 .map(function (o) { return o.idx; });
 
-            renderPointLabels($labelCont, data.currentState, indices, clicked, labelHover, poi);
+            renderPointLabels($labelCont, data.currentState, indices, clicked, appState);
         })
         .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
 }
@@ -247,7 +248,7 @@ function setupLabels ($labelCont, latestState, latestHighlightedObject, labelHov
 //Changes either from point mouseover or a label mouseover
 //Clicking (coexists with hovering) will open at most 1 label
 //Most recent interaction goes at the end
-function getLatestHighlightedObject ($eventTarget, renderState, labelHover, textures, poi) {
+function getLatestHighlightedObject ($eventTarget, renderState, textures, appState) {
 
     var OFF = [{idx: -1, dim: 0}];
 
@@ -286,10 +287,10 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
                     : {cmd: 'declick'};
             }))
         .merge(
-            labelHover
+            appState.labelHover
                 .filter(marqueeNotActive)
                 .map(function (elt) {
-                    return _.values(poi.state.activeLabels)
+                    return _.values(appState.poi.state.activeLabels)
                         .filter(function (lbl) { return lbl.elt.get(0) === elt; });
                 })
                 .filter(function (highlightedLabels) { return highlightedLabels.length; })

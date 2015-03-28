@@ -8,7 +8,7 @@ var _       = require('underscore');
 
 var util            = require('./util.js');
 var dataInspector   = require('./dataInspector.js');
-// var histogramBrush  = require('./histogramBrush.js');
+var histogramBrush  = require('./histogramBrush.js');
 var marqueeFact     = require('./marquee.js');
 
 var ui      = require('../ui.js');
@@ -56,25 +56,25 @@ function setupMarquee(isOn, renderState) {
 }
 
 // TODO: impl
-// function setupBrush(isOn, renderState) {
-//     var camera = renderState.get('camera');
-//     var cnv = renderState.get('canvas');
-//     var transform = function (point) {
-//         return camera.canvas2WorldCoords(point.x, point.y, cnv);
-//     };
+function setupBrush(isOn, renderState) {
+    var camera = renderState.get('camera');
+    var cnv = renderState.get('canvas');
+    var transform = function (point) {
+        return camera.canvas2WorldCoords(point.x, point.y, cnv);
+    };
 
-//     var marquee = marqueeFact.initBrush(renderState, $('#marquee'), isOn, {transform: transform});
+    var marquee = marqueeFact.initBrush(renderState, $('#marquee'), isOn, {transform: transform});
 
-//     marquee.selections.subscribe(function (sel) {
-//         debug('selected bounds', sel);
-//     }, util.makeErrorHandler('bad marquee selections'));
+    marquee.selections.subscribe(function (sel) {
+        debug('selected bounds', sel);
+    }, util.makeErrorHandler('bad marquee selections'));
 
-//     marquee.drags.subscribe(function (drag) {
-//         debug('drag action', drag.start, drag.end);
-//     }, util.makeErrorHandler('bad marquee drags'));
+    marquee.drags.subscribe(function (drag) {
+        debug('drag action', drag.start, drag.end);
+    }, util.makeErrorHandler('bad marquee drags'));
 
-//     return marquee;
-// }
+    return marquee;
+}
 
 // -> Observable DOM
 //Return which mouse group element selected
@@ -267,19 +267,19 @@ function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, s
         return marqueeIsOn;
     });
 
-    // var brushIsOn = false;
-    // var turnOnBrush = onElt.map(function (elt) {
-    //     if (elt === $('#histogramBrush')[0]) {
-    //         $(elt).children('i').toggleClass('toggle-on');
-    //         brushIsOn = !brushIsOn;
-    //     }
-    //     return brushIsOn;
-    // });
+    var brushIsOn = false;
+    var turnOnBrush = onElt.map(function (elt) {
+        if (elt === $('#histogramBrush')[0]) {
+            $(elt).children('i').toggleClass('toggle-on');
+            brushIsOn = !brushIsOn;
+        }
+        return brushIsOn;
+    });
 
     var marquee = setupMarquee(turnOnMarquee, renderState);
-    // var brush = setupBrush(turnOnBrush, renderState);
+    var brush = setupBrush(turnOnBrush, renderState);
     dataInspector.init(socket, workerParams.url, marquee);
-    // histogramBrush.init(socket, brush);
+    histogramBrush.init(socket, brush);
 
 
     var timeSlide = new Rx.Subject();

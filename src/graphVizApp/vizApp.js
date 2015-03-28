@@ -31,15 +31,22 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
     var settingsChanges = new Rx.ReplaySubject(1);
     settingsChanges.onNext({});
 
+    var appState = {
+        labelHover: labelHover,
+        lastRender: lastRender,
+        currentlyRendering: currentlyRendering,
+        poi: poi,
+        settingsChanges: settingsChanges
+    };
+
 
     //////////////////////////////////////////////////////////////////////////
     // Setup
     //////////////////////////////////////////////////////////////////////////
 
-    canvas.setupRendering(lastRender, currentlyRendering);
+    canvas.setupRendering(appState);
     var colors = colorpicker($('#foregroundColor'), $('#backgroundColor'), socket);
-    var renderStateUpdates = canvas.setupDragHoverInteractions($elt, renderState, colors.backgroundColor,
-                settingsChanges, poi, labelHover, lastRender, currentlyRendering);
+    var renderStateUpdates = canvas.setupDragHoverInteractions($elt, renderState, colors.backgroundColor, appState);
     shortestpaths($('#shortestpath'), poi, socket);
     controls.init(socket, $elt, renderState, vboUpdates, workerParams, urlParams, settingsChanges);
 
