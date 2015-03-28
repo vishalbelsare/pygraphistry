@@ -140,6 +140,7 @@ function setupRendering(appState) {
         .debounce(DEBOUNCE_TIME);
 
     // What to do when starting noisy/rendering state
+    // TODO: Show/hide with something cleaner than pure JQuery. At least a function.
     startRendering
         .do(function () {
             $('.graph-label-container').css('display', 'none');
@@ -151,9 +152,13 @@ function setupRendering(appState) {
 
     // What to do when exiting noisy/rendering state
     stopRendering
-        .filter(function() {
-            // TODO: Pull this from a proper stream in a refactor instead of a global dom object
-            return !$('#simulate .fa').hasClass('toggle-on');
+        .flatMap(function (pair) {
+            return appState.simulateOn.map(function (val) {
+                return _.extend(pair, {simulateOn: val});
+            });
+        })
+        .filter(function (pair) {
+            return !pair.simulateOn;
         })
         .do(function (pair) {
             pair.cur.renderer.render(pair.cur.currentState, 'interactionPicking', null,

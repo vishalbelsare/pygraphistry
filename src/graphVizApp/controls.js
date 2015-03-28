@@ -252,7 +252,7 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
     settingsChanges.onNext({name: name, val: val});
 }
 
-function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, settingsChanges, poi) {
+function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, appState) {
     createLegend($('#graph-legend'), urlParams);
     toggleLogo($('.logo-container'), urlParams);
     var onElt = makeMouseSwitchboard();
@@ -294,7 +294,7 @@ function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, s
     //FIXME: replace $OLD w/ browserfied jquery+jqrangeslider
     $('#timeSlider').on('valuesChanging', function (e, data) {
             timeSlide.onNext({min: data.values.min, max: data.values.max});
-            poi.invalidateCache();
+            appState.poi.invalidateCache();
         });
 
     timeSlide.sample(3)
@@ -336,7 +336,7 @@ function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, s
                         sendLayoutSetting(socket, param.algoName,
                                     param.name, Number($slider.val()));
                     } else if ($that.hasClass('local-menu-slider')) {
-                        setLocalSetting(param.name, Number($slider.val()), renderState, settingsChanges);
+                        setLocalSetting(param.name, Number($slider.val()), renderState, appState.settingsChanges);
                     }
                 },
                 util.makeErrorHandler('menu slider')
@@ -369,6 +369,7 @@ function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, s
         if (numTicks > 0) {
             $tooltips.tooltip('show');
             $bolt.toggleClass('automode', true).toggleClass('toggle-on', true);
+            appState.simulateOn.onNext(true);
             $shrinkToFit.toggleClass('automode', true).toggleClass('toggle-on', true);
         }
     }, util.makeErrorHandler('reveal scene'));
@@ -416,6 +417,7 @@ function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, s
             })
             .flatMapLatest(function (wasOn) {
                 var isOn = !wasOn;
+                appState.simulateOn.onNext(isOn);
                 return isOn ? Rx.Observable.interval(INTERACTION_INTERVAL) : Rx.Observable.empty();
             });
 
@@ -440,6 +442,7 @@ function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, s
             });
             $tooltips.tooltip('hide');
             $bolt.removeClass('automode').removeClass('toggle-on');
+            appState.simulateOn.onNext(false);
         }
     );
 

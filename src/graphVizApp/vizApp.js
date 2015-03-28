@@ -31,12 +31,22 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
     var settingsChanges = new Rx.ReplaySubject(1);
     settingsChanges.onNext({});
 
+    var marqueeOn = new Rx.ReplaySubject(1);
+    marqueeOn.onNext(false);
+    var simulateOn = new Rx.ReplaySubject(1);
+    simulateOn.onNext(false);
+    var brushOn = new Rx.ReplaySubject(1);
+    brushOn.onNext(false);
+
     var appState = {
         labelHover: labelHover,
         lastRender: lastRender,
         currentlyRendering: currentlyRendering,
         poi: poi,
-        settingsChanges: settingsChanges
+        settingsChanges: settingsChanges,
+        marqueeOn: marqueeOn,
+        simulateOn: simulateOn,
+        brushOn: brushOn
     };
 
 
@@ -48,7 +58,7 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
     var colors = colorpicker($('#foregroundColor'), $('#backgroundColor'), socket);
     var renderStateUpdates = canvas.setupDragHoverInteractions($elt, renderState, colors.backgroundColor, appState);
     shortestpaths($('#shortestpath'), poi, socket);
-    controls.init(socket, $elt, renderState, vboUpdates, workerParams, urlParams, settingsChanges);
+    controls.init(socket, $elt, renderState, vboUpdates, workerParams, urlParams, appState);
 
     return renderStateUpdates;
 }
