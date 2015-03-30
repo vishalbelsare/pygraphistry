@@ -31,8 +31,6 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, appState
     var camera = renderState.get('camera');
     var canvas = renderState.get('canvas');
 
-    var $marquee = $('#marqueerectangle i.fa');
-
     //pan/zoom
     //Observable Event
     var interactions;
@@ -42,7 +40,7 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, appState
         interactions = interaction.setupSwipe(eventTarget, camera)
             .merge(
                 interaction.setupPinch($eventTarget, camera)
-                .filter(function () { return !$marquee.hasClass('toggle-on'); }));
+                .flatMap(util.observableFilter(appState.marqueeOn, util.notIdentity)));
     } else {
         debug('Detected mouse-based device. Setting up mouse interaction event handlers.');
         interactions = interaction.setupDrag($eventTarget, camera)
@@ -55,9 +53,9 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, appState
                                 renderState.get('hostBuffers').curPoints,
                                 camera),
         interaction.setupZoomButton($('#zoomin'), camera, 1 / 1.25)
-            .filter(function () { return !$marquee.hasClass('toggle-on'); }),
+            .flatMap(util.observableFilter(appState.marqueeOn, util.notIdentity)),
         interaction.setupZoomButton($('#zoomout'), camera, 1.25)
-            .filter(function () { return !$marquee.hasClass('toggle-on'); })
+            .flatMap(util.observableFilter(appState.marqueeOn, util.notIdentity))
     );
 
     // Picks objects in priority based on order.
@@ -152,9 +150,7 @@ function setupRendering(appState) {
 
     // What to do when exiting noisy/rendering state
     stopRendering
-        .flatMap(util.observableFilter(appState.simulateOn, function (val) {
-            return !val;
-        }))
+        .flatMap(util.observableFilter(appState.simulateOn, util.notIdentity))
         .do(function (pair) {
             pair.cur.renderer.render(pair.cur.currentState, 'interactionPicking', null,
                 {renderListOverride: ['pointpicking', 'edgepicking', 'pointsampling']});

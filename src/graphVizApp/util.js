@@ -6,6 +6,10 @@ function makeErrorHandler(name) {
     };
 }
 
+// Usage:
+// mainObservableStream
+//    .flatMap(util.observableFilter(subStream, _.identity))
+//    .do (// Here you have mainObservable filtered on subStream)
 function observableFilter (stream, pred) {
     return function (origVal) {
         return stream
@@ -16,7 +20,13 @@ function observableFilter (stream, pred) {
     };
 }
 
+// inverse of _.identity
+function notIdentity (val) {
+    return !val;
+}
+
 module.exports = {
     makeErrorHandler: makeErrorHandler,
-    observableFilter: observableFilter
+    observableFilter: observableFilter,
+    notIdentity: notIdentity
 };
