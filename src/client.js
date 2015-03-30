@@ -104,7 +104,7 @@ function getVizServerParams(args) {
 
             debug('Got viz server params');
 
-            console.log('routed in ' + ( Date.now() - parseFloat(reply.data.timestamp) ) + ' ms');
+            console.info('Routed in', Date.now() - parseFloat(reply.data.timestamp), 'ms');
 
             return {
                 'hostname': reply.data.hostname,

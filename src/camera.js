@@ -238,7 +238,7 @@
             scalingFactor * ((1-alpha)*pointSizeConstantSmall + alpha*pointSizeConstantBig);
 
 
-        return this.edgeScaling * normalizedScalingFactor;
+        return Math.max(1, Math.min(8, this.edgeScaling * normalizedScalingFactor));
     };
 
     //FIXME should not depend on SC
