@@ -264,6 +264,7 @@ function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, a
             $(elt).children('i').toggleClass('toggle-on');
             marqueeIsOn = !marqueeIsOn;
         }
+        appState.marqueeOn.onNext(marqueeIsOn);
         return marqueeIsOn;
     });
 

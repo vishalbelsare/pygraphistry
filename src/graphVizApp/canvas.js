@@ -152,14 +152,9 @@ function setupRendering(appState) {
 
     // What to do when exiting noisy/rendering state
     stopRendering
-        .flatMap(function (pair) {
-            return appState.simulateOn.map(function (val) {
-                return _.extend(pair, {simulateOn: val});
-            });
-        })
-        .filter(function (pair) {
-            return !pair.simulateOn;
-        })
+        .flatMap(util.observableFilter(appState.simulateOn, function (val) {
+            return !val;
+        }))
         .do(function (pair) {
             pair.cur.renderer.render(pair.cur.currentState, 'interactionPicking', null,
                 {renderListOverride: ['pointpicking', 'edgepicking', 'pointsampling']});

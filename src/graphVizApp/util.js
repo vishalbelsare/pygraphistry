@@ -6,6 +6,17 @@ function makeErrorHandler(name) {
     };
 }
 
+function observableFilter (stream, pred) {
+    return function (origVal) {
+        return stream
+            .filter(pred)
+            .map(function () {
+                return origVal;
+            });
+    };
+}
+
 module.exports = {
-    makeErrorHandler: makeErrorHandler
+    makeErrorHandler: makeErrorHandler,
+    observableFilter: observableFilter
 };
