@@ -255,19 +255,12 @@ function getLatestHighlightedObject ($eventTarget, renderState, textures, appSta
     var res = new Rx.ReplaySubject(1);
     res.onNext(OFF);
 
-    var $marqueeButton = $('#marqueerectangle i.fa');
-    var $marquee = $('#marquee');
-
-    function marqueeNotActive() {
-        return !$marqueeButton.hasClass('toggle-on') ||
-               ($marquee.hasClass('done') && !$marquee.hasClass('beingdragged'));
-    }
-
     interaction.setupMousemove($eventTarget, renderState, textures)
-        .filter(marqueeNotActive)
+        // TODO: Make sure this also catches $('#marquee').hasClass('done') and 'beingdragged'
+        .flatMap(util.observableFilter(appState.marqueeOn, util.notIdentity))
         .map(function (v) { return {cmd: 'hover', pt: v}; })
         .merge($eventTarget.mousedownAsObservable()
-            .filter(marqueeNotActive)
+            .flatMap(util.observableFilter(appState.marqueeOn, util.notIdentity))
             .map(function (evt) {
                 var clickedLabel = $(evt.target).hasClass('graph-label') ||
                         $(evt.target).hasClass('highlighted-point') ||
@@ -288,7 +281,7 @@ function getLatestHighlightedObject ($eventTarget, renderState, textures, appSta
             }))
         .merge(
             appState.labelHover
-                .filter(marqueeNotActive)
+                .flatMap(util.observableFilter(appState.marqueeOn, util.notIdentity))
                 .map(function (elt) {
                     return _.values(appState.poi.state.activeLabels)
                         .filter(function (lbl) { return lbl.elt.get(0) === elt; });
