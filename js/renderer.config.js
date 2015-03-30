@@ -130,10 +130,12 @@ var models = {
     'logicalEdges': {
         'curIdx': {
             'datasource': 'HOST',
+            'index': true,
             'type': 'UNSIGNED_INT',
-            'count': 2,
+            'hint': 'STATIC_DRAW',
+            'count': 1,
             'offset': 0,
-            'stride': 8,
+            'stride': 0,
             'normalize': false
         }
     },
@@ -244,7 +246,7 @@ var items = {
         'program': 'edgeculled',
         'trigger': 'renderScene',
         'bindings': {
-            'curPos': ['springsPos', 'curPos'],
+            'curPos': ['curPoints', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
         },
         'index': ['logicalEdges', 'curIdx'],
@@ -467,7 +469,7 @@ var sceneNetflow = {
     'options': stdOptions,
     'camera': camera2D,
     'render': ['pointpicking', 'pointsampling', 'pointculledtexture', 'pointoutlinetexture',
-               'edgeculled', 'edgepicking', 'pointoutline', 'pointculled']
+               'edgeculledindexed', 'edgepicking', 'pointoutline', 'pointculled']
 }
 
 var scenes = {
@@ -645,7 +647,9 @@ function generateAllConfigs(programs, textures, models, items, scenes) {
 function gl2Bytes(type) {
     var types = {
         'FLOAT': 4,
-        'UNSIGNED_BYTE': 1
+        'UNSIGNED_BYTE': 1,
+        'UNSIGNED_SHORT': 2,
+        'UNSIGNED_INT': 4
     };
     if (!(type in types))
         util.die('Unknown GL type "%s"', type);
@@ -654,17 +658,22 @@ function gl2Bytes(type) {
 
 function isBufClientSide(buf) {
     var datasource = _.values(buf)[0].datasource;
-    return (datasource == 'CLIENT' || datasource == 'VERTEX_INDEX' || datasource == "EDGE_INDEX");
+    return (datasource === 'CLIENT' || datasource === 'VERTEX_INDEX' || datasource === "EDGE_INDEX");
 }
 
 function isBufServerSide(buf) {
     var datasource = _.values(buf)[0].datasource;
-    return (datasource == 'HOST' || datasource == 'DEVICE');
+    return (datasource === 'HOST' || datasource === 'DEVICE');
+}
+
+function isTextureServerSide(texture) {
+    return texture.datasource  === 'SERVER';
 }
 
 module.exports = {
     'scenes': generateAllConfigs(programs, textures, models, items, scenes),
     'gl2Bytes': gl2Bytes,
     'isBufClientSide': isBufClientSide,
-    'isBufServerSide': isBufServerSide
+    'isBufServerSide': isBufServerSide,
+    'isTextureServerSide': isTextureServerSide
 };

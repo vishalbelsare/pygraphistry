@@ -144,17 +144,21 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
 //counts -> {<itemName>: int}
 //For each render item, find a serverside model and send its count
 function fetchNumElements(counts, renderConfig) {
-
     return _.object(
         _.keys(renderConfig.items)
             .map(function (item) {
-                var serversideModelBindings =
-                    _.values(renderConfig.items[item].bindings)
+                var itemDef = renderConfig.items[item];
+                var aServersideModelName;
+                if (itemDef.index) {
+                    aServersideModelName = itemDef.index[0];
+                } else {
+                    var serversideModelBindings = _.values(renderConfig.items[item].bindings)
                         .filter(function (binding) {
                             var model = renderConfig.models[binding[0]];
                             return rConf.isBufServerSide(model);
                         });
-                var aServersideModelName = serversideModelBindings[0][0];
+                    aServersideModelName = serversideModelBindings[0][0];
+                }
                 return [item, counts[aServersideModelName].num];
             }));
 }
@@ -363,7 +367,16 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
                 if (!vbos.hasOwnProperty(bufferName)) {
                     util.die('Vbos does not have buffer %s', bufferName);
                 }
-            })
+            });
+
+            _.each(bufferNames, function (bufferName) {
+                var actualByteLength = vbos[bufferName].buffer.byteLength;
+                var expectedByteLength = bufferByteLengths[bufferName];
+                if( actualByteLength !== expectedByteLength) {
+                    util.error('Mismatch length for VBO %s (Expected:%d Got:%d)',
+                               bufferName, expectedByteLength, actualByteLength);
+                }
+            });
 
             //[ {buffer, version, compressed} ] ordered by bufferName
             var nowPreCompress = Date.now();
@@ -375,7 +388,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
                         {output: new Buffer(
                             Math.max(1024, Math.round(vbos[bufferName].buffer.byteLength * 1.5)))})
                         .map(function (compressed) {
-                            debug('compress bufferName %s (size %d)', bufferName,vbos[bufferName].buffer.byteLength);
+                            debug('compress bufferName %s (size %d)', bufferName, vbos[bufferName].buffer.byteLength);
                             metrics.info({metric: {'compress_buffer': bufferName} });
                             metrics.info({metric: {'compress_inputBytes': vbos[bufferName].buffer.byteLength} });
                             metrics.info({metric: {'compress_outputBytes': compressed.length} });

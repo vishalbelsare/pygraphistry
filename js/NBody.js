@@ -389,7 +389,6 @@ var setEdges = Q.promised(function(graph, edges) {
         };
     }
 
-    var logicalEdges = new Uint32Array(edges);
     var edgesFlipped = new Uint32Array(edges.length);
     for (var i = 0; i < edges.length/2; i++) {
         edgesFlipped[2 * i] = edges[2 * i + 1];
@@ -427,8 +426,7 @@ var setEdges = Q.promised(function(graph, edges) {
     console.info('Dataset    nodes:%d  edges:%d  splits:%d',
                 graph.simulator.numPoints, edges.length, numSplits);
 
-    return graph.simulator.setEdges(logicalEdges,
-                                    forwardEdges, backwardsEdges,
+    return graph.simulator.setEdges(forwardEdges, backwardsEdges,
                                     degrees, midPoints, endPoints)
         .then(function() {
             return graph;
