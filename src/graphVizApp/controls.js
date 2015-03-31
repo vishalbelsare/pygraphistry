@@ -278,9 +278,9 @@ function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, a
     });
 
     var marquee = setupMarquee(turnOnMarquee, renderState);
-    var brush = setupBrush(turnOnBrush, renderState);
+    // var brush = setupBrush(turnOnBrush, renderState);
     dataInspector.init(socket, workerParams.url, marquee);
-    histogramBrush.init(socket, brush);
+    // histogramBrush.init(socket, brush);
 
 
     var timeSlide = new Rx.Subject();

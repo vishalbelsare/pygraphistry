@@ -6,7 +6,8 @@ var $        = window.$;
 var Rx       = require('rx');
                require('../rx-jquery-stub');
 var debug    = require('debug')('graphistry:StreamGL:interaction');
-var renderer = require('../renderer');
+var util     = require('./util.js');
+var renderer = require('../renderer.js');
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -23,7 +24,7 @@ var renderer = require('../renderer');
  *
  * @return {Rx.Observable} Rx stream with Camera objects for every drag event.
  */
-function setupDrag($eventTarget, camera) {
+function setupDrag($eventTarget, camera, appState) {
 
     var $marquee = $('#marqueerectangle i.fa');
 
@@ -97,8 +98,7 @@ function setupMousemove($eventTarget, renderState, textures) {
         });
 }
 
-function setupScroll($eventTarget, canvas, camera) {
-
+function setupScroll($eventTarget, canvas, camera, appState) {
     var zoomBase = 1.1;
     var $marquee = $('#marquee');
     var $marqueeButton = $('#marqueerectangle i.fa');

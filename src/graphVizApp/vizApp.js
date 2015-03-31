@@ -33,6 +33,8 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
 
     var marqueeOn = new Rx.ReplaySubject(1);
     marqueeOn.onNext(false);
+    var marqueeActive = new Rx.ReplaySubject(1);
+    marqueeActive.onNext(false);
     var simulateOn = new Rx.ReplaySubject(1);
     simulateOn.onNext(false);
     var brushOn = new Rx.ReplaySubject(1);
@@ -45,6 +47,7 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
         poi: poi,
         settingsChanges: settingsChanges,
         marqueeOn: marqueeOn,
+        marqueeActive: marqueeActive,
         simulateOn: simulateOn,
         brushOn: brushOn
     };

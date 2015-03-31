@@ -43,8 +43,8 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, appState
                 .flatMap(util.observableFilter(appState.marqueeOn, util.notIdentity)));
     } else {
         debug('Detected mouse-based device. Setting up mouse interaction event handlers.');
-        interactions = interaction.setupDrag($eventTarget, camera)
-            .merge(interaction.setupScroll($eventTarget, canvas, camera));
+        interactions = interaction.setupDrag($eventTarget, camera, appState)
+            .merge(interaction.setupScroll($eventTarget, canvas, camera, appState));
 
     }
     interactions = Rx.Observable.merge(
