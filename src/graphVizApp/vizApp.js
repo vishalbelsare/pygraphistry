@@ -31,12 +31,20 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
     var settingsChanges = new Rx.ReplaySubject(1);
     settingsChanges.onNext({});
 
+    // Marquee button selected
     var marqueeOn = new Rx.ReplaySubject(1);
     marqueeOn.onNext(false);
+    // Marquee being drawn / dragged
     var marqueeActive = new Rx.ReplaySubject(1);
     marqueeActive.onNext(false);
+    // Marquee finished drawing on the canvas
+    // TODO: Do we really need this?
+    var marqueeDone = new Rx.ReplaySubject(1);
+    marqueeDone.onNext(false);
+    // Simulate button selected
     var simulateOn = new Rx.ReplaySubject(1);
     simulateOn.onNext(false);
+    // Brush button selected
     var brushOn = new Rx.ReplaySubject(1);
     brushOn.onNext(false);
 
@@ -48,6 +56,7 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
         settingsChanges: settingsChanges,
         marqueeOn: marqueeOn,
         marqueeActive: marqueeActive,
+        marqueeDone: marqueeDone,
         simulateOn: simulateOn,
         brushOn: brushOn
     };

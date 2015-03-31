@@ -35,14 +35,14 @@ function sendLayoutSetting(socket, algo, param, value) {
 }
 
 //Observable bool -> { ... }
-function setupMarquee(isOn, renderState) {
+function setupMarquee(isOn, renderState, appState) {
     var camera = renderState.get('camera');
     var cnv = renderState.get('canvas');
     var transform = function (point) {
         return camera.canvas2WorldCoords(point.x, point.y, cnv);
     };
 
-    var marquee = marqueeFact.initMarquee(renderState, $('#marquee'), isOn, {transform: transform});
+    var marquee = marqueeFact.initMarquee(renderState, $('#marquee'), isOn, appState, {transform: transform});
 
     marquee.selections.subscribe(function (sel) {
         debug('selected bounds', sel);
@@ -56,14 +56,14 @@ function setupMarquee(isOn, renderState) {
 }
 
 // TODO: impl
-function setupBrush(isOn, renderState) {
+function setupBrush(isOn, renderState, appState) {
     var camera = renderState.get('camera');
     var cnv = renderState.get('canvas');
     var transform = function (point) {
         return camera.canvas2WorldCoords(point.x, point.y, cnv);
     };
 
-    var marquee = marqueeFact.initBrush(renderState, $('#marquee'), isOn, {transform: transform});
+    var marquee = marqueeFact.initBrush(renderState, $('#marquee'), isOn, appState, {transform: transform});
 
     marquee.selections.subscribe(function (sel) {
         debug('selected bounds', sel);
@@ -265,6 +265,7 @@ function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, a
             marqueeIsOn = !marqueeIsOn;
         }
         appState.marqueeOn.onNext(marqueeIsOn);
+        appState.marqueeDone.onNext(false);
         return marqueeIsOn;
     });
 
@@ -277,8 +278,8 @@ function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, a
         return brushIsOn;
     });
 
-    var marquee = setupMarquee(turnOnMarquee, renderState);
-    // var brush = setupBrush(turnOnBrush, renderState);
+    var marquee = setupMarquee(turnOnMarquee, renderState, appState);
+    // var brush = setupBrush(turnOnBrush, renderState, appState);
     dataInspector.init(socket, workerParams.url, marquee);
     // histogramBrush.init(socket, brush);
 

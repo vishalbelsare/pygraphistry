@@ -26,10 +26,8 @@ var renderer = require('../renderer.js');
  */
 function setupDrag($eventTarget, camera, appState) {
 
-    var $marquee = $('#marqueerectangle i.fa');
-
     return $eventTarget.mousedownAsObservable()
-        .filter(function () { return !$marquee.hasClass('toggle-on'); })
+        .flatMap(util.observableFilter(appState.marqueeOn, util.notIdentity))
         .filter(function (evt) {
 
             //allow dragging by graph label title
@@ -100,14 +98,11 @@ function setupMousemove($eventTarget, renderState, textures) {
 
 function setupScroll($eventTarget, canvas, camera, appState) {
     var zoomBase = 1.1;
-    var $marquee = $('#marquee');
-    var $marqueeButton = $('#marqueerectangle i.fa');
 
     return $eventTarget.onAsObservable('mousewheel')
         .sample(1)
-        .filter(function () {
-            return !($marquee.hasClass('done') && $marqueeButton.hasClass('toggle-on'));
-        }).filter(function (evt) {
+        .flatMap(util.observableFilter(appState.marqueeDone, util.notIdentity))
+        .filter(function (evt) {
             return ! $(evt.target).parents('.graph-label-contents').length;
         })
         .do(function (wheelEvent) {
