@@ -255,10 +255,24 @@ var items = {
     },
     'edgepicking': {
         'program': 'edges',
+        'trigger': 'picking',
         'bindings': {
             'curPos': ['springsPos', 'curPos'],
             'edgeColor': ['edgeIndices', 'edgeColor']
         },
+        'drawType': 'LINES',
+        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
+        'renderTarget': 'hitmap',
+        'readTarget': true
+    },
+    'edgepickingindexed': {
+        'program': 'edges',
+        'trigger': 'picking',
+        'bindings': {
+            'curPos': ['curPoints', 'curPos'],
+            'edgeColor': ['edgeIndices', 'edgeColor']
+        },
+        'index': ['logicalEdges', 'curIdx'],
         'drawType': 'LINES',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'hitmap',
@@ -363,6 +377,7 @@ var items = {
     },
     'pointpicking': {
         'program': 'points',
+        'trigger': 'picking',
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -379,6 +394,7 @@ var items = {
     },
     'pointsampling': {
         'program': 'points',
+        'trigger': 'picking',
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -469,7 +485,7 @@ var sceneNetflow = {
     'options': stdOptions,
     'camera': camera2D,
     'render': ['pointpicking', 'pointsampling', 'pointculledtexture', 'pointoutlinetexture',
-               'edgeculledindexed', 'edgepicking', 'pointoutline', 'pointculled']
+               'edgeculledindexed', 'edgepickingindexed', 'pointoutline', 'pointculled']
 }
 
 var scenes = {
