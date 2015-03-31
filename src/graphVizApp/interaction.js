@@ -27,7 +27,7 @@ var renderer = require('../renderer.js');
 function setupDrag($eventTarget, camera, appState) {
 
     return $eventTarget.mousedownAsObservable()
-        .flatMap(util.observableFilter(appState.marqueeOn, util.notIdentity))
+        .flatMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
         .filter(function (evt) {
 
             //allow dragging by graph label title

@@ -275,6 +275,7 @@ function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, a
             $(elt).children('i').toggleClass('toggle-on');
             brushIsOn = !brushIsOn;
         }
+        appState.brushOn.onNext(brushIsOn);
         return brushIsOn;
     });
 

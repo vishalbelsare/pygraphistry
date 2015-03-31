@@ -40,7 +40,7 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, appState
         interactions = interaction.setupSwipe(eventTarget, camera)
             .merge(
                 interaction.setupPinch($eventTarget, camera)
-                .flatMap(util.observableFilter(appState.marqueeOn, util.notIdentity)));
+                .flatMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity)));
     } else {
         debug('Detected mouse-based device. Setting up mouse interaction event handlers.');
         interactions = interaction.setupDrag($eventTarget, camera, appState)
@@ -53,9 +53,9 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, appState
                                 renderState.get('hostBuffers').curPoints,
                                 camera),
         interaction.setupZoomButton($('#zoomin'), camera, 1 / 1.25)
-            .flatMap(util.observableFilter(appState.marqueeOn, util.notIdentity)),
+            .flatMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity)),
         interaction.setupZoomButton($('#zoomout'), camera, 1.25)
-            .flatMap(util.observableFilter(appState.marqueeOn, util.notIdentity))
+            .flatMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
     );
 
     // Picks objects in priority based on order.

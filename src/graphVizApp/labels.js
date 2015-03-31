@@ -261,7 +261,7 @@ function getLatestHighlightedObject ($eventTarget, renderState, textures, appSta
         .flatMap(util.observableFilter(appState.marqueeActive, util.notIdentity))
         .map(function (v) { return {cmd: 'hover', pt: v}; })
         .merge($eventTarget.mousedownAsObservable()
-            .flatMap(util.observableFilter(appState.marqueeOn, util.notIdentity))
+            .flatMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
             .map(function (evt) {
                 var clickedLabel = $(evt.target).hasClass('graph-label') ||
                         $(evt.target).hasClass('highlighted-point') ||
@@ -282,7 +282,7 @@ function getLatestHighlightedObject ($eventTarget, renderState, textures, appSta
             }))
         .merge(
             appState.labelHover
-                .flatMap(util.observableFilter(appState.marqueeOn, util.notIdentity))
+                .flatMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
                 .map(function (elt) {
                     return _.values(appState.poi.state.activeLabels)
                         .filter(function (lbl) { return lbl.elt.get(0) === elt; });

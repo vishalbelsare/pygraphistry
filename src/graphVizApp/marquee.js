@@ -299,8 +299,8 @@ function initBrush (renderState, $cont, toggle, appState, cfg) {
             return [key, cfg.transform(val)];
         }));
     };
-    var bounds = marqueeSelections(renderState, $cont, $elt, isOn);
-    var drags = marqueeDrags(bounds, $cont, $elt).map(transformAll);
+    var bounds = marqueeSelections(renderState, $cont, $elt, isOn, appState);
+    var drags = marqueeDrags(bounds, $cont, $elt, appState).map(transformAll);
     var selections = bounds.map(transformAll);
 
     return {

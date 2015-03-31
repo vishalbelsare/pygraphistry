@@ -47,6 +47,14 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
     // Brush button selected
     var brushOn = new Rx.ReplaySubject(1);
     brushOn.onNext(false);
+    // Is any marquee type toggled on?
+    var anyMarqueeOn = marqueeOn
+        .flatMap(function (marqueeVal) {
+            return brushOn
+                .map(function (brushVal) {
+                    return (brushVal || marqueeVal);
+                });
+        });
 
     var appState = {
         labelHover: labelHover,
@@ -58,7 +66,8 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
         marqueeActive: marqueeActive,
         marqueeDone: marqueeDone,
         simulateOn: simulateOn,
-        brushOn: brushOn
+        brushOn: brushOn,
+        anyMarqueeOn: anyMarqueeOn
     };
 
 
