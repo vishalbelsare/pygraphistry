@@ -19,6 +19,17 @@ function init(socket, marquee) {
 
     var $histogram = $('#histogram');
 
+    // Grab global stats at initialization
+    var globalStats = new Rx.ReplaySubject(1);
+    var params = {all: true};
+    Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
+        .map(function (reply) {
+            console.log('Got global reply: ', reply.data);
+            return reply.data;
+        }).subscribe(globalStats, util.makeErrorHandler('Global stat aggregate call'));
+
+
+
     // Setup Backbone for the brushing histogram
     var HistogramModel = Backbone.Model.extend({
         defaults: function() {
@@ -79,28 +90,40 @@ function init(socket, marquee) {
             histograms.each(this.addHistogram, this);
         }
     });
-    // var allHistograms = new AllHistogramsView();
     new AllHistogramsView();
 
-    marquee.selections.flatMap(function (sel) {
-        console.log('Firing brush selection: ', sel);
-        var params = {sel: sel, attribute: ATTRIBUTE};
-        return Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params);
-    }).do(function (reply) {
-        if (!reply) {
+    // Initial drag + drop
+    marquee.selections.flatMapLatest(function (sel) {
+        return globalStats.map(function (val) {
+            return {sel: sel, globalStats: val};
+        });
+    }).flatMap(function (data) {
+        console.log('Firing brush selection: ', data.sel);
+        var binning = data.globalStats[ATTRIBUTE];
+        var params = {sel: data.sel, attribute: ATTRIBUTE, binning: binning};
+        return Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
+            .map(function (agg) {
+                return {reply: agg, sel: data.sel, globalStats: data.globalStats};
+            });
+    }).do(function (data) {
+        if (!data.reply) {
             console.error('Unexpected server error on aggregate');
-        } else if (reply && !reply.success) {
-            console.log('Server replied with error:', reply.error);
+        } else if (data.reply && !data.reply.success) {
+            console.log('Server replied with error:', data.reply.error);
         }
     // TODO: Do we want to treat no replies in some special way?
-    }).filter(function (reply) { return reply && reply.success; })
-    .map(function (reply) {
+    }).filter(function (data) { return data.reply && data.reply.success; })
+    .map(function (data) {
         // TODO: Massage this into a format we want.
-        return reply.data[ATTRIBUTE];
+        // TODO: Deal with nodata responses cleanly
+        return data;
     }).do(function (data) {
-        updateHistogramData(socket, marquee, histograms, data);
+        console.log('Creating Histogram with: ', data.reply.data[ATTRIBUTE]);
+        updateHistogramData(socket, marquee, histograms, data.reply.data[ATTRIBUTE], data.globalStats);
     }).subscribe(_.identity, util.makeErrorHandler('Brush selection aggregate error'));
 
+
+    // Updates from brushing
     marquee.drags.sample(DRAG_SAMPLE_INTERVAL)
     .do(function (dragData) {
         console.log('Got drag data: ', dragData);
@@ -112,12 +135,35 @@ function init(socket, marquee) {
 function initializeHistogramViz($el, model) {
     var width = $el.width();
     var height = $el.parent().height(); // TODO: Get this more naturally.
-    var data = model.attributes;
+    var data = model.attributes.data;
+    var globalStats = model.attributes.globalStats[ATTRIBUTE];
     var bins = data.bins || []; // Guard against empty bins.
+    var globalBins = globalStats.bins || [];
+
+    // Transform bins and global bins into stacked format.
+    console.log('Bins: ', bins);
+    // TODO: Get this in a cleaner, more extensible way
+    var stackedBins = _.zip(bins, globalBins); // [[0,2], [1,4], ... ]
+    _.each(stackedBins, function (stack, idx) {
+        var local = stack[0] || 0;
+        var total = stack[1];
+        var stackedObj = [
+                {y0: 0, y1: local, val: local, type: 'local'},
+                {y0: local, y1: total, val: total, type: 'global'}
+        ];
+        stackedObj.total = total;
+        stackedBins[idx] = stackedObj;
+    });
+    console.log('Stacked Bins: ', stackedBins);
+
 
     var margin = {top: 10, right: 10, bottom: 20, left:40};
     width = width - margin.left - margin.right;
     height = height - margin.top - margin.bottom;
+
+    var color = d3.scale.ordinal()
+            .range(['#0FA5C5', '#B2B2B2'])
+            .domain(['local', 'global']);
 
     // TODO: Make these align between bars
     var xScale = d3.scale.linear()
@@ -129,9 +175,9 @@ function initializeHistogramViz($el, model) {
     var xAxis = d3.svg.axis()
         .scale(xScale)
         .orient('bottom')
-        .ticks(data.numBins + 1)
+        .ticks(globalStats.numBins + 1)
         .tickFormat(function (d) {
-            return d * data.binWidth + data.minValue;
+            return d * globalStats.binWidth + globalStats.minValue;
         });
 
     var yAxis = d3.svg.axis()
@@ -146,9 +192,13 @@ function initializeHistogramViz($el, model) {
             .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
     // TODO: Make this correct values
-    xScale.domain([0, data.numBins]);
+    xScale.domain([0, globalStats.numBins]);
 
-    var yDomainMax = (bins.length > 0) ? d3.max(bins) : 1; // Guard against zero items.
+    var yDomainMax = _.max(stackedBins, function (bin) {
+        return bin.total;
+    }).total;
+
+    console.log('yDomainMax: ', yDomainMax);
     yScale.domain([0, yDomainMax]);
 
     svg.append('g')
@@ -160,25 +210,56 @@ function initializeHistogramViz($el, model) {
         .attr('class', 'y axis')
         .call(yAxis);
 
-    svg.selectAll('.bar')
-            .data(bins)
-        .enter().append('rect')
-            .attr('class', 'bar')
-            .attr('x', function (d, i) {
-                return xScale(i);
-            })
-            .attr('width', Math.floor(width/data.numBins))
-            .attr('y', function (d) {
-                return yScale(d);
-            })
-            .attr('height', function (d) {
-                return height - yScale(d);
+    var columns = svg.selectAll('.bar')
+            .data(stackedBins)
+        .enter().append('g')
+            .attr('class', 'g')
+            .attr('transform', function (d, i) {
+                return 'translate(' + xScale(i) + ',0)';
             });
+
+    columns.selectAll('rect')
+            // TODO: Remove this
+            .data(function (d) {
+                return d;
+            })
+        .enter().append('rect')
+            .attr('width', Math.floor(width/globalStats.numBins))
+            .attr('height', function (d) {
+                console.log(d);
+                return yScale(d.y0) - yScale(d.y1);
+            })
+            .attr('y', function (d) {
+                return yScale(d.y1);
+            })
+            .style('fill', function (d) {
+                return color(d.type);
+            });
+
+
+
+    // svg.selectAll('.bar')
+    //         .data(stackedBins)
+    //     .enter().append('rect')
+    //         .attr('class', 'bar')
+    //         .attr('x', function (d, i) {
+    //             return xScale(i);
+    //         })
+    //         .attr('width', Math.floor(width/data.numBins))
+    //         .attr('y', function (d) {
+    //             return yScale(d);
+    //         })
+    //         .attr('height', function (d) {
+    //             return height - yScale(d);
+    //         });
+
+
+
 }
 
 
-function updateHistogramData(socket, marquee, collection, data) {
-    collection.reset([data]);
+function updateHistogramData(socket, marquee, collection, data, globalStats) {
+    collection.reset([{data: data, globalStats: globalStats}]);
 }
 
 module.exports = {
