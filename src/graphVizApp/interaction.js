@@ -27,7 +27,7 @@ var renderer = require('../renderer.js');
 function setupDrag($eventTarget, camera, appState) {
 
     return $eventTarget.mousedownAsObservable()
-        .flatMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
+        .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
         .filter(function (evt) {
 
             //allow dragging by graph label title
@@ -101,7 +101,7 @@ function setupScroll($eventTarget, canvas, camera, appState) {
 
     return $eventTarget.onAsObservable('mousewheel')
         .sample(1)
-        .flatMap(util.observableFilter(appState.marqueeDone, util.notIdentity))
+        .flatMapLatest(util.observableFilter(appState.marqueeDone, util.notIdentity))
         .filter(function (evt) {
             return ! $(evt.target).parents('.graph-label-contents').length;
         })

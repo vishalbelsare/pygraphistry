@@ -8,7 +8,7 @@ function makeErrorHandler(name) {
 
 // Usage:
 // mainObservableStream
-//    .flatMap(util.observableFilter(subStream, _.identity))
+//    .flatMapLatest(util.observableFilter(subStream, _.identity))
 //    .do (// Here you have mainObservable filtered on subStream)
 function observableFilter (stream, pred) {
     return function (origVal) {

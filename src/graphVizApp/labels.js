@@ -258,10 +258,10 @@ function getLatestHighlightedObject ($eventTarget, renderState, textures, appSta
     interaction.setupMousemove($eventTarget, renderState, textures)
         // TODO: Make sure this also catches $('#marquee').hasClass('done') and 'beingdragged'
         // As a non-marquee-active state.
-        .flatMap(util.observableFilter(appState.marqueeActive, util.notIdentity))
+        .flatMapLatest(util.observableFilter(appState.marqueeActive, util.notIdentity))
         .map(function (v) { return {cmd: 'hover', pt: v}; })
         .merge($eventTarget.mousedownAsObservable()
-            .flatMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
+            .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
             .map(function (evt) {
                 var clickedLabel = $(evt.target).hasClass('graph-label') ||
                         $(evt.target).hasClass('highlighted-point') ||
@@ -282,7 +282,7 @@ function getLatestHighlightedObject ($eventTarget, renderState, textures, appSta
             }))
         .merge(
             appState.labelHover
-                .flatMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
+                .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
                 .map(function (elt) {
                     return _.values(appState.poi.state.activeLabels)
                         .filter(function (lbl) { return lbl.elt.get(0) === elt; });
