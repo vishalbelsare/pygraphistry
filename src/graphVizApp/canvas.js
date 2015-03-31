@@ -13,7 +13,7 @@ var labels          = require('./labels.js');
 var renderer        = require('../renderer');
 
 
-var DEBOUNCE_TIME = 60;
+var DEBOUNCE_TIME = 80;
 
 
 function renderScene(lastRender, renderer, currentState, data) {
@@ -157,7 +157,7 @@ function setupRendering(lastRender, currentlyRendering) {
         })
         .do(function (pair) {
             pair.cur.renderer.render(pair.cur.currentState, 'interactionPicking', null,
-                {renderListOverride: ['pointpicking', 'edgepicking', 'pointsampling']});
+                {renderListTrigger: 'picking'});
         })
         .do(function () {
             $('.graph-label-container').css('display', 'block');

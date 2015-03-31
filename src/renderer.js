@@ -282,7 +282,7 @@ function init(config, canvas) {
     debug('Active indices', state.get('activeIndices'));
     debug('Active attributes', state.get('activeLocalAttributes'));
 
-    state = state.set('defaultItems', getDefaultItems(state));
+    state = state.set('defaultItems', getItemsForTrigger(state, 'renderScene'));
 
     resizeCanvas(state);
     window.addEventListener('resize', function () {
@@ -347,7 +347,7 @@ function enableExtensions(gl, extensions) {
         if (_.contains(supportedExtensions, name)) {
             return _.extend(obj, gl.getExtension(name));
         } else {
-            ui.error('Fatal error: GL driver lacks support for', name)
+            ui.error('Fatal error: GL driver lacks support for', name);
             return obj;
         }
     }, {});
@@ -387,10 +387,10 @@ function createCamera(state) {
 /*
  * Return the items to render when no override is given to render()
  */
-function getDefaultItems(state) {
+function getItemsForTrigger(state, trigger) {
     var items = state.get('config').get('items').toJS();
     var renderItems = _.chain(items).pick(function (i) {
-        return i.trigger === 'renderScene';
+        return i.trigger === trigger;
     }).map(function (i, name) {
         return name;
     }).value();
@@ -880,7 +880,9 @@ function renderLastQueued() {
         var renderObj = lastQueuedRenders[tag];
 
         var state = renderObj.state;
-        var renderListOverride = renderObj.renderListOverride;
+        var trigger = renderObj.renderListTrigger;
+        var renderListOverride = trigger ? getItemsForTrigger(state, trigger)
+                                         : renderObj.renderListOverride;
         var readPixelsOverride = renderObj.readPixelsOverride;
         var cb = renderObj.cb;
 
