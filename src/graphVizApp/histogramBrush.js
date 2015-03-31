@@ -113,7 +113,7 @@ function initializeHistogramViz($el, model) {
     var width = $el.width();
     var height = $el.parent().height(); // TODO: Get this more naturally.
     var data = model.attributes;
-    var bins = data.bins;
+    var bins = data.bins || []; // Guard against empty bins.
 
     var margin = {top: 10, right: 10, bottom: 20, left:40};
     width = width - margin.left - margin.right;
@@ -147,7 +147,9 @@ function initializeHistogramViz($el, model) {
 
     // TODO: Make this correct values
     xScale.domain([0, data.numBins]);
-    yScale.domain([0, d3.max(bins)]);
+
+    var yDomainMax = (bins.length > 0) ? d3.max(bins) : 1; // Guard against zero items.
+    yScale.domain([0, yDomainMax]);
 
     svg.append('g')
         .attr('class', 'x axis')
