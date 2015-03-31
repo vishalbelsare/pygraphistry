@@ -45,11 +45,11 @@ function setupMarquee(isOn, renderState, appState) {
     var marquee = marqueeFact.initMarquee(renderState, $('#marquee'), isOn, appState, {transform: transform});
 
     marquee.selections.subscribe(function (sel) {
-        debug('selected bounds', sel);
+        debug('marquee selected bounds', sel);
     }, util.makeErrorHandler('bad marquee selections'));
 
     marquee.drags.subscribe(function (drag) {
-        debug('drag action', drag.start, drag.end);
+        debug('marquee drag action', drag.start, drag.end);
     }, util.makeErrorHandler('bad marquee drags'));
 
     return marquee;
@@ -63,17 +63,17 @@ function setupBrush(isOn, renderState, appState) {
         return camera.canvas2WorldCoords(point.x, point.y, cnv);
     };
 
-    var marquee = marqueeFact.initBrush(renderState, $('#marquee'), isOn, appState, {transform: transform});
+    var brush = marqueeFact.initBrush(renderState, $('#brush'), isOn, appState, {transform: transform});
 
-    marquee.selections.subscribe(function (sel) {
-        debug('selected bounds', sel);
-    }, util.makeErrorHandler('bad marquee selections'));
+    brush.selections.subscribe(function (sel) {
+        debug('brush selected bounds', sel);
+    }, util.makeErrorHandler('bad brush selections'));
 
-    marquee.drags.subscribe(function (drag) {
-        debug('drag action', drag.start, drag.end);
-    }, util.makeErrorHandler('bad marquee drags'));
+    brush.drags.subscribe(function (drag) {
+        debug('brush drag action', drag.start, drag.end);
+    }, util.makeErrorHandler('bad brush drags'));
 
-    return marquee;
+    return brush;
 }
 
 // -> Observable DOM
@@ -280,9 +280,9 @@ function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, a
     });
 
     var marquee = setupMarquee(turnOnMarquee, renderState, appState);
-    // var brush = setupBrush(turnOnBrush, renderState, appState);
+    var brush = setupBrush(turnOnBrush, renderState, appState);
     dataInspector.init(socket, workerParams.url, marquee);
-    // histogramBrush.init(socket, brush);
+    histogramBrush.init(socket, brush);
 
 
     var timeSlide = new Rx.Subject();
