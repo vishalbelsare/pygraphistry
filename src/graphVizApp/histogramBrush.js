@@ -12,6 +12,7 @@ var d3 = require('d3');
 var util    = require('./util.js');
 
 var ATTRIBUTE = 'degree';
+var DRAG_SAMPLE_INTERVAL = 100;
 
 function init(socket, marquee) {
     debug('Initializing histogram brush');
@@ -82,6 +83,7 @@ function init(socket, marquee) {
     new AllHistogramsView();
 
     marquee.selections.flatMap(function (sel) {
+        console.log('Firing brush selection: ', sel);
         var params = {sel: sel, attribute: ATTRIBUTE};
         return Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params);
     }).do(function (reply) {
@@ -97,7 +99,13 @@ function init(socket, marquee) {
         return reply.data[ATTRIBUTE];
     }).do(function (data) {
         updateHistogramData(socket, marquee, histograms, data);
-    }).subscribe(_.identity, util.makeErrorHandler('aggregate error'));
+    }).subscribe(_.identity, util.makeErrorHandler('Brush selection aggregate error'));
+
+    marquee.drags.sample(DRAG_SAMPLE_INTERVAL)
+    .do(function (dragData) {
+        console.log('Got drag data: ', dragData);
+    }).subscribe(_.identity, util.makeErrorHandler('Brush drag aggregate error'));
+
 }
 
 
