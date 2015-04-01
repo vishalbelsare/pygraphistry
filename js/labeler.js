@@ -92,15 +92,15 @@ function getLabels(graph, indices) {
     }
 }
 
-function aggregate(graph, indices, attribute) {
+function aggregate(graph, indices, attribute, binning) {
     function process(frame, attribute) {
         var values = _.map(frame, function (row) {
             return row[attribute];
         });
         if (_.all(values, function (x) { return typeof x === 'number'; })) {
-            return histogram(values);
+            return histogram(values, binning);
         } else {
-            return countBy(values);
+            return countBy(values, binning);
         }
     }
 
@@ -113,7 +113,8 @@ function aggregate(graph, indices, attribute) {
 }
 
 
-function countBy(values) {
+function countBy(values, binning) {
+    // TODO: Binning.
     if (values.length === 0) {
         return {type: 'nodata'};
     }
@@ -127,7 +128,9 @@ function countBy(values) {
 }
 
 
-function histogram(values) {
+function histogram(values, binning) {
+    // Binning has binWidth, minValue, maxValue, and numBins
+
     values = _.filter(values, function (x) { return !isNaN(x)});
 
     var numValues = values.length;
@@ -143,6 +146,14 @@ function histogram(values) {
     var max = _.max(values);
     var min = _.min(values);
     var binWidth = Math.ceil((max - min) / numBins);
+
+    // Override if provided binning data.
+    if (binning) {
+        numBins = binning.numBins;
+        binWidth = binning.binWidth;
+        min = binning.minValue;
+        max = binning.maxValue;
+    }
 
     // Guard against 0 width case
     if (max === min) {
