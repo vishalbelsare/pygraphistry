@@ -31,6 +31,9 @@ function defaults() {
         VIZ_LISTEN_ADDRESS: '0.0.0.0',
         VIZ_LISTEN_PORT: 10000,
 
+        // The number of seconds old a GPU ping may be before being considered stale
+        GPU_PING_TIMEOUT: 60,
+
         HTTP_LISTEN_ADDRESS: 'localhost',
         HTTP_LISTEN_PORT: 3000,
 
