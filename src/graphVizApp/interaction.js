@@ -29,9 +29,14 @@ function setupDrag($eventTarget, camera, appState) {
     return $eventTarget.mousedownAsObservable()
         .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
         .filter(function (evt) {
+            var $p = $(evt.target);
+
+            // Filter out buttons
+            if ($p.hasClass('fa')) {
+                return false;
+            }
 
             //allow dragging by graph label title
-            var $p = $(evt.target);
             for (var i = 0; i < 2; i++) {
                 if ($p.hasClass('graph-label')) {
                     return true;
