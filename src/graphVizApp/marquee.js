@@ -230,7 +230,6 @@ function brushSelections (renderState, $cont, $elt, isOn, appState) {
                                     width: width + 2 * bw,
                                     height: height + 2 * bw
                                 });
-
                                 //createGhostImg(renderState, rect, $elt, width, height);
                             });
                     });
@@ -238,9 +237,7 @@ function brushSelections (renderState, $cont, $elt, isOn, appState) {
             }
         });
 
-    var boundsA = new Rx.ReplaySubject(1);
-    bounds.subscribe(boundsA, util.makeErrorHandler('boundsA'));
-    return boundsA;
+    return bounds;
 }
 
 
@@ -310,6 +307,7 @@ function marqueeDrags(selections, $cont, $elt, appState) {
 function brushDrags(selections, $cont, $elt, appState) {
     var drags = selections.flatMapLatest(function (selection) {
         var firstRunSinceMousedown = true;
+        var dragDelta = {x: 0, y: 0};
         return Rx.Observable.fromEvent($elt, 'mousedown')
             .do(function (evt) {
                 debug('stopPropagation: marquee down 2');
@@ -330,7 +328,7 @@ function brushDrags(selections, $cont, $elt, appState) {
                     .map(function (evt) {
                         return {start: startPoint, end: toPoint($cont, evt)};
                     }).do(function (drag) {
-                        var delta = toDelta(drag.start, drag.end);
+                        dragDelta = toDelta(drag.start, drag.end);
 
                         // Side effects
                         if (firstRunSinceMousedown) {
@@ -338,17 +336,16 @@ function brushDrags(selections, $cont, $elt, appState) {
                             $elt.removeClass('draggable').addClass('dragging');
                         }
                         $elt.css({
-                            left: selection.tl.x + delta.x,
-                            top: selection.tl.y + delta.y
+                            left: selection.tl.x + dragDelta.x,
+                            top: selection.tl.y + dragDelta.y
                         });
 
-                    }).map(function (drag) {
+                    }).map(function () {
                         // Convert back into TL/BR
-                        var delta = toDelta(drag.start, drag.end);
-                        var newTl = {x: selection.tl.x + delta.x,
-                                y: selection.tl.y + delta.y};
-                        var newBr = {x: selection.br.x + delta.x,
-                                y: selection.br.y + delta.y};
+                        var newTl = {x: selection.tl.x + dragDelta.x,
+                                y: selection.tl.y + dragDelta.y};
+                        var newBr = {x: selection.br.x + dragDelta.x,
+                                y: selection.br.y + dragDelta.y};
 
                         return {tl: newTl, br: newBr};
                     }).takeUntil(Rx.Observable.fromEvent($(window.document), 'mouseup')
@@ -356,7 +353,14 @@ function brushDrags(selections, $cont, $elt, appState) {
                             debug('End of drag');
                             appState.marqueeActive.onNext(false);
                             appState.marqueeDone.onNext(false);
-                            clearMarquee($cont, $elt);
+                            // clearMarquee($cont, $elt);
+
+                            // Update Selection positions.
+                            selection.tl.x += dragDelta.x;
+                            selection.tl.y += dragDelta.y;
+                            selection.br.x += dragDelta.x;
+                            selection.br.y += dragDelta.y;
+
                         })
                     );
             });
