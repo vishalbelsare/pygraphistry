@@ -81,7 +81,7 @@ function marqueeSelections (renderState, $cont, $elt, isOn, appState) {
                 return Rx.Observable.fromEvent($cont, 'mousedown')
                     .do(function (evt) {
                         debug('stopPropagation: marquee down');
-                        appState.marqueeActive.onNext(true);
+                        appState.marqueeActive.onNext('selecting');
                         appState.marqueeDone.onNext(false);
                         evt.stopPropagation();
                         $('body').addClass('noselect');
@@ -171,7 +171,7 @@ function brushSelections (renderState, $cont, $elt, isOn, appState) {
                 return Rx.Observable.fromEvent($cont, 'mousedown')
                     .do(function (evt) {
                         debug('stopPropagation: marquee down');
-                        appState.marqueeActive.onNext(true);
+                        appState.marqueeActive.onNext('selecting');
                         appState.marqueeDone.onNext(false);
                         evt.stopPropagation();
                         $('body').addClass('noselect');
@@ -260,7 +260,7 @@ function marqueeDrags(selections, $cont, $elt, appState) {
         return Rx.Observable.fromEvent($elt, 'mousedown')
             .do(function (evt) {
                 debug('stopPropagation: marquee down 2');
-                appState.marqueeActive.onNext(true);
+                appState.marqueeActive.onNext('dragging');
                 evt.stopPropagation();
                 $('body').addClass('noselect');
                 $cont.addClass('beingdragged');
@@ -311,7 +311,7 @@ function brushDrags(selections, $cont, $elt, doneDragging, appState) {
         return Rx.Observable.fromEvent($elt, 'mousedown')
             .do(function (evt) {
                 debug('stopPropagation: marquee down 2');
-                appState.marqueeActive.onNext(true);
+                appState.marqueeActive.onNext('dragging');
                 evt.stopPropagation();
                 $('body').addClass('noselect');
                 $cont.addClass('beingdragged');
@@ -361,10 +361,10 @@ function brushDrags(selections, $cont, $elt, doneDragging, appState) {
                             selection.br.x += dragDelta.x;
                             selection.br.y += dragDelta.y;
 
-                            var newTl = {x: selection.tl.x + dragDelta.x,
-                                y: selection.tl.y + dragDelta.y};
-                            var newBr = {x: selection.br.x + dragDelta.x,
-                                y: selection.br.y + dragDelta.y};
+                            var newTl = {x: selection.tl.x,
+                                y: selection.tl.y};
+                            var newBr = {x: selection.br.x,
+                                y: selection.br.y};
 
                             doneDragging.onNext({tl: newTl, br: newBr});
                         })
@@ -460,7 +460,7 @@ function initBrush (renderState, $cont, toggle, appState, cfg) {
     };
 
     var doneDraggingRaw = new Rx.ReplaySubject(1);
-    var doneDragging = doneDraggingRaw.map(transformAll);
+    var doneDragging = doneDraggingRaw.debounce(50).map(transformAll);
 
     var bounds = brushSelections(renderState, $cont, $elt, isOn, appState);
     var drags = brushDrags(bounds, $cont, $elt, doneDraggingRaw, appState).map(transformAll);

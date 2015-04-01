@@ -289,7 +289,7 @@ function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, a
 
     var marquee = setupMarquee(turnOnMarquee, renderState, appState);
     var brush = setupBrush(turnOnBrush, renderState, appState);
-    dataInspector.init(socket, workerParams.url, marquee);
+    dataInspector.init(socket, workerParams.url, brush, appState);
     histogramBrush.init(socket, brush);
 
 
