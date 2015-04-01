@@ -47,7 +47,7 @@ function etl(msg) {
         return vgwriter.uploadVGraph(vg, metadata)
             .fail(function (err) {
                 console.error('S3 Upload failed', err.message);
-            }).then(cacheLocally, cacheLocally) // Cache locally regarless of result
+            }).then(cacheLocally, cacheLocally) // Cache locally regardless of result
             .then(_.constant(name)); // We succeed iff cacheLocally succeeds
     } else {
         // On prod/staging ETL fails if upload fails
