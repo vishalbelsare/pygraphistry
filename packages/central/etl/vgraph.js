@@ -131,15 +131,21 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
         }
     }
 
+    var warnsLeftDuplicated = 100;
+    var warnsLeftBi = 100;
     function warnIfDuplicated(src, dst) {
         var dsts = edgeMap[src] || {};
         if (dst in dsts) {
-            console.info('Edge %s -> %s is duplicated', src, dst);
+            if (warnsLeftDuplicated-- > 0) {
+                console.info('Edge %s -> %s is duplicated', src, dst);
+            }
         }
 
         var srcs = edgeMap[dst] || {};
         if (src in srcs) {
-            console.info('Edge %s <-> %s has both directions', src, dst)
+            if (warnsLeftBi-- > 0) {
+                console.info('Edge %s <-> %s has both directions', src, dst);
+            }
         }
     }
 
@@ -208,6 +214,7 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
     }
 
     var sortedLabels = new Array(nodeCount);
+    var warnsLeftLabel = 100;
     for (var i = 0; i < nlabels.length; i++) {
         var label = nlabels[i];
         var nodeId = label[idField];
@@ -215,7 +222,9 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
             var labelIdx = node2Idx[nodeId];
             sortedLabels[labelIdx] = label;
         } else {
-            console.info(sprintf('Skipping label #%6d (nodeId: %10s) which has no matching node.', i, nodeId));
+            if (warnsLeftLabel-- > 0) {
+                console.info(sprintf('Skipping label #%6d (nodeId: %10s) which has no matching node.', i, nodeId));
+            }
         }
     }
 
