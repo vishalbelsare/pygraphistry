@@ -304,7 +304,7 @@ function marqueeDrags(selections, $cont, $elt, appState) {
     return dragsA;
 }
 
-function brushDrags(selections, $cont, $elt, appState) {
+function brushDrags(selections, $cont, $elt, doneDragging, appState) {
     var drags = selections.flatMapLatest(function (selection) {
         var firstRunSinceMousedown = true;
         var dragDelta = {x: 0, y: 0};
@@ -361,6 +361,12 @@ function brushDrags(selections, $cont, $elt, appState) {
                             selection.br.x += dragDelta.x;
                             selection.br.y += dragDelta.y;
 
+                            var newTl = {x: selection.tl.x + dragDelta.x,
+                                y: selection.tl.y + dragDelta.y};
+                            var newBr = {x: selection.br.x + dragDelta.x,
+                                y: selection.br.y + dragDelta.y};
+
+                            doneDragging.onNext({tl: newTl, br: newBr});
                         })
                     );
             });
@@ -452,14 +458,19 @@ function initBrush (renderState, $cont, toggle, appState, cfg) {
             return [key, cfg.transform(val)];
         }));
     };
+
+    var doneDraggingRaw = new Rx.ReplaySubject(1);
+    var doneDragging = doneDraggingRaw.map(transformAll);
+
     var bounds = brushSelections(renderState, $cont, $elt, isOn, appState);
-    var drags = brushDrags(bounds, $cont, $elt, appState).map(transformAll);
+    var drags = brushDrags(bounds, $cont, $elt, doneDraggingRaw, appState).map(transformAll);
     var selections = bounds.map(transformAll);
 
     return {
         selections: selections,
         bounds: bounds,
         drags: drags,
+        doneDragging: doneDragging,
         $elt: $elt,
         isOn: toggle
     };

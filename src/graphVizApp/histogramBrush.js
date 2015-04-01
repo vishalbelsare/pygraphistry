@@ -109,6 +109,20 @@ function init(socket, marquee) {
     new AllHistogramsView();
 
 
+
+    marquee.doneDragging.do(function (val) {
+        console.log('Done Dragging: ', val);
+    }).subscribe(_.identity, util.makeErrorHandler('Done Dragging'));
+
+
+    marquee.selections.do(function (val) {
+        console.log('Selected: ', val);
+    }).subscribe(_.identity, util.makeErrorHandler('Done Dragging'));
+
+
+
+
+
     marquee.selections.map(function (val) {
         return {type: 'selection', sel: val};
     }).merge(marquee.drags.sample(DRAG_SAMPLE_INTERVAL).map(function (val) {
