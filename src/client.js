@@ -101,17 +101,14 @@ function getVizServerParams(args) {
 
                 throw new Error(msg);
             }
-
-            debug('Got viz server params');
-
-            console.info('Routed in', Date.now() - parseFloat(reply.data.timestamp), 'ms');
-
-            return {
+            var params = {
                 'hostname': reply.data.hostname,
                 'port': reply.data.port,
                 'url': '//' + reply.data.hostname + ':' + reply.data.port
             };
 
+            console.info('Routed to', params.url, 'in', Date.now() - parseFloat(reply.data.timestamp), 'ms');
+            return params;
         })
         .retry(3)
         .take(1);
