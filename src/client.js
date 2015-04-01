@@ -253,7 +253,7 @@ function handleVboUpdates(socket, renderState, renderStateUpdates) {
         var thisStep = {step: vboUpdateStep++, data: data.step};
 
         $('#graph-node-count').text(data.elements.pointculled);
-        $('#graph-edge-count').text(data.elements.edgeculled/2);
+        $('#graph-edge-count').text(data.elements.edgeculledindexed/2);
 
 
         try {
