@@ -85,11 +85,8 @@ function get_likely_local_ip() {
 
 //string -> Observable {ips: ..., results: ...}
 function getIPs() {
-    // The age (in seconds) that defines 'fresh' or 'stale' pings
-    var freshSeconds = 30;
     // The absolute Date that defines the time threshild between fresh/stale pings
-    var freshDate = new Date(Date.now() - (freshSeconds * 1000) - 1);
-
+    var freshDate = new Date(Date.now() - (config.GPU_PING_TIMEOUT * 1000));
 
     // Find all the server running workers, sort by available GPU memory
     var workerServers = db.collection('gpu_monitor').find(
