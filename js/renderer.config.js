@@ -173,6 +173,7 @@ var models = {
         'pointSize':  {
             'datasource': 'HOST',
             'type': 'UNSIGNED_BYTE',
+            'hint': 'STATIC_DRAW',
             'count': 1,
             'offset': 0,
             'stride': 0,
@@ -183,6 +184,7 @@ var models = {
         'edgeColor':  {
             'datasource': 'HOST',
             'type': 'UNSIGNED_BYTE',
+            'hint': 'STATIC_DRAW',
             'count': 4,
             'offset': 0,
             'stride': 0,
@@ -193,6 +195,7 @@ var models = {
         'pointColor':  {
             'datasource': 'HOST',
             'type': 'UNSIGNED_BYTE',
+            'hint': 'STATIC_DRAW',
             'count': 4,
             'offset': 0,
             'stride': 0,
@@ -486,6 +489,7 @@ var sceneNetflow = {
     'camera': camera2D,
     'render': ['pointpicking', 'pointsampling', 'pointculledtexture', 'pointoutlinetexture',
                'edgeculledindexed', 'edgepickingindexed', 'pointoutline', 'pointculled']
+               //'edgeculled', 'edgepicking', 'pointoutline', 'pointculled']
 }
 
 var scenes = {
