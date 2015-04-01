@@ -12,13 +12,14 @@ var d3 = require('d3');
 var util    = require('./util.js');
 
 var ATTRIBUTE = 'degree';
-var DRAG_SAMPLE_INTERVAL = 300;
+var DRAG_SAMPLE_INTERVAL = 100;
 
 // GLOBALS for updates
 var svg;
 var xScale;
 var yScale;
 var color;
+var margin = {top: 10, right: 10, bottom: 20, left:40};
 
 function init(socket, marquee) {
     debug('Initializing histogram brush');
@@ -30,7 +31,7 @@ function init(socket, marquee) {
     var params = {all: true};
     Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
         .map(function (reply) {
-            console.log('Got global reply: ', reply.data);
+            console.log('Global Histogram Stats: ', reply);
             return reply.data;
         }).subscribe(globalStats, util.makeErrorHandler('Global stat aggregate call'));
 
@@ -76,6 +77,7 @@ function init(socket, marquee) {
             this.listenTo(histograms, 'add', this.addHistogram);
             this.listenTo(histograms, 'reset', this.addAll);
             this.listenTo(histograms, 'all', this.render);
+            this.listenTo(histograms, 'change', this.update);
         },
         render: function () {
             // TODO: Use something other than visibility
@@ -89,8 +91,15 @@ function init(socket, marquee) {
             var view = new HistogramView({model: histogram});
             var childEl = view.render().el;
             this.$el.append(childEl);
+            histogram.set('$el', $(childEl));
             initializeHistogramViz($(childEl), histogram); // TODO: Link to data?
-            updateHistogram($(childEl), histogram);
+            updateHistogram($(childEl), histogram, histogram.get('attribute'));
+        },
+        update: function (histogram) {
+            // TODO: Find way to not fire this on first time
+            if (!histogram.get('firstTime')) {
+                updateHistogram(histogram.get('$el'), histogram, histogram.get('attribute'));
+            }
         },
         addAll: function () {
             this.$el.empty();
@@ -99,7 +108,7 @@ function init(socket, marquee) {
     });
     new AllHistogramsView();
 
-    // Initial drag + drop
+
     marquee.selections.map(function (val) {
         return {type: 'selection', sel: val};
     }).merge(marquee.drags.sample(DRAG_SAMPLE_INTERVAL).map(function (val) {
@@ -109,8 +118,7 @@ function init(socket, marquee) {
         return globalStats.map(function (globalVal) {
             return {type: selContainer.type, sel: selContainer.sel, globalStats: globalVal};
         });
-    }).flatMap(function (data) {
-        console.log('Firing brush selection: ', data.sel);
+    }).flatMapLatest(function (data) {
         var binning = data.globalStats[ATTRIBUTE];
         var params = {sel: data.sel, attribute: ATTRIBUTE, binning: binning};
         return Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
@@ -125,28 +133,14 @@ function init(socket, marquee) {
         }
     // TODO: Do we want to treat no replies in some special way?
     }).filter(function (data) { return data.reply && data.reply.success; })
-    .map(function (data) {
-        // TODO: Massage this into a format we want.
-        // TODO: Deal with nodata responses cleanly
-        return data;
-    }).do(function (data) {
-        console.log('DATA:', data);
-        console.log('Creating Histogram with: ', data.reply.data[ATTRIBUTE]);
-
+    .do(function (data) {
         if (data.type === 'selection') {
-            createHistogramData(socket, marquee, histograms, data.reply.data[ATTRIBUTE], data.globalStats);
+            createHistogramData(socket, marquee, histograms, data.reply.data, data.globalStats, HistogramModel);
         } else if (data.type === 'drag') {
-            updateHistogramData(socket, marquee, histograms, data.reply.data[ATTRIBUTE], data.globalStats);
+            updateHistogramData(socket, marquee, histograms, data.reply.data, data.globalStats, HistogramModel);
         }
 
     }).subscribe(_.identity, util.makeErrorHandler('Brush selection aggregate error'));
-
-
-    // Updates from brushing
-    marquee.drags.sample(DRAG_SAMPLE_INTERVAL)
-    .do(function (dragData) {
-        console.log('Got drag data: ', dragData);
-    }).subscribe(_.identity, util.makeErrorHandler('Brush drag aggregate error'));
 
 }
 
@@ -168,15 +162,14 @@ function toStackedBins(bins, globalBins) {
     return stackedBins;
 }
 
-function updateHistogram($el, model) {
-    var width = $el.width();
+function updateHistogram($el, model, attribute) {
+    var width = $el.width() - margin.left - margin.right;
     var data = model.attributes.data;
-    var globalStats = model.attributes.globalStats[ATTRIBUTE];
+    var globalStats = model.attributes.globalStats[attribute];
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
 
-    // Transform bins and global bins into stacked format.
-    // TODO: Get this in a cleaner, more extensible way
+
     var stackedBins = toStackedBins(bins, globalBins);
 
     var columns = svg.selectAll('.column')
@@ -184,19 +177,14 @@ function updateHistogram($el, model) {
             return d.id;
         });
 
-
     columns.enter().append('g')
         .attr('class', 'g')
         .attr('class', 'column')
         .attr('transform', function (d, i) {
-            console.log('Entering Column');
             return 'translate(' + xScale(i) + ',0)';
         });
 
-    //////////////////////////////////////////////////////////////////
-    // COLUMN UPDATE SELECTION
 
-    // Update bars in existing columns
     var bars = columns.selectAll('rect')
         .data(function (d) {
             return d;
@@ -204,47 +192,38 @@ function updateHistogram($el, model) {
             return d.type + d.binId;
         });
 
-    // Update
-
     bars
-        // .transition().duration(DRAG_SAMPLE_INTERVAL)
+        .transition().duration(DRAG_SAMPLE_INTERVAL)
         .attr('height', function (d) {
-            console.log('UPDATING BAR');
-            return yScale(d.y0) - yScale(d.y1);
+            return yScale(d.y0) - yScale(d.y1) + heightDelta(d);
         })
         .attr('y', function (d) {
-            return yScale(d.y1);
+            return yScale(d.y1) - heightDelta(d);
         });
 
-    // Enter
 
     bars.enter().append('rect')
-        // .transition().duration(DRAG_SAMPLE_INTERVAL)
         .style('fill', function (d) {
-            console.log('ENTERING BAR');
             return color(d.type);
         })
         .attr('width', Math.floor(width/globalStats.numBins))
         .attr('height', function (d) {
-            return yScale(d.y0) - yScale(d.y1);
+            return yScale(d.y0) - yScale(d.y1) + heightDelta(d);
         })
         .attr('y', function (d) {
-            return yScale(d.y1);
+            return yScale(d.y1) - heightDelta(d);
         });
-
-
-    // Exit
-    // NO OP
-
-
-
-    // applyBarAttr(bars.enter().append('rect').transition().duration(DRAG_SAMPLE_INTERVAL).attr('class', function (d) {
-    //     console.log('Entering');
-    //     return 'blah';
-    // }));
-    // applyBarAttr(bars.transition().duration(DRAG_SAMPLE_INTERVAL));
 }
 
+function heightDelta(d) {
+    var minimumHeight = 4;
+    var height = yScale(d.y0) - yScale(d.y1);
+    if (d.val > 0 && d.y0 === 0 && height < minimumHeight) {
+       return minimumHeight - height;
+    } else {
+        return 0;
+    }
+}
 
 function initializeHistogramViz($el, model) {
     var width = $el.width();
@@ -258,7 +237,6 @@ function initializeHistogramViz($el, model) {
     // TODO: Get this in a cleaner, more extensible way
     var stackedBins = toStackedBins(bins, globalBins);
 
-    var margin = {top: 10, right: 10, bottom: 20, left:40};
     width = width - margin.left - margin.right;
     height = height - margin.top - margin.bottom;
 
@@ -292,7 +270,6 @@ function initializeHistogramViz($el, model) {
         .append('g')
             .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
-    // TODO: Make this correct values
     xScale.domain([0, globalStats.numBins]);
 
     var yDomainMax = _.max(stackedBins, function (bin) {
@@ -313,12 +290,24 @@ function initializeHistogramViz($el, model) {
 }
 
 
-function createHistogramData(socket, marquee, collection, data, globalStats) {
-    collection.reset([{data: data, globalStats: globalStats, firstTime: true}]);
+function createHistogramData(socket, marquee, collection, data, globalStats, Model) {
+    _.each(data, function (val, key) {
+        var histogram = new Model();
+        histogram.set({data: val, globalStats: globalStats, firstTime: true});
+        histogram.id = key;
+        histogram.set('attribute', key);
+        collection.reset([histogram]);
+    });
 }
 
-function updateHistogramData(socket, marquee, collection, data, globalStats ) {
-    collection.reset([{data: data, globalStats: globalStats, firstTime: false}]);
+function updateHistogramData(socket, marquee, collection, data, globalStats, Model ) {
+    _.each(data, function (val, key) {
+        var histogram = new Model();
+        histogram.set({data: val, globalStats: globalStats, firstTime: false});
+        histogram.id = key;
+        histogram.set('attribute', key);
+        collection.set([histogram]);
+    });
 }
 
 module.exports = {
