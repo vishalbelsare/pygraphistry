@@ -104,7 +104,7 @@ function getVizServerParams(args) {
 
             debug('Got viz server params');
 
-            console.log('routed in ' + ( Date.now() - parseFloat(reply.data.timestamp) ) + ' ms');
+            console.info('Routed in', Date.now() - parseFloat(reply.data.timestamp), 'ms');
 
             return {
                 'hostname': reply.data.hostname,
@@ -253,7 +253,7 @@ function handleVboUpdates(socket, renderState, renderStateUpdates) {
         var thisStep = {step: vboUpdateStep++, data: data.step};
 
         $('#graph-node-count').text(data.elements.pointculled);
-        $('#graph-edge-count').text(data.elements.edgeculled/2);
+        $('#graph-edge-count').text(data.elements.edgeculledindexed/2);
 
 
         try {

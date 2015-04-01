@@ -6,6 +6,7 @@ var Immutable   = require('immutable');
 var Rx          = require('rx');
 var debug       = require('debug')('graphistry:StreamGL:renderer');
 
+var ui                  = require('./ui.js');
 var cameras             = require('./camera.js');
 var localAttribHandler  = require('./localAttribHandler.js');
 var bufferProxy         = require('./bufferproxy.js').bufferProxy;
@@ -116,9 +117,9 @@ function useProgram(gl, program) {
 /** The currently bound buffer in GL
  * @type {?WebGLBuffer} */
 var boundBuffer = null;
-function bindBuffer(gl, buffer) {
+function bindBuffer(gl, glArrayType, buffer) {
     if(boundBuffer !== buffer) {
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bindBuffer(glArrayType, buffer);
         boundBuffer = buffer;
         return true;
     }
@@ -180,6 +181,7 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
     _.each(bindings.attributes, function(binding, attribute) {
 
         var element = modelSettings[binding[0]][binding[1]];
+        var glArrayType = element.index ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER;
         var datasource = element.datasource;
         var glBuffer =
               datasource === 'HOST'         ? buffers[binding[0]]
@@ -190,16 +192,15 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
                 localGlBuffers[state.get('config').get('models').get(binding[0]).get(binding[1]).get('localName')]
             : (function () { throw new Error('unknown datasource ' + datasource); }());
 
-        debug('  binding buffer', attribute, binding, datasource, glBuffer, element.name);
+        debug('  binding buffer', attribute, binding, datasource, glArrayType, glBuffer, element.name);
 
-        bindBuffer(gl, glBuffer);
+        bindBuffer(gl, glArrayType, glBuffer);
         var location = getAttribLocationFast(gl, program, programName, attribute);
 
         gl.vertexAttribPointer(location, element.count, gl[element.type], element.normalize,
             element.stride, element.offset);
 
         gl.enableVertexAttribArray(location);
-
     });
 
 
@@ -223,7 +224,6 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
 
     });
 
-
     programBindings[programName] = bindings;
 }
 
@@ -245,6 +245,7 @@ function init(config, canvas) {
         canvas: canvas,
 
         gl: undefined,
+        ext: undefined,
         programs:       Immutable.Map({}),
         defaultItems:   undefined,
         buffers:        Immutable.Map({}),
@@ -281,7 +282,7 @@ function init(config, canvas) {
     debug('Active indices', state.get('activeIndices'));
     debug('Active attributes', state.get('activeLocalAttributes'));
 
-    state = state.set('defaultItems', getDefaultItems(state));
+    state = state.set('defaultItems', getItemsForTrigger(state, 'renderScene'));
 
     resizeCanvas(state);
     window.addEventListener('resize', function () {
@@ -290,6 +291,8 @@ function init(config, canvas) {
 
     var gl = createContext(state);
     state = state.set('gl', gl);
+    var ext = enableExtensions(gl, ['OES_element_index_uint']);
+    state = state.set('ext', ext);
     setGlOptions(state);
 
     state = createPrograms(state);
@@ -337,6 +340,20 @@ function createContext(state) {
 }
 
 
+function enableExtensions(gl, extensions) {
+    var supportedExtensions = gl.getSupportedExtensions();
+    debug('Supported extensions', supportedExtensions);
+    return _.reduce(extensions, function (obj, name) {
+        if (_.contains(supportedExtensions, name)) {
+            return _.extend(obj, gl.getExtension(name));
+        } else {
+            ui.error('Fatal error: GL driver lacks support for', name);
+            return obj;
+        }
+    }, {});
+}
+
+
 function createCamera(state) {
     var camera;
     var canvas = state.get('canvas');
@@ -361,7 +378,7 @@ function createCamera(state) {
         throw new Error ('Unknown camera type');
     }
 
-    console.log('Display has high DPI: pixel ratio is', pixelRatio);
+    console.info('Display has high DPI: pixel ratio is', pixelRatio);
     camera.resize(canvas.width, canvas.height, pixelRatio);
 
     return camera;
@@ -370,10 +387,10 @@ function createCamera(state) {
 /*
  * Return the items to render when no override is given to render()
  */
-function getDefaultItems(state) {
+function getItemsForTrigger(state, trigger) {
     var items = state.get('config').get('items').toJS();
     var renderItems = _.chain(items).pick(function (i) {
-        return i.trigger === 'renderScene';
+        return i.trigger === trigger;
     }).map(function (i, name) {
         return name;
     }).value();
@@ -645,9 +662,17 @@ function loadTexture(state, textureNfo, name) {
  * into that buffer
  */
 function loadBuffers(state, buffers, bufferData) {
+    var config = state.get('config').toJS();
+
     _.each(bufferData, function(data, bufferName) {
         debug('Loading buffer data for buffer %s (data type: %s, length: %s bytes)',
-            bufferName, data.constructor.name, data.byteLength);
+                    bufferName, data.constructor.name, data.byteLength);
+
+        var model = _.values(config.models[bufferName])[0];
+        if (model === undefined) {
+            console.error('Asked to load data for buffer \'%s\', but corresponding model found',bufferName);
+            return false;
+        }
 
         if(typeof buffers[bufferName] === 'undefined') {
             console.error('Asked to load data for buffer \'%s\', but no buffer by that name exists locally',
@@ -655,14 +680,14 @@ function loadBuffers(state, buffers, bufferData) {
             return false;
         }
 
-        loadBuffer(state, buffers[bufferName], bufferName, data);
+        loadBuffer(state, buffers[bufferName], bufferName, model, data);
         state.get('hostBuffers')[bufferName].onNext(data);
 
     });
 }
 
 
-function loadBuffer(state, buffer, bufferName, data) {
+function loadBuffer(state, buffer, bufferName, model, data) {
     var gl = state.get('gl');
     if(typeof bufferSizes[bufferName] === 'undefined') {
         bufferSizes[bufferName] = 0;
@@ -685,17 +710,19 @@ function loadBuffer(state, buffer, bufferName, data) {
 
 
     try{
+        var glArrayType = model.index ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER;
+        var glHint = model.hint || 'STREAM_DRAW';
+        bindBuffer(gl, glArrayType, buffer);
 
-        bindBuffer(gl, buffer);
 
         if(bufferSizes[bufferName] >= data.byteLength) {
-            debug('Reusing existing GL buffer data store to load data for buffer %s (current size: %d, new data size: %d)',
-                bufferName, bufferSizes[bufferName], data.byteLength);
-            gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
+            debug('Reusing existing GL buffer to load data for buffer %s (current size: %d, new data size: %d)',
+                  bufferName, bufferSizes[bufferName], data.byteLength);
+            gl.bufferSubData(glArrayType, 0, data);
         } else {
-            debug('Creating new buffer data store for buffer %s (new size: %d)',
-                bufferName, data.byteLength);
-            gl.bufferData(gl.ARRAY_BUFFER, data, gl.STREAM_DRAW);
+            debug('Creating new buffer data store for buffer %s (new size: %d, hint: %s)',
+                  bufferName, data.byteLength, glHint);
+            gl.bufferData(glArrayType, data, gl[glHint]);
             bufferSizes[bufferName] = data.byteLength;
         }
     } catch(glErr) {
@@ -762,7 +789,7 @@ function updateIndexBuffer(gl, length, repetition) {
 
         debug('Expanding index buffer', glBuffer, 'memcpy', oldHostBuffer.length/repetition, 'elts', 'write to', length * repetition);
 
-        bindBuffer(gl, glBuffer);
+        bindBuffer(gl, gl.ARRAY_BUFFER, glBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, longerBuffer, gl.STREAM_DRAW);
     }
 }
@@ -853,7 +880,9 @@ function renderLastQueued() {
         var renderObj = lastQueuedRenders[tag];
 
         var state = renderObj.state;
-        var renderListOverride = renderObj.renderListOverride;
+        var trigger = renderObj.renderListTrigger;
+        var renderListOverride = trigger ? getItemsForTrigger(state, trigger)
+                                         : renderObj.renderListOverride;
         var readPixelsOverride = renderObj.readPixelsOverride;
         var cb = renderObj.cb;
 
@@ -862,6 +891,7 @@ function renderLastQueued() {
         var config      = state.get('config').toJS(),
             camera      = state.get('camera'),
             gl          = state.get('gl'),
+            ext         = state.get('ext'),
             programs    = state.get('programs').toJS(),
             buffers     = state.get('buffers').toJS();
 
@@ -871,7 +901,11 @@ function renderLastQueued() {
 
         var itemToTarget = function (config, itemName) {
             var itemDef = config.items[itemName];
-            return itemDef.renderTarget === 'CANVAS' ? null : itemDef.renderTarget;
+            if (!itemDef) {
+                console.error('Trying to render unknown item', itemName);
+            } else {
+                return itemDef.renderTarget === 'CANVAS' ? null : itemDef.renderTarget;
+            }
         };
 
         var sortedItems = toRender.slice();
@@ -885,19 +919,17 @@ function renderLastQueued() {
         var texturesToRead = [];
 
         sortedItems.forEach(function(item) {
-
             if(typeof numElements[item] === 'undefined' || numElements[item] < 1) {
                 debug('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
                     item);
                 return false;
             }
-            var texture = renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, item);
+            var texture = renderItem(state, config, camera, gl, ext, programs, buffers, clearedFBOs, item);
             if (texture) {
                 texturesToRead.push(texture);
             }
         });
 
-        //TODO: these should be batched w/ corresponding renderItem() calls
         if (texturesToRead.length > 0) {
             _.uniq(texturesToRead).forEach(function (renderTarget) {
                 debug('reading back texture', renderTarget);
@@ -940,7 +972,7 @@ function renderLastQueued() {
 }
 
 
-function renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, item) {
+function renderItem(state, config, camera, gl, ext, programs, buffers, clearedFBOs, item) {
     debug('Rendering item "%s" (%d elements)', item, numElements[item]);
 
     var itemDef = config.items[item];
@@ -975,7 +1007,11 @@ function renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, i
         buffers, config.models);
 
     debug('Done binding, drawing now...');
-    gl.drawArrays(gl[itemDef.drawType], 0, numElements[item]);
+    if (itemDef.index) {
+        gl.drawElements(gl[itemDef.drawType], numElements[item], gl.UNSIGNED_INT, 0);
+    } else {
+        gl.drawArrays(gl[itemDef.drawType], 0, numElements[item]);
+    }
 
     if (renderTarget !== null && itemDef.readTarget) {
         return renderTarget;
@@ -987,19 +1023,18 @@ function renderItem(state, config, camera, gl, programs, buffers, clearedFBOs, i
 // Get names of buffers needed from server
 // RenderOptions -> [ string ]
 function getServerBufferNames (config) {
-
     var renderItems = config.render;
     var bufferNamesLists = renderItems.map(function (itemName) {
-        var bindings = config.items[itemName].bindings;
-        return _.pairs(bindings)
-            .filter(function (bindingPair) {
-                var modelName = bindingPair[1][0];
-                var attribName = bindingPair[1][1];
+        var iDef = config.items[itemName];
+        var elementIndex = iDef.index ? [iDef.index] : [];
+        var bindings = _.values(iDef.bindings).concat(elementIndex);
+        return bindings.filter(function (binding) {
+                var modelName = binding[0];
+                var attribName = binding[1];
                 var datasource = config.models[modelName][attribName].datasource;
                 return (datasource === 'HOST' || datasource === 'DEVICE');
-            })
-            .map(function (bindingPair) {
-                var modelName = bindingPair[1][0];
+            }).map(function (binding) {
+                var modelName = binding[0];
                 return modelName;
             });
     });
@@ -1070,7 +1105,6 @@ module.exports = {
     createPrograms: createPrograms,
     createBuffers: createBuffers,
     loadBuffers: loadBuffers,
-    loadBuffer: loadBuffer,
     loadTextures: loadTextures,
     setCameraIm: setCameraIm,
     setNumElements: setNumElements,
