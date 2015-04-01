@@ -31,11 +31,6 @@ function setupDrag($eventTarget, camera, appState) {
         .filter(function (evt) {
             var $p = $(evt.target);
 
-            // Filter out buttons
-            if ($p.hasClass('fa')) {
-                return false;
-            }
-
             //allow dragging by graph label title
             for (var i = 0; i < 2; i++) {
                 if ($p.hasClass('graph-label')) {

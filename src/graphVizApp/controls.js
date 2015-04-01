@@ -85,7 +85,15 @@ function makeMouseSwitchboard() {
 
     var onElt = Rx.Observable.merge.apply(Rx.Observable,
             mouseElts.get().map(function (elt) {
-                return Rx.Observable.fromEvent(elt, 'click').map(_.constant(elt));
+                return Rx.Observable.fromEvent(elt, 'mousedown')
+                .do(function (evt) {
+                    // Stop from propagating to canvas
+                    evt.stopPropagation();
+                })
+                .flatMapLatest(function () {
+                    return Rx.Observable.fromEvent(elt, 'mouseup');
+                })
+                .map(_.constant(elt));
             }));
 
     return onElt;
