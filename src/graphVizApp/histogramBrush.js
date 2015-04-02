@@ -31,6 +31,7 @@ var svg;
 var xScale;
 var yScale;
 var color;
+var colorHighlighted;
 var margin = {top: 10, right: 10, bottom: 20, left:40};
 
 function init(socket, marquee) {
@@ -199,6 +200,15 @@ function toStackedBins(bins, globalBins, type) {
     return stackedBins;
 }
 
+
+function highlight(selection, toggle) {
+    _.each(selection[0], function (sel) {
+        var colorScale = (toggle) ? colorHighlighted : color;
+        var data = sel.__data__;
+        $(sel).css('fill', colorScale(data.type));
+    });
+}
+
 function updateHistogram($el, model, attribute) {
     var width = $el.width() - margin.left - margin.right;
     var data = model.attributes.data;
@@ -227,6 +237,12 @@ function updateHistogram($el, model, attribute) {
         .attr('class', 'column')
         .attr('transform', function (d, i) {
             return 'translate(' + xScale(i) + ',0)';
+        })
+        .on('mouseover', function () {
+            highlight(d3.select(d3.event.target.parentNode).selectAll('rect'), true);
+        })
+        .on('mouseout', function () {
+            highlight(d3.select(d3.event.target.parentNode).selectAll('rect'), false);
         });
 
     //////////////////////////////////////////////////////////////////////////
@@ -303,6 +319,11 @@ function initializeHistogramViz($el, model) {
     color = d3.scale.ordinal()
             .range(['#0FA5C5', '#B2B2B2'])
             .domain(['local', 'global']);
+
+    colorHighlighted = d3.scale.ordinal()
+            .range(['#086174', '#6B6868'])
+            .domain(['local', 'global']);
+
     // We want ticks between bars if histogram, and under bars if countBy
     if (type === 'countBy') {
         xScale = d3.scale.ordinal()
