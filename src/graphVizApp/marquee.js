@@ -81,8 +81,7 @@ function marqueeSelections (renderState, $cont, $elt, isOn, appState) {
                 return Rx.Observable.fromEvent($cont, 'mousedown')
                     .do(function (evt) {
                         debug('stopPropagation: marquee down');
-                        appState.marqueeActive.onNext('selecting');
-                        appState.marqueeDone.onNext(false);
+                        appState.marqueeOn.onNext('selecting');
                         evt.stopPropagation();
                         $('body').addClass('noselect');
                         effectCanvas('clear');
@@ -127,8 +126,7 @@ function marqueeSelections (renderState, $cont, $elt, isOn, appState) {
                                 effectCanvas('blur');
                                 $elt.addClass('draggable').removeClass('on');
                                 $cont.addClass('done');
-                                appState.marqueeActive.onNext(false);
-                                appState.marqueeDone.onNext(true);
+                                appState.marqueeOn.onNext('done');
 
                                 var width = rect.br.x - rect.tl.x;
                                 var height = rect.br.y - rect.tl.y;
@@ -171,8 +169,7 @@ function brushSelections (renderState, $cont, $elt, isOn, appState) {
                 return Rx.Observable.fromEvent($cont, 'mousedown')
                     .do(function (evt) {
                         debug('stopPropagation: marquee down');
-                        appState.marqueeActive.onNext('selecting');
-                        appState.marqueeDone.onNext(false);
+                        appState.brushOn.onNext('selecting');
                         evt.stopPropagation();
                         $('body').addClass('noselect');
                         effectCanvas('clear');
@@ -217,8 +214,7 @@ function brushSelections (renderState, $cont, $elt, isOn, appState) {
                                 //effectCanvas('blur');
                                 $elt.addClass('draggable').removeClass('on');
                                 $cont.addClass('done');
-                                appState.marqueeActive.onNext(false);
-                                appState.marqueeDone.onNext(true);
+                                appState.brushOn.onNext('done');
 
                                 var width = rect.br.x - rect.tl.x;
                                 var height = rect.br.y - rect.tl.y;
@@ -260,7 +256,7 @@ function marqueeDrags(selections, $cont, $elt, appState) {
         return Rx.Observable.fromEvent($elt, 'mousedown')
             .do(function (evt) {
                 debug('stopPropagation: marquee down 2');
-                appState.marqueeActive.onNext('dragging');
+                appState.marqueeOn.onNext('dragging');
                 evt.stopPropagation();
                 $('body').addClass('noselect');
                 $cont.addClass('beingdragged');
@@ -291,8 +287,7 @@ function marqueeDrags(selections, $cont, $elt, appState) {
                     }).takeUntil(Rx.Observable.fromEvent($(window.document), 'mouseup')
                         .do(function () {
                             debug('End of drag');
-                            appState.marqueeActive.onNext(false);
-                            appState.marqueeDone.onNext(false);
+                            appState.marqueeOn.onNext('toggle');
                             clearMarquee($cont, $elt);
                         })
                     ).takeLast(1);
@@ -311,7 +306,7 @@ function brushDrags(selections, $cont, $elt, doneDragging, appState) {
         return Rx.Observable.fromEvent($elt, 'mousedown')
             .do(function (evt) {
                 debug('stopPropagation: marquee down 2');
-                appState.marqueeActive.onNext('dragging');
+                appState.brushOn.onNext('dragging');
                 evt.stopPropagation();
                 $('body').addClass('noselect');
                 $cont.addClass('beingdragged');
@@ -351,8 +346,7 @@ function brushDrags(selections, $cont, $elt, doneDragging, appState) {
                     }).takeUntil(Rx.Observable.fromEvent($(window.document), 'mouseup')
                         .do(function () {
                             debug('End of drag');
-                            appState.marqueeActive.onNext(false);
-                            appState.marqueeDone.onNext(false);
+                            appState.brushOn.onNext('done');
                             // clearMarquee($cont, $elt);
 
                             // Update Selection positions.

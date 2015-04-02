@@ -101,7 +101,13 @@ function setupScroll($eventTarget, canvas, camera, appState) {
 
     return $eventTarget.onAsObservable('mousewheel')
         .sample(1)
-        .flatMapLatest(util.observableFilter(appState.marqueeDone, util.notIdentity))
+        .flatMapLatest(util.observableFilter([appState.marqueeOn, appState.brushOn],
+            function (val) {
+                console.log('Checking', val, 'for scroll');
+                return val !== 'done';
+            },
+            util.AND
+        ))
         .filter(function (evt) {
             return ! $(evt.target).parents('.graph-label-contents').length;
         })

@@ -272,8 +272,11 @@ function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, a
             $(elt).children('i').toggleClass('toggle-on');
             marqueeIsOn = !marqueeIsOn;
         }
-        appState.marqueeOn.onNext(marqueeIsOn);
-        appState.marqueeDone.onNext(false);
+        if (marqueeIsOn) {
+            appState.marqueeOn.onNext('toggled');
+        } else {
+            appState.marqueeOn.onNext(false);
+        }
         return marqueeIsOn;
     });
 
@@ -283,7 +286,11 @@ function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, a
             $(elt).children('i').toggleClass('toggle-on');
             brushIsOn = !brushIsOn;
         }
-        appState.brushOn.onNext(brushIsOn);
+        if (brushIsOn) {
+            appState.brushOn.onNext('toggled');
+        } else {
+            appState.brushOn.onNext(false);
+        }
         return brushIsOn;
     });
 

@@ -258,7 +258,13 @@ function getLatestHighlightedObject ($eventTarget, renderState, textures, appSta
     interaction.setupMousemove($eventTarget, renderState, textures)
         // TODO: Make sure this also catches $('#marquee').hasClass('done') and 'beingdragged'
         // As a non-marquee-active state.
-        .flatMapLatest(util.observableFilter(appState.marqueeActive, util.notIdentity))
+        // .flatMapLatest(util.observableFilter(appState.marqueeActive, util.notIdentity))
+        .flatMapLatest(util.observableFilter([appState.marqueeOn, appState.brushOn],
+                function (v) {
+                    return (v !== 'selecting') && (v !== 'dragging');
+                },
+                util.AND
+        ))
         .map(function (v) { return {cmd: 'hover', pt: v}; })
         .merge($eventTarget.mousedownAsObservable()
             .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))

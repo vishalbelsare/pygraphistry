@@ -19,8 +19,8 @@ function init(socket, workerUrl, marquee, appState) {
 
     var $inspectorOverlay = $('#inspector-overlay');
     // Grey out data inspector when marquee is being dragged.
-    appState.marqueeActive.do(function (active) {
-        if (active === 'dragging') {
+    appState.brushOn.do(function (state) {
+        if (state === 'dragging') {
             $inspectorOverlay.css('visibility', 'visible');
         } else {
             $inspectorOverlay.css('visibility', 'hidden');
