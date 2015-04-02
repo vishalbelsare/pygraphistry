@@ -329,10 +329,11 @@ function initializeHistogramViz($el, model) {
 
     color = d3.scale.ordinal()
             .range(['#0FA5C5', '#B2B2B2'])
+            // .range(['#0092DC', '#B2B2B2'])
             .domain(['local', 'global']);
 
     colorHighlighted = d3.scale.ordinal()
-            .range(['#086174', '#6B6868'])
+            .range(['#E35E13', '#6B6868'])
             .domain(['local', 'global']);
 
     // We want ticks between bars if histogram, and under bars if countBy
