@@ -11,7 +11,9 @@ var d3 = require('d3');
 
 var util    = require('./util.js');
 
-var ATTRIBUTE = 'degree';
+var ATTRIBUTE = 'community_infomap';
+var MODE = 'countBy';
+
 var DRAG_SAMPLE_INTERVAL = 100;
 
 // GLOBALS for updates
@@ -28,7 +30,7 @@ function init(socket, marquee) {
 
     // Grab global stats at initialization
     var globalStats = new Rx.ReplaySubject(1);
-    var params = {all: true};
+    var params = {all: true, mode: MODE};
     Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
         .map(function (reply) {
             console.log('Global Histogram Stats: ', reply);
@@ -120,7 +122,7 @@ function init(socket, marquee) {
         });
     }).flatMapLatest(function (data) {
         var binning = data.globalStats[ATTRIBUTE];
-        var params = {sel: data.sel, attribute: ATTRIBUTE, binning: binning};
+        var params = {sel: data.sel, attribute: ATTRIBUTE, binning: binning, mode: MODE};
         return Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
             .map(function (agg) {
                 return {reply: agg, sel: data.sel, globalStats: data.globalStats, type: data.type};
@@ -144,21 +146,43 @@ function init(socket, marquee) {
 
 }
 
-function toStackedBins(bins, globalBins) {
+function toStackedBins(bins, globalBins, type) {
     // Transform bins and global bins into stacked format.
     // TODO: Get this in a cleaner, more extensible way
-    var stackedBins = _.zip(bins, globalBins); // [[0,2], [1,4], ... ]
-    _.each(stackedBins, function (stack, idx) {
-        var local = stack[0] || 0;
-        var total = stack[1];
-        var stackedObj = [
-                {y0: 0, y1: local, val: local, type: 'local', binId: idx},
-                {y0: local, y1: total, val: total, type: 'global', binId: idx}
-        ];
-        stackedObj.total = total;
-        stackedObj.id = idx;
-        stackedBins[idx] = stackedObj;
-    });
+    var globalKeys = [];
+    var stackedBins = [];
+
+    if (type === 'countBy') {
+        globalKeys = _.keys(globalBins);
+        _.each(globalKeys, function (key, idx) {
+            var local = bins[key] || 0;
+            var total = globalBins[key];
+            var stackedObj = [
+                    {y0: 0, y1: local, val: local, type: 'local', binId: idx},
+                    {y0: local, y1: total, val: total, type: 'global', binId: idx}
+            ];
+            stackedObj.total = total;
+            stackedObj.name = key;
+            stackedObj.id = idx;
+            stackedBins.push(stackedObj);
+        });
+
+    } else {
+
+        stackedBins = _.zip(bins, globalBins); // [[0,2], [1,4], ... ]
+        _.each(stackedBins, function (stack, idx) {
+            var local = stack[0] || 0;
+            var total = stack[1];
+            var stackedObj = [
+                    {y0: 0, y1: local, val: local, type: 'local', binId: idx},
+                    {y0: local, y1: total, val: total, type: 'global', binId: idx}
+            ];
+            stackedObj.total = total;
+            stackedObj.id = idx;
+            stackedBins[idx] = stackedObj;
+        });
+    }
+
     return stackedBins;
 }
 
@@ -168,9 +192,10 @@ function updateHistogram($el, model, attribute) {
     var globalStats = model.attributes.globalStats[attribute];
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
+    var type = (data.type !== 'nodata') ? data.type : globalStats.type;
 
 
-    var stackedBins = toStackedBins(bins, globalBins);
+    var stackedBins = toStackedBins(bins, globalBins, type);
 
     var columns = svg.selectAll('.column')
         .data(stackedBins, function (d) {
@@ -181,7 +206,12 @@ function updateHistogram($el, model, attribute) {
         .attr('class', 'g')
         .attr('class', 'column')
         .attr('transform', function (d, i) {
-            return 'translate(' + xScale(i) + ',0)';
+            // TODO: Do we need a separate path?
+            if (type === 'countBy') {
+                return 'translate(' + xScale(i) + ',0)';
+            } else {
+                return 'translate(' + xScale(i) + ',0)';
+            }
         });
 
 
@@ -206,7 +236,13 @@ function updateHistogram($el, model, attribute) {
         .style('fill', function (d) {
             return color(d.type);
         })
-        .attr('width', Math.floor(width/globalStats.numBins))
+        .attr('width', function () {
+            if (type === 'countBy') {
+                return xScale.rangeBand();
+            } else {
+                return Math.floor(width/globalStats.numBins);
+            }
+        })
         .attr('height', function (d) {
             return yScale(d.y0) - yScale(d.y1) + heightDelta(d);
         })
@@ -232,10 +268,11 @@ function initializeHistogramViz($el, model) {
     var globalStats = model.attributes.globalStats[ATTRIBUTE];
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
+    var type = (data.type !== 'nodata') ? data.type : globalStats.type;
 
     // Transform bins and global bins into stacked format.
     // TODO: Get this in a cleaner, more extensible way
-    var stackedBins = toStackedBins(bins, globalBins);
+    var stackedBins = toStackedBins(bins, globalBins, type);
 
     width = width - margin.left - margin.right;
     height = height - margin.top - margin.bottom;
@@ -244,19 +281,29 @@ function initializeHistogramViz($el, model) {
             .range(['#0FA5C5', '#B2B2B2'])
             .domain(['local', 'global']);
 
-    // TODO: Make these align between bars
-    xScale = d3.scale.linear()
-        .range([0, width]);
+    // We want ticks between bars if histogram, and under bars if countBy
+    if (type === 'countBy') {
+        xScale = d3.scale.ordinal()
+            .rangeRoundBands([0, width], 0.1, 0.1);
+    } else {
+        xScale = d3.scale.linear()
+            .range([0, width]);
+    }
 
     yScale = d3.scale.linear()
         .range([height, 0]);
 
+    var numTicks = (type === 'countBy') ? globalStats.numBins : globalStats.numBins + 1;
     var xAxis = d3.svg.axis()
         .scale(xScale)
         .orient('bottom')
-        .ticks(globalStats.numBins + 1)
+        .ticks(numTicks)
         .tickFormat(function (d) {
-            return d * globalStats.binWidth + globalStats.minValue;
+            if (type === 'countBy') {
+                return d; // name of bin
+            } else {
+                return d * globalStats.binWidth + globalStats.minValue;
+            }
         });
 
     var yAxis = d3.svg.axis()
@@ -270,7 +317,12 @@ function initializeHistogramViz($el, model) {
         .append('g')
             .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
-    xScale.domain([0, globalStats.numBins]);
+    // TODO: Make sure this is correct for countBy
+    if (type === 'countBy') {
+        xScale.domain(_.range(globalStats.numBins));
+    } else {
+        xScale.domain([0, globalStats.numBins]);
+    }
 
     var yDomainMax = _.max(stackedBins, function (bin) {
         return bin.total;
