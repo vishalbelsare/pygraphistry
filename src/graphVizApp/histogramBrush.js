@@ -233,16 +233,26 @@ function updateHistogram($el, model, attribute) {
         });
 
     columns.enter().append('g')
-        .attr('class', 'g')
-        .attr('class', 'column')
+        .classed('g', true)
+        .classed('column', true)
         .attr('transform', function (d, i) {
             return 'translate(' + xScale(i) + ',0)';
         })
+        .attr('data-container', '#histogram')
+        .attr('data-placement', 'top')
+        .attr('data-toggle', 'tooltip')
+        .attr('title', function(d) {
+            return d.total;
+        })
         .on('mouseover', function () {
-            highlight(d3.select(d3.event.target.parentNode).selectAll('rect'), true);
+            var col = d3.select(d3.event.target.parentNode);
+            $(col).tooltip('show');
+            highlight(col.selectAll('rect'), true);
         })
         .on('mouseout', function () {
-            highlight(d3.select(d3.event.target.parentNode).selectAll('rect'), false);
+            var col = d3.select(d3.event.target.parentNode);
+            $(col).tooltip('hide');
+            highlight(col.selectAll('rect'), false);
         });
 
     //////////////////////////////////////////////////////////////////////////
@@ -277,6 +287,7 @@ function updateHistogram($el, model, attribute) {
         .attr('y', function (d) {
             return yScale(d.y1) - heightDelta(d);
         });
+
 }
 
 function heightDelta(d) {
