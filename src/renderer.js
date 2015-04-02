@@ -126,26 +126,38 @@ function bindBuffer(gl, glArrayType, buffer) {
     return false;
 }
 
-// Polyfill to get requestAnimationFrame cross browser.
-// Falls back to setTimeout. Based on Khronos polyfill.
-var requestAnimFrame = (function() {
 
-    // Hack so we can load the bundled version of this code on server.
-    if (typeof window === 'undefined') {
-        return function(/* function FrameRequestCallback */ callback /* DOMElement Element  element*/) {
-                return setTimeout(callback, 1000/60);
-             };
+// Polyfill to get requestAnimationFrame cross browser.
+// Falls back to setTimeout. Based on https://gist.github.com/paulirish/1579671
+(function() {
+    var lastTime = 0;
+    var vendors = ['ms', 'moz', 'webkit', 'o'];
+    for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+        window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+        window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame'] ||
+                                      window[vendors[x]+'CancelRequestAnimationFrame'];
     }
 
-    return window.requestAnimationFrame ||
-         window.webkitRequestAnimationFrame ||
-         window.mozRequestAnimationFrame ||
-         window.oRequestAnimationFrame ||
-         window.msRequestAnimationFrame ||
-         function(/* function FrameRequestCallback */ callback /* DOMElement Element  element*/) {
-           return window.setTimeout(callback, 1000/60);
-         };
-})();
+    if (!window.requestAnimationFrame) {
+        console.warn('requestAnimationFrame not supported, falling back on setTimeout');
+        window.requestAnimationFrame = function(callback) {
+            var currTime = Date.now();
+            var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+            var id = window.setTimeout(function() {
+                callback(currTime + timeToCall);
+            }, timeToCall);
+            lastTime = currTime + timeToCall;
+            return id;
+        };
+    }
+
+    if (!window.cancelAnimationFrame) {
+        console.warn('cancelAnimationFrame not supported, falling back on clearTimeout');
+        window.cancelAnimationFrame = function(id) {
+            clearTimeout(id);
+        };
+    }
+}());
 
 
 /** The bindings object currently in effect on a program
@@ -309,15 +321,6 @@ function init(config, canvas) {
 
     debug('state pre b', state.toJS());
     state = state.mergeDeep(createStandardTextures(config, canvas, gl));
-
-    // CORE ANIMATION LOOP
-    function renderingLoop(){
-        requestAnimFrame(renderingLoop);
-        renderLastQueued();
-    }
-    if (typeof window !== 'undefined') {
-        renderingLoop();
-    }
 
     debug('created', state.toJS());
     return state;
@@ -856,6 +859,8 @@ function setCameraIm(renderState, camera) {
  */
 var lastRenderTarget = {};
 var lastQueuedRenders = {};
+var lastRenderTime = 0;
+var renderingPaused = true;
 
 function render(state, tag, cb, opts) {
     debug('Queueing a render frame');
@@ -868,13 +873,37 @@ function render(state, tag, cb, opts) {
     if (opts) {
         _.extend(lastQueuedRenders[tag], opts);
     }
+
+    if(renderingPaused) {
+        startRenderingLoop();
+    }
 }
 
+function startRenderingLoop() {
+    function loop() {
+        var frameId = window.requestAnimationFrame(loop);
+        renderLastQueued(frameId);
+    }
 
-function renderLastQueued() {
+    debug('Starting rendering loop');
+    renderingPaused = false;
+    loop();
+}
+
+function pauseRenderingLoop(nextFrameId) {
+    debug('Pausing rendering loop');
+    window.cancelAnimationFrame(nextFrameId);
+    renderingPaused = true;
+}
+
+function renderLastQueued(nextFrameId) {
     if (_.isEmpty(lastQueuedRenders)) {
+        if (Date.now() - lastRenderTime > 1000) {
+            pauseRenderingLoop(nextFrameId);
+        }
         return;
     }
+    lastRenderTime = Date.now();
 
     _.each(_.keys(lastQueuedRenders), function (tag) {
         var renderObj = lastQueuedRenders[tag];
