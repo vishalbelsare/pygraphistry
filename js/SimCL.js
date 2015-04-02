@@ -650,30 +650,21 @@ function setEdges(renderer, simulator, forwardsEdges,
 
 
 /**
- * Sets the edge colors for the graph
+ * Sets the edge colors for the graph. With logical edges, edge colors are defined indirectly,
+ * by giving a color for the source point and destination point.
  *
  * @param simulator - the simulator object to set the edges for
  * @param {Uint32Array} edgeColors - dense array of edge start and end colors
  */
 function setEdgeColors(simulator, edgeColors) {
     if (!edgeColors) {
-        debug('Using default edge colors')
-        var forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
-        edgeColors = new Uint32Array(forwardsEdges.edgesTyped.length);
-        for (var i = 0; i < edgeColors.length; i++) {
-            var nodeIdx = forwardsEdges.edgesTyped[i];
-            var color = simulator.buffersLocal.pointColors[nodeIdx];
-            var dimmed =
-                0
-                | (((color >> 24)&255) * 0.9) << 24
-                | (((color >> 16)&255) * 0.9) << 16
-                | (((color >> 8) &255) * 0.9) << 8
-                | (((color >> 0) &255) * 0.9)
-                ;
-            edgeColors[i] = dimmed;
-        }
+        console.log('Using default edge colors');
+        edgeColors = new Uint32Array(simulator.buffersLocal.pointColors.buffer);
     }
 
+    if (edgeColors.length === simulator.numEdges * 2) {
+        console.warn('Non-default edgeColors are broken with logical edges');
+    }
 
     simulator.buffersLocal.edgeColors = edgeColors;
     simulator.tickBuffers(['edgeColors']);

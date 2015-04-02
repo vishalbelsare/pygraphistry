@@ -33,8 +33,8 @@ metrics.init('StreamGL:driver');
 //offset: in vertices
 //graph -> {<model>: {num: int, offset: int}
 function graphCounts(graph) {
-    var numPoints   = graph.simulator.timeSubset.pointsRange.len;
-    var numEdges    = graph.simulator.timeSubset.edgeRange.len;
+    var numPoints       = graph.simulator.timeSubset.pointsRange.len;
+    var numEdges        = graph.simulator.timeSubset.edgeRange.len;
     var offsetPoint     = graph.simulator.timeSubset.pointsRange.startIdx;
     var offsetEdge      = graph.simulator.timeSubset.edgeRange.startIdx;
     var numMidPoints    = graph.simulator.timeSubset.midPointsRange.len;
@@ -42,19 +42,21 @@ function graphCounts(graph) {
     var offsetMidPoints = graph.simulator.timeSubset.midPointsRange.startIdx;
     var offsetMidEdges  = graph.simulator.timeSubset.midEdgeRange.startIdx;
 
-    var point       = {num: numPoints,      offset: offsetPoint};
-    var pointColors = {num: numPoints,      offset: offsetPoint};
-    var edge        = {num: numEdges,       offset: offsetEdge};
-    var midPoint    = {num: numMidPoints,   offset: offsetMidPoints};
-    var midEdge     = {num: numMidEdges,    offset: offsetMidEdges};
+    var point       = {num: numPoints,    offset: offsetPoint};
+    var edge        = {num: numEdges,     offset: offsetEdge};
+    var midPoint    = {num: numMidPoints, offset: offsetMidPoints};
+    var midEdge     = {num: numMidEdges,  offset: offsetMidEdges};
 
     return {
         curPoints: point,
         springsPos: edge,
         logicalEdges: edge,
         pointSizes: point,
-        pointColors: pointColors,
-        edgeColors: edge,
+        pointColors: point,
+        /* With logical edges, edge colors are defined indirectly, by giving a color
+         * for the source point and destination point. As a result two edges sharing
+         * the same enpoints must have the same color. */
+        edgeColors: point,
         curMidPoints: midPoint,
         midSpringsPos: midEdge,
         midSpringsColorCoord: midEdge

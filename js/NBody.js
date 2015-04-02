@@ -188,7 +188,7 @@ function setPoints(graph, points, pointSizes, pointColors) {
 }
 
 function setVertices(graph, points) {
-    debug("Loading Vertices")
+    debug('Loading Vertices');
 
     // This flattens out the points array
     if(!(points instanceof Float32Array)) {
@@ -198,7 +198,7 @@ function setVertices(graph, points) {
     graph.__pointsHostBuffer = points;
 
     graph.stepNumber = 0;
-    return graph.simulator.setPoints(points)
+    return graph.simulator.setPoints(points);
 }
 
 
@@ -287,18 +287,9 @@ var setEdges = Q.promised(function(graph, edges) {
         //keep items contiguous to filter based on them
         workItems.sort(function (a, b) {
             return a[2] < b[2] ? -1
-                : a[2] > b[2] ? 1
-                : 0;
+                 : a[2] > b[2] ? 1
+                               : 0;
         });
-
-        //DISABLED: keeping ordered to streamline time-based filtering
-        /*
-        //Cheesey load balancing: sort by size
-        //TODO benchmark
-        workItems.sort(function (edgeList1, edgeList2) {
-            return edgeList1[1] - edgeList2[1];
-        });
-        */
 
         var degreesTyped = new Uint32Array(graph.simulator.numPoints);
         var srcToWorkItem = new Int32Array(graph.simulator.numPoints);
@@ -434,7 +425,7 @@ var setEdges = Q.promised(function(graph, edges) {
 });
 
 function setEdgeColors(graph, edgeColors) {
-    debug("Loading edgeColors");
+    debug('Loading edgeColors');
     var nedges = graph.simulator.numEdges;
 
     if (!edgeColors) // Use default Colors
@@ -459,7 +450,7 @@ function setEdgeColors(graph, edgeColors) {
 }
 
 function setEdgeWeight(graph, edgeWeights) {
-    debug("Loading edgeColors");
+    debug('Loading edgeColors');
     var nedges = graph.simulator.numEdges;
 
     if (!edgeWeights) {
@@ -531,19 +522,19 @@ function _toTypedArray(array, cons) {
 
 //graph * {play: bool, layout: bool} -> ()
 function tick(graph, cfg) {
-    events.fire("tickBegin");
-    events.fire("simulateBegin");
+    events.fire('tickBegin');
+    events.fire('simulateBegin');
 
     return graph.simulator.tick(graph.stepNumber++, cfg)
     .then(function() {
-        events.fire("simulateEnd");
-        events.fire("renderBegin");
+        events.fire('simulateEnd');
+        events.fire('renderBegin');
 
         return graph.renderer.render();
     })
     .then(function() {
-        events.fire("renderEnd");
-        events.fire("tickEnd");
+        events.fire('renderEnd');
+        events.fire('tickEnd');
 
         return graph;
     });
