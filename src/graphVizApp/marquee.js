@@ -429,6 +429,8 @@ function createGhostImg(renderState, sel, $elt, cssWidth, cssHeight) {
 
 function initBrush (renderState, $cont, toggle, appState, cfg) {
 
+    debug('init brush');
+
     cfg = cfg || {};
     cfg.transform = cfg.transform || _.identity;
     var $elt = createElt();

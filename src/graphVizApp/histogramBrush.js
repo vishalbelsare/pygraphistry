@@ -17,8 +17,11 @@ var util    = require('./util.js');
 //////////////////////////////////////////////////////////////////////////////
 
 var ATTRIBUTE = 'community_infomap';
+// var ATTRIBUTE = 'degree';
 var MODE = 'countBy';
+// var MODE = 'default';
 var DRAG_SAMPLE_INTERVAL = 100;
+var NUM_BINS_VISIBLE = 20;
 
 //////////////////////////////////////////////////////////////////////////////
 // Globals for updates
@@ -206,6 +209,10 @@ function updateHistogram($el, model, attribute) {
 
     var stackedBins = toStackedBins(bins, globalBins, type);
 
+    if (globalStats.numBins < NUM_BINS_VISIBLE) {
+        width = Math.floor((globalStats.numBins/NUM_BINS_VISIBLE) * width);
+    }
+
     //////////////////////////////////////////////////////////////////////////
     // Create Columns
     //////////////////////////////////////////////////////////////////////////
@@ -278,8 +285,16 @@ function initializeHistogramViz($el, model) {
     // Transform bins and global bins into stacked format.
     var stackedBins = toStackedBins(bins, globalBins, type);
 
+    //////////////////////////////////////////////////////////////////////////
+    // Scale size of SVG / viz based on number of elements.
+    //////////////////////////////////////////////////////////////////////////
+
     width = width - margin.left - margin.right;
     height = height - margin.top - margin.bottom;
+
+    if (globalStats.numBins < NUM_BINS_VISIBLE) {
+        width = Math.floor((globalStats.numBins/NUM_BINS_VISIBLE) * width);
+    }
 
     //////////////////////////////////////////////////////////////////////////
     // Setup Scales and Axes
