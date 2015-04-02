@@ -18,8 +18,8 @@ var util    = require('./util.js');
 
 var ATTRIBUTE = 'community_infomap';
 // var ATTRIBUTE = 'degree';
-var MODE = 'countBy';
-// var MODE = 'default';
+// var MODE = 'countBy';
+var MODE = 'default';
 var DRAG_SAMPLE_INTERVAL = 100;
 var NUM_BINS_VISIBLE = 20;
 
@@ -33,9 +33,17 @@ var yScale;
 var color;
 var colorHighlighted;
 var margin = {top: 10, right: 10, bottom: 20, left:40};
+var lastSelection;
+var attributeChange = new Rx.Subject();
+
+function updateAttribute (newAttribute) {
+    ATTRIBUTE = newAttribute;
+    attributeChange.onNext(newAttribute);
+}
 
 function init(socket, marquee) {
     debug('Initializing histogram brush');
+    window.updateAttribute = updateAttribute;
 
     //////////////////////////////////////////////////////////////////////////
     // Backbone views and models
@@ -44,13 +52,7 @@ function init(socket, marquee) {
     var $histogram = $('#histogram');
 
     // Setup Backbone for the brushing histogram
-    var HistogramModel = Backbone.Model.extend({
-        defaults: function() {
-            return {
-                active: true
-            };
-        }
-    });
+    var HistogramModel = Backbone.Model.extend({});
 
     var HistogramCollection = Backbone.Collection.extend({
         model: HistogramModel,
@@ -90,7 +92,7 @@ function init(socket, marquee) {
             if (histograms.length > 0) {
                 this.$el.css('visibility', 'visible');
             } else {
-                this.$el.hide('visibility', 'hidden');
+                this.$el.css('visibility', 'hidden');
             }
         },
         addHistogram: function (histogram) {
@@ -124,22 +126,27 @@ function init(socket, marquee) {
     var params = {all: true, mode: MODE};
     Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
         .map(function (reply) {
-            console.log('Global Histogram Stats: ', reply);
             return reply.data;
         }).subscribe(globalStats, util.makeErrorHandler('Global stat aggregate call'));
 
+    // Take stream of selections and drags and use them for histograms
     marquee.selections.map(function (val) {
         return {type: 'selection', sel: val};
     }).merge(marquee.drags.sample(DRAG_SAMPLE_INTERVAL).map(function (val) {
             return {type: 'drag', sel: val};
         })
+    ).merge(attributeChange.map(function () {
+            return {type: 'attributeChange', sel: lastSelection};
+        })
     ).flatMapLatest(function (selContainer) {
         return globalStats.map(function (globalVal) {
             return {type: selContainer.type, sel: selContainer.sel, globalStats: globalVal};
         });
+
     }).flatMapLatest(function (data) {
         var binning = data.globalStats[ATTRIBUTE];
         var params = {sel: data.sel, attribute: ATTRIBUTE, binning: binning, mode: MODE};
+        lastSelection = data.sel;
         return Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
             .map(function (agg) {
                 return {reply: agg, sel: data.sel, globalStats: data.globalStats, type: data.type};
@@ -153,7 +160,7 @@ function init(socket, marquee) {
     // TODO: Do we want to treat no replies in some special way?
     }).filter(function (data) { return data.reply && data.reply.success; })
     .do(function (data) {
-        if (data.type === 'selection') {
+        if (data.type === 'selection' || data.type === 'attributeChange') {
             updateHistogramData(socket, marquee, histograms, data.reply.data, data.globalStats, HistogramModel, true);
         } else if (data.type === 'drag') {
             updateHistogramData(socket, marquee, histograms, data.reply.data, data.globalStats, HistogramModel, false);
@@ -404,7 +411,11 @@ function updateHistogramData(socket, marquee, collection, data, globalStats, Mod
         histogram.set({data: val, globalStats: globalStats, firstTime: firstTime});
         histogram.id = key;
         histogram.set('attribute', key);
-        collection.set([histogram]);
+        if (firstTime) {
+            collection.reset([histogram]);
+        } else {
+            collection.set([histogram]);
+        }
     });
 }
 
