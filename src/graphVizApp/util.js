@@ -41,7 +41,7 @@ function observableFilter (streams, pred, operator) {
                 return operator(v0, v1);
             }).map(function () {
                 return origVal;
-            });
+            }).take(1);
         };
 
     } else {
@@ -51,7 +51,7 @@ function observableFilter (streams, pred, operator) {
                 .filter(pred)
                 .map(function () {
                     return origVal;
-                });
+                }).take(1);
         };
     }
 }

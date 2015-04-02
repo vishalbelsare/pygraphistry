@@ -103,7 +103,6 @@ function setupScroll($eventTarget, canvas, camera, appState) {
         .sample(1)
         .flatMapLatest(util.observableFilter([appState.marqueeOn, appState.brushOn],
             function (val) {
-                console.log('Checking', val, 'for scroll');
                 return val !== 'done';
             },
             util.AND
