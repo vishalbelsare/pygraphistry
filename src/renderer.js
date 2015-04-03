@@ -836,7 +836,7 @@ function setCamera(state) {
         var program = programs[programName];
         useProgram(gl, program);
 
-        var mvpLoc = gl.getUniformLocation(program, programConfig.camera);
+        var mvpLoc = getUniformLocationFast(gl, program, programName, programConfig.camera);
         gl.uniformMatrix4fv(mvpLoc, false, camera.getMatrix());
     });
 }
