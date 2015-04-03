@@ -55,20 +55,13 @@ function init(socket, marquee) {
     var HistogramModel = Backbone.Model.extend({});
 
     var HistogramCollection = Backbone.Collection.extend({
-        model: HistogramModel,
-        active: function() {
-            return this.where({active: true});
-        }
+        model: HistogramModel
     });
     var histograms = new HistogramCollection();
 
     var HistogramView = Backbone.View.extend({
         tagName: 'div',
         className: 'histogramDiv',
-        template: '', // TODO actually make template
-        events: { // TODO do we need any?
-
-        },
         initialize: function() {
             this.listenTo(this.model, 'change', this.render);
             this.listenTo(this.model, 'destroy', this.remove);
