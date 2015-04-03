@@ -160,10 +160,8 @@ var BarnesKernelSeq = function (clContext) {
         var num_bodies = numPoints;
         var numNodes = num_nodes;
         var numBodies = num_bodies;
-        // TODO (paden) Use actual number of workgroups. Don't hardcode
-        var num_work_groups = 128;
-        console.log("Num nodes", numNodes);
-        console.log("Num bodies", numBodies);
+        // Set this to the number of workgroups in boundBox kernel
+        var num_work_groups = 30;
 
 
         return Q.all(
