@@ -5,6 +5,7 @@ var $       = window.$;
 var Rx      = require('rx');
               require('../rx-jquery-stub');
 var _       = require('underscore');
+var Handlebars = require('handlebars');
 var Backbone = require('backbone');
     Backbone.$ = $;
 var d3 = require('d3');
@@ -63,12 +64,23 @@ function init(socket, marquee) {
     var HistogramView = Backbone.View.extend({
         tagName: 'div',
         className: 'histogramDiv',
+        template: Handlebars.compile($('#histogramTemplate').html()),
         initialize: function() {
-            this.listenTo(this.model, 'change', this.render);
             this.listenTo(this.model, 'destroy', this.remove);
         },
         render: function() {
-            // TODO: Do something or remove
+            var fields = _.filter(_.keys(this.model.get('globalStats')), function (val) {
+                return val !== '_title';
+            });
+
+            var params = {
+                fields: fields,
+                attribute: ATTRIBUTE,
+                id: this.cid
+            };
+            var html = this.template(params);
+            this.$el.html(html);
+
             return this;
         }
     });
@@ -94,13 +106,14 @@ function init(socket, marquee) {
             var childEl = view.render().el;
             this.$el.append(childEl);
             histogram.set('$el', $(childEl));
-            initializeHistogramViz($(childEl), histogram); // TODO: Link to data?
-            updateHistogram($(childEl), histogram, histogram.get('attribute'));
+            var vizContainer = $(childEl).children('.vizContainer');
+            initializeHistogramViz(vizContainer, histogram); // TODO: Link to data?
+            updateHistogram(vizContainer, histogram, histogram.get('attribute'));
         },
         update: function (histogram) {
             // TODO: Find way to not fire this on first time
             if (!histogram.get('firstTime')) {
-                updateHistogram(histogram.get('$el'), histogram, histogram.get('attribute'));
+                updateHistogram(histogram.get('$el').children('.vizContainer'), histogram, histogram.get('attribute'));
             }
         },
         addAll: function () {
@@ -162,6 +175,18 @@ function init(socket, marquee) {
 
     }).subscribe(_.identity, util.makeErrorHandler('Brush selection aggregate error'));
 
+    //////////////////////////////////////////////////////////////////////////
+    // General Setup
+    //////////////////////////////////////////////////////////////////////////
+
+    $('#histogram').on('click', '.histogramDropdownField', function(){
+        var field = $(this).text().trim();
+        $(this).parents('.dropdown').find('.btn').text(field);
+        $(this).parents('.dropdown').find('.btn').val(field);
+        updateAttribute(field);
+    });
+
+
 }
 
 function toStackedObject(local, total, idx, key, numLocal, numTotal) {
@@ -193,8 +218,6 @@ function toStackedObject(local, total, idx, key, numLocal, numTotal) {
     stackedObj.total = Math.max(total, local);
     stackedObj.name = key;
     stackedObj.id = idx;
-    console.log('Stacked Obj: ', stackedObj);
-    console.log('local: ', local, 'total: ', total);
     return stackedObj;
 }
 
@@ -292,9 +315,6 @@ function updateHistogram($el, model, attribute) {
         });
 
     bars
-        .style('fill', function (d) {
-            return color(d.type);
-        })
         .transition().duration(DRAG_SAMPLE_INTERVAL)
         .attr('height', function (d) {
             return yScale(d.y0) - yScale(d.y1) + heightDelta(d);
@@ -330,7 +350,7 @@ function heightDelta(d) {
 
 function initializeHistogramViz($el, model) {
     var width = $el.width();
-    var height = $el.parent().height(); // TODO: Get this more naturally.
+    var height = $el.height(); // TODO: Get this more naturally.
     var data = model.attributes.data;
     var globalStats = model.attributes.globalStats[ATTRIBUTE];
     var bins = data.bins || []; // Guard against empty bins.
