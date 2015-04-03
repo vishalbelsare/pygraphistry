@@ -16,10 +16,11 @@ var util    = require('./util.js');
 // CONSTANTS
 //////////////////////////////////////////////////////////////////////////////
 
-var ATTRIBUTE = 'community_infomap';
-// var ATTRIBUTE = 'degree';
+// var ATTRIBUTE = 'community_infomap';
+var ATTRIBUTE = 'degree';
 // var MODE = 'countBy';
 var MODE = 'default';
+var DIST = false;
 var DRAG_SAMPLE_INTERVAL = 100;
 var NUM_BINS_VISIBLE = 20;
 
@@ -163,18 +164,41 @@ function init(socket, marquee) {
 
 }
 
-function toStackedObject(local, total, idx, key) {
-    var stackedObj = [
-            {y0: 0, y1: local, val: local, type: 'local', binId: idx},
-            {y0: local, y1: total, val: total, type: 'global', binId: idx}
-    ];
-    stackedObj.total = total;
+function toStackedObject(local, total, idx, key, numLocal, numTotal) {
+    // If we want to normalize to a distribution as percentage of total.
+    var stackedObj;
+    if (DIST) {
+        local = (numLocal === 0) ? 0 : local / numLocal;
+        total = (numTotal === 0) ? 0 : total / numTotal;
+
+        if (local <= total) {
+            stackedObj = [
+                {y0: 0, y1: local, val: local, type: 'local', binId: idx, barNum: 0},
+                {y0: local, y1: total, val: total, type: 'global', binId: idx, barNum: 1}
+            ];
+        } else {
+            stackedObj = [
+                {y0: 0, y1: total, val: total, type: 'globalSmaller', binId: idx, barNum: 1},
+                {y0: total, y1: local, val: local, type: 'localBigger', binId: idx, barNum: 0}
+            ];
+        }
+
+    } else {
+        stackedObj = [
+            {y0: 0, y1: local, val: local, type: 'local', binId: idx, barNum: 0},
+            {y0: local, y1: total, val: total, type: 'global', binId: idx, barNum: 1}
+        ];
+    }
+
+    stackedObj.total = Math.max(total, local);
     stackedObj.name = key;
     stackedObj.id = idx;
+    console.log('Stacked Obj: ', stackedObj);
+    console.log('local: ', local, 'total: ', total);
     return stackedObj;
 }
 
-function toStackedBins(bins, globalBins, type) {
+function toStackedBins(bins, globalBins, type, numLocal, numTotal) {
     // Transform bins and global bins into stacked format.
     // Assumes that globalBins is always a superset of bins
     // TODO: Get this in a cleaner, more extensible way
@@ -184,7 +208,7 @@ function toStackedBins(bins, globalBins, type) {
         _.each(globalKeys, function (key, idx) {
             var local = bins[key] || 0;
             var total = globalBins[key];
-            var stackedObj = toStackedObject(local, total, idx, key);
+            var stackedObj = toStackedObject(local, total, idx, key, numLocal, numTotal);
             stackedBins.push(stackedObj);
         });
 
@@ -193,7 +217,7 @@ function toStackedBins(bins, globalBins, type) {
         _.each(zippedBins, function (stack, idx) {
             var local = stack[0] || 0;
             var total = stack[1];
-            var stackedObj = toStackedObject(local, total, idx, '');
+            var stackedObj = toStackedObject(local, total, idx, '', numLocal, numTotal);
             stackedBins.push(stackedObj);
         });
     }
@@ -216,8 +240,9 @@ function updateHistogram($el, model, attribute) {
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
     var type = (data.type !== 'nodata') ? data.type : globalStats.type;
+    data.numValues = data.numValues || 0;
 
-    var stackedBins = toStackedBins(bins, globalBins, type);
+    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues);
 
     if (globalStats.numBins < NUM_BINS_VISIBLE) {
         width = Math.floor((globalStats.numBins/NUM_BINS_VISIBLE) * width);
@@ -263,10 +288,13 @@ function updateHistogram($el, model, attribute) {
         .data(function (d) {
             return d;
         }, function (d) {
-            return d.type + d.binId;
+            return d.barNum + d.binId;
         });
 
     bars
+        .style('fill', function (d) {
+            return color(d.type);
+        })
         .transition().duration(DRAG_SAMPLE_INTERVAL)
         .attr('height', function (d) {
             return yScale(d.y0) - yScale(d.y1) + heightDelta(d);
@@ -308,9 +336,10 @@ function initializeHistogramViz($el, model) {
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
     var type = (data.type !== 'nodata') ? data.type : globalStats.type;
+    data.numValues = data.numValues || 0;
 
     // Transform bins and global bins into stacked format.
-    var stackedBins = toStackedBins(bins, globalBins, type);
+    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues);
 
     //////////////////////////////////////////////////////////////////////////
     // Scale size of SVG / viz based on number of elements.
@@ -328,13 +357,13 @@ function initializeHistogramViz($el, model) {
     //////////////////////////////////////////////////////////////////////////
 
     color = d3.scale.ordinal()
-            .range(['#0FA5C5', '#B2B2B2'])
+            .range(['#0FA5C5', '#B2B2B2', '#0FA5C5', '#00BBFF'])
             // .range(['#0092DC', '#B2B2B2'])
-            .domain(['local', 'global']);
+            .domain(['local', 'global', 'globalSmaller', 'localBigger']);
 
     colorHighlighted = d3.scale.ordinal()
-            .range(['#E35E13', '#6B6868'])
-            .domain(['local', 'global']);
+            .range(['#E35E13', '#6B6868', '#E35E13', '#FF3000'])
+            .domain(['local', 'global', 'globalSmaller', 'localBigger']);
 
     // We want ticks between bars if histogram, and under bars if countBy
     if (type === 'countBy') {
@@ -357,6 +386,10 @@ function initializeHistogramViz($el, model) {
     var yDomainMax = _.max(stackedBins, function (bin) {
         return bin.total;
     }).total;
+
+    if (DIST) {
+        yDomainMax = 1.0;
+    }
 
     yScale.domain([0, yDomainMax]);
 
