@@ -488,14 +488,21 @@ var sceneNetflow = {
     'options': stdOptions,
     'camera': camera2D,
     'render': ['pointpicking', 'pointsampling', 'pointculledtexture', 'pointoutlinetexture',
+               'edgeculled', 'edgepicking', 'pointoutline', 'pointculled']
+}
+
+var sceneNetflowIndexed = {
+    'options': stdOptions,
+    'camera': camera2D,
+    'render': ['pointpicking', 'pointsampling', 'pointculledtexture', 'pointoutlinetexture',
                'edgeculledindexed', 'edgepickingindexed', 'pointoutline', 'pointculled']
-               //'edgeculled', 'edgepicking', 'pointoutline', 'pointculled']
 }
 
 var scenes = {
     'default': sceneNetflow,
     'uber' : sceneUber,
-    'netflow': sceneNetflow
+    'netflow': sceneNetflow,
+    'netflowIndexed': sceneNetflowIndexed
 }
 
 function saneProgram(program, progName) {
