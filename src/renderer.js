@@ -874,15 +874,15 @@ function render(state, tag, cb, opts) {
         _.extend(lastQueuedRenders[tag], opts);
     }
 
-    if(renderingPaused) {
-        startRenderingLoop();
+    if (renderingPaused) {
+        startRenderingLoop(state.get('renderPipeline'));
     }
 }
 
-function startRenderingLoop() {
+function startRenderingLoop(renderPipeline) {
     function loop() {
         var frameId = window.requestAnimationFrame(loop);
-        renderLastQueued(frameId);
+        renderLastQueued(renderPipeline, frameId);
     }
 
     debug('Starting rendering loop');
@@ -896,10 +896,12 @@ function pauseRenderingLoop(nextFrameId) {
     renderingPaused = true;
 }
 
-function renderLastQueued(nextFrameId) {
+function renderLastQueued(renderPipeline, nextFrameId) {
     if (_.isEmpty(lastQueuedRenders)) {
-        if (Date.now() - lastRenderTime > 1000) {
+        var timeDelta = Date.now() - lastRenderTime;
+        if (timeDelta > 1000) {
             pauseRenderingLoop(nextFrameId);
+            renderPipeline.onNext({paused: true});
         }
         return;
     }
@@ -908,12 +910,12 @@ function renderLastQueued(nextFrameId) {
     _.each(_.keys(lastQueuedRenders), function (tag) {
         var renderObj = lastQueuedRenders[tag];
 
-        var state = renderObj.state;
-        var trigger = renderObj.renderListTrigger;
+        var state              = renderObj.state;
+        var trigger            = renderObj.renderListTrigger;
         var renderListOverride = trigger ? getItemsForTrigger(state, trigger)
                                          : renderObj.renderListOverride;
         var readPixelsOverride = renderObj.readPixelsOverride;
-        var cb = renderObj.cb;
+        var cb                 = renderObj.cb;
 
         debug('========= Rendering a frame, tag: ', tag);
 
@@ -985,7 +987,7 @@ function renderLastQueued(nextFrameId) {
             });
         }
 
-        state.get('renderPipeline').onNext({rendered: toRender});
+        renderPipeline.onNext({rendered: toRender});
 
         gl.flush();
 
@@ -1047,28 +1049,6 @@ function renderItem(state, config, camera, gl, ext, programs, buffers, clearedFB
     } else {
         return undefined;
     }
-}
-
-// Get names of buffers needed from server
-// RenderOptions -> [ string ]
-function getServerBufferNames (config) {
-    var renderItems = config.render;
-    var bufferNamesLists = renderItems.map(function (itemName) {
-        var iDef = config.items[itemName];
-        var elementIndex = iDef.index ? [iDef.index] : [];
-        var bindings = _.values(iDef.bindings).concat(elementIndex);
-        return bindings.filter(function (binding) {
-                var modelName = binding[0];
-                var attribName = binding[1];
-                var datasource = config.models[modelName][attribName].datasource;
-                return (datasource === 'HOST' || datasource === 'DEVICE');
-            }).map(function (binding) {
-                var modelName = binding[0];
-                return modelName;
-            });
-    });
-
-    return _.uniq(_.flatten(bufferNamesLists));
 }
 
 // Get names of textures needed from server
@@ -1138,7 +1118,6 @@ module.exports = {
     setCameraIm: setCameraIm,
     setNumElements: setNumElements,
     render: render,
-    getServerBufferNames: getServerBufferNames,
     getServerTextureNames: getServerTextureNames,
     hitTest: picking.hitTestN,
     localAttributeProxy: localAttributeProxy
