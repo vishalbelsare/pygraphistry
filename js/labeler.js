@@ -92,12 +92,13 @@ function getLabels(graph, indices) {
     }
 }
 
-function aggregate(graph, indices, attribute, binning) {
+function aggregate(graph, indices, attribute, binning, mode) {
     function process(frame, attribute) {
         var values = _.map(frame, function (row) {
             return row[attribute];
         });
-        if (_.all(values, function (x) { return typeof x === 'number'; })) {
+
+        if (mode !== 'countBy' && _.all(values, function (x) { return typeof x === 'number'; })) {
             return histogram(values, binning);
         } else {
             return countBy(values, binning);
@@ -120,9 +121,14 @@ function countBy(values, binning) {
     }
 
     var bins = _.countBy(values);
+    var numValues = _.reduce(_.values(bins), function (memo, num) {
+        return memo + num;
+    }, 0);
+
     return {
         type: 'countBy',
-        numBins: bins.length,
+        numValues: numValues,
+        numBins: _.keys(bins).length,
         bins: bins,
     };
 }
@@ -145,7 +151,11 @@ function histogram(values, binning) {
 
     var max = _.max(values);
     var min = _.min(values);
-    var binWidth = Math.ceil((max - min) / numBins);
+    var binWidth = (max - min) / numBins;
+
+    // Because we ceil on binWidth, we might need to trim numBins
+    // To do so, we check the id of the highest used bin
+    numBins = Math.floor((max - min) / binWidth) + 1;
 
     // Override if provided binning data.
     if (binning) {
