@@ -210,6 +210,18 @@ function midEdges(simulator, ebMidsprings, stepNumber) {
     return ebMidsprings.exec([simulator.numForwardsWorkItems], resources);
 }
 
+function promiseWhile(condition, body) {
+  var done = Q.defer();
+
+  function loop() {
+    if (!condition()) return done.resolve();
+    Q.when(body(), loop, done.reject);
+  }
+
+  Q.nextTick(loop);
+  return done.promise;
+}
+
 EdgeBundling.prototype.tick = function(simulator, stepNumber) {
     var workGroupSize = 256;
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps, workGroupSize);
@@ -219,13 +231,25 @@ EdgeBundling.prototype.tick = function(simulator, stepNumber) {
         debug('LOCKED, EARLY EXIT');
         return Q();
     }
-
     return Q().then(function () {
         if (locks.lockMidpoints) {
             simulator.tickBuffers(['nextMidPoints']);
             return simulator.buffers.curMidPoints.copyInto(simulator.buffers.nextMidPoints);
         } else {
-            return that.ebBarnesKernelSeq.execKernels(simulator, stepNumber, workItems);
+
+            var midpoint_index = 0;
+            var condition = function () {
+              return midpoint_index < simulator.numSplits;
+            };
+
+            var body = function () {
+              return that.ebBarnesKernelSeq.execKernels(simulator, stepNumber, workItems, midpoint_index)
+              .then( function () {
+                  return midpoint_index = midpoint_index + 1;
+              })
+            }
+
+            return promiseWhile(condition, body)
         }
     }).then(function () { //TODO do both forwards and backwards?
         if (simulator.numEdges > 0 && !locks.lockMidedges) {

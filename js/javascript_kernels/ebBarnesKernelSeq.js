@@ -10,7 +10,7 @@ var EbBarnesKernelSeq = function (clContext) {
     this.argsToBarnesLayout = [
         'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints',
         'inputPositions', 'xCoords', 'yCoords', 'mass', 'blocked', 'maxDepth',
-        'pointDegrees', 'stepNumber', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+        'pointDegrees', 'stepNumber', 'midpoint_stride', 'midpoints_per_edge', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
     ];
 
     // All Barnes kernels have same arguements
@@ -26,7 +26,7 @@ var EbBarnesKernelSeq = function (clContext) {
     'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
     'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
     'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
-        'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau', 'charge', 'WARPSIZE', 'THREADS_BOUND',
+        'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau', 'charge', 'midpoint_stride', 'midpoints_per_edge', 'WARPSIZE', 'THREADS_BOUND',
         'THREADS_FORCES', 'THREADS_SUMS'];
 
     this.argsType = {
@@ -83,6 +83,8 @@ var EbBarnesKernelSeq = function (clContext) {
         numWorkItems: cljs.types.uint_t,
         globalSpeed: null,
         nextMidPoints: null,
+        midpoint_stride: cljs.types.uint_t,
+        midpoints_per_edge: cljs.types.uint_t,
         WARPSIZE: cljs.types.define,
         THREADS_BOUND: cljs.types.define,
         THREADS_FORCES: cljs.types.define,
@@ -154,6 +156,7 @@ var EbBarnesKernelSeq = function (clContext) {
         var numBodies = num_bodies;
         // Set this to the number of workgroups in boundBox kernel
         var num_work_groups = 30;
+        console.log("Nodes", numNodes, "Bodies", numBodies);
 
 
         return Q.all(
@@ -210,12 +213,13 @@ var EbBarnesKernelSeq = function (clContext) {
         var that = this;
         console.log("Set midpoints", simulator.numMidPoints);
         console.log("Midpoints", workItems);
-        return setupTempBuffers(simulator, warpsize, simulator.numMidPoints).then(function (tempBuffers) {
+        console.log("Num edges", simulator.numEdges);
+        return setupTempBuffers(simulator, warpsize, simulator.numEdges).then(function (tempBuffers) {
 
         that.toBarnesLayout.set({xCoords: tempBuffers.x_cords.buffer,
           yCoords:tempBuffers.y_cords.buffer, mass:tempBuffers.mass.buffer,
                             blocked:tempBuffers.blocked.buffer, maxDepth:tempBuffers.maxdepth.buffer,
-                            numPoints:simulator.numMidPoints,
+                            numPoints:simulator.numEdges,
                             inputPositions: simulator.buffers.curMidPoints.buffer,
                             pointDegrees: simulator.buffers.degrees.buffer,
                             WARPSIZE: warpsize, THREADS_SUMS: workItems.computeSums[1], THREADS_FORCES: workItems.calculateForces[1],
@@ -298,7 +302,7 @@ var EbBarnesKernelSeq = function (clContext) {
     };
 
     // TODO (paden) Can probably combine ExecKernel functions
-    this.execKernels = function(simulator, stepNumber, workItems) {
+    this.execKernels = function(simulator, stepNumber, workItems, midpoint_index) {
 
         var resources = [
             simulator.buffers.curMidPoints,
@@ -307,12 +311,12 @@ var EbBarnesKernelSeq = function (clContext) {
                 simulator.buffers.nextMidPoints
         ];
 
-        this.toBarnesLayout.set({stepNumber: stepNumber});
+        this.toBarnesLayout.set({stepNumber: stepNumber, midpoint_stride: midpoint_index, midpoints_per_edge: simulator.numSplits});
         this.boundBox.set({stepNumber: stepNumber});
         this.buildTree.set({stepNumber: stepNumber});
         this.computeSums.set({stepNumber: stepNumber});
         this.sort.set({stepNumber: stepNumber});
-        this.calculateMidPoints.set({stepNumber: stepNumber});
+        this.calculateMidPoints.set({stepNumber: stepNumber, midpoint_stride: midpoint_index, midpoints_per_edge:simulator.numSplits});
 
         simulator.tickBuffers(['nextMidPoints']);
 
@@ -340,7 +344,6 @@ var EbBarnesKernelSeq = function (clContext) {
         .then(function () {
             return that.calculateMidPoints.exec([workItems.calculateForces[0]], resources, [workItems.calculateForces[1]]);
         })
-
         .fail(util.makeErrorHandler("Executing  EbBarnesKernelSeq failed"));
     };
 
