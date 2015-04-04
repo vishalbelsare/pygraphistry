@@ -72,6 +72,9 @@ var uberControls = {
             algo: EdgeBundlingBarnes,
             params: {
                 tau: new ContinuousParam('Speed', 1.0, 0.1, 10),
+                gravity: new ContinuousParam('Gravity', 0.020083175556898723, 0, 0.1),
+                charge: new ContinuousParam('Charge', -0.0000029360001841802474, -0.00001, 0),
+                springStrength: new ContinuousParam('Spring Strength', 4.2921, 0, 10),
                 springDistance: new ContinuousParam('Spring Distance', 0.0001, 0, 0.001),
                 scalingRatio: new ContinuousParam('Scaling', 1.0, 0.01, 100),
                 edgeInfluence: new DiscreteParam('Edge Influence', 1, 0, 5, 1),
@@ -91,7 +94,7 @@ var uberControls = {
     global: {
         simulationTime: 1, //SIMULATION_TIME, //milliseconds
         dimensions: [1, 1],
-        numSplits: 3
+        numSplits: 31
     },
     devices: ['CPU', 'GPU']
 }
