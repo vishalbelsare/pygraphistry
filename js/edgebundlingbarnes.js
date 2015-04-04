@@ -8,21 +8,21 @@ var _          = require('underscore'),
     webcl      = require('node-webcl'),
     Kernel     = require('./kernel.js'),
     LayoutAlgo = require('./layoutAlgo.js'),
-    BarnesKernelSeq = require('./javascript_kernels/barnesKernelSeq.js');
+    EbBarnesKernelSeq = require('./javascript_kernels/ebBarnesKernelSeq.js');
 
 
 function EdgeBundling(clContext) {
     LayoutAlgo.call(this, EdgeBundling.name);
 
     debug('Creating GaussSeidelBarnes kernels');
-    this.barnesKernelSeq = new BarnesKernelSeq(clContext);
+    this.ebBarnesKernelSeq = new EbBarnesKernelSeq(clContext);
 
     this.ebMidsprings = new Kernel('gaussSeidelMidsprings', EdgeBundling.argsMidsprings,
                                    EdgeBundling.argsType, 'edgeBundling.cl', clContext);
 
-    this.kernels = this.kernels.concat([this.barnesKernelSeq.toBarnesLayout, this.barnesKernelSeq.boundBox,
-                                        this.barnesKernelSeq.buildTree, this.barnesKernelSeq.computeSums,
-                                        this.barnesKernelSeq.sort, this.barnesKernelSeq.calculateMidPoints,
+    this.kernels = this.kernels.concat([this.ebBarnesKernelSeq.toBarnesLayout, this.ebBarnesKernelSeq.boundBox,
+                                        this.ebBarnesKernelSeq.buildTree, this.ebBarnesKernelSeq.computeSums,
+                                        this.ebBarnesKernelSeq.sort, this.ebBarnesKernelSeq.calculateMidPoints,
                                         this.ebMidsprings]);
 }
 EdgeBundling.prototype = Object.create(LayoutAlgo.prototype);
@@ -62,7 +62,7 @@ EdgeBundling.prototype.setPhysics = function(cfg) {
     LayoutAlgo.prototype.setPhysics.call(this, cfg)
 
     // get the flags from previous iteration
-    var flags = this.barnesKernelSeq.toBarnesLayout.get('flags');
+    var flags = this.ebBarnesKernelSeq.toBarnesLayout.get('flags');
     var flagNames = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'];
     _.each(cfg, function (val, flag) {
         var idx = flagNames.indexOf(flag);
@@ -76,7 +76,7 @@ EdgeBundling.prototype.setPhysics = function(cfg) {
         }
     });
 
-    this.barnesKernelSeq.setPhysics(flags);
+    this.ebBarnesKernelSeq.setPhysics(flags);
     //this.edgeKernelSeq.setPhysics(flags);
 }
 
@@ -175,7 +175,7 @@ EdgeBundling.prototype.setEdges = function (simulator) {
     var workGroupSize = 256;
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps, workGroupSize);
     return setupTempLayoutBuffers(simulator).then(function (tempBuffers) {
-      that.barnesKernelSeq.setMidPoints(simulator, tempBuffers, 32, workItems);
+      that.ebBarnesKernelSeq.setMidPoints(simulator, tempBuffers, 32, workItems);
 
       that.ebMidsprings.set({
           numSplits: global.numSplits,
@@ -225,7 +225,7 @@ EdgeBundling.prototype.tick = function(simulator, stepNumber) {
             simulator.tickBuffers(['nextMidPoints']);
             return simulator.buffers.curMidPoints.copyInto(simulator.buffers.nextMidPoints);
         } else {
-            return that.barnesKernelSeq.execKernelsMidPoints(simulator, stepNumber, workItems);
+            return that.ebBarnesKernelSeq.execKernels(simulator, stepNumber, workItems);
         }
     }).then(function () { //TODO do both forwards and backwards?
         if (simulator.numEdges > 0 && !locks.lockMidedges) {
