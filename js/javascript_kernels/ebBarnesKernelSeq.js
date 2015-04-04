@@ -316,7 +316,7 @@ var EbBarnesKernelSeq = function (clContext) {
 
         simulator.tickBuffers(['nextMidPoints']);
 
-        debug("Running Force Atlas2 with BarnesHut Kernels");
+        debug("Running Edge Bundling Barnes Hut Kernel Sequence");
 
         // For all calls, we must have the # work items be a multiple of the workgroup size.
         var that = this;
