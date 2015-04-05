@@ -312,7 +312,7 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
 
         var redirect = 'http://' + worker.hostname + ':' + worker.port + '/';
         debug('create socket', redirect);
-        var socket = io(redirect, {reconnection: false, transports: ['websocket']});
+        var socket = io(redirect, {forceNew: true, reconnection: false, transports: ['websocket']});
         //socket.io.engine.binaryType = 'arraybuffer';
 
         socket.on('connect_error', function (err) {
@@ -332,7 +332,6 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
 
                 req.pipe(request(newEndpoint)).pipe(res);
                 //res.redirect(307, newEndpoint);
-
             });
             debug('waiting for worker to initialize');
         });
