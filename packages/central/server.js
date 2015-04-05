@@ -15,8 +15,6 @@ var Q           = require('q');
 var _           = require('underscore');
 var config      = require('config')();
 
-var etl         = require('./etl/etl.js');
-
 debug("Config set to %j", config);
 
 var express     = require('express');
@@ -49,11 +47,6 @@ app.options('/api/v0.2/splunk/html/graph.fragment.html', function(req, res) {
 app.options('/api/v0.2/splunk/html/index.fragment.html', function(req, res) {
     res.sendStatus(200);
 });
-/*
-app.options('/etl', function(req, res) {
-    res.sendStatus(200);
-});
-*/
 var db;
 
 
