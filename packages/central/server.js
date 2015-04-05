@@ -1,18 +1,20 @@
 #!/usr/bin/env node
 'use strict';
 
-var path        = require('path');
+var os          = require('os');
+var fs          = require('fs');
+var path        = require('path')
+
+
 var debug       = require('debug')('graphistry:central:server');
 var mongo       = require('mongodb');
 var MongoClient = mongo.MongoClient;
 var assert      = require('assert');
 var Rx          = require('rx');
 var Q           = require('q');
-var os          = require('os');
-var fs          = require('fs');
-var path        = require('path')
 var _           = require('underscore');
 var config      = require('config')();
+
 var etl         = require('./etl/etl.js');
 
 debug("Config set to %j", config);
@@ -23,6 +25,9 @@ var app         = express();
 var http        = require('http').Server(app);
 var bodyParser  = require('body-parser');
 var request     = require('request');
+
+//for etl setup
+var io = require('socket.io-client');
 
 
 app.use(compression());
@@ -44,10 +49,11 @@ app.options('/api/v0.2/splunk/html/graph.fragment.html', function(req, res) {
 app.options('/api/v0.2/splunk/html/index.fragment.html', function(req, res) {
     res.sendStatus(200);
 });
+/*
 app.options('/etl', function(req, res) {
     res.sendStatus(200);
 });
-
+*/
 var db;
 
 
@@ -71,6 +77,12 @@ debug("Will route clients to viz server at %s:%d", VIZ_SERVER_HOST, VIZ_SERVER_P
  * @return {string} the IP address as a string
  */
 function get_likely_local_ip() {
+
+    if (config.ENVIRONMENT === 'local') {
+        return config.VIZ_LISTEN_ADDRESS;
+    }
+
+
     var public_iface = _.map(os.networkInterfaces(), function(ifaces) {
         return _.filter(ifaces, function(iface) {
             return (!iface.internal) && (iface.family === 'IPv4');
@@ -126,7 +138,7 @@ function getIPs() {
 function handshakeIp (workerNfo) {
     var url = 'http://' + workerNfo.hostname + ':' + workerNfo.port + '/claim';
     var cfg = {url: url, json: true, timeout: 500};
-    debug('Trying worker', cfg);
+    debug('Trying worker', cfg, workerNfo);
     return Rx.Observable.fromNodeCallback(request.get.bind(request))(cfg)
         .pluck(1)
         .map(function (resp) {
@@ -163,8 +175,24 @@ function listIps (o) {
     return workers;//{i: 0, workers: workers, worker: null};
 }
 
-
+// resp: JSON {success: bool, error} + {success: true, hostname, port}
 function assign_worker(req, res) {
+    pickWorker(function (err, worker) {
+        if (err) {
+            console.error('assign_worker failed', err);
+            return res.json({
+                success: false,
+                error: (err||{}).message || 'Error while assigning worker.'
+            });
+        }
+        debug('Assigning client a worker', req.ip, worker);
+        return res.json(_.extend({success: true}, worker));
+    });
+}
+
+//(exn * {hostname, port} -> ()) -> ()
+function pickWorker (k) {
+
     var ips;
 
     if(config.ENVIRONMENT === 'production' || config.ENVIRONMENT === 'staging') {
@@ -173,7 +201,7 @@ function assign_worker(req, res) {
                 return Rx.Observable.fromArray(listIps(o));
             });
     } else {
-        debug('Using local hostname/port');
+        debug('Using local hostname/port', VIZ_SERVER_HOST, VIZ_SERVER_PORT);
         ips = Rx.Observable.return({hostname: VIZ_SERVER_HOST, port: VIZ_SERVER_PORT});
     }
 
@@ -187,29 +215,21 @@ function assign_worker(req, res) {
 
     var count = 0;
     ip.do(function (worker) {
-            debug("Assigning client '%s' to viz server on %s, port %d",
-                req.ip, worker.hostname, worker.port);
-            res.json(worker);
+            debug("Assigning client viz server on %s, port %d", worker.hostname, worker.port);
+            k(null, worker);
         })
         .subscribe(
             function () { count++; },
             function (err) {
                 console.error('assign_worker error', err, (err || {}).stack);
-                res.json({
-                    success: false,
-                    error: (err||{}).message || 'Error while assigning GPU workers.'
-                });
+                k((err||{}).message || 'Error while assigning GPU workers.');
             },
             function () {
                 if (!count) {
                     console.error('assign_worker exhausted search');
-                    res.json({
-                        success: false,
-                        error: 'Too many users, please contact help@graphistry.com for private access.'
-                    });
+                    k('Too many users, please contact help@graphistry.com for private access.');
                 }
             });
-
 }
 
 function logClientError(req, res) {
@@ -277,7 +297,49 @@ app.use('/uber',   express.static(UBER_STATIC_PATH));
 app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
 
 // Temporarly handle ETL request from Splunk
-app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), etl.post);
+app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res) {
+    debug('etl request');
+    pickWorker(function (err, worker) {
+        debug('picked worker', req.ip, worker);
+
+        if (err) {
+            console.error('failed to get etl worker', err);
+            return res.send({
+                success: false,
+                msg: JSON.stringify(err)
+            });
+        }
+
+        var redirect = 'http://' + worker.hostname + ':' + worker.port + '/';
+        debug('create socket', redirect);
+        var socket = io(redirect, {reconnection: false, transports: ['websocket']});
+        //socket.io.engine.binaryType = 'arraybuffer';
+
+        socket.on('connect_error', function (err) {
+            console.error('error, socketio failed connect', err);
+        });
+
+        socket.on('connect', function () {
+            debug('connected socket, initializing app', redirect);
+            socket.emit('viz', 'etl', function (resp) {
+                debug('initialized, notifying client');
+                if (!resp.success) {
+                    console.error('failed initializing worker', resp);
+                    return res.json({success: false, msg: 'failed connecting to work'});
+                }
+                var newEndpoint = redirect + 'etl';
+                debug('telling client to redirect', newEndpoint);
+
+                req.pipe(request(newEndpoint)).pipe(res);
+                //res.redirect(307, newEndpoint);
+
+            });
+            debug('waiting for worker to initialize');
+        });
+
+    });
+
+});
 
 // Store client errors in a log file (indexed by Splunk)
 app.post('/error', bodyParser.json({type: '*', limit: '64mb'}), logClientError);
