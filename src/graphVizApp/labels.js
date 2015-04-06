@@ -265,7 +265,7 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
     interaction.setupMousemove($eventTarget, renderState, textures)
         .filter(marqueeNotActive)
         .map(function (v) { return {cmd: 'hover', pt: v}; })
-        .merge($eventTarget.mousedownAsObservable()
+        .merge($eventTarget.mouseupAsObservable()
             .filter(marqueeNotActive)
             .map(function (evt) {
                 var clickedLabel = $(evt.target).hasClass('graph-label') ||
@@ -273,13 +273,6 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
                         $(evt.target).hasClass('highlighted-point-center');
                 if (!clickedLabel) {
                     clickedLabel = $(evt.target).parents('.graph-label').length || false;
-                }
-                if (clickedLabel &&
-                        //allow dragging by menu title (don't stop)
-                        !$(evt.target).hasClass('graph-label') &&
-                        !$(evt.target).hasClass('graph-label-container')) {
-                    debug('stopPropagation: highlight down');
-                    evt.stopPropagation();
                 }
                 return clickedLabel ?
                     {cmd: 'click', pt: {dim: 1, idx: parseInt($('#highlighted-point-cont').attr('pointidx'))}}
