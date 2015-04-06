@@ -23,7 +23,7 @@ var ATTRIBUTE = 'degree';
 var MODE = 'default';
 var DIST = false;
 var DRAG_SAMPLE_INTERVAL = 100;
-var NUM_BINS_VISIBLE = 20;
+var NUM_BINS_VISIBLE = 15;
 
 //////////////////////////////////////////////////////////////////////////////
 // Globals for updates
@@ -34,7 +34,7 @@ var xScale;
 var yScale;
 var color;
 var colorHighlighted;
-var margin = {top: 10, right: 10, bottom: 20, left:40};
+var margin = {top: 10, right: 100, bottom: 20, left:10};
 var lastSelection;
 var attributeChange = new Rx.Subject();
 
@@ -257,7 +257,7 @@ function highlight(selection, toggle) {
 }
 
 function updateHistogram($el, model, attribute) {
-    var width = $el.width() - margin.left - margin.right;
+    var height = $el.height() - margin.top - margin.bottom;
     var data = model.attributes.data;
     var globalStats = model.attributes.globalStats[attribute];
     var bins = data.bins || []; // Guard against empty bins.
@@ -268,7 +268,7 @@ function updateHistogram($el, model, attribute) {
     var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues);
 
     if (globalStats.numBins < NUM_BINS_VISIBLE) {
-        width = Math.floor((globalStats.numBins/NUM_BINS_VISIBLE) * width);
+        height = Math.floor((globalStats.numBins/NUM_BINS_VISIBLE) * height);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -284,14 +284,17 @@ function updateHistogram($el, model, attribute) {
         .classed('g', true)
         .classed('column', true)
         .attr('transform', function (d, i) {
-            return 'translate(' + xScale(i) + ',0)';
+            // return 'translate(' + xScale(i) + ',0)';
+            return 'translate(0,' + yScale(i) + ')';
         })
+
         .attr('data-container', '#histogram')
         .attr('data-placement', 'top')
         .attr('data-toggle', 'tooltip')
         .attr('title', function(d) {
             return d.total;
         })
+
         .on('mouseover', function () {
             var col = d3.select(d3.event.target.parentNode);
             $(col).tooltip('show');
@@ -314,37 +317,72 @@ function updateHistogram($el, model, attribute) {
             return d.barNum + d.binId;
         });
 
+    // bars
+    //     .transition().duration(DRAG_SAMPLE_INTERVAL)
+    //     .attr('height', function (d) {
+    //         return yScale(d.y0) - yScale(d.y1) + heightDelta(d);
+    //     })
+    //     .attr('y', function (d) {
+    //         return yScale(d.y1) - heightDelta(d);
+    //     });
+
+    // var barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/globalStats.numBins);
+    // bars.enter().append('rect')
+    //     .style('fill', function (d) {
+    //         return color(d.type);
+    //     })
+    //     .attr('width', barWidth)
+    //     .attr('height', function (d) {
+    //         return yScale(d.y0) - yScale(d.y1) + heightDelta(d);
+    //     })
+    //     .attr('y', function (d) {
+    //         return yScale(d.y1) - heightDelta(d);
+    //     });
+
+
+
     bars
         .transition().duration(DRAG_SAMPLE_INTERVAL)
-        .attr('height', function (d) {
-            return yScale(d.y0) - yScale(d.y1) + heightDelta(d);
+        .attr('width', function (d) {
+            return xScale(d.y0) - xScale(d.y1) + heightDelta(d);
         })
-        .attr('y', function (d) {
-            return yScale(d.y1) - heightDelta(d);
+        .attr('x', function (d) {
+            return xScale(d.y1) - heightDelta(d);
         });
 
-    var barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/globalStats.numBins);
+    var barHeight = (type === 'countBy') ? yScale.rangeBand() : Math.floor(height/globalStats.numBins);
     bars.enter().append('rect')
         .style('fill', function (d) {
             return color(d.type);
         })
-        .attr('width', barWidth)
-        .attr('height', function (d) {
-            return yScale(d.y0) - yScale(d.y1) + heightDelta(d);
+        .attr('height', barHeight)
+        .attr('width', function (d) {
+            return xScale(d.y0) - xScale(d.y1) + heightDelta(d);
         })
-        .attr('y', function (d) {
-            return yScale(d.y1) - heightDelta(d);
+        .attr('x', function (d) {
+            return xScale(d.y1) - heightDelta(d);
         });
+
 
 }
 
 function heightDelta(d) {
-    var minimumHeight = 4;
-    var height = yScale(d.y0) - yScale(d.y1);
+    var minimumHeight = 3;
+    var height = xScale(d.y0) - xScale(d.y1);
     if (d.val > 0 && d.y0 === 0 && height < minimumHeight) {
        return minimumHeight - height;
     } else {
         return 0;
+    }
+}
+
+function stringShortener (d) {
+    var str = String(d);
+    var limit = 8;
+    if (str.length > limit) {
+        return str.substr(0, limit-1) + '...';
+    } else {
+        return str;
     }
 }
 
@@ -369,7 +407,7 @@ function initializeHistogramViz($el, model) {
     height = height - margin.top - margin.bottom;
 
     if (globalStats.numBins < NUM_BINS_VISIBLE) {
-        width = Math.floor((globalStats.numBins/NUM_BINS_VISIBLE) * width);
+        height = Math.floor((globalStats.numBins/NUM_BINS_VISIBLE) * height);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -387,49 +425,50 @@ function initializeHistogramViz($el, model) {
 
     // We want ticks between bars if histogram, and under bars if countBy
     if (type === 'countBy') {
-        xScale = d3.scale.ordinal()
-            .rangeRoundBands([0, width], 0.1, 0.1);
+        yScale = d3.scale.ordinal()
+            .rangeRoundBands([0, height], 0.1, 0.1);
     } else {
-        xScale = d3.scale.linear()
-            .range([0, width]);
+        yScale = d3.scale.linear()
+            .range([0, height]);
     }
 
-    yScale = d3.scale.linear()
-        .range([height, 0]);
+    xScale = d3.scale.linear()
+        .range([width, 0]);
 
     if (type === 'countBy') {
-        xScale.domain(_.range(globalStats.numBins));
+        yScale.domain(_.range(globalStats.numBins));
     } else {
-        xScale.domain([0, globalStats.numBins]);
+        yScale.domain([0, globalStats.numBins]);
     }
 
-    var yDomainMax = _.max(stackedBins, function (bin) {
+    var xDomainMax = _.max(stackedBins, function (bin) {
         return bin.total;
     }).total;
 
     if (DIST) {
-        yDomainMax = 1.0;
+        xDomainMax = 1.0;
     }
 
-    yScale.domain([0, yDomainMax]);
+    xScale.domain([0, xDomainMax]);
 
     var numTicks = (type === 'countBy') ? globalStats.numBins : globalStats.numBins + 1;
-    var xAxis = d3.svg.axis()
-        .scale(xScale)
-        .orient('bottom')
+    var yAxis = d3.svg.axis()
+        .scale(yScale)
+        .orient('right')
         .ticks(numTicks)
         .tickFormat(function (d) {
             if (type === 'countBy') {
-                return d; // name of bin
+                return stringShortener(d); // name of bin
             } else {
-                return d * globalStats.binWidth + globalStats.minValue;
+                return stringShortener(d * globalStats.binWidth + globalStats.minValue);
             }
         });
 
-    var yAxis = d3.svg.axis()
-        .scale(yScale)
+    var xAxis = d3.svg.axis()
+        .scale(xScale)
         .ticks(5) // TODO: Dynamic?
-        .orient('left'); // TODO: format?
+        .orient('bottom') // TODO: format?
+        .tickFormat(stringShortener);
 
     //////////////////////////////////////////////////////////////////////////
     // Setup SVG
@@ -441,13 +480,14 @@ function initializeHistogramViz($el, model) {
         .append('g')
             .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
-    svg.append('g')
-        .attr('class', 'x axis')
-        .attr('transform', 'translate(0,' + height + ')')
-        .call(xAxis);
+    // svg.append('g')
+    //     .attr('class', 'x axis')
+    //     .attr('transform', 'translate(0,' + height + ')')
+    //     .call(xAxis);
 
     svg.append('g')
         .attr('class', 'y axis')
+        .attr('transform', 'translate(' + width + ',0)')
         .call(yAxis);
 }
 
