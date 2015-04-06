@@ -658,12 +658,13 @@ function setEdges(renderer, simulator, forwardsEdges,
  */
 function setEdgeColors(simulator, edgeColors) {
     if (!edgeColors) {
-        console.log('Using default edge colors');
-        edgeColors = new Uint32Array(simulator.buffersLocal.pointColors.buffer);
-    }
-
-    if (edgeColors.length === simulator.numEdges * 2) {
-        console.warn('Non-default edgeColors are broken with logical edges');
+        debug('Using default edge colors');
+        var forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
+        edgeColors = new Uint32Array(forwardsEdges.edgesTyped.length);
+        for (var i = 0; i < edgeColors.length; i++) {
+            var nodeIdx = forwardsEdges.edgesTyped[i];
+            edgeColors[i] = simulator.buffersLocal.pointColors[nodeIdx];
+        }
     }
 
     simulator.buffersLocal.edgeColors = edgeColors;
@@ -674,7 +675,7 @@ function setEdgeColors(simulator, edgeColors) {
 
 function setEdgeWeight(simulator, edgeWeights) {
     if (!edgeWeights) {
-        debug('Using default edge weights')
+        debug('Using default edge weights');
         var forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
         edgeWeights = new Float32Array(forwardsEdges.edgesTyped.length);
         for (var i = 0; i < edgeWeights.length; i++) {

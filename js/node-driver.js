@@ -53,10 +53,7 @@ function graphCounts(graph) {
         logicalEdges: edge,
         pointSizes: point,
         pointColors: point,
-        /* With logical edges, edge colors are defined indirectly, by giving a color
-         * for the source point and destination point. As a result two edges sharing
-         * the same enpoints must have the same color. */
-        edgeColors: point,
+        edgeColors: edge,
         curMidPoints: midPoint,
         midSpringsPos: midEdge,
         midSpringsColorCoord: midEdge
