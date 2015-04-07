@@ -287,7 +287,12 @@
 
     <div id="inspector" class="panel backgrid-container"></div>
     <div id="inspector-overlay" class="panel"></div>
-    <div id="histogram" class="panel"></div>
+    <div id="histogram" class="panel">
+        <div id="histograms"></div>
+        <div id="addHistogram">
+            <button id="addHistogramButton" type="button" class="btn btn-primary"> Add Histogram </button>
+        </div>
+    </div>
 
     <script>
     $(function () {
@@ -351,21 +356,31 @@
 <!-- TEMPLATES -->
 <script type="text/template" id="histogramTemplate">
     <div class="topMenu">
-        <div class="dropdown">
-            <button class="btn btn-default btn-block dropdown-toggle pull-right" type="button" id="dropdownMenu{{id}}" data-toggle="dropdown" aria-expanded="true">
-                {{attribute}}
-                <span class="caret"></span>
-            </button>
-            <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
-                {{#each fields}}
-                    <li role="presentation"><a class="histogramDropdownField" role="menuitem" tabindex="-1" href="#">
-                        {{this}}
-                    </a></li>
-                {{/each}}
-            </ul>
+        <div class="col-xs-10">
+            <div class="dropdown">
+                <button class="btn btn-default btn-block dropdown-toggle pull-right" type="button" id="dropdownMenu{{id}}" data-toggle="dropdown" aria-expanded="true">
+                    {{attribute}}
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
+                    {{#each fields}}
+                        <li role="presentation"><a class="histogramDropdownField" role="menuitem" tabindex="-1" href="#">
+                            {{this}}
+                        </a></li>
+                    {{/each}}
+                </ul>
+            </div>
         </div>
+        <div class="col-xs-1 closeButton">
+            <a href="#" class="closeHistogramButtom" id="closeHistogramButton{{id}}">
+                <i class="fa fa-times"></i>
+            </a>
+        </div>
+
+
     </div>
     <div class="vizContainer"></div>
+    <div class="divide-line"></div>
 </script>
 
 
