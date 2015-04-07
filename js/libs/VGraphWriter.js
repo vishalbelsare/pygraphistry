@@ -74,6 +74,8 @@ var uploadVGraph = Q.promised(function (vg, metadata) {
                 ServerSideEncryption: 'AES256'
             };
 
+            debug ('uploading length', (zipped.length/1000).toFixed(1), 'KB');
+
             return Q.nfcall(config.S3.putObject.bind(config.S3), params);
         })
         .then(function () { debug('  uploaded', metadata.name); });
