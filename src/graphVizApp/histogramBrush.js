@@ -98,6 +98,7 @@ function init(socket, marquee) {
 
     var AllHistogramsView = Backbone.View.extend({
         el: $histogram,
+        histogramsContainer: $('#histograms'),
         initialize: function () {
             this.listenTo(histograms, 'add', this.addHistogram);
             this.listenTo(histograms, 'reset', this.addAll);
@@ -115,7 +116,7 @@ function init(socket, marquee) {
         addHistogram: function (histogram) {
             var view = new HistogramView({model: histogram});
             var childEl = view.render().el;
-            this.$el.append(childEl);
+            $(this.histogramsContainer).append(childEl);
             histogram.set('$el', $(childEl));
             var vizContainer = $(childEl).children('.vizContainer');
             var vizHeight = histogram.get('data').numBins * BAR_THICKNESS;
@@ -132,7 +133,7 @@ function init(socket, marquee) {
             }
         },
         addAll: function () {
-            this.$el.empty();
+            $(this.histogramsContainer).empty();
             histograms.each(this.addHistogram, this);
         }
     });
@@ -235,8 +236,9 @@ function toStackedObject(local, total, idx, key, numLocal, numTotal) {
 
     } else {
         stackedObj = [
+            // We do a max because sometimes we get incorrect global values that are slightly too small
             {y0: 0, y1: local, val: local, type: 'local', binId: idx, barNum: 0},
-            {y0: local, y1: total, val: total, type: 'global', binId: idx, barNum: 1}
+            {y0: local, y1: Math.max(total, local), val: total, type: 'global', binId: idx, barNum: 1}
         ];
     }
 
@@ -317,7 +319,7 @@ function updateHistogram($el, model, attribute) {
         .attr('data-container', '#histogram')
         .attr('data-placement', 'top')
         .attr('data-toggle', 'tooltip')
-        .attr('title', function(d) {
+        .attr('data-original-title', function(d) {
             return d.total;
         })
 
@@ -325,6 +327,7 @@ function updateHistogram($el, model, attribute) {
             var col = d3.select(d3.event.target.parentNode);
             var children = col[0][0].children;
             _.each(children, function (child) {
+                $(child).tooltip('fixTitle');
                 $(child).tooltip('show');
             });
             highlight(col.selectAll('rect'), true);
@@ -375,10 +378,17 @@ function updateHistogram($el, model, attribute) {
 
     bars
         .transition().duration(DRAG_SAMPLE_INTERVAL)
-        .attr('title', function(d) {
+        .attr('data-original-title', function(d) {
             return d.val;
         })
         .attr('width', function (d) {
+            var width = xScale(d.y0) - xScale(d.y1) + heightDelta(d, xScale);
+            if (width < 0) {
+                console.log('d: ', d);
+                console.log('scaled y0: ', xScale(d.y0));
+                console.log('scaled y1: ', xScale(d.y1));
+                console.log('heightDelta: ', heightDelta(d, xScale));
+            }
             return xScale(d.y0) - xScale(d.y1) + heightDelta(d, xScale);
         })
         .attr('x', function (d) {
@@ -397,7 +407,7 @@ function updateHistogram($el, model, attribute) {
             }
         })
         .attr('data-toggle', 'tooltip')
-        .attr('title', function(d) {
+        .attr('data-original-title', function(d) {
             return d.val;
         })
 
@@ -406,6 +416,12 @@ function updateHistogram($el, model, attribute) {
         })
         .attr('height', barHeight)
         .attr('width', function (d) {
+            var width = xScale(d.y0) - xScale(d.y1) + heightDelta(d, xScale);
+            if (width < 0) {
+                console.log('scaled y0: ', xScale(d.y0));
+                console.log('scaled y1: ', xScale(d.y1));
+                console.log('heightDelta: ', heightDelta(d, xScale));
+            }
             return xScale(d.y0) - xScale(d.y1) + heightDelta(d, xScale);
         })
         .attr('x', function (d) {
