@@ -167,7 +167,7 @@ function histogram(values, binning) {
                                  : Math.ceil(Math.sqrt(numValues));
 
     goalBins = Math.min(goalBins, 30); // Cap number of bins.
-    goalBins = Math.max(goalBins, 8); // Cap min number of bins.
+    goalBins = Math.max(goalBins, 10); // Cap min number of bins.
 
     var max = _.max(values);
     var min = _.min(values);
