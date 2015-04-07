@@ -21,7 +21,7 @@ var util    = require('./util.js');
 var MODE = 'default';
 var DIST = false;
 var DRAG_SAMPLE_INTERVAL = 100;
-var NUM_BINS_VISIBLE = 10;
+var BAR_THICKNESS = 16;
 
 //////////////////////////////////////////////////////////////////////////////
 // Globals for updates
@@ -36,7 +36,7 @@ var colorHighlighted = d3.scale.ordinal()
         .range(['#E35E13', '#6B6868', '#E35E13', '#FF3000'])
         .domain(['local', 'global', 'globalSmaller', 'localBigger']);
 
-var margin = {top: 10, right: 70, bottom: 20, left:10};
+var margin = {top: 10, right: 70, bottom: 20, left:20};
 var lastSelection;
 var attributes = [];
 var activeAttributes = [];
@@ -118,6 +118,8 @@ function init(socket, marquee) {
             this.$el.append(childEl);
             histogram.set('$el', $(childEl));
             var vizContainer = $(childEl).children('.vizContainer');
+            var vizHeight = histogram.get('data').numBins * BAR_THICKNESS;
+            vizContainer.height(String(vizHeight) + 'px');
             initializeHistogramViz(vizContainer, histogram); // TODO: Link to data?
             updateHistogram(vizContainer, histogram, histogram.get('attribute'));
         },
@@ -295,10 +297,6 @@ function updateHistogram($el, model, attribute) {
 
     var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues);
 
-    if (globalStats.numBins < NUM_BINS_VISIBLE) {
-        height = Math.floor((globalStats.numBins/NUM_BINS_VISIBLE) * height);
-    }
-
     //////////////////////////////////////////////////////////////////////////
     // Create Columns
     //////////////////////////////////////////////////////////////////////////
@@ -387,7 +385,7 @@ function updateHistogram($el, model, attribute) {
             return xScale(d.y1) - heightDelta(d, xScale);
         });
 
-    var barHeight = (type === 'countBy') ? yScale.rangeBand() : Math.floor(height/globalStats.numBins);
+    var barHeight = (type === 'countBy') ? yScale.rangeBand() : Math.floor(height/globalStats.numBins) - 2;
     bars.enter().append('rect')
 
         .attr('data-container', '#histogram')
@@ -469,10 +467,6 @@ function initializeHistogramViz($el, model) {
 
     width = width - margin.left - margin.right;
     height = height - margin.top - margin.bottom;
-
-    if (globalStats.numBins < NUM_BINS_VISIBLE) {
-        height = Math.floor((globalStats.numBins/NUM_BINS_VISIBLE) * height);
-    }
 
     //////////////////////////////////////////////////////////////////////////
     // Setup Scales and Axes
