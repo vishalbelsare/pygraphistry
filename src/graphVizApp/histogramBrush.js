@@ -39,7 +39,7 @@ var colorHighlighted = d3.scale.ordinal()
 var margin = {top: 10, right: 100, bottom: 20, left:10};
 var lastSelection;
 var attributes = [];
-var activeAttributes = ['betweenness', 'closeness', 'degree'];
+var activeAttributes = [];
 var attributeChange = new Rx.Subject();
 
 function updateAttribute (oldAttribute, newAttribute) {
@@ -152,6 +152,7 @@ function init(socket, marquee) {
             attributes = _.filter(_.keys(data), function (val) {
                 return val !== '_title';
             });
+            activeAttributes = attributes.slice(0,3);
         }).subscribe(globalStats, util.makeErrorHandler('Global stat aggregate call'));
 
 
@@ -405,7 +406,7 @@ function heightDelta(d, xScale) {
 function prettyPrint (d) {
     if (!isNaN(d)) {
         // Large Number
-        var precision = 6;
+        var precision = 4;
         if (d > 1000000 || (d !== 0 && d < 0.00001)) {
             return String(d.toExponential(precision));
         } else {

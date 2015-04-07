@@ -81,7 +81,7 @@ function setupBrush(isOn, renderState, appState) {
 //Side effect: highlight that element
 function makeMouseSwitchboard() {
 
-    var mouseElts = $('#marqueerectangle').add('#histogramBrush');
+    var mouseElts = $('#marqueerectangle').add('#histogramBrush').add('#layoutSettingsButton');
 
     var onElt = Rx.Observable.merge.apply(Rx.Observable,
             mouseElts.get().map(function (elt) {
@@ -293,6 +293,25 @@ function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, a
         }
         return brushIsOn;
     });
+
+    var settingsOn = false;
+    var turnOnSettings = onElt.map(function (elt) {
+        if (elt === $('#layoutSettingsButton')[0]) {
+            $(elt).children('i').toggleClass('toggle-on');
+            settingsOn = !settingsOn;
+        }
+        return settingsOn;
+    });
+
+    turnOnSettings.do(function (state) {
+        if (state) {
+            $('#renderingItems').css('display', 'block');
+        } else {
+            $('#renderingItems').css('display', 'none');
+        }
+    }).subscribe(_.identity, util.makeErrorHandler('Turning on/off settings'));
+
+
 
     var marquee = setupMarquee(turnOnMarquee, renderState, appState);
     var brush = setupBrush(turnOnBrush, renderState, appState);
