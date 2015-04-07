@@ -3,6 +3,7 @@
 var _ = require('underscore');
 var sprintf = require('sprintf-js').sprintf;
 var vgloader = require('./libs/VGraphLoader.js');
+var dateFormat = require('dateformat');
 
 
 function pickTitleField (attribs) {
@@ -46,7 +47,10 @@ function infoFrame(graph, indices) {
                             })
                             .filter(function (name) { return name !== maybeTitleField; })
                             .map(function (name) {
-                                return [name, attribs[name].values[idx]];
+                                var val = attribs[name].values[idx];
+                                return [name,
+                                    name.indexOf('Date') > -1 && typeof(val) === "number" ?
+                                        dateFormat(val, "mm-dd-yyyy") : val];
                             })
                     ],
                     true)
