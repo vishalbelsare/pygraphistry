@@ -36,7 +36,7 @@ var colorHighlighted = d3.scale.ordinal()
         .range(['#E35E13', '#6B6868', '#E35E13', '#FF3000'])
         .domain(['local', 'global', 'globalSmaller', 'localBigger']);
 
-var margin = {top: 10, right: 100, bottom: 20, left:10};
+var margin = {top: 10, right: 70, bottom: 20, left:10};
 var lastSelection;
 var attributes = [];
 var activeAttributes = [];
@@ -418,7 +418,7 @@ function updateHistogram($el, model, attribute) {
 }
 
 function heightDelta(d, xScale) {
-    var minimumHeight = 3;
+    var minimumHeight = 5;
     var height = xScale(d.y0) - xScale(d.y1);
     if (d.val > 0 && d.y0 === 0 && height < minimumHeight) {
        return minimumHeight - height;
@@ -440,7 +440,7 @@ function prettyPrint (d) {
 
     } else {
         var str = String(d);
-        var limit = 8;
+        var limit = 10;
         if (str.length > limit) {
             return str.substr(0, limit-1) + '...';
         } else {
@@ -543,7 +543,7 @@ function initializeHistogramViz($el, model) {
 
     svg.append('g')
         .attr('class', 'y axis')
-        .attr('transform', 'translate(' + width + ',0)')
+        .attr('transform', 'translate(' + (width + 4) + ',0)')
         .call(yAxis);
 
     model.set('xScale', xScale);
