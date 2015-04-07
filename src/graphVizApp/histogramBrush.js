@@ -17,29 +17,44 @@ var util    = require('./util.js');
 // CONSTANTS
 //////////////////////////////////////////////////////////////////////////////
 
-// var ATTRIBUTE = 'community_infomap';
-var ATTRIBUTE = 'degree';
 // var MODE = 'countBy';
 var MODE = 'default';
 var DIST = false;
 var DRAG_SAMPLE_INTERVAL = 100;
-var NUM_BINS_VISIBLE = 15;
+var NUM_BINS_VISIBLE = 10;
 
 //////////////////////////////////////////////////////////////////////////////
 // Globals for updates
 //////////////////////////////////////////////////////////////////////////////
 
-var svg;
-var xScale;
-var yScale;
-var color;
-var colorHighlighted;
+var color = d3.scale.ordinal()
+        .range(['#0FA5C5', '#B2B2B2', '#0FA5C5', '#00BBFF'])
+        // .range(['#0092DC', '#B2B2B2'])
+        .domain(['local', 'global', 'globalSmaller', 'localBigger']);
+
+var colorHighlighted = d3.scale.ordinal()
+        .range(['#E35E13', '#6B6868', '#E35E13', '#FF3000'])
+        .domain(['local', 'global', 'globalSmaller', 'localBigger']);
+
 var margin = {top: 10, right: 100, bottom: 20, left:10};
 var lastSelection;
+var attributes = [];
+var activeAttributes = ['betweenness', 'closeness', 'degree'];
 var attributeChange = new Rx.Subject();
 
-function updateAttribute (newAttribute) {
-    ATTRIBUTE = newAttribute;
+function updateAttribute (oldAttribute, newAttribute) {
+    console.log('Updating. Old: ', oldAttribute, ', new: ', newAttribute);
+    console.log('activeAttributes: ', activeAttributes);
+    // Delete old if it exists
+    var indexOfOld = activeAttributes.indexOf(oldAttribute);
+    if (indexOfOld > -1) {
+        activeAttributes.splice(indexOfOld, 1);
+    }
+
+    // Add new one if it exists
+    if (newAttribute) {
+        activeAttributes.push(newAttribute);
+    }
     attributeChange.onNext(newAttribute);
 }
 
@@ -69,13 +84,9 @@ function init(socket, marquee) {
             this.listenTo(this.model, 'destroy', this.remove);
         },
         render: function() {
-            var fields = _.filter(_.keys(this.model.get('globalStats')), function (val) {
-                return val !== '_title';
-            });
-
             var params = {
-                fields: fields,
-                attribute: ATTRIBUTE,
+                fields: attributes,
+                attribute: this.model.attributes.attribute,
                 id: this.cid
             };
             var html = this.template(params);
@@ -113,7 +124,9 @@ function init(socket, marquee) {
         update: function (histogram) {
             // TODO: Find way to not fire this on first time
             if (!histogram.get('firstTime')) {
-                updateHistogram(histogram.get('$el').children('.vizContainer'), histogram, histogram.get('attribute'));
+                histograms.each(function (histogram) {
+                    updateHistogram(histogram.get('$el').children('.vizContainer'), histogram, histogram.get('attribute'));
+                });
             }
         },
         addAll: function () {
@@ -134,7 +147,13 @@ function init(socket, marquee) {
     Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
         .map(function (reply) {
             return reply.data;
+        })
+        .do(function (data) {
+            attributes = _.filter(_.keys(data), function (val) {
+                return val !== '_title';
+            });
         }).subscribe(globalStats, util.makeErrorHandler('Global stat aggregate call'));
+
 
     // Take stream of selections and drags and use them for histograms
     marquee.selections.map(function (val) {
@@ -151,8 +170,8 @@ function init(socket, marquee) {
         });
 
     }).flatMapLatest(function (data) {
-        var binning = data.globalStats[ATTRIBUTE];
-        var params = {sel: data.sel, attribute: ATTRIBUTE, binning: binning, mode: MODE};
+        var binning = data.globalStats;
+        var params = {sel: data.sel, attributes: activeAttributes, binning: binning, mode: MODE};
         lastSelection = data.sel;
         return Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
             .map(function (agg) {
@@ -179,11 +198,14 @@ function init(socket, marquee) {
     // General Setup
     //////////////////////////////////////////////////////////////////////////
 
-    $('#histogram').on('click', '.histogramDropdownField', function(){
+    $('#histogram').on('click', '.histogramDropdownField', function() {
+        // TODO: Get this value in a cleaner way
+        var oldField = $(this).parent().parent().siblings('button').text().trim();
         var field = $(this).text().trim();
         $(this).parents('.dropdown').find('.btn').text(field);
         $(this).parents('.dropdown').find('.btn').val(field);
-        updateAttribute(field);
+        updateAttribute(oldField, field);
+        console.log('Active Attributes after: ', activeAttributes);
     });
 
 
@@ -265,6 +287,10 @@ function updateHistogram($el, model, attribute) {
     var type = (data.type !== 'nodata') ? data.type : globalStats.type;
     data.numValues = data.numValues || 0;
 
+    var svg = model.get('svg');
+    var xScale = model.get('xScale');
+    var yScale = model.get('yScale');
+
     var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues);
 
     if (globalStats.numBins < NUM_BINS_VISIBLE) {
@@ -344,10 +370,10 @@ function updateHistogram($el, model, attribute) {
     bars
         .transition().duration(DRAG_SAMPLE_INTERVAL)
         .attr('width', function (d) {
-            return xScale(d.y0) - xScale(d.y1) + heightDelta(d);
+            return xScale(d.y0) - xScale(d.y1) + heightDelta(d, xScale);
         })
         .attr('x', function (d) {
-            return xScale(d.y1) - heightDelta(d);
+            return xScale(d.y1) - heightDelta(d, xScale);
         });
 
     var barHeight = (type === 'countBy') ? yScale.rangeBand() : Math.floor(height/globalStats.numBins);
@@ -357,16 +383,16 @@ function updateHistogram($el, model, attribute) {
         })
         .attr('height', barHeight)
         .attr('width', function (d) {
-            return xScale(d.y0) - xScale(d.y1) + heightDelta(d);
+            return xScale(d.y0) - xScale(d.y1) + heightDelta(d, xScale);
         })
         .attr('x', function (d) {
-            return xScale(d.y1) - heightDelta(d);
+            return xScale(d.y1) - heightDelta(d, xScale);
         });
 
 
 }
 
-function heightDelta(d) {
+function heightDelta(d, xScale) {
     var minimumHeight = 3;
     var height = xScale(d.y0) - xScale(d.y1);
     if (d.val > 0 && d.y0 === 0 && height < minimumHeight) {
@@ -376,13 +402,25 @@ function heightDelta(d) {
     }
 }
 
-function stringShortener (d) {
-    var str = String(d);
-    var limit = 8;
-    if (str.length > limit) {
-        return str.substr(0, limit-1) + '...';
+function prettyPrint (d) {
+    if (!isNaN(d)) {
+        // Large Number
+        var precision = 6;
+        if (d > 1000000 || (d !== 0 && d < 0.00001)) {
+            return String(d.toExponential(precision));
+        } else {
+            d = Math.round(d*1000000) / 1000000; // Kill rounding errors
+            return String(d);
+        }
+
     } else {
-        return str;
+        var str = String(d);
+        var limit = 8;
+        if (str.length > limit) {
+            return str.substr(0, limit-1) + '...';
+        } else {
+            return str;
+        }
     }
 }
 
@@ -390,7 +428,8 @@ function initializeHistogramViz($el, model) {
     var width = $el.width();
     var height = $el.height(); // TODO: Get this more naturally.
     var data = model.attributes.data;
-    var globalStats = model.attributes.globalStats[ATTRIBUTE];
+    var attribute = model.attributes.attribute;
+    var globalStats = model.attributes.globalStats[attribute];
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
     var type = (data.type !== 'nodata') ? data.type : globalStats.type;
@@ -414,16 +453,8 @@ function initializeHistogramViz($el, model) {
     // Setup Scales and Axes
     //////////////////////////////////////////////////////////////////////////
 
-    color = d3.scale.ordinal()
-            .range(['#0FA5C5', '#B2B2B2', '#0FA5C5', '#00BBFF'])
-            // .range(['#0092DC', '#B2B2B2'])
-            .domain(['local', 'global', 'globalSmaller', 'localBigger']);
-
-    colorHighlighted = d3.scale.ordinal()
-            .range(['#E35E13', '#6B6868', '#E35E13', '#FF3000'])
-            .domain(['local', 'global', 'globalSmaller', 'localBigger']);
-
     // We want ticks between bars if histogram, and under bars if countBy
+    var yScale;
     if (type === 'countBy') {
         yScale = d3.scale.ordinal()
             .rangeRoundBands([0, height], 0.1, 0.1);
@@ -432,7 +463,7 @@ function initializeHistogramViz($el, model) {
             .range([0, height]);
     }
 
-    xScale = d3.scale.linear()
+    var xScale = d3.scale.linear()
         .range([width, 0]);
 
     if (type === 'countBy') {
@@ -458,9 +489,9 @@ function initializeHistogramViz($el, model) {
         .ticks(numTicks)
         .tickFormat(function (d) {
             if (type === 'countBy') {
-                return stringShortener(d); // name of bin
+                return prettyPrint(d); // name of bin
             } else {
-                return stringShortener(d * globalStats.binWidth + globalStats.minValue);
+                return prettyPrint(d * globalStats.binWidth + globalStats.minValue);
             }
         });
 
@@ -468,13 +499,13 @@ function initializeHistogramViz($el, model) {
         .scale(xScale)
         .ticks(5) // TODO: Dynamic?
         .orient('bottom') // TODO: format?
-        .tickFormat(stringShortener);
+        .tickFormat(prettyPrint);
 
     //////////////////////////////////////////////////////////////////////////
     // Setup SVG
     //////////////////////////////////////////////////////////////////////////
 
-    svg = d3.select($el[0]).append('svg')
+    var svg = d3.select($el[0]).append('svg')
             .attr('width', width + margin.left + margin.right)
             .attr('height', height + margin.top + margin.bottom)
         .append('g')
@@ -489,20 +520,28 @@ function initializeHistogramViz($el, model) {
         .attr('class', 'y axis')
         .attr('transform', 'translate(' + width + ',0)')
         .call(yAxis);
+
+    model.set('xScale', xScale);
+    model.set('yScale', yScale);
+    model.set('svg', svg);
 }
 
 function updateHistogramData(socket, marquee, collection, data, globalStats, Model, firstTime) {
+    var histograms = [];
     _.each(data, function (val, key) {
         var histogram = new Model();
         histogram.set({data: val, globalStats: globalStats, firstTime: firstTime});
         histogram.id = key;
         histogram.set('attribute', key);
-        if (firstTime) {
-            collection.reset([histogram]);
-        } else {
-            collection.set([histogram]);
-        }
+        histograms.push(histogram);
+
     });
+
+    if (firstTime) {
+        collection.reset(histograms);
+    } else {
+        collection.set(histograms);
+    }
 }
 
 module.exports = {
