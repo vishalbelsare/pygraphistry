@@ -238,7 +238,8 @@ function toStackedObject(local, total, idx, key, numLocal, numTotal) {
         ];
     }
 
-    stackedObj.total = Math.max(total, local);
+    stackedObj.total = total;
+    stackedObj.local = local;
     stackedObj.name = key;
     stackedObj.id = idx;
     return stackedObj;
@@ -324,12 +325,18 @@ function updateHistogram($el, model, attribute) {
 
         .on('mouseover', function () {
             var col = d3.select(d3.event.target.parentNode);
-            $(col).tooltip('show');
+            var children = col[0][0].children;
+            _.each(children, function (child) {
+                $(child).tooltip('show');
+            });
             highlight(col.selectAll('rect'), true);
         })
         .on('mouseout', function () {
             var col = d3.select(d3.event.target.parentNode);
-            $(col).tooltip('hide');
+            var children = col[0][0].children;
+            _.each(children, function (child) {
+                $(child).tooltip('hide');
+            });
             highlight(col.selectAll('rect'), false);
         });
 
@@ -370,6 +377,9 @@ function updateHistogram($el, model, attribute) {
 
     bars
         .transition().duration(DRAG_SAMPLE_INTERVAL)
+        .attr('title', function(d) {
+            return d.val;
+        })
         .attr('width', function (d) {
             return xScale(d.y0) - xScale(d.y1) + heightDelta(d, xScale);
         })
@@ -379,6 +389,20 @@ function updateHistogram($el, model, attribute) {
 
     var barHeight = (type === 'countBy') ? yScale.rangeBand() : Math.floor(height/globalStats.numBins);
     bars.enter().append('rect')
+
+        .attr('data-container', '#histogram')
+        .attr('data-placement', function (d) {
+            if (d.type === 'global') {
+                return 'bottom';
+            } else {
+                return 'top';
+            }
+        })
+        .attr('data-toggle', 'tooltip')
+        .attr('title', function(d) {
+            return d.val;
+        })
+
         .style('fill', function (d) {
             return color(d.type);
         })
