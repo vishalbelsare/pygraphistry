@@ -211,6 +211,7 @@ function histogram(values, binning) {
     if (binning) {
         numBins = binning.numBins;
         binWidth = binning.binWidth;
+        bottomVal = binning.minValue;
         min = binning.minValue;
         max = binning.maxValue;
     }
