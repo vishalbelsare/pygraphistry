@@ -41,10 +41,9 @@ var lastSelection;
 var attributes = [];
 var activeAttributes = [];
 var attributeChange = new Rx.Subject();
+var globalStatsCache = {}; // For add histogram. TODO: Get rid of this and use replay
 
 function updateAttribute (oldAttribute, newAttribute) {
-    console.log('Updating. Old: ', oldAttribute, ', new: ', newAttribute);
-    console.log('activeAttributes: ', activeAttributes);
     // Delete old if it exists
     var indexOfOld = activeAttributes.indexOf(oldAttribute);
     if (indexOfOld > -1) {
@@ -55,7 +54,11 @@ function updateAttribute (oldAttribute, newAttribute) {
     if (newAttribute) {
         activeAttributes.push(newAttribute);
     }
-    attributeChange.onNext(newAttribute);
+
+    // Only resend selections if an update, not add / remove
+    if (oldAttribute && newAttribute) {
+        attributeChange.onNext(newAttribute);
+    }
 }
 
 function init(socket, marquee) {
@@ -79,7 +82,7 @@ function init(socket, marquee) {
     var HistogramView = Backbone.View.extend({
         tagName: 'div',
         className: 'histogramDiv',
-        template: Handlebars.compile($('#histogramTemplate').html()),
+        template: Handlebars.compile($('#histogramTemplateNoDropdown').html()),
 
         events: {
             'click .closeHistogramButton': 'close'
@@ -124,13 +127,14 @@ function init(socket, marquee) {
         addHistogram: function (histogram) {
             var view = new HistogramView({model: histogram});
             var childEl = view.render().el;
+            var attribute = histogram.get('attribute');
             $(this.histogramsContainer).append(childEl);
             histogram.set('$el', $(childEl));
             var vizContainer = $(childEl).children('.vizContainer');
-            var vizHeight = histogram.get('data').numBins * BAR_THICKNESS;
+            var vizHeight = histogram.get('globalStats')[attribute].numBins * BAR_THICKNESS;
             vizContainer.height(String(vizHeight) + 'px');
             initializeHistogramViz(vizContainer, histogram); // TODO: Link to data?
-            updateHistogram(vizContainer, histogram, histogram.get('attribute'));
+            updateHistogram(vizContainer, histogram, attribute);
         },
         removeHistogram: function (histogram) {
             updateAttribute(histogram.attributes.attribute);
@@ -163,10 +167,18 @@ function init(socket, marquee) {
             return reply.data;
         })
         .do(function (data) {
+            globalStatsCache = data;
             attributes = _.filter(_.keys(data), function (val) {
                 return val !== '_title';
             });
-            activeAttributes = attributes.slice(0,3);
+            var template = Handlebars.compile($('#addHistogramTemplate').html());
+            var params = {
+                fields: attributes
+            };
+            var html = template(params);
+            $('#addHistogram').html(html);
+
+            // activeAttributes = attributes.slice(0,3);
         }).subscribe(globalStats, util.makeErrorHandler('Global stat aggregate call'));
 
 
@@ -223,17 +235,17 @@ function init(socket, marquee) {
         $(this).parents('.dropdown').find('.btn').text(field);
         $(this).parents('.dropdown').find('.btn').val(field);
         updateAttribute(oldField, field);
-        console.log('Active Attributes after: ', activeAttributes);
     });
 
-    // $('#histogram').on('click', '.closeHistogramButton', function (evt) {
-    //     var target = $(evt.target);
-    //     var id = target[0].attributes.cid;
-    //     console.log('id: ', id);
-    // });
+    $('#histogram').on('click', '.addHistogramDropdownField', function () {
+        var attribute = $(this).text().trim();
+        updateAttribute(null, attribute);
 
-    $('#histogram').on('click', '#addHistogramButton', function () {
-
+        var histogram = new HistogramModel();
+        histogram.set({data: {}, globalStats: globalStatsCache, firstTime: true});
+        histogram.id = attribute;
+        histogram.set('attribute', attribute);
+        histograms.add([histogram]);
     });
 
 }
@@ -287,6 +299,10 @@ function toStackedBins(bins, globalBins, type, numLocal, numTotal) {
         });
 
     } else {
+        // If empty bin array, make it all 0s.
+        if (bins.length === 0) {
+            bins = Array.apply(null, new Array(globalBins.length)).map(function () { return 0; });
+        }
         var zippedBins = _.zip(bins, globalBins); // [[0,2], [1,4], ... ]
         _.each(zippedBins, function (stack, idx) {
             var local = stack[0] || 0;
@@ -405,13 +421,6 @@ function updateHistogram($el, model, attribute) {
             return d.val;
         })
         .attr('width', function (d) {
-            var width = xScale(d.y0) - xScale(d.y1) + heightDelta(d, xScale);
-            if (width < 0) {
-                console.log('d: ', d);
-                console.log('scaled y0: ', xScale(d.y0));
-                console.log('scaled y1: ', xScale(d.y1));
-                console.log('heightDelta: ', heightDelta(d, xScale));
-            }
             return xScale(d.y0) - xScale(d.y1) + heightDelta(d, xScale);
         })
         .attr('x', function (d) {
@@ -439,12 +448,6 @@ function updateHistogram($el, model, attribute) {
         })
         .attr('height', barHeight)
         .attr('width', function (d) {
-            var width = xScale(d.y0) - xScale(d.y1) + heightDelta(d, xScale);
-            if (width < 0) {
-                console.log('scaled y0: ', xScale(d.y0));
-                console.log('scaled y1: ', xScale(d.y1));
-                console.log('heightDelta: ', heightDelta(d, xScale));
-            }
             return xScale(d.y0) - xScale(d.y1) + heightDelta(d, xScale);
         })
         .attr('x', function (d) {
@@ -588,7 +591,7 @@ function updateHistogramData(socket, marquee, collection, data, globalStats, Mod
     var histograms = [];
     _.each(data, function (val, key) {
         var histogram = new Model();
-        histogram.set({data: val, globalStats: globalStats, firstTime: firstTime});
+        histogram.set({data: val, globalStats: globalStats, firstTime: false});
         histogram.id = key;
         histogram.set('attribute', key);
         histograms.push(histogram);
