@@ -21,7 +21,7 @@ function renderScene(lastRender, renderer, currentState, data) {
 }
 
 
-function setupDragHoverInteractions($eventTarget, renderState, bgColor, settingsChanges, poi, labelHover, lastRender, currentlyRendering) {
+function setupDragHoverInteractions($eventTarget, renderState, bgColor, appState) {
     //var currentState = renderState;
     var stateStream = new Rx.Subject();
     var latestState = new Rx.ReplaySubject(1);
@@ -30,8 +30,6 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, settings
 
     var camera = renderState.get('camera');
     var canvas = renderState.get('canvas');
-
-    var $marquee = $('#marqueerectangle i.fa');
 
     //pan/zoom
     //Observable Event
@@ -42,11 +40,11 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, settings
         interactions = interaction.setupSwipe(eventTarget, camera)
             .merge(
                 interaction.setupPinch($eventTarget, camera)
-                .filter(function () { return !$marquee.hasClass('toggle-on'); }));
+                .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity)));
     } else {
         debug('Detected mouse-based device. Setting up mouse interaction event handlers.');
-        interactions = interaction.setupDrag($eventTarget, camera)
-            .merge(interaction.setupScroll($eventTarget, canvas, camera));
+        interactions = interaction.setupDrag($eventTarget, camera, appState)
+            .merge(interaction.setupScroll($eventTarget, canvas, camera, appState));
 
     }
     interactions = Rx.Observable.merge(
@@ -55,18 +53,18 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, settings
                                 renderState.get('hostBuffers').curPoints,
                                 camera),
         interaction.setupZoomButton($('#zoomin'), camera, 1 / 1.25)
-            .filter(function () { return !$marquee.hasClass('toggle-on'); }),
+            .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity)),
         interaction.setupZoomButton($('#zoomout'), camera, 1.25)
-            .filter(function () { return !$marquee.hasClass('toggle-on'); })
+            .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
     );
 
     // Picks objects in priority based on order.
     var hitMapTextures = ['hitmap'];
-    var latestHighlightedObject = labels.getLatestHighlightedObject($eventTarget, renderState, labelHover, hitMapTextures, poi);
+    var latestHighlightedObject = labels.getLatestHighlightedObject($eventTarget, renderState, hitMapTextures, appState);
 
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
-    labels.setupLabels($labelCont, latestState, latestHighlightedObject, labelHover, currentlyRendering, poi);
+    labels.setupLabels($labelCont, latestState, latestHighlightedObject, appState);
 
 
     //TODO refactor this is out of place
@@ -94,7 +92,7 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, settings
                 renderState.get('hostBuffers').curPoints,
                 renderState.get('hostBuffers').pointSizes,
                 stateWithColor,
-                settingsChanges,
+                appState.settingsChanges,
                 function (curPoints, pointSizes, renderState, settingsChange) {
                     return {renderTag: Date.now(),
                             camera: camera,
@@ -114,7 +112,7 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, settings
         .do(function(data) {
             var currentState = renderer.setCameraIm(data.renderState, data.camera);
             stateStream.onNext(currentState);
-            renderScene(lastRender, renderer, currentState, data);
+            renderScene(appState.lastRender, renderer, currentState, data);
         })
         .pluck('renderState');
 
@@ -122,17 +120,17 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, settings
 }
 
 
-function setupRendering(lastRender, currentlyRendering) {
+function setupRendering(appState) {
 
     // Determine if it's a quiet/noisy state
-    var startRendering = lastRender
+    var startRendering = appState.lastRender
         .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
         .filter(function (pair) {
             return (!pair.prev || (pair.cur.data.renderTag !== pair.prev.data.renderTag));
         })
         .sample(DEBOUNCE_TIME);
 
-    var stopRendering = lastRender
+    var stopRendering = appState.lastRender
         .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
         .filter(function (pair) {
             return (!pair.prev || (pair.cur.data.renderTag !== pair.prev.data.renderTag));
@@ -140,21 +138,19 @@ function setupRendering(lastRender, currentlyRendering) {
         .debounce(DEBOUNCE_TIME);
 
     // What to do when starting noisy/rendering state
+    // TODO: Show/hide with something cleaner than pure JQuery. At least a function.
     startRendering
         .do(function () {
             $('.graph-label-container').css('display', 'none');
         })
         .do(function () {
-            currentlyRendering.onNext(true);
+            appState.currentlyRendering.onNext(true);
         })
         .subscribe(_.identity, util.makeErrorHandler('Start Rendering'));
 
     // What to do when exiting noisy/rendering state
     stopRendering
-        .filter(function() {
-            // TODO: Pull this from a proper stream in a refactor instead of a global dom object
-            return !$('#simulate .fa').hasClass('toggle-on');
-        })
+        .flatMapLatest(util.observableFilter(appState.simulateOn, util.notIdentity))
         .do(function (pair) {
             pair.cur.renderer.render(pair.cur.currentState, 'interactionPicking', null,
                 {renderListTrigger: 'picking'});
@@ -163,13 +159,13 @@ function setupRendering(lastRender, currentlyRendering) {
             $('.graph-label-container').css('display', 'block');
         })
         .do(function () {
-            currentlyRendering.onNext(false);
+            appState.currentlyRendering.onNext(false);
         })
         .subscribe(_.identity, util.makeErrorHandler('Stop Rendering'));
 
     //Render gpu items, text on reqAnimFrame
     //Slower, update the pointpicking sampler (does GPU->CPU transfer)
-    lastRender
+    appState.lastRender
         .bufferWithTime(10)
         .filter(function (arr) { return arr.length; })
         .map(function (arr) {

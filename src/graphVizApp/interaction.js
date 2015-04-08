@@ -6,7 +6,8 @@ var $        = window.$;
 var Rx       = require('rx');
                require('../rx-jquery-stub');
 var debug    = require('debug')('graphistry:StreamGL:interaction');
-var renderer = require('../renderer');
+var util     = require('./util.js');
+var renderer = require('../renderer.js');
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -23,16 +24,14 @@ var renderer = require('../renderer');
  *
  * @return {Rx.Observable} Rx stream with Camera objects for every drag event.
  */
-function setupDrag($eventTarget, camera) {
-
-    var $marquee = $('#marqueerectangle i.fa');
+function setupDrag($eventTarget, camera, appState) {
 
     return $eventTarget.mousedownAsObservable()
-        .filter(function () { return !$marquee.hasClass('toggle-on'); })
+        .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
         .filter(function (evt) {
+            var $p = $(evt.target);
 
             //allow dragging by graph label title
-            var $p = $(evt.target);
             for (var i = 0; i < 2; i++) {
                 if ($p.hasClass('graph-label')) {
                     return true;
@@ -97,17 +96,18 @@ function setupMousemove($eventTarget, renderState, textures) {
         });
 }
 
-function setupScroll($eventTarget, canvas, camera) {
-
+function setupScroll($eventTarget, canvas, camera, appState) {
     var zoomBase = 1.1;
-    var $marquee = $('#marquee');
-    var $marqueeButton = $('#marqueerectangle i.fa');
 
     return $eventTarget.onAsObservable('mousewheel')
         .sample(1)
-        .filter(function () {
-            return !($marquee.hasClass('done') && $marqueeButton.hasClass('toggle-on'));
-        }).filter(function (evt) {
+        .flatMapLatest(util.observableFilter([appState.marqueeOn, appState.brushOn],
+            function (val) {
+                return val !== 'done';
+            },
+            util.AND
+        ))
+        .filter(function (evt) {
             return ! $(evt.target).parents('.graph-label-contents').length;
         })
         .do(function (wheelEvent) {

@@ -184,7 +184,7 @@ function createLabelDom(labelObj) {
             var val = pair[1];
             var entry =
                 pair[0].indexOf('Date') > -1 && typeof(val) === 'number' ?
-                    $.datepicker.formatDate( "d-M-yy",new Date(val))
+                    $.datepicker.formatDate( 'd-M-yy', new Date(val))
                 : (!isNaN(val) && val % 1 !== 0) ?
                     sprintf('%.4f', val)
                 : sprintf('%s', val);

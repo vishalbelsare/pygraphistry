@@ -31,17 +31,55 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
     var settingsChanges = new Rx.ReplaySubject(1);
     settingsChanges.onNext({});
 
+    // Marquee button selected
+    var marqueeOn = new Rx.ReplaySubject(1);
+    marqueeOn.onNext(false);
+    // Marquee being drawn / dragged
+    var marqueeActive = new Rx.ReplaySubject(1);
+    marqueeActive.onNext(false);
+    // Marquee finished drawing on the canvas
+    // TODO: Do we really need this?
+    var marqueeDone = new Rx.ReplaySubject(1);
+    marqueeDone.onNext(false);
+    // Simulate button selected
+    var simulateOn = new Rx.ReplaySubject(1);
+    simulateOn.onNext(false);
+    // Brush button selected
+    var brushOn = new Rx.ReplaySubject(1);
+    brushOn.onNext(false);
+    // Is any marquee type toggled on?
+    var anyMarqueeOn = marqueeOn
+        .flatMap(function (marqueeVal) {
+            return brushOn
+                .map(function (brushVal) {
+                    return (brushVal || marqueeVal);
+                });
+        });
+
+    var appState = {
+        labelHover: labelHover,
+        lastRender: lastRender,
+        currentlyRendering: currentlyRendering,
+        poi: poi,
+        settingsChanges: settingsChanges,
+        marqueeOn: marqueeOn,
+        marqueeActive: marqueeActive,
+        marqueeDone: marqueeDone,
+        simulateOn: simulateOn,
+        brushOn: brushOn,
+        anyMarqueeOn: anyMarqueeOn
+    };
+
 
     //////////////////////////////////////////////////////////////////////////
     // Setup
     //////////////////////////////////////////////////////////////////////////
 
-    canvas.setupRendering(lastRender, currentlyRendering);
+    canvas.setupRendering(appState);
     var colors = colorpicker($('#foregroundColor'), $('#backgroundColor'), socket);
-    var renderStateUpdates = canvas.setupDragHoverInteractions($elt, renderState, colors.backgroundColor,
-                settingsChanges, poi, labelHover, lastRender, currentlyRendering);
+    var renderStateUpdates = canvas.setupDragHoverInteractions($elt, renderState, colors.backgroundColor, appState);
     shortestpaths($('#shortestpath'), poi, socket);
-    controls.init(socket, $elt, renderState, vboUpdates, workerParams, urlParams, settingsChanges, poi);
+    controls.init(socket, $elt, renderState, vboUpdates, workerParams, urlParams, appState);
 
     return renderStateUpdates;
 }
