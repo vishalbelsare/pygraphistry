@@ -304,9 +304,7 @@
     <div id="inspector-overlay" class="panel"></div>
     <div id="histogram" class="panel">
         <div id="histograms"></div>
-        <div id="addHistogram">
-            <button id="addHistogramButton" type="button" class="btn btn-primary"> Add Histogram </button>
-        </div>
+        <div id="addHistogram"></div>
     </div>
 
     <script>
@@ -387,8 +385,8 @@
             </div>
         </div>
         <div class="col-xs-1 closeButton">
-            <a href="#" class="closeHistogramButtom" id="closeHistogramButton{{id}}" cid="{{cid}}">
-                <i class="fa fa-times"></i>
+            <a href="#">
+                <i class="fa fa-times closeHistogramButton" id="closeHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
 
@@ -397,6 +395,38 @@
     <div class="vizContainer"></div>
     <div class="divide-line"></div>
 </script>
+
+<script type="text/template" id="histogramTemplateNoDropdown">
+    <div class="topMenu">
+        <div class="col-xs-10 attributeName">
+                {{attribute}}
+        </div>
+        <div class="col-xs-1 closeButton">
+            <a href="#">
+                <i class="fa fa-times closeHistogramButton" id="closeHistogramButton{{id}}" cid="{{id}}"></i>
+            </a>
+        </div>
+    </div>
+    <div class="vizContainer"></div>
+    <div class="divide-line"></div>
+</script>
+
+<script type="text/template" id="addHistogramTemplate">
+    <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" id="addHistogramButton" data-toggle="dropdown" aria-expanded="true">
+            Add Histogram
+            <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
+            {{#each fields}}
+                <li role="presentation"><a class="addHistogramDropdownField" role="menuitem" tabindex="-1" href="#">
+                    {{this}}
+                </a></li>
+            {{/each}}
+        </ul>
+    </div>
+</script>
+
 
 
 </body>
