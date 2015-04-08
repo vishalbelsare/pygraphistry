@@ -89,12 +89,12 @@ function load(graph, dataset) {
     return decoders[vg.version](graph, vg, dataset.metadata);
 }
 
-function getAttributeMap(vg) {
+function getAttributeMap(vg, attributes) {
     var vectors = vg.string_vectors.concat(vg.int32_vectors, vg.double_vectors);
     var map = {};
     for (var i = 0; i < vectors.length; i++) {
         var v = vectors[i];
-        if (v.values.length > 0)
+        if (v.values.length > 0 && (!attributes || attributes.length === 0 || attributes.indexOf(v.name) > -1) )
             map[v.name] = {
                 target : v.target,
                 type: typeof(v.values[0]),

@@ -17,10 +17,27 @@ function pickTitleField (attribs) {
     return undefined;
 }
 
+function attribsToPairs (attribs, maybeTitleField, idx) {
 
-function infoFrame(graph, indices) {
+    return _.keys(attribs)
+        .filter(function (name) { return attribs[name].target === vgloader.types.VERTEX; })
+        .filter(function (name) {
+            return ['pointColor', 'pointSize', 'pointTitle', 'pointLabel, degree']
+                .indexOf(name) === -1;
+        })
+        .filter(function (name) { return name !== maybeTitleField; })
+        .map(function (name) {
+            var val = attribs[name].values[idx];
+            return [name,
+                name.indexOf('Date') > -1 && typeof(val) === "number" ?
+                    dateFormat(val, "mm-dd-yyyy") : val];
+        });
+}
+
+
+function infoFrame(graph, indices, attributeNames) {
     var offset = graph.simulator.timeSubset.pointsRange.startIdx;
-    var attribs = vgloader.getAttributeMap(graph.simulator.vgraph);
+    var attribs = vgloader.getAttributeMap(graph.simulator.vgraph, attributeNames);
 
     var titleOverride = attribs.hasOwnProperty('pointTitle');
     var maybeTitleField = pickTitleField(attribs);
@@ -28,35 +45,30 @@ function infoFrame(graph, indices) {
     return indices.map(function (rawIdx) {
         var idx = Math.max(0, Math.min(offset + rawIdx, graph.simulator.numPoints));
 
-        var outDegree = graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped[idx];
-        var inDegree = graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped[idx];
-        var degree = outDegree + inDegree;
+        // Only want subset of data, so we don't send full.
+        if (attributeNames && attributeNames.length > 0) {
+            var pairs = attribsToPairs(attribs, maybeTitleField, idx);
+            return _.object(pairs);
 
-        var columns = _.object(
-                _.flatten(
-                    [
+        } else {
+            var outDegree = graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped[idx];
+            var inDegree = graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped[idx];
+            var degree = outDegree + inDegree;
+
+            var columns = _.object(
+                    _.flatten(
                         [
-                            ['degree', sprintf('%s (%s in, %s out)', degree, inDegree, outDegree)],
-                            ['_title', maybeTitleField ? attribs[maybeTitleField].values[idx] : idx],
+                            [
+                                ['degree', sprintf('%s (%s in, %s out)', degree, inDegree, outDegree)],
+                                ['_title', maybeTitleField ? attribs[maybeTitleField].values[idx] : idx],
+                            ],
+                            attribsToPairs(attribs, maybeTitleField, idx)
                         ],
-                        _.keys(attribs)
-                            .filter(function (name) { return attribs[name].target === vgloader.types.VERTEX; })
-                            .filter(function (name) {
-                                return ['pointColor', 'pointSize', 'pointTitle', 'pointLabel, degree']
-                                    .indexOf(name) === -1;
-                            })
-                            .filter(function (name) { return name !== maybeTitleField; })
-                            .map(function (name) {
-                                var val = attribs[name].values[idx];
-                                return [name,
-                                    name.indexOf('Date') > -1 && typeof(val) === "number" ?
-                                        dateFormat(val, "mm-dd-yyyy") : val];
-                            })
-                    ],
-                    true)
-                );
+                        true)
+                    );
 
-        return columns;
+            return columns;
+        }
     });
 }
 
@@ -110,7 +122,7 @@ function aggregate(graph, indices, attributes, binning, mode) {
         }
     }
 
-    var frame = infoFrame(graph, indices);
+    var frame = infoFrame(graph, indices, attributes);
     var columns = attributes ? attributes : frameHeader(graph);
 
     return _.object(_.map(columns, function (attribute) {
