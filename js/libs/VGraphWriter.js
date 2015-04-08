@@ -91,9 +91,12 @@ function uploadBuffers(graph, vectors) {
 
 // Graph -> Promise
 function write(graph) {
+
     // Disable buggy serialization
-    console.log('I AM DISABLED BECAUSE I AM BUGGY')
-    if (true || !graph.vg) {
+    console.log('(tmp skip write)');
+    return Q();
+
+    if (!graph.vg) {
         return Q();
     }
 
