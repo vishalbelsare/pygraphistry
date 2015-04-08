@@ -215,9 +215,9 @@ function createRenderer(socket, canvas) {
  * @param  {socket.io socket} socket - socket.io socket created when we connected to the server.
  * @param  {renderer} renderState    - The renderer object returned by renderer.create().
  *
- * @return {Rx.BehaviorSubject} {'start', 'received', 'rendered'} Rx subject that fires every time a frame is rendered.
+ * @return {Rx.BehaviorSubject} {'init', 'start', 'received', 'rendered'} Rx subject that fires every time a frame is rendered.
  */
-function handleVboUpdates(socket, renderState, renderStateUpdates) {
+function handleVboUpdates(socket, renderState) {
     //string * {<name> -> int} * name -> Subject ArrayBuffer
     //socketID, bufferByteLengths, bufferName
     var fetchBuffer = makeFetcher('vbo?buffer', socket.io.uri);
@@ -233,17 +233,10 @@ function handleVboUpdates(socket, renderState, renderStateUpdates) {
     debug('Server buffers/textures', bufferNames, textureNames);
 
     var lastHandshake = Date.now();
-    var renderedFrame = new Rx.BehaviorSubject(0);
+    var vboUpdates = new Rx.BehaviorSubject('init');
 
     var previousVersions = {buffers: {}, textures: {}};
-
     var vboUpdateStep = 0;
-
-    var latestState = new Rx.ReplaySubject(1);
-    latestState.onNext(renderState);
-    renderStateUpdates.subscribe(
-        latestState,
-        function (err) { console.error('handlevbo err', err, (err||{}).stack); });
 
     socket.on('vbo_update', function (data, handshake) {
 
@@ -254,7 +247,7 @@ function handleVboUpdates(socket, renderState, renderStateUpdates) {
 
         try {
             debug('1. VBO update', thisStep);
-            renderedFrame.onNext('start');
+            vboUpdates.onNext('start');
 
             var now = new Date().getTime();
             debug('2. got VBO update message', now - lastHandshake, data, 'ms', thisStep);
@@ -270,21 +263,12 @@ function handleVboUpdates(socket, renderState, renderStateUpdates) {
             var readyTextures = new Rx.ReplaySubject(1);
 
             var readyToRender = Rx.Observable.zip(readyBuffers, readyTextures, _.identity).share();
-            Rx.Observable.combineLatest(
-                    readyToRender, latestState,
-                    function (_, renderState) { return [_,renderState]; })
-                .filter(function (pair) {
-                    return pair[1]; })
-                .take(1)
-                .subscribe(function (pair) {
-                    var renderState = pair[1];
+            readyToRender
+                .subscribe(function () {
                     debug('6. All buffers and textures received, completing', thisStep);
                     handshake(Date.now() - lastHandshake);
                     lastHandshake = Date.now();
-                    renderedFrame.onNext('received');
-                    renderer.render(renderState, 'clientNewVbos', function () {
-                        renderedFrame.onNext('rendered');
-                    });
+                    vboUpdates.onNext('received');
                 },
                 function (err) { console.error('6 err. readyToRender error', err, (err||{}).stack, thisStep); });
 
@@ -355,7 +339,7 @@ function handleVboUpdates(socket, renderState, renderStateUpdates) {
 
     socket.emit('begin_streaming');
 
-    return renderedFrame;
+    return vboUpdates;
 }
 
 module.exports = {

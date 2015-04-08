@@ -11,7 +11,7 @@ var shortestpaths   = require('./shortestpaths.js');
 var colorpicker     = require('./colorpicker.js');
 var controls        = require('./controls.js');
 var canvas          = require('./canvas.js');
-
+var ui              = require('../ui.js');
 var poiLib          = require('../poi.js');
 
 
@@ -26,8 +26,7 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
     var poi = poiLib(socket);
     // Observable DOM
     var labelHover = new Rx.Subject();
-    var lastRender = new Rx.Subject();
-    var currentlyRendering = new Rx.ReplaySubject(1);
+    var renderTasks = new Rx.Subject();
     var settingsChanges = new Rx.ReplaySubject(1);
     settingsChanges.onNext({});
 
@@ -36,12 +35,17 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
     // Setup
     //////////////////////////////////////////////////////////////////////////
 
-    canvas.setupRendering(lastRender, currentlyRendering);
+    canvas.setupRendering(renderState, renderTasks, vboUpdates);
     var colors = colorpicker($('#foregroundColor'), $('#backgroundColor'), socket);
-    var renderStateUpdates = canvas.setupDragHoverInteractions($elt, renderState, colors.backgroundColor,
-                settingsChanges, poi, labelHover, lastRender, currentlyRendering);
+    var renderStateUpdates = canvas.setupInteractions($elt, renderState, colors.backgroundColor,
+                                                      settingsChanges, poi, labelHover, renderTasks);
     shortestpaths($('#shortestpath'), poi, socket);
-    controls.init(socket, $elt, renderState, vboUpdates, workerParams, urlParams, settingsChanges, poi);
+
+    var doneLoading = vboUpdates.filter(function (update) {
+        return update === 'received';
+    }).take(1).do(ui.hideSpinnerShowBody).delay(700);
+
+    controls.init(socket, $elt, renderState, doneLoading, workerParams, urlParams, settingsChanges, poi);
 
     return renderStateUpdates;
 }

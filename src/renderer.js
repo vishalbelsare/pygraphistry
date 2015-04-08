@@ -143,11 +143,10 @@ function bindBuffer(gl, glArrayType, buffer) {
         window.requestAnimationFrame = function(callback) {
             var currTime = Date.now();
             var timeToCall = Math.max(0, 16 - (currTime - lastTime));
-            var id = window.setTimeout(function() {
+            lastTime = currTime + timeToCall;
+            return window.setTimeout(function() {
                 callback(currTime + timeToCall);
             }, timeToCall);
-            lastTime = currTime + timeToCall;
-            return id;
         };
     }
 
@@ -391,6 +390,10 @@ function createCamera(state) {
  * Return the items to render when no override is given to render()
  */
 function getItemsForTrigger(state, trigger) {
+    if (!trigger) {
+        return undefined;
+    }
+
     var items = state.get('config').get('items').toJS();
     var renderItems = _.chain(items).pick(function (i) {
         return i.trigger === trigger;
@@ -849,157 +852,100 @@ function setCameraIm(renderState, camera) {
     return newState;
 }
 
+var lastRenderTarget = {};
 
 /**
  * Render one or more items as specified in render config's render array
  * Implemented by queueing up a rendering task, which will lazilly be handled by
  * the animation loop of the browser.
  * @param {Renderer} state - initialized renderer
- * @param {(string[])} [renderListOverride] - optional override of the render array
+ * @param {String} tag - Extra information to track who requested rendering for debugging/perf
+ * @param {String} renderListTrigger - The trigger tag of the render items to execute
+ * @param {[String]} renderListOverride - List of render items to execute
+ * @param {Object} readPixelOverride - Dimensions for readPixels
+ * @param {Function} callback - Callback exectued after readPixels
  */
-var lastRenderTarget = {};
-var lastQueuedRenders = {};
-var lastRenderTime = 0;
-var renderingPaused = true;
+function render(state, tag, renderListTrigger, renderListOverride, readPixelsOverride, callback) {
+    debug('========= Rendering a frame, tag: ', tag);
 
-function render(state, tag, cb, opts) {
-    debug('Queueing a render frame');
+    var config      = state.get('config').toJS(),
+        camera      = state.get('camera'),
+        gl          = state.get('gl'),
+        ext         = state.get('ext'),
+        programs    = state.get('programs').toJS(),
+        buffers     = state.get('buffers').toJS();
 
-    lastQueuedRenders[tag] = {
-        state: state,
-        timestamp: Date.now(),
-        cb: cb
+    var toRender = getItemsForTrigger(state, renderListTrigger) || renderListOverride || state.get('defaultItems');
+    console.log('========= Rendering', toRender,'    tag:', tag);
+    state.get('renderPipeline').onNext({start: toRender});
+
+    var itemToTarget = function (config, itemName) {
+        var itemDef = config.items[itemName];
+        if (!itemDef) {
+            console.error('Trying to render unknown item', itemName);
+        } else {
+            return itemDef.renderTarget === 'CANVAS' ? null : itemDef.renderTarget;
+        }
     };
-    if (opts) {
-        _.extend(lastQueuedRenders[tag], opts);
-    }
 
-    if (renderingPaused) {
-        startRenderingLoop(state.get('renderPipeline'));
-    }
-}
-
-function startRenderingLoop(renderPipeline) {
-    function loop() {
-        var frameId = window.requestAnimationFrame(loop);
-        renderLastQueued(renderPipeline, frameId);
-    }
-
-    debug('Starting rendering loop');
-    renderingPaused = false;
-    loop();
-}
-
-function pauseRenderingLoop(nextFrameId) {
-    debug('Pausing rendering loop');
-    window.cancelAnimationFrame(nextFrameId);
-    renderingPaused = true;
-}
-
-function renderLastQueued(renderPipeline, nextFrameId) {
-    if (_.isEmpty(lastQueuedRenders)) {
-        var timeDelta = Date.now() - lastRenderTime;
-        if (timeDelta > 1000) {
-            pauseRenderingLoop(nextFrameId);
-            renderPipeline.onNext({paused: true});
-        }
-        return;
-    }
-    lastRenderTime = Date.now();
-
-    _.each(_.keys(lastQueuedRenders), function (tag) {
-        var renderObj = lastQueuedRenders[tag];
-
-        var state              = renderObj.state;
-        var trigger            = renderObj.renderListTrigger;
-        var renderListOverride = trigger ? getItemsForTrigger(state, trigger)
-                                         : renderObj.renderListOverride;
-        var readPixelsOverride = renderObj.readPixelsOverride;
-        var cb                 = renderObj.cb;
-
-        debug('========= Rendering a frame, tag: ', tag);
-
-        var config      = state.get('config').toJS(),
-            camera      = state.get('camera'),
-            gl          = state.get('gl'),
-            ext         = state.get('ext'),
-            programs    = state.get('programs').toJS(),
-            buffers     = state.get('buffers').toJS();
-
-        var toRender = renderListOverride || state.get('defaultItems');
-
-        state.get('renderPipeline').onNext({start: toRender});
-
-        var itemToTarget = function (config, itemName) {
-            var itemDef = config.items[itemName];
-            if (!itemDef) {
-                console.error('Trying to render unknown item', itemName);
-            } else {
-                return itemDef.renderTarget === 'CANVAS' ? null : itemDef.renderTarget;
-            }
-        };
-
-        var sortedItems = toRender.slice();
-        sortedItems.sort(function (a,b) {
-            var aTarget = itemToTarget(config, a);
-            var bTarget = itemToTarget(config, b);
-            return aTarget < bTarget ? -1 : aTarget === bTarget ? 0 : 1;
-        });
-
-        var clearedFBOs = { };
-        var texturesToRead = [];
-
-        sortedItems.forEach(function(item) {
-            if(typeof numElements[item] === 'undefined' || numElements[item] < 1) {
-                debug('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
-                    item);
-                return false;
-            }
-            var texture = renderItem(state, config, camera, gl, ext, programs, buffers, clearedFBOs, item);
-            if (texture) {
-                texturesToRead.push(texture);
-            }
-        });
-
-        if (texturesToRead.length > 0) {
-            _.uniq(texturesToRead).forEach(function (renderTarget) {
-                debug('reading back texture', renderTarget);
-
-                if (renderTarget !== lastRenderTarget) {
-                    debug('  (needed rebind)');
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
-                    lastRenderTarget = renderTarget;
-                }
-
-                var dims = getTextureDims(config, gl.canvas, camera, renderTarget);
-                var pixelreads = state.get('pixelreads');
-                var texture = pixelreads[renderTarget];
-                var readDims = readPixelsOverride || { x: 0, y: 0, width: dims.width, height: dims.height };
-
-                if (!texture || texture.length !== readDims.width * readDims.height * 4) {
-                    debug('reallocating buffer', texture.length, readDims.width * readDims.height * 4);
-                    texture = new Uint8Array(readDims.width * readDims.height * 4);
-                    pixelreads[renderTarget] = texture;
-                }
-
-                gl.readPixels(readDims.x, readDims.y, readDims.width, readDims.height,
-                              gl.RGBA, gl.UNSIGNED_BYTE, texture);
-            });
-        }
-
-        renderPipeline.onNext({rendered: toRender});
-
-        gl.flush();
-
-        // Call optional callback.
-        if (cb) {
-            cb();
-        }
-
+    var sortedItems = toRender.slice();
+    sortedItems.sort(function (a,b) {
+        var aTarget = itemToTarget(config, a);
+        var bTarget = itemToTarget(config, b);
+        return aTarget < bTarget ? -1 : aTarget === bTarget ? 0 : 1;
     });
 
-    // Clear render queue
-    lastQueuedRenders = {};
+    var clearedFBOs = { };
+    var texturesToRead = [];
+
+    sortedItems.forEach(function(item) {
+        if(typeof numElements[item] === 'undefined' || numElements[item] < 1) {
+            debug('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
+                item);
+            return false;
+        }
+        var texture = renderItem(state, config, camera, gl, ext, programs, buffers, clearedFBOs, item);
+        if (texture) {
+            texturesToRead.push(texture);
+        }
+    });
+
+    if (texturesToRead.length > 0) {
+        _.uniq(texturesToRead).forEach(function (renderTarget) {
+            debug('reading back texture', renderTarget);
+
+            if (renderTarget !== lastRenderTarget) {
+                debug('  (needed rebind)');
+                gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
+                lastRenderTarget = renderTarget;
+            }
+
+            var dims = getTextureDims(config, gl.canvas, camera, renderTarget);
+            var pixelreads = state.get('pixelreads');
+            var texture = pixelreads[renderTarget];
+            var readDims = readPixelsOverride || { x: 0, y: 0, width: dims.width, height: dims.height };
+
+            if (!texture || texture.length !== readDims.width * readDims.height * 4) {
+                debug('reallocating buffer', texture.length, readDims.width * readDims.height * 4);
+                texture = new Uint8Array(readDims.width * readDims.height * 4);
+                pixelreads[renderTarget] = texture;
+            }
+
+            gl.readPixels(readDims.x, readDims.y, readDims.width, readDims.height,
+                            gl.RGBA, gl.UNSIGNED_BYTE, texture);
+        });
+    }
+
+    state.get('renderPipeline').onNext({ tag: tag, rendered: toRender });
+
+    gl.flush();
+
+    // Call optional callback. Since Chrome implements gl.finish as gl.flush, there is no way to guarantee
+    // that rendering is done. However, gl.readpixels does trigger a GPU/CPU sync, so the callback can be used
+    // to process the results of readpixels.
+    if (callback) {
+        callback();
+    }
 }
 
 
@@ -1049,6 +995,28 @@ function renderItem(state, config, camera, gl, ext, programs, buffers, clearedFB
     } else {
         return undefined;
     }
+}
+
+// Get names of buffers needed from server
+// RenderOptions -> [ string ]
+function getServerBufferNames (config) {
+    var renderItems = config.render;
+    var bufferNamesLists = renderItems.map(function (itemName) {
+        var iDef = config.items[itemName];
+        var elementIndex = iDef.index ? [iDef.index] : [];
+        var bindings = _.values(iDef.bindings).concat(elementIndex);
+        return bindings.filter(function (binding) {
+                var modelName = binding[0];
+                var attribName = binding[1];
+                var datasource = config.models[modelName][attribName].datasource;
+                return (datasource === 'HOST' || datasource === 'DEVICE');
+            }).map(function (binding) {
+                var modelName = binding[0];
+                return modelName;
+            });
+    });
+
+    return _.uniq(_.flatten(bufferNamesLists));
 }
 
 // Get names of textures needed from server
@@ -1118,6 +1086,7 @@ module.exports = {
     setCameraIm: setCameraIm,
     setNumElements: setNumElements,
     render: render,
+    getServerBufferNames: getServerBufferNames,
     getServerTextureNames: getServerTextureNames,
     hitTest: picking.hitTestN,
     localAttributeProxy: localAttributeProxy

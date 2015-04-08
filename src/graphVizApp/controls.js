@@ -11,8 +11,6 @@ var dataInspector   = require('./dataInspector.js');
 // var histogramBrush  = require('./histogramBrush.js');
 var marqueeFact     = require('./marquee.js');
 
-var ui      = require('../ui.js');
-
 
 var INTERACTION_INTERVAL = 50;
 
@@ -252,7 +250,7 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
     settingsChanges.onNext({name: name, val: val});
 }
 
-function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, settingsChanges, poi) {
+function init (socket, $elt, renderState, doneLoading, workerParams, urlParams, settingsChanges, poi) {
     createLegend($('#graph-legend'), urlParams);
     toggleLogo($('.logo-container'), urlParams);
     var onElt = makeMouseSwitchboard();
@@ -359,10 +357,6 @@ function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, s
     var $tooltips = $('[data-toggle="tooltip"]');
     var $bolt = $('#simulate .fa');
     var $shrinkToFit = $('#center .fa');
-
-    var doneLoading = vboUpdates.filter(function (update) {
-        return update === 'rendered';
-    }).take(1).do(ui.hideSpinnerShowBody).delay(700);
     var numTicks = urlParams.play !== undefined ? urlParams.play : 5000;
 
     doneLoading.take(1).subscribe(function () {

@@ -8,7 +8,6 @@ var _       = require('underscore');
 
 var util            = require('./util.js');
 var interaction     = require('./interaction.js');
-
 var renderer        = require('../renderer');
 
 
@@ -48,54 +47,67 @@ function renderPointLabels($labelCont, renderState, labelIndices, clicked, label
 }
 
 
-//RenderState * [ float ] * [{dim: int, idx: int}] -> ()
-function renderCursor (renderState, points, indices, sizes) {
+//RenderState *  [{dim: int, idx: int}] -> ()
+function renderCursor (renderState, indices) {
+    var rxPoints = renderState.get('hostBuffers').curPoints;
+    var rxSizes = renderState.get('hostBuffers').pointSizes;
 
-    var idx = indices[indices.length - 1].idx;
-    var dim = indices[indices.length - 1].dim;
+    rxPoints.combineLatest(
+        rxSizes,
+        function (p, s) {
+            return {
+                points: new Float32Array(p.buffer),
+                sizes: new Uint8Array(s.buffer)
+            };
+        }
+    ).do(function (buffers) {
+        var points = buffers.points;
+        var sizes = buffers.sizes;
 
-    debug('Enlarging current mouseover point (last)', idx);
+        var idx = indices[indices.length - 1].idx;
+        var dim = indices[indices.length - 1].dim;
 
-    if (idx === undefined || idx < 0 || dim === 2) {
-        $('#highlighted-point-cont').css({display: 'none'});
-        return;
-    }
+        if (idx === undefined || idx < 0 || dim === 2) {
+            $('#highlighted-point-cont').css({display: 'none'});
+            return;
+        }
 
-    $('#highlighted-point-cont').css({display: 'block'});
+        $('#highlighted-point-cont').css({display: 'block'});
 
-    var camera = renderState.get('camera');
-    var cnv = renderState.get('canvas');
-    var pixelRatio = camera.pixelRatio;
-    var mtx = camera.getMatrix();
+        var camera = renderState.get('camera');
+        var cnv = renderState.get('canvas');
+        var pixelRatio = camera.pixelRatio;
+        var mtx = camera.getMatrix();
 
-    var pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
-    var scalingFactor = camera.semanticZoom(sizes.length);
-    // Clamp like in pointculled shader
-    var size = Math.max(5, Math.min(scalingFactor * sizes[idx], 50)) / pixelRatio;
-    var offset = size / 2.0;
+        var pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
+        var scalingFactor = camera.semanticZoom(sizes.length);
+        // Clamp like in pointculled shader
+        var size = Math.max(5, Math.min(scalingFactor * sizes[idx], 50)) / pixelRatio;
+        var offset = size / 2.0;
 
-    $('#highlighted-point-cont')
-    .attr('pointIdx', idx)
-    .css({
-        top: pos.y,
-        left: pos.x
-    });
-    $('.highlighted-point').css({
-        'left' : -offset,
-        'top' : -offset,
-        'width': size,
-        'height': size,
-        'border-radius': size / 2
-    });
+        $('#highlighted-point-cont')
+        .attr('pointIdx', idx)
+        .css({
+            top: pos.y,
+            left: pos.x
+        });
+        $('.highlighted-point').css({
+            'left' : -offset,
+            'top' : -offset,
+            'width': size,
+            'height': size,
+            'border-radius': size / 2
+        });
 
-    /* Ideally, highlighted-point-center would be a child of highlighted-point-cont
-     * instead of highlighted-point. I ran into tricky CSS absolute positioning
-     * issues when I tried that. */
-    var csize = parseInt($('.highlighted-point-center').css('width'), 10);
-    $('.highlighted-point-center').css({
-        'left' : offset - csize / 2.0,
-        'top' : offset - csize / 2.0
-    });
+        /* Ideally, highlighted-point-center would be a child of highlighted-point-cont
+        * instead of highlighted-point. I ran into tricky CSS absolute positioning
+        * issues when I tried that. */
+        var csize = parseInt($('.highlighted-point-center').css('width'), 10);
+        $('.highlighted-point-center').css({
+            'left' : offset - csize / 2.0,
+            'top' : offset - csize / 2.0
+        });
+    }).subscribe(_.identity, util.makeErrorHandler('renderCursor'));
 }
 
 
@@ -211,36 +223,23 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices
 
 //move labels when new highlight or finish noisy rendering section
 //$DOM * Observable RenderState * Observable [ {dim: int, idx: int} ] * Observable DOM -> ()
-function setupLabels ($labelCont, latestState, latestHighlightedObject, labelHover, currentlyRendering, poi) {
-    latestState
-        .flatMapLatest(function (currentState) {
-            //wait until has samples
-            return currentState.get('rendered')
-                .flatMap(function () {
-                    return latestHighlightedObject.map(function (latestHighlighted) {
-                        return _.extend({highlighted: latestHighlighted}, {currentState: currentState});
-                    });
-                });
-        })
-        .flatMapLatest(function (data) {
-            return currentlyRendering.map(function (val) {
-                return _.extend({rendering: val}, data);
-            });
-        })
-        .filter(function (data) {
-            return !data.rendering;
-        })
-        .do(function (data) {
-            var indices = data.highlighted.map(function (o) {
-                return !o.dim || o.dim === 1 ? o.idx : -1;
-            });
-            var clicked = data.highlighted
-                .filter(function (o) { return o.click; })
-                .map(function (o) { return o.idx; });
+function setupLabels ($labelCont, latestState, latestHighlightedObject, labelHover, currentlyQuiet, poi) {
+    currentlyQuiet.flatMapLatest(function () {
+        return latestState.combineLatest(
+                latestHighlightedObject,
+                function (s, h) { return {state: s, highlighted: h}; }
+            );
+    }).do(function (data) {
+        var indices = data.highlighted.map(function (o) {
+            return !o.dim || o.dim === 1 ? o.idx : -1;
+        });
+        var clicked = data.highlighted
+            .filter(function (o) { return o.click; })
+            .map(function (o) { return o.idx; });
 
-            renderPointLabels($labelCont, data.currentState, indices, clicked, labelHover, poi);
-        })
-        .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
+        renderPointLabels($labelCont, data.state, indices, clicked, labelHover, poi);
+    })
+    .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
 }
 
 //$DOM * RenderState * Observable DOM * textureName-> Observable [ {dim: 1, idx: int} ]
