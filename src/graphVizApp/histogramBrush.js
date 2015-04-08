@@ -202,6 +202,9 @@ function init(socket, marquee) {
     // General Setup
     //////////////////////////////////////////////////////////////////////////
 
+    // We use this more verbose approach to click handlers because it watches
+    // the DOM for added elements.
+
     $('#histogram').on('click', '.histogramDropdownField', function() {
         // TODO: Get this value in a cleaner way
         var oldField = $(this).parent().parent().siblings('button').text().trim();
@@ -212,6 +215,13 @@ function init(socket, marquee) {
         console.log('Active Attributes after: ', activeAttributes);
     });
 
+    $('#histogram').on('click', '.closeHistogramButton', function () {
+
+    });
+
+    $('#histogram').on('click', '#addHistogramButton', function () {
+
+    });
 
 }
 
@@ -445,7 +455,7 @@ function prettyPrint (d) {
     if (!isNaN(d)) {
         // Large Number
         var precision = 4;
-        if (d > 1000000 || (d !== 0 && d < 0.00001)) {
+        if (Math.abs(d) > 1000000 || (d !== 0 && Math.abs(d) < 0.00001)) {
             return String(d.toExponential(precision));
         } else {
             d = Math.round(d*1000000) / 1000000; // Kill rounding errors
@@ -530,11 +540,11 @@ function initializeHistogramViz($el, model) {
             }
         });
 
-    var xAxis = d3.svg.axis()
-        .scale(xScale)
-        .ticks(5) // TODO: Dynamic?
-        .orient('bottom') // TODO: format?
-        .tickFormat(prettyPrint);
+    // var xAxis = d3.svg.axis()
+    //     .scale(xScale)
+    //     .ticks(5) // TODO: Dynamic?
+    //     .orient('bottom') // TODO: format?
+    //     .tickFormat(prettyPrint);
 
     //////////////////////////////////////////////////////////////////////////
     // Setup SVG
