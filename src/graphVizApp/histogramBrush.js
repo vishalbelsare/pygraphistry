@@ -250,7 +250,6 @@ function init(socket, marquee) {
         var histogram = new HistogramModel();
         histogram.set({data: {}, globalStats: globalStatsCache, firstTime: true});
         histogram.id = attribute;
-        console.log('Create ID:' + attribute);
         histogram.set('attribute', attribute);
         histograms.add([histogram]);
     });
@@ -598,13 +597,10 @@ function initializeHistogramViz($el, model) {
 
 function updateHistogramData(socket, marquee, collection, data, globalStats, Model) {
     var histograms = [];
-    console.log('starting update');
     _.each(data, function (val, key) {
-        console.log('Updating: ', key);
         var histogram = new Model();
         histogram.set({data: val, globalStats: globalStats, firstTime: false});
         histogram.id = key;
-        console.log('Update ID:' + key);
         histogram.set('attribute', key);
         histograms.push(histogram);
 
