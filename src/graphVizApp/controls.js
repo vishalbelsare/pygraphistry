@@ -289,6 +289,8 @@ function init (socket, $elt, renderState, vboUpdates, workerParams, urlParams, a
         if (brushIsOn) {
             appState.brushOn.onNext('toggled');
         } else {
+            $('#histogram').css('visibility', 'hidden');
+            $('#inspector').css('visibility', 'hidden');
             appState.brushOn.onNext(false);
         }
         return brushIsOn;
