@@ -80,6 +80,11 @@ function init(socket, marquee) {
         tagName: 'div',
         className: 'histogramDiv',
         template: Handlebars.compile($('#histogramTemplate').html()),
+
+        events: {
+            'click .closeHistogramButton': 'close'
+        },
+
         initialize: function() {
             this.listenTo(this.model, 'destroy', this.remove);
         },
@@ -93,25 +98,28 @@ function init(socket, marquee) {
             this.$el.html(html);
 
             return this;
+        },
+
+        close: function() {
+            this.$el.remove();
+            histograms.remove(this.model);
         }
     });
+
 
     var AllHistogramsView = Backbone.View.extend({
         el: $histogram,
         histogramsContainer: $('#histograms'),
         initialize: function () {
             this.listenTo(histograms, 'add', this.addHistogram);
+            this.listenTo(histograms, 'remove', this.removeHistogram);
             this.listenTo(histograms, 'reset', this.addAll);
             this.listenTo(histograms, 'all', this.render);
             this.listenTo(histograms, 'change', this.update);
         },
         render: function () {
             // TODO: Use something other than visibility
-            if (histograms.length > 0) {
-                this.$el.css('visibility', 'visible');
-            } else {
-                this.$el.css('visibility', 'hidden');
-            }
+            this.$el.css('visibility', 'visible');
         },
         addHistogram: function (histogram) {
             var view = new HistogramView({model: histogram});
@@ -123,6 +131,9 @@ function init(socket, marquee) {
             vizContainer.height(String(vizHeight) + 'px');
             initializeHistogramViz(vizContainer, histogram); // TODO: Link to data?
             updateHistogram(vizContainer, histogram, histogram.get('attribute'));
+        },
+        removeHistogram: function (histogram) {
+            updateAttribute(histogram.attributes.attribute);
         },
         update: function (histogram) {
             // TODO: Find way to not fire this on first time
@@ -215,9 +226,11 @@ function init(socket, marquee) {
         console.log('Active Attributes after: ', activeAttributes);
     });
 
-    $('#histogram').on('click', '.closeHistogramButton', function () {
-
-    });
+    // $('#histogram').on('click', '.closeHistogramButton', function (evt) {
+    //     var target = $(evt.target);
+    //     var id = target[0].attributes.cid;
+    //     console.log('id: ', id);
+    // });
 
     $('#histogram').on('click', '#addHistogramButton', function () {
 
