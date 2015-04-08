@@ -146,37 +146,60 @@
 
                 <div class="accordion-heading">
 
-                  <a href="#" id="mouser" data-container="body" data-toggle="tooltip" data-placement="left" title="Scroll and Pan">
-                    <i class="fa fa-arrows fa-2x"></i>
-                  </a>
+                    <div class="options-group">
 
-                  <a href="#" id="zoomin" data-container="body" data-toggle="tooltip" data-placement="left" title="Zoom in">
-                    <i class="fa fa-search-plus fa-2x"></i>
-                  </a>
+                      <a href="#" id="mouser">
+                        <i class="fa fa-arrows fa-2x"></i>
+                      </a>
 
-                  <a href="#" id="zoomout" data-container="body" data-toggle="tooltip" data-placement="left" title="Zoom out">
-                    <i class="fa fa-search-minus fa-2x"></i>
-                  </a>
+                      <a href="#" id="simulate" data-container="body" data-toggle="tooltip" data-placement="right" title="Start/Stop Visual Clustering">
+                        <i class="fa fa-bolt fa-2x"></i>
+                      </a>
 
-                  <a href="#" id="simulate" data-container="body" data-toggle="tooltip" data-placement="left" title="Start/Stop Visual Clustering">
-                    <i class="fa fa-bolt fa-2x"></i>
-                  </a>
+                      <div class="divide-line"></div>
 
-                  <a href="#" id="center" data-container="body" data-toggle="tooltip" data-placement="left" title="Center View">
-                      <i class="fa fa-compress fa-2x"></i>
-                  </a>
+                      <a href="#" id="center" data-container="body" data-toggle="tooltip" data-placement="right" title="Center View">
+                          <i class="fa fa-compress fa-2x"></i>
+                      </a>
 
-                  <a href="#" id="marqueerectangle" data-container="body" data-toggle="tooltip" data-placement="left" title="Inspect and Move Nodes">
-                    <i class="fa fa-crosshairs fa-2x"></i>
-                  </a>
+                      <div class="divide-line"></div>
 
-                  <a href="#" id="shortestpath" data-container="body" data-toggle="tooltip" data-placement="left" title="Find routes between two points by clicking on them">
-                      <i class="fa fa-road fa-2x"></i>
-                  </a>
+                      <a href="#" id="layoutSettingsButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Layout Settings">
+                        <i class="fa fa-cogs fa-2x"></i>
+                      </a>
 
-                  <a href="#" id="histogramBrush" data-container="body" data-toggle="tooltip" data-placement="left" title="Histogram Brush">
-                      <i class="fa fa-bar-chart fa-2x"></i>
-                  </a>
+                    </div>
+
+                    <div class="options-group">
+                      <a href="#" id="zoomin" data-container="body" data-toggle="tooltip" data-placement="right" title="Zoom in">
+                        <i class="fa fa-search-plus fa-2x"></i>
+                      </a>
+
+                      <div class="divide-line"></div>
+
+                      <a href="#" id="zoomout" data-container="body" data-toggle="tooltip" data-placement="right" title="Zoom out">
+                        <i class="fa fa-search-minus fa-2x"></i>
+                      </a>
+                    </div>
+
+                    <div class="options-group">
+                      <a href="#" id="marqueerectangle" data-container="body" data-toggle="tooltip" data-placement="right" title="Inspect and Move Nodes">
+                        <i class="fa fa-crosshairs fa-2x"></i>
+                      </a>
+
+                      <div class="divide-line"></div>
+
+                      <a href="#" id="shortestpath" data-container="body" data-toggle="tooltip" data-placement="right" title="Find routes between two points">
+                          <i class="fa fa-road fa-2x"></i>
+                      </a>
+
+                      <div class="divide-line"></div>
+
+                      <a href="#" id="histogramBrush" data-container="body" data-toggle="tooltip" data-placement="right" title="Histogram Brush">
+                          <i class="fa fa-bar-chart fa-2x"></i>
+                      </a>
+
+                      <div class="divide-line"></div>
 
 <style>
 .colorpicker {
@@ -203,48 +226,42 @@
 }
 </style>
 
-                  <div id="colorpickers">
-                        <div id="foregroundColor">
+                      <div id="colorpickers">
+                            <div id="foregroundColor">
 
-                            <div class="colorSelector">
-                                <div style="opacity: 0.3; background-color: #000"></div>
+                                <div class="colorSelector">
+                                    <div style="opacity: 0.3; background-color: #000"></div>
+                                </div>
+                                <div class="colorHolder"></div>
+
                             </div>
-                            <div class="colorHolder"></div>
 
-                        </div>
-                        <div id="backgroundColor">
+                            <div class="divide-line"></div>
 
-                            <div class="colorSelector">
-                                <div style="opacity: 0.3; background-color: #fff"></div>
+                            <div id="backgroundColor">
+
+                                <div class="colorSelector">
+                                    <div style="opacity: 0.3; background-color: #fff"></div>
+                                </div>
+                                <div class="colorHolder"></div>
+
                             </div>
-                            <div class="colorHolder"></div>
+                      </div>
 
-                        </div>
-                  </div>
+                    </div> <!-- last options group -->
 
-                </div>
+
+
+                </div> <!-- accordion heading -->
 
             </div>
         </div>
 
+        <div id="renderingItems" class="settingsPanel">
+            <div class="form-horizontal">
+            </div>  <!-- /form-horizontal -->
+        </div> <!-- /renderingItems -->
 
-        <div class="menu" style="padding: 1em; margin: 1em;">
-
-            <div class="accordion" id="menuState">
-                <div class="accordion-group">
-                    <div class="accordion-heading">
-                      <a class="accordion-toggle" data-toggle="collapse" data-parent="#menuState" href="#renderingItems">
-                        <i class="fa fa-cogs fa-2x"></i>
-                      </a>
-                    </div>
-
-                    <div id="renderingItems" class="accordion-body collapse">
-                        <div class="form-horizontal">
-                        </div>  <!-- /form-horizontal -->
-                    </div> <!-- /renderingItems -->
-                </div> <!-- /accordion-group -->
-            </div> <!-- /accordion -->
-        </div> <!-- /menu -->
     </div> <!-- /section -->
 
     <div class="status-bar"></div>
@@ -269,7 +286,13 @@
     </div>
 
     <div id="inspector" class="panel backgrid-container"></div>
-    <div id="histogram" class="panel"></div>
+    <div id="inspector-overlay" class="panel"></div>
+    <div id="histogram" class="panel">
+        <div id="histograms"></div>
+        <div id="addHistogram">
+            <button id="addHistogramButton" type="button" class="btn btn-primary"> Add Histogram </button>
+        </div>
+    </div>
 
     <script>
     $(function () {
@@ -329,5 +352,36 @@
 <div class="logo-container">
     <img src="img/logo_stroked.png" />
 </div>
+
+<!-- TEMPLATES -->
+<script type="text/template" id="histogramTemplate">
+    <div class="topMenu">
+        <div class="col-xs-10">
+            <div class="dropdown">
+                <button class="btn btn-default btn-block dropdown-toggle pull-right" type="button" id="dropdownMenu{{id}}" data-toggle="dropdown" aria-expanded="true">
+                    {{attribute}}
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
+                    {{#each fields}}
+                        <li role="presentation"><a class="histogramDropdownField" role="menuitem" tabindex="-1" href="#">
+                            {{this}}
+                        </a></li>
+                    {{/each}}
+                </ul>
+            </div>
+        </div>
+        <div class="col-xs-1 closeButton">
+            <a href="#" class="closeHistogramButtom" id="closeHistogramButton{{id}}" cid="{{cid}}">
+                <i class="fa fa-times"></i>
+            </a>
+        </div>
+
+
+    </div>
+    <div class="vizContainer"></div>
+    <div class="divide-line"></div>
+</script>
+
 
 </body>

@@ -96,20 +96,22 @@ function getLabels(graph, indices) {
     }
 }
 
-function aggregate(graph, indices, attribute, binning) {
+function aggregate(graph, indices, attributes, binning, mode) {
     function process(frame, attribute) {
         var values = _.map(frame, function (row) {
             return row[attribute];
         });
-        if (_.all(values, function (x) { return typeof x === 'number'; })) {
-            return histogram(values, binning);
+
+        var binningHint = binning ? binning[attribute] : undefined;
+        if (mode !== 'countBy' && _.all(values, function (x) { return typeof x === 'number'; })) {
+            return histogram(values, binningHint);
         } else {
-            return countBy(values, binning);
+            return countBy(values, binningHint);
         }
     }
 
     var frame = infoFrame(graph, indices);
-    var columns = attribute ? [attribute] : frameHeader(graph);
+    var columns = attributes ? attributes : frameHeader(graph);
 
     return _.object(_.map(columns, function (attribute) {
         return [attribute, process(frame, attribute)];
@@ -124,11 +126,34 @@ function countBy(values, binning) {
     }
 
     var bins = _.countBy(values);
+    var numValues = _.reduce(_.values(bins), function (memo, num) {
+        return memo + num;
+    }, 0);
+
     return {
         type: 'countBy',
-        numBins: bins.length,
+        numValues: numValues,
+        numBins: _.keys(bins).length,
         bins: bins,
     };
+}
+
+function round_down(num, multiple) {
+    if (multiple == 0) {
+        return num;
+    }
+
+    var div = num / multiple;
+    return multiple * Math.floor(div);
+}
+
+function round_up(num, multiple) {
+    if (multiple == 0) {
+        return num;
+    }
+
+    var div = num / multiple;
+    return multiple * Math.ceil(div);
 }
 
 
@@ -142,14 +167,45 @@ function histogram(values, binning) {
         return {type: 'nodata'};
     }
 
-    var numBins = numValues > 30 ? Math.ceil(Math.log(numValues) / Math.log(2)) + 1
+    var goalBins = numValues > 30 ? Math.ceil(Math.log(numValues) / Math.log(2)) + 1
                                  : Math.ceil(Math.sqrt(numValues));
 
-    numBins = Math.min(numBins, 50); // Cap number of bins.
+    goalBins = Math.min(goalBins, 30); // Cap number of bins.
+    goalBins = Math.max(goalBins, 8); // Cap min number of bins.
 
     var max = _.max(values);
     var min = _.min(values);
-    var binWidth = Math.ceil((max - min) / numBins);
+    var goalWidth = (max - min) / goalBins;
+
+    // Because users like clean binning, we try to coerce binWidth
+    // to its nearest nice value.
+    //
+    // We have different behavior based on the order of Max - Min.
+
+    var binWidth = 10;
+    var numBins = (max - min) / binWidth;
+    // Get to a rough approx
+    while (numBins < 2 || numBins >= 100) {
+        if (numBins < 2) {
+            binWidth *= 0.1;
+        } else {
+            binWidth *= 10;
+        }
+        numBins = (max - min) / binWidth;
+    }
+    // Refine by doubling/halving
+    while (numBins < 4 || numBins > goalBins) {
+        if (numBins < 4) {
+            binWidth /= 2;
+        } else {
+            binWidth *= 2;
+        }
+        numBins = (max - min) / binWidth;
+    }
+
+    var bottomVal = round_down(min, binWidth);
+    var topVal = round_up(max, binWidth);
+    var numBins = (topVal - bottomVal) / binWidth;
 
     // Override if provided binning data.
     if (binning) {
@@ -170,8 +226,7 @@ function histogram(values, binning) {
     // console.log('Bins: ', bins);
 
     _.each(values, function (val) {
-        var binId = Math.min(Math.floor((val - min) / binWidth), numBins - 1);
-        // console.log('Val: ', val, ', binId: ', binId);
+        var binId = Math.min(Math.floor((val - bottomVal) / binWidth), numBins - 1);
         bins[binId].push(val)
     })
 
@@ -180,8 +235,10 @@ function histogram(values, binning) {
         numBins: numBins,
         binWidth: binWidth,
         numValues: numValues,
-        maxValue: max,
-        minValue: min,
+        // maxValue: max,
+        // minValue: min,
+        maxValue: topVal,
+        minValue: bottomVal,
         bins: bins.map(function (b) { return b.length; })
     };
 }
