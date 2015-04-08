@@ -42,6 +42,7 @@ var attributes = [];
 var activeAttributes = [];
 var attributeChange = new Rx.Subject();
 var globalStatsCache = {}; // For add histogram. TODO: Get rid of this and use replay
+var d3DataMap = {};
 
 function updateAttribute (oldAttribute, newAttribute) {
     // Delete old if it exists
@@ -152,7 +153,7 @@ function init(socket, marquee) {
             histograms.each(this.addHistogram, this);
         }
     });
-    new AllHistogramsView();
+    var allHistogramsView = new AllHistogramsView();
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -213,10 +214,15 @@ function init(socket, marquee) {
     // TODO: Do we want to treat no replies in some special way?
     }).filter(function (data) { return data.reply && data.reply.success; })
     .do(function (data) {
+
+        // TODO: Pull this out from here.
+        allHistogramsView.render();
+
+        // TODO: Figure out if we need to treat these separately or not
         if (data.type === 'selection' || data.type === 'attributeChange') {
-            updateHistogramData(socket, marquee, histograms, data.reply.data, data.globalStats, HistogramModel, true);
+            updateHistogramData(socket, marquee, histograms, data.reply.data, data.globalStats, HistogramModel);
         } else if (data.type === 'drag') {
-            updateHistogramData(socket, marquee, histograms, data.reply.data, data.globalStats, HistogramModel, false);
+            updateHistogramData(socket, marquee, histograms, data.reply.data, data.globalStats, HistogramModel);
         }
 
     }).subscribe(_.identity, util.makeErrorHandler('Brush selection aggregate error'));
@@ -244,6 +250,7 @@ function init(socket, marquee) {
         var histogram = new HistogramModel();
         histogram.set({data: {}, globalStats: globalStatsCache, firstTime: true});
         histogram.id = attribute;
+        console.log('Create ID:' + attribute);
         histogram.set('attribute', attribute);
         histograms.add([histogram]);
     });
@@ -332,9 +339,9 @@ function updateHistogram($el, model, attribute) {
     var type = (data.type !== 'nodata') ? data.type : globalStats.type;
     data.numValues = data.numValues || 0;
 
-    var svg = model.get('svg');
-    var xScale = model.get('xScale');
-    var yScale = model.get('yScale');
+    var svg = d3DataMap[attribute].svg;
+    var xScale = d3DataMap[attribute].xScale;
+    var yScale = d3DataMap[attribute].yScale;
 
     var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues);
 
@@ -582,27 +589,27 @@ function initializeHistogramViz($el, model) {
         .attr('transform', 'translate(' + (width + 4) + ',0)')
         .call(yAxis);
 
-    model.set('xScale', xScale);
-    model.set('yScale', yScale);
-    model.set('svg', svg);
+    d3DataMap[attribute] = {
+        xScale: xScale,
+        yScale: yScale,
+        svg: svg
+    };
 }
 
-function updateHistogramData(socket, marquee, collection, data, globalStats, Model, firstTime) {
+function updateHistogramData(socket, marquee, collection, data, globalStats, Model) {
     var histograms = [];
+    console.log('starting update');
     _.each(data, function (val, key) {
+        console.log('Updating: ', key);
         var histogram = new Model();
         histogram.set({data: val, globalStats: globalStats, firstTime: false});
         histogram.id = key;
+        console.log('Update ID:' + key);
         histogram.set('attribute', key);
         histograms.push(histogram);
 
     });
-
-    if (firstTime) {
-        collection.reset(histograms);
-    } else {
-        collection.set(histograms);
-    }
+    collection.set(histograms);
 }
 
 module.exports = {
