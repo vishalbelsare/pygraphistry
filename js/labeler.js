@@ -235,6 +235,8 @@ function histogram(values, binning) {
     if (max === min) {
         binWidth = 1;
         numBins = 1;
+        topVal = min + 1;
+        bottomVal = min;
     }
     var bins = Array.apply(null, new Array(numBins)).map(function () { return []; });
 
