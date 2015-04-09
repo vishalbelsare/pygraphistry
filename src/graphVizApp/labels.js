@@ -18,7 +18,7 @@ var HIGHLIGHT_SIZE = 20;
 // $DOM * RendererState  * [int] * [int] -> ()
 // Immediately reposition each label based on camera and curPoints buffer
 var renderLabelsRan = false;
-function renderPointLabels($labelCont, renderState, labelIndices, clicked, labelHover, poi) {
+function renderPointLabels($labelCont, renderState, labelIndices, clicked, appState) {
 
     debug('rendering labels');
 
@@ -40,7 +40,7 @@ function renderPointLabels($labelCont, renderState, labelIndices, clicked, label
                 }
             }
 
-            renderLabelsImmediate($labelCont, renderState, curPoints, labelIndices, clicked, labelHover, poi);
+            renderLabelsImmediate($labelCont, renderState, curPoints, labelIndices, clicked, appState);
 
         })
         .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
@@ -159,7 +159,8 @@ function effectLabels(toClear, toShow, labels, newPos, labelIndices, clicked, po
 
 }
 
-function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices, clicked, labelHover, poi) {
+function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices, clicked, appState) {
+    var poi = appState.poi;
     var points = new Float32Array(curPoints.buffer);
 
     var t0 = Date.now();
@@ -191,7 +192,7 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices
                 //no label and no preallocated elts, create new
                 var freshLabel = poi.genLabel($labelCont, idx);
                 freshLabel.elt.on('mouseover', function () {
-                    labelHover.onNext(this);
+                    appState.labelHover.onNext(this);
                 });
                 toShow.push(freshLabel);
                 return freshLabel;
@@ -223,8 +224,8 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices
 
 //move labels when new highlight or finish noisy rendering section
 //$DOM * Observable RenderState * Observable [ {dim: int, idx: int} ] * Observable DOM -> ()
-function setupLabels ($labelCont, latestState, latestHighlightedObject, labelHover, currentlyQuiet, poi) {
-    currentlyQuiet.flatMapLatest(function () {
+function setupLabels ($labelCont, latestState, latestHighlightedObject, appState) {
+    appState.currentlyQuiet.flatMapLatest(function () {
         return latestState.combineLatest(
                 latestHighlightedObject,
                 function (s, h) { return {state: s, highlighted: h}; }
@@ -237,7 +238,7 @@ function setupLabels ($labelCont, latestState, latestHighlightedObject, labelHov
             .filter(function (o) { return o.click; })
             .map(function (o) { return o.idx; });
 
-        renderPointLabels($labelCont, data.state, indices, clicked, labelHover, poi);
+        renderPointLabels($labelCont, data.state, indices, clicked, appState);
     })
     .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
 }
@@ -246,26 +247,26 @@ function setupLabels ($labelCont, latestState, latestHighlightedObject, labelHov
 //Changes either from point mouseover or a label mouseover
 //Clicking (coexists with hovering) will open at most 1 label
 //Most recent interaction goes at the end
-function getLatestHighlightedObject ($eventTarget, renderState, labelHover, textures, poi) {
+function getLatestHighlightedObject ($eventTarget, renderState, textures, appState) {
 
     var OFF = [{idx: -1, dim: 0}];
 
     var res = new Rx.ReplaySubject(1);
     res.onNext(OFF);
 
-    var $marqueeButton = $('#marqueerectangle i.fa');
-    var $marquee = $('#marquee');
-
-    function marqueeNotActive() {
-        return !$marqueeButton.hasClass('toggle-on') ||
-               ($marquee.hasClass('done') && !$marquee.hasClass('beingdragged'));
-    }
-
     interaction.setupMousemove($eventTarget, renderState, textures)
-        .filter(marqueeNotActive)
+        // TODO: Make sure this also catches $('#marquee').hasClass('done') and 'beingdragged'
+        // As a non-marquee-active state.
+        // .flatMapLatest(util.observableFilter(appState.marqueeActive, util.notIdentity))
+        .flatMapLatest(util.observableFilter([appState.marqueeOn, appState.brushOn],
+                function (v) {
+                    return (v !== 'selecting') && (v !== 'dragging');
+                },
+                util.AND
+        ))
         .map(function (v) { return {cmd: 'hover', pt: v}; })
         .merge($eventTarget.mousedownAsObservable()
-            .filter(marqueeNotActive)
+            .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
             .map(function (evt) {
                 var clickedLabel = $(evt.target).hasClass('graph-label') ||
                         $(evt.target).hasClass('highlighted-point') ||
@@ -273,22 +274,15 @@ function getLatestHighlightedObject ($eventTarget, renderState, labelHover, text
                 if (!clickedLabel) {
                     clickedLabel = $(evt.target).parents('.graph-label').length || false;
                 }
-                if (clickedLabel &&
-                        //allow dragging by menu title (don't stop)
-                        !$(evt.target).hasClass('graph-label') &&
-                        !$(evt.target).hasClass('graph-label-container')) {
-                    debug('stopPropagation: highlight down');
-                    evt.stopPropagation();
-                }
                 return clickedLabel ?
                     {cmd: 'click', pt: {dim: 1, idx: parseInt($('#highlighted-point-cont').attr('pointidx'))}}
                     : {cmd: 'declick'};
             }))
         .merge(
-            labelHover
-                .filter(marqueeNotActive)
+            appState.labelHover
+                .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
                 .map(function (elt) {
-                    return _.values(poi.state.activeLabels)
+                    return _.values(appState.poi.state.activeLabels)
                         .filter(function (lbl) { return lbl.elt.get(0) === elt; });
                 })
                 .filter(function (highlightedLabels) { return highlightedLabels.length; })

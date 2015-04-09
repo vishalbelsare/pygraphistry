@@ -8,7 +8,7 @@ var _       = require('underscore');
 
 var util            = require('./util.js');
 var dataInspector   = require('./dataInspector.js');
-// var histogramBrush  = require('./histogramBrush.js');
+var histogramBrush  = require('./histogramBrush.js');
 var marqueeFact     = require('./marquee.js');
 
 
@@ -33,57 +33,65 @@ function sendLayoutSetting(socket, algo, param, value) {
 }
 
 //Observable bool -> { ... }
-function setupMarquee(isOn, renderState) {
+function setupMarquee(isOn, renderState, appState) {
     var camera = renderState.get('camera');
     var cnv = renderState.get('canvas');
     var transform = function (point) {
         return camera.canvas2WorldCoords(point.x, point.y, cnv);
     };
 
-    var marquee = marqueeFact.initMarquee(renderState, $('#marquee'), isOn, {transform: transform});
+    var marquee = marqueeFact.initMarquee(renderState, $('#marquee'), isOn, appState, {transform: transform});
 
     marquee.selections.subscribe(function (sel) {
-        debug('selected bounds', sel);
+        debug('marquee selected bounds', sel);
     }, util.makeErrorHandler('bad marquee selections'));
 
     marquee.drags.subscribe(function (drag) {
-        debug('drag action', drag.start, drag.end);
+        debug('marquee drag action', drag.start, drag.end);
     }, util.makeErrorHandler('bad marquee drags'));
 
     return marquee;
 }
 
 // TODO: impl
-// function setupBrush(isOn, renderState) {
-//     var camera = renderState.get('camera');
-//     var cnv = renderState.get('canvas');
-//     var transform = function (point) {
-//         return camera.canvas2WorldCoords(point.x, point.y, cnv);
-//     };
+function setupBrush(isOn, renderState, appState) {
+    var camera = renderState.get('camera');
+    var cnv = renderState.get('canvas');
+    var transform = function (point) {
+        return camera.canvas2WorldCoords(point.x, point.y, cnv);
+    };
 
-//     var marquee = marqueeFact.initBrush(renderState, $('#marquee'), isOn, {transform: transform});
+    var brush = marqueeFact.initBrush(renderState, $('#brush'), isOn, appState, {transform: transform});
 
-//     marquee.selections.subscribe(function (sel) {
-//         debug('selected bounds', sel);
-//     }, util.makeErrorHandler('bad marquee selections'));
+    brush.selections.subscribe(function (sel) {
+        debug('brush selected bounds', sel);
+    }, util.makeErrorHandler('bad brush selections'));
 
-//     marquee.drags.subscribe(function (drag) {
-//         debug('drag action', drag.start, drag.end);
-//     }, util.makeErrorHandler('bad marquee drags'));
+    brush.drags.subscribe(function (drag) {
+        debug('brush drag action', drag.start, drag.end);
+    }, util.makeErrorHandler('bad brush drags'));
 
-//     return marquee;
-// }
+    return brush;
+}
 
 // -> Observable DOM
 //Return which mouse group element selected
 //Side effect: highlight that element
 function makeMouseSwitchboard() {
 
-    var mouseElts = $('#marqueerectangle').add('#histogramBrush');
+    var mouseElts = $('#marqueerectangle').add('#histogramBrush').add('#layoutSettingsButton');
 
     var onElt = Rx.Observable.merge.apply(Rx.Observable,
             mouseElts.get().map(function (elt) {
-                return Rx.Observable.fromEvent(elt, 'click').map(_.constant(elt));
+                return Rx.Observable.fromEvent(elt, 'mousedown')
+                .do(function (evt) {
+                    // Stop from propagating to canvas
+                    evt.stopPropagation();
+                })
+                .flatMapLatest(function () {
+                    return Rx.Observable.fromEvent(elt, 'mouseup');
+                })
+                .map(_.constant(elt));
             }));
 
     return onElt;
@@ -250,7 +258,7 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
     settingsChanges.onNext({name: name, val: val});
 }
 
-function init (socket, $elt, renderState, doneLoading, workerParams, urlParams, settingsChanges, poi) {
+function init (socket, $elt, renderState, doneLoading, workerParams, urlParams, appState) {
     createLegend($('#graph-legend'), urlParams);
     toggleLogo($('.logo-container'), urlParams);
     var onElt = makeMouseSwitchboard();
@@ -262,22 +270,53 @@ function init (socket, $elt, renderState, doneLoading, workerParams, urlParams, 
             $(elt).children('i').toggleClass('toggle-on');
             marqueeIsOn = !marqueeIsOn;
         }
+        if (marqueeIsOn) {
+            appState.marqueeOn.onNext('toggled');
+        } else {
+            appState.marqueeOn.onNext(false);
+        }
         return marqueeIsOn;
     });
 
-    // var brushIsOn = false;
-    // var turnOnBrush = onElt.map(function (elt) {
-    //     if (elt === $('#histogramBrush')[0]) {
-    //         $(elt).children('i').toggleClass('toggle-on');
-    //         brushIsOn = !brushIsOn;
-    //     }
-    //     return brushIsOn;
-    // });
+    var brushIsOn = false;
+    var turnOnBrush = onElt.map(function (elt) {
+        if (elt === $('#histogramBrush')[0]) {
+            $(elt).children('i').toggleClass('toggle-on');
+            brushIsOn = !brushIsOn;
+        }
+        if (brushIsOn) {
+            appState.brushOn.onNext('toggled');
+        } else {
+            $('#histogram').css('visibility', 'hidden');
+            $('#inspector').css('visibility', 'hidden');
+            appState.brushOn.onNext(false);
+        }
+        return brushIsOn;
+    });
 
-    var marquee = setupMarquee(turnOnMarquee, renderState);
-    // var brush = setupBrush(turnOnBrush, renderState);
-    dataInspector.init(socket, workerParams.url, marquee);
-    // histogramBrush.init(socket, brush);
+    var settingsOn = false;
+    var turnOnSettings = onElt.map(function (elt) {
+        if (elt === $('#layoutSettingsButton')[0]) {
+            $(elt).children('i').toggleClass('toggle-on');
+            settingsOn = !settingsOn;
+        }
+        return settingsOn;
+    });
+
+    turnOnSettings.do(function (state) {
+        if (state) {
+            $('#renderingItems').css('display', 'block');
+        } else {
+            $('#renderingItems').css('display', 'none');
+        }
+    }).subscribe(_.identity, util.makeErrorHandler('Turning on/off settings'));
+
+
+
+    var marquee = setupMarquee(turnOnMarquee, renderState, appState);
+    var brush = setupBrush(turnOnBrush, renderState, appState);
+    dataInspector.init(socket, workerParams.url, brush, appState);
+    histogramBrush.init(socket, brush);
 
 
     var timeSlide = new Rx.Subject();
@@ -292,7 +331,7 @@ function init (socket, $elt, renderState, doneLoading, workerParams, urlParams, 
     //FIXME: replace $OLD w/ browserfied jquery+jqrangeslider
     $('#timeSlider').on('valuesChanging', function (e, data) {
             timeSlide.onNext({min: data.values.min, max: data.values.max});
-            poi.invalidateCache();
+            appState.poi.invalidateCache();
         });
 
     timeSlide.sample(3)
@@ -334,7 +373,7 @@ function init (socket, $elt, renderState, doneLoading, workerParams, urlParams, 
                         sendLayoutSetting(socket, param.algoName,
                                     param.name, Number($slider.val()));
                     } else if ($that.hasClass('local-menu-slider')) {
-                        setLocalSetting(param.name, Number($slider.val()), renderState, settingsChanges);
+                        setLocalSetting(param.name, Number($slider.val()), renderState, appState.settingsChanges);
                     }
                 },
                 util.makeErrorHandler('menu slider')
@@ -363,6 +402,7 @@ function init (socket, $elt, renderState, doneLoading, workerParams, urlParams, 
         if (numTicks > 0) {
             $tooltips.tooltip('show');
             $bolt.toggleClass('automode', true).toggleClass('toggle-on', true);
+            appState.simulateOn.onNext(true);
             $shrinkToFit.toggleClass('automode', true).toggleClass('toggle-on', true);
         }
     }, util.makeErrorHandler('reveal scene'));
@@ -410,6 +450,7 @@ function init (socket, $elt, renderState, doneLoading, workerParams, urlParams, 
             })
             .flatMapLatest(function (wasOn) {
                 var isOn = !wasOn;
+                appState.simulateOn.onNext(isOn);
                 return isOn ? Rx.Observable.interval(INTERACTION_INTERVAL) : Rx.Observable.empty();
             });
 
@@ -434,6 +475,7 @@ function init (socket, $elt, renderState, doneLoading, workerParams, urlParams, 
             });
             $tooltips.tooltip('hide');
             $bolt.removeClass('automode').removeClass('toggle-on');
+            appState.simulateOn.onNext(false);
         }
     );
 

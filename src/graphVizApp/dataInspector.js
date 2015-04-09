@@ -13,9 +13,21 @@ var Backgrid = require('backgrid');
 
 var util        = require('./util.js');
 
-function init(socket, workerUrl, marquee) {
+function init(socket, workerUrl, marquee, appState) {
     var InspectData = Backbone.Model.extend({});
+    var marqueeTriggers = marquee.selections.merge(marquee.doneDragging);
 
+    var $inspectorOverlay = $('#inspector-overlay');
+    // Grey out data inspector when marquee is being dragged.
+    appState.brushOn.do(function (state) {
+        if (state === 'dragging') {
+            $inspectorOverlay.css('visibility', 'visible');
+        } else {
+            $inspectorOverlay.css('visibility', 'hidden');
+        }
+    }).subscribe(_.identity, util.makeErrorHandler('Grey / Ungrey Data Inspector'));
+
+    // Update data inspector when new selections are available.
     Rx.Observable.fromCallback(socket.emit, socket)('inspect_header', null)
     .do(function (reply) {
         if (!reply || !reply.success) {
@@ -43,7 +55,7 @@ function init(socket, workerUrl, marquee) {
             console.error('Server error on inspectHeader', data.error);
         }
     }).do(function (columns) {
-        marquee.selections.flatMap(function (sel) {
+        marqueeTriggers.flatMap(function (sel) {
             return Rx.Observable.fromCallback(socket.emit, socket)('set_selection', sel);
         }).do(function (reply) {
             if (!reply || !reply.success) {

@@ -15,7 +15,7 @@ var renderer        = require('../renderer');
 var renderingPaused = true;
 var renderQueue = {};
 var latestState = new Rx.ReplaySubject(1);
-var currentlyQuiet = new Rx.ReplaySubject(1);
+var renderTasks = new Rx.Subject();
 
 
 function renderScene(renderTasks, state, tag, trigger, items, readPixels, callback) {
@@ -30,16 +30,13 @@ function renderScene(renderTasks, state, tag, trigger, items, readPixels, callba
 }
 
 
-function setupInteractions($eventTarget, renderState, bgColor, settingsChanges,
-                                    poi, labelHover, renderTasks) {
+function setupInteractions($eventTarget, renderState, bgColor, appState) {
     var stateStream = new Rx.Subject();
     stateStream.subscribe(latestState, util.makeErrorHandler('bad stateStream'));
     stateStream.onNext(renderState);
 
     var camera = renderState.get('camera');
     var canvas = renderState.get('canvas');
-
-    var $marquee = $('#marqueerectangle i.fa');
 
     //pan/zoom
     //Observable Event
@@ -50,11 +47,11 @@ function setupInteractions($eventTarget, renderState, bgColor, settingsChanges,
         interactions = interaction.setupSwipe(eventTarget, camera)
             .merge(
                 interaction.setupPinch($eventTarget, camera)
-                .filter(function () { return !$marquee.hasClass('toggle-on'); }));
+                .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity)));
     } else {
         debug('Detected mouse-based device. Setting up mouse interaction event handlers.');
-        interactions = interaction.setupDrag($eventTarget, camera)
-            .merge(interaction.setupScroll($eventTarget, canvas, camera));
+        interactions = interaction.setupDrag($eventTarget, camera, appState)
+            .merge(interaction.setupScroll($eventTarget, canvas, camera, appState));
 
     }
     interactions = Rx.Observable.merge(
@@ -63,18 +60,18 @@ function setupInteractions($eventTarget, renderState, bgColor, settingsChanges,
                                 renderState.get('hostBuffers').curPoints,
                                 camera),
         interaction.setupZoomButton($('#zoomin'), camera, 1 / 1.25)
-            .filter(function () { return !$marquee.hasClass('toggle-on'); }),
+            .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity)),
         interaction.setupZoomButton($('#zoomout'), camera, 1.25)
-            .filter(function () { return !$marquee.hasClass('toggle-on'); })
+            .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
     );
 
     // Picks objects in priority based on order.
     var hitMapTextures = ['hitmap'];
     var latestHighlightedObject = labels.getLatestHighlightedObject($eventTarget, renderState,
-                                                                    labelHover, hitMapTextures, poi);
+                                                                    hitMapTextures, appState);
 
     latestHighlightedObject.combineLatest(
-        stateStream,
+        latestState,
         function (h, s) { return {state: s, highlightIndices: h}; }
     ).do (function (now) {
         console.log('updating cursor');
@@ -83,7 +80,7 @@ function setupInteractions($eventTarget, renderState, bgColor, settingsChanges,
 
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
-    labels.setupLabels($labelCont, latestState, latestHighlightedObject, labelHover, currentlyQuiet, poi);
+    labels.setupLabels($labelCont, latestState, latestHighlightedObject, appState);
 
 
     //TODO refactor this is out of place
@@ -109,16 +106,14 @@ function setupInteractions($eventTarget, renderState, bgColor, settingsChanges,
         .flatMapLatest(function (camera) {
             return Rx.Observable.combineLatest(
                 stateWithColor,
-                settingsChanges,
+                appState.settingsChanges,
                 function (renderState, settingsChange) {
                     return {renderTag: Date.now(),
                             camera: camera,
                             settingsChange: settingsChange,
                             renderState: renderState};
                 });
-        })
-
-        .do(function(data) {
+        }).do(function(data) {
             var currentState = renderer.setCameraIm(data.renderState, data.camera);
             stateStream.onNext(currentState);
             renderScene(renderTasks, currentState, 'panzoom');
@@ -128,13 +123,13 @@ function setupInteractions($eventTarget, renderState, bgColor, settingsChanges,
     return renderStateUpdates;
 }
 
-function renderSlowEffects(state) {
+function renderSlowEffects(state, currentlyQuiet) {
     renderer.render(state, 'picking', 'picking');
     $('.graph-label-container').css('display', 'block');
     currentlyQuiet.onNext();
 }
 
-function setupRendering(renderState, renderTasks, vboUpdates) {
+function setupRendering(renderState, vboUpdates, appState) {
 
     vboUpdates.filter(function (status) {
         return status === 'received';
@@ -144,7 +139,7 @@ function setupRendering(renderState, renderTasks, vboUpdates) {
 
     function quietCallback() {
         console.log('Quiet state');
-        renderSlowEffects(renderState);
+        renderSlowEffects(renderState, appState.currentlyQuiet);
     }
 
     renderTasks.subscribe(function (task) {
