@@ -12,7 +12,7 @@
 var $               = window.$,
     _               = require('underscore'),
     Rx              = require('rx'),
-    nodeutil            = require('util'),
+    nodeutil        = require('util'),
     debug           = require('debug')('graphistry:StreamGL:main');
                       require('./rx-jquery-stub');
 
@@ -89,19 +89,20 @@ function init(canvas, vizType) {
 
             debug('Creating renderer');
             return streamClient.createRenderer(socket, canvas)
-                .map(function(renderState) {
+                .map(function(initialRenderState) {
                     debug('Renderer created');
-                    return {socket: socket, workerParams: nfo.params, renderState: renderState};
+                    return {
+                        socket: socket,
+                        workerParams: nfo.params,
+                        initialRenderState: initialRenderState
+                    };
                 });
-        }).do(function(v) {
-            var socket = v.socket;
-            var renderState = v.renderState;
-
-            var vboUpdates = streamClient.handleVboUpdates(socket, renderState);
+        }).do(function(nfo) {
+            var vboUpdates = streamClient.handleVboUpdates(nfo.socket, nfo.initialRenderState);
 
             //TODO merge update notifs into vboUpdates
-            var vizAppRenderStateUpdates = vizApp(socket, $('.sim-container'), v.renderState,
-                                                  vboUpdates, v.workerParams, urlParams);
+            var vizAppRenderStateUpdates = vizApp(nfo.socket, $('.sim-container'), nfo.initialRenderState,
+                                                  vboUpdates, nfo.workerParams, urlParams);
             vizAppRenderStateUpdates.subscribe(
                 _.identity,
                 util.makeErrorHandler('Error in app state update')
@@ -109,7 +110,7 @@ function init(canvas, vizType) {
 
             initialized.onNext({
                 vboUpdates: vboUpdates,
-                renderState: renderState
+                initialRenderState: nfo.initialRenderState
             });
 
         }).subscribe(
@@ -147,7 +148,7 @@ function createInfoOverlay(app) {
         theme: 'transparent',
     });
     app.subscribe(function (app) {
-        app.renderState.get('renderPipeline').subscribe(function (evt) {
+        app.intitialRenderState.get('renderPipeline').subscribe(function (evt) {
             if (evt.start) {
 //                    renderMeter.resume();
 //                    renderMeter.tickStart();
