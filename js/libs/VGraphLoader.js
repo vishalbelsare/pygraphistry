@@ -221,6 +221,11 @@ function decode0(graph, vg, metadata)  {
         });
     }
 
+    // Create map from attribute name -> type
+    vg.attributeTypeMap = createAttributeTypeMap([[vg.string_vectors, 'string'],
+            [vg.int32_vectors, 'int32'], [vg.double_vectors, 'double']]);
+
+
     return graph.setVertices(vertices)
     .then(function () {
         return graph.setEdges(edges);
@@ -229,6 +234,26 @@ function decode0(graph, vg, metadata)  {
         return graph;
     }).fail(util.makeErrorHandler('Failure in VGraphLoader'));
 }
+
+
+function getAttributeType (vg, attribute) {
+    return vg.attributeTypeMap[attribute];
+}
+
+
+function createAttributeTypeMap (pairs) {
+    var map = {};
+    _.each(pairs, function (pair) {
+        var vectors = pair[0];
+        var typeName = pair[1];
+        var attributes = _.pluck(vectors, 'name');
+        _.each(attributes, function (attr) {
+            map[attr] = typeName;
+        })
+    });
+    return map;
+}
+
 
 function runLoaders(loaders) {
     _.each(loaders, function (loaderArray, aname) {
@@ -429,6 +454,7 @@ var int2color = util.int2color;
 module.exports = {
     load: load,
     getAttributeMap: getAttributeMap,
+    getAttributeType: getAttributeType,
     types: {
         VERTEX: VERTEX,
         EDGE: EDGE

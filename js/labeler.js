@@ -111,7 +111,9 @@ function aggregate(graph, indices, attributes, binning, mode) {
         });
 
         var binningHint = binning ? binning[attribute] : undefined;
-        if (mode !== 'countBy' && _.all(values, function (x) { return typeof x === 'number'; })) {
+        var type = vgloader.getAttributeType(graph.simulator.vgraph, attribute);
+
+        if (mode !== 'countBy' && type !== 'string') {
             return histogram(values, binningHint);
         } else {
             return countBy(values, binningHint);
