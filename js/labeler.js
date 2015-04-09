@@ -45,32 +45,25 @@ function infoFrame(graph, indices, attributeNames) {
     return indices.map(function (rawIdx) {
         var idx = Math.max(0, Math.min(offset + rawIdx, graph.simulator.numPoints));
 
-        // Only want subset of data, so we don't send full.
-        if (attributeNames && attributeNames.length > 0) {
-            var pairs = attribsToPairs(attribs, maybeTitleField, idx);
-            return _.object(pairs);
+        var outDegree = graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped[idx];
+        var inDegree = graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped[idx];
+        var degree = outDegree + inDegree;
 
-        } else {
-            var outDegree = graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped[idx];
-            var inDegree = graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped[idx];
-            var degree = outDegree + inDegree;
-
-            var columns = _.object(
-                    _.flatten(
+        var columns = _.object(
+                _.flatten(
+                    [
                         [
-                            [
-                                ['degree', degree],
-                                ['degree in', inDegree],
-                                ['degree out', outDegree],
-                                ['_title', maybeTitleField ? attribs[maybeTitleField].values[idx] : idx],
-                            ],
-                            attribsToPairs(attribs, maybeTitleField, idx)
+                            ['degree', degree],
+                            ['degree in', inDegree],
+                            ['degree out', outDegree],
+                            ['_title', maybeTitleField ? attribs[maybeTitleField].values[idx] : idx],
                         ],
-                        true)
-                    );
+                        attribsToPairs(attribs, maybeTitleField, idx)
+                    ],
+                    true)
+                );
 
-            return columns;
-        }
+        return columns;
     });
 }
 
