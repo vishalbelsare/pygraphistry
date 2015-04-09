@@ -510,7 +510,7 @@ function initializeHistogramViz($el, model) {
     var globalStats = model.attributes.globalStats[attribute];
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
-    var type = (data.type !== 'nodata') ? data.type : globalStats.type;
+    var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
     data.numValues = data.numValues || 0;
 
     // Transform bins and global bins into stacked format.
