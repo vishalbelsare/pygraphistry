@@ -104,6 +104,7 @@ function getLabels(graph, indices) {
 }
 
 function aggregate(graph, indices, attributes, binning, mode) {
+
     function process(frame, attribute) {
         var values = _.map(frame, function (row) {
             return row[attribute];
@@ -119,6 +120,11 @@ function aggregate(graph, indices, attributes, binning, mode) {
 
     var frame = infoFrame(graph, indices, attributes);
     var columns = attributes ? attributes : frameHeader(graph);
+
+    // Filter out private attributes that begin with underscore
+    columns = columns.filter(function (val) {
+        return val[0] !== '_';
+    });
 
     return _.object(_.map(columns, function (attribute) {
         return [attribute, process(frame, attribute)];
@@ -212,7 +218,7 @@ function histogram(values, binning) {
 
     var bottomVal = round_down(min, binWidth);
     var topVal = round_up(max, binWidth);
-    var numBins = (topVal - bottomVal) / binWidth;
+    var numBins = Math.round((topVal - bottomVal) / binWidth);
 
     // Override if provided binning data.
     if (binning) {
