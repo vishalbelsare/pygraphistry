@@ -99,14 +99,7 @@ function init(canvas, vizType) {
                 });
         }).do(function(nfo) {
             var vboUpdates = streamClient.handleVboUpdates(nfo.socket, nfo.initialRenderState);
-
-            //TODO merge update notifs into vboUpdates
-            var vizAppRenderStateUpdates = vizApp(nfo.socket, $('.sim-container'), nfo.initialRenderState,
-                                                  vboUpdates, nfo.workerParams, urlParams);
-            vizAppRenderStateUpdates.subscribe(
-                _.identity,
-                util.makeErrorHandler('Error in app state update')
-            );
+            vizApp(nfo.socket, $('.sim-container'), nfo.initialRenderState, vboUpdates, nfo.workerParams, urlParams);
 
             initialized.onNext({
                 vboUpdates: vboUpdates,
@@ -148,13 +141,9 @@ function createInfoOverlay(app) {
         theme: 'transparent',
     });
     app.subscribe(function (app) {
-        app.intitialRenderState.get('renderPipeline').subscribe(function (evt) {
-            if (evt.start) {
-//                    renderMeter.resume();
-//                    renderMeter.tickStart();
-            } else if (evt.rendered) {
+        app.initialRenderState.get('renderPipeline').subscribe(function (evt) {
+            if (evt.rendered) {
                 renderMeter.tick();
-//                    renderMeter.pause();
             }
         },
         function (err) { console.error('renderPipeline error', err, (err||{}).stack); });

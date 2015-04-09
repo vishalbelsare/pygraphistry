@@ -12,29 +12,9 @@ var labels          = require('./labels.js');
 var renderer        = require('../renderer');
 
 
-var renderingPaused = true;
-var renderQueue = {};
-var latestState = new Rx.ReplaySubject(1);
-var renderTasks = new Rx.Subject();
 
-
-function renderScene(renderTasks, state, tag, trigger, items, readPixels, callback) {
-    renderTasks.onNext({
-        state: state,
-        tag: tag,
-        trigger: trigger,
-        items: items,
-        readPixels: readPixels,
-        callback: callback
-    });
-}
-
-
-function setupInteractions($eventTarget, renderState, bgColor, appState) {
-    var stateStream = new Rx.Subject();
-    stateStream.subscribe(latestState, util.makeErrorHandler('bad stateStream'));
-    stateStream.onNext(renderState);
-
+function setupCameraInteractions(appState, $eventTarget) {
+    var renderState = appState.renderState;
     var camera = renderState.get('camera');
     var canvas = renderState.get('canvas');
 
@@ -52,9 +32,9 @@ function setupInteractions($eventTarget, renderState, bgColor, appState) {
         debug('Detected mouse-based device. Setting up mouse interaction event handlers.');
         interactions = interaction.setupDrag($eventTarget, camera, appState)
             .merge(interaction.setupScroll($eventTarget, canvas, camera, appState));
-
     }
-    interactions = Rx.Observable.merge(
+
+    return Rx.Observable.merge(
         interactions,
         interaction.setupCenter($('#center'),
                                 renderState.get('hostBuffers').curPoints,
@@ -64,26 +44,40 @@ function setupInteractions($eventTarget, renderState, bgColor, appState) {
         interaction.setupZoomButton($('#zoomout'), camera, 1.25)
             .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
     );
+}
 
+
+function setupLabelsAndCursor(appState, $eventTarget, $labelCont) {
     // Picks objects in priority based on order.
     var hitMapTextures = ['hitmap'];
-    var latestHighlightedObject = labels.getLatestHighlightedObject($eventTarget, renderState,
-                                                                    hitMapTextures, appState);
+    var latestHighlightedObject = labels.getLatestHighlightedObject(appState, $eventTarget, hitMapTextures);
 
-    latestHighlightedObject.combineLatest(
-        latestState,
-        function (h, s) { return {state: s, highlightIndices: h}; }
-    ).do (function (now) {
-        console.log('updating cursor');
-        labels.renderCursor(now.state, now.highlightIndices);
-    }).subscribe(_.identity, util.makeErrorHandler('renderCursor setup'));
+    latestHighlightedObject.do(function (highlightIndices) {
+        labels.renderCursor(appState.renderState, highlightIndices);
+    }).subscribe(_.identity, util.makeErrorHandler('setupCursor'));
 
-    var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
-    labels.setupLabels($labelCont, latestState, latestHighlightedObject, appState);
+    labels.setupLabels(appState, $labelCont, latestHighlightedObject);
+}
 
 
-    //TODO refactor this is out of place
+function setupRenderUpdates(renderState, cameraStream, settingsChanges) {
+    var renderUpdates = cameraStream.combineLatest(
+        settingsChanges,
+        function (camera, nothing) { return camera; }
+    )
+
+    renderUpdates.do(function (camera) {
+        //TODO: Make camera functional and pass camera to setCamera
+        renderer.setCamera(renderState);
+        renderScene('panzoom');
+    }).subscribe(_.identity, util.makeErrorHandler('render updates'));
+}
+
+
+function setupBackgroundColor() {
+    //TODO FIXME
+    /*TODO refactor this is out of place
     var stateWithColor =
         bgColor.map(function (rgb) {
 
@@ -96,32 +90,28 @@ function setupInteractions($eventTarget, renderState, bgColor, appState) {
             var options = config.get('options');
 
             return currentState.set('config',
-                    config.set('options',
-                        options.set('clearColor', color)));
+                                    config.set('options',
+                                                options.set('clearColor', color)));
         });
-
-    //render scene on pan/zoom (get latest points etc. at that time)
-    //tag render changes & label changes
-    var renderStateUpdates = interactions
-        .flatMapLatest(function (camera) {
-            return Rx.Observable.combineLatest(
-                stateWithColor,
-                appState.settingsChanges,
-                function (renderState, settingsChange) {
-                    return {renderTag: Date.now(),
-                            camera: camera,
-                            settingsChange: settingsChange,
-                            renderState: renderState};
-                });
-        }).do(function(data) {
-            var currentState = renderer.setCameraIm(data.renderState, data.camera);
-            stateStream.onNext(currentState);
-            renderScene(renderTasks, currentState, 'panzoom');
-        })
-        .pluck('renderState');
-
-    return renderStateUpdates;
+    */
 }
+
+
+var renderingPaused = true;
+var renderQueue = {};
+var renderTasks = new Rx.Subject();
+
+
+function renderScene(tag, trigger, items, readPixels, callback) {
+    renderTasks.onNext({
+        tag: tag,
+        trigger: trigger,
+        items: items,
+        readPixels: readPixels,
+        callback: callback
+    });
+}
+
 
 function renderSlowEffects(state, currentlyQuiet) {
     renderer.render(state, 'picking', 'picking');
@@ -129,33 +119,32 @@ function renderSlowEffects(state, currentlyQuiet) {
     currentlyQuiet.onNext();
 }
 
-function setupRendering(renderState, vboUpdates, appState) {
 
+function setupRenderingLoop(renderState, vboUpdates, currentlyQuiet) {
     vboUpdates.filter(function (status) {
         return status === 'received';
     }).do(function () {
-        renderScene(renderTasks, renderState, 'vboupdate');
+        renderScene('vboupdate');
+        renderScene('vboupdate_picking', 'picking');
     }).subscribe(_.identity, util.makeErrorHandler('render vbo updates'));
 
     function quietCallback() {
         console.log('Quiet state');
-        renderSlowEffects(renderState, appState.currentlyQuiet);
+        renderSlowEffects(renderState, currentlyQuiet);
     }
 
     renderTasks.subscribe(function (task) {
         console.log('Queueing frame on behalf of', task.tag);
         renderQueue[task.tag] = task;
 
-        latestState.onNext(task.state);
-
         if (renderingPaused) {
-            startRenderingLoop(quietCallback);
+            startRenderingLoop(renderState, quietCallback);
         }
     });
 }
 
 
-function startRenderingLoop(quietCallback) {
+function startRenderingLoop(renderState, quietCallback) {
     var lastRenderTime = 0;
     var quietSignaled = false;
 
@@ -179,7 +168,7 @@ function startRenderingLoop(quietCallback) {
         quietSignaled = false;
 
         _.each(renderQueue, function (renderTask, tag) {
-            renderer.render(renderTask.state, tag, renderTask.trigger, renderTask.items,
+            renderer.render(renderState, tag, renderTask.trigger, renderTask.items,
                             renderTask.readPixels, renderTask.callback);
         });
         renderQueue = {};
@@ -198,6 +187,8 @@ function startRenderingLoop(quietCallback) {
 
 
 module.exports = {
-    setupInteractions: setupInteractions,
-    setupRendering: setupRendering
+    setupCameraInteractions: setupCameraInteractions,
+    setupLabelsAndCursor: setupLabelsAndCursor,
+    setupRenderUpdates: setupRenderUpdates,
+    setupRenderingLoop: setupRenderingLoop
 };

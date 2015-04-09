@@ -845,13 +845,6 @@ function setCamera(state) {
 }
 
 
-// Wrapper for setCamera which takes an Immutable renderState (returned by init()) and a camera
-function setCameraIm(renderState, camera) {
-    var newState = renderState.set('camera', camera);
-    setCamera(newState);
-    return newState;
-}
-
 var lastRenderTarget = {};
 
 /**
@@ -1083,7 +1076,7 @@ module.exports = {
     createBuffers: createBuffers,
     loadBuffers: loadBuffers,
     loadTextures: loadTextures,
-    setCameraIm: setCameraIm,
+    setCamera: setCamera,
     setNumElements: setNumElements,
     render: render,
     getServerBufferNames: getServerBufferNames,

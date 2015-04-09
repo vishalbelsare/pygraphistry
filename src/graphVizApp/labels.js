@@ -15,14 +15,14 @@ var renderer        = require('../renderer');
 var HIGHLIGHT_SIZE = 20;
 
 
-// $DOM * RendererState  * [int] * [int] -> ()
+// AppState * $DOM * [int] * [int] -> ()
 // Immediately reposition each label based on camera and curPoints buffer
 var renderLabelsRan = false;
-function renderPointLabels($labelCont, renderState, labelIndices, clicked, appState) {
+function renderPointLabels(appState, $labelCont, labelIndices, clicked) {
 
     debug('rendering labels');
 
-    var curPoints = renderState.get('hostBuffers').curPoints;
+    var curPoints = appState.renderState.get('hostBuffers').curPoints;
     if (!curPoints) {
         console.warn('renderLabels called before curPoints available');
         return;
@@ -33,14 +33,14 @@ function renderPointLabels($labelCont, renderState, labelIndices, clicked, appSt
             //first run: created the enlarged points for the sampler
             if (!renderLabelsRan) {
                 renderLabelsRan = true;
-                var allOn = renderer.localAttributeProxy(renderState)('allHighlighted');
+                var allOn = renderer.localAttributeProxy(appState.renderState)('allHighlighted');
                 var amt = curPoints.buffer.byteLength / (4 * 2);
                 for (var i = 0; i < amt; i++) {
                     allOn.write(i, HIGHLIGHT_SIZE);
                 }
             }
 
-            renderLabelsImmediate($labelCont, renderState, curPoints, labelIndices, clicked, appState);
+            renderLabelsImmediate($labelCont, appState.renderState, curPoints, labelIndices, clicked, appState);
 
         })
         .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
@@ -219,42 +219,41 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices
 
     debug('sampling timing', t1 - t0, t2 - t1, t3 - t2, Date.now() - t3,
         'labels:', labels.length, '/', _.keys(hits).length, poi.state.inactiveLabels.length);
-
 }
 
 //move labels when new highlight or finish noisy rendering section
-//$DOM * Observable RenderState * Observable [ {dim: int, idx: int} ] * Observable DOM -> ()
-function setupLabels ($labelCont, latestState, latestHighlightedObject, appState) {
+// AppState * $DOM * Observable [ {dim: int, idx: int} ] * Observable DOM -> ()
+function setupLabels (appState, $labelCont, latestHighlightedObject) {
     appState.currentlyQuiet.flatMapLatest(function () {
-        return latestState.combineLatest(
-                latestHighlightedObject,
-                function (s, h) { return {state: s, highlighted: h}; }
-            );
-    }).do(function (data) {
-        var indices = data.highlighted.map(function (o) {
+        return latestHighlightedObject.combineLatest(
+            appState.cameraChanges,
+            appState.vboUpdates,
+            _.identity);
+    }).do(function (highlighted) {
+        var indices = highlighted.map(function (o) {
             return !o.dim || o.dim === 1 ? o.idx : -1;
         });
-        var clicked = data.highlighted
+        var clicked = highlighted
             .filter(function (o) { return o.click; })
             .map(function (o) { return o.idx; });
 
-        renderPointLabels($labelCont, data.state, indices, clicked, appState);
+        renderPointLabels(appState, $labelCont, indices, clicked);
     })
     .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
 }
 
-//$DOM * RenderState * Observable DOM * textureName-> Observable [ {dim: 1, idx: int} ]
+//AppState * $DOM * textureName-> Observable [ {dim: 1, idx: int} ]
 //Changes either from point mouseover or a label mouseover
 //Clicking (coexists with hovering) will open at most 1 label
 //Most recent interaction goes at the end
-function getLatestHighlightedObject ($eventTarget, renderState, textures, appState) {
+function getLatestHighlightedObject (appState, $eventTarget, textures) {
 
     var OFF = [{idx: -1, dim: 0}];
 
     var res = new Rx.ReplaySubject(1);
     res.onNext(OFF);
 
-    interaction.setupMousemove($eventTarget, renderState, textures)
+    interaction.setupMousemove($eventTarget, appState.renderState, textures)
         // TODO: Make sure this also catches $('#marquee').hasClass('done') and 'beingdragged'
         // As a non-marquee-active state.
         // .flatMapLatest(util.observableFilter(appState.marqueeActive, util.notIdentity))
