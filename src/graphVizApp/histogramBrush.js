@@ -132,7 +132,7 @@ function init(socket, marquee) {
             $(this.histogramsContainer).append(childEl);
             histogram.set('$el', $(childEl));
             var vizContainer = $(childEl).children('.vizContainer');
-            var vizHeight = histogram.get('globalStats')[attribute].numBins * BAR_THICKNESS;
+            var vizHeight = histogram.get('globalStats')[attribute].numBins * BAR_THICKNESS + margin.top + margin.bottom;
             vizContainer.height(String(vizHeight) + 'px');
             initializeHistogramViz(vizContainer, histogram); // TODO: Link to data?
             updateHistogram(vizContainer, histogram, attribute);
