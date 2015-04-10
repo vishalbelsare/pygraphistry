@@ -99,7 +99,7 @@ function init(canvas, vizType) {
                 });
         }).do(function(nfo) {
             var vboUpdates = streamClient.handleVboUpdates(nfo.socket, nfo.initialRenderState);
-            vizApp(nfo.socket, $('.sim-container'), nfo.initialRenderState, vboUpdates, nfo.workerParams, urlParams);
+            vizApp(nfo.socket, nfo.initialRenderState, vboUpdates, nfo.workerParams, urlParams);
 
             initialized.onNext({
                 vboUpdates: vboUpdates,

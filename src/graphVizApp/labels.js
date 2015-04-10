@@ -40,7 +40,7 @@ function renderPointLabels(appState, $labelCont, labelIndices, clicked) {
                 }
             }
 
-            renderLabelsImmediate($labelCont, appState.renderState, curPoints, labelIndices, clicked, appState);
+            renderLabelsImmediate(appState, $labelCont, curPoints, labelIndices, clicked);
 
         })
         .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
@@ -159,13 +159,13 @@ function effectLabels(toClear, toShow, labels, newPos, labelIndices, clicked, po
 
 }
 
-function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices, clicked, appState) {
+function renderLabelsImmediate (appState, $labelCont, curPoints, labelIndices, clicked) {
     var poi = appState.poi;
     var points = new Float32Array(curPoints.buffer);
 
     var t0 = Date.now();
 
-    var hits = poi.getActiveApprox(renderState, 'pointHitmapDownsampled');
+    var hits = poi.getActiveApprox(appState.renderState, 'pointHitmapDownsampled');
     labelIndices.forEach(function (labelIdx) {
         if (labelIdx > -1) {
             hits[labelIdx] = true;
@@ -173,7 +173,8 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices
     });
     var t1 = Date.now();
 
-    var toClear = poi.finishApprox(poi.state.activeLabels, poi.state.inactiveLabels, hits, renderState, points);
+    var toClear = poi.finishApprox(poi.state.activeLabels, poi.state.inactiveLabels,
+                                   hits, appState.renderState, points);
 
     //select label elts (and make active if needed)
     var toShow = [];
@@ -211,7 +212,7 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices
 
     var t2 = Date.now();
 
-    var newPos = newLabelPositions(renderState, labels, points, toClear, toShow);
+    var newPos = newLabelPositions(appState.renderState, labels, points, toClear, toShow);
 
     var t3 = Date.now();
 
@@ -223,7 +224,10 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices
 
 //move labels when new highlight or finish noisy rendering section
 // AppState * $DOM * Observable [ {dim: int, idx: int} ] * Observable DOM -> ()
-function setupLabels (appState, $labelCont, latestHighlightedObject) {
+function setupLabels (appState, $eventTarget, latestHighlightedObject) {
+    var $labelCont = $('<div>').addClass('graph-label-container');
+    $eventTarget.append($labelCont);
+
     appState.currentlyQuiet.flatMapLatest(function () {
         return latestHighlightedObject.combineLatest(
             appState.cameraChanges,

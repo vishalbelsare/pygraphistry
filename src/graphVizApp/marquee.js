@@ -65,7 +65,7 @@ function effectCanvas(effect) {
 
 //$DOM * $DOM * Observable bool -> Observable_1 {top, left, width, height}
 //track selections and affect $elt style/class
-function marqueeSelections (renderState, $cont, $elt, isOn, appState) {
+function marqueeSelections (appState, $cont, $elt, isOn) {
     var bounds = isOn.flatMapLatest(function (isOn) {
             if (!isOn) {
                 debug('stop listening for marquee selections');
@@ -139,7 +139,7 @@ function marqueeSelections (renderState, $cont, $elt, isOn, appState) {
                                     height: height + 2 * bw
                                 });
 
-                                createGhostImg(renderState, rect, $elt, width, height);
+                                createGhostImg(appState.renderState, rect, $elt, width, height);
                             });
                     });
 
@@ -153,7 +153,7 @@ function marqueeSelections (renderState, $cont, $elt, isOn, appState) {
 
 //$DOM * $DOM * Observable bool -> Observable_1 {top, left, width, height}
 //track selections and affect $elt style/class
-function brushSelections (renderState, $cont, $elt, isOn, appState) {
+function brushSelections (appState, $cont, $elt, isOn) {
     var bounds = isOn.flatMapLatest(function (isOn) {
             if (!isOn) {
                 debug('stop listening for marquee selections');
@@ -226,7 +226,6 @@ function brushSelections (renderState, $cont, $elt, isOn, appState) {
                                     width: width + 2 * bw,
                                     height: height + 2 * bw
                                 });
-                                //createGhostImg(renderState, rect, $elt, width, height);
                             });
                     });
 
@@ -427,7 +426,7 @@ function createGhostImg(renderState, sel, $elt, cssWidth, cssHeight) {
 }
 
 
-function initBrush (renderState, $cont, toggle, appState, cfg) {
+function initBrush (appState, $cont, toggle, cfg) {
 
     debug('init brush');
 
@@ -458,7 +457,7 @@ function initBrush (renderState, $cont, toggle, appState, cfg) {
     var doneDraggingRaw = new Rx.ReplaySubject(1);
     var doneDragging = doneDraggingRaw.debounce(50).map(transformAll);
 
-    var bounds = brushSelections(renderState, $cont, $elt, isOn, appState);
+    var bounds = brushSelections(appState, $cont, $elt, isOn);
     var drags = brushDrags(bounds, $cont, $elt, doneDraggingRaw, appState).map(transformAll);
     var selections = bounds.map(transformAll);
 
@@ -474,10 +473,9 @@ function initBrush (renderState, $cont, toggle, appState, cfg) {
 }
 
 
-//$DOM * Observable bool * ?{?transform: [num, num] -> [num, num]}
-// -> {selections: Observable [ [num, num] ] }
-function initMarquee (renderState, $cont, toggle, appState, cfg) {
-
+// AppState * $DOM * Observable bool * ?{?transform: [num, num] -> [num, num]}
+//          -> {selections: Observable [ [num, num] ] }
+function initMarquee (appState, $cont, toggle, cfg) {
     debug('init marquee');
 
     cfg = cfg || {};
@@ -504,7 +502,7 @@ function initMarquee (renderState, $cont, toggle, appState, cfg) {
             return [key, cfg.transform(val)];
         }));
     };
-    var bounds = marqueeSelections(renderState, $cont, $elt, isOn, appState);
+    var bounds = marqueeSelections(appState, $cont, $elt, isOn);
     var drags = marqueeDrags(bounds, $cont, $elt, appState).map(transformAll);
     var selections = bounds.map(transformAll);
 

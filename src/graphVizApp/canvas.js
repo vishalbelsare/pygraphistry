@@ -47,7 +47,7 @@ function setupCameraInteractions(appState, $eventTarget) {
 }
 
 
-function setupLabelsAndCursor(appState, $eventTarget, $labelCont) {
+function setupLabelsAndCursor(appState, $eventTarget) {
     // Picks objects in priority based on order.
     var hitMapTextures = ['hitmap'];
     var latestHighlightedObject = labels.getLatestHighlightedObject(appState, $eventTarget, hitMapTextures);
@@ -56,16 +56,12 @@ function setupLabelsAndCursor(appState, $eventTarget, $labelCont) {
         labels.renderCursor(appState.renderState, highlightIndices);
     }).subscribe(_.identity, util.makeErrorHandler('setupCursor'));
 
-    $eventTarget.append($labelCont);
-    labels.setupLabels(appState, $labelCont, latestHighlightedObject);
+    labels.setupLabels(appState, $eventTarget, latestHighlightedObject);
 }
 
 
 function setupRenderUpdates(renderState, cameraStream, settingsChanges) {
-    var renderUpdates = cameraStream.combineLatest(
-        settingsChanges,
-        function (camera, nothing) { return camera; }
-    )
+    var renderUpdates = cameraStream.combineLatest(settingsChanges, _.identity);
 
     renderUpdates.do(function (camera) {
         //TODO: Make camera functional and pass camera to setCamera

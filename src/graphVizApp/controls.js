@@ -33,14 +33,14 @@ function sendLayoutSetting(socket, algo, param, value) {
 }
 
 //Observable bool -> { ... }
-function setupMarquee(isOn, renderState, appState) {
-    var camera = renderState.get('camera');
-    var cnv = renderState.get('canvas');
+function setupMarquee(appState, isOn) {
+    var camera = appState.renderState.get('camera');
+    var cnv = appState.renderState.get('canvas');
     var transform = function (point) {
         return camera.canvas2WorldCoords(point.x, point.y, cnv);
     };
 
-    var marquee = marqueeFact.initMarquee(renderState, $('#marquee'), isOn, appState, {transform: transform});
+    var marquee = marqueeFact.initMarquee(appState, $('#marquee'), isOn, {transform: transform});
 
     marquee.selections.subscribe(function (sel) {
         debug('marquee selected bounds', sel);
@@ -53,15 +53,15 @@ function setupMarquee(isOn, renderState, appState) {
     return marquee;
 }
 
-// TODO: impl
-function setupBrush(isOn, renderState, appState) {
-    var camera = renderState.get('camera');
-    var cnv = renderState.get('canvas');
+
+function setupBrush(appState, isOn) {
+    var camera = appState.renderState.get('camera');
+    var cnv = appState.renderState.get('canvas');
     var transform = function (point) {
         return camera.canvas2WorldCoords(point.x, point.y, cnv);
     };
 
-    var brush = marqueeFact.initBrush(renderState, $('#brush'), isOn, appState, {transform: transform});
+    var brush = marqueeFact.initBrush(appState, $('#brush'), isOn, {transform: transform});
 
     brush.selections.subscribe(function (sel) {
         debug('brush selected bounds', sel);
@@ -258,7 +258,7 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
     settingsChanges.onNext({name: name, val: val});
 }
 
-function init (socket, $elt, renderState, doneLoading, workerParams, urlParams, appState) {
+function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     createLegend($('#graph-legend'), urlParams);
     toggleLogo($('.logo-container'), urlParams);
     var onElt = makeMouseSwitchboard();
@@ -313,8 +313,8 @@ function init (socket, $elt, renderState, doneLoading, workerParams, urlParams, 
 
 
 
-    var marquee = setupMarquee(turnOnMarquee, renderState, appState);
-    var brush = setupBrush(turnOnBrush, renderState, appState);
+    var marquee = setupMarquee(appState, turnOnMarquee);
+    var brush = setupBrush(appState, turnOnBrush);
     dataInspector.init(socket, workerParams.url, brush, appState);
     histogramBrush.init(socket, brush);
 
@@ -373,7 +373,8 @@ function init (socket, $elt, renderState, doneLoading, workerParams, urlParams, 
                         sendLayoutSetting(socket, param.algoName,
                                     param.name, Number($slider.val()));
                     } else if ($that.hasClass('local-menu-slider')) {
-                        setLocalSetting(param.name, Number($slider.val()), renderState, appState.settingsChanges);
+                        setLocalSetting(param.name, Number($slider.val()),
+                                        appState.renderState, appState.settingsChanges);
                     }
                 },
                 util.makeErrorHandler('menu slider')

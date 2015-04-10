@@ -18,7 +18,7 @@ var util            = require('./util.js');
 
 
 // ... -> Observable renderState
-function init(socket, $elt, initialRenderState, vboUpdates, workerParams, urlParams) {
+function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     debug('Initializing vizApp.');
 
     //////////////////////////////////////////////////////////////////////////
@@ -75,34 +75,37 @@ function init(socket, $elt, initialRenderState, vboUpdates, workerParams, urlPar
         anyMarqueeOn: anyMarqueeOn
     };
 
+    //////////////////////////////////////////////////////////////////////////
+    // DOM Elements
+    //////////////////////////////////////////////////////////////////////////
+
+    var $simCont   = $('.sim-container');
+    var $fgPicker  = $('#foregroundColor');
+    var $bgPicker  = $('#backgroundColor');
+    var $spButton  = $('#shortestpath');
 
     //////////////////////////////////////////////////////////////////////////
     // Setup
     //////////////////////////////////////////////////////////////////////////
 
     canvas.setupRenderingLoop(appState.renderState, appState.vboUpdates, appState.currentlyQuiet);
-    canvas.setupCameraInteractions(appState, $elt)
-        .subscribe(appState.cameraChanges, util.makeErrorHandler('cameraChanges'));
+    canvas.setupCameraInteractions(appState, $simCont).subscribe(
+        appState.cameraChanges,
+        util.makeErrorHandler('cameraChanges')
+    );
 
-    var $labelCont = $('<div>').addClass('graph-label-container');
-    canvas.setupLabelsAndCursor(appState, $elt, $labelCont);
+    canvas.setupLabelsAndCursor(appState, $simCont);
     canvas.setupRenderUpdates(appState.renderState, cameraChanges, settingsChanges);
 
-
-    //var colors = colorpicker($('#foregroundColor'), $('#backgroundColor'), socket);
-    //var renderStateUpdates = canvas.setupInteractions($elt, colors.backgroundColor, appState);
-    //shortestpaths($('#shortestpath'), poi, socket);
+    var colors = colorpicker($fgPicker, $bgPicker, socket);
+    shortestpaths($spButton, poi, socket);
 
     var doneLoading = vboUpdates.filter(function (update) {
         return update === 'received';
     }).take(1).do(ui.hideSpinnerShowBody).delay(700);
-
     doneLoading.subscribe(_.identity, util.makeErrorHandler('doneLoading'));
 
-
-    controls.init(socket, $elt, initialRenderState, doneLoading, workerParams, urlParams, appState);
-
-    return null;//renderStateUpdates;
+    controls.init(appState, socket, $simCont, doneLoading, workerParams, urlParams);
 }
 
 
