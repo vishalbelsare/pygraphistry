@@ -451,6 +451,14 @@ function updateHistogram($el, model, attribute) {
                 return 'top';
             }
         })
+
+        .attr('data-html', true)
+        .attr('data-template', function (d) {
+            var fill = colorHighlighted(d.type);
+            return '<div class="tooltip" role="tooltip"><div class="tooltip-arrow"></div>' +
+                '<div class="tooltip-inner" style="background-color: ' + fill + '"></div></div>';
+        })
+
         .attr('data-toggle', 'tooltip')
         .attr('data-original-title', function(d) {
             return d.val;
