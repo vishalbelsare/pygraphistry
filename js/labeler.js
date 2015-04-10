@@ -34,11 +34,17 @@ function infoFrame(graph, indices, attributeNames) {
         .filter(function (name) { return name !== maybeTitleField; })
 
 
-    return indices.map(function (rawIdx) {
-        var idx = Math.max(0, Math.min(offset + rawIdx, graph.simulator.numPoints));
+    var outDegrees = graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped;
+    var inDegrees = graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped;
 
-        var outDegree = graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped[idx];
-        var inDegree = graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped[idx];
+    return indices.map(function (rawIdx) {
+
+        // Uncomment this if we start getting invalid indices.
+        // var idx = Math.max(0, Math.min(offset + rawIdx, graph.simulator.numPoints));
+        var idx = rawIdx;
+
+        var outDegree = outDegrees[idx];
+        var inDegree = inDegrees[idx];
         var degree = outDegree + inDegree;
 
         var columns = {
