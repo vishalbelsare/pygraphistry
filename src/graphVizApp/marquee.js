@@ -379,16 +379,13 @@ function createElt() {
 // Callback takes texture as arg.
 // TODO: Consider using RX here instead of callbacks?
 function getTexture(renderState, dims, cb) {
-    var renderOpts = {renderListOverride: ['pointoutlinetexture', 'pointculledtexture'],
-            readPixelsOverride: dims};
-
-    renderer.render(renderState, 'marqueeGetTexture', function () {
+    renderer.render(renderState, 'marqueeGetTexture', 'marquee', undefined, dims, function () {
             var texture = renderState.get('pixelreads').pointTexture;
             if (!texture) {
                 console.error('error reading texture');
             }
             cb(texture);
-        }, renderOpts);
+        });
 }
 
 
