@@ -132,7 +132,7 @@ function init(socket, marquee) {
             $(this.histogramsContainer).append(childEl);
             histogram.set('$el', $(childEl));
             var vizContainer = $(childEl).children('.vizContainer');
-            var vizHeight = histogram.get('globalStats')[attribute].numBins * BAR_THICKNESS;
+            var vizHeight = histogram.get('globalStats')[attribute].numBins * BAR_THICKNESS + margin.top + margin.bottom;
             vizContainer.height(String(vizHeight) + 'px');
             initializeHistogramViz(vizContainer, histogram); // TODO: Link to data?
             updateHistogram(vizContainer, histogram, attribute);
@@ -164,13 +164,20 @@ function init(socket, marquee) {
     var globalStats = new Rx.ReplaySubject(1);
     var params = {all: true, mode: MODE};
     Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
-        .map(function (reply) {
+        .do(function (reply) {
+            if (!reply) {
+                console.error('Unexpected server error on global aggregate');
+            } else if (reply && !reply.success) {
+                console.log('Server replied with error from global aggregate:', reply.error, reply.stack);
+            }
+        }).map(function (reply) {
             return reply.data;
         })
         .do(function (data) {
             globalStatsCache = data;
             attributes = _.filter(_.keys(data), function (val) {
-                return val !== '_title';
+                var isTitle = (val !== '_title');
+                return isTitle;
             });
             var template = Handlebars.compile($('#addHistogramTemplate').html());
             var params = {
@@ -503,7 +510,7 @@ function initializeHistogramViz($el, model) {
     var globalStats = model.attributes.globalStats[attribute];
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
-    var type = (data.type !== 'nodata') ? data.type : globalStats.type;
+    var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
     data.numValues = data.numValues || 0;
 
     // Transform bins and global bins into stacked format.
