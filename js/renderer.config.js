@@ -338,6 +338,7 @@ var items = {
     },
     'pointculledtexture': {
         'program': 'pointculled',
+        'triggers': ['marquee'],
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -485,21 +486,21 @@ var sceneUber = {
 var sceneNetflow = {
     'options': stdOptions,
     'camera': camera2D,
-    'render': ['pointpicking', 'pointsampling', 'pointculledtexture', 'pointoutlinetexture',
+    'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
                'edgeculled', 'edgepicking', 'pointoutline', 'pointculled']
 }
 
 var sceneNetflowIndexed = {
     'options': stdOptions,
     'camera': camera2D,
-    'render': ['pointpicking', 'pointsampling', 'pointculledtexture', 'pointoutlinetexture',
+    'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
                'edgeculledindexed', 'edgepickingindexed', 'pointoutline', 'pointculled']
 }
 
 var sceneNetflowIndexedClient = {
     'options': stdOptions,
     'camera': camera2D,
-    'render': ['pointpicking', 'pointsampling', 'pointculledtexture', 'pointoutlinetexture',
+    'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
                'edgeculledindexedclient', 'pointoutline', 'pointculled']
 }
 
