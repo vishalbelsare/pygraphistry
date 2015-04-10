@@ -6,6 +6,7 @@ module.exports = {
         edgeInfluence: cljs.types.uint_t,
         flags: cljs.types.uint_t,
         numPoints: cljs.types.uint_t,
+        numMidPoints: cljs.types.uint_t,
         tilesPerIteration: cljs.types.uint_t,
         tilePointsParam: cljs.types.local_t,
         tilePointsParam2: cljs.types.local_t,

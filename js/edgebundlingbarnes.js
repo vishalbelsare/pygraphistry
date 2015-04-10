@@ -8,7 +8,11 @@ var _          = require('underscore'),
     webcl      = require('node-webcl'),
     Kernel     = require('./kernel.js'),
     LayoutAlgo = require('./layoutAlgo.js'),
-    EbBarnesKernelSeq = require('./javascript_kernels/ebBarnesKernelSeq.js');
+    faSwingsKernel = require('./javascript_kernels/faSwingsKernel.js'),
+    integrateMidPointsKernel = require('./javascript_kernels/integrateMidPointsKernel.js'),
+    //integrateKernel = require('./javascript_kernels/integrateKernel.js'),
+    EbBarnesKernelSeq = require('./javascript_kernels/ebBarnesKernelSeq.js'),
+    midEdgeGather = require('./javascript_kernels/midEdgeGather.js');
 
 
 function EdgeBundling(clContext) {
@@ -20,10 +24,16 @@ function EdgeBundling(clContext) {
     this.ebMidsprings = new Kernel('gaussSeidelMidsprings', EdgeBundling.argsMidsprings,
                                    EdgeBundling.argsType, 'edgeBundling.cl', clContext);
 
+    this.faSwingsKernel = new faSwingsKernel(clContext);
+
+    this.integrateMidPoints = new integrateMidPointsKernel(clContext);
+
+    this.midEdgeGather = new midEdgeGather(clContext);
+
     this.kernels = this.kernels.concat([this.ebBarnesKernelSeq.toBarnesLayout, this.ebBarnesKernelSeq.boundBox,
                                         this.ebBarnesKernelSeq.buildTree, this.ebBarnesKernelSeq.computeSums,
                                         this.ebBarnesKernelSeq.sort, this.ebBarnesKernelSeq.calculateMidPoints,
-                                        this.ebMidsprings]);
+                                        this.ebMidsprings, this.integrateMidPoints.faIntegrate]);
 }
 EdgeBundling.prototype = Object.create(LayoutAlgo.prototype);
 EdgeBundling.prototype.constructor = EdgeBundling;
@@ -77,6 +87,8 @@ EdgeBundling.prototype.setPhysics = function(cfg) {
     });
 
     this.ebBarnesKernelSeq.setPhysics(flags);
+    console.log(this);
+    this.integrateMidPoints.setPhysics(flags);
     //this.edgeKernelSeq.setPhysics(flags);
 }
 
@@ -147,17 +159,25 @@ function getNumWorkitemsByHardware(deviceProps) {
 
 // Contains any temporary buffers needed for layout
 var tempLayoutBuffers  = {
-  globalSpeed: null
+  globalSpeed: null,
+  prevForces: null,
+  curForces: null
+
 };
+Object.seal(tempLayoutBuffers);
 
 // Create temporary buffers needed for layout
 var setupTempLayoutBuffers = function(simulator) {
     return Q.all(
         [
-        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed')
+        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed'),
+        simulator.cl.createBuffer(2*simulator.numMidPoints*Float32Array.BYTES_PER_ELEMENT, 'prevForces'),
+        simulator.cl.createBuffer(2*simulator.numMidPoints*Float32Array.BYTES_PER_ELEMENT, 'curForces')
         ])
-    .spread(function (globalSpeed) {
+    .spread(function (globalSpeed, prevForces, curForces) {
       tempLayoutBuffers.globalSpeed = globalSpeed;
+      tempLayoutBuffers.prevForces = prevForces;
+      tempLayoutBuffers.curForces = curForces;
       return tempLayoutBuffers;
     })
     .catch(util.makeErrorHandler('setupTempBuffers'));
@@ -174,8 +194,10 @@ EdgeBundling.prototype.setEdges = function (simulator) {
     var that = this;
     var workGroupSize = 256;
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps, workGroupSize);
-    return setupTempLayoutBuffers(simulator).then(function (tempBuffers) {
-      that.ebBarnesKernelSeq.setMidPoints(simulator, tempBuffers, 32, workItems);
+    console.log(workItems);
+    return setupTempLayoutBuffers(simulator).then(function (tempLayoutBuffers) {
+      that.ebBarnesKernelSeq.setMidPoints(simulator, tempLayoutBuffers, 32, workItems);
+      that.faSwingsKernel.setMidPoints(simulator, tempLayoutBuffers);
 
       that.ebMidsprings.set({
           numSplits: global.numSplits,
@@ -183,7 +205,7 @@ EdgeBundling.prototype.setEdges = function (simulator) {
           workList: simulator.buffers.forwardsWorkItems.buffer,
           inputPoints: simulator.buffers.curPoints.buffer,
           inputMidPoints: simulator.buffers.nextMidPoints.buffer,
-          outputMidPoints: simulator.buffers.curMidPoints.buffer,
+          outputMidPoints: tempLayoutBuffers.curForces.buffer,
           springMidPositions: simulator.buffers.midSpringsPos.buffer,
           midSpringsColorCoords: simulator.buffers.midSpringsColorCoord.buffer
       });
@@ -191,6 +213,7 @@ EdgeBundling.prototype.setEdges = function (simulator) {
     });
 }
 
+// TODO Should we do forwards and backwards edges?
 function midEdges(simulator, ebMidsprings, stepNumber) {
     var resources = [
         simulator.buffers.forwardsEdges,
@@ -231,6 +254,7 @@ EdgeBundling.prototype.tick = function(simulator, stepNumber) {
         debug('LOCKED, EARLY EXIT');
         return Q();
     }
+    console.log("Before");
     return Q().then(function () {
         if (locks.lockMidpoints) {
             simulator.tickBuffers(['nextMidPoints']);
@@ -252,12 +276,20 @@ EdgeBundling.prototype.tick = function(simulator, stepNumber) {
             return promiseWhile(condition, body)
         }
     }).then(function () { //TODO do both forwards and backwards?
+        console.log("After");
         if (simulator.numEdges > 0 && !locks.lockMidedges) {
             return midEdges(simulator, that.ebMidsprings, stepNumber);
         } else {
             simulator.tickBuffers(['curMidPoints']);
             return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
         }
+    })
+    .then(function () {
+        return that.faSwingsKernel.execMidPointsKernels(simulator, workItems);
+    }).then(function () {
+        return that.integrateMidPoints.execKernels(simulator, tempLayoutBuffers, workItems);
+    }).then(function () {
+        return that.midEdgeGather.execKernels(simulator)
     }).fail(util.makeErrorHandler('Failure in edgebundling tick'));
 }
 
