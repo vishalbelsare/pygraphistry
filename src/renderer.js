@@ -380,7 +380,7 @@ function createCamera(state) {
         throw new Error ('Unknown camera type');
     }
 
-    console.info('Display has high DPI: pixel ratio is', pixelRatio);
+    console.info('Display\'s pixel ratio is', pixelRatio);
     camera.resize(canvas.width, canvas.height, pixelRatio);
 
     return camera;
