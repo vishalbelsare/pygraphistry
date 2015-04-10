@@ -1042,9 +1042,8 @@ function getActiveIndices (config) {
             .map(function (bindingPair) {
                 var modelName = bindingPair[1][0];
                 var attribName = bindingPair[1][1];
-                debug('bindingPair', bindingPair);
-                debug('datasource', config.models[modelName][attribName].datasource);
                 var datasource = config.models[modelName][attribName].datasource;
+                debug('GetActiveIndices: bindingPair', bindingPair, 'datasource', datasource);
                 return datasource;
             })
             .map(function (datasource) {

@@ -114,6 +114,7 @@ function renderSlowEffects(renderState, vboUpdated) {
 
     }
 
+    renderer.render(renderState, 'fullscene', 'renderSceneFull');
     renderer.render(renderState, 'picking', 'picking');
     $('.graph-label-container').css('display', 'block');
 }
