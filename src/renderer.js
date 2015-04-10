@@ -247,8 +247,6 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
 
 function init(config, canvas) {
     config = Immutable.fromJS(config);
-
-
     var renderPipeline = new Rx.ReplaySubject(1);
 
     var state = Immutable.Map({
@@ -258,7 +256,6 @@ function init(config, canvas) {
         gl: undefined,
         ext: undefined,
         programs:       Immutable.Map({}),
-        defaultItems:   undefined,
         buffers:        Immutable.Map({}),
         //TODO make immutable
         hostBuffers:    {},
@@ -292,8 +289,6 @@ function init(config, canvas) {
 
     debug('Active indices', state.get('activeIndices'));
     debug('Active attributes', state.get('activeLocalAttributes'));
-
-    state = state.set('defaultItems', getItemsForTrigger(state, 'renderScene'));
 
     resizeCanvas(state);
     window.addEventListener('resize', function () {
@@ -396,7 +391,7 @@ function getItemsForTrigger(state, trigger) {
 
     var items = state.get('config').get('items').toJS();
     var renderItems = _.chain(items).pick(function (i) {
-        return i.trigger === trigger;
+        return _.contains(i.triggers, trigger);
     }).map(function (i, name) {
         return name;
     }).value();
@@ -688,7 +683,6 @@ function loadBuffers(state, buffers, bufferData) {
 
         loadBuffer(state, buffers[bufferName], bufferName, model, data);
         state.get('hostBuffers')[bufferName].onNext(data);
-
     });
 }
 
@@ -771,7 +765,6 @@ function expandHostBuffer(gl, length, repetition, oldHostBuffer) {
     }
 
     return longerBuffer;
-
 }
 
 function updateIndexBuffer(gl, length, repetition) {
@@ -859,8 +852,6 @@ var lastRenderTarget = {};
  * @param {Function} callback - Callback exectued after readPixels
  */
 function render(state, tag, renderListTrigger, renderListOverride, readPixelsOverride, callback) {
-    debug('========= Rendering a frame, tag: ', tag);
-
     var config      = state.get('config').toJS(),
         camera      = state.get('camera'),
         gl          = state.get('gl'),
@@ -868,8 +859,13 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
         programs    = state.get('programs').toJS(),
         buffers     = state.get('buffers').toJS();
 
-    var toRender = getItemsForTrigger(state, renderListTrigger) || renderListOverride || state.get('defaultItems');
-    console.log('========= Rendering', toRender,'    tag:', tag);
+    var toRender = getItemsForTrigger(state, renderListTrigger) || renderListOverride;
+    if (toRender === undefined || toRender.length === 0) {
+        console.warn('Nothing to render for tag', tag);
+        return;
+    }
+
+    console.log('==== Rendering a frame (tag: ' + tag +')', toRender);
     state.get('renderPipeline').onNext({start: toRender});
 
     var itemToTarget = function (config, itemName) {

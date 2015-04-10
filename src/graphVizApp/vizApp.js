@@ -17,7 +17,6 @@ var poiLib          = require('../poi.js');
 var util            = require('./util.js');
 
 
-// ... -> Observable renderState
 function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     debug('Initializing vizApp.');
 
@@ -103,7 +102,6 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     var doneLoading = vboUpdates.filter(function (update) {
         return update === 'received';
     }).take(1).do(ui.hideSpinnerShowBody).delay(700);
-    doneLoading.subscribe(_.identity, util.makeErrorHandler('doneLoading'));
 
     controls.init(appState, socket, $simCont, doneLoading, workerParams, urlParams);
 }

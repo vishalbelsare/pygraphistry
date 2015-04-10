@@ -66,7 +66,7 @@ function setupRenderUpdates(renderState, cameraStream, settingsChanges) {
     renderUpdates.do(function (camera) {
         //TODO: Make camera functional and pass camera to setCamera
         renderer.setCamera(renderState);
-        renderScene('panzoom');
+        renderScene('panzoom', 'renderSceneFast');
     }).subscribe(_.identity, util.makeErrorHandler('render updates'));
 }
 
@@ -109,24 +109,32 @@ function renderScene(tag, trigger, items, readPixels, callback) {
 }
 
 
-function renderSlowEffects(state, currentlyQuiet) {
-    renderer.render(state, 'picking', 'picking');
+function renderSlowEffects(renderState, vboUpdated) {
+    if (vboUpdated) {
+
+    }
+
+    renderer.render(renderState, 'picking', 'picking');
     $('.graph-label-container').css('display', 'block');
-    currentlyQuiet.onNext();
 }
 
 
 function setupRenderingLoop(renderState, vboUpdates, currentlyQuiet) {
+    var vboUpdated = false;
+
     vboUpdates.filter(function (status) {
         return status === 'received';
     }).do(function () {
-        renderScene('vboupdate');
+        vboUpdated = true;
+        renderScene('vboupdate', 'renderSceneFast');
         renderScene('vboupdate_picking', 'picking');
     }).subscribe(_.identity, util.makeErrorHandler('render vbo updates'));
 
     function quietCallback() {
         console.log('Quiet state');
-        renderSlowEffects(renderState, currentlyQuiet);
+        renderSlowEffects(renderState, currentlyQuiet, vboUpdated);
+        vboUpdated = false;
+        currentlyQuiet.onNext();
     }
 
     renderTasks.subscribe(function (task) {
