@@ -17,23 +17,6 @@ function pickTitleField (attribs) {
     return undefined;
 }
 
-function attribsToPairs (attribs, maybeTitleField, idx) {
-
-    return _.keys(attribs)
-        .filter(function (name) { return attribs[name].target === vgloader.types.VERTEX; })
-        .filter(function (name) {
-            return ['pointColor', 'pointSize', 'pointTitle', 'pointLabel, degree']
-                .indexOf(name) === -1;
-        })
-        .filter(function (name) { return name !== maybeTitleField; })
-        .map(function (name) {
-            var val = attribs[name].values[idx];
-            return [name,
-                name.indexOf('Date') > -1 && typeof(val) === "number" ?
-                    dateFormat(val, "mm-dd-yyyy") : val];
-        });
-}
-
 
 function infoFrame(graph, indices, attributeNames) {
     var offset = graph.simulator.timeSubset.pointsRange.startIdx;
@@ -42,33 +25,43 @@ function infoFrame(graph, indices, attributeNames) {
     var titleOverride = attribs.hasOwnProperty('pointTitle');
     var maybeTitleField = pickTitleField(attribs);
 
+    var filteredKeys = _.keys(attribs)
+        .filter(function (name) { return attribs[name].target === vgloader.types.VERTEX; })
+        .filter(function (name) {
+            return ['pointColor', 'pointSize', 'pointTitle', 'pointLabel, degree']
+                .indexOf(name) === -1;
+        })
+        .filter(function (name) { return name !== maybeTitleField; })
+
+
+    var outDegrees = graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped;
+    var inDegrees = graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped;
+
     return indices.map(function (rawIdx) {
-        var idx = Math.max(0, Math.min(offset + rawIdx, graph.simulator.numPoints));
 
-        // Only want subset of data, so we don't send full.
-        if (attributeNames && attributeNames.length > 0) {
-            var pairs = attribsToPairs(attribs, maybeTitleField, idx);
-            return _.object(pairs);
+        // Uncomment this if we start getting invalid indices.
+        // var idx = Math.max(0, Math.min(offset + rawIdx, graph.simulator.numPoints));
+        var idx = rawIdx;
 
-        } else {
-            var outDegree = graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped[idx];
-            var inDegree = graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped[idx];
-            var degree = outDegree + inDegree;
+        var outDegree = outDegrees[idx];
+        var inDegree = inDegrees[idx];
+        var degree = outDegree + inDegree;
 
-            var columns = _.object(
-                    _.flatten(
-                        [
-                            [
-                                ['degree', sprintf('%s (%s in, %s out)', degree, inDegree, outDegree)],
-                                ['_title', maybeTitleField ? attribs[maybeTitleField].values[idx] : idx],
-                            ],
-                            attribsToPairs(attribs, maybeTitleField, idx)
-                        ],
-                        true)
-                    );
+        var columns = {
+            'degree': degree,
+            'degree in': inDegree,
+            'degree out': outDegree,
+            '_title' : maybeTitleField ? attribs[maybeTitleField].values[idx] : idx
+        };
 
-            return columns;
-        }
+        _.each(filteredKeys, function (key) {
+            var val = attribs[key].values[idx];
+            var formattedVal = key.indexOf('Date') > -1 && typeof(val) === "number" ?
+                    dateFormat(val, 'mm-dd-yyyy') : val;
+            columns[key] = formattedVal;
+        });
+
+        return columns;
     });
 }
 
@@ -109,13 +102,16 @@ function getLabels(graph, indices) {
 }
 
 function aggregate(graph, indices, attributes, binning, mode) {
+
     function process(frame, attribute) {
         var values = _.map(frame, function (row) {
             return row[attribute];
         });
 
         var binningHint = binning ? binning[attribute] : undefined;
-        if (mode !== 'countBy' && _.all(values, function (x) { return typeof x === 'number'; })) {
+        var type = vgloader.getAttributeType(graph.simulator.vgraph, attribute);
+
+        if (mode !== 'countBy' && type !== 'string') {
             return histogram(values, binningHint);
         } else {
             return countBy(values, binningHint);
@@ -124,6 +120,11 @@ function aggregate(graph, indices, attributes, binning, mode) {
 
     var frame = infoFrame(graph, indices, attributes);
     var columns = attributes ? attributes : frameHeader(graph);
+
+    // Filter out private attributes that begin with underscore
+    columns = columns.filter(function (val) {
+        return val[0] !== '_';
+    });
 
     return _.object(_.map(columns, function (attribute) {
         return [attribute, process(frame, attribute)];
@@ -217,7 +218,7 @@ function histogram(values, binning) {
 
     var bottomVal = round_down(min, binWidth);
     var topVal = round_up(max, binWidth);
-    var numBins = (topVal - bottomVal) / binWidth;
+    var numBins = Math.round((topVal - bottomVal) / binWidth);
 
     // Override if provided binning data.
     if (binning) {
@@ -232,15 +233,17 @@ function histogram(values, binning) {
     if (max === min) {
         binWidth = 1;
         numBins = 1;
+        topVal = min + 1;
+        bottomVal = min;
     }
-    var bins = Array.apply(null, new Array(numBins)).map(function () { return []; });
+    var bins = Array.apply(null, new Array(numBins)).map(function () { return 0; });
 
     // console.log('Max: ', max, ', Min: ', min, ', Width: ', binWidth);
     // console.log('Bins: ', bins);
 
     _.each(values, function (val) {
         var binId = Math.min(Math.floor((val - bottomVal) / binWidth), numBins - 1);
-        bins[binId].push(val)
+        bins[binId] += 1;
     })
 
     return {
@@ -252,7 +255,7 @@ function histogram(values, binning) {
         // minValue: min,
         maxValue: topVal,
         minValue: bottomVal,
-        bins: bins.map(function (b) { return b.length; })
+        bins: bins
     };
 }
 
