@@ -22,6 +22,8 @@ var MODE = 'default';
 var DIST = false;
 var DRAG_SAMPLE_INTERVAL = 100;
 var BAR_THICKNESS = 16;
+var SPARKLINES = true;
+var NUM_SPARKLINES = 30;
 
 //////////////////////////////////////////////////////////////////////////////
 // Globals for updates
@@ -37,6 +39,7 @@ var colorHighlighted = d3.scale.ordinal()
         .domain(['local', 'global', 'globalSmaller', 'localBigger']);
 
 var margin = {top: 10, right: 70, bottom: 20, left:20};
+var marginSparklines = {top: 10, right: 20, bottom: 10, left: 20};
 var lastSelection;
 var attributes = [];
 var activeAttributes = [];
@@ -132,10 +135,20 @@ function init(socket, marquee) {
             $(this.histogramsContainer).append(childEl);
             histogram.set('$el', $(childEl));
             var vizContainer = $(childEl).children('.vizContainer');
-            var vizHeight = histogram.get('globalStats')[attribute].numBins * BAR_THICKNESS + margin.top + margin.bottom;
-            vizContainer.height(String(vizHeight) + 'px');
-            initializeHistogramViz(vizContainer, histogram); // TODO: Link to data?
-            updateHistogram(vizContainer, histogram, attribute);
+
+            if (SPARKLINES) {
+                var vizHeight = '80';
+                // var vizHeight = histogram.get('globalStats')[attribute].numBins * BAR_THICKNESS + margin.top + margin.bottom;
+                vizContainer.height(String(vizHeight) + 'px');
+                initializeSparklineViz(vizContainer, histogram); // TODO: Link to data?
+                updateSparkline(vizContainer, histogram, attribute);
+            } else {
+                var vizHeight = histogram.get('globalStats')[attribute].numBins * BAR_THICKNESS + margin.top + margin.bottom;
+                vizContainer.height(String(vizHeight) + 'px');
+                initializeHistogramViz(vizContainer, histogram); // TODO: Link to data?
+                updateHistogram(vizContainer, histogram, attribute);
+            }
+
         },
         removeHistogram: function (histogram) {
             updateAttribute(histogram.attributes.attribute);
@@ -144,7 +157,12 @@ function init(socket, marquee) {
             // TODO: Find way to not fire this on first time
             if (!histogram.get('firstTime')) {
                 histograms.each(function (histogram) {
-                    updateHistogram(histogram.get('$el').children('.vizContainer'), histogram, histogram.get('attribute'));
+
+                    if (SPARKLINES) {
+                        updateSparkline(histogram.get('$el').children('.vizContainer'), histogram, histogram.get('attribute'));
+                    } else {
+                        updateHistogram(histogram.get('$el').children('.vizContainer'), histogram, histogram.get('attribute'));
+                    }
                 });
             }
         },
@@ -163,6 +181,9 @@ function init(socket, marquee) {
     // Grab global stats at initialization
     var globalStats = new Rx.ReplaySubject(1);
     var params = {all: true, mode: MODE};
+    if (SPARKLINES) {
+        params.binning = {'_goalNumberOfBins': NUM_SPARKLINES};
+    }
     Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
         .do(function (reply) {
             if (!reply) {
@@ -175,6 +196,7 @@ function init(socket, marquee) {
         })
         .do(function (data) {
             globalStatsCache = data;
+            console.log('data: ', data);
             attributes = _.filter(_.keys(data), function (val) {
                 var isTitle = (val !== '_title');
                 return isTitle;
@@ -478,6 +500,141 @@ function updateHistogram($el, model, attribute) {
 
 }
 
+function updateSparkline($el, model, attribute) {
+    var width = $el.width() - marginSparklines.left - marginSparklines.right;
+    var data = model.attributes.data;
+    var globalStats = model.attributes.globalStats[attribute];
+    var bins = data.bins || []; // Guard against empty bins.
+    var globalBins = globalStats.bins || [];
+    var type = (data.type !== 'nodata') ? data.type : globalStats.type;
+    data.numValues = data.numValues || 0;
+
+    var svg = d3DataMap[attribute].svg;
+    var xScale = d3DataMap[attribute].xScale;
+    var yScale = d3DataMap[attribute].yScale;
+
+    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues);
+
+    //////////////////////////////////////////////////////////////////////////
+    // Create Columns
+    //////////////////////////////////////////////////////////////////////////
+
+    var columns = svg.selectAll('.column')
+        .data(stackedBins, function (d) {
+            return d.id;
+        });
+
+    columns.enter().append('g')
+        .classed('g', true)
+        .classed('column', true)
+        .attr('transform', function (d, i) {
+            return 'translate(' + xScale(i) + ',0)';
+            // return 'translate(0,' + yScale(i) + ')';
+        })
+
+        .on('mouseover', function () {
+            var col = d3.select(d3.event.target.parentNode);
+            var children = col[0][0].children;
+            _.each(children, function (child) {
+                $(child).tooltip('fixTitle');
+                $(child).tooltip('show');
+            });
+            highlight(col.selectAll('rect'), true);
+        })
+        .on('mouseout', function () {
+            var col = d3.select(d3.event.target.parentNode);
+            var children = col[0][0].children;
+            _.each(children, function (child) {
+                $(child).tooltip('hide');
+            });
+            highlight(col.selectAll('rect'), false);
+        });
+
+    //////////////////////////////////////////////////////////////////////////
+    // Create and Update Bars
+    //////////////////////////////////////////////////////////////////////////
+
+    var bars = columns.selectAll('rect')
+        .data(function (d) {
+            return d;
+        }, function (d) {
+            return d.barNum + d.binId;
+        });
+
+    // bars
+    //     .transition().duration(DRAG_SAMPLE_INTERVAL)
+    //     .attr('height', function (d) {
+    //         return yScale(d.y0) - yScale(d.y1) + heightDelta(d);
+    //     })
+    //     .attr('y', function (d) {
+    //         return yScale(d.y1) - heightDelta(d);
+    //     });
+
+    // var barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/globalStats.numBins);
+    // bars.enter().append('rect')
+    //     .style('fill', function (d) {
+    //         return color(d.type);
+    //     })
+    //     .attr('width', barWidth)
+    //     .attr('height', function (d) {
+    //         return yScale(d.y0) - yScale(d.y1) + heightDelta(d);
+    //     })
+    //     .attr('y', function (d) {
+    //         return yScale(d.y1) - heightDelta(d);
+    //     });
+
+
+
+    bars
+        .transition().duration(DRAG_SAMPLE_INTERVAL)
+        .attr('data-original-title', function(d) {
+            return d.val;
+        })
+        .attr('height', function (d) {
+            return yScale(d.y0) - yScale(d.y1) + heightDelta(d, yScale);
+        })
+        .attr('y', function (d) {
+            return yScale(d.y1) - heightDelta(d, yScale);
+        });
+
+    var barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/globalStats.numBins) - 1;
+    bars.enter().append('rect')
+
+        .attr('data-container', '#histogram')
+        .attr('data-placement', function (d) {
+            if (d.type === 'global') {
+                return 'left';
+            } else {
+                return 'right';
+            }
+        })
+
+        .attr('data-html', true)
+        .attr('data-template', function (d) {
+            var fill = colorHighlighted(d.type);
+            return '<div class="tooltip" role="tooltip"><div class="tooltip-arrow"></div>' +
+                '<div class="tooltip-inner" style="background-color: ' + fill + '"></div></div>';
+        })
+
+        .attr('data-toggle', 'tooltip')
+        .attr('data-original-title', function(d) {
+            return d.val;
+        })
+
+        .style('fill', function (d) {
+            return color(d.type);
+        })
+        .attr('width', barWidth)
+        .attr('height', function (d) {
+            return yScale(d.y0) - yScale(d.y1) + heightDelta(d, yScale);
+        })
+        .attr('y', function (d) {
+            return yScale(d.y1) - heightDelta(d, yScale);
+        });
+
+
+}
+
 function heightDelta(d, xScale) {
     var minimumHeight = 5;
     var height = xScale(d.y0) - xScale(d.y1);
@@ -609,6 +766,107 @@ function initializeHistogramViz($el, model) {
         svg: svg
     };
 }
+
+function initializeSparklineViz($el, model) {
+    var width = $el.width();
+    var height = $el.height(); // TODO: Get this more naturally.
+    var data = model.attributes.data;
+    var attribute = model.attributes.attribute;
+    var globalStats = model.attributes.globalStats[attribute];
+    var bins = data.bins || []; // Guard against empty bins.
+    var globalBins = globalStats.bins || [];
+    var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
+    data.numValues = data.numValues || 0;
+
+    // Transform bins and global bins into stacked format.
+    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues);
+
+    //////////////////////////////////////////////////////////////////////////
+    // Scale size of SVG / viz based on number of elements.
+    //////////////////////////////////////////////////////////////////////////
+
+    width = width - marginSparklines.left - marginSparklines.right;
+    height = height - marginSparklines.top - marginSparklines.bottom;
+
+    //////////////////////////////////////////////////////////////////////////
+    // Setup Scales and Axes
+    //////////////////////////////////////////////////////////////////////////
+
+    // We want ticks between bars if histogram, and under bars if countBy
+    var xScale;
+    if (type === 'countBy') {
+        xScale = d3.scale.ordinal()
+            .rangeRoundBands([0, width], 0.1, 0.1);
+    } else {
+        xScale = d3.scale.linear()
+            .range([0, width]);
+    }
+
+    var yScale = d3.scale.linear()
+        .range([height, 0]);
+
+    if (type === 'countBy') {
+        xScale.domain(_.range(globalStats.numBins));
+    } else {
+        xScale.domain([0, globalStats.numBins]);
+    }
+
+    var yDomainMax = _.max(stackedBins, function (bin) {
+        return bin.total;
+    }).total;
+
+    if (DIST) {
+        yDomainMax = 1.0;
+    }
+
+    yScale.domain([0, yDomainMax]);
+
+    var numTicks = (type === 'countBy') ? globalStats.numBins : globalStats.numBins + 1;
+    // var xAxis = d3.svg.axis()
+    //     .scale(xScale)
+    //     .orient('bottom')
+    //     .ticks(numTicks)
+    //     .tickFormat(function (d) {
+    //         if (type === 'countBy') {
+    //             return prettyPrint(d); // name of bin
+    //         } else {
+    //             return prettyPrint(d * globalStats.binWidth + globalStats.minValue);
+    //         }
+    //     });
+
+    // var xAxis = d3.svg.axis()
+    //     .scale(xScale)
+    //     .ticks(5) // TODO: Dynamic?
+    //     .orient('bottom') // TODO: format?
+    //     .tickFormat(prettyPrint);
+
+    //////////////////////////////////////////////////////////////////////////
+    // Setup SVG
+    //////////////////////////////////////////////////////////////////////////
+
+    var svg = d3.select($el[0]).append('svg')
+            .attr('width', width + marginSparklines.left + marginSparklines.right)
+            .attr('height', height + marginSparklines.top + marginSparklines.bottom)
+        .append('g')
+            .attr('transform', 'translate(' + marginSparklines.left + ',' + marginSparklines.top + ')');
+
+    // svg.append('g')
+    //     .attr('class', 'x axis')
+    //     .attr('transform', 'translate(0,' + height + ')')
+    //     .call(xAxis);
+
+    // svg.append('g')
+    //     .attr('class', 'y axis')
+    //     .attr('transform', 'translate(' + (width + 4) + ',0)')
+    //     .call(yAxis);
+
+    d3DataMap[attribute] = {
+        xScale: xScale,
+        yScale: yScale,
+        svg: svg
+    };
+}
+
 
 function updateHistogramData(socket, marquee, collection, data, globalStats, Model) {
     var histograms = [];
