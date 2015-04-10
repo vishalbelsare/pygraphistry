@@ -865,7 +865,7 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
         return;
     }
 
-    console.log('==== Rendering a frame (tag: ' + tag +')', toRender);
+    debug('==== Rendering a frame (tag: ' + tag +')', toRender);
     state.get('renderPipeline').onNext({start: toRender});
 
     var itemToTarget = function (config, itemName) {

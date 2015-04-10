@@ -19,7 +19,6 @@ var $               = window.$,
 var streamClient    = require('./client.js'),
     ui              = require('./ui.js'),
     vizApp          = require('./graphVizApp/vizApp.js'),
-    util            = require('./graphVizApp/util.js'),
     monkey          = require('./monkey.js');
 
 

@@ -71,8 +71,8 @@ function setupRenderUpdates(renderState, cameraStream, settingsChanges) {
 }
 
 
+//TODO FIXME
 function setupBackgroundColor() {
-    //TODO FIXME
     /*TODO refactor this is out of place
     var stateWithColor =
         bgColor.map(function (rgb) {
@@ -132,14 +132,14 @@ function setupRenderingLoop(renderState, vboUpdates, currentlyQuiet) {
     }).subscribe(_.identity, util.makeErrorHandler('render vbo updates'));
 
     function quietCallback() {
-        console.log('Quiet state');
+        debug('Quiet state');
         renderSlowEffects(renderState, currentlyQuiet, vboUpdated);
         vboUpdated = false;
         currentlyQuiet.onNext();
     }
 
     renderTasks.subscribe(function (task) {
-        console.log('Queueing frame on behalf of', task.tag);
+        debug('Queueing frame on behalf of', task.tag);
         renderQueue[task.tag] = task;
 
         if (renderingPaused) {
@@ -180,18 +180,19 @@ function startRenderingLoop(renderState, quietCallback) {
     }
 
     function pauseRenderingLoop(nextFrameId) {
-        console.log('Pausing rendering loop');
+        debug('Pausing rendering loop');
         window.cancelAnimationFrame(nextFrameId);
         renderingPaused = true;
     }
 
-    console.log('Starting rendering loop');
+    debug('Starting rendering loop');
     renderingPaused = false;
     loop();
 }
 
 
 module.exports = {
+    setupBackgroundColor: setupBackgroundColor,
     setupCameraInteractions: setupCameraInteractions,
     setupLabelsAndCursor: setupLabelsAndCursor,
     setupRenderUpdates: setupRenderUpdates,

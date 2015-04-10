@@ -4,7 +4,6 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:vizApp');
 var $       = window.$;
-var _       = require('underscore');
 var Rx      = require('rx');
               require('../rx-jquery-stub');
 
@@ -97,6 +96,8 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     canvas.setupRenderUpdates(appState.renderState, cameraChanges, settingsChanges);
 
     var colors = colorpicker($fgPicker, $bgPicker, socket);
+    canvas.setupBackgroundColor(appState, colors.backgroundColor);
+
     shortestpaths($spButton, poi, socket);
 
     var doneLoading = vboUpdates.filter(function (update) {
