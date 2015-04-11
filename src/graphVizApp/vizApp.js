@@ -86,7 +86,8 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     // Setup
     //////////////////////////////////////////////////////////////////////////
 
-    canvas.setupRenderingLoop(appState.renderState, appState.vboUpdates, appState.currentlyQuiet);
+    canvas.setupRenderingLoop(appState.renderState, appState.vboUpdates,
+                              appState.simulateOn, appState.currentlyQuiet);
     canvas.setupCameraInteractions(appState, $simCont).subscribe(
         appState.cameraChanges,
         util.makeErrorHandler('cameraChanges')

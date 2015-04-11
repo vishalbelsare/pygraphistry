@@ -120,8 +120,13 @@ function renderSlowEffects(renderState, vboUpdated) {
 }
 
 
-function setupRenderingLoop(renderState, vboUpdates, currentlyQuiet) {
+function setupRenderingLoop(renderState, vboUpdates, simulateOn, currentlyQuiet) {
     var vboUpdated = false;
+    var simulating;
+
+    simulateOn.subscribe(function (val) {
+        simulating = val;
+    }, util.makeErrorHandler('simulate updates'));
 
     vboUpdates.filter(function (status) {
         return status === 'received';
@@ -132,10 +137,12 @@ function setupRenderingLoop(renderState, vboUpdates, currentlyQuiet) {
     }).subscribe(_.identity, util.makeErrorHandler('render vbo updates'));
 
     function quietCallback() {
-        debug('Quiet state');
-        renderSlowEffects(renderState, currentlyQuiet, vboUpdated);
-        vboUpdated = false;
-        currentlyQuiet.onNext();
+        if (!simulating) {
+            debug('Quiet state');
+            renderSlowEffects(renderState, currentlyQuiet, vboUpdated);
+            vboUpdated = false;
+            currentlyQuiet.onNext();
+        }
     }
 
     renderTasks.subscribe(function (task) {
