@@ -393,8 +393,13 @@
 
 <script type="text/template" id="histogramTemplateNoDropdown">
     <div class="topMenu">
-        <div class="col-xs-10 attributeName">
-                {{attribute}}
+        <div class="col-xs-1 expandButton">
+            <a href="#">
+                <i class="fa fa-play expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
+            </a>
+        </div>
+        <div class="col-xs-9 attributeName">
+            {{attribute}}
         </div>
         <div class="col-xs-1 closeButton">
             <a href="#">
