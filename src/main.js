@@ -16,7 +16,7 @@ var $               = window.$,
     debug           = require('debug')('graphistry:StreamGL:main');
                       require('./rx-jquery-stub');
 
-var streamClient    = require('./client.js'),
+var streamClient    = require('./localclient.js'),
     ui              = require('./ui.js'),
     vizApp          = require('./graphVizApp/vizApp.js'),
     monkey          = require('./monkey.js');
