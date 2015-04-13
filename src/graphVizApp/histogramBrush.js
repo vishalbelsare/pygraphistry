@@ -87,7 +87,9 @@ function init(socket, marquee) {
         template: Handlebars.compile($('#histogramTemplateNoDropdown').html()),
 
         events: {
-            'click .closeHistogramButton': 'close'
+            'click .closeHistogramButton': 'close',
+            'click .expandHistogramButton': 'expand',
+            'click .expandedHistogramButton': 'shrink'
         },
 
         initialize: function() {
@@ -103,6 +105,14 @@ function init(socket, marquee) {
             this.$el.html(html);
 
             return this;
+        },
+
+        shrink: function(evt) {
+            $(evt.target).removeClass('expandedHistogramButton').addClass('expandHistogramButton');
+        },
+
+        expand: function(evt) {
+            $(evt.target).removeClass('expandHistogramButton').addClass('expandedHistogramButton');
         },
 
         close: function() {
@@ -279,7 +289,6 @@ function init(socket, marquee) {
         histogram.set('attribute', attribute);
         histograms.add([histogram]);
     });
-
 }
 
 function toStackedObject(local, total, idx, key, numLocal, numTotal, distribution) {
