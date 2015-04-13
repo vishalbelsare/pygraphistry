@@ -22,7 +22,6 @@ var MODE = 'default';
 var DIST = false;
 var DRAG_SAMPLE_INTERVAL = 100;
 var BAR_THICKNESS = 16;
-var SPARKLINES = true;
 var NUM_SPARKLINES = 30;
 
 //////////////////////////////////////////////////////////////////////////////
@@ -46,20 +45,20 @@ var attributeChange = new Rx.Subject();
 var globalStatsCache = {}; // For add histogram. TODO: Get rid of this and use replay
 var d3DataMap = {};
 
-function updateAttribute (oldAttribute, newAttribute) {
+function updateAttribute (oldAttribute, newAttribute, type) {
     // Delete old if it exists
-    var indexOfOld = activeAttributes.indexOf(oldAttribute);
+    var indexOfOld = _.pluck(activeAttributes, 'name').indexOf(oldAttribute);
     if (indexOfOld > -1) {
         activeAttributes.splice(indexOfOld, 1);
     }
 
     // Add new one if it exists
     if (newAttribute) {
-        activeAttributes.push(newAttribute);
+        activeAttributes.push({name: newAttribute, type: type});
     }
 
-    // Only resend selections if an update, not add / remove
-    if (oldAttribute && newAttribute) {
+    // Only resend selections if an add/update
+    if (newAttribute) {
         attributeChange.onNext(newAttribute);
     }
 }
@@ -108,29 +107,31 @@ function init(socket, marquee) {
         },
 
         shrink: function(evt) {
-            console.log('Shrinking');
             $(evt.target).removeClass('expandedHistogramButton').addClass('expandHistogramButton');
             var vizContainer = this.model.get('vizContainer');
             var attribute = this.model.get('attribute');
+            d3DataMap[attribute].svg.selectAll('*').remove();
             vizContainer.empty();
             var vizHeight = '80';
             vizContainer.height(String(vizHeight) + 'px');
             initializeSparklineViz(vizContainer, this.model); // TODO: Link to data?
             updateSparkline(vizContainer, this.model, attribute);
             this.model.set('sparkLines', true);
+            updateAttribute(attribute, attribute, 'sparkLines');
         },
 
         expand: function(evt) {
-            console.log('Expanding');
             $(evt.target).removeClass('expandHistogramButton').addClass('expandedHistogramButton');
             var vizContainer = this.model.get('vizContainer');
             var attribute = this.model.get('attribute');
+            d3DataMap[attribute].svg.selectAll('*').remove();
             vizContainer.empty();
-            var vizHeight = this.model.get('globalStats')[attribute].numBins * BAR_THICKNESS + margin.top + margin.bottom;
+            var vizHeight = this.model.get('globalStats').histograms[attribute].numBins * BAR_THICKNESS + margin.top + margin.bottom;
             vizContainer.height(String(vizHeight) + 'px');
             initializeHistogramViz(vizContainer, this.model); // TODO: Link to data?
             updateHistogram(vizContainer, this.model, attribute);
             this.model.set('sparkLines', false);
+            updateAttribute(attribute, attribute, 'histogram');
         },
 
         close: function() {
@@ -169,7 +170,7 @@ function init(socket, marquee) {
                 initializeSparklineViz(vizContainer, histogram); // TODO: Link to data?
                 updateSparkline(vizContainer, histogram, attribute);
             } else {
-                vizHeight = histogram.get('globalStats')[attribute].numBins * BAR_THICKNESS + margin.top + margin.bottom;
+                vizHeight = histogram.get('globalStats').histograms[attribute].numBins * BAR_THICKNESS + margin.top + margin.bottom;
                 vizContainer.height(String(vizHeight) + 'px');
                 initializeHistogramViz(vizContainer, histogram); // TODO: Link to data?
                 updateHistogram(vizContainer, histogram, attribute);
@@ -207,35 +208,28 @@ function init(socket, marquee) {
     // Grab global stats at initialization
     var globalStats = new Rx.ReplaySubject(1);
     var params = {all: true, mode: MODE};
-    if (SPARKLINES) {
-        params.binning = {'_goalNumberOfBins': NUM_SPARKLINES};
-    }
-    Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
-        .do(function (reply) {
-            if (!reply) {
-                console.error('Unexpected server error on global aggregate');
-            } else if (reply && !reply.success) {
-                console.log('Server replied with error from global aggregate:', reply.error, reply.stack);
-            }
-        }).map(function (reply) {
-            return reply.data;
-        })
-        .do(function (data) {
-            globalStatsCache = data;
-            console.log('data: ', data);
-            attributes = _.filter(_.keys(data), function (val) {
-                var isTitle = (val !== '_title');
-                return isTitle;
-            });
-            var template = Handlebars.compile($('#addHistogramTemplate').html());
-            var params = {
-                fields: attributes
-            };
-            var html = template(params);
-            $('#addHistogram').html(html);
+    var paramsSparklines = {all: true, mode: MODE, binning: {'_goalNumberOfBins': NUM_SPARKLINES}};
+    var globalStream = Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params);
+    var globalStreamSparklines = Rx.Observable.fromCallback(socket.emit, socket)('aggregate', paramsSparklines);
 
-            // activeAttributes = attributes.slice(0,3);
-        }).subscribe(globalStats, util.makeErrorHandler('Global stat aggregate call'));
+    Rx.Observable.zip(globalStream, globalStreamSparklines, function (histogramsReply, sparkLinesReply) {
+        checkReply(histogramsReply);
+        checkReply(sparkLinesReply);
+        return {histograms: histogramsReply.data, sparkLines: sparkLinesReply.data};
+    }).do(function (data) {
+        globalStatsCache = data;
+        attributes = _.filter(_.keys(data.histograms), function (val) {
+            var isTitle = (val !== '_title');
+            return isTitle;
+        });
+        var template = Handlebars.compile($('#addHistogramTemplate').html());
+        var params = {
+            fields: attributes
+        };
+        var html = template(params);
+        $('#addHistogram').html(html);
+
+    }).subscribe(globalStats, util.makeErrorHandler('Global stat aggregate call'));
 
 
     // Take stream of selections and drags and use them for histograms
@@ -253,8 +247,17 @@ function init(socket, marquee) {
         });
 
     }).flatMapLatest(function (data) {
-        var binning = data.globalStats;
-        var params = {sel: data.sel, attributes: activeAttributes, binning: binning, mode: MODE};
+        var binning = {};
+        var attributes = _.pluck(activeAttributes, 'name');
+        _.each(activeAttributes, function (attr) {
+            if (attr.type === 'sparkLines') {
+                binning[attr.name] = data.globalStats.sparkLines[attr.name];
+            } else {
+                binning[attr.name] = data.globalStats.histograms[attr.name];
+            }
+        });
+
+        var params = {sel: data.sel, attributes: attributes, binning: binning, mode: MODE};
         lastSelection = data.sel;
         return Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
             .map(function (agg) {
@@ -295,12 +298,12 @@ function init(socket, marquee) {
         var field = $(this).text().trim();
         $(this).parents('.dropdown').find('.btn').text(field);
         $(this).parents('.dropdown').find('.btn').val(field);
-        updateAttribute(oldField, field);
+        updateAttribute(oldField, field, 'sparkLines');
     });
 
     $('#histogram').on('click', '.addHistogramDropdownField', function () {
         var attribute = $(this).text().trim();
-        updateAttribute(null, attribute);
+        updateAttribute(null, attribute, 'sparkLines');
 
         var histogram = new HistogramModel();
         histogram.set({data: {}, globalStats: globalStatsCache, firstTime: true, sparkLines: true});
@@ -308,6 +311,14 @@ function init(socket, marquee) {
         histogram.set('attribute', attribute);
         histograms.add([histogram]);
     });
+}
+
+function checkReply (reply) {
+    if (!reply) {
+        console.error('Unexpected server error on global aggregate');
+    } else if (reply && !reply.success) {
+        console.log('Server replied with error from global aggregate:', reply.error, reply.stack);
+    }
 }
 
 function toStackedObject(local, total, idx, key, numLocal, numTotal, distribution) {
@@ -386,7 +397,7 @@ function highlight(selection, toggle) {
 function updateHistogram($el, model, attribute) {
     var height = $el.height() - margin.top - margin.bottom;
     var data = model.attributes.data;
-    var globalStats = model.attributes.globalStats[attribute];
+    var globalStats = model.attributes.globalStats.histograms[attribute];
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
     var type = (data.type !== 'nodata') ? data.type : globalStats.type;
@@ -403,7 +414,6 @@ function updateHistogram($el, model, attribute) {
     //////////////////////////////////////////////////////////////////////////
 
     var columns = selectColumns(svg, stackedBins);
-    console.log('yScale: ', yScale, yScale(0));
     applyAttrColumns(columns.enter().append('g'))
         .attr('transform', function (d, i) {
             return 'translate(0,' + yScale(i) + ')';
@@ -443,7 +453,7 @@ function updateHistogram($el, model, attribute) {
 function updateSparkline($el, model, attribute) {
     var width = $el.width() - marginSparklines.left - marginSparklines.right;
     var data = model.attributes.data;
-    var globalStats = model.attributes.globalStats[attribute];
+    var globalStats = model.attributes.globalStats.sparkLines[attribute];
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
     var type = (data.type !== 'nodata') ? data.type : globalStats.type;
@@ -597,7 +607,7 @@ function initializeHistogramViz($el, model) {
     var height = $el.height(); // TODO: Get this more naturally.
     var data = model.attributes.data;
     var attribute = model.attributes.attribute;
-    var globalStats = model.attributes.globalStats[attribute];
+    var globalStats = model.attributes.globalStats.histograms[attribute];
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
     var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
@@ -644,7 +654,7 @@ function initializeSparklineViz($el, model) {
     var height = $el.height();
     var data = model.attributes.data;
     var attribute = model.attributes.attribute;
-    var globalStats = model.attributes.globalStats[attribute];
+    var globalStats = model.attributes.globalStats.sparkLines[attribute];
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
     var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
