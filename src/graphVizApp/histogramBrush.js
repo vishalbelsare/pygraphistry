@@ -31,7 +31,6 @@ var NUM_SPARKLINES = 30;
 
 var color = d3.scale.ordinal()
         .range(['#0FA5C5', '#B2B2B2', '#0FA5C5', '#00BBFF'])
-        // .range(['#0092DC', '#B2B2B2'])
         .domain(['local', 'global', 'globalSmaller', 'localBigger']);
 
 var colorHighlighted = d3.scale.ordinal()
@@ -67,7 +66,6 @@ function updateAttribute (oldAttribute, newAttribute) {
 
 function init(socket, marquee) {
     debug('Initializing histogram brush');
-    window.updateAttribute = updateAttribute;
 
     //////////////////////////////////////////////////////////////////////////
     // Backbone views and models
@@ -138,7 +136,6 @@ function init(socket, marquee) {
 
             if (SPARKLINES) {
                 var vizHeight = '80';
-                // var vizHeight = histogram.get('globalStats')[attribute].numBins * BAR_THICKNESS + margin.top + margin.bottom;
                 vizContainer.height(String(vizHeight) + 'px');
                 initializeSparklineViz(vizContainer, histogram); // TODO: Link to data?
                 updateSparkline(vizContainer, histogram, attribute);
@@ -681,45 +678,8 @@ function initializeHistogramViz($el, model) {
     // Transform bins and global bins into stacked format.
     var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues);
 
-    //////////////////////////////////////////////////////////////////////////
-    // Scale size of SVG / viz based on number of elements.
-    //////////////////////////////////////////////////////////////////////////
-
-    width = width - margin.left - margin.right;
-    height = height - margin.top - margin.bottom;
-
-    //////////////////////////////////////////////////////////////////////////
-    // Setup Scales and Axes
-    //////////////////////////////////////////////////////////////////////////
-
-    // We want ticks between bars if histogram, and under bars if countBy
-    var yScale;
-    if (type === 'countBy') {
-        yScale = d3.scale.ordinal()
-            .rangeRoundBands([0, height], 0.1, 0.1);
-    } else {
-        yScale = d3.scale.linear()
-            .range([0, height]);
-    }
-
-    var xScale = d3.scale.linear()
-        .range([width, 0]);
-
-    if (type === 'countBy') {
-        yScale.domain(_.range(globalStats.numBins));
-    } else {
-        yScale.domain([0, globalStats.numBins]);
-    }
-
-    var xDomainMax = _.max(stackedBins, function (bin) {
-        return bin.total;
-    }).total;
-
-    if (DIST) {
-        xDomainMax = 1.0;
-    }
-
-    xScale.domain([0, xDomainMax]);
+    var yScale = setupBinScale(type, height);
+    var xScale = setupAmountScale(width, stackedBins, DIST);
 
     var numTicks = (type === 'countBy') ? globalStats.numBins : globalStats.numBins + 1;
     var yAxis = d3.svg.axis()
@@ -734,26 +694,7 @@ function initializeHistogramViz($el, model) {
             }
         });
 
-    // var xAxis = d3.svg.axis()
-    //     .scale(xScale)
-    //     .ticks(5) // TODO: Dynamic?
-    //     .orient('bottom') // TODO: format?
-    //     .tickFormat(prettyPrint);
-
-    //////////////////////////////////////////////////////////////////////////
-    // Setup SVG
-    //////////////////////////////////////////////////////////////////////////
-
-    var svg = d3.select($el[0]).append('svg')
-            .attr('width', width + margin.left + margin.right)
-            .attr('height', height + margin.top + margin.bottom)
-        .append('g')
-            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
-
-    // svg.append('g')
-    //     .attr('class', 'x axis')
-    //     .attr('transform', 'translate(0,' + height + ')')
-    //     .call(xAxis);
+    var svg = setupSvg($el[0], margin, width, height);
 
     svg.append('g')
         .attr('class', 'y axis')
@@ -769,7 +710,7 @@ function initializeHistogramViz($el, model) {
 
 function initializeSparklineViz($el, model) {
     var width = $el.width();
-    var height = $el.height(); // TODO: Get this more naturally.
+    var height = $el.height();
     var data = model.attributes.data;
     var attribute = model.attributes.attribute;
     var globalStats = model.attributes.globalStats[attribute];
@@ -781,84 +722,12 @@ function initializeSparklineViz($el, model) {
     // Transform bins and global bins into stacked format.
     var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues);
 
-    //////////////////////////////////////////////////////////////////////////
-    // Scale size of SVG / viz based on number of elements.
-    //////////////////////////////////////////////////////////////////////////
-
     width = width - marginSparklines.left - marginSparklines.right;
     height = height - marginSparklines.top - marginSparklines.bottom;
 
-    //////////////////////////////////////////////////////////////////////////
-    // Setup Scales and Axes
-    //////////////////////////////////////////////////////////////////////////
-
-    // We want ticks between bars if histogram, and under bars if countBy
-    var xScale;
-    if (type === 'countBy') {
-        xScale = d3.scale.ordinal()
-            .rangeRoundBands([0, width], 0.1, 0.1);
-    } else {
-        xScale = d3.scale.linear()
-            .range([0, width]);
-    }
-
-    var yScale = d3.scale.linear()
-        .range([height, 0]);
-
-    if (type === 'countBy') {
-        xScale.domain(_.range(globalStats.numBins));
-    } else {
-        xScale.domain([0, globalStats.numBins]);
-    }
-
-    var yDomainMax = _.max(stackedBins, function (bin) {
-        return bin.total;
-    }).total;
-
-    if (DIST) {
-        yDomainMax = 1.0;
-    }
-
-    yScale.domain([0, yDomainMax]);
-
-    var numTicks = (type === 'countBy') ? globalStats.numBins : globalStats.numBins + 1;
-    // var xAxis = d3.svg.axis()
-    //     .scale(xScale)
-    //     .orient('bottom')
-    //     .ticks(numTicks)
-    //     .tickFormat(function (d) {
-    //         if (type === 'countBy') {
-    //             return prettyPrint(d); // name of bin
-    //         } else {
-    //             return prettyPrint(d * globalStats.binWidth + globalStats.minValue);
-    //         }
-    //     });
-
-    // var xAxis = d3.svg.axis()
-    //     .scale(xScale)
-    //     .ticks(5) // TODO: Dynamic?
-    //     .orient('bottom') // TODO: format?
-    //     .tickFormat(prettyPrint);
-
-    //////////////////////////////////////////////////////////////////////////
-    // Setup SVG
-    //////////////////////////////////////////////////////////////////////////
-
-    var svg = d3.select($el[0]).append('svg')
-            .attr('width', width + marginSparklines.left + marginSparklines.right)
-            .attr('height', height + marginSparklines.top + marginSparklines.bottom)
-        .append('g')
-            .attr('transform', 'translate(' + marginSparklines.left + ',' + marginSparklines.top + ')');
-
-    // svg.append('g')
-    //     .attr('class', 'x axis')
-    //     .attr('transform', 'translate(0,' + height + ')')
-    //     .call(xAxis);
-
-    // svg.append('g')
-    //     .attr('class', 'y axis')
-    //     .attr('transform', 'translate(' + (width + 4) + ',0)')
-    //     .call(yAxis);
+    var xScale = setupBinScale(type, width, globalStats.numBins);
+    var yScale = setupAmountScale(height, stackedBins, DIST);
+    var svg = setupSvg($el[0], marginSparklines, width, height);
 
     d3DataMap[attribute] = {
         xScale: xScale,
@@ -867,8 +736,42 @@ function initializeSparklineViz($el, model) {
     };
 }
 
+function setupBinScale (type, size, globalNumBins) {
+    // We want ticks between bars if histogram, and under bars if countBy
+    if (type === 'countBy') {
+        return d3.scale.ordinal()
+            .rangeRoundBands([0, size], 0.1, 0.1)
+            .domain(_.range(globalNumBins));
+    } else {
+        return d3.scale.linear()
+            .range([0, size])
+            .domain([0, globalNumBins]);
+    }
+}
 
-function updateHistogramData(socket, marquee, collection, data, globalStats, Model) {
+function setupAmountScale (size, stackedBins, distribution) {
+    var domainMax = 1.0;
+    if (!distribution) {
+        domainMax = _.max(stackedBins, function (bin) {
+            return bin.total;
+        }).total;
+    }
+
+    return d3.scale.linear()
+            .range([size, 0])
+            .domain([0, domainMax]);
+}
+
+function setupSvg (el, margin, width, height) {
+    return d3.select(el).append('svg')
+            .attr('width', width + margin.left + margin.right)
+            .attr('height', height + margin.top + margin.bottom)
+        .append('g')
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+}
+
+
+function updateHistogramData (socket, marquee, collection, data, globalStats, Model) {
     var histograms = [];
     _.each(data, function (val, key) {
         var histogram = new Model();
