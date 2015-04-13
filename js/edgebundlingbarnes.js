@@ -87,7 +87,6 @@ EdgeBundling.prototype.setPhysics = function(cfg) {
     });
 
     this.ebBarnesKernelSeq.setPhysics(flags);
-    console.log(this);
     this.integrateMidPoints.setPhysics(flags);
     //this.edgeKernelSeq.setPhysics(flags);
 }
@@ -160,6 +159,7 @@ function getNumWorkitemsByHardware(deviceProps) {
 // Contains any temporary buffers needed for layout
 var tempLayoutBuffers  = {
   globalSpeed: null,
+  tempMidPoints: null,
   prevForces: null,
   curForces: null
 
@@ -172,12 +172,14 @@ var setupTempLayoutBuffers = function(simulator) {
         [
         simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed'),
         simulator.cl.createBuffer(2*simulator.numMidPoints*Float32Array.BYTES_PER_ELEMENT, 'prevForces'),
-        simulator.cl.createBuffer(2*simulator.numMidPoints*Float32Array.BYTES_PER_ELEMENT, 'curForces')
+        simulator.cl.createBuffer(2*simulator.numMidPoints*Float32Array.BYTES_PER_ELEMENT, 'curForces'),
+        simulator.cl.createBuffer(2*simulator.numMidPoints*Float32Array.BYTES_PER_ELEMENT, 'tempMidPoints')
         ])
-    .spread(function (globalSpeed, prevForces, curForces) {
+    .spread(function (globalSpeed, prevForces, curForces, tempMidPoints) {
       tempLayoutBuffers.globalSpeed = globalSpeed;
       tempLayoutBuffers.prevForces = prevForces;
       tempLayoutBuffers.curForces = curForces;
+      tempLayoutBuffers.tempMidPoints = tempMidPoints;
       return tempLayoutBuffers;
     })
     .catch(util.makeErrorHandler('setupTempBuffers'));
@@ -204,7 +206,7 @@ EdgeBundling.prototype.setEdges = function (simulator) {
           springs: simulator.buffers.forwardsEdges.buffer,
           workList: simulator.buffers.forwardsWorkItems.buffer,
           inputPoints: simulator.buffers.curPoints.buffer,
-          inputMidPoints: simulator.buffers.nextMidPoints.buffer,
+          inputMidPoints: tempLayoutBuffers.tempMidPoints.buffer,
           outputMidPoints: tempLayoutBuffers.curForces.buffer,
           springMidPositions: simulator.buffers.midSpringsPos.buffer,
           midSpringsColorCoords: simulator.buffers.midSpringsColorCoord.buffer
@@ -290,6 +292,14 @@ EdgeBundling.prototype.tick = function(simulator, stepNumber) {
         return that.integrateMidPoints.execKernels(simulator, tempLayoutBuffers, workItems);
     }).then(function () {
         return that.midEdgeGather.execKernels(simulator)
+    }).then(function () {
+        return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
+    }).then(function () {
+            simulator.tickBuffers(['curMidPoints'])
+        return Q.all([
+            simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints),
+            tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
+            ])
     }).fail(util.makeErrorHandler('Failure in edgebundling tick'));
 }
 

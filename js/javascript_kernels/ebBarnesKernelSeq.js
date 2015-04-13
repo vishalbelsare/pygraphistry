@@ -111,7 +111,7 @@ var EbBarnesKernelSeq = function (clContext) {
 
 
   this.kernels = [this.toBarnesLayout, this.boundBox, this.buildTree, this.computeSums,
-  this.sort, this.calculatePointsForces, this.calculateMidPoints, this.move];
+  this.sort, this.calculateMidPoints];
 
   this.setPhysics = function(flag) {
 
@@ -254,7 +254,7 @@ var EbBarnesKernelSeq = function (clContext) {
           height:simulator.controls.global.dimensions[1],
           numBodies:buffers.numBodies,
           numNodes:buffers.numNodes,
-          nextMidPoints:simulator.buffers.nextMidPoints.buffer,
+          nextMidPoints:layoutBuffers.tempMidPoints.buffer,
           WARPSIZE:warpsize,
           THREADS_SUMS: workItems.computeSums[1],
           THREADS_FORCES: workItems.calculateForces[1],
@@ -295,7 +295,7 @@ var EbBarnesKernelSeq = function (clContext) {
         height:simulator.controls.global.dimensions[1],
         numBodies:buffers.numBodies,
         numNodes:buffers.numNodes,
-        nextMidPoints:simulator.buffers.nextMidPoints.buffer,
+        nextMidPoints:layoutBuffers.tempMidPoints.buffer,
         WARPSIZE:warpsize,
         THREADS_SUMS: workItems.computeSums[1],
         THREADS_FORCES: workItems.calculateForces[1],
