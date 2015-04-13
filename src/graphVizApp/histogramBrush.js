@@ -282,10 +282,10 @@ function init(socket, marquee) {
 
 }
 
-function toStackedObject(local, total, idx, key, numLocal, numTotal) {
+function toStackedObject(local, total, idx, key, numLocal, numTotal, distribution) {
     // If we want to normalize to a distribution as percentage of total.
     var stackedObj;
-    if (DIST) {
+    if (distribution) {
         local = (numLocal === 0) ? 0 : local / numLocal;
         total = (numTotal === 0) ? 0 : total / numTotal;
 
@@ -316,7 +316,7 @@ function toStackedObject(local, total, idx, key, numLocal, numTotal) {
     return stackedObj;
 }
 
-function toStackedBins(bins, globalBins, type, numLocal, numTotal) {
+function toStackedBins(bins, globalBins, type, numLocal, numTotal, distribution) {
     // Transform bins and global bins into stacked format.
     // Assumes that globalBins is always a superset of bins
     // TODO: Get this in a cleaner, more extensible way
@@ -326,7 +326,7 @@ function toStackedBins(bins, globalBins, type, numLocal, numTotal) {
         _.each(globalKeys, function (key, idx) {
             var local = bins[key] || 0;
             var total = globalBins[key];
-            var stackedObj = toStackedObject(local, total, idx, key, numLocal, numTotal);
+            var stackedObj = toStackedObject(local, total, idx, key, numLocal, numTotal, distribution);
             stackedBins.push(stackedObj);
         });
 
@@ -339,7 +339,7 @@ function toStackedBins(bins, globalBins, type, numLocal, numTotal) {
         _.each(zippedBins, function (stack, idx) {
             var local = stack[0] || 0;
             var total = stack[1];
-            var stackedObj = toStackedObject(local, total, idx, '', numLocal, numTotal);
+            var stackedObj = toStackedObject(local, total, idx, '', numLocal, numTotal, distribution);
             stackedBins.push(stackedObj);
         });
     }
@@ -368,87 +368,25 @@ function updateHistogram($el, model, attribute) {
     var xScale = d3DataMap[attribute].xScale;
     var yScale = d3DataMap[attribute].yScale;
 
-    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues);
+    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues, DIST);
 
     //////////////////////////////////////////////////////////////////////////
     // Create Columns
     //////////////////////////////////////////////////////////////////////////
 
-    var columns = svg.selectAll('.column')
-        .data(stackedBins, function (d) {
-            return d.id;
-        });
-
-    columns.enter().append('g')
-        .classed('g', true)
-        .classed('column', true)
+    var columns = selectColumns(svg, stackedBins);
+    applyAttrColumns(columns.enter().append('g'))
         .attr('transform', function (d, i) {
-            // return 'translate(' + xScale(i) + ',0)';
             return 'translate(0,' + yScale(i) + ')';
-        })
-
-        .attr('data-container', '#histogram')
-        .attr('data-placement', 'top')
-        .attr('data-toggle', 'tooltip')
-        .attr('data-original-title', function(d) {
-            return d.total;
-        })
-
-        .on('mouseover', function () {
-            var col = d3.select(d3.event.target.parentNode);
-            var children = col[0][0].children;
-            _.each(children, function (child) {
-                $(child).tooltip('fixTitle');
-                $(child).tooltip('show');
-            });
-            highlight(col.selectAll('rect'), true);
-        })
-        .on('mouseout', function () {
-            var col = d3.select(d3.event.target.parentNode);
-            var children = col[0][0].children;
-            _.each(children, function (child) {
-                $(child).tooltip('hide');
-            });
-            highlight(col.selectAll('rect'), false);
         });
 
     //////////////////////////////////////////////////////////////////////////
     // Create and Update Bars
     //////////////////////////////////////////////////////////////////////////
 
-    var bars = columns.selectAll('rect')
-        .data(function (d) {
-            return d;
-        }, function (d) {
-            return d.barNum + d.binId;
-        });
+    var bars = selectBars(columns);
 
-    // bars
-    //     .transition().duration(DRAG_SAMPLE_INTERVAL)
-    //     .attr('height', function (d) {
-    //         return yScale(d.y0) - yScale(d.y1) + heightDelta(d);
-    //     })
-    //     .attr('y', function (d) {
-    //         return yScale(d.y1) - heightDelta(d);
-    //     });
-
-    // var barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/globalStats.numBins);
-    // bars.enter().append('rect')
-    //     .style('fill', function (d) {
-    //         return color(d.type);
-    //     })
-    //     .attr('width', barWidth)
-    //     .attr('height', function (d) {
-    //         return yScale(d.y0) - yScale(d.y1) + heightDelta(d);
-    //     })
-    //     .attr('y', function (d) {
-    //         return yScale(d.y1) - heightDelta(d);
-    //     });
-
-
-
-    bars
-        .transition().duration(DRAG_SAMPLE_INTERVAL)
+    bars.transition().duration(DRAG_SAMPLE_INTERVAL)
         .attr('data-original-title', function(d) {
             return d.val;
         })
@@ -459,33 +397,9 @@ function updateHistogram($el, model, attribute) {
             return xScale(d.y1) - heightDelta(d, xScale);
         });
 
+
     var barHeight = (type === 'countBy') ? yScale.rangeBand() : Math.floor(height/globalStats.numBins) - 2;
-    bars.enter().append('rect')
-
-        .attr('data-container', '#histogram')
-        .attr('data-placement', function (d) {
-            if (d.type === 'global') {
-                return 'bottom';
-            } else {
-                return 'top';
-            }
-        })
-
-        .attr('data-html', true)
-        .attr('data-template', function (d) {
-            var fill = colorHighlighted(d.type);
-            return '<div class="tooltip" role="tooltip"><div class="tooltip-arrow"></div>' +
-                '<div class="tooltip-inner" style="background-color: ' + fill + '"></div></div>';
-        })
-
-        .attr('data-toggle', 'tooltip')
-        .attr('data-original-title', function(d) {
-            return d.val;
-        })
-
-        .style('fill', function (d) {
-            return color(d.type);
-        })
+    applyAttrBars(bars.enter().append('rect'), 'bottom', 'top')
         .attr('height', barHeight)
         .attr('width', function (d) {
             return xScale(d.y0) - xScale(d.y1) + heightDelta(d, xScale);
@@ -510,80 +424,25 @@ function updateSparkline($el, model, attribute) {
     var xScale = d3DataMap[attribute].xScale;
     var yScale = d3DataMap[attribute].yScale;
 
-    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues);
+    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues, DIST);
 
     //////////////////////////////////////////////////////////////////////////
     // Create Columns
     //////////////////////////////////////////////////////////////////////////
 
-    var columns = svg.selectAll('.column')
-        .data(stackedBins, function (d) {
-            return d.id;
-        });
-
-    columns.enter().append('g')
-        .classed('g', true)
-        .classed('column', true)
+    var columns = selectColumns(svg, stackedBins);
+    applyAttrColumns(columns.enter().append('g'))
         .attr('transform', function (d, i) {
             return 'translate(' + xScale(i) + ',0)';
-            // return 'translate(0,' + yScale(i) + ')';
-        })
-
-        .on('mouseover', function () {
-            var col = d3.select(d3.event.target.parentNode);
-            var children = col[0][0].children;
-            _.each(children, function (child) {
-                $(child).tooltip('fixTitle');
-                $(child).tooltip('show');
-            });
-            highlight(col.selectAll('rect'), true);
-        })
-        .on('mouseout', function () {
-            var col = d3.select(d3.event.target.parentNode);
-            var children = col[0][0].children;
-            _.each(children, function (child) {
-                $(child).tooltip('hide');
-            });
-            highlight(col.selectAll('rect'), false);
         });
 
     //////////////////////////////////////////////////////////////////////////
     // Create and Update Bars
     //////////////////////////////////////////////////////////////////////////
 
-    var bars = columns.selectAll('rect')
-        .data(function (d) {
-            return d;
-        }, function (d) {
-            return d.barNum + d.binId;
-        });
+    var bars = selectBars(columns);
 
-    // bars
-    //     .transition().duration(DRAG_SAMPLE_INTERVAL)
-    //     .attr('height', function (d) {
-    //         return yScale(d.y0) - yScale(d.y1) + heightDelta(d);
-    //     })
-    //     .attr('y', function (d) {
-    //         return yScale(d.y1) - heightDelta(d);
-    //     });
-
-    // var barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/globalStats.numBins);
-    // bars.enter().append('rect')
-    //     .style('fill', function (d) {
-    //         return color(d.type);
-    //     })
-    //     .attr('width', barWidth)
-    //     .attr('height', function (d) {
-    //         return yScale(d.y0) - yScale(d.y1) + heightDelta(d);
-    //     })
-    //     .attr('y', function (d) {
-    //         return yScale(d.y1) - heightDelta(d);
-    //     });
-
-
-
-    bars
-        .transition().duration(DRAG_SAMPLE_INTERVAL)
+    bars.transition().duration(DRAG_SAMPLE_INTERVAL)
         .attr('data-original-title', function(d) {
             return d.val;
         })
@@ -594,15 +453,50 @@ function updateSparkline($el, model, attribute) {
             return yScale(d.y1) - heightDelta(d, yScale);
         });
 
-    var barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/globalStats.numBins) - 1;
-    bars.enter().append('rect')
 
+    var barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/globalStats.numBins) - 1;
+    applyAttrBars(bars.enter().append('rect'), 'left', 'right')
+        .attr('width', barWidth)
+        .attr('height', function (d) {
+            return yScale(d.y0) - yScale(d.y1) + heightDelta(d, yScale);
+        })
+        .attr('y', function (d) {
+            return yScale(d.y1) - heightDelta(d, yScale);
+        });
+
+}
+
+function selectColumns (svg, stackedBins) {
+    return svg.selectAll('.column')
+        .data(stackedBins, function (d) {
+            return d.id;
+        });
+}
+
+function selectBars (columns) {
+    return columns.selectAll('rect')
+        .data(function (d) {
+            return d;
+        }, function (d) {
+            return d.barNum + d.binId;
+        });
+}
+
+function applyAttrColumns (columns) {
+    return columns.classed('g', true)
+        .classed('column', true)
+        .on('mouseover', toggleTooltips.bind(null, true))
+        .on('mouseout', toggleTooltips.bind(null, false));
+}
+
+function applyAttrBars (bars, globalPos, localPos) {
+    return bars
         .attr('data-container', '#histogram')
         .attr('data-placement', function (d) {
             if (d.type === 'global') {
-                return 'left';
+                return globalPos;
             } else {
-                return 'right';
+                return localPos;
             }
         })
 
@@ -620,16 +514,21 @@ function updateSparkline($el, model, attribute) {
 
         .style('fill', function (d) {
             return color(d.type);
-        })
-        .attr('width', barWidth)
-        .attr('height', function (d) {
-            return yScale(d.y0) - yScale(d.y1) + heightDelta(d, yScale);
-        })
-        .attr('y', function (d) {
-            return yScale(d.y1) - heightDelta(d, yScale);
         });
+}
 
-
+function toggleTooltips (showTooltip) {
+    var col = d3.select(d3.event.target.parentNode);
+    var children = col[0][0].children;
+    _.each(children, function (child) {
+        if (showTooltip) {
+            $(child).tooltip('fixTitle');
+            $(child).tooltip('show');
+        } else {
+            $(child).tooltip('hide');
+        }
+    });
+    highlight(col.selectAll('rect'), showTooltip);
 }
 
 function heightDelta(d, xScale) {
@@ -676,7 +575,7 @@ function initializeHistogramViz($el, model) {
     data.numValues = data.numValues || 0;
 
     // Transform bins and global bins into stacked format.
-    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues);
+    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues, DIST);
 
     var yScale = setupBinScale(type, height);
     var xScale = setupAmountScale(width, stackedBins, DIST);
@@ -720,7 +619,7 @@ function initializeSparklineViz($el, model) {
     data.numValues = data.numValues || 0;
 
     // Transform bins and global bins into stacked format.
-    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues);
+    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues, DIST);
 
     width = width - marginSparklines.left - marginSparklines.right;
     height = height - marginSparklines.top - marginSparklines.bottom;
