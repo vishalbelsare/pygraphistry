@@ -108,11 +108,29 @@ function init(socket, marquee) {
         },
 
         shrink: function(evt) {
+            console.log('Shrinking');
             $(evt.target).removeClass('expandedHistogramButton').addClass('expandHistogramButton');
+            var vizContainer = this.model.get('vizContainer');
+            var attribute = this.model.get('attribute');
+            vizContainer.empty();
+            var vizHeight = '80';
+            vizContainer.height(String(vizHeight) + 'px');
+            initializeSparklineViz(vizContainer, this.model); // TODO: Link to data?
+            updateSparkline(vizContainer, this.model, attribute);
+            this.model.set('sparkLines', true);
         },
 
         expand: function(evt) {
+            console.log('Expanding');
             $(evt.target).removeClass('expandHistogramButton').addClass('expandedHistogramButton');
+            var vizContainer = this.model.get('vizContainer');
+            var attribute = this.model.get('attribute');
+            vizContainer.empty();
+            var vizHeight = this.model.get('globalStats')[attribute].numBins * BAR_THICKNESS + margin.top + margin.bottom;
+            vizContainer.height(String(vizHeight) + 'px');
+            initializeHistogramViz(vizContainer, this.model); // TODO: Link to data?
+            updateHistogram(vizContainer, this.model, attribute);
+            this.model.set('sparkLines', false);
         },
 
         close: function() {
@@ -143,14 +161,15 @@ function init(socket, marquee) {
             $(this.histogramsContainer).append(childEl);
             histogram.set('$el', $(childEl));
             var vizContainer = $(childEl).children('.vizContainer');
+            histogram.set('vizContainer', vizContainer);
+            var vizHeight = '80';
 
-            if (SPARKLINES) {
-                var vizHeight = '80';
+            if (histogram.get('sparkLines')) {
                 vizContainer.height(String(vizHeight) + 'px');
                 initializeSparklineViz(vizContainer, histogram); // TODO: Link to data?
                 updateSparkline(vizContainer, histogram, attribute);
             } else {
-                var vizHeight = histogram.get('globalStats')[attribute].numBins * BAR_THICKNESS + margin.top + margin.bottom;
+                vizHeight = histogram.get('globalStats')[attribute].numBins * BAR_THICKNESS + margin.top + margin.bottom;
                 vizContainer.height(String(vizHeight) + 'px');
                 initializeHistogramViz(vizContainer, histogram); // TODO: Link to data?
                 updateHistogram(vizContainer, histogram, attribute);
@@ -165,10 +184,10 @@ function init(socket, marquee) {
             if (!histogram.get('firstTime')) {
                 histograms.each(function (histogram) {
 
-                    if (SPARKLINES) {
-                        updateSparkline(histogram.get('$el').children('.vizContainer'), histogram, histogram.get('attribute'));
+                    if (histogram.get('sparkLines')) {
+                        updateSparkline(histogram.get('vizContainer'), histogram, histogram.get('attribute'));
                     } else {
-                        updateHistogram(histogram.get('$el').children('.vizContainer'), histogram, histogram.get('attribute'));
+                        updateHistogram(histogram.get('vizContainer'), histogram, histogram.get('attribute'));
                     }
                 });
             }
@@ -284,7 +303,7 @@ function init(socket, marquee) {
         updateAttribute(null, attribute);
 
         var histogram = new HistogramModel();
-        histogram.set({data: {}, globalStats: globalStatsCache, firstTime: true});
+        histogram.set({data: {}, globalStats: globalStatsCache, firstTime: true, sparkLines: true});
         histogram.id = attribute;
         histogram.set('attribute', attribute);
         histograms.add([histogram]);
@@ -384,6 +403,7 @@ function updateHistogram($el, model, attribute) {
     //////////////////////////////////////////////////////////////////////////
 
     var columns = selectColumns(svg, stackedBins);
+    console.log('yScale: ', yScale, yScale(0));
     applyAttrColumns(columns.enter().append('g'))
         .attr('transform', function (d, i) {
             return 'translate(0,' + yScale(i) + ')';
@@ -586,7 +606,10 @@ function initializeHistogramViz($el, model) {
     // Transform bins and global bins into stacked format.
     var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues, DIST);
 
-    var yScale = setupBinScale(type, height);
+    width = width - margin.left - margin.right;
+    height = height - margin.top - margin.bottom;
+
+    var yScale = setupBinScale(type, height, globalStats.numBins);
     var xScale = setupAmountScale(width, stackedBins, DIST);
 
     var numTicks = (type === 'countBy') ? globalStats.numBins : globalStats.numBins + 1;
