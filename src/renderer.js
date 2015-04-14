@@ -19,12 +19,6 @@ var picking             = require('./picking.js');
 // Globals across renderer instances
 ////////////////////////////////////////////////////////////////////////////////
 
-//keyed on instancing: 1 -> vertex, 2 -> line, 3 -> triangle, ...
-//[ Uint32Array ]
-var indexHostBuffers = [];
-//[ glBuffer ]
-var indexGlBuffers = [];
-
 /** Cached dictionary of program.attribute: attribute locations
  * @type {Object.<string, Object.<string, GLint>>} */
 var attrLocations = {};
@@ -161,6 +155,7 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
 
     var gl = state.get('gl');
     var uniforms = state.get('uniforms');
+    var indexGlBuffers = state.get('indexGlBuffers');
 
     debug('Binding program %s', programName);
 
@@ -247,8 +242,9 @@ function init(config, canvas) {
         bufferSize:     Immutable.Map({}),
         numElements:    {},
 
-        activeProgram: undefined,
-        attrLocations: Immutable.Map({}),
+        //keyed on instancing: 1 -> vertex, 2 -> line, 3 -> triangle, ...
+        indexHostBuffers: {}, // {Uint32Array}
+        indexGlBuffers: {}, // {GlBuffer}
 
         activeIndices:  getActiveIndices(config),
 
@@ -257,7 +253,6 @@ function init(config, canvas) {
 
         //Observable [...]
         rendered: renderPipeline.pluck('rendered').filter(_.identity)
-
     });
 
     resizeCanvas(state);
@@ -679,7 +674,7 @@ function loadBuffer(state, buffer, bufferName, model, data) {
     }
 
     state.get('activeIndices')
-        .forEach(updateIndexBuffer.bind('', gl, data.byteLength / 4));
+        .forEach(updateIndexBuffer.bind('', state, data.byteLength / 4));
 
     try{
         var glArrayType = model.index ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER;
@@ -739,7 +734,10 @@ function expandHostBuffer(gl, length, repetition, oldHostBuffer) {
     return longerBuffer;
 }
 
-function updateIndexBuffer(gl, length, repetition) {
+function updateIndexBuffer(state, length, repetition) {
+    var gl = state.get('gl');
+    var indexHostBuffers = state.get('indexHostBuffers');
+    var indexGlBuffers = state.get('indexGlBuffers');
 
     if (!indexHostBuffers[repetition]) {
         indexHostBuffers[repetition] = new Uint32Array([]);
