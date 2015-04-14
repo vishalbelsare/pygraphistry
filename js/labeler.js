@@ -218,8 +218,9 @@ function histogram(values, binning, goalNumberOfBins) {
             numBins = (max - min) / binWidth;
         }
         // Refine by doubling/halving
-        while (numBins < 4 || numBins > goalBins) {
-            if (numBins < 4) {
+        var minBins = Math.max(4, Math.floor(goalBins / 2) - 1);
+        while (numBins < minBins || numBins > goalBins) {
+            if (numBins < minBins) {
                 binWidth /= 2;
             } else {
                 binWidth *= 2;
