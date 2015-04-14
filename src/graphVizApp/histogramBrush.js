@@ -397,6 +397,7 @@ function highlight(selection, toggle) {
 
 function updateHistogram($el, model, attribute) {
     var height = $el.height() - margin.top - margin.bottom;
+    var width = $el.width() - margin.left - margin.right;
     var data = model.attributes.data;
     var globalStats = model.attributes.globalStats.histograms[attribute];
     var bins = data.bins || []; // Guard against empty bins.
@@ -408,7 +409,10 @@ function updateHistogram($el, model, attribute) {
     var xScale = d3DataMap[attribute].xScale;
     var yScale = d3DataMap[attribute].yScale;
 
+    var barPadding = 2;
     var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues, DIST);
+    var barHeight = (type === 'countBy') ? yScale.rangeBand() : Math.floor(height/globalStats.numBins) - barPadding;
+
 
     //////////////////////////////////////////////////////////////////////////
     // Create Columns
@@ -418,7 +422,11 @@ function updateHistogram($el, model, attribute) {
     applyAttrColumns(columns.enter().append('g'))
         .attr('transform', function (d, i) {
             return 'translate(0,' + yScale(i) + ')';
-        });
+        }).append('rect')
+            .attr('height', barHeight + barPadding)
+            .attr('width', width)
+            .attr('opacity', 0);
+
 
     //////////////////////////////////////////////////////////////////////////
     // Create and Update Bars
@@ -438,7 +446,6 @@ function updateHistogram($el, model, attribute) {
         });
 
 
-    var barHeight = (type === 'countBy') ? yScale.rangeBand() : Math.floor(height/globalStats.numBins) - 2;
     applyAttrBars(bars.enter().append('rect'), 'bottom', 'top')
         .attr('height', barHeight)
         .attr('width', function (d) {
@@ -453,6 +460,7 @@ function updateHistogram($el, model, attribute) {
 
 function updateSparkline($el, model, attribute) {
     var width = $el.width() - marginSparklines.left - marginSparklines.right;
+    var height = $el.height() - marginSparklines.top - marginSparklines.bottom;
     var data = model.attributes.data;
     var globalStats = model.attributes.globalStats.sparkLines[attribute];
     var bins = data.bins || []; // Guard against empty bins.
@@ -464,7 +472,9 @@ function updateSparkline($el, model, attribute) {
     var xScale = d3DataMap[attribute].xScale;
     var yScale = d3DataMap[attribute].yScale;
 
+    var barPadding = 1;
     var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues, DIST);
+    var barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/globalStats.numBins) - barPadding;
 
     //////////////////////////////////////////////////////////////////////////
     // Create Columns
@@ -474,7 +484,11 @@ function updateSparkline($el, model, attribute) {
     applyAttrColumns(columns.enter().append('g'))
         .attr('transform', function (d, i) {
             return 'translate(' + xScale(i) + ',0)';
-        });
+        })
+        .append('rect')
+            .attr('width', barWidth + barPadding)
+            .attr('height', height)
+            .attr('opacity', 0);
 
     //////////////////////////////////////////////////////////////////////////
     // Create and Update Bars
@@ -494,7 +508,6 @@ function updateSparkline($el, model, attribute) {
         });
 
 
-    var barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/globalStats.numBins) - 1;
     applyAttrBars(bars.enter().append('rect'), 'left', 'right')
         .attr('width', barWidth)
         .attr('height', function (d) {
