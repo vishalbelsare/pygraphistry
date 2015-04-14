@@ -8,8 +8,6 @@ var debug       = require('debug')('graphistry:StreamGL:renderer');
 
 var ui                  = require('./ui.js');
 var cameras             = require('./camera.js');
-var localAttribHandler  = require('./localAttribHandler.js');
-var bufferProxy         = require('./bufferproxy.js').bufferProxy;
 var picking             = require('./picking.js');
 
 
@@ -27,12 +25,6 @@ var indexHostBuffers = [];
 //[ glBuffer ]
 var indexGlBuffers = [];
 
-//User supplied buffers (auto-initialized to empty)
-//{ <name> -> TypedArray }
-var localHostBuffers = {};
-//{ <name> -> glBuffer }
-var localGlBuffers = {};
-
 /** A dictionary mapping buffer names to current sizes
  * @type {Object.<string, number>} */
 var bufferSizes = {};
@@ -40,7 +32,6 @@ var bufferSizes = {};
 /** Cached dictionary of program.attribute: attribute locations
  * @type {Object.<string, Object.<string, GLint>>} */
 var attrLocations = {};
-
 
 /** Cached dictionary of program.uniform: uniform locations
  * @type {Object.<string, Object.<string, GLint>>} */
@@ -199,8 +190,8 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
             : datasource === 'DEVICE'       ? buffers[binding[0]]
             : datasource === 'VERTEX_INDEX' ? indexGlBuffers[1]
             : datasource === 'EDGE_INDEX'   ? indexGlBuffers[2]
-            : datasource === 'CLIENT'       ?
-                localGlBuffers[state.get('config').get('models').get(binding[0]).get(binding[1]).get('localName')]
+            : datasource === 'CLIENT'       ? buffers[binding[0]]
+                //localGlBuffers[state.get('config').get('models').get(binding[0]).get(binding[1]).get('localName')]
             : (function () { throw new Error('unknown datasource ' + datasource); }());
 
         debug('  binding buffer', attribute, binding, datasource, glArrayType, glBuffer, element.name);
@@ -277,7 +268,6 @@ function init(config, canvas) {
         programBindings: Immutable.Map({}),
 
         activeIndices:  getActiveIndices(config),
-        activeLocalAttributes: localAttribHandler.getActiveLocalAttributes(config),
 
         //Observable {?start: [...], ?rendered: [...]}
         renderPipeline: renderPipeline,
@@ -286,9 +276,6 @@ function init(config, canvas) {
         rendered: renderPipeline.pluck('rendered').filter(_.identity)
 
     });
-
-    debug('Active indices', state.get('activeIndices'));
-    debug('Active attributes', state.get('activeLocalAttributes'));
 
     resizeCanvas(state);
     window.addEventListener('resize', function () {
@@ -606,16 +593,20 @@ function createPrograms(state) {
 
 function createBuffers(state) {
     var gl = state.get('gl');
+    var models = state.get('config').get('models');
 
-    var createdBuffers = state.get('config').get('models').map(function(bufferOpts, bufferName) {
-        debug('Creating buffer %s', bufferName);
+    var createdBuffers = models.map(function(bufferOpts, bufferName) {
+        debug('Creating buffer %s with options %o', bufferName, bufferOpts.toJS());
         var vbo = gl.createBuffer();
         return vbo;
     }).cacheResult();
 
     var hostBuffers = state.get('hostBuffers');
-    _.keys(state.get('config').get('models').toJS()).forEach(function(bufferName) {
-        hostBuffers[bufferName] = new Rx.ReplaySubject(1);
+    models.forEach(function(bufferOpts, bufferName) {
+        var options = _.values(bufferOpts.toJS())[0];
+        if (options.datasource === 'HOST' || options.datasource === 'DEVICE') {
+            hostBuffers[bufferName] = new Rx.ReplaySubject(1);
+        }
     });
 
     return state.set('buffers', createdBuffers);
@@ -700,15 +691,6 @@ function loadBuffer(state, buffer, bufferName, model, data) {
     state.get('activeIndices')
         .forEach(updateIndexBuffer.bind('', gl, data.byteLength / 4));
 
-    state.get('activeLocalAttributes')
-        .forEach(
-            localAttribHandler.updateLocalAttributesBuffer.bind('',
-                {host: localHostBuffers, gl: localGlBuffers},
-                {bindBuffer: bindBuffer, expandHostBuffer: expandHostBuffer},
-                gl,
-                data.byteLength / 4));
-
-
     try{
         var glArrayType = model.index ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER;
         var glHint = model.hint || 'STREAM_DRAW';
@@ -738,7 +720,7 @@ function loadBuffer(state, buffer, bufferName, model, data) {
 //GLContext * int * int * UInt32Array -> Uint32Array
 function expandHostBuffer(gl, length, repetition, oldHostBuffer) {
 
-    var longerBuffer = new Uint32Array(Math.round(length * repetition * 1.25));
+    var longerBuffer = new Uint32Array(Math.round(length * repetition));
 
     //memcpy old (initial) indexes
     if (oldHostBuffer.length) {
@@ -1043,7 +1025,6 @@ function getActiveIndices (config) {
                 var modelName = bindingPair[1][0];
                 var attribName = bindingPair[1][1];
                 var datasource = config.models[modelName][attribName].datasource;
-                debug('GetActiveIndices: bindingPair', bindingPair, 'datasource', datasource);
                 return datasource;
             })
             .map(function (datasource) {
@@ -1057,18 +1038,9 @@ function getActiveIndices (config) {
     return _.uniq(_.flatten(activeIndexModesLists));
 }
 
-// State -> string -> {read: int -> 'a, write: int * 'a -> ()}
-var localAttributeProxy = function (state) {
-    return bufferProxy(state.get('gl'), localHostBuffers, localGlBuffers);
-};
-
 
 module.exports = {
     init: init,
-    createContext: createContext,
-    setGlOptions: setGlOptions,
-    createPrograms: createPrograms,
-    createBuffers: createBuffers,
     loadBuffers: loadBuffers,
     loadTextures: loadTextures,
     setCamera: setCamera,
@@ -1077,5 +1049,4 @@ module.exports = {
     getServerBufferNames: getServerBufferNames,
     getServerTextureNames: getServerTextureNames,
     hitTest: picking.hitTestN,
-    localAttributeProxy: localAttributeProxy
 };

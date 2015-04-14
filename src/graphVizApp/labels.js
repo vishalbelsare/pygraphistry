@@ -8,18 +8,12 @@ var _       = require('underscore');
 
 var util            = require('./util.js');
 var interaction     = require('./interaction.js');
-var renderer        = require('../renderer');
 
-
-// STATIC FINAL VARIABLES
-var HIGHLIGHT_SIZE = 20;
 
 
 // AppState * $DOM * [int] * [int] -> ()
 // Immediately reposition each label based on camera and curPoints buffer
-var renderLabelsRan = false;
 function renderPointLabels(appState, $labelCont, labelIndices, clicked) {
-
     debug('rendering labels');
 
     var curPoints = appState.renderState.get('hostBuffers').curPoints;
@@ -29,19 +23,7 @@ function renderPointLabels(appState, $labelCont, labelIndices, clicked) {
     }
     curPoints.take(1)
         .do(function (curPoints) {
-
-            //first run: created the enlarged points for the sampler
-            if (!renderLabelsRan) {
-                renderLabelsRan = true;
-                var allOn = renderer.localAttributeProxy(appState.renderState)('allHighlighted');
-                var amt = curPoints.buffer.byteLength / (4 * 2);
-                for (var i = 0; i < amt; i++) {
-                    allOn.write(i, HIGHLIGHT_SIZE);
-                }
-            }
-
             renderLabelsImmediate(appState, $labelCont, curPoints, labelIndices, clicked);
-
         })
         .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
 }
