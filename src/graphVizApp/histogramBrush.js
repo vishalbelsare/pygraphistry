@@ -116,7 +116,6 @@ function init(socket, marquee) {
             var vizHeight = SPARKLINE_HEIGHT;
             vizContainer.height(String(vizHeight) + 'px');
             initializeSparklineViz(vizContainer, this.model); // TODO: Link to data?
-            updateSparkline(vizContainer, this.model, attribute);
             this.model.set('sparkLines', true);
             updateAttribute(attribute, attribute, 'sparkLines');
         },
@@ -130,7 +129,6 @@ function init(socket, marquee) {
             var vizHeight = this.model.get('globalStats').histograms[attribute].numBins * BAR_THICKNESS + margin.top + margin.bottom;
             vizContainer.height(String(vizHeight) + 'px');
             initializeHistogramViz(vizContainer, this.model); // TODO: Link to data?
-            updateHistogram(vizContainer, this.model, attribute);
             this.model.set('sparkLines', false);
             updateAttribute(attribute, attribute, 'histogram');
         },
@@ -150,7 +148,7 @@ function init(socket, marquee) {
             this.listenTo(histograms, 'remove', this.removeHistogram);
             this.listenTo(histograms, 'reset', this.addAll);
             this.listenTo(histograms, 'all', this.render);
-            this.listenTo(histograms, 'change', this.update);
+            this.listenTo(histograms, 'change:data', this.update);
         },
         render: function () {
             // TODO: Use something other than visibility
@@ -412,7 +410,6 @@ function updateHistogram($el, model, attribute) {
     var barPadding = 2;
     var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues, DIST);
     var barHeight = (type === 'countBy') ? yScale.rangeBand() : Math.floor(height/globalStats.numBins) - barPadding;
-
 
     //////////////////////////////////////////////////////////////////////////
     // Create Columns
