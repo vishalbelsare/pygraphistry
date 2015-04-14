@@ -226,7 +226,6 @@ function handleVboUpdates(socket, renderState) {
     //socketID, textureByteLengths, textureName
     var fetchTexture = makeFetcher('texture?texture', socket.io.uri);
 
-    var buffers = renderState.get('buffers').toJS();
     var bufferNames = renderer.getServerBufferNames(renderState.get('config').toJS());
     var textureNames = renderer.getServerTextureNames(renderState.get('config').toJS());
 
@@ -288,8 +287,10 @@ function handleVboUpdates(socket, renderState) {
                     socket.emit('received_buffers'); //TODO fire preemptively based on guess
 
                     try {
-                        renderer.setNumElements(data.elements);
-                        renderer.loadBuffers(renderState, buffers, bindings);
+                        _.each(data.elements, function (num, itemName) {
+                            renderer.setNumElements(renderState, itemName, num);
+                        });
+                        renderer.loadBuffers(renderState, bindings);
                         readyBuffers.onNext();
                     } catch (e) {
                         console.error('5a err. Render error on loading data into WebGL:', e, e.stack, thisStep);

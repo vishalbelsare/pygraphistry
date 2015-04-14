@@ -191,7 +191,6 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
             : datasource === 'VERTEX_INDEX' ? indexGlBuffers[1]
             : datasource === 'EDGE_INDEX'   ? indexGlBuffers[2]
             : datasource === 'CLIENT'       ? buffers[binding[0]]
-                //localGlBuffers[state.get('config').get('models').get(binding[0]).get(binding[1]).get('localName')]
             : (function () { throw new Error('unknown datasource ' + datasource); }());
 
         debug('  binding buffer', attribute, binding, datasource, glArrayType, glBuffer, element.name);
@@ -261,7 +260,7 @@ function init(config, canvas) {
 
         boundBuffer: undefined,
         bufferSize: Immutable.Map({}),
-        numElements: Immutable.Map({}),
+        numElements: {},
 
         activeProgram: undefined,
         attrLocations: Immutable.Map({}),
@@ -649,12 +648,12 @@ function loadTexture(state, textureNfo, name) {
 /**
  * Given an object mapping buffer/texture names to ArrayBuffer data, load all of them into the GL context
  * @param {RendererState} state - renderer instance
- * @param {Object.<string, WebGLBuffer>} buffers - the buffer object returned by createBuffers()
  * @param {Object.<string, ArrayBuffer>} bufferData - a mapping of buffer name -> new data to load
  * into that buffer
  */
-function loadBuffers(state, buffers, bufferData) {
+function loadBuffers(state, bufferData) {
     var config = state.get('config').toJS();
+    var buffers = state.get('buffers').toJS();
 
     _.each(bufferData, function(data, bufferName) {
         debug('Loading buffer data for buffer %s (data type: %s, length: %s bytes)',
@@ -673,7 +672,10 @@ function loadBuffers(state, buffers, bufferData) {
         }
 
         loadBuffer(state, buffers[bufferName], bufferName, model, data);
-        state.get('hostBuffers')[bufferName].onNext(data);
+
+        if (model.datasource === 'HOST' || model.datasource === 'DEVICE') {
+            state.get('hostBuffers')[bufferName].onNext(data);
+        }
     });
 }
 
@@ -777,9 +779,8 @@ function updateIndexBuffer(gl, length, repetition) {
 
 
 /** A mapping of scene items to the number of elements that should be rendered for them */
-var numElements = {};
-function setNumElements(newNumElements) {
-    numElements = newNumElements;
+function setNumElements(state, item, newNumElements) {
+    state.get('numElements')[item] = newNumElements;
 }
 
 
@@ -795,7 +796,7 @@ function setCamera(state) {
     // Set zoomScalingFactor uniform if it exists.
     _.each(uniforms, function (map, item) {
         if ('zoomScalingFactor' in map) {
-            numVertices = numElements[item];
+            numVertices = state.get('numElements')[item];
             var scalingFactor = camera.semanticZoom(numVertices);
             map.zoomScalingFactor = [scalingFactor];
         }
@@ -870,7 +871,8 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
     var texturesToRead = [];
 
     sortedItems.forEach(function(item) {
-        if(typeof numElements[item] === 'undefined' || numElements[item] < 1) {
+        var numElements = state.get('numElements')[item];
+        if(typeof numElements === 'undefined' || numElements < 1) {
             debug('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
                 item);
             return false;
@@ -921,10 +923,11 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
 
 
 function renderItem(state, config, camera, gl, ext, programs, buffers, clearedFBOs, item) {
-    debug('Rendering item "%s" (%d elements)', item, numElements[item]);
-
     var itemDef = config.items[item];
+    var numElements = state.get('numElements')[item];
     var renderTarget = itemDef.renderTarget === 'CANVAS' ? null : itemDef.renderTarget;
+
+    debug('Rendering item "%s" (%d elements)', item, numElements);
 
     if (renderTarget !== lastRenderTarget) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
@@ -956,9 +959,9 @@ function renderItem(state, config, camera, gl, ext, programs, buffers, clearedFB
 
     debug('Done binding, drawing now...');
     if (itemDef.index) {
-        gl.drawElements(gl[itemDef.drawType], numElements[item], gl.UNSIGNED_INT, 0);
+        gl.drawElements(gl[itemDef.drawType], numElements, gl.UNSIGNED_INT, 0);
     } else {
-        gl.drawArrays(gl[itemDef.drawType], 0, numElements[item]);
+        gl.drawArrays(gl[itemDef.drawType], 0, numElements);
     }
 
     if (renderTarget !== null && itemDef.readTarget) {
