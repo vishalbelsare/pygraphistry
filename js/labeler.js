@@ -108,11 +108,12 @@ function aggregate(graph, indices, attributes, binning, mode) {
             return row[attribute];
         });
 
+        var goalNumberOfBins = binning ? binning._goalNumberOfBins : 0;
         var binningHint = binning ? binning[attribute] : undefined;
         var type = vgloader.getAttributeType(graph.simulator.vgraph, attribute);
 
         if (mode !== 'countBy' && type !== 'string') {
-            return histogram(values, binningHint);
+            return histogram(values, binningHint, goalNumberOfBins);
         } else {
             return countBy(values, binningHint);
         }
@@ -170,7 +171,7 @@ function round_up(num, multiple) {
 }
 
 
-function histogram(values, binning) {
+function histogram(values, binning, goalNumberOfBins) {
     // Binning has binWidth, minValue, maxValue, and numBins
 
     values = _.filter(values, function (x) { return !isNaN(x)});
@@ -186,39 +187,52 @@ function histogram(values, binning) {
     goalBins = Math.min(goalBins, 30); // Cap number of bins.
     goalBins = Math.max(goalBins, 8); // Cap min number of bins.
 
+
     var max = _.max(values);
     var min = _.min(values);
-    var goalWidth = (max - min) / goalBins;
 
-    // Because users like clean binning, we try to coerce binWidth
-    // to its nearest nice value.
-    //
-    // We have different behavior based on the order of Max - Min.
+    if (goalNumberOfBins) {
+        var numBins = goalNumberOfBins;
+        var bottomVal = min;
+        var topVal = max;
+        var binWidth = (max - min) / numBins;
 
-    var binWidth = 10;
-    var numBins = (max - min) / binWidth;
-    // Get to a rough approx
-    while (numBins < 2 || numBins >= 100) {
-        if (numBins < 2) {
-            binWidth *= 0.1;
-        } else {
-            binWidth *= 10;
+    // Try to find a good division.
+    } else {
+        var goalWidth = (max - min) / goalBins;
+
+        // Because users like clean binning, we try to coerce binWidth
+        // to its nearest nice value.
+        //
+        // We have different behavior based on the order of Max - Min.
+
+        var binWidth = 10;
+        var numBins = (max - min) / binWidth;
+        // Get to a rough approx
+        while (numBins < 2 || numBins >= 100) {
+            if (numBins < 2) {
+                binWidth *= 0.1;
+            } else {
+                binWidth *= 10;
+            }
+            numBins = (max - min) / binWidth;
         }
-        numBins = (max - min) / binWidth;
-    }
-    // Refine by doubling/halving
-    while (numBins < 4 || numBins > goalBins) {
-        if (numBins < 4) {
-            binWidth /= 2;
-        } else {
-            binWidth *= 2;
+        // Refine by doubling/halving
+        var minBins = Math.max(4, Math.floor(goalBins / 2) - 1);
+        while (numBins < minBins || numBins > goalBins) {
+            if (numBins < minBins) {
+                binWidth /= 2;
+            } else {
+                binWidth *= 2;
+            }
+            numBins = (max - min) / binWidth;
         }
-        numBins = (max - min) / binWidth;
+
+        var bottomVal = round_down(min, binWidth);
+        var topVal = round_up(max, binWidth);
+        numBins = Math.round((topVal - bottomVal) / binWidth);
     }
 
-    var bottomVal = round_down(min, binWidth);
-    var topVal = round_up(max, binWidth);
-    var numBins = Math.round((topVal - bottomVal) / binWidth);
 
     // Override if provided binning data.
     if (binning) {
