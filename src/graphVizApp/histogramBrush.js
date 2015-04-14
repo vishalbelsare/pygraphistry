@@ -22,6 +22,7 @@ var MODE = 'default';
 var DIST = false;
 var DRAG_SAMPLE_INTERVAL = 100;
 var BAR_THICKNESS = 16;
+var SPARKLINE_HEIGHT = 50;
 var NUM_SPARKLINES = 30;
 
 //////////////////////////////////////////////////////////////////////////////
@@ -112,7 +113,7 @@ function init(socket, marquee) {
             var attribute = this.model.get('attribute');
             d3DataMap[attribute].svg.selectAll('*').remove();
             vizContainer.empty();
-            var vizHeight = '80';
+            var vizHeight = SPARKLINE_HEIGHT;
             vizContainer.height(String(vizHeight) + 'px');
             initializeSparklineViz(vizContainer, this.model); // TODO: Link to data?
             updateSparkline(vizContainer, this.model, attribute);
@@ -163,7 +164,7 @@ function init(socket, marquee) {
             histogram.set('$el', $(childEl));
             var vizContainer = $(childEl).children('.vizContainer');
             histogram.set('vizContainer', vizContainer);
-            var vizHeight = '80';
+            var vizHeight = SPARKLINE_HEIGHT;
 
             if (histogram.get('sparkLines')) {
                 vizContainer.height(String(vizHeight) + 'px');
