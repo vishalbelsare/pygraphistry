@@ -150,9 +150,6 @@ function bindBuffer(gl, glArrayType, buffer) {
 }());
 
 
-/** The bindings object currently in effect on a program
- * @type {Object.<string, RendererOptions.render.bindings>} */
-var programBindings = {};
 /**
  * Binds all of a programs attributes to elements of a/some buffer(s)
  * @param {WebGLRenderingContext} gl - the WebGL context containing the program and buffers
@@ -173,15 +170,7 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
 
     useProgram(gl, program);
 
-    // FIXME: If we don't rebind every frame, but bind another program, then the bindings of the
-    // first program are lost. Shouldn't they persist unless we change them for the program?
-    // If the program is already bound using the current binding preferences, no need to continue
-    //if(programBindings[programName] === bindings) {
-        //debug('Not binding program %s because already bound', programName);
-        //return false;
-    //}
     _.each(bindings.attributes, function(binding, attribute) {
-
         var element = modelSettings[binding[0]][binding[1]];
         var glArrayType = element.index ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER;
         var datasource = element.datasource;
@@ -224,8 +213,6 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
         gl.uniform1i(location, 0);
 
     });
-
-    programBindings[programName] = bindings;
 }
 
 
@@ -264,7 +251,6 @@ function init(config, canvas) {
 
         activeProgram: undefined,
         attrLocations: Immutable.Map({}),
-        programBindings: Immutable.Map({}),
 
         activeIndices:  getActiveIndices(config),
 
@@ -657,17 +643,17 @@ function loadBuffers(state, bufferData) {
 
     _.each(bufferData, function(data, bufferName) {
         debug('Loading buffer data for buffer %s (data type: %s, length: %s bytes)',
-                    bufferName, data.constructor.name, data.byteLength);
+              bufferName, data.constructor.name, data.byteLength);
 
         var model = _.values(config.models[bufferName])[0];
         if (model === undefined) {
-            console.error('Asked to load data for buffer \'%s\', but corresponding model found',bufferName);
+            console.error('Asked to load data for buffer \'%s\', but corresponding model found', bufferName);
             return false;
         }
 
         if(typeof buffers[bufferName] === 'undefined') {
             console.error('Asked to load data for buffer \'%s\', but no buffer by that name exists locally',
-                bufferName, buffers);
+                          bufferName, buffers);
             return false;
         }
 
@@ -770,7 +756,8 @@ function updateIndexBuffer(gl, length, repetition) {
 
         var glBuffer = indexGlBuffers[repetition];
 
-        debug('Expanding index buffer', glBuffer, 'memcpy', oldHostBuffer.length/repetition, 'elts', 'write to', length * repetition);
+        debug('Expanding index buffer', glBuffer, 'memcpy', oldHostBuffer.length/repetition, 'elts',
+              'write to', length * repetition);
 
         bindBuffer(gl, gl.ARRAY_BUFFER, glBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, longerBuffer, gl.STREAM_DRAW);
