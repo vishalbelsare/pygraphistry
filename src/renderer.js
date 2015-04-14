@@ -25,10 +25,6 @@ var indexHostBuffers = [];
 //[ glBuffer ]
 var indexGlBuffers = [];
 
-/** A dictionary mapping buffer names to current sizes
- * @type {Object.<string, number>} */
-var bufferSizes = {};
-
 /** Cached dictionary of program.attribute: attribute locations
  * @type {Object.<string, Object.<string, GLint>>} */
 var attrLocations = {};
@@ -234,6 +230,8 @@ function init(config, canvas) {
         ext: undefined,
         programs:       Immutable.Map({}),
         buffers:        Immutable.Map({}),
+        bufferSizes:    {},
+
         //TODO make immutable
         hostBuffers:    {},
         camera:         undefined,
@@ -245,9 +243,9 @@ function init(config, canvas) {
         pixelreads:     {},
         uniforms:       undefined,
 
-        boundBuffer: undefined,
-        bufferSize: Immutable.Map({}),
-        numElements: {},
+        boundBuffer:    undefined,
+        bufferSize:     Immutable.Map({}),
+        numElements:    {},
 
         activeProgram: undefined,
         attrLocations: Immutable.Map({}),
@@ -582,6 +580,7 @@ function createBuffers(state) {
 
     var createdBuffers = models.map(function(bufferOpts, bufferName) {
         debug('Creating buffer %s with options %o', bufferName, bufferOpts.toJS());
+        state.get('bufferSizes')[bufferName] = 0;
         var vbo = gl.createBuffer();
         return vbo;
     }).cacheResult();
@@ -668,11 +667,14 @@ function loadBuffers(state, bufferData) {
 
 function loadBuffer(state, buffer, bufferName, model, data) {
     var gl = state.get('gl');
+    var bufferSizes = state.get('bufferSizes');
+
     if(typeof bufferSizes[bufferName] === 'undefined') {
-        bufferSizes[bufferName] = 0;
+        console.error('loadBuffer: No size for buffer', bufferName);
+        return;
     }
     if(data.byteLength <= 0) {
-        debug('Warning: asked to load data for buffer \'%s\', but data length is 0', bufferName);
+        console.warn('loadBuffer: Asked to load data for buffer \'%s\', but data length is 0', bufferName);
         return;
     }
 
