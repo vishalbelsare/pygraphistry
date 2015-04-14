@@ -425,7 +425,9 @@ function updateHistogram($el, model, attribute) {
         }).append('rect')
             .attr('height', barHeight + barPadding)
             .attr('width', width)
-            .attr('opacity', 0);
+            .attr('opacity', 0)
+            .on('mouseover', toggleTooltips.bind(null, true))
+            .on('mouseout', toggleTooltips.bind(null, false));
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -488,7 +490,9 @@ function updateSparkline($el, model, attribute) {
         .append('rect')
             .attr('width', barWidth + barPadding)
             .attr('height', height)
-            .attr('opacity', 0);
+            .attr('opacity', 0)
+            .on('mouseover', toggleTooltips.bind(null, true))
+            .on('mouseout', toggleTooltips.bind(null, false));
 
     //////////////////////////////////////////////////////////////////////////
     // Create and Update Bars
@@ -537,9 +541,7 @@ function selectBars (columns) {
 
 function applyAttrColumns (columns) {
     return columns.classed('g', true)
-        .classed('column', true)
-        .on('mouseover', toggleTooltips.bind(null, true))
-        .on('mouseout', toggleTooltips.bind(null, false));
+        .classed('column', true);
 }
 
 function applyAttrBars (bars, globalPos, localPos) {
@@ -565,6 +567,7 @@ function applyAttrBars (bars, globalPos, localPos) {
             return d.val;
         })
 
+        .style('pointer-events', 'none')
         .style('fill', function (d) {
             return color(d.type);
         });
