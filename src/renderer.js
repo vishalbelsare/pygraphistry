@@ -173,13 +173,13 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
             : datasource === 'CLIENT'       ? buffers[binding[0]]
             : (function () { throw new Error('unknown datasource ' + datasource); }());
 
-        debug('  binding buffer', attribute, binding, datasource, glArrayType, glBuffer, element.name);
+        debug('  binding buffer', attribute, binding, datasource, glArrayType, glBuffer, element);
 
         bindBuffer(gl, glArrayType, glBuffer);
         var location = getAttribLocationFast(gl, program, programName, attribute);
 
         gl.vertexAttribPointer(location, element.count, gl[element.type], element.normalize,
-            element.stride, element.offset);
+                               element.stride, element.offset);
 
         gl.enableVertexAttribArray(location);
     });

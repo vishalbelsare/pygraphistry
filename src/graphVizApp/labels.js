@@ -28,68 +28,80 @@ function renderPointLabels(appState, $labelCont, labelIndices, clicked) {
         .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
 }
 
-
-//RenderState *  [{dim: int, idx: int}] -> ()
-function renderCursor (renderState, indices) {
+// RenderState * Obserbable * Observable
+function setupCursor(renderState, isAnimating, latestHighlightedObject) {
     var rxPoints = renderState.get('hostBuffers').curPoints;
     var rxSizes = renderState.get('hostBuffers').pointSizes;
 
-    rxPoints.combineLatest(
-        rxSizes,
-        function (p, s) {
-            return {
-                points: new Float32Array(p.buffer),
-                sizes: new Uint8Array(s.buffer)
-            };
-        }
-    ).do(function (buffers) {
-        var points = buffers.points;
-        var sizes = buffers.sizes;
+    var $cont = $('#highlighted-point-cont');
+    var $point = $('.highlighted-point');
+    var $center = $('.highlighted-point-center');
+    var animating = isAnimating.filter(function (v) { return v === true; });
+    var notAnimating = isAnimating.filter(function (v) { return v === false; });
 
-        var idx = indices[indices.length - 1].idx;
-        var dim = indices[indices.length - 1].dim;
+    animating.subscribe(function () {
+        $cont.css({display: 'none'});
+    }, util.makeErrorHandler('renderCursor isAnimating'));
 
-        if (idx === undefined || idx < 0 || dim === 2) {
-            $('#highlighted-point-cont').css({display: 'none'});
-            return;
-        }
+    notAnimating.flatMapLatest(function () {
+        return rxPoints.combineLatest(
+            rxSizes,
+            latestHighlightedObject,
+            function (p, s, i) {
+                return {
+                    points: new Float32Array(p.buffer),
+                    sizes: new Uint8Array(s.buffer),
+                    indices: i
+                };
+            }
+        ).takeUntil(animating);
+    }).do(function (data) {
+        renderCursor(renderState, $cont, $point, $center, data.points, data.sizes, data.indices);
+    }).subscribe(_.identity, util.makeErrorHandler('setupCursor'));
+}
 
-        $('#highlighted-point-cont').css({display: 'block'});
+// RenderState * Dom * Dom * Dom * Float32Array * Uint8Array * [Object]
+function renderCursor(renderState, $cont, $point, $center, points, sizes, indices) {
+    var idx = indices[indices.length - 1].idx;
+    var dim = indices[indices.length - 1].dim;
 
-        var camera = renderState.get('camera');
-        var cnv = renderState.get('canvas');
-        var pixelRatio = camera.pixelRatio;
-        var mtx = camera.getMatrix();
+    if (idx === undefined || idx < 0 || dim === 2) {
+        $cont.css({display: 'none'});
+        return;
+    }
+    $cont.css({display: 'block'});
 
-        var pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
-        var scalingFactor = camera.semanticZoom(sizes.length);
-        // Clamp like in pointculled shader
-        var size = Math.max(5, Math.min(scalingFactor * sizes[idx], 50)) / pixelRatio;
-        var offset = size / 2.0;
+    var camera = renderState.get('camera');
+    var cnv = renderState.get('canvas');
+    var pixelRatio = camera.pixelRatio;
+    var mtx = camera.getMatrix();
 
-        $('#highlighted-point-cont')
-        .attr('pointIdx', idx)
-        .css({
-            top: pos.y,
-            left: pos.x
-        });
-        $('.highlighted-point').css({
-            'left' : -offset,
-            'top' : -offset,
-            'width': size,
-            'height': size,
-            'border-radius': size / 2
-        });
+    var pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
+    var scalingFactor = camera.semanticZoom(sizes.length);
+    // Clamp like in pointculled shader
+    var size = Math.max(5, Math.min(scalingFactor * sizes[idx], 50)) / pixelRatio;
+    var offset = size / 2.0;
 
-        /* Ideally, highlighted-point-center would be a child of highlighted-point-cont
-        * instead of highlighted-point. I ran into tricky CSS absolute positioning
-        * issues when I tried that. */
-        var csize = parseInt($('.highlighted-point-center').css('width'), 10);
-        $('.highlighted-point-center').css({
-            'left' : offset - csize / 2.0,
-            'top' : offset - csize / 2.0
-        });
-    }).subscribe(_.identity, util.makeErrorHandler('renderCursor'));
+    $cont.attr('pointIdx', idx).css({
+        top: pos.y,
+        left: pos.x
+    });
+    $point.css({
+        'left' : -offset,
+        'top' : -offset,
+        'width': size,
+        'height': size,
+        'border-radius': size / 2
+    });
+
+    /* Ideally, highlighted-point-center would be a child of highlighted-point-cont
+    * instead of highlighted-point. I ran into tricky CSS absolute positioning
+    * issues when I tried that. */
+    var csize = parseInt($center.css('width'), 10);
+    $center.css({
+        'left' : offset - csize / 2.0,
+        'top' : offset - csize / 2.0
+    });
 }
 
 
@@ -210,7 +222,10 @@ function setupLabels (appState, $eventTarget, latestHighlightedObject) {
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
 
-    appState.currentlyQuiet.flatMapLatest(function () {
+
+    appState.isAnimating.filter(function (v) {
+        return v === false;
+    }).flatMapLatest(function () {
         return latestHighlightedObject.combineLatest(
             appState.cameraChanges,
             appState.vboUpdates,
@@ -303,6 +318,6 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
 
 module.exports = {
     setupLabels: setupLabels,
-    getLatestHighlightedObject: getLatestHighlightedObject,
-    renderCursor: renderCursor
+    setupCursor: setupCursor,
+    getLatestHighlightedObject: getLatestHighlightedObject
 };

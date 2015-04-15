@@ -52,10 +52,7 @@ function setupLabelsAndCursor(appState, $eventTarget) {
     var hitMapTextures = ['hitmap'];
     var latestHighlightedObject = labels.getLatestHighlightedObject(appState, $eventTarget, hitMapTextures);
 
-    latestHighlightedObject.do(function (highlightIndices) {
-        labels.renderCursor(appState.renderState, highlightIndices);
-    }).subscribe(_.identity, util.makeErrorHandler('setupCursor'));
-
+    labels.setupCursor(appState.renderState, appState.isAnimating, latestHighlightedObject);
     labels.setupLabels(appState, $eventTarget, latestHighlightedObject);
 }
 
@@ -109,24 +106,56 @@ function renderScene(tag, trigger, items, readPixels, callback) {
 }
 
 
-function renderSlowEffects(renderState, vboUpdated) {
+function renderSlowEffects(renderState, vboUpdated, bufferSnapshots) {
     if (vboUpdated) {
+        var start = Date.now();
 
+        var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
+        var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
+        var numPoints = logicalEdges.length;
+
+        if (!bufferSnapshots.springsPos) {
+            bufferSnapshots.springsPos = new Float32Array(numPoints * 2);
+        }
+        var springsPos = bufferSnapshots.springsPos;
+
+        for (var i = 0; i < numPoints; i++) {
+            springsPos[2*i] = curPoints[2 * logicalEdges[i]];
+            springsPos[2*i + 1] = curPoints[2 * logicalEdges[i] + 1];
+        }
+
+        var end1 = Date.now();
+        renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
+        var end2 = Date.now();
+
+        console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
     }
 
     renderer.render(renderState, 'fullscene', 'renderSceneFull');
     renderer.render(renderState, 'picking', 'picking');
-    $('.graph-label-container').css('display', 'block');
 }
 
 
-function setupRenderingLoop(renderState, vboUpdates, simulateOn, currentlyQuiet) {
+function setupRenderingLoop(renderState, vboUpdates, isAnimating, simulateOn) {
     var vboUpdated = false;
     var simulating;
+    var bufferSnapshots = {
+        curPoints: undefined,
+        logicalEdges: undefined,
+        springsPos: undefined
+    };
 
     simulateOn.subscribe(function (val) {
         simulating = val;
     }, util.makeErrorHandler('simulate updates'));
+
+
+    var hostBuffers = renderState.get('hostBuffers');
+    _.each(['curPoints', 'logicalEdges'], function (bufName) {
+        hostBuffers[bufName].subscribe(function (data) {
+            bufferSnapshots[bufName] = data;
+        });
+    });
 
     vboUpdates.filter(function (status) {
         return status === 'received';
@@ -139,9 +168,8 @@ function setupRenderingLoop(renderState, vboUpdates, simulateOn, currentlyQuiet)
     function quietCallback() {
         if (!simulating) {
             debug('Quiet state');
-            renderSlowEffects(renderState, currentlyQuiet, vboUpdated);
+            renderSlowEffects(renderState, vboUpdated, bufferSnapshots);
             vboUpdated = false;
-            currentlyQuiet.onNext();
         }
     }
 
@@ -150,15 +178,15 @@ function setupRenderingLoop(renderState, vboUpdates, simulateOn, currentlyQuiet)
         renderQueue[task.tag] = task;
 
         if (renderingPaused) {
-            startRenderingLoop(renderState, quietCallback);
+            startRenderingLoop(renderState, quietCallback, isAnimating);
         }
     });
 }
 
 
-function startRenderingLoop(renderState, quietCallback) {
+function startRenderingLoop(renderState, quietCallback, isAnimating) {
     var lastRenderTime = 0;
-    var quietSignaled = false;
+    var quietSignaled = true;
 
     function loop() {
         var nextFrameId = window.requestAnimationFrame(loop);
@@ -166,8 +194,9 @@ function startRenderingLoop(renderState, quietCallback) {
         if (_.keys(renderQueue).length === 0) {
             var timeDelta = Date.now() - lastRenderTime;
             if (timeDelta > 200 && !quietSignaled) {
-                quietSignaled = true;
                 quietCallback();
+                quietSignaled = true;
+                isAnimating.onNext(false);
             }
 
             if (timeDelta > 1000) {
@@ -177,7 +206,10 @@ function startRenderingLoop(renderState, quietCallback) {
         }
 
         lastRenderTime = Date.now();
-        quietSignaled = false;
+        if (quietSignaled) {
+            isAnimating.onNext(true);
+            quietSignaled = false;
+        }
 
         _.each(renderQueue, function (renderTask, tag) {
             renderer.render(renderState, tag, renderTask.trigger, renderTask.items,

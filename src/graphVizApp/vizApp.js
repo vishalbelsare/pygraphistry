@@ -26,8 +26,9 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     // Observable DOM
     var labelHover = new Rx.Subject();
 
-    var currentlyQuiet = new Rx.ReplaySubject(1);
     var cameraChanges = new Rx.ReplaySubject(1);
+    var isAnimating = new Rx.ReplaySubject(1);
+    isAnimating.onNext(false);
 
     var settingsChanges = new Rx.ReplaySubject(1);
     settingsChanges.onNext({});
@@ -61,8 +62,8 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
         renderState: initialRenderState,
         vboUpdates: vboUpdates,
         cameraChanges: cameraChanges,
+        isAnimating: isAnimating,
         labelHover: labelHover,
-        currentlyQuiet: currentlyQuiet,
         poi: poi,
         settingsChanges: settingsChanges,
         marqueeOn: marqueeOn,
@@ -86,15 +87,15 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     // Setup
     //////////////////////////////////////////////////////////////////////////
 
-    canvas.setupRenderingLoop(appState.renderState, appState.vboUpdates,
-                              appState.simulateOn, appState.currentlyQuiet);
+    canvas.setupRenderingLoop(appState.renderState, appState.vboUpdates, appState.isAnimating,
+                              appState.simulateOn);
     canvas.setupCameraInteractions(appState, $simCont).subscribe(
         appState.cameraChanges,
         util.makeErrorHandler('cameraChanges')
     );
 
     canvas.setupLabelsAndCursor(appState, $simCont);
-    canvas.setupRenderUpdates(appState.renderState, cameraChanges, settingsChanges);
+    canvas.setupRenderUpdates(appState.renderState, appState.cameraChanges, appState.settingsChanges);
 
     var colors = colorpicker($fgPicker, $bgPicker, socket);
     canvas.setupBackgroundColor(appState, colors.backgroundColor);
