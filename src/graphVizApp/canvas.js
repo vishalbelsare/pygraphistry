@@ -166,7 +166,7 @@ function setupRenderingLoop(renderState, vboUpdates, isAnimating, simulateOn) {
     }).do(function () {
         vboUpdated = true;
         renderScene('vboupdate', 'renderSceneFast');
-        renderScene('vboupdate_picking', 'picking');
+        renderScene('vboupdate_picking', undefined, ['pointsampling']);
     }).subscribe(_.identity, util.makeErrorHandler('render vbo updates'));
 
     function quietCallback() {
