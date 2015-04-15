@@ -258,7 +258,18 @@ var items = {
     },
     'edgeculledindexed' : {
         'program': 'edgeculled',
-        'triggers': ['renderSceneFast', 'renderSceneFull'],
+        'triggers': ['renderSceneFull'],
+        'bindings': {
+            'curPos': ['curPoints', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'index': ['logicalEdges', 'curIdx'],
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
+    'indexeddummy' : {
+        'program': 'edgeculled',
+        'triggers': [],
         'bindings': {
             'curPos': ['curPoints', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
@@ -284,19 +295,6 @@ var items = {
             'curPos': ['springsPos', 'curPos'],
             'edgeColor': ['edgeIndices', 'edgeColor']
         },
-        'drawType': 'LINES',
-        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
-        'renderTarget': 'hitmap',
-        'readTarget': true
-    },
-    'edgepickingindexed': {
-        'program': 'edges',
-        'triggers': ['picking'],
-        'bindings': {
-            'curPos': ['curPoints', 'curPos'],
-            'edgeColor': ['edgeIndices', 'edgeColor']
-        },
-        'index': ['logicalEdges', 'curIdx'],
         'drawType': 'LINES',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'hitmap',
@@ -493,15 +491,17 @@ var sceneNetflow = {
 var sceneNetflowIndexed = {
     'options': stdOptions,
     'camera': camera2D,
+    'edgeMode': 'CLIENTINDEXED',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'edgeculledindexed', 'edgepickingindexed', 'pointoutline', 'pointculled']
+               'edgeculledindexed', 'pointoutline', 'pointculled']
 }
 
 var sceneNetflowIndexedClient = {
     'options': stdOptions,
     'camera': camera2D,
+    'edgeMode': 'INDEXEDCLIENT',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'edgeculledindexedclient', 'pointoutline', 'pointculled']
+               'indexeddummy', 'edgeculledindexedclient', 'pointoutline', 'pointculled']
 }
 
 var scenes = {
@@ -623,7 +623,7 @@ function generateAllConfigs(programs, textures, models, items, scenes) {
     check(programs, textures, models, items, scenes);
 
     return _.object(_.map(scenes, function (scene, name) {
-        var config = {};
+        var config = _.extend({}, scene);
 
         var citems = {}
         var cprograms = {};
@@ -664,9 +664,6 @@ function generateAllConfigs(programs, textures, models, items, scenes) {
             }
         });
 
-        config.options = scene.options;
-        config.camera = scene.camera;
-        config.render = scene.render;
         config.programs = cprograms;
         config.items = citems;
         config.textures = ctextures;
