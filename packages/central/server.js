@@ -18,7 +18,7 @@ var etl         = require('./etl/etl.js');
 debug("Config set to %j", config);
 
 var express     = require('express');
-var compression    = require('compression');
+var compression = require('compression');
 var app         = express();
 var http        = require('http').Server(app);
 var bodyParser  = require('body-parser');
