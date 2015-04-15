@@ -222,14 +222,11 @@ function setupLabels (appState, $eventTarget, latestHighlightedObject) {
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
 
-
-    appState.isAnimating.filter(function (v) {
-        return v === false;
-    }).flatMapLatest(function () {
-        return latestHighlightedObject.combineLatest(
-            appState.cameraChanges,
-            appState.vboUpdates,
-            _.identity);
+    appState.cameraChanges.combineLatest(
+        appState.vboUpdates,
+        _.identity
+    ).flatMapLatest(function () {
+        return latestHighlightedObject;
     }).do(function (highlighted) {
         var indices = highlighted.map(function (o) {
             return !o.dim || o.dim === 1 ? o.idx : -1;
