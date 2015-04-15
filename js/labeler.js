@@ -103,10 +103,7 @@ function getLabels(graph, indices) {
 
 function aggregate(graph, indices, attributes, binning, mode) {
 
-    function process(frame, attribute) {
-        var values = _.map(frame, function (row) {
-            return row[attribute];
-        });
+    function process(values, attribute) {
 
         var goalNumberOfBins = binning ? binning._goalNumberOfBins : 0;
         var binningHint = binning ? binning[attribute] : undefined;
@@ -119,8 +116,9 @@ function aggregate(graph, indices, attributes, binning, mode) {
         }
     }
 
-    var frame = infoFrame(graph, indices, attributes);
+    var attributeMap = vgloader.getAttributeMap(graph.simulator.vgraph, attributes);
     var columns = attributes ? attributes : frameHeader(graph);
+    var filteredAttributeMap = filterAttributeMap(graph, indices, columns, attributeMap);
 
     // Filter out private attributes that begin with underscore
     columns = columns.filter(function (val) {
@@ -128,8 +126,41 @@ function aggregate(graph, indices, attributes, binning, mode) {
     });
 
     return _.object(_.map(columns, function (attribute) {
-        return [attribute, process(frame, attribute)];
+        return [attribute, process(filteredAttributeMap[attribute], attribute)];
     }));
+}
+
+
+function filterAttributeMap (graph, indices, columns, attributeMap) {
+
+    var filteredAttributeMap = _.object(_.map(columns, function (attr) {
+        return [attr, new Array(indices.length)];
+    }));
+
+    var maybeTitleField = pickTitleField(attributeMap);
+    var outDegrees = graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped;
+    var inDegrees = graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped;
+
+    _.each(columns, function (attr) {
+        _.each(indices, function (v, i) {
+
+            var value;
+            if (attr === 'degree') {
+                value = outDegrees[v] + inDegrees[v];
+            } else if (attr === 'degree in') {
+                value = inDegrees[v];
+            } else if (attr === 'degree out') {
+                value = outDegrees[v];
+            } else if (attr === '_title') {
+                value = maybeTitleField ? attributeMap[maybeTitleField].values[v] : v
+            } else {
+                value = attributeMap[attr].values[v];
+            }
+
+            filteredAttributeMap[attr][i] = value;
+        });
+    });
+    return filteredAttributeMap;
 }
 
 
@@ -174,7 +205,9 @@ function round_up(num, multiple) {
 function histogram(values, binning, goalNumberOfBins) {
     // Binning has binWidth, minValue, maxValue, and numBins
 
-    values = _.filter(values, function (x) { return !isNaN(x)});
+    // Disabled because filtering is expensive, and we now have type safety coming from
+    // VGraph types.
+    // values = _.filter(values, function (x) { return !isNaN(x)});
 
     var numValues = values.length;
     if (numValues === 0) {
@@ -188,59 +221,56 @@ function histogram(values, binning, goalNumberOfBins) {
     goalBins = Math.max(goalBins, 8); // Cap min number of bins.
 
 
-    var max = _.max(values);
-    var min = _.min(values);
-
-    if (goalNumberOfBins) {
-        var numBins = goalNumberOfBins;
-        var bottomVal = min;
-        var topVal = max;
-        var binWidth = (max - min) / numBins;
-
-    // Try to find a good division.
-    } else {
-        var goalWidth = (max - min) / goalBins;
-
-        // Because users like clean binning, we try to coerce binWidth
-        // to its nearest nice value.
-        //
-        // We have different behavior based on the order of Max - Min.
-
-        var binWidth = 10;
-        var numBins = (max - min) / binWidth;
-        // Get to a rough approx
-        while (numBins < 2 || numBins >= 100) {
-            if (numBins < 2) {
-                binWidth *= 0.1;
-            } else {
-                binWidth *= 10;
-            }
-            numBins = (max - min) / binWidth;
-        }
-        // Refine by doubling/halving
-        var minBins = Math.max(4, Math.floor(goalBins / 2) - 1);
-        while (numBins < minBins || numBins > goalBins) {
-            if (numBins < minBins) {
-                binWidth /= 2;
-            } else {
-                binWidth *= 2;
-            }
-            numBins = (max - min) / binWidth;
-        }
-
-        var bottomVal = round_down(min, binWidth);
-        var topVal = round_up(max, binWidth);
-        numBins = Math.round((topVal - bottomVal) / binWidth);
-    }
-
-
     // Override if provided binning data.
     if (binning) {
-        numBins = binning.numBins;
-        binWidth = binning.binWidth;
-        bottomVal = binning.minValue;
-        min = binning.minValue;
-        max = binning.maxValue;
+        var numBins = binning.numBins;
+        var binWidth = binning.binWidth;
+        var bottomVal = binning.minValue;
+        var topval = binning.maxValue;
+        var min = binning.minValue;
+        var max = binning.maxValue;
+
+    } else {
+
+        var max = _.max(values);
+        var min = _.min(values);
+
+        if (goalNumberOfBins) {
+            var numBins = goalNumberOfBins;
+            var bottomVal = min;
+            var topVal = max;
+            var binWidth = (max - min) / numBins;
+
+        // Try to find a good division.
+        } else {
+            var goalWidth = (max - min) / goalBins;
+
+            var binWidth = 10;
+            var numBins = (max - min) / binWidth;
+            // Get to a rough approx
+            while (numBins < 2 || numBins >= 100) {
+                if (numBins < 2) {
+                    binWidth *= 0.1;
+                } else {
+                    binWidth *= 10;
+                }
+                numBins = (max - min) / binWidth;
+            }
+            // Refine by doubling/halving
+            var minBins = Math.max(4, Math.floor(goalBins / 2) - 1);
+            while (numBins < minBins || numBins > goalBins) {
+                if (numBins < minBins) {
+                    binWidth /= 2;
+                } else {
+                    binWidth *= 2;
+                }
+                numBins = (max - min) / binWidth;
+            }
+
+            var bottomVal = round_down(min, binWidth);
+            var topVal = round_up(max, binWidth);
+            numBins = Math.round((topVal - bottomVal) / binWidth);
+        }
     }
 
     // Guard against 0 width case
@@ -250,23 +280,21 @@ function histogram(values, binning, goalNumberOfBins) {
         topVal = min + 1;
         bottomVal = min;
     }
+
     var bins = Array.apply(null, new Array(numBins)).map(function () { return 0; });
 
-    // console.log('Max: ', max, ', Min: ', min, ', Width: ', binWidth);
-    // console.log('Bins: ', bins);
-
-    _.each(values, function (val) {
-        var binId = Math.min(Math.floor((val - bottomVal) / binWidth), numBins - 1);
-        bins[binId] += 1;
-    })
+    var binId;
+    for (var i = 0; i < values.length; i++) {
+        // Here we use an optimized "Floor" because we know it's a smallish, positive number.
+        binId = ((values[i] - bottomVal) / binWidth) | 0;
+        bins[binId]++;
+    }
 
     return {
         type: 'histogram',
         numBins: numBins,
         binWidth: binWidth,
         numValues: numValues,
-        // maxValue: max,
-        // minValue: min,
         maxValue: topVal,
         minValue: bottomVal,
         bins: bins
