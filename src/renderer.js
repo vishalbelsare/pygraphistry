@@ -387,7 +387,7 @@ function resizeCanvas(state) {
         if (camera !== undefined) {
             camera.resize(width, height, pixelRatio);
             setCamera(state);
-            render(state, 'resizeCanvas');
+            render(state, 'resizeCanvas', 'renderSceneFull');
         }
     }
 }
