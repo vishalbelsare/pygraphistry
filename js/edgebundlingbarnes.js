@@ -40,7 +40,7 @@ EdgeBundling.prototype.constructor = EdgeBundling;
 
 EdgeBundling.name = 'EdgeBundling';
 
-EdgeBundling.argsMidsprings = ['numSplits', 'springs', 'workList', 'inputPoints',
+EdgeBundling.argsMidsprings = ['numSplits', 'springs', 'workList', 'inputPoints', 'inputForces',
                                'inputMidPoints', 'outputMidPoints', 'springMidPositions',
                                'midSpringsColorCoords', 'springStrength', 'springDistance',
                                'stepNumber'];
@@ -64,6 +64,7 @@ EdgeBundling.argsType = {
     outputMidPoints: null,
     springMidPositions: null,
     midSpringsColorCoords: null,
+    inputForces: null,   
     springStrength: cljs.types.float_t,
     springDistance: cljs.types.float_t,
 }
@@ -161,25 +162,33 @@ var tempLayoutBuffers  = {
   globalSpeed: null,
   tempMidPoints: null,
   prevForces: null,
-  curForces: null
+  curForces: null,
+  swings: null,
+  tractions: null
 
 };
 Object.seal(tempLayoutBuffers);
 
 // Create temporary buffers needed for layout
 var setupTempLayoutBuffers = function(simulator) {
+    simulator.resetBuffers(tempLayoutBuffers);
+    console.log("Mid point allocation", simulator.numMidPoints);
     return Q.all(
         [
         simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed'),
         simulator.cl.createBuffer(2*simulator.numMidPoints*Float32Array.BYTES_PER_ELEMENT, 'prevForces'),
         simulator.cl.createBuffer(2*simulator.numMidPoints*Float32Array.BYTES_PER_ELEMENT, 'curForces'),
-        simulator.cl.createBuffer(2*simulator.numMidPoints*Float32Array.BYTES_PER_ELEMENT, 'tempMidPoints')
+        simulator.cl.createBuffer(2*simulator.numMidPoints*Float32Array.BYTES_PER_ELEMENT, 'tempMidPoints'),
+        simulator.cl.createBuffer(1*simulator.numMidPoints*Float32Array.BYTES_PER_ELEMENT, 'swings'),
+        simulator.cl.createBuffer(1*simulator.numMidPoints*Float32Array.BYTES_PER_ELEMENT, 'tractions')
         ])
-    .spread(function (globalSpeed, prevForces, curForces, tempMidPoints) {
+    .spread(function (globalSpeed, prevForces, curForces, tempMidPoints, swings, tractions) {
       tempLayoutBuffers.globalSpeed = globalSpeed;
       tempLayoutBuffers.prevForces = prevForces;
       tempLayoutBuffers.curForces = curForces;
       tempLayoutBuffers.tempMidPoints = tempMidPoints;
+      tempLayoutBuffers.swings = swings;
+      tempLayoutBuffers.tractions = tractions;
       return tempLayoutBuffers;
     })
     .catch(util.makeErrorHandler('setupTempBuffers'));
@@ -206,7 +215,8 @@ EdgeBundling.prototype.setEdges = function (simulator) {
           springs: simulator.buffers.forwardsEdges.buffer,
           workList: simulator.buffers.forwardsWorkItems.buffer,
           inputPoints: simulator.buffers.curPoints.buffer,
-          inputMidPoints: tempLayoutBuffers.tempMidPoints.buffer,
+          inputForces: tempLayoutBuffers.tempMidPoints.buffer,
+          inputMidPoints: simulator.buffers.curMidPoints.buffer,
           outputMidPoints: tempLayoutBuffers.curForces.buffer,
           springMidPositions: simulator.buffers.midSpringsPos.buffer,
           midSpringsColorCoords: simulator.buffers.midSpringsColorCoord.buffer
@@ -224,7 +234,7 @@ function midEdges(simulator, ebMidsprings, stepNumber) {
         simulator.buffers.nextMidPoints,
         simulator.buffers.curMidPoints,
         simulator.buffers.midSpringsPos,
-        simulator.buffers.midSpringsColorCoord
+        simulator.buffers.midSpringsColorCoord,
     ];
 
     ebMidsprings.set({stepNumber: stepNumber});
@@ -293,11 +303,13 @@ EdgeBundling.prototype.tick = function(simulator, stepNumber) {
     }).then(function () {
         return that.midEdgeGather.execKernels(simulator)
     }).then(function () {
-        return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
+        //return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
+        return Q()
     }).then(function () {
-            simulator.tickBuffers(['curMidPoints'])
+        simulator.tickBuffers(['curMidPoints'])
         return Q.all([
             simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints),
+            //tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
             tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
             ])
     }).fail(util.makeErrorHandler('Failure in edgebundling tick'));

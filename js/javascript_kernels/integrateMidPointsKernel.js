@@ -34,7 +34,7 @@ var integrateKernel = function (clContext) {
         globalSpeed: tempLayoutBuffers.globalSpeed.buffer,
         inputPositions: buffers.curMidPoints.buffer,
         curForces: tempLayoutBuffers.curForces.buffer,
-        swings: buffers.swings.buffer,
+        swings: tempLayoutBuffers.swings.buffer,
         outputPositions: buffers.nextMidPoints.buffer
     });
 
