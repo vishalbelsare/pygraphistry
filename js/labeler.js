@@ -137,29 +137,45 @@ function filterAttributeMap (graph, indices, columns, attributeMap) {
         return [attr, new Array(indices.length)];
     }));
 
+    var filteredColumns = _.filter(columns, function (col) {
+        return ['degree', 'degree in', 'degree out', '_title'].indexOf(col) === -1;
+    });
+
+    var extraColumns = _.filter(columns, function (col) {
+        return ['degree', 'degree in', 'degree out', '_title'].indexOf(col) !== -1;
+    });
+
     var maybeTitleField = pickTitleField(attributeMap);
     var outDegrees = graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped;
     var inDegrees = graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped;
 
-    _.each(columns, function (attr) {
+    _.each(filteredColumns, function (attr) {
         _.each(indices, function (v, i) {
-
-            var value;
-            if (attr === 'degree') {
-                value = outDegrees[v] + inDegrees[v];
-            } else if (attr === 'degree in') {
-                value = inDegrees[v];
-            } else if (attr === 'degree out') {
-                value = outDegrees[v];
-            } else if (attr === '_title') {
-                value = maybeTitleField ? attributeMap[maybeTitleField].values[v] : v
-            } else {
-                value = attributeMap[attr].values[v];
-            }
-
-            filteredAttributeMap[attr][i] = value;
+            filteredAttributeMap[attr][i] = attributeMap[attr].values[v];
         });
     });
+
+    // Attributes that aren't stored in VGraph;
+    _.each(extraColumns, function (col) {
+        if (col === 'degree') {
+            _.each(indices, function (v, i) {
+                filteredAttributeMap['degree'][i] = outDegrees[v] + inDegrees[v];
+            });
+        } else if (col === 'degree in') {
+            _.each(indices, function (v, i) {
+                filteredAttributeMap['degree in'][i] = inDegrees[v];
+            });
+        } else if (col === 'degree out') {
+            _.each(indices, function (v, i) {
+                filteredAttributeMap['degree out'][i] = outDegrees[v];
+            });
+        } else if (col === '_title') {
+            _.each(indices, function (v, i) {
+                filteredAttributeMap['_title'][i] = maybeTitleField ? attributeMap[maybeTitleField].values[v] : v;
+            });
+        }
+    });
+
     return filteredAttributeMap;
 }
 
