@@ -107,7 +107,7 @@ function renderScene(tag, trigger, items, readPixels, callback) {
 
 
 function renderSlowEffects(renderState, vboUpdated, bufferSnapshots) {
-    if (vboUpdated) {
+    if (vboUpdated && renderState.get('config').get('edgeMode') === 'INDEXEDCLIENT') {
         var start = Date.now();
 
         var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
@@ -136,6 +136,7 @@ function renderSlowEffects(renderState, vboUpdated, bufferSnapshots) {
 }
 
 
+
 function setupRenderingLoop(renderState, vboUpdates, isAnimating, simulateOn) {
     var vboUpdated = false;
     var simulating;
@@ -152,9 +153,12 @@ function setupRenderingLoop(renderState, vboUpdates, isAnimating, simulateOn) {
 
     var hostBuffers = renderState.get('hostBuffers');
     _.each(['curPoints', 'logicalEdges'], function (bufName) {
-        hostBuffers[bufName].subscribe(function (data) {
-            bufferSnapshots[bufName] = data;
-        });
+        var rxBuf = hostBuffers[bufName];
+        if (rxBuf) {
+            rxBuf.subscribe(function (data) {
+                bufferSnapshots[bufName] = data;
+            });
+        }
     });
 
     vboUpdates.filter(function (status) {
