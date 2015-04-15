@@ -505,7 +505,7 @@ var sceneNetflowIndexedClient = {
 }
 
 var scenes = {
-    'default': sceneNetflow,
+    'default': sceneNetflowIndexedClient,
     'uber' : sceneUber,
     'netflow': sceneNetflow,
     'netflowIndexed': sceneNetflowIndexed,
