@@ -103,22 +103,30 @@ function getLabels(graph, indices) {
 
 function aggregate(graph, indices, attributes, binning, mode) {
 
-    function process(values, attribute) {
+    function process(values, attribute, indices) {
 
         var goalNumberOfBins = binning ? binning._goalNumberOfBins : 0;
         var binningHint = binning ? binning[attribute] : undefined;
         var type = vgloader.getAttributeType(graph.simulator.vgraph, attribute);
 
         if (mode !== 'countBy' && type !== 'string') {
-            return histogram(values, binningHint, goalNumberOfBins);
+            return histogram(values, binningHint, goalNumberOfBins, indices);
         } else {
-            return countBy(values, binningHint);
+            return countBy(values, binningHint, indices);
         }
     }
 
     var attributeMap = vgloader.getAttributeMap(graph.simulator.vgraph, attributes);
+    attributeMap['degree in'] = {values: graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped};
+    attributeMap['degree out'] = {values: graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped};
+    // TODO: Caches this value elsewhere.
+    var degrees = _.map(attributeMap['degree out'].values, function (val, idx) {
+        return val + attributeMap['degree in'].values[idx];
+    });
+    attributeMap['degree'] = {values: degrees};
+
     var columns = attributes ? attributes : frameHeader(graph);
-    var filteredAttributeMap = filterAttributeMap(graph, indices, columns, attributeMap);
+    //var filteredAttributeMap = filterAttributeMap(graph, indices, columns, attributeMap);
 
     // Filter out private attributes that begin with underscore
     columns = columns.filter(function (val) {
@@ -126,67 +134,20 @@ function aggregate(graph, indices, attributes, binning, mode) {
     });
 
     return _.object(_.map(columns, function (attribute) {
-        return [attribute, process(filteredAttributeMap[attribute], attribute)];
+        return [attribute, process(attributeMap[attribute].values, attribute, indices)];
     }));
 }
 
 
-function filterAttributeMap (graph, indices, columns, attributeMap) {
-
-    var filteredAttributeMap = _.object(_.map(columns, function (attr) {
-        return [attr, new Array(indices.length)];
-    }));
-
-    var filteredColumns = _.filter(columns, function (col) {
-        return ['degree', 'degree in', 'degree out', '_title'].indexOf(col) === -1;
-    });
-
-    var extraColumns = _.filter(columns, function (col) {
-        return ['degree', 'degree in', 'degree out', '_title'].indexOf(col) !== -1;
-    });
-
-    var maybeTitleField = pickTitleField(attributeMap);
-    var outDegrees = graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped;
-    var inDegrees = graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped;
-
-    _.each(filteredColumns, function (attr) {
-        _.each(indices, function (v, i) {
-            filteredAttributeMap[attr][i] = attributeMap[attr].values[v];
-        });
-    });
-
-    // Attributes that aren't stored in VGraph;
-    _.each(extraColumns, function (col) {
-        if (col === 'degree') {
-            _.each(indices, function (v, i) {
-                filteredAttributeMap['degree'][i] = outDegrees[v] + inDegrees[v];
-            });
-        } else if (col === 'degree in') {
-            _.each(indices, function (v, i) {
-                filteredAttributeMap['degree in'][i] = inDegrees[v];
-            });
-        } else if (col === 'degree out') {
-            _.each(indices, function (v, i) {
-                filteredAttributeMap['degree out'][i] = outDegrees[v];
-            });
-        } else if (col === '_title') {
-            _.each(indices, function (v, i) {
-                filteredAttributeMap['_title'][i] = maybeTitleField ? attributeMap[maybeTitleField].values[v] : v;
-            });
-        }
-    });
-
-    return filteredAttributeMap;
-}
-
-
-function countBy(values, binning) {
+function countBy(values, binning, indices) {
     // TODO: Binning.
-    if (values.length === 0) {
+    if (indices.length === 0) {
         return {type: 'nodata'};
     }
 
-    var bins = _.countBy(values);
+    var bins = _.countBy(indices, function (valIdx) {
+        return values[valIdx];
+    });
     var numValues = _.reduce(_.values(bins), function (memo, num) {
         return memo + num;
     }, 0);
@@ -217,15 +178,30 @@ function round_up(num, multiple) {
     return multiple * Math.ceil(div);
 }
 
+function minMaxMasked(values, indices) {
+    var min = Infinity;
+    var max = -Infinity;
 
-function histogram(values, binning, goalNumberOfBins) {
+    _.each(indices, function (valueIdx) {
+        var val = values[valueIdx];
+        if (val < min) {
+            min = val;
+        }
+        if (val > max) {
+            max = val;
+        }
+    });
+    return {max: max, min: min};
+}
+
+function histogram(values, binning, goalNumberOfBins, indices) {
     // Binning has binWidth, minValue, maxValue, and numBins
 
     // Disabled because filtering is expensive, and we now have type safety coming from
     // VGraph types.
     // values = _.filter(values, function (x) { return !isNaN(x)});
 
-    var numValues = values.length;
+    var numValues = indices.length;
     if (numValues === 0) {
         return {type: 'nodata'};
     }
@@ -248,8 +224,9 @@ function histogram(values, binning, goalNumberOfBins) {
 
     } else {
 
-        var max = _.max(values);
-        var min = _.min(values);
+        var minMax = minMaxMasked(values, indices);
+        var max = minMax.max;
+        var min = minMax.min;
 
         if (goalNumberOfBins) {
             var numBins = goalNumberOfBins;
@@ -300,9 +277,9 @@ function histogram(values, binning, goalNumberOfBins) {
     var bins = Array.apply(null, new Array(numBins)).map(function () { return 0; });
 
     var binId;
-    for (var i = 0; i < values.length; i++) {
+    for (var i = 0; i < indices.length; i++) {
         // Here we use an optimized "Floor" because we know it's a smallish, positive number.
-        binId = ((values[i] - bottomVal) / binWidth) | 0;
+        binId = ((values[indices[i]] - bottomVal) / binWidth) | 0;
         bins[binId]++;
     }
 
