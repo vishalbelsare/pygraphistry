@@ -87,15 +87,16 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     // Setup
     //////////////////////////////////////////////////////////////////////////
 
-    canvas.setupRenderingLoop(appState.renderState, appState.vboUpdates, appState.isAnimating,
-                              appState.simulateOn);
+    appState.renderingScheduler = new canvas.RenderingScheduler(appState.renderState, appState.vboUpdates,
+                                                                appState.isAnimating, appState.simulateOn);
+
     canvas.setupCameraInteractions(appState, $simCont).subscribe(
         appState.cameraChanges,
         util.makeErrorHandler('cameraChanges')
     );
 
     canvas.setupLabelsAndCursor(appState, $simCont);
-    canvas.setupRenderUpdates(appState.renderState, appState.cameraChanges, appState.settingsChanges);
+    canvas.setupRenderUpdates(appState.renderingScheduler, appState.cameraChanges, appState.settingsChanges);
 
     var colors = colorpicker($fgPicker, $bgPicker, socket);
     canvas.setupBackgroundColor(appState, colors.backgroundColor);

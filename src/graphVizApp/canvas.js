@@ -57,13 +57,13 @@ function setupLabelsAndCursor(appState, $eventTarget) {
 }
 
 
-function setupRenderUpdates(renderState, cameraStream, settingsChanges) {
+function setupRenderUpdates(renderingScheduler, cameraStream, settingsChanges) {
     var renderUpdates = cameraStream.combineLatest(settingsChanges, _.identity);
 
     renderUpdates.do(function (camera) {
         //TODO: Make camera functional and pass camera to setCamera
-        renderer.setCamera(renderState);
-        renderScene('panzoom', 'renderSceneFast');
+        renderer.setCamera(renderingScheduler.renderState);
+        renderingScheduler.renderScene('panzoom', {trigger: 'renderSceneFast'});
     }).subscribe(_.identity, util.makeErrorHandler('render updates'));
 }
 
@@ -89,45 +89,42 @@ function setupBackgroundColor() {
     */
 }
 
+/* Deindexed logical edges by looking up the x/y positions of the source and destination
+ * nodes. */
+function expandLogicalEdges(bufferSnapshots) {
+    var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
+    var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
+    var numPoints = logicalEdges.length;
 
-var renderingPaused = true;
-var renderQueue = {};
-var renderTasks = new Rx.Subject();
+    if (!bufferSnapshots.springsPos) {
+        bufferSnapshots.springsPos = new Float32Array(numPoints * 2);
+    }
+    var springsPos = bufferSnapshots.springsPos;
 
+    for (var i = 0; i < numPoints; i++) {
+        springsPos[2 * i]     = curPoints[2 * logicalEdges[i]];
+        springsPos[2 * i + 1] = curPoints[2 * logicalEdges[i] + 1];
+    }
 
-function renderScene(tag, trigger, items, readPixels, callback) {
-    renderTasks.onNext({
-        tag: tag,
-        trigger: trigger,
-        items: items,
-        readPixels: readPixels,
-        callback: callback
-    });
+    return springsPos;
 }
 
+/*
+ * Render expensive items (eg, edges) when a quiet state is detected. This function is called
+ * from within an animation frame and must execture all its work inside it. Callbacks(rx, etc)
+ * are not allowed as they would schedule work outside the animation frame.
+ */
+function renderSlowEffects(renderingScheduler) {
+    var appSnapshot = renderingScheduler.appSnapshot;
+    var renderState = renderingScheduler.renderState;
+    var logicaEdges = renderState.get('config').get('edgeMode') === 'INDEXEDCLIENT';
 
-function renderSlowEffects(renderState, vboUpdated, bufferSnapshots) {
-    if (vboUpdated && renderState.get('config').get('edgeMode') === 'INDEXEDCLIENT') {
+    if (logicaEdges && appSnapshot.vboUpdated) {
         var start = Date.now();
-
-        var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
-        var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
-        var numPoints = logicalEdges.length;
-
-        if (!bufferSnapshots.springsPos) {
-            bufferSnapshots.springsPos = new Float32Array(numPoints * 2);
-        }
-        var springsPos = bufferSnapshots.springsPos;
-
-        for (var i = 0; i < numPoints; i++) {
-            springsPos[2*i] = curPoints[2 * logicalEdges[i]];
-            springsPos[2*i + 1] = curPoints[2 * logicalEdges[i] + 1];
-        }
-
+        var springsPos = expandLogicalEdges(appSnapshot.buffers);
         var end1 = Date.now();
         renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
         var end2 = Date.now();
-
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
     }
 
@@ -136,27 +133,42 @@ function renderSlowEffects(renderState, vboUpdated, bufferSnapshots) {
 }
 
 
+var RenderingScheduler = function(renderState, vboUpdates, isAnimating, simulateOn) {
+    var that = this;
+    this.renderState = renderState;
 
-function setupRenderingLoop(renderState, vboUpdates, isAnimating, simulateOn) {
-    var vboUpdated = false;
-    var simulating;
-    var bufferSnapshots = {
-        curPoints: undefined,
-        logicalEdges: undefined,
-        springsPos: undefined
+    /* Rendering queue */
+    var renderTasks = new Rx.Subject();
+    var renderQueue = {};
+    var renderingPaused = true; // False when the animation loop is running.
+
+    /* Since we cannot read out of Rx streams withing the animation frame, we record the latest
+     * value produced by needed rx streams and pass them as function arguments to the quiet state
+     * callback. */
+    this.appSnapshot = {
+        vboUpdated: false,
+        simulating: false,
+        buffers: {
+            curPoints: undefined,
+            logicalEdges: undefined,
+            springsPos: undefined
+        }
     };
 
-    simulateOn.subscribe(function (val) {
-        simulating = val;
-    }, util.makeErrorHandler('simulate updates'));
 
+    /*
+     * Rx hooks to maintain the appSnaphot up-to-date
+     */
+    simulateOn.subscribe(function (val) {
+        that.appSnapshot.simulating = val;
+    }, util.makeErrorHandler('simulate updates'));
 
     var hostBuffers = renderState.get('hostBuffers');
     _.each(['curPoints', 'logicalEdges'], function (bufName) {
         var rxBuf = hostBuffers[bufName];
         if (rxBuf) {
             rxBuf.subscribe(function (data) {
-                bufferSnapshots[bufName] = data;
+                that.appSnapshot.buffers[bufName] = data;
             });
         }
     });
@@ -164,62 +176,76 @@ function setupRenderingLoop(renderState, vboUpdates, isAnimating, simulateOn) {
     vboUpdates.filter(function (status) {
         return status === 'received';
     }).do(function () {
-        vboUpdated = true;
-        renderScene('vboupdate', 'renderSceneFast');
-        renderScene('vboupdate_picking', undefined, ['pointsampling']);
+        that.appSnapshot.vboUpdated = true;
+        that.renderScene('vboupdate', {trigger: 'renderSceneFast'});
+        that.renderScene('vboupdate_picking', {items: ['pointsampling']});
     }).subscribe(_.identity, util.makeErrorHandler('render vbo updates'));
 
-    function quietCallback() {
-        if (!simulating) {
-            debug('Quiet state');
-            renderSlowEffects(renderState, vboUpdated, bufferSnapshots);
-            vboUpdated = false;
-        }
-    }
 
+    /* Push a render task into the renderer queue
+     * String * {trigger, items, readPixels, callback} -> () */
+    this.renderScene = function(tag, task) {
+        renderTasks.onNext({
+            tag: tag,
+            trigger: task.trigger,
+            items: task.items,
+            readPixels: task.readPixels,
+            callback: task.callback
+        });
+    };
+
+    /* Move render tasks into a tagged dictionary. For each tag, only the latest task
+     * is rendered; others are skipepd. */
     renderTasks.subscribe(function (task) {
         debug('Queueing frame on behalf of', task.tag);
         renderQueue[task.tag] = task;
 
         if (renderingPaused) {
-            startRenderingLoop(renderState, quietCallback, isAnimating);
+            startRenderingLoop();
         }
     });
-}
 
 
-function startRenderingLoop(renderState, quietCallback, isAnimating) {
-    var lastRenderTime = 0;
-    var quietSignaled = true;
+    /*
+     * Helpers to start/stop the rendering loop within an animation frame
+     */
+    function startRenderingLoop() {
+        var lastRenderTime = 0;
+        var quietSignaled = true;
 
-    function loop() {
-        var nextFrameId = window.requestAnimationFrame(loop);
+        function loop() {
+            var nextFrameId = window.requestAnimationFrame(loop);
 
-        if (_.keys(renderQueue).length === 0) {
-            var timeDelta = Date.now() - lastRenderTime;
-            if (timeDelta > 200 && !quietSignaled) {
-                quietCallback();
-                quietSignaled = true;
-                isAnimating.onNext(false);
+            if (_.keys(renderQueue).length === 0) { // Nothing to render
+                var timeDelta = Date.now() - lastRenderTime;
+                if (timeDelta > 200 && !quietSignaled) {
+                    quietCallback();
+                    quietSignaled = true;
+                    isAnimating.onNext(false);
+                }
+
+                if (timeDelta > 1000) {
+                    pauseRenderingLoop(nextFrameId);
+                }
+                return;
             }
 
-            if (timeDelta > 1000) {
-                pauseRenderingLoop(nextFrameId);
+            lastRenderTime = Date.now();
+            if (quietSignaled) {
+                isAnimating.onNext(true);
+                quietSignaled = false;
             }
-            return;
+
+            _.each(renderQueue, function (renderTask, tag) {
+                renderer.render(renderState, tag, renderTask.trigger, renderTask.items,
+                                renderTask.readPixels, renderTask.callback);
+            });
+            renderQueue = {};
         }
 
-        lastRenderTime = Date.now();
-        if (quietSignaled) {
-            isAnimating.onNext(true);
-            quietSignaled = false;
-        }
-
-        _.each(renderQueue, function (renderTask, tag) {
-            renderer.render(renderState, tag, renderTask.trigger, renderTask.items,
-                            renderTask.readPixels, renderTask.callback);
-        });
-        renderQueue = {};
+        debug('Starting rendering loop');
+        renderingPaused = false;
+        loop();
     }
 
     function pauseRenderingLoop(nextFrameId) {
@@ -228,10 +254,15 @@ function startRenderingLoop(renderState, quietCallback, isAnimating) {
         renderingPaused = true;
     }
 
-    debug('Starting rendering loop');
-    renderingPaused = false;
-    loop();
-}
+    /* Called when a quiet/steady state is detected, to render expensive features such as edges */
+    function quietCallback() {
+        if (!that.appSnapshot.simulating) {
+            debug('Quiet state');
+            renderSlowEffects(that);
+            that.appSnapshot.vboUpdated = false;
+        }
+    }
+};
 
 
 module.exports = {
@@ -239,5 +270,5 @@ module.exports = {
     setupCameraInteractions: setupCameraInteractions,
     setupLabelsAndCursor: setupLabelsAndCursor,
     setupRenderUpdates: setupRenderUpdates,
-    setupRenderingLoop: setupRenderingLoop
+    RenderingScheduler: RenderingScheduler
 };
