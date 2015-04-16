@@ -207,7 +207,8 @@ var RenderingScheduler = function(renderState, vboUpdates, isAnimating, simulate
 
 
     /*
-     * Helpers to start/stop the rendering loop within an animation frame
+     * Helpers to start/stop the rendering loop within an animation frame. The rendering loop
+     * stops when idle for a second and starts again at the next render update.
      */
     function startRenderingLoop() {
         var lastRenderTime = 0;
