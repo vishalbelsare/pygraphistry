@@ -13,6 +13,14 @@ var _            = require('underscore');
 var renderer     = require('./renderer.js');
 
 
+//======
+
+//can get reset by basePath()
+var BASE_PATH = '/graph/viz/facebook.';
+
+//======
+
+
 //string * {socketHost: string, socketPort: int} -> (... -> ...)
 // where fragment == 'vbo?buffer' or 'texture?name'
 function makeFetcher () {
@@ -25,7 +33,7 @@ function makeFetcher () {
 
         //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
         var oReq = new XMLHttpRequest();
-        oReq.open('GET', '/graph/viz/facebook.' + bufferName + '.vbo', true);
+        oReq.open('GET', BASE_PATH + bufferName + '.vbo', true);
         oReq.responseType = 'arraybuffer';
 
         var now = Date.now();
@@ -57,6 +65,12 @@ function makeFetcher () {
 
 
 module.exports = {
+
+    basePath: function (path) {
+        BASE_PATH = path;
+        return module.exports;
+    },
+
     connect: function (vizType) {
         debug('connect', vizType);
 
@@ -73,7 +87,7 @@ module.exports = {
         debug('createRenderer');
 
         return $.ajaxAsObservable({
-                url: '/graph/viz/facebook.renderconfig.json',
+                url: BASE_PATH + 'renderconfig.json',
                 dataType: 'json'
             })
             .pluck('data')
@@ -88,7 +102,7 @@ module.exports = {
 
         var vboUpdates = new Rx.BehaviorSubject('init');
 
-        $.ajaxAsObservable({url: '/graph/viz/facebook.metadata.json', dataType: 'json'})
+        $.ajaxAsObservable({url: BASE_PATH + 'metadata.json', dataType: 'json'})
             .pluck('data')
             .do(function (data) {
                 debug('got metadata', data);

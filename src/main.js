@@ -28,6 +28,9 @@ var urlParams = getUrlParameters();
 var IS_OFFLINE = urlParams.offline === 'true';
 debug('IS_OFFLINE', IS_OFFLINE);
 var streamClient    = IS_OFFLINE ? localClient : serverClient;
+if (IS_OFFLINE && urlParams.basePath) {
+    streamClient.basePath(decodeURIComponent(urlParams.basePath));
+}
 
 
 console.warn('%cWarning: having the console open can slow down execution significantly!',
