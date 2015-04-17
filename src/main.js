@@ -19,18 +19,10 @@ var $               = window.$,
 var ui              = require('./ui.js');
 var vizApp          = require('./graphVizApp/vizApp.js');
 var monkey          = require('./monkey.js');
+
+//defer choice to after urlParam
 var serverClient    = require('./client.js');
 var localClient     = require('./localclient.js');
-
-
-var urlParams = getUrlParameters();
-
-var IS_OFFLINE = urlParams.offline === 'true';
-debug('IS_OFFLINE', IS_OFFLINE);
-var streamClient    = IS_OFFLINE ? localClient : serverClient;
-if (IS_OFFLINE && urlParams.basePath) {
-    streamClient.basePath(decodeURIComponent(urlParams.basePath));
-}
 
 
 console.warn('%cWarning: having the console open can slow down execution significantly!',
@@ -38,6 +30,9 @@ console.warn('%cWarning: having the console open can slow down execution signifi
 
 
 //===============
+
+
+var urlParams = getUrlParameters();
 
 
 /**
@@ -54,6 +49,29 @@ function getUrlParameters() {
 
     return params;
 }
+function isParamTrue (param) {
+    var val = (urlParams[param] || '').toLowerCase();
+    return val === 'true' || val === '1' || val === 'yes';
+}
+function isParamFalse (param) {
+    var val = (urlParams[param] || '').toLowerCase();
+    return val === 'false' || val === '0' || val === 'no';
+}
+
+
+//================
+
+
+
+var IS_OFFLINE = urlParams.offline === 'true';
+debug('IS_OFFLINE', IS_OFFLINE);
+var streamClient    = IS_OFFLINE ? localClient : serverClient;
+if (IS_OFFLINE && urlParams.basePath) {
+    streamClient.basePath(decodeURIComponent(urlParams.basePath));
+}
+
+
+//==================
 
 
 // Sets up event handlers to display socket errors + disconnects on screen
@@ -224,10 +242,6 @@ window.addEventListener('load', function() {
     var app = init($('#simulation')[0], 'graph');
     createInfoOverlay(app);
 
-    function isParamTrue(param) {
-        var val = (urlParams[param] || '').toLowerCase();
-        return val === 'true' || val === '1' || val === 'yes';
-    }
 
     if (isParamTrue('info')) {
         $('html').addClass('info');
