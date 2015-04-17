@@ -129,11 +129,14 @@ function renderSlowEffects(renderingScheduler) {
     }
 
     renderer.render(renderState, 'fullscene', 'renderSceneFull');
-    renderer.render(renderState, 'picking', 'picking');
+    renderer.render(renderState, 'picking', 'picking', undefined, undefined, function () {
+        renderingScheduler.appSnapshot.hitmapUpdates.onNext();
+    });
 }
 
 
-var RenderingScheduler = function(renderState, vboUpdates, isAnimating, simulateOn) {
+var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
+                                  isAnimating, simulateOn) {
     var that = this;
     this.renderState = renderState;
 
@@ -152,7 +155,8 @@ var RenderingScheduler = function(renderState, vboUpdates, isAnimating, simulate
             curPoints: undefined,
             logicalEdges: undefined,
             springsPos: undefined
-        }
+        },
+        hitmapUpdates: hitmapUpdates
     };
 
 
@@ -178,7 +182,12 @@ var RenderingScheduler = function(renderState, vboUpdates, isAnimating, simulate
     }).do(function () {
         that.appSnapshot.vboUpdated = true;
         that.renderScene('vboupdate', {trigger: 'renderSceneFast'});
-        that.renderScene('vboupdate_picking', {items: ['pointsampling']});
+        that.renderScene('vboupdate_picking', {
+            items: ['pointsampling'],
+            callback: function () {
+                hitmapUpdates.onNext();
+            }
+        });
     }).subscribe(_.identity, util.makeErrorHandler('render vbo updates'));
 
 

@@ -61,6 +61,7 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     var appState = {
         renderState: initialRenderState,
         vboUpdates: vboUpdates,
+        hitmapUpdates: new Rx.ReplaySubject(1),
         cameraChanges: cameraChanges,
         isAnimating: isAnimating,
         labelHover: labelHover,
@@ -87,8 +88,11 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     // Setup
     //////////////////////////////////////////////////////////////////////////
 
-    appState.renderingScheduler = new canvas.RenderingScheduler(appState.renderState, appState.vboUpdates,
-                                                                appState.isAnimating, appState.simulateOn);
+    appState.renderingScheduler = new canvas.RenderingScheduler(appState.renderState,
+                                                                appState.vboUpdates,
+                                                                appState.hitmapUpdates,
+                                                                appState.isAnimating,
+                                                                appState.simulateOn);
 
     canvas.setupCameraInteractions(appState, $simCont).subscribe(
         appState.cameraChanges,

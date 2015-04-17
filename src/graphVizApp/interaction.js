@@ -7,7 +7,6 @@ var Rx       = require('rx');
                require('../rx-jquery-stub');
 var debug    = require('debug')('graphistry:StreamGL:interaction');
 var util     = require('./util.js');
-var renderer = require('../renderer.js');
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -80,9 +79,11 @@ function setupDrag($eventTarget, camera, appState) {
 }
 
 
-function setupMousemove($eventTarget, renderState, textures) {
+function setupMousemove($eventTarget) {
     debug('setupMouseover');
     var bounds = $('canvas', $eventTarget[0])[0].getBoundingClientRect();
+
+    var initial = {x: 0, y: 0};
 
     return $eventTarget.mousemoveAsObservable()
         .filter(function (v) {
@@ -91,12 +92,12 @@ function setupMousemove($eventTarget, renderState, textures) {
         .sample(1)
         .map(function (evt) {
             evt.preventDefault();
-            var pos = {
+            return {
                 x: evt.clientX - bounds.left,
                 y: evt.clientY - bounds.top
             };
-            return renderer.hitTest(renderState, textures, pos.x, pos.y, 20);
-        });
+        })
+        .merge(Rx.Observable.return(initial));
 }
 
 function setupScroll($eventTarget, canvas, camera, appState) {

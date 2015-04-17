@@ -8,6 +8,7 @@ var _       = require('underscore');
 
 var util            = require('./util.js');
 var interaction     = require('./interaction.js');
+var picking         = require('../picking.js');
 
 
 
@@ -247,11 +248,17 @@ function setupLabels (appState, $eventTarget, latestHighlightedObject) {
 function getLatestHighlightedObject (appState, $eventTarget, textures) {
 
     var OFF = [{idx: -1, dim: 0}];
-
+    var $cont = $('#highlighted-point-cont');
     var res = new Rx.ReplaySubject(1);
     res.onNext(OFF);
 
-    interaction.setupMousemove($eventTarget, appState.renderState, textures)
+    interaction.setupMousemove($eventTarget).combineLatest(
+            appState.hitmapUpdates,
+            _.identity
+        )
+        .map(function (pos) {
+            return picking.hitTestN(appState.renderState, textures, pos.x, pos.y, 20);
+        })
         // TODO: Make sure this also catches $('#marquee').hasClass('done') and 'beingdragged'
         // As a non-marquee-active state.
         // .flatMapLatest(util.observableFilter(appState.marqueeActive, util.notIdentity))
@@ -272,7 +279,7 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
                     clickedLabel = $(evt.target).parents('.graph-label').length || false;
                 }
                 return clickedLabel ?
-                    {cmd: 'click', pt: {dim: 1, idx: parseInt($('#highlighted-point-cont').attr('pointidx'))}}
+                    {cmd: 'click', pt: {dim: 1, idx: parseInt($cont.attr('pointidx'))}}
                     : {cmd: 'declick'};
             }))
         .merge(
@@ -309,7 +316,7 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
         })
         .subscribe(res, util.makeErrorHandler('getLatestHighlightedObject'));
 
-    return res.map(_.identity);
+    return res;
 }
 
 

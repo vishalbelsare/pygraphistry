@@ -8,7 +8,6 @@ var debug       = require('debug')('graphistry:StreamGL:renderer');
 
 var ui                  = require('./ui.js');
 var cameras             = require('./camera.js');
-var picking             = require('./picking.js');
 
 
 
@@ -1038,5 +1037,4 @@ module.exports = {
     render: render,
     getServerBufferNames: getServerBufferNames,
     getServerTextureNames: getServerTextureNames,
-    hitTest: picking.hitTestN,
 };
