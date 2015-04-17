@@ -19,7 +19,7 @@ function makeFetcher () {
 //string * {<name> -> int} * name -> Subject ArrayBuffer
     return function (bufferByteLengths, bufferName) {
 
-        console.log('fetching', bufferName);
+        debug('fetching', bufferName);
 
         var res = new Rx.Subject();
 
@@ -31,11 +31,11 @@ function makeFetcher () {
         var now = Date.now();
         oReq.onload = function () {
             try {
-                console.log('got texture/vbo data', bufferName, Date.now() - now, 'ms');
+                debug('got texture/vbo data', bufferName, Date.now() - now, 'ms');
 
                 var arrayBuffer = oReq.response; // Note: not oReq.responseText
                 var blength = bufferByteLengths[bufferName];
-                console.log('Buffer length (%s): %d, %d', bufferName, blength, arrayBuffer.byteLength);
+                debug('Buffer length (%s): %d, %d', bufferName, blength, arrayBuffer.byteLength);
                 var trimmedArray = new Uint8Array(arrayBuffer, 0, blength);
 
                 res.onNext(trimmedArray);
@@ -57,20 +57,20 @@ function makeFetcher () {
 
 
 module.exports = {
-    connect: function (vizType, urlParams) {
-        console.log('connect');
+    connect: function (vizType) {
+        debug('connect', vizType);
 
         return Rx.Observable.return({
             socket: {
-                on: function (evt) { console.log('ignoring on reg', evt); },
-                emit: function (evt) { console.log('ignoring emit', evt); }
+                on: function (evt) { debug('ignoring on reg', evt); },
+                emit: function (evt) { debug('ignoring emit', evt); }
             },
             params: {}
         });
     },
 
     createRenderer: function (socket, canvas) {
-        console.log('createRenderer');
+        debug('createRenderer');
 
         return $.ajaxAsObservable({
                 url: '/graph/viz/facebook.renderconfig.json',
@@ -78,24 +78,20 @@ module.exports = {
             })
             .pluck('data')
             .map(function (data) {
-                console.log('got', data);
+                debug('got', data);
                 return renderer.init(data, canvas);
             });
     },
 
     handleVboUpdates: function (socket, renderState) {
-        console.log('handle vbo updates');
-
-        var bufferNames = renderer.getServerBufferNames(renderState.get('config').toJS());
-        var textureNames = renderer.getServerTextureNames(renderState.get('config').toJS());
+        debug('handle vbo updates');
 
         var vboUpdates = new Rx.BehaviorSubject('init');
-
 
         $.ajaxAsObservable({url: '/graph/viz/facebook.metadata.json', dataType: 'json'})
             .pluck('data')
             .do(function (data) {
-                console.log('got metadata', data);
+                debug('got metadata', data);
 
                 $('#graph-node-count').text(data.elements.pointculled);
                 var numEdges = (data.elements.edgeculled || data.elements.edgeculledindexed ||
