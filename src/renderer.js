@@ -8,8 +8,6 @@ var debug       = require('debug')('graphistry:StreamGL:renderer');
 
 var ui                  = require('./ui.js');
 var cameras             = require('./camera.js');
-var localAttribHandler  = require('./localAttribHandler.js');
-var bufferProxy         = require('./bufferproxy.js').bufferProxy;
 var picking             = require('./picking.js');
 
 
@@ -21,26 +19,9 @@ var picking             = require('./picking.js');
 // Globals across renderer instances
 ////////////////////////////////////////////////////////////////////////////////
 
-//keyed on instancing: 1 -> vertex, 2 -> line, 3 -> triangle, ...
-//[ Uint32Array ]
-var indexHostBuffers = [];
-//[ glBuffer ]
-var indexGlBuffers = [];
-
-//User supplied buffers (auto-initialized to empty)
-//{ <name> -> TypedArray }
-var localHostBuffers = {};
-//{ <name> -> glBuffer }
-var localGlBuffers = {};
-
-/** A dictionary mapping buffer names to current sizes
- * @type {Object.<string, number>} */
-var bufferSizes = {};
-
 /** Cached dictionary of program.attribute: attribute locations
  * @type {Object.<string, Object.<string, GLint>>} */
 var attrLocations = {};
-
 
 /** Cached dictionary of program.uniform: uniform locations
  * @type {Object.<string, Object.<string, GLint>>} */
@@ -143,11 +124,10 @@ function bindBuffer(gl, glArrayType, buffer) {
         window.requestAnimationFrame = function(callback) {
             var currTime = Date.now();
             var timeToCall = Math.max(0, 16 - (currTime - lastTime));
-            var id = window.setTimeout(function() {
+            lastTime = currTime + timeToCall;
+            return window.setTimeout(function() {
                 callback(currTime + timeToCall);
             }, timeToCall);
-            lastTime = currTime + timeToCall;
-            return id;
         };
     }
 
@@ -160,9 +140,6 @@ function bindBuffer(gl, glArrayType, buffer) {
 }());
 
 
-/** The bindings object currently in effect on a program
- * @type {Object.<string, RendererOptions.render.bindings>} */
-var programBindings = {};
 /**
  * Binds all of a programs attributes to elements of a/some buffer(s)
  * @param {WebGLRenderingContext} gl - the WebGL context containing the program and buffers
@@ -178,20 +155,13 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
 
     var gl = state.get('gl');
     var uniforms = state.get('uniforms');
+    var indexGlBuffers = state.get('indexGlBuffers');
 
     debug('Binding program %s', programName);
 
     useProgram(gl, program);
 
-    // FIXME: If we don't rebind every frame, but bind another program, then the bindings of the
-    // first program are lost. Shouldn't they persist unless we change them for the program?
-    // If the program is already bound using the current binding preferences, no need to continue
-    //if(programBindings[programName] === bindings) {
-        //debug('Not binding program %s because already bound', programName);
-        //return false;
-    //}
     _.each(bindings.attributes, function(binding, attribute) {
-
         var element = modelSettings[binding[0]][binding[1]];
         var glArrayType = element.index ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER;
         var datasource = element.datasource;
@@ -200,17 +170,16 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
             : datasource === 'DEVICE'       ? buffers[binding[0]]
             : datasource === 'VERTEX_INDEX' ? indexGlBuffers[1]
             : datasource === 'EDGE_INDEX'   ? indexGlBuffers[2]
-            : datasource === 'CLIENT'       ?
-                localGlBuffers[state.get('config').get('models').get(binding[0]).get(binding[1]).get('localName')]
+            : datasource === 'CLIENT'       ? buffers[binding[0]]
             : (function () { throw new Error('unknown datasource ' + datasource); }());
 
-        debug('  binding buffer', attribute, binding, datasource, glArrayType, glBuffer, element.name);
+        debug('  binding buffer', attribute, binding, datasource, glArrayType, glBuffer, element);
 
         bindBuffer(gl, glArrayType, glBuffer);
         var location = getAttribLocationFast(gl, program, programName, attribute);
 
         gl.vertexAttribPointer(location, element.count, gl[element.type], element.normalize,
-            element.stride, element.offset);
+                               element.stride, element.offset);
 
         gl.enableVertexAttribArray(location);
     });
@@ -235,8 +204,6 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
         gl.uniform1i(location, 0);
 
     });
-
-    programBindings[programName] = bindings;
 }
 
 
@@ -248,8 +215,6 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
 
 function init(config, canvas) {
     config = Immutable.fromJS(config);
-
-
     var renderPipeline = new Rx.ReplaySubject(1);
 
     var state = Immutable.Map({
@@ -259,8 +224,9 @@ function init(config, canvas) {
         gl: undefined,
         ext: undefined,
         programs:       Immutable.Map({}),
-        defaultItems:   undefined,
         buffers:        Immutable.Map({}),
+        bufferSizes:    {},
+
         //TODO make immutable
         hostBuffers:    {},
         camera:         undefined,
@@ -272,29 +238,22 @@ function init(config, canvas) {
         pixelreads:     {},
         uniforms:       undefined,
 
-        boundBuffer: undefined,
-        bufferSize: Immutable.Map({}),
-        numElements: Immutable.Map({}),
+        boundBuffer:    undefined,
+        bufferSize:     Immutable.Map({}),
+        numElements:    {},
 
-        activeProgram: undefined,
-        attrLocations: Immutable.Map({}),
-        programBindings: Immutable.Map({}),
+        //keyed on instancing: 1 -> vertex, 2 -> line, 3 -> triangle, ...
+        indexHostBuffers: {}, // {Uint32Array}
+        indexGlBuffers: {}, // {GlBuffer}
 
         activeIndices:  getActiveIndices(config),
-        activeLocalAttributes: localAttribHandler.getActiveLocalAttributes(config),
 
         //Observable {?start: [...], ?rendered: [...]}
         renderPipeline: renderPipeline,
 
         //Observable [...]
         rendered: renderPipeline.pluck('rendered').filter(_.identity)
-
     });
-
-    debug('Active indices', state.get('activeIndices'));
-    debug('Active attributes', state.get('activeLocalAttributes'));
-
-    state = state.set('defaultItems', getItemsForTrigger(state, 'renderScene'));
 
     resizeCanvas(state);
     window.addEventListener('resize', function () {
@@ -381,7 +340,7 @@ function createCamera(state) {
         throw new Error ('Unknown camera type');
     }
 
-    console.info('Display has high DPI: pixel ratio is', pixelRatio);
+    console.info('Display\'s pixel ratio is', pixelRatio);
     camera.resize(canvas.width, canvas.height, pixelRatio);
 
     return camera;
@@ -391,9 +350,13 @@ function createCamera(state) {
  * Return the items to render when no override is given to render()
  */
 function getItemsForTrigger(state, trigger) {
+    if (!trigger) {
+        return undefined;
+    }
+
     var items = state.get('config').get('items').toJS();
     var renderItems = _.chain(items).pick(function (i) {
-        return i.trigger === trigger;
+        return _.contains(i.triggers, trigger);
     }).map(function (i, name) {
         return name;
     }).value();
@@ -424,7 +387,7 @@ function resizeCanvas(state) {
         if (camera !== undefined) {
             camera.resize(width, height, pixelRatio);
             setCamera(state);
-            render(state, 'resizeCanvas');
+            render(state, 'resizeCanvas', 'renderSceneFull');
         }
     }
 }
@@ -608,16 +571,21 @@ function createPrograms(state) {
 
 function createBuffers(state) {
     var gl = state.get('gl');
+    var models = state.get('config').get('models');
 
-    var createdBuffers = state.get('config').get('models').map(function(bufferOpts, bufferName) {
-        debug('Creating buffer %s', bufferName);
+    var createdBuffers = models.map(function(bufferOpts, bufferName) {
+        debug('Creating buffer %s with options %o', bufferName, bufferOpts.toJS());
+        state.get('bufferSizes')[bufferName] = 0;
         var vbo = gl.createBuffer();
         return vbo;
     }).cacheResult();
 
     var hostBuffers = state.get('hostBuffers');
-    _.keys(state.get('config').get('models').toJS()).forEach(function(bufferName) {
-        hostBuffers[bufferName] = new Rx.ReplaySubject(1);
+    models.forEach(function(bufferOpts, bufferName) {
+        var options = _.values(bufferOpts.toJS())[0];
+        if (options.datasource === 'HOST' || options.datasource === 'DEVICE') {
+            hostBuffers[bufferName] = new Rx.ReplaySubject(1);
+        }
     });
 
     return state.set('buffers', createdBuffers);
@@ -660,57 +628,53 @@ function loadTexture(state, textureNfo, name) {
 /**
  * Given an object mapping buffer/texture names to ArrayBuffer data, load all of them into the GL context
  * @param {RendererState} state - renderer instance
- * @param {Object.<string, WebGLBuffer>} buffers - the buffer object returned by createBuffers()
  * @param {Object.<string, ArrayBuffer>} bufferData - a mapping of buffer name -> new data to load
  * into that buffer
  */
-function loadBuffers(state, buffers, bufferData) {
+function loadBuffers(state, bufferData) {
     var config = state.get('config').toJS();
+    var buffers = state.get('buffers').toJS();
 
     _.each(bufferData, function(data, bufferName) {
         debug('Loading buffer data for buffer %s (data type: %s, length: %s bytes)',
-                    bufferName, data.constructor.name, data.byteLength);
+              bufferName, data.constructor.name, data.byteLength);
 
         var model = _.values(config.models[bufferName])[0];
         if (model === undefined) {
-            console.error('Asked to load data for buffer \'%s\', but corresponding model found',bufferName);
+            console.error('Asked to load data for buffer \'%s\', but corresponding model found', bufferName);
             return false;
         }
 
         if(typeof buffers[bufferName] === 'undefined') {
             console.error('Asked to load data for buffer \'%s\', but no buffer by that name exists locally',
-                bufferName, buffers);
+                          bufferName, buffers);
             return false;
         }
 
         loadBuffer(state, buffers[bufferName], bufferName, model, data);
-        state.get('hostBuffers')[bufferName].onNext(data);
 
+        if (model.datasource === 'HOST' || model.datasource === 'DEVICE') {
+            state.get('hostBuffers')[bufferName].onNext(data);
+        }
     });
 }
 
 
 function loadBuffer(state, buffer, bufferName, model, data) {
     var gl = state.get('gl');
+    var bufferSizes = state.get('bufferSizes');
+
     if(typeof bufferSizes[bufferName] === 'undefined') {
-        bufferSizes[bufferName] = 0;
+        console.error('loadBuffer: No size for buffer', bufferName);
+        return;
     }
     if(data.byteLength <= 0) {
-        debug('Warning: asked to load data for buffer \'%s\', but data length is 0', bufferName);
+        console.warn('loadBuffer: Asked to load data for buffer \'%s\', but data length is 0', bufferName);
         return;
     }
 
     state.get('activeIndices')
-        .forEach(updateIndexBuffer.bind('', gl, data.byteLength / 4));
-
-    state.get('activeLocalAttributes')
-        .forEach(
-            localAttribHandler.updateLocalAttributesBuffer.bind('',
-                {host: localHostBuffers, gl: localGlBuffers},
-                {bindBuffer: bindBuffer, expandHostBuffer: expandHostBuffer},
-                gl,
-                data.byteLength / 4));
-
+        .forEach(updateIndexBuffer.bind('', state, data.byteLength / 4));
 
     try{
         var glArrayType = model.index ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER;
@@ -741,7 +705,7 @@ function loadBuffer(state, buffer, bufferName, model, data) {
 //GLContext * int * int * UInt32Array -> Uint32Array
 function expandHostBuffer(gl, length, repetition, oldHostBuffer) {
 
-    var longerBuffer = new Uint32Array(Math.round(length * repetition * 1.25));
+    var longerBuffer = new Uint32Array(Math.round(length * repetition));
 
     //memcpy old (initial) indexes
     if (oldHostBuffer.length) {
@@ -768,10 +732,12 @@ function expandHostBuffer(gl, length, repetition, oldHostBuffer) {
     }
 
     return longerBuffer;
-
 }
 
-function updateIndexBuffer(gl, length, repetition) {
+function updateIndexBuffer(state, length, repetition) {
+    var gl = state.get('gl');
+    var indexHostBuffers = state.get('indexHostBuffers');
+    var indexGlBuffers = state.get('indexGlBuffers');
 
     if (!indexHostBuffers[repetition]) {
         indexHostBuffers[repetition] = new Uint32Array([]);
@@ -790,7 +756,8 @@ function updateIndexBuffer(gl, length, repetition) {
 
         var glBuffer = indexGlBuffers[repetition];
 
-        debug('Expanding index buffer', glBuffer, 'memcpy', oldHostBuffer.length/repetition, 'elts', 'write to', length * repetition);
+        debug('Expanding index buffer', glBuffer, 'memcpy', oldHostBuffer.length/repetition, 'elts',
+              'write to', length * repetition);
 
         bindBuffer(gl, gl.ARRAY_BUFFER, glBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, longerBuffer, gl.STREAM_DRAW);
@@ -799,9 +766,8 @@ function updateIndexBuffer(gl, length, repetition) {
 
 
 /** A mapping of scene items to the number of elements that should be rendered for them */
-var numElements = {};
-function setNumElements(newNumElements) {
-    numElements = newNumElements;
+function setNumElements(state, item, newNumElements) {
+    state.get('numElements')[item] = newNumElements;
 }
 
 
@@ -817,7 +783,7 @@ function setCamera(state) {
     // Set zoomScalingFactor uniform if it exists.
     _.each(uniforms, function (map, item) {
         if ('zoomScalingFactor' in map) {
-            numVertices = numElements[item];
+            numVertices = state.get('numElements')[item];
             var scalingFactor = camera.semanticZoom(numVertices);
             map.zoomScalingFactor = [scalingFactor];
         }
@@ -842,170 +808,113 @@ function setCamera(state) {
 }
 
 
-// Wrapper for setCamera which takes an Immutable renderState (returned by init()) and a camera
-function setCameraIm(renderState, camera) {
-    var newState = renderState.set('camera', camera);
-    setCamera(newState);
-    return newState;
-}
-
+var lastRenderTarget = {};
 
 /**
  * Render one or more items as specified in render config's render array
  * Implemented by queueing up a rendering task, which will lazilly be handled by
  * the animation loop of the browser.
  * @param {Renderer} state - initialized renderer
- * @param {(string[])} [renderListOverride] - optional override of the render array
+ * @param {String} tag - Extra information to track who requested rendering for debugging/perf
+ * @param {String} renderListTrigger - The trigger tag of the render items to execute
+ * @param {[String]} renderListOverride - List of render items to execute
+ * @param {Object} readPixelOverride - Dimensions for readPixels
+ * @param {Function} callback - Callback exectued after readPixels
  */
-var lastRenderTarget = {};
-var lastQueuedRenders = {};
-var lastRenderTime = 0;
-var renderingPaused = true;
+function render(state, tag, renderListTrigger, renderListOverride, readPixelsOverride, callback) {
+    var config      = state.get('config').toJS(),
+        camera      = state.get('camera'),
+        gl          = state.get('gl'),
+        ext         = state.get('ext'),
+        programs    = state.get('programs').toJS(),
+        buffers     = state.get('buffers').toJS();
 
-function render(state, tag, cb, opts) {
-    debug('Queueing a render frame');
-
-    lastQueuedRenders[tag] = {
-        state: state,
-        timestamp: Date.now(),
-        cb: cb
-    };
-    if (opts) {
-        _.extend(lastQueuedRenders[tag], opts);
-    }
-
-    if(renderingPaused) {
-        startRenderingLoop();
-    }
-}
-
-function startRenderingLoop() {
-    function loop() {
-        var frameId = window.requestAnimationFrame(loop);
-        renderLastQueued(frameId);
-    }
-
-    debug('Starting rendering loop');
-    renderingPaused = false;
-    loop();
-}
-
-function pauseRenderingLoop(nextFrameId) {
-    debug('Pausing rendering loop');
-    window.cancelAnimationFrame(nextFrameId);
-    renderingPaused = true;
-}
-
-function renderLastQueued(nextFrameId) {
-    if (_.isEmpty(lastQueuedRenders)) {
-        if (Date.now() - lastRenderTime > 1000) {
-            pauseRenderingLoop(nextFrameId);
-        }
+    var toRender = getItemsForTrigger(state, renderListTrigger) || renderListOverride;
+    if (toRender === undefined || toRender.length === 0) {
+        console.warn('Nothing to render for tag', tag);
         return;
     }
-    lastRenderTime = Date.now();
 
-    _.each(_.keys(lastQueuedRenders), function (tag) {
-        var renderObj = lastQueuedRenders[tag];
+    debug('==== Rendering a frame (tag: ' + tag +')', toRender);
+    state.get('renderPipeline').onNext({start: toRender});
 
-        var state = renderObj.state;
-        var trigger = renderObj.renderListTrigger;
-        var renderListOverride = trigger ? getItemsForTrigger(state, trigger)
-                                         : renderObj.renderListOverride;
-        var readPixelsOverride = renderObj.readPixelsOverride;
-        var cb = renderObj.cb;
-
-        debug('========= Rendering a frame, tag: ', tag);
-
-        var config      = state.get('config').toJS(),
-            camera      = state.get('camera'),
-            gl          = state.get('gl'),
-            ext         = state.get('ext'),
-            programs    = state.get('programs').toJS(),
-            buffers     = state.get('buffers').toJS();
-
-        var toRender = renderListOverride || state.get('defaultItems');
-
-        state.get('renderPipeline').onNext({start: toRender});
-
-        var itemToTarget = function (config, itemName) {
-            var itemDef = config.items[itemName];
-            if (!itemDef) {
-                console.error('Trying to render unknown item', itemName);
-            } else {
-                return itemDef.renderTarget === 'CANVAS' ? null : itemDef.renderTarget;
-            }
-        };
-
-        var sortedItems = toRender.slice();
-        sortedItems.sort(function (a,b) {
-            var aTarget = itemToTarget(config, a);
-            var bTarget = itemToTarget(config, b);
-            return aTarget < bTarget ? -1 : aTarget === bTarget ? 0 : 1;
-        });
-
-        var clearedFBOs = { };
-        var texturesToRead = [];
-
-        sortedItems.forEach(function(item) {
-            if(typeof numElements[item] === 'undefined' || numElements[item] < 1) {
-                debug('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
-                    item);
-                return false;
-            }
-            var texture = renderItem(state, config, camera, gl, ext, programs, buffers, clearedFBOs, item);
-            if (texture) {
-                texturesToRead.push(texture);
-            }
-        });
-
-        if (texturesToRead.length > 0) {
-            _.uniq(texturesToRead).forEach(function (renderTarget) {
-                debug('reading back texture', renderTarget);
-
-                if (renderTarget !== lastRenderTarget) {
-                    debug('  (needed rebind)');
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
-                    lastRenderTarget = renderTarget;
-                }
-
-                var dims = getTextureDims(config, gl.canvas, camera, renderTarget);
-                var pixelreads = state.get('pixelreads');
-                var texture = pixelreads[renderTarget];
-                var readDims = readPixelsOverride || { x: 0, y: 0, width: dims.width, height: dims.height };
-
-                if (!texture || texture.length !== readDims.width * readDims.height * 4) {
-                    debug('reallocating buffer', texture.length, readDims.width * readDims.height * 4);
-                    texture = new Uint8Array(readDims.width * readDims.height * 4);
-                    pixelreads[renderTarget] = texture;
-                }
-
-                gl.readPixels(readDims.x, readDims.y, readDims.width, readDims.height,
-                              gl.RGBA, gl.UNSIGNED_BYTE, texture);
-            });
+    var itemToTarget = function (config, itemName) {
+        var itemDef = config.items[itemName];
+        if (!itemDef) {
+            console.error('Trying to render unknown item', itemName);
+        } else {
+            return itemDef.renderTarget === 'CANVAS' ? null : itemDef.renderTarget;
         }
+    };
 
-        state.get('renderPipeline').onNext({rendered: toRender});
-
-        gl.flush();
-
-        // Call optional callback.
-        if (cb) {
-            cb();
-        }
-
+    var sortedItems = toRender.slice();
+    sortedItems.sort(function (a,b) {
+        var aTarget = itemToTarget(config, a);
+        var bTarget = itemToTarget(config, b);
+        return aTarget < bTarget ? -1 : aTarget === bTarget ? 0 : 1;
     });
 
-    // Clear render queue
-    lastQueuedRenders = {};
+    var clearedFBOs = { };
+    var texturesToRead = [];
+
+    sortedItems.forEach(function(item) {
+        var numElements = state.get('numElements')[item];
+        if(typeof numElements === 'undefined' || numElements < 1) {
+            debug('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
+                item);
+            return false;
+        }
+        var texture = renderItem(state, config, camera, gl, ext, programs, buffers, clearedFBOs, item);
+        if (texture) {
+            texturesToRead.push(texture);
+        }
+    });
+
+    if (texturesToRead.length > 0) {
+        _.uniq(texturesToRead).forEach(function (renderTarget) {
+            debug('reading back texture', renderTarget);
+
+            if (renderTarget !== lastRenderTarget) {
+                debug('  (needed rebind)');
+                gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
+                lastRenderTarget = renderTarget;
+            }
+
+            var dims = getTextureDims(config, gl.canvas, camera, renderTarget);
+            var pixelreads = state.get('pixelreads');
+            var texture = pixelreads[renderTarget];
+            var readDims = readPixelsOverride || { x: 0, y: 0, width: dims.width, height: dims.height };
+
+            if (!texture || texture.length !== readDims.width * readDims.height * 4) {
+                debug('reallocating buffer', texture.length, readDims.width * readDims.height * 4);
+                texture = new Uint8Array(readDims.width * readDims.height * 4);
+                pixelreads[renderTarget] = texture;
+            }
+
+            gl.readPixels(readDims.x, readDims.y, readDims.width, readDims.height,
+                            gl.RGBA, gl.UNSIGNED_BYTE, texture);
+        });
+    }
+
+    state.get('renderPipeline').onNext({ tag: tag, rendered: toRender });
+
+    gl.flush();
+
+    // Call optional callback. Since Chrome implements gl.finish as gl.flush, there is no way to guarantee
+    // that rendering is done. However, gl.readpixels does trigger a GPU/CPU sync, so the callback can be used
+    // to process the results of readpixels.
+    if (callback) {
+        callback();
+    }
 }
 
 
 function renderItem(state, config, camera, gl, ext, programs, buffers, clearedFBOs, item) {
-    debug('Rendering item "%s" (%d elements)', item, numElements[item]);
-
     var itemDef = config.items[item];
+    var numElements = state.get('numElements')[item];
     var renderTarget = itemDef.renderTarget === 'CANVAS' ? null : itemDef.renderTarget;
+
+    debug('Rendering item "%s" (%d elements)', item, numElements);
 
     if (renderTarget !== lastRenderTarget) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
@@ -1037,9 +946,9 @@ function renderItem(state, config, camera, gl, ext, programs, buffers, clearedFB
 
     debug('Done binding, drawing now...');
     if (itemDef.index) {
-        gl.drawElements(gl[itemDef.drawType], numElements[item], gl.UNSIGNED_INT, 0);
+        gl.drawElements(gl[itemDef.drawType], numElements, gl.UNSIGNED_INT, 0);
     } else {
-        gl.drawArrays(gl[itemDef.drawType], 0, numElements[item]);
+        gl.drawArrays(gl[itemDef.drawType], 0, numElements);
     }
 
     if (renderTarget !== null && itemDef.readTarget) {
@@ -1105,8 +1014,6 @@ function getActiveIndices (config) {
             .map(function (bindingPair) {
                 var modelName = bindingPair[1][0];
                 var attribName = bindingPair[1][1];
-                debug('bindingPair', bindingPair);
-                debug('datasource', config.models[modelName][attribName].datasource);
                 var datasource = config.models[modelName][attribName].datasource;
                 return datasource;
             })
@@ -1121,25 +1028,15 @@ function getActiveIndices (config) {
     return _.uniq(_.flatten(activeIndexModesLists));
 }
 
-// State -> string -> {read: int -> 'a, write: int * 'a -> ()}
-var localAttributeProxy = function (state) {
-    return bufferProxy(state.get('gl'), localHostBuffers, localGlBuffers);
-};
-
 
 module.exports = {
     init: init,
-    createContext: createContext,
-    setGlOptions: setGlOptions,
-    createPrograms: createPrograms,
-    createBuffers: createBuffers,
     loadBuffers: loadBuffers,
     loadTextures: loadTextures,
-    setCameraIm: setCameraIm,
+    setCamera: setCamera,
     setNumElements: setNumElements,
     render: render,
     getServerBufferNames: getServerBufferNames,
     getServerTextureNames: getServerTextureNames,
     hitTest: picking.hitTestN,
-    localAttributeProxy: localAttributeProxy
 };

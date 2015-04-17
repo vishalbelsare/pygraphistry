@@ -12,7 +12,7 @@
 var $               = window.$,
     _               = require('underscore'),
     Rx              = require('rx'),
-    util            = require('util'),
+    nodeutil        = require('util'),
     debug           = require('debug')('graphistry:StreamGL:main');
                       require('./rx-jquery-stub');
 
@@ -88,29 +88,21 @@ function init(canvas, vizType) {
 
             debug('Creating renderer');
             return streamClient.createRenderer(socket, canvas)
-                .map(function(renderState) {
+                .map(function(initialRenderState) {
                     debug('Renderer created');
-                    return {socket: socket, workerParams: nfo.params, renderState: renderState};
+                    return {
+                        socket: socket,
+                        workerParams: nfo.params,
+                        initialRenderState: initialRenderState
+                    };
                 });
-        }).do(function(v) {
-            var socket = v.socket;
-            var renderState = v.renderState;
-
-            var renderStateUpdates = new Rx.Subject();
-
-            var vboUpdates = streamClient.handleVboUpdates(socket, renderState, renderStateUpdates);
-
-            //TODO merge update notifs into vboUpdates
-            var vizAppRenderStateUpdates = vizApp(socket, $('.sim-container'), v.renderState,
-                                                  vboUpdates, v.workerParams, urlParams);
-            vizAppRenderStateUpdates
-                .subscribe(
-                    renderStateUpdates,
-                    function (err) { console.error('render scene on pan/zoom', err, (err||{}).stack); });
+        }).do(function(nfo) {
+            var vboUpdates = streamClient.handleVboUpdates(nfo.socket, nfo.initialRenderState);
+            vizApp(nfo.socket, nfo.initialRenderState, vboUpdates, nfo.workerParams, urlParams);
 
             initialized.onNext({
                 vboUpdates: vboUpdates,
-                renderState: renderState
+                initialRenderState: nfo.initialRenderState
             });
 
         }).subscribe(
@@ -148,13 +140,9 @@ function createInfoOverlay(app) {
         theme: 'transparent',
     });
     app.subscribe(function (app) {
-        app.renderState.get('renderPipeline').subscribe(function (evt) {
-            if (evt.start) {
-//                    renderMeter.resume();
-//                    renderMeter.tickStart();
-            } else if (evt.rendered) {
+        app.initialRenderState.get('renderPipeline').subscribe(function (evt) {
+            if (evt.rendered) {
                 renderMeter.tick();
-//                    renderMeter.pause();
             }
         },
         function (err) { console.error('renderPipeline error', err, (err||{}).stack); });
@@ -204,7 +192,7 @@ window.addEventListener('load', function() {
         monkey.patch(console, fun, monkey.after(function () {
             var msg = {
                 type: 'console.' + fun,
-                content: util.format.apply(this, arguments)
+                content: nodeutil.format.apply(this, arguments)
             };
             $.post(window.location.origin + '/error', JSON.stringify(msg));
         }));

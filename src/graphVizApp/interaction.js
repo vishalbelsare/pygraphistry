@@ -68,6 +68,9 @@ function setupDrag($eventTarget, camera, appState) {
                         y: curPos.pageY
                     };
                 })
+                .filter(function (dragEvent) {
+                    return dragEvent.deltaX !== 0 || dragEvent.deltaY !== 0;
+                })
                 .map(function(dragEvent) {
                     camera.center.x -= dragEvent.deltaX * camera.width ;
                     camera.center.y -= dragEvent.deltaY * camera.height;

@@ -11,23 +11,25 @@ var shortestpaths   = require('./shortestpaths.js');
 var colorpicker     = require('./colorpicker.js');
 var controls        = require('./controls.js');
 var canvas          = require('./canvas.js');
-
+var ui              = require('../ui.js');
 var poiLib          = require('../poi.js');
+var util            = require('./util.js');
 
 
-// ... -> Observable renderState
-function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
+function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     debug('Initializing vizApp.');
 
     //////////////////////////////////////////////////////////////////////////
     // App State
     //////////////////////////////////////////////////////////////////////////
-
     var poi = poiLib(socket);
     // Observable DOM
     var labelHover = new Rx.Subject();
-    var lastRender = new Rx.Subject();
-    var currentlyRendering = new Rx.ReplaySubject(1);
+
+    var cameraChanges = new Rx.ReplaySubject(1);
+    var isAnimating = new Rx.ReplaySubject(1);
+    isAnimating.onNext(false);
+
     var settingsChanges = new Rx.ReplaySubject(1);
     settingsChanges.onNext({});
 
@@ -57,9 +59,11 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
         });
 
     var appState = {
+        renderState: initialRenderState,
+        vboUpdates: vboUpdates,
+        cameraChanges: cameraChanges,
+        isAnimating: isAnimating,
         labelHover: labelHover,
-        lastRender: lastRender,
-        currentlyRendering: currentlyRendering,
         poi: poi,
         settingsChanges: settingsChanges,
         marqueeOn: marqueeOn,
@@ -70,18 +74,40 @@ function init(socket, $elt, renderState, vboUpdates, workerParams, urlParams) {
         anyMarqueeOn: anyMarqueeOn
     };
 
+    //////////////////////////////////////////////////////////////////////////
+    // DOM Elements
+    //////////////////////////////////////////////////////////////////////////
+
+    var $simCont   = $('.sim-container');
+    var $fgPicker  = $('#foregroundColor');
+    var $bgPicker  = $('#backgroundColor');
+    var $spButton  = $('#shortestpath');
 
     //////////////////////////////////////////////////////////////////////////
     // Setup
     //////////////////////////////////////////////////////////////////////////
 
-    canvas.setupRendering(appState);
-    var colors = colorpicker($('#foregroundColor'), $('#backgroundColor'), socket);
-    var renderStateUpdates = canvas.setupDragHoverInteractions($elt, renderState, colors.backgroundColor, appState);
-    shortestpaths($('#shortestpath'), poi, socket);
-    controls.init(socket, $elt, renderState, vboUpdates, workerParams, urlParams, appState);
+    appState.renderingScheduler = new canvas.RenderingScheduler(appState.renderState, appState.vboUpdates,
+                                                                appState.isAnimating, appState.simulateOn);
 
-    return renderStateUpdates;
+    canvas.setupCameraInteractions(appState, $simCont).subscribe(
+        appState.cameraChanges,
+        util.makeErrorHandler('cameraChanges')
+    );
+
+    canvas.setupLabelsAndCursor(appState, $simCont);
+    canvas.setupRenderUpdates(appState.renderingScheduler, appState.cameraChanges, appState.settingsChanges);
+
+    var colors = colorpicker($fgPicker, $bgPicker, socket);
+    canvas.setupBackgroundColor(appState, colors.backgroundColor);
+
+    shortestpaths($spButton, poi, socket);
+
+    var doneLoading = vboUpdates.filter(function (update) {
+        return update === 'received';
+    }).take(1).do(ui.hideSpinnerShowBody).delay(700);
+
+    controls.init(appState, socket, $simCont, doneLoading, workerParams, urlParams);
 }
 
 

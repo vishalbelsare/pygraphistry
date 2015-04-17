@@ -9,25 +9,12 @@ var _       = require('underscore');
 var interaction     = require('./interaction.js');
 var util            = require('./util.js');
 var labels          = require('./labels.js');
-
 var renderer        = require('../renderer');
 
 
-var DEBOUNCE_TIME = 80;
 
-
-function renderScene(lastRender, renderer, currentState, data) {
-    lastRender.onNext({renderer: renderer, currentState: currentState, data: data});
-}
-
-
-function setupDragHoverInteractions($eventTarget, renderState, bgColor, appState) {
-    //var currentState = renderState;
-    var stateStream = new Rx.Subject();
-    var latestState = new Rx.ReplaySubject(1);
-    stateStream.subscribe(latestState, util.makeErrorHandler('bad stateStream'));
-    stateStream.onNext(renderState);
-
+function setupCameraInteractions(appState, $eventTarget) {
+    var renderState = appState.renderState;
     var camera = renderState.get('camera');
     var canvas = renderState.get('canvas');
 
@@ -45,9 +32,9 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, appState
         debug('Detected mouse-based device. Setting up mouse interaction event handlers.');
         interactions = interaction.setupDrag($eventTarget, camera, appState)
             .merge(interaction.setupScroll($eventTarget, canvas, camera, appState));
-
     }
-    interactions = Rx.Observable.merge(
+
+    return Rx.Observable.merge(
         interactions,
         interaction.setupCenter($('#center'),
                                 renderState.get('hostBuffers').curPoints,
@@ -57,17 +44,33 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, appState
         interaction.setupZoomButton($('#zoomout'), camera, 1.25)
             .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
     );
+}
 
+
+function setupLabelsAndCursor(appState, $eventTarget) {
     // Picks objects in priority based on order.
     var hitMapTextures = ['hitmap'];
-    var latestHighlightedObject = labels.getLatestHighlightedObject($eventTarget, renderState, hitMapTextures, appState);
+    var latestHighlightedObject = labels.getLatestHighlightedObject(appState, $eventTarget, hitMapTextures);
 
-    var $labelCont = $('<div>').addClass('graph-label-container');
-    $eventTarget.append($labelCont);
-    labels.setupLabels($labelCont, latestState, latestHighlightedObject, appState);
+    labels.setupCursor(appState.renderState, appState.isAnimating, latestHighlightedObject);
+    labels.setupLabels(appState, $eventTarget, latestHighlightedObject);
+}
 
 
-    //TODO refactor this is out of place
+function setupRenderUpdates(renderingScheduler, cameraStream, settingsChanges) {
+    var renderUpdates = cameraStream.combineLatest(settingsChanges, _.identity);
+
+    renderUpdates.do(function (camera) {
+        //TODO: Make camera functional and pass camera to setCamera
+        renderer.setCamera(renderingScheduler.renderState);
+        renderingScheduler.renderScene('panzoom', {trigger: 'renderSceneFast'});
+    }).subscribe(_.identity, util.makeErrorHandler('render updates'));
+}
+
+
+//TODO FIXME
+function setupBackgroundColor() {
+    /*TODO refactor this is out of place
     var stateWithColor =
         bgColor.map(function (rgb) {
 
@@ -80,141 +83,193 @@ function setupDragHoverInteractions($eventTarget, renderState, bgColor, appState
             var options = config.get('options');
 
             return currentState.set('config',
-                    config.set('options',
-                        options.set('clearColor', color)));
+                                    config.set('options',
+                                                options.set('clearColor', color)));
         });
+    */
+}
 
-    //render scene on pan/zoom (get latest points etc. at that time)
-    //tag render changes & label changes
-    var renderStateUpdates = interactions
-        .flatMapLatest(function (camera) {
-            return Rx.Observable.combineLatest(
-                renderState.get('hostBuffers').curPoints,
-                renderState.get('hostBuffers').pointSizes,
-                stateWithColor,
-                appState.settingsChanges,
-                function (curPoints, pointSizes, renderState, settingsChange) {
-                    return {renderTag: Date.now(),
-                            camera: camera,
-                            curPoints: curPoints,
-                            pointSizes: pointSizes,
-                            settingsChange: settingsChange,
-                            renderState: renderState};
-                });
-        })
-        .flatMapLatest(function (data) {
-            // TODO: pass in dim. Handle Dim.
-            // Temporary hack -- ignore edges.
-            return latestHighlightedObject.map(function (highlightIndices) {
-                return _.extend({labelTag: Date.now(), highlightIndices: highlightIndices}, data);
-            });
-        })
-        .do(function(data) {
-            var currentState = renderer.setCameraIm(data.renderState, data.camera);
-            stateStream.onNext(currentState);
-            renderScene(appState.lastRender, renderer, currentState, data);
-        })
-        .pluck('renderState');
+/* Deindexed logical edges by looking up the x/y positions of the source and destination
+ * nodes. */
+function expandLogicalEdges(bufferSnapshots) {
+    var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
+    var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
+    var numPoints = logicalEdges.length;
 
-    return renderStateUpdates;
+    if (!bufferSnapshots.springsPos) {
+        bufferSnapshots.springsPos = new Float32Array(numPoints * 2);
+    }
+    var springsPos = bufferSnapshots.springsPos;
+
+    for (var i = 0; i < numPoints; i++) {
+        springsPos[2 * i]     = curPoints[2 * logicalEdges[i]];
+        springsPos[2 * i + 1] = curPoints[2 * logicalEdges[i] + 1];
+    }
+
+    return springsPos;
+}
+
+/*
+ * Render expensive items (eg, edges) when a quiet state is detected. This function is called
+ * from within an animation frame and must execture all its work inside it. Callbacks(rx, etc)
+ * are not allowed as they would schedule work outside the animation frame.
+ */
+function renderSlowEffects(renderingScheduler) {
+    var appSnapshot = renderingScheduler.appSnapshot;
+    var renderState = renderingScheduler.renderState;
+    var logicaEdges = renderState.get('config').get('edgeMode') === 'INDEXEDCLIENT';
+
+    if (logicaEdges && appSnapshot.vboUpdated) {
+        var start = Date.now();
+        var springsPos = expandLogicalEdges(appSnapshot.buffers);
+        var end1 = Date.now();
+        renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
+        var end2 = Date.now();
+        console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
+    }
+
+    renderer.render(renderState, 'fullscene', 'renderSceneFull');
+    renderer.render(renderState, 'picking', 'picking');
 }
 
 
-function setupRendering(appState) {
+var RenderingScheduler = function(renderState, vboUpdates, isAnimating, simulateOn) {
+    var that = this;
+    this.renderState = renderState;
 
-    // Determine if it's a quiet/noisy state
-    var startRendering = appState.lastRender
-        .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
-        .filter(function (pair) {
-            return (!pair.prev || (pair.cur.data.renderTag !== pair.prev.data.renderTag));
-        })
-        .sample(DEBOUNCE_TIME);
+    /* Rendering queue */
+    var renderTasks = new Rx.Subject();
+    var renderQueue = {};
+    var renderingPaused = true; // False when the animation loop is running.
 
-    var stopRendering = appState.lastRender
-        .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
-        .filter(function (pair) {
-            return (!pair.prev || (pair.cur.data.renderTag !== pair.prev.data.renderTag));
-        })
-        .debounce(DEBOUNCE_TIME);
+    /* Since we cannot read out of Rx streams withing the animation frame, we record the latest
+     * value produced by needed rx streams and pass them as function arguments to the quiet state
+     * callback. */
+    this.appSnapshot = {
+        vboUpdated: false,
+        simulating: false,
+        buffers: {
+            curPoints: undefined,
+            logicalEdges: undefined,
+            springsPos: undefined
+        }
+    };
 
-    // What to do when starting noisy/rendering state
-    // TODO: Show/hide with something cleaner than pure JQuery. At least a function.
-    startRendering
-        .do(function () {
-            $('.graph-label-container').css('display', 'none');
-        })
-        .do(function () {
-            appState.currentlyRendering.onNext(true);
-        })
-        .subscribe(_.identity, util.makeErrorHandler('Start Rendering'));
 
-    // What to do when exiting noisy/rendering state
-    stopRendering
-        .flatMapLatest(util.observableFilter(appState.simulateOn, util.notIdentity))
-        .do(function (pair) {
-            pair.cur.renderer.render(pair.cur.currentState, 'interactionPicking', null,
-                {renderListTrigger: 'picking'});
-        })
-        .do(function () {
-            $('.graph-label-container').css('display', 'block');
-        })
-        .do(function () {
-            appState.currentlyRendering.onNext(false);
-        })
-        .subscribe(_.identity, util.makeErrorHandler('Stop Rendering'));
+    /*
+     * Rx hooks to maintain the appSnaphot up-to-date
+     */
+    simulateOn.subscribe(function (val) {
+        that.appSnapshot.simulating = val;
+    }, util.makeErrorHandler('simulate updates'));
 
-    //Render gpu items, text on reqAnimFrame
-    //Slower, update the pointpicking sampler (does GPU->CPU transfer)
-    appState.lastRender
-        .bufferWithTime(10)
-        .filter(function (arr) { return arr.length; })
-        .map(function (arr) {
-            var res = arr[arr.length - 1];
-            _.extend(res.data,
-                arr.reduce(
-                    function (acc, v) {
-                        return {
-                            data: {
-                                renderTag: Math.max(v.data.renderTag, acc.data.renderTag),
-                                labelTag: Math.max(v.data.labelTag, acc.data.labelTag)
-                            }
-                        };
-                    },
-                    {data: { renderTag: 0, labelTag: 0}}));
-            return res;
-        })
-        .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
-        .do(function (pair) {
-            var cfg = pair.cur;
-            if (!pair.prev || (cfg.data.renderTag !== pair.prev.data.renderTag)) {
-                cfg.renderer.render(cfg.currentState, 'interactionRender');
+    var hostBuffers = renderState.get('hostBuffers');
+    _.each(['curPoints', 'logicalEdges'], function (bufName) {
+        var rxBuf = hostBuffers[bufName];
+        if (rxBuf) {
+            rxBuf.subscribe(function (data) {
+                that.appSnapshot.buffers[bufName] = data;
+            });
+        }
+    });
+
+    vboUpdates.filter(function (status) {
+        return status === 'received';
+    }).do(function () {
+        that.appSnapshot.vboUpdated = true;
+        that.renderScene('vboupdate', {trigger: 'renderSceneFast'});
+        that.renderScene('vboupdate_picking', {items: ['pointsampling']});
+    }).subscribe(_.identity, util.makeErrorHandler('render vbo updates'));
+
+
+    /* Push a render task into the renderer queue
+     * String * {trigger, items, readPixels, callback} -> () */
+    this.renderScene = function(tag, task) {
+        renderTasks.onNext({
+            tag: tag,
+            trigger: task.trigger,
+            items: task.items,
+            readPixels: task.readPixels,
+            callback: task.callback
+        });
+    };
+
+    /* Move render tasks into a tagged dictionary. For each tag, only the latest task
+     * is rendered; others are skipepd. */
+    renderTasks.subscribe(function (task) {
+        debug('Queueing frame on behalf of', task.tag);
+        renderQueue[task.tag] = task;
+
+        if (renderingPaused) {
+            startRenderingLoop();
+        }
+    });
+
+
+    /*
+     * Helpers to start/stop the rendering loop within an animation frame. The rendering loop
+     * stops when idle for a second and starts again at the next render update.
+     */
+    function startRenderingLoop() {
+        var lastRenderTime = 0;
+        var quietSignaled = true;
+
+        function loop() {
+            var nextFrameId = window.requestAnimationFrame(loop);
+
+            if (_.keys(renderQueue).length === 0) { // Nothing to render
+                var timeDelta = Date.now() - lastRenderTime;
+                if (timeDelta > 200 && !quietSignaled) {
+                    quietCallback();
+                    quietSignaled = true;
+                    isAnimating.onNext(false);
+                }
+
+                if (timeDelta > 1000) {
+                    pauseRenderingLoop(nextFrameId);
+                }
+                return;
             }
 
-            labels.renderCursor(cfg.currentState, new Float32Array(cfg.data.curPoints.buffer),
-                         cfg.data.highlightIndices, new Uint8Array(cfg.data.pointSizes.buffer));
-        })
-        .pluck('cur')
-        .scan({prev: null, cur: null}, function (acc, v) { return {prev: acc.cur, cur: v}; })
-        .bufferWithTime(80)
-        .filter(function (arr) { return arr.length; })
-        .map(function (arr) {
-            var res = arr[arr.length - 1];
-            _.extend(res.data,
-                arr.reduce(
-                    function (acc, v) {
-                        return {
-                            renderTag: Math.max(v.renderTag, acc.renderTag),
-                            labelTag: Math.max(v.labelTag, acc.labelTag)
-                        };
-                    },
-                    {data: { renderTag: 0, labelTag: 0}}));
-            return res;
-        })
-        .subscribe(_.identity, util.makeErrorHandler('render effect'));
-}
+            lastRenderTime = Date.now();
+            if (quietSignaled) {
+                isAnimating.onNext(true);
+                quietSignaled = false;
+            }
+
+            _.each(renderQueue, function (renderTask, tag) {
+                renderer.render(renderState, tag, renderTask.trigger, renderTask.items,
+                                renderTask.readPixels, renderTask.callback);
+            });
+            renderQueue = {};
+        }
+
+        debug('Starting rendering loop');
+        renderingPaused = false;
+        loop();
+    }
+
+    function pauseRenderingLoop(nextFrameId) {
+        debug('Pausing rendering loop');
+        window.cancelAnimationFrame(nextFrameId);
+        renderingPaused = true;
+    }
+
+    /* Called when a quiet/steady state is detected, to render expensive features such as edges */
+    function quietCallback() {
+        if (!that.appSnapshot.simulating) {
+            debug('Quiet state');
+            renderSlowEffects(that);
+            that.appSnapshot.vboUpdated = false;
+        }
+    }
+};
 
 
 module.exports = {
-    setupDragHoverInteractions: setupDragHoverInteractions,
-    setupRendering: setupRendering
+    setupBackgroundColor: setupBackgroundColor,
+    setupCameraInteractions: setupCameraInteractions,
+    setupLabelsAndCursor: setupLabelsAndCursor,
+    setupRenderUpdates: setupRenderUpdates,
+    RenderingScheduler: RenderingScheduler
 };

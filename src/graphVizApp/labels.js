@@ -9,59 +9,67 @@ var _       = require('underscore');
 var util            = require('./util.js');
 var interaction     = require('./interaction.js');
 
-var renderer        = require('../renderer');
 
 
-// STATIC FINAL VARIABLES
-var HIGHLIGHT_SIZE = 20;
-
-
-// $DOM * RendererState  * [int] * [int] -> ()
+// AppState * $DOM * [int] * [int] -> ()
 // Immediately reposition each label based on camera and curPoints buffer
-var renderLabelsRan = false;
-function renderPointLabels($labelCont, renderState, labelIndices, clicked, appState) {
-
+function renderPointLabels(appState, $labelCont, labelIndices, clicked) {
     debug('rendering labels');
 
-    var curPoints = renderState.get('hostBuffers').curPoints;
+    var curPoints = appState.renderState.get('hostBuffers').curPoints;
     if (!curPoints) {
         console.warn('renderLabels called before curPoints available');
         return;
     }
     curPoints.take(1)
         .do(function (curPoints) {
-
-            //first run: created the enlarged points for the sampler
-            if (!renderLabelsRan) {
-                renderLabelsRan = true;
-                var allOn = renderer.localAttributeProxy(renderState)('allHighlighted');
-                var amt = curPoints.buffer.byteLength / (4 * 2);
-                for (var i = 0; i < amt; i++) {
-                    allOn.write(i, HIGHLIGHT_SIZE);
-                }
-            }
-
-            renderLabelsImmediate($labelCont, renderState, curPoints, labelIndices, clicked, appState);
-
+            renderLabelsImmediate(appState, $labelCont, curPoints, labelIndices, clicked);
         })
         .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
 }
 
+// RenderState * Obserbable * Observable
+function setupCursor(renderState, isAnimating, latestHighlightedObject) {
+    var rxPoints = renderState.get('hostBuffers').curPoints;
+    var rxSizes = renderState.get('hostBuffers').pointSizes;
 
-//RenderState * [ float ] * [{dim: int, idx: int}] -> ()
-function renderCursor (renderState, points, indices, sizes) {
+    var $cont = $('#highlighted-point-cont');
+    var $point = $('.highlighted-point');
+    var $center = $('.highlighted-point-center');
+    var animating = isAnimating.filter(function (v) { return v === true; });
+    var notAnimating = isAnimating.filter(function (v) { return v === false; });
 
+    animating.subscribe(function () {
+        $cont.css({display: 'none'});
+    }, util.makeErrorHandler('renderCursor isAnimating'));
+
+    notAnimating.flatMapLatest(function () {
+        return rxPoints.combineLatest(
+            rxSizes,
+            latestHighlightedObject,
+            function (p, s, i) {
+                return {
+                    points: new Float32Array(p.buffer),
+                    sizes: new Uint8Array(s.buffer),
+                    indices: i
+                };
+            }
+        ).takeUntil(animating);
+    }).do(function (data) {
+        renderCursor(renderState, $cont, $point, $center, data.points, data.sizes, data.indices);
+    }).subscribe(_.identity, util.makeErrorHandler('setupCursor'));
+}
+
+// RenderState * Dom * Dom * Dom * Float32Array * Uint8Array * [Object]
+function renderCursor(renderState, $cont, $point, $center, points, sizes, indices) {
     var idx = indices[indices.length - 1].idx;
     var dim = indices[indices.length - 1].dim;
 
-    debug('Enlarging current mouseover point (last)', idx);
-
     if (idx === undefined || idx < 0 || dim === 2) {
-        $('#highlighted-point-cont').css({display: 'none'});
+        $cont.css({display: 'none'});
         return;
     }
-
-    $('#highlighted-point-cont').css({display: 'block'});
+    $cont.css({display: 'block'});
 
     var camera = renderState.get('camera');
     var cnv = renderState.get('canvas');
@@ -74,13 +82,11 @@ function renderCursor (renderState, points, indices, sizes) {
     var size = Math.max(5, Math.min(scalingFactor * sizes[idx], 50)) / pixelRatio;
     var offset = size / 2.0;
 
-    $('#highlighted-point-cont')
-    .attr('pointIdx', idx)
-    .css({
+    $cont.attr('pointIdx', idx).css({
         top: pos.y,
         left: pos.x
     });
-    $('.highlighted-point').css({
+    $point.css({
         'left' : -offset,
         'top' : -offset,
         'width': size,
@@ -89,10 +95,10 @@ function renderCursor (renderState, points, indices, sizes) {
     });
 
     /* Ideally, highlighted-point-center would be a child of highlighted-point-cont
-     * instead of highlighted-point. I ran into tricky CSS absolute positioning
-     * issues when I tried that. */
-    var csize = parseInt($('.highlighted-point-center').css('width'), 10);
-    $('.highlighted-point-center').css({
+    * instead of highlighted-point. I ran into tricky CSS absolute positioning
+    * issues when I tried that. */
+    var csize = parseInt($center.css('width'), 10);
+    $center.css({
         'left' : offset - csize / 2.0,
         'top' : offset - csize / 2.0
     });
@@ -147,13 +153,13 @@ function effectLabels(toClear, toShow, labels, newPos, labelIndices, clicked, po
 
 }
 
-function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices, clicked, appState) {
+function renderLabelsImmediate (appState, $labelCont, curPoints, labelIndices, clicked) {
     var poi = appState.poi;
     var points = new Float32Array(curPoints.buffer);
 
     var t0 = Date.now();
 
-    var hits = poi.getActiveApprox(renderState, 'pointHitmapDownsampled');
+    var hits = poi.getActiveApprox(appState.renderState, 'pointHitmapDownsampled');
     labelIndices.forEach(function (labelIdx) {
         if (labelIdx > -1) {
             hits[labelIdx] = true;
@@ -161,7 +167,8 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices
     });
     var t1 = Date.now();
 
-    var toClear = poi.finishApprox(poi.state.activeLabels, poi.state.inactiveLabels, hits, renderState, points);
+    var toClear = poi.finishApprox(poi.state.activeLabels, poi.state.inactiveLabels,
+                                   hits, appState.renderState, points);
 
     //select label elts (and make active if needed)
     var toShow = [];
@@ -199,7 +206,7 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices
 
     var t2 = Date.now();
 
-    var newPos = newLabelPositions(renderState, labels, points, toClear, toShow);
+    var newPos = newLabelPositions(appState.renderState, labels, points, toClear, toShow);
 
     var t3 = Date.now();
 
@@ -207,55 +214,44 @@ function renderLabelsImmediate ($labelCont, renderState, curPoints, labelIndices
 
     debug('sampling timing', t1 - t0, t2 - t1, t3 - t2, Date.now() - t3,
         'labels:', labels.length, '/', _.keys(hits).length, poi.state.inactiveLabels.length);
-
 }
 
 //move labels when new highlight or finish noisy rendering section
-//$DOM * Observable RenderState * Observable [ {dim: int, idx: int} ] * Observable DOM -> ()
-function setupLabels ($labelCont, latestState, latestHighlightedObject, appState) {
-    latestState
-        .flatMapLatest(function (currentState) {
-            //wait until has samples
-            return currentState.get('rendered')
-                .flatMap(function () {
-                    return latestHighlightedObject.map(function (latestHighlighted) {
-                        return _.extend({highlighted: latestHighlighted}, {currentState: currentState});
-                    });
-                });
-        })
-        .flatMapLatest(function (data) {
-            return appState.currentlyRendering.map(function (val) {
-                return _.extend({rendering: val}, data);
-            });
-        })
-        .filter(function (data) {
-            return !data.rendering;
-        })
-        .do(function (data) {
-            var indices = data.highlighted.map(function (o) {
-                return !o.dim || o.dim === 1 ? o.idx : -1;
-            });
-            var clicked = data.highlighted
-                .filter(function (o) { return o.click; })
-                .map(function (o) { return o.idx; });
+// AppState * $DOM * Observable [ {dim: int, idx: int} ] * Observable DOM -> ()
+function setupLabels (appState, $eventTarget, latestHighlightedObject) {
+    var $labelCont = $('<div>').addClass('graph-label-container');
+    $eventTarget.append($labelCont);
 
-            renderPointLabels($labelCont, data.currentState, indices, clicked, appState);
-        })
-        .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
+    appState.cameraChanges.combineLatest(
+        appState.vboUpdates,
+        _.identity
+    ).flatMapLatest(function () {
+        return latestHighlightedObject;
+    }).do(function (highlighted) {
+        var indices = highlighted.map(function (o) {
+            return !o.dim || o.dim === 1 ? o.idx : -1;
+        });
+        var clicked = highlighted
+            .filter(function (o) { return o.click; })
+            .map(function (o) { return o.idx; });
+
+        renderPointLabels(appState, $labelCont, indices, clicked);
+    })
+    .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
 }
 
-//$DOM * RenderState * Observable DOM * textureName-> Observable [ {dim: 1, idx: int} ]
+//AppState * $DOM * textureName-> Observable [ {dim: 1, idx: int} ]
 //Changes either from point mouseover or a label mouseover
 //Clicking (coexists with hovering) will open at most 1 label
 //Most recent interaction goes at the end
-function getLatestHighlightedObject ($eventTarget, renderState, textures, appState) {
+function getLatestHighlightedObject (appState, $eventTarget, textures) {
 
     var OFF = [{idx: -1, dim: 0}];
 
     var res = new Rx.ReplaySubject(1);
     res.onNext(OFF);
 
-    interaction.setupMousemove($eventTarget, renderState, textures)
+    interaction.setupMousemove($eventTarget, appState.renderState, textures)
         // TODO: Make sure this also catches $('#marquee').hasClass('done') and 'beingdragged'
         // As a non-marquee-active state.
         // .flatMapLatest(util.observableFilter(appState.marqueeActive, util.notIdentity))
@@ -319,6 +315,6 @@ function getLatestHighlightedObject ($eventTarget, renderState, textures, appSta
 
 module.exports = {
     setupLabels: setupLabels,
-    getLatestHighlightedObject: getLatestHighlightedObject,
-    renderCursor: renderCursor
+    setupCursor: setupCursor,
+    getLatestHighlightedObject: getLatestHighlightedObject
 };
