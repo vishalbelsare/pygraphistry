@@ -16,14 +16,21 @@ var $               = window.$,
     debug           = require('debug')('graphistry:StreamGL:main');
                       require('./rx-jquery-stub');
 
-var streamClient    = require('./client.js'),
-    ui              = require('./ui.js'),
-    vizApp          = require('./graphVizApp/vizApp.js'),
-    monkey          = require('./monkey.js');
+var ui              = require('./ui.js');
+var vizApp          = require('./graphVizApp/vizApp.js');
+var monkey          = require('./monkey.js');
+
+//defer choice to after urlParam
+var serverClient    = require('./client.js');
+var localClient     = require('./localclient.js');
 
 
 console.warn('%cWarning: having the console open can slow down execution significantly!',
     'font-size: 18pt; font-weight: bold; font-family: \'Helvetica Neue\', Helvetica, sans-serif; background-color: rgb(255, 242, 0);');
+
+
+//===============
+
 
 var urlParams = getUrlParameters();
 
@@ -42,6 +49,29 @@ function getUrlParameters() {
 
     return params;
 }
+function isParamTrue (param) {
+    var val = (urlParams[param] || '').toLowerCase();
+    return val === 'true' || val === '1' || val === 'yes';
+}
+function isParamFalse (param) {
+    var val = (urlParams[param] || '').toLowerCase();
+    return val === 'false' || val === '0' || val === 'no';
+}
+
+
+//================
+
+
+
+var IS_OFFLINE = urlParams.offline === 'true';
+debug('IS_OFFLINE', IS_OFFLINE);
+var streamClient    = IS_OFFLINE ? localClient : serverClient;
+if (IS_OFFLINE && urlParams.basePath) {
+    streamClient.basePath(decodeURIComponent(urlParams.basePath));
+}
+
+
+//==================
 
 
 // Sets up event handlers to display socket errors + disconnects on screen
@@ -212,16 +242,21 @@ window.addEventListener('load', function() {
     var app = init($('#simulation')[0], 'graph');
     createInfoOverlay(app);
 
-    function isParamTrue(param) {
-        var val = (urlParams[param] || '').toLowerCase();
-        return val === 'true' || val === '1' || val === 'yes';
-    }
 
+    //def on
     if (isParamTrue('info')) {
         $('html').addClass('info');
     }
     if (isParamTrue('debug')) {
         $('html').addClass('debug');
+    }
+
+    //def off
+    if (isParamFalse('logo')) {
+        $('html').addClass('nologo');
+    }
+    if (isParamFalse('menu')) {
+        $('html').addClass('nomenu');
     }
 
 });
