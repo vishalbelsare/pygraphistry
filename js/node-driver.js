@@ -410,7 +410,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
             var uncompressed =
                 _.object(_.zip(
                         bufferNames,
-                        bufferNames.map(function (_, i) {  return compressedVbos[i].buffer; })));
+                        bufferNames.map(function (_, i) {  return compressedVbos[i].buffer.buffer || compressedVbos[i].buffer; })));
 
             var versions =
                 _.object(_.zip(
