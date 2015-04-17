@@ -222,6 +222,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, labelIndices, c
 function setupLabels (appState, $eventTarget, latestHighlightedObject) {
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
+    var $sim = $('#simulation');
 
     appState.cameraChanges.combineLatest(
         appState.vboUpdates,
@@ -229,14 +230,21 @@ function setupLabels (appState, $eventTarget, latestHighlightedObject) {
     ).flatMapLatest(function () {
         return latestHighlightedObject;
     }).do(function (highlighted) {
-        var indices = highlighted.map(function (o) {
-            return !o.dim || o.dim === 1 ? o.idx : -1;
-        });
-        var clicked = highlighted
-            .filter(function (o) { return o.click; })
-            .map(function (o) { return o.idx; });
+        if ($sim.hasClass('moving')) {
+            renderPointLabels(appState, $labelCont, [], []);
+        } else {
+            var indices = highlighted.map(function (o) {
+                return !o.dim || o.dim === 1 ? o.idx : -1;
+            });
 
-        renderPointLabels(appState, $labelCont, indices, clicked);
+            var clicked = highlighted.filter(function (o) {
+                return o.click;
+            }).map(function (o) {
+                return o.idx;
+            });
+
+            renderPointLabels(appState, $labelCont, indices, clicked);
+        }
     })
     .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
 }

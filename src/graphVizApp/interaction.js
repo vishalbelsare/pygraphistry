@@ -24,6 +24,8 @@ var util     = require('./util.js');
  * @return {Rx.Observable} Rx stream with Camera objects for every drag event.
  */
 function setupDrag($eventTarget, camera, appState) {
+    var $sim = $('#simulation');
+    var $html = $('html');
 
     return $eventTarget.mousedownAsObservable()
         .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
@@ -49,13 +51,13 @@ function setupDrag($eventTarget, camera, appState) {
         })
         .do(function (clickPos) {
             clickPos.preventDefault();
-            $('#simulation').toggleClass('moving', true);
+            $sim.toggleClass('moving', true);
         })
         .flatMapLatest(function(clickPos) {
             return $('html').mousemoveAsObservable()
-                .takeUntil($('html').mouseupAsObservable()
+                .takeUntil($html.mouseupAsObservable()
                     .do(function () {
-                        $('#simulation').toggleClass('moving', false);
+                        $sim.toggleClass('moving', false);
                     }))
                 .distinctUntilChanged(function(pos) { return {x: pos.pageX, y: pos.pageY}; })
                 .scan({x: clickPos.pageX, y: clickPos.pageY, deltaX: 0, deltaY: 0}, function(accPos, curPos) {
