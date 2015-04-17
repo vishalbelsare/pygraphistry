@@ -16,16 +16,25 @@ var $               = window.$,
     debug           = require('debug')('graphistry:StreamGL:main');
                       require('./rx-jquery-stub');
 
-var streamClient    = require('./localclient.js'),
-    ui              = require('./ui.js'),
-    vizApp          = require('./graphVizApp/vizApp.js'),
-    monkey          = require('./monkey.js');
+var ui              = require('./ui.js');
+var vizApp          = require('./graphVizApp/vizApp.js');
+var monkey          = require('./monkey.js');
+var serverClient    = require('./client.js');
+var localClient     = require('./localclient.js');
+
+
+var urlParams = getUrlParameters();
+
+var IS_OFFLINE = urlParams.offline === 'true';
+debug('IS_OFFLINE', IS_OFFLINE);
+var streamClient    = IS_OFFLINE ? localClient : serverClient;
 
 
 console.warn('%cWarning: having the console open can slow down execution significantly!',
     'font-size: 18pt; font-weight: bold; font-family: \'Helvetica Neue\', Helvetica, sans-serif; background-color: rgb(255, 242, 0);');
 
-var urlParams = getUrlParameters();
+
+//===============
 
 
 /**
