@@ -243,11 +243,20 @@ window.addEventListener('load', function() {
     createInfoOverlay(app);
 
 
+    //def on
     if (isParamTrue('info')) {
         $('html').addClass('info');
     }
     if (isParamTrue('debug')) {
         $('html').addClass('debug');
+    }
+
+    //def off
+    if (isParamFalse('logo')) {
+        $('html').addClass('nologo');
+    }
+    if (isParamFalse('menu')) {
+        $('html').addClass('nomenu');
     }
 
 });
