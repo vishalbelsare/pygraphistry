@@ -35,7 +35,7 @@ function makeFetcher () {
 
                 var arrayBuffer = oReq.response; // Note: not oReq.responseText
                 var blength = bufferByteLengths[bufferName];
-                console.log('Buffer length (%s): %d', bufferName, blength);
+                console.log('Buffer length (%s): %d, %d', bufferName, blength, arrayBuffer.byteLength);
                 var trimmedArray = new Uint8Array(arrayBuffer, 0, blength);
 
                 res.onNext(trimmedArray);
