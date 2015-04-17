@@ -317,6 +317,17 @@ var testMapperDemo = {
     }),
 }
 
+var misMapper = {
+    mappings: _.extend({}, testMapper.mappings, {
+        pointSize: {
+            name: 'betweeness',
+            transform: function (v) {
+                return normalize(v, 5, Math.pow(2, 8))
+            }
+        }
+    })
+}
+
 var debugMapper = {
     mappings: {
         pointLabel: {
@@ -408,6 +419,7 @@ function doWrap(res, mapping, loader) {
 var mappers = {
     'opentsdb': testMapper,
     'opentsdbDemo': testMapperDemo,
+    'miserables': misMapper,
     'debug': debugMapper,
     'splunk': splunkMapper,
     'default': splunkMapper

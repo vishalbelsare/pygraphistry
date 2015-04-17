@@ -139,6 +139,17 @@ var models = {
             'normalize': false
         }
     },
+    'springsPosClient': {
+        'curPos': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
     'midSpringsPos': {
         'curPos': {
             'datasource': 'DEVICE',
@@ -237,7 +248,7 @@ var models = {
 var items = {
     'edgeculled': {
         'program': 'edgeculled',
-        'trigger': 'renderScene',
+        'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos': ['springsPos', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
@@ -247,18 +258,39 @@ var items = {
     },
     'edgeculledindexed' : {
         'program': 'edgeculled',
-        'trigger': 'renderScene',
+        'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos': ['curPoints', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
         },
         'index': ['logicalEdges', 'curIdx'],
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
+    'indexeddummy' : {
+        'program': 'edgeculled',
+        'triggers': [],
+        'bindings': {
+            'curPos': ['curPoints', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'index': ['logicalEdges', 'curIdx'],
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
+    'edgeculledindexedclient' : {
+        'program': 'edgeculled',
+        'triggers': ['renderSceneFull'],
+        'bindings': {
+            'curPos': ['springsPosClient', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
         'drawType': 'LINES',
         'glOptions': {}
     },
     'edgepicking': {
         'program': 'edges',
-        'trigger': 'picking',
+        'triggers': ['picking'],
         'bindings': {
             'curPos': ['springsPos', 'curPos'],
             'edgeColor': ['edgeIndices', 'edgeColor']
@@ -267,33 +299,10 @@ var items = {
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'hitmap',
         'readTarget': true
-    },
-    'edgepickingindexed': {
-        'program': 'edges',
-        'trigger': 'picking',
-        'bindings': {
-            'curPos': ['curPoints', 'curPos'],
-            'edgeColor': ['edgeIndices', 'edgeColor']
-        },
-        'index': ['logicalEdges', 'curIdx'],
-        'drawType': 'LINES',
-        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
-        'renderTarget': 'hitmap',
-        'readTarget': true
-    },
-    'edges': {
-        'program': 'edges',
-        'trigger': 'renderScene',
-        'bindings': {
-            'curPos': ['springsPos', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor']
-        },
-        'drawType': 'LINES',
-        'glOptions': {}
     },
     'pointculled': {
         'program': 'pointculled',
-        'trigger': 'renderScene',
+        'triggers': ['renderSceneFast', 'renderSceneFull'],
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -310,7 +319,7 @@ var items = {
     },
     'uberpointculled': {
         'program': 'pointculled',
-        'trigger': 'renderScene',
+        'triggers': ['renderSceneFast', 'renderSceneFull'],
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -327,6 +336,7 @@ var items = {
     },
     'pointculledtexture': {
         'program': 'pointculled',
+        'triggers': ['marquee'],
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -345,7 +355,7 @@ var items = {
     },
     'pointoutline': {
         'program': 'pointculled',
-        'trigger': 'renderScene',
+        'triggers': ['renderSceneFast', 'renderSceneFull'],
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -362,6 +372,7 @@ var items = {
     },
     'pointoutlinetexture': {
         'program': 'pointculled',
+        'triggers': ['marquee'],
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -380,7 +391,7 @@ var items = {
     },
     'pointpicking': {
         'program': 'points',
-        'trigger': 'picking',
+        'triggers': ['picking'],
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -397,7 +408,7 @@ var items = {
     },
     'pointsampling': {
         'program': 'points',
-        'trigger': 'picking',
+        'triggers': ['picking'],
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -412,23 +423,9 @@ var items = {
         'renderTarget': 'pointHitmapDownsampled',
         'readTarget': true,
     },
-    'points': {
-        'program': 'points',
-        'bindings': {
-            'curPos':       ['curPoints', 'curPos'],
-            'pointSize':    ['pointSizes', 'pointSize'],
-            'pointColor':   ['pointColors', 'pointColor']
-        },
-        'uniforms': {
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0]},
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
-        },
-        'drawType': 'POINTS',
-        'glOptions': {}
-    },
     'midpoints': {
         'program': 'midpoints',
-        'trigger': 'renderScene',
+        'triggers': ['renderSceneFast', 'renderSceneFull'],
         'bindings': {
             'curPos': ['curMidPoints', 'curPos']
         },
@@ -437,7 +434,7 @@ var items = {
     },
     'midedgetextured': {
         'program': 'midedgetextured',
-        'trigger': 'renderScene',
+        'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos': ['midSpringsPos', 'curPos'],
             'aColorCoord': ['midSpringsColorCoord', 'colorCoord']
@@ -450,7 +447,7 @@ var items = {
     },
     'midedgeculled': {
         'program': 'midedgeculled',
-        'trigger': 'renderScene',
+        'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos': ['midSpringsPos', 'curPos'],
             'edgeColor' : ['edgeColors', 'edgeColor']
@@ -487,22 +484,32 @@ var sceneUber = {
 var sceneNetflow = {
     'options': stdOptions,
     'camera': camera2D,
-    'render': ['pointpicking', 'pointsampling', 'pointculledtexture', 'pointoutlinetexture',
+    'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
                'edgeculled', 'edgepicking', 'pointoutline', 'pointculled']
 }
 
 var sceneNetflowIndexed = {
     'options': stdOptions,
     'camera': camera2D,
-    'render': ['pointpicking', 'pointsampling', 'pointculledtexture', 'pointoutlinetexture',
-               'edgeculledindexed', 'edgepickingindexed', 'pointoutline', 'pointculled']
+    'edgeMode': 'CLIENTINDEXED',
+    'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
+               'edgeculledindexed', 'pointoutline', 'pointculled']
+}
+
+var sceneNetflowIndexedClient = {
+    'options': stdOptions,
+    'camera': camera2D,
+    'edgeMode': 'INDEXEDCLIENT',
+    'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
+               'indexeddummy', 'edgeculledindexedclient', 'pointoutline', 'pointculled']
 }
 
 var scenes = {
-    'default': sceneNetflow,
+    'default': sceneNetflowIndexedClient,
     'uber' : sceneUber,
     'netflow': sceneNetflow,
-    'netflowIndexed': sceneNetflowIndexed
+    'netflowIndexed': sceneNetflowIndexed,
+    'netflowIndexedClient': sceneNetflowIndexedClient
 }
 
 function saneProgram(program, progName) {
@@ -616,7 +623,7 @@ function generateAllConfigs(programs, textures, models, items, scenes) {
     check(programs, textures, models, items, scenes);
 
     return _.object(_.map(scenes, function (scene, name) {
-        var config = {};
+        var config = _.extend({}, scene);
 
         var citems = {}
         var cprograms = {};
@@ -657,9 +664,6 @@ function generateAllConfigs(programs, textures, models, items, scenes) {
             }
         });
 
-        config.options = scene.options;
-        config.camera = scene.camera;
-        config.render = scene.render;
         config.programs = cprograms;
         config.items = citems;
         config.textures = ctextures;
