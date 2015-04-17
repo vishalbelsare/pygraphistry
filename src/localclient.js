@@ -83,25 +83,26 @@ module.exports = {
             });
     },
 
-    handleVboUpdates: function (socket, renderState, renderStateUpdates) {
+    handleVboUpdates: function (socket, renderState) {
         console.log('handle vbo updates');
 
-        var buffers = renderState.get('buffers').toJS();
+        var bufferNames = renderer.getServerBufferNames(renderState.get('config').toJS());
+        var textureNames = renderer.getServerTextureNames(renderState.get('config').toJS());
 
-        var latestState = new Rx.ReplaySubject(1);
-        latestState.onNext(renderState);
-        renderStateUpdates.subscribe(
-            latestState,
-            function (err) { console.error('handlevbo err', err, (err||{}).stack); });
-
-        var renderedFrame = new Rx.BehaviorSubject(0);
+        var vboUpdates = new Rx.BehaviorSubject('init');
 
 
         $.ajaxAsObservable({url: '/graph/viz/facebook.metadata.json', dataType: 'json'})
             .pluck('data')
             .do(function (data) {
                 console.log('got metadata', data);
-                renderedFrame.onNext('start');
+
+                $('#graph-node-count').text(data.elements.pointculled);
+                var numEdges = (data.elements.edgeculled || data.elements.edgeculledindexed ||
+                                data.elements.edgeculledindexedclient) / 2;
+                $('#graph-edge-count').text(numEdges);
+
+                vboUpdates.onNext('start');
 
                 var fetchBuffer = makeFetcher().bind('', data.bufferByteLengths);
                 var fetchTexture = makeFetcher().bind('', data.bufferByteLengths);
@@ -110,6 +111,9 @@ module.exports = {
                 var readyBuffers = new Rx.ReplaySubject(1);
                 var readyTextures = new Rx.ReplaySubject(1);
                 var readyToRender = Rx.Observable.zip(readyBuffers, readyTextures, _.identity).share();
+                readyToRender.subscribe(
+                    function () { vboUpdates.onNext('received'); },
+                    function (err) { console.error('readyToRender error', err, (err||{}).stack); });
 
                 var changedBufferNames = _.keys(data.bufferByteLengths);
                 var bufferVBOs = Rx.Observable.zipArray(
@@ -121,17 +125,18 @@ module.exports = {
                             vbos.shift();
                             var bindings = _.object(_.zip(changedBufferNames, vbos));
                             try {
-                                renderer.setNumElements(data.elements);
-                                renderer.loadBuffers(renderState, buffers, bindings);
+                                _.each(data.elements, function (num, itemName) {
+                                    renderer.setNumElements(renderState, itemName, num);
+                                });
+                                renderer.loadBuffers(renderState, bindings);
                                 readyBuffers.onNext();
                             } catch (e) {
-                                console.error('5a err. Render error on loading data into WebGL:', e, e.stack);
+                                console.error('Render error on loading data into WebGL:', e, e.stack);
                             }
                         },
                         function (err) {
                             console.error('bufferVBOs exn', err, (err||{}).stack);
                         });
-
 
                 var changedTextureNames = [];
                 var texturesData = Rx.Observable.zipArray(
@@ -152,30 +157,12 @@ module.exports = {
                                 console.error('texturesData exn', err, (err||{}).stack);
                         });
 
-                Rx.Observable.combineLatest(
-                        readyToRender, latestState,
-                        function (_, renderState) { return [_,renderState]; })
-                    .filter(function (pair) {
-                        return pair[1]; })
-                    .take(1)
-                    .subscribe(function (pair) {
-                            var renderState = pair[1];
-                            renderedFrame.onNext('received');
-                            renderer.render(renderState, 'clientNewVbos', function () {
-                                renderedFrame.onNext('rendered');
-                            });
-                        },
-                        function (err) {
-                            console.error('vbo render exn', err, (err||{}).stack);
-                        });
-
-
             }).subscribe(_.identity,
                 function (err) {
                     console.error('fetch vbo exn', err, (err||{}).stack);
                 });
 
-        return renderedFrame;
+        return vboUpdates;
 
     }
 };
