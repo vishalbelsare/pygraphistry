@@ -5,7 +5,7 @@ var _           = require('underscore');
 
 
 var NAME = 'facebook';
-var SAVE_AT_EACH_STEP = true;
+var SAVE_AT_EACH_STEP = false;
 var CHECK_AT_EACH_SAVE = true;
 
 var basePath = __dirname + '/../assets/viz/' + NAME + '.';
