@@ -934,6 +934,9 @@ function renderItem(state, config, camera, gl, ext, programs, buffers, clearedFB
         clearedFBOs[renderTarget] = true;
     }
 
+    var depthFunc = ((itemDef.glOptions || {}).depthFunc || config.options.depthFunc)[0][0];
+    gl.depthFunc(gl[depthFunc]);
+
     bindProgram(
         state, programs[itemDef.program], itemDef.program, item,
         {
