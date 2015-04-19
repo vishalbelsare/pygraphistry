@@ -286,7 +286,9 @@ var items = {
             'edgeColor': ['edgeColors', 'edgeColor']
         },
         'drawType': 'LINES',
-        'glOptions': {}
+        'glOptions': {
+            'depthFunc': [['LESS']]
+        }
     },
     'edgepicking': {
         'program': 'edges',
