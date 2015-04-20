@@ -647,6 +647,7 @@ function prettyPrint (d, attributeName) {
         } else if (abs > 1000) {
             return String( maybePrecise(d/1000) ) + 'K';
         }  else {
+            d = Math.round(d*1000000) / 1000000; // Kill rounding errors
             return String(d);
         }
 
