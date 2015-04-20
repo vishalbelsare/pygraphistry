@@ -594,8 +594,35 @@ function heightDelta(d, xScale) {
     }
 }
 
-function prettyPrint (d) {
+function maybePrecise(v) {
+    var diff = Math.abs(v - Math.round(v));
+    if (diff > 0.1) {
+        return v.toFixed(1);
+    } else {
+        return v;
+    }
+}
+
+function prettyPrint (d, attributeName) {
     if (!isNaN(d)) {
+
+        if (attributeName.indexOf('Date') > -1) {
+            return d3.time.format('%m/%d/%Y')(new Date(d));
+        }
+
+        var abs = Math.abs(d);
+        if (abs > 1000000000000 || (d !== 0 && Math.abs(d) < 0.00001)) {
+            return String(d.toExponential(4));
+        } else if (abs > 1000000000) {
+            return String( maybePrecise(d/1000000000) ) + 'B';
+        } else if (abs > 1000000) {
+            return String( maybePrecise(d/1000000) ) + 'M';
+        } else if (abs > 1000) {
+            return String( maybePrecise(d/1000) ) + 'K';
+        }  else {
+            return String(d);
+        }
+
         // Large Number
         var precision = 4;
         if (Math.abs(d) > 1000000 || (d !== 0 && Math.abs(d) < 0.00001)) {
@@ -622,6 +649,7 @@ function initializeHistogramViz($el, model) {
     var data = model.attributes.data;
     var attribute = model.attributes.attribute;
     var globalStats = model.attributes.globalStats.histograms[attribute];
+    var name = model.get('attribute');
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
     var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
@@ -643,9 +671,9 @@ function initializeHistogramViz($el, model) {
         .ticks(numTicks)
         .tickFormat(function (d) {
             if (type === 'countBy') {
-                return prettyPrint(d); // name of bin
+                return prettyPrint(d, name); // name of bin
             } else {
-                return prettyPrint(d * globalStats.binWidth + globalStats.minValue);
+                return prettyPrint(d * globalStats.binWidth + globalStats.minValue, name);
             }
         });
 
