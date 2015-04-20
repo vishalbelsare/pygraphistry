@@ -421,7 +421,12 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         .flatMapLatest(_.identity);
     });
 
-    //tick stream until canceled/timed out (end with 'false')
+    var finalCenter = (function () {
+        var flag = urlParams.center;
+         return flag === undefined || flag.toLowerCase() === 'true';
+    }());
+
+    //tick stream until canceled/timed out (ends with finalCenter)
     var autoCentering = doneLoading.flatMapLatest(function () {
         return Rx.Observable.merge(
             Rx.Observable.return(Rx.Observable.interval(1000)),
@@ -437,7 +442,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
                         .filter(function (evt){ return evt.originalEvent !== undefined; }),
                     Rx.Observable.timer(numTicks))
                 .take(1)
-                .map(_.constant(Rx.Observable.return(false))))
+                .map(_.constant(Rx.Observable.return(finalCenter))))
         .flatMapLatest(_.identity);
     });
     var isAutoCentering = new Rx.ReplaySubject(1);
@@ -482,9 +487,10 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     autoCentering.subscribe(
         function (count) {
-            if (count === false || count < 3  ||
-                (count % 2 === 0 && count < 10) ||
-                count % 10 === 0) {
+            if (count === true ||
+                typeof count === 'number' && (count < 3  ||
+                                             (count % 2 === 0 && count < 10) ||
+                                              count % 10 === 0)) {
                 $('#center').trigger('click');
             }
         },
