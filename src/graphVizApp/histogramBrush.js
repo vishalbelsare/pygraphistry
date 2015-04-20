@@ -46,6 +46,7 @@ var attributeChange = new Rx.Subject();
 var globalStatsCache = {}; // For add histogram. TODO: Get rid of this and use replay
 var d3DataMap = {};
 
+
 function updateAttribute (oldAttribute, newAttribute, type) {
     // Delete old if it exists
     var indexOfOld = _.pluck(activeAttributes, 'name').indexOf(oldAttribute);
@@ -63,6 +64,23 @@ function updateAttribute (oldAttribute, newAttribute, type) {
         attributeChange.onNext(newAttribute);
     }
 }
+
+function toggleExpandedD3 (attribute, vizContainer, vizHeight, view) {
+    d3DataMap[attribute].svg.selectAll('*').remove();
+    vizContainer.empty();
+    vizContainer.height(String(vizHeight) + 'px');
+
+    var sparkLines = view.model.get('sparkLines');
+    if (sparkLines) {
+        initializeHistogramViz(vizContainer, view.model);
+        updateAttribute(attribute, attribute, 'histogram');
+    } else {
+        initializeSparklineViz(vizContainer, view.model);
+        updateAttribute(attribute, attribute, 'sparkLines');
+    }
+    view.model.set('sparkLines', !sparkLines);
+}
+
 
 function init(socket, marquee) {
     debug('Initializing histogram brush');
@@ -107,7 +125,6 @@ function init(socket, marquee) {
             };
             var html = this.template(params);
             this.$el.html(html);
-
             return this;
         },
 
@@ -115,26 +132,16 @@ function init(socket, marquee) {
             $(evt.target).removeClass('expandedHistogramButton').addClass('expandHistogramButton');
             var vizContainer = this.model.get('vizContainer');
             var attribute = this.model.get('attribute');
-            d3DataMap[attribute].svg.selectAll('*').remove();
-            vizContainer.empty();
             var vizHeight = SPARKLINE_HEIGHT;
-            vizContainer.height(String(vizHeight) + 'px');
-            initializeSparklineViz(vizContainer, this.model); // TODO: Link to data?
-            this.model.set('sparkLines', true);
-            updateAttribute(attribute, attribute, 'sparkLines');
+            toggleExpandedD3(attribute, vizContainer, vizHeight, this);
         },
 
         expand: function(evt) {
             $(evt.target).removeClass('expandHistogramButton').addClass('expandedHistogramButton');
             var vizContainer = this.model.get('vizContainer');
             var attribute = this.model.get('attribute');
-            d3DataMap[attribute].svg.selectAll('*').remove();
-            vizContainer.empty();
             var vizHeight = this.model.get('globalStats').histograms[attribute].numBins * BAR_THICKNESS + margin.top + margin.bottom;
-            vizContainer.height(String(vizHeight) + 'px');
-            initializeHistogramViz(vizContainer, this.model); // TODO: Link to data?
-            this.model.set('sparkLines', false);
-            updateAttribute(attribute, attribute, 'histogram');
+            toggleExpandedD3(attribute, vizContainer, vizHeight, this);
         },
 
         close: function() {
@@ -317,15 +324,6 @@ function init(socket, marquee) {
 
     // We use this more verbose approach to click handlers because it watches
     // the DOM for added elements.
-
-    $('#histogram').on('click', '.histogramDropdownField', function() {
-        // TODO: Get this value in a cleaner way
-        var oldField = $(this).parent().parent().siblings('button').text().trim();
-        var field = $(this).text().trim();
-        $(this).parents('.dropdown').find('.btn').text(field);
-        $(this).parents('.dropdown').find('.btn').val(field);
-        updateAttribute(oldField, field, 'sparkLines');
-    });
 
     $('#histogram').on('click', '.addHistogramDropdownField', function () {
         var attribute = $(this).text().trim();
