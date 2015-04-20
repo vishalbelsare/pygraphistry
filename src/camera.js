@@ -133,7 +133,7 @@
         var aspectRatio = width / height;
         this.width = aspectRatio * this.height;
         this.pixelRatio = pixelRatio;
-        debug('Updating camera dimensions to (%f,%f)', this.width, this.height);
+        debug('Updating camera dimensions to (%f,%f)', this.width, this.height, this.center);
     };
 
 
