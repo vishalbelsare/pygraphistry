@@ -366,7 +366,12 @@
 <!-- TEMPLATES -->
 <script type="text/template" id="histogramTemplate">
     <div class="topMenu">
-        <div class="col-xs-10">
+        <div class="col-xs-1 expandButton">
+            <a href="#">
+                <i class="fa fa-play expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
+            </a>
+        </div>
+        <div class="col-xs-9">
             <div class="dropdown">
                 <button class="btn btn-default btn-block dropdown-toggle pull-right" type="button" id="dropdownMenu{{id}}" data-toggle="dropdown" aria-expanded="true">
                     {{attribute}}
@@ -386,8 +391,6 @@
                 <i class="fa fa-times closeHistogramButton" id="closeHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
-
-
     </div>
     <div class="vizContainer"></div>
     <div class="divide-line"></div>
