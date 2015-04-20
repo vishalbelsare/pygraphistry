@@ -30,7 +30,7 @@ var NUM_SPARKLINES = 30;
 //////////////////////////////////////////////////////////////////////////////
 
 var color = d3.scale.ordinal()
-        .range(['#0FA5C5', '#B2B2B2', '#0FA5C5', '#00BBFF'])
+        .range(['#0FA5C5', '#C8C8C8', '#0FA5C5', '#00BBFF'])
         .domain(['local', 'global', 'globalSmaller', 'localBigger']);
 
 var colorHighlighted = d3.scale.ordinal()
