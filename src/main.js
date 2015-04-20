@@ -63,10 +63,9 @@ function isParamFalse (param) {
 
 
 
-var IS_OFFLINE = urlParams.offline === 'true';
-debug('IS_OFFLINE', IS_OFFLINE);
-var streamClient    = IS_OFFLINE ? localClient : serverClient;
-if (IS_OFFLINE && urlParams.basePath) {
+debug('IS_OFFLINE', isParamTrue('offline'));
+var streamClient    = isParamTrue('offline') ? localClient : serverClient;
+if (isParamTrue('offline') && urlParams.basePath !== undefined) {
     streamClient.basePath(decodeURIComponent(urlParams.basePath));
 }
 
