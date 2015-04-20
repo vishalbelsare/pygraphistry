@@ -236,6 +236,7 @@ function init(config, canvas) {
         renderBuffers:  Immutable.Map({}),
         pixelreads:     {},
         uniforms:       undefined,
+        options:        config.get('options').toJS(),
 
         boundBuffer:    undefined,
         bufferSize:     Immutable.Map({}),
@@ -498,9 +499,7 @@ function setGlOptions(state) {
         'lineWidth': true
     };
 
-    // FIXME: Make this work with Immutable.js' native iterators, rather than using toJS()
-    var options = state.get('config').get('options').toJS();
-    _.each(options, function(optionCalls, optionName) {
+    _.each(state.get('options'), function(optionCalls, optionName) {
         if(whiteList[optionName] !== true ||
             typeof gl[optionName] !== 'function') {
             return;
@@ -824,6 +823,7 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
     var config      = state.get('config').toJS(),
         camera      = state.get('camera'),
         gl          = state.get('gl'),
+        options     = state.get('options'),
         ext         = state.get('ext'),
         programs    = state.get('programs').toJS(),
         buffers     = state.get('buffers').toJS();
@@ -863,7 +863,8 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
                 item);
             return false;
         }
-        var texture = renderItem(state, config, camera, gl, ext, programs, buffers, clearedFBOs, item);
+        var texture = renderItem(state, config, camera, gl, options, ext,
+                                 programs, buffers, clearedFBOs, item);
         if (texture) {
             texturesToRead.push(texture);
         }
@@ -908,7 +909,7 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
 }
 
 
-function renderItem(state, config, camera, gl, ext, programs, buffers, clearedFBOs, item) {
+function renderItem(state, config, camera, gl, options, ext, programs, buffers, clearedFBOs, item) {
     var itemDef = config.items[item];
     var numElements = state.get('numElements')[item];
     var renderTarget = itemDef.renderTarget === 'CANVAS' ? null : itemDef.renderTarget;
@@ -927,7 +928,7 @@ function renderItem(state, config, camera, gl, ext, programs, buffers, clearedFB
     if (!clearedFBOs[renderTarget]) {
         debug('  clearing render target', renderTarget);
 
-        var clearColor = ((itemDef.glOptions || {}).clearColor || config.options.clearColor)[0];
+        var clearColor = ((itemDef.glOptions || {}).clearColor || options.clearColor)[0];
         gl.clearColor.apply(gl, clearColor);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 

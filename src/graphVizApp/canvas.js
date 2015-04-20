@@ -68,25 +68,12 @@ function setupRenderUpdates(renderingScheduler, cameraStream, settingsChanges) {
 }
 
 
-//TODO FIXME
-function setupBackgroundColor() {
-    /*TODO refactor this is out of place
-    var stateWithColor =
-        bgColor.map(function (rgb) {
-
-            var currentState = renderState;
-
-            var color = [[rgb.r/256, rgb.g/256, rgb.b/256,
-                rgb.a === undefined ? 1 : rgb.a/256]];
-
-            var config = currentState.get('config');
-            var options = config.get('options');
-
-            return currentState.set('config',
-                                    config.set('options',
-                                                options.set('clearColor', color)));
-        });
-    */
+function setupBackgroundColor(renderingScheduler, bgColor) {
+    bgColor.do(function (rgb) {
+        var color = [rgb.r/256, rgb.g/256, rgb.b/256, rgb.a === undefined ? 1 : rgb.a/256];
+        renderingScheduler.renderState.get('options').clearColor = [color];
+        renderingScheduler.renderScene('bgcolor', {trigger: 'renderSceneFast'});
+    }).subscribe(_.identity, util.makeErrorHandler('bg color updates'));
 }
 
 /* Deindexed logical edges by looking up the x/y positions of the source and destination

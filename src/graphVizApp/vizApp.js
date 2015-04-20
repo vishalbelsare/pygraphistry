@@ -103,7 +103,7 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     canvas.setupRenderUpdates(appState.renderingScheduler, appState.cameraChanges, appState.settingsChanges);
 
     var colors = colorpicker($fgPicker, $bgPicker, socket);
-    canvas.setupBackgroundColor(appState, colors.backgroundColor);
+    canvas.setupBackgroundColor(appState.renderingScheduler, colors.backgroundColor);
 
     shortestpaths($spButton, poi, socket);
 
