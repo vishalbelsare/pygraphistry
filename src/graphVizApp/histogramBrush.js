@@ -67,6 +67,10 @@ function updateAttribute (oldAttribute, newAttribute, type) {
 function init(socket, marquee) {
     debug('Initializing histogram brush');
 
+   // Grab global stats at initialization
+    var globalStats = new Rx.ReplaySubject(1);
+
+
     //////////////////////////////////////////////////////////////////////////
     // Backbone views and models
     //////////////////////////////////////////////////////////////////////////
@@ -139,6 +143,7 @@ function init(socket, marquee) {
         }
     });
 
+    var started = false;
 
     var AllHistogramsView = Backbone.View.extend({
         el: $histogram,
@@ -153,6 +158,29 @@ function init(socket, marquee) {
         render: function () {
             // TODO: Use something other than visibility
             this.$el.css('visibility', 'visible');
+            if (!started) {
+                started = true;
+
+                globalStats
+                    .take(1)
+                    .do(function () {
+                        var maxItems = Math.min((window.innerHeight - 110) / 85, 5);
+                        console.log('maxItems', maxItems);
+                        attributes.forEach(function (attribute, i) {
+                            if (i >= maxItems) {
+                                return;
+                            }
+                            updateAttribute(null, attribute, 'sparkLines');
+                            var histogram = new HistogramModel();
+                            histogram.set({data: {}, globalStats: globalStatsCache, firstTime: true, sparkLines: true});
+                            histogram.id = attribute;
+                            histogram.set('attribute', attribute);
+                            histograms.add([histogram]);
+                        });
+                    })
+                    .subscribe(_.identity, util.makeErrorHandler('Error prepopulating histograms'));
+
+            }
         },
         addHistogram: function (histogram) {
             var view = new HistogramView({model: histogram});
@@ -204,8 +232,6 @@ function init(socket, marquee) {
     // Setup Streams
     //////////////////////////////////////////////////////////////////////////
 
-    // Grab global stats at initialization
-    var globalStats = new Rx.ReplaySubject(1);
     var params = {all: true, mode: MODE};
     var paramsSparklines = {all: true, mode: MODE, binning: {'_goalNumberOfBins': NUM_SPARKLINES}};
     var globalStream = Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params);
@@ -272,15 +298,16 @@ function init(socket, marquee) {
     }).filter(function (data) { return data.reply && data.reply.success; })
     .do(function (data) {
 
-        // TODO: Pull this out from here.
-        allHistogramsView.render();
-
         // TODO: Figure out if we need to treat these separately or not
         if (data.type === 'selection' || data.type === 'attributeChange') {
             updateHistogramData(socket, marquee, histograms, data.reply.data, data.globalStats, HistogramModel);
         } else if (data.type === 'drag') {
             updateHistogramData(socket, marquee, histograms, data.reply.data, data.globalStats, HistogramModel);
         }
+
+        // TODO: Pull this out from here.
+        //do after updates because may trigger prepopulation
+        allHistogramsView.render();
 
     }).subscribe(_.identity, util.makeErrorHandler('Brush selection aggregate error'));
 
