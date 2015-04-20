@@ -60,7 +60,7 @@ function setupLabelsAndCursor(appState, $eventTarget) {
 function setupRenderUpdates(renderingScheduler, cameraStream, settingsChanges) {
     var renderUpdates = cameraStream.combineLatest(settingsChanges, _.identity);
 
-    renderUpdates.do(function (camera) {
+    renderUpdates.do(function () {
         //TODO: Make camera functional and pass camera to setCamera
         renderer.setCamera(renderingScheduler.renderState);
         renderingScheduler.renderScene('panzoom', {trigger: 'renderSceneFast'});

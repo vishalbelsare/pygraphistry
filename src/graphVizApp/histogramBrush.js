@@ -30,7 +30,7 @@ var NUM_SPARKLINES = 30;
 //////////////////////////////////////////////////////////////////////////////
 
 var color = d3.scale.ordinal()
-        .range(['#0FA5C5', '#B2B2B2', '#0FA5C5', '#00BBFF'])
+        .range(['#0FA5C5', '#C8C8C8', '#0FA5C5', '#00BBFF'])
         .domain(['local', 'global', 'globalSmaller', 'localBigger']);
 
 var colorHighlighted = d3.scale.ordinal()
@@ -66,6 +66,10 @@ function updateAttribute (oldAttribute, newAttribute, type) {
 
 function init(socket, marquee) {
     debug('Initializing histogram brush');
+
+   // Grab global stats at initialization
+    var globalStats = new Rx.ReplaySubject(1);
+
 
     //////////////////////////////////////////////////////////////////////////
     // Backbone views and models
@@ -139,6 +143,7 @@ function init(socket, marquee) {
         }
     });
 
+    var started = false;
 
     var AllHistogramsView = Backbone.View.extend({
         el: $histogram,
@@ -153,6 +158,29 @@ function init(socket, marquee) {
         render: function () {
             // TODO: Use something other than visibility
             this.$el.css('visibility', 'visible');
+            if (!started) {
+                started = true;
+
+                globalStats
+                    .take(1)
+                    .do(function () {
+                        var maxItems = Math.min((window.innerHeight - 110) / 85, 5);
+                        console.log('maxItems', maxItems);
+                        attributes.forEach(function (attribute, i) {
+                            if (i >= maxItems) {
+                                return;
+                            }
+                            updateAttribute(null, attribute, 'sparkLines');
+                            var histogram = new HistogramModel();
+                            histogram.set({data: {}, globalStats: globalStatsCache, firstTime: true, sparkLines: true});
+                            histogram.id = attribute;
+                            histogram.set('attribute', attribute);
+                            histograms.add([histogram]);
+                        });
+                    })
+                    .subscribe(_.identity, util.makeErrorHandler('Error prepopulating histograms'));
+
+            }
         },
         addHistogram: function (histogram) {
             var view = new HistogramView({model: histogram});
@@ -204,8 +232,6 @@ function init(socket, marquee) {
     // Setup Streams
     //////////////////////////////////////////////////////////////////////////
 
-    // Grab global stats at initialization
-    var globalStats = new Rx.ReplaySubject(1);
     var params = {all: true, mode: MODE};
     var paramsSparklines = {all: true, mode: MODE, binning: {'_goalNumberOfBins': NUM_SPARKLINES}};
     var globalStream = Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params);
@@ -272,15 +298,16 @@ function init(socket, marquee) {
     }).filter(function (data) { return data.reply && data.reply.success; })
     .do(function (data) {
 
-        // TODO: Pull this out from here.
-        allHistogramsView.render();
-
         // TODO: Figure out if we need to treat these separately or not
         if (data.type === 'selection' || data.type === 'attributeChange') {
             updateHistogramData(socket, marquee, histograms, data.reply.data, data.globalStats, HistogramModel);
         } else if (data.type === 'drag') {
             updateHistogramData(socket, marquee, histograms, data.reply.data, data.globalStats, HistogramModel);
         }
+
+        // TODO: Pull this out from here.
+        //do after updates because may trigger prepopulation
+        allHistogramsView.render();
 
     }).subscribe(_.identity, util.makeErrorHandler('Brush selection aggregate error'));
 
@@ -594,8 +621,36 @@ function heightDelta(d, xScale) {
     }
 }
 
-function prettyPrint (d) {
+function maybePrecise(v) {
+    var diff = Math.abs(v - Math.round(v));
+    if (diff > 0.1) {
+        return v.toFixed(1);
+    } else {
+        return v;
+    }
+}
+
+function prettyPrint (d, attributeName) {
     if (!isNaN(d)) {
+
+        if (attributeName.indexOf('Date') > -1) {
+            return d3.time.format('%m/%d/%Y')(new Date(d));
+        }
+
+        var abs = Math.abs(d);
+        if (abs > 1000000000000 || (d !== 0 && Math.abs(d) < 0.00001)) {
+            return String(d.toExponential(4));
+        } else if (abs > 1000000000) {
+            return String( maybePrecise(d/1000000000) ) + 'B';
+        } else if (abs > 1000000) {
+            return String( maybePrecise(d/1000000) ) + 'M';
+        } else if (abs > 1000) {
+            return String( maybePrecise(d/1000) ) + 'K';
+        }  else {
+            d = Math.round(d*1000000) / 1000000; // Kill rounding errors
+            return String(d);
+        }
+
         // Large Number
         var precision = 4;
         if (Math.abs(d) > 1000000 || (d !== 0 && Math.abs(d) < 0.00001)) {
@@ -622,6 +677,7 @@ function initializeHistogramViz($el, model) {
     var data = model.attributes.data;
     var attribute = model.attributes.attribute;
     var globalStats = model.attributes.globalStats.histograms[attribute];
+    var name = model.get('attribute');
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
     var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
@@ -643,9 +699,9 @@ function initializeHistogramViz($el, model) {
         .ticks(numTicks)
         .tickFormat(function (d) {
             if (type === 'countBy') {
-                return prettyPrint(d); // name of bin
+                return prettyPrint(d, name); // name of bin
             } else {
-                return prettyPrint(d * globalStats.binWidth + globalStats.minValue);
+                return prettyPrint(d * globalStats.binWidth + globalStats.minValue, name);
             }
         });
 
