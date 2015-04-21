@@ -134,6 +134,23 @@ function init(canvas, vizType) {
                 initialRenderState: nfo.initialRenderState
             });
 
+            vboUpdates
+                .filter(function (v) { return v === 'start'; })
+                .do(function () {
+                    console.log('posting start');
+                    parent.postMessage('start', window.location.origin);
+                })
+                .flatMap(function () {
+                    return vboUpdates
+                        .filter(function (v) { return v === 'received'; })
+                        .take(1);
+                })
+                .do(function () {
+                    console.log('posting received');
+                    parent.postMessage('received', window.location.origin);
+                })
+                .subscribe(_.identity, function (err) { console.error('bad vboUpdate', err); });
+
         }).subscribe(
             _.identity,
             function (err) {
