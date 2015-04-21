@@ -10,11 +10,17 @@ var util            = require('./util.js');
 var interaction     = require('./interaction.js');
 var picking         = require('../picking.js');
 
+// HACK because we can't know what the mouse position is without watching events
+var mousePosition = {x: 0, y: 0};
 
+document.addEventListener('mousemove', function(e) {
+    mousePosition.x = e.clientX || e.pageX;
+    mousePosition.y = e.clientY || e.pageY;
+}, false);
 
-// AppState * $DOM * [int] * [int] -> ()
+// AppState * $DOM * {dim:int, idx:int} * {dim:int, idx:int} -> ()
 // Immediately reposition each label based on camera and curPoints buffer
-function renderPointLabels(appState, $labelCont, labelIndices, clicked) {
+function renderPointLabels(appState, $labelCont, labels, clicked) {
     debug('rendering labels');
 
     var curPoints = appState.renderState.get('hostBuffers').curPoints;
@@ -24,7 +30,7 @@ function renderPointLabels(appState, $labelCont, labelIndices, clicked) {
     }
     curPoints.take(1)
         .do(function (curPoints) {
-            renderLabelsImmediate(appState, $labelCont, curPoints, labelIndices, clicked);
+            renderLabelsImmediate(appState, $labelCont, curPoints, labels, clicked);
         })
         .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
 }
@@ -114,10 +120,17 @@ function newLabelPositions(renderState, labels, points) {
 
     var newPos = new Float32Array(labels.length * 2);
     for (var i = 0; i < labels.length; i++) {
-        var idx = labels[i].idx;
-        var pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
-        newPos[2 * i] = pos.x;
-        newPos[2 * i + 1] = pos.y;
+        // TODO: Treat 2D labels more naturally.
+        var dim = labels[i].dim;
+        if (dim === 2) {
+            newPos[2 * i] = -1;
+            newPos[2 * i + 1] = -1;
+        } else {
+            var idx = labels[i].idx;
+            var pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
+            newPos[2 * i] = pos.x;
+            newPos[2 * i + 1] = pos.y;
+        }
     }
 
     return newPos;
@@ -131,7 +144,12 @@ function effectLabels(toClear, toShow, labels, newPos, labelIndices, clicked, po
     });
 
     labels.forEach(function (elt, i) {
-        elt.elt.css('left', newPos[2 * i]).css('top', newPos[2 * i + 1]);
+        // TODO: Deal with 2D elements cleaner
+        if (elt.dim === 2) {
+            elt.elt.css('left', mousePosition.x).css('top', mousePosition.y);
+        } else {
+            elt.elt.css('left', newPos[2 * i]).css('top', newPos[2 * i + 1]);
+        }
         elt.elt.removeClass('on');
         elt.elt.removeClass('clicked');
     });
@@ -142,7 +160,8 @@ function effectLabels(toClear, toShow, labels, newPos, labelIndices, clicked, po
         }
     });
 
-    clicked.forEach(function (labelIdx) {
+    clicked.forEach(function (clickObj) {
+        var labelIdx = clickObj.idx;
         if (labelIdx > -1) {
             poi.state.activeLabels[labelIdx].elt.toggleClass('clicked', true);
         }
@@ -154,16 +173,20 @@ function effectLabels(toClear, toShow, labels, newPos, labelIndices, clicked, po
 
 }
 
-function renderLabelsImmediate (appState, $labelCont, curPoints, labelIndices, clicked) {
+function renderLabelsImmediate (appState, $labelCont, curPoints, toLabel, clicked) {
+
+    var labelIndices = _.pluck(toLabel, 'idx');
+
     var poi = appState.poi;
     var points = new Float32Array(curPoints.buffer);
 
     var t0 = Date.now();
 
     var hits = poi.getActiveApprox(appState.renderState, 'pointHitmapDownsampled');
-    labelIndices.forEach(function (labelIdx) {
+    toLabel.forEach(function (labelObj) {
+        var labelIdx = labelObj.idx;
         if (labelIdx > -1) {
-            hits[labelIdx] = true;
+            hits[labelIdx] = {dim: labelObj.dim};
         }
     });
     var t1 = Date.now();
@@ -186,7 +209,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, labelIndices, c
                 return null;
             } else if (!poi.state.inactiveLabels.length) {
                 //no label and no preallocated elts, create new
-                var freshLabel = poi.genLabel($labelCont, idx);
+                var freshLabel = poi.genLabel($labelCont, idx, hits[idx]);
                 freshLabel.elt.on('mouseover', function () {
                     appState.labelHover.onNext(this);
                 });
@@ -196,7 +219,8 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, labelIndices, c
                 //no label and available inactive preallocated, reuse
                 var lbl = poi.state.inactiveLabels.pop();
                 lbl.idx = idx;
-                lbl.setIdx(idx);
+                lbl.dim = hits[idx].dim;
+                lbl.setIdx({idx: idx, dim: lbl.dim});
                 toShow.push(lbl);
                 return lbl;
             }
@@ -233,17 +257,16 @@ function setupLabels (appState, $eventTarget, latestHighlightedObject) {
         if ($sim.hasClass('moving')) {
             renderPointLabels(appState, $labelCont, [], []);
         } else {
-            var indices = highlighted.map(function (o) {
-                return !o.dim || o.dim === 1 ? o.idx : -1;
-            });
+
+            // var indices = highlighted.map(function (o) {
+            //     return !o.dim || o.dim === 1 ? o.idx : -1;
+            // });
 
             var clicked = highlighted.filter(function (o) {
                 return o.click;
-            }).map(function (o) {
-                return o.idx;
             });
 
-            renderPointLabels(appState, $labelCont, indices, clicked);
+            renderPointLabels(appState, $labelCont, highlighted, clicked);
         }
     })
     .subscribe(_.identity, util.makeErrorHandler('setuplabels'));

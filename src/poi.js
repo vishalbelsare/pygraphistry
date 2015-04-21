@@ -32,7 +32,7 @@ function makeErrorHandler(name) {
 function markHits(samples32) {
     var hits = {};
     for (var i = 0; i < samples32.length; i++) {
-        hits[picking.decodeGpuIndex(samples32[i]).idx] =  true;
+        hits[picking.decodeGpuIndex(samples32[i]).idx] = {dim: 1};
     }
     return hits;
 }
@@ -44,7 +44,7 @@ function topHits(hits) {
     return vals;
 }
 
-//renderState * String -> {<idx> -> True}
+//renderState * String -> {<idx> -> {dim: int}}
 //dict of points that are on screen -- approx may skip some
 function getActiveApprox(renderState, textureName) {
     var samples32 = new Uint32Array(renderState.get('pixelreads')[textureName].buffer);
@@ -55,7 +55,7 @@ function getActiveApprox(renderState, textureName) {
 
     var res = {};
     vals.forEach(function (v) {
-        res[v] = true;
+        res[v] = {dim: 1};
     });
 
     //remove null
@@ -67,7 +67,7 @@ function getActiveApprox(renderState, textureName) {
 }
 
 
-//{<idx>: True} * [{elt: $DOM}] * {<idx>: True} * RenderState * [ Float ] -> ()
+//{<idx>: True} * [{elt: $DOM}] * {<idx>: {dim: int}} * RenderState * [ Float ] -> ()
 //  Effects: update inactiveLabels, activeLabels, hits
 //return unused activeLabels to inactiveLabels incase need extra to reuse
 //(otherwise mark as hit)
@@ -98,7 +98,7 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
                 toClear.push(lbl);
             } else {
                 //overplotted, keep
-                hits[lbl.idx] = true;
+                hits[lbl.idx] = {dim: lbl.dim};
             }
         }
     });
@@ -110,7 +110,7 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
 
 //create label, attach to dom
 //label texts defined externall; can change idx to update
-function genLabel (instance, $labelCont, idx) {
+function genLabel (instance, $labelCont, idx, info) {
 
 
     var setter = new Rx.ReplaySubject(1);
@@ -125,14 +125,16 @@ function genLabel (instance, $labelCont, idx) {
 
     var res = {
         idx: idx,
+        dim: info.dim,
         elt: $elt,
         setIdx: setter.onNext.bind(setter)
     };
 
     setter
         .sample(3)
-        .do(function (idx) {
-            res.idx = idx;
+        .do(function (data) {
+            res.dim = data.dim;
+            res.idx = data.idx;
             $elt.empty();
         })
         .flatMapLatest(instance.getLabelDom)
@@ -145,7 +147,7 @@ function genLabel (instance, $labelCont, idx) {
         })
         .subscribe(_.identity, makeErrorHandler('genLabel fetcher'));
 
-    res.setIdx(idx);
+    res.setIdx({idx: idx, dim: info.dim});
 
     return res;
 }
@@ -155,14 +157,24 @@ function genLabel (instance, $labelCont, idx) {
 //NETWORK ===================
 
 
-function fetchLabel (instance, idx) {
-    instance.state.socket.emit('get_labels', [idx], function (err, data) {
-        if (err) {
-            console.error('get_labels', err);
-        } else {
-            instance.state.labelCache[idx].onNext(createLabelDom(data[0]));
-        }
-    });
+function fetchLabel (instance, idx, dim) {
+    // TODO: Impl serverside
+    if (dim === 2) {
+        var fakeData = {title: 'Dummy Title',
+            columns: [['col1', 1], ['col2', 2]]
+        };
+        console.log('Fetched for dim 2: ', fakeData);
+        instance.state.labelCache[idx].onNext(createLabelDom(fakeData));
+    } else {
+        instance.state.socket.emit('get_labels', [idx], function (err, data) {
+            if (err) {
+                console.error('get_labels', err);
+            } else {
+                console.log('Fetched for dim 1: ', data[0]);
+                instance.state.labelCache[idx].onNext(createLabelDom(data[0]));
+            }
+        });
+    }
 }
 
 function createLabelDom(labelObj) {
@@ -201,10 +213,14 @@ function createLabelDom(labelObj) {
 
 //instance * int -> ReplaySubject_1 ?HtmlString
 //TODO batch fetches
-function getLabelDom (instance, idx) {
+function getLabelDom (instance, data) {
+    // TODO: Make cache aware of both idx and dim
+    var idx = data.idx;
+    var dim = data.dim;
+
     if (!instance.state.labelCache[idx]) {
         instance.state.labelCache[idx] = new Rx.ReplaySubject(1);
-        fetchLabel(instance, idx);
+        fetchLabel(instance, idx, dim);
     }
     return instance.state.labelCache[idx];
 }
