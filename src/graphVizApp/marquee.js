@@ -68,7 +68,7 @@ function effectCanvas(effect) {
 //
 // doAfterSelection takes (appState, rect, $elt, width, height)
 //
-function marqueeSelections (appState, $cont, $elt, isOn, doAfterSelection) {
+function marqueeSelections (appState, $cont, $elt, isOn, marqueeState, doAfterSelection) {
     var bounds = isOn.flatMapLatest(function (isOn) {
             if (!isOn) {
                 debug('stop listening for marquee selections');
@@ -84,7 +84,7 @@ function marqueeSelections (appState, $cont, $elt, isOn, doAfterSelection) {
                 return Rx.Observable.fromEvent($cont, 'mousedown')
                     .do(function (evt) {
                         debug('stopPropagation: marquee down');
-                        appState.marqueeOn.onNext('selecting');
+                        marqueeState.onNext('selecting');
                         evt.stopPropagation();
                         $('body').addClass('noselect');
                         effectCanvas('clear');
@@ -128,7 +128,7 @@ function marqueeSelections (appState, $cont, $elt, isOn, doAfterSelection) {
                                 $('body').removeClass('noselect');
                                 $elt.addClass('draggable').removeClass('on');
                                 $cont.addClass('done');
-                                appState.marqueeOn.onNext('done');
+                                marqueeState.onNext('done');
 
                                 var width = rect.br.x - rect.tl.x;
                                 var height = rect.br.y - rect.tl.y;
@@ -170,63 +170,15 @@ function clearMarquee($cont, $elt) {
     effectCanvas('clear');
 }
 
-function marqueeDrags(selections, $cont, $elt, appState) {
-    var drags = selections.flatMapLatest(function (selection) {
-        var firstRunSinceMousedown = true;
-        return Rx.Observable.fromEvent($elt, 'mousedown')
-            .do(function (evt) {
-                debug('stopPropagation: marquee down 2');
-                appState.marqueeOn.onNext('dragging');
-                evt.stopPropagation();
-                $('body').addClass('noselect');
-                $cont.addClass('beingdragged');
-            })
-            .map(toPoint.bind('', $cont))
-            .flatMapLatest(function (startPoint) {
-                debug('Start of drag: ', startPoint);
-                return Rx.Observable.fromEvent($(window.document), 'mousemove')
-                    .do(function (evt) {
-                        debug('stopPropagation: marquee move 2');
-                        evt.stopPropagation();
-                    })
-                    .sample(1)
-                    .map(function (evt) {
-                        return {start: startPoint, end: toPoint($cont, evt)};
-                    }).do(function (drag) {
-                        var delta = toDelta(drag.start, drag.end);
 
-                        // Side effects
-                        if (firstRunSinceMousedown) {
-                            firstRunSinceMousedown = false;
-                            $elt.removeClass('draggable').addClass('dragging');
-                        }
-                        $elt.css({
-                            left: selection.tl.x + delta.x,
-                            top: selection.tl.y + delta.y
-                        });
-                    }).takeUntil(Rx.Observable.fromEvent($(window.document), 'mouseup')
-                        .do(function () {
-                            debug('End of drag');
-                            appState.marqueeOn.onNext('toggle');
-                            clearMarquee($cont, $elt);
-                        })
-                    ).takeLast(1);
-            });
-    });
-
-    var dragsA = new Rx.ReplaySubject(1);
-    drags.subscribe(dragsA, util.makeErrorHandler('dragsA'));
-    return dragsA;
-}
-
-function brushDrags(selections, $cont, $elt, doneDragging, appState) {
+function marqueeDrags(selections, $cont, $elt, appState, marqueeState, takeLast, doAfterDrags) {
     var drags = selections.flatMapLatest(function (selection) {
         var firstRunSinceMousedown = true;
         var dragDelta = {x: 0, y: 0};
         return Rx.Observable.fromEvent($elt, 'mousedown')
             .do(function (evt) {
                 debug('stopPropagation: marquee down 2');
-                appState.brushOn.onNext('dragging');
+                marqueeState.onNext('dragging');
                 evt.stopPropagation();
                 $('body').addClass('noselect');
                 $cont.addClass('beingdragged');
@@ -234,7 +186,7 @@ function brushDrags(selections, $cont, $elt, doneDragging, appState) {
             .map(toPoint.bind('', $cont))
             .flatMapLatest(function (startPoint) {
                 debug('Start of drag: ', startPoint);
-                return Rx.Observable.fromEvent($(window.document), 'mousemove')
+                var observable =  Rx.Observable.fromEvent($(window.document), 'mousemove')
                     .do(function (evt) {
                         debug('stopPropagation: marquee move 2');
                         evt.stopPropagation();
@@ -255,37 +207,54 @@ function brushDrags(selections, $cont, $elt, doneDragging, appState) {
                             top: selection.tl.y + dragDelta.y
                         });
 
-                    }).map(function () {
+                    }).map(function (diff) {
                         // Convert back into TL/BR
                         var newTl = {x: selection.tl.x + dragDelta.x,
                                 y: selection.tl.y + dragDelta.y};
                         var newBr = {x: selection.br.x + dragDelta.x,
                                 y: selection.br.y + dragDelta.y};
 
-                        return {tl: newTl, br: newBr};
+                        return {diff: diff,
+                                coords: {tl: newTl, br: newBr}
+                        };
                     }).takeUntil(Rx.Observable.fromEvent($(window.document), 'mouseup')
                         .do(function () {
                             debug('End of drag');
-                            appState.brushOn.onNext('done');
-                            // clearMarquee($cont, $elt);
-
-                            // Update Selection positions.
-                            selection.tl.x += dragDelta.x;
-                            selection.tl.y += dragDelta.y;
-                            selection.br.x += dragDelta.x;
-                            selection.br.y += dragDelta.y;
-
-                            var newTl = {x: selection.tl.x,
-                                y: selection.tl.y};
-                            var newBr = {x: selection.br.x,
-                                y: selection.br.y};
-
-                            doneDragging.onNext({tl: newTl, br: newBr});
+                            doAfterDrags(marqueeState, selection, dragDelta, $cont, $elt);
                         })
                     );
+
+                if (takeLast) {
+                    return observable.takeLast(1);
+                } else {
+                    return observable;
+                }
+
             });
     });
     return drags;
+}
+
+function doAfterDragsMarquee (marqueeState, selection, delta, $cont, $elt) {
+    marqueeState.onNext('toggle');
+    clearMarquee($cont, $elt);
+}
+
+function doAfterDragsBrush (doneDragging, marqueeState, selection, dragDelta) {
+    marqueeState.onNext('done');
+
+    selection.tl.x += dragDelta.x;
+    selection.tl.y += dragDelta.y;
+    selection.br.x += dragDelta.x;
+    selection.br.y += dragDelta.y;
+
+    var newTl = {x: selection.tl.x,
+        y: selection.tl.y};
+    var newBr = {x: selection.br.x,
+        y: selection.br.y};
+
+    doneDragging.onNext({tl: newTl, br: newBr});
+
 }
 
 
@@ -375,8 +344,13 @@ function initBrush (appState, $cont, toggle, cfg) {
     var doneDraggingRaw = new Rx.ReplaySubject(1);
     var doneDragging = doneDraggingRaw.debounce(50).map(transformAll);
 
-    var bounds = marqueeSelections(appState, $cont, $elt, isOn, _.identity);
-    var drags = brushDrags(bounds, $cont, $elt, doneDraggingRaw, appState).map(transformAll);
+    var bounds = marqueeSelections(appState, $cont, $elt, isOn, appState.brushOn, _.identity);
+
+    var drags = marqueeDrags(bounds, $cont, $elt, appState, appState.brushOn, false, doAfterDragsBrush.bind(null, doneDraggingRaw))
+            .map(function (data) {
+                return data.coords;
+            }).map(transformAll);
+
     var selections = bounds.map(transformAll);
 
     return {
@@ -420,10 +394,20 @@ function initMarquee (appState, $cont, toggle, cfg) {
             return [key, cfg.transform(val)];
         }));
     };
-    var bounds = marqueeSelections(appState, $cont, $elt, isOn, blurAndMakeGhost);
+    var bounds = marqueeSelections(appState, $cont, $elt, isOn, appState.marqueeOn, blurAndMakeGhost);
     var boundsA = new Rx.ReplaySubject(1);
     bounds.subscribe(boundsA, util.makeErrorHandler('boundsA'));
-    var drags = marqueeDrags(boundsA, $cont, $elt, appState).map(transformAll);
+
+    var rawDrags = marqueeDrags(boundsA, $cont, $elt, appState, appState.marqueeOn, true, doAfterDragsMarquee);
+    var dragsA = new Rx.ReplaySubject(1);
+    rawDrags.subscribe(dragsA, util.makeErrorHandler('dragsA'));
+    var drags = dragsA
+        .map(function (data) {
+            console.log('Marquee got: ', data);
+            return data.diff;
+        })
+        .map(transformAll);
+
     var selections = boundsA.map(transformAll);
 
     return {
