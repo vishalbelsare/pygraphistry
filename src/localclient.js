@@ -100,7 +100,8 @@ module.exports = {
     handleVboUpdates: function (socket, renderState) {
         debug('handle vbo updates');
 
-        var vboUpdates = new Rx.BehaviorSubject('init');
+        var vboUpdates = new Rx.ReplaySubject(1);
+        vboUpdates.onNext('init');
 
         $.ajaxAsObservable({url: BASE_PATH + 'metadata.json', dataType: 'json'})
             .pluck('data')
