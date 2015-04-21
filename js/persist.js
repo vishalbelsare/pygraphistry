@@ -48,20 +48,12 @@ module.exports =
     : {
         maybeSaveConfig: function (renderConfig) {
 
-            if (Math.random() < 0.95) {
-                return;
-            }
-
             debug('saving config', renderConfig);
             fs.writeFileSync(basePath + 'renderconfig.json', JSON.stringify(renderConfig));
 
         },
 
         maybeSaveVbos: function (vbos, step) {
-
-            if (step > 3 && Math.random() < 0.95) {
-                return;
-            }
 
             debug('serializing vbo');
             prevHeader = {
