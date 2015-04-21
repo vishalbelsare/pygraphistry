@@ -45,7 +45,7 @@ module.exports = function ($fg, $bg, socket, renderState) {
     var backgroundColor = new Rx.ReplaySubject(1);
 
     var initColor = _.chain(renderState.get('options').clearColor[0]).zip(['r', 'g', 'b', 'a']).map(function (pair) {
-        return [pair[1], pair[0] * 256];
+        return [pair[1], pair[0] * 255];
     }).object().value();
 
     backgroundColor.onNext(initColor);

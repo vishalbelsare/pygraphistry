@@ -68,7 +68,7 @@ function setupRenderUpdates(renderingScheduler, cameraStream, settingsChanges) {
 
 function setupBackgroundColor(renderingScheduler, bgColor) {
     bgColor.do(function (rgb) {
-        var color = [rgb.r/256, rgb.g/256, rgb.b/256, rgb.a === undefined ? 1 : rgb.a/256];
+        var color = [rgb.r/255, rgb.g/255, rgb.b/255, rgb.a === undefined ? 1 : rgb.a/255];
         renderingScheduler.renderState.get('options').clearColor = [color];
         renderingScheduler.renderScene('bgcolor', {trigger: 'renderSceneFast'});
     }).subscribe(_.identity, util.makeErrorHandler('bg color updates'));
