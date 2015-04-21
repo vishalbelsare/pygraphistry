@@ -312,17 +312,19 @@ function createGhostImg(renderState, sel, $elt, cssWidth, cssHeight) {
     });
 }
 
+function makeTransformer (cfg) {
+    return function (obj) {
+        return _.object(_.map(obj, function (val, key) {
+            return [key, cfg.transform(val)];
+        }));
+    };
+}
 
-function initBrush (appState, $cont, toggle, cfg) {
-
-    debug('init brush');
-
+function setupContainer ($cont, toggle, cfg, isOn, $elt) {
     cfg = cfg || {};
     cfg.transform = cfg.transform || _.identity;
-    var $elt = createElt();
 
     //starts false
-    var isOn = new Rx.ReplaySubject(1);
     toggle.merge(Rx.Observable.return(false)).subscribe(isOn, util.makeErrorHandler('on/off'));
 
     isOn.subscribe(function (flag) {
@@ -334,12 +336,16 @@ function initBrush (appState, $cont, toggle, cfg) {
     //Effect scene
     $cont.append($elt);
     maintainContainerStyle($cont, isOn);
+}
 
-    var transformAll = function(obj) {
-        return _.object(_.map(obj, function (val, key) {
-            return [key, cfg.transform(val)];
-        }));
-    };
+
+function initBrush (appState, $cont, toggle, cfg) {
+    debug('init brush');
+    var $elt = createElt();
+    var isOn = new Rx.ReplaySubject(1);
+    setupContainer($cont, toggle, cfg, isOn, $elt);
+    var transformAll = makeTransformer(cfg);
+
 
     var doneDraggingRaw = new Rx.ReplaySubject(1);
     var doneDragging = doneDraggingRaw.debounce(50).map(transformAll);
@@ -369,31 +375,12 @@ function initBrush (appState, $cont, toggle, cfg) {
 //          -> {selections: Observable [ [num, num] ] }
 function initMarquee (appState, $cont, toggle, cfg) {
     debug('init marquee');
-
-    cfg = cfg || {};
-    cfg.transform = cfg.transform || _.identity;
-
     var $elt = createElt();
-
-    //starts false
     var isOn = new Rx.ReplaySubject(1);
-    toggle.merge(Rx.Observable.return(false)).subscribe(isOn, util.makeErrorHandler('on/off'));
+    setupContainer($cont, toggle, cfg, isOn, $elt);
+    var transformAll = makeTransformer(cfg);
 
-    isOn.subscribe(function (flag) {
-        if (!flag) {
-            clearMarquee($cont, $elt);
-        }
-    }, util.makeErrorHandler('blur canvas'));
 
-    //Effect scene
-    $cont.append($elt);
-    maintainContainerStyle($cont, isOn);
-
-    var transformAll = function(obj) {
-        return _.object(_.map(obj, function (val, key) {
-            return [key, cfg.transform(val)];
-        }));
-    };
     var bounds = marqueeSelections(appState, $cont, $elt, isOn, appState.marqueeOn, blurAndMakeGhost);
     var boundsA = new Rx.ReplaySubject(1);
     bounds.subscribe(boundsA, util.makeErrorHandler('boundsA'));
