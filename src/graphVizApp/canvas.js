@@ -233,6 +233,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
                 quietSignaled = false;
             }
 
+            renderer.setCamera(renderState);
             _.each(renderQueue, function (renderTask, tag) {
                 renderer.render(renderState, tag, renderTask.trigger, renderTask.items,
                                 renderTask.readPixels, renderTask.callback);
