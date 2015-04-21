@@ -137,7 +137,6 @@ function init(canvas, vizType) {
             vboUpdates
                 .filter(function (v) { return v === 'start'; })
                 .do(function () {
-                    console.log('posting start');
                     parent.postMessage('start', window.location.origin);
                 })
                 .flatMap(function () {
@@ -146,7 +145,6 @@ function init(canvas, vizType) {
                         .take(1);
                 })
                 .do(function () {
-                    console.log('posting received');
                     parent.postMessage('received', window.location.origin);
                 })
                 .subscribe(_.identity, function (err) { console.error('bad vboUpdate', err); });
