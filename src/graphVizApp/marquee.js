@@ -63,9 +63,12 @@ function effectCanvas(effect) {
     }
 }
 
-//$DOM * $DOM * Observable bool -> Observable_1 {top, left, width, height}
+//$DOM * $DOM * Observable bool * bool * Function -> Observable_1 {top, left, width, height}
 //track selections and affect $elt style/class
-function marqueeSelections (appState, $cont, $elt, isOn) {
+//
+// doAfterSelection takes (appState, rect, $elt, width, height)
+//
+function marqueeSelections (appState, $cont, $elt, isOn, doAfterSelection) {
     var bounds = isOn.flatMapLatest(function (isOn) {
             if (!isOn) {
                 debug('stop listening for marquee selections');
@@ -123,7 +126,6 @@ function marqueeSelections (appState, $cont, $elt, isOn) {
                             ).takeLast(1)
                             .do(function (rect) {
                                 $('body').removeClass('noselect');
-                                effectCanvas('blur');
                                 $elt.addClass('draggable').removeClass('on');
                                 $cont.addClass('done');
                                 appState.marqueeOn.onNext('done');
@@ -139,93 +141,8 @@ function marqueeSelections (appState, $cont, $elt, isOn) {
                                     height: height + 2 * bw
                                 });
 
-                                createGhostImg(appState.renderState, rect, $elt, width, height);
-                            });
-                    });
+                                doAfterSelection(appState, rect, $elt, width, height);
 
-            }
-        });
-
-    var boundsA = new Rx.ReplaySubject(1);
-    bounds.subscribe(boundsA, util.makeErrorHandler('boundsA'));
-    return boundsA;
-}
-
-//$DOM * $DOM * Observable bool -> Observable_1 {top, left, width, height}
-//track selections and affect $elt style/class
-function brushSelections (appState, $cont, $elt, isOn) {
-    var bounds = isOn.flatMapLatest(function (isOn) {
-            if (!isOn) {
-                debug('stop listening for marquee selections');
-                $('#simulation').css({
-                    'filter': '',
-                    '-webkit-filter': '',
-                });
-                effectCanvas('clear');
-                return Rx.Observable.empty();
-            } else {
-                debug('start listening for marquee selections');
-                var firstRunSinceMousedown;
-                return Rx.Observable.fromEvent($cont, 'mousedown')
-                    .do(function (evt) {
-                        debug('stopPropagation: marquee down');
-                        appState.brushOn.onNext('selecting');
-                        evt.stopPropagation();
-                        $('body').addClass('noselect');
-                        effectCanvas('clear');
-                        $elt.empty();
-                        $elt.css({width: 0, height: 0});
-                        $elt.removeClass('draggable').removeClass('dragging');
-                        $cont.removeClass('done');
-                    }).map(toPoint.bind('', $cont))
-                    .do(function () {
-                            debug('marquee instance started, listening');
-                            firstRunSinceMousedown = true;
-                    }).flatMapLatest(function (startPoint) {
-                        return Rx.Observable.fromEvent($(window.document), 'mousemove')
-                            .do(function (evt) {
-                                debug('stopPropagation: marquee move');
-                                evt.stopPropagation();
-                            })
-                            .sample(1)
-                            .map(function (moveEvt) {
-                                return toRect(startPoint, toPoint($cont, moveEvt));
-                            }).do(function (rect) {
-                                if (firstRunSinceMousedown) {
-                                    debug('show marquee instance on first bound calc');
-                                    $elt.removeClass('off').addClass('on');
-                                    firstRunSinceMousedown = false;
-                                }
-                                $elt.css({
-                                    left: rect.tl.x,
-                                    top: rect.tl.y,
-                                    width: rect.br.x - rect.tl.x,
-                                    height: rect.br.y - rect.tl.y
-                                });
-                            }).takeUntil(Rx.Observable.fromEvent($(window.document), 'mouseup')
-                                .do(function (evt) {
-                                    debug('stopPropagation: marquee up');
-                                    evt.stopPropagation();
-                                    debug('drag marquee finished');
-                                })
-                            ).takeLast(1)
-                            .do(function (rect) {
-                                $('body').removeClass('noselect');
-                                //effectCanvas('blur');
-                                $elt.addClass('draggable').removeClass('on');
-                                $cont.addClass('done');
-                                appState.brushOn.onNext('done');
-
-                                var width = rect.br.x - rect.tl.x;
-                                var height = rect.br.y - rect.tl.y;
-                                var bw = parseInt($elt.css('border-width'));
-
-                                $elt.css({ // Take border sizes into account when aligning ghost image
-                                    left: rect.tl.x - bw,
-                                    top: rect.tl.y - bw,
-                                    width: width + 2 * bw,
-                                    height: height + 2 * bw
-                                });
                             });
                     });
 
@@ -235,6 +152,10 @@ function brushSelections (appState, $cont, $elt, isOn) {
     return bounds;
 }
 
+function blurAndMakeGhost(appState, rect, $elt, width, height) {
+    effectCanvas('blur');
+    createGhostImg(appState.renderState, rect, $elt, width, height);
+}
 
 function toDelta(startPoint, endPoint) {
     return {x: endPoint.x - startPoint.x,
@@ -454,7 +375,7 @@ function initBrush (appState, $cont, toggle, cfg) {
     var doneDraggingRaw = new Rx.ReplaySubject(1);
     var doneDragging = doneDraggingRaw.debounce(50).map(transformAll);
 
-    var bounds = brushSelections(appState, $cont, $elt, isOn);
+    var bounds = marqueeSelections(appState, $cont, $elt, isOn, _.identity);
     var drags = brushDrags(bounds, $cont, $elt, doneDraggingRaw, appState).map(transformAll);
     var selections = bounds.map(transformAll);
 
@@ -499,13 +420,15 @@ function initMarquee (appState, $cont, toggle, cfg) {
             return [key, cfg.transform(val)];
         }));
     };
-    var bounds = marqueeSelections(appState, $cont, $elt, isOn);
-    var drags = marqueeDrags(bounds, $cont, $elt, appState).map(transformAll);
-    var selections = bounds.map(transformAll);
+    var bounds = marqueeSelections(appState, $cont, $elt, isOn, blurAndMakeGhost);
+    var boundsA = new Rx.ReplaySubject(1);
+    bounds.subscribe(boundsA, util.makeErrorHandler('boundsA'));
+    var drags = marqueeDrags(boundsA, $cont, $elt, appState).map(transformAll);
+    var selections = boundsA.map(transformAll);
 
     return {
         selections: selections,
-        bounds: bounds,
+        bounds: boundsA,
         drags: drags,
         $elt: $elt,
         isOn: toggle
