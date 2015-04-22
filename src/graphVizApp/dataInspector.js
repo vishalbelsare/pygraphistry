@@ -13,8 +13,10 @@ var Backgrid = require('backgrid');
 
 var util        = require('./util.js');
 
-function init(appState, socket, workerUrl, marquee, $inspector) {
-    var InspectData = Backbone.Model.extend({});
+function init(appState, socket, workerUrl, marquee) {
+    var $nodesInspector = $('#inspector-nodes').find('.inspector');
+    var $edgesInspector = $('#inspector-edges').find('.inspector');
+
     var marqueeTriggers = marquee.selections.merge(marquee.doneDragging);
 
     var $inspectorOverlay = $('#inspector-overlay');
@@ -35,25 +37,10 @@ function init(appState, socket, workerUrl, marquee, $inspector) {
         }
     }).filter(function (reply) { return reply && reply.success; })
     .map(function (data) {
-        if (data && data.success) {
-            debug('Inspect Header', data.header);
-            var columns = [{
-                name: '_title', // The key of the model attribute
-                label: 'Node', // The name to display in the header
-                cell: 'string',
-                editable: false,
-            }].concat(_.map(_.without(data.header, '_title'), function (key) {
-                return {
-                    name: key,
-                    label: key,
-                    cell: 'string',
-                    editable: false,
-                };
-            }));
-            return columns;
-        } else {
-            console.error('Server error on inspectHeader', data.error);
-        }
+        return {
+            nodes: createColumns(data.header.nodes, 'Node'),
+            edges: createColumns(data.header.edges, 'Edge')
+        };
     }).do(function (columns) {
         marqueeTriggers.flatMap(function (sel) {
             return Rx.Observable.fromCallback(socket.emit, socket)('set_selection', sel);
@@ -62,22 +49,41 @@ function init(appState, socket, workerUrl, marquee, $inspector) {
                 console.error('Server error on set_selection', (reply||{}).error);
             }
         }).filter(function (reply) { return reply && reply.success; })
-        .subscribe(function (reply) {
-            debug('Setting up PageableCollection of size', reply.count);
-            showPageableGrid(workerUrl, InspectData, columns, reply.count, $inspector);
+        .do(function (reply) {
+            showPageableGrid(workerUrl, columns.nodes, reply.params.nodes, $nodesInspector);
+            showPageableGrid(workerUrl, columns.edges, reply.params.edges, $edgesInspector);
             $('#inspector').css({visibility: 'visible'});
-        }, util.makeErrorHandler('fetch data for inspector'));
+        }).subscribe(_.identity, util.makeErrorHandler('fetch data for inspector'));
     }).subscribe(_.identity, util.makeErrorHandler('fetch inspectHeader'));
 }
 
+function createColumns(header, title) {
+    debug('Inspect Header', header);
 
-function showPageableGrid(workerUrl, model, columns, count, $inspector) {
+    return [{
+        name: '_title', // The key of the model attribute
+        label: title, // The name to display in the header
+        cell: 'string',
+        editable: false,
+    }].concat(_.map(_.without(header, '_title'), function (key) {
+        return {
+            name: key,
+            label: key,
+            cell: 'string',
+            editable: false,
+        };
+    }));
+}
+
+
+function showPageableGrid(workerUrl, columns, params, $inspector) {
+    var InspectData = Backbone.Model.extend({});
     var DataFrame = Backbone.PageableCollection.extend({
-        model: model,
-        url: workerUrl + '/read_selection',
+        model: InspectData,
+        url: workerUrl + params.urn,
         state: {
             pageSize: 8,
-            totalRecords: count,
+            totalRecords: params.count,
         },
     });
 
