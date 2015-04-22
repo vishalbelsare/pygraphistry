@@ -31,8 +31,10 @@ function makeErrorHandler(name) {
 
 function markHits(samples32) {
     var hits = {};
+    var idx;
     for (var i = 0; i < samples32.length; i++) {
-        hits[picking.decodeGpuIndex(samples32[i]).idx] =  true;
+        idx = picking.decodeGpuIndex(samples32[i]).idx;
+        hits[idx] = {dim: 1, idx: idx};
     }
     return hits;
 }
@@ -44,7 +46,7 @@ function topHits(hits) {
     return vals;
 }
 
-//renderState * String -> {<idx> -> True}
+//renderState * String -> {<idx> -> {dim: int}}
 //dict of points that are on screen -- approx may skip some
 function getActiveApprox(renderState, textureName) {
     var samples32 = new Uint32Array(renderState.get('pixelreads')[textureName].buffer);
@@ -55,7 +57,8 @@ function getActiveApprox(renderState, textureName) {
 
     var res = {};
     vals.forEach(function (v) {
-        res[v] = true;
+        var key = cacheKey(v, 1);
+        res[key] = {idx: v, dim: 1};
     });
 
     //remove null
@@ -67,7 +70,7 @@ function getActiveApprox(renderState, textureName) {
 }
 
 
-//{<idx>: True} * [{elt: $DOM}] * {<idx>: True} * RenderState * [ Float ] -> ()
+//{<idx>: True} * [{elt: $DOM}] * {<idx>: {dim: int}} * RenderState * [ Float ] -> ()
 //  Effects: update inactiveLabels, activeLabels, hits
 //return unused activeLabels to inactiveLabels incase need extra to reuse
 //(otherwise mark as hit)
@@ -84,7 +87,7 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
     var cnvCached = {width: cnv.width, height: cnv.height};
 
     _.values(activeLabels).forEach(function (lbl) {
-        if (!hits[lbl.idx]) {
+        if (!hits[cacheKey(lbl.idx, lbl.dim)]) {
 
             var pos = camera.canvasCoords(points[2 * lbl.idx], points[2 * lbl.idx + 1], cnvCached, mtx);
 
@@ -94,11 +97,11 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
             if (isOffScreen || isDecayed) {
                 //remove
                 inactiveLabels.push(lbl);
-                delete activeLabels[lbl.idx];
+                delete activeLabels[cacheKey(lbl.idx, lbl.dim)];
                 toClear.push(lbl);
             } else {
                 //overplotted, keep
-                hits[lbl.idx] = true;
+                hits[cacheKey(lbl.idx, lbl.dim)] = {idx: lbl.idx, dim: lbl.dim};
             }
         }
     });
@@ -110,7 +113,7 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
 
 //create label, attach to dom
 //label texts defined externall; can change idx to update
-function genLabel (instance, $labelCont, idx) {
+function genLabel (instance, $labelCont, idx, info) {
 
 
     var setter = new Rx.ReplaySubject(1);
@@ -125,14 +128,16 @@ function genLabel (instance, $labelCont, idx) {
 
     var res = {
         idx: idx,
+        dim: info.dim,
         elt: $elt,
         setIdx: setter.onNext.bind(setter)
     };
 
     setter
         .sample(3)
-        .do(function (idx) {
-            res.idx = idx;
+        .do(function (data) {
+            res.dim = data.dim;
+            res.idx = data.idx;
             $elt.empty();
         })
         .flatMapLatest(instance.getLabelDom)
@@ -145,7 +150,7 @@ function genLabel (instance, $labelCont, idx) {
         })
         .subscribe(_.identity, makeErrorHandler('genLabel fetcher'));
 
-    res.setIdx(idx);
+    res.setIdx({idx: idx, dim: info.dim});
 
     return res;
 }
@@ -154,13 +159,18 @@ function genLabel (instance, $labelCont, idx) {
 
 //NETWORK ===================
 
+function cacheKey(idx, dim) {
+    return String(idx) + ',' + String(dim);
+}
 
-function fetchLabel (instance, idx) {
-    instance.state.socket.emit('get_labels', [idx], function (err, data) {
+
+function fetchLabel (instance, idx, dim) {
+    // TODO: Impl serverside
+    instance.state.socket.emit('get_labels', {dim: dim, indices: [idx]}, function (err, data) {
         if (err) {
             console.error('get_labels', err);
         } else {
-            instance.state.labelCache[idx].onNext(createLabelDom(data[0]));
+            instance.state.labelCache[cacheKey(idx, dim)].onNext(createLabelDom(data[0]));
         }
     });
 }
@@ -201,26 +211,30 @@ function createLabelDom(labelObj) {
 
 //instance * int -> ReplaySubject_1 ?HtmlString
 //TODO batch fetches
-function getLabelDom (instance, idx) {
-    if (!instance.state.labelCache[idx]) {
-        instance.state.labelCache[idx] = new Rx.ReplaySubject(1);
-        fetchLabel(instance, idx);
+function getLabelDom (instance, data) {
+    // TODO: Make cache aware of both idx and dim
+    var idx = data.idx;
+    var dim = data.dim;
+
+    if (!instance.state.labelCache[cacheKey(idx, dim)]) {
+        instance.state.labelCache[cacheKey(idx, dim)] = new Rx.ReplaySubject(1);
+        fetchLabel(instance, idx, dim);
     }
-    return instance.state.labelCache[idx];
+    return instance.state.labelCache[cacheKey(idx, dim)];
 }
 
 
 // ?[ idx ] -> bool
-function invalidateCache (instance, idxs) {
-    var indices = idxs ? idxs : _.keys(instance.state.labelCache);
-    indices.forEach(function (idx) {
-        idx = parseInt(idx);
+function invalidateCache (instance) {
+    var cacheKeys = _.keys(instance.state.labelCache);
+    cacheKeys.forEach(function (cacheKey) {
+        var cachedLabel = instance.state.labelCache[cacheKey];
 
         //TODO to be correct, we should mark existing remapping ones as inprogress
         //however, chances are, it won't move, so this avoids *some* flickr, though we still see some
         //instance.state.labelCache[idx].onNext('(fetching)');
 
-        fetchLabel(instance, idx);
+        fetchLabel(instance, cachedLabel.idx, cachedLabel.dim);
     });
 }
 
@@ -237,7 +251,7 @@ function init (socket) {
             socket: socket,
 
             //[ ReplaySubject_1 ?HtmlString ]
-            labelCache: [],
+            labelCache: {},
 
             //{<int> -> {elt: $DOM, idx: int} }
             activeLabels: {},
@@ -264,7 +278,10 @@ function init (socket) {
         genLabel: genLabel.bind('', instance),
 
         // ?[ idx ] -> bool
-        invalidateCache: invalidateCache.bind('', instance)
+        invalidateCache: invalidateCache.bind('', instance),
+
+        // int * int -> String
+        cacheKey: cacheKey,
     });
 
     return instance;

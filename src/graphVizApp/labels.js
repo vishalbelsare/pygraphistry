@@ -10,11 +10,17 @@ var util            = require('./util.js');
 var interaction     = require('./interaction.js');
 var picking         = require('../picking.js');
 
+// HACK because we can't know what the mouse position is without watching events
+var mousePosition = {x: 0, y: 0};
 
+document.addEventListener('mousemove', function(e) {
+    mousePosition.x = e.clientX || e.pageX;
+    mousePosition.y = e.clientY || e.pageY;
+}, false);
 
-// AppState * $DOM * [int] * [int] -> ()
+// AppState * $DOM * {dim:int, idx:int} * {dim:int, idx:int} -> ()
 // Immediately reposition each label based on camera and curPoints buffer
-function renderPointLabels(appState, $labelCont, labelIndices, clicked) {
+function renderPointLabels(appState, $labelCont, labels, clicked) {
     debug('rendering labels');
 
     var curPoints = appState.renderState.get('hostBuffers').curPoints;
@@ -24,7 +30,7 @@ function renderPointLabels(appState, $labelCont, labelIndices, clicked) {
     }
     curPoints.take(1)
         .do(function (curPoints) {
-            renderLabelsImmediate(appState, $labelCont, curPoints, labelIndices, clicked);
+            renderLabelsImmediate(appState, $labelCont, curPoints, labels, clicked);
         })
         .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
 }
@@ -114,16 +120,23 @@ function newLabelPositions(renderState, labels, points) {
 
     var newPos = new Float32Array(labels.length * 2);
     for (var i = 0; i < labels.length; i++) {
-        var idx = labels[i].idx;
-        var pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
-        newPos[2 * i] = pos.x;
-        newPos[2 * i + 1] = pos.y;
+        // TODO: Treat 2D labels more naturally.
+        var dim = labels[i].dim;
+        if (dim === 2) {
+            newPos[2 * i] = -1;
+            newPos[2 * i + 1] = -1;
+        } else {
+            var idx = labels[i].idx;
+            var pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
+            newPos[2 * i] = pos.x;
+            newPos[2 * i + 1] = pos.y;
+        }
     }
 
     return newPos;
 }
 
-function effectLabels(toClear, toShow, labels, newPos, labelIndices, clicked, poi) {
+function effectLabels(toClear, toShow, labels, newPos, highlighted, clicked, poi) {
 
     //DOM effects: disable old, then move->enable new
     toClear.forEach(function (lbl) {
@@ -131,20 +144,27 @@ function effectLabels(toClear, toShow, labels, newPos, labelIndices, clicked, po
     });
 
     labels.forEach(function (elt, i) {
-        elt.elt.css('left', newPos[2 * i]).css('top', newPos[2 * i + 1]);
+        // TODO: Deal with 2D elements cleaner
+        if (elt.dim === 2) {
+            elt.elt.css('left', mousePosition.x).css('top', mousePosition.y);
+        } else {
+            elt.elt.css('left', newPos[2 * i]).css('top', newPos[2 * i + 1]);
+        }
         elt.elt.removeClass('on');
         elt.elt.removeClass('clicked');
     });
 
-    labelIndices.forEach(function (labelIdx) {
-        if (labelIdx > -1) {
-            poi.state.activeLabels[labelIdx].elt.toggleClass('on', true);
+    highlighted.forEach(function (label) {
+        var cacheKey = poi.cacheKey(label.idx, label.dim);
+        if (label.idx > -1) {
+            poi.state.activeLabels[cacheKey].elt.toggleClass('on', true);
         }
     });
 
-    clicked.forEach(function (labelIdx) {
-        if (labelIdx > -1) {
-            poi.state.activeLabels[labelIdx].elt.toggleClass('clicked', true);
+    clicked.forEach(function (clickObj) {
+        var cacheKey = poi.cacheKey(clickObj.idx, clickObj.dim);
+        if (clickObj.idx > -1) {
+            poi.state.activeLabels[cacheKey].elt.toggleClass('clicked', true);
         }
     });
 
@@ -154,16 +174,21 @@ function effectLabels(toClear, toShow, labels, newPos, labelIndices, clicked, po
 
 }
 
-function renderLabelsImmediate (appState, $labelCont, curPoints, labelIndices, clicked) {
+function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, clicked) {
+
     var poi = appState.poi;
     var points = new Float32Array(curPoints.buffer);
 
     var t0 = Date.now();
 
     var hits = poi.getActiveApprox(appState.renderState, 'pointHitmapDownsampled');
-    labelIndices.forEach(function (labelIdx) {
+    highlighted.forEach(function (labelObj) {
+        var labelIdx = labelObj.idx;
         if (labelIdx > -1) {
-            hits[labelIdx] = true;
+            hits[poi.cacheKey(labelIdx, labelObj.dim)] = {
+                dim: labelObj.dim,
+                idx: labelIdx
+            };
         }
     });
     var t1 = Date.now();
@@ -173,20 +198,25 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, labelIndices, c
 
     //select label elts (and make active if needed)
     var toShow = [];
-    var labels = _.keys(hits)
-        .map(function (idxStr) {
-            var idx = parseInt(idxStr);
-            if (poi.state.activeLabels[idx]) {
+    var labels = _.values(hits)
+        .map(function (hit) {
+
+            var idx = parseInt(hit.idx);
+            var dim = hit.dim;
+
+            if (idx === -1) {
+                return null;
+            } else if (poi.state.activeLabels[poi.cacheKey(idx, dim)]) {
                 //label already on, resuse
-                var alreadyActiveLabel = poi.state.activeLabels[idx];
+                var alreadyActiveLabel = poi.state.activeLabels[poi.cacheKey(idx, dim)];
                 toShow.push(alreadyActiveLabel);
                 return alreadyActiveLabel;
-            } else if ((_.keys(poi.state.activeLabels).length > poi.MAX_LABELS) && (labelIndices.indexOf(idx) === -1)) {
+            } else if ((_.keys(poi.state.activeLabels).length > poi.MAX_LABELS) && (_.pluck(highlighted, 'idx').indexOf(idx) === -1)) {
                 //no label but too many on screen, don't create new
                 return null;
             } else if (!poi.state.inactiveLabels.length) {
                 //no label and no preallocated elts, create new
-                var freshLabel = poi.genLabel($labelCont, idx);
+                var freshLabel = poi.genLabel($labelCont, idx, hits[poi.cacheKey(idx, dim)]);
                 freshLabel.elt.on('mouseover', function () {
                     appState.labelHover.onNext(this);
                 });
@@ -196,14 +226,15 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, labelIndices, c
                 //no label and available inactive preallocated, reuse
                 var lbl = poi.state.inactiveLabels.pop();
                 lbl.idx = idx;
-                lbl.setIdx(idx);
+                lbl.dim = dim;
+                lbl.setIdx({idx: idx, dim: lbl.dim});
                 toShow.push(lbl);
                 return lbl;
             }
         })
         .filter(_.identity);
 
-    poi.resetActiveLabels(_.object(labels.map(function (lbl) { return [lbl.idx, lbl]; })));
+    poi.resetActiveLabels(_.object(labels.map(function (lbl) { return [poi.cacheKey(lbl.idx, lbl.dim), lbl]; })));
 
     var t2 = Date.now();
 
@@ -211,7 +242,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, labelIndices, c
 
     var t3 = Date.now();
 
-    effectLabels(toClear, toShow, labels, newPos, labelIndices, clicked, poi);
+    effectLabels(toClear, toShow, labels, newPos, highlighted, clicked, poi);
 
     debug('sampling timing', t1 - t0, t2 - t1, t3 - t2, Date.now() - t3,
         'labels:', labels.length, '/', _.keys(hits).length, poi.state.inactiveLabels.length);
@@ -233,17 +264,16 @@ function setupLabels (appState, $eventTarget, latestHighlightedObject) {
         if ($sim.hasClass('moving')) {
             renderPointLabels(appState, $labelCont, [], []);
         } else {
-            var indices = highlighted.map(function (o) {
-                return !o.dim || o.dim === 1 ? o.idx : -1;
-            });
+
+            // var indices = highlighted.map(function (o) {
+            //     return !o.dim || o.dim === 1 ? o.idx : -1;
+            // });
 
             var clicked = highlighted.filter(function (o) {
                 return o.click;
-            }).map(function (o) {
-                return o.idx;
             });
 
-            renderPointLabels(appState, $labelCont, indices, clicked);
+            renderPointLabels(appState, $labelCont, highlighted, clicked);
         }
     })
     .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
@@ -265,7 +295,7 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
             _.identity
         )
         .map(function (pos) {
-            return picking.hitTestN(appState.renderState, textures, pos.x, pos.y, 20);
+            return picking.hitTestN(appState.renderState, textures, pos.x, pos.y, 10);
         })
         // TODO: Make sure this also catches $('#marquee').hasClass('done') and 'beingdragged'
         // As a non-marquee-active state.
