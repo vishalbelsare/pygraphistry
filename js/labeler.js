@@ -18,7 +18,17 @@ function pickTitleField (attribs) {
 }
 
 
-function infoFrame(graph, indices, attributeNames) {
+function infoFrame(graph, type, indices, attributeNames) {
+    var target;
+    if (type === 'point') {
+        target = vgloader.types.VERTEX;
+    } else if (type === 'edge') {
+        target = vgloader.types.EDGE;
+    } else {
+        console.error('infoFrame received invalid type: ', type);
+        return;
+    }
+
     var offset = graph.simulator.timeSubset.pointsRange.startIdx;
     var attribs = vgloader.getAttributeMap(graph.simulator.vgraph, attributeNames);
 
@@ -26,7 +36,7 @@ function infoFrame(graph, indices, attributeNames) {
     var maybeTitleField = pickTitleField(attribs);
 
     var filteredKeys = _.keys(attribs)
-        .filter(function (name) { return attribs[name].target === vgloader.types.VERTEX; })
+        .filter(function (name) { return attribs[name].target === target; })
         .filter(function (name) {
             return ['pointColor', 'pointSize', 'pointTitle', 'pointLabel, degree']
                 .indexOf(name) === -1;
@@ -67,13 +77,14 @@ function infoFrame(graph, indices, attributeNames) {
 
 function frameHeader(graph) {
     return _.sortBy(
-        _.keys(infoFrame(graph, [0])[0]),
+        _.keys(infoFrame(graph, 'point', [0])[0]),
         _.identity
     );
 }
 
-function defaultLabels(graph, indices) {
-    return infoFrame(graph, indices).map(function (columns) {
+function defaultLabels(graph, indices, dim) {
+    var type = (dim === 2) ? 'edge' : 'point';
+    return infoFrame(graph, type, indices).map(function (columns) {
         return {
             title: columns._title,
             columns: _.sortBy(
@@ -93,11 +104,11 @@ function presetLabels (graph, indices) {
 }
 
 
-function getLabels(graph, indices) {
-    if (graph.simulator.labels.length) {
+function getLabels(graph, indices, dim) {
+    if (dim === 2 && graph.simulator.labels.length) {
         return presetLabels(graph, indices);
     } else {
-        return defaultLabels(graph, indices);
+        return defaultLabels(graph, indices, dim);
     }
 }
 
