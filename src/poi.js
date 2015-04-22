@@ -156,6 +156,10 @@ function genLabel (instance, $labelCont, idx, info) {
 
 //NETWORK ===================
 
+function cacheKey(idx, dim) {
+    return String(idx) + ',' + String(dim);
+}
+
 
 function fetchLabel (instance, idx, dim) {
     // TODO: Impl serverside
@@ -164,14 +168,14 @@ function fetchLabel (instance, idx, dim) {
             columns: [['col1', 1], ['col2', 2]]
         };
         console.log('Fetched for dim 2: ', fakeData);
-        instance.state.labelCache[idx].onNext(createLabelDom(fakeData));
+        instance.state.labelCache[cacheKey(idx, dim)].onNext(createLabelDom(fakeData));
     } else {
         instance.state.socket.emit('get_labels', [idx], function (err, data) {
             if (err) {
                 console.error('get_labels', err);
             } else {
                 console.log('Fetched for dim 1: ', data[0]);
-                instance.state.labelCache[idx].onNext(createLabelDom(data[0]));
+                instance.state.labelCache[cacheKey(idx, dim)].onNext(createLabelDom(data[0]));
             }
         });
     }
@@ -218,25 +222,25 @@ function getLabelDom (instance, data) {
     var idx = data.idx;
     var dim = data.dim;
 
-    if (!instance.state.labelCache[idx]) {
-        instance.state.labelCache[idx] = new Rx.ReplaySubject(1);
+    if (!instance.state.labelCache[cacheKey(idx, dim)]) {
+        instance.state.labelCache[cacheKey(idx, dim)] = new Rx.ReplaySubject(1);
         fetchLabel(instance, idx, dim);
     }
-    return instance.state.labelCache[idx];
+    return instance.state.labelCache[cacheKey(idx, dim)];
 }
 
 
 // ?[ idx ] -> bool
-function invalidateCache (instance, idxs) {
-    var indices = idxs ? idxs : _.keys(instance.state.labelCache);
-    indices.forEach(function (idx) {
-        idx = parseInt(idx);
+function invalidateCache (instance) {
+    var cacheKeys = _.keys(instance.state.labelCache);
+    cacheKeys.forEach(function (cacheKey) {
+        var cachedLabel = instance.state.labelCache[cacheKey];
 
         //TODO to be correct, we should mark existing remapping ones as inprogress
         //however, chances are, it won't move, so this avoids *some* flickr, though we still see some
         //instance.state.labelCache[idx].onNext('(fetching)');
 
-        fetchLabel(instance, idx);
+        fetchLabel(instance, cachedLabel.idx, cachedLabel.dim);
     });
 }
 
@@ -253,7 +257,7 @@ function init (socket) {
             socket: socket,
 
             //[ ReplaySubject_1 ?HtmlString ]
-            labelCache: [],
+            labelCache: {},
 
             //{<int> -> {elt: $DOM, idx: int} }
             activeLabels: {},
