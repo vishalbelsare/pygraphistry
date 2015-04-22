@@ -111,7 +111,7 @@ function showPageableGrid(workerUrl, columns, params, $inspector) {
         collection: dataFrame
     });
 
-    $inspector.append(paginator.render().el);
+    $inspector.prepend(paginator.render().el);
 }
 
 module.exports = {
