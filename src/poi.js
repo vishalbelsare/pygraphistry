@@ -166,20 +166,13 @@ function cacheKey(idx, dim) {
 
 function fetchLabel (instance, idx, dim) {
     // TODO: Impl serverside
-    if (dim === 2) {
-        var fakeData = {title: 'Dummy Title',
-            columns: [['col1', 1], ['col2', 2]]
-        };
-        instance.state.labelCache[cacheKey(idx, dim)].onNext(createLabelDom(fakeData));
-    } else {
-        instance.state.socket.emit('get_labels', [idx], function (err, data) {
-            if (err) {
-                console.error('get_labels', err);
-            } else {
-                instance.state.labelCache[cacheKey(idx, dim)].onNext(createLabelDom(data[0]));
-            }
-        });
-    }
+    instance.state.socket.emit('get_labels', {dim: dim, indices: [idx]}, function (err, data) {
+        if (err) {
+            console.error('get_labels', err);
+        } else {
+            instance.state.labelCache[cacheKey(idx, dim)].onNext(createLabelDom(data[0]));
+        }
+    });
 }
 
 function createLabelDom(labelObj) {
