@@ -295,7 +295,7 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
             _.identity
         )
         .map(function (pos) {
-            return picking.hitTestN(appState.renderState, textures, pos.x, pos.y, 20);
+            return picking.hitTestN(appState.renderState, textures, pos.x, pos.y, 10);
         })
         // TODO: Make sure this also catches $('#marquee').hasClass('done') and 'beingdragged'
         // As a non-marquee-active state.
