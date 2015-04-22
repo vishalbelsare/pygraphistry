@@ -315,7 +315,8 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     var marquee = setupMarquee(appState, turnOnMarquee);
     var brush = setupBrush(appState, turnOnBrush);
-    dataInspector.init(socket, workerParams.url, brush, appState);
+    var $nodeInspector = $('#inspector-nodes').find('.inspector');
+    dataInspector.init(appState, socket, workerParams.url, brush, $nodeInspector);
     histogramBrush.init(socket, brush);
 
 

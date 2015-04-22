@@ -13,7 +13,7 @@ var Backgrid = require('backgrid');
 
 var util        = require('./util.js');
 
-function init(socket, workerUrl, marquee, appState) {
+function init(appState, socket, workerUrl, marquee, $inspector) {
     var InspectData = Backbone.Model.extend({});
     var marqueeTriggers = marquee.selections.merge(marquee.doneDragging);
 
@@ -64,20 +64,19 @@ function init(socket, workerUrl, marquee, appState) {
         }).filter(function (reply) { return reply && reply.success; })
         .subscribe(function (reply) {
             debug('Setting up PageableCollection of size', reply.count);
-            showPageableGrid(workerUrl, InspectData, columns, reply.count);
+            showPageableGrid(workerUrl, InspectData, columns, reply.count, $inspector);
+            $('#inspector').css({visibility: 'visible'});
         }, util.makeErrorHandler('fetch data for inspector'));
     }).subscribe(_.identity, util.makeErrorHandler('fetch inspectHeader'));
 }
 
 
-function showPageableGrid(workerUrl, model, columns, count) {
-    var $inspector = $('#inspector');
-
+function showPageableGrid(workerUrl, model, columns, count, $inspector) {
     var DataFrame = Backbone.PageableCollection.extend({
         model: model,
         url: workerUrl + '/read_selection',
         state: {
-            pageSize: 5,
+            pageSize: 8,
             totalRecords: count,
         },
     });
@@ -91,7 +90,7 @@ function showPageableGrid(workerUrl, model, columns, count) {
     });
 
     // Render the grid and attach the root to your HTML document
-    $inspector.empty().append(grid.render().el).css({visibility: 'visible'});
+    $inspector.empty().append(grid.render().el);
 
     var paginator = new Backgrid.Extension.Paginator({
         // If you anticipate a large number of pages, you can adjust
