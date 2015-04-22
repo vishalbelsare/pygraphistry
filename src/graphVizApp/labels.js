@@ -136,7 +136,7 @@ function newLabelPositions(renderState, labels, points) {
     return newPos;
 }
 
-function effectLabels(toClear, toShow, labels, newPos, labelIndices, clicked, poi) {
+function effectLabels(toClear, toShow, labels, newPos, highlighted, clicked, poi) {
 
     //DOM effects: disable old, then move->enable new
     toClear.forEach(function (lbl) {
@@ -154,16 +154,17 @@ function effectLabels(toClear, toShow, labels, newPos, labelIndices, clicked, po
         elt.elt.removeClass('clicked');
     });
 
-    labelIndices.forEach(function (labelIdx) {
-        if (labelIdx > -1) {
-            poi.state.activeLabels[labelIdx].elt.toggleClass('on', true);
+    highlighted.forEach(function (label) {
+        var cacheKey = poi.cacheKey(label.idx, label.dim);
+        if (label.idx > -1) {
+            poi.state.activeLabels[cacheKey].elt.toggleClass('on', true);
         }
     });
 
     clicked.forEach(function (clickObj) {
-        var labelIdx = clickObj.idx;
-        if (labelIdx > -1) {
-            poi.state.activeLabels[labelIdx].elt.toggleClass('clicked', true);
+        var cacheKey = poi.cacheKey(clickObj.idx, clickObj.dim);
+        if (clickObj.idx > -1) {
+            poi.state.activeLabels[cacheKey].elt.toggleClass('clicked', true);
         }
     });
 
@@ -173,9 +174,7 @@ function effectLabels(toClear, toShow, labels, newPos, labelIndices, clicked, po
 
 }
 
-function renderLabelsImmediate (appState, $labelCont, curPoints, toLabel, clicked) {
-
-    var labelIndices = _.pluck(toLabel, 'idx');
+function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, clicked) {
 
     var poi = appState.poi;
     var points = new Float32Array(curPoints.buffer);
@@ -183,10 +182,13 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, toLabel, clicke
     var t0 = Date.now();
 
     var hits = poi.getActiveApprox(appState.renderState, 'pointHitmapDownsampled');
-    toLabel.forEach(function (labelObj) {
+    highlighted.forEach(function (labelObj) {
         var labelIdx = labelObj.idx;
         if (labelIdx > -1) {
-            hits[labelIdx] = {dim: labelObj.dim};
+            hits[poi.cacheKey(labelIdx, labelObj.dim)] = {
+                dim: labelObj.dim,
+                idx: labelIdx
+            };
         }
     });
     var t1 = Date.now();
@@ -196,20 +198,23 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, toLabel, clicke
 
     //select label elts (and make active if needed)
     var toShow = [];
-    var labels = _.keys(hits)
-        .map(function (idxStr) {
-            var idx = parseInt(idxStr);
-            if (poi.state.activeLabels[idx]) {
+    var labels = _.values(hits)
+        .map(function (hit) {
+
+            var idx = parseInt(hit.idx);
+            var dim = hit.dim;
+
+            if (poi.state.activeLabels[poi.cacheKey(idx, dim)]) {
                 //label already on, resuse
-                var alreadyActiveLabel = poi.state.activeLabels[idx];
+                var alreadyActiveLabel = poi.state.activeLabels[poi.cacheKey(idx, dim)];
                 toShow.push(alreadyActiveLabel);
                 return alreadyActiveLabel;
-            } else if ((_.keys(poi.state.activeLabels).length > poi.MAX_LABELS) && (labelIndices.indexOf(idx) === -1)) {
+            } else if ((_.keys(poi.state.activeLabels).length > poi.MAX_LABELS) && (_.pluck(highlighted, 'idx').indexOf(idx) === -1)) {
                 //no label but too many on screen, don't create new
                 return null;
             } else if (!poi.state.inactiveLabels.length) {
                 //no label and no preallocated elts, create new
-                var freshLabel = poi.genLabel($labelCont, idx, hits[idx]);
+                var freshLabel = poi.genLabel($labelCont, idx, hits[poi.cacheKey(idx, dim)]);
                 freshLabel.elt.on('mouseover', function () {
                     appState.labelHover.onNext(this);
                 });
@@ -219,7 +224,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, toLabel, clicke
                 //no label and available inactive preallocated, reuse
                 var lbl = poi.state.inactiveLabels.pop();
                 lbl.idx = idx;
-                lbl.dim = hits[idx].dim;
+                lbl.dim = dim;
                 lbl.setIdx({idx: idx, dim: lbl.dim});
                 toShow.push(lbl);
                 return lbl;
@@ -227,7 +232,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, toLabel, clicke
         })
         .filter(_.identity);
 
-    poi.resetActiveLabels(_.object(labels.map(function (lbl) { return [lbl.idx, lbl]; })));
+    poi.resetActiveLabels(_.object(labels.map(function (lbl) { return [poi.cacheKey(lbl.idx, lbl.dim), lbl]; })));
 
     var t2 = Date.now();
 
@@ -235,7 +240,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, toLabel, clicke
 
     var t3 = Date.now();
 
-    effectLabels(toClear, toShow, labels, newPos, labelIndices, clicked, poi);
+    effectLabels(toClear, toShow, labels, newPos, highlighted, clicked, poi);
 
     debug('sampling timing', t1 - t0, t2 - t1, t3 - t2, Date.now() - t3,
         'labels:', labels.length, '/', _.keys(hits).length, poi.state.inactiveLabels.length);

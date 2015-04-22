@@ -31,8 +31,10 @@ function makeErrorHandler(name) {
 
 function markHits(samples32) {
     var hits = {};
+    var idx;
     for (var i = 0; i < samples32.length; i++) {
-        hits[picking.decodeGpuIndex(samples32[i]).idx] = {dim: 1};
+        idx = picking.decodeGpuIndex(samples32[i]).idx;
+        hits[idx] = {dim: 1, idx: idx};
     }
     return hits;
 }
@@ -55,7 +57,8 @@ function getActiveApprox(renderState, textureName) {
 
     var res = {};
     vals.forEach(function (v) {
-        res[v] = {dim: 1};
+        var key = cacheKey(v, 1);
+        res[key] = {idx: v, dim: 1};
     });
 
     //remove null
@@ -84,7 +87,7 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
     var cnvCached = {width: cnv.width, height: cnv.height};
 
     _.values(activeLabels).forEach(function (lbl) {
-        if (!hits[lbl.idx]) {
+        if (!hits[cacheKey(lbl.idx, lbl.dim)]) {
 
             var pos = camera.canvasCoords(points[2 * lbl.idx], points[2 * lbl.idx + 1], cnvCached, mtx);
 
@@ -94,11 +97,11 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
             if (isOffScreen || isDecayed) {
                 //remove
                 inactiveLabels.push(lbl);
-                delete activeLabels[lbl.idx];
+                delete activeLabels[cacheKey(lbl.idx, lbl.dim)];
                 toClear.push(lbl);
             } else {
                 //overplotted, keep
-                hits[lbl.idx] = {dim: lbl.dim};
+                hits[cacheKey(lbl.idx, lbl.dim)] = {idx: lbl.idx, dim: lbl.dim};
             }
         }
     });
@@ -167,14 +170,12 @@ function fetchLabel (instance, idx, dim) {
         var fakeData = {title: 'Dummy Title',
             columns: [['col1', 1], ['col2', 2]]
         };
-        console.log('Fetched for dim 2: ', fakeData);
         instance.state.labelCache[cacheKey(idx, dim)].onNext(createLabelDom(fakeData));
     } else {
         instance.state.socket.emit('get_labels', [idx], function (err, data) {
             if (err) {
                 console.error('get_labels', err);
             } else {
-                console.log('Fetched for dim 1: ', data[0]);
                 instance.state.labelCache[cacheKey(idx, dim)].onNext(createLabelDom(data[0]));
             }
         });
@@ -284,7 +285,10 @@ function init (socket) {
         genLabel: genLabel.bind('', instance),
 
         // ?[ idx ] -> bool
-        invalidateCache: invalidateCache.bind('', instance)
+        invalidateCache: invalidateCache.bind('', instance),
+
+        // int * int -> String
+        cacheKey: cacheKey,
     });
 
     return instance;
