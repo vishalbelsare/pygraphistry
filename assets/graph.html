@@ -85,6 +85,7 @@
 
     <link rel="stylesheet" href="libs/bootstrap-slider/css/bootstrap-slider.css">
     <link rel="stylesheet" href="libs/bootstrap-switch.min.css">
+    <link rel="stylesheet" href="libs/bootstrap.vertical-tabs.min.css">
 
     <link rel="stylesheet" href="libs/font-awesome/css/font-awesome.css">
     <link rel="stylesheet" href="css/nunito.css">
@@ -297,7 +298,25 @@
         </table>
     </div>
 
-    <div id="inspector" class="panel backgrid-container"></div>
+    <div id="inspector">
+        <div class="inspector-panels">
+            <div class="inspector-tabs">
+                <ul class="nav nav-tabs tabs-left sideways">
+                    <li class="active"><a href="#inspector-nodes" data-toggle="tab">Nodes</a></li>
+                    <li><a href="#inspector-edges" data-toggle="tab">Edges</a></li>
+                </ul>
+            </div>
+            <div class="tab-content">
+                <div id="inspector-nodes" class="tab-pane active">
+                    <div class="inspector panel"></div>
+                </div>
+                <div id="inspector-edges" class="tab-pane">
+                    <div class="inspector panel"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="inspector-overlay" class="panel"></div>
     <div id="histogram" class="panel">
         <div id="histograms"></div>
