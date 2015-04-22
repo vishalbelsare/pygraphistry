@@ -83,6 +83,7 @@ function create(renderer, device, vendor, cfg) {
             simObj.recolor = recolor.bind(this, simObj);
             simObj.moveNodes = moveNodes.bind(this, simObj);
             simObj.selectNodes = selectNodes.bind(this, simObj);
+            simObj.connectedEdges = connectedEdges.bind(this, simObj);
             simObj.resetBuffers = resetBuffers.bind(this, simObj);
             simObj.tickBuffers = tickBuffers.bind(this, simObj);
             simObj.highlightShortestPaths = highlightShortestPaths.bind(this, renderer, simObj);
@@ -822,6 +823,30 @@ function selectNodes(simulator, selection) {
             }
             return res;
         }).fail(util.makeErrorHandler('Failure trying to compute selection'));
+}
+
+// Return the set of edge indices which are connected (either as src or dst)
+// to nodes in nodeIndices
+function connectedEdges(simulator, nodeIndices) {
+    var forwardsBuffers = simulator.bufferHostCopies.forwardsEdges;
+    var backwardsBuffers = simulator.bufferHostCopies.backwardsEdges;
+
+    function getOutgoingEdges(buffers, nodeIdx) {
+        var workItemId = buffers.srcToWorkItem[nodeIdx];
+        var firstEdgeId = buffers.workItemsTyped[4*workItemId];
+        var numEdges = buffers.workItemsTyped[4*workItemId + 1];
+
+        return _.range(numEdges).map(function (offset) {
+            return firstEdgeId + offset;
+        });
+    }
+
+    var edgeIndices = nodeIndices.map(function (idx) {
+        return getOutgoingEdges(forwardsBuffers, idx)
+            .concat(getOutgoingEdges(backwardsBuffers, idx));
+    });
+
+    return _.uniq(_.flatten(edgeIndices, true));
 }
 
 function recolor(simulator, marquee) {

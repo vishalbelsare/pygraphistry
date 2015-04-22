@@ -78,9 +78,9 @@ function infoFrame(graph, type, indices, attributeNames) {
     });
 }
 
-function frameHeader(graph) {
+function frameHeader(graph, type) {
     return _.sortBy(
-        _.keys(infoFrame(graph, 'point', [0])[0]),
+        _.keys(infoFrame(graph, type, [0])[0]),
         _.identity
     );
 }
@@ -139,7 +139,7 @@ function aggregate(graph, indices, attributes, binning, mode) {
     });
     attributeMap['degree'] = {values: degrees};
 
-    var columns = attributes ? attributes : frameHeader(graph);
+    var columns = attributes ? attributes : frameHeader(graph, 'point');
     //var filteredAttributeMap = filterAttributeMap(graph, indices, columns, attributeMap);
 
     // Filter out private attributes that begin with underscore
