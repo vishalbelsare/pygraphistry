@@ -38,7 +38,7 @@ function infoFrame(graph, type, indices, attributeNames) {
     var filteredKeys = _.keys(attribs)
         .filter(function (name) { return attribs[name].target === target; })
         .filter(function (name) {
-            return ['pointColor', 'pointSize', 'pointTitle', 'pointLabel, degree']
+            return ['pointColor', 'pointSize', 'pointTitle', 'pointLabel', 'degree']
                 .indexOf(name) === -1;
         })
         .filter(function (name) { return name !== maybeTitleField; })
@@ -52,17 +52,20 @@ function infoFrame(graph, type, indices, attributeNames) {
         // Uncomment this if we start getting invalid indices.
         // var idx = Math.max(0, Math.min(offset + rawIdx, graph.simulator.numPoints));
         var idx = rawIdx;
-
-        var outDegree = outDegrees[idx];
-        var inDegree = inDegrees[idx];
-        var degree = outDegree + inDegree;
-
         var columns = {
-            'degree': degree,
-            'degree in': inDegree,
-            'degree out': outDegree,
-            '_title' : maybeTitleField ? attribs[maybeTitleField].values[idx] : idx
+            '_title' : idx
         };
+        if (type === 'point') {
+            var outDegree = outDegrees[idx];
+            var inDegree = inDegrees[idx];
+            var degree = outDegree + inDegree;
+            columns = _.extend(columns, {
+                'degree': degree,
+                'degree in': inDegree,
+                'degree out': outDegree,
+                '_title' : maybeTitleField ? attribs[maybeTitleField].values[idx] : idx
+            });
+        }
 
         _.each(filteredKeys, function (key) {
             var val = attribs[key].values[idx];
