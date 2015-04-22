@@ -495,7 +495,7 @@ var sceneNetflowIndexed = {
     'camera': camera2D,
     'edgeMode': 'CLIENTINDEXED',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'edgeculledindexed', 'pointoutline', 'pointculled']
+               'edgeculledindexed', 'edgepicking', 'pointoutline', 'pointculled']
 }
 
 var sceneNetflowIndexedClient = {
@@ -503,7 +503,7 @@ var sceneNetflowIndexedClient = {
     'camera': camera2D,
     'edgeMode': 'INDEXEDCLIENT',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'indexeddummy', 'edgeculledindexedclient', 'pointoutline', 'pointculled']
+               'indexeddummy', 'edgeculledindexedclient', 'edgepicking', 'pointoutline', 'pointculled']
 }
 
 var scenes = {
