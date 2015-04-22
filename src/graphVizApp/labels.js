@@ -204,7 +204,9 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
             var idx = parseInt(hit.idx);
             var dim = hit.dim;
 
-            if (poi.state.activeLabels[poi.cacheKey(idx, dim)]) {
+            if (idx === -1) {
+                return null;
+            } else if (poi.state.activeLabels[poi.cacheKey(idx, dim)]) {
                 //label already on, resuse
                 var alreadyActiveLabel = poi.state.activeLabels[poi.cacheKey(idx, dim)];
                 toShow.push(alreadyActiveLabel);
