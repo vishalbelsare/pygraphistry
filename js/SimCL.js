@@ -835,9 +835,10 @@ function connectedEdges(simulator, nodeIndices) {
         var workItemId = buffers.srcToWorkItem[nodeIdx];
         var firstEdgeId = buffers.workItemsTyped[4*workItemId];
         var numEdges = buffers.workItemsTyped[4*workItemId + 1];
+        var permutation = buffers.edgePermutationInverseTyped;
 
         return _.range(numEdges).map(function (offset) {
-            return firstEdgeId + offset;
+            return permutation[firstEdgeId + offset];
         });
     }
 
