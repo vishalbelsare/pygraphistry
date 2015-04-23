@@ -99,6 +99,7 @@ function create(renderer, device, vendor, cfg) {
             simObj.labels = [];
 
             simObj.bufferHostCopies = {
+                unsortedEdges: null,
                 forwardsEdges: null,
                 backwardsEdges: null
             };
@@ -505,7 +506,7 @@ function setLabels(simulator, labels) {
  * @param {Float32Array} midPoints - dense array of control points (packed sequence of nDim structs)
  * @returns {Q.promise} a promise for the simulator object
  */
-function setEdges(renderer, simulator, forwardsEdges,
+function setEdges(renderer, simulator, unsortedEdges, forwardsEdges,
                   backwardsEdges, degrees, midPoints, endPoints) {
     //edges, workItems
     var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
@@ -524,6 +525,7 @@ function setEdges(renderer, simulator, forwardsEdges,
         throw new Error("The work item buffer size is invalid (must be a multiple of " + elementsPerWorkItem + ")");
     }
 
+    simulator.bufferHostCopies.unsortedEdges = unsortedEdges;
     simulator.bufferHostCopies.forwardsEdges = forwardsEdges;
     simulator.bufferHostCopies.backwardsEdges = backwardsEdges;
 

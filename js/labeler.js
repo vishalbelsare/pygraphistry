@@ -17,7 +17,6 @@ function pickTitleField (attribs) {
     return undefined;
 }
 
-
 function infoFrame(graph, type, indices, attributeNames) {
     var target;
     if (type === 'point') {
@@ -32,8 +31,11 @@ function infoFrame(graph, type, indices, attributeNames) {
     var offset = graph.simulator.timeSubset.pointsRange.startIdx;
     var attribs = vgloader.getAttributeMap(graph.simulator.vgraph, attributeNames);
 
-    var titleOverride = attribs.hasOwnProperty('pointTitle');
     var maybeTitleField = pickTitleField(attribs);
+    function titleOf(idx) {
+        return maybeTitleField ? attribs[maybeTitleField].values[idx] : idx;
+    }
+
 
     var filteredKeys = _.keys(attribs)
         .filter(function (name) { return attribs[name].target === target; })
@@ -52,9 +54,8 @@ function infoFrame(graph, type, indices, attributeNames) {
         // Uncomment this if we start getting invalid indices.
         // var idx = Math.max(0, Math.min(offset + rawIdx, graph.simulator.numPoints));
         var idx = rawIdx;
-        var columns = {
-            '_title' : idx
-        };
+        var columns = {};
+
         if (type === 'point') {
             var outDegree = outDegrees[idx];
             var inDegree = inDegrees[idx];
@@ -63,7 +64,17 @@ function infoFrame(graph, type, indices, attributeNames) {
                 'degree': degree,
                 'degree in': inDegree,
                 'degree out': outDegree,
-                '_title' : maybeTitleField ? attribs[maybeTitleField].values[idx] : idx
+                '_title': titleOf(idx)
+            });
+        } else if (type === 'edge') {
+            var unsortedEdges = graph.simulator.bufferHostCopies.unsortedEdges;
+            var srcIdx = unsortedEdges[2*idx];
+            var dstIdx = unsortedEdges[2*idx+1];
+
+            columns = _.extend(columns, {
+                _title: idx,
+                src: titleOf(srcIdx),
+                dst: titleOf(dstIdx)
             });
         }
 
