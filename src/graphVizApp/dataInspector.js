@@ -82,7 +82,7 @@ function showPageableGrid(workerUrl, columns, params, $inspector) {
         model: InspectData,
         url: workerUrl + params.urn,
         state: {
-            pageSize: 8,
+            pageSize: 9,
             totalRecords: params.count,
         },
     });
@@ -111,6 +111,8 @@ function showPageableGrid(workerUrl, columns, params, $inspector) {
         collection: dataFrame
     });
 
+    var divider = $('<div>').addClass('divide-line');
+    $inspector.prepend(divider);
     $inspector.prepend(paginator.render().el);
 }
 
