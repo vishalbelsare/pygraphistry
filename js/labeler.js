@@ -6,8 +6,7 @@ var vgloader = require('./libs/VGraphLoader.js');
 var dateFormat = require('dateformat');
 
 
-function pickTitleField (attribs) {
-    var prioritized = ['pointTitle', 'node', 'label', 'ip'];
+function pickTitleField (attribs, prioritized) {
     for (var i = 0; i < prioritized.length; i++) {
         var field = prioritized[i];
         if (attribs.hasOwnProperty(field)) {
@@ -16,6 +15,19 @@ function pickTitleField (attribs) {
     }
     return undefined;
 }
+
+
+function nodeTitleField (attribs) {
+    var prioritized = ['pointTitle', 'node', 'label', 'ip'];
+    return pickTitleField(attribs, prioritized);
+}
+
+
+function edgeTitleField (attribs) {
+    var prioritized = ['edgeTitle', 'edge'];
+    return pickTitleField(attribs, prioritized);
+}
+
 
 function infoFrame(graph, type, indices, attributeNames) {
     var target;
@@ -31,9 +43,14 @@ function infoFrame(graph, type, indices, attributeNames) {
     var offset = graph.simulator.timeSubset.pointsRange.startIdx;
     var attribs = vgloader.getAttributeMap(graph.simulator.vgraph, attributeNames);
 
-    var maybeTitleField = pickTitleField(attribs);
-    function titleOf(idx) {
-        return maybeTitleField ? attribs[maybeTitleField].values[idx] : idx;
+    var titleFieldNode = nodeTitleField(attribs);
+    var titleFieldEdge = edgeTitleField(attribs);
+
+    function nodeTitle(idx) {
+        return titleFieldNode ? attribs[titleFieldNode].values[idx] : idx;
+    }
+    function edgeTitle(idx) {
+        return titleFieldEdge ? attribs[titleFieldEdge].values[idx] : idx;
     }
 
 
@@ -43,11 +60,12 @@ function infoFrame(graph, type, indices, attributeNames) {
             return ['pointColor', 'pointSize', 'pointTitle', 'pointLabel', 'degree']
                 .indexOf(name) === -1;
         })
-        .filter(function (name) { return name !== maybeTitleField; })
+        .filter(function (name) { return name !== nodeTitleField && name !== edgeTitleField; })
 
 
     var outDegrees = graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped;
     var inDegrees = graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped;
+    var unsortedEdges = graph.simulator.bufferHostCopies.unsortedEdges;
 
     return indices.map(function (rawIdx) {
 
@@ -64,17 +82,17 @@ function infoFrame(graph, type, indices, attributeNames) {
                 'degree': degree,
                 'degree in': inDegree,
                 'degree out': outDegree,
-                '_title': titleOf(idx)
+                '_title': nodeTitle(idx)
             });
         } else if (type === 'edge') {
-            var unsortedEdges = graph.simulator.bufferHostCopies.unsortedEdges;
+
             var srcIdx = unsortedEdges[2*idx];
             var dstIdx = unsortedEdges[2*idx+1];
 
             columns = _.extend(columns, {
-                _title: idx,
-                src: titleOf(srcIdx),
-                dst: titleOf(dstIdx)
+                _title: edgeTitle(idx),
+                src: nodeTitle(srcIdx),
+                dst: nodeTitle(dstIdx)
             });
         }
 
