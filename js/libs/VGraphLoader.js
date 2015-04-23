@@ -111,12 +111,12 @@ function decode0(graph, vg, metadata)  {
     var amap = getAttributeMap(vg);
     debug('Graph has attribute: %o', Object.keys(amap))
     var vertices = [];
-    var edges = []
+    var edges = new Array(vg.nedges);
     var dimensions = [1, 1];
 
     for (var i = 0; i < vg.edges.length; i++) {
         var e = vg.edges[i];
-        edges.push([e.src, e.dst]);
+        edges[i] = [e.src, e.dst];
     }
 
 
