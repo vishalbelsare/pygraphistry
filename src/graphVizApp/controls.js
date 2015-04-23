@@ -415,6 +415,9 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
             Rx.Observable.merge(
                     $('#simulate').onAsObservable('click')
                         .filter(function (evt){ return evt.originalEvent !== undefined; }),
+                    $('#colorpickers').onAsObservable('click'),
+                    $('#marqueerectangle').onAsObservable('click'),
+                    $('#histogramBrush').onAsObservable('click'),
                     Rx.Observable.timer(numTicks))
                 .take(1)
                 .map(_.constant(Rx.Observable.return(false))))
