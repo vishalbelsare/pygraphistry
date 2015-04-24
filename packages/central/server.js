@@ -228,12 +228,12 @@ function pickWorker (k) {
             function () { count++; },
             function (err) {
                 console.error('assign_worker error', err, (err || {}).stack);
-                k((err||{}).message || 'Error while assigning GPU workers.');
+                k(err || new Error('Unexpected error while assigning workers.'));
             },
             function () {
                 if (!count) {
-                    console.error('assign_worker exhausted search');
-                    k('Too many users, please contact help@graphistry.com for private access.');
+                    console.error('assign_worker exhausted search (too many users?)');
+                    k(new Error('Too many users, please contact help@graphistry.com for private access.'));
                 }
             });
 }
@@ -312,7 +312,7 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
             console.error('Error while assiging an ETL worker', err);
             return res.send({
                 success: false,
-                msg: 'Error while assigning an ETL worker:' + JSON.stringify(err)
+                msg: 'Error while assigning an ETL worker:' + err.message
             });
         }
 
