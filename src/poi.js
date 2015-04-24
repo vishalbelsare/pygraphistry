@@ -165,7 +165,6 @@ function cacheKey(idx, dim) {
 
 
 function fetchLabel (instance, idx, dim) {
-    // TODO: Impl serverside
     instance.state.socket.emit('get_labels', {dim: dim, indices: [idx]}, function (err, data) {
         if (err) {
             console.error('get_labels', err);
