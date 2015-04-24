@@ -82,7 +82,7 @@ function showPageableGrid(workerUrl, columns, params, $inspector) {
         model: InspectData,
         url: workerUrl + params.urn,
         state: {
-            pageSize: 9,
+            pageSize: 8,
             totalRecords: params.count,
         },
     });
