@@ -40,29 +40,29 @@ var faSwingKernel = function (clContext) {
 
 
 
-    //this.execKernels = function(simulator, workItems) {
+    this.execKernels = function(simulator, workItems) {
 
-        //var buffers = simulator.buffers;
-        //this.faSwings.set({
-            //prevForces: buffers.prevForces.buffer,
-            //curForces: buffers.curForces.buffer,
-            //swings: buffers.swings.buffer,
-            //tractions: buffers.tractions.buffer
-        //});
+        var buffers = simulator.buffers;
+        this.faSwings.set({
+            prevForces: buffers.prevForces.buffer,
+            curForces: buffers.curForces.buffer,
+            swings: buffers.swings.buffer,
+            tractions: buffers.tractions.buffer
+        });
 
-        //var resources = [
-            //buffers.prevForces,
-            //buffers.curForces,
-            //buffers.swings,
-                //buffers.tractions
-        //];
+        var resources = [
+            buffers.prevForces,
+            buffers.curForces,
+            buffers.swings,
+                buffers.tractions
+        ];
 
-        //simulator.tickBuffers(['swings', 'tractions']);
+        simulator.tickBuffers(['swings', 'tractions']);
 
-        //debug("Running kernel faSwingsTractions");
-        //return this.faSwings.exec([simulator.numPoints], resources)
-        //.fail(util.makeErrorHandler('Executing FaSwing failed'));
-    //};
+        debug("Running kernel faSwingsTractions");
+        return this.faSwings.exec([simulator.numPoints], resources)
+        .fail(util.makeErrorHandler('Executing FaSwing failed'));
+    };
 
     this.execMidPointsKernels = function(simulator, workItems) {
 

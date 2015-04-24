@@ -207,66 +207,7 @@ var BarnesKernelSeq = function (clContext) {
         .fail(util.makeErrorHandler("Setting temporary buffers for barnesHutKernelSequence failed"));
     };
 
-<<<<<<< HEAD
     this.setEdges = function(simulator, layoutBuffers, warpsize, workItems) {
-=======
-    this.setMidPoints = function(simulator, layoutBuffers, warpsize) {
-        var that = this;
-        console.log("Set midpoints");
-        return setupTempBuffers(simulator, warpsize).then(function (tempBuffers) {
-
-        that.toBarnesLayout.set({xCoords: tempBuffers.x_cords.buffer,
-          yCoords:tempBuffers.y_cords.buffer, mass:tempBuffers.mass.buffer,
-                            blocked:tempBuffers.blocked.buffer, maxDepth:tempBuffers.maxdepth.buffer,
-                            numPoints:simulator.numMidPoints,
-                            inputPositions: simulator.buffers.curMidPoints.buffer,
-                            pointDegrees: simulator.buffers.degrees.buffer, WARPSIZE: warpsize});
-
-            var setBarnesKernelArgs = function(kernel, buffers) {
-              var setArgs = {xCoords:buffers.x_cords.buffer,
-                yCoords:buffers.y_cords.buffer,
-                accX:buffers.accx.buffer,
-                accY:buffers.accy.buffer,
-                children:buffers.children.buffer,
-                mass:buffers.mass.buffer,
-                start:buffers.start.buffer,
-                sort:buffers.sort.buffer,
-                globalXMin:buffers.xmin.buffer,
-                globalXMax:buffers.xmax.buffer,
-                globalYMin:buffers.ymin.buffer,
-                globalYMax:buffers.ymax.buffer,
-                swings:simulator.buffers.swings.buffer,
-                tractions:simulator.buffers.tractions.buffer,
-                count:buffers.count.buffer,
-                blocked:buffers.blocked.buffer,
-                bottom:buffers.bottom.buffer,
-                step:buffers.step.buffer,
-                maxDepth:buffers.maxdepth.buffer,
-                radius:buffers.radius.buffer,
-                globalSpeed: layoutBuffers.globalSpeed.buffer,
-                width:simulator.controls.global.dimensions[0],
-                height:simulator.controls.global.dimensions[1],
-                numBodies:buffers.numBodies,
-                numNodes:buffers.numNodes,
-                nextMidPoints:simulator.buffers.nextMidPoints.buffer,
-                //pointForces:simulator.buffers.pointForces.buffer,
-                WARPSIZE:warpsize};
-
-              kernel.set(setArgs);
-            };
-
-            setBarnesKernelArgs(that.boundBox, tempBuffers);
-            setBarnesKernelArgs(that.buildTree, tempBuffers);
-            setBarnesKernelArgs(that.computeSums, tempBuffers);
-            setBarnesKernelArgs(that.sort, tempBuffers);
-            setBarnesKernelArgs(that.calculateForces, tempBuffers);
-
-        }).fail(util.makeErrorHandler('setupTempBuffers'));
-    };
-
-
-    this.setEdges = function(simulator, layoutBuffers, warpsize) {
->>>>>>> Running barnes hut (repulsion) on midPoints.
         var that = this;
         return setupTempBuffers(simulator, warpsize).then(function (tempBuffers) {
 
