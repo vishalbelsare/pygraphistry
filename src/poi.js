@@ -169,23 +169,33 @@ function fetchLabel (instance, idx, dim) {
         if (err) {
             console.error('get_labels', err);
         } else {
-            instance.state.labelCache[cacheKey(idx, dim)].onNext(createLabelDom(data[0]));
+            instance.state.labelCache[cacheKey(idx, dim)].onNext(createLabelDom(dim, data[0]));
         }
     });
 }
 
-function createLabelDom(labelObj) {
+function createLabelDom(dim, labelObj) {
     var $cont = $('<div>').addClass('graph-label-container');
     var $pin = $('<i>').addClass('fa fa-lg fa-thumb-tack');
     var $title;
     var $content;
+    var $labelType = $('<span>').addClass('label-type').addClass('pull-right');
+
+    if (dim === 2) {
+        console.log('making edge');
+        $cont.addClass('graph-label-edge');
+    } else if (dim === 1) {
+        $cont.addClass('graph-label-point');
+    }
 
     if (labelObj.formatted) {
         $cont.addClass('graph-label-preset');
-        $title = $('<span>').addClass('graph-label-title').append(labelObj.formatted);
+        $title = $('<span>').addClass('graph-label-title').append(labelObj.formatted)
+                .append($labelType);
     } else {
         $cont.addClass('graph-label-default');
-        $title = $('<span>').addClass('graph-label-title').append($pin).append(' ' + labelObj.title);
+        $title = $('<div>').addClass('graph-label-title').append($pin).append(' ' + labelObj.title)
+                .append($labelType);
         var $table= $('<table>');
         labelObj.columns.forEach(function (pair) {
             var $row = $('<tr>').addClass('graph-label-pair');
