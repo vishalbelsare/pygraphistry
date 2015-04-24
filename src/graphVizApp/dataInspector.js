@@ -116,6 +116,16 @@ function showPageableGrid(workerUrl, columns, params, $inspector) {
     var divider = $('<div>').addClass('divide-line');
     $inspector.prepend(divider);
     $inspector.prepend(paginator.render().el);
+
+    var $colHeaders = $inspector.find('.backgrid').find('thead').find('tr').children();
+    $colHeaders.each(function () {
+        var $colHeader = $(this);
+        $colHeader.click(function () {
+            $colHeaders.not($colHeader).each(function () {
+                $(this).removeClass('ascending').removeClass('descending');
+            });
+        });
+    });
 }
 
 module.exports = {
