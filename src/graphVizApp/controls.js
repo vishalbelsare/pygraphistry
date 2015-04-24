@@ -10,9 +10,7 @@ var util            = require('./util.js');
 var dataInspector   = require('./dataInspector.js');
 var histogramBrush  = require('./histogramBrush.js');
 var marqueeFact     = require('./marquee.js');
-
-
-var INTERACTION_INTERVAL = 50;
+var runButton       = require('./runButton.js');
 
 
 function sendLayoutSetting(socket, algo, param, value) {
@@ -258,6 +256,10 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
     settingsChanges.onNext({name: name, val: val});
 }
 
+
+
+
+
 function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     createLegend($('#graph-legend'), urlParams);
     toggleLogo($('.logo-container'), urlParams);
@@ -399,30 +401,6 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var $shrinkToFit = $('#center .fa');
     var numTicks = urlParams.play !== undefined ? urlParams.play : 5000;
 
-    doneLoading.take(1).subscribe(function () {
-        if (numTicks > 0) {
-            $tooltips.tooltip('show');
-            $bolt.toggleClass('automode', true).toggleClass('toggle-on', true);
-            appState.simulateOn.onNext(true);
-            $shrinkToFit.toggleClass('automode', true).toggleClass('toggle-on', true);
-        }
-    }, util.makeErrorHandler('reveal scene'));
-
-    // Tick stream until canceled/timed out (end with 'false'), starts after first vbo update.
-    var autoLayingOut = doneLoading.flatMapLatest(function () {
-        return Rx.Observable.merge(
-            Rx.Observable.return(Rx.Observable.interval(20)),
-            Rx.Observable.merge(
-                    $('#simulate').onAsObservable('click')
-                        .filter(function (evt){ return evt.originalEvent !== undefined; }),
-                    $('#colorpickers').onAsObservable('click'),
-                    $('#marqueerectangle').onAsObservable('click'),
-                    $('#histogramBrush').onAsObservable('click'),
-                    Rx.Observable.timer(numTicks))
-                .take(1)
-                .map(_.constant(Rx.Observable.return(false))))
-        .flatMapLatest(_.identity);
-    });
 
     var finalCenter = (function () {
         var flag = urlParams.center;
@@ -451,43 +429,6 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var isAutoCentering = new Rx.ReplaySubject(1);
     autoCentering.subscribe(isAutoCentering, util.makeErrorHandler('bad autocenter'));
 
-    var runLayout =
-        Rx.Observable.fromEvent($('#simulate'), 'click')
-            .map(function () { return $bolt.hasClass('toggle-on'); })
-            .do(function (wasOn) {
-                $bolt.toggleClass('toggle-on', !wasOn);
-            })
-            .flatMapLatest(function (wasOn) {
-                var isOn = !wasOn;
-                appState.simulateOn.onNext(isOn);
-                return isOn ? Rx.Observable.interval(INTERACTION_INTERVAL) : Rx.Observable.empty();
-            });
-
-    runLayout
-        .subscribe(
-            function () { socket.emit('interaction', {play: true, layout: true}); },
-            util.makeErrorHandler('Error stimulating graph'));
-
-    autoLayingOut.subscribe(
-        function (evt) {
-            if (evt !== false) {
-                var payload = {play: true, layout: true};
-                socket.emit('interaction', payload);
-            }
-        },
-        util.makeErrorHandler('autoLayingOut error'),
-        function () {
-            isAutoCentering.take(1).subscribe(function (v) {
-                if (v !== false) {
-                    $('#center').trigger('click');
-                }
-            });
-            $tooltips.tooltip('hide');
-            $bolt.removeClass('automode').removeClass('toggle-on');
-            appState.simulateOn.onNext(false);
-        }
-    );
-
     autoCentering.subscribe(
         function (count) {
             if (count === true ||
@@ -501,6 +442,22 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         function () {
             $shrinkToFit.toggleClass('automode', false).toggleClass('toggle-on', false);
         });
+
+
+    doneLoading.take(1).subscribe(function () {
+        if (numTicks > 0) {
+            $tooltips.tooltip('show');
+            $bolt.toggleClass('automode', true).toggleClass('toggle-on', true);
+            appState.simulateOn.onNext(true);
+            $shrinkToFit.toggleClass('automode', true).toggleClass('toggle-on', true);
+        }
+    }, util.makeErrorHandler('reveal scene'));
+
+
+    doneLoading
+        .do(runButton.bind('', appState, socket, urlParams, isAutoCentering))
+        .subscribe(_.identity, util.makeErrorHandler('layout button'));
+
 
 }
 
