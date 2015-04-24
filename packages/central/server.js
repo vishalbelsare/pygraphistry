@@ -53,8 +53,8 @@ var db;
 var MAIN_STATIC_PATH    = path.resolve(__dirname, 'assets');
 var GRAPH_STATIC_PATH   = path.resolve(require('graph-viz').staticFilePath(), 'assets');
 var HORIZON_STATIC_PATH = path.resolve(require('horizon-viz').staticFilePath(), 'assets');
-var UBER_STATIC_PATH   = path.resolve(require('uber-viz').staticFilePath(), 'assets');
-var SPLUNK_STATIC_PATH   = path.resolve(require('splunk-viz').staticFilePath(), 'assets');
+var UBER_STATIC_PATH    = path.resolve(require('uber-viz').staticFilePath(), 'assets');
+var SPLUNK_STATIC_PATH  = path.resolve(require('splunk-viz').staticFilePath(), 'assets');
 
 var HTTP_SERVER_LISTEN_ADDRESS = config.HTTP_LISTEN_ADDRESS;
 var HTTP_SERVER_LISTEN_PORT = config.HTTP_LISTEN_PORT;
@@ -172,10 +172,10 @@ function listIps (o) {
 function assign_worker(req, res) {
     pickWorker(function (err, worker) {
         if (err) {
-            console.error('assign_worker failed', err);
+            console.error('Error while assigning visualization worker:', err);
             return res.json({
                 success: false,
-                error: (err||{}).message || 'Error while assigning worker.'
+                error: (err||{}).message || 'Error while assigning visualization worker.'
             });
         }
         debug('Assigning client a worker', req.ip, worker);
@@ -293,13 +293,13 @@ app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
 app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res) {
     debug('etl request');
     pickWorker(function (err, worker) {
-        debug('picked worker', req.ip, worker);
+        debug('picked etl worker', req.ip, worker);
 
         if (err) {
-            console.error('failed to get etl worker', err);
+            console.error('Error while assiging an ETL worker', err);
             return res.send({
                 success: false,
-                msg: JSON.stringify(err)
+                msg: 'Error while assigning an ETL worker:' + JSON.stringify(err)
             });
         }
 
