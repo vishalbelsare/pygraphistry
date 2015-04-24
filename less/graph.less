@@ -16,9 +16,32 @@
 @graphistry-lightblue: #0fa5c5;
 @graphistry-darkblue: #0C1134;
 
+
+//////////////////////////////////////////////////////////////////////////////
+// z-index order
+//////////////////////////////////////////////////////////////////////////////
+
+@marquee-z:                     5000;
+@highlighted-point-z:           5001;
+@graph-label-z:                 6000;
+@graph-label-clicked-z:         6500;
+@graph-label-hover-z:           7000;
+@legend-z:                      8000;
+@histogram-z:                  10000;
+@inspector-z:                  10000;
+@inspector-tabs-z:             10001;
+@inspector-overlay-z:          10001;
+@histogram-btn-z:              10002;
+@histogram-name-z:             10002;
+@status-bar-z:                 99999;
+@menu-z:                      100001;
+@menus-z:                    1000000;
+@tooltip-z:                  1000001;
+
 //////////////////////////////////////////////////////////////////////////////
 // Labels
 //////////////////////////////////////////////////////////////////////////////
+
 
 .graph-label-container {
     position: absolute;
@@ -28,6 +51,16 @@
 
 //label -> container -> title + (contents -> pair -> (key+value))
 .graph-label {
+
+    position: absolute;
+    z-index: @graph-label-z;
+    &.clicked {
+        z-index: @graph-label-clicked-z;
+    }
+    &.on:not(.clicked) {
+        z-index: @graph-label-hover-z;
+    }
+
 
     //scrollbar
     &::-webkit-scrollbar,
@@ -69,8 +102,6 @@
         color: rgb(31, 31, 51);
     }
 
-    position: absolute;
-    z-index: 10000;
 
 
     //only selectable when clicked
@@ -109,7 +140,6 @@
         display: none;
     }
     &.on {
-        z-index: 100000;
         & .graph-label-title {
             max-height: none;
             max-width: none;
@@ -202,7 +232,7 @@
 }
 
 #highlighted-point-cont {
-    z-index: 5001;
+    z-index: @highlighted-point-z;
     position: absolute;
     top: -10px;
     left: -10px;
@@ -278,7 +308,7 @@
     width: 100%;
     height: 100%;
     position: absolute;
-    z-index: 5000;
+    z-index: @marquee-z;
     top: 0;
     left: 0;
 
@@ -367,7 +397,7 @@
     bottom: 0px;
     width: 100%;
     text-align: left;
-    z-index: 99999;
+    z-index: @status-bar-z;
     background-color: rgba(200, 0, 0, 0.9);
     color: rgb(255, 255, 255);
     font-weight: 800;
@@ -410,7 +440,7 @@ html.nomenu #menus, html.nomenu #sliders {
 #menus {
     position: absolute;
     width: 100%;
-    z-index: 1000000;
+    z-index: @menus-z;
 
     .noselect();
 }
@@ -450,7 +480,7 @@ html.nomenu #menus, html.nomenu #sliders {
 
 .menu {
     position: absolute;
-    z-index: 100001;
+    z-index: @menu-z;
     left: 4em;
 }
 
@@ -552,16 +582,7 @@ button.btn-default {
         display: inline-block;
     }
 
-    #colorpickers {
-        display: inline-block;
-    }
 }
-
-#colorpickers {
-    display: none;
-}
-
-
 
 #timeSlider {
     display: none;
@@ -608,7 +629,7 @@ button.btn-default {
     padding: 1em;
     max-width: 40em;
     min-width: 20em;
-    z-index: 20000;
+    z-index: @legend-z;
 
     border-radius: 10px;
     border: 1px solid rgba(255,255,244,0.9);
@@ -665,7 +686,7 @@ button.btn-default {
 
 #inspector {
     visibility: hidden;
-    z-index: 10000;
+    z-index: @inspector-z;
     position: fixed;
     left: 0;
     bottom: 0;
@@ -679,14 +700,14 @@ button.btn-default {
         position: relative;
         float: left;
         width: 2.8em;
-        z-index: 10001;
+        z-index: @inspector-tabs-z;
 
         & > ul > li > a {
-            color: @graphistry-lightblue;
+            color: @dark-grey;
         }
 
         & > ul > li.active > a {
-            color: @dark-grey;
+            color: @graphistry-lightblue;
         }
     }
 
@@ -728,6 +749,7 @@ button.btn-default {
         .integer-cell,
         .string-cell {
             padding: 0px 5px;
+            border-left: 1px #DDD solid;
             a {
                 color: @dark-grey;
                 &:hover {
@@ -779,7 +801,7 @@ button.btn-default {
 
 #inspector-overlay {
     &.panel {
-        z-index: 10001;
+        z-index: @inspector-overlay-z;
         position: fixed;
         left: 0;
         bottom: 0;
@@ -803,7 +825,7 @@ button.btn-default {
     &.panel {
         background-color: @light-grey-background-2;
         visibility: hidden;
-        z-index: 10000;
+        z-index: @histogram-z;
         position: fixed;
         right: 0;
         bottom: 0;
@@ -913,7 +935,7 @@ button.btn-default {
     }
 
     .btn-default {
-        z-index: 10002;
+        z-index: @histogram-btn-z;
         color: @dark-grey;
         text-align: center;
         font-weight: bold;
@@ -929,7 +951,7 @@ button.btn-default {
         margin-left: 4px;
         padding-left: 4px;
         margin-top: 5px;
-        z-index: 10002;
+        z-index: @histogram-name-z;
         color: @dark-grey;
         font-size: 1em;
 
@@ -1004,7 +1026,7 @@ html {
 }
 
 .tooltip {
-    z-index: 1000001;
+    z-index: @tooltip-z;
 }
 
 .noselect {
