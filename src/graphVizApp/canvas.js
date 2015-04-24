@@ -152,18 +152,17 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         that.appSnapshot.simulating = val;
     }, util.makeErrorHandler('simulate updates'));
 
-    var hostBuffers = renderState.get('hostBuffers');
-    _.each(['curPoints', 'logicalEdges'], function (bufName) {
-        var rxBuf = hostBuffers[bufName];
-        if (rxBuf) {
-            rxBuf.subscribe(function (data) {
-                that.appSnapshot.buffers[bufName] = data;
-            });
-        }
-    });
-
     vboUpdates.filter(function (status) {
         return status === 'received';
+    }).flatMapLatest(function () {
+        var hostBuffers = renderState.get('hostBuffers');
+        var bufUpdates = ['curPoints', 'logicalEdges'].map(function (bufName) {
+            var bufUpdate = hostBuffers[bufName] || Rx.Observable.return();
+            return bufUpdate.do(function (data) {
+                that.appSnapshot.buffers[bufName] = data;
+            });
+        });
+        return bufUpdates[0].combineLatest(bufUpdates[1], _.identity);
     }).do(function () {
         that.appSnapshot.vboUpdated = true;
         that.renderScene('vboupdate', {trigger: 'renderSceneFast'});
