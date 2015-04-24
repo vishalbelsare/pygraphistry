@@ -136,7 +136,7 @@ function handshakeIp (workerNfo) {
         .pluck(1)
         .map(function (resp) {
             debug('Worker response', resp);
-            return resp.success;
+            return !!resp.success;
         });
 }
 
@@ -198,11 +198,22 @@ function pickWorker (k) {
         ips = Rx.Observable.return({hostname: VIZ_SERVER_HOST, port: VIZ_SERVER_PORT});
     }
 
-    var ip = ips
+
+    // Create a controlled Observable of IPs so that it only emits an item when we ask it to,
+    // instead of emitting them all at once. (Warning: keep a reference to the Observable right
+    // after `controlled` is applied, as further operators will mask the `request()` method.)
+    var ipsControlled = ips.controlled();
+    // Emit one IP to start
+    ipsControlled.request(1);
+
+    var ip = ipsControlled
         .flatMap(function (workerNfo) {
             return handshakeIp(workerNfo)
-                .filter(_.identity)
-                .map(_.constant(workerNfo));
+                .map(function(success) { return (success) ? workerNfo : false; });
+        })
+        .filter(function filterWorkerAndRequest(workerNfo) {
+            // If we're going to reject this worker, also request the next one
+            return !!(workerNfo || (ipsControlled.request(1) && false));
         })
         .take(1);
 
