@@ -103,8 +103,9 @@ function getIPs() {
         .fromNodeCallback(workerServers.toArray, workerServers)()
         .flatMap(function (ips) {
             if (ips.length < 1) {
+                debug('No worker currently registered to this cluster.');
                 return Rx.Observable.throw(new Error(
-                    'There are no viz servers currently registered to this cluster. Please contact help@graphistry.com for further assistance.'));
+                    'There are no worker currently registered to this cluster. Please contact help@graphistry.com for further assistance.'));
             }
 
             // Find all idle node processes
@@ -116,7 +117,8 @@ function getIPs() {
             return Rx.Observable.fromNodeCallback(nodeCollection.toArray, nodeCollection)()
                 .map(function (results) {
                     if (!results.length) {
-                        var msg = "All viz servers are currently busy, and your request can't be serviced at this time. Please contact help@graphistry.com for private access. (Reason: could not find an available worker in the worker ping database.)";
+                        debug('All workers are currently busy');
+                        var msg = "All workers are currently busy, and your request can't be serviced at this time. Please contact help@graphistry.com for private access. (Reason: could not find an available worker in the worker ping database.)";
                         throw new Error(msg);
                     }
                     return {ips: ips, results: results};
