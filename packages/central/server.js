@@ -130,7 +130,7 @@ function getIPs() {
 //TODO protocol as part of handshake (http vs https)
 function handshakeIp (workerNfo) {
     var url = 'http://' + workerNfo.hostname + ':' + workerNfo.port + '/claim';
-    var cfg = {url: url, json: true, timeout: 500};
+    var cfg = {url: url, json: true, timeout: 250};
     debug('Trying worker', cfg, workerNfo);
     return Rx.Observable.fromNodeCallback(request.get.bind(request))(cfg)
         .pluck(1)
