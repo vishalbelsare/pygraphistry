@@ -9,7 +9,7 @@ var EbBarnesKernelSeq = function (clContext) {
 
   this.argsToBarnesLayout = [
     'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints',
-    'inputPositions', 'xCoords', 'yCoords', 'mass', 'blocked', 'maxDepth',
+    'inputMidPositions', 'inputPositions', 'xCoords', 'yCoords', 'springs', 'edgeDirectionX', 'edgeDirectionY', 'mass', 'blocked', 'maxDepth',
     'pointDegrees', 'stepNumber', 'midpoint_stride', 'midpoints_per_edge', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
   ];
 
@@ -23,7 +23,7 @@ var EbBarnesKernelSeq = function (clContext) {
   ];
 
   this.argsMidPoints = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
-  'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
+  'yCoords', 'edgeDirectionX', 'edgeDirectionY', 'accX', 'accY', 'children', 'mass', 'start',
   'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
   'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
     'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau', 'charge', 'midpoint_stride', 'midpoints_per_edge', 'WARPSIZE', 'THREADS_BOUND',
@@ -39,6 +39,7 @@ var EbBarnesKernelSeq = function (clContext) {
     tilePointsParam: cljs.types.local_t,
     tilePointsParam2: cljs.types.local_t,
     inputPositions: null,
+    inputMidPositions: null,
     pointForces: null,
     partialForces: null,
     outputForces: null,
@@ -62,6 +63,8 @@ var EbBarnesKernelSeq = function (clContext) {
     springs: null,
     xCoords: null,
     yCoords: null,
+    edgeDirectionX: null,
+    edgeDirectionY: null,
     accX: null,
     accY: null,
     children: null,
@@ -129,6 +132,8 @@ var EbBarnesKernelSeq = function (clContext) {
     partialForces: null,
     x_cords: null, //cl.createBuffer(cl, 0, "x_cords"),
     y_cords: null,
+    edgeDirectionX: null,
+    edgeDirectionY: null,
     velx: null,
     vely: null,
     accx: null,
@@ -165,6 +170,8 @@ var EbBarnesKernelSeq = function (clContext) {
         simulator.cl.createBuffer(2*num_bodies*Float32Array.BYTES_PER_ELEMENT,  'partialForces'),
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT,  'x_cords'),
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'y_cords'),
+        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT,  'edgeDirectionX'),
+        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'edgeDirectionY'),
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'accx'),
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'accy'),
         simulator.cl.createBuffer(4*(num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'children'),
@@ -184,11 +191,13 @@ var EbBarnesKernelSeq = function (clContext) {
         simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'radius'),
         simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed')
         ])
-    .spread(function (partialForces, x_cords, y_cords, accx, accy, children, mass, start, sort, xmin, xmax, ymin, ymax, count,
+    .spread(function (partialForces, x_cords, y_cords, edgeDirectionX, edgeDirectionY, accx, accy, children, mass, start, sort, xmin, xmax, ymin, ymax, count,
                       blocked, step, bottom, maxdepth, radius) {
           tempBuffers.partialForces = partialForces;
           tempBuffers.x_cords = x_cords;
           tempBuffers.y_cords = y_cords;
+          tempBuffers.edgeDirectionX = edgeDirectionX;
+          tempBuffers.edgeDirectionY = edgeDirectionY;
           tempBuffers.accx = accx;
           tempBuffers.accy = accy;
           tempBuffers.children = children;
@@ -219,13 +228,22 @@ var EbBarnesKernelSeq = function (clContext) {
     console.log("Num edges", simulator.numEdges);
     return setupTempBuffers(simulator, warpsize, simulator.numEdges).then(function (tempBuffers) {
 
-      that.toBarnesLayout.set({xCoords: tempBuffers.x_cords.buffer,
-        yCoords:tempBuffers.y_cords.buffer, mass:tempBuffers.mass.buffer,
-        blocked:tempBuffers.blocked.buffer, maxDepth:tempBuffers.maxdepth.buffer,
+      that.toBarnesLayout.set({
+        xCoords: tempBuffers.x_cords.buffer,
+        yCoords:tempBuffers.y_cords.buffer,
+        edgeDirectionX: tempBuffers.edgeDirectionX.buffer,
+        edgeDirectionY: tempBuffers.edgeDirectionY.buffer,
+        springs: simulator.buffers.forwardsEdges.buffer,
+        mass:tempBuffers.mass.buffer,
+        blocked:tempBuffers.blocked.buffer,
+        maxDepth:tempBuffers.maxdepth.buffer,
         numPoints:simulator.numEdges,
-        inputPositions: simulator.buffers.curMidPoints.buffer,
+        inputMidPositions: simulator.buffers.curMidPoints.buffer,
+        inputPositions: simulator.buffers.curPoints.buffer,
         pointDegrees: simulator.buffers.degrees.buffer,
-        WARPSIZE: warpsize, THREADS_SUMS: workItems.computeSums[1], THREADS_FORCES: workItems.calculateForces[1],
+        WARPSIZE: warpsize,
+        THREADS_SUMS: workItems.computeSums[1],
+        THREADS_FORCES: workItems.calculateForces[1],
         THREADS_BOUND: workItems.boundBox[1]});
 
       var setBarnesKernelArgs = function(kernel, buffers) {
@@ -270,8 +288,11 @@ var EbBarnesKernelSeq = function (clContext) {
       setBarnesKernelArgs(that.sort, tempBuffers);
       var buffers = tempBuffers;
 
-      that.calculateMidPoints.set({xCoords:buffers.x_cords.buffer,
+      that.calculateMidPoints.set({
+        xCoords:buffers.x_cords.buffer,
         yCoords:buffers.y_cords.buffer,
+        edgeDirectionX: tempBuffers.edgeDirectionX.buffer,
+        edgeDirectionY: tempBuffers.edgeDirectionY.buffer,
         accX:buffers.accx.buffer,
         accY:buffers.accy.buffer,
         children:buffers.children.buffer,
@@ -313,7 +334,6 @@ var EbBarnesKernelSeq = function (clContext) {
       simulator.buffers.backwardsDegrees,
         simulator.buffers.nextMidPoints
     ];
-    console.log("Midpoint index", midpoint_index);
 
     this.toBarnesLayout.set({stepNumber: stepNumber, midpoint_stride: midpoint_index, midpoints_per_edge: simulator.numSplits});
     this.boundBox.set({stepNumber: stepNumber});
