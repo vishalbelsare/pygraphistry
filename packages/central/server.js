@@ -137,6 +137,11 @@ function handshakeIp (workerNfo) {
         .map(function (resp) {
             debug('Worker response', resp);
             return !!resp.success;
+        })
+        .catch(function catchHandshakeHTTPErrors(err) {
+            console.warn('Handshake error: encountered a HTTP error attempting to handshake "%s". Catching error and reporting unsuccessful handshake to caller. Error message: %s',
+                url, err);
+            return Rx.Observable.return(false);
         });
 }
 
