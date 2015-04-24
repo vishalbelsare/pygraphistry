@@ -37,7 +37,8 @@ function create(renderer, device, vendor, controls) {
     _.each({
         setPoints: setPoints,
         setVertices: setVertices,
-        setLabels: setLabels,
+        setPointLabels: setPointLabels,
+        setEdgeLabels: setEdgeLabels,
         setEdges: setEdges,
         setEdgesAndColors: setEdgesAndColors,
         setEdgeColors: setEdgeColors,
@@ -493,11 +494,16 @@ function setMidEdgeColors(graph, midEdgeColors) {
     return graph.simulator.setMidEdgeColors(ec);
 }
 
-function setLabels(graph, pointLabels) {
-    debug('setLabels', pointLabels ? pointLabels.length : 'none');
-    return graph.simulator.setLabels(pointLabels);
+function setPointLabels(graph, pointLabels) {
+    debug('setPointLabels', pointLabels ? pointLabels.length : 'none');
+    return graph.simulator.setPointLabels(pointLabels);
 }
 
+
+function setEdgeLabels(graph, edgeLabels) {
+    debug('setEdgeLabels', edgeLabels ? edgeLabels.length : 'none');
+    return graph.simulator.setEdgeLabels(edgeLabels);
+}
 
 function setColorMap(graph, imageURL, maybeClusters) {
     return graph.renderer.setColorMap(imageURL, maybeClusters)

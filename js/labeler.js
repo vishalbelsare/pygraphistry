@@ -79,10 +79,10 @@ function infoFrame(graph, type, indices, attributeNames) {
             var inDegree = inDegrees[idx];
             var degree = outDegree + inDegree;
             columns = _.extend(columns, {
-                'degree': degree,
-                'degree in': inDegree,
-                'degree out': outDegree,
-                '_title': nodeTitle(idx)
+                degree: degree,
+                degree_in: inDegree,
+                degree_out: outDegree,
+                _title: nodeTitle(idx)
             });
         } else if (type === 'edge') {
 
@@ -114,8 +114,7 @@ function frameHeader(graph, type) {
     );
 }
 
-function defaultLabels(graph, indices, dim) {
-    var type = (dim === 2) ? 'edge' : 'point';
+function defaultLabels(graph, indices, type) {
     return infoFrame(graph, type, indices).map(function (columns) {
         return {
             title: columns._title,
@@ -127,20 +126,25 @@ function defaultLabels(graph, indices, dim) {
     });
 }
 
-function presetLabels (graph, indices) {
-    var offset = graph.simulator.timeSubset.pointsRange.startIdx;
+function presetLabels (labels, indices, range) {
+    var offset = range.startIdx;
 
     return indices.map(function (idx) {
-        return { formatted: graph.simulator.labels[offset + idx] };
+        return { formatted: labels[offset + idx] };
     });
 }
 
 
 function getLabels(graph, indices, dim) {
-    if (dim === 2 && graph.simulator.labels.length) {
-        return presetLabels(graph, indices);
+    var type = (dim === 2) ? 'edge' : 'point';
+    var simulator = graph.simulator;
+
+    if (type === 'point' && simulator.pointLabels.length) {
+        return presetLabels(simulator.pointLabels, indices, simulator.timeSubset.pointsRange);
+    } else if (type === 'edge' && simulator.edgeLabels.length) {
+        return presetLabels(simulator.edgeLabels, indices, simulator.timeSubset.edgeRange);
     } else {
-        return defaultLabels(graph, indices, dim);
+        return defaultLabels(graph, indices, type);
     }
 }
 

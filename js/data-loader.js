@@ -315,7 +315,7 @@ function loadGeo(graph, dataset) {
 
         return graph.setPoints(processedData.points)
             .then(function () {
-                return graph.setLabels(processedData.points.map(function (v, i) {
+                return graph.setPointLabels(processedData.points.map(function (v, i) {
                     return '<b>' + i + '</b><hr/>' + v[0].toFixed(4) + ', ' + v[1].toFixed(4);
                 }));
             })

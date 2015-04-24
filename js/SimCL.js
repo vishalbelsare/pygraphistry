@@ -76,7 +76,8 @@ function create(renderer, device, vendor, cfg) {
             simObj.setEdgeColors = setEdgeColors.bind(this, simObj);
             simObj.setEdgeWeight = setEdgeWeight.bind(this, simObj);
             simObj.setMidEdgeColors = setMidEdgeColors.bind(this, simObj);
-            simObj.setLabels = setLabels.bind(this, simObj);
+            simObj.setPointLabels = setPointLabels.bind(this, simObj);
+            simObj.setEdgeLabels = setEdgeLabels.bind(this, simObj);
             simObj.setLocks = setLocks.bind(this, simObj);
             simObj.setPhysics = setPhysics.bind(this, simObj);
             simObj.setTimeSubset = setTimeSubset.bind(this, renderer, simObj);
@@ -96,7 +97,8 @@ function create(renderer, device, vendor, cfg) {
             simObj.numMidPoints = 0;
             simObj.numMidEdges = 0;
             simObj.numSplits = controls.global.numSplits;
-            simObj.labels = [];
+            simObj.pointLabels = [];
+            simObj.edgeLabels = [];
 
             simObj.bufferHostCopies = {
                 unsortedEdges: null,
@@ -486,9 +488,15 @@ function createSetters (simulator) {
 }
 
 //Simulator * ?[HtmlString] -> ()
-function setLabels(simulator, labels) {
-    simulator.labels = labels || [];
+function setPointLabels(simulator, labels) {
+    simulator.pointLabels = labels || [];
 }
+
+//Simulator * ?[HtmlString] -> ()
+function setEdgeLabels(simulator, labels) {
+    simulator.edgeLabels = labels || [];
+}
+
 
 /**
  * Sets the edge list for the graph
@@ -871,7 +879,7 @@ function recolor(simulator, marquee) {
 
         _.each(selectedIdx, function (idx) {
             simulator.buffersLocal.pointSizes[idx] = 255;
-            console.log('Selected', simulator.labels[idx]);
+            console.log('Selected', simulator.pointLabels[idx]);
         })
 
         simulator.tickBuffers(['pointSizes']);

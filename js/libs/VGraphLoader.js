@@ -64,9 +64,15 @@ var attributeLoaders = function(graph) {
             values: undefined
         },
         pointLabel: {
-            load: graph.setLabels,
+            load: graph.setPointLabels,
             type: 'string',
             target: VERTEX,
+            values: undefined
+        },
+        edgeLabel: {
+            load: graph.setEdgeLabels,
+            type: 'string',
+            target: EDGE,
             values: undefined
         },
         edgeWeight: {
@@ -349,6 +355,9 @@ var splunkMapper = {
         },
         pointLabel: {
             name: 'pointLabel'
+        },
+        edgeLabel: {
+            name: 'edgeLabel'
         },
         pointColor: {
             name: 'pointColor',
