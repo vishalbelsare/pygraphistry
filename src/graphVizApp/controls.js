@@ -77,7 +77,7 @@ function setupBrush(appState, isOn) {
 //Side effect: highlight that element
 function makeMouseSwitchboard() {
 
-    var mouseElts = $('#marqueerectangle').add('#histogramBrush').add('#layoutSettingsButton');
+    var mouseElts = $('#marqueerectangle, #histogramBrush, #layoutSettingsButton');
 
     var onElt = Rx.Observable.merge.apply(Rx.Observable,
             mouseElts.get().map(function (elt) {
@@ -267,18 +267,20 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     // TODO: More general version for all toggle-able buttons?
     var marqueeIsOn = false;
-    var turnOnMarquee = onElt.map(function (elt) {
-        if (elt === $('#marqueerectangle')[0]) {
-            $(elt).children('i').toggleClass('toggle-on');
-            marqueeIsOn = !marqueeIsOn;
-        }
-        if (marqueeIsOn) {
-            appState.marqueeOn.onNext('toggled');
-        } else {
-            appState.marqueeOn.onNext(false);
-        }
-        return marqueeIsOn;
-    });
+    var turnOnMarquee =
+        Rx.Observable.merge(
+            onElt.filter(function (elt) { return elt === $('#marqueerectangle')[0]; })
+                .map(function () { return !marqueeIsOn; }),
+            onElt.filter(function (elt) { return elt === $('#histogramBrush')[0]; })
+                .map(_.constant(false)),
+            Rx.Observable.fromEvent($('#simulate'), 'click')
+                .map(_.constant(false)))
+        .do(function (isTurnOn) {
+            marqueeIsOn = isTurnOn;
+            $('#marqueerectangle').children('i').toggleClass('toggle-on', marqueeIsOn);
+            appState.marqueeOn.onNext(marqueeIsOn ? 'toggled' : false);
+        });
+
 
     var brushIsOn = false;
     var turnOnBrush = onElt.map(function (elt) {
