@@ -164,11 +164,11 @@ function aggregate(graph, indices, attributes, binning, mode) {
     }
 
     var attributeMap = vgloader.getAttributeMap(graph.simulator.vgraph, attributes);
-    attributeMap['degree in'] = {values: graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped};
-    attributeMap['degree out'] = {values: graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped};
+    attributeMap['degree_in'] = {values: graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped};
+    attributeMap['degree_out'] = {values: graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped};
     // TODO: Caches this value elsewhere.
-    var degrees = _.map(attributeMap['degree out'].values, function (val, idx) {
-        return val + attributeMap['degree in'].values[idx];
+    var degrees = _.map(attributeMap['degree_out'].values, function (val, idx) {
+        return val + attributeMap['degree_in'].values[idx];
     });
     attributeMap['degree'] = {values: degrees};
 
