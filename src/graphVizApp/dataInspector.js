@@ -88,11 +88,11 @@ function showPageableGrid(workerUrl, columns, params, $inspector) {
     });
 
     var dataFrame = new DataFrame([], {mode: 'server'});
-    dataFrame.fetch({reset: true});
 
     var grid = new Backgrid.Grid({
         columns: columns,
-        collection: dataFrame
+        collection: dataFrame,
+        emptyText: 'Empty selection'
     });
 
     // Render the grid and attach the root to your HTML document
@@ -110,6 +110,8 @@ function showPageableGrid(workerUrl, columns, params, $inspector) {
         //slideScale: 0.25, // Default is 0.5
         collection: dataFrame
     });
+
+    dataFrame.fetch({reset: true});
 
     var divider = $('<div>').addClass('divide-line');
     $inspector.prepend(divider);
