@@ -282,19 +282,28 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         });
 
 
+    //hist
     var brushIsOn = false;
-    var turnOnBrush = onElt.map(function (elt) {
-        if (elt === $('#histogramBrush')[0]) {
-            $(elt).children('i').toggleClass('toggle-on');
-            brushIsOn = !brushIsOn;
-        }
-        if (brushIsOn) {
-            appState.brushOn.onNext('toggled');
-        } else {
-            $('#histogram').css('visibility', 'hidden');
-            $('#inspector').css('visibility', 'hidden');
-            appState.brushOn.onNext(false);
-        }
+    var turnOnBrush = onElt
+        .merge(
+            Rx.Observable.fromEvent($('#simulate'), 'click')
+            .map(_.constant($('#simulate')[0])))
+        .map(function (elt) {
+            if (elt === $('#histogramBrush')[0]) {
+                $(elt).children('i').toggleClass('toggle-on');
+                brushIsOn = !brushIsOn;
+            } else if (brushIsOn &&
+                    (elt === $('#marqueerectangle')[0] || elt === $('#simulate')[0])) {
+                brushIsOn = false;
+                $('#histogramBrush').children('i').toggleClass('toggle-on', false);
+            }
+            if (brushIsOn) {
+                appState.brushOn.onNext('toggled');
+            } else {
+                $('#histogram').css('visibility', 'hidden');
+                $('#inspector').css('visibility', 'hidden');
+                appState.brushOn.onNext(false);
+            }
         return brushIsOn;
     });
 
