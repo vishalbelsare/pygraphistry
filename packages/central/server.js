@@ -219,7 +219,7 @@ function pickWorker (k) {
 
     var count = 0;
     ip.do(function (worker) {
-            debug("Assigning client viz server on %s, port %d", worker.hostname, worker.port);
+            debug("Assigning worker on %s, port %d", worker.hostname, worker.port);
             k(null, worker);
         })
         .subscribe(
