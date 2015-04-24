@@ -132,13 +132,18 @@ function getIPs() {
 //TODO protocol as part of handshake (http vs https)
 function handshakeIp (workerNfo) {
     var url = 'http://' + workerNfo.hostname + ':' + workerNfo.port + '/claim';
-    var cfg = {url: url, json: true, timeout: 500};
+    var cfg = {url: url, json: true, timeout: 250};
     debug('Trying worker', cfg, workerNfo);
     return Rx.Observable.fromNodeCallback(request.get.bind(request))(cfg)
         .pluck(1)
         .map(function (resp) {
             debug('Worker response', resp);
             return !!resp.success;
+        })
+        .catch(function catchHandshakeHTTPErrors(err) {
+            console.warn('Handshake error: encountered a HTTP error attempting to handshake "%s". Catching error and reporting unsuccessful handshake to caller. Error message: %s',
+                url, err);
+            return Rx.Observable.return(false);
         });
 }
 
