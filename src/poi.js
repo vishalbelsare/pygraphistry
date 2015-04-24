@@ -182,7 +182,6 @@ function createLabelDom(dim, labelObj) {
     var $labelType = $('<span>').addClass('label-type').addClass('pull-right');
 
     if (dim === 2) {
-        console.log('making edge');
         $cont.addClass('graph-label-edge');
     } else if (dim === 1) {
         $cont.addClass('graph-label-point');
