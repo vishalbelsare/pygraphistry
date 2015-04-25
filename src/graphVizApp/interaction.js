@@ -91,7 +91,7 @@ function setupMousemove($eventTarget) {
         .filter(function (v) {
             return ! $(v.target).parents('.graph-label').length;
         })
-        .sample(1)
+        .throttleFirst(1)
         .map(function (evt) {
             evt.preventDefault();
             return {
@@ -106,7 +106,7 @@ function setupScroll($eventTarget, canvas, camera, appState) {
     var zoomBase = 1.1;
 
     return $eventTarget.onAsObservable('mousewheel')
-        .sample(1)
+        .throttleFirst(1)
         .flatMapLatest(util.observableFilter([appState.marqueeOn, appState.brushOn],
             function (val) {
                 return val !== 'done';
@@ -166,7 +166,7 @@ function zoom(camera, zoomFactor, zoomPoint) {
 
 function setupCenter($toggle, curPoints, camera) {
     return $toggle.onAsObservable('click')
-        .sample(1)
+        .throttleFirst(1)
         .flatMapLatest(function () {
             debug('click on center');
             return curPoints.take(1).map(function (curPoints) {

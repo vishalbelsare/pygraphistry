@@ -36,7 +36,7 @@ module.exports = function ($fg, $bg, socket, renderState) {
     var foregroundColor = new Rx.ReplaySubject(1);
     foregroundColor.onNext({r: 0, g: 0, b: 0});
     makeInspector($fg, '#000')
-        .sample(10)
+        .throttleFirst(10)
         .do(function (rgb) {
             socket.emit('set_colors', {rgb: rgb});
         })
@@ -50,7 +50,7 @@ module.exports = function ($fg, $bg, socket, renderState) {
 
     backgroundColor.onNext(initColor);
     makeInspector($bg, '#fff')
-        .sample(10)
+        .throttleFirst(10)
         .do(function (rgb) {
             $('#simulation').css('backgroundColor', 'rgba(' + [rgb.r, rgb.g, rgb.b, 255].join(',') + ')');
         })
