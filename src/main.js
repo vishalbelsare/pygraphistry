@@ -164,6 +164,10 @@ function init(canvas, vizType) {
 
 function createInfoOverlay(app) {
 
+    if (!isParamTrue('info')) {
+        return;
+    }
+
     var renderMeterD =
         $('<div>')
             .addClass('meter').addClass('meter-fps')
