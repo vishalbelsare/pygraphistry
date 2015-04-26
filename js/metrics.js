@@ -15,7 +15,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 
 var IS_ONLINE = false;
-require('dns').resolve('www.graphistry.com', function (err) {
+dns.resolve('www.graphistry.com', function (err) {
     if (!err) {
         IS_ONLINE = true;
     }
