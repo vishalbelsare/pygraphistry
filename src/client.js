@@ -153,10 +153,14 @@ function connect(vizType, urlParams) {
 
                     debug('got params', params);
 
-                    var socket = io(params.url, { query: workersArgs,
+                    // var socket = io(params.url, { query: workersArgs,
+                    //                             reconnection: false,
+                    //                             transports: ['websocket']
+                    //                             });
+                    var socket = io.Manager(params.url, { query: workersArgs,
                                                 reconnection: false,
                                                 transports: ['websocket']
-                                                });
+                                            }).socket('/');
 
                     socket.io.engine.binaryType = 'arraybuffer';
 
