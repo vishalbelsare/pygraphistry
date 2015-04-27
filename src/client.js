@@ -104,6 +104,7 @@ function getVizServerParams(args) {
             var params = {
                 'hostname': reply.data.hostname,
                 'port': reply.data.port,
+                'path': '/worker/' + reply.data.port + '/',
                 'url': window.location.origin + '/worker/' + reply.data.port + '/'
             };
 
@@ -134,7 +135,7 @@ function connect(vizType, urlParams) {
         return param + '=' + urlParams[param];
     }).join('&');
 
-    workersArgs = workersArgs + '&port=' + urlParams.port;
+
 
 
     var attempt = 0;
@@ -155,13 +156,16 @@ function connect(vizType, urlParams) {
 
                     debug('got params', params);
 
+                    workersArgs = workersArgs + '&port=' + params.port;
+
                     // var socket = io(params.url, { query: workersArgs,
                     //                             reconnection: false,
                     //                             transports: ['websocket']
                     //                             });
                     var socket = io.Manager(params.url, { query: workersArgs,
                                                 reconnection: false,
-                                                transports: ['websocket']
+                                                transports: ['websocket'],
+                                                path: params.path + 'socket.io/'
                                             }).socket('/');
 
                     socket.io.engine.binaryType = 'arraybuffer';
