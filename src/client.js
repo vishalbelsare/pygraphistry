@@ -156,7 +156,7 @@ function connect(vizType, urlParams) {
 
                     debug('got params', params);
 
-                    workersArgs = workersArgs + '&port=' + params.port;
+                    workersArgs = workersArgs + '&workerPort=' + params.port;
 
                     // var socket = io(params.url, { query: workersArgs,
                     //                             reconnection: false,
