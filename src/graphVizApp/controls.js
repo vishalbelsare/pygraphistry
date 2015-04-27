@@ -132,7 +132,7 @@ function createLegend($elt, urlParams) {
     $elt.show();
 }
 
-function createControls(socket, appState, trigger) {
+function createControls(socket) {
     var rxControls = Rx.Observable.fromCallback(socket.emit, socket)('layout_controls', null)
         .map(function (res) {
             if (res && res.success) {
@@ -190,11 +190,7 @@ function createControls(socket, appState, trigger) {
     };
 
     var $anchor = $('#renderingItems').children('.form-horizontal').empty();
-    rxControls
-        //defer construction till first click due to toggle
-        //bug: https://github.com/nostalgiaz/bootstrap-switch/issues/446
-        .flatMap(function (controls) { return trigger.map(_.constant(controls)); })
-    .do(function (controls) {
+    rxControls.subscribe(function (controls) {
         // Setup client side controls.
         var localParams = [
             {
@@ -232,45 +228,9 @@ function createControls(socket, appState, trigger) {
             });
         });
 
-        $('#renderingItems').find('[type=checkbox]').each(function () {
-            var input = this;
-            $(input).bootstrapSwitch();
-            var param = $(input).data('param');
-            $(input).onAsObservable('switchChange.bootstrapSwitch').subscribe(
-                function () {
-                    sendLayoutSetting(socket, param.algoName, param.name, input.checked);
-                },
-                util.makeErrorHandler('menu checkbox')
-            );
-        });
-
-        $('.menu-slider').each(function () {
-            var $that = $(this);
-            var $slider = $(this).bootstrapSlider({tooltip: 'hide'});
-            var param = $slider.data('param');
-
-            Rx.Observable.merge(
-                $slider.onAsObservable('slide'),
-                $slider.onAsObservable('slideStop')
-            ).distinctUntilChanged()
-            .throttleFirst(50)
-            .subscribe(
-                function () {
-                    if ($that.hasClass('layout-menu-slider')) {
-                        sendLayoutSetting(socket, param.algoName,
-                                    param.name, Number($slider.val()));
-                    } else if ($that.hasClass('local-menu-slider')) {
-                        setLocalSetting(param.name, Number($slider.val()),
-                                        appState.renderState, appState.settingsChanges);
-                    }
-                },
-                util.makeErrorHandler('menu slider')
-            );
-        });
-
     }, util.makeErrorHandler('createControls'));
 
-    rxControls.subscribe(_.identity, util.makeErrorHandler('construct controls'));
+    return rxControls;
 }
 
 function toLog(minPos, maxPos, minVal, maxVal, pos) {
@@ -371,9 +331,6 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     dataInspector.init(appState, socket, workerParams.url, brush);
     histogramBrush.init(socket, brush);
 
-/*
-
-    //FIXME: some reason this is firing events while supposedly idling
 
     var timeSlide = new Rx.Subject();
     $('#timeSlider').rangeSlider({
@@ -390,7 +347,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
             appState.poi.invalidateCache();
         });
 
-    timeSlide.throttleFirst(3)
+    timeSlide.sample(3)
         .do(function (when) {
             var payload = {
                 play: true, layout: false,
@@ -399,14 +356,45 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
             socket.emit('interaction', payload);
         })
         .subscribe(_.identity, util.makeErrorHandler('timeSlide'));
-*/
 
-    createControls(
-        socket,
-        appState,
-        onElt
-            .filter(function (elt) { return elt === $('#layoutSettingsButton')[0]; })
-            .take(1));
+    createControls(socket).subscribe(function () {
+        $('#renderingItems').find('[type=checkbox]').each(function () {
+            var input = this;
+            $(input).bootstrapSwitch();
+            var param = $(input).data('param');
+            $(input).onAsObservable('switchChange.bootstrapSwitch').subscribe(
+                function () {
+                    sendLayoutSetting(socket, param.algoName, param.name, input.checked);
+                },
+                util.makeErrorHandler('menu checkbox')
+            );
+        });
+
+        $('.menu-slider').each(function () {
+            var $that = $(this);
+            var $slider = $(this).bootstrapSlider({tooltip: 'hide'});
+            var param = $slider.data('param');
+
+            Rx.Observable.merge(
+                $slider.onAsObservable('slide'),
+                $slider.onAsObservable('slideStop')
+            ).distinctUntilChanged()
+            .sample(50)
+            .subscribe(
+                function () {
+                    if ($that.hasClass('layout-menu-slider')) {
+                        sendLayoutSetting(socket, param.algoName,
+                                    param.name, Number($slider.val()));
+                    } else if ($that.hasClass('local-menu-slider')) {
+                        setLocalSetting(param.name, Number($slider.val()),
+                                        appState.renderState, appState.settingsChanges);
+                    }
+                },
+                util.makeErrorHandler('menu slider')
+            );
+        });
+
+    }, util.makeErrorHandler('bad controls'));
 
     Rx.Observable.zip(
         marquee.drags,
@@ -427,32 +415,28 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     var finalCenter = (function () {
         var flag = urlParams.center;
-        return flag === undefined || flag.toLowerCase() === 'true';
+         return flag === undefined || flag.toLowerCase() === 'true';
     }());
 
-
-    var centeringDone =
-        Rx.Observable.merge(
-            Rx.Observable.fromEvent($('#center'), 'click'),
-            Rx.Observable.fromEvent($('#simulate'), 'click'),
-            $('#simulation').onAsObservable('mousewheel'),
-            $('#simulation').onAsObservable('mousedown'),
-            $('#zoomin').onAsObservable('click'),
-            $('#zoomout').onAsObservable('click'))
-        //skip events autoplay triggers
-        .filter(function (evt){ return evt.originalEvent !== undefined; })
-        .merge(Rx.Observable.timer(numTicks))
-        .map(_.constant(finalCenter));
-
     //tick stream until canceled/timed out (ends with finalCenter)
-    var autoCentering =
-        doneLoading.flatMapLatest(function () {
-            return Rx.Observable.interval(1000)
-                .do(function () { console.log('auto center interval'); })
-                .merge(centeringDone)
-                .takeUntil(centeringDone.delay(1));
-        });
-
+    var autoCentering = doneLoading.flatMapLatest(function () {
+        return Rx.Observable.merge(
+            Rx.Observable.return(Rx.Observable.interval(1000)),
+            Rx.Observable.merge(
+                    Rx.Observable.merge(
+                            Rx.Observable.fromEvent($('#center'), 'click'),
+                            Rx.Observable.fromEvent($('#simulate'), 'click'),
+                            $('#simulation').onAsObservable('mousewheel'),
+                            $('#simulation').onAsObservable('mousedown'),
+                            $('#zoomin').onAsObservable('click'),
+                            $('#zoomout').onAsObservable('click'))
+                        //skip events autoplay triggers
+                        .filter(function (evt){ return evt.originalEvent !== undefined; }),
+                    Rx.Observable.timer(numTicks))
+                .take(1)
+                .map(_.constant(Rx.Observable.return(finalCenter))))
+        .flatMapLatest(_.identity);
+    });
     var isAutoCentering = new Rx.ReplaySubject(1);
     autoCentering.subscribe(isAutoCentering, util.makeErrorHandler('bad autocenter'));
 

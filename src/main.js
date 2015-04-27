@@ -216,7 +216,8 @@ function createInfoOverlay(app) {
 
         theme: 'transparent',
     });
-    app.pluck('vboUpdates').subscribe(function(evt) {
+    app.subscribe(function (app) {
+        app.vboUpdates.subscribe(function(evt) {
             switch (evt) {
                 case 'start':
                     networkMeter.resume();
@@ -228,7 +229,8 @@ function createInfoOverlay(app) {
                     break;
             }
         },
-        function (err) { console.error('app vboUpdates error', err, (err||{}).stack); });
+        function (err) { console.error('vboUpdates error', err, (err||{}).stack); });
+    }, function (err) { console.error('app vboUpdates error', err, (err||{}).stack); });
 }
 
 window.addEventListener('load', function() {
