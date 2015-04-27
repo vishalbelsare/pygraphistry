@@ -99,6 +99,10 @@ var textures = {
         'datasource': 'CLIENT',
         'retina': true
     },
+    'steadyStateTexture': {
+        'datasource': 'CLIENT',
+        'retina': true
+    },
     'pointHitmapDownsampled': {
         'datasource': 'CLIENT',
         'width': {'unit': 'percent', 'value': 5},
@@ -304,7 +308,24 @@ var items = {
     },
     'pointculled': {
         'program': 'pointculled',
-        'triggers': ['renderSceneFast', 'renderSceneFull'],
+        'triggers': ['renderSceneFast'],
+        'bindings': {
+            'curPos':       ['curPoints', 'curPos'],
+            'pointSize':    ['pointSizes', 'pointSize'],
+            'pointColor':   ['pointColors', 'pointColor'],
+        },
+        'uniforms': {
+            'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
+            'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
+        },
+        'drawType': 'POINTS',
+        'glOptions': {},
+    },
+    'pointculledFull': {
+        'program': 'pointculled',
+        'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -321,7 +342,24 @@ var items = {
     },
     'uberpointculled': {
         'program': 'pointculled',
-        'triggers': ['renderSceneFast', 'renderSceneFull'],
+        'triggers': ['renderSceneFast'],
+        'bindings': {
+            'curPos':       ['curPoints', 'curPos'],
+            'pointSize':    ['pointSizes', 'pointSize'],
+            'pointColor':   ['pointColors', 'pointColor'],
+        },
+        'uniforms': {
+            'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
+            'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [8.0] }
+        },
+        'drawType': 'POINTS',
+        'glOptions': {},
+    },
+    'uberpointculledFull': {
+        'program': 'pointculled',
+        'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -357,7 +395,24 @@ var items = {
     },
     'pointoutline': {
         'program': 'pointculled',
-        'triggers': ['renderSceneFast', 'renderSceneFull'],
+        'triggers': ['renderSceneFast'],
+        'bindings': {
+            'curPos':       ['curPoints', 'curPos'],
+            'pointSize':    ['pointSizes', 'pointSize'],
+            'pointColor':   ['pointColors', 'pointColor']
+        },
+        'uniforms': {
+            'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
+            'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH] },
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
+        },
+        'drawType': 'POINTS',
+        'glOptions': {},
+    },
+    'pointoutlineFull': {
+        'program': 'pointculled',
+        'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -427,7 +482,16 @@ var items = {
     },
     'midpoints': {
         'program': 'midpoints',
-        'triggers': ['renderSceneFast', 'renderSceneFull'],
+        'triggers': ['renderSceneFast'],
+        'bindings': {
+            'curPos': ['curMidPoints', 'curPos']
+        },
+        'drawType': 'POINTS',
+        'glOptions': {}
+    },
+    'midpointsFull': {
+        'program': 'midpoints',
+        'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos': ['curMidPoints', 'curPos']
         },
@@ -480,14 +544,14 @@ var camera2D = {
 var sceneUber = {
     'options': stdOptions,
     'camera': camera2D,
-    'render': ['pointpicking',  'pointsampling', 'midedgetextured', 'edgepicking', 'uberpointculled']
+    'render': ['pointpicking',  'pointsampling', 'midedgetextured', 'edgepicking', 'uberpointculled', 'uberpointculledFull']
 }
 
 var sceneNetflow = {
     'options': stdOptions,
     'camera': camera2D,
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'edgeculled', 'edgepicking', 'pointoutline', 'pointculled']
+               'edgeculled', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull']
 }
 
 var sceneNetflowIndexed = {
@@ -495,7 +559,7 @@ var sceneNetflowIndexed = {
     'camera': camera2D,
     'edgeMode': 'CLIENTINDEXED',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'edgeculledindexed', 'edgepicking', 'pointoutline', 'pointculled']
+               'edgeculledindexed', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull']
 }
 
 var sceneNetflowIndexedClient = {
@@ -503,7 +567,7 @@ var sceneNetflowIndexedClient = {
     'camera': camera2D,
     'edgeMode': 'INDEXEDCLIENT',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'indexeddummy', 'edgeculledindexedclient', 'edgepicking', 'pointoutline', 'pointculled']
+               'indexeddummy', 'edgeculledindexedclient', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull']
 }
 
 var scenes = {
