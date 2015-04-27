@@ -131,11 +131,19 @@
 
     //hover effect: show & higher than other labels
     .graph-label-title {
+        width: 100%;
         max-width: 10em;
         display: inline-block;
         overflow:hidden;
         pointer-events: none;
     }
+
+    .label-type {
+        text-transform: uppercase;
+        font-size: 0.9em;
+        color: @dark-grey;
+    }
+
     .graph-label-contents {
         display: none;
     }
@@ -155,8 +163,15 @@
             overflow-x: hidden;
 
         }
-    }
 
+        .graph-label-container.graph-label-point .graph-label-title .label-type:after {
+            content: " Point";
+        }
+
+        .graph-label-container.graph-label-edge .graph-label-title .label-type:after {
+            content: " Edge";
+        }
+    }
 
     .graph-label-container {
         margin-top: 2.5em;
@@ -776,6 +791,17 @@ button.btn-default {
         font-size: 0.75em;
         font-weight: bold;
         background-color: @light-grey-background-2;
+
+        li {
+            display: inline-block;
+            width: 2em;
+            margin-left: 5px;
+
+        }
+
+        li.disabled, li.disabled a {
+            color: @medium-grey !important;
+        }
 
 
         li.active > a {
