@@ -104,7 +104,7 @@ function getVizServerParams(args) {
             var params = {
                 'hostname': reply.data.hostname,
                 'port': reply.data.port,
-                'url': '/worker/' + reply.data.port
+                'url': window.location.origin + '/worker/' + reply.data.port + '/'
             };
 
             console.info('Routed to', params.url, 'in', Date.now() - parseFloat(reply.data.timestamp), 'ms');
@@ -134,6 +134,8 @@ function connect(vizType, urlParams) {
         return param + '=' + urlParams[param];
     }).join('&');
 
+    workersArgs = workersArgs + '&port=' + urlParams.port;
+
 
     var attempt = 0;
     var latestError;
@@ -157,7 +159,7 @@ function connect(vizType, urlParams) {
                     //                             reconnection: false,
                     //                             transports: ['websocket']
                     //                             });
-                    var socket = io.Manager(window.location.origin + params.url, { query: workersArgs,
+                    var socket = io.Manager(params.url, { query: workersArgs,
                                                 reconnection: false,
                                                 transports: ['websocket']
                                             }).socket('/');
