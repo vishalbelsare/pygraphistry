@@ -357,6 +357,9 @@ app.post('/error', bodyParser.json({type: '*', limit: '64mb'}), logClientError);
 // Default '/' static assets
 app.use('/', express.static(MAIN_STATIC_PATH));
 
+// Default '/' static assets
+app.use('/graphistry', express.static(MAIN_STATIC_PATH));
+
 
 app.get('/horizon', function(req, res) {
     debug('redirecting to horizon')
