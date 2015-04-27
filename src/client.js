@@ -104,7 +104,7 @@ function getVizServerParams(args) {
             var params = {
                 'hostname': reply.data.hostname,
                 'port': reply.data.port,
-                'url': '//' + reply.data.hostname + ':' + reply.data.port
+                'url': '/worker/' + reply.data.port
             };
 
             console.info('Routed to', params.url, 'in', Date.now() - parseFloat(reply.data.timestamp), 'ms');
