@@ -43,22 +43,27 @@ function infoFrame(graph, type, indices, attributeNames) {
     var offset = graph.simulator.timeSubset.pointsRange.startIdx;
     var attribs = vgloader.getAttributeMap(graph.simulator.vgraph, attributeNames);
 
+    function read(field, idx) {
+        var val = attribs[field].values[idx];
+        return (typeof val === 'string') ? decodeURIComponent(val) : val;
+    }
+
     var titleFieldNode = nodeTitleField(attribs);
     var titleFieldEdge = edgeTitleField(attribs);
 
     function nodeTitle(idx) {
-        return titleFieldNode ? attribs[titleFieldNode].values[idx] : idx;
+        return titleFieldNode ? read(titleFieldNode, idx) : idx;
     }
     function edgeTitle(idx) {
-        return titleFieldEdge ? attribs[titleFieldEdge].values[idx] : idx;
+        return titleFieldEdge ? read(titleFieldEdge, idx) : idx;
     }
 
 
     var filteredKeys = _.keys(attribs)
         .filter(function (name) { return attribs[name].target === target; })
         .filter(function (name) {
-            return ['pointColor', 'pointSize', 'pointTitle', 'pointLabel', 'degree']
-                .indexOf(name) === -1;
+            return ['pointColor', 'pointSize', 'pointTitle', 'pointLabel',
+                    'edgeLabel', 'edgeTitle', 'degree'].indexOf(name) === -1;
         })
         .filter(function (name) { return name !== nodeTitleField && name !== edgeTitleField; })
 
@@ -91,13 +96,13 @@ function infoFrame(graph, type, indices, attributeNames) {
 
             columns = _.extend(columns, {
                 _title: edgeTitle(idx),
-                src: nodeTitle(srcIdx),
-                dst: nodeTitle(dstIdx)
+                Source: nodeTitle(srcIdx),
+                Destination: nodeTitle(dstIdx)
             });
         }
 
         _.each(filteredKeys, function (key) {
-            var val = attribs[key].values[idx];
+            var val = read(key, idx);
             var formattedVal = key.indexOf('Date') > -1 && typeof(val) === "number" ?
                     dateFormat(val, 'mm-dd-yyyy') : val;
             columns[key] = formattedVal;
