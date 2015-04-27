@@ -157,7 +157,7 @@ function connect(vizType, urlParams) {
                     //                             reconnection: false,
                     //                             transports: ['websocket']
                     //                             });
-                    var socket = io.Manager(params.url, { query: workersArgs,
+                    var socket = io.Manager(window.location.origin + params.url, { query: workersArgs,
                                                 reconnection: false,
                                                 transports: ['websocket']
                                             }).socket('/');
