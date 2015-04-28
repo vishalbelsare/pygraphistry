@@ -4,6 +4,7 @@
 var os          = require('os');
 var fs          = require('fs');
 var path        = require('path')
+var url         = require('url');
 
 
 var debug       = require('debug')('graphistry:central:server');
@@ -18,6 +19,7 @@ var config      = require('config')();
 debug("Config set to %j", config);
 
 var express     = require('express');
+var proxy       = require('express-http-proxy');
 var compression = require('compression');
 var app         = express();
 var http        = require('http').Server(app);
@@ -374,6 +376,18 @@ app.get('/uber', function(req, res) {
 
 function start() {
     return Rx.Observable.return()
+        .do(function () {
+            if (config.ENVIRONMENT === 'local') {
+                var from = '/worker/' + config.VIZ_LISTEN_PORT + '/';
+                var to = 'http://localhost:' + config.VIZ_LISTEN_PORT;
+                debug('setting up proxy', from, to);
+                app.use(from, proxy(to, {
+                    forwardPath: function(req, res) {
+                        return url.parse(req.url).path.replace(RegExp('worker/' + config.VIZ_LISTEN_PORT + '/'),'/');
+                    }
+                }));
+            }
+        })
         .flatMap(function () {
             if(config.ENVIRONMENT === 'local') {
                 return Rx.Observable.return();

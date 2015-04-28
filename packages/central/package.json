@@ -13,6 +13,7 @@
     "config": "git+ssh://git@github.com:graphistry/config.git#master",
     "debug": "~2.1.3",
     "express": "~4.12.3",
+    "express-http-proxy": "~0.6.0",
     "graph-viz": "git+ssh://git@github.com:graphistry/graph-viz.git#master",
     "horizon-viz": "git+ssh://git@github.com:graphistry/horizon-viz.git#master",
     "mongodb": "~2.0.25",
