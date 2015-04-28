@@ -74,7 +74,7 @@ var uberControls = {
                 tau: new ContinuousParam('Speed', 0.0005, 0.00001, 0.01),
                 gravity: new ContinuousParam('Gravity', 0.020083175556898723, 0, 0.1),
                 charge: new ContinuousParam('Charge', -0.005, -0.1, -0.0000000000000000),
-                springStrength: new ContinuousParam('Spring Strength', 50.2921, 0, 500),
+                springStrength: new ContinuousParam('Spring Strength', 50.2921, 0, 5000),
                 springDistance: new ContinuousParam('Spring Distance', 0.5, 0.0000001, 1),
                 scalingRatio: new ContinuousParam('Scaling', 1.0, 0.01, 100),
                 edgeInfluence: new DiscreteParam('Edge Influence', 1, 0, 5, 1),
@@ -94,7 +94,7 @@ var uberControls = {
     global: {
         simulationTime: 1, //SIMULATION_TIME, //milliseconds
         dimensions: [1, 1],
-        numSplits: 32
+        numSplits: 16
     },
     devices: ['CPU', 'GPU']
 }

@@ -9,7 +9,7 @@ var EbBarnesKernelSeq = function (clContext) {
 
   this.argsToBarnesLayout = [
     'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints',
-    'inputMidPositions', 'inputPositions', 'xCoords', 'yCoords', 'springs', 'edgeDirectionX', 'edgeDirectionY', 'mass', 'blocked', 'maxDepth',
+    'inputMidPositions', 'inputPositions', 'xCoords', 'yCoords', 'springs', 'edgeDirectionX', 'edgeDirectionY', 'edgeLength', 'mass', 'blocked', 'maxDepth',
     'pointDegrees', 'stepNumber', 'midpoint_stride', 'midpoints_per_edge', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
   ];
 
@@ -23,7 +23,7 @@ var EbBarnesKernelSeq = function (clContext) {
   ];
 
   this.argsMidPoints = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
-  'yCoords', 'edgeDirectionX', 'edgeDirectionY', 'accX', 'accY', 'children', 'mass', 'start',
+  'yCoords', 'edgeDirectionX', 'edgeDirectionY', 'edgeLength', 'accX', 'accY', 'children', 'mass', 'start',
   'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
   'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
     'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau', 'charge', 'midpoint_stride', 'midpoints_per_edge', 'WARPSIZE', 'THREADS_BOUND',
@@ -65,6 +65,7 @@ var EbBarnesKernelSeq = function (clContext) {
     yCoords: null,
     edgeDirectionX: null,
     edgeDirectionY: null,
+    edgeLength: null,
     accX: null,
     accY: null,
     children: null,
@@ -134,6 +135,8 @@ var EbBarnesKernelSeq = function (clContext) {
     y_cords: null,
     edgeDirectionX: null,
     edgeDirectionY: null,
+    edgeLegnth: null,
+    edgeLength: null,
     velx: null,
     vely: null,
     accx: null,
@@ -172,6 +175,7 @@ var EbBarnesKernelSeq = function (clContext) {
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'y_cords'),
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT,  'edgeDirectionX'),
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'edgeDirectionY'),
+        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'edgeLegnth'),
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'accx'),
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'accy'),
         simulator.cl.createBuffer(4*(num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'children'),
@@ -191,13 +195,14 @@ var EbBarnesKernelSeq = function (clContext) {
         simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'radius'),
         simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed')
         ])
-    .spread(function (partialForces, x_cords, y_cords, edgeDirectionX, edgeDirectionY, accx, accy, children, mass, start, sort, xmin, xmax, ymin, ymax, count,
+    .spread(function (partialForces, x_cords, y_cords, edgeDirectionX, edgeDirectionY, edgeLength, accx, accy, children, mass, start, sort, xmin, xmax, ymin, ymax, count,
                       blocked, step, bottom, maxdepth, radius) {
           tempBuffers.partialForces = partialForces;
           tempBuffers.x_cords = x_cords;
           tempBuffers.y_cords = y_cords;
           tempBuffers.edgeDirectionX = edgeDirectionX;
           tempBuffers.edgeDirectionY = edgeDirectionY;
+          tempBuffers.edgeLength = edgeLength;
           tempBuffers.accx = accx;
           tempBuffers.accy = accy;
           tempBuffers.children = children;
@@ -233,6 +238,7 @@ var EbBarnesKernelSeq = function (clContext) {
         yCoords:tempBuffers.y_cords.buffer,
         edgeDirectionX: tempBuffers.edgeDirectionX.buffer,
         edgeDirectionY: tempBuffers.edgeDirectionY.buffer,
+        edgeLength: tempBuffers.edgeLength.buffer,
         springs: simulator.buffers.forwardsEdges.buffer,
         mass:tempBuffers.mass.buffer,
         blocked:tempBuffers.blocked.buffer,
@@ -293,6 +299,7 @@ var EbBarnesKernelSeq = function (clContext) {
         yCoords:buffers.y_cords.buffer,
         edgeDirectionX: tempBuffers.edgeDirectionX.buffer,
         edgeDirectionY: tempBuffers.edgeDirectionY.buffer,
+        edgeLength: tempBuffers.edgeLength.buffer,
         accX:buffers.accx.buffer,
         accY:buffers.accy.buffer,
         children:buffers.children.buffer,
