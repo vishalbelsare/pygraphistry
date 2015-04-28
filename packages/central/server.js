@@ -412,7 +412,9 @@ if(require.main === module) {
         },
         function (err) {
             console.error("[server.js] Fatal error: could not start server on address %s, port %s. Exiting...",
-                HTTP_SERVER_LISTEN_ADDRESS, HTTP_SERVER_LISTEN_PORT);
+                HTTP_SERVER_LISTEN_ADDRESS,
+                HTTP_SERVER_LISTEN_PORT,
+                err);
 
             process.exit(1);
         }
