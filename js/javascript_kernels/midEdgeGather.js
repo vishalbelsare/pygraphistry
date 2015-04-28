@@ -47,7 +47,7 @@ function midEdgeGather(clContext) {
       simulator.tickBuffers(['curMidPoints', 'midSpringsPos', 'midSpringsColorCoord']);
 
       debug('Running midEdgeGather kernel');
-      return this.gather.exec([simulator.numForwardsWorkItems], resources)
+      return this.gather.exec([simulator.numEdges], resources)
         .fail(util.makeErrorHandler('Kernel midEdgeGather failed'));
     };
 

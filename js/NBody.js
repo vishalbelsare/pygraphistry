@@ -400,14 +400,14 @@ var setEdges = Q.promised(function(graph, edges) {
     var midPoints = new Float32Array((edges.length / 2) * numSplits * nDim || 1);
     if (numSplits) {
         for (var i = 0; i < edges.length; i+=2) {
-            var src = edges[i];
-            var dst = edges[i + 1];
+            var src = forwardEdges.edgesTyped[i];
+            var dst = forwardEdges.edgesTyped[i + 1];
             for (var d = 0; d < nDim; d++) {
-                var start = graph.__pointsHostBuffer[src * nDim + d];
-                var end = graph.__pointsHostBuffer[dst * nDim + d];
+                var start = graph.__pointsHostBuffer[(src * nDim) + d];
+                var end = graph.__pointsHostBuffer[(dst * nDim) + d];
                 var step = (end - start) / (numSplits + 1);
                 for (var q = 0; q < numSplits; q++) {
-                    midPoints[((i/2) * numSplits + q) * nDim + d] = start + step * (q + 1);
+                    midPoints[((((i/2) * numSplits) + q) * nDim) + d] = start + step * (q + 1);
                 }
             }
         }
