@@ -7,7 +7,8 @@ var ForceAtlas2         = require('./forceatlas2.js'),
     ForceAtlas2Fast     = require('./forceatlas2fast.js'),
     forceAtlasBarnes    = require('./forceatlasbarnes.js'),
     GaussSeidel         = require('./gaussseidel.js'),
-    EdgeBundling        = require('./edgebundling.js');
+    EdgeBundling        = require('./edgebundling.js'),
+    EdgeBundlingBarnes        = require('./edgebundlingbarnes.js');
 
 var SIMULATION_TIME = 100;
 
@@ -68,12 +69,19 @@ var uberControls = {
     simulator: SimCL,
     layoutAlgorithms: [
         {
-            algo: EdgeBundling,
+            algo: EdgeBundlingBarnes,
             params: {
-                charge: new ContinuousParam('Charge', -0.00000, -0.0001, 0),
+                tau: new ContinuousParam('Speed', 0.05, 0.000000001, 0.5),
                 gravity: new ContinuousParam('Gravity', 0.020083175556898723, 0, 0.1),
-                springStrength: new ContinuousParam('Spring Strength', 5.2921, 0, 6),
-                springDistance: new ContinuousParam('Spring Distance', 0.0001, 0, 0.001),
+                charge: new ContinuousParam('Charge', -0.0001, -100000, -0.0000000000000001),
+                springStrength: new ContinuousParam('Spring Strength', 200.2921, 0, 10000),
+                springDistance: new ContinuousParam('Spring Distance', 0.5, 0.0000001, 1),
+                scalingRatio: new ContinuousParam('Scaling', 1.0, 0.01, 100),
+                edgeInfluence: new DiscreteParam('Edge Influence', 1, 0, 5, 1),
+                preventOverlap: new BoolParam('Prevent Overlap', false),
+                strongGravity: new BoolParam('Strong Gravity', false),
+                dissuadeHubs: new BoolParam('Dissuade Hubs', false),
+                linLog: new BoolParam('LinLog', false)
             }
         }
     ],
@@ -84,9 +92,9 @@ var uberControls = {
         lockMidedges: false
     },
     global: {
-        simulationTime: SIMULATION_TIME, //milliseconds
+        simulationTime: 1, //SIMULATION_TIME, //milliseconds
         dimensions: [1, 1],
-        numSplits: 3
+        numSplits: 8
     },
     devices: ['CPU', 'GPU']
 }

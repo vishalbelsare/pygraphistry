@@ -452,7 +452,7 @@ var items = {
         'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos': ['midSpringsPos', 'curPos'],
-            'edgeColor' : ['edgeColors', 'edgeColor']
+            'edgeColor' : ['midSpringsColorCoord', 'colorCoord']
         },
         'drawType': 'LINES',
         'glOptions': {}
@@ -480,7 +480,7 @@ var camera2D = {
 var sceneUber = {
     'options': stdOptions,
     'camera': camera2D,
-    'render': ['pointpicking',  'pointsampling', 'midedgetextured', 'edgepicking', 'uberpointculled']
+    'render': ['pointpicking',  'pointsampling', 'midedgeculled', 'edgepicking', 'uberpointculled']
 }
 
 var sceneNetflow = {
