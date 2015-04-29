@@ -199,12 +199,22 @@ EdgeBundling.prototype.setEdges = function (simulator) {
         * simulator.elementsPerPoint
         * Float32Array.BYTES_PER_ELEMENT;
 
+    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
+    var warpsize = 1; // Always correct
+    if (vendor.indexOf('intel') != -1) {
+        warpsize = 16;
+    } else if (vendor.indexOf('nvidia') != -1) {
+        warpsize = 32;
+    } else if (vendor.indexOf('amd') != -1) {
+        warpsize = 64;
+    }
+
     var global = simulator.controls.global;
     var that = this;
     var workGroupSize = 256;
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps, workGroupSize);
     return setupTempLayoutBuffers(simulator).then(function (tempLayoutBuffers) {
-      that.ebBarnesKernelSeq.setMidPoints(simulator, tempLayoutBuffers, 32, workItems);
+      that.ebBarnesKernelSeq.setMidPoints(simulator, tempLayoutBuffers, warpsize, workItems);
       that.faSwingsKernel.setMidPoints(simulator, tempLayoutBuffers);
 
       that.ebMidsprings.set({
