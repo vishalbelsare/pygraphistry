@@ -153,9 +153,9 @@ var secretConsole = {
     error: console.error,
     fatal: console.error
 };
-//console.info = info;
-//console.warn = warn;
-//console.error = error;
+console.info = info;
+console.warn = warn;
+console.error = error;
 
 function rgb(r, g, b, a) {
     if (a === undefined)
