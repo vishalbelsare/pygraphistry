@@ -266,7 +266,6 @@ EdgeBundling.prototype.tick = function(simulator, stepNumber) {
         debug('LOCKED, EARLY EXIT');
         return Q();
     }
-    console.log("Before");
     return Q().then(function () {
         if (locks.lockMidpoints) {
             simulator.tickBuffers(['nextMidPoints']);
@@ -288,7 +287,6 @@ EdgeBundling.prototype.tick = function(simulator, stepNumber) {
             return promiseWhile(condition, body)
         }
     }).then(function () { //TODO do both forwards and backwards?
-        console.log("After");
         if (simulator.numEdges > 0 && !locks.lockMidedges) {
             return midEdges(simulator, that.ebMidsprings, stepNumber);
         } else {

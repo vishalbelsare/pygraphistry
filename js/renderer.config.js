@@ -445,7 +445,7 @@ var items = {
             'uSampler': 'colorMap'
         },
         'drawType': 'LINES',
-        'glOptions': {},
+        'glOptions': {}
     },
     'midedgeculled': {
         'program': 'midedgeculled',
@@ -455,7 +455,7 @@ var items = {
             'edgeColor' : ['midSpringsColorCoord', 'colorCoord']
         },
         'drawType': 'LINES',
-        'glOptions': {},
+        'glOptions': {}
     }
 }
 
@@ -480,7 +480,7 @@ var camera2D = {
 var sceneUber = {
     'options': stdOptions,
     'camera': camera2D,
-    'render': ['midpoints', 'pointpicking', 'pointsampling', 'midedgeculled', 'uberpointculled', 'edgepicking']
+    'render': ['pointpicking',  'pointsampling', 'midedgeculled', 'edgepicking', 'uberpointculled']
 }
 
 var sceneNetflow = {
