@@ -165,7 +165,6 @@ var EbBarnesKernelSeq = function (clContext) {
     var numBodies = num_bodies;
     // Set this to the number of workgroups in boundBox kernel
     var num_work_groups = 30;
-    console.log("Nodes", numNodes, "Bodies", numBodies);
 
 
     return Q.all(
@@ -228,9 +227,6 @@ var EbBarnesKernelSeq = function (clContext) {
 
   this.setMidPoints = function(simulator, layoutBuffers, warpsize, workItems) {
     var that = this;
-    console.log("Set midpoints", simulator.numMidPoints);
-    console.log("Midpoints", workItems);
-    console.log("Num edges", simulator.numEdges);
     return setupTempBuffers(simulator, warpsize, simulator.numEdges).then(function (tempBuffers) {
 
       that.toBarnesLayout.set({

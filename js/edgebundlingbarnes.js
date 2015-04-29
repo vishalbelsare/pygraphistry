@@ -107,7 +107,6 @@ function getNumWorkitemsByHardware(deviceProps) {
         calculateForces: [60, 256]
     }
 
-    //console.log("DEVICE NAME: ", deviceProps.NAME);
     if (deviceProps.NAME.indexOf('GeForce GT 650M') != -1) {
         numWorkGroups.buildTree[0] = 1;
         numWorkGroups.computeSums[0] = 1;
@@ -172,7 +171,6 @@ Object.seal(tempLayoutBuffers);
 // Create temporary buffers needed for layout
 var setupTempLayoutBuffers = function(simulator) {
     simulator.resetBuffers(tempLayoutBuffers);
-    console.log("Mid point allocation", simulator.numMidPoints);
     return Q.all(
         [
         simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed'),
@@ -205,7 +203,6 @@ EdgeBundling.prototype.setEdges = function (simulator) {
     var that = this;
     var workGroupSize = 256;
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps, workGroupSize);
-    console.log(workItems);
     return setupTempLayoutBuffers(simulator).then(function (tempLayoutBuffers) {
       that.ebBarnesKernelSeq.setMidPoints(simulator, tempLayoutBuffers, 32, workItems);
       that.faSwingsKernel.setMidPoints(simulator, tempLayoutBuffers);

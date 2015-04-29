@@ -27,7 +27,6 @@ function getNumWorkitemsByHardware(deviceProps) {
         calculateForces: [60, 256]
     }
 
-    //console.log("DEVICE NAME: ", deviceProps.NAME);
     if (deviceProps.NAME.indexOf('GeForce GT 650M') != -1) {
         numWorkGroups.buildTree[0] = 1;
         numWorkGroups.computeSums[0] = 1;
