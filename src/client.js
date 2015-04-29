@@ -169,8 +169,8 @@ function connect(vizType, urlParams) {
 
                     socket.io.engine.binaryType = 'arraybuffer';
 
-                    socket.io.on('connect_error', function () { // FIXME Cannot trigger this handler when testing. Bug?
-                        console.error('error, socketio failed connect');
+                    socket.io.on('connect_error', function (err) { // FIXME Cannot trigger this handler when testing. Bug?
+                        console.error('error, socketio failed connect', err);
                         latestError = 'Failed to connect to GPU worker. Try refreshing the page...';
 
                         // FIXME: Cannot throw exception in callback. Must wrap in Rx
