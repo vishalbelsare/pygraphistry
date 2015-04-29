@@ -526,20 +526,25 @@ function createPrograms(state) {
 
         //// Create, compile and attach the shaders
         var vertShader = gl.createShader(gl.VERTEX_SHADER);
-        gl.shaderSource(vertShader, programOptions.get('sources').get('vertex'));
+        var sourceCode = programOptions.get('sources').get('vertex');
+        var log;
+        gl.shaderSource(vertShader, sourceCode);
         gl.compileShader(vertShader);
         if(!(gl.isShader(vertShader) && gl.getShaderParameter(vertShader, gl.COMPILE_STATUS))) {
-            throw new Error('Could not compile shader. Log: "' + gl.getShaderInfoLog(vertShader) +
-                '"\nSource:\n' + programOptions.get('sources').get('vertex'));
+            log = gl.getShaderInfoLog(vertShader);
+            debug('Error in vertex shader', programName, log, sourceCode);
+            throw new Error('Could not compile vertex shader "' + programName + '" (' + log + ')');
         }
         gl.attachShader(program, vertShader);
 
         var fragShader = gl.createShader(gl.FRAGMENT_SHADER);
-        gl.shaderSource(fragShader, programOptions.get('sources').get('fragment'));
+        sourceCode = programOptions.get('sources').get('fragment');
+        gl.shaderSource(fragShader, sourceCode);
         gl.compileShader(fragShader);
         if(!(gl.isShader(fragShader) && gl.getShaderParameter(fragShader, gl.COMPILE_STATUS))) {
-            throw new Error('Could not compile shader. Log: "' + gl.getShaderInfoLog(fragShader) +
-                '"\nSource:\n' + programOptions.get('sources').get('fragment'));
+            log = gl.getShaderInfoLog(fragShader);
+            debug('Error in fragment shader', programName, log, sourceCode);
+            throw new Error('Could not compile fragment shader "' + programName + '" (' + log + ')');
         }
         gl.attachShader(program, fragShader);
 
@@ -859,7 +864,7 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
     sortedItems.forEach(function(item) {
         var numElements = state.get('numElements')[item];
         if(typeof numElements === 'undefined' || numElements < 1) {
-            debug('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
+            console.warn('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
                 item);
             return false;
         }
