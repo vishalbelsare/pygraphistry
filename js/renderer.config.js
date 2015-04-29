@@ -23,6 +23,15 @@ var programs = {
         'camera': 'mvp',
         'uniforms': []
     },
+    'arrow': {
+        'sources': {
+            'vertex': fs.readFileSync(__dirname + '/../shaders/arrow.vertex.glsl', 'utf8').toString('ascii'),
+            'fragment': fs.readFileSync(__dirname + '/../shaders/arrow.fragment.glsl', 'utf8').toString('ascii')
+        },
+        'attributes': ['arrowColor', 'curPos', 'pointSize', 'edgeVec'],
+        'camera': 'mvp',
+        'uniforms': ['zoomScalingFactor', 'maxPointSize']
+    },
     'edges': {
         'sources': {
             'vertex': fs.readFileSync(__dirname + '/../shaders/edge.vertex.glsl', 'utf8').toString('ascii'),
@@ -150,6 +159,28 @@ var models = {
             'normalize': false
         }
     },
+    'arrowPosClient': {
+        'curPos': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
+    'arrowEdgeVec': {
+        'edgeVec': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
     'midSpringsPos': {
         'curPos': {
             'datasource': 'DEVICE',
@@ -191,9 +222,31 @@ var models = {
             'normalize': false
         }
     },
+    'arrowPointSizes': {
+        'pointSize':  {
+            'datasource': 'CLIENT',
+            'type': 'UNSIGNED_BYTE',
+            'hint': 'STATIC_DRAW',
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': false
+        }
+    },
     'edgeColors': {
         'edgeColor':  {
             'datasource': 'HOST',
+            'type': 'UNSIGNED_BYTE',
+            'hint': 'STATIC_DRAW',
+            'count': 4,
+            'offset': 0,
+            'stride': 0,
+            'normalize': true
+        }
+    },
+    'arrowColors': {
+        'arrowColor':  {
+            'datasource': 'CLIENT',
             'type': 'UNSIGNED_BYTE',
             'hint': 'STATIC_DRAW',
             'count': 4,
@@ -286,6 +339,24 @@ var items = {
             'edgeColor': ['edgeColors', 'edgeColor']
         },
         'drawType': 'LINES',
+        'glOptions': {
+            'depthFunc': [['LESS']]
+        }
+    },
+    'arrowculled' : {
+        'program': 'arrow',
+        'triggers': ['renderSceneFull'],
+        'bindings': {
+            'curPos': ['arrowPosClient', 'curPos'],
+            'arrowColor': ['arrowColors', 'arrowColor'],
+            'pointSize': ['arrowPointSizes', 'pointSize'],
+            'edgeVec': ['arrowEdgeVec', 'edgeVec']
+        },
+        'uniforms': {
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
+        },
+        'drawType': 'TRIANGLES',
         'glOptions': {
             'depthFunc': [['LESS']]
         }
@@ -503,7 +574,8 @@ var sceneNetflowIndexedClient = {
     'camera': camera2D,
     'edgeMode': 'INDEXEDCLIENT',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'indexeddummy', 'edgeculledindexedclient', 'edgepicking', 'pointoutline', 'pointculled']
+               'indexeddummy', 'edgeculledindexedclient', 'arrowculled',
+               'edgepicking', 'pointoutline', 'pointculled']
 }
 
 var scenes = {
