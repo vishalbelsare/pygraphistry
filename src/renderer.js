@@ -26,6 +26,8 @@ var attrLocations = {};
  * @type {Object.<string, Object.<string, GLint>>} */
 var uniformLocations = {};
 
+var lastRenderTarget = {};
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Internal helpers
@@ -805,8 +807,27 @@ function setCamera(state) {
     });
 }
 
+function updateRenderTarget (state, renderTarget) {
+    var gl = state.get('gl');
+    if (renderTarget !== lastRenderTarget) {
+        debug('  rebinding renderTarget');
+        gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
+        lastRenderTarget = renderTarget;
+    }
+}
 
-var lastRenderTarget = {};
+
+function copyCanvasToTexture(state, textureName) {
+    var gl = state.get('gl');
+    var canvas = gl.canvas;
+
+    var start = Date.now();
+    updateRenderTarget(state, textureName);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+    var end = Date.now();
+    console.info('Copied Canvas to Texture(' + textureName +') in', end - start, '[ms]');
+}
+
 
 /**
  * Render one or more items as specified in render config's render array
@@ -874,11 +895,7 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
         _.uniq(texturesToRead).forEach(function (renderTarget) {
             debug('reading back texture', renderTarget);
 
-            if (renderTarget !== lastRenderTarget) {
-                debug('  (needed rebind)');
-                gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
-                lastRenderTarget = renderTarget;
-            }
+            updateRenderTarget(state, renderTarget);
 
             var dims = getTextureDims(config, gl.canvas, camera, renderTarget);
             var pixelreads = state.get('pixelreads');
@@ -916,10 +933,7 @@ function renderItem(state, config, camera, gl, options, ext, programs, buffers, 
 
     debug('Rendering item "%s" (%d elements)', item, numElements);
 
-    if (renderTarget !== lastRenderTarget) {
-        gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
-        lastRenderTarget = renderTarget;
-    }
+    updateRenderTarget(state, renderTarget);
 
     //change viewport in case of downsampled target
     var dims = getTextureDims(config, gl.canvas, camera, renderTarget);
@@ -1039,6 +1053,7 @@ module.exports = {
     setCamera: setCamera,
     setNumElements: setNumElements,
     render: render,
+    copyCanvasToTexture: copyCanvasToTexture,
     getServerBufferNames: getServerBufferNames,
     getServerTextureNames: getServerTextureNames,
 };
