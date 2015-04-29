@@ -9,20 +9,12 @@ var zlib = require('zlib');
 var path = require('path');
 var fs = require('fs');
 var config  = require('config')();
-// var renderConfig = require('../../js/renderer.config.graph.js');
 
-var builder = null;
-var pb_root = null;
-
-pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'), function (err, builder_) {
-    if (err) {
-        debug('error: could not build proto', err, err.stack);
-        return;
-    } else {
-        builder = builder_;
-        pb_root = builder.build();
-    }
-});
+var builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
+if (builder === null) {
+    util.die('Could not find protobuf definition');
+}
+var pb_root = builder.build();
 
 //{<name>-> CLJSBuffer} -> Promise [ protobufvector ]
 function readBuffers(buffers) {
@@ -39,7 +31,7 @@ function readBuffers(buffers) {
 
         // Read the buffer data into a typed array and push to vectors array
         return buffer.read(target).then(function(buf) {
-            var vector = new pb_root.VectorGraph.FloatAttributeVector();
+            var vector = new pb_root.VectorGraph.DoubleAttributeVector();
             var normalArray = Array.prototype.slice.call(target);
 
             vector.values = normalArray;
