@@ -78,7 +78,7 @@ function renderCursor(renderState, renderingScheduler, $cont, $point, $center, p
         renderingScheduler.renderScene('mouseOver', {
             trigger: 'mouseOverEdgeHighlight',
             data: {
-                indices: [idx]
+                edgeIndices: [idx]
             }
         });
         return;

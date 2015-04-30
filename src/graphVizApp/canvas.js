@@ -124,15 +124,23 @@ function renderSlowEffects(renderingScheduler) {
  * Render mouseover effects. These should only occur during a quiet state.
  *
  */
-function renderMouseoverEffects(renderingScheduler) {
+function renderMouseoverEffects(renderingScheduler, task) {
     var appSnapshot = renderingScheduler.appSnapshot;
-    var renderState = renderingScheduler.renderState;
-
-    console.log('Rendering Mouseover Effects');
+    var buffers = appSnapshot.buffers;
+    console.log('TODO: Rendering mouseover task: ', task);
 
     // TODO: Render cached texture to screen
-    // TODO: Render mouseover Effects
 
+    // TODO: Render mouseover Effects
+    var edgeIndices = task.data.edgeIndices;
+    // TODO: Start with a small buffer and increase if necessary, masking underlying
+    // data so we don't have to clear out later values. This way we won't have to constantly allocate
+    buffers.highlightedEdges = new Float32Array(edgeIndices.length * 2);
+    _.each(edgeIndices, function (val, idx) {
+        buffers.highlightedEdges[idx*2] = buffers.springsPos[val*2];
+        buffers.highlightedEdges[idx*2 + 1] = buffers.springsPos[val*2 + 1];
+    });
+    console.log('Edges Buffer to Highlight: ', buffers.highlightedEdges);
 }
 
 
@@ -156,7 +164,8 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         buffers: {
             curPoints: undefined,
             logicalEdges: undefined,
-            springsPos: undefined
+            springsPos: undefined,
+            highlightedEdges: undefined
         },
         hitmapUpdates: hitmapUpdates
     };
@@ -247,7 +256,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
             // TODO: Generalize this as a separate category?
             if (_.keys(renderQueue).indexOf('mouseOver') > -1) {
                 // TODO: Handle mouseover interaction
-                console.log('Handling mouseover task: ', renderQueue.mouseOver);
+                renderMouseoverEffects(that, renderQueue.mouseOver);
                 delete renderQueue.mouseOver;
             }
 
