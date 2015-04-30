@@ -17,9 +17,8 @@ if (builder === null) {
 }
 var pb_root = builder.build();
 
-// TODO: Figure out how to read enum from protobuf
-var VERTEX = 0;
-var EDGE = 1;
+var VERTEX = pb_root.VectorGraph.AttributeTarget.VERTEX;
+var EDGE   = pb_root.VectorGraph.AttributeTarget.EDGE;
 
 var decoders = {
     0: decode0

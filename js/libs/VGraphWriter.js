@@ -1,14 +1,12 @@
-"use strict";
+'use strict';
 
-var Q = require('q');
-var _ = require('underscore');
-var fs = require('fs');
-var debug = require('debug')('graphistry:graph-viz:vgraphwriter');
-var pb = require('protobufjs');
-var zlib = require('zlib');
-var path = require('path');
-var fs = require('fs');
+var Q       = require('q');
+var _       = require('underscore');
+var debug   = require('debug')('graphistry:graph-viz:data:vgraphwriter');
+var pb      = require('protobufjs');
+var path    = require('path');
 var config  = require('config')();
+var s3      = require('common/s3.js');
 
 var builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
 if (builder === null) {
@@ -16,118 +14,50 @@ if (builder === null) {
 }
 var pb_root = builder.build();
 
-//{<name>-> CLJSBuffer} -> Promise [ protobufvector ]
-function readBuffers(buffers) {
+/* Hack way to serialize positions while waiting for dataframe */
+function serializePositions(graph) {
+    debug('Serializing');
+    var vg = graph.simulator.vgraph;
 
-    var vectors = [];
+    var curPoints = graph.simulator.buffers.curPoints;
+    var numPoints = graph.simulator.numPoints;
 
-    // Iterate through each buffer
-    var arrs = Object.keys(buffers).map(function(index){
+    var xVal = new Array(numPoints);
+    var yVal = new Array(numPoints);
+    var values = new Float32Array(curPoints.size / Float32Array.BYTES_PER_ELEMENT);
 
-        var buffer = buffers[index];
-
-        // TODO: Set this dynamically based on type?
-        var target = new Float32Array(buffer.size / Float32Array.BYTES_PER_ELEMENT);
-
-        // Read the buffer data into a typed array and push to vectors array
-        return buffer.read(target).then(function(buf) {
-            var vector = new pb_root.VectorGraph.DoubleAttributeVector();
-            var normalArray = Array.prototype.slice.call(target);
-
-            vector.values = normalArray;
-            vector.name = index;
-            vectors.push(vector);
-
-            return target;
-        })
-    })
-
-    return Q.all(arrs).then(_.constant(vectors));
-
-}
-
-
-//Promise? graph * Promise? [ ProtobufVector ] -> Promise
-var uploadVGraph = Q.promised(function (vg, metadata) {
-
-    debug('uploading VGraph', metadata.name);
-
-    return Q()
-        .then(function () { return vg.constructor === Buffer ? vg : (vg.encode().toBuffer()); })
-        .then(Q.nfcall.bind('', zlib.gzip))
-        .then(function (zipped) {
-
-            var params = {
-                Bucket: config.BUCKET,
-                Key: metadata.name,
-                ACL: 'private',
-                Metadata: metadata,
-                Body: zipped,
-                ServerSideEncryption: 'AES256'
-            };
-
-            debug ('uploading length', (zipped.length/1000).toFixed(1), 'KB');
-
-            return Q.nfcall(config.S3.putObject.bind(config.S3), params);
-        })
-        .then(function () { debug('  uploaded', metadata.name); });
-});
-
-
-function uploadBuffers(graph, vectors) {
-    graph.vg.float_vectors = vectors;
-    var metadata = graph.metadata;
-    metadata.name = metadata.name.replace('.serialized','') + '.serialized';
-    return uploadVGraph(graph.vg, metadata);
-}
-
-// Graph -> Promise
-function write(graph) {
-
-    // Disable buggy serialization
-    console.log('(tmp skip write)');
-    return Q();
-
-    if (!graph.vg) {
-        return Q();
-    }
-
-    // FIXME: Very buggy
-    debug('serializing and saving state...')
-
-    // Grab the buffers from the simulator
-    var buffers = graph.simulator.buffers;
-
-    // Add vertices. It's a flattened array, so compose into tuples.
-    var untypedVertices = Array.prototype.slice.call(graph.__pointsHostBuffer);
-
-    if (graph.vg.double_vectors === undefined) {
-        graph.vg.double_vectors = [];
-    }
-
-    for (var index = 0; index < untypedVertices.length; index++) {
-        if (index % 2 != 0) {
-            continue;
+    return curPoints.read(values).then(function () {
+        for (var i = 0; i < numPoints; i++) {
+            xVal[i] = values[2*i];
+            yVal[i] = values[2*i + 1];
         }
 
-        // Save the vertices to a double_vector in the protobuf
-        var x = new pb_root.VectorGraph.DoubleAttributeVector();
-        x.name = "x";
-        x.values = graph.__pointsHostBuffer[index];
-        x.target = pb_root.VectorGraph.AttributeTarget.VERTEX;
-        graph.vg.double_vectors.push(x);
+        var xVec = new pb_root.VectorGraph.DoubleAttributeVector();
+        xVec.name = 'x';
+        xVec.values = xVal;
+        xVec.target = pb_root.VectorGraph.AttributeTarget.VERTEX;
+        vg.double_vectors.push(xVec);
 
-        var y = new pb_root.VectorGraph.DoubleAttributeVector();
-        y.name = "y";
-        y.values = graph.__pointsHostBuffer[index+1];
-        y.target = pb_root.VectorGraph.AttributeTarget.VERTEX;
-        graph.vg.double_vectors.push(y);
-    }
+        var yVec = new pb_root.VectorGraph.DoubleAttributeVector();
+        yVec.name = 'y';
+        yVec.values = yVal;
+        yVec.target = pb_root.VectorGraph.AttributeTarget.VERTEX;
+        vg.double_vectors.push(yVec);
 
+        return vg;
+    });
+}
 
-    return uploadBuffers(graph, readBuffers(buffers));
+function save(graph, name) {
+    debug('Saving current graph as', name);
+
+    return serializePositions(graph).then(function (vg) {
+        var blob = vg.encode().toBuffer();
+        debug('Uploading to S3', name);
+        return s3.upload(config.S3, config.BUCKET, {name: name}, blob);
+    }).fail(util.makeErrorHandler('save vgraph'));
 }
 
 module.exports = {
-    // I AM DEAD CODE
+    save: save
 };
