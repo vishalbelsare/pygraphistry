@@ -10,7 +10,8 @@ var util            = require('./util.js');
 
 
 function nameToLink (urlParams, name) {
-    var params = _.extend({}, urlParams, {datasetname: encodeURIComponent(name), play: 0});
+    var overrides = {dataset: encodeURIComponent(name), play: 0};
+    var params = _.extend({}, _.omit(urlParams, 'dataset', 'datasetname'), overrides);
     var paramStr = _.map(params, function (v, k) { return k + '=' + v; }).join('&');
     return window.location.origin + window.location.pathname + '?' + paramStr;
 }
@@ -23,7 +24,7 @@ module.exports = function (socket, urlParams) {
         //show
         .map(function () {
              return $(Handlebars.compile($('#forkTemplate').html())(
-                {defName: urlParams.datasetname + '_' + (1+Math.random()*2000000000).toString(16).slice(0).replace('.','')}));
+                {defName: urlParams.dataset + '_' + (1+Math.random()*2000000000).toString(16).slice(0).replace('.','')}));
         })
         .do(function ($modal) {
              $('body').append($modal);
@@ -58,8 +59,9 @@ module.exports = function (socket, urlParams) {
                     .empty()
                     .append($('<span>').text('Static copy at: '))
                     .append($('<a>')
+                        .attr('target', '_blank')
                         .text(url)
-                        .attr('href',url));
+                        .attr('href', url));
                 $('.status', $modal).css('display','none');
             }
         })
