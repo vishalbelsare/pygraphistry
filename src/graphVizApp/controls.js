@@ -11,6 +11,7 @@ var dataInspector   = require('./dataInspector.js');
 var histogramBrush  = require('./histogramBrush.js');
 var marqueeFact     = require('./marquee.js');
 var runButton       = require('./runButton.js');
+var forkVgraph      = require('./fork.js');
 
 
 function sendLayoutSetting(socket, algo, param, value) {
@@ -330,6 +331,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var brush = setupBrush(appState, turnOnBrush);
     dataInspector.init(appState, socket, workerParams.url, brush);
     histogramBrush.init(socket, brush);
+    forkVgraph(socket);
 
 
     var timeSlide = new Rx.Subject();
