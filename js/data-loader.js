@@ -10,7 +10,7 @@ var zlib = require('zlib');
 var Rx = require('rx');
 var urllib = require('url');
 var util = require('./util.js');
-var Cache = require('./cache.js');
+var Cache = require('common/cache.js');
 
 var MatrixLoader = require('./libs/MatrixLoader.js'),
     VGraphLoader = require('./libs/VGraphLoader.js'),
