@@ -331,7 +331,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var brush = setupBrush(appState, turnOnBrush);
     dataInspector.init(appState, socket, workerParams.url, brush);
     histogramBrush.init(socket, brush);
-    forkVgraph(socket);
+    forkVgraph(socket, urlParams);
 
 
     var timeSlide = new Rx.Subject();

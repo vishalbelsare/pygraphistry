@@ -9,13 +9,21 @@ var Handlebars = require('handlebars');
 var util            = require('./util.js');
 
 
-module.exports = function (socket) {
+function nameToLink (urlParams, name) {
+    var params = _.extend({}, urlParams, {datasetname: encodeURIComponent(name), play: 0});
+    var paramStr = _.map(params, function (v, k) { return k + '=' + v; }).join('&');
+    return window.location.origin + window.location.pathname + '?' + paramStr;
+}
+
+
+module.exports = function (socket, urlParams) {
     var $btn = $('#forkButton');
 
     Rx.Observable.fromEvent($btn, 'click')
+        //show
         .map(function () {
              return $(Handlebars.compile($('#forkTemplate').html())(
-                {defName: 'Graph_' + (1+Math.random()*2000000000).toString(16).slice(0).replace('.','')}));
+                {defName: urlParams.datasetname + '_' + (1+Math.random()*2000000000).toString(16).slice(0).replace('.','')}));
         })
         .do(function ($modal) {
              $('body').append($modal);
@@ -26,6 +34,7 @@ module.exports = function (socket) {
             return Rx.Observable.fromEvent($('.modal-footer button', $modal), 'click')
                 .map(_.constant($modal));
         })
+        //notify server & wait
         .do(function ($modal) {
             $('.status', $modal).css('display','inline');
             $('.modal-footer button', $modal).css('display', 'none');
@@ -37,23 +46,26 @@ module.exports = function (socket) {
                     return {reply: reply, $modal: $modal};
                 });
         })
+        //show
         .do(function (pair) {
             var reply = pair.reply;
             var $modal = pair.$modal;
             if (!reply || !reply.success)  {
                 throw new Error({msg: 'Server error on inspectHeader', v: (reply||{}).error});
             } else {
+                var url = nameToLink(urlParams, reply.data);
                 $('.modal-body', $modal)
                     .empty()
                     .append($('<span>').text('Static copy at: '))
                     .append($('<a>')
-                        .text(reply.data)
-                        .attr('href',reply.data));
+                        .text(url)
+                        .attr('href',url));
                 $('.status', $modal).css('display','none');
             }
         })
         .subscribe(_.identity,
             function (err) {
+                console.error('err', err);
                 try { $('.forker').remove(); } catch (e) { }
                 util.makeErrorHandler('exn forking vgraph', err);
             });
