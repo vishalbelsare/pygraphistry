@@ -788,8 +788,18 @@ function setCamera(state) {
         if ('zoomScalingFactor' in map) {
             numVertices = state.get('numElements')[item];
             var scalingFactor = camera.semanticZoom(numVertices);
-            map.zoomScalingFactor = [scalingFactor];
+            map.zoomScalingFactor = 4.0;//[scalingFactor];
         }
+
+        if ('screenWidth' in map) {
+            map.screenWidth = camera.width;
+        }
+
+        if ('screenHeight' in map) {
+            map.screenHeight = camera.height;
+        }
+
+        console.log(map);
     });
 
     //HACK: we should have line shaders, and pass this as a uniform

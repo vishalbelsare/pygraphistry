@@ -128,7 +128,6 @@ function makeArrows(bufferSnapshots) {
         var start = [springsPos[4*i + 0], springsPos[4*i + 1]];
         var end   = [springsPos[4*i + 2], springsPos[4*i + 3]];
         var pointSize = pointSizes[logicalEdges[2*i + 1]];
-        console.log(pointSize);
 
         var vec = [start[0] - end[0], start[1] - end[1]];
         var norm = Math.sqrt(vec[0] * vec[0] + vec[1] * vec[1]);
