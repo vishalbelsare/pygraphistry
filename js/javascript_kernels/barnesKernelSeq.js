@@ -22,6 +22,12 @@ var BarnesKernelSeq = function (clContext) {
         'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
     ];
 
+    this.argsBarnes2 = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
+    'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
+    'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
+    'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
+        'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau', 'WARPSIZE'];
+
     this.argsType = {
         scalingRatio: cljs.types.float_t,
         gravity: cljs.types.float_t,
@@ -50,6 +56,7 @@ var BarnesKernelSeq = function (clContext) {
         tractions: null,
         gSpeeds: null,
         tau: cljs.types.float_t,
+        charge: cljs.types.float_t,
         gSpeed: cljs.types.float_t,
         springs: null,
         xCoords: null,
@@ -74,6 +81,7 @@ var BarnesKernelSeq = function (clContext) {
         numNodes: cljs.types.uint_t,
         numWorkItems: cljs.types.uint_t,
         globalSpeed: null,
+        nextMidPoints: null,
         WARPSIZE: cljs.types.define,
         THREADS_BOUND: cljs.types.define,
         THREADS_FORCES: cljs.types.define,
@@ -95,12 +103,11 @@ var BarnesKernelSeq = function (clContext) {
     this.sort = new Kernel('sort', this.argsBarnes,
             this.argsType, 'barnesHut/sort.cl', clContext);
 
-    this.calculateForces = new Kernel('calculate_forces', this.argsBarnes,
-            this.argsType, 'barnesHut/calculateForces.cl', clContext);
-
+    this.calculatePointForces = new Kernel('calculate_forces', this.argsBarnes,
+            this.argsType, 'barnesHut/calculatePointForces.cl', clContext);
 
     this.kernels = [this.toBarnesLayout, this.boundBox, this.buildTree, this.computeSums,
-                    this.sort, this.calculateForces];
+                    this.sort, this.calculatePointsForces, this.move];
 
     this.setPhysics = function(flag) {
 
@@ -109,7 +116,7 @@ var BarnesKernelSeq = function (clContext) {
         this.buildTree.set({flags: flag});
         this.computeSums.set({flags: flag});
         this.sort.set({flags: flag});
-        this.calculateForces.set({flags: flag});
+        this.calculatePointForces.set({flags: flag});
 
     };
 
@@ -132,19 +139,22 @@ var BarnesKernelSeq = function (clContext) {
         bottom: null,
         maxdepth: null,
     };
-    var setupTempBuffers = function(simulator, warpsize) {
+    var setupTempBuffers = function(simulator, warpsize, numPoints) {
         simulator.resetBuffers(tempBuffers);
         var blocks = 8; //TODO (paden) should be set to multiprocecessor count
 
-        var num_nodes = simulator.numPoints * 5;
+        if (numPoints === undefined) {
+          numPoints = simulator.numPoints;
+        }
+        var num_nodes = numPoints * 5;
         if (num_nodes < 1024*blocks) num_nodes = 1024*blocks;
         while ((num_nodes & (warpsize - 1)) != 0) num_nodes++;
         num_nodes--;
-        var num_bodies = simulator.numPoints;
+        var num_bodies = numPoints;
         var numNodes = num_nodes;
         var numBodies = num_bodies;
-        // TODO (paden) Use actual number of workgroups. Don't hardcode
-        var num_work_groups = 128;
+        // Set this to the number of workgroups in boundBox kernel
+        var num_work_groups = 30;
 
 
         return Q.all(
@@ -249,9 +259,56 @@ var BarnesKernelSeq = function (clContext) {
             setBarnesKernelArgs(that.buildTree, tempBuffers);
             setBarnesKernelArgs(that.computeSums, tempBuffers);
             setBarnesKernelArgs(that.sort, tempBuffers);
-            setBarnesKernelArgs(that.calculateForces, tempBuffers);
+            setBarnesKernelArgs(that.calculatePointForces, tempBuffers);
 
         }).fail(util.makeErrorHandler('setupTempBuffers'));
+    };
+
+    // TODO (paden) Can probably combine ExecKernel functions
+    this.execKernelsMidPoints = function(simulator, stepNumber, workItems) {
+
+        var resources = [
+            simulator.buffers.curMidPoints,
+            simulator.buffers.forwardsDegrees,
+            simulator.buffers.backwardsDegrees,
+                simulator.buffers.partialForces1
+        ];
+
+        this.toBarnesLayout.set({stepNumber: stepNumber});
+        this.boundBox.set({stepNumber: stepNumber});
+        this.buildTree.set({stepNumber: stepNumber});
+        this.computeSums.set({stepNumber: stepNumber});
+        this.sort.set({stepNumber: stepNumber});
+        this.calculateForces.set({stepNumber: stepNumber});
+
+        simulator.tickBuffers(['nextMidPoints']);
+
+        debug("Running Force Atlas2 with BarnesHut Kernels");
+
+        // For all calls, we must have the # work items be a multiple of the workgroup size.
+        var that = this;
+        return this.toBarnesLayout.exec([workItems.toBarnesLayout], resources, [256])
+        .then(function () {
+            return that.boundBox.exec([workItems.boundBox], resources, [256]);
+        })
+
+        .then(function () {
+            return that.buildTree.exec([workItems.buildTree], resources, [256]);
+        })
+
+        .then(function () {
+            return that.computeSums.exec([workItems.computeSums], resources, [256]);
+        })
+
+        .then(function () {
+            return that.sort.exec([workItems.sort], resources, [256]);
+        })
+
+        .then(function () {
+            return that.calculateForces.exec([workItems.calculateForces], resources, [256]);
+        })
+
+        .fail(util.makeErrorHandler("Executing BarnesKernelSeq failed"));
     };
 
     this.execKernels = function(simulator, stepNumber, workItems) {
@@ -268,7 +325,7 @@ var BarnesKernelSeq = function (clContext) {
         this.buildTree.set({stepNumber: stepNumber});
         this.computeSums.set({stepNumber: stepNumber});
         this.sort.set({stepNumber: stepNumber});
-        this.calculateForces.set({stepNumber: stepNumber});
+        this.calculatePointForces.set({stepNumber: stepNumber});
 
         simulator.tickBuffers(['partialForces1']);
 
@@ -294,7 +351,7 @@ var BarnesKernelSeq = function (clContext) {
         })
 
         .then(function () {
-            return that.calculateForces.exec([workItems.calculateForces[0]], resources, [workItems.calculateForces[1]]);
+            return that.calculatePointForces.exec([workItems.calculateForces[0]], resources, [workItems.calculateForces[1]]);
         })
 
         .fail(util.makeErrorHandler("Executing BarnesKernelSeq failed"));
