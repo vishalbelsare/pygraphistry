@@ -36,7 +36,7 @@ function renderPointLabels(appState, $labelCont, labels, clicked) {
 }
 
 // RenderState * Obserbable * Observable
-function setupCursor(renderState, isAnimating, latestHighlightedObject) {
+function setupCursor(renderState, renderingScheduler, isAnimating, latestHighlightedObject) {
     var rxPoints = renderState.get('hostBuffers').curPoints;
     var rxSizes = renderState.get('hostBuffers').pointSizes;
 
@@ -63,16 +63,28 @@ function setupCursor(renderState, isAnimating, latestHighlightedObject) {
             }
         ).takeUntil(animating);
     }).do(function (data) {
-        renderCursor(renderState, $cont, $point, $center, data.points, data.sizes, data.indices);
+        renderCursor(renderState, renderingScheduler, $cont, $point, $center, data.points, data.sizes, data.indices);
     }).subscribe(_.identity, util.makeErrorHandler('setupCursor'));
 }
 
 // RenderState * Dom * Dom * Dom * Float32Array * Uint8Array * [Object]
-function renderCursor(renderState, $cont, $point, $center, points, sizes, indices) {
+function renderCursor(renderState, renderingScheduler, $cont, $point, $center, points, sizes, indices) {
     var idx = indices[indices.length - 1].idx;
     var dim = indices[indices.length - 1].dim;
 
-    if (idx === undefined || idx < 0 || dim === 2) {
+    // Highlight Edge (TODO: Highlight points through renderer)
+    if (dim === 2) {
+        $cont.css({display: 'none'});
+        renderingScheduler.renderScene('mouseOver', {
+            trigger: 'mouseOverEdgeHighlight',
+            data: {
+                indices: [idx]
+            }
+        });
+        return;
+    }
+
+    if (idx === undefined || idx < 0) {
         $cont.css({display: 'none'});
         return;
     }

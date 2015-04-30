@@ -52,7 +52,7 @@ function setupLabelsAndCursor(appState, $eventTarget) {
     var hitMapTextures = ['hitmap'];
     var latestHighlightedObject = labels.getLatestHighlightedObject(appState, $eventTarget, hitMapTextures);
 
-    labels.setupCursor(appState.renderState, appState.isAnimating, latestHighlightedObject);
+    labels.setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimating, latestHighlightedObject);
     labels.setupLabels(appState, $eventTarget, latestHighlightedObject);
 }
 
@@ -117,6 +117,22 @@ function renderSlowEffects(renderingScheduler) {
     renderer.render(renderState, 'picking', 'picking', undefined, undefined, function () {
         renderingScheduler.appSnapshot.hitmapUpdates.onNext();
     });
+    renderer.copyCanvasToTexture(renderState, 'steadyStateTexture');
+}
+
+/*
+ * Render mouseover effects. These should only occur during a quiet state.
+ *
+ */
+function renderMouseoverEffects(renderingScheduler) {
+    var appSnapshot = renderingScheduler.appSnapshot;
+    var renderState = renderingScheduler.renderState;
+
+    console.log('Rendering Mouseover Effects');
+
+    // TODO: Render cached texture to screen
+    // TODO: Render mouseover Effects
+
 }
 
 
@@ -136,6 +152,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
     this.appSnapshot = {
         vboUpdated: false,
         simulating: false,
+        quietState: false,
         buffers: {
             curPoints: undefined,
             logicalEdges: undefined,
@@ -183,7 +200,8 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
             trigger: task.trigger,
             items: task.items,
             readPixels: task.readPixels,
-            callback: task.callback
+            callback: task.callback,
+            data: task.data
         });
     };
 
@@ -210,7 +228,8 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         function loop() {
             var nextFrameId = window.requestAnimationFrame(loop);
 
-            if (_.keys(renderQueue).length === 0) { // Nothing to render
+            // Nothing to render
+            if (_.keys(renderQueue).length === 0) {
                 var timeDelta = Date.now() - lastRenderTime;
                 if (timeDelta > 200 && !quietSignaled) {
                     quietCallback();
@@ -224,18 +243,30 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
                 return;
             }
 
-            lastRenderTime = Date.now();
-            if (quietSignaled) {
-                isAnimating.onNext(true);
-                quietSignaled = false;
+            // Mouseover interactions
+            // TODO: Generalize this as a separate category?
+            if (_.keys(renderQueue).indexOf('mouseOver') > -1) {
+                // TODO: Handle mouseover interaction
+                console.log('Handling mouseover task: ', renderQueue.mouseOver);
+                delete renderQueue.mouseOver;
             }
 
-            renderer.setCamera(renderState);
-            _.each(renderQueue, function (renderTask, tag) {
-                renderer.render(renderState, tag, renderTask.trigger, renderTask.items,
-                                renderTask.readPixels, renderTask.callback);
-            });
-            renderQueue = {};
+            // Rest render queue
+            if (_.keys(renderQueue).length > 0) {
+                lastRenderTime = Date.now();
+                if (quietSignaled) {
+                    isAnimating.onNext(true);
+                    quietSignaled = false;
+                    that.appSnapshot.quietState = false;
+                }
+
+                renderer.setCamera(renderState);
+                _.each(renderQueue, function (renderTask, tag) {
+                    renderer.render(renderState, tag, renderTask.trigger, renderTask.items,
+                                    renderTask.readPixels, renderTask.callback);
+                });
+                renderQueue = {};
+            }
         }
 
         debug('Starting rendering loop');
@@ -254,6 +285,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         if (!that.appSnapshot.simulating) {
             debug('Quiet state');
             renderSlowEffects(that);
+            that.appSnapshot.quietState = true;
             that.appSnapshot.vboUpdated = false;
         }
     }
