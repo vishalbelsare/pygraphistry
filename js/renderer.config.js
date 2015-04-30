@@ -30,7 +30,7 @@ var programs = {
         },
         'attributes': ['arrowColor', 'curPos', 'pointSize', 'edgeVec'],
         'camera': 'mvp',
-        'uniforms': ['zoomScalingFactor', 'maxPointSize']
+        'uniforms': ['zoomScalingFactor', 'maxPointSize', 'screenWidth', 'screenHeight']
     },
     'edges': {
         'sources': {
@@ -354,11 +354,13 @@ var items = {
         },
         'uniforms': {
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] },
+            'screenWidth': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'screenHeight': { 'uniformType': '1f', 'defaultValues': [1.0] }
         },
         'drawType': 'TRIANGLES',
         'glOptions': {
-            'depthFunc': [['LESS']]
+            //'depthFunc': [['LESS']]
         }
     },
     'edgepicking': {
@@ -574,8 +576,8 @@ var sceneNetflowIndexedClient = {
     'camera': camera2D,
     'edgeMode': 'INDEXEDCLIENT',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'indexeddummy', 'edgeculledindexedclient', 'arrowculled',
-               'edgepicking', 'pointoutline', 'pointculled']
+               'indexeddummy', 'edgeculledindexedclient',
+               'edgepicking', 'pointoutline', 'pointculled', 'arrowculled']
 }
 
 var scenes = {
