@@ -1,13 +1,13 @@
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
+var fs      = require('fs');
+var path    = require('path');
 var fstools = require('fs-tools');
-var crypto = require('crypto');
-var Q = require('q');
-var debug = require('debug')('graphistry:graph-viz:data:cache');
-var _ = require('underscore');
-//var util = require('./util.js');
+var crypto  = require('crypto');
+var Q       = require('q');
+var debug   = require('debug')('graphistry:common:cache');
+var _       = require('underscore');
+//var util    = require('./util.js');
 
 
 function Cache(cacheDir, enabled) {
