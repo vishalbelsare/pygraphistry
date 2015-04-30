@@ -1,11 +1,7 @@
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
-var fstools = require('fs-tools');
 var http = require('http');
 var https = require('https');
-var crypto = require('crypto');
 var Q = require('q');
 var debug = require('debug')('graphistry:graph-viz:data:data-loader');
 var _ = require('underscore');
@@ -14,14 +10,11 @@ var zlib = require('zlib');
 var Rx = require('rx');
 var urllib = require('url');
 var util = require('./util.js');
+var Cache = require('common/cache.js');
 
 var MatrixLoader = require('./libs/MatrixLoader.js'),
     VGraphLoader = require('./libs/VGraphLoader.js'),
-    VGraphWriter = require('./libs/VGraphWriter.js'),
     kmeans = require('./libs/kmeans.js');
-
-// Make sure caching directory exists
-fstools.mkdirSync(config.LOCAL_CACHE_DIR, '0777');
 
 var loaders = {
     'default': VGraphLoader.load,
@@ -38,6 +31,8 @@ var downloader = {
     'https:': httpDownloader.bind(undefined, https),
     'null': graphistryS3Downloader // For legacy compatibility
 }
+
+var tmpCache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);
 
 function downloadDataset(query) {
     var url = urllib.parse(decodeURIComponent(query.dataset));
@@ -60,47 +55,6 @@ function downloadDataset(query) {
     }).fail(util.makeErrorHandler('Failure while retrieving dataset'));
 }
 
-function getCacheFile(url) {
-    var hash = crypto.createHash('sha1').update(url.href).digest('hex');
-    var fileName = encodeURIComponent(url.pathname) + '.' + hash;
-    return path.resolve(config.LOCAL_CACHE_DIR, fileName);
-}
-
-function readCache(url, timestamp) {
-    var res = Q.defer();
-
-    var filePath = getCacheFile(url);
-    Q.denodeify(fs.stat)(filePath).then(function (stats) {
-        if (!stats.isFile()) {
-            res.reject('Error: Cached dataset is not a file!');
-        } else if (stats.mtime.getTime() > timestamp.getTime()) {
-            debug('Found up-to-date dataset in cache');
-            res.resolve(fs.readFileSync(filePath));
-        } else {
-            debug('Found obsolete dataset in cache (%s), ignoring...', stats.mtime);
-            res.reject();
-        }
-    }).fail(function (err) {
-        debug('No matching dataset found in cache', err);
-        res.reject(err);
-    });
-
-    return res.promise;
-}
-
-function cache(data, url) {
-    if (!config.LOCAL_CACHE)
-        return Q();
-
-    var path = getCacheFile(url);
-    return Q.denodeify(fs.writeFile)(path, data, {encoding: 'utf8'}).then(
-        function () {
-            debug('Dataset saved in cache:', path);
-        },
-        util.makeErrorHandler('Failure while caching dataset')
-    );
-}
-
 function httpDownloader(http, url) {
     debug('Attemping to download dataset using HTTP');
     var result = Q.defer();
@@ -110,7 +64,7 @@ function httpDownloader(http, url) {
     http.request(_.extend(url, {method: 'HEAD'}), function (res) {
         var mtime = new Date(res.headers['last-modified']);
         //Try to read from cache otherwise download the dataset
-        readCache(url, mtime).then(function (data) {
+        tmpCache.get(url, mtime).then(function (data) {
             result.resolve(data);
         }).fail(function () {
             http.get(url.href, function (res) {
@@ -124,7 +78,7 @@ function httpDownloader(http, url) {
 
                 res.on('end', function () {
                     var buffer = new Buffer(data, 'binary');
-                    cache(buffer, url);
+                    tmpCache.put(url, buffer);
                     result.resolve(buffer);
                 });
             }).on('error', function (err) {
@@ -158,11 +112,11 @@ function graphistryS3Downloader(url) {
             debug('Could not fetch S3 header', err.message)
             debug('Falling back on local cache');
             // Try to load from cache regardless of timestamp.
-            res.resolve(readCache(url, new Date(0)));
+            res.resolve(tmpCache.get(url, new Date(0)));
         } else {
             var mtime = new Date(data['LastModified']);
             debug('Got S3 headers, dataset was last modified on', mtime);
-            readCache(url, mtime).then(function (data) {
+            tmpCache.get(url, mtime).then(function (data) {
                 res.resolve(data);
             }).fail(function () { // Not in cache of stale
                 config.S3.getObject(params, function(err, data) {
@@ -171,7 +125,7 @@ function graphistryS3Downloader(url) {
                         res.reject();
                     } else {
                         debug('Successful S3 download');
-                        cache(data.Body, url);
+                        tmpCache.put(url, data.Body);
                         res.resolve(data.Body);
                     }
                 });
@@ -394,7 +348,6 @@ module.exports = {
     createEdges: createEdges,
     loadDatasetIntoSim: loadDatasetIntoSim,
     downloadDataset: downloadDataset,
-    cache: cache
 };
 
 // vim: set et ff=unix ts=8 sw=4 fdm=syntax:

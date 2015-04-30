@@ -129,6 +129,5 @@ function write(graph) {
 }
 
 module.exports = {
-    write: write,
-    uploadVGraph: uploadVGraph,
+    // I AM DEAD CODE
 };
