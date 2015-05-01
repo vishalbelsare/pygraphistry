@@ -6,6 +6,7 @@ var path        = require('path');
 var url         = require('url');
 
 var debug       = require('debug')('graphistry:central:server');
+var _           = require('underscore');
 var Rx          = require('rx');
 var Q           = require('q');
 var config      = require('config')();
