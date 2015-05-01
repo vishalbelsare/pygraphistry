@@ -156,9 +156,18 @@ function fetchNumElements(counts, renderConfig) {
                             var model = renderConfig.models[binding[0]];
                             return rConf.isBufServerSide(model);
                         });
-                    aServersideModelName = serversideModelBindings[0][0];
+                    if (serversideModelBindings.length !== 0) {
+                        aServersideModelName = serversideModelBindings[0][0];
+                    }
                 }
-                return [item, counts[aServersideModelName].num];
+
+                if (aServersideModelName) {
+                    return [item, counts[aServersideModelName].num];
+                } else {
+                    // console.warn('Cannot compute count for %s: no server side model', item);
+                    return [item, 0];
+                }
+
             }));
 }
 

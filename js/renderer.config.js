@@ -23,6 +23,15 @@ var programs = {
         'camera': 'mvp',
         'uniforms': []
     },
+    'edgehighlight': {
+        'sources': {
+            'vertex': fs.readFileSync(__dirname + '/../shaders/edgehighlighted.vertex.glsl', 'utf8').toString('ascii'),
+            'fragment': fs.readFileSync(__dirname + '/../shaders/edgehighlighted.fragment.glsl', 'utf8').toString('ascii')
+        },
+        'attributes': ['curPos'],
+        'camera': 'mvp',
+        'uniforms': []
+    },
     'edges': {
         'sources': {
             'vertex': fs.readFileSync(__dirname + '/../shaders/edge.vertex.glsl', 'utf8').toString('ascii'),
@@ -144,6 +153,17 @@ var models = {
         }
     },
     'springsPosClient': {
+        'curPos': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
+    'highlightedEdgesPos': {
         'curPos': {
             'datasource': 'CLIENT',
             'type': 'FLOAT',
@@ -288,6 +308,17 @@ var items = {
         'bindings': {
             'curPos': ['springsPosClient', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'drawType': 'LINES',
+        'glOptions': {
+            'depthFunc': [['LESS']]
+        }
+    },
+    'edgehighlight': {
+        'program': 'edgehighlight',
+        'triggers': ['highlight'],
+        'bindings': {
+            'curPos': ['highlightedEdgesPos', 'curPos']
         },
         'drawType': 'LINES',
         'glOptions': {
@@ -544,14 +575,14 @@ var camera2D = {
 var sceneUber = {
     'options': stdOptions,
     'camera': camera2D,
-    'render': ['pointpicking',  'pointsampling', 'midedgeculled', 'edgepicking', 'uberpointculled', 'uberpointculledFull']
+    'render': ['pointpicking',  'pointsampling', 'midedgeculled', 'edgepicking', 'uberpointculled', 'uberpointculledFull', 'edgehighlight']
 }
 
 var sceneNetflow = {
     'options': stdOptions,
     'camera': camera2D,
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'edgeculled', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull']
+               'edgeculled', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull', 'edgehighlight']
 }
 
 var sceneNetflowIndexed = {
@@ -559,7 +590,7 @@ var sceneNetflowIndexed = {
     'camera': camera2D,
     'edgeMode': 'CLIENTINDEXED',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'edgeculledindexed', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull']
+               'edgeculledindexed', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull', 'edgehighlight']
 }
 
 var sceneNetflowIndexedClient = {
@@ -567,7 +598,7 @@ var sceneNetflowIndexedClient = {
     'camera': camera2D,
     'edgeMode': 'INDEXEDCLIENT',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'indexeddummy', 'edgeculledindexedclient', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull']
+               'indexeddummy', 'edgeculledindexedclient', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull', 'edgehighlight']
 }
 
 var scenes = {
