@@ -269,9 +269,8 @@ function createControls(socket, appState, trigger) {
             );
         });
 
-    }, util.makeErrorHandler('createControls'));
-
-    rxControls.subscribe(_.identity, util.makeErrorHandler('construct controls'));
+    })
+    .subscribe(_.identity, util.makeErrorHandler('createControls'));
 }
 
 function toLog(minPos, maxPos, minVal, maxVal, pos) {
