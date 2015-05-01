@@ -1,0 +1,20 @@
+#!/usr/bin/env node
+'use strict';
+/// <reference path="../typings/node/node.d.ts"/>
+
+var server = require('../lib/server.js');
+
+
+server.start().subscribe(
+    function () {
+        console.log('\n[server.js] Server listening on %s:%d', server.config.listenIP, server.config.listenPort);
+    },
+    function (err) {
+        console.error("[server.js] Fatal error: could not start server on address %s, port %s. Exiting...",
+            server.config.listenIP,
+            server.config.listenPort,
+            err);
+
+        process.exit(1);
+    }
+);

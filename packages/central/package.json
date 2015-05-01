@@ -4,7 +4,11 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "start": "node ./bin/central",
     "test": "echo \"No tests available.\""
+  },
+  "bin": {
+    "graphistry-central": "./bin/central"
   },
   "dependencies": {
     "StreamGL": "git+ssh://git@github.com:graphistry/StreamGL.git#master",

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 'use strict';
 
 var os          = require('os');
@@ -405,21 +404,7 @@ function start() {
 }
 
 
-if(require.main === module) {
-    start().subscribe(
-        function () {
-            console.log('\n[server.js] Server listening on %s:%d', HTTP_SERVER_LISTEN_ADDRESS, HTTP_SERVER_LISTEN_PORT);
-        },
-        function (err) {
-            console.error("[server.js] Fatal error: could not start server on address %s, port %s. Exiting...",
-                HTTP_SERVER_LISTEN_ADDRESS,
-                HTTP_SERVER_LISTEN_PORT,
-                err);
 
-            process.exit(1);
-        }
-    );
-}
 
 
 module.exports = {
