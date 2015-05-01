@@ -126,7 +126,9 @@ function renderSlowEffects(renderingScheduler) {
  */
 function renderMouseoverEffects(renderingScheduler, task) {
     var appSnapshot = renderingScheduler.appSnapshot;
+    var renderState = renderingScheduler.renderState;
     var buffers = appSnapshot.buffers;
+    var numElements = renderState.get('numElements');
     console.log('TODO: Rendering mouseover task: ', task);
 
     // TODO: Render cached texture to screen
@@ -135,12 +137,17 @@ function renderMouseoverEffects(renderingScheduler, task) {
     var edgeIndices = task.data.edgeIndices;
     // TODO: Start with a small buffer and increase if necessary, masking underlying
     // data so we don't have to clear out later values. This way we won't have to constantly allocate
-    buffers.highlightedEdges = new Float32Array(edgeIndices.length * 2);
+    buffers.highlightedEdges = new Float32Array(edgeIndices.length * 4);
     _.each(edgeIndices, function (val, idx) {
-        buffers.highlightedEdges[idx*2] = buffers.springsPos[val*2];
-        buffers.highlightedEdges[idx*2 + 1] = buffers.springsPos[val*2 + 1];
+        buffers.highlightedEdges[idx*4] = buffers.springsPos[val*4];
+        buffers.highlightedEdges[idx*4 + 1] = buffers.springsPos[val*4 + 1];
+        buffers.highlightedEdges[idx*4 + 2] = buffers.springsPos[val*4 + 2];
+        buffers.highlightedEdges[idx*4 + 3] = buffers.springsPos[val*4 + 3];
     });
-    console.log('Edges Buffer to Highlight: ', buffers.highlightedEdges);
+    numElements.edgehighlight = edgeIndices.length * 2;
+
+    renderer.loadBuffers(renderState, {'highlightedEdgesPos': buffers.highlightedEdges});
+    renderer.render(renderState, 'highlight', 'highlight');
 }
 
 
