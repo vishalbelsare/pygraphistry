@@ -6,6 +6,7 @@
 var fs          = require('fs');
 var path        = require('path');
 var url         = require('url');
+var util        = require('util');
 
 var debug       = require('debug')('graphistry:central:server');
 var _           = require('underscore');
@@ -100,6 +101,26 @@ function logClientError(req, res) {
 
 
 /**
+ * Converts ad-hoc URL object(s) (i.e., one we constructed by hand, possibly incomplete or
+ * invalid) into as complete a URL object as node's URL module can muster. This is done by
+ * converting the ad-hoc URL to a formatted string, then re-parsing it into a URL object.
+ *
+ * @param {...Object} url - One or more URL-like objects. Multiple arguments will be combined into
+ * a single URL object, with later arguments overwriting earlier ones.
+ *
+ * @returns {Object} A valid Node.js URL object.
+ */
+function ensureValidUrl() {
+    var args = [{}];
+    for(var i in arguments) { args.push(arguments[i]); }
+
+    var adHocUrl = _.extend.apply(_, args);
+
+    return url.parse(url.format(adHocUrl), true, true);
+}
+
+
+/**
  * Handles a `/vizaddr` HTTP request by finding a viz worker server process, reserving it for the
  * the user, and returning the worker's address to the user so she can connect to it.
  */
@@ -113,7 +134,27 @@ function assignWorker(req, res) {
             });
         }
         debug('Assigning client a worker', req.ip, worker);
-        return res.json(_.extend({success: true}, worker));
+
+        // Get the request URL so that we can construct a worker URL from it
+        var baseUrl = ensureValidUrl(url.parse(req.originalUrl), {host: req.get('Host')});
+
+        var workerPort = (config.ENVIRONMENT === 'local') ? worker.port : baseUrl.port;
+        var workerPath = (config.ENVIRONMENT === 'local') ?
+            util.format('%s/', config.BASE_URL) :
+            util.format('%s/%s/', config.BASE_URL, encodeURIComponent(worker.port));
+//            util.format('%s/%s/%s',
+//                config.BASE_URL,
+//                encodeURIComponent(worker.hostname),
+//                encodeURIComponent(worker.port));
+
+        var workerUrl = ensureValidUrl({
+                hostname: baseUrl.hostname,
+                port: workerPort,
+                pathname: workerPath,
+                query: {}
+            });
+
+        return res.json({success: true, timestamp: worker.timestamp, uri: workerUrl});
     });
 }
 
@@ -160,6 +201,8 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
             });
         }
 
+        // Note: we specifically do not respect reverse proxy stuff, since we're presumably running
+        // inside the cluster, and direct connections are more efficient.
         var redirect = 'http://' + worker.hostname + ':' + worker.port + '/';
         debug('create socket', redirect);
         var socket = io(redirect, {forceNew: true, reconnection: false, transports: ['websocket']});

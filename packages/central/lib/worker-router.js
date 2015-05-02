@@ -161,7 +161,7 @@ function combineWorkerInfo (servers, workers) {
 function pickWorker (cb) {
     var ips;
 
-    if(config.ENVIRONMENT === 'production' || config.ENVIRONMENT === 'staging') {
+    if(config.ENVIRONMENT !== 'local') {
         ips = getIPs()
             .flatMap(function (o) {
                 return Rx.Observable.fromArray(combineWorkerInfo(o.servers, o.workers));
@@ -176,6 +176,7 @@ function pickWorker (cb) {
     // instead of emitting them all at once. (Warning: keep a reference to the Observable right
     // after `controlled` is applied, as further operators will mask the `request()` method.)
     var ipsControlled = ips.controlled();
+
     // Emit one IP to start
     ipsControlled.request(1);
 
