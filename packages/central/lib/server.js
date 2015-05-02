@@ -142,8 +142,8 @@ function assignWorker(req, res) {
 
         var workerPort = (config.ENVIRONMENT === 'local') ? worker.port : baseUrl.port;
         var workerPath = (config.ENVIRONMENT === 'local') ?
-            util.format('%s/', config.BASE_URL) :
-            util.format('%s/%s/', config.BASE_URL, encodeURIComponent(worker.port));
+            util.format('%s/worker/', config.BASE_URL) :
+            util.format('%s/worker/%s/', config.BASE_URL, encodeURIComponent(worker.port));
 //            util.format('%s/%s/%s',
 //                config.BASE_URL,
 //                encodeURIComponent(worker.hostname),
