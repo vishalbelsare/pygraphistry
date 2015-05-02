@@ -1,5 +1,5 @@
 /// <reference path="../typings/node/node.d.ts"/>
-/// <reference path="../typings/lodash/lodash.d.ts"/>
+/// <reference path="../typings/underscore/underscore.d.ts"/>
 /// <reference path="../typings/rx/rx.d.ts"/>
 'use strict';
 
@@ -187,7 +187,12 @@ function pickWorker (cb) {
         })
         .filter(function filterWorkerAndRequest(workerNfo) {
             // If we're going to reject this worker, also request the next one
-            return !!(workerNfo || (ipsControlled.request(1) && false));
+            if(!workerNfo) {
+                ipsControlled.request(1);
+                return false;
+            } else {
+                return workerNfo;
+            }
         })
         .take(1);
 
