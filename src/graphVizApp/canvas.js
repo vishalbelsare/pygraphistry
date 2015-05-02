@@ -94,17 +94,28 @@ function expandLogicalEdges(bufferSnapshots) {
     return springsPos;
 }
 
+
 function makeArrows(bufferSnapshots) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var pointSizes = new Uint8Array(bufferSnapshots.pointSizes.buffer);
     var springsPos = new Float32Array(bufferSnapshots.springsPos.buffer);
     var edgeColors = new Uint32Array(bufferSnapshots.edgeColors.buffer);
-    var numEdges = springsPos.length / 4; // Two coords (x,y) for each of the two end points.
+    var numEdges = springsPos.length / 4; // TWO coords (x,y) for each of the TWO endpoints.
 
-    if (!bufferSnapshots.arrowPos) {
-        bufferSnapshots.arrowPos = new Float32Array(numEdges * 2 * 3);
+    if (!bufferSnapshots.arrowStartPos) {
+        bufferSnapshots.arrowStartPos = new Float32Array(numEdges * 2 * 3);
     }
-    var arrowPos = bufferSnapshots.arrowPos;
+    var arrowStartPos = bufferSnapshots.arrowStartPos;
+
+    if (!bufferSnapshots.arrowEndPos) {
+        bufferSnapshots.arrowEndPos = new Float32Array(numEdges * 2 * 3);
+    }
+    var arrowEndPos = bufferSnapshots.arrowEndPos;
+
+    if (!bufferSnapshots.arrowNormalDir) {
+        bufferSnapshots.arrowNormalDir = new Float32Array(numEdges * 3);
+    }
+    var arrowNormalDir = bufferSnapshots.arrowNormalDir;
 
     if (!bufferSnapshots.arrowColors) {
         bufferSnapshots.arrowColors = new Uint32Array(numEdges * 3);
@@ -116,66 +127,37 @@ function makeArrows(bufferSnapshots) {
     }
     var arrowPointSizes = bufferSnapshots.arrowPointSizes;
 
-    if (!bufferSnapshots.arrowEdgeVecs) {
-        bufferSnapshots.arrowEdgeVecs = new Float32Array(numEdges * 2 * 3);
-    }
-    var arrowEdgeVecs = bufferSnapshots.arrowEdgeVecs;
-
-    var arrowHeight = 2;
-    var arrowHalfLength = arrowHeight / Math.sqrt(3);
-
     for (var i = 0; i < numEdges; i++) {
         var start = [springsPos[4*i + 0], springsPos[4*i + 1]];
         var end   = [springsPos[4*i + 2], springsPos[4*i + 3]];
+
+        arrowStartPos[6*i + 0] = start[0];
+        arrowStartPos[6*i + 1] = start[1];
+        arrowStartPos[6*i + 2] = start[0];
+        arrowStartPos[6*i + 3] = start[1];
+        arrowStartPos[6*i + 4] = start[0];
+        arrowStartPos[6*i + 5] = start[1];
+
+        arrowEndPos[6*i + 0] = end[0];
+        arrowEndPos[6*i + 1] = end[1];
+        arrowEndPos[6*i + 2] = end[0];
+        arrowEndPos[6*i + 3] = end[1];
+        arrowEndPos[6*i + 4] = end[0];
+        arrowEndPos[6*i + 5] = end[1];
+
+        arrowNormalDir[3*i + 0] = 0;  // Tip vertex
+        arrowNormalDir[3*i + 1] = 1;  // Left vertex
+        arrowNormalDir[3*i + 2] = -1; // Right vertex
+
         var pointSize = pointSizes[logicalEdges[2*i + 1]];
-
-        var vec = [start[0] - end[0], start[1] - end[1]];
-        var norm = Math.sqrt(vec[0] * vec[0] + vec[1] * vec[1]);
-        vec[0] = vec[0] / norm;
-        vec[1] = vec[1] / norm;
-        var nvec = [-vec[1], vec[0]];
-        var startOffset = [0, 0];//[vec[0] * radius / 50, vec[1] * radius / 50];
-
-        var base = [
-            end[0] + startOffset[0] + vec[0] * arrowHeight,
-            end[1] + startOffset[1] + vec[1] * arrowHeight
-        ];
-        var tip = [
-            end[0] + startOffset[0],
-            end[1] + startOffset[1]
-        ];
-        var wing1 = [
-            base[0] + nvec[0] * arrowHalfLength,
-            base[1] + nvec[1] * arrowHalfLength
-        ];
-        var wing2 = [
-            base[0] - nvec[0] * arrowHalfLength,
-            base[1] - nvec[1] * arrowHalfLength
-        ];
-
-        arrowPos[6*i + 0] = tip[0];
-        arrowPos[6*i + 1] = tip[1];
-        arrowPos[6*i + 2] = wing1[0];
-        arrowPos[6*i + 3] = wing1[1];
-        arrowPos[6*i + 4] = wing2[0];
-        arrowPos[6*i + 5] = wing2[1];
+        arrowPointSizes[3*i + 0] = pointSize;
+        arrowPointSizes[3*i + 1] = pointSize;
+        arrowPointSizes[3*i + 2] = pointSize;
 
         arrowColors[3*i + 0] = edgeColors[2*i + 1];
         arrowColors[3*i + 1] = edgeColors[2*i + 1];
         arrowColors[3*i + 2] = edgeColors[2*i + 1];
-
-        arrowEdgeVecs[6*i + 0] = vec[0];
-        arrowEdgeVecs[6*i + 1] = vec[1];
-        arrowEdgeVecs[6*i + 2] = vec[0];
-        arrowEdgeVecs[6*i + 3] = vec[1];
-        arrowEdgeVecs[6*i + 4] = vec[0];
-        arrowEdgeVecs[6*i + 5] = vec[1];
-
-        arrowPointSizes[3*i + 0] = pointSize;
-        arrowPointSizes[3*i + 1] = pointSize;
-        arrowPointSizes[3*i + 2] = pointSize;
     }
-
 }
 
 /*
@@ -198,14 +180,14 @@ function renderSlowEffects(renderingScheduler) {
 
         makeArrows(appSnapshot.buffers);
         var end3 = Date.now();
-        renderer.loadBuffers(renderState, {'arrowPosClient': appSnapshot.buffers.arrowPos});
+        renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
+        renderer.loadBuffers(renderState, {'arrowEndPos': appSnapshot.buffers.arrowEndPos});
+        renderer.loadBuffers(renderState, {'arrowNormalDir': appSnapshot.buffers.arrowNormalDir});
         renderer.loadBuffers(renderState, {'arrowColors': appSnapshot.buffers.arrowColors});
-        renderer.loadBuffers(renderState, {'arrowEdgeVec': appSnapshot.buffers.arrowEdgeVecs});
         renderer.loadBuffers(renderState, {'arrowPointSizes': appSnapshot.buffers.arrowPointSizes});
-        renderer.setNumElements(renderState, 'arrowculled', appSnapshot.buffers.arrowPos.length / 2);
+        renderer.setNumElements(renderState, 'arrowculled', appSnapshot.buffers.arrowStartPos.length / 2);
         var end4 = Date.now();
         console.info('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
-
     }
 
     renderer.setCamera(renderState);
@@ -238,10 +220,11 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
             logicalEdges: undefined,
             springsPos: undefined,
             edgeColors: undefined,
-            arrowPos: undefined,
+            arrowStartPos: undefined,
+            arrowEndPos: undefined,
+            arrowNormalDir: undefined,
             arrowColors: undefined,
             arrowPointSizes: undefined,
-            arrowEdgeVecs: undefined
         },
         hitmapUpdates: hitmapUpdates
     };

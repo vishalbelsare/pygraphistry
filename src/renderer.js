@@ -788,18 +788,16 @@ function setCamera(state) {
         if ('zoomScalingFactor' in map) {
             numVertices = state.get('numElements')[item];
             var scalingFactor = camera.semanticZoom(numVertices);
-            map.zoomScalingFactor = 4.0;//[scalingFactor];
+            map.zoomScalingFactor = scalingFactor;
         }
 
-        if ('screenWidth' in map) {
-            map.screenWidth = camera.width;
+        if ('maxScreenSize' in map) {
+            map.maxScreenSize = Math.max(camera.width, camera.height);
         }
 
-        if ('screenHeight' in map) {
-            map.screenHeight = camera.height;
+        if ('maxCanvasSize' in map) {
+            map.maxCanvasSize = Math.max(gl.canvas.width, gl.canvas.height);
         }
-
-        console.log(map);
     });
 
     //HACK: we should have line shaders, and pass this as a uniform
