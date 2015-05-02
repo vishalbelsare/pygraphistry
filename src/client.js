@@ -162,11 +162,11 @@ function connect(vizType, urlParams) {
 
                     debug('Got worker URI', uri.url);
 
-                    var socket = io(uri.url, {
+                    var socket = io.Manager(uri.url, {
                             query: uri.query,
                             path: uri.path + 'socket.io/',
                             reconnection: false
-                        });
+                        }).socket('/');
                     socket.io.engine.binaryType = 'arraybuffer';
 
                     // FIXME Cannot trigger this handler when testing. Bug?
