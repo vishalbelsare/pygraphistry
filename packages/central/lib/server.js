@@ -1,4 +1,6 @@
 /// <reference path="../typings/node/node.d.ts"/>
+/// <reference path="../typings/underscore/underscore.d.ts"/>
+/// <reference path="../typings/rx/rx.d.ts"/>
 'use strict';
 
 var fs          = require('fs');
@@ -11,7 +13,7 @@ var Rx          = require('rx');
 var Q           = require('q');
 var config      = require('config')();
 
-debug("Config set to %j", config);
+debug('Config set to %j', config);
 
 var express     = require('express');
 var proxy       = require('express-http-proxy');
@@ -46,7 +48,6 @@ app.options('/api/v0.2/splunk/html/graph.fragment.html', function(req, res) {
 app.options('/api/v0.2/splunk/html/index.fragment.html', function(req, res) {
     res.sendStatus(200);
 });
-var db;
 
 
 var MAIN_STATIC_PATH    = path.resolve(__dirname, 'assets');
@@ -68,7 +69,9 @@ function logClientError(req, res) {
             } else {
                 console.error('[Client]', JSON.stringify(msg, null, 2));
             }
+            /* jshint -W064 */
             return Q();
+            /* jshint +W064 */
         }
         var logFile = path.resolve('/', 'var', 'log', 'clients' ,'clients.log');
         return Q.denodeify(fs.appendFile)(logFile, JSON.stringify(msg) + '\n')
@@ -100,7 +103,7 @@ function logClientError(req, res) {
  * Handles a `/vizaddr` HTTP request by finding a viz worker server process, reserving it for the
  * the user, and returning the worker's address to the user so she can connect to it.
  */
-function assign_worker(req, res) {
+function assignWorker(req, res) {
     router.pickWorker(function (err, worker) {
         if (err) {
             console.error('Error while assigning visualization worker:', err);
@@ -116,11 +119,11 @@ function assign_worker(req, res) {
 
 
 app.get('/vizaddr/graph', function(req, res) {
-    assign_worker(req, res);
+    assignWorker(req, res);
 });
 
 app.get('/vizaddr/horizon', function(req, res) {
-    assign_worker(req, res);
+    assignWorker(req, res);
 });
 
 
@@ -216,8 +219,8 @@ function start() {
                 var to = 'http://localhost:' + config.VIZ_LISTEN_PORT;
                 debug('setting up proxy', from, to);
                 app.use(from, proxy(to, {
-                    forwardPath: function(req, res) {
-                        return url.parse(req.url).path.replace(RegExp('worker/' + config.VIZ_LISTEN_PORT + '/'),'/');
+                    forwardPath: function(req) {
+                        return url.parse(req.url).path.replace(new RegExp('worker/' + config.VIZ_LISTEN_PORT + '/'),'/');
                     }
                 }));
             }
