@@ -128,10 +128,15 @@ function connect(vizType, urlParams) {
     if ('datasetname' in urlParams) {
         urlParams.dataset = urlParams.datasetname;
     }
+    
+    validUrlParams = _.pick(urlParams, validWorkerParams);
 
-    var vizAddrArgs = _.chain(urlParams)
+    var validUrlParams = _.chain(urlParams)
         .pick(validWorkerParams)
         .mapObject(function(val) { return encodeURIComponent(val); })
+        .value();
+        
+    var vizAddrArgs = _.chain(validUrlParams)
         .pairs()
         .map(function (param) { return param.join('='); })
         .value()
@@ -152,7 +157,7 @@ function connect(vizType, urlParams) {
                     }
                 })
                 .flatMap(function() {
-                    uri.query = _.extend({}, urlParams, uri.query);
+                    uri.query = _.extend({}, validUrlParams, uri.query);
                     uri.url = urlModule.format(uri, true, true);
 
                     debug('Got worker URI', uri.url);
