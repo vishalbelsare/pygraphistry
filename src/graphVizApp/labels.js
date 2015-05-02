@@ -199,7 +199,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
             var idx = parseInt(hit.idx);
             var dim = hit.dim;
 
-            var EDGE_LABEL_OFFSET = -20;
+            var EDGE_LABEL_OFFSET = -40;
 
             if (idx === -1) {
                 return null;
@@ -315,15 +315,26 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
         .merge($eventTarget.mousedownAsObservable()
             .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
             .map(function (evt) {
-                var clickedLabel = $(evt.target).hasClass('graph-label') ||
-                        $(evt.target).hasClass('highlighted-point') ||
-                        $(evt.target).hasClass('highlighted-point-center');
-                if (!clickedLabel) {
-                    clickedLabel = $(evt.target).parents('.graph-label').length || false;
+                if ($(evt.target).hasClass('highlighted-point') ||
+                        $(evt.target).hasClass('highlighted-point-center')) {
+                    return {
+                        cmd: 'click',
+                        pt: {dim: 1, idx: parseInt($cont.attr('pointidx'))}
+                    };
+                } else if ($(evt.target).hasClass('graph-label') ||
+                        $(evt.target).parents('.graph-label').length) {
+
+                    var elt = $(evt.target).hasClass('graph-label') ? evt.target
+                        : ($(evt.target).parents('.graph-label')[0]);
+                    var pt = _.values(appState.poi.state.activeLabels)
+                        .filter(function (lbl) { return lbl.elt.get(0) === elt; })[0];
+                    return {
+                        cmd: 'click',
+                        pt: {dim: pt.dim, idx: pt.idx}
+                    };
+                } else {
+                    return {cmd: 'declick'};
                 }
-                return clickedLabel ?
-                    {cmd: 'click', pt: {dim: 1, idx: parseInt($cont.attr('pointidx'))}}
-                    : {cmd: 'declick'};
             }))
         .merge(
             appState.labelHover
@@ -333,9 +344,8 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
                         .filter(function (lbl) { return lbl.elt.get(0) === elt; });
                 })
                 .filter(function (highlightedLabels) { return highlightedLabels.length; })
-                // TODO: Tag this as a point properly
                 .map(function (highlightedLabels) {
-                    return {cmd: 'hover', pt: {dim: 1, idx: highlightedLabels[0].idx}};
+                    return {cmd: 'hover', pt: {dim: highlightedLabels[0].dim, idx: highlightedLabels[0].idx}};
                 }))
         .scan([], function (acc, cmd) {
             switch (cmd.cmd) {
