@@ -123,8 +123,8 @@ function newLabelPositions(renderState, labels, points) {
         // TODO: Treat 2D labels more naturally.
         var dim = labels[i].dim;
         if (dim === 2) {
-            newPos[2 * i] = -1;
-            newPos[2 * i + 1] = -1;
+            newPos[2 * i] = labels[i].x;
+            newPos[2 * i + 1] = labels[i].y;
         } else {
             var idx = labels[i].idx;
             var pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
@@ -144,12 +144,7 @@ function effectLabels(toClear, toShow, labels, newPos, highlighted, clicked, poi
     });
 
     labels.forEach(function (elt, i) {
-        // TODO: Deal with 2D elements cleaner
-        if (elt.dim === 2) {
-            elt.elt.css('left', mousePosition.x).css('top', mousePosition.y);
-        } else {
-            elt.elt.css('left', newPos[2 * i]).css('top', newPos[2 * i + 1]);
-        }
+        elt.elt.css('left', newPos[2 * i]).css('top', newPos[2 * i + 1]);
         elt.elt.removeClass('on');
         elt.elt.removeClass('clicked');
     });
@@ -204,6 +199,8 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
             var idx = parseInt(hit.idx);
             var dim = hit.dim;
 
+            var EDGE_LABEL_OFFSET = -20;
+
             if (idx === -1) {
                 return null;
             } else if (poi.state.activeLabels[poi.cacheKey(idx, dim)]) {
@@ -220,6 +217,10 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
                 freshLabel.elt.on('mouseover', function () {
                     appState.labelHover.onNext(this);
                 });
+                if (dim === 2) {
+                    freshLabel.x = mousePosition.x + EDGE_LABEL_OFFSET;
+                    freshLabel.y = mousePosition.y + EDGE_LABEL_OFFSET;
+                }
                 toShow.push(freshLabel);
                 return freshLabel;
             } else {
@@ -228,6 +229,10 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
                 lbl.idx = idx;
                 lbl.dim = dim;
                 lbl.setIdx({idx: idx, dim: lbl.dim});
+                if (dim === 2) {
+                    lbl.x = mousePosition.x + EDGE_LABEL_OFFSET;
+                    lbl.y = mousePosition.y + EDGE_LABEL_OFFSET;
+                }
                 toShow.push(lbl);
                 return lbl;
             }
