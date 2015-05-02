@@ -16,21 +16,35 @@ var io           = require('socket.io-client');
 var renderer     = require('./renderer.js');
 
 
-//string * {socketHost: string, socketPort: int} -> (... -> ...)
-// where fragment == 'vbo?buffer' or 'texture?name'
-function makeFetcher (fragment, url) {
+/**
+ * Creates a function which fetches takes an object ID, and fetches the object of that type, with
+ * that ID, from the viz worker.
+ * 
+ * @param {Url} workerUrl - The base address to the worker to fetch from (for example,
+ *     `localhost:8000` or `example.com/worker/10000`).
+ * @param {String} endpoint - The name of the REST API endpoint which is responsible for serving
+ *     objects of this type (for example, `vbo`).
+ * @param {String} queryKey - The key used in the query string constructed to fetch objects from
+ *     the server (for example, `buffer` will construct a URL like 
+ *     `example.com/worker/10000/vbo?buffer=...`). The value will be the object ID, and passed in
+ *     when calling the returned function.
+ */
+function makeFetcher (workerUrl, endpoint, queryKey) {
     //string * {<name> -> int} * name -> Subject ArrayBuffer
     return function (socketID, bufferByteLengths, bufferName) {
-
         debug('fetching', bufferName);
 
         var res = new Rx.Subject();
+        
+        var query = { id: socketID };
+        query[queryKey] = bufferName;
 
-        var fetchUrlObj = _.extend({}, url,
-            { query: {
-                fragment: bufferName,
-                id: socketID
-            }});
+        var fetchUrlObj = _.extend({}, url);
+        fetchUrlObj.path = 
+            fetchUrlObj.path + 
+            (fetchUrlObj.path.substr(-1) !== '/' ? '/' : '') + 
+            endpoint;
+        fetchUrlObj.query = query;    
 
         var fetchUrl = urlModule.format(fetchUrlObj);
 
@@ -245,11 +259,11 @@ function createRenderer(socket, canvas) {
 function handleVboUpdates(socket, uri, renderState) {
     //string * {<name> -> int} * name -> Subject ArrayBuffer
     //socketID, bufferByteLengths, bufferName
-    var fetchBuffer = makeFetcher('vbo?buffer', uri);
+    var fetchBuffer = makeFetcher(uri, 'vbo', 'buffer');
 
     //string * {<name> -> int} * name -> Subject ArrayBuffer
     //socketID, textureByteLengths, textureName
-    var fetchTexture = makeFetcher('texture?texture', uri);
+    var fetchTexture = makeFetcher(uri, 'texture', 'texture');
 
     var bufferNames = renderer.getServerBufferNames(renderState.get('config').toJS());
     var textureNames = renderer.getServerTextureNames(renderState.get('config').toJS());
