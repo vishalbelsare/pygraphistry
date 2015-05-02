@@ -53,7 +53,7 @@ app.options('/api/v0.2/splunk/html/index.fragment.html', function(req, res) {
 });
 
 
-var MAIN_STATIC_PATH    = path.resolve(__dirname, 'assets');
+var MAIN_STATIC_PATH    = path.resolve(__dirname, '../assets');
 var GRAPH_STATIC_PATH   = path.resolve(require('graph-viz').staticFilePath(), 'assets');
 var HORIZON_STATIC_PATH = path.resolve(require('horizon-viz').staticFilePath(), 'assets');
 var UBER_STATIC_PATH    = path.resolve(require('uber-viz').staticFilePath(), 'assets');
