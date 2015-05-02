@@ -5,7 +5,7 @@
     Client networking layer for connecting a local canvas to remote layout engine
 */
 
-var url          = require('url');
+var urlModule    = require('url');
 var debug        = require('debug')('graphistry:StreamGL:client');
 var $            = window.$;
 var Rx           = require('rx');
@@ -104,7 +104,7 @@ function getVizServerParams(args) {
                 throw new Error(msg);
             }
 
-            var url = url.format(reply.data.uri);
+            var url = urlModule.format(reply.data.uri);
             console.info('Routed to %s in %s ms', url, Date.now() - parseFloat(reply.data.timestamp));
 
             return _.extend({}, reply.data.uri, {url: url});
@@ -156,7 +156,7 @@ function connect(vizType, urlParams) {
 
                     debug('Got worker URI', uri);
 
-                    var socket = io(url.format(uri), {
+                    var socket = io(urlModule.format(uri), {
                             query: uri.query,
                             path: uri.path + 'socket.io/',
                             reconnection: false
