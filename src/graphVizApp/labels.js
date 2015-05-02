@@ -122,15 +122,16 @@ function newLabelPositions(renderState, labels, points) {
     for (var i = 0; i < labels.length; i++) {
         // TODO: Treat 2D labels more naturally.
         var dim = labels[i].dim;
+
+        var pos;
         if (dim === 2) {
-            newPos[2 * i] = labels[i].x;
-            newPos[2 * i + 1] = labels[i].y;
+            pos = camera.canvasCoords(labels[i].x, labels[i].y, cnv, mtx);
         } else {
             var idx = labels[i].idx;
-            var pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
-            newPos[2 * i] = pos.x;
-            newPos[2 * i + 1] = pos.y;
+            pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
         }
+        newPos[2 * i] = pos.x;
+        newPos[2 * i + 1] = pos.y;
     }
 
     return newPos;
@@ -168,6 +169,15 @@ function effectLabels(toClear, toShow, labels, newPos, highlighted, clicked, poi
     });
 
 }
+
+function toWorldCoords(renderState, x, y) {
+    var camera = renderState.get('camera');
+    var cnv = renderState.get('canvas');
+    var mtx = camera.getMatrix();
+
+    return camera.canvas2WorldCoords(x, y, cnv, mtx);
+}
+
 
 function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, clicked) {
 
@@ -218,8 +228,10 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
                     appState.labelHover.onNext(this);
                 });
                 if (dim === 2) {
-                    freshLabel.x = mousePosition.x + EDGE_LABEL_OFFSET;
-                    freshLabel.y = mousePosition.y + EDGE_LABEL_OFFSET;
+                    _.extend(freshLabel,
+                        toWorldCoords(appState.renderState,
+                            mousePosition.x + EDGE_LABEL_OFFSET,
+                            mousePosition.y + EDGE_LABEL_OFFSET));
                 }
                 toShow.push(freshLabel);
                 return freshLabel;
@@ -230,8 +242,10 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
                 lbl.dim = dim;
                 lbl.setIdx({idx: idx, dim: lbl.dim});
                 if (dim === 2) {
-                    lbl.x = mousePosition.x + EDGE_LABEL_OFFSET;
-                    lbl.y = mousePosition.y + EDGE_LABEL_OFFSET;
+                    _.extend(lbl,
+                        toWorldCoords(appState.renderState,
+                            mousePosition.x + EDGE_LABEL_OFFSET,
+                            mousePosition.y + EDGE_LABEL_OFFSET));
                 }
                 toShow.push(lbl);
                 return lbl;
