@@ -104,10 +104,10 @@ function getVizServerParams(args) {
                 throw new Error(msg);
             }
 
-            var url = urlModule.format(reply.data.uri);
-            console.info('Routed to %s in %s ms', url, Date.now() - parseFloat(reply.data.timestamp));
+            console.info('Routed to %s in %s ms', urlModule.format(reply.data.uri, true, true), Date.now() - parseFloat(reply.data.timestamp));
+            console.info(reply.data.uri);
 
-            return _.extend({}, reply.data.uri, {url: url});
+            return reply.data.uri;
         })
         .retry(3)
         .take(1);
@@ -153,10 +153,11 @@ function connect(vizType, urlParams) {
                 })
                 .flatMap(function() {
                     uri.query = _.extend({}, urlParams, uri.query);
+                    uri.url = urlModule.format(uri, true, true);
 
-                    debug('Got worker URI', uri);
+                    debug('Got worker URI', uri.url);
 
-                    var socket = io(urlModule.format(uri), {
+                    var socket = io(uri.url, {
                             query: uri.query,
                             path: uri.path + 'socket.io/',
                             reconnection: false
