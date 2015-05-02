@@ -187,7 +187,7 @@ function connect(vizType, urlParams) {
                     socketUrl.path = 
                         socketUrl.path +
                         (socketUrl.path.substr(-1) !== '/' ? '/' : '') +
-                        'socket.io/';
+                        'socket.io';
                         
                     var socketAddress = urlModule.format(socketUrl);
 
