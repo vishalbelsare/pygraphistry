@@ -60,7 +60,12 @@ function defaults() {
         LOCAL_CACHE: true,
         LOCAL_CACHE_DIR: '/tmp/graphistry/data_cache',
 
-        BUNYAN_LOG: undefined
+        BUNYAN_LOG: undefined,
+
+        // This string is prefixed to all Graphistry routes. For example, if BASE_URL is '/foo',
+        // then central will append '/vizaddr' to get the route it will listen for viz server
+        // address requests, "/foo/vizaddr". This applies to both static and dynamic content.
+        BASE_URL: ''
     };
 }
 
