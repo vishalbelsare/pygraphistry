@@ -166,13 +166,20 @@ function connect(vizType, urlParams) {
                 })
                 .flatMap(function() {
                     uri.query = _.extend({}, validUrlParams, uri.query);
-                    uri.url = urlModule.format(uri, true, true);
+                    
+                    var socketUrl = _.extend({}, uri);
+                    socketUrl.path = 
+                        socketUrl.path +
+                        (socketUrl.path.substr(-1) !== '/' ? '/' : '') +
+                        'socket.io/';
+                        
+                    var socketAddress = urlModule.format(socketUrl);
 
-                    debug('Got worker URI', uri.url);
+                    debug('Got worker URI', socketAddress);
 
-                    var socket = io.Manager(uri.url, {
-                            query: uri.query,
-                            path: uri.path + 'socket.io/',
+                    var socket = io.Manager(socketAddress, {
+                            query: socketUrl.query,
+                            path: socketUrl.path,
                             reconnection: false
                         }).socket('/');
                     socket.io.engine.binaryType = 'arraybuffer';
