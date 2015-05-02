@@ -125,8 +125,10 @@ function requestWorker(args) {
 
                 throw new Error(msg);
             }
-
-            console.info('Routed to %s in %s ms', urlModule.format(reply.data.uri, true, true), Date.now() - parseFloat(reply.data.timestamp));
+            
+            reply.data.uri.path = _.isString(reply.data.uri.path) ? reply.data.uri.path : '';
+                
+            console.info('Routed to %s in %d ms', urlModule.format(reply.data.uri), Date.now() - parseFloat(reply.data.timestamp));
             console.info(reply.data.uri);
 
             return reply.data.uri;
