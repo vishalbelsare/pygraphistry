@@ -1,9 +1,11 @@
+/// <reference path="../typings/underscore/underscore.d.ts"/>
 'use strict';
 
 /*
     Client networking layer for connecting a local canvas to remote layout engine
 */
 
+var url          = require('url');
 var debug        = require('debug')('graphistry:StreamGL:client');
 var $            = window.$;
 var Rx           = require('rx');
@@ -101,15 +103,11 @@ function getVizServerParams(args) {
 
                 throw new Error(msg);
             }
-            var params = {
-                'hostname': reply.data.hostname,
-                'port': reply.data.port,
-                'path': '/worker/' + reply.data.port + '/',
-                'url': window.location.origin + '/worker/' + reply.data.port
-            };
 
-            console.info('Routed to', params.url, 'in', Date.now() - parseFloat(reply.data.timestamp), 'ms');
-            return params;
+            var url = url.format(reply.data.uri);
+            console.info('Routed to %s in %s ms', url, Date.now() - parseFloat(reply.data.timestamp));
+
+            return _.extend({}, reply.data.uri, {url: url});
         })
         .retry(3)
         .take(1);
@@ -123,7 +121,7 @@ function connect(vizType, urlParams) {
     }
 
     // Get URL query params to send over to the worker via socket
-    var workerParams = ['dataset', 'scene', 'device', 'controls',
+    var validWorkerParams = ['dataset', 'scene', 'device', 'controls',
                         'mapper', 'type', 'vendor', 'usertag'];
 
     // For compatibility with old way of specifying dataset
@@ -131,18 +129,19 @@ function connect(vizType, urlParams) {
         urlParams.dataset = urlParams.datasetname;
     }
 
-    var workersArgs = _.map(workerParams, function (param) {
-        return param + '=' + urlParams[param];
-    }).join('&');
-
-
-
+    var vizAddrArgs = _.chain(urlParams)
+        .pick(validWorkerParams)
+        .mapObject(function(val) { return encodeURIComponent(val); })
+        .pairs()
+        .map(function (param) { return param.join('='); })
+        .value()
+        .join('&');
 
     var attempt = 0;
     var latestError;
 
-    return getVizServerParams(workersArgs)
-        .flatMap(function (params) {
+    return getVizServerParams(vizAddrArgs)
+        .flatMap(function (uri) {
             return Rx.Observable.return()
                 .do(function () {
                     attempt++;
@@ -153,23 +152,19 @@ function connect(vizType, urlParams) {
                     }
                 })
                 .flatMap(function() {
+                    uri.query = _.extend({}, urlParams, uri.query);
 
-                    debug('got params', params);
+                    debug('Got worker URI', uri);
 
-                    workersArgs = workersArgs + '&workerPort=' + params.port;
-
-                    // var socket = io(params.url, { query: workersArgs,
-                    //                             reconnection: false,
-                    //                             transports: ['websocket']
-                    //                             });
-                    var socket = io.Manager(params.url + '/', { query: workersArgs,
-                                                reconnection: false,
-                                                path: params.path + 'socket.io/'
-                                            }).socket('/');
-
+                    var socket = io(url.format(uri), {
+                            query: uri.query,
+                            path: uri.path + 'socket.io/',
+                            reconnection: false
+                        });
                     socket.io.engine.binaryType = 'arraybuffer';
 
-                    socket.io.on('connect_error', function (err) { // FIXME Cannot trigger this handler when testing. Bug?
+                    // FIXME Cannot trigger this handler when testing. Bug?
+                    socket.io.on('connect_error', function (err) {
                         console.error('error, socketio failed connect', err);
                         latestError = 'Failed to connect to GPU worker. Try refreshing the page...';
 
@@ -185,7 +180,7 @@ function connect(vizType, urlParams) {
                         })
                         .map(function (res) {
                             if (res && res.success) {
-                                return {params: params, socket: socket};
+                                return {params: uri, socket: socket};
                             } else {
                                 latestError = (res||{}).error || 'Connection rejected by GPU worker. Try refreshing the page...';
                                 console.error('Viz rejected (likely due to multiple claimants)');
