@@ -19,13 +19,13 @@ var renderer     = require('./renderer.js');
 /**
  * Creates a function which fetches takes an object ID, and fetches the object of that type, with
  * that ID, from the viz worker.
- * 
+ *
  * @param {Url} workerUrl - The base address to the worker to fetch from (for example,
  *     `localhost:8000` or `example.com/worker/10000`).
  * @param {String} endpoint - The name of the REST API endpoint which is responsible for serving
  *     objects of this type (for example, `vbo`).
  * @param {String} queryKey - The key used in the query string constructed to fetch objects from
- *     the server (for example, `buffer` will construct a URL like 
+ *     the server (for example, `buffer` will construct a URL like
  *     `example.com/worker/10000/vbo?buffer=...`). The value will be the object ID, and passed in
  *     when calling the returned function.
  */
@@ -35,16 +35,16 @@ function makeFetcher (workerUrl, endpoint, queryKey) {
         debug('fetching', bufferName);
 
         var res = new Rx.Subject();
-        
+
         var query = { id: socketID };
         query[queryKey] = bufferName;
 
-        var fetchUrlObj = _.extend({}, url);
-        fetchUrlObj.pathname = 
-            fetchUrlObj.pathname + 
-            (fetchUrlObj.pathname.substr(-1) !== '/' ? '/' : '') + 
+        var fetchUrlObj = _.extend({}, workerUrl);
+        fetchUrlObj.pathname =
+            fetchUrlObj.pathname +
+            (fetchUrlObj.pathname.substr(-1) !== '/' ? '/' : '') +
             endpoint;
-        fetchUrlObj.query = query;    
+        fetchUrlObj.query = query;
 
         var fetchUrl = urlModule.format(fetchUrlObj);
 
@@ -125,9 +125,9 @@ function requestWorker(args) {
 
                 throw new Error(msg);
             }
-            
+
             reply.data.uri.pathname = _.isString(reply.data.uri.pathname) ? reply.data.uri.pathname : '';
-                
+
             console.info('Routed to %s in %d ms', urlModule.format(reply.data.uri), Date.now() - parseFloat(reply.data.timestamp));
             console.info(reply.data.uri);
 
@@ -182,13 +182,13 @@ function connect(vizType, urlParams) {
                 })
                 .flatMap(function() {
                     uri.query = _.extend({}, validUrlParams, uri.query);
-                    
+
                     var socketUrl = _.extend({}, uri);
-                    socketUrl.pathname = 
+                    socketUrl.pathname =
                         socketUrl.pathname +
                         (socketUrl.pathname.substr(-1) !== '/' ? '/' : '') +
                         'socket.io';
-                        
+
                     debug('Got worker URI', urlModule.format(socketUrl));
 
                     var socket = io.Manager(socketUrl.host, {
