@@ -121,13 +121,13 @@ function init(canvas, vizType) {
                     debug('Renderer created');
                     return {
                         socket: socket,
-                        workerParams: nfo.params,
+                        uri: nfo.uri,
                         initialRenderState: initialRenderState
                     };
                 });
         }).do(function(nfo) {
-            var vboUpdates = streamClient.handleVboUpdates(nfo.socket, nfo.initialRenderState);
-            vizApp(nfo.socket, nfo.initialRenderState, vboUpdates, nfo.workerParams, urlParams);
+            var vboUpdates = streamClient.handleVboUpdates(nfo.socket, nfo.uri, nfo.initialRenderState);
+            vizApp(nfo.socket, nfo.initialRenderState, vboUpdates, nfo.uri, urlParams);
 
             initialized.onNext({
                 vboUpdates: vboUpdates,

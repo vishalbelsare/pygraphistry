@@ -186,7 +186,7 @@ function connect(vizType, urlParams) {
                         })
                         .map(function (res) {
                             if (res && res.success) {
-                                return {params: uri, socket: socket};
+                                return {uri: uri, socket: socket};
                             } else {
                                 latestError = (res||{}).error || 'Connection rejected by GPU worker. Try refreshing the page...';
                                 console.error('Viz rejected (likely due to multiple claimants)');

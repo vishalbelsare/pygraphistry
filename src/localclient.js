@@ -79,7 +79,7 @@ module.exports = {
                 on: function (evt) { debug('ignoring on reg', evt); },
                 emit: function (evt) { debug('ignoring emit', evt); }
             },
-            params: {}
+            uri: {}
         });
     },
 
