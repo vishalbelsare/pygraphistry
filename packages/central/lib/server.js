@@ -12,23 +12,21 @@ var debug       = require('debug')('graphistry:central:server');
 var _           = require('underscore');
 var Rx          = require('rx');
 var Q           = require('q');
-var config      = require('config')();
-
-debug('Config set to %j', config);
-
 var express     = require('express');
+var io          = require('socket.io-client'); //for etl setup
 var proxy       = require('express-http-proxy');
 var compression = require('compression');
+var request     = require('request');
+var bodyParser  = require('body-parser');
+
 var app         = express();
 var http        = require('http').Server(app);
-var bodyParser  = require('body-parser');
-var request     = require('request');
 
-//for etl setup
-var io = require('socket.io-client');
-
+var config      = require('config')();
 var router = require('./worker-router.js');
 
+
+debug('Config set to %j', config);
 
 app.use(compression());
 
