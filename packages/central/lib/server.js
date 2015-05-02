@@ -28,6 +28,10 @@ var router = require('./worker-router.js');
 
 debug('Config set to %j', config);
 
+// Tell Express to trust reverse-proxy connections from localhost, linklocal, and private IP ranges.
+// This allows Express to expose the client's real IP and protocol, not the proxy's.
+app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
+
 app.use(compression());
 
 //needed for splunk API
