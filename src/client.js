@@ -70,7 +70,7 @@ function getUpdatedNames (names, originalVersions, newVersions) {
 /**
  * Fetches the URL for the viz server to use
  */
-function getVizServerParams(args) {
+function requestWorker(args) {
 
     var attempt = 0;
 
@@ -128,14 +128,14 @@ function connect(vizType, urlParams) {
     if ('datasetname' in urlParams) {
         urlParams.dataset = urlParams.datasetname;
     }
-    
+
     validUrlParams = _.pick(urlParams, validWorkerParams);
 
     var validUrlParams = _.chain(urlParams)
         .pick(validWorkerParams)
         .mapObject(function(val) { return encodeURIComponent(val); })
         .value();
-        
+
     var vizAddrArgs = _.chain(validUrlParams)
         .pairs()
         .map(function (param) { return param.join('='); })
@@ -145,7 +145,7 @@ function connect(vizType, urlParams) {
     var attempt = 0;
     var latestError;
 
-    return getVizServerParams(vizAddrArgs)
+    return requestWorker(vizAddrArgs)
         .flatMap(function (uri) {
             return Rx.Observable.return()
                 .do(function () {
