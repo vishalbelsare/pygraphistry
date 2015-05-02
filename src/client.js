@@ -26,9 +26,17 @@ function makeFetcher (fragment, url) {
 
         var res = new Rx.Subject();
 
+        var fetchUrlObj = _.extend({}, url,
+            { query: {
+                fragment: bufferName,
+                id: socketID
+            }});
+
+        var fetchUrl = urlModule.format(fetchUrlObj);
+
         //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
         var oReq = new XMLHttpRequest();
-        oReq.open('GET', url + '/' + fragment + '=' + bufferName + '&id=' + socketID, true);
+        oReq.open('GET', fetchUrl, true);
         oReq.responseType = 'arraybuffer';
 
         var now = Date.now();
@@ -227,14 +235,14 @@ function createRenderer(socket, canvas) {
  *
  * @return {Rx.BehaviorSubject} {'init', 'start', 'received', 'rendered'} Rx subject that fires every time a frame is rendered.
  */
-function handleVboUpdates(socket, renderState) {
+function handleVboUpdates(socket, uri, renderState) {
     //string * {<name> -> int} * name -> Subject ArrayBuffer
     //socketID, bufferByteLengths, bufferName
-    var fetchBuffer = makeFetcher('vbo?buffer', socket.io.uri);
+    var fetchBuffer = makeFetcher('vbo?buffer', uri);
 
     //string * {<name> -> int} * name -> Subject ArrayBuffer
     //socketID, textureByteLengths, textureName
-    var fetchTexture = makeFetcher('texture?texture', socket.io.uri);
+    var fetchTexture = makeFetcher('texture?texture', uri);
 
     var bufferNames = renderer.getServerBufferNames(renderState.get('config').toJS());
     var textureNames = renderer.getServerTextureNames(renderState.get('config').toJS());
