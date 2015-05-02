@@ -152,9 +152,7 @@ function connect(vizType, urlParams) {
     if ('datasetname' in urlParams) {
         urlParams.dataset = urlParams.datasetname;
     }
-
-    validUrlParams = _.pick(urlParams, validWorkerParams);
-
+    
     var validUrlParams = _.chain(urlParams)
         .pick(validWorkerParams)
         .mapObject(function(val) { return encodeURIComponent(val); })
