@@ -189,11 +189,9 @@ function connect(vizType, urlParams) {
                         (socketUrl.pathname.substr(-1) !== '/' ? '/' : '') +
                         'socket.io';
                         
-                    var socketAddress = urlModule.format(socketUrl);
+                    debug('Got worker URI', urlModule.format(socketUrl));
 
-                    debug('Got worker URI', socketAddress);
-
-                    var socket = io.Manager(socketAddress, {
+                    var socket = io.Manager(socketUrl.host, {
                             query: socketUrl.query,
                             path: socketUrl.pathname,
                             reconnection: false
