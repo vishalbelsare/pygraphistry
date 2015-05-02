@@ -40,9 +40,9 @@ function makeFetcher (workerUrl, endpoint, queryKey) {
         query[queryKey] = bufferName;
 
         var fetchUrlObj = _.extend({}, url);
-        fetchUrlObj.path = 
-            fetchUrlObj.path + 
-            (fetchUrlObj.path.substr(-1) !== '/' ? '/' : '') + 
+        fetchUrlObj.pathname = 
+            fetchUrlObj.pathname + 
+            (fetchUrlObj.pathname.substr(-1) !== '/' ? '/' : '') + 
             endpoint;
         fetchUrlObj.query = query;    
 
@@ -126,7 +126,7 @@ function requestWorker(args) {
                 throw new Error(msg);
             }
             
-            reply.data.uri.path = _.isString(reply.data.uri.path) ? reply.data.uri.path : '';
+            reply.data.uri.pathname = _.isString(reply.data.uri.pathname) ? reply.data.uri.pathname : '';
                 
             console.info('Routed to %s in %d ms', urlModule.format(reply.data.uri), Date.now() - parseFloat(reply.data.timestamp));
             console.info(reply.data.uri);
@@ -184,9 +184,9 @@ function connect(vizType, urlParams) {
                     uri.query = _.extend({}, validUrlParams, uri.query);
                     
                     var socketUrl = _.extend({}, uri);
-                    socketUrl.path = 
-                        socketUrl.path +
-                        (socketUrl.path.substr(-1) !== '/' ? '/' : '') +
+                    socketUrl.pathname = 
+                        socketUrl.pathname +
+                        (socketUrl.pathname.substr(-1) !== '/' ? '/' : '') +
                         'socket.io';
                         
                     var socketAddress = urlModule.format(socketUrl);
@@ -195,7 +195,7 @@ function connect(vizType, urlParams) {
 
                     var socket = io.Manager(socketAddress, {
                             query: socketUrl.query,
-                            path: socketUrl.path,
+                            path: socketUrl.pathname,
                             reconnection: false
                         }).socket('/');
                     socket.io.engine.binaryType = 'arraybuffer';
