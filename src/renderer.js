@@ -646,7 +646,8 @@ function loadBuffers(state, bufferData) {
 
         var model = _.values(config.models[bufferName])[0];
         if (model === undefined) {
-            console.error('Asked to load data for buffer \'%s\', but corresponding model found', bufferName);
+            console.error('Asked to load data for buffer \'%s\', but corresponding model not found', bufferName);
+            console.log('models: ', config.models);
             return false;
         }
 
@@ -831,6 +832,25 @@ function copyCanvasToTexture(state, textureName) {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
     var end = Date.now();
     console.info('Copied Canvas to Texture(' + textureName +') in', end - start, '[ms]');
+    console.info('GL: ', gl);
+}
+
+function setupFullscreenBuffer(state) {
+
+    var fullscreenBuffer = new Float32Array([
+            1.0, 1.0, -1.0, 1.0, -1.0, -1.0,
+            -1.0, -1.0, 1.0, -1.0, 1.0, 1.0
+        ]);
+
+    // var fullscreenBuffer = new Float32Array([
+    //         1.0, 1.0, 0.0, 1.0, 0.0, 0.0,
+    //         0.0, 0.0, 1.0, 0.0, 1.0, 1.0
+    //     ]);
+
+    var numFullscreenElements = 6;
+
+    setNumElements(state, 'fullscreen', numFullscreenElements);
+    loadBuffers(state, {'fullscreenCoordinates': fullscreenBuffer});
 }
 
 
@@ -1059,6 +1079,7 @@ module.exports = {
     setNumElements: setNumElements,
     render: render,
     copyCanvasToTexture: copyCanvasToTexture,
+    setupFullscreenBuffer: setupFullscreenBuffer,
     getServerBufferNames: getServerBufferNames,
     getServerTextureNames: getServerTextureNames,
 };

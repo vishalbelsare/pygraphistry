@@ -129,7 +129,6 @@ function renderMouseoverEffects(renderingScheduler, task) {
     var renderState = renderingScheduler.renderState;
     var buffers = appSnapshot.buffers;
     var numElements = renderState.get('numElements');
-    console.log('TODO: Rendering mouseover task: ', task);
 
     // TODO: Render cached texture to screen
 
@@ -145,8 +144,11 @@ function renderMouseoverEffects(renderingScheduler, task) {
         buffers.highlightedEdges[idx*4 + 3] = buffers.springsPos[val*4 + 3];
     });
     numElements.edgehighlight = edgeIndices.length * 2;
+    // numElements.fullscreen = 2;
 
+    renderer.setupFullscreenBuffer(renderState);
     renderer.loadBuffers(renderState, {'highlightedEdgesPos': buffers.highlightedEdges});
+    // renderer.render(renderState, 'renderSteadyStateTexture', 'renderSteadyStateTexture');
     renderer.render(renderState, 'highlight', 'highlight');
 }
 
@@ -176,6 +178,11 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         },
         hitmapUpdates: hitmapUpdates
     };
+
+    /* Set up fullscreen buffer for mouseover effects.
+     *
+     */
+    renderer.setupFullscreenBuffer(renderState);
 
 
     /*
