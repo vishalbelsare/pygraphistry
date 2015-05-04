@@ -95,7 +95,18 @@ var programs = {
         'attributes': ['curPos'],
         'camera': 'mvp',
         'uniforms': []
+    },
+    'fullscreen': {
+        'sources': {
+            'vertex': fs.readFileSync(__dirname + '/../shaders/fullscreen.vertex.glsl', 'utf8').toString('ascii'),
+            'fragment': fs.readFileSync(__dirname + '/../shaders/fullscreen.fragment.glsl', 'utf8').toString('ascii')
+        },
+        'attributes': ['vertexPosition'],
+        'camera': 'mvp',
+        'uniforms': [],
+        'textures': ['uSampler']
     }
+
 }
 
 /* datasource can be either SERVER or CLIENT */
@@ -240,6 +251,16 @@ var models = {
     'curMidPoints': {
         'curPos': {
             'datasource': 'DEVICE',
+            'type': 'FLOAT',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
+    'fullscreenCoordinates': {
+        'vertexPosition': {
+            'datasource': 'CLIENT',
             'type': 'FLOAT',
             'count': 2,
             'offset': 0,
@@ -551,6 +572,18 @@ var items = {
         },
         'drawType': 'LINES',
         'glOptions': {}
+    },
+    'fullscreen': {
+        'program': 'fullscreen',
+        'triggers': ['highlight'],
+        'bindings': {
+            'vertexPosition': ['fullscreenCoordinates', 'vertexPosition']
+        },
+        'textureBindings': {
+            'uSampler': 'steadyStateTexture'
+        },
+        'drawType': 'TRIANGLES',
+        'glOptions': {}
     }
 }
 
@@ -575,14 +608,14 @@ var camera2D = {
 var sceneUber = {
     'options': stdOptions,
     'camera': camera2D,
-    'render': ['pointpicking',  'pointsampling', 'midedgeculled', 'edgepicking', 'uberpointculled', 'uberpointculledFull', 'edgehighlight']
+    'render': ['pointpicking',  'pointsampling', 'midedgeculled', 'edgepicking', 'uberpointculled', 'uberpointculledFull', 'edgehighlight', 'fullscreen']
 }
 
 var sceneNetflow = {
     'options': stdOptions,
     'camera': camera2D,
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'edgeculled', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull', 'edgehighlight']
+               'edgeculled', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull', 'edgehighlight', 'fullscreen']
 }
 
 var sceneNetflowIndexed = {
@@ -590,7 +623,7 @@ var sceneNetflowIndexed = {
     'camera': camera2D,
     'edgeMode': 'CLIENTINDEXED',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'edgeculledindexed', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull', 'edgehighlight']
+               'edgeculledindexed', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull', 'edgehighlight', 'fullscreen']
 }
 
 var sceneNetflowIndexedClient = {
@@ -598,7 +631,7 @@ var sceneNetflowIndexedClient = {
     'camera': camera2D,
     'edgeMode': 'INDEXEDCLIENT',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'indexeddummy', 'edgeculledindexedclient', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull', 'edgehighlight']
+               'indexeddummy', 'edgeculledindexedclient', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull', 'edgehighlight', 'fullscreen']
 }
 
 var scenes = {
