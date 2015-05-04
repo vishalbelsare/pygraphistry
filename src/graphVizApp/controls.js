@@ -368,7 +368,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     var marquee = setupMarquee(appState, turnOnMarquee);
     var brush = setupBrush(appState, turnOnBrush);
-    dataInspector.init(appState, socket, workerParams.url, brush);
+    dataInspector.init(appState, socket, workerParams.href, brush);
     histogramBrush.init(socket, brush);
     forkVgraph(socket, urlParams);
 
