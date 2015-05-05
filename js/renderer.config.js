@@ -584,6 +584,22 @@ var items = {
         },
         'drawType': 'TRIANGLES',
         'glOptions': {}
+    },
+    // Because we can't tell renderer to make a texture unless we write to it in an item
+    // TODO: Add this functionality and kill fullscreenDummy
+    'fullscreenDummy': {
+        'program': 'fullscreen',
+        'triggers': [],
+        'bindings': {
+            'vertexPosition': ['fullscreenCoordinates', 'vertexPosition']
+        },
+        'textureBindings': {
+            'uSampler': 'steadyStateTexture'
+        },
+        'drawType': 'TRIANGLES',
+        'glOptions': {},
+        'renderTarget': 'steadyStateTexture',
+        'readTarget': true
     }
 }
 
@@ -608,14 +624,14 @@ var camera2D = {
 var sceneUber = {
     'options': stdOptions,
     'camera': camera2D,
-    'render': ['pointpicking',  'pointsampling', 'midedgeculled', 'edgepicking', 'uberpointculled', 'uberpointculledFull', 'edgehighlight', 'fullscreen']
+    'render': ['pointpicking',  'pointsampling', 'midedgeculled', 'edgepicking', 'uberpointculled', 'uberpointculledFull', 'edgehighlight', 'fullscreen', 'fullscreenDummy']
 }
 
 var sceneNetflow = {
     'options': stdOptions,
     'camera': camera2D,
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'edgeculled', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull', 'edgehighlight', 'fullscreen']
+               'edgeculled', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull', 'edgehighlight', 'fullscreen', 'fullscreenDummy']
 }
 
 var sceneNetflowIndexed = {
@@ -623,7 +639,7 @@ var sceneNetflowIndexed = {
     'camera': camera2D,
     'edgeMode': 'CLIENTINDEXED',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'edgeculledindexed', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull', 'edgehighlight', 'fullscreen']
+               'edgeculledindexed', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull', 'edgehighlight', 'fullscreen', 'fullscreenDummy']
 }
 
 var sceneNetflowIndexedClient = {
@@ -631,7 +647,7 @@ var sceneNetflowIndexedClient = {
     'camera': camera2D,
     'edgeMode': 'INDEXEDCLIENT',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'indexeddummy', 'edgeculledindexedclient', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull', 'edgehighlight', 'fullscreen']
+               'indexeddummy', 'edgeculledindexedclient', 'edgepicking', 'pointoutline', 'pointoutlineFull', 'pointculled', 'pointculledFull', 'edgehighlight', 'fullscreen', 'fullscreenDummy']
 }
 
 var scenes = {
