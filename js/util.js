@@ -99,7 +99,7 @@ function makeHandler(type, msg, out, rethrow, style) {
         if (logger !== undefined) {
             logger[out]({content: payload})
         } else {
-            secretConsole[out](style(payload.type), payload.msg, payload.stack || payload.error || '');
+            secretConsole[out].call(console, style(payload.type), payload.msg, payload.stack || payload.error || '');
         }
 
         if (rethrow) {
