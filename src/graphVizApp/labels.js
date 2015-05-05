@@ -143,15 +143,16 @@ function newLabelPositions(renderState, labels, points) {
     for (var i = 0; i < labels.length; i++) {
         // TODO: Treat 2D labels more naturally.
         var dim = labels[i].dim;
+
+        var pos;
         if (dim === 2) {
-            newPos[2 * i] = -1;
-            newPos[2 * i + 1] = -1;
+            pos = camera.canvasCoords(labels[i].x, labels[i].y, cnv, mtx);
         } else {
             var idx = labels[i].idx;
-            var pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
-            newPos[2 * i] = pos.x;
-            newPos[2 * i + 1] = pos.y;
+            pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
         }
+        newPos[2 * i] = pos.x;
+        newPos[2 * i + 1] = pos.y;
     }
 
     return newPos;
@@ -165,12 +166,7 @@ function effectLabels(toClear, toShow, labels, newPos, highlighted, clicked, poi
     });
 
     labels.forEach(function (elt, i) {
-        // TODO: Deal with 2D elements cleaner
-        if (elt.dim === 2) {
-            elt.elt.css('left', mousePosition.x).css('top', mousePosition.y);
-        } else {
-            elt.elt.css('left', newPos[2 * i]).css('top', newPos[2 * i + 1]);
-        }
+        elt.elt.css('left', newPos[2 * i]).css('top', newPos[2 * i + 1]);
         elt.elt.removeClass('on');
         elt.elt.removeClass('clicked');
     });
@@ -194,6 +190,15 @@ function effectLabels(toClear, toShow, labels, newPos, highlighted, clicked, poi
     });
 
 }
+
+function toWorldCoords(renderState, x, y) {
+    var camera = renderState.get('camera');
+    var cnv = renderState.get('canvas');
+    var mtx = camera.getMatrix();
+
+    return camera.canvas2WorldCoords(x, y, cnv, mtx);
+}
+
 
 function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, clicked) {
 
@@ -225,6 +230,8 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
             var idx = parseInt(hit.idx);
             var dim = hit.dim;
 
+            var EDGE_LABEL_OFFSET = -40;
+
             if (idx === -1) {
                 return null;
             } else if (poi.state.activeLabels[poi.cacheKey(idx, dim)]) {
@@ -241,6 +248,12 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
                 freshLabel.elt.on('mouseover', function () {
                     appState.labelHover.onNext(this);
                 });
+                if (dim === 2) {
+                    _.extend(freshLabel,
+                        toWorldCoords(appState.renderState,
+                            mousePosition.x + EDGE_LABEL_OFFSET,
+                            mousePosition.y + EDGE_LABEL_OFFSET));
+                }
                 toShow.push(freshLabel);
                 return freshLabel;
             } else {
@@ -249,6 +262,12 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
                 lbl.idx = idx;
                 lbl.dim = dim;
                 lbl.setIdx({idx: idx, dim: lbl.dim});
+                if (dim === 2) {
+                    _.extend(lbl,
+                        toWorldCoords(appState.renderState,
+                            mousePosition.x + EDGE_LABEL_OFFSET,
+                            mousePosition.y + EDGE_LABEL_OFFSET));
+                }
                 toShow.push(lbl);
                 return lbl;
             }
@@ -331,15 +350,26 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
         .merge($eventTarget.mousedownAsObservable()
             .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
             .map(function (evt) {
-                var clickedLabel = $(evt.target).hasClass('graph-label') ||
-                        $(evt.target).hasClass('highlighted-point') ||
-                        $(evt.target).hasClass('highlighted-point-center');
-                if (!clickedLabel) {
-                    clickedLabel = $(evt.target).parents('.graph-label').length || false;
+                if ($(evt.target).hasClass('highlighted-point') ||
+                        $(evt.target).hasClass('highlighted-point-center')) {
+                    return {
+                        cmd: 'click',
+                        pt: {dim: 1, idx: parseInt($cont.attr('pointidx'))}
+                    };
+                } else if ($(evt.target).hasClass('graph-label') ||
+                        $(evt.target).parents('.graph-label').length) {
+
+                    var elt = $(evt.target).hasClass('graph-label') ? evt.target
+                        : ($(evt.target).parents('.graph-label')[0]);
+                    var pt = _.values(appState.poi.state.activeLabels)
+                        .filter(function (lbl) { return lbl.elt.get(0) === elt; })[0];
+                    return {
+                        cmd: 'click',
+                        pt: {dim: pt.dim, idx: pt.idx}
+                    };
+                } else {
+                    return {cmd: 'declick'};
                 }
-                return clickedLabel ?
-                    {cmd: 'click', pt: {dim: 1, idx: parseInt($cont.attr('pointidx'))}}
-                    : {cmd: 'declick'};
             }))
         .merge(
             appState.labelHover
@@ -349,9 +379,8 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
                         .filter(function (lbl) { return lbl.elt.get(0) === elt; });
                 })
                 .filter(function (highlightedLabels) { return highlightedLabels.length; })
-                // TODO: Tag this as a point properly
                 .map(function (highlightedLabels) {
-                    return {cmd: 'hover', pt: {dim: 1, idx: highlightedLabels[0].idx}};
+                    return {cmd: 'hover', pt: {dim: highlightedLabels[0].dim, idx: highlightedLabels[0].idx}};
                 }))
         .scan([], function (acc, cmd) {
             switch (cmd.cmd) {

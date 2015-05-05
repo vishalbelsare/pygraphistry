@@ -796,7 +796,15 @@ function setCamera(state) {
             // TODO: Actually get number of nodes from the server
             numVertices = state.get('numElements').pointculled || 0;
             var scalingFactor = camera.semanticZoom(numVertices);
-            map.zoomScalingFactor = [scalingFactor];
+            map.zoomScalingFactor = scalingFactor;
+        }
+
+        if ('maxScreenSize' in map) {
+            map.maxScreenSize = Math.max(camera.width, camera.height);
+        }
+
+        if ('maxCanvasSize' in map) {
+            map.maxCanvasSize = Math.max(gl.canvas.width, gl.canvas.height);
         }
     });
 

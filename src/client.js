@@ -1,9 +1,11 @@
+/// <reference path="../typings/underscore/underscore.d.ts"/>
 'use strict';
 
 /*
     Client networking layer for connecting a local canvas to remote layout engine
 */
 
+var urlModule    = require('url');
 var debug        = require('debug')('graphistry:StreamGL:client');
 var $            = window.$;
 var Rx           = require('rx');
@@ -14,19 +16,41 @@ var io           = require('socket.io-client');
 var renderer     = require('./renderer.js');
 
 
-//string * {socketHost: string, socketPort: int} -> (... -> ...)
-// where fragment == 'vbo?buffer' or 'texture?name'
-function makeFetcher (fragment, url) {
+/**
+ * Creates a function which fetches takes an object ID, and fetches the object of that type, with
+ * that ID, from the viz worker.
+ *
+ * @param {Url} workerUrl - The base address to the worker to fetch from (for example,
+ *     `localhost:8000` or `example.com/worker/10000`).
+ * @param {String} endpoint - The name of the REST API endpoint which is responsible for serving
+ *     objects of this type (for example, `vbo`).
+ * @param {String} queryKey - The key used in the query string constructed to fetch objects from
+ *     the server (for example, `buffer` will construct a URL like
+ *     `example.com/worker/10000/vbo?buffer=...`). The value will be the object ID, and passed in
+ *     when calling the returned function.
+ */
+function makeFetcher (workerUrl, endpoint, queryKey) {
     //string * {<name> -> int} * name -> Subject ArrayBuffer
     return function (socketID, bufferByteLengths, bufferName) {
-
         debug('fetching', bufferName);
 
         var res = new Rx.Subject();
 
+        var query = { id: socketID };
+        query[queryKey] = bufferName;
+
+        var fetchUrlObj = _.extend({}, workerUrl);
+        fetchUrlObj.pathname =
+            fetchUrlObj.pathname +
+            (fetchUrlObj.pathname.substr(-1) !== '/' ? '/' : '') +
+            endpoint;
+        fetchUrlObj.query = query;
+
+        var fetchUrl = urlModule.format(fetchUrlObj);
+
         //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
         var oReq = new XMLHttpRequest();
-        oReq.open('GET', url + '/' + fragment + '=' + bufferName + '&id=' + socketID, true);
+        oReq.open('GET', fetchUrl, true);
         oReq.responseType = 'arraybuffer';
 
         var now = Date.now();
@@ -68,7 +92,7 @@ function getUpdatedNames (names, originalVersions, newVersions) {
 /**
  * Fetches the URL for the viz server to use
  */
-function getVizServerParams(args) {
+function requestWorker(args) {
 
     var attempt = 0;
 
@@ -101,15 +125,13 @@ function getVizServerParams(args) {
 
                 throw new Error(msg);
             }
-            var params = {
-                'hostname': reply.data.hostname,
-                'port': reply.data.port,
-                'path': '/worker/' + reply.data.port + '/',
-                'url': window.location.origin + '/worker/' + reply.data.port
-            };
 
-            console.info('Routed to', params.url, 'in', Date.now() - parseFloat(reply.data.timestamp), 'ms');
-            return params;
+            reply.data.uri.pathname = _.isString(reply.data.uri.pathname) ? reply.data.uri.pathname : '';
+
+            console.info('Routed to %s in %d ms', urlModule.format(reply.data.uri), Date.now() - parseFloat(reply.data.timestamp));
+            console.info(reply.data.uri);
+
+            return reply.data.uri;
         })
         .retry(3)
         .take(1);
@@ -123,26 +145,30 @@ function connect(vizType, urlParams) {
     }
 
     // Get URL query params to send over to the worker via socket
-    var workerParams = ['dataset', 'scene', 'device', 'controls',
+    var validWorkerParams = ['dataset', 'scene', 'device', 'controls',
                         'mapper', 'type', 'vendor', 'usertag'];
 
     // For compatibility with old way of specifying dataset
     if ('datasetname' in urlParams) {
         urlParams.dataset = urlParams.datasetname;
     }
+    
+    var validUrlParams = _.chain(urlParams)
+        .pick(validWorkerParams)
+        .mapObject(function(val) { return encodeURIComponent(val); })
+        .value();
 
-    var workersArgs = _.map(workerParams, function (param) {
-        return param + '=' + urlParams[param];
-    }).join('&');
-
-
-
+    var vizAddrArgs = _.chain(validUrlParams)
+        .pairs()
+        .map(function (param) { return param.join('='); })
+        .value()
+        .join('&');
 
     var attempt = 0;
     var latestError;
 
-    return getVizServerParams(workersArgs)
-        .flatMap(function (params) {
+    return requestWorker(vizAddrArgs)
+        .flatMap(function (uri) {
             return Rx.Observable.return()
                 .do(function () {
                     attempt++;
@@ -153,23 +179,25 @@ function connect(vizType, urlParams) {
                     }
                 })
                 .flatMap(function() {
+                    uri.query = _.extend({}, validUrlParams, uri.query);
 
-                    debug('got params', params);
+                    var socketUrl = _.extend({}, uri);
+                    socketUrl.pathname =
+                        socketUrl.pathname +
+                        (socketUrl.pathname.substr(-1) !== '/' ? '/' : '') +
+                        'socket.io';
 
-                    workersArgs = workersArgs + '&workerPort=' + params.port;
+                    debug('Got worker URI', urlModule.format(socketUrl));
 
-                    // var socket = io(params.url, { query: workersArgs,
-                    //                             reconnection: false,
-                    //                             transports: ['websocket']
-                    //                             });
-                    var socket = io.Manager(params.url + '/', { query: workersArgs,
-                                                reconnection: false,
-                                                path: params.path + 'socket.io/'
-                                            }).socket('/');
-
+                    var socket = io.Manager(socketUrl.host, {
+                            query: socketUrl.query,
+                            path: socketUrl.pathname,
+                            reconnection: false
+                        }).socket('/');
                     socket.io.engine.binaryType = 'arraybuffer';
 
-                    socket.io.on('connect_error', function (err) { // FIXME Cannot trigger this handler when testing. Bug?
+                    // FIXME Cannot trigger this handler when testing. Bug?
+                    socket.io.on('connect_error', function (err) {
                         console.error('error, socketio failed connect', err);
                         latestError = 'Failed to connect to GPU worker. Try refreshing the page...';
 
@@ -185,7 +213,7 @@ function connect(vizType, urlParams) {
                         })
                         .map(function (res) {
                             if (res && res.success) {
-                                return {params: params, socket: socket};
+                                return {uri: uri, socket: socket};
                             } else {
                                 latestError = (res||{}).error || 'Connection rejected by GPU worker. Try refreshing the page...';
                                 console.error('Viz rejected (likely due to multiple claimants)');
@@ -226,14 +254,14 @@ function createRenderer(socket, canvas) {
  *
  * @return {Rx.BehaviorSubject} {'init', 'start', 'received', 'rendered'} Rx subject that fires every time a frame is rendered.
  */
-function handleVboUpdates(socket, renderState) {
+function handleVboUpdates(socket, uri, renderState) {
     //string * {<name> -> int} * name -> Subject ArrayBuffer
     //socketID, bufferByteLengths, bufferName
-    var fetchBuffer = makeFetcher('vbo?buffer', socket.io.uri);
+    var fetchBuffer = makeFetcher(uri, 'vbo', 'buffer');
 
     //string * {<name> -> int} * name -> Subject ArrayBuffer
     //socketID, textureByteLengths, textureName
-    var fetchTexture = makeFetcher('texture?texture', socket.io.uri);
+    var fetchTexture = makeFetcher(uri, 'texture', 'texture');
 
     var bufferNames = renderer.getServerBufferNames(renderState.get('config').toJS());
     var textureNames = renderer.getServerTextureNames(renderState.get('config').toJS());

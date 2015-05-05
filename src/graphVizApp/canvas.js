@@ -79,19 +79,85 @@ function setupBackgroundColor(renderingScheduler, bgColor) {
 function expandLogicalEdges(bufferSnapshots) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
-    var numPoints = logicalEdges.length;
+    var numVertices = logicalEdges.length;
 
     if (!bufferSnapshots.springsPos) {
-        bufferSnapshots.springsPos = new Float32Array(numPoints * 2);
+        bufferSnapshots.springsPos = new Float32Array(numVertices * 2);
     }
     var springsPos = bufferSnapshots.springsPos;
 
-    for (var i = 0; i < numPoints; i++) {
+    for (var i = 0; i < numVertices; i++) {
         springsPos[2 * i]     = curPoints[2 * logicalEdges[i]];
         springsPos[2 * i + 1] = curPoints[2 * logicalEdges[i] + 1];
     }
 
     return springsPos;
+}
+
+
+function makeArrows(bufferSnapshots) {
+    var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
+    var pointSizes = new Uint8Array(bufferSnapshots.pointSizes.buffer);
+    var springsPos = new Float32Array(bufferSnapshots.springsPos.buffer);
+    var edgeColors = new Uint32Array(bufferSnapshots.edgeColors.buffer);
+    var numEdges = springsPos.length / 4; // TWO coords (x,y) for each of the TWO endpoints.
+
+    if (!bufferSnapshots.arrowStartPos) {
+        bufferSnapshots.arrowStartPos = new Float32Array(numEdges * 2 * 3);
+    }
+    var arrowStartPos = bufferSnapshots.arrowStartPos;
+
+    if (!bufferSnapshots.arrowEndPos) {
+        bufferSnapshots.arrowEndPos = new Float32Array(numEdges * 2 * 3);
+    }
+    var arrowEndPos = bufferSnapshots.arrowEndPos;
+
+    if (!bufferSnapshots.arrowNormalDir) {
+        bufferSnapshots.arrowNormalDir = new Float32Array(numEdges * 3);
+    }
+    var arrowNormalDir = bufferSnapshots.arrowNormalDir;
+
+    if (!bufferSnapshots.arrowColors) {
+        bufferSnapshots.arrowColors = new Uint32Array(numEdges * 3);
+    }
+    var arrowColors = bufferSnapshots.arrowColors;
+
+    if (!bufferSnapshots.arrowPointSizes) {
+        bufferSnapshots.arrowPointSizes = new Uint8Array(numEdges * 3);
+    }
+    var arrowPointSizes = bufferSnapshots.arrowPointSizes;
+
+    for (var i = 0; i < numEdges; i++) {
+        var start = [springsPos[4*i + 0], springsPos[4*i + 1]];
+        var end   = [springsPos[4*i + 2], springsPos[4*i + 3]];
+
+        arrowStartPos[6*i + 0] = start[0];
+        arrowStartPos[6*i + 1] = start[1];
+        arrowStartPos[6*i + 2] = start[0];
+        arrowStartPos[6*i + 3] = start[1];
+        arrowStartPos[6*i + 4] = start[0];
+        arrowStartPos[6*i + 5] = start[1];
+
+        arrowEndPos[6*i + 0] = end[0];
+        arrowEndPos[6*i + 1] = end[1];
+        arrowEndPos[6*i + 2] = end[0];
+        arrowEndPos[6*i + 3] = end[1];
+        arrowEndPos[6*i + 4] = end[0];
+        arrowEndPos[6*i + 5] = end[1];
+
+        arrowNormalDir[3*i + 0] = 0;  // Tip vertex
+        arrowNormalDir[3*i + 1] = 1;  // Left vertex
+        arrowNormalDir[3*i + 2] = -1; // Right vertex
+
+        var pointSize = pointSizes[logicalEdges[2*i + 1]];
+        arrowPointSizes[3*i + 0] = pointSize;
+        arrowPointSizes[3*i + 1] = pointSize;
+        arrowPointSizes[3*i + 2] = pointSize;
+
+        arrowColors[3*i + 0] = edgeColors[2*i + 1];
+        arrowColors[3*i + 1] = edgeColors[2*i + 1];
+        arrowColors[3*i + 2] = edgeColors[2*i + 1];
+    }
 }
 
 /*
@@ -102,17 +168,29 @@ function expandLogicalEdges(bufferSnapshots) {
 function renderSlowEffects(renderingScheduler) {
     var appSnapshot = renderingScheduler.appSnapshot;
     var renderState = renderingScheduler.renderState;
-    var logicaEdges = renderState.get('config').get('edgeMode') === 'INDEXEDCLIENT';
+    var logicalEdges = renderState.get('config').get('edgeMode') === 'INDEXEDCLIENT';
 
-    if (logicaEdges && appSnapshot.vboUpdated) {
+    if (logicalEdges && appSnapshot.vboUpdated) {
         var start = Date.now();
         var springsPos = expandLogicalEdges(appSnapshot.buffers);
         var end1 = Date.now();
         renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
         var end2 = Date.now();
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
+
+        makeArrows(appSnapshot.buffers);
+        var end3 = Date.now();
+        renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
+        renderer.loadBuffers(renderState, {'arrowEndPos': appSnapshot.buffers.arrowEndPos});
+        renderer.loadBuffers(renderState, {'arrowNormalDir': appSnapshot.buffers.arrowNormalDir});
+        renderer.loadBuffers(renderState, {'arrowColors': appSnapshot.buffers.arrowColors});
+        renderer.loadBuffers(renderState, {'arrowPointSizes': appSnapshot.buffers.arrowPointSizes});
+        renderer.setNumElements(renderState, 'arrowculled', appSnapshot.buffers.arrowStartPos.length / 2);
+        var end4 = Date.now();
+        console.info('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
     }
 
+    renderer.setCamera(renderState);
     renderer.render(renderState, 'fullscene', 'renderSceneFull');
     renderer.render(renderState, 'picking', 'picking', undefined, undefined, function () {
         renderingScheduler.appSnapshot.hitmapUpdates.onNext();
@@ -207,12 +285,25 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         quietState: false,
         buffers: {
             curPoints: undefined,
+            pointSizes: undefined,
             logicalEdges: undefined,
             springsPos: undefined,
-            highlightedEdges: undefined
+            highlightedEdges: undefined,
+            highlightedNodePositions: undefined,
+            highlightedNodeSizes: undefined,
+            edgeColors: undefined,
+            arrowStartPos: undefined,
+            arrowEndPos: undefined,
+            arrowNormalDir: undefined,
+            arrowColors: undefined,
+            arrowPointSizes: undefined
         },
         hitmapUpdates: hitmapUpdates
     };
+
+    Object.seal(this.appSnapshot);
+    Object.seal(this.appSnapshot.buffers);
+
 
     /* Set up fullscreen buffer for mouseover effects.
      *
@@ -231,13 +322,14 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         return status === 'received';
     }).flatMapLatest(function () {
         var hostBuffers = renderState.get('hostBuffers');
-        var bufUpdates = ['curPoints', 'logicalEdges'].map(function (bufName) {
+        var bufUpdates = ['curPoints', 'logicalEdges', 'edgeColors', 'pointSizes'].map(function (bufName) {
             var bufUpdate = hostBuffers[bufName] || Rx.Observable.return();
             return bufUpdate.do(function (data) {
                 that.appSnapshot.buffers[bufName] = data;
             });
         });
-        return bufUpdates[0].combineLatest(bufUpdates[1], _.identity);
+        return bufUpdates[0]
+            .combineLatest(bufUpdates[1], bufUpdates[2], bufUpdates[3], _.identity);
     }).do(function () {
         that.appSnapshot.vboUpdated = true;
         that.renderScene('vboupdate', {trigger: 'renderSceneFast'});

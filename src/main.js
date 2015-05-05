@@ -121,13 +121,13 @@ function init(canvas, vizType) {
                     debug('Renderer created');
                     return {
                         socket: socket,
-                        workerParams: nfo.params,
+                        uri: nfo.uri,
                         initialRenderState: initialRenderState
                     };
                 });
         }).do(function(nfo) {
-            var vboUpdates = streamClient.handleVboUpdates(nfo.socket, nfo.initialRenderState);
-            vizApp(nfo.socket, nfo.initialRenderState, vboUpdates, nfo.workerParams, urlParams);
+            var vboUpdates = streamClient.handleVboUpdates(nfo.socket, nfo.uri, nfo.initialRenderState);
+            vizApp(nfo.socket, nfo.initialRenderState, vboUpdates, nfo.uri, urlParams);
 
             initialized.onNext({
                 vboUpdates: vboUpdates,
@@ -216,8 +216,7 @@ function createInfoOverlay(app) {
 
         theme: 'transparent',
     });
-    app.subscribe(function (app) {
-        app.vboUpdates.subscribe(function(evt) {
+    app.pluck('vboUpdates').subscribe(function(evt) {
             switch (evt) {
                 case 'start':
                     networkMeter.resume();
@@ -229,8 +228,7 @@ function createInfoOverlay(app) {
                     break;
             }
         },
-        function (err) { console.error('vboUpdates error', err, (err||{}).stack); });
-    }, function (err) { console.error('app vboUpdates error', err, (err||{}).stack); });
+        function (err) { console.error('app vboUpdates error', err, (err||{}).stack); });
 }
 
 window.addEventListener('load', function() {
