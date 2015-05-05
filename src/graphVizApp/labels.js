@@ -72,13 +72,14 @@ function renderCursor(renderState, renderingScheduler, $cont, $point, $center, p
     var idx = indices[indices.length - 1].idx;
     var dim = indices[indices.length - 1].dim;
 
-    // Highlight Edge (TODO: Highlight points through renderer)
+    // Renderer Highlights
     if (dim === 2) {
         $cont.css({display: 'none'});
         renderingScheduler.renderScene('mouseOver', {
             trigger: 'mouseOverEdgeHighlight',
             data: {
-                edgeIndices: [idx]
+                edgeIndices: [idx],
+                nodeIndices: []
             }
         });
         return;
@@ -86,8 +87,16 @@ function renderCursor(renderState, renderingScheduler, $cont, $point, $center, p
 
     if (idx === undefined || idx < 0) {
         $cont.css({display: 'none'});
+        renderingScheduler.renderScene('mouseOver', {
+            trigger: 'mouseOverEdgeHighlight',
+            data: {
+                edgeIndices: [],
+                nodeIndices: []
+            }
+        });
         return;
     }
+
     $cont.css({display: 'block'});
 
     var camera = renderState.get('camera');

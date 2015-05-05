@@ -124,6 +124,9 @@ function renderSlowEffects(renderingScheduler) {
  * Render mouseover effects. These should only occur during a quiet state.
  *
  */
+ var lastHighlightedEdge = -1;
+
+// TODO: Make this work on safari.
 function renderMouseoverEffects(renderingScheduler, task) {
     var appSnapshot = renderingScheduler.appSnapshot;
     var renderState = renderingScheduler.renderState;
@@ -132,8 +135,17 @@ function renderMouseoverEffects(renderingScheduler, task) {
 
     // TODO: Render cached texture to screen
 
-    // TODO: Render mouseover Effects
+    // TODO: Support more than one edge highlighted at once, or nodes
     var edgeIndices = task.data.edgeIndices;
+    if (lastHighlightedEdge === edgeIndices[0]) {
+        return;
+    }
+    lastHighlightedEdge = edgeIndices[0];
+
+    // if (edgeIndices.length === 0) {
+    //     return;
+    // }
+
     // TODO: Start with a small buffer and increase if necessary, masking underlying
     // data so we don't have to clear out later values. This way we won't have to constantly allocate
     buffers.highlightedEdges = new Float32Array(edgeIndices.length * 4);

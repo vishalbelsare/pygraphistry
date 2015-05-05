@@ -825,14 +825,17 @@ function updateRenderTarget (state, renderTarget) {
 
 function copyCanvasToTexture(state, textureName) {
     var gl = state.get('gl');
+    var textures = state.get('textures').toJS();
     var canvas = gl.canvas;
 
     var start = Date.now();
     updateRenderTarget(state, textureName);
+
+    var texture = textures[textureName];
+    gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
     var end = Date.now();
     console.info('Copied Canvas to Texture(' + textureName +') in', end - start, '[ms]');
-    console.info('GL: ', gl);
 }
 
 function setupFullscreenBuffer(state) {
@@ -841,11 +844,6 @@ function setupFullscreenBuffer(state) {
             1.0, 1.0, -1.0, 1.0, -1.0, -1.0,
             -1.0, -1.0, 1.0, -1.0, 1.0, 1.0
         ]);
-
-    // var fullscreenBuffer = new Float32Array([
-    //         1.0, 1.0, 0.0, 1.0, 0.0, 0.0,
-    //         0.0, 0.0, 1.0, 0.0, 1.0, 1.0
-    //     ]);
 
     var numFullscreenElements = 6;
 
