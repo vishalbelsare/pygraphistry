@@ -230,6 +230,9 @@ function init(config, canvas) {
 
         //TODO make immutable
         hostBuffers:    {},
+        // Non-replay subject because in our animationFrame loop,
+        // we can't use RxJS
+        hostBuffersCache: {},
         camera:         undefined,
 
         //{item -> gl obj}
@@ -661,6 +664,7 @@ function loadBuffers(state, bufferData) {
 
         if (model.datasource === 'HOST' || model.datasource === 'DEVICE') {
             state.get('hostBuffers')[bufferName].onNext(data);
+            state.get('hostBuffersCache')[bufferName] = data;
         }
     });
 }
@@ -675,7 +679,7 @@ function loadBuffer(state, buffer, bufferName, model, data) {
         return;
     }
     if(data.byteLength <= 0) {
-        console.warn('loadBuffer: Asked to load data for buffer \'%s\', but data length is 0', bufferName);
+        // console.warn('loadBuffer: Asked to load data for buffer \'%s\', but data length is 0', bufferName);
         return;
     }
 
@@ -787,9 +791,10 @@ function setCamera(state) {
     var numVertices;
 
     // Set zoomScalingFactor uniform if it exists.
-    _.each(uniforms, function (map, item) {
+    _.each(uniforms, function (map) {
         if ('zoomScalingFactor' in map) {
-            numVertices = state.get('numElements')[item];
+            // TODO: Actually get number of nodes from the server
+            numVertices = state.get('numElements').pointculled || 0;
             var scalingFactor = camera.semanticZoom(numVertices);
             map.zoomScalingFactor = [scalingFactor];
         }
@@ -903,8 +908,8 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
     sortedItems.forEach(function(item) {
         var numElements = state.get('numElements')[item];
         if(typeof numElements === 'undefined' || numElements < 1) {
-            console.warn('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
-                item);
+            // console.warn('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
+                // item);
             return false;
         }
         var texture = renderItem(state, config, camera, gl, options, ext,

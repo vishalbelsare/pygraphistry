@@ -131,36 +131,59 @@ function renderMouseoverEffects(renderingScheduler, task) {
     var appSnapshot = renderingScheduler.appSnapshot;
     var renderState = renderingScheduler.renderState;
     var buffers = appSnapshot.buffers;
+    var logicalEdges = new Uint32Array(buffers.logicalEdges.buffer);
+    var hostBuffers = renderState.get('hostBuffersCache');
     var numElements = renderState.get('numElements');
 
-    // TODO: Render cached texture to screen
+    var edgeIndices = task.data.edgeIndices || [];
+    var nodeIndices = task.data.nodeIndices || [];
 
-    // TODO: Support more than one edge highlighted at once, or nodes
-    var edgeIndices = task.data.edgeIndices;
+    // Extend node indices with edge endpoints
+    // TODO: Decide if we need to dedupe.
+    _.each(edgeIndices, function (val) {
+        nodeIndices.push(logicalEdges[2*val]);
+        nodeIndices.push(logicalEdges[2*val + 1]);
+    });
+
+    var hostNodePositions = new Float32Array(hostBuffers.curPoints.buffer);
+    var hostNodeSizes = hostBuffers.pointSizes;
+
+    // Don't render if nothing has changed
     if (lastHighlightedEdge === edgeIndices[0]) {
         return;
     }
     lastHighlightedEdge = edgeIndices[0];
 
-    // if (edgeIndices.length === 0) {
-    //     return;
-    // }
-
     // TODO: Start with a small buffer and increase if necessary, masking underlying
     // data so we don't have to clear out later values. This way we won't have to constantly allocate
     buffers.highlightedEdges = new Float32Array(edgeIndices.length * 4);
+    buffers.highlightedNodePositions = new Float32Array(nodeIndices.length * 2);
+    buffers.highlightedNodeSizes = new Uint8Array(nodeIndices.length);
+
+    numElements.edgehighlight = edgeIndices.length * 2;
+    numElements.pointhighlight = nodeIndices.length;
+
     _.each(edgeIndices, function (val, idx) {
         buffers.highlightedEdges[idx*4] = buffers.springsPos[val*4];
         buffers.highlightedEdges[idx*4 + 1] = buffers.springsPos[val*4 + 1];
         buffers.highlightedEdges[idx*4 + 2] = buffers.springsPos[val*4 + 2];
         buffers.highlightedEdges[idx*4 + 3] = buffers.springsPos[val*4 + 3];
     });
-    numElements.edgehighlight = edgeIndices.length * 2;
-    // numElements.fullscreen = 2;
+
+    _.each(nodeIndices, function (val, idx) {
+        buffers.highlightedNodePositions[idx*2] = hostNodePositions[val*2];
+        buffers.highlightedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
+
+        buffers.highlightedNodeSizes[idx] = hostNodeSizes[val];
+    });
 
     renderer.setupFullscreenBuffer(renderState);
-    renderer.loadBuffers(renderState, {'highlightedEdgesPos': buffers.highlightedEdges});
-    // renderer.render(renderState, 'renderSteadyStateTexture', 'renderSteadyStateTexture');
+    renderer.loadBuffers(renderState, {
+        'highlightedEdgesPos': buffers.highlightedEdges,
+        'highlightedPointsPos': buffers.highlightedNodePositions,
+        'highlightedPointsSizes': buffers.highlightedNodeSizes
+    });
+    renderer.setCamera(renderState);
     renderer.render(renderState, 'highlight', 'highlight');
 }
 
