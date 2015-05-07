@@ -128,9 +128,7 @@ function requestWorker(args) {
 
             reply.data.uri.pathname = _.isString(reply.data.uri.pathname) ? reply.data.uri.pathname : '';
 
-            console.info('Routed to %s in %d ms', urlModule.format(reply.data.uri), Date.now() - parseFloat(reply.data.timestamp));
-            console.info(reply.data.uri);
-
+            console.info('Assigned to viz worker at URL %s', urlModule.format(reply.data.uri));
             return reply.data.uri;
         })
         .retry(3)
