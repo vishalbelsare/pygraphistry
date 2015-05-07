@@ -23,12 +23,30 @@ var programs = {
         'camera': 'mvp',
         'uniforms': []
     },
+    'edgehighlight': {
+        'sources': {
+            'vertex': fs.readFileSync(__dirname + '/../shaders/edgehighlighted.vertex.glsl', 'utf8').toString('ascii'),
+            'fragment': fs.readFileSync(__dirname + '/../shaders/edgehighlighted.fragment.glsl', 'utf8').toString('ascii')
+        },
+        'attributes': ['curPos'],
+        'camera': 'mvp',
+        'uniforms': []
+    },
     'arrow': {
         'sources': {
             'vertex': fs.readFileSync(__dirname + '/../shaders/arrow.vertex.glsl', 'utf8').toString('ascii'),
             'fragment': fs.readFileSync(__dirname + '/../shaders/arrow.fragment.glsl', 'utf8').toString('ascii')
         },
         'attributes': ['startPos', 'endPos', 'normalDir', 'arrowColor', 'pointSize'],
+        'camera': 'mvp',
+        'uniforms': ['zoomScalingFactor', 'maxPointSize', 'maxScreenSize', 'maxCanvasSize']
+    },
+    'arrowhighlight': {
+        'sources': {
+            'vertex': fs.readFileSync(__dirname + '/../shaders/arrowhighlighted.vertex.glsl', 'utf8').toString('ascii'),
+            'fragment': fs.readFileSync(__dirname + '/../shaders/arrowhighlighted.fragment.glsl', 'utf8').toString('ascii')
+        },
+        'attributes': ['startPos', 'endPos', 'normalDir', 'pointSize'],
         'camera': 'mvp',
         'uniforms': ['zoomScalingFactor', 'maxPointSize', 'maxScreenSize', 'maxCanvasSize']
     },
@@ -78,6 +96,15 @@ var programs = {
         'camera': 'mvp',
         'uniforms': ['fog', 'stroke', 'zoomScalingFactor', 'maxPointSize']
     },
+    'pointhighlight': {
+        'sources': {
+            'vertex': fs.readFileSync(__dirname + '/../shaders/pointhighlighted.vertex.glsl', 'utf8').toString('ascii'),
+            'fragment': fs.readFileSync(__dirname + '/../shaders/pointhighlighted.fragment.glsl', 'utf8').toString('ascii')
+        },
+        'attributes': ['curPos', 'pointSize'],
+        'camera': 'mvp',
+        'uniforms': ['fog', 'stroke', 'zoomScalingFactor', 'maxPointSize']
+    },
     'points': {
         'sources': {
             'vertex': fs.readFileSync(__dirname + '/../shaders/point.vertex.glsl', 'utf8').toString('ascii'),
@@ -95,7 +122,18 @@ var programs = {
         'attributes': ['curPos'],
         'camera': 'mvp',
         'uniforms': []
+    },
+    'fullscreen': {
+        'sources': {
+            'vertex': fs.readFileSync(__dirname + '/../shaders/fullscreen.vertex.glsl', 'utf8').toString('ascii'),
+            'fragment': fs.readFileSync(__dirname + '/../shaders/fullscreen.fragment.glsl', 'utf8').toString('ascii')
+        },
+        'attributes': ['vertexPosition'],
+        'camera': 'mvp',
+        'uniforms': [],
+        'textures': ['uSampler']
     }
+
 }
 
 /* datasource can be either SERVER or CLIENT */
@@ -105,6 +143,10 @@ var textures = {
         'datasource': 'CLIENT',
     },
     'pointTexture': {
+        'datasource': 'CLIENT',
+        'retina': true
+    },
+    'steadyStateTexture': {
         'datasource': 'CLIENT',
         'retina': true
     },
@@ -159,6 +201,17 @@ var models = {
             'normalize': false
         }
     },
+    'highlightedEdgesPos': {
+        'curPos': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
     'arrowStartPos': {
         'curPos': {
             'datasource': 'CLIENT',
@@ -182,6 +235,39 @@ var models = {
         }
     },
     'arrowNormalDir': {
+        'normalDir': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': false
+        }
+    },
+    'highlightedArrowStartPos': {
+        'curPos': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
+    'highlightedArrowEndPos': {
+        'curPos': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
+    'highlightedArrowNormalDir': {
         'normalDir': {
             'datasource': 'CLIENT',
             'type': 'FLOAT',
@@ -222,6 +308,27 @@ var models = {
             'normalize': false
         }
     },
+    'highlightedPointsPos': {
+        'curPos': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
+    'highlightedPointsSizes': {
+        'pointSize': {
+            'datasource': 'CLIENT',
+            'type': 'UNSIGNED_BYTE',
+            'hint': 'STATIC_DRAW',
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': false
+        }
+    },
     'pointSizes': {
         'pointSize':  {
             'datasource': 'HOST',
@@ -234,6 +341,17 @@ var models = {
         }
     },
     'arrowPointSizes': {
+        'pointSize':  {
+            'datasource': 'CLIENT',
+            'type': 'UNSIGNED_BYTE',
+            'hint': 'STATIC_DRAW',
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': false
+        }
+    },
+    'highlightedArrowPointSizes': {
         'pointSize':  {
             'datasource': 'CLIENT',
             'type': 'UNSIGNED_BYTE',
@@ -280,6 +398,16 @@ var models = {
     'curMidPoints': {
         'curPos': {
             'datasource': 'DEVICE',
+            'type': 'FLOAT',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
+    'fullscreenCoordinates': {
+        'vertexPosition': {
+            'datasource': 'CLIENT',
             'type': 'FLOAT',
             'count': 2,
             'offset': 0,
@@ -354,6 +482,33 @@ var items = {
             'depthFunc': [['LESS']]
         }
     },
+    'edgehighlight': {
+        'program': 'edgehighlight',
+        'triggers': ['highlight'],
+        'bindings': {
+            'curPos': ['highlightedEdgesPos', 'curPos']
+        },
+        'drawType': 'LINES',
+        'glOptions': {
+            'depthFunc': [['LESS']]
+        }
+    },
+    'pointhighlight': {
+        'program': 'pointhighlight',
+        'triggers': ['highlight'],
+        'bindings': {
+            'curPos':       ['highlightedPointsPos', 'curPos'],
+            'pointSize':    ['highlightedPointsSizes', 'pointSize'],
+        },
+        'uniforms': {
+            'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
+            'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
+        },
+        'drawType': 'POINTS',
+        'glOptions': {}
+    },
     'arrowculled' : {
         'program': 'arrow',
         'triggers': ['renderSceneFull'],
@@ -363,6 +518,26 @@ var items = {
             'normalDir': ['arrowNormalDir', 'normalDir'],
             'arrowColor': ['arrowColors', 'arrowColor'],
             'pointSize': ['arrowPointSizes', 'pointSize'],
+        },
+        'uniforms': {
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] },
+            'maxScreenSize': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxCanvasSize': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'drawType': 'TRIANGLES',
+        'glOptions': {
+            //'depthFunc': [['LESS']]
+        }
+    },
+    'arrowhighlight' : {
+        'program': 'arrowhighlight',
+        'triggers': ['highlight'],
+        'bindings': {
+            'startPos': ['highlightedArrowStartPos', 'curPos'],
+            'endPos': ['highlightedArrowEndPos', 'curPos'],
+            'normalDir': ['highlightedArrowNormalDir', 'normalDir'],
+            'pointSize': ['highlightedArrowPointSizes', 'pointSize'],
         },
         'uniforms': {
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
@@ -541,6 +716,34 @@ var items = {
         },
         'drawType': 'LINES',
         'glOptions': {}
+    },
+    'fullscreen': {
+        'program': 'fullscreen',
+        'triggers': ['highlight'],
+        'bindings': {
+            'vertexPosition': ['fullscreenCoordinates', 'vertexPosition']
+        },
+        'textureBindings': {
+            'uSampler': 'steadyStateTexture'
+        },
+        'drawType': 'TRIANGLES',
+        'glOptions': {}
+    },
+    // Because we can't tell renderer to make a texture unless we write to it in an item
+    // TODO: Add this functionality and kill fullscreenDummy
+    'fullscreenDummy': {
+        'program': 'fullscreen',
+        'triggers': [],
+        'bindings': {
+            'vertexPosition': ['fullscreenCoordinates', 'vertexPosition']
+        },
+        'textureBindings': {
+            'uSampler': 'steadyStateTexture'
+        },
+        'drawType': 'TRIANGLES',
+        'glOptions': {},
+        'renderTarget': 'steadyStateTexture',
+        'readTarget': true
     }
 }
 
@@ -565,14 +768,14 @@ var camera2D = {
 var sceneUber = {
     'options': stdOptions,
     'camera': camera2D,
-    'render': ['pointpicking',  'pointsampling', 'midedgeculled', 'edgepicking', 'uberpointculled']
+    'render': ['pointpicking',  'pointsampling', 'midedgeculled', 'edgepicking', 'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight']
 }
 
 var sceneNetflow = {
     'options': stdOptions,
     'camera': camera2D,
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'edgeculled', 'edgepicking', 'pointoutline', 'pointculled']
+               'edgeculled', 'edgepicking', 'pointoutline', 'pointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight']
 }
 
 var sceneNetflowIndexed = {
@@ -580,7 +783,7 @@ var sceneNetflowIndexed = {
     'camera': camera2D,
     'edgeMode': 'CLIENTINDEXED',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'edgeculledindexed', 'edgepicking', 'pointoutline', 'pointculled']
+               'edgeculledindexed', 'edgepicking', 'pointoutline', 'pointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight']
 }
 
 var sceneNetflowIndexedClient = {
@@ -588,8 +791,9 @@ var sceneNetflowIndexedClient = {
     'camera': camera2D,
     'edgeMode': 'INDEXEDCLIENT',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'indexeddummy', 'edgeculledindexedclient', 'arrowculled',
-               'edgepicking', 'pointoutline', 'pointculled']
+               'indexeddummy', 'edgeculledindexedclient', 'arrowculled', 'arrowhighlight', 'edgepicking',
+               'pointoutline', 'pointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy',
+               'pointhighlight']
 }
 
 var scenes = {

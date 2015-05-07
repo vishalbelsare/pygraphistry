@@ -160,7 +160,6 @@ function fetchNumElements(counts, renderConfig) {
                         aServersideModelName = serversideModelBindings[0][0];
                     }
                 }
-
                 return [item, aServersideModelName ? counts[aServersideModelName].num : 0];
             }));
 }
