@@ -41,6 +41,15 @@ var programs = {
         'camera': 'mvp',
         'uniforms': ['zoomScalingFactor', 'maxPointSize', 'maxScreenSize', 'maxCanvasSize']
     },
+    'arrowhighlight': {
+        'sources': {
+            'vertex': fs.readFileSync(__dirname + '/../shaders/arrowhighlighted.vertex.glsl', 'utf8').toString('ascii'),
+            'fragment': fs.readFileSync(__dirname + '/../shaders/arrowhighlighted.fragment.glsl', 'utf8').toString('ascii')
+        },
+        'attributes': ['startPos', 'endPos', 'normalDir', 'pointSize'],
+        'camera': 'mvp',
+        'uniforms': ['zoomScalingFactor', 'maxPointSize', 'maxScreenSize', 'maxCanvasSize']
+    },
     'edges': {
         'sources': {
             'vertex': fs.readFileSync(__dirname + '/../shaders/edge.vertex.glsl', 'utf8').toString('ascii'),
@@ -236,6 +245,39 @@ var models = {
             'normalize': false
         }
     },
+    'highlightedArrowStartPos': {
+        'curPos': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
+    'highlightedArrowEndPos': {
+        'curPos': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
+    'highlightedArrowNormalDir': {
+        'normalDir': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': false
+        }
+    },
     'midSpringsPos': {
         'curPos': {
             'datasource': 'DEVICE',
@@ -299,6 +341,17 @@ var models = {
         }
     },
     'arrowPointSizes': {
+        'pointSize':  {
+            'datasource': 'CLIENT',
+            'type': 'UNSIGNED_BYTE',
+            'hint': 'STATIC_DRAW',
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': false
+        }
+    },
+    'highlightedArrowPointSizes': {
         'pointSize':  {
             'datasource': 'CLIENT',
             'type': 'UNSIGNED_BYTE',
@@ -465,6 +518,26 @@ var items = {
             'normalDir': ['arrowNormalDir', 'normalDir'],
             'arrowColor': ['arrowColors', 'arrowColor'],
             'pointSize': ['arrowPointSizes', 'pointSize'],
+        },
+        'uniforms': {
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] },
+            'maxScreenSize': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxCanvasSize': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'drawType': 'TRIANGLES',
+        'glOptions': {
+            //'depthFunc': [['LESS']]
+        }
+    },
+    'arrowhighlight' : {
+        'program': 'arrowhighlight',
+        'triggers': ['highlight'],
+        'bindings': {
+            'startPos': ['highlightedArrowStartPos', 'curPos'],
+            'endPos': ['highlightedArrowEndPos', 'curPos'],
+            'normalDir': ['highlightedArrowNormalDir', 'normalDir'],
+            'pointSize': ['highlightedArrowPointSizes', 'pointSize'],
         },
         'uniforms': {
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
@@ -718,7 +791,7 @@ var sceneNetflowIndexedClient = {
     'camera': camera2D,
     'edgeMode': 'INDEXEDCLIENT',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'indexeddummy', 'edgeculledindexedclient', 'arrowculled', 'edgepicking',
+               'indexeddummy', 'edgeculledindexedclient', 'arrowculled', 'arrowhighlight', 'edgepicking',
                'pointoutline', 'pointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy',
                'pointhighlight']
 }
