@@ -237,9 +237,16 @@ function renderMouseoverEffects(renderingScheduler, task) {
     buffers.highlightedEdges = new Float32Array(edgeIndices.length * 4);
     buffers.highlightedNodePositions = new Float32Array(nodeIndices.length * 2);
     buffers.highlightedNodeSizes = new Uint8Array(nodeIndices.length);
+    buffers.highlightedArrowStartPos = new Float32Array(edgeIndices.length * 2 * 3);
+    buffers.highlightedArrowEndPos = new Float32Array(edgeIndices.length * 2 * 3);
+    buffers.highlightedArrowNormalDir = new Float32Array(edgeIndices.length * 3);
+    buffers.highlightedArrowColors = new Uint32Array(edgeIndices.length * 3);
+    buffers.highlightedArrowPointSizes = new Uint8Array(edgeIndices.length * 3);
 
-    numElements.edgehighlight = edgeIndices.length * 2;
-    numElements.pointhighlight = nodeIndices.length;
+
+    renderer.setNumElements(renderState, 'edgehighlight', edgeIndices.length * 2);
+    renderer.setNumElements(renderState, 'pointhighlight', nodeIndices.length);
+    renderer.setNumElements(renderState, 'arrowhighlight', edgeIndices.length * 3);
 
     _.each(edgeIndices, function (val, idx) {
         buffers.highlightedEdges[idx*4] = buffers.springsPos[val*4];
@@ -255,12 +262,49 @@ function renderMouseoverEffects(renderingScheduler, task) {
         buffers.highlightedNodeSizes[idx] = hostNodeSizes[val];
     });
 
+    _.each(edgeIndices, function (val, idx) {
+        var start = [buffers.springsPos[4*val + 0], buffers.springsPos[4*val + 1]];
+        var end   = [buffers.springsPos[4*val + 2], buffers.springsPos[4*val + 3]];
+
+        buffers.highlightedArrowStartPos[6*idx + 0] = start[0];
+        buffers.highlightedArrowStartPos[6*idx + 1] = start[1];
+        buffers.highlightedArrowStartPos[6*idx + 2] = start[0];
+        buffers.highlightedArrowStartPos[6*idx + 3] = start[1];
+        buffers.highlightedArrowStartPos[6*idx + 4] = start[0];
+        buffers.highlightedArrowStartPos[6*idx + 5] = start[1];
+
+        buffers.highlightedArrowEndPos[6*idx + 0] = end[0];
+        buffers.highlightedArrowEndPos[6*idx + 1] = end[1];
+        buffers.highlightedArrowEndPos[6*idx + 2] = end[0];
+        buffers.highlightedArrowEndPos[6*idx + 3] = end[1];
+        buffers.highlightedArrowEndPos[6*idx + 4] = end[0];
+        buffers.highlightedArrowEndPos[6*idx + 5] = end[1];
+
+        buffers.highlightedArrowNormalDir[3*idx + 0] = 0;  // Tip vertex
+        buffers.highlightedArrowNormalDir[3*idx + 1] = 1;  // Left vertex
+        buffers.highlightedArrowNormalDir[3*idx + 2] = -1; // Right vertex
+
+        var pointSize = hostNodeSizes[logicalEdges[2*val + 1]];
+        buffers.highlightedArrowPointSizes[3*idx + 0] = pointSize;
+        buffers.highlightedArrowPointSizes[3*idx + 1] = pointSize;
+        buffers.highlightedArrowPointSizes[3*idx + 2] = pointSize;
+
+        buffers.highlightedArrowColors[3*idx + 0] = buffers.edgeColors[2*val + 1];
+        buffers.highlightedArrowColors[3*idx + 1] = buffers.edgeColors[2*val + 1];
+        buffers.highlightedArrowColors[3*idx + 2] = buffers.edgeColors[2*val + 1];
+    });
+
     renderer.setupFullscreenBuffer(renderState);
     renderer.loadBuffers(renderState, {
         'highlightedEdgesPos': buffers.highlightedEdges,
         'highlightedPointsPos': buffers.highlightedNodePositions,
-        'highlightedPointsSizes': buffers.highlightedNodeSizes
+        'highlightedPointsSizes': buffers.highlightedNodeSizes,
+        'highlightedArrowStartPos': buffers.highlightedArrowStartPos,
+        'highlightedArrowEndPos': buffers.highlightedArrowEndPos,
+        'highlightedArrowNormalDir': buffers.highlightedArrowNormalDir,
+        'highlightedArrowPointSizes': buffers.highlightedArrowPointSizes
     });
+
     renderer.setCamera(renderState);
     renderer.render(renderState, 'highlight', 'highlight');
 }
@@ -296,7 +340,12 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
             arrowEndPos: undefined,
             arrowNormalDir: undefined,
             arrowColors: undefined,
-            arrowPointSizes: undefined
+            arrowPointSizes: undefined,
+            highlightedArrowStartPos: undefined,
+            highlightedArrowEndPos: undefined,
+            highlightedArrowNormalDir: undefined,
+            highlightedArrowColors: undefined,
+            highlightedArrowPointSizes: undefined
         },
         hitmapUpdates: hitmapUpdates
     };
