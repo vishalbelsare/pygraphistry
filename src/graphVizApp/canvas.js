@@ -52,7 +52,7 @@ function setupLabelsAndCursor(appState, $eventTarget) {
     var hitMapTextures = ['hitmap'];
     var latestHighlightedObject = labels.getLatestHighlightedObject(appState, $eventTarget, hitMapTextures);
 
-    labels.setupCursor(appState.renderState, appState.isAnimating, latestHighlightedObject);
+    labels.setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimating, latestHighlightedObject);
     labels.setupLabels(appState, $eventTarget, latestHighlightedObject);
 }
 
@@ -94,6 +94,52 @@ function expandLogicalEdges(bufferSnapshots) {
     return springsPos;
 }
 
+/* Populate arrow buffers. The first argument is either an array of indices,
+ * or an integer value of how many you want.
+ */
+function populateArrowBuffers (maybeIterable, springsPos, arrowStartPos,
+        arrowEndPos, arrowNormalDir, pointSizes, logicalEdges,
+        arrowPointSizes, arrowColors, edgeColors) {
+
+    var isIterable = maybeIterable.constructor === Array;
+    var forLimit = (isIterable) ? maybeIterable.length : maybeIterable;
+
+    for (var idx = 0; idx < forLimit; idx++) {
+        var val = (isIterable) ? maybeIterable[idx] : idx;
+
+        var start = [springsPos[4*val + 0], springsPos[4*val + 1]];
+        var end   = [springsPos[4*val + 2], springsPos[4*val + 3]];
+
+        arrowStartPos[6*idx + 0] = start[0];
+        arrowStartPos[6*idx + 1] = start[1];
+        arrowStartPos[6*idx + 2] = start[0];
+        arrowStartPos[6*idx + 3] = start[1];
+        arrowStartPos[6*idx + 4] = start[0];
+        arrowStartPos[6*idx + 5] = start[1];
+
+        arrowEndPos[6*idx + 0] = end[0];
+        arrowEndPos[6*idx + 1] = end[1];
+        arrowEndPos[6*idx + 2] = end[0];
+        arrowEndPos[6*idx + 3] = end[1];
+        arrowEndPos[6*idx + 4] = end[0];
+        arrowEndPos[6*idx + 5] = end[1];
+
+        arrowNormalDir[3*idx + 0] = 0;  // Tip vertex
+        arrowNormalDir[3*idx + 1] = 1;  // Left vertex
+        arrowNormalDir[3*idx + 2] = -1; // Right vertex
+
+        var pointSize = pointSizes[logicalEdges[2*val + 1]];
+        arrowPointSizes[3*idx + 0] = pointSize;
+        arrowPointSizes[3*idx + 1] = pointSize;
+        arrowPointSizes[3*idx + 2] = pointSize;
+
+        arrowColors[3*idx + 0] = edgeColors[2*val + 1];
+        arrowColors[3*idx + 1] = edgeColors[2*val + 1];
+        arrowColors[3*idx + 2] = edgeColors[2*val + 1];
+
+    }
+}
+
 
 function makeArrows(bufferSnapshots) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
@@ -127,37 +173,9 @@ function makeArrows(bufferSnapshots) {
     }
     var arrowPointSizes = bufferSnapshots.arrowPointSizes;
 
-    for (var i = 0; i < numEdges; i++) {
-        var start = [springsPos[4*i + 0], springsPos[4*i + 1]];
-        var end   = [springsPos[4*i + 2], springsPos[4*i + 3]];
-
-        arrowStartPos[6*i + 0] = start[0];
-        arrowStartPos[6*i + 1] = start[1];
-        arrowStartPos[6*i + 2] = start[0];
-        arrowStartPos[6*i + 3] = start[1];
-        arrowStartPos[6*i + 4] = start[0];
-        arrowStartPos[6*i + 5] = start[1];
-
-        arrowEndPos[6*i + 0] = end[0];
-        arrowEndPos[6*i + 1] = end[1];
-        arrowEndPos[6*i + 2] = end[0];
-        arrowEndPos[6*i + 3] = end[1];
-        arrowEndPos[6*i + 4] = end[0];
-        arrowEndPos[6*i + 5] = end[1];
-
-        arrowNormalDir[3*i + 0] = 0;  // Tip vertex
-        arrowNormalDir[3*i + 1] = 1;  // Left vertex
-        arrowNormalDir[3*i + 2] = -1; // Right vertex
-
-        var pointSize = pointSizes[logicalEdges[2*i + 1]];
-        arrowPointSizes[3*i + 0] = pointSize;
-        arrowPointSizes[3*i + 1] = pointSize;
-        arrowPointSizes[3*i + 2] = pointSize;
-
-        arrowColors[3*i + 0] = edgeColors[2*i + 1];
-        arrowColors[3*i + 1] = edgeColors[2*i + 1];
-        arrowColors[3*i + 2] = edgeColors[2*i + 1];
-    }
+    populateArrowBuffers(numEdges, springsPos, arrowStartPos,
+            arrowEndPos, arrowNormalDir, pointSizes, logicalEdges,
+            arrowPointSizes, arrowColors, edgeColors);
 }
 
 /*
@@ -195,6 +213,89 @@ function renderSlowEffects(renderingScheduler) {
     renderer.render(renderState, 'picking', 'picking', undefined, undefined, function () {
         renderingScheduler.appSnapshot.hitmapUpdates.onNext();
     });
+    renderer.copyCanvasToTexture(renderState, 'steadyStateTexture');
+}
+
+/*
+ * Render mouseover effects. These should only occur during a quiet state.
+ *
+ */
+ var lastHighlightedEdge = -1;
+
+// TODO: Make this work on safari.
+function renderMouseoverEffects(renderingScheduler, task) {
+    var appSnapshot = renderingScheduler.appSnapshot;
+    var renderState = renderingScheduler.renderState;
+    var buffers = appSnapshot.buffers;
+    var logicalEdges = new Uint32Array(buffers.logicalEdges.buffer);
+    var hostBuffers = renderState.get('hostBuffersCache');
+    var numElements = renderState.get('numElements');
+
+    var edgeIndices = task.data.edgeIndices || [];
+    var nodeIndices = task.data.nodeIndices || [];
+
+    // Extend node indices with edge endpoints
+    // TODO: Decide if we need to dedupe.
+    _.each(edgeIndices, function (val) {
+        nodeIndices.push(logicalEdges[2*val]);
+        nodeIndices.push(logicalEdges[2*val + 1]);
+    });
+
+    var hostNodePositions = new Float32Array(hostBuffers.curPoints.buffer);
+    var hostNodeSizes = hostBuffers.pointSizes;
+
+    // Don't render if nothing has changed
+    if (lastHighlightedEdge === edgeIndices[0]) {
+        return;
+    }
+    lastHighlightedEdge = edgeIndices[0];
+
+    // TODO: Start with a small buffer and increase if necessary, masking underlying
+    // data so we don't have to clear out later values. This way we won't have to constantly allocate
+    buffers.highlightedEdges = new Float32Array(edgeIndices.length * 4);
+    buffers.highlightedNodePositions = new Float32Array(nodeIndices.length * 2);
+    buffers.highlightedNodeSizes = new Uint8Array(nodeIndices.length);
+    buffers.highlightedArrowStartPos = new Float32Array(edgeIndices.length * 2 * 3);
+    buffers.highlightedArrowEndPos = new Float32Array(edgeIndices.length * 2 * 3);
+    buffers.highlightedArrowNormalDir = new Float32Array(edgeIndices.length * 3);
+    buffers.highlightedArrowColors = new Uint32Array(edgeIndices.length * 3);
+    buffers.highlightedArrowPointSizes = new Uint8Array(edgeIndices.length * 3);
+
+    renderer.setNumElements(renderState, 'edgehighlight', edgeIndices.length * 2);
+    renderer.setNumElements(renderState, 'pointhighlight', nodeIndices.length);
+    renderer.setNumElements(renderState, 'arrowhighlight', edgeIndices.length * 3);
+
+    _.each(edgeIndices, function (val, idx) {
+        buffers.highlightedEdges[idx*4] = buffers.springsPos[val*4];
+        buffers.highlightedEdges[idx*4 + 1] = buffers.springsPos[val*4 + 1];
+        buffers.highlightedEdges[idx*4 + 2] = buffers.springsPos[val*4 + 2];
+        buffers.highlightedEdges[idx*4 + 3] = buffers.springsPos[val*4 + 3];
+    });
+
+    _.each(nodeIndices, function (val, idx) {
+        buffers.highlightedNodePositions[idx*2] = hostNodePositions[val*2];
+        buffers.highlightedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
+
+        buffers.highlightedNodeSizes[idx] = hostNodeSizes[val];
+    });
+
+    populateArrowBuffers(edgeIndices, buffers.springsPos, buffers.highlightedArrowStartPos,
+            buffers.highlightedArrowEndPos, buffers.highlightedArrowNormalDir, hostNodeSizes,
+            logicalEdges, buffers.highlightedArrowPointSizes, buffers.highlightedArrowColors,
+            buffers.edgeColors);
+
+    renderer.setupFullscreenBuffer(renderState);
+    renderer.loadBuffers(renderState, {
+        'highlightedEdgesPos': buffers.highlightedEdges,
+        'highlightedPointsPos': buffers.highlightedNodePositions,
+        'highlightedPointsSizes': buffers.highlightedNodeSizes,
+        'highlightedArrowStartPos': buffers.highlightedArrowStartPos,
+        'highlightedArrowEndPos': buffers.highlightedArrowEndPos,
+        'highlightedArrowNormalDir': buffers.highlightedArrowNormalDir,
+        'highlightedArrowPointSizes': buffers.highlightedArrowPointSizes
+    });
+    renderer.setCamera(renderState);
+    renderer.render(renderState, 'highlight', 'highlight');
 }
 
 
@@ -214,23 +315,38 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
     this.appSnapshot = {
         vboUpdated: false,
         simulating: false,
+        quietState: false,
         buffers: {
             curPoints: undefined,
             pointSizes: undefined,
             logicalEdges: undefined,
             springsPos: undefined,
+            highlightedEdges: undefined,
+            highlightedNodePositions: undefined,
+            highlightedNodeSizes: undefined,
             edgeColors: undefined,
             arrowStartPos: undefined,
             arrowEndPos: undefined,
             arrowNormalDir: undefined,
             arrowColors: undefined,
             arrowPointSizes: undefined,
+            highlightedArrowStartPos: undefined,
+            highlightedArrowEndPos: undefined,
+            highlightedArrowNormalDir: undefined,
+            highlightedArrowColors: undefined,
+            highlightedArrowPointSizes: undefined
         },
         hitmapUpdates: hitmapUpdates
     };
 
     Object.seal(this.appSnapshot);
     Object.seal(this.appSnapshot.buffers);
+
+
+    /* Set up fullscreen buffer for mouseover effects.
+     *
+     */
+    renderer.setupFullscreenBuffer(renderState);
 
 
     /*
@@ -272,7 +388,8 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
             trigger: task.trigger,
             items: task.items,
             readPixels: task.readPixels,
-            callback: task.callback
+            callback: task.callback,
+            data: task.data
         });
     };
 
@@ -299,7 +416,8 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         function loop() {
             var nextFrameId = window.requestAnimationFrame(loop);
 
-            if (_.keys(renderQueue).length === 0) { // Nothing to render
+            // Nothing to render
+            if (_.keys(renderQueue).length === 0) {
                 var timeDelta = Date.now() - lastRenderTime;
                 if (timeDelta > 200 && !quietSignaled) {
                     quietCallback();
@@ -313,18 +431,30 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
                 return;
             }
 
-            lastRenderTime = Date.now();
-            if (quietSignaled) {
-                isAnimating.onNext(true);
-                quietSignaled = false;
+            // Mouseover interactions
+            // TODO: Generalize this as a separate category?
+            if (_.keys(renderQueue).indexOf('mouseOver') > -1) {
+                // TODO: Handle mouseover interaction
+                renderMouseoverEffects(that, renderQueue.mouseOver);
+                delete renderQueue.mouseOver;
             }
 
-            renderer.setCamera(renderState);
-            _.each(renderQueue, function (renderTask, tag) {
-                renderer.render(renderState, tag, renderTask.trigger, renderTask.items,
-                                renderTask.readPixels, renderTask.callback);
-            });
-            renderQueue = {};
+            // Rest render queue
+            if (_.keys(renderQueue).length > 0) {
+                lastRenderTime = Date.now();
+                if (quietSignaled) {
+                    isAnimating.onNext(true);
+                    quietSignaled = false;
+                    that.appSnapshot.quietState = false;
+                }
+
+                renderer.setCamera(renderState);
+                _.each(renderQueue, function (renderTask, tag) {
+                    renderer.render(renderState, tag, renderTask.trigger, renderTask.items,
+                                    renderTask.readPixels, renderTask.callback);
+                });
+                renderQueue = {};
+            }
         }
 
         debug('Starting rendering loop');
@@ -343,6 +473,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         if (!that.appSnapshot.simulating) {
             debug('Quiet state');
             renderSlowEffects(that);
+            that.appSnapshot.quietState = true;
             that.appSnapshot.vboUpdated = false;
         }
     }

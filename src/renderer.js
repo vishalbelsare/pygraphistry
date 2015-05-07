@@ -26,6 +26,8 @@ var attrLocations = {};
  * @type {Object.<string, Object.<string, GLint>>} */
 var uniformLocations = {};
 
+var lastRenderTarget = {};
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Internal helpers
@@ -228,6 +230,9 @@ function init(config, canvas) {
 
         //TODO make immutable
         hostBuffers:    {},
+        // Non-replay subject because in our animationFrame loop,
+        // we can't use RxJS
+        hostBuffersCache: {},
         camera:         undefined,
 
         //{item -> gl obj}
@@ -644,7 +649,8 @@ function loadBuffers(state, bufferData) {
 
         var model = _.values(config.models[bufferName])[0];
         if (model === undefined) {
-            console.error('Asked to load data for buffer \'%s\', but corresponding model found', bufferName);
+            console.error('Asked to load data for buffer \'%s\', but corresponding model not found', bufferName);
+            console.log('models: ', config.models);
             return false;
         }
 
@@ -658,6 +664,7 @@ function loadBuffers(state, bufferData) {
 
         if (model.datasource === 'HOST' || model.datasource === 'DEVICE') {
             state.get('hostBuffers')[bufferName].onNext(data);
+            state.get('hostBuffersCache')[bufferName] = data;
         }
     });
 }
@@ -672,7 +679,7 @@ function loadBuffer(state, buffer, bufferName, model, data) {
         return;
     }
     if(data.byteLength <= 0) {
-        console.warn('loadBuffer: Asked to load data for buffer \'%s\', but data length is 0', bufferName);
+        // console.warn('loadBuffer: Asked to load data for buffer \'%s\', but data length is 0', bufferName);
         return;
     }
 
@@ -742,6 +749,8 @@ function updateIndexBuffer(state, length, repetition) {
     var indexHostBuffers = state.get('indexHostBuffers');
     var indexGlBuffers = state.get('indexGlBuffers');
 
+    length = Math.ceil(length);
+
     if (!indexHostBuffers[repetition]) {
         indexHostBuffers[repetition] = new Uint32Array([]);
     }
@@ -784,9 +793,10 @@ function setCamera(state) {
     var numVertices;
 
     // Set zoomScalingFactor uniform if it exists.
-    _.each(uniforms, function (map, item) {
+    _.each(uniforms, function (map) {
         if ('zoomScalingFactor' in map) {
-            numVertices = state.get('numElements')[item];
+            // TODO: Actually get number of nodes from the server
+            numVertices = state.get('numElements').pointculled || 0;
             var scalingFactor = camera.semanticZoom(numVertices);
             map.zoomScalingFactor = scalingFactor;
         }
@@ -818,8 +828,41 @@ function setCamera(state) {
     });
 }
 
+function updateRenderTarget (state, renderTarget) {
+    var gl = state.get('gl');
+    if (renderTarget !== lastRenderTarget) {
+        debug('  rebinding renderTarget');
+        gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
+        lastRenderTarget = renderTarget;
+    }
+}
 
-var lastRenderTarget = {};
+
+function copyCanvasToTexture(state, textureName) {
+    var gl = state.get('gl');
+    var textures = state.get('textures').toJS();
+    var canvas = gl.canvas;
+
+    updateRenderTarget(state, textureName);
+
+    var texture = textures[textureName];
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+}
+
+function setupFullscreenBuffer(state) {
+
+    var fullscreenBuffer = new Float32Array([
+            1.0, 1.0, -1.0, 1.0, -1.0, -1.0,
+            -1.0, -1.0, 1.0, -1.0, 1.0, 1.0
+        ]);
+
+    var numFullscreenElements = 6;
+
+    setNumElements(state, 'fullscreen', numFullscreenElements);
+    loadBuffers(state, {'fullscreenCoordinates': fullscreenBuffer});
+}
+
 
 /**
  * Render one or more items as specified in render config's render array
@@ -872,8 +915,8 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
     sortedItems.forEach(function(item) {
         var numElements = state.get('numElements')[item];
         if(typeof numElements === 'undefined' || numElements < 1) {
-            console.warn('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
-                item);
+            // console.warn('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
+                // item);
             return false;
         }
         var texture = renderItem(state, config, camera, gl, options, ext,
@@ -887,11 +930,7 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
         _.uniq(texturesToRead).forEach(function (renderTarget) {
             debug('reading back texture', renderTarget);
 
-            if (renderTarget !== lastRenderTarget) {
-                debug('  (needed rebind)');
-                gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
-                lastRenderTarget = renderTarget;
-            }
+            updateRenderTarget(state, renderTarget);
 
             var dims = getTextureDims(config, gl.canvas, camera, renderTarget);
             var pixelreads = state.get('pixelreads');
@@ -929,10 +968,7 @@ function renderItem(state, config, camera, gl, options, ext, programs, buffers, 
 
     debug('Rendering item "%s" (%d elements)', item, numElements);
 
-    if (renderTarget !== lastRenderTarget) {
-        gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
-        lastRenderTarget = renderTarget;
-    }
+    updateRenderTarget(state, renderTarget);
 
     //change viewport in case of downsampled target
     var dims = getTextureDims(config, gl.canvas, camera, renderTarget);
@@ -1052,6 +1088,8 @@ module.exports = {
     setCamera: setCamera,
     setNumElements: setNumElements,
     render: render,
+    copyCanvasToTexture: copyCanvasToTexture,
+    setupFullscreenBuffer: setupFullscreenBuffer,
     getServerBufferNames: getServerBufferNames,
     getServerTextureNames: getServerTextureNames,
 };
