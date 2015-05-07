@@ -227,6 +227,12 @@ function renderMouseoverEffects(renderingScheduler, task) {
     var appSnapshot = renderingScheduler.appSnapshot;
     var renderState = renderingScheduler.renderState;
     var buffers = appSnapshot.buffers;
+
+    // We haven't received any VBOs yet, so we shouldn't attempt to render.
+    if (!buffers.logicalEdges) {
+        return;
+    }
+
     var logicalEdges = new Uint32Array(buffers.logicalEdges.buffer);
     var hostBuffers = renderState.get('hostBuffersCache');
     var numElements = renderState.get('numElements');
