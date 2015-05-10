@@ -45,7 +45,12 @@ function infoFrame(graph, type, indices, attributeNames) {
 
     function read(field, idx) {
         var val = attribs[field].values[idx];
-        return (typeof val === 'string') ? decodeURIComponent(val) : val;
+        try {
+            return (typeof val === 'string') ? decodeURIComponent(val) : val;
+        } catch (e) {
+            console.error('bad read val', val);
+            return val;
+        }
     }
 
     var titleFieldNode = nodeTitleField(attribs);
