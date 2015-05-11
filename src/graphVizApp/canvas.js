@@ -235,7 +235,6 @@ function renderMouseoverEffects(renderingScheduler, task) {
 
     var logicalEdges = new Uint32Array(buffers.logicalEdges.buffer);
     var hostBuffers = renderState.get('hostBuffersCache');
-    var numElements = renderState.get('numElements');
 
     var edgeIndices = task.data.edgeIndices || [];
     var nodeIndices = task.data.nodeIndices || [];
