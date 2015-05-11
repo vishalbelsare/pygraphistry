@@ -130,7 +130,7 @@ var programs = {
         },
         'attributes': ['vertexPosition'],
         'camera': 'mvp',
-        'uniforms': [],
+        'uniforms': ['flipTexture'],
         'textures': ['uSampler']
     }
 
@@ -726,6 +726,9 @@ var items = {
         'textureBindings': {
             'uSampler': 'steadyStateTexture'
         },
+        'uniforms': {
+            'flipTexture': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
         'drawType': 'TRIANGLES',
         'glOptions': {}
     },
@@ -739,6 +742,9 @@ var items = {
         },
         'textureBindings': {
             'uSampler': 'steadyStateTexture'
+        },
+        'uniforms': {
+            'flipTexture': { 'uniformType': '1f', 'defaultValues': [1.0] }
         },
         'drawType': 'TRIANGLES',
         'glOptions': {},
