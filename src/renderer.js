@@ -782,6 +782,15 @@ function setNumElements(state, item, newNumElements) {
     state.get('numElements')[item] = newNumElements;
 }
 
+function setUniform(state, name, value) {
+    var uniforms = state.get('uniforms');
+    _.each(uniforms, function (map) {
+        if (name in map) {
+            map[name] = value;
+        }
+    });
+}
+
 
 function setCamera(state) {
     var config = state.get('config').toJS();
@@ -851,6 +860,12 @@ function copyCanvasToTexture(state, textureName) {
 }
 
 function setupFullscreenBuffer(state) {
+
+    // Disable flipping texture if browser is safari.
+    // TODO: Figure out exactly what causes this. NPOT Textures?
+    if (navigator.userAgent.indexOf('Safari') !== -1 && navigator.userAgent.indexOf('Chrome') === -1) {
+        setUniform(state, 'flipTexture', 0.0);
+    }
 
     var fullscreenBuffer = new Float32Array([
             1.0, 1.0, -1.0, 1.0, -1.0, -1.0,
