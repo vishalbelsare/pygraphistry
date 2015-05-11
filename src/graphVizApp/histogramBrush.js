@@ -20,10 +20,12 @@ var util    = require('./util.js');
 // var MODE = 'countBy';
 var MODE = 'default';
 var DIST = false;
-var DRAG_SAMPLE_INTERVAL = 100;
+var DRAG_SAMPLE_INTERVAL = 200;
 var BAR_THICKNESS = 16;
 var SPARKLINE_HEIGHT = 50;
 var NUM_SPARKLINES = 30;
+var NUM_COUNTBY_SPARKLINES = NUM_SPARKLINES - 1;
+var NUM_COUNTBY_HISTOGRAM = 50;
 
 //////////////////////////////////////////////////////////////////////////////
 // Globals for updates
@@ -72,13 +74,14 @@ function toggleExpandedD3 (attribute, vizContainer, vizHeight, view) {
 
     var sparkLines = view.model.get('sparkLines');
     if (sparkLines) {
+        view.model.set('sparkLines', !sparkLines);
         initializeHistogramViz(vizContainer, view.model);
         updateAttribute(attribute, attribute, 'histogram');
     } else {
+        view.model.set('sparkLines', !sparkLines);
         initializeSparklineViz(vizContainer, view.model);
         updateAttribute(attribute, attribute, 'sparkLines');
     }
-    view.model.set('sparkLines', !sparkLines);
 }
 
 
@@ -140,7 +143,9 @@ function init(socket, marquee) {
             $(evt.target).removeClass('expandHistogramButton').addClass('expandedHistogramButton');
             var vizContainer = this.model.get('vizContainer');
             var attribute = this.model.get('attribute');
-            var vizHeight = this.model.get('globalStats').histograms[attribute].numBins * BAR_THICKNESS + margin.top + margin.bottom;
+            var histogram = this.model.get('globalStats').histograms[attribute];
+            var numBins = (histogram.type === 'countBy') ? Math.min(NUM_COUNTBY_HISTOGRAM, histogram.numBins) : histogram.numBins;
+            var vizHeight = numBins * BAR_THICKNESS + margin.top + margin.bottom;
             toggleExpandedD3(attribute, vizContainer, vizHeight, this);
         },
 
@@ -160,7 +165,7 @@ function init(socket, marquee) {
             this.listenTo(histograms, 'remove', this.removeHistogram);
             this.listenTo(histograms, 'reset', this.addAll);
             this.listenTo(histograms, 'all', this.render);
-            this.listenTo(histograms, 'change:data', this.update);
+            this.listenTo(histograms, 'change:timeStamp', this.update);
         },
         render: function () {
             // TODO: Use something other than visibility
@@ -379,14 +384,15 @@ function toStackedObject(local, total, idx, key, numLocal, numTotal, distributio
     return stackedObj;
 }
 
-function toStackedBins(bins, globalBins, type, numLocal, numTotal, distribution) {
+function toStackedBins(bins, globalBins, type, numLocal, numTotal, distribution, limit) {
     // Transform bins and global bins into stacked format.
     // Assumes that globalBins is always a superset of bins
     // TODO: Get this in a cleaner, more extensible way
     var stackedBins = [];
     if (type === 'countBy') {
         var globalKeys = _.keys(globalBins);
-        _.each(globalKeys, function (key, idx) {
+        _.each(_.range(Math.min(globalKeys.length, limit)), function (idx) {
+            var key = globalKeys[idx];
             var local = bins[key] || 0;
             var total = globalBins[key];
             var stackedObj = toStackedObject(local, total, idx, key, numLocal, numTotal, distribution);
@@ -425,7 +431,8 @@ function updateHistogram($el, model, attribute) {
     var globalStats = model.attributes.globalStats.histograms[attribute];
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
-    var type = (data.type !== 'nodata') ? data.type : globalStats.type;
+    var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
+    var numBins = (type === 'countBy' ? Math.min(NUM_COUNTBY_HISTOGRAM, globalStats.numBins) : globalStats.numBins);
     data.numValues = data.numValues || 0;
 
     var svg = d3DataMap[attribute].svg;
@@ -433,8 +440,9 @@ function updateHistogram($el, model, attribute) {
     var yScale = d3DataMap[attribute].yScale;
 
     var barPadding = 2;
-    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues, DIST);
-    var barHeight = (type === 'countBy') ? yScale.rangeBand() : Math.floor(height/globalStats.numBins) - barPadding;
+    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues,
+            DIST, (type === 'countBy' ? NUM_COUNTBY_HISTOGRAM : 0));
+    var barHeight = (type === 'countBy') ? yScale.rangeBand() : Math.floor(height/numBins) - barPadding;
 
     //////////////////////////////////////////////////////////////////////////
     // Create Columns
@@ -489,7 +497,8 @@ function updateSparkline($el, model, attribute) {
     var globalStats = model.attributes.globalStats.sparkLines[attribute];
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
-    var type = (data.type !== 'nodata') ? data.type : globalStats.type;
+    var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
+    var numBins = (type === 'countBy' ? Math.min(NUM_COUNTBY_SPARKLINES, globalStats.numBins) : globalStats.numBins);
     data.numValues = data.numValues || 0;
 
     var svg = d3DataMap[attribute].svg;
@@ -497,8 +506,10 @@ function updateSparkline($el, model, attribute) {
     var yScale = d3DataMap[attribute].yScale;
 
     var barPadding = 1;
-    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues, DIST);
-    var barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/globalStats.numBins) - barPadding;
+    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues,
+            DIST, (type === 'countBy' ? NUM_COUNTBY_SPARKLINES : 0));
+
+    var barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/numBins) - barPadding;
 
     //////////////////////////////////////////////////////////////////////////
     // Create Columns
@@ -630,6 +641,7 @@ function maybePrecise(v) {
 
 function prettyPrint (d, attributeName) {
     if (!isNaN(d)) {
+        d = Number(d); // Cast to number in case it's a string
 
         if (attributeName.indexOf('Date') > -1) {
             return d3.time.format('%m/%d/%Y')(new Date(d));
@@ -679,25 +691,27 @@ function initializeHistogramViz($el, model) {
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
     var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
+    var numBins = (type === 'countBy' ? Math.min(NUM_COUNTBY_HISTOGRAM, globalStats.numBins) : globalStats.numBins);
     data.numValues = data.numValues || 0;
 
     // Transform bins and global bins into stacked format.
-    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues, DIST);
+    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues,
+        DIST, (type === 'countBy' ? NUM_COUNTBY_HISTOGRAM : 0));
 
     width = width - margin.left - margin.right;
     height = height - margin.top - margin.bottom;
 
-    var yScale = setupBinScale(type, height, globalStats.numBins);
+    var yScale = setupBinScale(type, height, numBins);
     var xScale = setupAmountScale(width, stackedBins, DIST);
 
-    var numTicks = (type === 'countBy') ? globalStats.numBins : globalStats.numBins + 1;
+    var numTicks = (type === 'countBy' ? numBins : numBins + 1);
     var yAxis = d3.svg.axis()
         .scale(yScale)
         .orient('right')
         .ticks(numTicks)
         .tickFormat(function (d) {
             if (type === 'countBy') {
-                return prettyPrint(d, name); // name of bin
+                return prettyPrint(stackedBins[d].name, name); // name of bin
             } else {
                 return prettyPrint(d * globalStats.binWidth + globalStats.minValue, name);
             }
@@ -726,15 +740,17 @@ function initializeSparklineViz($el, model) {
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
     var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
+    var numBins = (type === 'countBy' ? Math.min(NUM_COUNTBY_SPARKLINES, globalStats.numBins) : globalStats.numBins);
     data.numValues = data.numValues || 0;
 
     // Transform bins and global bins into stacked format.
-    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues, DIST);
+    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues,
+        DIST, (type === 'countBy' ? NUM_COUNTBY_SPARKLINES : 0));
 
     width = width - marginSparklines.left - marginSparklines.right;
     height = height - marginSparklines.top - marginSparklines.bottom;
 
-    var xScale = setupBinScale(type, width, globalStats.numBins);
+    var xScale = setupBinScale(type, width, numBins);
     var yScale = setupAmountScale(height, stackedBins, DIST);
     var svg = setupSvg($el[0], marginSparklines, width, height);
 
@@ -784,7 +800,7 @@ function updateHistogramData (socket, marquee, collection, data, globalStats, Mo
     var histograms = [];
     _.each(data, function (val, key) {
         var histogram = new Model();
-        histogram.set({data: val, globalStats: globalStats, firstTime: false});
+        histogram.set({data: val, globalStats: globalStats, firstTime: false, timeStamp: Date.now()});
         histogram.id = key;
         histogram.set('attribute', key);
         histograms.push(histogram);
