@@ -799,13 +799,12 @@ function setCamera(state) {
     var uniforms = state.get('uniforms');
     var camera = state.get('camera');
 
-    var numVertices;
+    var numVertices = state.get('numElements').pointculled || 0;
 
     // Set zoomScalingFactor uniform if it exists.
     _.each(uniforms, function (map) {
         if ('zoomScalingFactor' in map) {
             // TODO: Actually get number of nodes from the server
-            numVertices = state.get('numElements').pointculled || 0;
             var scalingFactor = camera.semanticZoom(numVertices);
             map.zoomScalingFactor = scalingFactor;
         }
@@ -820,7 +819,7 @@ function setCamera(state) {
     });
 
     //HACK: we should have line shaders, and pass this as a uniform
-    if (numVertices !== undefined) {
+    if (numVertices) {
         // HACK: Checking if uber/geo. Should be handled as uniform
         if (!config.items.midedgetextured) {
             gl.lineWidth(camera.semanticZoomEdges(numVertices));
