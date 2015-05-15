@@ -58,6 +58,9 @@ var GRAPH_STATIC_PATH   = path.resolve(require('graph-viz').staticFilePath(), 'a
 var HORIZON_STATIC_PATH = path.resolve(require('horizon-viz').staticFilePath(), 'assets');
 var UBER_STATIC_PATH    = path.resolve(require('uber-viz').staticFilePath(), 'assets');
 var SPLUNK_STATIC_PATH  = path.resolve(require('splunk-viz').staticFilePath(), 'assets');
+var STREAMGL_PATH       = require.resolve('StreamGL/dist/StreamGL.js');
+var STREAMGL_MAP_PATH   = require.resolve('StreamGL/dist/StreamGL.map');
+
 
 var HTTP_SERVER_LISTEN_ADDRESS = config.HTTP_LISTEN_ADDRESS;
 var HTTP_SERVER_LISTEN_PORT = config.HTTP_LISTEN_PORT;
@@ -172,10 +175,10 @@ app.get('/vizaddr/horizon', function(req, res) {
 
 // Serve the StreamGL client library
 app.get('*/StreamGL.js', function(req, res) {
-    res.sendFile(require.resolve('StreamGL/dist/StreamGL.js'));
+    res.sendFile(STREAMGL_PATH);
 });
 app.get('*/StreamGL.map', function(req, res) {
-    res.sendFile(require.resolve('StreamGL/dist/StreamGL.map'));
+    res.sendFile(STREAMGL_MAP_PATH);
 });
 
 // Serve horizon static assets
