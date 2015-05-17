@@ -10,6 +10,8 @@ var zlib = require('zlib');
 var Rx = require('rx');
 var urllib = require('url');
 var util = require('./util.js');
+var log = require('common/log.js');
+var eh = require('common/errorHandlers.js')(log);
 var Cache = require('common/cache.js');
 
 var MatrixLoader = require('./libs/MatrixLoader.js'),
@@ -52,7 +54,7 @@ function downloadDataset(query) {
 
     return downloader[url.protocol](url).then(function (data) {
         return { body: data, metadata: config };
-    }).fail(util.makeErrorHandler('Failure while retrieving dataset'));
+    }).fail(eh.makeErrorHandler('Failure while retrieving dataset'));
 }
 
 function httpDownloader(http, url) {
@@ -82,12 +84,12 @@ function httpDownloader(http, url) {
                     result.resolve(buffer);
                 });
             }).on('error', function (err) {
-                util.error('Cannot download dataset at', url.href, err.message);
+                log.error('Cannot download dataset at', url.href, err.message);
                 result.reject(err);
             });
         })
     }).on('error', function (err) {
-        util.error('Cannot fetch headers from', url.href, err.message);
+        log.error('Cannot fetch headers from', url.href, err.message);
         result.reject(err);
     }).end();
 
@@ -121,7 +123,7 @@ function graphistryS3Downloader(url) {
             }).fail(function () { // Not in cache of stale
                 config.S3.getObject(params, function(err, data) {
                     if (err) {
-                        util.error('S3 Download failed', err.message);
+                        log.error('S3 Download failed', err.message);
                         res.reject();
                     } else {
                         debug('Successful S3 download');

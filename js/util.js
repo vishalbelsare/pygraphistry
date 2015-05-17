@@ -1,33 +1,11 @@
 'use strict';
 
+
 var debug = require('debug')('graphistry:util'),
     path = require('path'),
     fs = require('fs'),
     Q = require('q'),
-    _ = require('underscore'),
-    nodeutil = require('util'),
-    chalk = require('chalk'),
-    bunyan = require('bunyan'),
-    config = require('config')();
-
-
-var logger = undefined;
-if (config.BUNYAN_LOG) {
-    logger = bunyan.createLogger({
-        name: 'graph-viz',
-        streams: [
-            {
-                path: config.BUNYAN_LOG
-            },{
-                stream: process.stdout
-            }
-        ]
-    });
-
-    process.on('SIGUSR2', function () {
-        logger.reopenFileStreams();
-    });
-}
+    _ = require('underscore');
 
 
 function getShaderSource(id) {
@@ -42,6 +20,7 @@ function getKernelSource(id) {
     debug('Fetching source for kernel %s at path %s, using fs read', id, kernel_path);
     return Q.denodeify(fs.readFile)(kernel_path, {encoding: 'utf8'});
 }
+
 
 /**
  * Fetch an image as an HTML Image object
@@ -69,93 +48,6 @@ function getImage(url) {
     return deferred.promise;
 }
 
-var usertag = 'unknown';
-function setUserTag(newtag) {
-    usertag = newtag;
-}
-
-function error2JSON(type, msg, error) {
-    var payload = {
-        type: type,
-        msg: msg,
-        pid: process.pid.toString(),
-        tag: usertag,
-    }
-
-    if (error && error.stack) {
-        payload.stack = error.stack;
-    } else if (error) {
-        payload.error = error;
-    }
-
-    return payload;
-}
-
-function makeHandler(type, msg, out, rethrow, style) {
-    style = style || _.identity;
-
-    return function (err) {
-        var payload = error2JSON(type, msg, err);
-        if (logger !== undefined) {
-            logger[out]({content: payload})
-        } else {
-            secretConsole[out].call(console, style(payload.type), payload.msg, payload.stack || payload.error || '');
-        }
-
-        if (rethrow) {
-            throw new Error(msg);
-        }
-    }
-}
-
-function makeErrorHandler() {
-    var msg = nodeutil.format.apply(this, arguments);
-    return makeHandler('ERROR', msg, 'error', true, chalk.bold.red)
-}
-
-function makeRxErrorHandler() {
-    var msg = nodeutil.format.apply(this, arguments);
-    return makeHandler('ERROR', msg, 'error', false, chalk.bold.red)
-}
-
-function error() {
-    var msg = nodeutil.format.apply(this, arguments);
-    makeHandler('ERROR', msg, 'error', false, chalk.bold.red)(new Error());
-}
-
-function exception(err) {
-    var otherArgs = Array.prototype.slice.call(arguments, 1);
-    var msg = nodeutil.format.apply(this, otherArgs);
-    makeHandler('ERROR', msg, 'error', false, chalk.bold.red)(err)
-}
-
-function die() {
-    var msg = nodeutil.format.apply(this, arguments);
-    makeHandler('FATAL', msg, 'fatal', false, chalk.bold.red)(new Error());
-    process.exit(1);
-}
-
-function warn() {
-    var msg = nodeutil.format.apply(this, arguments);
-    makeHandler('WARNING', msg, 'warn', false, chalk.yellow)(new Error());
-}
-
-function info() {
-    var msg = nodeutil.format.apply(this, arguments);
-    makeHandler('INFO', msg, 'info', false, chalk.green)();
-}
-
-// Hijack the console
-var secretConsole = {
-    info: console.info,
-    log: console.log,
-    warn: console.warn,
-    error: console.error,
-    fatal: console.error
-};
-console.info = info;
-console.warn = warn;
-console.error = error;
 
 function rgb(r, g, b, a) {
     if (a === undefined)
@@ -191,6 +83,7 @@ var palettes = {
     ]
 };
 
+
 function int2color(values, palette) {
     palette = palette || palettes.palette1;
 
@@ -199,22 +92,6 @@ function int2color(values, palette) {
     var ncolors = palette.length;
     return _.map(values, function (val) {
         return palette[val % ncolors];
-    });
-}
-
-/* Check that kernel argument lists are typo-free */
-function saneKernels(kernels) {
-    _.each(kernels, function (kernel) {
-        _.each(kernel.args, function (def, arg) {
-            if (!_.contains(kernel.order, arg))
-                die('In kernel %s, no order for argument %s', kernel.name, arg);
-            if (!(arg in kernel.types))
-                die('In kernel %s, no type for argument %s', kernel.name, arg);
-        });
-        _.each(kernel.order, function (arg) {
-            if (!(arg in kernel.args))
-                die('In kernel %s, unknown argument %s', kernel.name, arg);
-        });
     });
 }
 
@@ -230,19 +107,10 @@ function perf (perf, name, fn /* args */) {
 }
 
 module.exports = {
-    setUserTag: setUserTag,
     getShaderSource: getShaderSource,
     getKernelSource: getKernelSource,
     getImage: getImage,
-    die: die,
-    makeErrorHandler: makeErrorHandler,
-    makeRxErrorHandler: makeRxErrorHandler,
-    exception: exception,
-    error: error,
-    warn: warn,
-    info: info,
     rgb: rgb,
-    saneKernels: saneKernels,
     palettes: palettes,
     int2color: int2color,
     perf: perf
