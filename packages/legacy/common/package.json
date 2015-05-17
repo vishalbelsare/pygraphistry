@@ -16,6 +16,8 @@
   },
   "homepage": "https://github.com/graphistry/common",
   "dependencies": {
+    "bunyan": "~1.3.0",
+    "chalk": "~1.0.0",
     "debug": "~2.1.3",
     "q": "~1.1.0",
     "underscore": "~1.8.3",
