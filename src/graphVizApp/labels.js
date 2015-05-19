@@ -396,6 +396,7 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
                     return [];
             }
         })
+        .flatMapLatest(util.observableFilter(appState.isAnimatingOrSimulating, util.notIdentity))
         .map(function (arr) {
             return arr.filter(function (v) { return v.idx !== -1; });
         })

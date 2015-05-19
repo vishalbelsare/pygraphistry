@@ -52,7 +52,7 @@ function setupLabelsAndCursor(appState, $eventTarget) {
     var hitMapTextures = ['hitmap'];
     var latestHighlightedObject = labels.getLatestHighlightedObject(appState, $eventTarget, hitMapTextures);
 
-    labels.setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimating, latestHighlightedObject);
+    labels.setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating, latestHighlightedObject);
     labels.setupLabels(appState, $eventTarget, latestHighlightedObject);
 }
 

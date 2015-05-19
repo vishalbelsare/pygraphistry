@@ -407,7 +407,7 @@ function toStackedBins(bins, globalBins, type, numLocal, numTotal, distribution,
         var zippedBins = _.zip(bins, globalBins); // [[0,2], [1,4], ... ]
         _.each(zippedBins, function (stack, idx) {
             var local = stack[0] || 0;
-            var total = stack[1];
+            var total = stack[1] || 0;
             var stackedObj = toStackedObject(local, total, idx, '', numLocal, numTotal, distribution);
             stackedBins.push(stackedObj);
         });

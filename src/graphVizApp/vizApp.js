@@ -58,6 +58,14 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
                 });
         });
 
+    var isAnimatingOrSimulating = isAnimating
+        .flatMap(function (animating) {
+            return simulateOn
+                .map(function (simulating) {
+                    return (animating || simulating);
+                });
+        });
+
     var appState = {
         renderState: initialRenderState,
         vboUpdates: vboUpdates,
@@ -71,6 +79,7 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
         marqueeActive: marqueeActive,
         marqueeDone: marqueeDone,
         simulateOn: simulateOn,
+        isAnimatingOrSimulating: isAnimatingOrSimulating,
         brushOn: brushOn,
         anyMarqueeOn: anyMarqueeOn
     };
