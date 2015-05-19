@@ -25,7 +25,7 @@ var BAR_THICKNESS = 16;
 var SPARKLINE_HEIGHT = 50;
 var NUM_SPARKLINES = 30;
 var NUM_COUNTBY_SPARKLINES = NUM_SPARKLINES - 1;
-var NUM_COUNTBY_HISTOGRAM = 50;
+var NUM_COUNTBY_HISTOGRAM = NUM_COUNTBY_SPARKLINES;
 
 //////////////////////////////////////////////////////////////////////////////
 // Globals for updates
