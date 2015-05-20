@@ -230,7 +230,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
             var idx = parseInt(hit.idx);
             var dim = hit.dim;
 
-            var EDGE_LABEL_OFFSET = -40;
+            var EDGE_LABEL_OFFSET = 0;
 
             if (idx === -1) {
                 return null;
@@ -330,6 +330,9 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
     var res = new Rx.ReplaySubject(1);
     res.onNext(OFF);
 
+    // TODO: Avoid this global and deal with the mousedown merge better.
+    var lastHoverHighlighted;
+
     interaction.setupMousemove($eventTarget).combineLatest(
             appState.hitmapUpdates,
             _.identity
@@ -346,16 +349,23 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
                 },
                 util.AND
         ))
-        .map(function (v) { return {cmd: 'hover', pt: v}; })
+        .map(function (v) {
+            lastHoverHighlighted = {cmd: 'hover', pt: v};
+            return lastHoverHighlighted;
+        })
+        // TODO: Make it so this only responds to clicks, not drags
+        // e.g., if time between mousedown and mouseup are less than 1/2 sec.
         .merge($eventTarget.mousedownAsObservable()
             .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
             .map(function (evt) {
+                // Clicked on CSS highlight over node
                 if ($(evt.target).hasClass('highlighted-point') ||
                         $(evt.target).hasClass('highlighted-point-center')) {
                     return {
                         cmd: 'click',
                         pt: {dim: 1, idx: parseInt($cont.attr('pointidx'))}
                     };
+                // Clicked on existing POI label
                 } else if ($(evt.target).hasClass('graph-label') ||
                         $(evt.target).parents('.graph-label').length) {
 
@@ -367,7 +377,14 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
                         cmd: 'click',
                         pt: {dim: pt.dim, idx: pt.idx}
                     };
+                // Clicked on canvas
                 } else {
+                    // Clicked on highlighted element.
+                    if (lastHoverHighlighted && lastHoverHighlighted.pt.idx > -1) {
+                        return {cmd: 'click', pt: lastHoverHighlighted.pt};
+                    }
+
+                    // Clicked on nothing.
                     return {cmd: 'declick'};
                 }
             }))
