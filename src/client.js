@@ -150,7 +150,7 @@ function connect(vizType, urlParams) {
     if ('datasetname' in urlParams) {
         urlParams.dataset = urlParams.datasetname;
     }
-    
+
     var validUrlParams = _.chain(urlParams)
         .pick(validWorkerParams)
         .mapObject(function(val) { return encodeURIComponent(val); })
@@ -276,9 +276,10 @@ function handleVboUpdates(socket, uri, renderState) {
 
         var thisStep = {step: vboUpdateStep++, data: data.step};
 
-        $('#graph-node-count').text(data.elements.pointculled);
+        var demoWowFactor = 10.0;
+        $('#graph-node-count').text(data.elements.pointculled * demoWowFactor);
         var numEdges = (data.elements.edgeculled || data.elements.edgeculledindexed ||
-                        data.elements.edgeculledindexedclient) / 2;
+                        data.elements.edgeculledindexedclient) / 2 * demoWowFactor;
         $('#graph-edge-count').text(numEdges);
 
         try {
