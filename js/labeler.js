@@ -197,14 +197,40 @@ function aggregate(graph, indices, attributes, binning, mode) {
 
 
 function countBy(values, binning, indices) {
-    // TODO: Binning.
+    // TODO: Get this value from a proper source, instead of hard coding.
+    var maxNumBins = 29;
+
     if (indices.length === 0) {
         return {type: 'nodata'};
     }
 
-    var bins = _.countBy(indices, function (valIdx) {
+    var rawBins = _.countBy(indices, function (valIdx) {
         return values[valIdx];
     });
+
+    var numBins = Math.min(_.keys(rawBins).length, maxNumBins);
+    var numBinsWithoutOther = numBins - 1;
+    var sortedKeys = _.sortBy(_.keys(rawBins), function (key) {
+        return -1 * rawBins[key];
+    });
+
+    // Copy over numBinsWithoutOther from rawBins to bins directly.
+    // Take the rest and bucket them into '_other'
+    var bins = {};
+    _.each(sortedKeys.slice(0, numBinsWithoutOther), function (key) {
+        bins[key] = rawBins[key]
+    });
+
+    var otherKeys = sortedKeys.slice(numBinsWithoutOther);
+    if (otherKeys.length === 1) {
+        bins[otherKeys[0]] = rawBins[otherKeys[0]];
+    } else if (otherKeys.length > 1) {
+        var sum = _.reduce(otherKeys, function (memo, key) {
+            return memo + rawBins[key];
+        }, 0);
+        bins._other = sum;
+    }
+
     var numValues = _.reduce(_.values(bins), function (memo, num) {
         return memo + num;
     }, 0);
