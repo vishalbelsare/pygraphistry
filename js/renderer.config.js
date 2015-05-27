@@ -8,7 +8,7 @@
 var fs = require('fs');
 var _ = require('underscore');
 var debug = require('debug')('graphistry:graph-viz:driver:config');
-var util = require('./util.js');
+var log = require('common/log.js');
 
 
 var STROKE_WIDTH = 4.0;
@@ -813,14 +813,14 @@ var scenes = {
 function saneProgram(program, progName) {
     _.each(['sources', 'attributes', 'camera', 'uniforms'], function (field) {
         if (!(field in program))
-            util.die('Program "%s" must have field "%s"', progName, field);
+            log.die('Program "%s" must have field "%s"', progName, field);
     });
 }
 
 function saneTexture(texture, texName) {
     _.each(['datasource'], function (field) {
         if (!(field in texture))
-            util.die('Texture "%s" must have field "%s"', texName, field);
+            log.die('Texture "%s" must have field "%s"', texName, field);
     });
 }
 
@@ -828,7 +828,7 @@ function saneModel(model, modName) {
     _.each(model, function (buffer, bufName) {
         _.each(['datasource', 'type', 'count', 'offset', 'stride', 'normalize'], function (field) {
             if (!(field in buffer))
-                util.die('Buffer "%s" in model "%s" must have field "%s"', bufName, modName, field);
+                log.die('Buffer "%s" in model "%s" must have field "%s"', bufName, modName, field);
         });
     });
 }
@@ -836,76 +836,76 @@ function saneModel(model, modName) {
 function saneItem(programs, textures, models, item, itemName) {
     _.each(['program', 'bindings', 'drawType', 'glOptions'], function (field) {
         if (!(field in item))
-            util.die('Item "%s" must have field "%s"', itemName, field);
+            log.die('Item "%s" must have field "%s"', itemName, field);
     });
 
     if ('renderTarget' in item)
         if (!('readTarget' in item))
-            util.die('Item "%s" must specify readTarget with renderTarget', itemName);
+            log.die('Item "%s" must specify readTarget with renderTarget', itemName);
 
     var progName = item.program;
     if (!(progName in programs))
-        util.die('In item "%s", undeclared program "%s"', itemName, progName);
+        log.die('In item "%s", undeclared program "%s"', itemName, progName);
     var program = programs[progName];
 
     if (program.textures) {
         _.each(program.textures, function (texName){
             if (!item.textureBindings)
-                util.die('Item "%s", must have textureBindings for program "%s"',
+                log.die('Item "%s", must have textureBindings for program "%s"',
                         itemName, progName);
             if (!_.contains(_.keys(item.textureBindings), texName))
-                util.die('In item "%s", no bindings for texture "%s" (of program "%s")',
+                log.die('In item "%s", no bindings for texture "%s" (of program "%s")',
                         itemName, texName, progName);
         });
         _.each(item.textureBindings, function (texName, texPname) {
             if (!_.contains(program.textures, texPname))
-                util.die('Program "%s" does not declare texture named "%s" bound by item "%s"',
+                log.die('Program "%s" does not declare texture named "%s" bound by item "%s"',
                         progName, texPname, itemName);
             if (!(texName in textures))
-                util.die('In item "%s", undeclared texture "%s"', itemName, texName);
+                log.die('In item "%s", undeclared texture "%s"', itemName, texName);
         });
     }
 
     _.each(program.uniforms, function (uniform) {
         if (!(item.uniforms) || !(uniform in item.uniforms))
-            util.die('Item "%s" does not bind uniform "%s"', itemName, uniform);
+            log.die('Item "%s" does not bind uniform "%s"', itemName, uniform);
     });
 
     _.each(item.uniforms, function (binding, uniform) {
         if (!_.contains(program.uniforms, uniform))
-            util.die('Item "%s" binds uniform "%s" not declared by program "%s"',
+            log.die('Item "%s" binds uniform "%s" not declared by program "%s"',
                      itemName, uniform, progName)
     })
 
     _.each(program.attributes, function (attr) {
         if (!(attr in item.bindings))
-            util.die('In item "%s", program attribute "%s" (of program "%s") is not bound',
+            log.die('In item "%s", program attribute "%s" (of program "%s") is not bound',
                     itemName, progName, attr);
     });
     _.each(item.bindings, function (modelNames, attr) {
         if (!_.contains(program.attributes, attr))
-            util.die('Program %s does not declare attribute %s bound by item %s',
+            log.die('Program %s does not declare attribute %s bound by item %s',
                         progName, attr, itemName);
         if (!(modelNames[0] in models) || !(modelNames[1] in models[modelNames[0]]))
-            util.die('In item "%s", undeclared model "%s"', itemName, modelNames);
+            log.die('In item "%s", undeclared model "%s"', itemName, modelNames);
     });
 
     if (item.renderTarget) {
         var texName = item.renderTarget;
         if (!_.contains(_.keys(textures), texName))
-            util.die('In item "%s", underclared renderTarget texture "%s"', itemName, texName);
+            log.die('In item "%s", underclared renderTarget texture "%s"', itemName, texName);
     }
 }
 
 function saneScene(items, scene, sceneName) {
     _.each(['options', 'camera', 'render'], function (field) {
         if (!(field in scene))
-            util.die('Scene "%s", must have field "%s"', sceneName, field);
+            log.die('Scene "%s", must have field "%s"', sceneName, field);
     });
 
     _.each(scene.render, function (itemName) {
         if (!(itemName in items))
-            util.die('In scene "%s", undeclared render item "%s"', sceneName, itemName);
+            log.die('In scene "%s", undeclared render item "%s"', sceneName, itemName);
     });
 }
 
@@ -981,7 +981,7 @@ function gl2Bytes(type) {
         'UNSIGNED_INT': 4
     };
     if (!(type in types))
-        util.die('Unknown GL type "%s"', type);
+        log.die('Unknown GL type "%s"', type);
     return types[type];
 }
 

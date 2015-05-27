@@ -2,7 +2,8 @@
 
 var   debug = require('debug')('graphistry:graph-viz:cl:selectnodes'),
        cljs = require('./cl.js'),
-       util = require('./util.js'),
+        log = require('common/log.js'),
+         eh = require('common/errorHandlers.js')(log),
           Q = require('q'),
      Kernel = require('./kernel.js');
 
@@ -52,8 +53,8 @@ SelectNodes.prototype.run = function (simulator, selection, delta) {
                 return mask.read(result).then(function () {
                     return result;
                 });
-            }).fail(util.makeErrorHandler('Kernel selectNodes failed'));
-    }).fail(util.makeErrorHandler('Node selection failed'));
+            }).fail(eh.makeErrorHandler('Kernel selectNodes failed'));
+    }).fail(eh.makeErrorHandler('Node selection failed'));
 
 }
 

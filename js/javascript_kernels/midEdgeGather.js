@@ -2,7 +2,8 @@
 
 var   debug = require('debug')('graphistry:graph-viz:cl:midEdgegather'),
        cljs = require('../cl.js'),
-       util = require('../util.js'),
+        log = require('common/log.js'),
+         eh = require('common/errorHandlers.js')(log),
           Q = require('q'),
      Kernel = require('../kernel.js');
 
@@ -48,7 +49,7 @@ function midEdgeGather(clContext) {
 
       debug('Running midEdgeGather kernel');
       return this.gather.exec([simulator.numEdges], resources)
-        .fail(util.makeErrorHandler('Kernel midEdgeGather failed'));
+        .fail(eh.makeErrorHandler('Kernel midEdgeGather failed'));
     };
 
 

@@ -7,6 +7,9 @@ var sprintf = require('sprintf-js').sprintf;
 var path = require('path');
 var fs = require('fs');
 var util = require('./util');
+var log = require('common/log.js');
+var eh = require('common/errorHandlers.js')(log);
+
 var cljs = require('./cl.js');
 var config = require('config')();
 
@@ -24,7 +27,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     // Set synchronous based on debug value
     var synchronous = false;
     if (process.env.DEBUG && process.env.DEBUG.indexOf('perf') != -1) {
-        util.info('Kernel ' + name + ' is synchronous because DEBUG=perf');
+        log.info('Kernel ' + name + ' is synchronous because DEBUG=perf');
         synchronous = true;
     }
 
@@ -36,7 +39,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     // Sanity Checks
     _.each(argNames, function (arg) {
         if (!(arg in argTypes))
-            util.die('In Kernel %s, argument %s has no type', name, arg);
+            log.die('In Kernel %s, argument %s has no type', name, arg);
     });
 
     function isDefine(arg) {
@@ -66,7 +69,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         _.each(args, function (val, arg) {
             if (arg in argValues) {
                 if (typeof val === 'undefined' || typeof val === 'null') {
-                    util.warn('Setting argument %s to %s', arg, val);
+                    log.warn('Setting argument %s to %s', arg, val);
                 }
 
                 argValues[arg] = {dirty: true, val: val};
@@ -76,7 +79,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 }
                 defValues[arg] = val;
             } else {
-                util.die('Kernel %s has no argument/define named %s', name, arg);
+                log.die('Kernel %s has no argument/define named %s', name, arg);
             }
         });
 
@@ -93,7 +96,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         } else if (_.contains(args, arg)) {
             return argValues[arg].val
         } else {
-            util.warn('Kernel %s has no parameter %s', name, arg);
+            log.warn('Kernel %s has no parameter %s', name, arg);
             return undefined;
         }
     }
@@ -103,7 +106,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
 
         _.each(defValues, function (arg, val) {
             if (val === null)
-                util.die('Define %s of kernel %s was never set', arg, name);
+                log.die('Define %s of kernel %s was never set', arg, name);
         });
 
         var prefix = _.flatten(_.map(defValues, function (val, key) {
@@ -141,7 +144,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 var dirty = argValues[arg].dirty;
                 var type = argTypes[arg];
                 if (val === null)
-                    util.warn('In kernel %s, argument %s is null', name, arg);
+                    log.warn('In kernel %s, argument %s is null', name, arg);
 
                 if (dirty) {
                     debug('Setting arg %d with value', i, val);
@@ -151,7 +154,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
             }
 
         } catch (e) {
-            util.makeErrorHandler('Error setting argument %s of kernel %s', args[i], name)(e);
+            eh.makeErrorHandler('Error setting argument %s of kernel %s', args[i], name)(e);
         }
     };
 
@@ -177,7 +180,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     this.exec = function(numWorkItems, resources, workGroupSize) {
         return qKernel.then(function (kernel) {
             if (kernel === null) {
-                util.error('Kernel is not compiled, aborting');
+                log.error('Kernel is not compiled, aborting');
                 return Q();
             } else {
                 setAllArgs(kernel);

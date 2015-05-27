@@ -3,6 +3,8 @@
 var Q       = require('q');
 var _       = require('underscore');
 var debug   = require('debug')('graphistry:graph-viz:data:vgraphwriter');
+var log = require('common/log.js');
+var eh = require('common/errorHandlers.js')(log);
 var pb      = require('protobufjs');
 var path    = require('path');
 var config  = require('config')();
@@ -10,7 +12,7 @@ var s3      = require('common/s3.js');
 
 var builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
 if (builder === null) {
-    util.die('Could not find protobuf definition');
+    log.die('Could not find protobuf definition');
 }
 var pb_root = builder.build();
 
@@ -55,7 +57,7 @@ function save(graph, name) {
         var blob = vg.encode().toBuffer();
         debug('Uploading to S3', name);
         return s3.upload(config.S3, config.BUCKET, {name: name}, blob);
-    }).fail(util.makeErrorHandler('save vgraph'));
+    }).fail(eh.makeErrorHandler('save vgraph'));
 }
 
 module.exports = {

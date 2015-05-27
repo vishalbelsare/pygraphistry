@@ -7,6 +7,8 @@ var perf = require('debug')('perf');
 var nodeutil = require('util');
 var path = require('path');
 var util = require('./util.js');
+var log = require('common/log.js');
+var eh = require('common/errorHandlers.js')(log);
 
 debug("Initializing node-webcl flavored cl.js");
 var webcl = require('node-webcl');
@@ -54,7 +56,7 @@ var create = Q.promised(function(renderer, device, vendor) {
     device = device || 'all';
     var clDevice = clDeviceType[device.toLowerCase()];
     if (!clDevice) {
-        util.warn('Unknown device %s, using "all"', device);
+        log.warn('Unknown device %s, using "all"', device);
         clDevice = clDeviceType.all;
     }
     return createCLContextNode(renderer, clDevice, vendor.toLowerCase());
@@ -234,9 +236,9 @@ var compile = Q.promised(util.perf.bind(null, perf, 'Compiling Kernels', functio
         try {
         var log = program.getBuildInfo(cl.device, webcl.PROGRAM_BUILD_LOG)
         console.log('Build Log: %o', log);
-        util.makeErrorHandler('OpenCL compilation error')(e);
+        log.makeErrorHandler('OpenCL compilation error')(e);
         } catch (e2) {
-          util.makeErrorHandler('OpenCL compilation failed, no build log possible')(e2);
+          log.makeErrorHandler('OpenCL compilation failed, no build log possible')(e2);
         }
     }
 
@@ -255,7 +257,7 @@ var compile = Q.promised(util.perf.bind(null, perf, 'Compiling Kernels', functio
         return typeof kernels === "string" ? compiled.unknown : compiled;
 
     } catch (e) {
-        util.makeErrorHandler('Kernel creation error:', kernels)(e);
+        log.makeErrorHandler('Kernel creation error:', kernels)(e);
     }
 }));
 
@@ -290,7 +292,7 @@ var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
             var global = [globalSize];
             kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, global, workgroup);
         })
-        .fail(util.makeErrorHandler('Kernel error'))
+        .fail(log.makeErrorHandler('Kernel error'))
         .then(release.bind('', buffers))
         .then(function () { kernel.cl.queue.finish(); })
         .then(_.constant(kernel));
@@ -439,7 +441,7 @@ var read = Q.promised(function (buffer, target, optStartIdx, optLen) {
         .then(function() {
             return buffer;
         })
-        .fail(util.makeErrorHandler('Read error for buffer', buffer.name));
+        .fail(eh.makeErrorHandler('Read error for buffer', buffer.name));
 });
 
 

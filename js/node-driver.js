@@ -12,8 +12,8 @@ var Q = require("q"),
 
     request = require('request'),
     debug = require("debug")("graphistry:graph-viz:driver:node-driver"),
-    util = require('./util.js'),
-
+    log = require('common/log.js'),
+    eh = require('common/errorHandlers.js')(log),
     NBody = require("./NBody.js"),
     RenderNull = require('./RenderNull.js'),
     rConf = require('./renderer.config.js'),
@@ -66,7 +66,7 @@ function graphCounts(graph) {
 function getBufferVersion (graph, bufferName) {
     var buffers = graph.simulator.versions.buffers;
     if (!(bufferName in buffers))
-        util.die('Cannot find version of buffer %s', bufferName);
+        log.die('Cannot find version of buffer %s', bufferName);
 
     return buffers[bufferName];
 }
@@ -81,7 +81,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
     var layouts = _.object(_.map(bufferNames, function (name) {
         var model = renderConfig.models[name];
         if (_.values(model).length != 1)
-            util.die('Currently assumes one view per model');
+            log.die('Currently assumes one view per model');
 
         return [name, _.values(model)[0]];
 
@@ -135,7 +135,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                 };
             });
             return targetArrays;
-        }).fail(util.makeErrorHandler('node-driver.fetchVBO'));
+        }).fail(eh.makeErrorHandler('node-driver.fetchVBO'));
 }
 
 
@@ -195,7 +195,7 @@ function init(device, vendor, controls) {
     return RenderNull.create(null)
         .then(function (renderer) {
             return NBody.create(renderer, device, vendor, controls);
-        }).fail(util.makeErrorHandler('Failure in NBody creation'));
+        }).fail(eh.makeErrorHandler('Failure in NBody creation'));
 }
 
 
@@ -205,7 +205,7 @@ function getControls(controlsName) {
     if (controlsName in lConf.controls)
         controls = lConf.controls[controlsName];
     else
-        util.warn('Unknown controls "%s", using defaults.', controlsName);
+        log.warn('Unknown controls "%s", using defaults.', controlsName);
 
     return controls;
 }
@@ -317,13 +317,13 @@ function create(dataset) {
             })
             .subscribe(
                 animStepSubj,
-                util.makeRxErrorHandler('node-driver: tick failed')
+                eh.makeRxErrorHandler('node-driver: tick failed')
             );
 
         debug('Graph created');
         return graph;
     }).fail(function (err) {
-        util.die('Driver initialization error', (err||{}).stack);
+        log.die('Driver initialization error', (err||{}).stack);
     });
 
     return {
@@ -366,7 +366,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
 
             bufferNames.forEach(function (bufferName) {
                 if (!vbos.hasOwnProperty(bufferName)) {
-                    util.die('Vbos does not have buffer %s', bufferName);
+                    log.die('Vbos does not have buffer %s', bufferName);
                 }
             });
 
@@ -374,7 +374,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
                 var actualByteLength = vbos[bufferName].buffer.byteLength;
                 var expectedByteLength = bufferByteLengths[bufferName];
                 if( actualByteLength !== expectedByteLength) {
-                    util.error('Mismatch length for VBO %s (Expected:%d Got:%d)',
+                    log.error('Mismatch length for VBO %s (Expected:%d Got:%d)',
                                bufferName, expectedByteLength, actualByteLength);
                 }
             });

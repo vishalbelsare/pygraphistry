@@ -2,7 +2,9 @@ var Kernel = require('../kernel.js'),
     Q = require('q'),
     debug = require("debug")("graphistry:graph-viz:cl:barensKernels"),
     _     = require('underscore'),
-    util  = require('../util.js'),
+    log   = require('common/log.js'),
+    eh    = require('common/errorHandlers.js')(log),
+
     cljs  = require('../cl.js');
 
 var BarnesKernelSeq = function (clContext) {
@@ -204,7 +206,7 @@ var BarnesKernelSeq = function (clContext) {
                             tempBuffers.numBodies = numBodies;
                             return tempBuffers;
                         })
-        .fail(util.makeErrorHandler("Setting temporary buffers for barnesHutKernelSequence failed"));
+        .fail(eh.makeErrorHandler("Setting temporary buffers for barnesHutKernelSequence failed"));
     };
 
     this.setEdges = function(simulator, layoutBuffers, warpsize, workItems) {
@@ -261,7 +263,7 @@ var BarnesKernelSeq = function (clContext) {
             setBarnesKernelArgs(that.sort, tempBuffers);
             setBarnesKernelArgs(that.calculatePointForces, tempBuffers);
 
-        }).fail(util.makeErrorHandler('setupTempBuffers'));
+        }).fail(eh.makeErrorHandler('setupTempBuffers'));
     };
 
     // TODO (paden) Can probably combine ExecKernel functions
@@ -308,7 +310,7 @@ var BarnesKernelSeq = function (clContext) {
             return that.calculateForces.exec([workItems.calculateForces], resources, [256]);
         })
 
-        .fail(util.makeErrorHandler("Executing BarnesKernelSeq failed"));
+        .fail(eh.makeErrorHandler("Executing BarnesKernelSeq failed"));
     };
 
     this.execKernels = function(simulator, stepNumber, workItems) {
@@ -354,7 +356,7 @@ var BarnesKernelSeq = function (clContext) {
             return that.calculatePointForces.exec([workItems.calculateForces[0]], resources, [workItems.calculateForces[1]]);
         })
 
-        .fail(util.makeErrorHandler("Executing BarnesKernelSeq failed"));
+        .fail(eh.makeErrorHandler("Executing BarnesKernelSeq failed"));
     };
 
 };

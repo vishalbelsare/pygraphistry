@@ -1,11 +1,12 @@
 'use strict'
 
-var debug = require("debug")("graphistry:graph-viz:cl:gaussseidel")
+var debug = require('debug')('graphistry:graph-viz:cl:gaussseidel')
 var Q = require('q');
 var _ = require('underscore');
 var cljs = require('./cl.js');
 var webcl = require('node-webcl');
-var util = require('./util');
+var log = require('common/log.js');
+var eh = require('common/errorHandlers.js')(log);
 var LayoutAlgo = require('./layoutAlgo.js');
 var Kernel = require('./kernel.js');
 
@@ -96,7 +97,7 @@ function pointKernel(simulator, gsPoints, stepNumber) {
     return gsPoints.exec([simulator.numPoints], resources)
         .then(function () {
             return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-        }).fail(util.makeErrorHandler('Kernel gaussSeidelPoints failed'));
+        }).fail(eh.makeErrorHandler('Kernel gaussSeidelPoints failed'));
 }
 
 
@@ -122,7 +123,7 @@ function edgeKernelSeq(simulator, gsSprings, stepNumber, edges, workItems,
 
     debug('Running gaussSeidelSprings');
     return gsSprings.exec([numWorkItems], resources)
-        .fail(util.makeErrorHandler('Kernel gaussSeidelSprings failed'));
+        .fail(eh.makeErrorHandler('Kernel gaussSeidelSprings failed'));
 }
 
 
@@ -149,10 +150,10 @@ GaussSeidel.prototype.tick = function(simulator, stepNumber) {
                     simulator, that.gsSprings, stepNumber,
                     simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
                     simulator.buffers.nextPoints, simulator.buffers.curPoints, simulator.buffers.edgeTags_reverse);
-            }).fail(util.makeErrorHandler('edgeKernelSeq failed'));
+            }).fail(eh.makeErrorHandler('edgeKernelSeq failed'));
     }).then(function () {
         return simulator;
-    }).fail(util.makeErrorHandler('GaussSeidel tick failed'));
+    }).fail(eh.makeErrorHandler('GaussSeidel tick failed'));
 }
 
 module.exports = GaussSeidel;

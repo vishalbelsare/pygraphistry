@@ -8,12 +8,14 @@ var pb = require('protobufjs');
 var path = require('path');
 
 var config  = require('config')();
+var log = require('common/log.js');
+var eh = require('common/errorHandlers.js')(log);
 var util = require('../util.js');
 var weakcc = require('../weaklycc.js');
 
 var builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
 if (builder === null) {
-    util.die('Could not find protobuf definition');
+    log.die('Could not find protobuf definition');
 }
 var pb_root = builder.build();
 
@@ -200,7 +202,7 @@ function decode0(graph, vg, metadata)  {
     var loaders = attributeLoaders(graph);
     var mapper = mappers[metadata.mapper];
     if (!mapper) {
-        util.warn('Unknown mapper', metadata.mapper, 'using "default"');
+        log.warn('Unknown mapper', metadata.mapper, 'using "default"');
         mapper = mappers['default'];
     }
     loaders = wrap(mapper.mappings, loaders);
@@ -217,9 +219,9 @@ function decode0(graph, vg, metadata)  {
 
         _.each(loaderArray, function (loader) {
             if (vec.target != loader.target) {
-                util.warn('Vertex/Node attribute mismatch for ' + vname);
+                log.warn('Vertex/Node attribute mismatch for ' + vname);
             } else if (vec.type != loader.type) {
-                util.warn('Expected type ' + loader.type + ' but got ' + vec.type + ' for' + vname);
+                log.warn('Expected type ' + loader.type + ' but got ' + vec.type + ' for' + vname);
             } else {
                 loader.values = vec.values;
             }
@@ -237,7 +239,7 @@ function decode0(graph, vg, metadata)  {
     }).then(function () {
         runLoaders(loaders);
         return graph;
-    }).fail(util.makeErrorHandler('Failure in VGraphLoader'));
+    }).fail(eh.makeErrorHandler('Failure in VGraphLoader'));
 }
 
 

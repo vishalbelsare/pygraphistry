@@ -4,7 +4,8 @@ var   debug = require("debug")("graphistry:graph-viz:cl:forceatlas2"),
           _ = require('underscore'),
        cljs = require('./cl.js'),
           Q = require('q'),
-       util = require('./util.js'),
+        log = require('common/log.js'),
+         eh = require('common/errorHandlers.js')(log),
  LayoutAlgo = require('./layoutAlgo.js'),
      Kernel = require('./kernel.js');
 
@@ -144,7 +145,7 @@ function pointForces(simulator, faPoints, stepNumber) {
 
     debug("Running kernel faPointForces");
     return faPoints.exec([simulator.numPoints], resources)
-        .fail(util.makeErrorHandler('Kernel faPointForces failed'));
+        .fail(eh.makeErrorHandler('Kernel faPointForces failed'));
 }
 
 
@@ -186,7 +187,7 @@ function edgeForces(simulator, faEdges, stepNumber) {
                                 simulator.numBackwardsWorkItems,
                                 buffers.curPoints, stepNumber,
                                 buffers.partialForces2, buffers.curForces);
-    }).fail(util.makeErrorHandler('Kernel faPointEdges failed'));
+    }).fail(eh.makeErrorHandler('Kernel faPointEdges failed'));
 }
 
 
@@ -210,7 +211,7 @@ function swingsTractions(simulator, faSwings) {
 
     debug("Running kernel faSwingsTractions");
     return faSwings.exec([simulator.numPoints], resources)
-        .fail(util.makeErrorHandler('Kernel faSwingsTractions failed'));
+        .fail(eh.makeErrorHandler('Kernel faSwingsTractions failed'));
 }
 
 
@@ -235,7 +236,7 @@ function integrate(simulator, faIntegrate) {
 
     debug("Running kernel faIntegrate");
     return faIntegrate.exec([simulator.numPoints], resources)
-        .fail(util.makeErrorHandler('Kernel faIntegrate failed'));
+        .fail(eh.makeErrorHandler('Kernel faIntegrate failed'));
 }
 
 function integrateApprox(simulator, faIntegrateApprox) {
@@ -265,7 +266,7 @@ function integrateApprox(simulator, faIntegrateApprox) {
 
     debug('Running kernel faIntegrateApprox');
     return faIntegrateApprox.exec([simulator.numPoints], resources)
-        .fail(util.makeErrorHandler('Kernel faIntegrateApprox failed'));
+        .fail(eh.makeErrorHandler('Kernel faIntegrateApprox failed'));
 }
 
 ForceAtlas2.prototype.tick = function(simulator, stepNumber) {

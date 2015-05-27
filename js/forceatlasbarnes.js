@@ -4,7 +4,9 @@ var debug = require("debug")("graphistry:graph-viz:cl:forceatlas2barnes"),
     _     = require('underscore'),
     cljs  = require('./cl.js'),
     Q     = require('q'),
-    util  = require('./util.js'),
+    log   = require('common/log.js'),
+    eh    = require('common/errorHandlers.js')(log),
+
     LayoutAlgo = require('./layoutAlgo.js'),
     Kernel = require('./kernel.js'),
     BarnesKernelSeq = require('./javascript_kernels/barnesKernelSeq.js'),
@@ -67,7 +69,7 @@ function getNumWorkitemsByHardware(deviceProps) {
 
 
     } else if (deviceProps.NAME.indexOf('HD Graphics 4000') != -1) {
-        util.warn('Expected slow kernels: sort, calculate_forces');
+        log.warn('Expected slow kernels: sort, calculate_forces');
     }
 
     return _.mapObject(numWorkGroups, function(val, key) {
@@ -140,7 +142,7 @@ var setupTempLayoutBuffers = function(simulator) {
       tempLayoutBuffers.globalSpeed = globalSpeed;
       return tempLayoutBuffers;
     })
-    .catch(util.makeErrorHandler('setupTempBuffers'));
+    .catch(eh.makeErrorHandler('setupTempBuffers'));
 };
 
 

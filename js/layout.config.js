@@ -2,7 +2,7 @@
 
 var _ = require('underscore');
 var SimCL = require('./SimCL.js');
-var util = require('./util.js');
+var log = require('common/log.js');
 var ForceAtlas2         = require('./forceatlas2.js'),
     ForceAtlas2Fast     = require('./forceatlas2fast.js'),
     forceAtlasBarnes    = require('./forceatlasbarnes.js'),
@@ -186,17 +186,17 @@ function saneControl(control, name) {
     _.each(control, function(control) {
         _.each(['simulator', 'layoutAlgorithms', 'locks', 'global'], function (field) {
             if (!(field in control))
-                util.die('In control %s, block %s missing', name, field);
+                log.die('In control %s, block %s missing', name, field);
         });
 
         _.each(['lockPoints', 'lockEdges', 'lockMidpoints', 'lockMidedges'], function (field) {
             if (!(field in control.locks))
-                util.die('In control %s, lock %s missing', name, field);
+                log.die('In control %s, lock %s missing', name, field);
         });
 
         _.each(['simulationTime', 'dimensions'], function (field) {
             if (!(field in control.global))
-                util.die('In control %s.global, lock %s missing', name, field);
+                log.die('In control %s.global, lock %s missing', name, field);
         });
     });
 }
@@ -224,13 +224,13 @@ function fromClient(controls, simControls) {
 
     return _.object(_.map(simControls, function (update, algoName) {
         if (!(algoName in algoParams)) {
-            util.error('Unknown algorithm, ignoring setting update', algoName);
+            log.error('Unknown algorithm, ignoring setting update', algoName);
             return [];
         }
         var params = algoParams[algoName];
         var cfg = _.object(_.map(update, function (val, paramName) {
             if (!(paramName in params)) {
-                util.error('Unknown parameter, ignoring setting update', paramName);
+                log.error('Unknown parameter, ignoring setting update', paramName);
                 return [];
             }
             var param = params[paramName];

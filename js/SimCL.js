@@ -7,6 +7,8 @@ var perf  = require('debug')('perf');
 var sprintf = require('sprintf-js').sprintf;
 var dijkstra = require('dijkstra');
 var util = require('./util.js');
+var log = require('common/log.js');
+var eh = require('common/errorHandlers.js')(log);
 var cljs = require('./cl.js');
 var MoveNodes = require('./moveNodes.js');
 var SelectNodes = require('./selectNodes.js');
@@ -29,7 +31,7 @@ function create(renderer, device, vendor, cfg) {
             return _.contains(algo.devices, type);
         });
         if (availableControls.length === 0) {
-            util.die('No layout controls satisfying device/vendor requirements', device, vendor);
+            log.die('No layout controls satisfying device/vendor requirements', device, vendor);
         }
         var controls = availableControls[0];
         var layoutAlgorithms = controls.layoutAlgorithms;
@@ -164,7 +166,7 @@ function create(renderer, device, vendor, cfg) {
             debug('Simulator created');
             return simObj
         })
-    }).fail(util.makeErrorHandler('Cannot create SimCL'));
+    }).fail(eh.makeErrorHandler('Cannot create SimCL'));
 }
 
 
@@ -450,7 +452,7 @@ function setPoints(simulator, points) {
             la.setPoints(simulator);
         });
         return simulator;
-    }).fail(util.makeErrorHandler('Failure in SimCl.setPoints'));
+    }).fail(eh.makeErrorHandler('Failure in SimCl.setPoints'));
 }
 
 
@@ -475,7 +477,7 @@ function makeSetter(simulator, name, dimName) {
         }).then(function (buffer) {
             simulator.buffers[buffName] = buffer;
             return simulator;
-        }).fail(util.makeErrorHandler('ERROR Failure in SimCl.set %s', buffName));
+        }).fail(eh.makeErrorHandler('ERROR Failure in SimCl.set %s', buffName));
     };
 }
 
@@ -656,7 +658,7 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges,
         setTimeSubset(renderer, simulator, simulator.timeSubset.relRange);
         return simulator;
     })
-    .fail(util.makeErrorHandler('Failure in SimCL.setEdges'));
+    .fail(eh.makeErrorHandler('Failure in SimCL.setEdges'));
 }
 
 
@@ -708,7 +710,7 @@ function setEdgeWeight(simulator, edgeWeights) {
 }
 
 function setMidEdgeColors(simulator, midEdgeColors) {
-    util.error('TODO: Code setMidEdgeColors');
+    log.error('TODO: Code setMidEdgeColors');
 }
 
 function setLocks(simulator, cfg) {
@@ -815,7 +817,7 @@ function moveNodes(simulator, marqueeEvent) {
     return moveNodes.run(simulator, marqueeEvent.selection, delta)
         .then(function () {
             return springsGather.tick(simulator);
-        }).fail(util.makeErrorHandler('Failure trying to move nodes'));
+        }).fail(eh.makeErrorHandler('Failure trying to move nodes'));
 }
 
 function selectNodes(simulator, selection) {
@@ -832,7 +834,7 @@ function selectNodes(simulator, selection) {
                 }
             }
             return res;
-        }).fail(util.makeErrorHandler('Failure trying to compute selection'));
+        }).fail(eh.makeErrorHandler('Failure trying to compute selection'));
 }
 
 // Return the set of edge indices which are connected (either as src or dst)
@@ -883,7 +885,7 @@ function recolor(simulator, marquee) {
         })
 
         simulator.tickBuffers(['pointSizes']);
-    }).fail(util.makeErrorHandler('Read failed'));
+    }).fail(eh.makeErrorHandler('Read failed'));
 }
 
 
@@ -960,7 +962,7 @@ function tick(simulator, stepNumber, cfg) {
         simulator.cl.queue.finish();
         perf('Tick Finished.');
         simulator.renderer.finish();
-    }).fail(util.makeErrorHandler('SimCl tick failed'));
+    }).fail(eh.makeErrorHandler('SimCl tick failed'));
 }
 
 

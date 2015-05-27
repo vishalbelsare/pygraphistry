@@ -4,7 +4,8 @@ var _          = require('underscore'),
     Q          = require('q'),
     debug      = require('debug')('graphistry:graph-viz:cl:edgebundling'),
     cljs       = require('./cl.js'),
-    util       = require('./util.js'),
+    log        = require('common/log.js'),
+    eh         = require('common/errorHandlers.js')(log),
     webcl      = require('node-webcl'),
     Kernel     = require('./kernel.js'),
     LayoutAlgo = require('./layoutAlgo.js'),
@@ -64,7 +65,7 @@ EdgeBundling.argsType = {
     outputMidPoints: null,
     springMidPositions: null,
     midSpringsColorCoords: null,
-    inputForces: null,   
+    inputForces: null,
     springStrength: cljs.types.float_t,
     springDistance: cljs.types.float_t,
 }
@@ -147,7 +148,7 @@ function getNumWorkitemsByHardware(deviceProps) {
 
 
     } else if (deviceProps.NAME.indexOf('HD Graphics 4000') != -1) {
-        util.warn('Expected slow kernels: sort, calculate_forces');
+        log.warn('Expected slow kernels: sort, calculate_forces');
     }
 
     return _.mapObject(numWorkGroups, function(val, key) {
@@ -189,7 +190,7 @@ var setupTempLayoutBuffers = function(simulator) {
       tempLayoutBuffers.tractions = tractions;
       return tempLayoutBuffers;
     })
-    .catch(util.makeErrorHandler('setupTempBuffers'));
+    .catch(eh.makeErrorHandler('setupTempBuffers'));
 };
 
 
@@ -317,7 +318,7 @@ EdgeBundling.prototype.tick = function(simulator, stepNumber) {
             //tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
             tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
             ])
-    }).fail(util.makeErrorHandler('Failure in edgebundling tick'));
+    }).fail(eh.makeErrorHandler('Failure in edgebundling tick'));
 }
 
 module.exports = EdgeBundling;

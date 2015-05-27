@@ -3,7 +3,8 @@ var Kernel = require('../kernel.js'),
     debug = require("debug")("graphistry:graph-viz:cl:barensKernels"),
     _     = require('underscore'),
     cljs  = require('../cl.js');
-    util = require('../util.js'),
+      log = require('common/log.js'),
+       eh = require('common/errorHandlers.js')(log),
     ArgsType = require('./ArgsType.js');
 
 var integrateMidPointsApproxKernel = function (clContext) {
@@ -56,7 +57,7 @@ this.argsIntegrateMidPointsApprox = [
 
     debug('Running kernel faIntegrateApprox');
     return this.faIntegrate.exec([simulator.numMidPoints], resources)
-      .fail(util.makeErrorHandler('Executing IntegrateApprox failed'));
+      .fail(eh.makeErrorHandler('Executing IntegrateApprox failed'));
     }
 
 }

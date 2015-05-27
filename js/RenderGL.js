@@ -6,6 +6,9 @@ var Q = require('q'),
 var RenderBase = require('./RenderBase.js');
 var glMatrix = require('gl-matrix');
 var util = require('./util.js');
+var log = require('common/log.js');
+var eh = require('common/errorHandlers.js')(log);
+
 var debug = require('debug')('graphistry:graph-viz:render:rendergl');
 
 //[string] * document * canvas * int * [number, number] * {<string>: bool} -> Promise Renderer
@@ -119,7 +122,7 @@ function createProgram(renderer, vertexShaderID, fragmentShaderID) {
             renderer.gl.shaderSource(shader, sanitizedShaderSource);
             renderer.gl.compileShader(shader);
             if(!renderer.gl.getShaderParameter(shader, renderer.gl.COMPILE_STATUS)) {
-                util.error(renderer.gl.getShaderInfoLog(shader));
+                log.error(renderer.gl.getShaderInfoLog(shader));
                 throw new Error("Error compiling WebGL shader (shader type: " + shaderType + ")");
             }
             if(!renderer.gl.isShader(shader)) {
@@ -259,7 +262,7 @@ var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
             debug("Using preset colors from %s", imageURL);
         }
         } catch (e) {
-            util.makeErrorHandler('bad cluster load')(e);
+            eh.makeErrorHandler('bad cluster load')(e);
         }
 
 
