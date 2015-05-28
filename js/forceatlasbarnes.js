@@ -29,7 +29,8 @@ function getNumWorkitemsByHardware(deviceProps) {
         calculateForces: [60, 256]
     }
 
-    if (deviceProps.NAME.indexOf('GeForce GT 650M') != -1) {
+    if (deviceProps.NAME.indexOf('GeForce GT 650M') != -1 ||
+        deviceProps.NAME.indexOf('GeForce GT 750M') != -1) {
         numWorkGroups.buildTree[0] = 1;
         numWorkGroups.computeSums[0] = 1;
     } else if (deviceProps.NAME.indexOf('Iris Pro') != -1) {
