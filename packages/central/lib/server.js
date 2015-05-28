@@ -23,6 +23,10 @@ var app         = express();
 var http        = require('http').Server(app);
 
 var config      = require('config')();
+var log         = require('common/log.js');
+var eh          = require('common/errorHandlers.js')(log);
+log.createLogger(config, 'central');
+
 var router = require('./worker-router.js');
 
 
@@ -78,9 +82,7 @@ function logClientError(req, res) {
         }
         var logFile = path.resolve('/', 'var', 'log', 'clients' ,'clients.log');
         return Q.denodeify(fs.appendFile)(logFile, JSON.stringify(msg) + '\n')
-            .fail(function (err) {
-                console.error('Error writing client error', err, (err||{}).stack);
-            });
+            .fail(eh.makeErrorHandler('Error writing client error'));
     };
 
     var data = '';
@@ -95,7 +97,7 @@ function logClientError(req, res) {
                 res.status(200).end();
             });
         } catch(err) {
-            console.error('Error logging client error', err, (err||{}).stack);
+            log.exception(err, 'Error reading client error');
             res.status(500).end();
         }
     });
@@ -129,7 +131,7 @@ function ensureValidUrl() {
 function assignWorker(req, res) {
     router.pickWorker(function (err, worker) {
         if (err) {
-            console.error('Error while assigning visualization worker:', err);
+            log.error('Error while assigning visualization worker:', err);
             return res.json({
                 success: false,
                 error: (err||{}).message || 'Error while assigning visualization worker.'
@@ -196,7 +198,7 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
         debug('picked etl worker', req.ip, worker);
 
         if (err) {
-            console.error('Error while assiging an ETL worker', err);
+            log.error('Error while assiging an ETL worker', err);
             return res.send({
                 success: false,
                 msg: 'Error while assigning an ETL worker:' + err.message
@@ -211,7 +213,7 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
         //socket.io.engine.binaryType = 'arraybuffer';
 
         socket.on('connect_error', function (err) {
-            console.error('error, socketio failed connect', err);
+            log.error('Connect_error in socketio', err);
         });
 
         socket.on('connect', function () {
@@ -219,7 +221,7 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
             socket.emit('viz', 'etl', function (resp) {
                 debug('initialized, notifying client');
                 if (!resp.success) {
-                    console.error('failed initializing worker', resp);
+                    log.error('Failed initializing worker', resp);
                     return res.json({success: false, msg: 'failed connecting to work'});
                 }
                 var newEndpoint = redirect + 'etl';
@@ -284,5 +286,6 @@ module.exports = {
     config: {
         listenIP: HTTP_SERVER_LISTEN_ADDRESS,
         listenPort: HTTP_SERVER_LISTEN_PORT
-    }
+    },
+    log: log
 };

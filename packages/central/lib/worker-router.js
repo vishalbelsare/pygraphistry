@@ -3,16 +3,16 @@
 /// <reference path="../typings/rx/rx.d.ts"/>
 'use strict';
 
-var os = require('os');
-
-var _ = require('underscore');
-var Rx = require('rx');
-var debug = require('debug')('graphistry:central:worker-router');
-var request = require('request');
+var os          = require('os');
+var _           = require('underscore');
+var Rx          = require('rx');
+var debug       = require('debug')('graphistry:central:worker-router');
+var request     = require('request');
 var MongoClient = require('mongodb').MongoClient;
 
-var config = require('config')();
-
+var config      = require('config')();
+var log         = require('common/log.js');
+var eh          = require('common/errorHandlers.js')(log);
 
 var mongoClientConnect = Rx.Observable.fromNodeCallback(MongoClient.connect, MongoClient);
 var dbObs = (config.ENVIRONMENT === 'local') ?
@@ -118,7 +118,7 @@ function handshakeIp (workerNfo) {
             return !!resp.success;
         })
         .catch(function catchHandshakeHTTPErrors(err) {
-            console.warn('Handshake error: encountered a HTTP error attempting to handshake "%s". Catching error and reporting unsuccessful handshake to caller. Error message: %s',
+            log.warn('Handshake error: encountered a HTTP error attempting to handshake "%s". Catching error and reporting unsuccessful handshake to caller. Error message: %s',
                 url, err);
             return Rx.Observable.return(false);
         });
@@ -204,12 +204,12 @@ function pickWorker (cb) {
         .subscribe(
             function () { count++; },
             function (err) {
-                console.error('assign_worker error', err, (err || {}).stack);
+                log.exception(err, 'assign_worker error');
                 cb(err || new Error('Unexpected error while assigning workers.'));
             },
             function () {
                 if (!count) {
-                    console.error('assign_worker exhausted search (too many users?)');
+                    log.error('assign_worker exhausted search (too many users?)');
                     cb(new Error('Too many users, please contact help@graphistry.com for private access.'));
                 }
             });
