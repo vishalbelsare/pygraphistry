@@ -276,7 +276,7 @@ function handleVboUpdates(socket, uri, renderState) {
 
         var thisStep = {step: vboUpdateStep++, data: data.step};
 
-        var demoWowFactor = 10.0;
+        var demoWowFactor = 1.0;
         $('#graph-node-count').text(data.elements.pointculled * demoWowFactor);
         var numEdges = (data.elements.edgeculled || data.elements.edgeculledindexed ||
                         data.elements.edgeculledindexedclient) / 2 * demoWowFactor;
