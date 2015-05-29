@@ -147,7 +147,8 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                     log.warn('In kernel %s, argument %s is null', name, arg);
 
                 if (dirty) {
-                    debug('Setting arg %d with value', i, val);
+                    // Disabled because I clog the logs.
+                    //debug('Setting arg %d with value', i, val);
                     kernel.setArg(i, val, type || undefined);
                     argValues[arg].dirty = false;
                 }
