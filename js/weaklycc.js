@@ -112,15 +112,33 @@ module.exports = function weaklycc (numPoints, edges, depth) {
     var done = new Uint32Array(numPoints);
 
     var t1 = Date.now();
+    var lastSize = degrees[roots[0]];
+    var threshold = Math.min(lastSize * 0.1, 1000);
     for (var i = 0; i < numPoints; i++) {
         var root = roots[i];
         if (!done[root]) {
-            var size = traverse(edgeList, root, components.length, depth, done, nodeToComponent);
-            components.push({root: root, component: components.length, size: size})
+            if (true && lastSize < threshold) {
+
+                //skip first as likely supernode
+                var defC = components.length > 1 ? 1 : 0;
+
+                components[defC].size++;
+                done[root] = true;
+                nodeToComponent[root] = defC;
+            } else {
+                var size = traverse(edgeList, root, components.length, depth, done, nodeToComponent);
+                components.push({root: root, component: components.length, size: size});
+                lastSize = size;
+
+                //cut down for second component (first was a likely outlier)
+                if (components.length == 2) {
+                    threshold = Math.min(lastSize * 0.2, threshold);
+                }
+            }
         }
     }
-    perf('weaklycc dfs', Date.now() - t1, 'ms');
 
+    perf('weaklycc dfs', Date.now() - t1, 'ms');
     perf('weaklycc all', Date.now() - t0, 'ms');
 
     return {
