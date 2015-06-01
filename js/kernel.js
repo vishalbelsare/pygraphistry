@@ -14,6 +14,13 @@ var cljs = require('./cl.js');
 var config = require('config')();
 
 
+
+// Disable debug logging since this file is responsible for 90% of log output.
+// Comment me for local debugging.
+debug = function () {}
+
+
+
 // String * [String] * {String: Type} * String * clCtx
 var Kernel = function (name, argNames, argTypes, file, clContext) {
     debug('Creating Kernel', name);
@@ -147,8 +154,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                     log.warn('In kernel %s, argument %s is null', name, arg);
 
                 if (dirty) {
-                    // Disabled because I clog the logs.
-                    //debug('Setting arg %d with value', i, val);
+                    debug('Setting arg %d with value', i, val);
                     kernel.setArg(i, val, type || undefined);
                     argValues[arg].dirty = false;
                 }
