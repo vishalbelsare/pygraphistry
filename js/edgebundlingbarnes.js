@@ -274,6 +274,7 @@ EdgeBundling.prototype.tick = function(simulator, stepNumber) {
         debug('LOCKED, EARLY EXIT');
         return Q();
     }
+
     return Q().then(function () {
         if (locks.lockMidpoints) {
             simulator.tickBuffers(['nextMidPoints']);

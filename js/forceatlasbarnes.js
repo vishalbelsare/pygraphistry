@@ -193,6 +193,10 @@ function edgeForces(simulator, edgeKernelSeq, stepNumber, workItems) {
 
 
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
+    var locks = simulator.controls.locks;
+    if (locks.lockPoints) {
+      return Q();
+    }
     var that = this;
     var tickTime = Date.now();
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);

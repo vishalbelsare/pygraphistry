@@ -84,6 +84,19 @@ var uberControls = {
                 linLog: new BoolParam('LinLog', false)
             }
         }
+        ,{
+            algo: forceAtlasBarnes,
+            params: {
+                tau: new ContinuousParam('Precision vs. Speed', 10.0, 1.0, 25.0),
+                gravity: new ContinuousParam('Center Magnet', 1.0, 0.01, 100),
+                scalingRatio: new ContinuousParam('Expansion Ratio', 1.0, 0.01, 100),
+                edgeInfluence: new DiscreteParam('Edge Influence', 0, 0, 5, 1),
+                preventOverlap: new BoolParam('Prevent Overlap', false),
+                strongGravity: new BoolParam('Compact Layout', false),
+                dissuadeHubs: new BoolParam('Dissuade Hubs', false),
+                linLog: new BoolParam('Strong Separation (LinLog)', false)
+            }
+        }
     ],
     locks: {
         lockPoints: true,
@@ -94,7 +107,7 @@ var uberControls = {
     global: {
         simulationTime: 1, //SIMULATION_TIME, //milliseconds
         dimensions: [1, 1],
-        numSplits: 8
+        numSplits: 16
     },
     devices: ['CPU', 'GPU']
 }
