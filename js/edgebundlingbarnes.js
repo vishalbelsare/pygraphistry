@@ -11,6 +11,7 @@ var _          = require('underscore'),
     LayoutAlgo = require('./layoutAlgo.js'),
     faSwingsKernel = require('./javascript_kernels/faSwingsKernel.js'),
     integrateMidPointsKernel = require('./javascript_kernels/integrateMidPointsKernel.js'),
+    interpolateMidPoints = require('./javascript_kernels/interpolateMidPoints.js'),
     //integrateKernel = require('./javascript_kernels/integrateKernel.js'),
     EbBarnesKernelSeq = require('./javascript_kernels/ebBarnesKernelSeq.js'),
     midEdgeGather = require('./javascript_kernels/midEdgeGather.js');
@@ -29,12 +30,14 @@ function EdgeBundling(clContext) {
 
     this.integrateMidPoints = new integrateMidPointsKernel(clContext);
 
+    this.interpolateMidPoints = new interpolateMidPoints(clContext);
+
     this.midEdgeGather = new midEdgeGather(clContext);
 
     this.kernels = this.kernels.concat([this.ebBarnesKernelSeq.toBarnesLayout, this.ebBarnesKernelSeq.boundBox,
                                         this.ebBarnesKernelSeq.buildTree, this.ebBarnesKernelSeq.computeSums,
                                         this.ebBarnesKernelSeq.sort, this.ebBarnesKernelSeq.calculateMidPoints,
-                                        this.ebMidsprings, this.integrateMidPoints.faIntegrate]);
+                                        this.ebMidsprings, this.integrateMidPoints.faIntegrate, this.interpolateMidPoints.interpolate]);
 }
 EdgeBundling.prototype = Object.create(LayoutAlgo.prototype);
 EdgeBundling.prototype.constructor = EdgeBundling;
@@ -68,7 +71,7 @@ EdgeBundling.argsType = {
     inputForces: null,
     springStrength: cljs.types.float_t,
     springDistance: cljs.types.float_t,
-}
+};
 
 EdgeBundling.prototype.setPhysics = function(cfg) {
     LayoutAlgo.prototype.setPhysics.call(this, cfg)
@@ -284,7 +287,11 @@ EdgeBundling.prototype.tick = function(simulator, stepNumber) {
     if (locks.interpolateMidPoints) {
       // If interpolateMidpoints is true, midpoints are calculate by
       // interpolating between corresponding edge points.
-      calculateMidpoints = Q();
+      console.log("INTERPOLATION");
+      calculateMidpoints = Q().then(function () {
+      simulator.tickBuffers(['nextMidPoints']);
+      return that.interpolateMidPoints.execKernels(simulator);
+      })
     } else {
       // If interpolateMidpoints is not true, calculate midpoints
       // by edge bundling calculation.

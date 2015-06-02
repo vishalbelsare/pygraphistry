@@ -69,6 +69,19 @@ var uberControls = {
     simulator: SimCL,
     layoutAlgorithms: [
         {
+            algo: forceAtlasBarnes,
+            params: {
+                tau: new ContinuousParam('Precision vs. Speed', 10.0, 1.0, 25.0),
+                gravity: new ContinuousParam('Center Magnet', 1.0, 0.01, 100),
+                scalingRatio: new ContinuousParam('Expansion Ratio', 1.0, 0.01, 100),
+                edgeInfluence: new DiscreteParam('Edge Influence', 0, 0, 5, 1),
+                preventOverlap: new BoolParam('Prevent Overlap', false),
+                strongGravity: new BoolParam('Compact Layout', false),
+                dissuadeHubs: new BoolParam('Dissuade Hubs', false),
+                linLog: new BoolParam('Strong Separation (LinLog)', false)
+            }
+        }
+        ,{
             algo: EdgeBundlingBarnes,
             params: {
                 tau: new ContinuousParam('Speed', 0.05, 0.000000001, 0.5),
@@ -84,25 +97,13 @@ var uberControls = {
                 linLog: new BoolParam('LinLog', false)
             }
         }
-        ,{
-            algo: forceAtlasBarnes,
-            params: {
-                tau: new ContinuousParam('Precision vs. Speed', 10.0, 1.0, 25.0),
-                gravity: new ContinuousParam('Center Magnet', 1.0, 0.01, 100),
-                scalingRatio: new ContinuousParam('Expansion Ratio', 1.0, 0.01, 100),
-                edgeInfluence: new DiscreteParam('Edge Influence', 0, 0, 5, 1),
-                preventOverlap: new BoolParam('Prevent Overlap', false),
-                strongGravity: new BoolParam('Compact Layout', false),
-                dissuadeHubs: new BoolParam('Dissuade Hubs', false),
-                linLog: new BoolParam('Strong Separation (LinLog)', false)
-            }
-        }
     ],
     locks: {
-        lockPoints: true,
-        lockEdges: true,
+        lockPoints: false,
+        lockEdges: false,
         lockMidpoints: false,
-        lockMidedges: false
+        lockMidedges: false,
+        interpolateMidPoints: true
     },
     global: {
         simulationTime: 1, //SIMULATION_TIME, //milliseconds

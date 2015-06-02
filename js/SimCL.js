@@ -894,6 +894,12 @@ function recolor(simulator, marquee) {
 //output positions: nextPoints
 function tick(simulator, stepNumber, cfg) {
 
+    if (stepNumber == 100) {
+      simulator.controls.locks.interpolateMidPoints = false;
+      simulator.controls.locks.lockPoints = true;
+      simulator.controls.locks.lockEdges = true;
+    }
+
     // If there are no points in the graph, don't run the simulation
     if(simulator.numPoints < 1) {
         return Q(simulator);
