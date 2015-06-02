@@ -64,6 +64,13 @@ var attributeLoaders = function(graph) {
             target: EDGE,
             values: undefined
         },
+        edgeColor2: {
+            load: graph.setEdgeColors,
+            type: 'number',
+            default: graph.setEdgeColors,
+            target: EDGE,
+            values: undefined
+        },
         pointLabel: {
             load: graph.setPointLabels,
             type: 'string',
@@ -362,6 +369,13 @@ var splunkMapper = {
         },
         pointColor: {
             name: 'pointColor',
+            transform: function (v) {
+                var palette = util.palettes.qual_palette2;
+                return int2color(groupRoundAndClamp(v, 0, palette.length - 1), palette);
+            }
+        },
+        edgeColor2: {
+            name: 'edgeColor2',
             transform: function (v) {
                 var palette = util.palettes.qual_palette2;
                 return int2color(groupRoundAndClamp(v, 0, palette.length - 1), palette);
