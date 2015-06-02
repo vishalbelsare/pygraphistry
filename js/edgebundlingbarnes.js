@@ -275,39 +275,50 @@ EdgeBundling.prototype.tick = function(simulator, stepNumber) {
         return Q();
     }
 
-    return Q().then(function () {
-        if (locks.lockMidpoints) {
-            simulator.tickBuffers(['nextMidPoints']);
-            return simulator.buffers.curMidPoints.copyInto(simulator.buffers.nextMidPoints);
-        } else {
+    if (locks.lockMidpoints) {
+        simulator.tickBuffers(['nextMidPoints']);
+        return simulator.buffers.curMidPoints.copyInto(simulator.buffers.nextMidPoints);
+    }
 
+    var calculateMidpoints;
+    if (locks.interpolateMidPoints) {
+      // If interpolateMidpoints is true, midpoints are calculate by
+      // interpolating between corresponding edge points.
+      calculateMidpoints = Q();
+    } else {
+      // If interpolateMidpoints is not true, calculate midpoints
+      // by edge bundling calculation.
+        calculateMidpoints =  Q().then(function () {
+
+            // Promise while loop to calculate each set of midpoints seperately.
             var midpoint_index = 0;
-            var condition = function () {
-              return midpoint_index < simulator.numSplits;
-            };
+                var condition = function () {
+                  return midpoint_index < simulator.numSplits;
+                };
 
             var body = function () {
-              return that.ebBarnesKernelSeq.execKernels(simulator, stepNumber, workItems, midpoint_index)
-              .then( function () {
-                  return midpoint_index = midpoint_index + 1;
-              })
+                return that.ebBarnesKernelSeq.execKernels(simulator, stepNumber, workItems, midpoint_index)
+                .then(function () {
+                    return midpoint_index = midpoint_index + 1;
+                })
             }
-
             return promiseWhile(condition, body)
-        }
-    }).then(function () { //TODO do both forwards and backwards?
-        if (simulator.numEdges > 0 && !locks.lockMidedges) {
-            return midEdges(simulator, that.ebMidsprings, stepNumber);
-        } else {
-            simulator.tickBuffers(['curMidPoints']);
-            return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
-        }
-    })
-    .then(function () {
-        return that.faSwingsKernel.execMidPointsKernels(simulator, workItems);
-    }).then(function () {
-        return that.integrateMidPoints.execKernels(simulator, tempLayoutBuffers, workItems);
-    }).then(function () {
+
+        }).then(function () { //TODO do both forwards and backwards?
+            if (simulator.numEdges > 0 && !locks.lockMidedges) {
+                return midEdges(simulator, that.ebMidsprings, stepNumber);
+            } else {
+                simulator.tickBuffers(['curMidPoints']);
+                return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
+            }
+        })
+        .then(function () {
+            return that.faSwingsKernel.execMidPointsKernels(simulator, workItems);
+        }).then(function () {
+            return that.integrateMidPoints.execKernels(simulator, tempLayoutBuffers, workItems);
+        })
+    }
+    return calculateMidpoints.then(function () {
         return that.midEdgeGather.execKernels(simulator)
     }).then(function () {
         //return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
