@@ -10,7 +10,7 @@ var util            = require('./util.js');
 
 
 function nameToLink (urlParams, name) {
-    var overrides = {dataset: encodeURIComponent(name), play: 0};
+    var overrides = {dataset: name, play: 0};
     var params = _.extend({}, _.omit(urlParams, 'dataset', 'datasetname'), overrides);
     var paramStr = _.map(params, function (v, k) { return k + '=' + v; }).join('&');
     return window.location.origin + window.location.pathname + '?' + paramStr;
@@ -23,8 +23,11 @@ module.exports = function (socket, urlParams) {
     Rx.Observable.fromEvent($btn, 'click')
         //show
         .map(function () {
-             return $(Handlebars.compile($('#forkTemplate').html())(
-                {defName: urlParams.dataset + '_' + (1+Math.random()*2000000000).toString(16).slice(0).replace('.','')}));
+            var uid = Math.random().toString(36).substring(8);
+            var parts = urlParams.dataset.split('/');
+            var suffix = parts.slice(-parts.length + 1);
+            return $(Handlebars.compile($('#forkTemplate').html())(
+                {defName: suffix + '_' + uid}));
         })
         .do(function ($modal) {
              $('body').append($modal);
@@ -54,7 +57,7 @@ module.exports = function (socket, urlParams) {
             if (!reply || !reply.success)  {
                 throw new Error({msg: 'Server error on inspectHeader', v: (reply||{}).error});
             } else {
-                var url = nameToLink(urlParams, reply.data);
+                var url = nameToLink(urlParams, reply.name);
                 $('.modal-body', $modal)
                     .empty()
                     .append($('<span>').text('Static copy at: '))
