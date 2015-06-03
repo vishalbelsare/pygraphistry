@@ -44,7 +44,7 @@ var interpolateMidpointsKernel = function (clContext) {
             points: simulator.buffers.curPoints.buffer,
             numEdges: numSprings,
             numSplits: numSplits,
-            outputMidPoints: simulator.buffers.nextMidPoints.buffer
+            outputMidPoints: simulator.buffers.curMidPoints.buffer
         });
 
         simulator.tickBuffers(['nextMidPoints']);
