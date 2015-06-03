@@ -24,19 +24,26 @@ var randLength = 73;
 var NAMED_CLGL_BUFFERS = require('./buffers.js').NAMED_CLGL_BUFFERS;
 
 function create(renderer, device, vendor, cfg) {
-    return cljs.create(renderer, device, vendor).then(function(cl) {
+    return cljs.create(renderer, device, vendor).then(function (cl) {
         // Pick the first layout algorithm that matches our device type
-        var type = cl.deviceProps.TYPE.trim();
-        var availableControls = _.filter(cfg, function(algo) {
+        var type, // GPU device type
+            availableControls, // Available controls for device type
+            controls,
+            layoutAlgorithms,
+            simObj;
+
+        type = cl.deviceProps.TYPE.trim();
+
+        availableControls = _.filter(cfg, function (algo) {
             return _.contains(algo.devices, type);
         });
         if (availableControls.length === 0) {
             log.die('No layout controls satisfying device/vendor requirements', device, vendor);
         }
-        var controls = availableControls[0];
-        var layoutAlgorithms = controls.layoutAlgorithms;
+        controls = availableControls[0];
+        layoutAlgorithms = controls.layoutAlgorithms;
 
-        var simObj = {
+        simObj = {
             renderer: renderer,
             cl: cl,
             elementsPerPoint: 2,
@@ -47,20 +54,17 @@ function create(renderer, device, vendor, cfg) {
             controls: controls,
         };
 
-        return Q().then(function () {
+        return new Q().then(function () {
             debug('Instantiating layout algorithms: %o', layoutAlgorithms);
             return _.map(layoutAlgorithms, function (la) {
                 var algo = new la.algo(cl);
-                var params = _.object(_.map(la.params, function (param, key) {
-                    return [key, param.value];
-                }));
                 algo.setPhysics(_.object(_.map(la.params, function (p, name) {
                     return [name, p.value];
                 })));
                 return algo;
             });
-        }).then(function(algos) {
-            debug("Creating SimCL...")
+        }).then(function (algos) {
+            debug("Creating SimCL...");
 
             simObj.layoutAlgorithms = algos;
             simObj.otherKernels = {
@@ -894,7 +898,7 @@ function recolor(simulator, marquee) {
 //output positions: nextPoints
 function tick(simulator, stepNumber, cfg) {
 
-    if (stepNumber == 100) {
+    if (stepNumber == 120) {
       simulator.controls.locks.interpolateMidPoints = false;
       simulator.controls.locks.lockPoints = true;
       simulator.controls.locks.lockEdges = true;
