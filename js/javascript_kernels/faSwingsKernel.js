@@ -1,3 +1,4 @@
+'use strict';
 var Kernel = require('../kernel.js'),
     Q = require('q'),
     debug = require("debug")("graphistry:graph-viz:cl:barensKernels"),
@@ -10,7 +11,7 @@ var Kernel = require('../kernel.js'),
 var faSwingKernel = function (clContext) {
 
 
-    this.argsSwings = ['prevForces', 'curForces', 'swings' , 'tractions'];
+    this.argsSwings = ['prevForces', 'curForces', 'swings', 'tractions'];
 
     this.faSwings = new Kernel('faSwingsTractions', this.argsSwings,
                                ArgsType, 'forceAtlas2/faSwingsTractions.cl', clContext);
@@ -18,16 +19,16 @@ var faSwingKernel = function (clContext) {
 
     this.kernels = [this.faSwings];
 
-    this.setPhysics = function(cfg, mask) {
+    this.setPhysics = function (cfg, mask) {
         _.each(this.kernels, function (k) {
-            k.set(_.pick(cfg, k.argNames))
-        })
+            k.set(_.pick(cfg, k.argNames));
+        });
         this.faSwings.set({flags: mask});
     };
 
 
 
-    this.setEdges = function(simulator, layoutBuffers) {
+    this.setEdges = function (simulator) {
     };
 
     this.setMidPoints = function(simulator, layoutBuffers) {
