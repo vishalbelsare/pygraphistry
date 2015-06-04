@@ -86,8 +86,8 @@ var uberControls = {
             params: {
                 tau: new ContinuousParam('Speed', 0.05, 0.000000001, 0.5),
                 gravity: new ContinuousParam('Gravity', 0.020083175556898723, 0, 0.1),
-                charge: new ContinuousParam('Charge', -100000, -100000000, -0.0000000000000001),
-                springStrength: new ContinuousParam('Spring Strength', 10000.2921, 0, 10000000),
+                charge: new ContinuousParam('Charge', -50, -100, -0.0000000000000001),
+                springStrength: new ContinuousParam('Spring Strength', 50, 0, 100),
                 springDistance: new ContinuousParam('Spring Distance', 0.5, 0.0000001, 1),
                 scalingRatio: new ContinuousParam('Scaling', 1.0, 0.01, 100),
                 edgeInfluence: new DiscreteParam('Edge Influence', 1, 0, 5, 1),
