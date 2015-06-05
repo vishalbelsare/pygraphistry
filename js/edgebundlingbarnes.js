@@ -324,7 +324,6 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
                     });
             };
 
-            console.log("Running eb barnes");
             return promiseWhile(condition, body);
 
         }).then(function () { //TODO do both forwards and backwards?

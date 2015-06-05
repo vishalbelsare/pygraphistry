@@ -708,15 +708,15 @@ function setMidEdgeColors(simulator, midEdgeColors) {
             var color1HSV, color2HSV, h, s, v;
             color1HSV = color1.hsv();
             color2HSV = color2.hsv();
-            h = color1HSV.h * (1 - lambda) + color2HSV.h * lambda;
-            s = color1HSV.s * (1 - lambda) + color2HSV.s * lambda;
-            v = color1HSV.v * (1 - lambda) + color2HSV.v * lambda;
+            h = color1HSV.h * (1 - lambda) + color2HSV.h * (lambda);
+            s = color1HSV.s * (1 - lambda) + color2HSV.s * (lambda);
+            v = color1HSV.v * (1 - lambda) + color2HSV.v * (lambda);
             return Color().hsv([h, s, v]);
         }
 
         // Convert from HSV to RGB Int
         convertColor2RGBInt = function (hsv) {
-            var rgb = hsv.rgb(); 
+            var rgb = hsv.rgb();
             return (rgb.r << 0) + (rgb.g << 8) + (rgb.b << 16);
         }
 
@@ -745,9 +745,10 @@ function setMidEdgeColors(simulator, midEdgeColors) {
                 midEdgeColors[(2 * edgeIndex) * numSegments + (2 * midEdgeIndex)] =
                     interpolatedColor;
                 lambda = (midEdgeIndex / numSegments);
-                interpolatedColor = colorHSVInterpolator(srcColor, dstColor, lambda);
+                interpolatedColor = 
+                    convertColor2RGBInt(colorHSVInterpolator(srcColor, dstColor, lambda));
                 midEdgeColors[(2 * edgeIndex) * numSegments + (2 * midEdgeIndex) + 1] =
-                    convertColor2RGBInt(interpolatedColor);
+                    interpolatedColor;
             }
         }
     }

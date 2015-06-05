@@ -193,7 +193,6 @@ function edgeForces(simulator, edgeKernelSeq, stepNumber, workItems) {
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var locks = simulator.controls.locks;
     if (locks.lockPoints) {
-      console.log("HERE"); 
       var buffers = simulator.buffers;
       simulator.tickBuffers(['curPoints', 'nextPoints']);
       return Q.all([
