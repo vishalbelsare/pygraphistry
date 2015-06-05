@@ -481,6 +481,10 @@ function setEdgeWeight(graph, edgeWeights) {
 function setMidEdgeColors(graph, midEdgeColors) {
     debug("Loading midEdgeColors");
 
+    if (!midEdgeColors) { // Use default Colors
+        return graph.simulator.setMidEdgeColors(undefined);
+    }
+
     var numMidEdges = graph.simulator.numMidEdges;
 
     if (midEdgeColors.length != numMidEdges)

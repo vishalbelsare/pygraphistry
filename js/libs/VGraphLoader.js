@@ -64,6 +64,13 @@ var attributeLoaders = function(graph) {
             target: EDGE,
             values: undefined
         },
+        midEdgeColor: {
+            load: graph.setMidEdgeColors,
+            type: 'number',
+            default: graph.setMidEdgeColors,
+            target: EDGE,
+            values: undefined
+        },
         pointLabel: {
             load: graph.setPointLabels,
             type: 'string',

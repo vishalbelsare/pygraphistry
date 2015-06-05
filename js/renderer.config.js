@@ -373,6 +373,17 @@ var models = {
             'normalize': true
         }
     },
+    'midEdgeColors': {
+        'midEdgeColor':  {
+            'datasource': 'HOST',
+            'type': 'UNSIGNED_BYTE',
+            'hint': 'STATIC_DRAW',
+            'count': 4,
+            'offset': 0,
+            'stride': 0,
+            'normalize': true
+        }
+    },
     'arrowColors': {
         'arrowColor':  {
             'datasource': 'CLIENT',
@@ -712,7 +723,7 @@ var items = {
         'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos': ['midSpringsPos', 'curPos'],
-            'edgeColor' : ['midSpringsColorCoord', 'colorCoord']
+            'edgeColor' : ['midEdgeColors', 'midEdgeColor']
         },
         'drawType': 'LINES',
         'glOptions': {}

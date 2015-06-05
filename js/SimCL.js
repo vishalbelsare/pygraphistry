@@ -14,6 +14,7 @@ var MoveNodes = require('./moveNodes.js');
 var SelectNodes = require('./selectNodes.js');
 var SpringsGather = require('./springsGather.js');
 var webcl = require('node-webcl');
+var Color = require('color');
 
 // Do NOT enable this in prod. It destroys performance.
 // Seriously.
@@ -128,6 +129,7 @@ function create(renderer, device, vendor, cfg) {
                 springsPos: null,
                 midSpringsPos: null,
                 midSpringsColorCoord: null,
+                midEdgeColors: null,
                 nextMidPoints: null,
                 curMidPoints: null,
                 partialForces1: null,
@@ -690,6 +692,70 @@ function setEdgeColors(simulator, edgeColors) {
     return simulator;
 }
 
+function setMidEdgeColors(simulator, midEdgeColors) {
+    var midEdgeColors, forwardsEdges, srcNodeIdx, dstNodeIdx, srcColorInt, srcColor,
+        dstColorInt, dstColor, edgeIndex, midEdgeIndex, numSegments, lambda,
+        colorHSVInterpolator, convertRGBInt2Color, convertColor2RGBInt, interpolatedColor;
+
+    if (!midEdgeColors) {
+        debug('Using default midedge colors');
+        midEdgeColors = new Uint32Array(4 * simulator.numMidPoints);
+        numSegments = simulator.numSplits + 1;
+        forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
+
+        // Interpolate colors in the HSV color space.
+        colorHSVInterpolator = function (color1, color2, lambda) {
+            var color1HSV, color2HSV, h, s, v;
+            color1HSV = color1.hsv();
+            color2HSV = color2.hsv();
+            h = color1HSV.h * (1 - lambda) + color2HSV.h * lambda;
+            s = color1HSV.s * (1 - lambda) + color2HSV.s * lambda;
+            v = color1HSV.v * (1 - lambda) + color2HSV.v * lambda;
+            return Color().hsv([h, s, v]);
+        }
+
+        // Convert from HSV to RGB Int
+        convertColor2RGBInt = function (hsv) {
+            var rgb = hsv.rgb(); 
+            return (rgb.r << 0) + (rgb.g << 8) + (rgb.b << 16);
+        }
+
+        // Convert from RGB Int to HSV
+        convertRGBInt2Color= function (rgbInt) {
+            return Color().rgb({
+                r:rgbInt & 0xFF, 
+                g:(rgbInt >> 8) & 0xFF, 
+                b:(rgbInt >> 16) & 0xFF
+            });
+        }
+
+        for (edgeIndex = 0; edgeIndex < simulator.numEdges; edgeIndex++) {
+            srcNodeIdx = forwardsEdges.edgesTyped[2 * edgeIndex];
+            dstNodeIdx = forwardsEdges.edgesTyped[2 * edgeIndex + 1];
+
+            srcColorInt = simulator.buffersLocal.pointColors[srcNodeIdx];
+            dstColorInt = simulator.buffersLocal.pointColors[dstNodeIdx];
+
+            srcColor = convertRGBInt2Color(srcColorInt);
+            dstColor= convertRGBInt2Color(dstColorInt);
+
+            interpolatedColor = convertColor2RGBInt(srcColor);
+
+            for (midEdgeIndex = 0; midEdgeIndex < numSegments; midEdgeIndex++) {
+                midEdgeColors[(2 * edgeIndex) * numSegments + (2 * midEdgeIndex)] =
+                    interpolatedColor;
+                lambda = (midEdgeIndex / numSegments);
+                interpolatedColor = colorHSVInterpolator(srcColor, dstColor, lambda);
+                midEdgeColors[(2 * edgeIndex) * numSegments + (2 * midEdgeIndex) + 1] =
+                    convertColor2RGBInt(interpolatedColor);
+            }
+        }
+    }
+    simulator.buffersLocal.midEdgeColors = midEdgeColors;
+    simulator.tickBuffers(['midEdgeColors']);
+    return simulator;
+}
+
 function setEdgeWeight(simulator, edgeWeights) {
     if (!edgeWeights) {
         debug('Using default edge weights');
@@ -711,10 +777,6 @@ function setEdgeWeight(simulator, edgeWeights) {
 
     return simulator;
     })
-}
-
-function setMidEdgeColors(simulator, midEdgeColors) {
-    log.error('TODO: Code setMidEdgeColors');
 }
 
 function setLocks(simulator, cfg) {
