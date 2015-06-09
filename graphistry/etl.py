@@ -78,6 +78,17 @@
 # This function checks whether the input document is Json pointer
 #...............................................................................
 
+
+def settings():
+    print "TODO"
+    # Return Graphistry object
+
+def plot():
+    # Call settings with default values
+    # Call loadpandassync
+    print "TODO"
+
+
 class Graphistry (object):
 
     def __init__ (self):
