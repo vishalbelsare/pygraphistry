@@ -1,3 +1,3 @@
 # from src import graphistry
-from graphistry import Graphistry
+from src.graphistry import Graphistry
 
