@@ -4,11 +4,9 @@ var debug       = require('debug')('graphistry:graph-viz:persist');
 var _           = require('underscore');
 
 
-var NAME = 'facebook';
-var SAVE_AT_EACH_STEP = false;
 var CHECK_AT_EACH_SAVE = true;
 
-var basePath = __dirname + '/../assets/viz/' + NAME + '.';
+var baseDirPath = __dirname + '/../assets/viz/';
 
 
 //============
@@ -19,7 +17,7 @@ var prevHeader = {elements: {}, bufferByteLengths: {}};
 //============
 
 
-function checkWrite (vboPath, raw, buff) {
+function checkWrite (snapshotName, vboPath, raw, buff) {
     var readback = fs.readFileSync(vboPath);
     debug('readback', readback.length);
     for (var j = 0; j < raw.byteLength; j++) {
@@ -34,26 +32,21 @@ function checkWrite (vboPath, raw, buff) {
             throw 'exn';
         }
     }
-    var read = fs.readFileSync(basePath + 'metadata.json', {encoding: 'utf8'});
+    var read = fs.readFileSync(baseDirPath + snapshotName + '.metadata.json', {encoding: 'utf8'});
     debug('readback metadata', read);
 }
 
 
 module.exports =
-    !SAVE_AT_EACH_STEP ?
-        {
-            maybeSaveConfig: _.identity,
-            maybeSaveVbos: _.identity
-        }
-    : {
-        maybeSaveConfig: function (renderConfig) {
+    {
+        saveConfig: function (snapshotName, renderConfig) {
 
             debug('saving config', renderConfig);
-            fs.writeFileSync(basePath + 'renderconfig.json', JSON.stringify(renderConfig));
+            fs.writeFileSync(baseDirPath + snapshotName + '.renderconfig.json', JSON.stringify(renderConfig));
 
         },
 
-        maybeSaveVbos: function (vbos, step) {
+        saveVBOs: function (snapshotName, vbos, step) {
 
             debug('serializing vbo');
             prevHeader = {
@@ -63,7 +56,7 @@ module.exports =
             fs.writeFileSync(basePath + 'metadata.json', JSON.stringify(prevHeader));
             var buffers = vbos.uncompressed;
             for (var i in buffers) {
-                var vboPath = basePath + i + '.vbo';
+                var vboPath = baseDirPath + snapshotName + '.' + i + '.vbo';
                 var raw = buffers[i];
                 var buff = new Buffer(raw.byteLength);
                 var arr = new Uint8Array(raw);
@@ -75,11 +68,31 @@ module.exports =
 
                 debug('writing', vboPath, raw.byteLength, buff.length);
 
-                if (!CHECK_AT_EACH_SAVE) {
-                    continue;
+                if (CHECK_AT_EACH_SAVE) {
+                    checkWrite(snapshotName, vboPath, raw, buff);
                 }
-                checkWrite(vboPath, raw, buff);
             }
             debug('wrote/read', prevHeader, _.keys(buffers));
+        },
+
+        saveCurrentVBO: function (snapshotName, vbos) {
+            debug('serializing current vbo');
+            fs.writeFileSync(basePath + 'metadata.json', JSON.stringify(prevHeader));
+            var buffers = vbos.uncompressed;
+            var vboPath = baseDirPath + snapshotName + '.current.vbo';
+            var raw = buffers[buffers.length - 1];
+            var buff = new Buffer(raw.byteLength);
+            var arr = new Uint8Array(raw);
+            for (var j = 0; j < raw.byteLength; j++) {
+                buff[j] = raw[j];
+            }
+
+            fs.writeFileSync(vboPath, buff);
+
+            debug('writing', vboPath, raw.byteLength, buff.length);
+
+            if (CHECK_AT_EACH_SAVE) {
+                checkWrite(snapshotName, vboPath, raw, buff);
+            }
         }
     };
