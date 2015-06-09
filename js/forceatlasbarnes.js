@@ -27,7 +27,7 @@ function getNumWorkitemsByHardware(deviceProps) {
         edgeForces: [100, 256],
         segReduce: [1000, 256],
         calculateForces: [60, 256]
-    }
+    };
 
     if (deviceProps.NAME.indexOf('GeForce GT 650M') != -1 ||
         deviceProps.NAME.indexOf('GeForce GT 750M') != -1) {
