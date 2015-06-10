@@ -56,7 +56,7 @@ module.exports =
                 elements: _.extend(prevHeader.elements, vbos.elements),
                 bufferByteLengths: _.extend(prevHeader.bufferByteLengths, vbos.bufferByteLengths)
             };
-            fs.writeFileSync(basePath + 'metadata.json', JSON.stringify(prevHeader));
+            fs.writeFileSync(baseDirPath + snapshotName + '.metadata.json', JSON.stringify(prevHeader));
             var buffers = vbos.uncompressed;
             for (var i in buffers) {
                 var vboPath = baseDirPath + snapshotName + '.' + i + '.vbo';
@@ -80,7 +80,7 @@ module.exports =
 
         saveCurrentVBO: function (snapshotName, vbos) {
             debug('serializing current vbo');
-            fs.writeFileSync(basePath + 'metadata.json', JSON.stringify(prevHeader));
+            fs.writeFileSync(baseDirPath + snapshotName + '.metadata.json', JSON.stringify(prevHeader));
             var buffers = vbos.uncompressed;
             var vboPath = baseDirPath + snapshotName + '.current.vbo';
             var raw = buffers[buffers.length - 1];
