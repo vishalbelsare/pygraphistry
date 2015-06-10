@@ -3,6 +3,9 @@ var fs          = require('fs');
 var debug       = require('debug')('graphistry:graph-viz:persist');
 var _           = require('underscore');
 
+var s3          = require('common/s3.js');
+
+var config      = require('config')();
 
 var CHECK_AT_EACH_SAVE = true;
 
@@ -94,5 +97,8 @@ module.exports =
             if (CHECK_AT_EACH_SAVE) {
                 checkWrite(snapshotName, vboPath, raw, buff);
             }
+
+            // TODO upload to S3
+            s3.upload(config.S3, config.BUCKET, {name: snapshotName}, buff);
         }
     };
