@@ -14,6 +14,7 @@ var MoveNodes = require('./moveNodes.js');
 var SelectNodes = require('./selectNodes.js');
 var SpringsGather = require('./springsGather.js');
 var webcl = require('node-webcl');
+var Dataframe = require('./Dataframe.js');
 
 // Do NOT enable this in prod. It destroys performance.
 // Seriously.
@@ -101,6 +102,7 @@ function create(renderer, device, vendor, cfg) {
             simObj.numSplits = controls.global.numSplits;
             simObj.pointLabels = [];
             simObj.edgeLabels = [];
+            simObj.dataframe = new Dataframe();
 
             simObj.bufferHostCopies = {
                 unsortedEdges: null,

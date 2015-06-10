@@ -21,7 +21,8 @@ var Q = require("q"),
     webcl = require('node-webcl'),
 
     metrics = require("./metrics.js"),
-    loader = require("./data-loader.js");
+    loader = require("./data-loader.js"),
+    Dataframe = require('./Dataframe');
 
 
 metrics.init('StreamGL:driver');
@@ -261,6 +262,9 @@ function create(dataset) {
         return loader.loadDatasetIntoSim(graph, dataset)
     }).then(function (graph) {
         debug('ANIMATING');
+
+        // Load data into dataframe
+        graph.simulator.dataframe.load(graph);
 
         var play = userInteractions.filter(function (o) { return o && o.play; });
 

@@ -30,6 +30,9 @@ function edgeTitleField (attribs) {
 
 
 function infoFrame(graph, type, indices, attributeNames) {
+    // console.log('Making infoFrame');
+    graph.simulator.dataframe.print();
+
     var target;
     if (type === 'point') {
         target = vgloader.types.VERTEX;
