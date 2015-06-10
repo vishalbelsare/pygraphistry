@@ -95,6 +95,9 @@ module.exports =
             fs.writeFileSync(baseDirPath + snapshotName + '.metadata.json', JSON.stringify(prevHeader));
             var buffers = vbos.uncompressed;
             var vboPath = baseDirPath + snapshotName + '.current.vbo';
+            if (_.isEmpty(buffers)) {
+                throw 'empty VBO buffers supplied';
+            }
             var raw = buffers[buffers.length - 1];
             var buff = new Buffer(raw.byteLength);
             var arr = new Uint8Array(raw);
