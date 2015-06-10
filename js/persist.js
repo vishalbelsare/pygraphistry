@@ -20,6 +20,15 @@ var prevHeader = {elements: {}, bufferByteLengths: {}};
 //============
 
 
+function ensurePath(path) {
+    fs.exists(path, function (does_exist) {
+        if (!does_exist) {
+            fs.mkdir(path);
+        }
+    });
+}
+
+
 function checkWrite (snapshotName, vboPath, raw, buff) {
     var readback = fs.readFileSync(vboPath);
     debug('readback', readback.length);
@@ -45,6 +54,7 @@ module.exports =
         saveConfig: function (snapshotName, renderConfig) {
 
             debug('saving config', renderConfig);
+            ensurePath(baseDirPath);
             fs.writeFileSync(baseDirPath + snapshotName + '.renderconfig.json', JSON.stringify(renderConfig));
 
         },
@@ -56,6 +66,7 @@ module.exports =
                 elements: _.extend(prevHeader.elements, vbos.elements),
                 bufferByteLengths: _.extend(prevHeader.bufferByteLengths, vbos.bufferByteLengths)
             };
+            ensurePath(baseDirPath);
             fs.writeFileSync(baseDirPath + snapshotName + '.metadata.json', JSON.stringify(prevHeader));
             var buffers = vbos.uncompressed;
             for (var i in buffers) {
@@ -80,6 +91,7 @@ module.exports =
 
         saveCurrentVBO: function (snapshotName, vbos) {
             debug('serializing current vbo');
+            ensurePath(baseDirPath);
             fs.writeFileSync(baseDirPath + snapshotName + '.metadata.json', JSON.stringify(prevHeader));
             var buffers = vbos.uncompressed;
             var vboPath = baseDirPath + snapshotName + '.current.vbo';
