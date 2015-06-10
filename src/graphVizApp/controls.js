@@ -12,6 +12,7 @@ var histogramBrush  = require('./histogramBrush.js');
 var marqueeFact     = require('./marquee.js');
 var runButton       = require('./runButton.js');
 var forkVgraph      = require('./fork.js');
+var persistButton   = require('./persist.js');
 
 
 function sendLayoutSetting(socket, algo, param, value) {
@@ -371,6 +372,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     dataInspector.init(appState, socket, workerParams.href, brush);
     histogramBrush.init(socket, brush);
     forkVgraph(socket, urlParams);
+    persistButton(socket, urlParams);
 
 /*
 

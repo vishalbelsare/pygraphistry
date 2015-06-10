@@ -18,7 +18,7 @@ function nameToLink (urlParams, name) {
 
 
 module.exports = function (socket, urlParams) {
-    var $btn = $('#forkButton');
+    var $btn = $('#persistButton');
 
     Rx.Observable.fromEvent($btn, 'click')
         //show
@@ -26,7 +26,7 @@ module.exports = function (socket, urlParams) {
             var uid = Math.random().toString(36).substring(8);
             var parts = urlParams.dataset.split('/');
             var suffix = parts.slice(-parts.length + 1);
-            return $(Handlebars.compile($('#forkTemplate').html())(
+            return $(Handlebars.compile($('#persistTemplate').html())(
                 {defName: suffix + '_' + uid}));
         })
         .do(function ($modal) {
@@ -45,7 +45,7 @@ module.exports = function (socket, urlParams) {
         })
         .flatMap(function ($modal) {
             var name = $('.modal-body input', $modal).val();
-            return Rx.Observable.fromCallback(socket.emit, socket)('fork_vgraph', name)
+            return Rx.Observable.fromCallback(socket.emit, socket)('persist_current_vbo', name)
                 .map(function (reply) {
                     return {reply: reply, $modal: $modal};
                 });
@@ -53,8 +53,8 @@ module.exports = function (socket, urlParams) {
         //show
         .do(function (pair) {
             var reply = pair.reply;
-            if (!reply || !reply.success)  {
-                throw new Error({msg: 'Server error on inspectHeader', v: (reply||{}).error});
+            if (!reply || !reply.success) {
+                throw new Error({msg: 'Server error on inspectHeader', v: (reply || {}).error});
             }
             var $modal = pair.$modal;
             var url = nameToLink(urlParams, reply.name);
@@ -70,8 +70,8 @@ module.exports = function (socket, urlParams) {
         .subscribe(_.identity,
             function (err) {
                 console.error('err', err);
-                try { $('.forker').remove(); } catch (ignore) { }
-                util.makeErrorHandler('exn forking vgraph', err);
+                try { $('.persistor').remove(); } catch (ignore) { }
+                util.makeErrorHandler('exn persisting vgraph', err);
             });
 
 };
