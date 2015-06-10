@@ -53,25 +53,24 @@ module.exports = function (socket, urlParams) {
         //show
         .do(function (pair) {
             var reply = pair.reply;
-            var $modal = pair.$modal;
             if (!reply || !reply.success)  {
                 throw new Error({msg: 'Server error on inspectHeader', v: (reply||{}).error});
-            } else {
-                var url = nameToLink(urlParams, reply.name);
-                $('.modal-body', $modal)
-                    .empty()
-                    .append($('<span>').text('Static copy at: '))
-                    .append($('<a>')
-                        .attr('target', '_blank')
-                        .text(url)
-                        .attr('href', url));
-                $('.status', $modal).css('display','none');
             }
+            var $modal = pair.$modal;
+            var url = nameToLink(urlParams, reply.name);
+            $('.modal-body', $modal)
+                .empty()
+                .append($('<span>').text('Static copy at: '))
+                .append($('<a>')
+                    .attr('target', '_blank')
+                    .text(url)
+                    .attr('href', url));
+            $('.status', $modal).css('display','none');
         })
         .subscribe(_.identity,
             function (err) {
                 console.error('err', err);
-                try { $('.forker').remove(); } catch (e) { }
+                try { $('.forker').remove(); } catch (ignore) { }
                 util.makeErrorHandler('exn forking vgraph', err);
             });
 
