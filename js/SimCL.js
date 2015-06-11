@@ -96,6 +96,7 @@ function create(renderer, device, vendor, cfg) {
             simObj.tickBuffers = tickBuffers.bind(this, simObj);
             simObj.highlightShortestPaths = highlightShortestPaths.bind(this, renderer, simObj);
             simObj.setColor = setColor.bind(this, renderer, simObj);
+            simObj.setMidEdges = setMidEdges.bind(this, simObj);
 
             simObj.numPoints = 0;
             simObj.numEdges = 0;
@@ -488,6 +489,7 @@ function makeSetter(simulator, name, dimName) {
 }
 
 
+
 // ex:  simulator.setSizes(pointSizes).then(...)
 function createSetters (simulator) {
     _.each(NAMED_CLGL_BUFFERS, function (cfg, bufferName) {
@@ -505,6 +507,71 @@ function setEdgeLabels(simulator, labels) {
     simulator.edgeLabels = labels || [];
 }
 
+function setMidEdges(simulator) {
+    var bytesPerPoint,
+        bytesPerEdge,
+        numMidPoints,
+        midPointsByteLength,
+        springsByteLength;
+
+    bytesPerPoint = simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
+    bytesPerEdge = 2 * bytesPerPoint;
+    numMidPoints = ( simulator.numEdges * ( simulator.numSplits ) ),
+    midPointsByteLength = numMidPoints * bytesPerPoint;
+    springsByteLength = simulator.numEdges * bytesPerEdge;
+
+    simulator.buffers.curMidPoints.delete();
+    simulator.buffers.nextMidPoints.delete();
+
+    return Q.all( [
+        simulator.cl.createBuffer( midPointsByteLength , 'nextMidPoints' ),
+        simulator.renderer.createBuffer( midPointsByteLength , 'curMidPoints' ),
+        simulator.renderer.createBuffer( simulator.numMidEdges * bytesPerEdge , 'midSprings' ),
+        simulator.renderer.createBuffer( simulator.numMidEdges * bytesPerEdge , 'midSpringsColorCoord' ),
+    ] )
+    .spread( function( nextMidPointsBuffer , curMidPointsVBO , midSpringsVBO , midSpringsColorCoordVBO ) {
+        simulator.buffers.nextMidPoints = nextMidPointsBuffer;
+        simulator.renderer.buffers.curMidPoints = curMidPointsVBO;
+        simulator.renderer.buffers.midSprings = midSpringsVBO;
+        simulator.renderer.buffers.midSpringsColorCoord = midSpringsColorCoordVBO;
+        return Q.all( [
+            simulator.cl.createBufferGL(curMidPointsVBO, 'curMidPoints'),
+            simulator.cl.createBufferGL(midSpringsVBO, 'midSpringsPos'),
+            simulator.cl.createBufferGL(midSpringsColorCoordVBO, 'midSpringsColorCoord'),
+        ] )
+    } )
+    .spread( function ( midPointsBuf , midSpringsBuf , midSpringsColorCoordBuf ) {
+        simulator.buffers.midSpringsPos = midSpringsBuf;
+        simulator.buffers.curMidPoints = midPointsBuf;
+        simulator.buffers.midSpringsColorCoord = midSpringsColorCoordBuf;
+    } )
+    .fail( eh.makeErrorHandler('Failure in SimCL.setMidEdges') )
+}
+
+//function getMidPoints(simulator, edges, forwardEdges, pointsHostBuffer) {
+    //var nDim = simulator.controls.global.dimensions.length;
+    //console.log(nDim);
+
+    //var numSplits = simulator.controls.global.numSplits;
+    //console.log(numSplits);
+    //var midPoints = new Float32Array((edges.length / 2) * numSplits * nDim || 1);
+    //return midPoints;
+    //if (numSplits) {
+        //for (var i = 0; i < edges.length; i+=2) {
+            //var src = forwardEdges.edgesTyped[i];
+            //var dst = forwardEdges.edgesTyped[i + 1];
+            //for (var d = 0; d < nDim; d++) {
+                //var start = pointsHostBuffer[(src * nDim) + d];
+                //var end = pointsHostBuffer[(dst * nDim) + d];
+                //var step = (end - start) / (numSplits + 1);
+                //for (var q = 0; q < numSplits; q++) {
+                    //midPoints[((((i/2) * numSplits) + q) * nDim) + d] = start + step * (q + 1);
+                //}
+            //}
+        //}
+    //}
+    //return midPoints;
+//}
 
 /**
  * Sets the edge list for the graph
@@ -522,11 +589,13 @@ function setEdgeLabels(simulator, labels) {
  * @param {Float32Array} midPoints - dense array of control points (packed sequence of nDim structs)
  * @returns {Q.promise} a promise for the simulator object
  */
-function setEdges(renderer, simulator, unsortedEdges, forwardsEdges,
-                  backwardsEdges, degrees, midPoints, endPoints) {
+function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEdges, degrees, trash, endPoints, points) {
     //edges, workItems
+    var nDim = simulator.controls.global.dimensions.length;
     var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
     var elementsPerWorkItem = 4;
+    console.log(simulator.controls);
+    var midPoints = new Float32Array((unsortedEdges.length / 2) * simulator.numSplits * nDim || 1);
 
     if(forwardsEdges.edgesTyped.length < 1) {
         throw new Error("The edge buffer is empty");
@@ -562,7 +631,8 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges,
         simulator.buffers.midSpringsPos,
         simulator.buffers.forwardsEdgeStartEndIdxs,
         simulator.buffers.backwardsStartEndIdxs,
-        simulator.buffers.midSpringsColorCoord]);
+        simulator.buffers.midSpringsColorCoord
+    ]);
 
     return Q().then(function() {
         // Init constant
@@ -723,8 +793,8 @@ function setMidEdgeColors(simulator, midEdgeColors) {
         // Convert from RGB Int to HSV
         convertRGBInt2Color= function (rgbInt) {
             return Color().rgb({
-                r:rgbInt & 0xFF, 
-                g:(rgbInt >> 8) & 0xFF, 
+                r:rgbInt & 0xFF,
+                g:(rgbInt >> 8) & 0xFF,
                 b:(rgbInt >> 16) & 0xFF
             });
         }
@@ -745,7 +815,7 @@ function setMidEdgeColors(simulator, midEdgeColors) {
                 midEdgeColors[(2 * edgeIndex) * numSegments + (2 * midEdgeIndex)] =
                     interpolatedColor;
                 lambda = (midEdgeIndex / numSegments);
-                interpolatedColor = 
+                interpolatedColor =
                     convertColor2RGBInt(colorHSVInterpolator(srcColor, dstColor, lambda));
                 midEdgeColors[(2 * edgeIndex) * numSegments + (2 * midEdgeIndex) + 1] =
                     interpolatedColor;
@@ -787,6 +857,7 @@ function setLocks(simulator, cfg) {
 
 
 function setPhysics(simulator, cfg) {
+    console.log(cfg);
     debug('Simcl set physics', cfg)
     _.each(simulator.layoutAlgorithms, function (algo) {
         if (algo.name in cfg) {

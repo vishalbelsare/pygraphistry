@@ -76,14 +76,21 @@ function createSimulator(renderer, device, vendor, controls) {
         .fail(eh.makeErrorHandler('Cannot create simulator'));
 }
 
-function updateSettings (graph, newCfg) {
+function updateSettings(graph, newCfg) {
     debug('Updating simulation settings', newCfg);
     if (newCfg.simControls) {
         var cfg = lConf.fromClient(graph.simulator.controls, newCfg.simControls);
         graph.simulator.setPhysics(cfg);
         graph.simulator.setLocks(cfg);
         graph.renderer.setVisible(cfg);
+
+        // Number of midpoints has changed. Reset edges.
+        if (newCfg.simControls.ForceAtlas2Barnes.midpoints) {
+            graph.simulator.controls.global.numSplits = cfg.ForceAtlas2Barnes.midpoints;
+            graph.simulator.setMidEdges();
+        }
     }
+
 
     if (newCfg.timeSubset) {
         graph.simulator.setTimeSubset(newCfg.timeSubset);
@@ -421,7 +428,7 @@ var setEdges = Q.promised(function(graph, edges) {
                 graph.simulator.numPoints, edges.length, numSplits);
 
     return graph.simulator.setEdges(edges, forwardEdges, backwardsEdges,
-                                    degrees, midPoints, endPoints)
+                                    degrees, midPoints, endPoints, graph.__pointsHostBuffer)
         .then(function() {
             return graph;
         }).fail(eh.makeErrorHandler('Failure in setEdges'));

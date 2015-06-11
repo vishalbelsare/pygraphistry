@@ -64,6 +64,7 @@ function BoolParam(name, value) {
 BoolParam.prototype = Object.create(Param.prototype);
 BoolParam.prototype.constructor = BoolParam;
 
+var defaultNumSplits = 1;
 
 var uberControls = {
     simulator: SimCL,
@@ -71,6 +72,7 @@ var uberControls = {
         {
             algo: forceAtlasBarnes,
             params: {
+                midpoints: new DiscreteParam('Splits', defaultNumSplits , 0, 16),
                 tau: new ContinuousParam('Precision vs. Speed', 10.0, 1.0, 25.0),
                 gravity: new ContinuousParam('Center Magnet', 1.0, 0.01, 100),
                 scalingRatio: new ContinuousParam('Expansion Ratio', 1.0, 0.01, 100),
@@ -103,12 +105,13 @@ var uberControls = {
         lockEdges: false,
         lockMidpoints: false,
         lockMidedges: false,
-        interpolateMidPoints: true
+        interpolateMidPoints: true,
+        interpolateOnce: false
     },
     global: {
         simulationTime: 1, //SIMULATION_TIME, //milliseconds
         dimensions: [1, 1],
-        numSplits: 8
+        numSplits: defaultNumSplits
     },
     devices: ['CPU', 'GPU']
 }
