@@ -269,7 +269,11 @@
                       </a>
                     </div>
 
-
+                    <div class="options-group">
+                        <a href="#" id="persistButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Snapshot for Embed">
+                            <i class="fa fa-share-square-o fa-2x"></i>
+                        </a>
+                    </div>
 
                 </div> <!-- accordion heading -->
 
@@ -419,6 +423,32 @@
     </div>
 </script>
 
+<script type="text/template" id="persistTemplate">
+    <div class="modal fade persistor" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h3 class="modal-title">Save to Embed</h3>
+                </div>
+                <div class="modal-body">
+                    <form class="form-horizontal">
+                        <div class="form-group">
+                            <label for="snapshotName" class="col-sm-2 control-label">Save As</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" id="snapshotName" value="{{defName}}" />
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <i class="fa fa-spinner fa-spin status"></i>
+                    <button type="button" class="btn btn-primary">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
 
 <script type="text/template" id="histogramTemplate">
     <div class="topMenu">

@@ -106,7 +106,7 @@ function getNumWorkitemsByHardware(deviceProps) {
         edgeForces: [100, 256],
         segReduce: [1000, 256],
         calculateForces: [60, 256]
-    }
+    };
 
     if (deviceProps.NAME.indexOf('GeForce GT 650M') != -1) {
         numWorkGroups.buildTree[0] = 1;
@@ -117,6 +117,11 @@ function getNumWorkitemsByHardware(deviceProps) {
     } else if (deviceProps.NAME.indexOf('Iris') != -1) {
         numWorkGroups.computeSums[0] = 6;
         numWorkGroups.sort[0] = 8;
+    } else if (deviceProps.NAME.indexOf('M290X') != -1) {
+        numWorkGroups.buildTree[0] = 1;
+        numWorkGroups.computeSums[0] = 1;
+        numWorkGroups.computeSums[0] = 1; //6;
+        numWorkGroups.sort[0] = 1; //8;
     } else if (deviceProps.NAME.indexOf('K520') != -1) {
         // 1024
         // 30:14.1, 36:14.3, 40:13.6, 46:14.5, 50:14.1, 60:14.1, 100:14.7,
