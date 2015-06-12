@@ -557,6 +557,13 @@ function setMidEdges( simulator ) {
     .then( function () {
         simulator.setMidEdgeColors(undefined);
     } )
+    .then( function () {
+        return Q.all(
+            simulator.layoutAlgorithms
+                .map(function (alg) {
+                    return alg.setEdges(simulator);
+                }));
+    } )
     .fail( eh.makeErrorHandler('Failure in SimCL.setMidEdges') )
 }
 
