@@ -259,6 +259,9 @@ function midEdges(simulator, ebMidsprings, stepNumber) {
     return ebMidsprings.exec([simulator.numForwardsWorkItems], resources);
 }
 
+
+// Helper function in order to create a chain of promises. It is needed in order to 
+// dynamically create a promise chain for a variable number of midpoints. 
 function promiseWhile(condition, body) {
     var done = Q.defer();
 
@@ -295,11 +298,16 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
         return simulator.buffers.curMidPoints.copyInto(simulator.buffers.nextMidPoints);
     }
 
-    if (locks.interpolateMidPoints) {
+    if (locks.interpolateMidPointsOnce || locks.interpolateMidPoints) {
+        if ( locks.interpolateMidPointsOnce ) {
+            console.log("Force interpolation of midpoints");
+        }
+        locks.interpolateMidPointsOnce = false;
         // If interpolateMidpoints is true, midpoints are calculate by
         // interpolating between corresponding edge points.
         console.log("INTERPOLATION");
         calculateMidpoints = new Q().then(function () {
+
             simulator.tickBuffers(['nextMidPoints']);
             return that.interpolateMidPoints.execKernels(simulator);
         });

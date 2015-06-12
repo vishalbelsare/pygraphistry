@@ -507,7 +507,8 @@ function setEdgeLabels(simulator, labels) {
     simulator.edgeLabels = labels || [];
 }
 
-function setMidEdges(simulator) {
+function setMidEdges( simulator ) {
+    simulator.controls.locks.interpolateMidPointsOnce = true;
     var bytesPerPoint,
         bytesPerEdge,
         numMidPoints,
@@ -516,7 +517,13 @@ function setMidEdges(simulator) {
 
     bytesPerPoint = simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
     bytesPerEdge = 2 * bytesPerPoint;
-    numMidPoints = ( simulator.numEdges * ( simulator.numSplits ) ),
+    numMidPoints = ( simulator.numEdges * (simulator.numSplits) );
+
+    simulator.numMidPoints = numMidPoints;
+    simulator.renderer.numMidPoints = numMidPoints;
+    simulator.numMidEdges = ( simulator.numSplits + 1 ) * simulator.numEdges;
+    simulator.renderer.numMidEdges = simulator.numMidEdges;
+
     midPointsByteLength = numMidPoints * bytesPerPoint;
     springsByteLength = simulator.numEdges * bytesPerEdge;
 
@@ -529,21 +536,26 @@ function setMidEdges(simulator) {
         simulator.renderer.createBuffer( simulator.numMidEdges * bytesPerEdge , 'midSprings' ),
         simulator.renderer.createBuffer( simulator.numMidEdges * bytesPerEdge , 'midSpringsColorCoord' ),
     ] )
-    .spread( function( nextMidPointsBuffer , curMidPointsVBO , midSpringsVBO , midSpringsColorCoordVBO ) {
+    .spread( function ( nextMidPointsBuffer , curMidPointsVBO , midSpringsVBO , midSpringsColorCoordVBO ) {
         simulator.buffers.nextMidPoints = nextMidPointsBuffer;
         simulator.renderer.buffers.curMidPoints = curMidPointsVBO;
         simulator.renderer.buffers.midSprings = midSpringsVBO;
         simulator.renderer.buffers.midSpringsColorCoord = midSpringsColorCoordVBO;
         return Q.all( [
-            simulator.cl.createBufferGL(curMidPointsVBO, 'curMidPoints'),
-            simulator.cl.createBufferGL(midSpringsVBO, 'midSpringsPos'),
-            simulator.cl.createBufferGL(midSpringsColorCoordVBO, 'midSpringsColorCoord'),
+            simulator.cl.createBufferGL( curMidPointsVBO , 'curMidPoints' ),
+            simulator.cl.createBufferGL( midSpringsVBO , 'midSpringsPos' ),
+            simulator.cl.createBufferGL( midSpringsColorCoordVBO , 'midSpringsColorCoord' ),
         ] )
     } )
     .spread( function ( midPointsBuf , midSpringsBuf , midSpringsColorCoordBuf ) {
         simulator.buffers.midSpringsPos = midSpringsBuf;
         simulator.buffers.curMidPoints = midPointsBuf;
         simulator.buffers.midSpringsColorCoord = midSpringsColorCoordBuf;
+        setTimeSubset( simulator.renderer , simulator , simulator.timeSubset.relRange );
+        return simulator;
+    } )
+    .then( function () {
+        simulator.setMidEdgeColors(undefined);
     } )
     .fail( eh.makeErrorHandler('Failure in SimCL.setMidEdges') )
 }
@@ -769,6 +781,7 @@ function setMidEdgeColors(simulator, midEdgeColors) {
 
     if (!midEdgeColors) {
         debug('Using default midedge colors');
+        console.log("Num midpoints in simCL set midedgecolor", simulator.numMidPoints);
         midEdgeColors = new Uint32Array(4 * simulator.numMidPoints);
         numSegments = simulator.numSplits + 1;
         forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
@@ -910,6 +923,7 @@ function setTimeSubset(renderer, simulator, range) {
 
     var numEdges = endEdgeIdx - startEdgeIdx;
     var numSplits = simulator.controls.global.numSplits;
+    console.log("Num splits in timeset", numSplits, "range", range);
 
     simulator.timeSubset =
         {relRange: range, //%
@@ -923,7 +937,13 @@ function setTimeSubset(renderer, simulator, range) {
                 len: numEdges * 2          * (1 + numSplits)}};
 
     debug('subset args', {numPoints: renderer.numPoints, numEdges: renderer.numEdges, startEdgeIdx: startEdgeIdx, endIdx: endIdx, endEdgeIdx: endEdgeIdx, numSplits:numSplits});
-    debug('subset', simulator.timeSubset);
+    console.log('subset', simulator.timeSubset);
+    console.log('numMidpoints', simulator.numMidPoints);
+    console.log('nummidedges', simulator.numMidEdges);
+    console.log('numedges', simulator.numEdges);
+    console.log('rnumMidpoints', renderer.numMidPoints);
+    console.log('rnummidedges', renderer.numMidEdges);
+    console.log('rnumedges', renderer.numEdges);
 
 
     simulator.tickBuffers([

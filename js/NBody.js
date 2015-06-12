@@ -87,6 +87,7 @@ function updateSettings(graph, newCfg) {
         // Number of midpoints has changed. Reset edges.
         if (newCfg.simControls.ForceAtlas2Barnes.midpoints) {
             graph.simulator.controls.global.numSplits = cfg.ForceAtlas2Barnes.midpoints;
+            graph.simulator.numSplits = cfg.ForceAtlas2Barnes.midpoints;
             graph.simulator.setMidEdges();
         }
     }
