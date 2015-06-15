@@ -136,21 +136,23 @@ function requestWorker(args) {
 }
 
 
+// URL query params whitelist for the worker API
+var validWorkerParams = ['dataset', 'scene', 'device', 'controls',
+    'mapper', 'type', 'vendor', 'usertag'];
+
+
 function connect(vizType, urlParams) {
     debug('Connecting to visualization server');
     if (!vizType) {
         throw new Error('need vizType');
     }
 
-    // Get URL query params to send over to the worker via socket
-    var validWorkerParams = ['dataset', 'scene', 'device', 'controls',
-                        'mapper', 'type', 'vendor', 'usertag'];
-
     // For compatibility with old way of specifying dataset
     if ('datasetname' in urlParams) {
         urlParams.dataset = urlParams.datasetname;
     }
 
+    // Get URL query params to send over to the worker via socket
     var validUrlParams = _.chain(urlParams)
         .pick(validWorkerParams)
         .mapObject(function(val) { return encodeURIComponent(val); })
