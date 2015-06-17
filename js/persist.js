@@ -49,6 +49,11 @@ function checkWrite (snapshotName, vboPath, raw, buff) {
 }
 
 
+function uploadPublic (path, buffer) {
+    s3.upload(config.S3, config.BUCKET, {name: path}, buffer, {acl: 'public-read'});
+}
+
+
 module.exports =
     {
         saveConfig: function (snapshotName, renderConfig) {
@@ -90,30 +95,10 @@ module.exports =
         },
 
         saveCurrentVBO: function (snapshotName, vbos) {
-            debug('serializing current vbo');
-            ensurePath(baseDirPath);
-            fs.writeFileSync(baseDirPath + snapshotName + '.metadata.json', JSON.stringify(prevHeader));
-            var buffers = vbos.uncompressed;
-            var vboPath = baseDirPath + snapshotName + '.current.vbo';
-            if (_.isEmpty(buffers)) {
-                throw 'empty VBO buffers supplied';
-            }
-            var raw = buffers[buffers.length - 1];
-            var buff = new Buffer(raw.byteLength);
-            var arr = new Uint8Array(raw);
-            for (var j = 0; j < raw.byteLength; j++) {
-                buff[j] = raw[j];
-            }
-
-            fs.writeFileSync(vboPath, buff);
-
-            debug('writing', vboPath, raw.byteLength, buff.length);
-
-            if (CHECK_AT_EACH_SAVE) {
-                checkWrite(snapshotName, vboPath, raw, buff);
-            }
-
-            // TODO upload to S3
-            s3.upload(config.S3, config.BUCKET, {name: snapshotName}, buff);
+            debug('publishing current content to S3');
+            var snapshotPath = 'Static/' + snapshotName + '/';
+            uploadPublic(snapshotPath + 'metadata.json', JSON.stringify(prevHeader));
+            uploadPublic(snapshotPath + 'curPoints', vbos.curPoints);
+            uploadPublic(snapshotPath + 'springPos', vbos.springsPos);
         }
     };
