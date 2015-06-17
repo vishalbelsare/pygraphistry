@@ -23,6 +23,7 @@ var monkey          = require('./monkey.js');
 //defer choice to after urlParam
 var serverClient    = require('./client.js');
 var localClient     = require('./localclient.js');
+var staticClient    = require('./staticclient.js');
 
 
 console.warn('%cWarning: having the console open can slow down execution significantly!',
@@ -64,11 +65,18 @@ function isParamFalse (param) {
 
 
 debug('IS_OFFLINE', isParamTrue('offline'));
-var streamClient    = isParamTrue('offline') ? localClient : serverClient;
-if (isParamTrue('offline') && urlParams.basePath !== undefined) {
-    streamClient.basePath(decodeURIComponent(urlParams.basePath));
+debug('IS_STATIC', isParamTrue('static'));
+var streamClient = null;
+if (isParamTrue('offline')) {
+    streamClient = localClient;
+    if (urlParams.basePath !== undefined) {
+        streamClient.setPath(decodeURIComponent(urlParams.basePath));
+    }
+} else if (isParamTrue('static')) {
+    streamClient = staticClient;
+} else {
+    streamClient = serverClient;
 }
-
 
 //==================
 

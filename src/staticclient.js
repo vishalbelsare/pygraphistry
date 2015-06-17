@@ -1,10 +1,10 @@
 'use strict';
 
 /*
-    Local-only facet for client.js
+    Static-only facet for client.js
 */
 
-var debug        = require('debug')('graphistry:StreamGL:localclient');
+var debug        = require('debug')('graphistry:StreamGL:staticclient');
 var $            = window.$;
 var Rx           = require('rx');
                    require('./rx-jquery-stub');
@@ -15,8 +15,11 @@ var renderer     = require('./renderer.js');
 
 //======
 
-//can get reset by basePath()
-var BASE_PATH = '/graph/viz/facebook.';
+var BUCKET_REGION = 'us-west-1';
+var BUCKET_NAME = 'graphistry.data';
+var BUCKET_URL = 'https://s3-' + BUCKET_REGION + '.amazonaws.com/' + BUCKET_NAME;
+var BASE_URL = BUCKET_URL + '/Static/';
+var contentKey;
 
 //======
 
@@ -33,7 +36,7 @@ function makeFetcher () {
 
         //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
         var oReq = new XMLHttpRequest();
-        oReq.open('GET', BASE_PATH + bufferName + '.vbo', true);
+        oReq.open('GET', BASE_URL + bufferName + '.vbo', true);
         oReq.responseType = 'arraybuffer';
 
         var now = Date.now();
@@ -42,9 +45,9 @@ function makeFetcher () {
                 debug('got texture/vbo data', bufferName, Date.now() - now, 'ms');
 
                 var arrayBuffer = oReq.response; // Note: not oReq.responseText
-                var blength = bufferByteLengths[bufferName];
-                debug('Buffer length (%s): %d, %d', bufferName, blength, arrayBuffer.byteLength);
-                var trimmedArray = new Uint8Array(arrayBuffer, 0, blength);
+                var bufferLength = bufferByteLengths[bufferName];
+                debug('Buffer length (%s): %d, %d', bufferName, bufferLength, arrayBuffer.byteLength);
+                var trimmedArray = new Uint8Array(arrayBuffer, 0, bufferLength);
 
                 res.onNext(trimmedArray);
 
@@ -60,19 +63,12 @@ function makeFetcher () {
 }
 
 
-
-
-
-
 module.exports = {
 
-    setPath: function setPath(path) {
-        BASE_PATH = path;
-        return module.exports;
-    },
+    connect: function (vizType, urlParams) {
+        debug('connect', vizType, urlParams);
 
-    connect: function (vizType) {
-        debug('connect', vizType);
+        contentKey = urlParams.contentKey;
 
         return Rx.Observable.return({
             socket: {
@@ -87,7 +83,7 @@ module.exports = {
         debug('createRenderer');
 
         return $.ajaxAsObservable({
-                url: BASE_PATH + 'renderconfig.json',
+                url: BASE_URL + contentKey + '/renderconfig.json',
                 dataType: 'json'
             })
             .pluck('data')
@@ -103,7 +99,7 @@ module.exports = {
         var vboUpdates = new Rx.ReplaySubject(1);
         vboUpdates.onNext('init');
 
-        $.ajaxAsObservable({url: BASE_PATH + 'metadata.json', dataType: 'json'})
+        $.ajaxAsObservable({url: BASE_URL + contentKey + '/metadata.json', dataType: 'json'})
             .pluck('data')
             .do(function (data) {
                 debug('got metadata', data);
