@@ -10,24 +10,37 @@ var debug    = require('debug')('graphistry:common:s3');
 function upload(S3, bucket, metadata, binaryBuffer, params) {
     debug('Uploading binary blob', metadata.name);
 
-    var acl = params && params.acl;
+    var acl = params && params.acl,
+        compressed = true,
+        putParams = {
+            Bucket: bucket,
+            Key: metadata.name,
+            ACL: acl || 'private',
+            Metadata: metadata,
+            Body: binaryBuffer,
+            ServerSideEncryption: 'AES256'
+        };
 
-    return Q.nfcall(zlib.gzip, binaryBuffer)
-        .then(function (zipped) {
-            var putParams = {
-                Bucket: bucket,
-                Key: metadata.name,
-                ACL: acl || 'private',
-                Metadata: metadata,
-                Body: zipped,
-                ServerSideEncryption: 'AES256'
-            };
+    if (params && params.compressed !== undefined) {
+        compressed = params.compressed;
+    }
 
-            debug('Upload size', (zipped.length/1000).toFixed(1), 'KB');
-            return Q.nfcall(S3.putObject.bind(S3), putParams);
-        }).then(function () {
-            debug('Upload done', metadata.name);
-        });
+    if (compressed) {
+        return Q.nfcall(zlib.gzip, binaryBuffer)
+            .then(function (zipped) {
+                putParams.Body = zipped;
+                debug('Upload size', (putParams.Body.length / 1000).toFixed(1), 'KB');
+                return Q.nfcall(S3.putObject.bind(S3), putParams);
+            }).then(function () {
+                debug('Upload done', metadata.name);
+            });
+    } else {
+        debug('Upload size', (putParams.Body.length / 1000).toFixed(1), 'KB');
+        return Q.nfcall(S3.putObject.bind(S3), putParams)
+            .then(function () {
+                debug('Upload done', metadata.name);
+            });
+    }
 }
 
 module.exports = {
