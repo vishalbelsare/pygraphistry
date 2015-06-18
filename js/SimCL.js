@@ -567,31 +567,6 @@ function setMidEdges( simulator ) {
     .fail( eh.makeErrorHandler('Failure in SimCL.setMidEdges') )
 }
 
-//function getMidPoints(simulator, edges, forwardEdges, pointsHostBuffer) {
-    //var nDim = simulator.controls.global.dimensions.length;
-    //console.log(nDim);
-
-    //var numSplits = simulator.controls.global.numSplits;
-    //console.log(numSplits);
-    //var midPoints = new Float32Array((edges.length / 2) * numSplits * nDim || 1);
-    //return midPoints;
-    //if (numSplits) {
-        //for (var i = 0; i < edges.length; i+=2) {
-            //var src = forwardEdges.edgesTyped[i];
-            //var dst = forwardEdges.edgesTyped[i + 1];
-            //for (var d = 0; d < nDim; d++) {
-                //var start = pointsHostBuffer[(src * nDim) + d];
-                //var end = pointsHostBuffer[(dst * nDim) + d];
-                //var step = (end - start) / (numSplits + 1);
-                //for (var q = 0; q < numSplits; q++) {
-                    //midPoints[((((i/2) * numSplits) + q) * nDim) + d] = start + step * (q + 1);
-                //}
-            //}
-        //}
-    //}
-    //return midPoints;
-//}
-
 /**
  * Sets the edge list for the graph
  *
@@ -613,7 +588,6 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
     var nDim = simulator.controls.global.dimensions.length;
     var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
     var elementsPerWorkItem = 4;
-    console.log(simulator.controls);
     var midPoints = new Float32Array((unsortedEdges.length / 2) * simulator.numSplits * nDim || 1);
 
     if(forwardsEdges.edgesTyped.length < 1) {
@@ -788,7 +762,6 @@ function setMidEdgeColors(simulator, midEdgeColors) {
 
     if (!midEdgeColors) {
         debug('Using default midedge colors');
-        console.log("Num midpoints in simCL set midedgecolor", simulator.numMidPoints);
         midEdgeColors = new Uint32Array(4 * simulator.numMidPoints);
         numSegments = simulator.numSplits + 1;
         forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
@@ -930,7 +903,6 @@ function setTimeSubset(renderer, simulator, range) {
 
     var numEdges = endEdgeIdx - startEdgeIdx;
     var numSplits = simulator.controls.global.numSplits;
-    console.log("Num splits in timeset", numSplits, "range", range);
 
     simulator.timeSubset =
         {relRange: range, //%
@@ -944,13 +916,6 @@ function setTimeSubset(renderer, simulator, range) {
                 len: numEdges * 2          * (1 + numSplits)}};
 
     debug('subset args', {numPoints: renderer.numPoints, numEdges: renderer.numEdges, startEdgeIdx: startEdgeIdx, endIdx: endIdx, endEdgeIdx: endEdgeIdx, numSplits:numSplits});
-    console.log('subset', simulator.timeSubset);
-    console.log('numMidpoints', simulator.numMidPoints);
-    console.log('nummidedges', simulator.numMidEdges);
-    console.log('numedges', simulator.numEdges);
-    console.log('rnumMidpoints', renderer.numMidPoints);
-    console.log('rnummidedges', renderer.numMidEdges);
-    console.log('rnumedges', renderer.numEdges);
 
 
     simulator.tickBuffers([
