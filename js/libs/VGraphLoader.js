@@ -70,7 +70,7 @@ var attributeLoaders = function(graph) {
             default: graph.setMidEdgeColors,
             target: EDGE,
             values: undefined
-        }
+        },
         edgeColor2: {
             load: graph.setEdgeColors,
             type: 'number',
