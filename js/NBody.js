@@ -83,12 +83,26 @@ function updateSettings(graph, newCfg) {
         graph.simulator.setPhysics(cfg);
         graph.simulator.setLocks(cfg);
         graph.renderer.setVisible(cfg);
-
-        // Number of midpoints has changed. Reset edges.
-        if (newCfg.simControls.ForceAtlas2Barnes.midpoints) {
-            graph.simulator.controls.global.numSplits = cfg.ForceAtlas2Barnes.midpoints;
-            graph.simulator.numSplits = cfg.ForceAtlas2Barnes.midpoints;
-            graph.simulator.setMidEdges();
+        if (newCfg.simControls.EdgeBundling.hasOwnProperty('edgeBundling')) {
+            if (newCfg.simControls.EdgeBundling.edgeBundling) {
+                console.log("Switching to edge bundling");
+                graph.simulator.controls.locks.interpolateMidPoints = false;
+                graph.simulator.controls.locks.lockPoints = true;
+                graph.simulator.controls.locks.lockEdges = true;
+            }
+            if (!newCfg.simControls.EdgeBundling.edgeBundling) {
+                console.log("Switching to ForceAtlas2");
+                graph.simulator.controls.locks.interpolateMidPoints = true;
+                graph.simulator.controls.locks.lockPoints = false;
+                graph.simulator.controls.locks.lockEdges = false;
+            }
+        }
+        if (newCfg.simControls.EdgeBundling.hasOwnProperty('midpoints')) {
+            if (newCfg.simControls.EdgeBundling.midpoints) {
+                graph.simulator.controls.global.numSplits = cfg.EdgeBundling.midpoints;
+                graph.simulator.numSplits = cfg.EdgeBundling.midpoints;
+                return graph.simulator.setMidEdges();
+            }
         }
     }
 

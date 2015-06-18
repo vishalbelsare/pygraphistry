@@ -72,7 +72,6 @@ var uberControls = {
         {
             algo: forceAtlasBarnes,
             params: {
-                midpoints: new DiscreteParam('Splits', defaultNumSplits , 0, 16),
                 tau: new ContinuousParam('Precision vs. Speed', 10.0, 1.0, 25.0),
                 gravity: new ContinuousParam('Center Magnet', 1.0, 0.01, 100),
                 scalingRatio: new ContinuousParam('Expansion Ratio', 1.0, 0.01, 100),
@@ -86,17 +85,20 @@ var uberControls = {
         ,{
             algo: EdgeBundlingBarnes,
             params: {
+                edgeBundling: new BoolParam('Edge Bundling', false),
+                midpoints: new DiscreteParam('Splits', defaultNumSplits , 0, 32),
                 tau: new ContinuousParam('Speed', 0.5, 0.0000001, 1),
-                gravity: new ContinuousParam('Gravity', 0.020083175556898723, 0, 0.1),
-                charge: new ContinuousParam('Charge', -50, -100, -0.0000000000000001),
+                charge: new ContinuousParam('Charge', -5, -100, -0.0000000000000001),
                 springStrength: new ContinuousParam('Spring Strength', 100, 0, 200),
                 springDistance: new ContinuousParam('Spring Distance', 0.5, 0.0000001, 1),
-                scalingRatio: new ContinuousParam('Scaling', 1.0, 0.01, 100),
-                edgeInfluence: new DiscreteParam('Edge Influence', 1, 0, 5, 1),
+                // TODO : Remove these
+                gravity: new ContinuousParam('Center Magnet', 1.0, 0.01, 100),
+                scalingRatio: new ContinuousParam('Expansion Ratio', 1.0, 0.01, 100),
+                edgeInfluence: new DiscreteParam('Edge Influence', 0, 0, 5, 1),
                 preventOverlap: new BoolParam('Prevent Overlap', false),
-                strongGravity: new BoolParam('Strong Gravity', false),
+                strongGravity: new BoolParam('Compact Layout', false),
                 dissuadeHubs: new BoolParam('Dissuade Hubs', false),
-                linLog: new BoolParam('LinLog', false)
+                linLog: new BoolParam('Strong Separation (LinLog)', false)
             }
         }
     ],
