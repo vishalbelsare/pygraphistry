@@ -38,7 +38,7 @@ function midEdgeGather(clContext) {
       var numSprings = simulator.numEdges;
       this.gather.set({
         edges: simulator.buffers.forwardsEdges.buffer,
-        midPoints: simulator.buffers.nextMidPoints.buffer,
+        midPoints: simulator.buffers.curMidPoints.buffer,
         points: simulator.buffers.curPoints.buffer,
         numEdges: simulator.numEdges,
         numSplits: simulator.numSplits,

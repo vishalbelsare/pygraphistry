@@ -234,11 +234,10 @@ var compile = Q.promised(util.perf.bind(null, perf, 'Compiling Kernels', functio
         program.build([cl.device], '-I ' + includeDir + ' -cl-fast-relaxed-math');
     } catch (e) {
         try {
-        var log = program.getBuildInfo(cl.device, webcl.PROGRAM_BUILD_LOG)
-        console.log('Build Log: %o', log);
-        log.makeErrorHandler('OpenCL compilation error')(e);
+        var buildLog = program.getBuildInfo(cl.device, webcl.PROGRAM_BUILD_LOG)
+        eh.makeErrorHandler('OpenCL compilation error')(buildLog);
         } catch (e2) {
-          log.makeErrorHandler('OpenCL compilation failed, no build log possible')(e2);
+        eh.makeErrorHandler('OpenCL compilation failed, no build log possible')(e2);
         }
     }
 
@@ -257,7 +256,7 @@ var compile = Q.promised(util.perf.bind(null, perf, 'Compiling Kernels', functio
         return typeof kernels === "string" ? compiled.unknown : compiled;
 
     } catch (e) {
-        log.makeErrorHandler('Kernel creation error:', kernels)(e);
+        eh.makeErrorHandler('Kernel creation error:', kernels)(e);
     }
 }));
 
@@ -292,7 +291,7 @@ var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
             var global = [globalSize];
             kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, global, workgroup);
         })
-        .fail(log.makeErrorHandler('Kernel error'))
+        .fail(eh.makeErrorHandler('Kernel error'))
         .then(release.bind('', buffers))
         .then(function () { kernel.cl.queue.finish(); })
         .then(_.constant(kernel));
