@@ -13,7 +13,9 @@ var self = module.exports = {
         log: console.log,
         warn: console.warn,
         error: console.error,
-        fatal: console.error
+        fatal: console.error,
+        debug: console.log,
+        trace: console.log
     },
 
     usertag: 'unknown',
@@ -24,13 +26,16 @@ var self = module.exports = {
         self.moduleName = moduleName;
 
         if (config.BUNYAN_LOG) {
+            console.log(config.BUNYAN_LOG + " " + config.CONSOLE_DEBUG_LEVEL);
             self.logger = bunyan.createLogger({
                 name: moduleName,
                 streams: [
                     {
-                        path: config.BUNYAN_LOG
+                        path: config.BUNYAN_LOG,
+                        level: 10
                     },{
-                        stream: process.stdout
+                        stream: process.stdout,
+                        level: config.CONSOLE_DEBUG_LEVEL
                     }
                 ]
             });
@@ -62,6 +67,19 @@ var self = module.exports = {
         process.exit(1);
     },
 
+    //intern changes!!
+    //can we just import the entire debug module into here?
+    debug: function() {
+        var msg = nodeutil.format.apply(this, arguments);
+        self.makeHandler('DEBUG', msg, 'debug', false, chalk.inverse)();
+    },
+
+    trace: function() {
+        var msg = nodeutil.format.apply(this, arguments);
+        self.makeHandler('TRACE', msg, 'trace', false, chalk.bgYellow)();
+    },
+    //end intern changes
+
     warn: function () {
         var msg = nodeutil.format.apply(this, arguments);
         self.makeHandler('WARNING', msg, 'warn', false, chalk.yellow)(new Error());
@@ -84,7 +102,10 @@ var self = module.exports = {
         return function (err) {
             var payload = error2JSON(self, type, msg, err);
             if (self.logger !== undefined) {
-                self.logger[out]({content: payload})
+                self.logger[out]({content: payload});
+                // //logging to console for testing purposes
+                // var extra = payload.stack || payload.error || '';
+                // self.secretConsole[out](style(payload.type), payload.msg, extra);
             } else {
                 var extra = payload.stack || payload.error || '';
                 self.secretConsole[out](style(payload.type), payload.msg, extra);
