@@ -21,8 +21,14 @@ function upload(S3, bucket, metadata, binaryBuffer, params) {
             ServerSideEncryption: 'AES256'
         };
 
-    if (params && params.compressed !== undefined) {
-        compressed = params.compressed;
+    if (params && !_.isEmpty(params)) {
+        if (params.compressed !== undefined) {
+            compressed = params.compressed;
+        }
+
+        if (params['ContentType']) {
+            putParams['ContentType'] = params['ContentType'];
+        }
     }
 
     if (compressed) {
