@@ -49,8 +49,11 @@ function checkWrite (snapshotName, vboPath, raw, buff) {
 }
 
 
-function uploadPublic (path, buffer) {
-    s3.upload(config.S3, config.BUCKET, {name: path}, buffer, {acl: 'public-read', compressed: false});
+function uploadPublic (path, buffer, params) {
+    var uploadParams = !_.isEmpty(params) ? _.clone(params) : {};
+    uploadParams.acl = 'public-read';
+    uploadParams.compressed = false;
+    s3.upload(config.S3, config.BUCKET, {name: path}, buffer, uploadParams);
 }
 
 
@@ -97,8 +100,8 @@ module.exports =
         publishStaticContents: function (snapshotName, compressedVBOs, renderConfig) {
             debug('publishing current content to S3');
             var snapshotPath = 'Static/' + snapshotName + '/';
-            uploadPublic(snapshotPath + 'renderconfig.json', JSON.stringify(renderConfig));
-            uploadPublic(snapshotPath + 'metadata.json', JSON.stringify(prevHeader));
+            uploadPublic(snapshotPath + 'renderconfig.json', JSON.stringify(renderConfig), {ContentType: 'application/json'});
+            uploadPublic(snapshotPath + 'metadata.json', JSON.stringify(prevHeader), {ContentType: 'application/json'});
             uploadPublic(snapshotPath + 'curPoints', compressedVBOs.curPoints);
             uploadPublic(snapshotPath + 'springPos', compressedVBOs.springsPos);
         }
