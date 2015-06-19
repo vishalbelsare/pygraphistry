@@ -16,6 +16,7 @@ Metadata should be set as a variable storing an object with fields, e.g. {"uid":
 Files that use require('logger') should all use the same metadata object, which is where log.child comes in!
 ***MAKE SURE THAT***
 You NEVER reassign metadata to a new object! You may only mutate it, e.g. redefine fields, add fields, or delete fields. 
+Mutate the metadata using addMetadataField
 
 3. Control location + level of the logger. Probably from CLI. Example can be from log.js, where you pass in this info as JSON.
 e.g. '{"BUNYAN_LOG":"/This/Directory/Foo/Bar"}'
@@ -83,8 +84,8 @@ var parentLogger = bunyan.createLogger({name: "graphistry", metadata: {foo: "md"
 
 module.exports = {
     createLogger: function(config, name) {
-        var CONSOLE_DEBUG_LEVEL = parseInt(process.env.CONSOLE_DEBUG_LEVEL) || config.CONSOLE_DEBUG_LEVEL || parentLogger.level;
-        // console.log(CONSOLE_DEBUG_LEVEL === 10);
+        var CONSOLE_DEBUG_LEVEL = parseInt(process.env.CONSOLE_DEBUG_LEVEL) || config.CONSOLE_DEBUG_LEVEL || function() {}; //empty function prevents logger from logging to console
+        // console.log(CONSOLE_DEBUG_LEVEL);
         if (config.BUNYAN_LOG) {
             var l = parentLogger.child({
                 module: name,
