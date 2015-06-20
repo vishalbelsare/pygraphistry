@@ -100,7 +100,7 @@ module.exports = {
             // });
             return l;
         }
-        return parentLogger.child({module: name});
+        return parentLogger.child({module: name, level: CONSOLE_DEBUG_LEVEL});
     },
     addMetadataField: function(metadata) {
         if(!_.isObject(metadata)) { throw new Error("metadata must be an object"); }
