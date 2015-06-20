@@ -8,6 +8,7 @@ var fs = require('fs');
 var util = require('./util');
 
 var cljs = require('./cl.js');
+var opencl = require('node-opencl');
 var config = require('config')();
 
 var log         = require('common/logger.js');
@@ -28,20 +29,21 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     //TODO: Alternative way of doing this, since we aren't using debug module anymore
     // Set synchronous based on debug value
     var synchronous = false;
-    if (process.env.DEBUG && process.env.DEBUG.indexOf('perf') != -1) {
-         logger.trace('Kernel ' + name + ' is synchronous because DEBUG=perf');
-         synchronous = true;
+    if (process.env.DEBUG && process.env.DEBUG.indexOf('perf') !== -1) {
+        logger.trace('Kernel ' + name + ' is synchronous because DEBUG=perf');
+        synchronous = true;
     }
 
     // For gathering performance data
     this.timings = [];
     this.totalRuns = 0;
-    var maxTimings = 100
+    var maxTimings = 100;
 
     // Sanity Checks
     _.each(argNames, function (arg) {
-        if (!(arg in argTypes))
+        if (!(arg in argTypes)) {
             logger.die('In Kernel %s, argument %s has no type', name, arg);
+        }
     });
 
     function isDefine(arg) {
@@ -164,19 +166,20 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     function call(kernel, workItems, buffers, workGroupSize) {
         // TODO: Consider acquires and releases of buffers.
 
+        // why doesn't this call the cljs call function?
+
         var queue = clContext.queue;
         logger.trace('Enqueuing kernel %s', that.name, kernel);
         var start = process.hrtime();
-        queue.enqueueNDRangeKernel(kernel, null, workItems, workGroupSize || null);
+        opencl.enqueueNDRangeKernel(queue, kernel, null, workItems, workGroupSize || null);
         if (synchronous) {
             logger.trace('Waiting for kernel to finish');
-            clContext.queue.finish();
+            opencl.finish(queue);
             var diff = process.hrtime(start);
             that.timings[that.totalRuns % maxTimings] = (diff[0] * 1000 + diff[1] / 1000000);
         }
         that.totalRuns++;
         return Q(that);
-
     }
 
     // [Int] * [String] -> Promise[Kernel]

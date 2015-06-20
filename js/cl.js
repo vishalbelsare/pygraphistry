@@ -12,7 +12,8 @@ var logger      = log.createLogger('graph-viz:cl:cl');
 var perf        = require('common/perfStats.js').createPerfMonitor();
 
 logger.trace("Initializing node-webcl flavored cl.js");
-var webcl = require('node-webcl');
+//var webcl = require('node-webcl');
+var opencl = require('node-opencl');
 
 var types = {
     char_t: webcl.type.CHAR,
@@ -38,11 +39,11 @@ var types = {
 var defaultVendor = 'nvidia';
 
 var clDeviceType = {
-    'cpu': webcl.DEVICE_TYPE_CPU,
-    'gpu': webcl.DEVICE_TYPE_GPU,
-    'all': webcl.DEVICE_TYPE_ALL,
-    'any': webcl.DEVICE_TYPE_ALL,
-    'default': webcl.DEVICE_TYPE_ALL
+    'cpu': opencl.DEVICE_TYPE_CPU,
+    'gpu': opencl.DEVICE_TYPE_GPU,
+    'all': opencl.DEVICE_TYPE_ALL,
+    'any': opencl.DEVICE_TYPE_ALL,
+    'default': opencl.DEVICE_TYPE_ALL
 };
 
 
@@ -65,46 +66,48 @@ var create = Q.promised(function(renderer, device, vendor) {
 
 
 function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
-    if (typeof webcl === "undefined") {
-        throw new Error("WebCL does not appear to be supported in your browser");
-    } else if (webcl === null) {
-        throw new Error("Can't access WebCL object");
+    if (opencl === undefined) {
+        throw new Error("No OpenCL found.");
+    }
+    if (opencl === null) {
+        throw new Error("Can't access OpenCL object");
     }
 
-    var platforms = webcl.getPlatforms();
+    var platforms = opencl.getPlatformIDs();
     if (platforms.length === 0) {
-        throw new Error("Can't find any WebCL platforms");
+        throw new Error("Can't find any OpenCL platforms");
     }
     logger.debug("Found %d OpenCL platforms; using first", platforms.length);
     var platform = platforms[0];
 
-    var clDevices = platform.getDevices(DEVICE_TYPE);
+    var clDevices = opencl.getDeviceIds(platform, DEVICE_TYPE);
+    //var clDevices = platform.getDevices(DEVICE_TYPE);
 
     logger.debug("Devices found on platform: %d", clDevices.length);
     if(clDevices.length < 1) {
-        throw new Error("No WebCL devices of specified type (" + DEVICE_TYPE + ") found")
+        throw new Error("No OpenCL devices of specified type (" + DEVICE_TYPE + ") found");
     }
 
     var devices = clDevices.map(function(d) {
-    // var devices = platform.getDevices(DEVICE_TYPE).map(function(d) {
         logger.trace("Found device %s", nodeutil.inspect(d, {depth: null, showHidden: true, colors: true}));
 
         var typeToString = function (v) {
-            return v === 2 ? 'CPU'
-                : v === 4 ? 'GPU'
-                : v === 8 ? 'ACCELERATOR'
+            return v === opencl.DEVICE_TYPE_CPU ? 'CPU'
+                : v === opencl.DEVICE_TYPE_GPU ? 'GPU'
+                : v === opencl.DEVICE_TYPE_ACCELERATOR ? 'ACCELERATOR'
+                : v === opencl.DEVICE_TYPE_DEFAULT ? 'DEFAULT'
                 : ('unknown type: ' + v);
-        }
+        };
 
-        var computeUnits = d
-            .getInfo(webcl.DEVICE_MAX_WORK_ITEM_SIZES)
+        // TODO: this is definitely not the number of compute units
+        var computeUnits = opencl.getDeviceInfo(d, opencl.DEVICE_MAX_WORK_ITEM_SIZES)
             .reduce(function(a, b) {
                 return a * b;
             });
 
         return {
             device: d,
-            deviceType: typeToString(d.getInfo(webcl.DEVICE_TYPE)),
+            deviceType: typeToString(opencl.getDeviceInfo(d, opencl.DEVICE_TYPE)),
             computeUnits: computeUnits
         };
     });
@@ -113,50 +116,41 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
         vendor = defaultVendor;
     }
 
+    // sort devices first by "nvidia" and then by "computeUnits"
     devices.sort(function(a, b) {
-        var nameA = a.device.getInfo(webcl.DEVICE_VENDOR).toLowerCase();
-        var nameB = b.device.getInfo(webcl.DEVICE_VENDOR).toLowerCase();
+        // FIXME: the compute units are still calculated oddly
+        var nameA = opencl.getDeviceInfo(a.device, opencl.DEVICE_VENDOR).toLowerCase();
+        var nameB = opencl.getDeviceInfo(b.device, opencl.DEVICE_VENDOR).toLowerCase();
 
-        if (nameA.indexOf(vendor) != -1 && nameB.indexOf(vendor) == -1) {
+        if (nameA.indexOf(vendor) !== -1 && nameB.indexOf(vendor) === -1) {
             return -1;
-        } else if (nameB.indexOf(vendor) != -1 && nameA.indexOf(vendor) == -1) {
-            return 1;
-        } else {
-            return b.computeUnits - a.computeUnits;
         }
+        if (nameB.indexOf(vendor) !== -1 && nameA.indexOf(vendor) === -1) {
+            return 1;
+        }
+        return b.computeUnits - a.computeUnits;
     });
 
 
     var deviceWrapper = null, err = null;
-
-    for (var i = 0; i < devices.length && deviceWrapper === null; i++) {
-        var wrapped = devices[i];
+    var i;
+    var wrapped;
+    var clErrorHandler = function(){
+        // TODO
+    };
+    for (i = 0; i < devices.length && deviceWrapper === null; i++) {
+        wrapped = devices[i];
 
         try {
-            if(renderer.gl !== null) {
-                logger.trace('Device with gl');
-                if(wrapped.device.getInfo(webcl.DEVICE_EXTENSIONS).search(/gl.sharing/i) == -1) {
-                    logger.trace("Skipping device %d due to no sharing. %o", i, wrapped);
-                    continue;
-                }
-
-                wrapped.context = webcl.createContext({
-                    devices: [ wrapped.device ],
-                    shareGroup: renderer.gl,
-                    platform: platform
-                });
-            } else {
-                wrapped.context = webcl.createContext({
-                    devices: [ wrapped.device ],
-                    platform: platform
-                });
-            }
+            wrapped.context = opencl.createContext([opencl.CONTEXT_PLATFORM, platform],
+                                                   [wrapped.device], clErrorHandler,
+                                                   clErrorHandler);
 
             if (wrapped.context === null) {
                 throw new Error("Error creating WebCL context");
             }
 
-            wrapped.queue = wrapped.context.createCommandQueue(wrapped.device, 0);
+            wrapped.queue = opencl.createCommandQueue(wrapped.context, wrapped.device, 0);
             deviceWrapper = wrapped;
         } catch (e) {
             logger.trace("Skipping device %d due to error %o. %o", i, e, wrapped);
@@ -176,7 +170,7 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
     ];
 
     var props = _.object(attribs.map(function (name) {
-        return [name, deviceWrapper.device.getInfo(webcl['DEVICE_' + name])];
+        return [name, opencl.getDeviceInfo(deviceWrapper.device, opencl['DEVICE_' + name])];
     }));
     props.TYPE = deviceWrapper.deviceType;
 
@@ -193,13 +187,13 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
 
     var res = {
         renderer: renderer,
-        cl: webcl,
+        cl: opencl,
         context: deviceWrapper.context,
         device: deviceWrapper.device,
         queue: deviceWrapper.queue,
         deviceProps: props,
-        maxThreads: deviceWrapper.device.getInfo(webcl.DEVICE_MAX_WORK_GROUP_SIZE),
-        numCores: deviceWrapper.device.getInfo(webcl.DEVICE_MAX_COMPUTE_UNITS)
+        maxThreads: opencl.getDeviceInfo(deviceWrapper.device, opencl.DEVICE_MAX_WORK_GROUP_SIZE),
+        numCores: opencl.getDeviceInfo(deviceWrapper.device, opencl.DEVICE_MAX_COMPUTE_UNITS)
     };
 
     //FIXME ??
@@ -208,8 +202,7 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
     res.createBufferGL = createBufferGL.bind(this, res);
 
     return res;
-
-};
+}
 
 
 /**
@@ -231,37 +224,33 @@ var compile = Q.promised(function (cl, source, kernels) {
 
     var program;
     try {
-        program = cl.context.createProgram(source);
+        // compile and link program
+        program = opencl.createProgramWithSource(cl.context, source);
         // Note: Include dir is not official webcl, won't work in the browser.
         var includeDir = path.resolve(__dirname, '..', 'kernels');
-        program.build([cl.device], '-I ' + includeDir + ' -cl-fast-relaxed-math');
+        opencl.BuildProgram(program, [cl.device], '-I ' + includeDir + ' -cl-fast-relaxed-math');
+
+        // create kernels
+        try {
+            var kernelsObjs = typeof kernels === "string" ? [ 'unknown' ] : kernels;
+            var compiled = _.object(kernelsObjs.map(function (kernelName) {
+                    debug('    Compiling ', kernelName);
+                    return [kernelName, opencl.createKernel(program, kernelName)];
+            }));
+            debug('  Compiled kernels');
+
+            return typeof kernels === "string" ? compiled.unknown : compiled;
+        } catch (e) {
+            eh.makeErrorHandler('Kernel creation error:', kernels)(e);
+        }
     } catch (e) {
         try {
-            var buildLog = program.getBuildInfo(cl.device, webcl.PROGRAM_BUILD_LOG)
-            log.makeQErrorHandler(logger, 'OpenCL compilation error')(buildLog);
+          var log = opencl.getProgramBuildInfo(program, cl.device, opencl.PROGRAM_BUILD_LOG);
+          console.log('Build Log: %o', log);
+          log.makeQErrorHandler(logger, 'OpenCL compilation error')(log);
         } catch (e2) {
             log.makeQErrorHandler(logger, 'OpenCL compilation failed, no build log possible')(e2);
         }
-    }
-
-    try {
-
-        var kernelsObjs = typeof kernels === "string" ? [ 'unknown' ] : kernels;
-
-        var compiled = _.object(kernelsObjs.map(function (kernelName) {
-                logger.trace('    Compiling ', kernelName);
-                return [kernelName, program.createKernel(kernelName)];
-        }));
-
-
-        logger.trace('  Compiled kernels');
-
-        perf.endTiming('graph-viz:cl:compilekernel', true);
-        return typeof kernels === "string" ? compiled.unknown : compiled;
-
-    } catch (e) {
-        perf.endTiming('graph-viz:cl:compilekernel');
-        log.makeQErrorHandler(logger, 'Kernel creation error:', kernels)(e);
     }
 });
 
@@ -288,28 +277,37 @@ var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
     return acquire(buffers)
         .then(function () {
             var workgroup;
-            if (localSize === undefined) {
+            if (localSize === undefined || localSize === null) {
                 workgroup = null;
             } else {
                 workgroup = [localSize];
             }
             var global = [globalSize];
-            kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, global, workgroup);
+            // TODO: passing `null` might a problem with node-opencl
+            opencl.enqueueNDRangeKernel(kernel.cl.queue, kernel.kernel, null, global, workgroup);
         })
         .fail(log.makeQErrorHandler(logger, 'Kernel error'))
-        .then(release.bind('', buffers))
-        .then(function () { kernel.cl.queue.finish(); })
+        // TODO: need GL buffer interoperability?
+        //.then(release.bind('', buffers)) // Release of GL buffers
+        .then(function () {
+            // wait for kernel to finish
+            // TODO: isn't this also called somewhere else?
+            opencl.Finish(kernel.cl.queue);
+        })
         .then(_.constant(kernel));
 });
 
+var finish = function(queue) {
+    opencl.Finish(queue);
+};
 
 var createBuffer = Q.promised(function(cl, size, name) {
     logger.debug("Creating buffer %s, size %d", name, size);
 
-    var buffer = cl.context.createBuffer(cl.cl.MEM_READ_WRITE, size);
+    var buffer = opencl.createBuffer(cl.context, opencl.MEM_READ_WRITE, size);
 
     if (buffer === null) {
-        throw new Error("Could not create the WebCL buffer");
+        throw new Error("Could not create the OpenCL buffer");
     }
 
     var bufObj = {
@@ -317,6 +315,8 @@ var createBuffer = Q.promised(function(cl, size, name) {
         "buffer": buffer,
         "cl": cl,
         "size": size,
+        // FIXME: acquire and release could be removed after GL dependencies are
+        //        scraped
         "acquire": function() {
             return Q();
         },
@@ -325,7 +325,8 @@ var createBuffer = Q.promised(function(cl, size, name) {
         }
     };
     bufObj.delete = Q.promised(function() {
-        buffer.release();
+        //buffer.release();
+        opencl.ReleaseMemObject(buffer);
         bufObj.size = 0;
         return null;
     });
@@ -358,50 +359,52 @@ function createBufferGL(cl, vbo, name) {
             });
     }
 
-    var deferred = Q.defer();
+    throw new Error("shared GL/CL buffers not supported by node-opencl");
 
-    var buffer = cl.context.createFromGLBuffer(cl.cl.MEM_READ_WRITE, vbo.buffer);
+    // var deferred = Q.defer();
 
-    if (buffer === null) {
-        deferred.reject(new Error("Could not create WebCL buffer from WebGL buffer"))
-    } else {
-        if (!buffer.getInfo) { logger.debug("WARNING: no getInfo() available on buffer %s", name); }
+    // var buffer = cl.context.createFromGLBuffer(cl.cl.MEM_READ_WRITE, vbo.buffer);
 
-        var bufObj = {
-            "name": name,
-            "buffer": buffer,
-            "cl": cl,
-            "size": buffer.getInfo ? buffer.getInfo(cl.cl.MEM_SIZE) : vbo.len,
-            "acquire": Q.promised(function() {
-                cl.renderer.finish();
-                cl.queue.enqueueAcquireGLObjects([buffer]);
+    // if (buffer === null) {
+    //     deferred.reject(new Error("Could not create WebCL buffer from WebGL buffer"))
+    // } else {
+    //     if (!buffer.getInfo) { logger.debug("WARNING: no getInfo() available on buffer %s", name); }
 
-            }),
-            "release": Q.promised(function() {
-                cl.queue.enqueueReleaseGLObjects([buffer]);
-                cl.queue.finish();
-                cl.renderer.finish();
-            })
-        };
+    //     var bufObj = {
+    //         "name": name,
+    //         "buffer": buffer,
+    //         "cl": cl,
+    //         "size": buffer.getInfo ? buffer.getInfo(cl.cl.MEM_SIZE) : vbo.len,
+    //         "acquire": Q.promised(function() {
+    //             cl.renderer.finish();
+    //             cl.queue.enqueueAcquireGLObjects([buffer]);
 
-        bufObj.delete = Q.promised(function() {
-            return bufObj.release()
-            .then(function() {
-                bufObj.release();
-                bufObj.size = 0;
-                return null;
-            });
-        });
+    //         }),
+    //         "release": Q.promised(function() {
+    //             cl.queue.enqueueReleaseGLObjects([buffer]);
+    //             cl.queue.finish();
+    //             cl.renderer.finish();
+    //         })
+    //     };
 
-        bufObj.write = write.bind(this, bufObj);
-        bufObj.read = read.bind(this, bufObj);
-        bufObj.copyInto = copyBuffer.bind(this, cl, bufObj);
+    //     bufObj.delete = Q.promised(function() {
+    //         return bufObj.release()
+    //         .then(function() {
+    //             bufObj.release();
+    //             bufObj.size = 0;
+    //             return null;
+    //         });
+    //     });
 
-        logger.trace("Created buffer");
-        deferred.resolve(bufObj)
-    }
+    //     bufObj.write = write.bind(this, bufObj);
+    //     bufObj.read = read.bind(this, bufObj);
+    //     bufObj.copyInto = copyBuffer.bind(this, cl, bufObj);
 
-    return deferred.promise;
+    //     logger.trace("Created buffer");
+    //     deferred.resolve(bufObj)
+    // }
+
+    // return deferred.promise;
 }
 
 
@@ -410,7 +413,7 @@ var copyBuffer = Q.promised(function (cl, source, destination) {
         source.name, source.size, destination.name, destination.size);
     return acquire([source, destination])
         .then(function () {
-            cl.queue.enqueueCopyBuffer(source.buffer, destination.buffer, 0, 0, Math.min(source.size, destination.size));
+            opencl.enqueueCopyBuffer(cl.queue, source.buffer, destination.buffer, 0, 0, Math.min(source.size, destination.size));
         })
         // .then(function () {
         //     cl.queue.finish();
@@ -421,9 +424,10 @@ var copyBuffer = Q.promised(function (cl, source, destination) {
 
 var write = Q.promised(function write(buffer, data) {
     logger.trace('Writing to buffer', buffer.name, buffer.size, 'bytes');
+    // TODO acquire not needed if GL is dropped
     return buffer.acquire()
         .then(function () {
-            buffer.cl.queue.enqueueWriteBuffer(buffer.buffer, true, 0, data.byteLength, data);
+            opencl.enqueueWriteBuffer(buffer.cl.queue, buffer.buffer, true, 0, data.byteLength, data);
             return buffer.release();
         })
         .then(function() {
@@ -441,7 +445,8 @@ var read = Q.promised(function (buffer, target, optStartIdx, optLen) {
             logger.trace('Reading Buffer', buffer.name);
             var start = Math.min(optStartIdx || 0, buffer.size);
             var len = optLen !== undefined ? optLen : (buffer.size - start);
-            buffer.cl.queue.enqueueReadBuffer(buffer.buffer, true, start, len, target);
+            opencl.enqueueReadBuffer(buffer.cl.queue, buffer.buffer, true, start, len, target);
+            // TODO acquire and release not needed if GL is dropped
             return buffer.release();
         })
         .then(function() {
