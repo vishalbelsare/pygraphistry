@@ -89,11 +89,13 @@ module.exports = {
             .pluck('data')
             .map(function (data) {
                 debug('got', data);
-                return renderer.init(data, canvas);
+                var renderState = renderer.init(data, canvas);
+                debug('Renderer created');
+                return renderState;
             });
     },
 
-    handleVboUpdates: function (socket, renderState) {
+    handleVboUpdates: function (socket, uri, renderState) {
         debug('handle vbo updates');
 
         var vboUpdates = new Rx.ReplaySubject(1);

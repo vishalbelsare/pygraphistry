@@ -97,7 +97,7 @@ module.exports = {
             });
     },
 
-    handleVboUpdates: function (socket, renderState) {
+    handleVboUpdates: function (socket, uri, renderState) {
         debug('handle vbo updates');
 
         var vboUpdates = new Rx.ReplaySubject(1);
