@@ -62,8 +62,11 @@ function defaults() {
 
         BUNYAN_LOG: undefined,
 
+        //minimum level of messages you'd want going into bunyan log files
+        BUNYAN_DEBUG_LEVEL: undefined,
         //minimum level of messages you'd want going into stdout
         CONSOLE_DEBUG_LEVEL: undefined,
+
 
         // This string is prefixed to all Graphistry routes. For example, if BASE_URL is '/foo',
         // then central will append '/vizaddr' to get the route it will listen for viz server
