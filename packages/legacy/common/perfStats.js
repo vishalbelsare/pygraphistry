@@ -1,6 +1,5 @@
 var statsd = require('node-statsd');
 
-
 // Timing: sends a timing command with the specified milliseconds
 function timing() {
   return;
@@ -43,16 +42,18 @@ function unique() {
 // client.unique('my_unique', 'foobarbaz');
 
 function createPerfMonitor() {
-  return;
+  return {
+    timing: timing,
+    increment: increment,
+    decrement: decrement,
+    histogram: histogram,
+    gauge: gauge,
+    set: set,
+    unique: unique,
+    createPerfMonitor: createPerfMonitor
+  };
 }
 
 module.exports = {
-  timing: timing,
-  increment: increment,
-  decrement: decrement,
-  histogram: histogram,
-  gauge: gauge,
-  set: set,
-  unique: unique,
   createPerfMonitor: createPerfMonitor
 }
