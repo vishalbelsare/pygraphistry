@@ -63,9 +63,9 @@ function defaults() {
         BUNYAN_LOG: undefined,
 
         //minimum level of messages you'd want going into bunyan log files
-        BUNYAN_DEBUG_LEVEL: undefined,
+        BUNYAN_DEBUG_LEVEL: 10,
         //minimum level of messages you'd want going into stdout
-        CONSOLE_DEBUG_LEVEL: undefined,
+        CONSOLE_DEBUG_LEVEL: 30,
 
 
         // This string is prefixed to all Graphistry routes. For example, if BASE_URL is '/foo',
