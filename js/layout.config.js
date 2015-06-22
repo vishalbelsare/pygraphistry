@@ -7,8 +7,7 @@ var ForceAtlas2         = require('./forceatlas2.js'),
     ForceAtlas2Fast     = require('./forceatlas2fast.js'),
     forceAtlasBarnes    = require('./forceatlasbarnes.js'),
     GaussSeidel         = require('./gaussseidel.js'),
-    EdgeBundling        = require('./edgebundling.js'),
-    EdgeBundlingBarnes        = require('./edgebundlingbarnes.js');
+    EdgeBundling       = require('./kd-edgebundling.js');
 
 var SIMULATION_TIME = 100;
 
@@ -83,7 +82,7 @@ var uberControls = {
             }
         }
         ,{
-            algo: EdgeBundlingBarnes,
+            algo: EdgeBundling,
             params: {
                 edgeBundling: new BoolParam('Edge Bundling', false),
                 midpoints: new DiscreteParam('Splits', defaultNumSplits , 0, 32),

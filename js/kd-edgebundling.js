@@ -11,16 +11,15 @@ var _          = require('underscore'),
     FaSwingsKernel = require('./javascript_kernels/faSwingsKernel.js'),
     IntegrateMidPointsKernel = require('./javascript_kernels/integrateMidPointsKernel.js'),
     InterpolateMidPoints = require('./javascript_kernels/interpolateMidpoints.js'),
-    //integrateKernel = require('./javascript_kernels/integrateKernel.js'),
-    EbBarnesKernelSeq = require('./javascript_kernels/ebBarnesKernelSeq.js'),
+    MidpointForces = require('./javascript_kernels/kd-MidpointForces.js'),
     MidEdgeGather = require('./javascript_kernels/midEdgeGather.js');
 
 
 function EdgeBundling(clContext) {
     LayoutAlgo.call(this, EdgeBundling.name);
 
-    debug('Creating GaussSeidelBarnes kernels');
-    this.ebBarnesKernelSeq = new EbBarnesKernelSeq(clContext);
+    debug('Creating edge bundling kernels');
+    this.MidpointForces= new MidpointForces(clContext);
 
     this.ebMidsprings = new Kernel('gaussSeidelMidsprings', EdgeBundling.argsMidsprings,
                                    EdgeBundling.argsType, 'edgeBundling.cl', clContext);
@@ -33,9 +32,9 @@ function EdgeBundling(clContext) {
 
     this.midEdgeGather = new MidEdgeGather(clContext);
 
-    this.kernels = this.kernels.concat([this.ebBarnesKernelSeq.toBarnesLayout, this.ebBarnesKernelSeq.boundBox,
-                                        this.ebBarnesKernelSeq.buildTree, this.ebBarnesKernelSeq.computeSums,
-                                        this.ebBarnesKernelSeq.sort, this.ebBarnesKernelSeq.calculateMidPoints,
+    this.kernels = this.kernels.concat([this.MidpointForces.toBarnesLayout, this.MidpointForces.boundBox,
+                                        this.MidpointForces.buildTree, this.MidpointForces.computeSums,
+                                        this.MidpointForces.sort, this.MidpointForces.calculateMidPoints,
                                         this.ebMidsprings, this.integrateMidPoints.faIntegrate, this.interpolateMidPoints.interpolate]);
 }
 EdgeBundling.prototype = Object.create(LayoutAlgo.prototype);
@@ -78,7 +77,7 @@ EdgeBundling.prototype.setPhysics = function (cfg) {
     LayoutAlgo.prototype.setPhysics.call(this, cfg);
 
     // get the flags from previous iteration
-    flags = this.ebBarnesKernelSeq.toBarnesLayout.get('flags');
+    flags = this.MidpointForces.toBarnesLayout.get('flags');
     flagNames = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'];
 
     _.each(cfg, function (val, flag) {
@@ -96,7 +95,7 @@ EdgeBundling.prototype.setPhysics = function (cfg) {
         }
     });
 
-    this.ebBarnesKernelSeq.setPhysics(flags);
+    this.MidpointForces.setPhysics(flags);
     this.integrateMidPoints.setPhysics(flags);
     //this.edgeKernelSeq.setPhysics(flags);
 };
@@ -227,7 +226,7 @@ EdgeBundling.prototype.setEdges = function (simulator) {
     workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps, workGroupSize);
 
     return setupTempLayoutBuffers(simulator).then(function (tempLayoutBuffers) {
-        that.ebBarnesKernelSeq.setMidPoints(simulator, tempLayoutBuffers, warpsize, workItems);
+        that.MidpointForces.setMidPoints(simulator, tempLayoutBuffers, warpsize, workItems);
         that.faSwingsKernel.setMidPoints(simulator, tempLayoutBuffers);
 
         that.ebMidsprings.set({
@@ -331,7 +330,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
             };
 
             body = function () {
-                return that.ebBarnesKernelSeq.execKernels(simulator, stepNumber, workItems, midpointIndex)
+                return that.MidpointForces.execKernels(simulator, stepNumber, workItems, midpointIndex)
                     .then(function () {
                         midpointIndex = midpointIndex + 1;
                     });
