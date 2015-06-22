@@ -1,4 +1,3 @@
-var statsd = require('node-statsd');
 
 // Timing: sends a timing command with the specified milliseconds
 function timing() {
