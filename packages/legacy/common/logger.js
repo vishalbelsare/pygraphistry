@@ -23,16 +23,9 @@ e.g. '{"BUNYAN_LOG":"/This/Directory/Foo/Bar"}'
 
 **/
 
-
 var bunyan = require('bunyan');
 var _ = require('underscore');
-var md = {};
-
-// var parentLogger = bunyan.createLogger({
-//     name: name,
-//     serializers: {metadata: function() { return md; }}
-// });
-// l.fields = _.extend({}, l.fields, {metadata: {}});
+var config = require('../config')();
 
 //////////Error handler/serializer from bunyan, modified for our needs
 /*
@@ -78,29 +71,34 @@ var errSerializer = bunyan.stdSerializers.err = function err(err) {
     return obj;
 };
 
+var CONSOLE_DEBUG_LEVEL = parseInt(process.env.CONSOLE_DEBUG_LEVEL) || config.CONSOLE_DEBUG_LEVEL || 30; //empty function prevents logger from logging to console
+var BUNYAN_DEBUG_LEVEL = parseInt(process.env.BUNYAN_DEBUG_LEVEL) || config.BUNYAN_DEBUG_LEVEL || 10; //defaults to 10 unless specified in command line or config
 
+var parentLogger = config.BUNYAN_LOG !== undefined ? 
+    bunyan.createLogger({
+        name: "graphistry", 
+        metadata: {},
+        level: CONSOLE_DEBUG_LEVEL,
+        streams: [{
+            path: config.BUNYAN_LOG,
+            level: BUNYAN_DEBUG_LEVEL,
+        }]
+    }) : 
+    //bunyan defaults to stdout if no stream is specified
+    bunyan.createLogger({
+        name: "graphistry", 
+        metadata: {},
+        level: CONSOLE_DEBUG_LEVEL
+    });
 
-var parentLogger = bunyan.createLogger({name: "graphistry", metadata: {foo: "md"}});
+process.on('SIGUSR2', function () {
+    l.reopenFileStreams();
+});
+
 
 module.exports = {
-    createLogger: function(config, name) {
-        var CONSOLE_DEBUG_LEVEL = parseInt(process.env.CONSOLE_DEBUG_LEVEL) || config.CONSOLE_DEBUG_LEVEL || function() {}; //empty function prevents logger from logging to console
-        // console.log(CONSOLE_DEBUG_LEVEL);
-        if (config.BUNYAN_LOG) {
-            var l = parentLogger.child({
-                module: name,
-                level: CONSOLE_DEBUG_LEVEL,
-                streams: [{
-                    path: config.BUNYAN_LOG,
-                    level: 10,
-                }]
-            });
-            // process.on('SIGUSR2', function () {
-            //     l.reopenFileStreams();
-            // });
-            return l;
-        }
-        return parentLogger.child({module: name, level: CONSOLE_DEBUG_LEVEL});
+    createLogger: function(name) {
+        return parentLogger.child({module: name}, true);
     },
     addMetadataField: function(metadata) {
         if(!_.isObject(metadata)) { throw new Error("metadata must be an object"); }
