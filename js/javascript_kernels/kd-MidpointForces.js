@@ -100,22 +100,22 @@ var MidpointForces = function (clContext) {
   }
 
   this.toBarnesLayout = new Kernel('to_barnes_layout', this.argsToBarnesLayout,
-      this.argsType, 'barnesHut/toBarnesLayoutMidPoints.cl', clContext);
+      this.argsType, 'kdTree/kd-ConvertBuffersToKDLayout.cl', clContext);
 
   this.boundBox = new Kernel('bound_box', this.argsBarnes,
-      this.argsType, 'barnesHut/boundBox.cl', clContext);
+      this.argsType, 'kdTree/kd-BoundBox.cl', clContext);
 
   this.buildTree = new Kernel('build_tree', this.argsBarnes,
-      this.argsType, 'barnesHut/buildTree.cl', clContext);
+      this.argsType, 'kdTree/kd-BuildTree.cl', clContext);
 
   this.computeSums = new Kernel('compute_sums', this.argsBarnes,
-      this.argsType, 'barnesHut/computeSums.cl', clContext);
+      this.argsType, 'kdTree/kd-ComputeSums.cl', clContext);
 
   this.sort = new Kernel('sort', this.argsBarnes,
-      this.argsType, 'barnesHut/sort.cl', clContext);
+      this.argsType, 'kdTree/kd-Sort.cl', clContext);
 
   this.calculateMidPoints = new Kernel('calculate_forces', this.argsMidPoints,
-      this.argsType, 'barnesHut/calculateMidPoints.cl', clContext);
+      this.argsType, 'kdTree/kd-CalculateForces.cl', clContext);
 
 
   this.kernels = [this.toBarnesLayout, this.boundBox, this.buildTree, this.computeSums,
