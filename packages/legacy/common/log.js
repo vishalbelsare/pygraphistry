@@ -26,7 +26,6 @@ var self = module.exports = {
         self.moduleName = moduleName;
 
         if (config.BUNYAN_LOG) {
-            console.log(config.BUNYAN_LOG + " " + config.CONSOLE_DEBUG_LEVEL);
             self.logger = bunyan.createLogger({
                 name: moduleName,
                 streams: [
@@ -67,8 +66,6 @@ var self = module.exports = {
         process.exit(1);
     },
 
-    //intern changes!!
-    //can we just import the entire debug module into here?
     debug: function() {
         var msg = nodeutil.format.apply(this, arguments);
         self.makeHandler('DEBUG', msg, 'debug', false, chalk.inverse)();
@@ -78,7 +75,6 @@ var self = module.exports = {
         var msg = nodeutil.format.apply(this, arguments);
         self.makeHandler('TRACE', msg, 'trace', false, chalk.bgYellow)();
     },
-    //end intern changes
 
     warn: function () {
         var msg = nodeutil.format.apply(this, arguments);
@@ -103,9 +99,6 @@ var self = module.exports = {
             var payload = error2JSON(self, type, msg, err);
             if (self.logger !== undefined) {
                 self.logger[out]({content: payload});
-                // //logging to console for testing purposes
-                // var extra = payload.stack || payload.error || '';
-                // self.secretConsole[out](style(payload.type), payload.msg, extra);
             } else {
                 var extra = payload.stack || payload.error || '';
                 self.secretConsole[out](style(payload.type), payload.msg, extra);
