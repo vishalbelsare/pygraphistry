@@ -42,6 +42,10 @@ function unique() {
 // client.set('my_unique', 'foobar');
 // client.unique('my_unique', 'foobarbaz');
 
+function createPerfMonitor() {
+  return;
+}
+
 module.exports = {
   timing: timing,
   increment: increment,
