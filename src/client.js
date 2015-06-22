@@ -250,6 +250,7 @@ function createRenderer(socket, canvas) {
  * render them.
  *
  * @param  {socket.io socket} socket - socket.io socket created when we connected to the server.
+ * @param  {string} uri              - The URI for the server's websocket endpoint.
  * @param  {renderer} renderState    - The renderer object returned by renderer.create().
  *
  * @return {Rx.BehaviorSubject} {'init', 'start', 'received', 'rendered'} Rx subject that fires every time a frame is rendered.

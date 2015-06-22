@@ -118,14 +118,20 @@ function init(canvas, vizType) {
 
     var initialized = new Rx.ReplaySubject(1);
 
+    /** @typedef {Object} RenderInfo
+     * @property {socket} socket
+     * @property {string} uri
+     * @property {renderer} initialRenderState
+     **/
+
     streamClient.connect(vizType, urlParams)
-        .flatMap(function(nfo) {
+        .flatMap(/** @param {RenderInfo} nfo */ function(nfo) {
             var socket  = nfo.socket;
             displayErrors(socket, $(canvas));
 
             debug('Creating renderer');
             return streamClient.createRenderer(socket, canvas)
-                .map(function(initialRenderState) {
+                .map(/** @param {renderer} initialRenderState @returns {RenderInfo} */ function(initialRenderState) {
                     debug('Renderer created');
                     return {
                         socket: socket,
@@ -133,7 +139,7 @@ function init(canvas, vizType) {
                         initialRenderState: initialRenderState
                     };
                 });
-        }).do(function(nfo) {
+        }).do(/** @param {RenderInfo} nfo */ function(nfo) {
             var vboUpdates = streamClient.handleVboUpdates(nfo.socket, nfo.uri, nfo.initialRenderState);
             vizApp(nfo.socket, nfo.initialRenderState, vboUpdates, nfo.uri, urlParams);
 
