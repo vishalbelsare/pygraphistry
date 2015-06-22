@@ -6,6 +6,9 @@ var Kernel = require('../kernel.js'),
        eh = require('common/errorHandlers.js')(log),
     cljs  = require('../cl.js');
 
+// This implementation is designed to optimize midpoint force calculation
+// by using a 4 dimensional kd-tree in order to reduce the number of calculations 
+// needed
 var MidpointForces = function (clContext) {
 
   this.argsToBarnesLayout = [
