@@ -53,5 +53,6 @@ module.exports = {
   histogram: histogram,
   gauge: gauge,
   set: set,
-  unique: unique
+  unique: unique,
+  createPerfMonitor: createPerfMonitor
 }
