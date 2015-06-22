@@ -71,8 +71,8 @@ var errSerializer = bunyan.stdSerializers.err = function err(err) {
     return obj;
 };
 
-var CONSOLE_DEBUG_LEVEL = parseInt(process.env.CONSOLE_DEBUG_LEVEL) || config.CONSOLE_DEBUG_LEVEL || 30; //empty function prevents logger from logging to console
-var BUNYAN_DEBUG_LEVEL = parseInt(process.env.BUNYAN_DEBUG_LEVEL) || config.BUNYAN_DEBUG_LEVEL || 10; //defaults to 10 unless specified in command line or config
+var CONSOLE_DEBUG_LEVEL = parseInt(process.env.CONSOLE_DEBUG_LEVEL) || config.CONSOLE_DEBUG_LEVEL; //empty function prevents logger from logging to console
+var BUNYAN_DEBUG_LEVEL = parseInt(process.env.BUNYAN_DEBUG_LEVEL) || config.BUNYAN_DEBUG_LEVEL; //defaults to 10 unless specified in command line or config
 
 var parentLogger = config.BUNYAN_LOG !== undefined ? 
     bunyan.createLogger({
