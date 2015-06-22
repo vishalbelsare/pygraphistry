@@ -19,7 +19,7 @@ function EdgeBundling(clContext) {
     LayoutAlgo.call(this, EdgeBundling.name);
 
     debug('Creating edge bundling kernels');
-    this.MidpointForces= new MidpointForces(clContext);
+    this.midpointForces= new MidpointForces(clContext);
 
     this.ebMidsprings = new Kernel('gaussSeidelMidsprings', EdgeBundling.argsMidsprings,
                                    EdgeBundling.argsType, 'edgeBundling.cl', clContext);
@@ -32,9 +32,9 @@ function EdgeBundling(clContext) {
 
     this.midEdgeGather = new MidEdgeGather(clContext);
 
-    this.kernels = this.kernels.concat([this.MidpointForces.toBarnesLayout, this.MidpointForces.boundBox,
-                                        this.MidpointForces.buildTree, this.MidpointForces.computeSums,
-                                        this.MidpointForces.sort, this.MidpointForces.calculateMidPoints,
+    this.kernels = this.kernels.concat([this.midpointForces.toBarnesLayout, this.midpointForces.boundBox,
+                                        this.midpointForces.buildTree, this.midpointForces.computeSums,
+                                        this.midpointForces.sort, this.midpointForces.calculateMidPoints,
                                         this.ebMidsprings, this.integrateMidPoints.faIntegrate, this.interpolateMidPoints.interpolate]);
 }
 EdgeBundling.prototype = Object.create(LayoutAlgo.prototype);
@@ -77,7 +77,7 @@ EdgeBundling.prototype.setPhysics = function (cfg) {
     LayoutAlgo.prototype.setPhysics.call(this, cfg);
 
     // get the flags from previous iteration
-    flags = this.MidpointForces.toBarnesLayout.get('flags');
+    flags = this.midpointForces.toBarnesLayout.get('flags');
     flagNames = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'];
 
     _.each(cfg, function (val, flag) {
@@ -95,7 +95,7 @@ EdgeBundling.prototype.setPhysics = function (cfg) {
         }
     });
 
-    this.MidpointForces.setPhysics(flags);
+    this.midpointForces.setPhysics(flags);
     this.integrateMidPoints.setPhysics(flags);
     //this.edgeKernelSeq.setPhysics(flags);
 };
@@ -226,7 +226,7 @@ EdgeBundling.prototype.setEdges = function (simulator) {
     workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps, workGroupSize);
 
     return setupTempLayoutBuffers(simulator).then(function (tempLayoutBuffers) {
-        that.MidpointForces.setMidPoints(simulator, tempLayoutBuffers, warpsize, workItems);
+        that.midpointForces.setMidPoints(simulator, tempLayoutBuffers, warpsize, workItems);
         that.faSwingsKernel.setMidPoints(simulator, tempLayoutBuffers);
 
         that.ebMidsprings.set({
@@ -304,12 +304,12 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
 
     if (locks.interpolateMidPointsOnce || locks.interpolateMidPoints) {
         if ( locks.interpolateMidPointsOnce ) {
-            console.log("Force interpolation of midpoints");
+            debug("Number of midpoints has changed. Force interpolation");
         }
         locks.interpolateMidPointsOnce = false;
         // If interpolateMidpoints is true, midpoints are calculate by
         // interpolating between corresponding edge points.
-        console.log("INTERPOLATION");
+        debug("Midpoints will be interpolated");
         calculateMidpoints = new Q().then(function () {
 
             simulator.tickBuffers(['nextMidPoints']);
@@ -330,7 +330,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
             };
 
             body = function () {
-                return that.MidpointForces.execKernels(simulator, stepNumber, workItems, midpointIndex)
+                return that.midpointForces.execKernels(simulator, stepNumber, workItems, midpointIndex)
                     .then(function () {
                         midpointIndex = midpointIndex + 1;
                     });

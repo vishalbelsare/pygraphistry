@@ -850,7 +850,6 @@ function setLocks(simulator, cfg) {
 
 
 function setPhysics(simulator, cfg) {
-    console.log(cfg);
     debug('Simcl set physics', cfg)
     _.each(simulator.layoutAlgorithms, function (algo) {
         if (algo.name in cfg) {
