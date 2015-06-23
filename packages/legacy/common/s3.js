@@ -7,25 +7,47 @@ var debug    = require('debug')('graphistry:common:s3');
 
 
 // S3 * String * {name: String, ...} * Buffer -> Promise
-function upload(S3, bucket, metadata, binaryBuffer) {
+function upload(S3, bucket, metadata, binaryBuffer, params) {
     debug('Uploading binary blob', metadata.name);
 
-    return Q.nfcall(zlib.gzip, binaryBuffer)
-        .then(function (zipped) {
-            var params = {
-                Bucket: bucket,
-                Key: metadata.name,
-                ACL: 'private',
-                Metadata: metadata,
-                Body: zipped,
-                ServerSideEncryption: 'AES256'
-            };
+    var acl = params && params.acl,
+        compressed = true,
+        putParams = {
+            Bucket: bucket,
+            Key: metadata.name,
+            ACL: acl || 'private',
+            Metadata: metadata,
+            Body: binaryBuffer,
+            ServerSideEncryption: 'AES256'
+        };
 
-            debug('Upload size', (zipped.length/1000).toFixed(1), 'KB');
-            return Q.nfcall(S3.putObject.bind(S3), params);
-        }).then(function () {
-            debug('Upload done', metadata.name);
-        });
+    if (params && !_.isEmpty(params)) {
+        if (params.compressed !== undefined) {
+            compressed = params.compressed;
+        }
+
+        if (params.ContentType) {
+            putParams.ContentType = params.ContentType;
+        }
+    }
+
+    if (compressed) {
+        putParams.ContentEncoding = 'gzip';
+        return Q.nfcall(zlib.gzip, binaryBuffer)
+            .then(function (zipped) {
+                putParams.Body = zipped;
+                debug('Upload size', (putParams.Body.length / 1000).toFixed(1), 'KB');
+                return Q.nfcall(S3.putObject.bind(S3), putParams);
+            }).then(function () {
+                debug('Upload done', metadata.name);
+            });
+    } else {
+        debug('Upload size', (putParams.Body.length / 1000).toFixed(1), 'KB');
+        return Q.nfcall(S3.putObject.bind(S3), putParams)
+            .then(function () {
+                debug('Upload done', metadata.name);
+            });
+    }
 }
 
 module.exports = {
