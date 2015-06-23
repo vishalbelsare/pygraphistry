@@ -169,6 +169,7 @@ var MidpointForces = function (clContext) {
     var numBodies = num_bodies;
     // Set this to the number of workgroups in boundBox kernel
     var num_work_groups = 30;
+    var numDimensions = 2;
 
 
     return Q.all(
@@ -195,7 +196,7 @@ var MidpointForces = function (clContext) {
         simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'step'),
         simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'bottom'),
         simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'maxdepth'),
-        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'radius'),
+        simulator.cl.createBuffer(numDimensions * Float32Array.BYTES_PER_ELEMENT, 'radius'),
         simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed')
         ])
     .spread(function (partialForces, x_cords, y_cords, edgeDirectionX, edgeDirectionY, edgeLength, accx, accy, children, mass, start, sort, xmin, xmax, ymin, ymax, count,
