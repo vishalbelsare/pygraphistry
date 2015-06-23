@@ -310,7 +310,6 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
         locks.interpolateMidpointsOnce = false;
         // If interpolateMidpoints is true, midpoints are calculate by
         // interpolating between corresponding edge points.
-        console.log("INTERPOLATION");
         calculateMidpoints = new Q().then(function () {
 
             simulator.tickBuffers(['nextMidpoints']);

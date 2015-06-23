@@ -40,6 +40,66 @@ var args = {
     ]
 };
 
+var parameters = {
+    toBarnesLayout : {
+        functionName: 'to_barnes_layout',
+        args: ['xCoords', 'yCoords', 'edgeDirectionX', 'edgeDirectionY', 'edgeLengths', 'springs',
+            'mass', 'blocked', 'maxDepth', 'numPoints', 'inputMidPositions', 'inputPositions',
+            'pointDegrees', 'WARPSIZE', 'THREADS_SUMS', 'THREADS_FORCES', 'THREADS_BOUND']
+    },
+    boundBox: {
+        functionName: 'boundBox',
+        args :[
+        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'accX', 'accY',
+        'children', 'mass', 'start', 'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
+        'globalEdgeMin', 'globalEdgeMax', 'swings', 'tractions', 'count', 'blocked', 'step', 'bottom',
+        'maxDepth', 'radius', 'globalSpeed', 'stepNumber', 'width', 'height', 'numBodies', 'numNodes',
+        'nextMidPoints', 'tau', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+        ],
+    },
+    buildTree: {
+        functionName: 'buildTree',
+        args: [
+        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'accX', 'accY',
+        'children', 'mass', 'start', 'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
+        'swings', 'tractions', 'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius',
+        'globalSpeed', 'stepNumber', 'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau',
+        'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+        ],
+    },
+    computeSums: {
+        functionName: 'computeSums',
+        args: [
+        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'accX', 'accY',
+        'children', 'mass', 'start', 'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
+        'swings', 'tractions', 'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius',
+        'globalSpeed', 'stepNumber', 'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau',
+        'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+        ],
+    },
+    sort: {
+        functionName: 'sort',
+        args: [
+        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'accX', 'accY',
+        'children', 'mass', 'start', 'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
+        'swings', 'tractions', 'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius',
+        'globalSpeed', 'stepNumber', 'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau',
+        'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+        ],
+    },
+    calculateMidPoints: {
+        funcationName: 'calculateMidPoints',
+        args:[
+        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'edgeDirectionX',
+        'edgeDirectionY', 'edgeLengths', 'accX', 'accY', 'children', 'mass', 'start', 'sort',
+        'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions', 'count', 'blocked',
+        'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber', 'width', 'height',
+        'numBodies', 'numNodes', 'nextMidPoints', 'tau', 'charge', 'midpoint_stride',
+        'midpoints_per_edge', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+    ]
+    }
+}
+
 var argsType = {
     scalingRatio: cljs.types.float_t,
     gravity: cljs.types.float_t,
@@ -212,7 +272,6 @@ var setupTempBuffers = function(simulator, warpsize, numPoints) {
 };
 
 var getBufferBindings = function (layoutBuffers, tempBuffers, simulator, warpsize, workItems) {
-    console.log(simulator.numEdges);
     bufferBindings = {
         xCoords: tempBuffers.x_cords,
         yCoords:tempBuffers.y_cords,
@@ -262,25 +321,32 @@ var getBufferBindings = function (layoutBuffers, tempBuffers, simulator, warpsiz
     return bufferBindings;
 }
 
-var parameters = {
+var kernelParameters = {
     toBarnesLayout : {
-        functionName: 'to_barnes_layout',
-        args: ['xCoords', 'yCoords', 'edgeDirectionX', 'edgeDirectionY', 'edgeLengths', 'springs',
-            'mass', 'blocked', 'maxDepth', 'numPoints', 'inputMidPositions', 'inputPositions',
-            'pointDegrees', 'WARPSIZE', 'THREADS_SUMS', 'THREADS_FORCES', 'THREADS_BOUND']
+        name: 'toBarnesLayout',
+        kernelName:'to_barnes_layout',
+        args: ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints', 'inputMidPositions',
+        'inputPositions', 'xCoords', 'yCoords', 'springs', 'edgeDirectionX', 'edgeDirectionY',
+        'edgeLengths', 'mass', 'blocked', 'maxDepth', 'pointDegrees', 'stepNumber', 'midpoint_stride',
+        'midpoints_per_edge', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+        ],
+        fileName: 'kdTree/kd-ConvertBuffersToKDLayout.cl'
     },
     boundBox: {
-        functionName: 'boundBox',
-        args :[
-        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'accX', 'accY',
-        'children', 'mass', 'start', 'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
-        'globalEdgeMin', 'globalEdgeMax', 'swings', 'tractions', 'count', 'blocked', 'step', 'bottom',
-        'maxDepth', 'radius', 'globalSpeed', 'stepNumber', 'width', 'height', 'numBodies', 'numNodes',
-        'nextMidPoints', 'tau', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+        name : 'boundBox',
+        kernelName: 'bound_box',
+        args : ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'accX',
+            'accY', 'children', 'mass', 'start', 'sort', 'globalXMin', 'globalXMax', 'globalYMin',
+            'globalYMax', 'globalEdgeMin', 'globalEdgeMax', 'swings', 'tractions', 'count',
+            'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber', 'width',
+            'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau', 'WARPSIZE', 'THREADS_BOUND',
+            'THREADS_FORCES', 'THREADS_SUMS'
         ],
+        fileName: 'kdTree/kd-BoundBox.cl'
     },
     buildTree: {
-        functionName: 'buildTree',
+        name: 'buildTree',
+        kernelName: 'build_tree',
         args: [
         'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'accX', 'accY',
         'children', 'mass', 'start', 'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
@@ -288,9 +354,11 @@ var parameters = {
         'globalSpeed', 'stepNumber', 'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau',
         'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
         ],
+        fileName: 'kdTree/kd-BuildTree.cl'
     },
     computeSums: {
-        functionName: 'computeSums',
+        name: 'computeSums',
+        kernelName: 'compute_sums',
         args: [
         'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'accX', 'accY',
         'children', 'mass', 'start', 'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
@@ -298,9 +366,11 @@ var parameters = {
         'globalSpeed', 'stepNumber', 'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau',
         'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
         ],
+        fileName: 'kdTree/kd-ComputeSums.cl'
     },
     sort: {
-        functionName: 'sort',
+        name: 'sort',
+        kernelName: 'sort',
         args: [
         'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'accX', 'accY',
         'children', 'mass', 'start', 'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
@@ -308,9 +378,11 @@ var parameters = {
         'globalSpeed', 'stepNumber', 'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau',
         'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
         ],
+        fileName: 'kdTree/kd-Sort.cl'
     },
     calculateMidPoints: {
-        funcationName: 'calculateMidPoints',
+        name: 'calculateMidPoints',
+        kernelName: 'calculate_forces',
         args:[
         'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'edgeDirectionX',
         'edgeDirectionY', 'edgeLengths', 'accX', 'accY', 'children', 'mass', 'start', 'sort',
@@ -318,9 +390,11 @@ var parameters = {
         'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber', 'width', 'height',
         'numBodies', 'numNodes', 'nextMidPoints', 'tau', 'charge', 'midpoint_stride',
         'midpoints_per_edge', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
-    ]
+        ],
+        fileName: 'kdTree/kd-CalculateForces.cl'
     }
 }
+
 
 
 
@@ -328,32 +402,21 @@ var parameters = {
 // by using a 4 dimensional kd-tree in order to reduce the number of calculations
 // needed
 var MidpointForces = function (clContext) {
-    var toBarnesLayout,
-    boundBox,
-    buildTree,
-    computeSums,
-    sort,
-    calculateMidPoints;
+    this.kernels = [];
 
-    this.toBarnesLayout = new Kernel('to_barnes_layout', args.toBarnesLayout, argsType,
-                                'kdTree/kd-ConvertBuffersToKDLayout.cl', clContext);
+    //console.log(this);
+    var that = this;
 
-    this.boundBox = new Kernel('bound_box', args.boundBox, argsType, 'kdTree/kd-BoundBox.cl',
-                          clContext);
-
-    this.buildTree = new Kernel('build_tree', args.barnes, argsType, 'kdTree/kd-BuildTree.cl',
-                           clContext);
-
-    this.computeSums = new Kernel('compute_sums', args.barnes, argsType, 'kdTree/kd-ComputeSums.cl',
-                             clContext);
-
-    this.sort = new Kernel('sort', args.barnes, argsType, 'kdTree/kd-Sort.cl', clContext)
-
-    this.calculateMidPoints = new Kernel('calculate_forces', args.midPoints, argsType,
-                                    'kdTree/kd-CalculateForces.cl', clContext);
-
-    this.kernels = [this.toBarnesLayout, this.boundBox, this.buildTree, this.computeSums,
-        this.sort, this.calculateMidPoints];
+    _.each( kernelParameters, function (kernel) {
+        var newKernel = new Kernel(kernel.kernelName, kernel.args, argsType, kernel.fileName,
+                                   clContext)
+        if (newKernel === undefined) {
+            console.log(kernel);
+        }
+        that[kernel.name] = newKernel;
+        that.kernels.push(newKernel);
+    });
+    //console.log(this);
 
     this.setPhysics = function(flag) {
         this.toBarnesLayout.set({flags: flag});
@@ -363,6 +426,7 @@ var MidpointForces = function (clContext) {
         this.sort.set({flags: flag});
         this.calculateMidPoints.set({flags: flag});
     };
+
 
     this.getFlags = function() {
         return this.toBarnesLayout.get('flags');
@@ -387,7 +451,6 @@ var MidpointForces = function (clContext) {
                     }
                 }
             })
-            console.log("Name:", kernelName, "binding:", binding);
             return kernel.set(binding)
         } catch (e) {
             return eh.makeErrorHandler('Error setting arguments in kd-MidpointForces.js')
@@ -399,9 +462,10 @@ var MidpointForces = function (clContext) {
         var that = this;
         return setupTempBuffers(simulator, warpsize, simulator.numEdges).then(function (tempBuffers) {
             var buffers = tempBuffers;
+
             var bufferBindings = getBufferBindings(layoutBuffers, tempBuffers, simulator, warpsize,
                                                    workItems);
-            //console.log(bufferBindings);
+
             return Q.all([
             that.setArgs(that.toBarnesLayout, 'toBarnesLayout', bufferBindings),
             that.setArgs(that.boundBox, "boundBox", bufferBindings),
@@ -413,7 +477,6 @@ var MidpointForces = function (clContext) {
         }).fail(eh.makeErrorHandler('setupTempBuffers'));
     };
 
-    // TODO (paden) Can probably combine ExecKernel functions
     this.execKernels = function(simulator, stepNumber, workItems, midpoint_index) {
 
         var resources = [
