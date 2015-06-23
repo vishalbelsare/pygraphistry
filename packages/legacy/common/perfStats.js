@@ -1,3 +1,4 @@
+//Essentially, data here should be collected then piped into outside sources, such as boundary, and then have that service process/display the data
 
 // Timing: sends a timing command with the specified milliseconds
 function timing() {
