@@ -23,9 +23,6 @@ var app         = express();
 var http        = require('http').Server(app);
 
 var config      = require('config')();
-var log         = require('common/log.js');
-var eh          = require('common/errorHandlers.js')(log);
-log.createLogger(config, 'central');
 
 var Log         = require('common/logger.js');
 var logger      = Log.createLogger('central');
@@ -69,15 +66,16 @@ var STREAMGL_MAP_PATH   = require.resolve('StreamGL/dist/StreamGL.map');
 var HTTP_SERVER_LISTEN_ADDRESS = config.HTTP_LISTEN_ADDRESS;
 var HTTP_SERVER_LISTEN_PORT = config.HTTP_LISTEN_PORT;
 
-
+// {req: req, clientError: msg}
 function logClientError(req, res) {
     var writeError = function (msg) {
         //logger.debug('Logging client error', msg);
         if(config.ENVIRONMENT === 'local') {
+            //TODO: determine which fields from req object you want to log
             if (msg.content) {
-                console.error('[Client]', msg.content);
+                logger.error({clientID: req.ip, clientError: msg.content}, "Client Error");
             } else {
-                console.error('[Client]', JSON.stringify(msg, null, 2));
+                logger.error({clientID: req.ip, clientError: JSON.stringify(msg, null, 2)}, "Client Error");
             }
             /* jshint -W064 */
             return Q();
@@ -291,5 +289,5 @@ module.exports = {
         listenIP: HTTP_SERVER_LISTEN_ADDRESS,
         listenPort: HTTP_SERVER_LISTEN_PORT
     },
-    log: log
+    logger: logger
 };

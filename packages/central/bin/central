@@ -3,15 +3,15 @@
 /// <reference path="../typings/node/node.d.ts"/>
 
 var server = require('../lib/server.js');
-var log = server.log
+var logger = server.logger;
 
 server.start().subscribe(
     function () {
-        log.info('Central listening on %s:%d', server.config.listenIP,
+        logger.info('Central listening on %s:%d', server.config.listenIP,
                                                server.config.listenPort);
     },
     function (err) {
-        log.error('Central failed to start server on %s:%s. Exiting...',
+        logger.error('Central failed to start server on %s:%s. Exiting...',
                   server.config.listenIP, server.config.listenPort, err);
         process.exit(1);
     }
