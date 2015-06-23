@@ -20,4 +20,4 @@ log.error("Hello world!");
 
 test.log.trace("Hello World from another logger!"); //to test that different loggers maintain their namespace/module names
 
-log.info(new Error("Hello")); //how does bunyan handle error objects? look into the standard error serializer and err.js
+log.info({err: new Error("Hello")}, "hello2"); //how does bunyan handle error objects? look into the standard error serializer and err.js
