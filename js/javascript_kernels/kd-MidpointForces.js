@@ -6,34 +6,41 @@ var Kernel = require('../kernel.js'),
        eh = require('common/errorHandlers.js')(log),
     cljs  = require('../cl.js');
 
-// This implementation is designed to optimize midpoint force calculation
-// by using a 4 dimensional kd-tree in order to reduce the number of calculations 
-// needed
-var MidpointForces = function (clContext) {
+var args = {
+    toBarnesLayout:[
+        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints', 'inputMidPositions',
+        'inputPositions', 'xCoords', 'yCoords', 'springs', 'edgeDirectionX', 'edgeDirectionY',
+        'edgeLengths', 'mass', 'blocked', 'maxDepth', 'pointDegrees', 'stepNumber', 'midpoint_stride',
+        'midpoints_per_edge', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+    ],
 
-  this.argsToBarnesLayout = [
-    'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints',
-    'inputMidPositions', 'inputPositions', 'xCoords', 'yCoords', 'springs', 'edgeDirectionX', 'edgeDirectionY', 'edgeLength', 'mass', 'blocked', 'maxDepth',
-    'pointDegrees', 'stepNumber', 'midpoint_stride', 'midpoints_per_edge', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
-  ];
+    barnes:[
+        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'accX', 'accY',
+        'children', 'mass', 'start', 'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
+        'swings', 'tractions', 'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius',
+        'globalSpeed', 'stepNumber', 'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau',
+        'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+    ],
 
-  // All Barnes kernels have same arguements
-  this.argsBarnes = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
-  'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
-  'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
-  'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
-    'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau', 'WARPSIZE',
-    'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
-  ];
+    boundBox:[
+        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'accX', 'accY',
+        'children', 'mass', 'start', 'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
+        'globalEdgeMin', 'globalEdgeMax', 'swings', 'tractions', 'count', 'blocked', 'step', 'bottom',
+        'maxDepth', 'radius', 'globalSpeed', 'stepNumber', 'width', 'height', 'numBodies', 'numNodes',
+        'nextMidPoints', 'tau', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+    ],
 
-  this.argsMidPoints = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
-  'yCoords', 'edgeDirectionX', 'edgeDirectionY', 'edgeLength', 'accX', 'accY', 'children', 'mass', 'start',
-  'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
-  'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
-    'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau', 'charge', 'midpoint_stride', 'midpoints_per_edge', 'WARPSIZE', 'THREADS_BOUND',
-    'THREADS_FORCES', 'THREADS_SUMS'];
+    midPoints:[
+        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'edgeDirectionX',
+        'edgeDirectionY', 'edgeLengths', 'accX', 'accY', 'children', 'mass', 'start', 'sort',
+        'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions', 'count', 'blocked',
+        'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber', 'width', 'height',
+        'numBodies', 'numNodes', 'nextMidPoints', 'tau', 'charge', 'midpoint_stride',
+        'midpoints_per_edge', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+    ]
+};
 
-  this.argsType = {
+var argsType = {
     scalingRatio: cljs.types.float_t,
     gravity: cljs.types.float_t,
     edgeInfluence: cljs.types.uint_t,
@@ -69,7 +76,7 @@ var MidpointForces = function (clContext) {
     yCoords: null,
     edgeDirectionX: null,
     edgeDirectionY: null,
-    edgeLength: null,
+    edgeLengths: null,
     accX: null,
     accY: null,
     children: null,
@@ -80,6 +87,8 @@ var MidpointForces = function (clContext) {
     globalXMax: null,
     globalYMin: null,
     globalYMax: null,
+    globalEdgeMin: null,
+    globalEdgeMax: null,
     count: null,
     blocked: null,
     step: null,
@@ -97,50 +106,15 @@ var MidpointForces = function (clContext) {
     THREADS_BOUND: cljs.types.define,
     THREADS_FORCES: cljs.types.define,
     THREADS_SUMS: cljs.types.define
-  }
+}
 
-  this.toBarnesLayout = new Kernel('to_barnes_layout', this.argsToBarnesLayout,
-      this.argsType, 'kdTree/kd-ConvertBuffersToKDLayout.cl', clContext);
-
-  this.boundBox = new Kernel('bound_box', this.argsBarnes,
-      this.argsType, 'kdTree/kd-BoundBox.cl', clContext);
-
-  this.buildTree = new Kernel('build_tree', this.argsBarnes,
-      this.argsType, 'kdTree/kd-BuildTree.cl', clContext);
-
-  this.computeSums = new Kernel('compute_sums', this.argsBarnes,
-      this.argsType, 'kdTree/kd-ComputeSums.cl', clContext);
-
-  this.sort = new Kernel('sort', this.argsBarnes,
-      this.argsType, 'kdTree/kd-Sort.cl', clContext);
-
-  this.calculateMidPoints = new Kernel('calculate_forces', this.argsMidPoints,
-      this.argsType, 'kdTree/kd-CalculateForces.cl', clContext);
-
-
-  this.kernels = [this.toBarnesLayout, this.boundBox, this.buildTree, this.computeSums,
-  this.sort, this.calculateMidPoints];
-
-  this.setPhysics = function(flag) {
-
-    this.toBarnesLayout.set({flags: flag});
-    this.boundBox.set({flags: flag});
-    this.buildTree.set({flags: flag});
-    this.computeSums.set({flags: flag});
-    this.sort.set({flags: flag});
-    this.calculateMidPoints.set({flags: flag});
-
-  };
-
-
-  var tempBuffers  = {
+var tempBuffers  = {
     partialForces: null,
-    x_cords: null, //cl.createBuffer(cl, 0, "x_cords"),
+    x_cords: null,
     y_cords: null,
     edgeDirectionX: null,
     edgeDirectionY: null,
-    edgeLegnth: null,
-    edgeLength: null,
+    edgeLengths: null,
     velx: null,
     vely: null,
     accx: null,
@@ -155,8 +129,9 @@ var MidpointForces = function (clContext) {
     step: null,
     bottom: null,
     maxdepth: null,
-  };
-  var setupTempBuffers = function(simulator, warpsize, numPoints) {
+};
+
+var setupTempBuffers = function(simulator, warpsize, numPoints) {
     simulator.resetBuffers(tempBuffers);
     var blocks = 8; //TODO (paden) should be set to multiprocecessor count
 
@@ -174,210 +149,315 @@ var MidpointForces = function (clContext) {
 
     return Q.all(
         [
-        simulator.cl.createBuffer(2*num_bodies*Float32Array.BYTES_PER_ELEMENT,  'partialForces'),
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT,  'x_cords'),
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'y_cords'),
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT,  'edgeDirectionX'),
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'edgeDirectionY'),
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'edgeLegnth'),
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'accx'),
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'accy'),
-        simulator.cl.createBuffer(4*(num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'children'),
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'mass'),
-        simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'start'),
-        //TODO (paden) Create subBuffers
-        simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'sort'),
-        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_mins'),
-        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_maxs'),
-        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_y_mins'),
-        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_y_maxs'),
-        simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'count'),
-        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'blocked'),
-        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'step'),
-        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'bottom'),
-        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'maxdepth'),
-        simulator.cl.createBuffer(numDimensions * Float32Array.BYTES_PER_ELEMENT, 'radius'),
-        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed')
+            simulator.cl.createBuffer(2*num_bodies*Float32Array.BYTES_PER_ELEMENT,  'partialForces'),
+            simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT,  'x_cords'),
+            simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'y_cords'),
+            simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'edge_lengths'),
+            simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT,  'edgeDirectionX'),
+            simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'edgeDirectionY'),
+            simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'edgeLegnth'),
+            simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'accx'),
+            simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'accy'),
+            simulator.cl.createBuffer(4*(num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'children'),
+            simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'mass'),
+            simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'start'),
+            //TODO (paden) Create subBuffers
+            simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'sort'),
+            simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_mins'),
+            simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_maxs'),
+            simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_y_mins'),
+            simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_y_maxs'),
+            simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_edge_mins'),
+            simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_edge_maxs'),
+            simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'count'),
+            simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'blocked'),
+            simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'step'),
+            simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'bottom'),
+            simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'maxdepth'),
+            simulator.cl.createBuffer(numDimensions * Float32Array.BYTES_PER_ELEMENT, 'radius'),
+            simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed')
         ])
-    .spread(function (partialForces, x_cords, y_cords, edgeDirectionX, edgeDirectionY, edgeLength, accx, accy, children, mass, start, sort, xmin, xmax, ymin, ymax, count,
-                      blocked, step, bottom, maxdepth, radius) {
-          tempBuffers.partialForces = partialForces;
-          tempBuffers.x_cords = x_cords;
-          tempBuffers.y_cords = y_cords;
-          tempBuffers.edgeDirectionX = edgeDirectionX;
-          tempBuffers.edgeDirectionY = edgeDirectionY;
-          tempBuffers.edgeLength = edgeLength;
-          tempBuffers.accx = accx;
-          tempBuffers.accy = accy;
-          tempBuffers.children = children;
-          tempBuffers.mass = mass;
-          tempBuffers.start = start;
-          tempBuffers.sort = sort;
-          tempBuffers.xmin = xmin;
-          tempBuffers.xmax = xmax;
-          tempBuffers.ymin = ymin;
-          tempBuffers.ymax = ymax;
-          tempBuffers.count = count;
-          tempBuffers.blocked = blocked;
-          tempBuffers.step = step;
-          tempBuffers.bottom = bottom;
-          tempBuffers.maxdepth = maxdepth;
-          tempBuffers.radius = radius;
-          tempBuffers.numNodes = numNodes;
-          tempBuffers.numBodies = numBodies;
-          return tempBuffers;
-    })
-    .fail(eh.makeErrorHandler("Setting temporary buffers for barnesHutKernelSequence failed"));
-  };
+        .spread(function (partialForces, x_cords, y_cords, edgeLengths, edgeDirectionX, edgeDirectionY,
+                          accx, accy, children, mass, start, sort, xmin, xmax, ymin, ymax,
+                          edgeMin, edgeMax, count, blocked, step, bottom, maxdepth, radius) {
+                              tempBuffers.partialForces = partialForces;
+                              tempBuffers.x_cords = x_cords;
+                              tempBuffers.y_cords = y_cords;
+                              tempBuffers.edgeLengths = edgeLengths;
+                              tempBuffers.edgeDirectionX = edgeDirectionX;
+                              tempBuffers.edgeDirectionY = edgeDirectionY;
+                              tempBuffers.accx = accx;
+                              tempBuffers.accy = accy;
+                              tempBuffers.children = children;
+                              tempBuffers.mass = mass;
+                              tempBuffers.start = start;
+                              tempBuffers.sort = sort;
+                              tempBuffers.xmin = xmin;
+                              tempBuffers.xmax = xmax;
+                              tempBuffers.ymin = ymin;
+                              tempBuffers.ymax = ymax;
+                              tempBuffers.edgeMin = edgeMin;
+                              tempBuffers.edgeMax = edgeMax;
+                              tempBuffers.count = count;
+                              tempBuffers.blocked = blocked;
+                              tempBuffers.step = step;
+                              tempBuffers.bottom = bottom;
+                              tempBuffers.maxdepth = maxdepth;
+                              tempBuffers.radius = radius;
+                              tempBuffers.numNodes = numNodes;
+                              tempBuffers.numBodies = numBodies;
+                              return tempBuffers;
+                          })
+                          .fail(eh.makeErrorHandler("Setting temporary buffers for barnesHutKernelSequence failed"));
+};
 
-  this.setMidPoints = function(simulator, layoutBuffers, warpsize, workItems) {
-    var that = this;
-    return setupTempBuffers(simulator, warpsize, simulator.numEdges).then(function (tempBuffers) {
-
-      that.toBarnesLayout.set({
-        xCoords: tempBuffers.x_cords.buffer,
-        yCoords:tempBuffers.y_cords.buffer,
-        edgeDirectionX: tempBuffers.edgeDirectionX.buffer,
-        edgeDirectionY: tempBuffers.edgeDirectionY.buffer,
-        edgeLength: tempBuffers.edgeLength.buffer,
-        springs: simulator.buffers.forwardsEdges.buffer,
-        mass:tempBuffers.mass.buffer,
-        blocked:tempBuffers.blocked.buffer,
-        maxDepth:tempBuffers.maxdepth.buffer,
+var getBufferBindings = function (layoutBuffers, tempBuffers, simulator, warpsize, workItems) {
+    console.log(simulator.numEdges);
+    bufferBindings = {
+        xCoords: tempBuffers.x_cords,
+        yCoords:tempBuffers.y_cords,
+        accX:tempBuffers.accx,
+        accY:tempBuffers.accy,
+        edgeDirectionX: tempBuffers.edgeDirectionX,
+        edgeDirectionY: tempBuffers.edgeDirectionY,
+        edgeLengths: tempBuffers.edgeLengths,
+        springs: simulator.buffers.forwardsEdges,
+        mass:tempBuffers.mass,
+        blocked:tempBuffers.blocked,
+        maxDepth:tempBuffers.maxdepth,
         numPoints:simulator.numEdges,
-        inputMidPositions: simulator.buffers.curMidPoints.buffer,
-        inputPositions: simulator.buffers.curPoints.buffer,
-        pointDegrees: simulator.buffers.degrees.buffer,
+        inputMidPositions: simulator.buffers.curMidPoints,
+        inputPositions: simulator.buffers.curPoints,
+        pointDegrees: simulator.buffers.degrees,
         WARPSIZE: warpsize,
-        THREADS_SUMS: workItems.computeSums[1],
-        THREADS_FORCES: workItems.calculateForces[1],
-        THREADS_BOUND: workItems.boundBox[1]});
-
-      var setBarnesKernelArgs = function(kernel, buffers) {
-        var setArgs = {xCoords:buffers.x_cords.buffer,
-          yCoords:buffers.y_cords.buffer,
-          accX:buffers.accx.buffer,
-          accY:buffers.accy.buffer,
-          children:buffers.children.buffer,
-          mass:buffers.mass.buffer,
-          start:buffers.start.buffer,
-          sort:buffers.sort.buffer,
-          globalXMin:buffers.xmin.buffer,
-          globalXMax:buffers.xmax.buffer,
-          globalYMin:buffers.ymin.buffer,
-          globalYMax:buffers.ymax.buffer,
-          swings:layoutBuffers.swings.buffer,
-          tractions:layoutBuffers.tractions.buffer,
-          count:buffers.count.buffer,
-          blocked:buffers.blocked.buffer,
-          bottom:buffers.bottom.buffer,
-          step:buffers.step.buffer,
-          maxDepth:buffers.maxdepth.buffer,
-          radius:buffers.radius.buffer,
-          globalSpeed: layoutBuffers.globalSpeed.buffer,
-          width:simulator.controls.global.dimensions[0],
-          height:simulator.controls.global.dimensions[1],
-          numBodies:buffers.numBodies,
-          numNodes:buffers.numNodes,
-          nextMidPoints:layoutBuffers.tempMidPoints.buffer,
-          WARPSIZE:warpsize,
-          THREADS_SUMS: workItems.computeSums[1],
-          THREADS_FORCES: workItems.calculateForces[1],
-          THREADS_BOUND: workItems.boundBox[1]
-        };
-
-        kernel.set(setArgs);
-      };
-
-      setBarnesKernelArgs(that.boundBox, tempBuffers);
-      setBarnesKernelArgs(that.buildTree, tempBuffers);
-      setBarnesKernelArgs(that.computeSums, tempBuffers);
-      setBarnesKernelArgs(that.sort, tempBuffers);
-      var buffers = tempBuffers;
-
-      that.calculateMidPoints.set({
-        xCoords:buffers.x_cords.buffer,
-        yCoords:buffers.y_cords.buffer,
-        edgeDirectionX: tempBuffers.edgeDirectionX.buffer,
-        edgeDirectionY: tempBuffers.edgeDirectionY.buffer,
-        edgeLength: tempBuffers.edgeLength.buffer,
-        accX:buffers.accx.buffer,
-        accY:buffers.accy.buffer,
-        children:buffers.children.buffer,
-        mass:buffers.mass.buffer,
-        start:buffers.start.buffer,
-        sort:buffers.sort.buffer,
-        globalXMin:buffers.xmin.buffer,
-        globalXMax:buffers.xmax.buffer,
-        globalYMin:buffers.ymin.buffer,
-        globalYMax:buffers.ymax.buffer,
-        swings:layoutBuffers.swings.buffer,
-        tractions:layoutBuffers.tractions.buffer,
-        count:buffers.count.buffer,
-        blocked:buffers.blocked.buffer,
-        bottom:buffers.bottom.buffer,
-        step:buffers.step.buffer,
-        maxDepth:buffers.maxdepth.buffer,
-        radius:buffers.radius.buffer,
-        globalSpeed: layoutBuffers.globalSpeed.buffer,
+        children:tempBuffers.children,
+        mass:tempBuffers.mass,
+        start:tempBuffers.start,
+        sort:tempBuffers.sort,
+        globalXMin:tempBuffers.xmin,
+        globalXMax:tempBuffers.xmax,
+        globalYMin:tempBuffers.ymin,
+        globalYMax:tempBuffers.ymax,
+        globalEdgeMin:tempBuffers.edgeMin,
+        globalEdgeMax:tempBuffers.edgeMax,
+        swings:layoutBuffers.swings,
+        tractions:layoutBuffers.tractions,
+        count:tempBuffers.count,
+        blocked:tempBuffers.blocked,
+        bottom:tempBuffers.bottom,
+        step:tempBuffers.step,
+        maxDepth:tempBuffers.maxdepth,
+        radius:tempBuffers.radius,
+        globalSpeed: layoutBuffers.globalSpeed,
         width:simulator.controls.global.dimensions[0],
         height:simulator.controls.global.dimensions[1],
-        numBodies:buffers.numBodies,
-        numNodes:buffers.numNodes,
-        nextMidPoints:layoutBuffers.tempMidPoints.buffer,
+        numBodies:tempBuffers.numBodies,
+        numNodes:tempBuffers.numNodes,
+        nextMidPoints:layoutBuffers.tempMidPoints,
         WARPSIZE:warpsize,
         THREADS_SUMS: workItems.computeSums[1],
         THREADS_FORCES: workItems.calculateForces[1],
         THREADS_BOUND: workItems.boundBox[1]
-      });
-    }).fail(eh.makeErrorHandler('setupTempBuffers'));
-  };
+    }
+    return bufferBindings;
+}
 
-  // TODO (paden) Can probably combine ExecKernel functions
-  this.execKernels = function(simulator, stepNumber, workItems, midpoint_index) {
+var parameters = {
+    toBarnesLayout : {
+        functionName: 'to_barnes_layout',
+        args: ['xCoords', 'yCoords', 'edgeDirectionX', 'edgeDirectionY', 'edgeLengths', 'springs',
+            'mass', 'blocked', 'maxDepth', 'numPoints', 'inputMidPositions', 'inputPositions',
+            'pointDegrees', 'WARPSIZE', 'THREADS_SUMS', 'THREADS_FORCES', 'THREADS_BOUND']
+    },
+    boundBox: {
+        functionName: 'boundBox',
+        args :[
+        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'accX', 'accY',
+        'children', 'mass', 'start', 'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
+        'globalEdgeMin', 'globalEdgeMax', 'swings', 'tractions', 'count', 'blocked', 'step', 'bottom',
+        'maxDepth', 'radius', 'globalSpeed', 'stepNumber', 'width', 'height', 'numBodies', 'numNodes',
+        'nextMidPoints', 'tau', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+        ],
+    },
+    buildTree: {
+        functionName: 'buildTree',
+        args: [
+        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'accX', 'accY',
+        'children', 'mass', 'start', 'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
+        'swings', 'tractions', 'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius',
+        'globalSpeed', 'stepNumber', 'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau',
+        'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+        ],
+    },
+    computeSums: {
+        functionName: 'computeSums',
+        args: [
+        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'accX', 'accY',
+        'children', 'mass', 'start', 'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
+        'swings', 'tractions', 'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius',
+        'globalSpeed', 'stepNumber', 'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau',
+        'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+        ],
+    },
+    sort: {
+        functionName: 'sort',
+        args: [
+        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'accX', 'accY',
+        'children', 'mass', 'start', 'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax',
+        'swings', 'tractions', 'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius',
+        'globalSpeed', 'stepNumber', 'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau',
+        'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+        ],
+    },
+    calculateMidPoints: {
+        funcationName: 'calculateMidPoints',
+        args:[
+        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords', 'yCoords', 'edgeDirectionX',
+        'edgeDirectionY', 'edgeLengths', 'accX', 'accY', 'children', 'mass', 'start', 'sort',
+        'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions', 'count', 'blocked',
+        'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber', 'width', 'height',
+        'numBodies', 'numNodes', 'nextMidPoints', 'tau', 'charge', 'midpoint_stride',
+        'midpoints_per_edge', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+    ]
+    }
+}
 
-    var resources = [
-      simulator.buffers.curMidPoints,
-      simulator.buffers.forwardsDegrees,
-      simulator.buffers.backwardsDegrees,
-        simulator.buffers.nextMidPoints
-    ];
 
-    this.toBarnesLayout.set({stepNumber: stepNumber, midpoint_stride: midpoint_index, midpoints_per_edge: simulator.numSplits});
-    this.boundBox.set({stepNumber: stepNumber});
-    this.buildTree.set({stepNumber: stepNumber});
-    this.computeSums.set({stepNumber: stepNumber});
-    this.sort.set({stepNumber: stepNumber});
-    this.calculateMidPoints.set({stepNumber: stepNumber, midpoint_stride: midpoint_index, midpoints_per_edge:simulator.numSplits});
 
-    simulator.tickBuffers(['nextMidPoints']);
+// This implementation is designed to optimize midpoint force calculation
+// by using a 4 dimensional kd-tree in order to reduce the number of calculations
+// needed
+var MidpointForces = function (clContext) {
+    var toBarnesLayout,
+    boundBox,
+    buildTree,
+    computeSums,
+    sort,
+    calculateMidPoints;
 
-    debug("Running Edge Bundling Barnes Hut Kernel Sequence");
+    this.toBarnesLayout = new Kernel('to_barnes_layout', args.toBarnesLayout, argsType,
+                                'kdTree/kd-ConvertBuffersToKDLayout.cl', clContext);
 
-    // For all calls, we must have the # work items be a multiple of the workgroup size.
-    var that = this;
-    return this.toBarnesLayout.exec([workItems.toBarnesLayout[0]], resources, [workItems.toBarnesLayout[1]])
-      .then(function () {
-        return that.boundBox.exec([workItems.boundBox[0]], resources, [workItems.boundBox[1]]);
-      })
+    this.boundBox = new Kernel('bound_box', args.boundBox, argsType, 'kdTree/kd-BoundBox.cl',
+                          clContext);
 
-    .then(function () {
-      return that.buildTree.exec([workItems.buildTree[0]], resources, [workItems.buildTree[1]]);
-    })
+    this.buildTree = new Kernel('build_tree', args.barnes, argsType, 'kdTree/kd-BuildTree.cl',
+                           clContext);
 
-    .then(function () {
-      return that.computeSums.exec([workItems.computeSums[0]], resources, [workItems.computeSums[1]]);
-    })
+    this.computeSums = new Kernel('compute_sums', args.barnes, argsType, 'kdTree/kd-ComputeSums.cl',
+                             clContext);
 
-    .then(function () {
-      return that.sort.exec([workItems.sort[0]], resources, [workItems.sort[1]]);
-    })
+    this.sort = new Kernel('sort', args.barnes, argsType, 'kdTree/kd-Sort.cl', clContext)
 
-    .then(function () {
-      return that.calculateMidPoints.exec([workItems.calculateForces[0]], resources, [workItems.calculateForces[1]]);
-    })
-    .fail(eh.makeErrorHandler("Executing  EbBarnesKernelSeq failed"));
-  };
+    this.calculateMidPoints = new Kernel('calculate_forces', args.midPoints, argsType,
+                                    'kdTree/kd-CalculateForces.cl', clContext);
+
+    this.kernels = [this.toBarnesLayout, this.boundBox, this.buildTree, this.computeSums,
+        this.sort, this.calculateMidPoints];
+
+    this.setPhysics = function(flag) {
+        this.toBarnesLayout.set({flags: flag});
+        this.boundBox.set({flags: flag});
+        this.buildTree.set({flags: flag});
+        this.computeSums.set({flags: flag});
+        this.sort.set({flags: flag});
+        this.calculateMidPoints.set({flags: flag});
+    };
+
+    this.getFlags = function() {
+        return this.toBarnesLayout.get('flags');
+    }
+
+    this.setArgs = function (kernel, kernelName, bufferBindings) {
+        var params = parameters[kernelName];
+        var args = params.args;
+        var flags = ['tau', 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'stepNumber']
+        try {
+            var binding = {};
+            _.each(args, function (element, index, list) {
+                var arg = element;
+                if (flags.indexOf(arg) < 0) {
+                    if (bufferBindings[arg] === undefined) {
+                        return eh.makeErrorHandler('Error: no buffer bindings for arguement')
+                    }
+                    if (bufferBindings[arg].name !== undefined) {
+                        binding[arg] = bufferBindings[arg].buffer;
+                    } else {
+                        binding[arg] = bufferBindings[arg];
+                    }
+                }
+            })
+            console.log("Name:", kernelName, "binding:", binding);
+            return kernel.set(binding)
+        } catch (e) {
+            return eh.makeErrorHandler('Error setting arguments in kd-MidpointForces.js')
+        }
+    };
+
+
+    this.setMidPoints = function(simulator, layoutBuffers, warpsize, workItems) {
+        var that = this;
+        return setupTempBuffers(simulator, warpsize, simulator.numEdges).then(function (tempBuffers) {
+            var buffers = tempBuffers;
+            var bufferBindings = getBufferBindings(layoutBuffers, tempBuffers, simulator, warpsize,
+                                                   workItems);
+            //console.log(bufferBindings);
+            return Q.all([
+            that.setArgs(that.toBarnesLayout, 'toBarnesLayout', bufferBindings),
+            that.setArgs(that.boundBox, "boundBox", bufferBindings),
+            that.setArgs(that.buildTree, 'buildTree', bufferBindings),
+            that.setArgs(that.computeSums, 'computeSums', bufferBindings),
+            that.setArgs(that.sort, 'sort', bufferBindings),
+            that.setArgs(that.calculateMidPoints, 'calculateMidPoints', bufferBindings)
+            ]);
+        }).fail(eh.makeErrorHandler('setupTempBuffers'));
+    };
+
+    // TODO (paden) Can probably combine ExecKernel functions
+    this.execKernels = function(simulator, stepNumber, workItems, midpoint_index) {
+
+        var resources = [
+            simulator.buffers.curMidPoints,
+            simulator.buffers.forwardsDegrees,
+            simulator.buffers.backwardsDegrees,
+            simulator.buffers.nextMidPoints
+        ];
+
+        this.toBarnesLayout.set({stepNumber: stepNumber, midpoint_stride: midpoint_index, midpoints_per_edge: simulator.numSplits});
+        this.boundBox.set({stepNumber: stepNumber});
+        this.buildTree.set({stepNumber: stepNumber});
+        this.computeSums.set({stepNumber: stepNumber});
+        this.sort.set({stepNumber: stepNumber});
+        this.calculateMidPoints.set({stepNumber: stepNumber, midpoint_stride: midpoint_index, midpoints_per_edge:simulator.numSplits});
+
+        simulator.tickBuffers(['nextMidPoints']);
+
+        debug("Running Edge Bundling Barnes Hut Kernel Sequence");
+
+        // For all calls, we must have the # work items be a multiple of the workgroup size.
+        var that = this;
+        return this.toBarnesLayout.exec([workItems.toBarnesLayout[0]], resources, [workItems.toBarnesLayout[1]])
+        .then(function () {
+            return that.boundBox.exec([workItems.boundBox[0]], resources, [workItems.boundBox[1]]);
+        })
+
+        .then(function () {
+            return that.buildTree.exec([workItems.buildTree[0]], resources, [workItems.buildTree[1]]);
+        })
+
+        .then(function () {
+            return that.computeSums.exec([workItems.computeSums[0]], resources, [workItems.computeSums[1]]);
+        })
+
+        .then(function () {
+            return that.sort.exec([workItems.sort[0]], resources, [workItems.sort[1]]);
+        })
+
+        .then(function () {
+            return that.calculateMidPoints.exec([workItems.calculateForces[0]], resources, [workItems.calculateForces[1]]);
+        })
+        .fail(eh.makeErrorHandler("Executing  EbBarnesKernelSeq failed"));
+    };
 
 };
 
