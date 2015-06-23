@@ -102,7 +102,7 @@ module.exports =
             var snapshotPath = 'Static/' + snapshotName + '/';
             uploadPublic(snapshotPath + 'renderconfig.json', JSON.stringify(renderConfig), {ContentType: 'application/json'});
             uploadPublic(snapshotPath + 'metadata.json', JSON.stringify(metadata), {ContentType: 'application/json'});
-            uploadPublic(snapshotPath + 'curPoints', compressedVBOs.curPoints);
-            uploadPublic(snapshotPath + 'springPos', compressedVBOs.springsPos);
+            uploadPublic(snapshotPath + 'curPoints.vbo', compressedVBOs.curPoints);
+            uploadPublic(snapshotPath + 'springsPos.vbo', compressedVBOs.springsPos);
         }
     };
