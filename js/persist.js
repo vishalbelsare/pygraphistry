@@ -52,7 +52,6 @@ function checkWrite (snapshotName, vboPath, raw, buff) {
 function uploadPublic (path, buffer, params) {
     var uploadParams = !_.isEmpty(params) ? _.clone(params) : {};
     uploadParams.acl = 'public-read';
-    uploadParams.compressed = false;
     s3.upload(config.S3, config.BUCKET, {name: path}, buffer, uploadParams);
 }
 
