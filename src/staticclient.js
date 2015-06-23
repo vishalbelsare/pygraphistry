@@ -36,7 +36,7 @@ function makeFetcher () {
 
         //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
         var oReq = new XMLHttpRequest();
-        oReq.open('GET', BASE_URL + bufferName + '.vbo', true);
+        oReq.open('GET', BASE_URL + contentKey + '/' + bufferName + '.vbo', true);
         oReq.responseType = 'arraybuffer';
 
         var now = Date.now();
