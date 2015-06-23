@@ -33,7 +33,7 @@ logger.createLogger('central');
 var router = require('./worker-router.js');
 
 
-debug('Config set to %j', config);
+logger.trace('Config set to %j', config);
 
 // Tell Express to trust reverse-proxy connections from localhost, linklocal, and private IP ranges.
 // This allows Express to expose the client's real IP and protocol, not the proxy's.
@@ -75,7 +75,7 @@ var HTTP_SERVER_LISTEN_PORT = config.HTTP_LISTEN_PORT;
 
 function logClientError(req, res) {
     var writeError = function (msg) {
-        //debug('Logging client error', msg);
+        //logger.debug('Logging client error', msg);
         if(config.ENVIRONMENT === 'local') {
             if (msg.content) {
                 console.error('[Client]', msg.content);
@@ -143,7 +143,7 @@ function assignWorker(req, res) {
                 error: (err||{}).message || 'Error while assigning visualization worker.'
             });
         }
-        debug('Assigning client a worker', req.ip, worker);
+        logger.debug('Assigning client a worker', req.ip, worker);
 
         // Get the request URL so that we can construct a worker URL from it
         var baseUrl = ensureValidUrl(url.parse(req.originalUrl), {host: req.get('Host')});
@@ -199,9 +199,9 @@ app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
 
 // Temporarly handle ETL request from Splunk
 app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res) {
-    debug('etl request');
+    logger.debug('etl request');
     router.pickWorker(function (err, worker) {
-        debug('picked etl worker', req.ip, worker);
+        logger.debug('picked etl worker', req.ip, worker);
 
         if (err) {
             logger.error({err: err},'Error while assiging an ETL worker');
@@ -214,7 +214,7 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
         // Note: we specifically do not respect reverse proxy stuff, since we're presumably running
         // inside the cluster, and direct connections are more efficient.
         var redirect = 'http://' + worker.hostname + ':' + worker.port + '/';
-        debug('create socket', redirect);
+        logger.debug('create socket', redirect);
         var socket = io(redirect, {forceNew: true, reconnection: false, transports: ['websocket']});
         //socket.io.engine.binaryType = 'arraybuffer';
 
@@ -223,20 +223,20 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
         });
 
         socket.on('connect', function () {
-            debug('connected socket, initializing app', redirect);
+            logger.debug('connected socket, initializing app', redirect);
             socket.emit('viz', 'etl', function (resp) {
-                debug('initialized, notifying client');
+                logger.debug('initialized, notifying client');
                 if (!resp.success) {
                     logger.error({err: resp}, 'Failed initializing worker');
                     return res.json({success: false, msg: 'failed connecting to work'});
                 }
                 var newEndpoint = redirect + 'etl';
-                debug('telling client to redirect', newEndpoint);
+                logger.debug('telling client to redirect', newEndpoint);
 
                 req.pipe(request(newEndpoint)).pipe(res);
                 //res.redirect(307, newEndpoint);
             });
-            debug('waiting for worker to initialize');
+            logger.debug('waiting for worker to initialize');
         });
 
     });
@@ -254,12 +254,12 @@ app.use('/', express.static(MAIN_STATIC_PATH));
 
 
 app.get('/horizon', function(req, res) {
-    debug('redirecting to horizon');
+    logger.debug('redirecting to horizon');
     res.redirect('/horizon/src/demo/index.html' + (req.query.debug !== undefined ? '?debug' : ''));
 });
 
 app.get('/uber', function(req, res) {
-    debug('redirecting to graph');
+    logger.debug('redirecting to graph');
     res.redirect('/uber/index.html' + (req.query.debug !== undefined ? '?debug' : ''));
 });
 
@@ -270,7 +270,7 @@ function start() {
             if (config.ENVIRONMENT === 'local') {
                 var from = '/worker/' + config.VIZ_LISTEN_PORT + '/';
                 var to = 'http://localhost:' + config.VIZ_LISTEN_PORT;
-                debug('setting up proxy', from, to);
+                logger.debug('setting up proxy', from, to);
                 app.use(from, proxy(to, {
                     forwardPath: function(req) {
                         return url.parse(req.url).path.replace(new RegExp('worker/' + config.VIZ_LISTEN_PORT + '/'),'/');
