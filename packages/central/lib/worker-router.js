@@ -13,7 +13,7 @@ var MongoClient = require('mongodb').MongoClient;
 var config      = require('config')();
 
 var Log         = require('common/logger.js');
-var logger      = Log.createLogger('central');
+var logger      = Log.createLogger('central:worker-router');
 
 var mongoClientConnect = Rx.Observable.fromNodeCallback(MongoClient.connect, MongoClient);
 var dbObs = (config.ENVIRONMENT === 'local') ?

@@ -25,7 +25,7 @@ var http        = require('http').Server(app);
 var config      = require('config')();
 
 var Log         = require('common/logger.js');
-var logger      = Log.createLogger('central');
+var logger      = Log.createLogger('central:server');
 
 var router = require('./worker-router.js');
 
