@@ -6,7 +6,6 @@
 var os          = require('os');
 var _           = require('underscore');
 var Rx          = require('rx');
-var debug       = require('debug')('graphistry:central:worker-router');
 var request     = require('request');
 var MongoClient = require('mongodb').MongoClient;
 
