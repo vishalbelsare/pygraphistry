@@ -27,6 +27,9 @@ var log         = require('common/log.js');
 var eh          = require('common/errorHandlers.js')(log);
 log.createLogger(config, 'central');
 
+var logger      = require('common/logger.js');
+logger.createLogger('central');
+
 var router = require('./worker-router.js');
 
 
@@ -100,7 +103,7 @@ function logClientError(req, res) {
                 res.status(200).end();
             });
         } catch(err) {
-            log.exception(err, 'Error reading client error');
+            logger.error({err:err}, 'Error reading client error');
             res.status(500).end();
         }
     });
@@ -134,7 +137,7 @@ function ensureValidUrl() {
 function assignWorker(req, res) {
     router.pickWorker(function (err, worker) {
         if (err) {
-            log.error('Error while assigning visualization worker:', err);
+            logger.error({err:err},'Error while assigning visualization worker');
             return res.json({
                 success: false,
                 error: (err||{}).message || 'Error while assigning visualization worker.'
@@ -201,7 +204,7 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
         debug('picked etl worker', req.ip, worker);
 
         if (err) {
-            log.error('Error while assiging an ETL worker', err);
+            logger.error({err: err},'Error while assiging an ETL worker');
             return res.send({
                 success: false,
                 msg: 'Error while assigning an ETL worker:' + err.message
@@ -216,7 +219,7 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
         //socket.io.engine.binaryType = 'arraybuffer';
 
         socket.on('connect_error', function (err) {
-            log.error('Connect_error in socketio', err);
+            logger.error({err: err}'Connect_error in socketio');
         });
 
         socket.on('connect', function () {
@@ -224,7 +227,7 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
             socket.emit('viz', 'etl', function (resp) {
                 debug('initialized, notifying client');
                 if (!resp.success) {
-                    log.error('Failed initializing worker', resp);
+                    logger.error({err: resp}, 'Failed initializing worker');
                     return res.json({success: false, msg: 'failed connecting to work'});
                 }
                 var newEndpoint = redirect + 'etl';
