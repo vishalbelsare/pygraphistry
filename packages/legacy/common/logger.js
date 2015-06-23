@@ -78,6 +78,9 @@ var parentLogger = config.BUNYAN_LOG !== undefined ?
     bunyan.createLogger({
         name: "graphistry", 
         metadata: {},
+        serializers: {
+            err: bunyan.stdSerializers.err
+        },
         level: CONSOLE_DEBUG_LEVEL,
         streams: [{
             path: config.BUNYAN_LOG,
@@ -88,6 +91,9 @@ var parentLogger = config.BUNYAN_LOG !== undefined ?
     bunyan.createLogger({
         name: "graphistry", 
         metadata: {},
+        serializers: {
+            err: bunyan.stdSerializers.err
+        },
         level: CONSOLE_DEBUG_LEVEL
     });
 
