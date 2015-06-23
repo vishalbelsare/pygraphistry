@@ -26,12 +26,13 @@ function upload(S3, bucket, metadata, binaryBuffer, params) {
             compressed = params.compressed;
         }
 
-        if (params['ContentType']) {
-            putParams['ContentType'] = params['ContentType'];
+        if (params.ContentType) {
+            putParams.ContentType = params.ContentType;
         }
     }
 
     if (compressed) {
+        putParams.ContentEncoding = 'gzip';
         return Q.nfcall(zlib.gzip, binaryBuffer)
             .then(function (zipped) {
                 putParams.Body = zipped;
