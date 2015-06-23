@@ -886,8 +886,8 @@ function setupFullscreenBuffer(state) {
  * @param {String} tag - Extra information to track who requested rendering for debugging/perf
  * @param {String} renderListTrigger - The trigger tag of the render items to execute
  * @param {[String]} renderListOverride - List of render items to execute
- * @param {Object} readPixelOverride - Dimensions for readPixels
- * @param {Function} callback - Callback exectued after readPixels
+ * @param {Object} readPixelsOverride - Dimensions for readPixels
+ * @param {Function} callback - Callback executed after readPixels
  */
 function render(state, tag, renderListTrigger, renderListOverride, readPixelsOverride, callback) {
     var config      = state.get('config').toJS(),
