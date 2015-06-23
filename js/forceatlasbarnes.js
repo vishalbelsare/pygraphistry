@@ -195,9 +195,18 @@ function edgeForces(simulator, edgeKernelSeq, stepNumber, workItems) {
                                       simulator.numBackwardsWorkItems, buffers.curPoints, stepNumber, workItems);
 }
 
-
-
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
+    var locks = simulator.controls.locks;
+    if (locks.lockPoints) {
+      var buffers = simulator.buffers;
+      simulator.tickBuffers(['curPoints', 'nextPoints']);
+      return Q.all([
+              buffers.nextPoints.copyInto(buffers.curPoints),
+              buffers.curPoints.copyInto(buffers.nextPoints)
+              ]);
+      //return buffers.curPoints.copyInto(buffers.nextPoints);
+      //return Q();
+    }
     var that = this;
     var tickTime = Date.now();
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);

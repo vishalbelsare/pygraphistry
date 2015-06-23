@@ -1,6 +1,6 @@
 var Kernel = require('../kernel.js'),
     Q = require('q'),
-    debug = require("debug")("graphistry:graph-viz:cl:barensKernels"),
+    debug = require("debug")("graphistry:graph-viz:cl:ebBarnesKernelSequence"),
     _     = require('underscore'),
       log = require('common/log.js'),
        eh = require('common/errorHandlers.js')(log),

@@ -1,6 +1,6 @@
 var Kernel = require('../kernel.js'),
     Q = require('q'),
-    debug = require("debug")("graphistry:graph-viz:cl:barensKernels"),
+    debug = require("debug")("graphistry:graph-viz:cl:integrationKernel"),
     _     = require('underscore'),
     cljs  = require('../cl.js'),
     log = require('common/log.js'),
