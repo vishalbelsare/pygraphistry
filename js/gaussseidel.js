@@ -5,7 +5,6 @@
 var Q = require('q');
 var _ = require('underscore');
 var cljs = require('./cl.js');
-var webcl = require('node-webcl');
 var LayoutAlgo = require('./layoutAlgo.js');
 var Kernel = require('./kernel.js');
 

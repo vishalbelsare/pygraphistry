@@ -14,6 +14,10 @@ var config = require('config')();
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:cl:kernel');
 
+// Disable debug logging since this file is responsible for 90% of log output.
+// Comment me for local debugging.
+//debug = function () {}
+//Q.longStackSupport = true;
 
 
 // String * [String] * {String: Type} * String * clCtx
@@ -72,7 +76,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         var mustRecompile = false;
         _.each(args, function (val, arg) {
             if (arg in argValues) {
-                if (typeof val === 'undefined' || typeof val === 'null') {
+                if (val === undefined || typeof val === 'null') {
                     logger.trace('Setting argument %s to %s', arg, val);
                 }
 
@@ -98,19 +102,21 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         if (_.contains(defines, arg)) {
             return defValues[arg];
         } else if (_.contains(args, arg)) {
-            return argValues[arg].val
+            return argValues[arg].val;
         } else {
             logger.warn('Kernel %s has no parameter %s', name, arg);
             return undefined;
         }
-    }
+    };
 
     function compile () {
         logger.trace('Compiling kernel', that.name);
 
         _.each(defValues, function (arg, val) {
-            if (val === null)
+            if (val === null) {
                 logger.die('Define %s of kernel %s was never set', arg, name);
+            }
+
         });
 
         var prefix = _.flatten(_.map(defValues, function (val, key) {
@@ -152,8 +158,8 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                     logger.trace('In kernel %s, argument %s is null', name, arg);
 
                 if (dirty) {
-                    logger.trace('Setting arg %d with value', i, val);
-                    kernel.setArg(i, val, type || undefined);
+                    logger.trace('Setting arg %d of kernel %s to value %s', i, name, val);
+                    opencl.setKernelArg(kernel, i, val);
                     argValues[arg].dirty = false;
                 }
             }
@@ -166,12 +172,10 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     function call(kernel, workItems, buffers, workGroupSize) {
         // TODO: Consider acquires and releases of buffers.
 
-        // why doesn't this call the cljs call function?
-
         var queue = clContext.queue;
         logger.trace('Enqueuing kernel %s', that.name, kernel);
         var start = process.hrtime();
-        opencl.enqueueNDRangeKernel(queue, kernel, null, workItems, workGroupSize || null);
+        opencl.enqueueNDRangeKernel(queue, kernel, 1, null, workItems, workGroupSize || null);
         if (synchronous) {
             logger.trace('Waiting for kernel to finish');
             opencl.finish(queue);

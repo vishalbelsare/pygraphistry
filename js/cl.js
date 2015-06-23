@@ -13,37 +13,39 @@ var perf        = require('common/perfStats.js').createPerfMonitor();
 
 logger.trace("Initializing node-webcl flavored cl.js");
 //var webcl = require('node-webcl');
-var opencl = require('node-opencl');
+var ocl = require('node-opencl');
+// Q.longStackSupport = true;
 
+// TODO: remove types from SimCL, since they are no longer needed
 var types = {
-    char_t: webcl.type.CHAR,
-    double_t: webcl.type.DOUBLE,
-    float_t: webcl.type.FLOAT,
-    half_t: webcl.type.HALF,
-    int_t: webcl.type.INT,
-    local_t: webcl.type.LOCAL_MEMORY_SIZE,
-    long_t: webcl.type.LONG,
-    short_t: webcl.type.SHORT,
-    uchar_t: webcl.type.UCHAR,
-    uint_t: webcl.type.UINT,
-    ulong_t: webcl.type.ULONG,
-    ushort_t: webcl.type.USHORT,
-    float2_t: webcl.type.VEC2,
-    float3_t: webcl.type.VEC3,
-    float4_t: webcl.type.VEC4,
-    float8_t: webcl.type.VEC8,
-    float16_t: webcl.type.VEC16,
+    char_t: null,
+    double_t: null,
+    float_t: null,
+    half_t: null,
+    int_t: null,
+    local_t: null,
+    long_t: null,
+    short_t: null,
+    uchar_t: null,
+    uint_t: null,
+    ulong_t: null,
+    ushort_t: null,
+    float2_t: null,
+    float3_t: null,
+    float4_t: null,
+    float8_t: null,
+    float16_t: null,
     define: '#define',
 };
 
 var defaultVendor = 'nvidia';
 
 var clDeviceType = {
-    'cpu': opencl.DEVICE_TYPE_CPU,
-    'gpu': opencl.DEVICE_TYPE_GPU,
-    'all': opencl.DEVICE_TYPE_ALL,
-    'any': opencl.DEVICE_TYPE_ALL,
-    'default': opencl.DEVICE_TYPE_ALL
+    'cpu': ocl.DEVICE_TYPE_CPU,
+    'gpu': ocl.DEVICE_TYPE_GPU,
+    'all': ocl.DEVICE_TYPE_ALL,
+    'any': ocl.DEVICE_TYPE_ALL,
+    'default': ocl.DEVICE_TYPE_ALL
 };
 
 
@@ -66,22 +68,21 @@ var create = Q.promised(function(renderer, device, vendor) {
 
 
 function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
-    if (opencl === undefined) {
+    if (ocl === undefined) {
         throw new Error("No OpenCL found.");
     }
-    if (opencl === null) {
+    if (ocl === null) {
         throw new Error("Can't access OpenCL object");
     }
 
-    var platforms = opencl.getPlatformIDs();
+    var platforms = ocl.getPlatformIDs();
     if (platforms.length === 0) {
         throw new Error("Can't find any OpenCL platforms");
     }
     logger.debug("Found %d OpenCL platforms; using first", platforms.length);
     var platform = platforms[0];
 
-    var clDevices = opencl.getDeviceIds(platform, DEVICE_TYPE);
-    //var clDevices = platform.getDevices(DEVICE_TYPE);
+    var clDevices = ocl.getDeviceIDs(platform, DEVICE_TYPE);
 
     logger.debug("Devices found on platform: %d", clDevices.length);
     if(clDevices.length < 1) {
@@ -92,22 +93,22 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
         logger.trace("Found device %s", nodeutil.inspect(d, {depth: null, showHidden: true, colors: true}));
 
         var typeToString = function (v) {
-            return v === opencl.DEVICE_TYPE_CPU ? 'CPU'
-                : v === opencl.DEVICE_TYPE_GPU ? 'GPU'
-                : v === opencl.DEVICE_TYPE_ACCELERATOR ? 'ACCELERATOR'
-                : v === opencl.DEVICE_TYPE_DEFAULT ? 'DEFAULT'
+            return v === ocl.DEVICE_TYPE_CPU ? 'CPU'
+                : v === ocl.DEVICE_TYPE_GPU ? 'GPU'
+                : v === ocl.DEVICE_TYPE_ACCELERATOR ? 'ACCELERATOR'
+                : v === ocl.DEVICE_TYPE_DEFAULT ? 'DEFAULT'
                 : ('unknown type: ' + v);
         };
 
         // TODO: this is definitely not the number of compute units
-        var computeUnits = opencl.getDeviceInfo(d, opencl.DEVICE_MAX_WORK_ITEM_SIZES)
+        var computeUnits = ocl.getDeviceInfo(d, ocl.DEVICE_MAX_WORK_ITEM_SIZES)
             .reduce(function(a, b) {
                 return a * b;
             });
 
         return {
             device: d,
-            deviceType: typeToString(opencl.getDeviceInfo(d, opencl.DEVICE_TYPE)),
+            deviceType: typeToString(ocl.getDeviceInfo(d, ocl.DEVICE_TYPE)),
             computeUnits: computeUnits
         };
     });
@@ -118,9 +119,9 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
 
     // sort devices first by "nvidia" and then by "computeUnits"
     devices.sort(function(a, b) {
-        // FIXME: the compute units are still calculated oddly
-        var nameA = opencl.getDeviceInfo(a.device, opencl.DEVICE_VENDOR).toLowerCase();
-        var nameB = opencl.getDeviceInfo(b.device, opencl.DEVICE_VENDOR).toLowerCase();
+        // FIXME: the number of compute units is calculated weirdly
+        var nameA = ocl.getDeviceInfo(a.device, ocl.DEVICE_VENDOR).toLowerCase();
+        var nameB = ocl.getDeviceInfo(b.device, ocl.DEVICE_VENDOR).toLowerCase();
 
         if (nameA.indexOf(vendor) !== -1 && nameB.indexOf(vendor) === -1) {
             return -1;
@@ -142,7 +143,7 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
         wrapped = devices[i];
 
         try {
-            wrapped.context = opencl.createContext([opencl.CONTEXT_PLATFORM, platform],
+            wrapped.context = ocl.createContext([ocl.CONTEXT_PLATFORM, platform],
                                                    [wrapped.device], clErrorHandler,
                                                    clErrorHandler);
 
@@ -150,7 +151,11 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
                 throw new Error("Error creating WebCL context");
             }
 
-            wrapped.queue = opencl.createCommandQueue(wrapped.context, wrapped.device, 0);
+            if (ocl.VERSION_2_0) {
+                wrapped.queue = ocl.createCommandQueueWithProperties(wrapped.context, wrapped.device, []);
+            } else {
+                wrapped.queue = ocl.createCommandQueue(wrapped.context, wrapped.device, 0);
+            }
             deviceWrapper = wrapped;
         } catch (e) {
             logger.trace("Skipping device %d due to error %o. %o", i, e, wrapped);
@@ -170,7 +175,7 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
     ];
 
     var props = _.object(attribs.map(function (name) {
-        return [name, opencl.getDeviceInfo(deviceWrapper.device, opencl['DEVICE_' + name])];
+        return [name, ocl.getDeviceInfo(deviceWrapper.device, ocl['DEVICE_' + name])];
     }));
     props.TYPE = deviceWrapper.deviceType;
 
@@ -187,19 +192,20 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
 
     var res = {
         renderer: renderer,
-        cl: opencl,
+        cl: ocl,
         context: deviceWrapper.context,
         device: deviceWrapper.device,
         queue: deviceWrapper.queue,
         deviceProps: props,
-        maxThreads: opencl.getDeviceInfo(deviceWrapper.device, opencl.DEVICE_MAX_WORK_GROUP_SIZE),
-        numCores: opencl.getDeviceInfo(deviceWrapper.device, opencl.DEVICE_MAX_COMPUTE_UNITS)
+        maxThreads: ocl.getDeviceInfo(deviceWrapper.device, ocl.DEVICE_MAX_WORK_GROUP_SIZE),
+        numCores: ocl.getDeviceInfo(deviceWrapper.device, ocl.DEVICE_MAX_COMPUTE_UNITS)
     };
 
     //FIXME ??
     res.compile = compile.bind(this, res);
     res.createBuffer = createBuffer.bind(this, res);
     res.createBufferGL = createBufferGL.bind(this, res);
+    res.finish = finish;
 
     return res;
 }
@@ -225,17 +231,17 @@ var compile = Q.promised(function (cl, source, kernels) {
     var program;
     try {
         // compile and link program
-        program = opencl.createProgramWithSource(cl.context, source);
+        program = ocl.createProgramWithSource(cl.context, source);
         // Note: Include dir is not official webcl, won't work in the browser.
         var includeDir = path.resolve(__dirname, '..', 'kernels');
-        opencl.BuildProgram(program, [cl.device], '-I ' + includeDir + ' -cl-fast-relaxed-math');
+        ocl.buildProgram(program, [cl.device], '-I ' + includeDir + ' -cl-fast-relaxed-math');
 
         // create kernels
         try {
             var kernelsObjs = typeof kernels === "string" ? [ 'unknown' ] : kernels;
             var compiled = _.object(kernelsObjs.map(function (kernelName) {
                     debug('    Compiling ', kernelName);
-                    return [kernelName, opencl.createKernel(program, kernelName)];
+                    return [kernelName, ocl.createKernel(program, kernelName)];
             }));
             debug('  Compiled kernels');
 
@@ -245,7 +251,8 @@ var compile = Q.promised(function (cl, source, kernels) {
         }
     } catch (e) {
         try {
-          var log = opencl.getProgramBuildInfo(program, cl.device, opencl.PROGRAM_BUILD_LOG);
+          var log = ocl.getProgramBuildInfo(program, cl.device, ocl.PROGRAM_BUILD_LOG);
+          // compile error -> get error output
           console.log('Build Log: %o', log);
           log.makeQErrorHandler(logger, 'OpenCL compilation error')(log);
         } catch (e2) {
@@ -284,7 +291,7 @@ var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
             }
             var global = [globalSize];
             // TODO: passing `null` might a problem with node-opencl
-            opencl.enqueueNDRangeKernel(kernel.cl.queue, kernel.kernel, null, global, workgroup);
+            ocl.enqueueNDRangeKernel(kernel.cl.queue, kernel.kernel, null, global, workgroup);
         })
         .fail(log.makeQErrorHandler(logger, 'Kernel error'))
         // TODO: need GL buffer interoperability?
@@ -292,19 +299,19 @@ var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
         .then(function () {
             // wait for kernel to finish
             // TODO: isn't this also called somewhere else?
-            opencl.Finish(kernel.cl.queue);
+            ocl.Finish(kernel.cl.queue);
         })
         .then(_.constant(kernel));
 });
 
 var finish = function(queue) {
-    opencl.Finish(queue);
+    ocl.finish(queue);
 };
 
 var createBuffer = Q.promised(function(cl, size, name) {
     logger.debug("Creating buffer %s, size %d", name, size);
 
-    var buffer = opencl.createBuffer(cl.context, opencl.MEM_READ_WRITE, size);
+    var buffer = ocl.createBuffer(cl.context, ocl.MEM_READ_WRITE, size);
 
     if (buffer === null) {
         throw new Error("Could not create the OpenCL buffer");
@@ -326,7 +333,7 @@ var createBuffer = Q.promised(function(cl, size, name) {
     };
     bufObj.delete = Q.promised(function() {
         //buffer.release();
-        opencl.ReleaseMemObject(buffer);
+        ocl.ReleaseMemObject(buffer);
         bufObj.size = 0;
         return null;
     });
@@ -413,7 +420,7 @@ var copyBuffer = Q.promised(function (cl, source, destination) {
         source.name, source.size, destination.name, destination.size);
     return acquire([source, destination])
         .then(function () {
-            opencl.enqueueCopyBuffer(cl.queue, source.buffer, destination.buffer, 0, 0, Math.min(source.size, destination.size));
+            ocl.enqueueCopyBuffer(cl.queue, source.buffer, destination.buffer, 0, 0, Math.min(source.size, destination.size));
         })
         // .then(function () {
         //     cl.queue.finish();
@@ -427,7 +434,7 @@ var write = Q.promised(function write(buffer, data) {
     // TODO acquire not needed if GL is dropped
     return buffer.acquire()
         .then(function () {
-            opencl.enqueueWriteBuffer(buffer.cl.queue, buffer.buffer, true, 0, data.byteLength, data);
+            ocl.enqueueWriteBuffer(buffer.cl.queue, buffer.buffer, true, 0, data.byteLength, data);
             return buffer.release();
         })
         .then(function() {
@@ -445,7 +452,7 @@ var read = Q.promised(function (buffer, target, optStartIdx, optLen) {
             logger.trace('Reading Buffer', buffer.name);
             var start = Math.min(optStartIdx || 0, buffer.size);
             var len = optLen !== undefined ? optLen : (buffer.size - start);
-            opencl.enqueueReadBuffer(buffer.cl.queue, buffer.buffer, true, start, len, target);
+            ocl.enqueueReadBuffer(buffer.cl.queue, buffer.buffer, true, start, len, target);
             // TODO acquire and release not needed if GL is dropped
             return buffer.release();
         })
