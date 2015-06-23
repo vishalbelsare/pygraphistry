@@ -27,13 +27,10 @@ var log         = require('common/log.js');
 var eh          = require('common/errorHandlers.js')(log);
 log.createLogger(config, 'central');
 
-var logger      = require('common/logger.js');
-logger.createLogger('central');
+var Log         = require('common/logger.js');
+var logger      = Log.createLogger('central');
 
 var router = require('./worker-router.js');
-
-
-logger.trace('Config set to %j', config);
 
 // Tell Express to trust reverse-proxy connections from localhost, linklocal, and private IP ranges.
 // This allows Express to expose the client's real IP and protocol, not the proxy's.
@@ -103,7 +100,7 @@ function logClientError(req, res) {
                 res.status(200).end();
             });
         } catch(err) {
-            logger.error({err:err}, 'Error reading client error');
+            logger.error(err, 'Error reading client error');
             res.status(500).end();
         }
     });
@@ -137,7 +134,7 @@ function ensureValidUrl() {
 function assignWorker(req, res) {
     router.pickWorker(function (err, worker) {
         if (err) {
-            logger.error({err:err},'Error while assigning visualization worker');
+            logger.error(err, 'Error while assigning visualization worker');
             return res.json({
                 success: false,
                 error: (err||{}).message || 'Error while assigning visualization worker.'
@@ -204,7 +201,7 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
         logger.debug('picked etl worker', req.ip, worker);
 
         if (err) {
-            logger.error({err: err},'Error while assiging an ETL worker');
+            logger.error(err ,'Error while assiging an ETL worker');
             return res.send({
                 success: false,
                 msg: 'Error while assigning an ETL worker:' + err.message
@@ -219,24 +216,24 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
         //socket.io.engine.binaryType = 'arraybuffer';
 
         socket.on('connect_error', function (err) {
-            logger.error({err: err}'Connect_error in socketio');
+            logger.error(err ,'Connect_error in socketio');
         });
 
         socket.on('connect', function () {
-            logger.debug('connected socket, initializing app', redirect);
+            logger.trace('connected socket, initializing app', redirect);
             socket.emit('viz', 'etl', function (resp) {
-                logger.debug('initialized, notifying client');
+                logger.trace('initialized, notifying client');
                 if (!resp.success) {
-                    logger.error({err: resp}, 'Failed initializing worker');
+                    logger.error(resp, 'Failed initializing worker');
                     return res.json({success: false, msg: 'failed connecting to work'});
                 }
                 var newEndpoint = redirect + 'etl';
-                logger.debug('telling client to redirect', newEndpoint);
+                logger.trace('telling client to redirect', newEndpoint);
 
                 req.pipe(request(newEndpoint)).pipe(res);
                 //res.redirect(307, newEndpoint);
             });
-            logger.debug('waiting for worker to initialize');
+            logger.trace('waiting for worker to initialize');
         });
 
     });
@@ -270,7 +267,7 @@ function start() {
             if (config.ENVIRONMENT === 'local') {
                 var from = '/worker/' + config.VIZ_LISTEN_PORT + '/';
                 var to = 'http://localhost:' + config.VIZ_LISTEN_PORT;
-                logger.debug('setting up proxy', from, to);
+                logger.info('setting up proxy', from, to);
                 app.use(from, proxy(to, {
                     forwardPath: function(req) {
                         return url.parse(req.url).path.replace(new RegExp('worker/' + config.VIZ_LISTEN_PORT + '/'),'/');
