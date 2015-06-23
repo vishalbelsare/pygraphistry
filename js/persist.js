@@ -104,5 +104,9 @@ module.exports =
             uploadPublic(snapshotPath + 'metadata.json', JSON.stringify(metadata), {ContentType: 'application/json'});
             uploadPublic(snapshotPath + 'curPoints.vbo', compressedVBOs.curPoints);
             uploadPublic(snapshotPath + 'springsPos.vbo', compressedVBOs.springsPos);
+            uploadPublic(snapshotPath + 'edgeColors.vbo', compressedVBOs.edgeColors);
+            uploadPublic(snapshotPath + 'pointSizes.vbo', compressedVBOs.pointSizes);
+            uploadPublic(snapshotPath + 'pointColors.vbo', compressedVBOs.pointColors);
+            uploadPublic(snapshotPath + 'logicalEdges.vbo', compressedVBOs.logicalEdges);
         }
     };
