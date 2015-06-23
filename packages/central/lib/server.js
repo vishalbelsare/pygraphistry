@@ -85,7 +85,8 @@ function logClientError(req, res) {
         }
         var logFile = path.resolve('/', 'var', 'log', 'clients' ,'clients.log');
         return Q.denodeify(fs.appendFile)(logFile, JSON.stringify(msg) + '\n')
-            .fail(eh.makeErrorHandler('Error writing client error'));
+            .fail(logger.makeErrorHandler("Error writing client error")); //eh.makeErrorHandler('Error writing client error')
+            //unsure if this method of making an error handler is efficient, since we're creating a new child logger for each error handler...
     };
 
     var data = '';
