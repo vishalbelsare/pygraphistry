@@ -35,9 +35,22 @@ console.warn('%cWarning: having the console open can slow down execution signifi
 
 var urlParams = getUrlParameters();
 
+/**
+ * @typedef {Object} GraphistryURLParams
+ * @type {string} usertag
+ * @type {string} basePath
+ * @type {string} debug - defaults to false.
+ * @type {string} info - defaults to false.
+ * @type {string} logo - bool, defaults to true, can override to disable Graphistry brand/logo.
+ * @type {string} menu - bool, defaults to true, can override to disable menu.
+ * @type {string} static - bool, defaults to false, indicates whether to load static content instead of connect live.
+ * @type {string} contentKey - specifies where static content resides.
+ */
+
 
 /**
  * Gets the URL param for the dataset
+ * @return GraphistryURLParams
  */
 function getUrlParameters() {
     var sPageURL = window.location.search.substring(1);
