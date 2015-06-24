@@ -65,7 +65,6 @@ var STREAMGL_MAP_PATH   = require.resolve('StreamGL/dist/StreamGL.map');
 var HTTP_SERVER_LISTEN_ADDRESS = config.HTTP_LISTEN_ADDRESS;
 var HTTP_SERVER_LISTEN_PORT = config.HTTP_LISTEN_PORT;
 
-// {req: req, clientError: msg}
 function logClientError(req, res) {
     var writeError = function (msg) {
         //logger.debug('Logging client error', msg);
@@ -82,8 +81,7 @@ function logClientError(req, res) {
         }
         var logFile = path.resolve('/', 'var', 'log', 'clients' ,'clients.log');
         return Q.denodeify(fs.appendFile)(logFile, JSON.stringify(msg) + '\n')
-            .fail(logger.makeErrorHandler("Error writing client error")); //eh.makeErrorHandler('Error writing client error')
-            //unsure if this method of making an error handler is efficient, since we're creating a new child logger for each error handler...
+            .fail(logger.makeQErrorHandler("Error writing client error"));
     };
 
     var data = '';
