@@ -117,8 +117,8 @@ function deployEnv(options) {
         MONGO_HOSTS: ['c48.lighthouse.2.mongolayer.com:10048', 'c48.lighthouse.3.mongolayer.com:10048'],
         MONGO_REPLICA_SET: 'set-545152bc461811298c009c03',
 
-        BUNYAN_LOG: '/var/log/graphistry-json/' + process.env.SUPERVISOR_PROCESS_NAME + '.log'
-        PINGER_ENABLED: true,
+        BUNYAN_LOG: '/var/log/graphistry-json/' + process.env.SUPERVISOR_PROCESS_NAME + '.log',
+        PINGER_ENABLED: true
     };
 
     var stagingOptions = {
