@@ -72,7 +72,7 @@ module.exports = function (socket, urlParams) {
             function (err) {
                 console.error('err', err);
                 try { $('.persistor').remove(); } catch (ignore) { }
-                util.makeErrorHandler('exn persisting vgraph', err);
+                util.makeErrorHandler('Exception while persisting VBOs', err);
             });
 
 };
