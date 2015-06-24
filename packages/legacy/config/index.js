@@ -2,7 +2,10 @@
 'use strict';
 
 var util = require('util');
-var debug = require('debug')('graphistry:config');
+
+var Log         = require('common/logger.js');
+var logger      = Log.createLogger('config');
+
 var _ = require('lodash');
 var AWS = require('aws-sdk');
 AWS.config.update({accessKeyId: 'AKIAJSGVPK46VRVYMU2A', secretAccessKey: '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'});
@@ -214,7 +217,7 @@ function getOptions(optionOverrides) {
 
     var optionsResolved = resolve(defaults, overrides, deployEnv, synthesized, overrides);
 
-    debug('Program options resolved to:', optionsResolved);
+    logger.debug('Program options resolved to:', optionsResolved);
     return optionsResolved;
 };
 
