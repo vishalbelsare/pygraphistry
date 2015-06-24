@@ -85,7 +85,7 @@ function displayErrors(socket, $canvas) {
 //      vboUpdates: Observable {'start', 'received', 'rendered'},
 //      renderState: renderState
 //  }
-function init(streamClient, canvas, vizType) {
+function init(streamClient, canvasElement, vizType) {
     debug('Initializing client networking driver', vizType);
 
     var textNum = 0;
@@ -109,10 +109,10 @@ function init(streamClient, canvas, vizType) {
     streamClient.connect(vizType, urlParams)
         .flatMap(/** @param {RenderInfo} nfo */ function(nfo) {
             var socket  = nfo.socket;
-            displayErrors(socket, $(canvas));
+            displayErrors(socket, $(canvasElement));
 
             debug('Creating renderer');
-            return streamClient.createRenderer(socket, canvas)
+            return streamClient.createRenderer(socket, canvasElement)
                 .map(/** @param {renderer} initialRenderState @returns {RenderInfo} */ function(initialRenderState) {
                     debug('Renderer created');
                     return {
