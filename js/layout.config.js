@@ -64,37 +64,56 @@ function BoolParam(name, value) {
 BoolParam.prototype = Object.create(Param.prototype);
 BoolParam.prototype.constructor = BoolParam;
 
+var defaultNumSplits = 3;
 
 var uberControls = {
     simulator: SimCL,
     layoutAlgorithms: [
         {
+            algo: forceAtlasBarnes,
+            params: {
+                tau: new ContinuousParam('Precision vs. Speed', 10.0, 1.0, 25.0),
+                gravity: new ContinuousParam('Center Magnet', 1.0, 0.01, 100),
+                scalingRatio: new ContinuousParam('Expansion Ratio', 1.0, 0.01, 100),
+                edgeInfluence: new DiscreteParam('Edge Influence', 0, 0, 5, 1),
+                preventOverlap: new BoolParam('Prevent Overlap', false),
+                strongGravity: new BoolParam('Compact Layout', false),
+                dissuadeHubs: new BoolParam('Dissuade Hubs', false),
+                linLog: new BoolParam('Strong Separation (LinLog)', false)
+            }
+        }
+        ,{
             algo: EdgeBundlingBarnes,
             params: {
-                tau: new ContinuousParam('Speed', 0.05, 0.000000001, 0.5),
-                gravity: new ContinuousParam('Gravity', 0.020083175556898723, 0, 0.1),
-                charge: new ContinuousParam('Charge', -0.0001, -100000, -0.0000000000000001),
-                springStrength: new ContinuousParam('Spring Strength', 200.2921, 0, 10000),
+                edgeBundling: new BoolParam('Edge Bundling', false),
+                midpoints: new DiscreteParam('Splits', defaultNumSplits , 0, 32),
+                tau: new ContinuousParam('Speed', 0.5, 0.0000001, 1),
+                charge: new ContinuousParam('Charge', -100, -200, -0.0000000000000001),
+                springStrength: new ContinuousParam('Spring Strength', 100, 0, 200),
                 springDistance: new ContinuousParam('Spring Distance', 0.5, 0.0000001, 1),
-                scalingRatio: new ContinuousParam('Scaling', 1.0, 0.01, 100),
-                edgeInfluence: new DiscreteParam('Edge Influence', 1, 0, 5, 1),
+                // TODO : Remove these
+                gravity: new ContinuousParam('Center Magnet', 1.0, 0.01, 100),
+                scalingRatio: new ContinuousParam('Expansion Ratio', 1.0, 0.01, 100),
+                edgeInfluence: new DiscreteParam('Edge Influence', 0, 0, 5, 1),
                 preventOverlap: new BoolParam('Prevent Overlap', false),
-                strongGravity: new BoolParam('Strong Gravity', false),
+                strongGravity: new BoolParam('Compact Layout', false),
                 dissuadeHubs: new BoolParam('Dissuade Hubs', false),
-                linLog: new BoolParam('LinLog', false)
+                linLog: new BoolParam('Strong Separation (LinLog)', false)
             }
         }
     ],
     locks: {
-        lockPoints: true,
-        lockEdges: true,
+        lockPoints: false,
+        lockEdges: false,
         lockMidpoints: false,
-        lockMidedges: false
+        lockMidedges: false,
+        interpolateMidPoints: true,
+        interpolateMidPointsOnce: false
     },
     global: {
         simulationTime: 1, //SIMULATION_TIME, //milliseconds
         dimensions: [1, 1],
-        numSplits: 8
+        numSplits: defaultNumSplits
     },
     devices: ['CPU', 'GPU']
 }

@@ -56,7 +56,8 @@ function graphCounts(graph) {
         edgeColors: edge,
         curMidPoints: midPoint,
         midSpringsPos: midEdge,
-        midSpringsColorCoord: midEdge
+        midSpringsColorCoord: midEdge,
+        midEdgeColors: midEdge
     };
 
 }

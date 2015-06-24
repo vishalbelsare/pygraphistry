@@ -49,6 +49,13 @@ function checkWrite (snapshotName, vboPath, raw, buff) {
 }
 
 
+function uploadPublic (path, buffer, params) {
+    var uploadParams = !_.isEmpty(params) ? _.clone(params) : {};
+    uploadParams.acl = 'public-read';
+    s3.upload(config.S3, config.BUCKET, {name: path}, buffer, uploadParams);
+}
+
+
 module.exports =
     {
         saveConfig: function (snapshotName, renderConfig) {
@@ -89,31 +96,16 @@ module.exports =
             debug('wrote/read', prevHeader, _.keys(buffers));
         },
 
-        saveCurrentVBO: function (snapshotName, vbos) {
-            debug('serializing current vbo');
-            ensurePath(baseDirPath);
-            fs.writeFileSync(baseDirPath + snapshotName + '.metadata.json', JSON.stringify(prevHeader));
-            var buffers = vbos.uncompressed;
-            var vboPath = baseDirPath + snapshotName + '.current.vbo';
-            if (_.isEmpty(buffers)) {
-                throw 'empty VBO buffers supplied';
-            }
-            var raw = buffers[buffers.length - 1];
-            var buff = new Buffer(raw.byteLength);
-            var arr = new Uint8Array(raw);
-            for (var j = 0; j < raw.byteLength; j++) {
-                buff[j] = raw[j];
-            }
-
-            fs.writeFileSync(vboPath, buff);
-
-            debug('writing', vboPath, raw.byteLength, buff.length);
-
-            if (CHECK_AT_EACH_SAVE) {
-                checkWrite(snapshotName, vboPath, raw, buff);
-            }
-
-            // TODO upload to S3
-            s3.upload(config.S3, config.BUCKET, {name: snapshotName}, buff);
+        publishStaticContents: function (snapshotName, compressedVBOs, metadata, renderConfig) {
+            debug('publishing current content to S3');
+            var snapshotPath = 'Static/' + snapshotName + '/';
+            uploadPublic(snapshotPath + 'renderconfig.json', JSON.stringify(renderConfig), {ContentType: 'application/json'});
+            uploadPublic(snapshotPath + 'metadata.json', JSON.stringify(metadata), {ContentType: 'application/json'});
+            uploadPublic(snapshotPath + 'curPoints.vbo', compressedVBOs.curPoints, {compressed: false});
+            uploadPublic(snapshotPath + 'springsPos.vbo', compressedVBOs.springsPos, {compressed: false});
+            uploadPublic(snapshotPath + 'edgeColors.vbo', compressedVBOs.edgeColors, {compressed: false});
+            uploadPublic(snapshotPath + 'pointSizes.vbo', compressedVBOs.pointSizes, {compressed: false});
+            uploadPublic(snapshotPath + 'pointColors.vbo', compressedVBOs.pointColors, {compressed: false});
+            uploadPublic(snapshotPath + 'logicalEdges.vbo', compressedVBOs.logicalEdges, {compressed: false});
         }
     };

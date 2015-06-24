@@ -76,14 +76,36 @@ function createSimulator(renderer, device, vendor, controls) {
         .fail(eh.makeErrorHandler('Cannot create simulator'));
 }
 
-function updateSettings (graph, newCfg) {
+function updateSettings(graph, newCfg) {
     debug('Updating simulation settings', newCfg);
     if (newCfg.simControls) {
         var cfg = lConf.fromClient(graph.simulator.controls, newCfg.simControls);
         graph.simulator.setPhysics(cfg);
         graph.simulator.setLocks(cfg);
         graph.renderer.setVisible(cfg);
+        if (newCfg.simControls.hasOwnProperty('EdgeBundling')) {
+            if (newCfg.simControls.EdgeBundling.hasOwnProperty('edgeBundling')) {
+                if (newCfg.simControls.EdgeBundling.edgeBundling) {
+                    console.log("Switching to edge bundling");
+                    graph.simulator.controls.locks.interpolateMidPoints = false;
+                    graph.simulator.controls.locks.lockPoints = true;
+                    graph.simulator.controls.locks.lockEdges = true;
+                }
+                if (!newCfg.simControls.EdgeBundling.edgeBundling) {
+                    console.log("Switching to ForceAtlas2");
+                    graph.simulator.controls.locks.interpolateMidPoints = true;
+                    graph.simulator.controls.locks.lockPoints = false;
+                    graph.simulator.controls.locks.lockEdges = false;
+                }
+            }
+            if (newCfg.simControls.EdgeBundling.hasOwnProperty('midpoints')) {
+                graph.simulator.controls.global.numSplits = cfg.EdgeBundling.midpoints;
+                graph.simulator.numSplits = cfg.EdgeBundling.midpoints;
+                return graph.simulator.setMidEdges();
+            }
+        }
     }
+
 
     if (newCfg.timeSubset) {
         graph.simulator.setTimeSubset(newCfg.timeSubset);
@@ -421,7 +443,7 @@ var setEdges = Q.promised(function(graph, edges) {
                 graph.simulator.numPoints, edges.length, numSplits);
 
     return graph.simulator.setEdges(edges, forwardEdges, backwardsEdges,
-                                    degrees, midPoints, endPoints)
+                                    degrees, midPoints, endPoints, graph.__pointsHostBuffer)
         .then(function() {
             return graph;
         }).fail(eh.makeErrorHandler('Failure in setEdges'));
@@ -480,6 +502,10 @@ function setEdgeWeight(graph, edgeWeights) {
 
 function setMidEdgeColors(graph, midEdgeColors) {
     debug("Loading midEdgeColors");
+
+    if (!midEdgeColors) { // Use default Colors
+        return graph.simulator.setMidEdgeColors(undefined);
+    }
 
     var numMidEdges = graph.simulator.numMidEdges;
 
