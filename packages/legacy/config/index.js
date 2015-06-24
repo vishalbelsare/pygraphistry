@@ -51,6 +51,7 @@ function defaults() {
         MONGO_REPLICA_SET: undefined,
         // This option will be set by synthesized; it's only here for reference
         MONGO_SERVER: 'mongodb://localhost/graphistry-local',
+        PINGER_ENABLED: false,
 
         BOUNDARY: {
             ENDPOINT: 'https://api.graphdat.com/v1/measurements',
@@ -117,6 +118,7 @@ function deployEnv(options) {
         MONGO_REPLICA_SET: 'set-545152bc461811298c009c03',
 
         BUNYAN_LOG: '/var/log/graphistry-json/' + process.env.SUPERVISOR_PROCESS_NAME + '.log'
+        PINGER_ENABLED: true,
     };
 
     var stagingOptions = {
