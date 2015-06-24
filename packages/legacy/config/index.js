@@ -90,7 +90,7 @@ function commandLine() {
         try {
             commandLineOptions = JSON.parse(process.argv[2])
         } catch (err) {
-            console.warn("WARNING Cannot parse command line arguments, ignoring...");
+            logger.warn("WARNING Cannot parse command line arguments, ignoring...");
         }
     }
 
