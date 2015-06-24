@@ -210,7 +210,7 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
 
         // Note: we specifically do not respect reverse proxy stuff, since we're presumably running
         // inside the cluster, and direct connections are more efficient.
-        var redirect = 'http://' + worker.hostname + ':' + worker.port + '/';
+        var redirect = 'http://' + worker.hostname + ':' + worker.port;
         debug('create socket', redirect);
         var socket = io(redirect, {forceNew: true, reconnection: false, transports: ['websocket']});
         //socket.io.engine.binaryType = 'arraybuffer';
@@ -227,7 +227,7 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
                     log.error('Failed initializing worker', resp);
                     return res.json({success: false, msg: 'failed connecting to work'});
                 }
-                var newEndpoint = redirect + 'etl';
+                var newEndpoint = redirect + req.originalUrl;
                 debug('telling client to redirect', newEndpoint);
 
                 req.pipe(request(newEndpoint)).pipe(res);
