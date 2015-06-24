@@ -60,24 +60,6 @@ function isParamFalse (param) {
 }
 
 
-//================
-
-
-
-debug('IS_OFFLINE', isParamTrue('offline'));
-debug('IS_STATIC', isParamTrue('static'));
-var streamClient = null;
-if (isParamTrue('offline')) {
-    streamClient = localClient;
-    if (urlParams.basePath !== undefined) {
-        streamClient.setPath(decodeURIComponent(urlParams.basePath));
-    }
-} else if (isParamTrue('static')) {
-    streamClient = staticClient;
-} else {
-    streamClient = serverClient;
-}
-
 //==================
 
 
@@ -103,7 +85,7 @@ function displayErrors(socket, $canvas) {
 //      vboUpdates: Observable {'start', 'received', 'rendered'},
 //      renderState: renderState
 //  }
-function init(canvas, vizType) {
+function init(streamClient, canvas, vizType) {
     debug('Initializing client networking driver', vizType);
 
     var textNum = 0;
@@ -269,7 +251,21 @@ window.addEventListener('load', function() {
         }
     }
 
-    var app = init($('#simulation')[0], 'graph');
+    debug('IS_OFFLINE', isParamTrue('offline'));
+    debug('IS_STATIC', isParamTrue('static'));
+    var streamClient = null;
+    if (isParamTrue('offline')) {
+        streamClient = localClient;
+        if (urlParams.basePath !== undefined) {
+            streamClient.setPath(decodeURIComponent(urlParams.basePath));
+        }
+    } else if (isParamTrue('static')) {
+        streamClient = staticClient;
+    } else {
+        streamClient = serverClient;
+    }
+
+    var app = init(streamClient, $('#simulation')[0], 'graph');
     createInfoOverlay(app);
 
 
