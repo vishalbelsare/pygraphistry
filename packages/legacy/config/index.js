@@ -33,6 +33,9 @@ function defaults() {
 
         // The number of seconds old a GPU ping may be before being considered stale
         GPU_PING_TIMEOUT: 60,
+        // The number of seconds a worker waits for an assigned user to connect. During this time,
+        // no other connections will be assigned to this worker.
+        WORKER_CONNECT_TIMEOUT: 10,
 
         HTTP_LISTEN_ADDRESS: 'localhost',
         HTTP_LISTEN_PORT: 3000,
