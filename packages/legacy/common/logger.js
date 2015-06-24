@@ -110,8 +110,17 @@ module.exports = {
         if(!_.isObject(metadata)) { throw new Error("metadata must be an object"); }
         return _.extend(parentLogger.fields.metadata, metadata);
     },
-    makeErrorHandler: function(msg) {
+    makeRxErrorHandler: function(msg) {
         //This should return a function that takes an error as an argument and logs a formatted version of it.
-        return parentLogger.child({msg: msg}, true).error;
+        return function(err) {
+            childLogger.error(err, msg);
+        }
+    },
+    makeQErrorHandler: function(childLogger, msg) {
+        //This should return a function that takes an error as an argument and logs a formatted version of it, and rethrows the error.
+        return function(err) {
+            childLogger.error(err, msg);
+            throw new Error(err);
+        }
     }
 };
