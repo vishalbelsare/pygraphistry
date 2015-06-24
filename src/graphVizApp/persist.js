@@ -11,7 +11,8 @@ var util            = require('./util.js');
 
 function nameToLink (urlParams, name) {
     var overrides = {static: true, contentKey: name};
-    var params = _.extend({}, _.omit(urlParams, 'dataset', 'datasetname'), overrides);
+    // Cascade effect via extend(). omit() call provided to mute options.
+    var params = _.extend({}, _.omit(urlParams), overrides);
     var paramStr = _.map(params, function (v, k) { return k + '=' + v; }).join('&');
     return window.location.origin + window.location.pathname + '?' + paramStr;
 }
