@@ -269,18 +269,20 @@ window.addEventListener('load', function() {
     createInfoOverlay(app);
 
 
-    //def on
+    // URL info parameter can ???
     if (isParamTrue('info')) {
         $('html').addClass('info');
     }
+    // URL debug parameter can ???
     if (isParamTrue('debug')) {
         $('html').addClass('debug');
     }
 
-    //def off
+    // URL logo parameter can disable the logo via CSS:
     if (isParamFalse('logo')) {
         $('html').addClass('nologo');
     }
+    // URL menu parameter can disable the menu/marquee entirely via CSS:
     if (isParamFalse('menu')) {
         $('html').addClass('nomenu');
     }
