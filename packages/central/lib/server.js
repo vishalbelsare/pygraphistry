@@ -71,9 +71,9 @@ function logClientError(req, res) {
         if(config.ENVIRONMENT === 'local') {
             //TODO: determine which fields from req object you want to log
             if (msg.content) {
-                logger.error({clientID: req.ip, clientError: msg.content}, "Client Error");
+                logger.error({clientID: req.ip, clientError: msg.content}, 'Client Error');
             } else {
-                logger.error({clientID: req.ip, clientError: JSON.stringify(msg, null, 2)}, "Client Error");
+                logger.error({clientID: req.ip, clientError: JSON.stringify(msg, null, 2)}, 'Client Error');
             }
             /* jshint -W064 */
             return Q();
@@ -81,7 +81,7 @@ function logClientError(req, res) {
         }
         var logFile = path.resolve('/', 'var', 'log', 'clients' ,'clients.log');
         return Q.denodeify(fs.appendFile)(logFile, JSON.stringify(msg) + '\n')
-            .fail(logger.makeQErrorHandler("Error writing client error"));
+            .fail(Log.makeQErrorHandler(logger, 'Error writing client error'));
     };
 
     var data = '';
@@ -101,7 +101,6 @@ function logClientError(req, res) {
         }
     });
 }
-
 
 /**
  * Converts ad-hoc URL object(s) (i.e., one we constructed by hand, possibly incomplete or
