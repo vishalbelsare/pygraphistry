@@ -4,13 +4,15 @@
 var Rx = require("rx");
 var request = require('request');
 var config = require('config')();
-var debug = require('debug')('boundary:metrics');
 var _ = require('underscore');
 var dns = require('dns');
-var log = require('common/log.js');
+
+var Log         = require('common/logger.js');
+var logger      = Log.createLogger('metrics');
+logger.fields.name = 'boundary';
 
 
-console.log('FIXME reject expired certs (currently relaxing for Boundary)');
+logger.info('FIXME reject expired certs (currently relaxing for Boundary)');
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 
@@ -23,7 +25,7 @@ dns.resolve('www.graphistry.com', function (err) {
 
 function sendToBoundary (entry) {
     if (!config.BOUNDARY || (config.ENVIRONMENT === 'local' /*&& !IS_ONLINE*/)) {
-        debug(entry);
+        logger.debug(entry);
         return;
     }
 
@@ -47,10 +49,10 @@ function sendToBoundary (entry) {
         },
         function (error, response, body) {
             if (error) {
-                log.error('Error posting to boundary', error.body);
+                logger.error(error, 'Error posting to boundary');
             } else {
                 if (response.statusCode !== 200) {
-                    log.error('Boundary returned error', response.body);
+                    logger.error(response, 'Boundary returned error');
                 }
             }
         });
