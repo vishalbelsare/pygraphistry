@@ -183,6 +183,7 @@ Object.seal(tempLayoutBuffers);
 // Create temporary buffers needed for layout
 var setupTempLayoutBuffers = function (simulator) {
     simulator.resetBuffers(tempLayoutBuffers);
+    console.log('Num midpoints', simulator.numMidPoints);
     return Q.all([
         simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed'),
         simulator.cl.createBuffer(2 * simulator.numMidPoints * Float32Array.BYTES_PER_ELEMENT, 'prevForces'),
@@ -312,8 +313,10 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
         // interpolating between corresponding edge points.
         calculateMidpoints = new Q().then(function () {
 
-            simulator.tickBuffers(['nextMidpoints']);
-            return that.interpolateMidpoints.execKernels(simulator);
+            return that.interpolateMidpoints.execKernels(simulator)
+            .then( function () {
+                simulator.tickBuffers(['nextMidpoints']);
+            });
         });
     } else {
       // If interpolateMidpoints is not true, calculate midpoints
@@ -330,6 +333,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
             };
 
             body = function () {
+                console.log(midpointIndex);
                 return that.midpointForces.execKernels(simulator, stepNumber, workItems, midpointIndex)
                     .then(function () {
                         midpointIndex = midpointIndex + 1;
@@ -346,6 +350,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
             //simulator.tickBuffers(['curMidpoints']);
             //return simulator.buffers.nextMidpoints.copyInto(simulator.buffers.curMidpoints);
         }).then(function () {
+            console.log("faswings");
             return that.faSwingsKernel.execMidPointsKernels(simulator, workItems);
         }).then(function () {
             return that.integrateMidpoints.execKernels(simulator, tempLayoutBuffers, workItems);
