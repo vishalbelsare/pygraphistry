@@ -8,6 +8,7 @@ var _ = require('underscore');
 var debug = require("debug")("graphistry:graph-viz:graph:nbody");
 var log = require('common/log.js');
 var eh = require('common/errorHandlers.js')(log);
+var Dataframe = require('./Dataframe.js');
 
 
 var ELEMENTS_PER_POINTS = 2;
@@ -30,10 +31,13 @@ var boundBuffers = {};
  */
 function create(renderer, device, vendor, controls) {
 
+    var dataframe = new Dataframe();
+
     var graph = {
         renderer: renderer,
         stepNumber: 0,
-        __pointsHostBuffer: undefined
+        __pointsHostBuffer: undefined,
+        dataframe: dataframe
     };
 
     _.each({

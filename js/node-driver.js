@@ -264,9 +264,6 @@ function create(dataset) {
     }).then(function (graph) {
         debug('ANIMATING');
 
-        // Load data into dataframe
-        graph.simulator.dataframe.load(graph);
-
         var play = userInteractions.filter(function (o) { return o && o.play; });
 
         //Observable {play: bool, layout: bool}
