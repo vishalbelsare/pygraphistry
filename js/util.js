@@ -1,23 +1,24 @@
 'use strict';
 
 
-var debug = require('debug')('graphistry:util'),
-    path = require('path'),
+var path = require('path'),
     fs = require('fs'),
     Q = require('q'),
-    _ = require('underscore');
+    _ = require('underscore'),
+    Log = require('common/logger.js'),
+    logger = Log.createLogger('util');
 
 
 function getShaderSource(id) {
     var shader_path = path.resolve(__dirname, '..' ,'shaders', id);
-    debug('Fetching source for shader %s at path %s, using fs read', id, shader_path);
+    logger.trace('Fetching source for shader %s at path %s, using fs read', id, shader_path);
     return Q.denodeify(fs.readFile)(shader_path, {encoding: 'utf8'});
 }
 
 
 function getKernelSource(id) {
     var kernel_path = path.resolve(__dirname, '..' ,'kernels', id);
-    debug('Fetching source for kernel %s at path %s, using fs read', id, kernel_path);
+    logger.trace('Fetching source for kernel %s at path %s, using fs read', id, kernel_path);
     return Q.denodeify(fs.readFile)(kernel_path, {encoding: 'utf8'});
 }
 
@@ -33,14 +34,14 @@ function getImage(url) {
         var img = new Image();
 
         img.onload = function() {
-            debug("Done loading <img>");
+            logger.trace("Done loading <img>");
 
             deferred.resolve(img);
         };
 
-        debug("Loading <img> from src %s", url);
+        logger.trace("Loading <img> from src %s", url);
         img.src = url;
-        debug("  <img> src set");
+        logger.trace("  <img> src set");
     } catch (e) {
         deferred.reject(e);
     }
@@ -87,7 +88,7 @@ var palettes = {
 function int2color(values, palette) {
     palette = palette || palettes.palette1;
 
-    debug("Palette: %o", palette)
+    logger.trace("Palette: %o", palette)
 
     var ncolors = palette.length;
     return _.map(values, function (val) {

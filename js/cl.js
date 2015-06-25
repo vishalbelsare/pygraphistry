@@ -260,7 +260,7 @@ var compile = Q.promised(function (cl, source, kernels) {
         return typeof kernels === "string" ? compiled.unknown : compiled;
 
     } catch (e) {
-        perf.endTiming('graph-viz:cl:compilekernel', true);
+        perf.endTiming('graph-viz:cl:compilekernel');
         Log.makeQErrorHandler('Kernel creation error:', kernels)(e);
     }
 });
