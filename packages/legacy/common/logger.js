@@ -98,6 +98,13 @@ var parentLogger = config.BUNYAN_LOG !== undefined ?
         level: CONSOLE_DEBUG_LEVEL
     });
 
+//add any additional logging methods here
+
+parentLogger.die = function(err, msg) {
+    parentLogger.fatal(err, msg);
+    process.exit(1);
+};
+
 process.on('SIGUSR2', function () {
     parentLogger.reopenFileStreams();
 });
@@ -105,7 +112,18 @@ process.on('SIGUSR2', function () {
 
 module.exports = {
     createLogger: function(name) {
-        return parentLogger.child({module: name}, true);
+        return (function () {
+            var childLogger = parentLogger.child({module: name}, true);
+
+            //add any additional logging methods here
+
+            childLogger.die = function(err, msg) {
+                childLogger.fatal(err, msg);
+                process.exit(1);
+            };
+
+            return childLogger;
+        })();
     },
     addMetadataField: function(metadata) {
         if(!_.isObject(metadata)) { throw new Error('metadata must be an object'); }
@@ -125,3 +143,17 @@ module.exports = {
         };
     }
 };
+
+var didLogConfig = false;
+var configLogger = module.exports.createLogger('config');
+
+if (config.CONFIG_ERRORS.length > 0) {
+    config.CONFIG_ERRORS.forEach( function(index, element) {
+        configLogger.error(element, 'Config error');
+    });
+}
+
+if(!didLogConfig) {
+    configLogger.debug('Program options resolved to:', config);
+    didLogConfig = true;
+}

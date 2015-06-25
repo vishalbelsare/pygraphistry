@@ -1,3 +1,5 @@
+'use strict';
+
 var logger = require('../logger.js');
 var test = require('./test.js'); //run test.js first
 var log = logger.createLogger('test3');
