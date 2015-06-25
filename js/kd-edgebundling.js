@@ -349,7 +349,6 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
             //simulator.tickBuffers(['curMidpoints']);
             //return simulator.buffers.nextMidpoints.copyInto(simulator.buffers.curMidpoints);
         }).then(function () {
-            console.log("faswings");
             return that.faSwingsKernel.execMidPointsKernels(simulator, workItems);
         }).then(function () {
             return that.integrateMidpoints.execKernels(simulator, tempLayoutBuffers, workItems);
