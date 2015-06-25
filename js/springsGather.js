@@ -1,15 +1,18 @@
 'use strict'
 
-var   debug = require('debug')('graphistry:graph-viz:cl:springsgather'),
-       cljs = require('./cl.js'),
+// var   debug = require('debug')('graphistry:graph-viz:cl:springsgather'),
+var    cljs = require('./cl.js'),
        util = require('./util.js'),
-        log = require('common/log.js'),
-         eh = require('common/errorHandlers.js')(log),
+        // log = require('common/log.js'),
+         // eh = require('common/errorHandlers.js')(log),
           Q = require('q'),
      Kernel = require('./kernel.js');
 
+var Log         = require('common/logger.js');
+var logger      = Log.createLogger('graph-viz:cl:springsgather');
+
 function SpringsGather(clContext) {
-    debug('Creating springsGather kernel');
+    logger.debug('Creating springsGather kernel');
 
     var args = ['springs', 'inputPoints', 'numSprings', 'springPositions'];
     var argsType = {
@@ -40,9 +43,9 @@ SpringsGather.prototype.tick = function(simulator) {
 
     simulator.tickBuffers(['springsPos']);
 
-    debug('Running SpringsGather kernel');
+    logger.debug('Running SpringsGather kernel');
     return this.gather.exec([simulator.numForwardsWorkItems], resources)
-        .fail(eh.makeErrorHandler('Kernel springGather failed'));
+        .fail(Log.makeQErrorHandler('Kernel springGather failed'));
 }
 
 module.exports = SpringsGather;

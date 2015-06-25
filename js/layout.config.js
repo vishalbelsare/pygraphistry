@@ -2,7 +2,8 @@
 
 var _ = require('underscore');
 var SimCL = require('./SimCL.js');
-var log = require('common/log.js');
+var Log         = require('common/logger.js');
+var logger      = Log.createLogger('graph-viz:cl:layoutconfig');
 var ForceAtlas2         = require('./forceatlas2.js'),
     ForceAtlas2Fast     = require('./forceatlas2fast.js'),
     forceAtlasBarnes    = require('./forceatlasbarnes.js'),
@@ -205,17 +206,17 @@ function saneControl(control, name) {
     _.each(control, function(control) {
         _.each(['simulator', 'layoutAlgorithms', 'locks', 'global'], function (field) {
             if (!(field in control))
-                log.die('In control %s, block %s missing', name, field);
+                logger.die('In control %s, block %s missing', name, field);
         });
 
         _.each(['lockPoints', 'lockEdges', 'lockMidpoints', 'lockMidedges'], function (field) {
             if (!(field in control.locks))
-                log.die('In control %s, lock %s missing', name, field);
+                logger.die('In control %s, lock %s missing', name, field);
         });
 
         _.each(['simulationTime', 'dimensions'], function (field) {
             if (!(field in control.global))
-                log.die('In control %s.global, lock %s missing', name, field);
+                logger.die('In control %s.global, lock %s missing', name, field);
         });
     });
 }
@@ -243,13 +244,13 @@ function fromClient(controls, simControls) {
 
     return _.object(_.map(simControls, function (update, algoName) {
         if (!(algoName in algoParams)) {
-            log.error('Unknown algorithm, ignoring setting update', algoName);
+            logger.error('Unknown algorithm, ignoring setting update', algoName);
             return [];
         }
         var params = algoParams[algoName];
         var cfg = _.object(_.map(update, function (val, paramName) {
             if (!(paramName in params)) {
-                log.error('Unknown parameter, ignoring setting update', paramName);
+                logger.error('Unknown parameter, ignoring setting update', paramName);
                 return [];
             }
             var param = params[paramName];

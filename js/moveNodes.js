@@ -1,14 +1,13 @@
 'use strict';
 
-var   debug = require('debug')('graphistry:graph-viz:cl:movenodes'),
-       cljs = require('./cl.js'),
-        log = require('common/log.js'),
-         eh = require('common/errorHandlers.js')(log),
+var    cljs = require('./cl.js'),
           Q = require('q'),
-     Kernel = require('./kernel.js');
+     Kernel = require('./kernel.js'),
+        Log = require('common/logger.js'),
+     logger = Log.createLogger('graph-viz:cl:movenodes');
 
 function MoveNodes(clContext) {
-    debug('Creating moveNodes kernel');
+    logger.debug('Creating moveNodes kernel');
 
     var args = ['top', 'left', 'bottom', 'right', 'deltaX', 'deltaY',
                 'inputPositions', 'outputPositions'];
@@ -27,7 +26,7 @@ function MoveNodes(clContext) {
 
 
 MoveNodes.prototype.run = function (simulator, selection, delta) {
-    debug('Moving nodes');
+    logger.debug('Moving nodes');
     var resources = [simulator.buffers.curPoints, simulator.buffers.nextPoints];
 
     this.moveNodes.set({
@@ -43,11 +42,11 @@ MoveNodes.prototype.run = function (simulator, selection, delta) {
 
     simulator.tickBuffers(['nextPoints', 'curPoints']);
 
-    debug('Running moveNodes');
+    logger.debug('Running moveNodes');
     return this.moveNodes.exec([simulator.numPoints], resources)
         .then(function () {
             return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-        }).fail(eh.makeErrorHandler('Kernel moveNodes failed'));
+        }).fail(logger.makeQErrorHandler('Kernel moveNodes failed'));
 }
 
 module.exports = MoveNodes;

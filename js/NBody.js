@@ -5,10 +5,9 @@ var glMatrix = require('gl-matrix');
 var lConf = require('./layout.config.js');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');
-var debug = require("debug")("graphistry:graph-viz:graph:nbody");
-var log = require('common/log.js');
-var eh = require('common/errorHandlers.js')(log);
 
+var Log         = require('common/logger.js');
+var logger      = Log.createLogger('graph-viz:graph-viz:graph:nbody');
 
 var ELEMENTS_PER_POINTS = 2;
 
@@ -63,21 +62,21 @@ function create(renderer, device, vendor, controls) {
     }).then(function () {
         Object.seal(graph);
         return graph;
-    }).fail(eh.makeErrorHandler('Cannot initialize nbody'));
+    }).fail(Log.makeQErrorHandler('Cannot initialize nbody'));
 }
 
 function createSimulator(renderer, device, vendor, controls) {
-    debug('Creating Simulator')
+    logger.debug('Creating Simulator')
 
     // Hack, but making simulator depend on CL device it not worth the work.
     var simulator = controls[0].simulator;
 
     return simulator.create(renderer, device, vendor, controls)
-        .fail(eh.makeErrorHandler('Cannot create simulator'));
+        .fail(Log.makeQErrorHandler('Cannot create simulator'));
 }
 
 function updateSettings(graph, newCfg) {
-    debug('Updating simulation settings', newCfg);
+    logger.debug('Updating simulation settings', newCfg);
     if (newCfg.simControls) {
         var cfg = lConf.fromClient(graph.simulator.controls, newCfg.simControls);
         graph.simulator.setPhysics(cfg);
@@ -86,13 +85,13 @@ function updateSettings(graph, newCfg) {
         if (newCfg.simControls.hasOwnProperty('EdgeBundling')) {
             if (newCfg.simControls.EdgeBundling.hasOwnProperty('edgeBundling')) {
                 if (newCfg.simControls.EdgeBundling.edgeBundling) {
-                    console.log("Switching to edge bundling");
+                    logger.info("Switching to edge bundling");
                     graph.simulator.controls.locks.interpolateMidPoints = false;
                     graph.simulator.controls.locks.lockPoints = true;
                     graph.simulator.controls.locks.lockEdges = true;
                 }
                 if (!newCfg.simControls.EdgeBundling.edgeBundling) {
-                    console.log("Switching to ForceAtlas2");
+                    logger.info("Switching to ForceAtlas2");
                     graph.simulator.controls.locks.interpolateMidPoints = true;
                     graph.simulator.controls.locks.lockPoints = false;
                     graph.simulator.controls.locks.lockEdges = false;
@@ -134,7 +133,7 @@ function passthroughSetter(simulator, dimName, arr, passthrough) {
 //Create default setter
 function makeDefaultSetter (name, arrConstructor, dimName, passthrough, f) {
     return function (simulator) {
-        debug("Using default %s", name);
+        logger.debug("Using default %s", name);
         var elts = simulator[dimName];
         var arr = new arrConstructor(elts);
         if (f) {
@@ -148,7 +147,7 @@ function makeSetter (name, defSetter, arrConstructor, dimName, passthrough) {
 
     return function (graph, rawArr) {
 
-        debug('Loading %s', name);
+        logger.debug('Loading %s', name);
 
         if (!rawArr) {
             return defSetter(graph.simulator);
@@ -189,7 +188,7 @@ _.each(NAMED_CLGL_BUFFERS, function (cfg, name) {
 // TODO Deprecate and remove. Left for Uber compatibitily
 function setPoints(graph, points, pointSizes, pointColors) {
 
-    debug('setPoints (DEPRECATED)');
+    logger.debug('setPoints (DEPRECATED)');
 
     // FIXME: If there is already data loaded, we should to free it before loading new data
     return setVertices(graph, points)
@@ -197,23 +196,23 @@ function setPoints(graph, points, pointSizes, pointColors) {
         if (pointSizes) {
             return boundBuffers.setSizes.setter(graph, pointSizes);
         } else {
-            debug('no point sizes, deferring');
+            logger.debug('no point sizes, deferring');
         }
 
     }).then(function (simulator) {
         if (pointColors) {
             return boundBuffers.setColors.setter(graph, pointColors);
         } else {
-            debug('no point colors, deferring');
+            logger.debug('no point colors, deferring');
         }
     })
     .then(function() {
         return graph;
-    }).fail(eh.makeErrorHandler('Failure in setPoints'));
+    }).fail(Log.makeQErrorHandler('Failure in setPoints'));
 }
 
 function setVertices(graph, points) {
-    debug('Loading Vertices');
+    logger.debug('Loading Vertices');
 
     // This flattens out the points array
     if(!(points instanceof Float32Array)) {
@@ -254,7 +253,7 @@ function scatterEdgePos(edges, curPos) {
 }
 
 var setEdges = Q.promised(function(graph, edges) {
-    debug('Loading Edges');
+    logger.debug('Loading Edges');
     if (edges.length < 1)
         return Q.fcall(function() { return graph; });
 
@@ -262,7 +261,7 @@ var setEdges = Q.promised(function(graph, edges) {
         edges = _toTypedArray(edges, Uint32Array);
     }
 
-    debug('Number of edges: %d', edges.length / 2);
+    logger.debug('Number of edges: %d', edges.length / 2);
 
     //FIXME THIS SHOULD WORK BUT CRASHES SAFARI
     var encapsulate = function (edges) {
@@ -439,25 +438,25 @@ var setEdges = Q.promised(function(graph, edges) {
 
     var endPoints = scatterEdgePos(edges, graph.__pointsHostBuffer);
 
-    console.info('Dataset    nodes:%d  edges:%d  splits:%d',
+    logger.info('Dataset    nodes:%d  edges:%d  splits:%d',
                 graph.simulator.numPoints, edges.length, numSplits);
 
     return graph.simulator.setEdges(edges, forwardEdges, backwardsEdges,
                                     degrees, midPoints, endPoints, graph.__pointsHostBuffer)
         .then(function() {
             return graph;
-        }).fail(eh.makeErrorHandler('Failure in setEdges'));
+        }).fail(Log.makeQErrorHandler('Failure in setEdges'));
 });
 
 function setEdgeColors(graph, edgeColors) {
-    debug('Loading edgeColors');
+    logger.debug('Loading edgeColors');
     var nedges = graph.simulator.numEdges;
 
     if (!edgeColors) // Use default Colors
         return graph.simulator.setEdgeColors(undefined);
 
     if (edgeColors.length != nedges)
-       log.error('setEdgeColors expects one color per edge');
+       logger.error('setEdgeColors expects one color per edge');
 
     // Internaly we have two colors, one per endpoint.
     // Edges may be permuted, use forward permutation
@@ -475,7 +474,7 @@ function setEdgeColors(graph, edgeColors) {
 }
 
 function setEdgeWeight(graph, edgeWeights) {
-    debug('Loading edgeColors');
+    logger.debug('Loading edgeColors');
     var nedges = graph.simulator.numEdges;
 
     if (!edgeWeights) {
@@ -484,7 +483,7 @@ function setEdgeWeight(graph, edgeWeights) {
 
 
     if (edgeWeights.length != nedges)
-       log.error('setEdgeWeigts expects one weight per edge');
+       logger.error('setEdgeWeigts expects one weight per edge');
 
     // Internaly we have two weights, one per endpoint.
     // Edges may be permuted, use forward permutation
@@ -501,7 +500,7 @@ function setEdgeWeight(graph, edgeWeights) {
 }
 
 function setMidEdgeColors(graph, midEdgeColors) {
-    debug("Loading midEdgeColors");
+    logger.debug("Loading midEdgeColors");
 
     if (!midEdgeColors) { // Use default Colors
         return graph.simulator.setMidEdgeColors(undefined);
@@ -510,7 +509,7 @@ function setMidEdgeColors(graph, midEdgeColors) {
     var numMidEdges = graph.simulator.numMidEdges;
 
     if (midEdgeColors.length != numMidEdges)
-       log.error('setMidEdgeColors expects one color per midEdge');
+       logger.error('setMidEdgeColors expects one color per midEdge');
 
     // Internaly we have two colors, one per endpoint.
     var ec = new Uint32Array(numMidEdges * 2);
@@ -523,13 +522,13 @@ function setMidEdgeColors(graph, midEdgeColors) {
 }
 
 function setPointLabels(graph, pointLabels) {
-    debug('setPointLabels', pointLabels ? pointLabels.length : 'none');
+    logger.debug('setPointLabels', pointLabels ? pointLabels.length : 'none');
     return graph.simulator.setPointLabels(pointLabels);
 }
 
 
 function setEdgeLabels(graph, edgeLabels) {
-    debug('setEdgeLabels', edgeLabels ? edgeLabels.length : 'none');
+    logger.debug('setEdgeLabels', edgeLabels ? edgeLabels.length : 'none');
     return graph.simulator.setEdgeLabels(edgeLabels);
 }
 

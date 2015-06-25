@@ -11,9 +11,9 @@ var Q = require("q"),
     _ = require('underscore'),
 
     request = require('request'),
-    debug = require("debug")("graphistry:graph-viz:driver:node-driver"),
-    log = require('common/log.js'),
-    eh = require('common/errorHandlers.js')(log),
+    // debug = require("debug")("graphistry:graph-viz:driver:node-driver"),
+    // log = require('common/log.js'),
+    // eh = require('common/errorHandlers.js')(log),
     NBody = require("./NBody.js"),
     RenderNull = require('./RenderNull.js'),
     rConf = require('./renderer.config.js'),
@@ -23,6 +23,8 @@ var Q = require("q"),
     metrics = require("./metrics.js"),
     loader = require("./data-loader.js");
 
+var Log         = require('common/logger.js');
+var logger      = Log.createLogger('graph-viz:data:data-loader');
 
 metrics.init('StreamGL:driver');
 
@@ -67,7 +69,7 @@ function graphCounts(graph) {
 function getBufferVersion (graph, bufferName) {
     var buffers = graph.simulator.versions.buffers;
     if (!(bufferName in buffers))
-        log.die('Cannot find version of buffer %s', bufferName);
+        logger.die('Cannot find version of buffer %s', bufferName);
 
     return buffers[bufferName];
 }
@@ -82,7 +84,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
     var layouts = _.object(_.map(bufferNames, function (name) {
         var model = renderConfig.models[name];
         if (_.values(model).length != 1)
-            log.die('Currently assumes one view per model');
+            logger.die('Currently assumes one view per model');
 
         return [name, _.values(model)[0]];
 
@@ -106,7 +108,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                     version: graph.simulator.versions.buffers[name]
                 };
 
-                debug('Reading device buffer %s, stride %d', name, stride);
+                logger.debug('Reading device buffer %s, stride %d', name, stride);
 
                 return graph.simulator.buffers[name].read(
                     new Float32Array(targetArrays[name].buffer),
@@ -117,7 +119,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
             _.each(hostBufs, function (layout, name) {
                 var stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
 
-                debug('Fetching host buffer %s', name);
+                logger.debug('Fetching host buffer %s', name);
                 if (!graph.simulator.buffersLocal[name]) {
                     throw new Error('missing buffersLocal base buffer: ' + name);
                 }
@@ -136,7 +138,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                 };
             });
             return targetArrays;
-        }).fail(eh.makeErrorHandler('node-driver.fetchVBO'));
+        }).fail(Log.makeQErrorHandler('node-driver.fetchVBO'));
 }
 
 
@@ -181,7 +183,7 @@ function fetchBufferByteLengths(counts, renderConfig) {
 
 
 function init(device, vendor, controls) {
-    debug("Starting initialization");
+    logger.debug("Starting initialization");
 
     /* Example of RenderGL instatiation.
      * Left for historical purposes, probably broken!
@@ -196,7 +198,7 @@ function init(device, vendor, controls) {
     return RenderNull.create(null)
         .then(function (renderer) {
             return NBody.create(renderer, device, vendor, controls);
-        }).fail(eh.makeErrorHandler('Failure in NBody creation'));
+        }).fail(Log.makeQErrorHandler('Failure in NBody creation'));
 }
 
 
@@ -206,7 +208,7 @@ function getControls(controlsName) {
     if (controlsName in lConf.controls)
         controls = lConf.controls[controlsName];
     else
-        log.warn('Unknown controls "%s", using defaults.', controlsName);
+        logger.warn('Unknown controls "%s", using defaults.', controlsName);
 
     return controls;
 }
@@ -243,7 +245,7 @@ function delayObservableGenerator(delay, value, cb) {
 
 
 function create(dataset) {
-    debug("STARTING DRIVER");
+    logger.debug("STARTING DRIVER");
 
     //Observable {play: bool, layout: bool, ... cfg settings ...}
     //  play: animation stream
@@ -258,10 +260,10 @@ function create(dataset) {
     var vendor = dataset.metadata.vendor;
 
     var graph = init(device, vendor, controls).then(function (graph) {
-        debug('LOADING DATASET');
+        logger.debug('LOADING DATASET');
         return loader.loadDatasetIntoSim(graph, dataset)
     }).then(function (graph) {
-        debug('ANIMATING');
+        logger.debug('ANIMATING');
 
         var play = userInteractions.filter(function (o) { return o && o.play; });
 
@@ -283,7 +285,7 @@ function create(dataset) {
         var isRunningRecent = new Rx.ReplaySubject(1);
 
         isRunningRecent.subscribe(function (v) {
-            debug('=============================isRunningRecent:', v)
+            logger.debug('=============================isRunningRecent:', v)
         });
 
         isRunning.subscribe(isRunningRecent);
@@ -318,13 +320,13 @@ function create(dataset) {
             })
             .subscribe(
                 animStepSubj,
-                eh.makeRxErrorHandler('node-driver: tick failed')
+                Log.makeRxErrorHandler('node-driver: tick failed')
             );
 
-        debug('Graph created');
+        logger.debug('Graph created');
         return graph;
     }).fail(function (err) {
-        log.die('Driver initialization error', (err||{}).stack);
+        logger.die(err, 'Driver initialization error');
     });
 
     return {
@@ -367,7 +369,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
 
             bufferNames.forEach(function (bufferName) {
                 if (!vbos.hasOwnProperty(bufferName)) {
-                    log.die('Vbos does not have buffer %s', bufferName);
+                    logger.die('Vbos does not have buffer %s', bufferName);
                 }
             });
 
@@ -375,7 +377,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
                 var actualByteLength = vbos[bufferName].buffer.byteLength;
                 var expectedByteLength = bufferByteLengths[bufferName];
                 if( actualByteLength !== expectedByteLength) {
-                    log.error('Mismatch length for VBO %s (Expected:%d Got:%d)',
+                    logger.error('Mismatch length for VBO %s (Expected:%d Got:%d)',
                                bufferName, expectedByteLength, actualByteLength);
                 }
             });
@@ -390,7 +392,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
                         {output: new Buffer(
                             Math.max(1024, Math.round(vbos[bufferName].buffer.byteLength * 1.5)))})
                         .map(function (compressed) {
-                            debug('compress bufferName %s (size %d)', bufferName, vbos[bufferName].buffer.byteLength);
+                            logger.debug('compress bufferName %s (size %d)', bufferName, vbos[bufferName].buffer.byteLength);
                             metrics.info({metric: {'compress_buffer': bufferName} });
                             metrics.info({metric: {'compress_inputBytes': vbos[bufferName].buffer.byteLength} });
                             metrics.info({metric: {'compress_outputBytes': compressed.length} });

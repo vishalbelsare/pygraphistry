@@ -1,19 +1,19 @@
 'use strict'
 
-var debug = require('debug')('graphistry:graph-viz:cl:gaussseidel')
 var Q = require('q');
 var _ = require('underscore');
 var cljs = require('./cl.js');
 var webcl = require('node-webcl');
-var log = require('common/log.js');
-var eh = require('common/errorHandlers.js')(log);
 var LayoutAlgo = require('./layoutAlgo.js');
 var Kernel = require('./kernel.js');
+
+var Log         = require('common/logger.js');
+var logger      = Log.createLogger('graph-viz:cl:gaussseidel');
 
 function GaussSeidel(clContext) {
     LayoutAlgo.call(this, GaussSeidel.name);
 
-    debug('Creating GaussSeidel kernels');
+    logger.debug('Creating GaussSeidel kernels');
     this.gsPoints = new Kernel('gaussSeidelPoints', GaussSeidel.argsPoints,
                                GaussSeidel.argsType, 'gaussSeidel.cl', clContext);
 
@@ -93,17 +93,17 @@ function pointKernel(simulator, gsPoints, stepNumber) {
 
     simulator.tickBuffers(['nextPoints', 'curPoints']);
 
-    debug("Running gaussSeidelPoints");
+    logger.debug("Running gaussSeidelPoints");
     return gsPoints.exec([simulator.numPoints], resources)
         .then(function () {
             return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-        }).fail(eh.makeErrorHandler('Kernel gaussSeidelPoints failed'));
+        }).fail(Log.makeQErrorHandler('Kernel gaussSeidelPoints failed'));
 }
 
 
 function edgeKernelSeq(simulator, gsSprings, stepNumber, edges, workItems,
                        numWorkItems, fromPoints, toPoints, edgeTags) {
-    debug('edgeKernelSeq');
+    logger.debug('edgeKernelSeq');
 
     var resources = [edges, workItems, fromPoints, toPoints, simulator.buffers.springsPos];
 
@@ -121,9 +121,9 @@ function edgeKernelSeq(simulator, gsSprings, stepNumber, edges, workItems,
             return simulator.buffers[name] == toPoints;
         }));
 
-    debug('Running gaussSeidelSprings');
+    logegr.debug('Running gaussSeidelSprings');
     return gsSprings.exec([numWorkItems], resources)
-        .fail(eh.makeErrorHandler('Kernel gaussSeidelSprings failed'));
+        .fail(Log.makeQErrorHandler('Kernel gaussSeidelSprings failed'));
 }
 
 
@@ -132,13 +132,13 @@ GaussSeidel.prototype.tick = function(simulator, stepNumber) {
     var locks = simulator.controls.locks;
     return Q().then(function () {
         if (locks.lockPoints) {
-            debug("Points are locked, nothing to do.")
+            logger.debug("Points are locked, nothing to do.")
         } else {
             return pointKernel(simulator, that.gsPoints, stepNumber);
         }
     }).then(function() {
         if (simulator.numEdges <= 0 || locks.lockEdges) {
-            debug("Edges are locked, nothing to do.")
+            logger.debug("Edges are locked, nothing to do.")
             return simulator;
         }
         return edgeKernelSeq(
@@ -150,10 +150,10 @@ GaussSeidel.prototype.tick = function(simulator, stepNumber) {
                     simulator, that.gsSprings, stepNumber,
                     simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
                     simulator.buffers.nextPoints, simulator.buffers.curPoints, simulator.buffers.edgeTags_reverse);
-            }).fail(eh.makeErrorHandler('edgeKernelSeq failed'));
+            }).fail(Log.makeQErrorHandler('edgeKernelSeq failed'));
     }).then(function () {
         return simulator;
-    }).fail(eh.makeErrorHandler('GaussSeidel tick failed'));
+    }).fail(Log.makeQErrorHandler('GaussSeidel tick failed'));
 }
 
 module.exports = GaussSeidel;

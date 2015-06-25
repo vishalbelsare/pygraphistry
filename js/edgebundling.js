@@ -2,19 +2,18 @@
 
 var _          = require('underscore'),
     Q          = require('q'),
-    debug      = require('debug')('graphistry:graph-viz:cl:edgebundling'),
     cljs       = require('./cl.js'),
-    log        = require('common/log.js'),
-    eh         = require('common/errorHandlers.js')(log),
     webcl      = require('node-webcl'),
     Kernel     = require('./kernel.js'),
-    LayoutAlgo = require('./layoutAlgo.js');
+    LayoutAlgo = require('./layoutAlgo.js'),
+    Log        = require('common/logger.js'),
+    logger     = Log.createLogger('graph-viz:cl:edgebundling');
 
 
 function EdgeBundling(clContext) {
     LayoutAlgo.call(this, EdgeBundling.name);
 
-    debug('Creating GaussSeidel kernels');
+    logger.debug('Creating GaussSeidel kernels');
     this.ebMidpoints = new Kernel('gaussSeidelMidpoints', EdgeBundling.argsMidpoints,
                                    EdgeBundling.argsType, 'edgeBundling.cl', clContext);
 
@@ -101,7 +100,7 @@ function midPoints(simulator, ebMidpoints, stepNumber) {
     ebMidpoints.set({stepNumber: stepNumber});
     simulator.tickBuffers(['curMidPoints', 'nextMidPoints']);
 
-    debug('Running kernel gaussSeidelMidpoints')
+    logger.debug('Running kernel gaussSeidelMidpoints')
     return ebMidpoints.exec([simulator.numMidPoints], resources);
 }
 
@@ -120,7 +119,7 @@ function midEdges(simulator, ebMidsprings, stepNumber) {
 
     simulator.tickBuffers(['curMidPoints', 'midSpringsPos', 'midSpringsColorCoord']);
 
-    debug('Running kernel gaussSeidelMidsprings')
+    logger.debug('Running kernel gaussSeidelMidsprings')
     return ebMidsprings.exec([simulator.numForwardsWorkItems], resources);
 }
 
@@ -128,7 +127,7 @@ EdgeBundling.prototype.tick = function(simulator, stepNumber) {
     var that = this;
     var locks = simulator.controls.locks;
     if (locks.lockMidpoints && locks.lockMidedges) {
-        debug('LOCKED, EARLY EXIT');
+        logger.debug('LOCKED, EARLY EXIT');
         return Q();
     }
 
@@ -146,7 +145,7 @@ EdgeBundling.prototype.tick = function(simulator, stepNumber) {
             simulator.tickBuffers(['curMidPoints']);
             return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
         }
-    }).fail(eh.makeErrorHandler('Failure in edgebundling tick'));
+    }).fail(logger.makeQErrorHandler('Failure in edgebundling tick'));
 }
 
 module.exports = EdgeBundling;

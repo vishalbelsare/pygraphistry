@@ -4,7 +4,8 @@ var _ = require('underscore');
 var sprintf = require('sprintf-js').sprintf;
 var vgloader = require('./libs/VGraphLoader.js');
 var dateFormat = require('dateformat');
-
+var Log         = require('common/logger.js');
+var logger      = Log.createLogger('graph-viz:labeler');
 
 function pickTitleField (attribs, prioritized) {
     for (var i = 0; i < prioritized.length; i++) {
@@ -36,7 +37,7 @@ function infoFrame(graph, type, indices, attributeNames) {
     } else if (type === 'edge') {
         target = vgloader.types.EDGE;
     } else {
-        console.error('infoFrame received invalid type: ', type);
+        logger.error('infoFrame received invalid type: ', type);
         return;
     }
 
@@ -48,7 +49,7 @@ function infoFrame(graph, type, indices, attributeNames) {
         try {
             return (typeof val === 'string') ? decodeURIComponent(val) : val;
         } catch (e) {
-            console.error('bad read val', val);
+            logger.error('bad read val', val);
             return val;
         }
     }
