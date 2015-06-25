@@ -78,7 +78,11 @@ var BUNYAN_DEBUG_LEVEL = parseInt(process.env.BUNYAN_DEBUG_LEVEL) || config.BUNY
 var parentLogger = config.BUNYAN_LOG !== undefined ?
     bunyan.createLogger({
         name: 'graphistry',
-        metadata: {},
+        metadata: {
+            userInfo: {
+                tag: 'unknown'
+            }
+        },
         serializers: {
             err: bunyan.stdSerializers.err
         },
@@ -91,7 +95,11 @@ var parentLogger = config.BUNYAN_LOG !== undefined ?
     //bunyan defaults to stdout if no stream is specified
     bunyan.createLogger({
         name: 'graphistry',
-        metadata: {},
+        metadata: {
+            userInfo: {
+                tag: 'unknown'
+            }
+        },
         serializers: {
             err: bunyan.stdSerializers.err
         },
@@ -110,7 +118,7 @@ process.on('SIGUSR2', function () {
 });
 
 
-module.exports = {
+var self = module.exports = {
     createLogger: function(name) {
         return (function () {
             var childLogger = parentLogger.child({module: name}, true);
@@ -126,8 +134,12 @@ module.exports = {
         })();
     },
     addMetadataField: function(metadata) {
+        //metadata is global, same for all loggers
         if(!_.isObject(metadata)) { throw new Error('metadata must be an object'); }
         return _.extend(parentLogger.fields.metadata, metadata);
+    },
+    addUserInfo: function(newUserInfo) {
+        return _.extend(parentLogger.fields.metadata.userInfo, newUserInfo);
     },
     makeRxErrorHandler: function(childLogger, msg) {
         //This should return a function that takes an error as an argument and logs a formatted version of it.
