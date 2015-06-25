@@ -2,13 +2,9 @@
 
 var _ = require('underscore');
 var Q = require('q');
-// var debug = require('debug')('graphistry:graph-viz:graph:simcl');
-// var perf  = require('debug')('perf');
 var sprintf = require('sprintf-js').sprintf;
 var dijkstra = require('dijkstra');
 var util = require('./util.js');
-// var log = require('common/log.js');
-// var eh = require('common/errorHandlers.js')(log);
 var cljs = require('./cl.js');
 var MoveNodes = require('./moveNodes.js');
 var SelectNodes = require('./selectNodes.js');
