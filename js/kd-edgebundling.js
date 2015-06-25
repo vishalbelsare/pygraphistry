@@ -333,7 +333,6 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
             };
 
             body = function () {
-                console.log(midpointIndex);
                 return that.midpointForces.execKernels(simulator, stepNumber, workItems, midpointIndex)
                     .then(function () {
                         midpointIndex = midpointIndex + 1;
