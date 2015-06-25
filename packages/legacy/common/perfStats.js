@@ -7,6 +7,20 @@ function timing() {
 }
 // client.timing('response_time', 42);
 
+
+var timestamps = {};
+function startTiming(id) {
+    timestamps[id] = id;
+}
+
+function endTiming(id) {
+    if(!timestamps[id]) {
+        //What should I do if id is not found?
+        return;
+    }
+    timing(id, Date.now() - timestamps[id]);
+}
+
 // Increment: Increments a stat by a value (default is 1)
 function increment() {
   return;
@@ -44,6 +58,8 @@ function unique() {
 
 function createPerfMonitor() {
   return {
+    startTiming: startTiming,
+    endTiming: endTiming,
     timing: timing,
     increment: increment,
     decrement: decrement,
