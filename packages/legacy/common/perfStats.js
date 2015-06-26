@@ -101,7 +101,7 @@ function sendToBoundary (entry) {
 
 // Send logged metrics to Boundary
 // { '0': { 'method': 'tick', durationMS': 173 } }
-var info = function () {
+var getMetric = function () {
     for (var key in arguments) {
         if (arguments.hasOwnProperty(key)) {
             var entry = arguments[key];
@@ -129,7 +129,7 @@ function createPerfMonitor() {
     set: set,
     unique: unique,
     createPerfMonitor: createPerfMonitor,
-    info: info,
+    getMetric: getMetric,
     metrics: metrics
   };
 }
