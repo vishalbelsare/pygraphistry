@@ -293,13 +293,14 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
     workGroupSize = 256;
     workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps, workGroupSize);
     that = this;
-    locks = simulator.controls.locks;
+    var locks = simulator.controls.locks;
     if (locks.lockMidpoints && locks.lockMidedges) {
         debug('LOCKED, EARLY EXIT');
         return new Q();
     }
 
     if (locks.lockMidpoints) {
+        console.log("Lock midpoints");
         simulator.tickBuffers(['nextMidPoints']);
         return simulator.buffers.curMidPoints.copyInto(simulator.buffers.nextMidPoints);
     }
@@ -308,7 +309,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
         if ( locks.interpolateMidpointsOnce ) {
             console.log("Force interpolation of midpoints");
         }
-        locks.interpolateMidpointsOnce = false;
+        locks.interpolateMidPointsOnce = false;
         // If interpolateMidpoints is true, midpoints are calculate by
         // interpolating between corresponding edge points.
         calculateMidpoints = new Q().then(function () {
