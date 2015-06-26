@@ -9,7 +9,6 @@
 var Q = require("q"),
     Rx = require("rx"),
     _ = require('underscore'),
-
     request = require('request'),
     // debug = require("debug")("graphistry:graph-viz:driver:node-driver"),
     // log = require('common/log.js'),
@@ -20,13 +19,14 @@ var Q = require("q"),
     lConf = require('./layout.config.js'),
     webcl = require('node-webcl'),
 
-    metrics = require("./metrics.js"),
+    // metrics = require("./metrics.js"),
     loader = require("./data-loader.js");
 
 var Log         = require('common/logger.js');
 var logger      = Log.createLogger('graph-viz:data:data-loader');
+var perf        = require('common/perfStats.js').createPerfMonitor();
 
-metrics.init('StreamGL:driver');
+// metrics.init('StreamGL:driver');
 
 
 
@@ -285,7 +285,7 @@ function create(dataset) {
         var isRunningRecent = new Rx.ReplaySubject(1);
 
         isRunningRecent.subscribe(function (v) {
-            logger.debug('=============================isRunningRecent:', v)
+            logger.debug('=============================isRunningRecent:', v);
         });
 
         isRunning.subscribe(isRunningRecent);
@@ -312,7 +312,7 @@ function create(dataset) {
                             graph.updateSettings(v).then(function () {
                                 return graph.tick(v);
                             }).then(function () {
-                                metrics.info({metric: {'tick_durationMS': Date.now() - now} });
+                                perf.info({metric: {'tick_durationMS': Date.now() - now} });
                             })
                         );
                     })
@@ -363,9 +363,9 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
     var now = Date.now();
     return Rx.Observable.fromPromise(fetchVBOs(graph, renderConfig, bufferNames, counts))
         .flatMap(function (vbos) {
-            //metrics.info({metric: {'fetchVBOs_lastVersions': bufferVersions}});
-            metrics.info({metric: {'fetchVBOs_buffers': bufferNames}});
-            metrics.info({metric: {'fetchVBOs_durationMS': Date.now() - now}});
+            //perf.info({metric: {'fetchVBOs_lastVersions': bufferVersions}});
+            perf.info({metric: {'fetchVBOs_buffers': bufferNames}});
+            perf.info({metric: {'fetchVBOs_durationMS': Date.now() - now}});
 
             bufferNames.forEach(function (bufferName) {
                 if (!vbos.hasOwnProperty(bufferName)) {
@@ -393,16 +393,16 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
                             Math.max(1024, Math.round(vbos[bufferName].buffer.byteLength * 1.5)))})
                         .map(function (compressed) {
                             logger.debug('compress bufferName %s (size %d)', bufferName, vbos[bufferName].buffer.byteLength);
-                            metrics.info({metric: {'compress_buffer': bufferName} });
-                            metrics.info({metric: {'compress_inputBytes': vbos[bufferName].buffer.byteLength} });
-                            metrics.info({metric: {'compress_outputBytes': compressed.length} });
-                            metrics.info({metric: {'compress_durationMS': Date.now() - now} });
+                            perf.info({metric: {'compress_buffer': bufferName} });
+                            perf.info({metric: {'compress_inputBytes': vbos[bufferName].buffer.byteLength} });
+                            perf.info({metric: {'compress_outputBytes': compressed.length} });
+                            perf.info({metric: {'compress_durationMS': Date.now() - now} });
                             return _.extend({}, vbos[bufferName], {compressed: compressed});
                         })
                 });
 
             return Rx.Observable.zipArray(compressed).take(1)
-                .do(function () { metrics.info({metric: {'compressAll_durationMS': Date.now() - nowPreCompress} }) });
+                .do(function () { perf.info({metric: {'compressAll_durationMS': Date.now() - nowPreCompress} }) });
 
         })
         .map(function(compressedVbos) {
