@@ -130,7 +130,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                 };
             });
             return targetArrays;
-        }).fail(Log.makeQErrorHandler('node-driver.fetchVBO'));
+        }).fail(Log.makeQErrorHandler(logger, 'node-driver.fetchVBO'));
 }
 
 
@@ -190,7 +190,7 @@ function init(device, vendor, controls) {
     return RenderNull.create(null)
         .then(function (renderer) {
             return NBody.create(renderer, device, vendor, controls);
-        }).fail(Log.makeQErrorHandler('Failure in NBody creation'));
+        }).fail(Log.makeQErrorHandler(logger, 'Failure in NBody creation'));
 }
 
 
@@ -312,7 +312,7 @@ function create(dataset) {
             })
             .subscribe(
                 animStepSubj,
-                Log.makeRxErrorHandler('node-driver: tick failed')
+                Log.makeRxErrorHandler(logger, 'node-driver: tick failed')
             );
 
         logger.debug('Graph created');

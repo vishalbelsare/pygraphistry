@@ -148,7 +148,7 @@ var setupTempLayoutBuffers = function(simulator) {
       tempLayoutBuffers.globalSpeed = globalSpeed;
       return tempLayoutBuffers;
     })
-    .catch(logger.makeQErrorHandler('setupTempBuffers'));
+    .catch(Log.makeQErrorHandler(logger, 'setupTempBuffers'));
 };
 
 

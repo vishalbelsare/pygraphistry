@@ -97,7 +97,7 @@ function pointKernel(simulator, gsPoints, stepNumber) {
     return gsPoints.exec([simulator.numPoints], resources)
         .then(function () {
             return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-        }).fail(Log.makeQErrorHandler('Kernel gaussSeidelPoints failed'));
+        }).fail(Log.makeQErrorHandler(logger, 'Kernel gaussSeidelPoints failed'));
 }
 
 
@@ -123,7 +123,7 @@ function edgeKernelSeq(simulator, gsSprings, stepNumber, edges, workItems,
 
     logegr.debug('Running gaussSeidelSprings');
     return gsSprings.exec([numWorkItems], resources)
-        .fail(Log.makeQErrorHandler('Kernel gaussSeidelSprings failed'));
+        .fail(Log.makeQErrorHandler(logger, 'Kernel gaussSeidelSprings failed'));
 }
 
 
@@ -150,10 +150,10 @@ GaussSeidel.prototype.tick = function(simulator, stepNumber) {
                     simulator, that.gsSprings, stepNumber,
                     simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
                     simulator.buffers.nextPoints, simulator.buffers.curPoints, simulator.buffers.edgeTags_reverse);
-            }).fail(Log.makeQErrorHandler('edgeKernelSeq failed'));
+            }).fail(Log.makeQErrorHandler(logger, 'edgeKernelSeq failed'));
     }).then(function () {
         return simulator;
-    }).fail(Log.makeQErrorHandler('GaussSeidel tick failed'));
+    }).fail(Log.makeQErrorHandler(logger, 'GaussSeidel tick failed'));
 }
 
 module.exports = GaussSeidel;

@@ -198,7 +198,7 @@ var setupTempLayoutBuffers = function (simulator) {
         tempLayoutBuffers.swings = swings;
         tempLayoutBuffers.tractions = tractions;
         return tempLayoutBuffers;
-    }).catch(Log.makeQErrorHandler('setupTempBuffers'));
+    }).catch(Log.makeQErrorHandler(logger, 'setupTempBuffers'));
 };
 
 
@@ -361,7 +361,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
             //tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
             tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
         ]);
-    }).fail(Log.makeQErrorHandler('Failure in edgebundling tick'));
+    }).fail(Log.makeQErrorHandler(logger, 'Failure in edgebundling tick'));
 };
 
 module.exports = EdgeBundling;

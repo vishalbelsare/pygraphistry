@@ -53,8 +53,8 @@ SelectNodes.prototype.run = function (simulator, selection, delta) {
                 return mask.read(result).then(function () {
                     return result;
                 });
-            }).fail(Log.makeQErrorHandler('Kernel selectNodes failed'));
-    }).fail(Log.makeQErrorHandler('Node selection failed'));
+            }).fail(Log.makeQErrorHandler(logger, 'Kernel selectNodes failed'));
+    }).fail(Log.makeQErrorHandler(logger, 'Node selection failed'));
 
 }
 

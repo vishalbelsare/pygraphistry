@@ -155,7 +155,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
             }
 
         } catch (e) {
-            logger.makeQErrorHandler('Error setting argument %s of kernel %s', args[i], name)(e);
+            Log.makeQErrorHandler(logger, 'Error setting argument %s of kernel %s', args[i], name)(e);
         }
     };
 

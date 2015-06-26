@@ -146,7 +146,7 @@ function pointForces(simulator, faPoints, stepNumber) {
 
     logger.debug("Running kernel faPointForces");
     return faPoints.exec([simulator.numPoints], resources)
-        .fail(Log.makeQErrorHandler('Kernel faPointForces failed'));
+        .fail(Log.makeQErrorHandler(logger, 'Kernel faPointForces failed'));
 }
 
 
@@ -187,7 +187,7 @@ function edgeForces(simulator, faEdges, stepNumber) {
                                 simulator.numBackwardsWorkItems,
                                 buffers.curPoints, stepNumber,
                                 buffers.partialForces2, buffers.curForces);
-    }).fail(Log.makeQErrorHandler('Kernel faPointEdges failed'));
+    }).fail(Log.makeQErrorHandler(logger, 'Kernel faPointEdges failed'));
 }
 
 
@@ -211,7 +211,7 @@ function swingsTractions(simulator, faSwings) {
 
     logger.debug("Running kernel faSwingsTractions");
     return faSwings.exec([simulator.numPoints], resources)
-        .fail(Log.makeQErrorHandler('Kernel faSwingsTractions failed'));
+        .fail(Log.makeQErrorHandler(logger, 'Kernel faSwingsTractions failed'));
 }
 
 
@@ -236,7 +236,7 @@ function integrate(simulator, faIntegrate) {
 
     logger.debug("Running kernel faIntegrate");
     return faIntegrate.exec([simulator.numPoints], resources)
-        .fail(Log.makeQErrorHandler('Kernel faIntegrate failed'));
+        .fail(Log.makeQErrorHandler(logger, 'Kernel faIntegrate failed'));
 }
 
 function integrateApprox(simulator, faIntegrateApprox) {
@@ -266,7 +266,7 @@ function integrateApprox(simulator, faIntegrateApprox) {
 
     logger.debug('Running kernel faIntegrateApprox');
     return faIntegrateApprox.exec([simulator.numPoints], resources)
-        .fail(Log.makeQErrorHandler('Kernel faIntegrateApprox failed'));
+        .fail(Log.makeQErrorHandler(logger, 'Kernel faIntegrateApprox failed'));
 }
 
 

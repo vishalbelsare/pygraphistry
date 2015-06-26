@@ -57,7 +57,7 @@ function save(graph, name) {
         var blob = vg.encode().toBuffer();
         logger.debug('Uploading to S3', name);
         return s3.upload(config.S3, config.BUCKET, {name: name}, blob);
-    }).fail(Log.makeQErrorHandler('save vgraph'));
+    }).fail(Log.makeQErrorHandler(logger, 'save vgraph'));
 }
 
 module.exports = {

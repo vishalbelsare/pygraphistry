@@ -238,9 +238,9 @@ var compile = Q.promised(function (cl, source, kernels) {
     } catch (e) {
         try {
         var buildLog = program.getBuildInfo(cl.device, webcl.PROGRAM_BUILD_LOG)
-        Log.makeQErrorHandler('OpenCL compilation error')(buildLog);
+        Log.makeQErrorHandler(logger, 'OpenCL compilation error')(buildLog);
         } catch (e2) {
-        Log.makeQErrorHandler('OpenCL compilation failed, no build log possible')(e2);
+        Log.makeQErrorHandler(logger, 'OpenCL compilation failed, no build log possible')(e2);
         }
     }
 
@@ -261,7 +261,7 @@ var compile = Q.promised(function (cl, source, kernels) {
 
     } catch (e) {
         perf.endTiming('graph-viz:cl:compilekernel');
-        Log.makeQErrorHandler('Kernel creation error:', kernels)(e);
+        Log.makeQErrorHandler(logger, 'Kernel creation error:', kernels)(e);
     }
 });
 
@@ -296,7 +296,7 @@ var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
             var global = [globalSize];
             kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, global, workgroup);
         })
-        .fail(Log.makeQErrorHandler('Kernel error'))
+        .fail(Log.makeQErrorHandler(logger, 'Kernel error'))
         .then(release.bind('', buffers))
         .then(function () { kernel.cl.queue.finish(); })
         .then(_.constant(kernel));
@@ -445,7 +445,7 @@ var read = Q.promised(function (buffer, target, optStartIdx, optLen) {
         .then(function() {
             return buffer;
         })
-        .fail(Log.makeQErrorHandler('Read error for buffer', buffer.name));
+        .fail(Log.makeQErrorHandler(logger, 'Read error for buffer', buffer.name));
 });
 
 

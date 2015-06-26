@@ -145,7 +145,7 @@ EdgeBundling.prototype.tick = function(simulator, stepNumber) {
             simulator.tickBuffers(['curMidPoints']);
             return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
         }
-    }).fail(logger.makeQErrorHandler('Failure in edgebundling tick'));
+    }).fail(Log.makeQErrorHandler(logger, 'Failure in edgebundling tick'));
 }
 
 module.exports = EdgeBundling;

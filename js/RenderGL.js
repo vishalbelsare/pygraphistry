@@ -261,7 +261,7 @@ var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
             logger.debug("Using preset colors from %s", imageURL);
         }
         } catch (e) {
-            Log.makeQErrorHandler('bad cluster load')(e);
+            Log.makeQErrorHandler(logger, 'bad cluster load')(e);
         }
 
 

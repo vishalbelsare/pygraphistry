@@ -54,7 +54,7 @@ function downloadDataset(query) {
 
     return downloader[url.protocol](url).then(function (data) {
         return { body: data, metadata: config };
-    }).fail(Log.makeQErrorHandler('Failure while retrieving dataset'));
+    }).fail(Log.makeQErrorHandler(logger, 'Failure while retrieving dataset'));
 }
 
 function httpDownloader(http, url) {

@@ -253,7 +253,7 @@ function decode0(graph, vg, metadata)  {
     }).then(function () {
         runLoaders(loaders);
         return graph;
-    }).fail(Log.makeQErrorHandler('Failure in VGraphLoader'));
+    }).fail(Log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
 }
 
 

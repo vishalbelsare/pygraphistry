@@ -46,7 +46,7 @@ MoveNodes.prototype.run = function (simulator, selection, delta) {
     return this.moveNodes.exec([simulator.numPoints], resources)
         .then(function () {
             return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-        }).fail(logger.makeQErrorHandler('Kernel moveNodes failed'));
+        }).fail(Log.makeQErrorHandler(logger, 'Kernel moveNodes failed'));
 }
 
 module.exports = MoveNodes;
