@@ -289,7 +289,7 @@ function create(dataset) {
             //    return Rx.Observable.fromPromise(graph.tick(0, {play: true, layout: false}));
             //})
             .expand(function(graph) {
-                var now = Date.now();
+                perf.startTiming('tick_durationMS');
                 //return (Rx.Observable.fromCallback(graph.renderer.document.requestAnimationFrame))()
                 return Rx.Observable.return()
                     // Add in a delay to allow nodejs' event loop some breathing room
@@ -304,7 +304,7 @@ function create(dataset) {
                             graph.updateSettings(v).then(function () {
                                 return graph.tick(v);
                             }).then(function () {
-                                perf.getMetric({metric: {'tick_durationMS': Date.now() - now} });
+                                perf.endTiming('tick_durationMS');
                             })
                         );
                     })
@@ -352,12 +352,11 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
         });
     bufferNames = neededBuffers;
 
-    var now = Date.now();
+    perf.startTiming('fetchVBOs_durationMS');
     return Rx.Observable.fromPromise(fetchVBOs(graph, renderConfig, bufferNames, counts))
         .flatMap(function (vbos) {
             //perf.getMetric({metric: {'fetchVBOs_lastVersions': bufferVersions}});
-            perf.getMetric({metric: {'fetchVBOs_buffers': bufferNames}});
-            perf.getMetric({metric: {'fetchVBOs_durationMS': Date.now() - now}});
+            perf.endTiming('fetchVBOs_durationMS');
 
             bufferNames.forEach(function (bufferName) {
                 if (!vbos.hasOwnProperty(bufferName)) {
@@ -375,26 +374,25 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
             });
 
             //[ {buffer, version, compressed} ] ordered by bufferName
-            var nowPreCompress = Date.now();
+            perf.startTiming('compressAll_durationMS');
             var compressed =
                 bufferNames.map(function (bufferName) {
-                    var now = Date.now();
+                    perf.startTiming('compress_durationMS');
                     return Rx.Observable.fromNodeCallback(compress.deflate)(
                         vbos[bufferName].buffer,//binary,
                         {output: new Buffer(
                             Math.max(1024, Math.round(vbos[bufferName].buffer.byteLength * 1.5)))})
                         .map(function (compressed) {
                             logger.debug('compress bufferName %s (size %d)', bufferName, vbos[bufferName].buffer.byteLength);
-                            perf.getMetric({metric: {'compress_buffer': bufferName} });
-                            perf.getMetric({metric: {'compress_inputBytes': vbos[bufferName].buffer.byteLength} });
-                            perf.getMetric({metric: {'compress_outputBytes': compressed.length} });
-                            perf.getMetric({metric: {'compress_durationMS': Date.now() - now} });
+                            perf.gauge('compress_inputBytes', vbos[bufferName].buffer.byteLength);
+                            perf.gauge('compress_outputBytes', compressed.length);
+                            perf.endTiming('compress_durationMS');
                             return _.extend({}, vbos[bufferName], {compressed: compressed});
                         })
                 });
 
             return Rx.Observable.zipArray(compressed).take(1)
-                .do(function () { perf.getMetric({metric: {'compressAll_durationMS': Date.now() - nowPreCompress} }) });
+                .do(function () { perf.endTiming('compressAll_durationMS');
 
         })
         .map(function(compressedVbos) {
