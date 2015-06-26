@@ -2,23 +2,23 @@
 
 var Q       = require('q');
 var _       = require('underscore');
-var debug   = require('debug')('graphistry:graph-viz:data:vgraphwriter');
-var log = require('common/log.js');
-var eh = require('common/errorHandlers.js')(log);
 var pb      = require('protobufjs');
 var path    = require('path');
 var config  = require('config')();
 var s3      = require('common/s3.js');
 
+var Log         = require('common/logger.js');
+var logger      = Log.createLogger('graph-viz:data:vgraphwriter');
+
 var builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
 if (builder === null) {
-    log.die('Could not find protobuf definition');
+    logger.die('Could not find protobuf definition');
 }
 var pb_root = builder.build();
 
 /* Hack way to serialize positions while waiting for dataframe */
 function serializePositions(graph) {
-    debug('Serializing');
+    logger.debug('Serializing');
     var vg = graph.simulator.vgraph;
 
     var curPoints = graph.simulator.buffers.curPoints;
@@ -51,13 +51,13 @@ function serializePositions(graph) {
 }
 
 function save(graph, name) {
-    debug('Saving current graph as', name);
+    logger.debug('Saving current graph as', name);
 
     return serializePositions(graph).then(function (vg) {
         var blob = vg.encode().toBuffer();
-        debug('Uploading to S3', name);
+        logger.debug('Uploading to S3', name);
         return s3.upload(config.S3, config.BUCKET, {name: name}, blob);
-    }).fail(eh.makeErrorHandler('save vgraph'));
+    }).fail(Log.makeQErrorHandler('save vgraph'));
 }
 
 module.exports = {

@@ -2,7 +2,8 @@
 
 var Q = require('q');
 var Long = require('./Long.js');
-var debug = require("debug")("graphistry:graph-viz:data:matrixloader");
+var Log         = require('common/logger.js');
+var logger      = Log.createLogger('graph-viz:data:matrixloader');
 var zlib = require("zlib");
 
 var exports = {
@@ -26,7 +27,7 @@ var exports = {
 
 
     loadBinary: function (nodeBuffer) { // -> Promise Binary
-        debug("Loading binary");
+        logger.debug("Loading binary");
 
         var t0 = new Date().getTime();
 
@@ -62,7 +63,7 @@ var exports = {
             };
         });
 
-        debug("Did naive parse & transform in %d ms", new Date().getTime() - t0);
+        logger.debug("Did naive parse & transform in %d ms", new Date().getTime() - t0);
 
         return {
           nodes: nodes,
@@ -74,7 +75,7 @@ var exports = {
     loadGeo: function(nodeBuffer) { // -> Promise Binary
         var t0 = new Date().getTime();
 
-        debug("Loading Geo file %s");
+        logger.debug("Loading Geo file %s");
 
         function Binary (buf) {
             var f32 = new Float32Array(buf.buffer);
@@ -105,7 +106,7 @@ var exports = {
             };
         }
 
-        debug("Loading geo data with node.js fs module");
+        logger.debug("Loading geo data with node.js fs module");
         return Binary(new Uint32Array((new Uint8Array(nodeBuffer)).buffer));
     },
 

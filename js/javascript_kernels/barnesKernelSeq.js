@@ -1,11 +1,9 @@
 var Kernel = require('../kernel.js'),
     Q = require('q'),
-    debug = require("debug")("graphistry:graph-viz:cl:barensKernels"),
     _     = require('underscore'),
-    log   = require('common/log.js'),
-    eh    = require('common/errorHandlers.js')(log),
-
     cljs  = require('../cl.js');
+var Log         = require('common/logger.js');
+var logger      = Log.createLogger('graph-viz:cl:barnesKernels');
 
 var BarnesKernelSeq = function (clContext) {
 
@@ -206,7 +204,7 @@ var BarnesKernelSeq = function (clContext) {
                             tempBuffers.numBodies = numBodies;
                             return tempBuffers;
                         })
-        .fail(eh.makeErrorHandler("Setting temporary buffers for barnesHutKernelSequence failed"));
+        .fail(Log.makeQErrorHandler("Setting temporary buffers for barnesHutKernelSequence failed"));
     };
 
     this.setEdges = function(simulator, layoutBuffers, warpsize, workItems) {
@@ -263,7 +261,7 @@ var BarnesKernelSeq = function (clContext) {
             setBarnesKernelArgs(that.sort, tempBuffers);
             setBarnesKernelArgs(that.calculatePointForces, tempBuffers);
 
-        }).fail(eh.makeErrorHandler('setupTempBuffers'));
+        }).fail(Log.makeQErrorHandler('setupTempBuffers'));
     };
 
     // TODO (paden) Can probably combine ExecKernel functions
@@ -285,7 +283,7 @@ var BarnesKernelSeq = function (clContext) {
 
         simulator.tickBuffers(['nextMidPoints']);
 
-        debug("Running Force Atlas2 with BarnesHut Kernels");
+        logger.debug("Running Force Atlas2 with BarnesHut Kernels");
 
         // For all calls, we must have the # work items be a multiple of the workgroup size.
         var that = this;
@@ -310,7 +308,7 @@ var BarnesKernelSeq = function (clContext) {
             return that.calculateForces.exec([workItems.calculateForces], resources, [256]);
         })
 
-        .fail(eh.makeErrorHandler("Executing BarnesKernelSeq failed"));
+        .fail(Log.makeQErrorHandler("Executing BarnesKernelSeq failed"));
     };
 
     this.execKernels = function(simulator, stepNumber, workItems) {
@@ -331,7 +329,7 @@ var BarnesKernelSeq = function (clContext) {
 
         simulator.tickBuffers(['partialForces1']);
 
-        debug("Running Force Atlas2 with BarnesHut Kernels");
+        logger.debug("Running Force Atlas2 with BarnesHut Kernels");
 
         // For all calls, we must have the # work items be a multiple of the workgroup size.
         var that = this;
@@ -356,7 +354,7 @@ var BarnesKernelSeq = function (clContext) {
             return that.calculatePointForces.exec([workItems.calculateForces[0]], resources, [workItems.calculateForces[1]]);
         })
 
-        .fail(eh.makeErrorHandler("Executing BarnesKernelSeq failed"));
+        .fail(Log.makeQErrorHandler("Executing BarnesKernelSeq failed"));
     };
 
 };

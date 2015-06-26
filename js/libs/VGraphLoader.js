@@ -3,19 +3,19 @@
 var Q = require('q');
 var _ = require('underscore');
 var fs = require('fs');
-var debug = require('debug')('graphistry:graph-viz:data:vgraphloader');
 var pb = require('protobufjs');
 var path = require('path');
 
 var config  = require('config')();
-var log = require('common/log.js');
-var eh = require('common/errorHandlers.js')(log);
 var util = require('../util.js');
 var weakcc = require('../weaklycc.js');
 
+var Log         = require('common/logger.js');
+var logger      = Log.createLogger('graph-viz:data:vgraphloader');
+
 var builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
 if (builder === null) {
-    log.die('Could not find protobuf definition');
+    logger.die('Could not find protobuf definition');
 }
 var pb_root = builder.build();
 
@@ -105,7 +105,7 @@ var attributeLoaders = function(graph) {
 **/
 function load(graph, dataset) {
     var vg = pb_root.VectorGraph.decode(dataset.body)
-    debug('attaching vgraph to simulator');
+    logger.debug('attaching vgraph to simulator');
     graph.simulator.vgraph = vg;
     return decoders[vg.version](graph, vg, dataset.metadata);
 }
@@ -126,11 +126,11 @@ function getAttributeMap(vg, attributes) {
 }
 
 function decode0(graph, vg, metadata)  {
-    debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
+    logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
           vg.version, vg.name, vg.nvertices, vg.nedges);
 
     var amap = getAttributeMap(vg);
-    debug('Graph has attribute: %o', Object.keys(amap))
+    logger.debug('Graph has attribute: %o', Object.keys(amap))
     var vertices = [];
     var edges = new Array(vg.nedges);
     var dimensions = [1, 1];
@@ -147,12 +147,12 @@ function decode0(graph, vg, metadata)  {
 
     // Load vertices from protobuf Vertex message
     if (xObj && yObj) {
-        debug('Loading previous vertices from xObj');
+        logger.debug('Loading previous vertices from xObj');
         for (var i = 0; i < vg.nvertices; i++) {
             vertices.push([xObj.values[i], yObj.values[i]]);
         }
     } else {
-        debug('Running component analysis');
+        logger.debug('Running component analysis');
 
         var components = weakcc(vg.nvertices, edges, 2);
         var pointsPerRow = vg.nvertices / (Math.round(Math.sqrt(components.components.length)) + 1);
@@ -210,21 +210,21 @@ function decode0(graph, vg, metadata)  {
             }
             vertices.push(vertex);
         }
-        debug('weakcc postprocess', Date.now() - t0);
+        logger.trace('weakcc postprocess', Date.now() - t0);
     }
 
     var loaders = attributeLoaders(graph);
     var mapper = mappers[metadata.mapper];
     if (!mapper) {
-        log.warn('Unknown mapper', metadata.mapper, 'using "default"');
+        logger.warn('Unknown mapper', metadata.mapper, 'using "default"');
         mapper = mappers['default'];
     }
     loaders = wrap(mapper.mappings, loaders);
-    debug('Attribute loaders: %o', loaders);
+    logger.trace('Attribute loaders: %o', loaders);
 
     for (var vname in amap) {
         if (!(vname in loaders)) {
-            debug('Skipping unmapped attribute', vname);
+            logger.trace('Skipping unmapped attribute', vname);
             continue;
         }
 
@@ -233,9 +233,9 @@ function decode0(graph, vg, metadata)  {
 
         _.each(loaderArray, function (loader) {
             if (vec.target != loader.target) {
-                log.warn('Vertex/Node attribute mismatch for ' + vname);
+                logger.warn('Vertex/Node attribute mismatch for ' + vname);
             } else if (vec.type != loader.type) {
-                log.warn('Expected type ' + loader.type + ' but got ' + vec.type + ' for' + vname);
+                logger.warn('Expected type ' + loader.type + ' but got ' + vec.type + ' for' + vname);
             } else {
                 loader.values = vec.values;
             }
@@ -253,7 +253,7 @@ function decode0(graph, vg, metadata)  {
     }).then(function () {
         runLoaders(loaders);
         return graph;
-    }).fail(eh.makeErrorHandler('Failure in VGraphLoader'));
+    }).fail(Log.makeQErrorHandler('Failure in VGraphLoader'));
 }
 
 
@@ -426,7 +426,7 @@ function wrap(mappings, loaders) {
             // Helper function to work around dubious JS scoping
             doWrap(res, mapping, loader);
 
-            debug('Mapping ' + mapping.name + ' to ' + a);
+            logger.trace('Mapping ' + mapping.name + ' to ' + a);
         } else
             res[a] = [loaders[a]];
     }

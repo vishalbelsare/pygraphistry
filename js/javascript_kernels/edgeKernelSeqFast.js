@@ -1,11 +1,11 @@
 var Kernel = require('../kernel.js'),
     Q = require('q'),
-    debug = require("debug")("graphistry:graph-viz:cl:barensKernels"),
-    log = require('common/log.js'),
-    eh = require('common/errorHandlers.js')(log),
     _     = require('underscore'),
     cljs  = require('../cl.js'),
     ArgsType = require('./ArgsType.js');
+
+var Log         = require('common/logger.js');
+var logger      = Log.createLogger('graph-viz:cl:barnesKernels');
 
 var edgeKernelSeqFast = function (clContext) {
 
@@ -100,7 +100,7 @@ var edgeKernelSeqFast = function (clContext) {
           })
           );
 
-      debug("Running kernel faEdgeForces");
+      logger.debug("Running kernel faEdgeForces");
       var that = this;
       return this.mapEdges.exec([workItemsSize.edgeForces[0]], resources, [workItemsSize.edgeForces[1]]).then(function () {
         that.segReduce.set({
@@ -117,7 +117,7 @@ var edgeKernelSeqFast = function (clContext) {
 
         return that.segReduce.exec([workItemsSize.segReduce[0]], resources, [workItemsSize.segReduce[1]]);
       })
-      .fail(eh.makeErrorHandler("Executing edgeKernelSeqFast failed"));
+      .fail(Log.makeQErrorHandler("Executing edgeKernelSeqFast failed"));
 
     }
 }
