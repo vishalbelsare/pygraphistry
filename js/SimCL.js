@@ -15,6 +15,7 @@ var Color = require('color');
 var Log         = require('common/logger.js');
 var logger      = Log.createLogger('graph-viz:data:data-loader');
 
+
 // Do NOT enable this in prod. It destroys performance.
 // Seriously.
 // Q.longStackSupport = true;
@@ -38,7 +39,7 @@ function create(renderer, device, vendor, cfg) {
             return _.contains(algo.devices, type);
         });
         if (availableControls.length === 0) {
-            log.die('No layout controls satisfying device/vendor requirements', device, vendor);
+            logger.die('No layout controls satisfying device/vendor requirements', device, vendor);
         }
         controls = availableControls[0];
         layoutAlgorithms = controls.layoutAlgorithms;
@@ -1055,7 +1056,7 @@ function tick(simulator, stepNumber, cfg) {
         return tickAllHelper(simulator.layoutAlgorithms.slice(0));
     }).then(function() {
         if (stepNumber % 20 === 0 && stepNumber !== 0) {
-            perf('Layout Perf Report (step: %d)', stepNumber);
+            logger.trace('Layout Perf Report (step: %d)', stepNumber);
 
             var extraKernels = [simulator.otherKernels.springsGather.gather];
             var totals = {};
@@ -1074,10 +1075,10 @@ function tick(simulator, stepNumber, cfg) {
 
             _.each(simulator.layoutAlgorithms, function (la) {
                 var total = totals[la.name] / stepNumber;
-                perf(sprintf('  %s (Total:%f) [ms]', la.name, total.toFixed(0)));
+                logger.trace(sprintf('  %s (Total:%f) [ms]', la.name, total.toFixed(0)));
                 _.each(la.runtimeStats(extraKernels), function (stats) {
                     var percentage = (stats.mean * stats.runs / totals[la.name] * 100);
-                    perf(sprintf('\t%s        pct:%4.1f%%', stats.pretty, percentage));
+                    logger.trace(sprintf('\t%s        pct:%4.1f%%', stats.pretty, percentage));
                 });
            });
         }
@@ -1089,7 +1090,7 @@ function tick(simulator, stepNumber, cfg) {
         // argument to finish().
 
         simulator.cl.queue.finish();
-        perf('Tick Finished.');
+        logger.trace('Tick Finished.');
         simulator.renderer.finish();
     }).fail(Log.makeQErrorHandler(logger, 'SimCl tick failed'));
 }
