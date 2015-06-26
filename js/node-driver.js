@@ -10,24 +10,16 @@ var Q = require("q"),
     Rx = require("rx"),
     _ = require('underscore'),
     request = require('request'),
-    // debug = require("debug")("graphistry:graph-viz:driver:node-driver"),
-    // log = require('common/log.js'),
-    // eh = require('common/errorHandlers.js')(log),
     NBody = require("./NBody.js"),
     RenderNull = require('./RenderNull.js'),
     rConf = require('./renderer.config.js'),
     lConf = require('./layout.config.js'),
     webcl = require('node-webcl'),
-
-    // metrics = require("./metrics.js"),
     loader = require("./data-loader.js");
 
 var Log         = require('common/logger.js');
 var logger      = Log.createLogger('graph-viz:data:data-loader');
 var perf        = require('common/perfStats.js').createPerfMonitor();
-
-// metrics.init('StreamGL:driver');
-
 
 
 //number/offset of graph elements and how they relate to various models
