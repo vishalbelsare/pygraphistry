@@ -103,16 +103,24 @@ function sendToBoundary (entry) {
 // { '0': { 'method': 'tick', durationMS': 173 } }
 var getMetric = function () {
     for (var key in arguments) {
-        if (arguments.hasOwnProperty(key)) {
-            var entry = arguments[key];
+        if (!arguments.hasOwnProperty(key)) continue;
 
-            // If the metric and value keys exist, send it along to Boundary /
-            // Graphite / whatever
-            if (entry['metric']) {
-                var property = _.keys(entry['metric'])[0];
-                metrics[property] = entry['metric'][property];
-                sendToBoundary(entry['metric']);
+        // If the metric and value keys exist, send it along to Boundary /
+        // Graphite / whatever
+        if (arguments[key]['metric']) {
+            var entry = arguments[key]['metric'];
+            var property = _.keys(entry)[0];
+            if(!metrics[property]) {
+                metrics[property] = [];
             }
+            else {
+                metrics[property].push({
+                    metric: entry[property],
+                    timestamp: Date.now() / 1000,
+                    source: config.HOSTNAME
+                });
+            }
+            sendToBoundary(entry);
         }
     }
 };
