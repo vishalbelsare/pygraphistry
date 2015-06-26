@@ -2,7 +2,10 @@
 
 var _ = require('underscore');
 var dateFormat = require('dateformat');
+var fs = require('fs');
 
+var baseDirPath = __dirname + '/../assets/dataframe/';
+var TYPES = ['point', 'edge'];
 
 var Dataframe = function () {
     // We keep a copy of the original data, plus a filtered view
@@ -16,7 +19,8 @@ var Dataframe = function () {
             point: {},
             edge: {}
         },
-        buffers: {}
+        buffers: {},
+        numElements: {}
     };
     this.data = this.rawdata;
 };
@@ -47,6 +51,7 @@ Dataframe.prototype.load = function (attributes, type) {
     });
 
     var numElements = filteredAttributes[filteredKeys[0]].values.length;
+    this.rawdata.numElements[type] = numElements;
 
     if (nodeTitleField) {
         filteredAttributes._title = attributes[nodeTitleField];
@@ -80,6 +85,23 @@ Dataframe.prototype.getRows = function (indices, type) {
     });
 }
 
+Dataframe.prototype.getRowsCompact = function (indices, type) {
+    var attributes = this.data.attributes[type];
+    var keys = this.getAttributeKeys(type);
+
+    var values = _.map(indices, function (index) {
+        var row = [];
+        _.each(keys, function (key) {
+            row.push(attributes[key].values[index]);
+        });
+        return row;
+    });
+
+    return {
+        header: keys,
+        values: values
+    }
+}
 
 Dataframe.prototype.getColumn = function (column, type) {
     var attributes = this.data.attributes[type];
@@ -94,6 +116,44 @@ Dataframe.prototype.getAttributeKeys = function (type) {
     );
 }
 
+
+//////////////////////////////////////////////////////////////////////////////
+// Data Serialization
+//////////////////////////////////////////////////////////////////////////////
+
+// Target is string of file to write to.
+// TODO: Async file write.
+Dataframe.prototype.serializeRow = function (target, options) {
+    var options = options || {};
+    var that = this;
+    var toSerialize = {};
+
+    _.each(TYPES, function (type) {
+        if (options.compact) {
+            toSerialize[type] = that.getRowsCompact(range(that.data.numElements[type]), type);
+        } else {
+            toSerialize[type] = that.getRows(range(that.data.numElements[type]), type);
+        }
+    });
+
+    serialize(toSerialize, options.compress, target);
+}
+
+Dataframe.prototype.serializeColumn = function (target, options) {
+    var options = options || {};
+    var that = this;
+    var toSerialize = {};
+
+    _.each(TYPES, function (type) {
+        toSerialize[type] = {};
+        var keys = that.getAttributeKeys(type);
+        _.each(keys, function (key) {
+            toSerialize[type][key] = that.data.attributes[type][key];
+        })
+    });
+
+    serialize(toSerialize, options.compress, target);
+}
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -377,5 +437,14 @@ function minMaxMasked(values, indices) {
     return {max: max, min: min};
 }
 
+function serialize(data, compressFunction, target) {
+    var serialized = JSON.stringify(data);
+
+    if (compressFunction) {
+        serialized = compressFunction(serialized);
+    }
+
+    fs.writeFileSync(baseDirPath + target, serialized);
+}
 
 module.exports = Dataframe;
