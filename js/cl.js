@@ -9,7 +9,7 @@ var util = require('./util.js');
 var Log         = require('common/logger.js');
 var logger      = Log.createLogger('graph-viz:cl:cl');
 
-var perf        = require('common/perfStats.js');
+var perf        = require('common/perfStats.js').createPerfMonitor();
 
 logger.debug("Initializing node-webcl flavored cl.js");
 var webcl = require('node-webcl');
@@ -180,15 +180,15 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
     }));
     props.TYPE = deviceWrapper.deviceType;
 
-    console.info('OpenCL    Type:%s  Vendor:%s  Device:%s',
+    logger.info('OpenCL    Type:%s  Vendor:%s  Device:%s',
                 props.TYPE, props.VENDOR, props.NAME);
 
-    perf.trace('Device Sizes   WorkGroup:%d  WorkItem:%s', props.MAX_WORK_GROUP_SIZE,
+    logger.trace('Device Sizes   WorkGroup:%d  WorkItem:%s', props.MAX_WORK_GROUP_SIZE,
          props.MAX_WORK_ITEM_SIZES);
-    perf.trace('Max Mem (kB)   Global:%d  Alloc:%d  Local:%d  Constant:%d',
+    logger.trace('Max Mem (kB)   Global:%d  Alloc:%d  Local:%d  Constant:%d',
           props.GLOBAL_MEM_SIZE / 1024, props.MAX_MEM_ALLOC_SIZE / 1024,
           props.LOCAL_MEM_SIZE / 1024, props.MAX_CONSTANT_BUFFER_SIZE / 1024);
-    perf.trace('Profile (ns)   Type:%s  Resolution:%d',
+    logger.trace('Profile (ns)   Type:%s  Resolution:%d',
          props.PROFILE, props.PROFILING_TIMER_RESOLUTION);
 
     var res = {
