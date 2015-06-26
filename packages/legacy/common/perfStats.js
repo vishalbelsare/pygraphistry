@@ -1,12 +1,17 @@
 'use strict';
 //Essentially, data here should be collected then piped into outside sources, such as boundary, and then have that service process/display the data
 
+var request = require('request');
+var config = require('config')();
+var _ = require('underscore');
+var Log         = require('./logger.js');
+var logger      = Log.createLogger('perfStats');
+
 // Timing: sends a timing command with the specified milliseconds
 function timing() {
   return;
 }
 // client.timing('response_time', 42);
-
 
 var timestamps = {};
 function startTiming(id) {
@@ -56,6 +61,62 @@ function unique() {
 // client.set('my_unique', 'foobar');
 // client.unique('my_unique', 'foobarbaz');
 
+// Is it necessary to store metrics locally, or should everything just be sent to boundary?
+var metrics = {};
+
+function sendToBoundary (entry) {
+    if (!config.BOUNDARY || (config.ENVIRONMENT === 'local' /*&& !IS_ONLINE*/)) {
+        logger.debug(entry);
+        return;
+    }
+
+    var property = _.keys(entry)[0];
+    var data = {
+        measure: entry[property],
+        metric: property.toUpperCase(),
+        timestamp: Date.now() / 1000,
+        source: config.HOSTNAME
+    };
+
+    request.post(
+        {
+            url: config.BOUNDARY.ENDPOINT,
+            auth: config.BOUNDARY.AUTH,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            json: true,
+            body: data,
+        },
+        function (error, response, body) {
+            if (error) {
+                logger.error(error, 'Error posting to boundary');
+            } else {
+                if (response.statusCode !== 200) {
+                    logger.error(response, 'Boundary returned error');
+                }
+            }
+        });
+}
+
+// Send logged metrics to Boundary
+// { '0': { 'method': 'tick', durationMS': 173 } }
+var info = function () {
+    for (var key in arguments) {
+        if (arguments.hasOwnProperty(key)) {
+            var entry = arguments[key];
+
+            // If the metric and value keys exist, send it along to Boundary /
+            // Graphite / whatever
+            if (entry['metric']) {
+                var property = _.keys(entry['metric'])[0];
+                metrics[property] = entry['metric'][property];
+                sendToBoundary(entry['metric']);
+            }
+        }
+    }
+};
+
 function createPerfMonitor() {
   return {
     startTiming: startTiming,
@@ -67,7 +128,9 @@ function createPerfMonitor() {
     gauge: gauge,
     set: set,
     unique: unique,
-    createPerfMonitor: createPerfMonitor
+    createPerfMonitor: createPerfMonitor,
+    info: info,
+    metrics: metrics
   };
 }
 
