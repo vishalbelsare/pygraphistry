@@ -293,7 +293,6 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
 function setupLabels (appState, $eventTarget, latestHighlightedObject) {
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
-    var $sim = $('#simulation');
 
     appState.cameraChanges.combineLatest(
         appState.vboUpdates,
@@ -301,20 +300,14 @@ function setupLabels (appState, $eventTarget, latestHighlightedObject) {
     ).flatMapLatest(function () {
         return latestHighlightedObject;
     }).do(function (highlighted) {
-        if ($sim.hasClass('moving')) {
-            renderPointLabels(appState, $labelCont, [], []);
-        } else {
 
-            // var indices = highlighted.map(function (o) {
-            //     return !o.dim || o.dim === 1 ? o.idx : -1;
-            // });
+        //always pin (unpin-if-drag may happen later)
+        var clicked = highlighted.filter(function (o) {
+            return o.click;
+        });
 
-            var clicked = highlighted.filter(function (o) {
-                return o.click;
-            });
+        renderPointLabels(appState, $labelCont, highlighted, clicked);
 
-            renderPointLabels(appState, $labelCont, highlighted, clicked);
-        }
     })
     .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
 }
@@ -357,7 +350,19 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
         // e.g., if time between mousedown and mouseup are less than 1/2 sec.
         .merge($eventTarget.mousedownAsObservable()
             .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
-            .map(function (evt) {
+            .flatMapLatest(function (down) {
+                return $eventTarget.mouseupAsObservable().take(1).map(function (up) {
+                    return [down, up];
+                });
+            })
+            .filter(function (downUp) {
+                var dist =
+                    Math.abs(downUp[0].clientX - downUp[1].clientX) +
+                    Math.abs(downUp[0].clientY - downUp[1].clientY);
+                return dist < 5;
+            })
+            .map(function (downUp) {
+                var evt = downUp[1];
                 // Clicked on CSS highlight over node
                 if ($(evt.target).hasClass('highlighted-point') ||
                         $(evt.target).hasClass('highlighted-point-center')) {
