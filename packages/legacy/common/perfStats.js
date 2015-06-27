@@ -73,8 +73,6 @@ function createPerfMonitor() {
     set: set,
     unique: unique,
     createPerfMonitor: createPerfMonitor,
-    getMetric: getMetric,
-    metrics: metrics
   };
 }
 
