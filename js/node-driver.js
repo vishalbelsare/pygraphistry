@@ -384,8 +384,8 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
                             Math.max(1024, Math.round(vbos[bufferName].buffer.byteLength * 1.5)))})
                         .map(function (compressed) {
                             logger.debug('compress bufferName %s (size %d)', bufferName, vbos[bufferName].buffer.byteLength);
-                            perf.gauge('compress_inputBytes', vbos[bufferName].buffer.byteLength);
-                            perf.gauge('compress_outputBytes', compressed.length);
+                            perf.histogram('compress_inputBytes', vbos[bufferName].buffer.byteLength);
+                            perf.histogram('compress_outputBytes', compressed.length);
                             perf.endTiming('compress_durationMS');
                             return _.extend({}, vbos[bufferName], {compressed: compressed});
                         })
