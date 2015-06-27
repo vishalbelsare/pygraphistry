@@ -30,8 +30,11 @@ var Dataframe = function () {
 // Data Loading
 //////////////////////////////////////////////////////////////////////////////
 
-// Type can be 'point' or 'edge'
-// TODO: Implicit degrees for points and src/dst for edges.
+/**
+ * TODO: Implicit degrees for points and src/dst for edges.
+ * @param {Object} attributes
+ * @param {string} type - 'point' or 'edge'
+ */
 Dataframe.prototype.load = function (attributes, type) {
     decodeStrings(attributes);
     decodeDates(attributes);
@@ -44,7 +47,7 @@ Dataframe.prototype.load = function (attributes, type) {
             return ['pointColor', 'pointSize', 'pointTitle', 'pointLabel',
                     'edgeLabel', 'edgeTitle', 'degree'].indexOf(name) === -1;
         })
-        .filter(function (name) { return name !== nodeTitleField && name !== edgeTitleField; })
+        .filter(function (name) { return name !== nodeTitleField && name !== edgeTitleField; });
 
     var filteredAttributes = _.pick(attributes, function (value, key) {
         return filteredKeys.indexOf(key) > -1;
@@ -63,7 +66,7 @@ Dataframe.prototype.load = function (attributes, type) {
 
     _.extend(this.rawdata.attributes[type], filteredAttributes);
     // TODO: Case where data != raw data.
-}
+};
 
 
 
@@ -83,7 +86,7 @@ Dataframe.prototype.getRows = function (indices, type) {
         });
         return row;
     });
-}
+};
 
 Dataframe.prototype.getRowsCompact = function (indices, type) {
     var attributes = this.data.attributes[type];
@@ -101,12 +104,12 @@ Dataframe.prototype.getRowsCompact = function (indices, type) {
         header: keys,
         values: values
     }
-}
+};
 
 Dataframe.prototype.getColumn = function (column, type) {
     var attributes = this.data.attributes[type];
     return attributes[column].values;
-}
+};
 
 
 Dataframe.prototype.getAttributeKeys = function (type) {
@@ -114,17 +117,20 @@ Dataframe.prototype.getAttributeKeys = function (type) {
         _.keys(this.data.attributes[type]),
         _.identity
     );
-}
+};
 
 
 //////////////////////////////////////////////////////////////////////////////
 // Data Serialization
 //////////////////////////////////////////////////////////////////////////////
 
-// Target is string of file to write to.
-// TODO: Async file write.
+/** Serialize the dataframe to the target in JSON format in row-wise order.
+ * @param {string} target - filename to write to.
+ * @param {Object} options
+ */
 Dataframe.prototype.serializeRow = function (target, options) {
-    var options = options || {};
+    // TODO: Async file write.
+    options = options || {};
     var that = this;
     var toSerialize = {};
 
@@ -137,10 +143,14 @@ Dataframe.prototype.serializeRow = function (target, options) {
     });
 
     serialize(toSerialize, options.compress, target);
-}
+};
 
+/** Serialize the dataframe to the target in JSON format in column-wise order.
+ * @param {string} target - filename to write to.
+ * @param {Object} options
+ */
 Dataframe.prototype.serializeColumn = function (target, options) {
-    var options = options || {};
+    options = options || {};
     var that = this;
     var toSerialize = {};
 
@@ -153,7 +163,7 @@ Dataframe.prototype.serializeColumn = function (target, options) {
     });
 
     serialize(toSerialize, options.compress, target);
-}
+};
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -185,7 +195,7 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
     return _.object(_.map(keysToAggregate, function (attribute) {
         return [attribute, process(attribute, indices)];
     }));
-}
+};
 
 
 Dataframe.prototype.countBy = function (attribute, binning, indices, type) {
@@ -338,7 +348,7 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
         minValue: bottomVal,
         bins: bins
     };
-}
+};
 
 
 
