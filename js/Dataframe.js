@@ -102,6 +102,12 @@ Dataframe.prototype.getRows = function (indices, type) {
     });
 };
 
+
+/** Returns a descriptor of a set of rows.
+ * @param {Array.<number>} indices - which elements to extract.
+ * @param {string} type - any of [TYPES]{@link TYPES}.
+ * @returns {{header, values}}
+ */
 Dataframe.prototype.getRowsCompact = function (indices, type) {
     var attributes = this.data.attributes[type];
     var keys = this.getAttributeKeys(type);
@@ -117,7 +123,7 @@ Dataframe.prototype.getRowsCompact = function (indices, type) {
     return {
         header: keys,
         values: values
-    }
+    };
 };
 
 Dataframe.prototype.getColumn = function (column, type) {
