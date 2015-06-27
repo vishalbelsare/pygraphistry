@@ -96,7 +96,7 @@ module.exports =
             debug('wrote/read', prevHeader, _.keys(buffers));
         },
 
-        publishStaticContents: function (snapshotName, compressedVBOs, metadata, renderConfig) {
+        publishStaticContents: function (snapshotName, compressedVBOs, metadata, dataframe, renderConfig) {
             debug('publishing current content to S3');
             var snapshotPath = 'Static/' + snapshotName + '/';
             uploadPublic(snapshotPath + 'renderconfig.json', JSON.stringify(renderConfig), {ContentType: 'application/json'});
