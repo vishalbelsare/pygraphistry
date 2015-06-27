@@ -11,7 +11,7 @@ var Dataframe = function () {
     // We keep a copy of the original data, plus a filtered view
     // that defaults to the new raw data.
     //
-    // This is to allow tools like filters/selections to propogate to
+    // This is to allow tools like filters/selections to propagate to
     // all other tools that rely on data frames.
 
     this.rawdata = {
@@ -33,7 +33,7 @@ var Dataframe = function () {
 /**
  * TODO: Implicit degrees for points and src/dst for edges.
  * @param {Object} attributes
- * @param {string} type - 'point' or 'edge'
+ * @param {string} type - any of [TYPES]{@link TYPES}
  */
 Dataframe.prototype.load = function (attributes, type) {
     decodeStrings(attributes);
@@ -74,17 +74,31 @@ Dataframe.prototype.load = function (attributes, type) {
 // Data Access
 //////////////////////////////////////////////////////////////////////////////
 
+/** Returns one row object.
+ * @param {double} index - which element to extract.
+ * @param {string} type - any of [TYPES]{@link TYPES}.
+ * @param {Object?} attributes - which attributes to extract from the row.
+ */
+Dataframe.prototype.getRowAt = function (index, type, attributes) {
+    attributes = attributes || this.data.attributes[type];
+    var row = {};
+    _.each(_.keys(attributes), function (key) {
+        row[key] = attributes[key].values[index];
+    });
+    return row;
+};
 
-// Returns array of row (fat json) objects
+
+/** Returns array of row (fat json) objects.
+ * @param {Array.<number>} indices - which elements to extract.
+ * @param {string} type - any of [TYPES]{@link TYPES}.
+ */
 Dataframe.prototype.getRows = function (indices, type) {
-    var attributes = this.data.attributes[type];
+    var attributes = this.data.attributes[type],
+        that = this;
 
     return _.map(indices, function (index) {
-        var row = {};
-        _.each(_.keys(attributes), function (key) {
-            row[key] = attributes[key].values[index];
-        });
-        return row;
+        return that.getRowAt(index, type, attributes);
     });
 };
 
@@ -126,9 +140,9 @@ Dataframe.prototype.getAttributeKeys = function (type) {
 
 /** Serialize the dataframe to the target in JSON format in row-wise order.
  * @param {string} target - filename to write to.
- * @param {Object} options
+ * @param {Object} options - has flags 'compact' and 'compress'
  */
-Dataframe.prototype.serializeRow = function (target, options) {
+Dataframe.prototype.serializeRows = function (target, options) {
     // TODO: Async file write.
     options = options || {};
     var that = this;
@@ -147,9 +161,9 @@ Dataframe.prototype.serializeRow = function (target, options) {
 
 /** Serialize the dataframe to the target in JSON format in column-wise order.
  * @param {string} target - filename to write to.
- * @param {Object} options
+ * @param {Object} options - has flags 'compact' and 'compress'
  */
-Dataframe.prototype.serializeColumn = function (target, options) {
+Dataframe.prototype.serializeColumns = function (target, options) {
     options = options || {};
     var that = this;
     var toSerialize = {};
@@ -159,7 +173,7 @@ Dataframe.prototype.serializeColumn = function (target, options) {
         var keys = that.getAttributeKeys(type);
         _.each(keys, function (key) {
             toSerialize[type][key] = that.data.attributes[type][key];
-        })
+        });
     });
 
     serialize(toSerialize, options.compress, target);
