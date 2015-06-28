@@ -45,6 +45,7 @@ var urlParams = getUrlParameters();
  * @type {string} menu - bool, defaults to true, can override to disable menu.
  * @type {string} static - bool, defaults to false, indicates whether to load static content instead of connect live.
  * @type {string} contentKey - specifies where static content resides.
+ * @type {string} camera - defaults to '2d', can also be '3d'
  */
 
 
@@ -125,7 +126,7 @@ function init(streamClient, canvasElement, vizType) {
             displayErrors(socket, $(canvasElement));
 
             debug('Creating renderer');
-            return streamClient.createRenderer(socket, canvasElement)
+            return streamClient.createRenderer(socket, canvasElement, urlParams)
                 .map(/** @param {renderer} initialRenderState @returns {RenderInfo} */ function(initialRenderState) {
                     debug('Renderer created');
                     return {
@@ -278,7 +279,7 @@ window.addEventListener('load', function() {
         streamClient = serverClient;
     }
 
-    var app = init(streamClient, $('#simulation')[0], 'graph');
+    var app = init(streamClient, $('#simulation')[0], 'graph', urlParams);
     createInfoOverlay(app);
 
 

@@ -226,8 +226,9 @@ function connect(vizType, urlParams) {
 }
 
 
-function createRenderer(socket, canvas) {
-    debug('Getting render-config from server');
+//socket * canvas * {?is3d: bool}
+function createRenderer(socket, canvas, urlParams) {
+    debug('Getting render-config from server', urlParams);
     return Rx.Observable.fromCallback(socket.emit, socket)('render_config', null)
         .map(function (res) {
             if (res && res.success) {
@@ -237,7 +238,7 @@ function createRenderer(socket, canvas) {
                 throw new Error((res||{}).error || 'Cannot get render_config');
             }
         }).map(function (renderConfig) {
-            var renderState = renderer.init(renderConfig, canvas);
+            var renderState = renderer.init(renderConfig, canvas, urlParams);
             debug('Renderer created');
             return renderState;
         });

@@ -83,8 +83,8 @@ module.exports = {
         });
     },
 
-    createRenderer: function (socket, canvas) {
-        debug('createRenderer');
+    createRenderer: function (socket, canvas, urlParams) {
+        debug('createRenderer', urlParams);
 
         return $.ajaxAsObservable({
                 url: BASE_PATH + 'renderconfig.json',
@@ -93,7 +93,7 @@ module.exports = {
             .pluck('data')
             .map(function (data) {
                 debug('got', data);
-                return renderer.init(data, canvas);
+                return renderer.init(data, canvas, urlParams);
             });
     },
 

@@ -214,7 +214,8 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
 ////////////////////////////////////////////////////////////////////////////////
 
 
-function init(config, canvas) {
+//config * canvas
+function init(config, canvas, urlParams) {
     config = Immutable.fromJS(config);
     var renderPipeline = new Rx.ReplaySubject(1);
 
@@ -276,7 +277,7 @@ function init(config, canvas) {
     state = createUniforms(state);
 
     debug('precreated', state.toJS());
-    var camera = createCamera(state);
+    var camera = createCamera(state, urlParams);
     state = state.set('camera', camera);
     setCamera(state);
 
@@ -321,8 +322,7 @@ function enableExtensions(gl, extensions) {
 }
 
 
-function createCamera(state) {
-    var camera;
+function createCamera(state, urlParams) {
     var canvas = state.get('canvas');
     var pixelRatio = window.devicePixelRatio || 1;
     var camConfig = state.get('config').get('camera');
