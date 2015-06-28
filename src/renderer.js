@@ -335,15 +335,18 @@ function createCamera(state, urlParams) {
         });
     }
 
-    if (camConfig.get('type') === '2d') {
-        var nearPlane = camConfig.get('nearPlane');
-        var farPlane = camConfig.get('farPlane');
-        camera = new cameras.Camera2d(bounds.get('left'), bounds.get('right'),
-                                      bounds.get('top'), bounds.get('bottom'),
-                                      nearPlane, farPlane);
-    } else {
-        throw new Error ('Unknown camera type');
-    }
+    var mode =
+        urlParams && urlParams.camera ? (urlParams.camera === '3d' ? '3d' : '2d')
+        : camConfig.get('type') === '3d' ? '3d'
+        : '2d';
+
+    console.log('url', mode, urlParams);
+
+    var camera = new cameras.Camera2d(
+            bounds.get('left'), bounds.get('right'),
+            bounds.get('top'), bounds.get('bottom'),
+            camConfig.get('nearPlane'), camConfig.get('farPlane'),
+            mode);
 
     console.info('Display\'s pixel ratio is', pixelRatio);
     camera.resize(canvas.width, canvas.height, pixelRatio);

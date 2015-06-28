@@ -6,6 +6,7 @@
     'use strict';
 
     var debug = require('debug')('graphistry:StreamGL:camera');
+    var $     = window.$;
 
     var glMatrix, mat4, vec3, vec4;
     if(typeof window === 'undefined' || !window.glMatrix) {
@@ -42,6 +43,7 @@
         this.near = args.lens.near;
         this.far = args.lens.far;
         this.aspect = args.lens.aspect;
+
     }
 
     /** Sets the lens and position attributes based off the size of a <canvas> element. */
@@ -98,6 +100,47 @@
         this.pointScaling = 1.0;
         this.edgeScaling = 1.0;
         this.pixelRatio = 1.0;
+
+
+        if (mode === '3d') {
+            debug('Using 3d camera');
+            this.is3d = true;
+            this.position = {x: 0.0, y: 0.0, z: 0.0};
+            this.rotation = {x: 0.0, y: 0.0, z: 0.0};
+            this.fov = 60;
+            this.near = 1;
+            this.far = 20;
+            this.aspect = 1;
+
+            /*
+                shift left/right: rotate
+                shift up/down: tilt
+            */
+            var that = this;
+            $(document).keydown(function (e) {
+                var codes = {LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40};
+                var AMT = 5;
+                if (!!!e.shiftKey) {
+                    return;
+                }
+                switch (e.keyCode || e.which) {
+                    case codes.LEFT:
+                        that.rotation.z = (that.rotation.z + AMT) % 360;
+                        break;
+                    case codes.UP:
+                        that.rotation.x = (that.rotation.x + AMT) % 360;
+                        break;
+                    case codes.RIGHT:
+                        that.rotation.z = (that.rotation.z - AMT) % 360;
+                        break;
+                    case codes.DOWN:
+                        that.rotation.x = (that.rotation.x - AMT) % 360;
+                        break;
+                }
+            });
+
+        }
+
     }
 
     Camera2d.prototype.setPointScaling = function(value) {
@@ -138,8 +181,12 @@
     };
 
 
+    function toRadian (deg) { return deg * Math.PI / 180; }
+
+
     Camera2d.prototype.getMatrix = function() {
         var projectionMatrix = mat4.create(); //new J3DIMatrix4();
+
         // Choose arbitrary near and far planes (0, 20)
         // We purposelly swap and negate the top and bottom arguments so that the matrix follows
         // HTML-style coordinates (top-left corner at 0,0) vs. than GL coordinates (bottom-left 0,0)
@@ -147,6 +194,19 @@
                    this.center.x - (this.width / 2), this.center.x + (this.width / 2),
                    -this.center.y - (this.height / 2), -this.center.y + (this.height / 2),
                    this.nearPlane, this.farPlane);
+
+
+        if (this.is3d) {
+            mat4.rotateX(projectionMatrix, projectionMatrix, toRadian(this.rotation.x));
+            mat4.rotateY(projectionMatrix, projectionMatrix, toRadian(this.rotation.y));
+            mat4.rotateZ(projectionMatrix, projectionMatrix, toRadian(this.rotation.z));
+        }
+
+
+
+//        mat4.perspective(projectionMatrix, toRadian(this.fov), this.aspect, this.near, this.far);
+
+//        mat4.translate(projectionMatrix, projectionMatrix, vec3.fromValues(this.position.x, this.position.y, this.position.z));
 
         return projectionMatrix;
     };
