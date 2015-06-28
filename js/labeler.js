@@ -66,10 +66,6 @@ function infoFrame(graph, type, indices, attributeNames) {
 
     var filteredKeys = _.keys(attribs)
         .filter(function (name) { return attribs[name].target === target; })
-        .filter(function (name) {
-            return ['pointColor', 'pointSize', 'pointTitle', 'pointLabel',
-                    'edgeLabel', 'edgeTitle', 'degree'].indexOf(name) === -1;
-        })
         .filter(function (name) { return name !== nodeTitleField && name !== edgeTitleField; })
 
 
