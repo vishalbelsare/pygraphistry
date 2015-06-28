@@ -156,8 +156,8 @@ function getLabels(graph, indices, dim) {
 
 function aggregate(graph, indices, attributes, binning, mode) {
 
-    function process(values, attribute, indices) {
-
+    // ... -> {type: str, numValues: int, numBins: int, bins: {<k>: int}}
+    var process = function (values, attribute, indices) {
         var goalNumberOfBins = binning ? binning._goalNumberOfBins : 0;
         var binningHint = binning ? binning[attribute] : undefined;
         var type = vgloader.getAttributeType(graph.simulator.vgraph, attribute);
@@ -167,9 +167,10 @@ function aggregate(graph, indices, attributes, binning, mode) {
         } else {
             return countBy(values, binningHint, indices);
         }
-    }
+    };
 
     var attributeMap = vgloader.getAttributeMap(graph.simulator.vgraph, attributes);
+
     attributeMap['degree_in'] = {values: graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped};
     attributeMap['degree_out'] = {values: graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped};
     // TODO: Caches this value elsewhere.
@@ -192,6 +193,7 @@ function aggregate(graph, indices, attributes, binning, mode) {
 }
 
 
+// ... -> {type: str, numValues: int, numBins: int, bins: {<k>: int}}
 function countBy(values, binning, indices) {
     // TODO: Get this value from a proper source, instead of hard coding.
     var maxNumBins = 29;
@@ -273,6 +275,7 @@ function minMaxMasked(values, indices) {
     return {max: max, min: min};
 }
 
+// ... -> {type: str, numValues: int, numBins: int, bins: {<k>: int}}
 function histogram(values, binning, goalNumberOfBins, indices) {
     // Binning has binWidth, minValue, maxValue, and numBins
 
