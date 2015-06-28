@@ -179,13 +179,13 @@ function aggregate(graph, indices, attributes, binning, mode) {
     });
     attributeMap['degree'] = {values: degrees};
 
-    var columns = attributes ? attributes : frameHeader(graph, 'point');
-    //var filteredAttributeMap = filterAttributeMap(graph, indices, columns, attributeMap);
-
-    // Filter out private attributes that begin with underscore
-    columns = columns.filter(function (val) {
-        return val[0] !== '_';
-    });
+    var columns =
+        (attributes ? attributes : (frameHeader(graph, 'point').concat(frameHeader(graph, 'edge'))))
+        .filter(function (val) { return val[0] !== '_'; })
+        .filter(function (val) {
+            //TODO these trigger an error yet ought to be supported
+            return ['Source', 'Destination'].indexOf(val) == -1;
+        });
 
     return _.object(_.map(columns, function (attribute) {
         return [attribute, process(attributeMap[attribute].values, attribute, indices)];
