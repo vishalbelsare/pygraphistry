@@ -5,6 +5,7 @@ var $$       = window.Quo;
 var $        = window.$;
 var Rx       = require('rx');
                require('../rx-jquery-stub');
+var _        = require('underscore');
 var debug    = require('debug')('graphistry:StreamGL:interaction');
 var util     = require('./util.js');
 
@@ -101,6 +102,45 @@ function setupMousemove($eventTarget) {
         })
         .merge(Rx.Observable.return(initial));
 }
+
+
+/*
+    shift left/right: rotate
+    shift up/down: tilt
+*/
+// Camera -> Observable Camera
+// feature-gated by 3d
+function setupRotate(camera) {
+
+    var presses = new Rx.Subject();
+
+    $(document).keydown(function (e) { presses.onNext(e); });
+
+    var CODES = {LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40};
+    var AMT = 5;
+
+    return presses
+        .filter(function () { return camera.is3d; })
+        .filter(function (e) { return !!e.shiftKey; })
+        .do(function (e) {
+             switch (e.keyCode || e.which) {
+                case CODES.LEFT:
+                    camera.rotation.z = (camera.rotation.z + AMT) % 360;
+                    break;
+                case CODES.UP:
+                    camera.rotation.x = (camera.rotation.x + AMT) % 360;
+                    break;
+                case CODES.RIGHT:
+                    camera.rotation.z = (camera.rotation.z - AMT) % 360;
+                    break;
+                case CODES.DOWN:
+                    camera.rotation.x = (camera.rotation.x - AMT) % 360;
+                    break;
+            }
+        })
+        .map(_.constant(camera));
+}
+
 
 function setupScroll($eventTarget, canvas, camera, appState) {
     var zoomBase = 1.1;
@@ -324,6 +364,7 @@ module.exports = {
     setupSwipe: setupSwipe,
     setupPinch: setupPinch,
     setupZoomButton: setupZoomButton,
+    setupRotate: setupRotate,
 
     isTouchBased: touchBased
 };

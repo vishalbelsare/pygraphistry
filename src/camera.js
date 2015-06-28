@@ -6,7 +6,6 @@
     'use strict';
 
     var debug = require('debug')('graphistry:StreamGL:camera');
-    var $     = window.$;
 
     var glMatrix, mat4, vec3, vec4;
     if(typeof window === 'undefined' || !window.glMatrix) {
@@ -111,34 +110,6 @@
             this.near = 1;
             this.far = 20;
             this.aspect = 1;
-
-            /*
-                shift left/right: rotate
-                shift up/down: tilt
-            */
-            var that = this;
-            $(document).keydown(function (e) {
-                var codes = {LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40};
-                var AMT = 5;
-                if (!!!e.shiftKey) {
-                    return;
-                }
-                switch (e.keyCode || e.which) {
-                    case codes.LEFT:
-                        that.rotation.z = (that.rotation.z + AMT) % 360;
-                        break;
-                    case codes.UP:
-                        that.rotation.x = (that.rotation.x + AMT) % 360;
-                        break;
-                    case codes.RIGHT:
-                        that.rotation.z = (that.rotation.z - AMT) % 360;
-                        break;
-                    case codes.DOWN:
-                        that.rotation.x = (that.rotation.x - AMT) % 360;
-                        break;
-                }
-            });
-
         }
 
     }

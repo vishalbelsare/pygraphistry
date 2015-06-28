@@ -36,6 +36,7 @@ function setupCameraInteractions(appState, $eventTarget) {
 
     return Rx.Observable.merge(
         interactions,
+        interaction.setupRotate(camera),
         interaction.setupCenter($('#center'),
                                 renderState.get('hostBuffers').curPoints,
                                 camera),
