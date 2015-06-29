@@ -52,18 +52,18 @@ function checkWrite (snapshotName, vboPath, raw, buff) {
 function uploadPublic (path, buffer, params) {
     var uploadParams = !_.isEmpty(params) ? _.clone(params) : {};
     uploadParams.acl = 'public-read';
-    s3.upload(config.S3, config.BUCKET, {name: path}, buffer, uploadParams);
+    return s3.upload(config.S3, config.BUCKET, {name: path}, buffer, uploadParams);
 }
 
 
 function staticContentForDataframe (dataframe, type) {
-    var rows = dataframe.getRows(undefined, type);
-    var rowContents = new Array(rows.length);
-    var indexes = new ArrayBuffer(rows.length);
-    var indexesView = new Uint32Array(indexes);
-    var currentContentIndex = 0;
+    var rows = dataframe.getRows(undefined, type),
+        rowContents = new Array(rows.length),
+        indexes = new ArrayBuffer(rows.length * 4),
+        indexesView = new Uint32Array(indexes),
+        currentContentIndex = 0;
     _.each(rows, function (row, rowIndex) {
-        var content = JSON.stringify(row),
+        var content = new Buffer(JSON.stringify(row), 'utf8'),
             contentLength = content.length;
         indexesView[rowIndex] = currentContentIndex;
         rowContents[rowIndex] = content;
@@ -116,6 +116,8 @@ module.exports =
         publishStaticContents: function (snapshotName, compressedVBOs, metadata, dataframe, renderConfig) {
             debug('publishing current content to S3');
             var snapshotPath = 'Static/' + snapshotName + '/';
+            var edgeExport = staticContentForDataframe(dataframe, 'edge');
+            var pointExport = staticContentForDataframe(dataframe, 'point');
             uploadPublic(snapshotPath + 'renderconfig.json', JSON.stringify(renderConfig), {ContentType: 'application/json'});
             uploadPublic(snapshotPath + 'metadata.json', JSON.stringify(metadata), {ContentType: 'application/json'});
             uploadPublic(snapshotPath + 'curPoints.vbo', compressedVBOs.curPoints, {compressed: false});
@@ -124,11 +126,9 @@ module.exports =
             uploadPublic(snapshotPath + 'pointSizes.vbo', compressedVBOs.pointSizes, {compressed: false});
             uploadPublic(snapshotPath + 'pointColors.vbo', compressedVBOs.pointColors, {compressed: false});
             uploadPublic(snapshotPath + 'logicalEdges.vbo', compressedVBOs.logicalEdges, {compressed: false});
-            var edgeExport = staticContentForDataframe(dataframe, 'edge');
             uploadPublic(snapshotPath + 'edgeLabels.buffer', edgeExport.contents, {compressed: false});
             uploadPublic(snapshotPath + 'edgeIndexes.buffer', edgeExport.indexes, {compressed: false});
-            var pointExport = staticContentForDataframe(dataframe, 'point');
             uploadPublic(snapshotPath + 'pointLabels.buffer', pointExport.contents, {compressed: false});
-            uploadPublic(snapshotPath + 'pointIndexes.buffer', pointExport.indexes, {compressed: false});
+            return uploadPublic(snapshotPath + 'pointIndexes.buffer', pointExport.indexes, {compressed: false});
         }
     };
