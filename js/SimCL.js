@@ -508,6 +508,7 @@ function setEdgeLabels(simulator, labels) {
 }
 
 function setMidEdges( simulator ) {
+    debug("In set midedges");
     simulator.controls.locks.interpolateMidPointsOnce = true;
     var bytesPerPoint,
         bytesPerEdge,
@@ -761,7 +762,7 @@ function setMidEdgeColors(simulator, midEdgeColors) {
         colorHSVInterpolator, convertRGBInt2Color, convertColor2RGBInt, interpolatedColor;
 
     // If there are no splits, don't interpolate midEdge colors
-    if (simulator.numSplits) {
+    if (simulator.numSplits == 0) {
         return simulator;
     }
 
