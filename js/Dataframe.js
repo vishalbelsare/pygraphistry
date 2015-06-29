@@ -109,6 +109,8 @@ Dataframe.prototype.getRows = function (indices, type) {
     var attributes = this.data.attributes[type],
         that = this;
 
+    indices = indices || range(that.data.numElements[type]);
+
     return _.map(indices, function (index) {
         return that.getRowAt(index, type, attributes);
     });
@@ -121,8 +123,10 @@ Dataframe.prototype.getRows = function (indices, type) {
  * @returns {{header, values}}
  */
 Dataframe.prototype.getRowsCompact = function (indices, type) {
-    var attributes = this.data.attributes[type];
-    var keys = this.getAttributeKeys(type);
+    var attributes = this.data.attributes[type],
+        keys = this.getAttributeKeys(type);
+
+    indices = indices || range(that.data.numElements[type]);
 
     var values = _.map(indices, function (index) {
         var row = [];
@@ -168,9 +172,9 @@ Dataframe.prototype.serializeRows = function (target, options) {
 
     _.each(TYPES, function (type) {
         if (options.compact) {
-            toSerialize[type] = that.getRowsCompact(range(that.data.numElements[type]), type);
+            toSerialize[type] = that.getRowsCompact(undefined, type);
         } else {
-            toSerialize[type] = that.getRows(range(that.data.numElements[type]), type);
+            toSerialize[type] = that.getRows(undefined, type);
         }
     });
 
