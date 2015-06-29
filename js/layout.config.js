@@ -86,7 +86,7 @@ var uberControls = {
             params: {
                 edgeBundling: new BoolParam('Edge Bundling', false),
                 midpoints: new DiscreteParam('Splits', defaultNumSplits , 0, 32),
-                tau: new ContinuousParam('Speed', 0.2, 0.0000001, 1),
+                tau: new ContinuousParam('Speed', 0.5, 0.0000001, 1),
                 charge: new ContinuousParam('Charge', -1, -200, -0.0000001),
                 springStrength: new ContinuousParam('Spring Strength', 100, 0, 200),
                 springDistance: new ContinuousParam('Spring Distance', 0.5, 0.0000001, 1),
