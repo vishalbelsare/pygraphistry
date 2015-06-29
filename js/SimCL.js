@@ -760,6 +760,11 @@ function setMidEdgeColors(simulator, midEdgeColors) {
         dstColorInt, dstColor, edgeIndex, midEdgeIndex, numSegments, lambda,
         colorHSVInterpolator, convertRGBInt2Color, convertColor2RGBInt, interpolatedColor;
 
+    // If there are no splits, don't interpolate midEdge colors
+    if (simulator.numSplits) {
+        return simulator;
+    }
+
     if (!midEdgeColors) {
         debug('Using default midedge colors');
         midEdgeColors = new Uint32Array(4 * simulator.numMidPoints);
