@@ -56,6 +56,23 @@ function uploadPublic (path, buffer, params) {
 }
 
 
+function staticContentForDataframe (dataframe, type) {
+    var rows = dataframe.getRows(undefined, type);
+    var rowContents = new Array(rows.length);
+    var indexes = new ArrayBuffer(rows.length);
+    var indexesView = new Uint32Array(indexes);
+    var currentContentIndex = 0;
+    _.each(rows, function (row, rowIndex) {
+        var content = JSON.stringify(row),
+            contentLength = content.length;
+        indexesView[rowIndex] = currentContentIndex;
+        rowContents[rowIndex] = content;
+        currentContentIndex += contentLength;
+    });
+    return {contents: Buffer.concat(rowContents), indexes: indexes};
+}
+
+
 module.exports =
     {
         saveConfig: function (snapshotName, renderConfig) {
@@ -107,5 +124,11 @@ module.exports =
             uploadPublic(snapshotPath + 'pointSizes.vbo', compressedVBOs.pointSizes);
             uploadPublic(snapshotPath + 'pointColors.vbo', compressedVBOs.pointColors);
             uploadPublic(snapshotPath + 'logicalEdges.vbo', compressedVBOs.logicalEdges);
+            var edgeExport = staticContentForDataframe(dataframe, 'edge');
+            uploadPublic(snapshotPath + 'edgeLabels.buffer', edgeExport.contents);
+            uploadPublic(snapshotPath + 'edgeIndexes.buffer', edgeExport.indexes);
+            var pointExport = staticContentForDataframe(dataframe, 'point');
+            uploadPublic(snapshotPath + 'pointLabels.buffer', pointExport.contents);
+            uploadPublic(snapshotPath + 'pointIndexes.buffer', pointExport.indexes);
         }
     };
