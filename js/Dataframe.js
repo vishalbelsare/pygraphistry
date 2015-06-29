@@ -33,6 +33,12 @@ var Dataframe = function () {
 // Type can be 'point' or 'edge'
 // TODO: Implicit degrees for points and src/dst for edges.
 Dataframe.prototype.load = function (attributes, type) {
+
+    // Case of loading with no data.
+    if (_.keys(attributes).length === 0) {
+        return;
+    }
+
     decodeStrings(attributes);
     decodeDates(attributes);
 
@@ -49,6 +55,12 @@ Dataframe.prototype.load = function (attributes, type) {
     var filteredAttributes = _.pick(attributes, function (value, key) {
         return filteredKeys.indexOf(key) > -1;
     });
+
+    // Case of filtering out all attributes
+    if (filteredKeys.length === 0) {
+        return;
+    }
+
 
     var numElements = filteredAttributes[filteredKeys[0]].values.length;
     this.rawdata.numElements[type] = numElements;
