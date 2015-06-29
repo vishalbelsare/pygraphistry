@@ -90,19 +90,20 @@ function updateSettings(graph, newCfg) {
         if (newCfg.simControls.hasOwnProperty('EdgeBundling')) {
             if (newCfg.simControls.EdgeBundling.hasOwnProperty('edgeBundling')) {
                 if (newCfg.simControls.EdgeBundling.edgeBundling) {
-                    console.log("Switching to edge bundling");
+                    debug("Edge bundling turned on. Lock points and edges");
                     graph.simulator.controls.locks.interpolateMidPoints = false;
                     graph.simulator.controls.locks.lockPoints = true;
                     graph.simulator.controls.locks.lockEdges = true;
                 }
                 if (!newCfg.simControls.EdgeBundling.edgeBundling) {
-                    console.log("Switching to ForceAtlas2");
+                    debug("Edge bundling turned off. Unlock points and edges. Interpolate Midpoints");
                     graph.simulator.controls.locks.interpolateMidPoints = true;
                     graph.simulator.controls.locks.lockPoints = false;
                     graph.simulator.controls.locks.lockEdges = false;
                 }
             }
             if (newCfg.simControls.EdgeBundling.hasOwnProperty('midpoints')) {
+                graph.simulator.controls.locks.interpolateMidPointsOnce = true;
                 graph.simulator.controls.global.numSplits = cfg.EdgeBundling.midpoints;
                 graph.simulator.numSplits = cfg.EdgeBundling.midpoints;
                 return graph.simulator.setMidEdges();

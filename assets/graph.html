@@ -1,6 +1,42 @@
-<body class="graphistry-body">
-
+<html>
+<head>
     <script type="text/javascript" src="libs/jquery-2.1.1.js"></script>
+    <link rel="stylesheet" href="css/jquery-ui-1.10.4.css">
+    <link rel="stylesheet" href="libs/jQRangeSlider-5.6.0/css/classic-min.css">
+    <link rel="stylesheet" href="libs/colorpicker/colorpicker.css">
+
+    <!-- Libs (bootstrap etc.) -->
+    <script type="text/javascript" src="libs/jquery-ui-1.10.4.min.js"></script>
+    <script type="text/javascript" src="libs/underscore-min.js"></script>
+    <script type="text/javascript" src="libs/jquery.mousewheel-3.1.9.js"></script>
+    <script type="text/javascript" src="libs/jQRangeSlider-5.6.0/jQAllRangeSliders-min.js"></script>
+    <script type="text/javascript" src="libs/colorpicker/colorpicker.js"></script>
+    <script type="text/javascript" src="libs/spin.min.js"></script>
+
+    <!-- FIXME: Package Quo and bundle with StreamGL -->
+    <script type="text/javascript" src="libs/quo.js"></script>
+
+    <link rel="stylesheet" href="libs/bootstrap/css/bootstrap.css">
+    <script type="text/javascript" src="libs/bootstrap/js/bootstrap.js"></script>
+    <script type="text/javascript" src="libs/bootstrap-slider/js/bootstrap-slider.js"></script>
+    <script type="text/javascript" src="libs/bootstrap-switch.min.js"></script>
+
+    <link rel="stylesheet" href="libs/bootstrap-slider/css/bootstrap-slider.css">
+    <link rel="stylesheet" href="libs/bootstrap-switch.min.css">
+    <link rel="stylesheet" href="libs/bootstrap.vertical-tabs.min.css">
+
+    <link rel="stylesheet" href="libs/font-awesome/css/font-awesome.css">
+    <link rel="stylesheet" href="css/nunito.css">
+
+    <link rel="stylesheet" href="libs/backgrid.min.css">
+    <link rel="stylesheet" href="libs/backgrid-paginator.min.css">
+
+    <!-- App -->
+    <link rel="stylesheet" href="css/gpustreaming.css" type="text/css" media="screen" charset="utf-8">
+    <link rel="stylesheet" href="css/graph.css" type="text/css" media="screen" charset="utf-8">
+
+</head>
+<body class="graphistry-body">
 
     <!-- copied from index.fragment.handlebars -->
     <script type="text/javascript">
@@ -60,42 +96,6 @@
       ga('send', 'pageview');
 
     </script>
-
-    <!-- Libs (bootstrap etc.) -->
-    <script type="text/javascript" src="libs/jquery-ui-1.10.4.min.js"></script>
-    <script type="text/javascript" src="libs/underscore-min.js"></script>
-    <script type="text/javascript" src="libs/jquery.mousewheel-3.1.9.js"></script>
-    <script type="text/javascript" src="libs/jQRangeSlider-5.6.0/jQAllRangeSliders-min.js"></script>
-    <script type="text/javascript" src="libs/colorpicker/colorpicker.js"></script>
-    <script type="text/javascript" src="libs/spin.min.js"></script>
-
-
-    <!-- FIXME: Package Quo and bundle with StreamGL -->
-    <script type="text/javascript" src="libs/quo.js"></script>
-
-
-    <link rel="stylesheet" href="css/jquery-ui-1.10.4.css">
-    <link rel="stylesheet" href="libs/jQRangeSlider-5.6.0/css/classic-min.css">
-    <link rel="stylesheet" href="libs/colorpicker/colorpicker.css">
-
-    <link rel="stylesheet" href="libs/bootstrap/css/bootstrap.css">
-    <script type="text/javascript" src="libs/bootstrap/js/bootstrap.js"></script>
-    <script type="text/javascript" src="libs/bootstrap-slider/js/bootstrap-slider.js"></script>
-    <script type="text/javascript" src="libs/bootstrap-switch.min.js"></script>
-
-    <link rel="stylesheet" href="libs/bootstrap-slider/css/bootstrap-slider.css">
-    <link rel="stylesheet" href="libs/bootstrap-switch.min.css">
-    <link rel="stylesheet" href="libs/bootstrap.vertical-tabs.min.css">
-
-    <link rel="stylesheet" href="libs/font-awesome/css/font-awesome.css">
-    <link rel="stylesheet" href="css/nunito.css">
-
-    <link rel="stylesheet" href="libs/backgrid.min.css">
-    <link rel="stylesheet" href="libs/backgrid-paginator.min.css">
-
-    <!-- App -->
-    <link rel="stylesheet" href="css/gpustreaming.css" type="text/css" media="screen" charset="utf-8">
-    <link rel="stylesheet" href="css/graph.css" type="text/css" media="screen" charset="utf-8">
 
     <!-- FIXME: Include fpsmeter as part of the StreamGL bundle -->
     <script type="text/javascript" src="libs/fpsmeter.js" charset="utf-8"></script>
@@ -407,7 +407,7 @@
 
                     <form class="form-horizontal">
                       <div class="form-group">
-                        <label for="location" class="col-sm-2 control-label">Upload As</label>
+                        <label for="forkSaveName" class="col-sm-2 control-label">Upload As</label>
                         <div class="col-sm-10">
                           <input type="text" class="form-control" id="forkSaveName" value="{{defName}}">
                         </div>
@@ -522,3 +522,4 @@
 
 
 </body>
+</html>

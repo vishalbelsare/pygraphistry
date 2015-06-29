@@ -7,8 +7,7 @@ var ForceAtlas2         = require('./forceatlas2.js'),
     ForceAtlas2Fast     = require('./forceatlas2fast.js'),
     forceAtlasBarnes    = require('./forceatlasbarnes.js'),
     GaussSeidel         = require('./gaussseidel.js'),
-    EdgeBundling        = require('./edgebundling.js'),
-    EdgeBundlingBarnes        = require('./edgebundlingbarnes.js');
+    EdgeBundling       = require('./kd-edgebundling.js');
 
 var SIMULATION_TIME = 100;
 
@@ -64,7 +63,7 @@ function BoolParam(name, value) {
 BoolParam.prototype = Object.create(Param.prototype);
 BoolParam.prototype.constructor = BoolParam;
 
-var defaultNumSplits = 3;
+var defaultNumSplits = 8;
 
 var uberControls = {
     simulator: SimCL,
@@ -83,12 +82,12 @@ var uberControls = {
             }
         }
         ,{
-            algo: EdgeBundlingBarnes,
+            algo: EdgeBundling,
             params: {
                 edgeBundling: new BoolParam('Edge Bundling', false),
                 midpoints: new DiscreteParam('Splits', defaultNumSplits , 0, 32),
                 tau: new ContinuousParam('Speed', 0.5, 0.0000001, 1),
-                charge: new ContinuousParam('Charge', -100, -200, -0.0000000000000001),
+                charge: new ContinuousParam('Charge', -1, -200, -0.0000001),
                 springStrength: new ContinuousParam('Spring Strength', 100, 0, 200),
                 springDistance: new ContinuousParam('Spring Distance', 0.5, 0.0000001, 1),
                 // TODO : Remove these

@@ -118,17 +118,17 @@ module.exports =
             var snapshotPath = 'Static/' + snapshotName + '/';
             uploadPublic(snapshotPath + 'renderconfig.json', JSON.stringify(renderConfig), {ContentType: 'application/json'});
             uploadPublic(snapshotPath + 'metadata.json', JSON.stringify(metadata), {ContentType: 'application/json'});
-            uploadPublic(snapshotPath + 'curPoints.vbo', compressedVBOs.curPoints);
-            uploadPublic(snapshotPath + 'springsPos.vbo', compressedVBOs.springsPos);
-            uploadPublic(snapshotPath + 'edgeColors.vbo', compressedVBOs.edgeColors);
-            uploadPublic(snapshotPath + 'pointSizes.vbo', compressedVBOs.pointSizes);
-            uploadPublic(snapshotPath + 'pointColors.vbo', compressedVBOs.pointColors);
-            uploadPublic(snapshotPath + 'logicalEdges.vbo', compressedVBOs.logicalEdges);
+            uploadPublic(snapshotPath + 'curPoints.vbo', compressedVBOs.curPoints, {compressed: false});
+            uploadPublic(snapshotPath + 'springsPos.vbo', compressedVBOs.springsPos, {compressed: false});
+            uploadPublic(snapshotPath + 'edgeColors.vbo', compressedVBOs.edgeColors, {compressed: false});
+            uploadPublic(snapshotPath + 'pointSizes.vbo', compressedVBOs.pointSizes, {compressed: false});
+            uploadPublic(snapshotPath + 'pointColors.vbo', compressedVBOs.pointColors, {compressed: false});
+            uploadPublic(snapshotPath + 'logicalEdges.vbo', compressedVBOs.logicalEdges, {compressed: false});
             var edgeExport = staticContentForDataframe(dataframe, 'edge');
-            uploadPublic(snapshotPath + 'edgeLabels.buffer', edgeExport.contents);
-            uploadPublic(snapshotPath + 'edgeIndexes.buffer', edgeExport.indexes);
+            uploadPublic(snapshotPath + 'edgeLabels.buffer', edgeExport.contents, {compressed: false});
+            uploadPublic(snapshotPath + 'edgeIndexes.buffer', edgeExport.indexes, {compressed: false});
             var pointExport = staticContentForDataframe(dataframe, 'point');
-            uploadPublic(snapshotPath + 'pointLabels.buffer', pointExport.contents);
-            uploadPublic(snapshotPath + 'pointIndexes.buffer', pointExport.indexes);
+            uploadPublic(snapshotPath + 'pointLabels.buffer', pointExport.contents, {compressed: false});
+            uploadPublic(snapshotPath + 'pointIndexes.buffer', pointExport.indexes, {compressed: false});
         }
     };
