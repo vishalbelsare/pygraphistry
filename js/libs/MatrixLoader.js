@@ -63,6 +63,7 @@ var exports = {
             };
         });
 
+        //might be better for a perflog?
         logger.trace("Did naive parse & transform in %d ms", new Date().getTime() - t0);
 
         return {
@@ -75,6 +76,7 @@ var exports = {
     loadGeo: function(nodeBuffer) { // -> Promise Binary
         var t0 = new Date().getTime();
 
+        //is the %s ever going to be formatted?
         logger.trace("Loading Geo file %s");
 
         function Binary (buf) {
