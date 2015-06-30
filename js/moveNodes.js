@@ -7,7 +7,7 @@ var    cljs = require('./cl.js'),
      logger = Log.createLogger('graph-viz:cl:movenodes');
 
 function MoveNodes(clContext) {
-    logger.debug('Creating moveNodes kernel');
+    logger.trace('Creating moveNodes kernel');
 
     var args = ['top', 'left', 'bottom', 'right', 'deltaX', 'deltaY',
                 'inputPositions', 'outputPositions'];
@@ -26,7 +26,7 @@ function MoveNodes(clContext) {
 
 
 MoveNodes.prototype.run = function (simulator, selection, delta) {
-    logger.debug('Moving nodes');
+    logger.trace('Moving nodes');
     var resources = [simulator.buffers.curPoints, simulator.buffers.nextPoints];
 
     this.moveNodes.set({
@@ -42,7 +42,7 @@ MoveNodes.prototype.run = function (simulator, selection, delta) {
 
     simulator.tickBuffers(['nextPoints', 'curPoints']);
 
-    logger.debug('Running moveNodes');
+    logger.trace('Running moveNodes');
     return this.moveNodes.exec([simulator.numPoints], resources)
         .then(function () {
             return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);

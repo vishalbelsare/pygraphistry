@@ -200,10 +200,10 @@ var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
         var imageData;
         try {
         if (typeof(window) == 'undefined') {
-            logger.debug("FIXME: no fancy setColorMap in node");
+            logger.trace("FIXME: no fancy setColorMap in node");
         } else if (maybeClusters) {
 
-            logger.debug("Clustering colors");
+            logger.trace("Clustering colors");
 
             var canvas = renderer.document.createElement("canvas");
             canvas.width = texImg.width;
@@ -276,7 +276,7 @@ var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
         gl.bindTexture(gl.TEXTURE_2D, null);
 
 
-        logger.debug("Finished setting colormap");
+        logger.trace("Finished setting colormap");
     });
 });
 

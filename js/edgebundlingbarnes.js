@@ -18,7 +18,7 @@ var _          = require('underscore'),
 function EdgeBundling(clContext) {
     LayoutAlgo.call(this, EdgeBundling.name);
 
-    logger.debug('Creating GaussSeidelBarnes kernels');
+    logger.trace('Creating GaussSeidelBarnes kernels');
     this.ebBarnesKernelSeq = new EbBarnesKernelSeq(clContext);
 
     this.ebMidsprings = new Kernel('gaussSeidelMidsprings', EdgeBundling.argsMidsprings,
@@ -259,7 +259,7 @@ function midEdges(simulator, ebMidsprings, stepNumber) {
 
     simulator.tickBuffers(['curMidPoints', 'midSpringsPos', 'midSpringsColorCoord']);
 
-    logger.debug('Running kernel gaussSeidelMidsprings');
+    logger.trace('Running kernel gaussSeidelMidsprings');
     return ebMidsprings.exec([simulator.numForwardsWorkItems], resources);
 }
 
@@ -293,7 +293,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
     that = this;
     locks = simulator.controls.locks;
     if (locks.lockMidpoints && locks.lockMidedges) {
-        logger.debug('LOCKED, EARLY EXIT');
+        logger.trace('LOCKED, EARLY EXIT');
         return new Q();
     }
 

@@ -72,7 +72,7 @@ module.exports =
 
         saveVBOs: function (snapshotName, vbos, step) {
 
-            logger.debug('serializing vbo');
+            logger.trace('serializing vbo');
             prevHeader = {
                 elements: _.extend(prevHeader.elements, vbos.elements),
                 bufferByteLengths: _.extend(prevHeader.bufferByteLengths, vbos.bufferByteLengths)
@@ -101,7 +101,7 @@ module.exports =
         },
 
         publishStaticContents: function (snapshotName, compressedVBOs, metadata, renderConfig) {
-            logger.debug('publishing current content to S3');
+            logger.trace('publishing current content to S3');
             var snapshotPath = 'Static/' + snapshotName + '/';
             uploadPublic(snapshotPath + 'renderconfig.json', JSON.stringify(renderConfig), {ContentType: 'application/json'});
             uploadPublic(snapshotPath + 'metadata.json', JSON.stringify(metadata), {ContentType: 'application/json'});

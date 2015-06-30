@@ -48,7 +48,7 @@ var integrateKernel = function (clContext) {
 
     simulator.tickBuffers(['nextPoints']);
 
-    logger.debug("Running kernel faIntegrate");
+    logger.trace("Running kernel faIntegrate");
     return this.faIntegrate.exec([simulator.numPoints], resources)
         .fail(Log.makeQErrorHandler('Executing Integrate failed'));
 }

@@ -66,7 +66,7 @@ function create(renderer, device, vendor, controls) {
 }
 
 function createSimulator(renderer, device, vendor, controls) {
-    logger.debug('Creating Simulator')
+    logger.trace('Creating Simulator')
 
     // Hack, but making simulator depend on CL device it not worth the work.
     var simulator = controls[0].simulator;
@@ -133,7 +133,7 @@ function passthroughSetter(simulator, dimName, arr, passthrough) {
 //Create default setter
 function makeDefaultSetter (name, arrConstructor, dimName, passthrough, f) {
     return function (simulator) {
-        logger.debug("Using default %s", name);
+        logger.trace("Using default %s", name);
         var elts = simulator[dimName];
         var arr = new arrConstructor(elts);
         if (f) {
@@ -147,7 +147,7 @@ function makeSetter (name, defSetter, arrConstructor, dimName, passthrough) {
 
     return function (graph, rawArr) {
 
-        logger.debug('Loading %s', name);
+        logger.trace('Loading %s', name);
 
         if (!rawArr) {
             return defSetter(graph.simulator);
@@ -188,7 +188,7 @@ _.each(NAMED_CLGL_BUFFERS, function (cfg, name) {
 // TODO Deprecate and remove. Left for Uber compatibitily
 function setPoints(graph, points, pointSizes, pointColors) {
 
-    logger.debug('setPoints (DEPRECATED)');
+    logger.trace('setPoints (DEPRECATED)');
 
     // FIXME: If there is already data loaded, we should to free it before loading new data
     return setVertices(graph, points)
@@ -196,14 +196,14 @@ function setPoints(graph, points, pointSizes, pointColors) {
         if (pointSizes) {
             return boundBuffers.setSizes.setter(graph, pointSizes);
         } else {
-            logger.debug('no point sizes, deferring');
+            logger.trace('no point sizes, deferring');
         }
 
     }).then(function (simulator) {
         if (pointColors) {
             return boundBuffers.setColors.setter(graph, pointColors);
         } else {
-            logger.debug('no point colors, deferring');
+            logger.trace('no point colors, deferring');
         }
     })
     .then(function() {
@@ -212,7 +212,7 @@ function setPoints(graph, points, pointSizes, pointColors) {
 }
 
 function setVertices(graph, points) {
-    logger.debug('Loading Vertices');
+    logger.trace('Loading Vertices');
 
     // This flattens out the points array
     if(!(points instanceof Float32Array)) {
@@ -253,7 +253,7 @@ function scatterEdgePos(edges, curPos) {
 }
 
 var setEdges = Q.promised(function(graph, edges) {
-    logger.debug('Loading Edges');
+    logger.trace('Loading Edges');
     if (edges.length < 1)
         return Q.fcall(function() { return graph; });
 
@@ -449,7 +449,7 @@ var setEdges = Q.promised(function(graph, edges) {
 });
 
 function setEdgeColors(graph, edgeColors) {
-    logger.debug('Loading edgeColors');
+    logger.trace('Loading edgeColors');
     var nedges = graph.simulator.numEdges;
 
     if (!edgeColors) // Use default Colors
@@ -474,7 +474,7 @@ function setEdgeColors(graph, edgeColors) {
 }
 
 function setEdgeWeight(graph, edgeWeights) {
-    logger.debug('Loading edgeColors');
+    logger.trace('Loading edgeColors');
     var nedges = graph.simulator.numEdges;
 
     if (!edgeWeights) {
@@ -500,7 +500,7 @@ function setEdgeWeight(graph, edgeWeights) {
 }
 
 function setMidEdgeColors(graph, midEdgeColors) {
-    logger.debug("Loading midEdgeColors");
+    logger.trace("Loading midEdgeColors");
 
     if (!midEdgeColors) { // Use default Colors
         return graph.simulator.setMidEdgeColors(undefined);
@@ -522,13 +522,13 @@ function setMidEdgeColors(graph, midEdgeColors) {
 }
 
 function setPointLabels(graph, pointLabels) {
-    logger.debug('setPointLabels', pointLabels ? pointLabels.length : 'none');
+    logger.trace('setPointLabels', pointLabels ? pointLabels.length : 'none');
     return graph.simulator.setPointLabels(pointLabels);
 }
 
 
 function setEdgeLabels(graph, edgeLabels) {
-    logger.debug('setEdgeLabels', edgeLabels ? edgeLabels.length : 'none');
+    logger.trace('setEdgeLabels', edgeLabels ? edgeLabels.length : 'none');
     return graph.simulator.setEdgeLabels(edgeLabels);
 }
 

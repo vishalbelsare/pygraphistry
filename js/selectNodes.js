@@ -8,7 +8,7 @@ var Log         = require('common/logger.js');
 var logger      = Log.createLogger('graph-viz:cl:selectnodes');
 
 function SelectNodes(clContext) {
-    logger.debug('Creating selectNodes kernel');
+    logger.trace('Creating selectNodes kernel');
 
     var args = ['top', 'left', 'bottom', 'right', 'positions', 'mask'];
     var argsType = {
@@ -32,7 +32,7 @@ SelectNodes.prototype.run = function (simulator, selection, delta) {
     }
 
     return that.qMask.then(function (mask) {
-        logger.debug('Computing selection mask');
+        logger.trace('Computing selection mask');
         var resources = [simulator.buffers.curPoints];
 
         that.selectNodes.set({
@@ -46,7 +46,7 @@ SelectNodes.prototype.run = function (simulator, selection, delta) {
 
         simulator.tickBuffers(['nextPoints', 'curPoints']);
 
-        logger.debug('Running selectNodes');
+        logger.trace('Running selectNodes');
         return that.selectNodes.exec([simulator.numPoints], resources)
             .then(function () {
                 var result = new Uint8Array(that.bytes);

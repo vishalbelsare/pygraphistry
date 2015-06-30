@@ -49,7 +49,7 @@ var interpolateMidpointsKernel = function (clContext) {
 
         simulator.tickBuffers(['nextMidPoints']);
 
-        logger.debug('Running interpolateMidpoints kernel');
+        logger.trace('Running interpolateMidpoints kernel');
         return this.interpolate.exec([simulator.numEdges], resources)
             .fail(Log.makeQErrorHandler('Kernel interpolateMidPoints failed'));
     };

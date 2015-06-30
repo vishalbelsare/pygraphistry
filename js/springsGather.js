@@ -12,7 +12,7 @@ var Log         = require('common/logger.js');
 var logger      = Log.createLogger('graph-viz:cl:springsgather');
 
 function SpringsGather(clContext) {
-    logger.debug('Creating springsGather kernel');
+    logger.trace('Creating springsGather kernel');
 
     var args = ['springs', 'inputPoints', 'numSprings', 'springPositions'];
     var argsType = {
@@ -43,7 +43,7 @@ SpringsGather.prototype.tick = function(simulator) {
 
     simulator.tickBuffers(['springsPos']);
 
-    logger.debug('Running SpringsGather kernel');
+    logger.trace('Running SpringsGather kernel');
     return this.gather.exec([simulator.numForwardsWorkItems], resources)
         .fail(Log.makeQErrorHandler('Kernel springGather failed'));
 }

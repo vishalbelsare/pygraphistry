@@ -18,7 +18,7 @@ var pb_root = builder.build();
 
 /* Hack way to serialize positions while waiting for dataframe */
 function serializePositions(graph) {
-    logger.debug('Serializing');
+    logger.trace('Serializing');
     var vg = graph.simulator.vgraph;
 
     var curPoints = graph.simulator.buffers.curPoints;
@@ -51,11 +51,11 @@ function serializePositions(graph) {
 }
 
 function save(graph, name) {
-    logger.debug('Saving current graph as', name);
+    logger.trace('Saving current graph as', name);
 
     return serializePositions(graph).then(function (vg) {
         var blob = vg.encode().toBuffer();
-        logger.debug('Uploading to S3', name);
+        logger.trace('Uploading to S3', name);
         return s3.upload(config.S3, config.BUCKET, {name: name}, blob);
     }).fail(Log.makeQErrorHandler(logger, 'save vgraph'));
 }

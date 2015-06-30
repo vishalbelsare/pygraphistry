@@ -12,7 +12,7 @@ var logger      = Log.createLogger('graph-viz:render:rendernull');
 //[string] * document -> Promise Renderer
 var create = Q.promised(function(document) {
     var renderer = RenderBase.create();
-    logger.debug("Created renderer RenderNull");
+    logger.trace("Created renderer RenderNull");
 
     renderer.document = document;
 

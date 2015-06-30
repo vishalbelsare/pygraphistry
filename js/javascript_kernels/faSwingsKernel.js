@@ -62,7 +62,7 @@ var faSwingKernel = function (clContext) {
 
         simulator.tickBuffers(['swings', 'tractions']);
 
-        logger.debug("Running kernel faSwingsTractions");
+        logger.trace("Running kernel faSwingsTractions");
         return this.faSwings.exec([simulator.numPoints], resources)
         .fail(Log.makeQErrorHandler('Executing FaSwing failed'));
     };

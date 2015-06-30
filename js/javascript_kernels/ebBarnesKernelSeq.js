@@ -348,7 +348,7 @@ var EbBarnesKernelSeq = function (clContext) {
 
     simulator.tickBuffers(['nextMidPoints']);
 
-    logger.debug("Running Edge Bundling Barnes Hut Kernel Sequence");
+    logger.trace("Running Edge Bundling Barnes Hut Kernel Sequence");
 
     // For all calls, we must have the # work items be a multiple of the workgroup size.
     var that = this;

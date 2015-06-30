@@ -283,7 +283,7 @@ var BarnesKernelSeq = function (clContext) {
 
         simulator.tickBuffers(['nextMidPoints']);
 
-        logger.debug("Running Force Atlas2 with BarnesHut Kernels");
+        logger.trace("Running Force Atlas2 with BarnesHut Kernels");
 
         // For all calls, we must have the # work items be a multiple of the workgroup size.
         var that = this;
@@ -329,7 +329,7 @@ var BarnesKernelSeq = function (clContext) {
 
         simulator.tickBuffers(['partialForces1']);
 
-        logger.debug("Running Force Atlas2 with BarnesHut Kernels");
+        logger.trace("Running Force Atlas2 with BarnesHut Kernels");
 
         // For all calls, we must have the # work items be a multiple of the workgroup size.
         var that = this;

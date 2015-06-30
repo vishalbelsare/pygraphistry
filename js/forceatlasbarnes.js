@@ -88,7 +88,7 @@ function getNumWorkitemsByHardware(deviceProps) {
 function ForceAtlas2Barnes(clContext) {
     LayoutAlgo.call(this, ForceAtlas2Barnes.name);
 
-    logger.debug('Creating ForceAtlasBarnes kernels');
+    logger.trace('Creating ForceAtlasBarnes kernels');
     this.barnesKernelSeq = new BarnesKernelSeq(clContext);
 
     this.edgeKernelSeq = new EdgeKernelSeqFast(clContext);

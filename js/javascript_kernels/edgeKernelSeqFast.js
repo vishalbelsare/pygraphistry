@@ -100,7 +100,7 @@ var edgeKernelSeqFast = function (clContext) {
           })
           );
 
-      logger.debug("Running kernel faEdgeForces");
+      logger.trace("Running kernel faEdgeForces");
       var that = this;
       return this.mapEdges.exec([workItemsSize.edgeForces[0]], resources, [workItemsSize.edgeForces[1]]).then(function () {
         that.segReduce.set({

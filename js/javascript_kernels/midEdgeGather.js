@@ -5,7 +5,7 @@ var    cljs = require('../cl.js'),
      Kernel = require('../kernel.js');
 
 function midEdgeGather(clContext) {
-    logger.debug('Creating springsGather kernel');
+    logger.trace('Creating springsGather kernel');
 
     var args = ['edges', 'midPoints', 'points', 'numEdges', 'numSplits', 'midEdgePositions'];
     var argsType = {
@@ -44,7 +44,7 @@ function midEdgeGather(clContext) {
 
       simulator.tickBuffers(['curMidPoints', 'midSpringsPos', 'midSpringsColorCoord']);
 
-      logger.debug('Running midEdgeGather kernel');
+      logger.trace('Running midEdgeGather kernel');
       return this.gather.exec([simulator.numEdges], resources)
         .fail(Log.makeQErrorHandler('Kernel midEdgeGather failed'));
     };

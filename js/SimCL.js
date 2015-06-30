@@ -65,7 +65,7 @@ function create(renderer, device, vendor, cfg) {
                 return algo;
             });
         }).then(function (algos) {
-            logger.debug("Creating SimCL...");
+            logger.trace("Creating SimCL...");
 
             simObj.layoutAlgorithms = algos;
             simObj.otherKernels = {
@@ -170,7 +170,7 @@ function create(renderer, device, vendor, cfg) {
             Object.seal(simObj.buffers);
             Object.seal(simObj);
 
-            logger.debug('Simulator created');
+            logger.trace('Simulator created');
             return simObj
         })
     }).fail(Log.makeQErrorHandler(logger, 'Cannot create SimCL'));
@@ -423,7 +423,7 @@ function setPoints(simulator, points) {
         simulator.cl.createBuffer(randBufBytes, 'randValues')])
     .spread(function(pointsVBO, nextPointsBuf, partialForces1Buf, partialForces2Buf,
                      curForcesBuf, prevForcesBuf, swingsBuf, tractionsBuf, randBuf) {
-        logger.debug('Created most of the points');
+        logger.trace('Created most of the points');
         simulator.buffers.nextPoints = nextPointsBuf;
         simulator.buffers.partialForces1 = partialForces1Buf;
         simulator.buffers.partialForces2 = partialForces2Buf;
@@ -740,7 +740,7 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
  */
 function setEdgeColors(simulator, edgeColors) {
     if (!edgeColors) {
-        logger.debug('Using default edge colors');
+        logger.trace('Using default edge colors');
         var forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
         edgeColors = new Uint32Array(forwardsEdges.edgesTyped.length);
         for (var i = 0; i < edgeColors.length; i++) {
@@ -761,7 +761,7 @@ function setMidEdgeColors(simulator, midEdgeColors) {
         colorHSVInterpolator, convertRGBInt2Color, convertColor2RGBInt, interpolatedColor;
 
     if (!midEdgeColors) {
-        logger.debug('Using default midedge colors');
+        logger.trace('Using default midedge colors');
         midEdgeColors = new Uint32Array(4 * simulator.numMidPoints);
         numSegments = simulator.numSplits + 1;
         forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
@@ -822,7 +822,7 @@ function setMidEdgeColors(simulator, midEdgeColors) {
 
 function setEdgeWeight(simulator, edgeWeights) {
     if (!edgeWeights) {
-        logger.debug('Using default edge weights');
+        logger.trace('Using default edge weights');
         var forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
         edgeWeights = new Float32Array(forwardsEdges.edgesTyped.length);
         for (var i = 0; i < edgeWeights.length; i++) {
@@ -1032,7 +1032,7 @@ function tick(simulator, stepNumber, cfg) {
     simulator.versions.tick++;
 
     if (!cfg.layout) {
-        logger.debug('No layout algs to run, early exit');
+        logger.trace('No layout algs to run, early exit');
         return Q(simulator);
     }
 

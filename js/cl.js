@@ -11,7 +11,7 @@ var logger      = Log.createLogger('graph-viz:cl:cl');
 
 var perf        = require('common/perfStats.js').createPerfMonitor();
 
-logger.debug("Initializing node-webcl flavored cl.js");
+logger.trace("Initializing node-webcl flavored cl.js");
 var webcl = require('node-webcl');
 
 var types = {
@@ -342,7 +342,7 @@ function createBufferGL(cl, vbo, name) {
     logger.debug("Creating buffer %s from GL buffer", name);
 
     if(vbo.gl === null) {
-        logger.debug("    GL not enabled; falling back to creating CL buffer");
+        logger.debug("GL not enabled; falling back to creating CL buffer");
         return createBuffer(cl, vbo.len, name)
             .then(function(bufObj) {
                 if(vbo.data !== null) {
@@ -397,7 +397,7 @@ function createBufferGL(cl, vbo, name) {
         bufObj.read = read.bind(this, bufObj);
         bufObj.copyInto = copyBuffer.bind(this, cl, bufObj);
 
-        logger.debug("  Created buffer");
+        logger.trace("Created buffer");
         deferred.resolve(bufObj)
     }
 
@@ -428,7 +428,7 @@ var write = Q.promised(function write(buffer, data) {
         })
         .then(function() {
             // buffer.cl.queue.finish();
-            logger.debug("  Finished buffer %s write", buffer.name);
+            logger.debug("Finished buffer %s write", buffer.name);
             return buffer;
         });
 });

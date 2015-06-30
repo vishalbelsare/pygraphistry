@@ -12,7 +12,7 @@ var       _ = require('underscore'),
 function ForceAtlas2(clContext) {
     LayoutAlgo.call(this, ForceAtlas2.name);
 
-    logger.debug('Creating ForceAtlas2 kernels');
+    logger.trace('Creating ForceAtlas2 kernels');
     this.faPoints = new Kernel('faPointForces', ForceAtlas2.argsPoints,
                                ForceAtlas2.argsType, 'forceAtlas2/faPointForces.cl', clContext);
     this.faEdges = new Kernel('faEdgeForces', ForceAtlas2.argsEdges,
@@ -142,7 +142,7 @@ function pointForces(simulator, faPoints, stepNumber) {
 
     simulator.tickBuffers(['partialForces1']);
 
-    logger.debug("Running kernel faPointForces");
+    logger.trace("Running kernel faPointForces");
     return faPoints.exec([simulator.numPoints], resources)
         .fail(Log.makeQErrorHandler(logger, 'Kernel faPointForces failed'));
 }
@@ -168,7 +168,7 @@ function edgeForcesOneWay(simulator, faEdges, edges, workItems, numWorkItems,
         })
     );
 
-    logger.debug("Running kernel faEdgeForces");
+    logger.trace("Running kernel faEdgeForces");
     return faEdges.exec([numWorkItems], resources);
 }
 
@@ -208,7 +208,7 @@ function swingsTractions(simulator, faSwings) {
 
     simulator.tickBuffers(['swings', 'tractions']);
 
-    logger.debug("Running kernel faSwingsTractions");
+    logger.trace("Running kernel faSwingsTractions");
     return faSwings.exec([simulator.numPoints], resources)
         .fail(Log.makeQErrorHandler(logger, 'Kernel faSwingsTractions failed'));
 }
@@ -233,7 +233,7 @@ function integrate(simulator, faIntegrate) {
 
     simulator.tickBuffers(['nextPoints']);
 
-    logger.debug("Running kernel faIntegrate");
+    logger.trace("Running kernel faIntegrate");
     return faIntegrate.exec([simulator.numPoints], resources)
         .fail(Log.makeQErrorHandler(logger, 'Kernel faIntegrate failed'));
 }
@@ -263,7 +263,7 @@ function integrateApprox(simulator, faIntegrateApprox) {
 
     simulator.tickBuffers(['nextPoints']);
 
-    logger.debug('Running kernel faIntegrateApprox');
+    logger.trace('Running kernel faIntegrateApprox');
     return faIntegrateApprox.exec([simulator.numPoints], resources)
         .fail(Log.makeQErrorHandler(logger, 'Kernel faIntegrateApprox failed'));
 }

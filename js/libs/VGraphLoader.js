@@ -105,7 +105,7 @@ var attributeLoaders = function(graph) {
 **/
 function load(graph, dataset) {
     var vg = pb_root.VectorGraph.decode(dataset.body)
-    logger.debug('attaching vgraph to simulator');
+    logger.trace('attaching vgraph to simulator');
     graph.simulator.vgraph = vg;
     return decoders[vg.version](graph, vg, dataset.metadata);
 }
@@ -147,12 +147,12 @@ function decode0(graph, vg, metadata)  {
 
     // Load vertices from protobuf Vertex message
     if (xObj && yObj) {
-        logger.debug('Loading previous vertices from xObj');
+        logger.trace('Loading previous vertices from xObj');
         for (var i = 0; i < vg.nvertices; i++) {
             vertices.push([xObj.values[i], yObj.values[i]]);
         }
     } else {
-        logger.debug('Running component analysis');
+        logger.trace('Running component analysis');
 
         var components = weakcc(vg.nvertices, edges, 2);
         var pointsPerRow = vg.nvertices / (Math.round(Math.sqrt(components.components.length)) + 1);

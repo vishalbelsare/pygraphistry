@@ -58,7 +58,7 @@ function downloadDataset(query) {
 }
 
 function httpDownloader(http, url) {
-    logger.debug('Attemping to download dataset using HTTP');
+    logger.trace('Attemping to download dataset using HTTP');
     var result = Q.defer();
 
     // Q.denodeify fails http.get because it does not follow
@@ -101,7 +101,7 @@ function httpDownloader(http, url) {
  * modified time and fetches from S3 accordingly.
 **/
 function graphistryS3Downloader(url) {
-    logger.debug('Attempting to download from S3 ' + url.href);
+    logger.trace('Attempting to download from S3 ' + url.href);
     var params = {
       Bucket: config.BUCKET,
       Key: url.href
@@ -126,7 +126,7 @@ function graphistryS3Downloader(url) {
                         logger.error(err, 'S3 Download failed');
                         res.reject();
                     } else {
-                        logger.debug('Successful S3 download');
+                        logger.trace('Successful S3 download');
                         tmpCache.put(url, data.Body);
                         res.resolve(data.Body);
                     }
@@ -146,7 +146,7 @@ function loadDatasetIntoSim(graph, dataset) {
 
     // If body is gzipped, decompress transparently
     if (dataset.body.readUInt16BE(0) === 0x1f8b) { //Do we care about big endian? ARM?
-        logger.debug('Dataset body is gzipped, decompressing');
+        logger.trace('Dataset body is gzipped, decompressing');
         return Q.denodeify(zlib.gunzip)(dataset.body).then(function (gunzipped) {
             dataset.body = gunzipped;
             return loader(graph, dataset);
@@ -198,7 +198,7 @@ function loadRandom(graph, dataset) {
 
 function loadRectangle(graph, dataset) {
     var cfg = dataset.Metadata.config
-    logger.debug("Loading rectangle", cfg.rows, cfg.columns);
+    logger.trace("Loading rectangle", cfg.rows, cfg.columns);
 
     var points =
         _.flatten(
@@ -218,7 +218,7 @@ function loadRectangle(graph, dataset) {
 
 
 function loadSocioPLT(graph, dataset) {
-    logger.debug("Loading SocioPLT");
+    logger.trace("Loading SocioPLT");
 
     var data = require('./libs/socioplt/generateGraph.js').process(dataset.body);
 
@@ -261,7 +261,7 @@ function loadSocioPLT(graph, dataset) {
 
 
 function loadGeo(graph, dataset) {
-    logger.debug("Loading Geo");
+    logger.trace("Loading Geo");
 
     return Q(MatrixLoader.loadGeo(dataset.body))
      .then(function(geoData) {
@@ -312,7 +312,7 @@ function loadGeo(graph, dataset) {
                 });
     })
     .then(function() {
-        logger.debug("Done setting geo points, edges");
+        logger.trace("Done setting geo points, edges");
         return graph;
     });
 }

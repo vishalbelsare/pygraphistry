@@ -13,7 +13,7 @@ var logger      = Log.createLogger('graph-viz:cl:gaussseidel');
 function GaussSeidel(clContext) {
     LayoutAlgo.call(this, GaussSeidel.name);
 
-    logger.debug('Creating GaussSeidel kernels');
+    logger.trace('Creating GaussSeidel kernels');
     this.gsPoints = new Kernel('gaussSeidelPoints', GaussSeidel.argsPoints,
                                GaussSeidel.argsType, 'gaussSeidel.cl', clContext);
 
@@ -93,7 +93,7 @@ function pointKernel(simulator, gsPoints, stepNumber) {
 
     simulator.tickBuffers(['nextPoints', 'curPoints']);
 
-    logger.debug("Running gaussSeidelPoints");
+    logger.trace("Running gaussSeidelPoints");
     return gsPoints.exec([simulator.numPoints], resources)
         .then(function () {
             return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
@@ -103,7 +103,7 @@ function pointKernel(simulator, gsPoints, stepNumber) {
 
 function edgeKernelSeq(simulator, gsSprings, stepNumber, edges, workItems,
                        numWorkItems, fromPoints, toPoints, edgeTags) {
-    logger.debug('edgeKernelSeq');
+    logger.trace('edgeKernelSeq');
 
     var resources = [edges, workItems, fromPoints, toPoints, simulator.buffers.springsPos];
 
@@ -121,7 +121,7 @@ function edgeKernelSeq(simulator, gsSprings, stepNumber, edges, workItems,
             return simulator.buffers[name] == toPoints;
         }));
 
-    logegr.debug('Running gaussSeidelSprings');
+    logegr.trace('Running gaussSeidelSprings');
     return gsSprings.exec([numWorkItems], resources)
         .fail(Log.makeQErrorHandler(logger, 'Kernel gaussSeidelSprings failed'));
 }
@@ -132,13 +132,13 @@ GaussSeidel.prototype.tick = function(simulator, stepNumber) {
     var locks = simulator.controls.locks;
     return Q().then(function () {
         if (locks.lockPoints) {
-            logger.debug("Points are locked, nothing to do.")
+            logger.trace("Points are locked, nothing to do.")
         } else {
             return pointKernel(simulator, that.gsPoints, stepNumber);
         }
     }).then(function() {
         if (simulator.numEdges <= 0 || locks.lockEdges) {
-            logger.debug("Edges are locked, nothing to do.")
+            logger.trace("Edges are locked, nothing to do.")
             return simulator;
         }
         return edgeKernelSeq(
