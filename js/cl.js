@@ -251,10 +251,8 @@ var compile = Q.promised(function (cl, source, kernels) {
         }
     } catch (e) {
         try {
-          var log = ocl.getProgramBuildInfo(program, cl.device, ocl.PROGRAM_BUILD_LOG);
-          // compile error -> get error output
-          console.log('Build Log: %o', log);
-          log.makeQErrorHandler(logger, 'OpenCL compilation error')(log);
+            var buildLog = ocl.getProgramBuildInfo(program, cl.device, ocl.PROGRAM_BUILD_LOG)
+            log.makeQErrorHandler(logger, 'OpenCL compilation error')(buildLog);
         } catch (e2) {
             log.makeQErrorHandler(logger, 'OpenCL compilation failed, no build log possible')(e2);
         }
