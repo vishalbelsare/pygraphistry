@@ -75,8 +75,9 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
 
     var layouts = _.object(_.map(bufferNames, function (name) {
         var model = renderConfig.models[name];
-        if (_.values(model).length != 1)
+        if (_.values(model).length != 1) {
             logger.die('Currently assumes one view per model');
+        }
 
         return [name, _.values(model)[0]];
 
@@ -175,7 +176,7 @@ function fetchBufferByteLengths(counts, renderConfig) {
 
 
 function init(device, vendor, controls) {
-    logger.debug("Starting initialization");
+    logger.trace("Starting initialization");
 
     /* Example of RenderGL instatiation.
      * Left for historical purposes, probably broken!
@@ -197,10 +198,12 @@ function init(device, vendor, controls) {
 
 function getControls(controlsName) {
     var controls = lConf.controls.default;
-    if (controlsName in lConf.controls)
+    if (controlsName in lConf.controls) {
         controls = lConf.controls[controlsName];
-    else
+    }
+    else {
         logger.warn('Unknown controls "%s", using defaults.', controlsName);
+    }
 
     return controls;
 }
@@ -229,7 +232,7 @@ function delayObservableGenerator(delay, value, cb) {
                 setImmediate(function() { cb(v2); });
             })(v1);
         });
-};
+}
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -237,7 +240,7 @@ function delayObservableGenerator(delay, value, cb) {
 
 
 function create(dataset) {
-    logger.debug("STARTING DRIVER");
+    logger.trace("STARTING DRIVER");
 
     //Observable {play: bool, layout: bool, ... cfg settings ...}
     //  play: animation stream
@@ -252,10 +255,10 @@ function create(dataset) {
     var vendor = dataset.metadata.vendor;
 
     var graph = init(device, vendor, controls).then(function (graph) {
-        logger.debug('LOADING DATASET');
-        return loader.loadDatasetIntoSim(graph, dataset)
+        logger.trace('LOADING DATASET');
+        return loader.loadDatasetIntoSim(graph, dataset);
     }).then(function (graph) {
-        logger.debug('ANIMATING');
+        logger.trace('ANIMATING');
 
         var play = userInteractions.filter(function (o) { return o && o.play; });
 
@@ -315,7 +318,7 @@ function create(dataset) {
                 Log.makeRxErrorHandler(logger, 'node-driver: tick failed')
             );
 
-        logger.debug('Graph created');
+        logger.trace('Graph created');
         return graph;
     }).fail(function (err) {
         logger.die(err, 'Driver initialization error');
@@ -327,7 +330,7 @@ function create(dataset) {
         },
         ticks: animStepSubj.skip(1),
         graph: graph
-    }
+    };
 }
 
 
@@ -388,7 +391,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
                             perf.histogram('compress_outputBytes', compressed.length);
                             perf.endTiming('compress_durationMS');
                             return _.extend({}, vbos[bufferName], {compressed: compressed});
-                        })
+                        });
                 });
 
             return Rx.Observable.zipArray(compressed).take(1)
@@ -424,6 +427,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
             };
 
         });
+});
 }
 
 
