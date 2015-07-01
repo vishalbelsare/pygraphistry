@@ -762,12 +762,6 @@ function setMidEdgeColors(simulator, midEdgeColors) {
         dstColorInt, dstColor, edgeIndex, midEdgeIndex, numSegments, lambda,
         colorHSVInterpolator, convertRGBInt2Color, convertColor2RGBInt, interpolatedColor;
 
-    // If there are no splits, don't interpolate midEdge colors
-    if (simulator.numSplits == 0) {
-        return simulator;
-    }
-
-
     if (!midEdgeColors) {
         simulator.cl.createBuffer(4 * simulator.numMidPoints);
 
