@@ -99,7 +99,11 @@ function expandLogicalMidEdges(bufferSnapshots) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var curMidPoints = new Float32Array(bufferSnapshots.curMidPoints.buffer);
     var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
-    var numSplits = curMidPoints.length  / logicalEdges.length; // TODO
+    var numSplits = curMidPoints.length  / logicalEdges.length;
+
+    if (numSplits < 1) {
+        numSplits = 0;
+    }
     //var numMidEdges = numSplits + 1;
     var numEdges = (logicalEdges.length / 2);
 
@@ -118,8 +122,6 @@ function expandLogicalMidEdges(bufferSnapshots) {
         var srcPointY = curPoints[(2 * srcPointIdx)+ 1];
         var dstPointX = curPoints[(2 * dstPointIdx)];
         var dstPointY = curPoints[(2 * dstPointIdx) + 1];
-        //var stepX = dstPointX - srcPointX;
-        //var stepY = dstPointY - srcPointY;
 
         var elementsPerPoint = 2;
         var pointsPerEdge = 2;
@@ -133,13 +135,13 @@ function expandLogicalMidEdges(bufferSnapshots) {
         var prevY = srcPointY;
 
         for (var midEdgeIdx = 0; midEdgeIdx < numSplits; midEdgeIdx++) {
-            //var lambda = (midEdgeIdx + 1) / (numSplits + 1);
+
             midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4)] = prevX;
             midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 1] = prevY;
-            //prevX = srcPointX + (stepX * lambda);
-            //prevY = srcPointY + (stepY * lambda);
+
             prevX = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIdx * 2)];
             prevY = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIdx * 2) + 1];
+
             midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 2] = prevX;
             midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 3] = prevY;
         }
@@ -246,30 +248,35 @@ function renderSlowEffects(renderingScheduler) {
     var appSnapshot = renderingScheduler.appSnapshot;
     var renderState = renderingScheduler.renderState;
     var logicalEdges = renderState.get('config').get('edgeMode') === 'INDEXEDCLIENT';
+    var springsPos;
     
 
     if (logicalEdges && appSnapshot.vboUpdated) {
         var start = Date.now();
-        var springsPos = expandLogicalEdges(appSnapshot.buffers);
+        //if (appSnapshot.buffers.springsPos) {
+            springsPos = expandLogicalEdges(appSnapshot.buffers);
+        //}
         if (appSnapshot.buffers.curMidPoints) {
             var midSpringsPos = expandLogicalMidEdges(appSnapshot.buffers);
             renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
         }
         var end1 = Date.now();
-        renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
+        //renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
         var end2 = Date.now();
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
 
-        makeArrows(appSnapshot.buffers);
-        var end3 = Date.now();
-        renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
-        renderer.loadBuffers(renderState, {'arrowEndPos': appSnapshot.buffers.arrowEndPos});
-        renderer.loadBuffers(renderState, {'arrowNormalDir': appSnapshot.buffers.arrowNormalDir});
-        renderer.loadBuffers(renderState, {'arrowColors': appSnapshot.buffers.arrowColors});
-        renderer.loadBuffers(renderState, {'arrowPointSizes': appSnapshot.buffers.arrowPointSizes});
-        renderer.setNumElements(renderState, 'arrowculled', appSnapshot.buffers.arrowStartPos.length / 2);
-        var end4 = Date.now();
-        console.info('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
+        if (appSnapshot.buffers.arrowStartPos) {
+            makeArrows(appSnapshot.buffers);
+            var end3 = Date.now();
+            renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
+            renderer.loadBuffers(renderState, {'arrowEndPos': appSnapshot.buffers.arrowEndPos});
+            renderer.loadBuffers(renderState, {'arrowNormalDir': appSnapshot.buffers.arrowNormalDir});
+            renderer.loadBuffers(renderState, {'arrowColors': appSnapshot.buffers.arrowColors});
+            renderer.loadBuffers(renderState, {'arrowPointSizes': appSnapshot.buffers.arrowPointSizes});
+            renderer.setNumElements(renderState, 'arrowculled', appSnapshot.buffers.arrowStartPos.length / 2);
+            var end4 = Date.now();
+            console.info('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
+        }
     }
 
     renderer.setCamera(renderState);
@@ -318,51 +325,53 @@ function renderMouseoverEffects(renderingScheduler, task) {
         return;
     }
     lastHighlightedEdge = edgeIndices[0];
+    
+    if (buffers.highLightedEdges) {
+        // TODO: Start with a small buffer and increase if necessary, masking underlying
+        // data so we don't have to clear out later values. This way we won't have to constantly allocate
+        buffers.highlightedEdges = new Float32Array(edgeIndices.length * 4);
+        buffers.highlightedNodePositions = new Float32Array(nodeIndices.length * 2);
+        buffers.highlightedNodeSizes = new Uint8Array(nodeIndices.length);
+        buffers.highlightedArrowStartPos = new Float32Array(edgeIndices.length * 2 * 3);
+        buffers.highlightedArrowEndPos = new Float32Array(edgeIndices.length * 2 * 3);
+        buffers.highlightedArrowNormalDir = new Float32Array(edgeIndices.length * 3);
+        buffers.highlightedArrowColors = new Uint32Array(edgeIndices.length * 3);
+        buffers.highlightedArrowPointSizes = new Uint8Array(edgeIndices.length * 3);
 
-    // TODO: Start with a small buffer and increase if necessary, masking underlying
-    // data so we don't have to clear out later values. This way we won't have to constantly allocate
-    buffers.highlightedEdges = new Float32Array(edgeIndices.length * 4);
-    buffers.highlightedNodePositions = new Float32Array(nodeIndices.length * 2);
-    buffers.highlightedNodeSizes = new Uint8Array(nodeIndices.length);
-    buffers.highlightedArrowStartPos = new Float32Array(edgeIndices.length * 2 * 3);
-    buffers.highlightedArrowEndPos = new Float32Array(edgeIndices.length * 2 * 3);
-    buffers.highlightedArrowNormalDir = new Float32Array(edgeIndices.length * 3);
-    buffers.highlightedArrowColors = new Uint32Array(edgeIndices.length * 3);
-    buffers.highlightedArrowPointSizes = new Uint8Array(edgeIndices.length * 3);
+        renderer.setNumElements(renderState, 'edgehighlight', edgeIndices.length * 2);
+        renderer.setNumElements(renderState, 'pointhighlight', nodeIndices.length);
+        renderer.setNumElements(renderState, 'arrowhighlight', edgeIndices.length * 3);
 
-    renderer.setNumElements(renderState, 'edgehighlight', edgeIndices.length * 2);
-    renderer.setNumElements(renderState, 'pointhighlight', nodeIndices.length);
-    renderer.setNumElements(renderState, 'arrowhighlight', edgeIndices.length * 3);
+        _.each(edgeIndices, function (val, idx) {
+            buffers.highlightedEdges[idx*4] = buffers.springsPos[val*4];
+            buffers.highlightedEdges[idx*4 + 1] = buffers.springsPos[val*4 + 1];
+            buffers.highlightedEdges[idx*4 + 2] = buffers.springsPos[val*4 + 2];
+            buffers.highlightedEdges[idx*4 + 3] = buffers.springsPos[val*4 + 3];
+        });
 
-    _.each(edgeIndices, function (val, idx) {
-        buffers.highlightedEdges[idx*4] = buffers.springsPos[val*4];
-        buffers.highlightedEdges[idx*4 + 1] = buffers.springsPos[val*4 + 1];
-        buffers.highlightedEdges[idx*4 + 2] = buffers.springsPos[val*4 + 2];
-        buffers.highlightedEdges[idx*4 + 3] = buffers.springsPos[val*4 + 3];
-    });
+        _.each(nodeIndices, function (val, idx) {
+            buffers.highlightedNodePositions[idx*2] = hostNodePositions[val*2];
+            buffers.highlightedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
 
-    _.each(nodeIndices, function (val, idx) {
-        buffers.highlightedNodePositions[idx*2] = hostNodePositions[val*2];
-        buffers.highlightedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
+            buffers.highlightedNodeSizes[idx] = hostNodeSizes[val];
+        });
 
-        buffers.highlightedNodeSizes[idx] = hostNodeSizes[val];
-    });
+        populateArrowBuffers(edgeIndices, buffers.springsPos, buffers.highlightedArrowStartPos,
+                buffers.highlightedArrowEndPos, buffers.highlightedArrowNormalDir, hostNodeSizes,
+                logicalEdges, buffers.highlightedArrowPointSizes, buffers.highlightedArrowColors,
+                buffers.edgeColors);
 
-    populateArrowBuffers(edgeIndices, buffers.springsPos, buffers.highlightedArrowStartPos,
-            buffers.highlightedArrowEndPos, buffers.highlightedArrowNormalDir, hostNodeSizes,
-            logicalEdges, buffers.highlightedArrowPointSizes, buffers.highlightedArrowColors,
-            buffers.edgeColors);
-
-    renderer.setupFullscreenBuffer(renderState);
-    renderer.loadBuffers(renderState, {
-        'highlightedEdgesPos': buffers.highlightedEdges,
-        'highlightedPointsPos': buffers.highlightedNodePositions,
-        'highlightedPointsSizes': buffers.highlightedNodeSizes,
-        'highlightedArrowStartPos': buffers.highlightedArrowStartPos,
-        'highlightedArrowEndPos': buffers.highlightedArrowEndPos,
-        'highlightedArrowNormalDir': buffers.highlightedArrowNormalDir,
-        'highlightedArrowPointSizes': buffers.highlightedArrowPointSizes
-    });
+        renderer.setupFullscreenBuffer(renderState);
+        renderer.loadBuffers(renderState, {
+            'highlightedEdgesPos': buffers.highlightedEdges,
+            'highlightedPointsPos': buffers.highlightedNodePositions,
+            'highlightedPointsSizes': buffers.highlightedNodeSizes,
+            'highlightedArrowStartPos': buffers.highlightedArrowStartPos,
+            'highlightedArrowEndPos': buffers.highlightedArrowEndPos,
+            'highlightedArrowNormalDir': buffers.highlightedArrowNormalDir,
+            'highlightedArrowPointSizes': buffers.highlightedArrowPointSizes
+        });
+    }
     renderer.setCamera(renderState);
     renderer.render(renderState, 'highlight', 'highlight');
 }
