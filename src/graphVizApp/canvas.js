@@ -95,6 +95,64 @@ function expandLogicalEdges(bufferSnapshots) {
     return springsPos;
 }
 
+function expandLogicalMidEdges(bufferSnapshots) {
+    var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
+    var curMidPoints = new Float32Array(bufferSnapshots.curMidPoints.buffer);
+    var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
+    var numSplits = curMidPoints.length  / logicalEdges.length; // TODO
+    //var numMidEdges = numSplits + 1;
+    var numEdges = (logicalEdges.length / 2);
+
+    var numVertices = (2 * numEdges) * (numSplits + 1);
+
+    if (!bufferSnapshots.midSpringsPos) {
+        bufferSnapshots.midSpringsPos = new Float32Array(numVertices * 2);
+    }
+    var midSpringsPos = bufferSnapshots.midSpringsPos;
+
+    for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
+        var srcPointIdx = logicalEdges[edgeIndex * 2];
+        var dstPointIdx = logicalEdges[(edgeIndex * 2) + 1];
+
+        var srcPointX = curPoints[(2 * srcPointIdx)];
+        var srcPointY = curPoints[(2 * srcPointIdx)+ 1];
+        var dstPointX = curPoints[(2 * dstPointIdx)];
+        var dstPointY = curPoints[(2 * dstPointIdx) + 1];
+        //var stepX = dstPointX - srcPointX;
+        //var stepY = dstPointY - srcPointY;
+
+        var elementsPerPoint = 2;
+        var pointsPerEdge = 2;
+        var midEdgesPerEdge = numSplits + 1;
+        var midEdgeStride = elementsPerPoint * pointsPerEdge * midEdgesPerEdge;
+        var midEdgeStartIdx = edgeIndex * midEdgeStride;
+
+        midSpringsPos[midEdgeStartIdx] =  srcPointX;
+        midSpringsPos[midEdgeStartIdx + 1] =  srcPointY;
+        var prevX = srcPointX;
+        var prevY = srcPointY;
+
+        for (var midEdgeIdx = 0; midEdgeIdx < numSplits; midEdgeIdx++) {
+            //var lambda = (midEdgeIdx + 1) / (numSplits + 1);
+            midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4)] = prevX;
+            midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 1] = prevY;
+            //prevX = srcPointX + (stepX * lambda);
+            //prevY = srcPointY + (stepY * lambda);
+            prevX = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIdx * 2)];
+            prevY = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIdx * 2) + 1];
+            midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 2] = prevX;
+            midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 3] = prevY;
+        }
+        midSpringsPos[((edgeIndex + 1) * midEdgeStride) - 4] =  prevX;
+        midSpringsPos[((edgeIndex + 1) * midEdgeStride) - 3] =  prevY;
+
+        midSpringsPos[((edgeIndex + 1) * midEdgeStride) - 2] =  dstPointX;
+        midSpringsPos[((edgeIndex + 1) * midEdgeStride) - 1] =  dstPointY;
+    }
+
+    return midSpringsPos;
+}
+
 /* Populate arrow buffers. The first argument is either an array of indices,
  * or an integer value of how many you want.
  */
@@ -188,10 +246,15 @@ function renderSlowEffects(renderingScheduler) {
     var appSnapshot = renderingScheduler.appSnapshot;
     var renderState = renderingScheduler.renderState;
     var logicalEdges = renderState.get('config').get('edgeMode') === 'INDEXEDCLIENT';
+    
 
     if (logicalEdges && appSnapshot.vboUpdated) {
         var start = Date.now();
         var springsPos = expandLogicalEdges(appSnapshot.buffers);
+        if (appSnapshot.buffers.curMidPoints) {
+            var midSpringsPos = expandLogicalMidEdges(appSnapshot.buffers);
+            renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
+        }
         var end1 = Date.now();
         renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
         var end2 = Date.now();
@@ -324,9 +387,11 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         quietState: false,
         buffers: {
             curPoints: undefined,
+            curMidPoints: undefined,
             pointSizes: undefined,
             logicalEdges: undefined,
             springsPos: undefined,
+            midSpringsPos: undefined,
             highlightedEdges: undefined,
             highlightedNodePositions: undefined,
             highlightedNodeSizes: undefined,
@@ -366,14 +431,14 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         return status === 'received';
     }).flatMapLatest(function () {
         var hostBuffers = renderState.get('hostBuffers');
-        var bufUpdates = ['curPoints', 'logicalEdges', 'edgeColors', 'pointSizes'].map(function (bufName) {
+        var bufUpdates = ['curPoints', 'logicalEdges', 'edgeColors', 'pointSizes', 'curMidPoints'].map(function (bufName) {
             var bufUpdate = hostBuffers[bufName] || Rx.Observable.return();
             return bufUpdate.do(function (data) {
                 that.appSnapshot.buffers[bufName] = data;
             });
         });
         return bufUpdates[0]
-            .combineLatest(bufUpdates[1], bufUpdates[2], bufUpdates[3], _.identity);
+            .combineLatest(bufUpdates[1], bufUpdates[2], bufUpdates[3], bufUpdates[4], _.identity);
     }).do(function () {
         that.appSnapshot.vboUpdated = true;
         that.renderScene('vboupdate', {trigger: 'renderSceneFast'});
