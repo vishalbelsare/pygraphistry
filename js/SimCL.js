@@ -530,6 +530,7 @@ function setMidEdges( simulator ) {
 
     simulator.buffers.curMidPoints.delete();
     simulator.buffers.nextMidPoints.delete();
+    simulator.tickBuffers(['curMidPoints']);
 
     return Q.all( [
         simulator.cl.createBuffer( midPointsByteLength , 'nextMidPoints' ),
@@ -764,6 +765,12 @@ function setMidEdgeColors(simulator, midEdgeColors) {
     // If there are no splits, don't interpolate midEdge colors
     if (simulator.numSplits == 0) {
         return simulator;
+    }
+
+
+    if (!midEdgeColors) {
+        simulator.cl.createBuffer(4 * simulator.numMidPoints);
+
     }
 
     if (!midEdgeColors) {
