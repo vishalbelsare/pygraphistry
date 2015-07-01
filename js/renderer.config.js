@@ -427,6 +427,16 @@ var models = {
             'normalize': false
         }
     },
+    'curMidPointsClient': {
+        'curPos': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
     'fullscreenCoordinates': {
         'vertexPosition': {
             'datasource': 'CLIENT',
@@ -496,7 +506,7 @@ var items = {
         'program': 'midedgeculled',
         'triggers': [],
         'bindings': {
-            'curPos': ['curMidPoints', 'curPos'],
+            'curPos': ['curMidPointsClient', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
         },
         'index': ['logicalEdges', 'curIdx'],
