@@ -195,7 +195,7 @@ app.use('/uber',   express.static(UBER_STATIC_PATH));
 app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
 
 // Temporarly handle ETL request from Splunk
-app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res) {
+app.post('/etl', bodyParser.json({type: '*', limit: '128mb'}), function (req, res) {
     debug('etl request');
     router.pickWorker(function (err, worker) {
         debug('picked etl worker', req.ip, worker);
