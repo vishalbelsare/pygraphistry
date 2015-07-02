@@ -2,7 +2,7 @@
 'use strict';
 
 var util = require('util');
-var debug = require('debug')('graphistry:config');
+
 var _ = require('lodash');
 var AWS = require('aws-sdk');
 AWS.config.update({accessKeyId: 'AKIAJSGVPK46VRVYMU2A', secretAccessKey: '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'});
@@ -23,6 +23,8 @@ AWS.config.update({region: 'us-west-1'});
  */
 function defaults() {
     return {
+        CONFIG_ERRORS: [],
+
         HOSTNAME: 'localhost',
         ENVIRONMENT: 'local',
 
@@ -89,9 +91,10 @@ function commandLine() {
 
     if (process.argv.length > 2) {
         try {
-            commandLineOptions = JSON.parse(process.argv[2])
+            commandLineOptions = JSON.parse(process.argv[2]);
         } catch (err) {
-            console.warn("WARNING Cannot parse command line arguments, ignoring...");
+            err.message = 'WARNING Cannot parse command line arguments, ignoring. Error: ' + err.message;
+            commandLineOptions = {CONFIG_ERRORS: [err]};
         }
     }
 
@@ -218,8 +221,6 @@ function getOptions(optionOverrides) {
     var overrides = resolve(commandLine, optionOverrides);
 
     var optionsResolved = resolve(defaults, overrides, deployEnv, synthesized, overrides);
-
-    debug('Program options resolved to:', optionsResolved);
     return optionsResolved;
 };
 
@@ -229,5 +230,5 @@ module.exports = (function() {
 
     return _.memoize(getOptions, function() {
         return arguments.length > 0 ? JSON.stringify(arguments) : emptyArgKey;
-    })
+    });
 })();
