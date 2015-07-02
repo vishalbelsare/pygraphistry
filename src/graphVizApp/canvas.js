@@ -10,8 +10,9 @@ var interaction     = require('./interaction.js');
 var util            = require('./util.js');
 var labels          = require('./labels.js');
 var renderer        = require('../renderer');
+var numeric = require('numeric');
 
-var math = require('mathjs');
+//var math = require('mathjs');
 
 
 function setupCameraInteractions(appState, $eventTarget) {
@@ -82,7 +83,7 @@ function getPolynomialCurves(bufferSnapshots) {
     var curMidPoints = new Float32Array(bufferSnapshots.curMidPoints.buffer);
     var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
     var numSplits = curMidPoints.length  / logicalEdges.length;
-    var numRenderedSplits = 4;
+    var numRenderedSplits = 8;
 
     //var numEdgesRendered = 3;
 
@@ -115,7 +116,7 @@ function getPolynomialCurves(bufferSnapshots) {
         this.dstPoint = [dstPointX, dstPointY];
         this.midPoint = [midPoint1X, midPoint1Y];
 
-        this.edgeVector = math.subtract(this.dstPoint, this.srcPoint);
+        this.edgeVector = numeric.sub(this.dstPoint, this.srcPoint);
         var xDir = Math.pow(this.edgeVector[0], 2);
         var yDir = Math.pow(this.edgeVector[1], 2);
         this.length = Math.pow(xDir + yDir, 0.5);
@@ -124,25 +125,26 @@ function getPolynomialCurves(bufferSnapshots) {
         this.theta = Math.atan2(this.edgeVector[1], this.edgeVector[0]);
 
 
-        this.transformationMatrix = math.matrix([
+        this.transformationMatrix = [
             [Math.cos(this.theta), Math.sin(this.theta)],
             [-Math.sin(this.theta), Math.cos(this.theta)]
-        ]);
+        ];
 
-        this.transformationMatrixInv = math.transpose(this.transformationMatrix);
+        this.transformationMatrixInv = numeric.transpose(this.transformationMatrix);
 
         return this;
 
     }
 
     ExpandedEdge.prototype.toEdgeBasis = function(vector) {
-        var matrix = math.multiply(this.transformationMatrix, math.subtract(vector, this.srcPoint));
+        var test = numeric.sub(vector, this.srcPoint);
+        var matrix = numeric.dot(this.transformationMatrix, test);
         return matrix.valueOf();
     };
 
     ExpandedEdge.prototype.fromEdgeBasis = function(vector) {
         //return math.multiply(this.transformationMatrixInv, vector).valueOf();
-        return math.multiply(this.transformationMatrixInv, vector).valueOf();
+        return numeric.dot(this.transformationMatrixInv, vector);
     };
 
     ExpandedEdge.prototype.getCurveParameters = function() {
@@ -157,15 +159,14 @@ function getPolynomialCurves(bufferSnapshots) {
         midPoint = this.toEdgeBasis(this.midPoint);
         yVector = [0, midPoint[1], dstPoint[1]];
 
-        xMatrix = math.matrix(
-            [
+        xMatrix = [
                 this.getQuadratic(0),
                 this.getQuadratic(midPoint[0]),
                 this.getQuadratic(dstPoint[0])
-            ]);
-        var epsilonMatrix = math.multiply(math.eye(3), 0.0000000001);
-        var xMatrix2 = math.add(xMatrix, epsilonMatrix);
-        return math.multiply(math.inv(xMatrix2), yVector);
+        ];
+        var epsilonMatrix = numeric.mul(numeric.identity(3), 0.0000000001);
+        var xMatrix2 = numeric.add(xMatrix, epsilonMatrix);
+        return numeric.dot(numeric.inv(xMatrix2), yVector);
     };
 
     ExpandedEdge.prototype.getQuadratic = function(x) {
@@ -173,8 +174,8 @@ function getPolynomialCurves(bufferSnapshots) {
     };
 
     ExpandedEdge.prototype.computePolynomial = function(x, betaVector) {
-        var xVector = math.matrix(this.getQuadratic(x));
-        return math.dot(betaVector, xVector);
+        var xVector = this.getQuadratic(x);
+        return numeric.dot(betaVector, xVector);
     };
 
     ExpandedEdge.prototype.getMidPointPosition = function(betaVector, lambda) {
@@ -185,9 +186,9 @@ function getPolynomialCurves(bufferSnapshots) {
         x = lambda * this.length;
 
         y = this.computePolynomial(x, betaVector);
-        transformedVector = this.fromEdgeBasis(math.matrix([x, y]));
+        transformedVector = this.fromEdgeBasis([x, y]);
 
-        result = math.add(this.srcPoint, transformedVector);
+        result = numeric.add(this.srcPoint, transformedVector);
 
         return result;
 
