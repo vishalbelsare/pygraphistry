@@ -128,6 +128,8 @@ function requestWorker(args) {
 
             reply.data.uri.pathname = _.isString(reply.data.uri.pathname) ? reply.data.uri.pathname : '';
 
+            reply.data.uri.protocol = window.location.protocol;
+
             console.info('Assigned to viz worker at URL %s', urlModule.format(reply.data.uri));
             return reply.data.uri;
         })
@@ -189,7 +191,7 @@ function connect(vizType, urlParams) {
 
                     debug('Got worker URI', urlModule.format(socketUrl));
 
-                    var socket = io.Manager(socketUrl.host, {
+                    var socket = io.Manager(socketUrl.protocol + '//' + socketUrl.host, {
                             query: socketUrl.query,
                             path: socketUrl.pathname,
                             reconnection: false
