@@ -506,7 +506,8 @@ var items = {
         'program': 'midedgeculled',
         'triggers': [],
         'bindings': {
-            'curPos': ['curMidPointsClient', 'curPos'],
+            //'curPos': ['curMidPointsClient', 'curPos'],
+            'curPos': ['curMidPoints', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
         },
         'index': ['logicalEdges', 'curIdx'],
