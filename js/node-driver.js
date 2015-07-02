@@ -46,6 +46,7 @@ function graphCounts(graph) {
     var edge        = {num: numEdges,     offset: offsetEdge};
     var midPoint    = {num: numMidPoints, offset: offsetMidPoints};
     var midEdge     = {num: numMidEdges,  offset: offsetMidEdges};
+    var midEdgeColor ={num: numEdges * (graph.simulator.numRenderedSplits + 1), offset:offsetMidEdges}
 
     return {
         curPoints: point,
@@ -57,7 +58,7 @@ function graphCounts(graph) {
         curMidPoints: midPoint,
         midSpringsPos: midEdge,
         midSpringsColorCoord: midEdge,
-        midEdgeColors: midEdge
+        midEdgeColors: midEdgeColor
     };
 
 }
