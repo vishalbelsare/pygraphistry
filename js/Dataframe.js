@@ -81,10 +81,27 @@ Dataframe.prototype.load = function (attributes, type) {
 };
 
 
+/** Load in a raw OpenCL buffer object.
+ *  @param {string} name - name of the buffer
+ *  @param {Object} buffer - a raw OpenCL buffer object
+ */
+Dataframe.prototype.loadBuffer = function (name, buffer) {
+
+};
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 // Data Access
 //////////////////////////////////////////////////////////////////////////////
+
+/** Returns an OpenCL buffer object.
+ *  @param {string} name - name of the buffer
+ */
+Dataframe.prototype.getBuffer = function (name) {
+
+};
+
 
 /** Returns one row object.
  * @param {double} index - which element to extract.
