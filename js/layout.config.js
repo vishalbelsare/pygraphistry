@@ -63,7 +63,8 @@ function BoolParam(name, value) {
 BoolParam.prototype = Object.create(Param.prototype);
 BoolParam.prototype.constructor = BoolParam;
 
-var defaultNumSplits = 8;
+var defaultNumSplits = 2;
+var numRenderedSplits = 8;
 
 var uberControls = {
     simulator: SimCL,
@@ -86,8 +87,8 @@ var uberControls = {
             params: {
                 edgeBundling: new BoolParam('Edge Bundling', false),
                 midpoints: new DiscreteParam('Splits', defaultNumSplits , 0, 32),
-                tau: new ContinuousParam('Speed', 0.5, 0.0000001, 1),
-                charge: new ContinuousParam('Charge', -1, -200, -0.0000001),
+                tau: new ContinuousParam('Speed', 10, 1.0, 25),
+                charge: new ContinuousParam('Charge', -100, -200, -0.0000001),
                 springStrength: new ContinuousParam('Spring Strength', 100, 0, 200),
                 springDistance: new ContinuousParam('Spring Distance', 0.5, 0.0000001, 1),
                 // TODO : Remove these
@@ -112,7 +113,8 @@ var uberControls = {
     global: {
         simulationTime: 1, //SIMULATION_TIME, //milliseconds
         dimensions: [1, 1],
-        numSplits: defaultNumSplits
+        numSplits: defaultNumSplits,
+        numRenderedSplits: numRenderedSplits
     },
     devices: ['CPU', 'GPU']
 }

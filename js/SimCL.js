@@ -106,6 +106,7 @@ function create(dataframe, renderer, device, vendor, cfg) {
             simObj.numMidPoints = 0;
             simObj.numMidEdges = 0;
             simObj.numSplits = controls.global.numSplits;
+            simObj.numRenderedSplits = controls.global.numRenderedSplits;
             simObj.pointLabels = [];
             simObj.edgeLabels = [];
 
@@ -522,10 +523,9 @@ function setMidEdges( simulator ) {
     numMidPoints = ( simulator.numEdges * (simulator.numSplits) );
 
     simulator.numMidPoints = numMidPoints;
-    simulator.renderer.numMidPoints = numMidPoints;
-    simulator.numMidEdges = ( simulator.numSplits + 1 ) * simulator.numEdges;
-    simulator.renderer.numMidEdges = simulator.numMidEdges;
 
+    simulator.numMidEdges = ( simulator.numRenderedSplits + 1 ) * simulator.numEdges;
+    simulator.renderer.numRenderedSplits = simulator.numRenderedSplits;
     midPointsByteLength = numMidPoints * bytesPerPoint;
     springsByteLength = simulator.numEdges * bytesPerEdge;
 
@@ -592,6 +592,8 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
     var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
     var elementsPerWorkItem = 4;
     var midPoints = new Float32Array((unsortedEdges.length / 2) * simulator.numSplits * nDim || 1);
+
+    debug("Number of midpoints: ", simulator.numSplits);
 
     if(forwardsEdges.edgesTyped.length < 1) {
         throw new Error("The edge buffer is empty");
@@ -758,26 +760,20 @@ function setEdgeColors(simulator, edgeColors) {
     return simulator;
 }
 
+// TODO Write kernel for this.
 function setMidEdgeColors(simulator, midEdgeColors) {
     var midEdgeColors, forwardsEdges, srcNodeIdx, dstNodeIdx, srcColorInt, srcColor,
         dstColorInt, dstColor, edgeIndex, midEdgeIndex, numSegments, lambda,
         colorHSVInterpolator, convertRGBInt2Color, convertColor2RGBInt, interpolatedColor;
 
-    // If there are no splits, don't interpolate midEdge colors
-    if (simulator.numSplits == 0) {
-        return simulator;
-    }
 
+    var numMidEdgeColors = simulator.numEdges * (simulator.numRenderedSplits + 1);
 
-    if (!midEdgeColors) {
-        simulator.cl.createBuffer(4 * simulator.numMidPoints);
-
-    }
 
     if (!midEdgeColors) {
         debug('Using default midedge colors');
-        midEdgeColors = new Uint32Array(4 * simulator.numMidPoints);
-        numSegments = simulator.numSplits + 1;
+        midEdgeColors = new Uint32Array(4 * numMidEdgeColors);
+        numSegments = simulator.numRenderedSplits + 1;
         forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
 
         // Interpolate colors in the HSV color space.
