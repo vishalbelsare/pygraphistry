@@ -8,6 +8,7 @@ var _ = require('underscore');
 var debug = require("debug")("graphistry:graph-viz:graph:nbody");
 var log = require('common/log.js');
 var eh = require('common/errorHandlers.js')(log);
+var Dataframe = require('./Dataframe.js');
 
 
 var ELEMENTS_PER_POINTS = 2;
@@ -30,10 +31,13 @@ var boundBuffers = {};
  */
 function create(renderer, device, vendor, controls) {
 
+    var dataframe = new Dataframe();
+
     var graph = {
         renderer: renderer,
         stepNumber: 0,
-        __pointsHostBuffer: undefined
+        __pointsHostBuffer: undefined,
+        dataframe: dataframe
     };
 
     _.each({
@@ -57,7 +61,7 @@ function create(renderer, device, vendor, controls) {
         graph[cfg.setterName] = boundBuffers[name].setter.bind('', graph);
     });
 
-    return createSimulator(renderer, device, vendor, controls).then(function (simulator) {
+    return createSimulator(dataframe, renderer, device, vendor, controls).then(function (simulator) {
         graph.simulator = simulator;
         graph.globalControls = simulator.controls.global;
     }).then(function () {
@@ -66,13 +70,13 @@ function create(renderer, device, vendor, controls) {
     }).fail(eh.makeErrorHandler('Cannot initialize nbody'));
 }
 
-function createSimulator(renderer, device, vendor, controls) {
+function createSimulator(dataframe, renderer, device, vendor, controls) {
     debug('Creating Simulator')
 
     // Hack, but making simulator depend on CL device it not worth the work.
     var simulator = controls[0].simulator;
 
-    return simulator.create(renderer, device, vendor, controls)
+    return simulator.create(dataframe, renderer, device, vendor, controls)
         .fail(eh.makeErrorHandler('Cannot create simulator'));
 }
 
@@ -189,7 +193,6 @@ _.each(NAMED_CLGL_BUFFERS, function (cfg, name) {
 
 // TODO Deprecate and remove. Left for Uber compatibitily
 function setPoints(graph, points, pointSizes, pointColors) {
-
     debug('setPoints (DEPRECATED)');
 
     // FIXME: If there is already data loaded, we should to free it before loading new data

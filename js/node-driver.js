@@ -21,7 +21,8 @@ var Q = require("q"),
     webcl = require('node-webcl'),
 
     metrics = require("./metrics.js"),
-    loader = require("./data-loader.js");
+    loader = require("./data-loader.js"),
+    Dataframe = require('./Dataframe');
 
 
 metrics.init('StreamGL:driver');

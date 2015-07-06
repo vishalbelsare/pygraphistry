@@ -1,9 +1,6 @@
 'use strict';
 
 var _ = require('underscore');
-var sprintf = require('sprintf-js').sprintf;
-var vgloader = require('./libs/VGraphLoader.js');
-var dateFormat = require('dateformat');
 
 
 function pickTitleField (attribs, prioritized) {
@@ -121,15 +118,17 @@ function frameHeader(graph, type) {
 }
 
 function defaultLabels(graph, indices, type) {
-    return infoFrame(graph, type, indices).map(function (columns) {
+
+    var rows = graph.dataframe.getRows(indices, type);
+    return rows.map(function (row) {
         return {
-            title: columns._title,
+            title: row._title,
             columns: _.sortBy(
-                _.pairs(_.omit(columns, '_title')),
+                _.pairs(_.omit(row, '_title')),
                 function (kvPair) { return kvPair[0]; }
             ),
         };
-    });
+    })
 }
 
 function presetLabels (labels, indices, range) {
@@ -377,9 +376,5 @@ function histogram(values, binning, goalNumberOfBins, indices) {
 }
 
 module.exports = {
-    getLabels: getLabels,
-    infoFrame: infoFrame,
-    aggregate: aggregate,
-    frameHeader: frameHeader,
+    getLabels: getLabels
 };
-
