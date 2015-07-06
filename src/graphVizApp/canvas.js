@@ -49,6 +49,115 @@ function setupCameraInteractions(appState, $eventTarget) {
     );
 }
 
+/* Deindexed logical edges by looking up the x/y positions of the source and destination
+ * nodes. */
+function expandLogicalEdges(bufferSnapshots) {
+    var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
+    var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
+    var numVertices = logicalEdges.length;
+
+    if (!bufferSnapshots.springsPos) {
+        bufferSnapshots.springsPos = new Float32Array(numVertices * 2);
+    }
+    var springsPos = bufferSnapshots.springsPos;
+
+    for (var i = 0; i < numVertices; i++) {
+        springsPos[2 * i]     = curPoints[2 * logicalEdges[i]];
+        springsPos[2 * i + 1] = curPoints[2 * logicalEdges[i] + 1];
+    }
+
+    return springsPos;
+}
+
+function interpolateEdgeArcs(bufferSnapshots) {
+    var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
+    var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
+    //var curMidPoints = new Float32Array(bufferSnapshots.curMidPoints.buffer);
+    //var numSplits = curMidPoints.length  / logicalEdges.length;
+    var numSplits = 1;
+    var HEIGHT = 0.2;
+
+    if (numSplits < 1) {
+        numSplits = 0;
+    }
+
+    //var numMidEdges = numSplits + 1;
+    var numEdges = (logicalEdges.length / 2);
+
+    var numVertices = (2 * numEdges) * (numSplits + 1);
+
+    if (!bufferSnapshots.midSpringsPos) {
+        bufferSnapshots.midSpringsPos = new Float32Array(numVertices * 2);
+    }
+
+
+    var elementsPerPoint = 2;
+    var pointsPerEdge = 2;
+    var midEdgesPerEdge = numSplits + 1;
+    var midEdgeStride = elementsPerPoint * pointsPerEdge * midEdgesPerEdge;
+
+    var midSpringsPos = bufferSnapshots.midSpringsPos;
+
+    for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
+
+        // Get source and destination point indices
+        var srcPointIdx = logicalEdges[edgeIndex * 2];
+        var dstPointIdx = logicalEdges[(edgeIndex * 2) + 1];
+
+        // Get source and destination cordinates
+        var srcPointX = curPoints[(2 * srcPointIdx)];
+        var srcPointY = curPoints[(2 * srcPointIdx) + 1];
+        var dstPointX = curPoints[(2 * dstPointIdx)];
+        var dstPointY = curPoints[(2 * dstPointIdx) + 1];
+
+        // Set the starting index for this midedge
+        var midEdgeStartIdx = edgeIndex * midEdgeStride;
+
+
+        var length = Math.sqrt(Math.pow(srcPointX - dstPointX, 2) + Math.pow(srcPointY - dstPointY, 2));
+
+        var xDirection = (srcPointX - dstPointX) / length;
+        var yDirection = (srcPointY - dstPointY) / length;
+        var height = HEIGHT * (length / 2);
+        var radius = (Math.pow(length / 2, 2) + Math.pow(height, 2)) / (2 * height);
+        var midPointX = (srcPointX + dstPointX) / 2;
+        var midPointY = (srcPointY + dstPointY) / 2;
+
+        var centerPointX = midPointX + (radius - height) * (-yDirection);
+        var centerPointY = midPointY + (radius - height) * xDirection;
+
+        var theta = Math.asin((length / 2) / radius) * 2.0;
+        var thetaStep = -theta / (numSplits + 1);
+
+        var startRadiusX = srcPointX - centerPointX;
+        var startRadiusY = srcPointY - centerPointY;
+
+        // The first points are the src
+        var prevX = srcPointX;
+        var prevY = srcPointY;
+
+        for (var midEdgeIdx = 0; midEdgeIdx < numSplits; midEdgeIdx++) {
+            var curTheta = thetaStep * (midEdgeIdx + 1);
+
+            midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4)] = prevX;
+            midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 1] = prevY;
+
+            prevX = centerPointX + (Math.cos(curTheta) * startRadiusX) - (Math.sin(curTheta) * startRadiusY);
+            prevY = centerPointY + (Math.sin(curTheta) * startRadiusX) + (Math.cos(curTheta) * startRadiusY);
+
+            midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 2] = prevX;
+            midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 3] = prevY;
+        }
+
+        midSpringsPos[((edgeIndex + 1) * midEdgeStride) - 4] =  prevX;
+        midSpringsPos[((edgeIndex + 1) * midEdgeStride) - 3] =  prevY;
+
+        midSpringsPos[((edgeIndex + 1) * midEdgeStride) - 2] =  dstPointX;
+        midSpringsPos[((edgeIndex + 1) * midEdgeStride) - 1] =  dstPointY;
+    }
+
+    return midSpringsPos;
+}
 
 function setupLabelsAndCursor(appState, $eventTarget) {
     // Picks objects in priority based on order.
@@ -59,7 +168,6 @@ function setupLabelsAndCursor(appState, $eventTarget) {
     labels.setupLabels(appState, $eventTarget, latestHighlightedObject);
 }
 
-
 function setupRenderUpdates(renderingScheduler, cameraStream, settingsChanges) {
     var renderUpdates = cameraStream.combineLatest(settingsChanges, _.identity);
 
@@ -67,7 +175,6 @@ function setupRenderUpdates(renderingScheduler, cameraStream, settingsChanges) {
         renderingScheduler.renderScene('panzoom', {trigger: 'renderSceneFast'});
     }).subscribe(_.identity, util.makeErrorHandler('render updates'));
 }
-
 
 function setupBackgroundColor(renderingScheduler, bgColor) {
     bgColor.do(function (rgb) {
@@ -103,12 +210,6 @@ function getPolynomialCurves(bufferSnapshots) {
         var midEdgeIdx = 0;
         var midPoint1X = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIdx * 2)];
         var midPoint1Y = curMidPoints[(edgeIndex *  2 * (numSplits)) + (midEdgeIdx * 2) + 1];
-        midEdgeIdx = 1;
-        var midPoint2X = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIdx * 2)];
-        var midPoint2Y = curMidPoints[(edgeIndex *  2 * (numSplits)) + (midEdgeIdx * 2) + 1];
-        this.midPoint1 = [midPoint1X, midPoint1Y];
-        this.midPoint2 = [midPoint2X, midPoint2Y];
-        this.midPoint = [(midPoint1X + midPoint2X) / 2, (midPoint1Y + midPoint2Y) / 2];
 
         this.srcPointIdx = logicalEdges[edgeIndex * 2];
         this.dstPointIdx = logicalEdges[(edgeIndex * 2) + 1];
@@ -119,6 +220,7 @@ function getPolynomialCurves(bufferSnapshots) {
         var dstPointX = curPoints[(2 * this.dstPointIdx)];
         var dstPointY = curPoints[(2 * this.dstPointIdx) + 1];
         this.dstPoint = [dstPointX, dstPointY];
+        this.midPoint = [midPoint1X, midPoint1Y];
 
         this.edgeVector = numeric.sub(this.dstPoint, this.srcPoint);
         var xDir = Math.pow(this.edgeVector[0], 2);
@@ -127,6 +229,7 @@ function getPolynomialCurves(bufferSnapshots) {
         this.direction = [this.edgeVector[0] / this.length, this.edgeVector[1]/ this.length];
 
         this.theta = Math.atan2(this.edgeVector[1], this.edgeVector[0]);
+
 
         this.transformationMatrix = [
             [Math.cos(this.theta), Math.sin(this.theta)],
@@ -150,33 +253,45 @@ function getPolynomialCurves(bufferSnapshots) {
         return numeric.dot(this.transformationMatrixInv, vector);
     };
 
-    ExpandedEdge.prototype.getSpline = function() {
+    ExpandedEdge.prototype.getCurveParameters = function() {
         var srcPoint,
             dstPoint,
-            midPoint1,
-            midPoint2,
-            yVector;
+            midPoint,
+            yVector,
+            xMatrix;
 
         srcPoint = [0, 0];
         dstPoint = this.toEdgeBasis(this.dstPoint);
-        midPoint1 = this.toEdgeBasis(this.midPoint1);
-        midPoint2 = this.toEdgeBasis(this.midPoint2);
+        midPoint = this.toEdgeBasis(this.midPoint);
+        yVector = [0, midPoint[1], dstPoint[1]];
 
-        yVector = [0, midPoint1[1], midPoint2[1], dstPoint[1]];
-
-        var x = [0,  midPoint1[0], midPoint2[0], dstPoint[0]];
-        var y = [0, midPoint1[1], midPoint2[1], dstPoint[1]];
-        return numeric.spline(x, y);
+        xMatrix = [
+                this.getQuadratic(0),
+                this.getQuadratic(midPoint[0]),
+                this.getQuadratic(dstPoint[0])
+        ];
+        var epsilonMatrix = numeric.mul(numeric.identity(3), 0.0000000001);
+        var xMatrix2 = numeric.add(xMatrix, epsilonMatrix);
+        return numeric.dot(numeric.inv(xMatrix2), yVector);
     };
 
-    ExpandedEdge.prototype.getMidPointPosition = function(spline, lambda) {
+    ExpandedEdge.prototype.getQuadratic = function(x) {
+        return [Math.pow(x, 2), x, 1];
+    };
+
+    ExpandedEdge.prototype.computePolynomial = function(x, betaVector) {
+        var xVector = this.getQuadratic(x);
+        return numeric.dot(betaVector, xVector);
+    };
+
+    ExpandedEdge.prototype.getMidPointPosition = function(betaVector, lambda) {
         var x,
             y,
             result,
             transformedVector;
         x = lambda * this.length;
 
-        y = spline.at(x);
+        y = this.computePolynomial(x, betaVector);
         transformedVector = this.fromEdgeBasis([x, y]);
 
         result = numeric.add(this.srcPoint, transformedVector);
@@ -199,11 +314,11 @@ function getPolynomialCurves(bufferSnapshots) {
 
     for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
         var edge = new ExpandedEdge(edgeIndex);
-        var spline = edge.getSpline();
-        var srcPoint = edge.getMidPointPosition(spline, 0);
+        var curveParameters = edge.getCurveParameters();
+        var srcPoint = edge.getMidPointPosition(curveParameters, 0);
         for (var midEdgeIdx = 0; midEdgeIdx < (numRenderedSplits + 1); midEdgeIdx++) {
             var lambda = (midEdgeIdx + 1) / (numRenderedSplits + 1);
-            var dstPoint = edge.getMidPointPosition(spline, lambda);
+            var dstPoint = edge.getMidPointPosition(curveParameters, lambda);
             setMidEdge(edgeIndex, midEdgeIdx, srcPoint, dstPoint);
             srcPoint = dstPoint;
         }
@@ -304,22 +419,25 @@ function renderSlowEffects(renderingScheduler) {
     var appSnapshot = renderingScheduler.appSnapshot;
     var renderState = renderingScheduler.renderState;
     var logicalEdges = renderState.get('config').get('edgeMode') === 'INDEXEDCLIENT';
-    //var springsPos;
+    var springsPos;
+    var midSpringsPos;
 
 
     if (logicalEdges && appSnapshot.vboUpdated) {
         var start = Date.now();
-        //if (appSnapshot.buffers.springsPos) {
-            //springsPos = expandLogicalEdges(appSnapshot.buffers);
-        //}
-        var midSpringsPos = getPolynomialCurves(appSnapshot.buffers);
-        renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
+        if (appSnapshot.buffers.curMidPoints) {
+            midSpringsPos = getPolynomialCurves(appSnapshot.buffers);
+            renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
+        } else {
+            springsPos = expandLogicalEdges(appSnapshot.buffers);
+            renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
+        }
         var end1 = Date.now();
         //renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
         var end2 = Date.now();
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
 
-        if (appSnapshot.buffers.arrowStartPos) {
+        if (!appSnapshot.buffers.curMidPoints) {
             makeArrows(appSnapshot.buffers);
             var end3 = Date.now();
             renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
