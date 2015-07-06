@@ -77,7 +77,6 @@ function setupBackgroundColor(renderingScheduler, bgColor) {
     }).subscribe(_.identity, util.makeErrorHandler('bg color updates'));
 }
 
-
 function getPolynomialCurves(bufferSnapshots) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var curMidPoints = new Float32Array(bufferSnapshots.curMidPoints.buffer);
@@ -104,6 +103,12 @@ function getPolynomialCurves(bufferSnapshots) {
         var midEdgeIdx = 0;
         var midPoint1X = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIdx * 2)];
         var midPoint1Y = curMidPoints[(edgeIndex *  2 * (numSplits)) + (midEdgeIdx * 2) + 1];
+        midEdgeIdx = 1;
+        var midPoint2X = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIdx * 2)];
+        var midPoint2Y = curMidPoints[(edgeIndex *  2 * (numSplits)) + (midEdgeIdx * 2) + 1];
+        this.midPoint1 = [midPoint1X, midPoint1Y];
+        this.midPoint2 = [midPoint2X, midPoint2Y];
+        this.midPoint = [(midPoint1X + midPoint2X) / 2, (midPoint1Y + midPoint2Y) / 2];
 
         this.srcPointIdx = logicalEdges[edgeIndex * 2];
         this.dstPointIdx = logicalEdges[(edgeIndex * 2) + 1];
@@ -114,7 +119,6 @@ function getPolynomialCurves(bufferSnapshots) {
         var dstPointX = curPoints[(2 * this.dstPointIdx)];
         var dstPointY = curPoints[(2 * this.dstPointIdx) + 1];
         this.dstPoint = [dstPointX, dstPointY];
-        this.midPoint = [midPoint1X, midPoint1Y];
 
         this.edgeVector = numeric.sub(this.dstPoint, this.srcPoint);
         var xDir = Math.pow(this.edgeVector[0], 2);
@@ -123,7 +127,6 @@ function getPolynomialCurves(bufferSnapshots) {
         this.direction = [this.edgeVector[0] / this.length, this.edgeVector[1]/ this.length];
 
         this.theta = Math.atan2(this.edgeVector[1], this.edgeVector[0]);
-
 
         this.transformationMatrix = [
             [Math.cos(this.theta), Math.sin(this.theta)],
@@ -147,45 +150,33 @@ function getPolynomialCurves(bufferSnapshots) {
         return numeric.dot(this.transformationMatrixInv, vector);
     };
 
-    ExpandedEdge.prototype.getCurveParameters = function() {
+    ExpandedEdge.prototype.getSpline = function() {
         var srcPoint,
             dstPoint,
-            midPoint,
-            yVector,
-            xMatrix;
+            midPoint1,
+            midPoint2,
+            yVector;
 
         srcPoint = [0, 0];
         dstPoint = this.toEdgeBasis(this.dstPoint);
-        midPoint = this.toEdgeBasis(this.midPoint);
-        yVector = [0, midPoint[1], dstPoint[1]];
+        midPoint1 = this.toEdgeBasis(this.midPoint1);
+        midPoint2 = this.toEdgeBasis(this.midPoint2);
 
-        xMatrix = [
-                this.getQuadratic(0),
-                this.getQuadratic(midPoint[0]),
-                this.getQuadratic(dstPoint[0])
-        ];
-        var epsilonMatrix = numeric.mul(numeric.identity(3), 0.0000000001);
-        var xMatrix2 = numeric.add(xMatrix, epsilonMatrix);
-        return numeric.dot(numeric.inv(xMatrix2), yVector);
+        yVector = [0, midPoint1[1], midPoint2[1], dstPoint[1]];
+
+        var x = [0,  midPoint1[0], midPoint2[0], dstPoint[0]];
+        var y = [0, midPoint1[1], midPoint2[1], dstPoint[1]];
+        return numeric.spline(x, y);
     };
 
-    ExpandedEdge.prototype.getQuadratic = function(x) {
-        return [Math.pow(x, 2), x, 1];
-    };
-
-    ExpandedEdge.prototype.computePolynomial = function(x, betaVector) {
-        var xVector = this.getQuadratic(x);
-        return numeric.dot(betaVector, xVector);
-    };
-
-    ExpandedEdge.prototype.getMidPointPosition = function(betaVector, lambda) {
+    ExpandedEdge.prototype.getMidPointPosition = function(spline, lambda) {
         var x,
             y,
             result,
             transformedVector;
         x = lambda * this.length;
 
-        y = this.computePolynomial(x, betaVector);
+        y = spline.at(x);
         transformedVector = this.fromEdgeBasis([x, y]);
 
         result = numeric.add(this.srcPoint, transformedVector);
@@ -208,11 +199,11 @@ function getPolynomialCurves(bufferSnapshots) {
 
     for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
         var edge = new ExpandedEdge(edgeIndex);
-        var curveParameters = edge.getCurveParameters();
-        var srcPoint = edge.getMidPointPosition(curveParameters, 0);
+        var spline = edge.getSpline();
+        var srcPoint = edge.getMidPointPosition(spline, 0);
         for (var midEdgeIdx = 0; midEdgeIdx < (numRenderedSplits + 1); midEdgeIdx++) {
             var lambda = (midEdgeIdx + 1) / (numRenderedSplits + 1);
-            var dstPoint = edge.getMidPointPosition(curveParameters, lambda);
+            var dstPoint = edge.getMidPointPosition(spline, lambda);
             setMidEdge(edgeIndex, midEdgeIdx, srcPoint, dstPoint);
             srcPoint = dstPoint;
         }
