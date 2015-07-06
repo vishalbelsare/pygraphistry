@@ -292,33 +292,69 @@ var setEdges = Q.promised(function(graph, edges) {
             edgePermutationInverseTyped[i] = edge.original;
         })
 
-        //[ [first edge number from src idx, numEdges from source idx, source idx], ... ]
-        var workItems = [[0, 0, edgeList[0][0]]];
-        var sourceHasEdge = [];
-        _.each(_.range(graph.simulator.numPoints), function () {
-            sourceHasEdge.push(false);
-        });
-        edgeList.forEach(function (edge, i) {
-            sourceHasEdge[edge[0]] = true;
-        });
-        edgeList.forEach(function (edge, i) {
-            var prev = workItems[workItems.length - 1];
-            if(edge[0] == prev[2]) {
-                prev[1]++;
+        var start = Date.now();
+
+
+
+        // //[ [first edge number from src idx, numEdges from source idx, source idx], ... ]
+        // var workItems = [[0, 0, edgeList[0][0]]];
+
+        // var sourceHasEdge = new Uint8Array(graph.simulator.numPoints);
+        // for (var i = 0; i < graph.simulator.numPoints; i++) {
+        //     sourceHasEdge[i] = 0;
+        // }
+        // edgeList.forEach(function (edge, i) {
+        //     sourceHasEdge[edge[0]] = 1;
+        // });
+        // edgeList.forEach(function (edge, i) {
+        //     var prev = workItems[workItems.length - 1];
+        //     if(edge[0] == prev[2]) {
+        //         prev[1]++;
+        //     } else {
+        //         workItems.push([i, 1, edge[0]])
+        //     }
+        // });
+        // _.each(sourceHasEdge, function (hasEdge, src) {
+        //     if (!hasEdge)
+        //         workItems.push([-1, 0, src]);
+        // });
+
+        // //keep items contiguous to filter based on them
+        // workItems.sort(function (a, b) {
+        //     return a[2] < b[2] ? -1
+        //          : a[2] > b[2] ? 1
+        //                        : 0;
+        // });
+
+
+
+         // [ [first edge number from src idx, numEdges from source idx, source idx], ... ]
+        var workItems = new Array(graph.simulator.numPoints);
+        var workItemsSize = 1;
+        var edgeListLastPos = 0;
+        var edgeListLastSrc = edgeList[0][0];
+        for (var i = 0; i < graph.simulator.numPoints; i++) {
+
+            // Case where node has edges
+            if (edgeListLastSrc === i) {
+                var startingIdx = edgeListLastPos;
+                var count = 0;
+                while (edgeListLastPos < edgeList.length && edgeList[edgeListLastPos][0] === i) {
+                    count++;
+                    edgeListLastPos++;
+                }
+                edgeListLastSrc = edgeListLastPos < edgeList.length ? edgeList[edgeListLastPos][0] : -1;
+                workItems[i] = [startingIdx, count, i];
+            // Case where node has no edges
             } else {
-                workItems.push([i, 1, edge[0]])
+                workItems[i] = [-1, 0, i];
             }
-        });
-        _.each(sourceHasEdge, function (hasEdge, src) {
-            if (!hasEdge)
-                workItems.push([-1, 0, src]);
-        });
-        //keep items contiguous to filter based on them
-        workItems.sort(function (a, b) {
-            return a[2] < b[2] ? -1
-                 : a[2] > b[2] ? 1
-                               : 0;
-        });
+        }
+
+
+
+        // console.log('Time to compute workItems: ', Date.now() - start);
+        // console.log('Work Items: ', workItems);
 
         var degreesTyped = new Uint32Array(graph.simulator.numPoints);
         var srcToWorkItem = new Int32Array(graph.simulator.numPoints);
@@ -415,8 +451,10 @@ var setEdges = Q.promised(function(graph, edges) {
         edgesFlipped[2 * i + 1] = edges[2 * i];
     }
 
+    var start = Date.now();
     var forwardEdges = encapsulate(edges);
     var backwardsEdges = encapsulate(edgesFlipped);
+    console.log('Encapsulates executed in: ', Date.now() - start);
 
     var degrees = new Uint32Array(graph.simulator.numPoints);
     for (var i = 0; i < graph.simulator.numPoints; i++) {
