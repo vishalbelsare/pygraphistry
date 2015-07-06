@@ -254,7 +254,6 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
 Dataframe.prototype.countBy = function (attribute, binning, indices, type) {
     var values = this.data.attributes[type][attribute].values;
 
-
     // TODO: Get this value from a proper source, instead of hard coding.
     var maxNumBins = 29;
 
@@ -301,6 +300,81 @@ Dataframe.prototype.countBy = function (attribute, binning, indices, type) {
     };
 }
 
+// Returns a binning object with properties numBins, binWidth, minValue,
+// maxValue
+function calculateBinning(numValues, values, indices, goalNumberOfBins) {
+
+    var goalBins = numValues > 30 ? Math.ceil(Math.log(numValues) / Math.log(2)) + 1
+                                 : Math.ceil(Math.sqrt(numValues));
+    goalBins = Math.min(goalBins, 30); // Cap number of bins.
+    goalBins = Math.max(goalBins, 8); // Cap min number of bins.
+
+    var minMax = minMaxMasked(values, indices);
+    var max = minMax.max;
+    var min = minMax.min;
+
+    var defaultBinning = {
+        numBins: 1,
+        binWidth: 1,
+        minValue: -Infinity,
+        maxValue: Infinity
+    };
+
+    if (goalNumberOfBins) {
+        var numBins = goalNumberOfBins;
+        var bottomVal = min;
+        var topVal = max;
+        var binWidth = (max - min) / numBins;
+
+    // Try to find a good division.
+    } else {
+        var goalWidth = (max - min) / goalBins;
+
+        var binWidth = 10;
+        var numBins = (max - min) / binWidth;
+
+        // Edge case for invalid values
+        // Should capture general case of NaNs and other invalid
+        if (min === Infinity || max === -Infinity || numBins < 0) {
+            return defaultBinning;
+        }
+
+        // Get to a rough approx
+        while (numBins < 2 || numBins >= 100) {
+            if (numBins < 2) {
+                binWidth *= 0.1;
+            } else {
+                binWidth *= 10;
+            }
+            numBins = (max - min) / binWidth;
+        }
+
+        // Refine by doubling/halving
+        var minBins = Math.max(3, Math.floor(goalBins / 2) - 1);
+        while (numBins < minBins || numBins > goalBins) {
+            if (numBins < minBins) {
+                binWidth /= 2;
+            } else {
+                binWidth *= 2;
+            }
+            numBins = (max - min) / binWidth;
+        }
+
+        var bottomVal = round_down(min, binWidth);
+        var topVal = round_up(max, binWidth);
+        numBins = Math.round((topVal - bottomVal) / binWidth);
+    }
+
+
+    return {
+        numBins: numBins,
+        binWidth: binWidth,
+        minValue: bottomVal,
+        maxValue: topVal,
+    };
+}
+
+
 Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, indices, type) {
     // Binning has binWidth, minValue, maxValue, and numBins
 
@@ -315,65 +389,14 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
         return {type: 'nodata'};
     }
 
-    var goalBins = numValues > 30 ? Math.ceil(Math.log(numValues) / Math.log(2)) + 1
-                                 : Math.ceil(Math.sqrt(numValues));
-
-    goalBins = Math.min(goalBins, 30); // Cap number of bins.
-    goalBins = Math.max(goalBins, 8); // Cap min number of bins.
-
-
     // Override if provided binning data.
-    if (binning) {
-        var numBins = binning.numBins;
-        var binWidth = binning.binWidth;
-        var bottomVal = binning.minValue;
-        var topval = binning.maxValue;
-        var min = binning.minValue;
-        var max = binning.maxValue;
-
-    } else {
-
-        var minMax = minMaxMasked(values, indices);
-        var max = minMax.max;
-        var min = minMax.min;
-
-        if (goalNumberOfBins) {
-            var numBins = goalNumberOfBins;
-            var bottomVal = min;
-            var topVal = max;
-            var binWidth = (max - min) / numBins;
-
-        // Try to find a good division.
-        } else {
-            var goalWidth = (max - min) / goalBins;
-
-            var binWidth = 10;
-            var numBins = (max - min) / binWidth;
-            // Get to a rough approx
-            while (numBins < 2 || numBins >= 100) {
-                if (numBins < 2) {
-                    binWidth *= 0.1;
-                } else {
-                    binWidth *= 10;
-                }
-                numBins = (max - min) / binWidth;
-            }
-            // Refine by doubling/halving
-            var minBins = Math.max(4, Math.floor(goalBins / 2) - 1);
-            while (numBins < minBins || numBins > goalBins) {
-                if (numBins < minBins) {
-                    binWidth /= 2;
-                } else {
-                    binWidth *= 2;
-                }
-                numBins = (max - min) / binWidth;
-            }
-
-            var bottomVal = round_down(min, binWidth);
-            var topVal = round_up(max, binWidth);
-            numBins = Math.round((topVal - bottomVal) / binWidth);
-        }
-    }
+    binning = binning || calculateBinning(numValues, values, indices, goalNumberOfBins);
+    var numBins = binning.numBins;
+    var binWidth = binning.binWidth;
+    var bottomVal = binning.minValue;
+    var topVal = binning.maxValue;
+    var min = binning.minValue;
+    var max = binning.maxValue;
 
     // Guard against 0 width case
     if (max === min) {
