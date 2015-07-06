@@ -183,7 +183,6 @@ Object.seal(tempLayoutBuffers);
 // Create temporary buffers needed for layout
 var setupTempLayoutBuffers = function (simulator) {
     simulator.resetBuffers(tempLayoutBuffers);
-    console.log('Num midpoints', simulator.numMidPoints);
     return Q.all([
         simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed'),
         simulator.cl.createBuffer(2 * simulator.numMidPoints * Float32Array.BYTES_PER_ELEMENT, 'prevForces'),
