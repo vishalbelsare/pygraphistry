@@ -42,8 +42,9 @@ Dataframe.prototype.load = function (attributes, type) {
         return;
     }
 
-    decodeStrings(attributes);
-    decodeDates(attributes);
+    // TODO: Decoding at the presentation layer.
+    // decodeStrings(attributes);
+    // decodeDates(attributes);
 
     var nodeTitleField = getNodeTitleField(attributes);
     var edgeTitleField = getEdgeTitleField(attributes);
@@ -449,8 +450,9 @@ function decodeStrings (attributes) {
 
 function decodeDates (attributes) {
     _.each(_.keys(attributes), function (key) {
+        var isDate = key.indexOf('Date') > -1;
         var decoded = _.map(attributes[key].values, function (val) {
-            return key.indexOf('Date') > -1 && typeof(val) === "number" ?
+            return isDate && typeof(val) === "number" ?
                     dateFormat(val, 'mm-dd-yyyy') : val;
         });
         attributes[key].values = decoded;
