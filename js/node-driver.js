@@ -261,6 +261,16 @@ function create(dataset) {
     var graph = init(device, vendor, controls).then(function (graph) {
         debug('LOADING DATASET');
         return loader.loadDatasetIntoSim(graph, dataset)
+
+    }).then(function (graph) {
+        // Load into dataframe data attributes that rely on the simulator existing.
+        var outDegrees = graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped;
+        var inDegrees = graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped;
+        var unsortedEdges = graph.simulator.bufferHostCopies.unsortedEdges;
+        graph.dataframe.loadDegrees(outDegrees, inDegrees);
+        graph.dataframe.loadEdgeDestinations(unsortedEdges);
+        return graph;
+
     }).then(function (graph) {
         debug('ANIMATING');
 

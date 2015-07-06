@@ -82,11 +82,66 @@ Dataframe.prototype.load = function (attributes, type) {
 };
 
 
+/** Load in degrees as a universal (independent of datasource) value
+ * @param {Typed Array} outDegrees - degrees going out of nodes
+ * @param {Typed Array} inDegrees - degrees going into nodes
+ */
+Dataframe.prototype.loadDegrees = function (outDegrees, inDegrees) {
+    var numElements = this.rawdata.numElements['point'];
+    var attributes = this.rawdata.attributes['point'];
+
+    // TODO: Error handling
+    if (numElements !== outDegrees.length || numElements !== inDegrees.length) {
+        return;
+    }
+
+    var degree = new Array(numElements);
+    var degree_in = new Array(numElements);
+    var degree_out = new Array(numElements);
+
+    for (var i = 0; i < numElements; i++) {
+        degree_in[i] = inDegrees[i];
+        degree_out[i] = outDegrees[i];
+        degree[i] = inDegrees[i] + outDegrees[i];
+    }
+
+    attributes.degree = {values: degree};
+    attributes.degree_in = {values: degree_in};
+    attributes.degree_out = {values: degree_out};
+};
+
+
+/** Load in edge source/dsts as a universal (independent of datasource) value
+ * @param {Typed Array} unsortedEdges - usorted list of edges.
+ */
+Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
+    var numElements = this.rawdata.numElements['edge'];
+    var attributes = this.rawdata.attributes['edge'];
+    var nodeTitles = this.rawdata.attributes['point']._title.values;
+
+    // TODO: Error handling
+    if (numElements !== unsortedEdges.length/2) {
+        return;
+    }
+
+    var source = new Array(numElements);
+    var destination = new Array(numElements);
+
+    for (var i = 0; i < numElements; i++) {
+        source[i] = nodeTitles[unsortedEdges[2*i]]
+        destination[i] = nodeTitles[unsortedEdges[2*i + 1]];
+    }
+
+    attributes.Source = {values: source};
+    attributes.Destination = {values: destination};
+};
+
+
 /** Load in a raw OpenCL buffer object.
  *  @param {string} name - name of the buffer
  *  @param {Object} buffer - a raw OpenCL buffer object
  */
-Dataframe.prototype.loadBuffer = function (name, buffer) {
+Dataframe.prototype.loadBuffer = function (name, type, buffer) {
 
 };
 
@@ -99,7 +154,7 @@ Dataframe.prototype.loadBuffer = function (name, buffer) {
 /** Returns an OpenCL buffer object.
  *  @param {string} name - name of the buffer
  */
-Dataframe.prototype.getBuffer = function (name) {
+Dataframe.prototype.getBuffer = function (name, type) {
 
 };
 
