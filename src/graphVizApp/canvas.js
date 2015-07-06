@@ -10,7 +10,7 @@ var interaction     = require('./interaction.js');
 var util            = require('./util.js');
 var labels          = require('./labels.js');
 var renderer        = require('../renderer');
-
+var numeric = require('numeric');
 
 
 function setupCameraInteractions(appState, $eventTarget) {
@@ -47,34 +47,6 @@ function setupCameraInteractions(appState, $eventTarget) {
     );
 }
 
-
-function setupLabelsAndCursor(appState, $eventTarget) {
-    // Picks objects in priority based on order.
-    var hitMapTextures = ['hitmap'];
-    var latestHighlightedObject = labels.getLatestHighlightedObject(appState, $eventTarget, hitMapTextures);
-
-    labels.setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating, latestHighlightedObject);
-    labels.setupLabels(appState, $eventTarget, latestHighlightedObject);
-}
-
-
-function setupRenderUpdates(renderingScheduler, cameraStream, settingsChanges) {
-    var renderUpdates = cameraStream.combineLatest(settingsChanges, _.identity);
-
-    renderUpdates.do(function () {
-        renderingScheduler.renderScene('panzoom', {trigger: 'renderSceneFast'});
-    }).subscribe(_.identity, util.makeErrorHandler('render updates'));
-}
-
-
-function setupBackgroundColor(renderingScheduler, bgColor) {
-    bgColor.do(function (rgb) {
-        var color = [rgb.r/255, rgb.g/255, rgb.b/255, rgb.a === undefined ? 1 : rgb.a/255];
-        renderingScheduler.renderState.get('options').clearColor = [color];
-        renderingScheduler.renderScene('bgcolor', {trigger: 'renderSceneFast'});
-    }).subscribe(_.identity, util.makeErrorHandler('bg color updates'));
-}
-
 /* Deindexed logical edges by looking up the x/y positions of the source and destination
  * nodes. */
 function expandLogicalEdges(bufferSnapshots) {
@@ -95,61 +67,170 @@ function expandLogicalEdges(bufferSnapshots) {
     return springsPos;
 }
 
-function expandLogicalMidEdges(bufferSnapshots) {
+function setupLabelsAndCursor(appState, $eventTarget) {
+    // Picks objects in priority based on order.
+    var hitMapTextures = ['hitmap'];
+    var latestHighlightedObject = labels.getLatestHighlightedObject(appState, $eventTarget, hitMapTextures);
+
+    labels.setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating, latestHighlightedObject);
+    labels.setupLabels(appState, $eventTarget, latestHighlightedObject);
+}
+
+function setupRenderUpdates(renderingScheduler, cameraStream, settingsChanges) {
+    var renderUpdates = cameraStream.combineLatest(settingsChanges, _.identity);
+
+    renderUpdates.do(function () {
+        renderingScheduler.renderScene('panzoom', {trigger: 'renderSceneFast'});
+    }).subscribe(_.identity, util.makeErrorHandler('render updates'));
+}
+
+function setupBackgroundColor(renderingScheduler, bgColor) {
+    bgColor.do(function (rgb) {
+        var color = [rgb.r/255, rgb.g/255, rgb.b/255, rgb.a === undefined ? 1 : rgb.a/255];
+        renderingScheduler.renderState.get('options').clearColor = [color];
+        renderingScheduler.renderScene('bgcolor', {trigger: 'renderSceneFast'});
+    }).subscribe(_.identity, util.makeErrorHandler('bg color updates'));
+}
+
+function getPolynomialCurves(bufferSnapshots) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var curMidPoints = new Float32Array(bufferSnapshots.curMidPoints.buffer);
     var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
-    var numSplits = curMidPoints.length  / logicalEdges.length; // TODO
+    var numSplits = curMidPoints.length  / logicalEdges.length;
+    var numRenderedSplits = 8;
+
+    //var numEdgesRendered = 3;
+
+    if (numSplits < 1) {
+        numSplits = 0;
+    }
     //var numMidEdges = numSplits + 1;
     var numEdges = (logicalEdges.length / 2);
 
-    var numVertices = (2 * numEdges) * (numSplits + 1);
+    var numVertices = (2 * numEdges) * (numRenderedSplits + 1);
 
     if (!bufferSnapshots.midSpringsPos) {
         bufferSnapshots.midSpringsPos = new Float32Array(numVertices * 2);
     }
     var midSpringsPos = bufferSnapshots.midSpringsPos;
 
-    for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
-        var srcPointIdx = logicalEdges[edgeIndex * 2];
-        var dstPointIdx = logicalEdges[(edgeIndex * 2) + 1];
+    function ExpandedEdge(edgeIndex) {
+        var midEdgeIdx = 0;
+        var midPoint1X = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIdx * 2)];
+        var midPoint1Y = curMidPoints[(edgeIndex *  2 * (numSplits)) + (midEdgeIdx * 2) + 1];
 
-        var srcPointX = curPoints[(2 * srcPointIdx)];
-        var srcPointY = curPoints[(2 * srcPointIdx)+ 1];
-        var dstPointX = curPoints[(2 * dstPointIdx)];
-        var dstPointY = curPoints[(2 * dstPointIdx) + 1];
-        //var stepX = dstPointX - srcPointX;
-        //var stepY = dstPointY - srcPointY;
+        this.srcPointIdx = logicalEdges[edgeIndex * 2];
+        this.dstPointIdx = logicalEdges[(edgeIndex * 2) + 1];
 
-        var elementsPerPoint = 2;
-        var pointsPerEdge = 2;
-        var midEdgesPerEdge = numSplits + 1;
-        var midEdgeStride = elementsPerPoint * pointsPerEdge * midEdgesPerEdge;
-        var midEdgeStartIdx = edgeIndex * midEdgeStride;
+        var srcPointX = curPoints[(2 * this.srcPointIdx)];
+        var srcPointY = curPoints[(2 * this.srcPointIdx)+ 1];
+        this.srcPoint = [srcPointX, srcPointY];
+        var dstPointX = curPoints[(2 * this.dstPointIdx)];
+        var dstPointY = curPoints[(2 * this.dstPointIdx) + 1];
+        this.dstPoint = [dstPointX, dstPointY];
+        this.midPoint = [midPoint1X, midPoint1Y];
 
-        midSpringsPos[midEdgeStartIdx] =  srcPointX;
-        midSpringsPos[midEdgeStartIdx + 1] =  srcPointY;
-        var prevX = srcPointX;
-        var prevY = srcPointY;
+        this.edgeVector = numeric.sub(this.dstPoint, this.srcPoint);
+        var xDir = Math.pow(this.edgeVector[0], 2);
+        var yDir = Math.pow(this.edgeVector[1], 2);
+        this.length = Math.pow(xDir + yDir, 0.5);
+        this.direction = [this.edgeVector[0] / this.length, this.edgeVector[1]/ this.length];
 
-        for (var midEdgeIdx = 0; midEdgeIdx < numSplits; midEdgeIdx++) {
-            //var lambda = (midEdgeIdx + 1) / (numSplits + 1);
-            midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4)] = prevX;
-            midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 1] = prevY;
-            //prevX = srcPointX + (stepX * lambda);
-            //prevY = srcPointY + (stepY * lambda);
-            prevX = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIdx * 2)];
-            prevY = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIdx * 2) + 1];
-            midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 2] = prevX;
-            midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 3] = prevY;
-        }
-        midSpringsPos[((edgeIndex + 1) * midEdgeStride) - 4] =  prevX;
-        midSpringsPos[((edgeIndex + 1) * midEdgeStride) - 3] =  prevY;
+        this.theta = Math.atan2(this.edgeVector[1], this.edgeVector[0]);
 
-        midSpringsPos[((edgeIndex + 1) * midEdgeStride) - 2] =  dstPointX;
-        midSpringsPos[((edgeIndex + 1) * midEdgeStride) - 1] =  dstPointY;
+
+        this.transformationMatrix = [
+            [Math.cos(this.theta), Math.sin(this.theta)],
+            [-Math.sin(this.theta), Math.cos(this.theta)]
+        ];
+
+        this.transformationMatrixInv = numeric.transpose(this.transformationMatrix);
+
+        return this;
+
     }
 
+    ExpandedEdge.prototype.toEdgeBasis = function(vector) {
+        var test = numeric.sub(vector, this.srcPoint);
+        var matrix = numeric.dot(this.transformationMatrix, test);
+        return matrix.valueOf();
+    };
+
+    ExpandedEdge.prototype.fromEdgeBasis = function(vector) {
+        //return math.multiply(this.transformationMatrixInv, vector).valueOf();
+        return numeric.dot(this.transformationMatrixInv, vector);
+    };
+
+    ExpandedEdge.prototype.getCurveParameters = function() {
+        var srcPoint,
+            dstPoint,
+            midPoint,
+            yVector,
+            xMatrix;
+
+        srcPoint = [0, 0];
+        dstPoint = this.toEdgeBasis(this.dstPoint);
+        midPoint = this.toEdgeBasis(this.midPoint);
+        yVector = [0, midPoint[1], dstPoint[1]];
+
+        xMatrix = [
+                this.getQuadratic(0),
+                this.getQuadratic(midPoint[0]),
+                this.getQuadratic(dstPoint[0])
+        ];
+        var epsilonMatrix = numeric.mul(numeric.identity(3), 0.0000000001);
+        var xMatrix2 = numeric.add(xMatrix, epsilonMatrix);
+        return numeric.dot(numeric.inv(xMatrix2), yVector);
+    };
+
+    ExpandedEdge.prototype.getQuadratic = function(x) {
+        return [Math.pow(x, 2), x, 1];
+    };
+
+    ExpandedEdge.prototype.computePolynomial = function(x, betaVector) {
+        var xVector = this.getQuadratic(x);
+        return numeric.dot(betaVector, xVector);
+    };
+
+    ExpandedEdge.prototype.getMidPointPosition = function(betaVector, lambda) {
+        var x,
+            y,
+            result,
+            transformedVector;
+        x = lambda * this.length;
+
+        y = this.computePolynomial(x, betaVector);
+        transformedVector = this.fromEdgeBasis([x, y]);
+
+        result = numeric.add(this.srcPoint, transformedVector);
+
+        return result;
+
+    };
+
+    function setMidEdge(edgeIdx, midEdgeIdx, srcPoint, dstPoint) {
+        var elementsPerPoint = 2;
+        var pointsPerEdge = 2;
+        var midEdgesPerEdge = numRenderedSplits + 1;
+        var midEdgeStride = elementsPerPoint * pointsPerEdge * midEdgesPerEdge;
+        var midEdgeStartIdx = edgeIndex * midEdgeStride;
+        midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4)] = srcPoint[0];
+        midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 1] = srcPoint[1];
+        midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 2] = dstPoint[0];
+        midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 3] = dstPoint[1];
+    }
+
+    for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
+        var edge = new ExpandedEdge(edgeIndex);
+        var curveParameters = edge.getCurveParameters();
+        var srcPoint = edge.getMidPointPosition(curveParameters, 0);
+        for (var midEdgeIdx = 0; midEdgeIdx < (numRenderedSplits + 1); midEdgeIdx++) {
+            var lambda = (midEdgeIdx + 1) / (numRenderedSplits + 1);
+            var dstPoint = edge.getMidPointPosition(curveParameters, lambda);
+            setMidEdge(edgeIndex, midEdgeIdx, srcPoint, dstPoint);
+            srcPoint = dstPoint;
+        }
+    }
     return midSpringsPos;
 }
 
@@ -246,30 +327,36 @@ function renderSlowEffects(renderingScheduler) {
     var appSnapshot = renderingScheduler.appSnapshot;
     var renderState = renderingScheduler.renderState;
     var logicalEdges = renderState.get('config').get('edgeMode') === 'INDEXEDCLIENT';
-    
+    var springsPos;
+    var midSpringsPos;
+
 
     if (logicalEdges && appSnapshot.vboUpdated) {
         var start = Date.now();
-        var springsPos = expandLogicalEdges(appSnapshot.buffers);
         if (appSnapshot.buffers.curMidPoints) {
-            var midSpringsPos = expandLogicalMidEdges(appSnapshot.buffers);
+            midSpringsPos = getPolynomialCurves(appSnapshot.buffers);
             renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
+        } else {
+            springsPos = expandLogicalEdges(appSnapshot.buffers);
+            renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
         }
         var end1 = Date.now();
-        renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
+        //renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
         var end2 = Date.now();
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
 
-        makeArrows(appSnapshot.buffers);
-        var end3 = Date.now();
-        renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
-        renderer.loadBuffers(renderState, {'arrowEndPos': appSnapshot.buffers.arrowEndPos});
-        renderer.loadBuffers(renderState, {'arrowNormalDir': appSnapshot.buffers.arrowNormalDir});
-        renderer.loadBuffers(renderState, {'arrowColors': appSnapshot.buffers.arrowColors});
-        renderer.loadBuffers(renderState, {'arrowPointSizes': appSnapshot.buffers.arrowPointSizes});
-        renderer.setNumElements(renderState, 'arrowculled', appSnapshot.buffers.arrowStartPos.length / 2);
-        var end4 = Date.now();
-        console.info('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
+        if (!appSnapshot.buffers.curMidPoints) {
+            makeArrows(appSnapshot.buffers);
+            var end3 = Date.now();
+            renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
+            renderer.loadBuffers(renderState, {'arrowEndPos': appSnapshot.buffers.arrowEndPos});
+            renderer.loadBuffers(renderState, {'arrowNormalDir': appSnapshot.buffers.arrowNormalDir});
+            renderer.loadBuffers(renderState, {'arrowColors': appSnapshot.buffers.arrowColors});
+            renderer.loadBuffers(renderState, {'arrowPointSizes': appSnapshot.buffers.arrowPointSizes});
+            renderer.setNumElements(renderState, 'arrowculled', appSnapshot.buffers.arrowStartPos.length / 2);
+            var end4 = Date.now();
+            console.info('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
+        }
     }
 
     renderer.setCamera(renderState);
@@ -319,50 +406,52 @@ function renderMouseoverEffects(renderingScheduler, task) {
     }
     lastHighlightedEdge = edgeIndices[0];
 
-    // TODO: Start with a small buffer and increase if necessary, masking underlying
-    // data so we don't have to clear out later values. This way we won't have to constantly allocate
-    buffers.highlightedEdges = new Float32Array(edgeIndices.length * 4);
-    buffers.highlightedNodePositions = new Float32Array(nodeIndices.length * 2);
-    buffers.highlightedNodeSizes = new Uint8Array(nodeIndices.length);
-    buffers.highlightedArrowStartPos = new Float32Array(edgeIndices.length * 2 * 3);
-    buffers.highlightedArrowEndPos = new Float32Array(edgeIndices.length * 2 * 3);
-    buffers.highlightedArrowNormalDir = new Float32Array(edgeIndices.length * 3);
-    buffers.highlightedArrowColors = new Uint32Array(edgeIndices.length * 3);
-    buffers.highlightedArrowPointSizes = new Uint8Array(edgeIndices.length * 3);
+    if (buffers.highLightedEdges) {
+        // TODO: Start with a small buffer and increase if necessary, masking underlying
+        // data so we don't have to clear out later values. This way we won't have to constantly allocate
+        buffers.highlightedEdges = new Float32Array(edgeIndices.length * 4);
+        buffers.highlightedNodePositions = new Float32Array(nodeIndices.length * 2);
+        buffers.highlightedNodeSizes = new Uint8Array(nodeIndices.length);
+        buffers.highlightedArrowStartPos = new Float32Array(edgeIndices.length * 2 * 3);
+        buffers.highlightedArrowEndPos = new Float32Array(edgeIndices.length * 2 * 3);
+        buffers.highlightedArrowNormalDir = new Float32Array(edgeIndices.length * 3);
+        buffers.highlightedArrowColors = new Uint32Array(edgeIndices.length * 3);
+        buffers.highlightedArrowPointSizes = new Uint8Array(edgeIndices.length * 3);
 
-    renderer.setNumElements(renderState, 'edgehighlight', edgeIndices.length * 2);
-    renderer.setNumElements(renderState, 'pointhighlight', nodeIndices.length);
-    renderer.setNumElements(renderState, 'arrowhighlight', edgeIndices.length * 3);
+        renderer.setNumElements(renderState, 'edgehighlight', edgeIndices.length * 2);
+        renderer.setNumElements(renderState, 'pointhighlight', nodeIndices.length);
+        renderer.setNumElements(renderState, 'arrowhighlight', edgeIndices.length * 3);
 
-    _.each(edgeIndices, function (val, idx) {
-        buffers.highlightedEdges[idx*4] = buffers.springsPos[val*4];
-        buffers.highlightedEdges[idx*4 + 1] = buffers.springsPos[val*4 + 1];
-        buffers.highlightedEdges[idx*4 + 2] = buffers.springsPos[val*4 + 2];
-        buffers.highlightedEdges[idx*4 + 3] = buffers.springsPos[val*4 + 3];
-    });
+        _.each(edgeIndices, function (val, idx) {
+            buffers.highlightedEdges[idx*4] = buffers.springsPos[val*4];
+            buffers.highlightedEdges[idx*4 + 1] = buffers.springsPos[val*4 + 1];
+            buffers.highlightedEdges[idx*4 + 2] = buffers.springsPos[val*4 + 2];
+            buffers.highlightedEdges[idx*4 + 3] = buffers.springsPos[val*4 + 3];
+        });
 
-    _.each(nodeIndices, function (val, idx) {
-        buffers.highlightedNodePositions[idx*2] = hostNodePositions[val*2];
-        buffers.highlightedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
+        _.each(nodeIndices, function (val, idx) {
+            buffers.highlightedNodePositions[idx*2] = hostNodePositions[val*2];
+            buffers.highlightedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
 
-        buffers.highlightedNodeSizes[idx] = hostNodeSizes[val];
-    });
+            buffers.highlightedNodeSizes[idx] = hostNodeSizes[val];
+        });
 
-    populateArrowBuffers(edgeIndices, buffers.springsPos, buffers.highlightedArrowStartPos,
-            buffers.highlightedArrowEndPos, buffers.highlightedArrowNormalDir, hostNodeSizes,
-            logicalEdges, buffers.highlightedArrowPointSizes, buffers.highlightedArrowColors,
-            buffers.edgeColors);
+        populateArrowBuffers(edgeIndices, buffers.springsPos, buffers.highlightedArrowStartPos,
+                buffers.highlightedArrowEndPos, buffers.highlightedArrowNormalDir, hostNodeSizes,
+                logicalEdges, buffers.highlightedArrowPointSizes, buffers.highlightedArrowColors,
+                buffers.edgeColors);
 
-    renderer.setupFullscreenBuffer(renderState);
-    renderer.loadBuffers(renderState, {
-        'highlightedEdgesPos': buffers.highlightedEdges,
-        'highlightedPointsPos': buffers.highlightedNodePositions,
-        'highlightedPointsSizes': buffers.highlightedNodeSizes,
-        'highlightedArrowStartPos': buffers.highlightedArrowStartPos,
-        'highlightedArrowEndPos': buffers.highlightedArrowEndPos,
-        'highlightedArrowNormalDir': buffers.highlightedArrowNormalDir,
-        'highlightedArrowPointSizes': buffers.highlightedArrowPointSizes
-    });
+        renderer.setupFullscreenBuffer(renderState);
+        renderer.loadBuffers(renderState, {
+            'highlightedEdgesPos': buffers.highlightedEdges,
+            'highlightedPointsPos': buffers.highlightedNodePositions,
+            'highlightedPointsSizes': buffers.highlightedNodeSizes,
+            'highlightedArrowStartPos': buffers.highlightedArrowStartPos,
+            'highlightedArrowEndPos': buffers.highlightedArrowEndPos,
+            'highlightedArrowNormalDir': buffers.highlightedArrowNormalDir,
+            'highlightedArrowPointSizes': buffers.highlightedArrowPointSizes
+        });
+    }
     renderer.setCamera(renderState);
     renderer.render(renderState, 'highlight', 'highlight');
 }
