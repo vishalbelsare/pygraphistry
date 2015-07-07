@@ -769,9 +769,9 @@ function setMidEdgeColors(simulator, midEdgeColors) {
 
     var numMidEdgeColors = simulator.numEdges * (simulator.numRenderedSplits + 1);
 
-    var colorObject = new Color();
-    srcColor = new Color();
-    dstColor = new Color();
+    var interpolatedColor = {};
+    srcColor = {};
+    dstColor = {};
 
     if (!midEdgeColors) {
         debug('Using default midedge colors');
@@ -784,25 +784,50 @@ function setMidEdgeColors(simulator, midEdgeColors) {
             var color1HSV, color2HSV, h, s, v;
             color1HSV = color1.hsv();
             color2HSV = color2.hsv();
-            h = color1HSV.h * (1 - lambda) + color2HSV.h * (lambda);
+            var h1 = color1HSV.h;
+            var h2 = color2HSV.h;
+            var maxCCW = h1 - h2;
+            var maxCW =  (h2 + 360) - h1;
+            var hueStep;
+            if (maxCW > maxCCW) {
+                //hueStep = higherHue - lowerHue;
+                //hueStep = h2 - h1;
+                hueStep = h2 - h1;
+            } else {
+                //hueStep = higherHue - lowerHue;
+                hueStep = (360 + h2) - h1;
+            }
+            h = (h1 + (hueStep * (lambda))) % 360;
+            //h = color1HSV.h * (1 - lambda) + color2HSV.h * (lambda);
             s = color1HSV.s * (1 - lambda) + color2HSV.s * (lambda);
             v = color1HSV.v * (1 - lambda) + color2HSV.v * (lambda);
-            return colorObject.hsv([h, s, v]);
+            return interpolatedColor.hsv([h, s, v]);
+        }
+
+        var colorRGBInterpolator = function (color1, color2, lambda) {
+            var r, g, b;
+            r = color1.r * (1 - lambda) + color2.r * (lambda);
+            g = color1.g * (1 - lambda) + color2.g * (lambda);
+            b = color1.b * (1 - lambda) + color2.b * (lambda);
+            return {
+                r: r,
+                g: g,
+                b: b
+            }
         }
 
         // Convert from HSV to RGB Int
         convertColor2RGBInt = function (color) {
-            var rgb = color.rgb();
-            return (rgb.r << 0) + (rgb.g << 8) + (rgb.b << 16);
+            return (color.r << 0) + (color.g << 8) + (color.b << 16);
         }
 
         // Convert from RGB Int to HSV
-        convertRGBInt2Color= function (color, rgbInt) {
-            return color.rgb({
+        convertRGBInt2Color= function (rgbInt) {
+            return {
                 r:rgbInt & 0xFF,
                 g:(rgbInt >> 8) & 0xFF,
                 b:(rgbInt >> 16) & 0xFF
-            });
+            }
         }
 
         for (edgeIndex = 0; edgeIndex < simulator.numEdges; edgeIndex++) {
@@ -812,17 +837,17 @@ function setMidEdgeColors(simulator, midEdgeColors) {
             srcColorInt = simulator.buffersLocal.pointColors[srcNodeIdx];
             dstColorInt = simulator.buffersLocal.pointColors[dstNodeIdx];
 
-            srcColor = convertRGBInt2Color(srcColor, srcColorInt);
-            dstColor= convertRGBInt2Color(dstColor, dstColorInt);
+            srcColor = convertRGBInt2Color(srcColorInt);
+            dstColor = convertRGBInt2Color(dstColorInt);
 
             interpolatedColorInt = convertColor2RGBInt(srcColor);
 
             for (midEdgeIndex = 0; midEdgeIndex < numSegments; midEdgeIndex++) {
                 midEdgeColors[(2 * edgeIndex) * numSegments + (2 * midEdgeIndex)] =
                     interpolatedColorInt;
-                lambda = (midEdgeIndex / numSegments);
+                lambda = (midEdgeIndex + 1) / (numSegments);
                 interpolatedColorInt =
-                    convertColor2RGBInt(colorHSVInterpolator(srcColor, dstColor, lambda));
+                    convertColor2RGBInt(colorRGBInterpolator(srcColor, dstColor, lambda));
                 midEdgeColors[(2 * edgeIndex) * numSegments + (2 * midEdgeIndex) + 1] =
                     interpolatedColorInt;
             }
