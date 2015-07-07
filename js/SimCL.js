@@ -998,7 +998,20 @@ function connectedEdges(simulator, nodeIndices) {
             .concat(getOutgoingEdges(backwardsBuffers, idx));
     });
 
-    return _.uniq(_.flatten(edgeIndices, true));
+
+    var flattenedEdgeIndices = _.flatten(edgeIndices, true);
+
+    // Compute setOfEdges = _.uniq(flattenedEdgeIndices) without underscore.
+    var setOfEdges = [];
+    var edgeHash = {};
+    _.each(flattenedEdgeIndices, function (edge) {
+        if (!edgeHash[edge]) {
+            setOfEdges.push(edge);
+            edgeHash[edge] = true;
+        }
+    });
+
+    return setOfEdges;
 }
 
 function recolor(simulator, marquee) {
