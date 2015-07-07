@@ -115,14 +115,9 @@ Dataframe.prototype.loadDegrees = function (outDegrees, inDegrees) {
  * @param {Typed Array} unsortedEdges - usorted list of edges.
  */
 Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
-    var numElements = this.rawdata.numElements['edge'];
+    var numElements = this.rawdata.numElements['edge'] || unsortedEdges.length / 2;
     var attributes = this.rawdata.attributes['edge'];
     var nodeTitles = this.rawdata.attributes['point']._title.values;
-
-    // TODO: Error handling
-    if (numElements !== unsortedEdges.length/2) {
-        return;
-    }
 
     var source = new Array(numElements);
     var destination = new Array(numElements);
@@ -134,6 +129,14 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
 
     attributes.Source = {values: source};
     attributes.Destination = {values: destination};
+
+    // If no attributes for edges have ever been loaded, just make title the index.
+    // TODO: Deal with this more elegantly / elsewhere
+    if (!this.rawdata.numElements['edge']) {
+        this.rawdata.numElements['edge'] = numElements;
+        attributes._title = {type: 'number', values: range(numElements)};
+    }
+
 };
 
 
