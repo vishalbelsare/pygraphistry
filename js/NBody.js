@@ -271,11 +271,10 @@ var setEdges = Q.promised(function(graph, edges) {
     //FIXME THIS SHOULD WORK BUT CRASHES SAFARI
     var encapsulate = function (edges) {
 
-        //[[src idx, dest idx]]
+        //[[src idx, dest idx, original idx]]
         var edgeList = new Array(edges.length / 2);
         for (var i = 0; i < edges.length/2; i++) {
-            edgeList[i] = [edges[2 * i], edges[2 * i + 1]];
-            edgeList[i].original = i;
+            edgeList[i] = [edges[2 * i], edges[2 * i + 1], i];
         }
 
         //sort by src idx
@@ -288,8 +287,8 @@ var setEdges = Q.promised(function(graph, edges) {
         var edgePermutationTyped = new Uint32Array(edgeList.length);
         var edgePermutationInverseTyped = new Uint32Array(edgeList.length);
         edgeList.forEach(function (edge, i) {
-            edgePermutationTyped[edge.original] = i;
-            edgePermutationInverseTyped[i] = edge.original;
+            edgePermutationTyped[edge[2]] = i;
+            edgePermutationInverseTyped[i] = edge[2];
         })
 
 
