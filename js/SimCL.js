@@ -982,34 +982,28 @@ function connectedEdges(simulator, nodeIndices) {
     var forwardsBuffers = simulator.bufferHostCopies.forwardsEdges;
     var backwardsBuffers = simulator.bufferHostCopies.backwardsEdges;
 
-    function getOutgoingEdges(buffers, nodeIdx) {
-        var workItemId = buffers.srcToWorkItem[nodeIdx];
-        var firstEdgeId = buffers.workItemsTyped[4*workItemId];
-        var numEdges = buffers.workItemsTyped[4*workItemId + 1];
-        var permutation = buffers.edgePermutationInverseTyped;
+    var setOfEdges = [];
+    var edgeHash = {};
 
-        return _.range(numEdges).map(function (offset) {
-            return permutation[firstEdgeId + offset];
+    var addOutgoingEdgesToSet = function (buffers, nodeIndices) {
+        _.each(nodeIndices, function (idx) {
+            var workItemId = buffers.srcToWorkItem[idx];
+            var firstEdgeId = buffers.workItemsTyped[4*workItemId];
+            var numEdges = buffers.workItemsTyped[4*workItemId + 1];
+            var permutation = buffers.edgePermutationInverseTyped;
+
+            for (var i = 0; i < numEdges; i++) {
+                var edge = permutation[firstEdgeId + i];
+                if (!edgeHash[edge]) {
+                    setOfEdges.push(edge);
+                    edgeHash[edge] = true;
+                }
+            }
         });
     }
 
-    var edgeIndices = nodeIndices.map(function (idx) {
-        return getOutgoingEdges(forwardsBuffers, idx)
-            .concat(getOutgoingEdges(backwardsBuffers, idx));
-    });
-
-
-    var flattenedEdgeIndices = _.flatten(edgeIndices, true);
-
-    // Compute setOfEdges = _.uniq(flattenedEdgeIndices) without underscore.
-    var setOfEdges = [];
-    var edgeHash = {};
-    _.each(flattenedEdgeIndices, function (edge) {
-        if (!edgeHash[edge]) {
-            setOfEdges.push(edge);
-            edgeHash[edge] = true;
-        }
-    });
+    addOutgoingEdgesToSet(forwardsBuffers, nodeIndices);
+    addOutgoingEdgesToSet(backwardsBuffers, nodeIndices);
 
     return setOfEdges;
 }
