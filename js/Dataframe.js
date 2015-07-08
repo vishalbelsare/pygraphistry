@@ -171,6 +171,12 @@ Dataframe.prototype.loadBuffer = function (name, type, buffer) {
 };
 
 
+Dataframe.prototype.writeBuffer = function (name, type, values) {
+    var buffer = this.rawdata.buffers[type][name];
+    return buffer.write(values);
+};
+
+
 /** Load in a host buffer object.
  *  @param {string} name - name of the buffer
  *  @param {Object} buffer - a raw OpenCL buffer object
