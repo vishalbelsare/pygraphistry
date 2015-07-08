@@ -200,10 +200,10 @@ function getPolynomialCurves(bufferSnapshots) {
         mem[8] = ((matrix[1] * matrix[4]) - (matrix[1] * matrix[4])) / det;
     }
 
-    var transformedDstPoint = [0, 0];
-    var transformedMidPoint = [0, 0];
-    var curveParameters = [0, 0, 0];
-    var yVector = [0, 0, 0];
+    var transformedDstPoint = new Float32Array(2);
+    var transformedMidPoint = new Float32Array(2);
+    var curveParameters = new Float32Array(3);
+    var yVector = new Float32Array(3);
     var invX = new Float32Array(9);
     function getCurveParameters(edge) {
         toEdgeBasisMem(edge.dstPoint, edge.transformationMatrix, edge.srcPoint, transformedDstPoint);
