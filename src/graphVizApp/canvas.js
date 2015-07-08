@@ -92,6 +92,8 @@ function setupBackgroundColor(renderingScheduler, bgColor) {
     }).subscribe(_.identity, util.makeErrorHandler('bg color updates'));
 }
 
+
+
 function getPolynomialCurves(bufferSnapshots) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var curMidPoints = new Float32Array(bufferSnapshots.curMidPoints.buffer);
@@ -114,122 +116,132 @@ function getPolynomialCurves(bufferSnapshots) {
     }
     var midSpringsPos = bufferSnapshots.midSpringsPos;
 
-    function ExpandedEdge(edgeIndex) {
+    var edge = {
+        srcPoint: [0, 0],
+        dstPoint: [0, 0],
+        midPoint: [0, 0],
+        length: null,
+        transformationMatrix: [[0,0], [0, 0]],
+        transformationMatrixInv: [[0, 0], [0, 0]]
+    };
+
+    Object.seal(edge);
+
+    function expandEdge(edge, edgeIndex) {
+
+        var srcPointIdx = logicalEdges[edgeIndex * 2];
+        var dstPointIdx = logicalEdges[(edgeIndex * 2) + 1];
+
+        edge.srcPoint = [curPoints[(2 * srcPointIdx)], curPoints[(2 * srcPointIdx)+ 1]];
+        edge.dstPoint = [curPoints[(2 * dstPointIdx)], curPoints[(2 * dstPointIdx) + 1]];
         var midEdgeIdx = 0;
-        var midPoint1X = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIdx * 2)];
-        var midPoint1Y = curMidPoints[(edgeIndex *  2 * (numSplits)) + (midEdgeIdx * 2) + 1];
+        edge.midPoint = [curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIdx * 2)],
+                        curMidPoints[(edgeIndex *  2 * (numSplits)) + (midEdgeIdx * 2) + 1]];
 
-        this.srcPointIdx = logicalEdges[edgeIndex * 2];
-        this.dstPointIdx = logicalEdges[(edgeIndex * 2) + 1];
+        var edgeVector = numeric.sub(edge.dstPoint, edge.srcPoint);
+        var xDir = Math.pow(edgeVector[0], 2);
+        var yDir = Math.pow(edgeVector[1], 2);
+        var length = Math.pow(xDir + yDir, 0.5);
 
-        var srcPointX = curPoints[(2 * this.srcPointIdx)];
-        var srcPointY = curPoints[(2 * this.srcPointIdx)+ 1];
-        this.srcPoint = [srcPointX, srcPointY];
-        var dstPointX = curPoints[(2 * this.dstPointIdx)];
-        var dstPointY = curPoints[(2 * this.dstPointIdx) + 1];
-        this.dstPoint = [dstPointX, dstPointY];
-        this.midPoint = [midPoint1X, midPoint1Y];
+        var theta = Math.atan2(edgeVector[1], edgeVector[0]);
 
-        this.edgeVector = numeric.sub(this.dstPoint, this.srcPoint);
-        var xDir = Math.pow(this.edgeVector[0], 2);
-        var yDir = Math.pow(this.edgeVector[1], 2);
-        this.length = Math.pow(xDir + yDir, 0.5);
-        this.direction = [this.edgeVector[0] / this.length, this.edgeVector[1]/ this.length];
+        var cos = Math.cos(theta);
+        var sin = Math.sin(theta);
 
-        this.theta = Math.atan2(this.edgeVector[1], this.edgeVector[0]);
+        edge.transformationMatrix[0][0] = cos;
+        edge.transformationMatrix[0][1] = sin;
+        edge.transformationMatrix[1][0] = -sin;
+        edge.transformationMatrix[1][1] = cos;
 
+        edge.transformationMatrixInv[0][0] = cos;
+        edge.transformationMatrixInv[0][1] = -sin;
+        edge.transformationMatrixInv[1][0] = sin;
+        edge.transformationMatrixInv[1][1] = cos;
 
-        this.transformationMatrix = [
-            [Math.cos(this.theta), Math.sin(this.theta)],
-            [-Math.sin(this.theta), Math.cos(this.theta)]
-        ];
-
-        this.transformationMatrixInv = numeric.transpose(this.transformationMatrix);
-
-        return this;
-
+        edge.length = length;
     }
 
-    ExpandedEdge.prototype.toEdgeBasis = function(vector) {
-        var test = numeric.sub(vector, this.srcPoint);
-        var matrix = numeric.dot(this.transformationMatrix, test);
-        return matrix.valueOf();
-    };
+    var diffVector = [0, 0];
+    function toEdgeBasisMem(vector, tranformationMatrix, srcPoint, output) {
+        diffVector[0] = vector[0] - srcPoint[0];
+        diffVector[1] = vector[1] - srcPoint[1];
+        output[0] = tranformationMatrix[0][0] * diffVector[0] + tranformationMatrix[0][1] * diffVector[1];
+        output[1] = tranformationMatrix[1][0] * diffVector[0] + tranformationMatrix[1][1] * diffVector[1];
+    }
 
-    ExpandedEdge.prototype.fromEdgeBasis = function(vector) {
-        //return math.multiply(this.transformationMatrixInv, vector).valueOf();
-        return numeric.dot(this.transformationMatrixInv, vector);
-    };
+    function fromEdgeBasisMem(vector, transformationMatrixInv, output) {
+        output[0] = transformationMatrixInv[0][0] * diffVector[0] + transformationMatrixInv[0][1] * diffVector[1];
+        output[1] = transformationMatrixInv[1][0] * diffVector[0] + transformationMatrixInv[1][1] * diffVector[1];
+    }
 
-    ExpandedEdge.prototype.getCurveParameters = function() {
-        var srcPoint,
-            dstPoint,
-            midPoint,
-            yVector,
-            xMatrix;
+    function fromEdgeBasis(vector, transformationMatrixInv) {
+        return numeric.dotMV(transformationMatrixInv, vector);
+    }
 
-        srcPoint = [0, 0];
-        dstPoint = this.toEdgeBasis(this.dstPoint);
-        midPoint = this.toEdgeBasis(this.midPoint);
-        yVector = [0, midPoint[1], dstPoint[1]];
-
-        xMatrix = [
-                this.getQuadratic(0),
-                this.getQuadratic(midPoint[0]),
-                this.getQuadratic(dstPoint[0])
-        ];
-        var epsilonMatrix = numeric.mul(numeric.identity(3), 0.0000000001);
-        var xMatrix2 = numeric.add(xMatrix, epsilonMatrix);
-        return numeric.dot(numeric.inv(xMatrix2), yVector);
-    };
-
-    ExpandedEdge.prototype.getQuadratic = function(x) {
+    function getQuadratic(x) {
         return [Math.pow(x, 2), x, 1];
-    };
+    }
 
-    ExpandedEdge.prototype.computePolynomial = function(x, betaVector) {
-        var xVector = this.getQuadratic(x);
-        return numeric.dot(betaVector, xVector);
-    };
+    var transformedDstPoint = [0, 0];
+    var transformedMidPoint = [0, 0];
 
-    ExpandedEdge.prototype.getMidPointPosition = function(betaVector, lambda) {
-        var x,
-            y,
-            result,
-            transformedVector;
-        x = lambda * this.length;
+    function getCurveParameters(edge) {
+        toEdgeBasisMem(edge.dstPoint, edge.transformationMatrix, edge.srcPoint, transformedDstPoint);
+        toEdgeBasisMem(edge.midPoint, edge.transformationMatrix, edge.srcPoint, transformedMidPoint);
 
-        y = this.computePolynomial(x, betaVector);
-        transformedVector = this.fromEdgeBasis([x, y]);
+        //return numeric.solve([
+                            //getQuadratic(0),
+                            //getQuadratic(midPoint[0]),
+                            //getQuadratic(dstPoint[0])
+                        //], [0, midPoint[1], dstPoint[1]]);
+        return numeric.dotMV(
+                        numeric.inv([
+                            [0, 0, 1],
+                            getQuadratic(transformedMidPoint[0]),
+                            getQuadratic(transformedDstPoint[0])
+                        ]),
+                        [0, transformedMidPoint[1], transformedDstPoint[1]]);
+    }
 
-        result = numeric.add(this.srcPoint, transformedVector);
+    function computePolynomial(x, betaVector) {
+        return numeric.dotVV(getQuadratic(x), betaVector);
+    }
 
-        return result;
-
-    };
+    function getMidPointPosition(edge, betaVector, lambda) {
+        var x;
+        x = lambda * edge.length;
+        return numeric.add(edge.srcPoint,
+                             fromEdgeBasis([x, computePolynomial(x, betaVector)],
+                                           edge.transformationMatrixInv));
+    }
 
     function setMidEdge(edgeIdx, midEdgeIdx, srcPoint, dstPoint) {
+        var index = midEdgeStartIdx + (midEdgeIdx * 4);
+        midSpringsPos[index] = srcPoint[0];
+        midSpringsPos[index + 1] = srcPoint[1];
+        midSpringsPos[index + 2] = dstPoint[0];
+        midSpringsPos[index + 3] = dstPoint[1];
+    }
+
+
+    for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
         var elementsPerPoint = 2;
         var pointsPerEdge = 2;
         var midEdgesPerEdge = numRenderedSplits + 1;
         var midEdgeStride = elementsPerPoint * pointsPerEdge * midEdgesPerEdge;
         var midEdgeStartIdx = edgeIndex * midEdgeStride;
-        midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4)] = srcPoint[0];
-        midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 1] = srcPoint[1];
-        midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 2] = dstPoint[0];
-        midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 3] = dstPoint[1];
-    }
 
-    for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
-        var edge = new ExpandedEdge(edgeIndex);
-        var curveParameters = edge.getCurveParameters();
-        var srcPoint = edge.getMidPointPosition(curveParameters, 0);
-        for (var midEdgeIdx = 0; midEdgeIdx < (numRenderedSplits + 1); midEdgeIdx++) {
+        expandEdge(edge, edgeIndex);
+
+        var curveParameters = getCurveParameters(edge);
+        var srcPoint = edge.srcPoint;
+        for (var midEdgeIdx = 0; midEdgeIdx < (numRenderedSplits); midEdgeIdx++) {
             var lambda = (midEdgeIdx + 1) / (numRenderedSplits + 1);
-            var dstPoint = edge.getMidPointPosition(curveParameters, lambda);
+            var dstPoint = getMidPointPosition(edge, curveParameters, lambda);
             setMidEdge(edgeIndex, midEdgeIdx, srcPoint, dstPoint);
             srcPoint = dstPoint;
         }
+        setMidEdge(edgeIndex, numRenderedSplits, srcPoint, edge.dstPoint);
     }
     return midSpringsPos;
 }
