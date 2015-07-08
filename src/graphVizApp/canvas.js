@@ -10,7 +10,6 @@ var interaction     = require('./interaction.js');
 var util            = require('./util.js');
 var labels          = require('./labels.js');
 var renderer        = require('../renderer');
-var numeric = require('numeric');
 
 
 function setupCameraInteractions(appState, $eventTarget) {
@@ -179,24 +178,45 @@ function getPolynomialCurves(bufferSnapshots) {
         return [Math.pow(x, 2), x, 1];
     }
 
+    function inverseMem(matrix, mem) {
+        var det = matrix[0] * ((matrix[4] * matrix[8]) - (matrix[5] * matrix[7])) -
+            matrix[1] * ((matrix[3] * matrix[8]) - (matrix[5] * matrix[6])) +
+            matrix[2] * ((matrix[3] * matrix[7]) - (matrix[4] * matrix[6]));
+        // First row
+        mem[0] = ((matrix[4] * matrix[8]) - (matrix[5] * matrix[7])) / det;
+        mem[1] = ((matrix[2] * matrix[7]) - (matrix[1] * matrix[8])) / det;
+        mem[2] = ((matrix[1] * matrix[5]) - (matrix[2] * matrix[4])) / det;
+
+        // Second Row
+        mem[3] = ((matrix[5] * matrix[6]) - (matrix[3] * matrix[8])) / det;
+        mem[4] = ((matrix[1] * matrix[8]) - (matrix[2] * matrix[6])) / det;
+        mem[5] = ((matrix[2] * matrix[3]) - (matrix[1] * matrix[5])) / det;
+
+        // Third Row
+        mem[6] = ((matrix[3] * matrix[7]) - (matrix[4] * matrix[6])) / det;
+        mem[7] = ((matrix[1] * matrix[6]) - (matrix[1] * matrix[7])) / det;
+        mem[8] = ((matrix[1] * matrix[4]) - (matrix[1] * matrix[4])) / det;
+    }
+
     var transformedDstPoint = [0, 0];
     var transformedMidPoint = [0, 0];
     var curveParameters = [0, 0, 0];
     var yVector = [0, 0, 0];
+    var invX = new Float32Array(9);
     function getCurveParameters(edge) {
         toEdgeBasisMem(edge.dstPoint, edge.transformationMatrix, edge.srcPoint, transformedDstPoint);
         toEdgeBasisMem(edge.midPoint, edge.transformationMatrix, edge.srcPoint, transformedMidPoint);
         yVector[0] = 0;
         yVector[1] = transformedMidPoint[1];
         yVector[2] = transformedDstPoint[1];
-        var invXVector = numeric.inv([
-                            [0, 0, 1],
-                            getQuadratic(transformedMidPoint[0]),
-                            getQuadratic(transformedDstPoint[0])
-                        ]);
-        curveParameters[0] = (invXVector[0][0] * yVector[0]) + (invXVector[0][1] * yVector[1]) + (invXVector[0][2] * yVector[2]);
-        curveParameters[1] = (invXVector[1][0] * yVector[0]) + (invXVector[1][1] * yVector[1]) + (invXVector[1][2] * yVector[2]);
-        curveParameters[2] = (invXVector[2][0] * yVector[0]) + (invXVector[2][1] * yVector[1]) + (invXVector[2][2] * yVector[2]);
+        var xVector = [0, 0, 1,
+                       Math.pow(transformedMidPoint[0], 2), transformedMidPoint[0], 1,
+                       Math.pow(transformedDstPoint[0], 2), transformedDstPoint[0], 1];
+
+        inverseMem(xVector, invX);
+        curveParameters[0] = (invX[0] * yVector[0]) + (invX[1] * yVector[1]) + (invX[2] * yVector[2]);
+        curveParameters[1] = (invX[3] * yVector[0]) + (invX[4] * yVector[1]) + (invX[5] * yVector[2]);
+        curveParameters[2] = (invX[6] * yVector[0]) + (invX[7] * yVector[1]) + (invX[8] * yVector[2]);
     }
 
     function computePolynomial(x, betaVector) {
