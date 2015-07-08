@@ -119,8 +119,8 @@ function getPolynomialCurves(bufferSnapshots) {
         dstPoint: new Float32Array(2),
         midPoint: new Float32Array(2),
         length: null,
-        transformationMatrix: [new Float32Array(2), new Float32Array(2)],
-        transformationMatrixInv: [new Float32Array(2), new Float32Array(2)]
+        transformationMatrix: new Float32Array(4),
+        transformationMatrixInv: new Float32Array(4),
     };
 
     Object.seal(edge);
@@ -136,45 +136,44 @@ function getPolynomialCurves(bufferSnapshots) {
         edge.midPoint = [curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIdx * 2)],
                         curMidPoints[(edgeIndex *  2 * (numSplits)) + (midEdgeIdx * 2) + 1]];
 
-        var edgeVector = numeric.sub(edge.dstPoint, edge.srcPoint);
-        var xDir = Math.pow(edgeVector[0], 2);
-        var yDir = Math.pow(edgeVector[1], 2);
-        var length = Math.pow(xDir + yDir, 0.5);
+        var edgeVector = new Float32Array(2);
+        edgeVector[0] = edge.dstPoint[0] - edge.srcPoint[0];
+        edgeVector[1] = edge.dstPoint[1] - edge.srcPoint[1];
+
+        edge.length = Math.pow(Math.pow(edgeVector[0], 2) + Math.pow(edgeVector[1], 2), 0.5);
 
         var theta = Math.atan2(edgeVector[1], edgeVector[0]);
 
         var cos = Math.cos(theta);
         var sin = Math.sin(theta);
 
-        edge.transformationMatrix[0][0] = cos;
-        edge.transformationMatrix[0][1] = sin;
-        edge.transformationMatrix[1][0] = -sin;
-        edge.transformationMatrix[1][1] = cos;
+        edge.transformationMatrix[0] = cos;
+        edge.transformationMatrix[1] = sin;
+        edge.transformationMatrix[2] = -sin;
+        edge.transformationMatrix[3] = cos;
 
-        edge.transformationMatrixInv[0][0] = cos;
-        edge.transformationMatrixInv[0][1] = -sin;
-        edge.transformationMatrixInv[1][0] = sin;
-        edge.transformationMatrixInv[1][1] = cos;
-
-        edge.length = length;
+        edge.transformationMatrixInv[0] = cos;
+        edge.transformationMatrixInv[1] = -sin;
+        edge.transformationMatrixInv[2] = sin;
+        edge.transformationMatrixInv[3] = cos;
     }
 
     var diffVector = [0, 0];
     function toEdgeBasisMem(vector, tranformationMatrix, srcPoint, output) {
         diffVector[0] = vector[0] - srcPoint[0];
         diffVector[1] = vector[1] - srcPoint[1];
-        output[0] = tranformationMatrix[0][0] * diffVector[0] + tranformationMatrix[0][1] * diffVector[1];
-        output[1] = tranformationMatrix[1][0] * diffVector[0] + tranformationMatrix[1][1] * diffVector[1];
+        output[0] = tranformationMatrix[0] * diffVector[0] + tranformationMatrix[1] * diffVector[1];
+        output[1] = tranformationMatrix[2] * diffVector[0] + tranformationMatrix[3] * diffVector[1];
     }
 
-    function fromEdgeBasisMem(vector, transformationMatrixInv, output) {
-        output[0] = transformationMatrixInv[0][0] * vector[0] + transformationMatrixInv[0][1] * vector[1];
-        output[1] = transformationMatrixInv[1][0] * vector[0] + transformationMatrixInv[1][1] * vector[1];
+    function fromEdgeBasisMem(vector, transformationMatrixInv, srcPoint, output) {
+        output[0] = srcPoint[0] + (transformationMatrixInv[0] * vector[0] + transformationMatrixInv[1] * vector[1]);
+        output[1] = srcPoint[1] + (transformationMatrixInv[2] * vector[0] + transformationMatrixInv[3] * vector[1]);
     }
 
-    function fromEdgeBasis(vector, transformationMatrixInv) {
-        return numeric.dotMV(transformationMatrixInv, vector);
-    }
+    //function fromEdgeBasis(vector, transformationMatrixInv) {
+        //return numeric.dotMV(transformationMatrixInv, vector);
+    //}
 
     function getQuadratic(x) {
         return [Math.pow(x, 2), x, 1];
@@ -210,8 +209,8 @@ function getPolynomialCurves(bufferSnapshots) {
         var x;
         x = lambda * edge.length;
         var vector = [x, computePolynomial(x, betaVector)];
-        fromEdgeBasisMem(vector, edge.transformationMatrixInv, midPointMem);
-        return numeric.add(edge.srcPoint, midPointMem);
+        fromEdgeBasisMem(vector, edge.transformationMatrixInv, edge.srcPoint, midPointMem);
+        //return midPointMem.slice();
     }
 
     function setMidEdge(edgeIdx, midEdgeIdx, srcPoint, dstPoint) {
@@ -223,23 +222,31 @@ function getPolynomialCurves(bufferSnapshots) {
     }
 
 
+    var srcPoint = new Float32Array(2);
+    var elementsPerPoint = 2;
+    var pointsPerEdge = 2;
+    var midEdgesPerEdge = numRenderedSplits + 1;
+    var midEdgeStride = elementsPerPoint * pointsPerEdge * midEdgesPerEdge;
     for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
-        var elementsPerPoint = 2;
-        var pointsPerEdge = 2;
-        var midEdgesPerEdge = numRenderedSplits + 1;
-        var midEdgeStride = elementsPerPoint * pointsPerEdge * midEdgesPerEdge;
+
         var midEdgeStartIdx = edgeIndex * midEdgeStride;
-
         expandEdge(edge, edgeIndex);
-
         getCurveParameters(edge);
-        var srcPoint = edge.srcPoint;
+
+        // Set first midpoint to source point of edge
+        srcPoint[0] = edge.srcPoint[0];
+        srcPoint[1] = edge.srcPoint[1];
+
         for (var midEdgeIdx = 0; midEdgeIdx < (numRenderedSplits); midEdgeIdx++) {
             var lambda = (midEdgeIdx + 1) / (numRenderedSplits + 1);
-            var dstPoint = getMidPointPosition(edge, curveParameters, lambda);
-            setMidEdge(edgeIndex, midEdgeIdx, srcPoint, dstPoint);
-            srcPoint = dstPoint;
+            getMidPointPosition(edge, curveParameters, lambda);
+            //var dstPoint = midPointMem.slice();
+            setMidEdge(edgeIndex, midEdgeIdx, srcPoint, midPointMem);
+            srcPoint[0] = midPointMem[0];
+            srcPoint[1] = midPointMem[1];
         }
+
+        // Set last midedge position to previous midpoint and edge destination
         setMidEdge(edgeIndex, numRenderedSplits, srcPoint, edge.dstPoint);
     }
     return midSpringsPos;
