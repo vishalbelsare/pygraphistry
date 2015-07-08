@@ -46,8 +46,8 @@ var edgeKernelSeq = function (clContext) {
         var resources = [edges, workItems, points, partialForces, outputForces];
 
         simulator.tickBuffers(
-                _.keys(simulator.buffers).filter(function (name) {
-                    return simulator.buffers[name] == outputForces;
+                simulator.dataframe.getBufferKeys('simulator').filter(function (name) {
+                    return simulator.getBuffer(name, 'simulator') == outputForces;
                 })
                 );
 

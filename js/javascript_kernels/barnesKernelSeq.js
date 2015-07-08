@@ -146,7 +146,7 @@ var BarnesKernelSeq = function (clContext) {
         var blocks = 8; //TODO (paden) should be set to multiprocecessor count
 
         if (numPoints === undefined) {
-          numPoints = simulator.numPoints;
+            numPoints = simulator.dataframe.getNumElements('point');
         }
         var num_nodes = numPoints * 5;
         if (num_nodes < 1024*blocks) num_nodes = 1024*blocks;
@@ -216,9 +216,9 @@ var BarnesKernelSeq = function (clContext) {
         that.toBarnesLayout.set({xCoords: tempBuffers.x_cords.buffer,
           yCoords:tempBuffers.y_cords.buffer, mass:tempBuffers.mass.buffer,
                             blocked:tempBuffers.blocked.buffer, maxDepth:tempBuffers.maxdepth.buffer,
-                            numPoints:simulator.numPoints,
-                            inputPositions: simulator.buffers.curPoints.buffer,
-                            pointDegrees: simulator.buffers.degrees.buffer,
+                            numPoints:simulator.dataframe.getNumElements('point'),
+                            inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
+                            pointDegrees: simulator.dataframe.getBuffer('degrees', 'simulator').buffer,
                             WARPSIZE: warpsize, THREADS_SUMS: workItems.computeSums[1], THREADS_FORCES: workItems.calculateForces[1],
                             THREADS_BOUND: workItems.boundBox[1]});
 
@@ -235,8 +235,8 @@ var BarnesKernelSeq = function (clContext) {
                 globalXMax:buffers.xmax.buffer,
                 globalYMin:buffers.ymin.buffer,
                 globalYMax:buffers.ymax.buffer,
-                swings:simulator.buffers.swings.buffer,
-                tractions:simulator.buffers.tractions.buffer,
+                swings:simulator.dataframe.getBuffer('swings', 'simulator').buffer,
+                tractions: simulator.dataframe.getBuffer('tractions', 'simulator').buffer,
                 count:buffers.count.buffer,
                 blocked:buffers.blocked.buffer,
                 bottom:buffers.bottom.buffer,
@@ -248,7 +248,7 @@ var BarnesKernelSeq = function (clContext) {
                 height:simulator.controls.global.dimensions[1],
                 numBodies:buffers.numBodies,
                 numNodes:buffers.numNodes,
-                pointForces:simulator.buffers.partialForces1.buffer,
+                pointForces: simulator.dataframe.getBuffer('partialForces1', 'simulator').buffer,
                 WARPSIZE:warpsize,
                 THREADS_SUMS: workItems.computeSums[1],
                 THREADS_FORCES: workItems.calculateForces[1],
@@ -270,10 +270,10 @@ var BarnesKernelSeq = function (clContext) {
     this.execKernelsMidPoints = function(simulator, stepNumber, workItems) {
 
         var resources = [
-            simulator.buffers.curMidPoints,
-            simulator.buffers.forwardsDegrees,
-            simulator.buffers.backwardsDegrees,
-                simulator.buffers.partialForces1
+            simulator.dataframe.getBuffer('curMidPoints', 'simulator'),
+            simulator.dataframe.getBuffer('forwardsDegrees', 'simulator'),
+            simulator.dataframe.getBuffer('backwardsDegrees', 'simulator'),
+            simulator.dataframe.getBuffer('partialForces1', 'simulator')
         ];
 
         this.toBarnesLayout.set({stepNumber: stepNumber});
@@ -316,10 +316,10 @@ var BarnesKernelSeq = function (clContext) {
     this.execKernels = function(simulator, stepNumber, workItems) {
 
         var resources = [
-            simulator.buffers.curPoints,
-            simulator.buffers.forwardsDegrees,
-            simulator.buffers.backwardsDegrees,
-                simulator.buffers.partialForces1
+            simulator.dataframe.getBuffer('curPoints', 'simulator'),
+            simulator.dataframe.getBuffer('forwardsDegrees', 'simulator'),
+            simulator.dataframe.getBuffer('backwardsDegrees', 'simulator'),
+            simulator.dataframe.getBuffer('partialForces1', 'simulator')
         ];
 
         this.toBarnesLayout.set({stepNumber: stepNumber});

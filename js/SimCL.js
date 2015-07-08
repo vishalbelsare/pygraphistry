@@ -171,6 +171,8 @@ function create(dataframe, renderer, device, vendor, cfg) {
 
             dataframe.setNumElements('point', renderer.numPoints);
             dataframe.setNumElements('edge', renderer.numEdges);
+            dataframe.setNumElements('splits', controls.global.numSplits);
+            dataframe.setNumElements('renderedSplits', controls.global.numRenderedSplits);
 
             Object.seal(simObj.buffers);
             Object.seal(simObj);
@@ -559,6 +561,7 @@ function setMidEdges( simulator ) {
     simulator.numMidPoints = numMidPoints;
     simulator.dataframe.setNumElements('midPoints', numMidPoints);
 
+    var numMidEdges = ( simulator.numRenderedSplits + 1 ) * simulator.dataframe.getNumElements('edge');
     simulator.numMidEdges = ( simulator.numRenderedSplits + 1 ) * simulator.numEdges;
     simulator.dataframe.setNumElements('midEdges', numMidEdges);
     simulator.dataframe.setNumElements('numRenderedSplits', simulator.numRenderedSplits);

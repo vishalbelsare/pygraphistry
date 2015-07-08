@@ -242,13 +242,50 @@ Dataframe.prototype.setNumElements = function (type, num) {
 // Data Access
 //////////////////////////////////////////////////////////////////////////////
 
+Dataframe.prototype.getBufferKeys = function (type) {
+    return _.sortBy(
+        _.keys(this.data.buffers[type]),
+        _.identity
+    );
+};
+
+Dataframe.prototype.getNumElements = function (type) {
+    var res = this.data.numElements[type];
+    if (!res && res !== 0) {
+        throw "Invalid Num Elements";
+    }
+    return res;
+};
+
+
+Dataframe.prototype.getLocalBuffer = function (name) {
+    var res = this.data.localBuffers[name];
+    if (!res) {
+        throw "Invalid Local Buffer";
+    }
+    return res;
+};
+
+Dataframe.prototype.getHostBuffer = function (name) {
+    var res = this.data.hostBuffers[name];
+    if (!res) {
+        throw "Invalid Host Buffer";
+    }
+    return res;
+};
+
+
 /** Returns an OpenCL buffer object.
  *  @param {string} name - name of the buffer
  *  @param {string} type - any of [TYPES]{@link TYPES}.
  */
 Dataframe.prototype.getBuffer = function (name, type) {
     var buffers = this.data.buffers[type];
-    return buffers[name];
+    var res = buffers[name];
+    if (!res) {
+        throw "Invalid Buffer";
+    }
+    return res;
 };
 
 

@@ -236,14 +236,14 @@ var EbBarnesKernelSeq = function (clContext) {
         edgeDirectionX: tempBuffers.edgeDirectionX.buffer,
         edgeDirectionY: tempBuffers.edgeDirectionY.buffer,
         edgeLength: tempBuffers.edgeLength.buffer,
-        springs: simulator.buffers.forwardsEdges.buffer,
+        springs: simulator.dataframe.getBuffer('forwardsEdges', 'simulator').buffer,
         mass:tempBuffers.mass.buffer,
         blocked:tempBuffers.blocked.buffer,
         maxDepth:tempBuffers.maxdepth.buffer,
-        numPoints:simulator.numEdges,
-        inputMidPositions: simulator.buffers.curMidPoints.buffer,
-        inputPositions: simulator.buffers.curPoints.buffer,
-        pointDegrees: simulator.buffers.degrees.buffer,
+        numPoints: simulator.dataframe.getNumElements('edge'),
+        inputMidPositions: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
+        inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
+        pointDegrees: simulator.dataframe.getBuffer('degrees', 'simulator').buffer,
         WARPSIZE: warpsize,
         THREADS_SUMS: workItems.computeSums[1],
         THREADS_FORCES: workItems.calculateForces[1],
@@ -333,18 +333,19 @@ var EbBarnesKernelSeq = function (clContext) {
   this.execKernels = function(simulator, stepNumber, workItems, midpoint_index) {
 
     var resources = [
-      simulator.buffers.curMidPoints,
-      simulator.buffers.forwardsDegrees,
-      simulator.buffers.backwardsDegrees,
-        simulator.buffers.nextMidPoints
+
+      simulator.dataframe.getBuffer('curMidPoints', 'simulator'),
+      simulator.dataframe.getBuffer('forwardsDegrees', 'simulator'),
+      simulator.dataframe.getBuffer('backwardsDegrees', 'simulator'),
+      simulator.dataframe.getBuffer('nextMidPoints', 'simulator')
     ];
 
-    this.toBarnesLayout.set({stepNumber: stepNumber, midpoint_stride: midpoint_index, midpoints_per_edge: simulator.numSplits});
+    this.toBarnesLayout.set({stepNumber: stepNumber, midpoint_stride: midpoint_index, midpoints_per_edge: simulator.dataframe.getNumElements('splits')});
     this.boundBox.set({stepNumber: stepNumber});
     this.buildTree.set({stepNumber: stepNumber});
     this.computeSums.set({stepNumber: stepNumber});
     this.sort.set({stepNumber: stepNumber});
-    this.calculateMidPoints.set({stepNumber: stepNumber, midpoint_stride: midpoint_index, midpoints_per_edge:simulator.numSplits});
+    this.calculateMidPoints.set({stepNumber: stepNumber, midpoint_stride: midpoint_index, midpoints_per_edge:simulator.dataframe.getNumElements('splits')});
 
     simulator.tickBuffers(['nextMidPoints']);
 

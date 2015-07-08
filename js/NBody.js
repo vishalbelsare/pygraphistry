@@ -105,6 +105,7 @@ function updateSettings(graph, newCfg) {
             if (newCfg.simControls.EdgeBundling.hasOwnProperty('midpoints')) {
                 graph.simulator.controls.locks.interpolateMidPointsOnce = true;
                 graph.simulator.controls.global.numSplits = cfg.EdgeBundling.midpoints;
+                graph.dataframe.setNumElements('splits', cfg.EdgeBundling.midpoints);
                 graph.simulator.numSplits = cfg.EdgeBundling.midpoints;
                 return graph.simulator.setMidEdges();
             }

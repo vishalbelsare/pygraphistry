@@ -41,15 +41,19 @@ var edgeKernelSeqFast = function (clContext) {
     }
 
     this.setEdges = function(simulator, layoutBuffers) {
-      var forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
-      var backwardsEdges = simulator.bufferHostCopies.backwardsEdges;
+
+      var forwardsEdges = simulator.dataframe.getHostBuffer('forwardsEdges');
+      var backwardsEdges = simulator.dataframe.getHostBuffer('backwardsEdges');
+      var numEdges = simulator.dataframe.getNumElements('edge');
+      var numPoints = simulator.dataframe.getNumElements('point');
+
       var that = this;
         return Q.all([
             simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'outputEdgeForcesMap'),
-            simulator.cl.createBuffer(1 + Math.ceil(simulator.numEdges / 256), 'globalCarryIn'),
+            simulator.cl.createBuffer(1 + Math.ceil(numEdges / 256), 'globalCarryIn'),
             simulator.cl.createBuffer(forwardsEdges.edgeStartEndIdxsTyped.byteLength, 'forwardsEdgeStartEndIdxs'),
             simulator.cl.createBuffer(backwardsEdges.edgeStartEndIdxsTyped.byteLength, 'backwardsEdgeStartEndIdxs'),
-            simulator.cl.createBuffer((simulator.numPoints * Float32Array.BYTES_PER_ELEMENT) / 2, 'segStart')])
+            simulator.cl.createBuffer((numPoints * Float32Array.BYTES_PER_ELEMENT) / 2, 'segStart')])
     .spread(function(outputEdgeForcesMap, globalCarryOut, forwardsEdgeStartEndIdxs, backwardsEdgeStartEndIdxs,
                      segStart) {
         // Bind buffers
@@ -68,35 +72,40 @@ var edgeKernelSeqFast = function (clContext) {
     this.execKernels = function(simulator, forwardsEdges, forwardsWorkItems, numForwardsWorkItems,
                                 backwardsEdges, backwardsWorkItems, numBackwardsWorkItems, points,
                                 stepNumber, workItemsSize) {
-      var buffers = simulator.buffers;
       var that = this;
       return this.edgeForcesOneWay(simulator, forwardsEdges, forwardsWorkItems, numForwardsWorkItems,
-          buffers.curPoints, stepNumber, buffers.partialForces1, buffers.partialForces2, buffers.forwardsEdgeStartEndIdxs, workItemsSize)
+          simulator.dataframe.getBuffer('curPoints', 'simulator'), stepNumber, simulator.dataframe.getBuffer('partialForces1', 'simulator'),
+          simulator.dataframe.getBuffer('partialForces2', 'simulator'), simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator'), workItemsSize)
         .then(function () {
           return that.edgeForcesOneWay(simulator, backwardsEdges, backwardsWorkItems, numBackwardsWorkItems,
-              buffers.curPoints, stepNumber, buffers.partialForces2, buffers.curForces, buffers.backwardsEdgeStartEndIdxs, workItemsSize);
+              simulator.dataframe.getBuffer('curPoints', 'simulator'), stepNumber, simulator.dataframe.getBuffer('partialForces2', 'simulator'),
+              simulator.dataframe.getBuffer('curForces', 'simulator'), simulator.dataframe.getBuffer('backwardsEdgeStartEndIdxs', 'simulator'), workItemsSize);
         });
         }
 
 
     this.edgeForcesOneWay = function(simulator, edges, workItems, numWorkItems,
         points, stepNumber, partialForces, outputForces, startEnd, workItemsSize) {
+
+      var numEdges = simulator.dataframe.getNumElements('edge');
+      var numPoints = simulator.dataframe.getNumElements('point');
+
       this.mapEdges.set({
-        numEdges: simulator.numEdges,
+        numEdges: numEdges,
         edges: edges.buffer,
         workList: workItems.buffer,
         inputPoints: points.buffer,
         stepNumber: stepNumber,
         numWorkItems: numWorkItems,
-        edgeWeights: simulator.buffers.edgeWeights.buffer,
-        outputForcesMap: simulator.buffers.outputEdgeForcesMap.buffer
+        edgeWeights: simulator.dataframe.getBuffer('edgeWeights', 'simulator').buffer,
+        outputForcesMap: simulator.dataframe.getBuffer('outputEdgeForcesMap', 'simulator').buffer
       });
 
       var resources = [edges, workItems, points, partialForces, outputForces];
 
       simulator.tickBuffers(
-          _.keys(simulator.buffers).filter(function (name) {
-            return simulator.buffers[name] == outputForces;
+          simulator.dataframe.getBufferKeys('simulator').filter(function (name) {
+            return simulator.dataframe.getBuffer(name, 'simulator') == outputForces;
           })
           );
 
@@ -105,14 +114,14 @@ var edgeKernelSeqFast = function (clContext) {
       return this.mapEdges.exec([workItemsSize.edgeForces[0]], resources, [workItemsSize.edgeForces[1]]).then(function () {
         that.segReduce.set({
           edgeStartEndIdxs: startEnd.buffer,
-          input: simulator.buffers.outputEdgeForcesMap.buffer,
-          segStart: simulator.buffers.segStart.buffer,
-          numInput:simulator.numEdges,
-          numOutput:simulator.numPoints,
+          input: simulator.dataframe.getBuffer('outputEdgeForcesMap', 'simulator').buffer,
+          segStart: simulator.dataframe.getBuffer('segStart', 'simulator').buffer,
+          numInput: numEdges,
+          numOutput: numPoints,
           workList: workItems.buffer,
           output: outputForces.buffer,
           partialForces:partialForces.buffer,
-          carryOutGlobal: simulator.buffers.globalCarryOut.buffer
+          carryOutGlobal: simulator.dataframe.getBuffer('globalCarryOut', 'simulator').buffer
         })
 
         return that.segReduce.exec([workItemsSize.segReduce[0]], resources, [workItemsSize.segReduce[1]]);
