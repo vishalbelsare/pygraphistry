@@ -226,12 +226,11 @@ function getPolynomialCurves(bufferSnapshots) {
         return (quadratic[0] * betaVector[0]) + (quadratic[1] * betaVector[1]) + (quadratic[2] * betaVector[2]);
     }
 
-    var midPointMem = [0, 0];
     function getMidPointPosition(edge, betaVector, lambda) {
         var x;
         x = lambda * edge.length;
         var vector = [x, computePolynomial(x, betaVector)];
-        fromEdgeBasisMem(vector, edge.transformationMatrixInv, edge.srcPoint, midPointMem);
+        fromEdgeBasisMem(vector, edge.transformationMatrixInv, edge.srcPoint, dstMidPoint);
         //return midPointMem.slice();
     }
 
@@ -244,7 +243,8 @@ function getPolynomialCurves(bufferSnapshots) {
     }
 
 
-    var srcPoint = new Float32Array(2);
+    var srcMidPoint = new Float32Array(2);
+    var dstMidPoint = new Float32Array(2);
     var elementsPerPoint = 2;
     var pointsPerEdge = 2;
     var midEdgesPerEdge = numRenderedSplits + 1;
@@ -256,20 +256,20 @@ function getPolynomialCurves(bufferSnapshots) {
         getCurveParameters(edge);
 
         // Set first midpoint to source point of edge
-        srcPoint[0] = edge.srcPoint[0];
-        srcPoint[1] = edge.srcPoint[1];
+        srcMidPoint[0] = edge.srcPoint[0];
+        srcMidPoint[1] = edge.srcPoint[1];
 
         for (var midEdgeIdx = 0; midEdgeIdx < (numRenderedSplits); midEdgeIdx++) {
             var lambda = (midEdgeIdx + 1) / (numRenderedSplits + 1);
             getMidPointPosition(edge, curveParameters, lambda);
             //var dstPoint = midPointMem.slice();
-            setMidEdge(edgeIndex, midEdgeIdx, srcPoint, midPointMem);
-            srcPoint[0] = midPointMem[0];
-            srcPoint[1] = midPointMem[1];
+            setMidEdge(edgeIndex, midEdgeIdx, srcMidPoint, dstMidPoint);
+            srcMidPoint[0] = dstMidPoint[0];
+            srcMidPoint[1] = dstMidPoint[1];
         }
 
         // Set last midedge position to previous midpoint and edge destination
-        setMidEdge(edgeIndex, numRenderedSplits, srcPoint, edge.dstPoint);
+        setMidEdge(edgeIndex, numRenderedSplits, srcMidPoint, edge.dstPoint);
     }
 
     return midSpringsPos;
