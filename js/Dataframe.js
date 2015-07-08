@@ -5,7 +5,7 @@ var dateFormat = require('dateformat');
 var fs = require('fs');
 
 var baseDirPath = __dirname + '/../assets/dataframe/';
-var TYPES = ['point', 'edge'];
+var TYPES = ['point', 'edge', 'simulator'];
 
 var Dataframe = function () {
     // We keep a copy of the original data, plus a filtered view
@@ -19,7 +19,27 @@ var Dataframe = function () {
             point: {},
             edge: {}
         },
-        buffers: {},
+        buffers: {
+            point: {},
+            edge: {},
+            simulator: {}
+        },
+        labels: {
+
+        },
+        // TODO: Can we deal with this more naturally?
+        hostBuffers: {
+
+        },
+        localBuffers: {
+
+        },
+        rendererBuffers: {
+
+        },
+        graphData: {
+
+        },
         numElements: {}
     };
     this.data = this.rawdata;
@@ -142,12 +162,74 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
 
 /** Load in a raw OpenCL buffer object.
  *  @param {string} name - name of the buffer
+ *  @param {string} type - any of [TYPES]{@link TYPES}.
  *  @param {Object} buffer - a raw OpenCL buffer object
  */
 Dataframe.prototype.loadBuffer = function (name, type, buffer) {
-
+    var buffers = this.rawdata.buffers[type];
+    buffers[name] = buffer;
 };
 
+
+/** Load in a host buffer object.
+ *  @param {string} name - name of the buffer
+ *  @param {Object} buffer - a raw OpenCL buffer object
+ */
+Dataframe.prototype.loadHostBuffer = function (name, buffer) {
+    var hostBuffers = this.rawdata.hostBuffers;
+    hostBuffers[name] = buffer;
+};
+
+
+Dataframe.prototype.loadLocalBuffer = function (name, buffer) {
+    var localBuffers = this.rawdata.localBuffers;
+    localBuffers[name] = buffer;
+};
+
+
+Dataframe.prototype.setLocalBufferValue = function (name, idx, value) {
+    var localBuffers = this.rawdata.localBuffers;
+    localBuffers[name][idx] = value;
+};
+
+
+Dataframe.prototype.loadRendererBuffer = function (name, buffer) {
+    var rendererBuffers = this.rawdata.rendererBuffers;
+    rendererBuffers[name] = buffer;
+};
+
+
+Dataframe.prototype.setHostBufferValue = function (name, idx, value) {
+    var hostBuffers = this.rawdata.hostBuffers;
+    hostBuffers[name][idx] = value;
+};
+
+
+Dataframe.prototype.loadGraphData = function (name, edges) {
+    this.rawdata.graphData[name] = edges;
+};
+
+
+Dataframe.prototype.loadLabels = function (type, labels) {
+    this.rawdata.labels[type] = labels;
+};
+
+
+Dataframe.prototype.deleteBuffer = function (name) {
+    var that = this;
+    _.each(TYPES, function (type) {
+        _.each(_.keys(that.rawdata.buffers[type]), function (key) {
+            if (key === name) {
+                that.rawdata.buffers[type][key].delete();
+                that.rawdata.buffers[type][key] = null;
+            }
+        });
+    });
+};
+
+Dataframe.prototype.setNumElements = function (type, num) {
+    this.rawdata.numElements[type] = num;
+};
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -156,9 +238,11 @@ Dataframe.prototype.loadBuffer = function (name, type, buffer) {
 
 /** Returns an OpenCL buffer object.
  *  @param {string} name - name of the buffer
+ *  @param {string} type - any of [TYPES]{@link TYPES}.
  */
 Dataframe.prototype.getBuffer = function (name, type) {
-
+    var buffers = this.data.buffers[type];
+    return buffers[name];
 };
 
 

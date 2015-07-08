@@ -225,6 +225,7 @@ function setVertices(graph, points) {
     }
 
     graph.__pointsHostBuffer = points;
+    graph.dataframe.loadHostBuffer('points', points);
 
     graph.stepNumber = 0;
     return graph.simulator.setPoints(points);

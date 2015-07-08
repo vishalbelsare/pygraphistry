@@ -21,8 +21,7 @@ var Q = require("q"),
     webcl = require('node-webcl'),
 
     metrics = require("./metrics.js"),
-    loader = require("./data-loader.js"),
-    Dataframe = require('./Dataframe');
+    loader = require("./data-loader.js");
 
 
 metrics.init('StreamGL:driver');
@@ -47,7 +46,7 @@ function graphCounts(graph) {
     var edge        = {num: numEdges,     offset: offsetEdge};
     var midPoint    = {num: numMidPoints, offset: offsetMidPoints};
     var midEdge     = {num: numMidEdges,  offset: offsetMidEdges};
-    var midEdgeColor ={num: numEdges * (graph.simulator.numRenderedSplits + 1), offset:offsetMidEdges}
+    var midEdgeColor ={num: numEdges * (graph.simulator.numRenderedSplits + 1), offset:offsetMidEdges};
 
     return {
         curPoints: point,
