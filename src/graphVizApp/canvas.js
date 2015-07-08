@@ -176,10 +176,6 @@ function getPolynomialCurves(bufferSnapshots) {
         output[1] = srcPoint[1] + (transformationMatrixInv[2] * vector[0] + transformationMatrixInv[3] * vector[1]);
     }
 
-    //function fromEdgeBasis(vector, transformationMatrixInv) {
-        //return numeric.dotMV(transformationMatrixInv, vector);
-    //}
-
     function getQuadratic(x) {
         return [Math.pow(x, 2), x, 1];
     }
