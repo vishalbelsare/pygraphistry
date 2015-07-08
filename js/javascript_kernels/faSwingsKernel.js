@@ -47,23 +47,23 @@ var faSwingKernel = function (clContext) {
 
         var buffers = simulator.buffers;
         this.faSwings.set({
-            prevForces: buffers.prevForces.buffer,
-            curForces: buffers.curForces.buffer,
-            swings: buffers.swings.buffer,
-            tractions: buffers.tractions.buffer
+            prevForces: simulator.dataframe.getBuffer('prevForces', 'simulator').buffer,
+            curForces: simulator.dataframe.getBuffer('curForces', 'simulator').buffer,
+            swings: simulator.dataframe.getBuffer('swings', 'simulator').buffer,
+            tractions: simulator.dataframe.getBuffer('tractions', 'simulator').buffer
         });
 
         var resources = [
-            buffers.prevForces,
-            buffers.curForces,
-            buffers.swings,
-                buffers.tractions
+            simulator.dataframe.getBuffer('prevForces', 'simulator'),
+            simulator.dataframe.getBuffer('curForces', 'simulator'),
+            simulator.dataframe.getBuffer('swings', 'simulator'),
+            simulator.dataframe.getBuffer('tractions', 'simulator')
         ];
 
         simulator.tickBuffers(['swings', 'tractions']);
 
         debug("Running kernel faSwingsTractions");
-        return this.faSwings.exec([simulator.numPoints], resources)
+        return this.faSwings.exec([simulator.dataframe.getNumElements('point')], resources)
         .fail(eh.makeErrorHandler('Executing FaSwing failed'));
     };
 
@@ -76,8 +76,9 @@ var faSwingKernel = function (clContext) {
       var resources = [];
 
       //simulator.tickBuffers(['swings', 'tractions']);
-
-        return this.faSwings.exec([simulator.numMidPoints], resources)
+      // var numMidpoints = simulator.numMidPoints;
+      var numMidpoints = simulator.dataframe.getNumElements('midPoints');
+        return this.faSwings.exec([numMidpoints], resources)
         .fail(eh.makeErrorHandler('Executing FaSwing failed'));
     };
 

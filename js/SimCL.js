@@ -703,8 +703,8 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
 
         simulator.dataframe.setNumElements('forwardsWorkItems', forwardsEdges.workItemsTyped.length / elementsPerWorkItem);
         simulator.dataframe.setNumElements('backwardsWorkItems', backwardsEdges.workItemsTyped.length / elementsPerWorkItem);
-        simulator.dataframe.setNumElements('numMidPoints', midPoints.length / simulator.elementsPerPoint);
-        simulator.dataframe.setNumElements('numMidEdges', (simulator.numSplits + 1) * simulator.numEdges);
+        simulator.dataframe.setNumElements('midPoints', midPoints.length / simulator.elementsPerPoint);
+        simulator.dataframe.setNumElements('midEdges', (simulator.numSplits + 1) * simulator.numEdges);
 
         simulator.numMidPoints = midPoints.length / simulator.elementsPerPoint;
         simulator.renderer.numMidPoints = simulator.numMidPoints;
