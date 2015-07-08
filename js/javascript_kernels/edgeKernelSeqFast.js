@@ -71,10 +71,10 @@ var edgeKernelSeqFast = function (clContext) {
       var buffers = simulator.buffers;
       var that = this;
       return this.edgeForcesOneWay(simulator, forwardsEdges, forwardsWorkItems, numForwardsWorkItems,
-          buffers.curPoints, stepNumber, buffers.partialForces1, buffers.partialForces2, this.tempBuffers.forwardsEdgeStartEndIdxs, workItemsSize)
+          buffers.curPoints, stepNumber, buffers.partialForces1, buffers.partialForces2, buffers.forwardsEdgeStartEndIdxs, workItemsSize)
         .then(function () {
           return that.edgeForcesOneWay(simulator, backwardsEdges, backwardsWorkItems, numBackwardsWorkItems,
-              buffers.curPoints, stepNumber, buffers.partialForces2, buffers.curForces, that.tempBuffers.backwardsEdgeStartEndIdxs, workItemsSize);
+              buffers.curPoints, stepNumber, buffers.partialForces2, buffers.curForces, buffers.backwardsEdgeStartEndIdxs, workItemsSize);
         });
         }
 
