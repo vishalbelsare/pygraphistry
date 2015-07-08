@@ -115,12 +115,12 @@ function getPolynomialCurves(bufferSnapshots) {
     var midSpringsPos = bufferSnapshots.midSpringsPos;
 
     var edge = {
-        srcPoint: [0, 0],
-        dstPoint: [0, 0],
-        midPoint: [0, 0],
+        srcPoint: new Float32Array(2),
+        dstPoint: new Float32Array(2),
+        midPoint: new Float32Array(2),
         length: null,
-        transformationMatrix: [[0,0], [0, 0]],
-        transformationMatrixInv: [[0, 0], [0, 0]]
+        transformationMatrix: [new Float32Array(2), new Float32Array(2)],
+        transformationMatrixInv: [new Float32Array(2), new Float32Array(2)]
     };
 
     Object.seal(edge);
@@ -182,22 +182,22 @@ function getPolynomialCurves(bufferSnapshots) {
 
     var transformedDstPoint = [0, 0];
     var transformedMidPoint = [0, 0];
+    var curveParameters = [0, 0, 0];
+    var yVector = [0, 0, 0];
     function getCurveParameters(edge) {
         toEdgeBasisMem(edge.dstPoint, edge.transformationMatrix, edge.srcPoint, transformedDstPoint);
         toEdgeBasisMem(edge.midPoint, edge.transformationMatrix, edge.srcPoint, transformedMidPoint);
-
-        //return numeric.solve([
-                            //getQuadratic(0),
-                            //getQuadratic(midPoint[0]),
-                            //getQuadratic(dstPoint[0])
-                        //], [0, midPoint[1], dstPoint[1]]);
-        return numeric.dotMV(
-                        numeric.inv([
+        yVector[0] = 0;
+        yVector[1] = transformedMidPoint[1];
+        yVector[2] = transformedDstPoint[1];
+        var invXVector = numeric.inv([
                             [0, 0, 1],
                             getQuadratic(transformedMidPoint[0]),
                             getQuadratic(transformedDstPoint[0])
-                        ]),
-                        [0, transformedMidPoint[1], transformedDstPoint[1]]);
+                        ]);
+        curveParameters[0] = (invXVector[0][0] * yVector[0]) + (invXVector[0][1] * yVector[1]) + (invXVector[0][2] * yVector[2]);
+        curveParameters[1] = (invXVector[1][0] * yVector[0]) + (invXVector[1][1] * yVector[1]) + (invXVector[1][2] * yVector[2]);
+        curveParameters[2] = (invXVector[2][0] * yVector[0]) + (invXVector[2][1] * yVector[1]) + (invXVector[2][2] * yVector[2]);
     }
 
     function computePolynomial(x, betaVector) {
@@ -232,7 +232,7 @@ function getPolynomialCurves(bufferSnapshots) {
 
         expandEdge(edge, edgeIndex);
 
-        var curveParameters = getCurveParameters(edge);
+        getCurveParameters(edge);
         var srcPoint = edge.srcPoint;
         for (var midEdgeIdx = 0; midEdgeIdx < (numRenderedSplits); midEdgeIdx++) {
             var lambda = (midEdgeIdx + 1) / (numRenderedSplits + 1);
