@@ -92,8 +92,6 @@ function setupBackgroundColor(renderingScheduler, bgColor) {
     }).subscribe(_.identity, util.makeErrorHandler('bg color updates'));
 }
 
-
-
 function getPolynomialCurves(bufferSnapshots) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var curMidPoints = new Float32Array(bufferSnapshots.curMidPoints.buffer);
@@ -170,8 +168,8 @@ function getPolynomialCurves(bufferSnapshots) {
     }
 
     function fromEdgeBasisMem(vector, transformationMatrixInv, output) {
-        output[0] = transformationMatrixInv[0][0] * diffVector[0] + transformationMatrixInv[0][1] * diffVector[1];
-        output[1] = transformationMatrixInv[1][0] * diffVector[0] + transformationMatrixInv[1][1] * diffVector[1];
+        output[0] = transformationMatrixInv[0][0] * vector[0] + transformationMatrixInv[0][1] * vector[1];
+        output[1] = transformationMatrixInv[1][0] * vector[0] + transformationMatrixInv[1][1] * vector[1];
     }
 
     function fromEdgeBasis(vector, transformationMatrixInv) {
@@ -184,7 +182,6 @@ function getPolynomialCurves(bufferSnapshots) {
 
     var transformedDstPoint = [0, 0];
     var transformedMidPoint = [0, 0];
-
     function getCurveParameters(edge) {
         toEdgeBasisMem(edge.dstPoint, edge.transformationMatrix, edge.srcPoint, transformedDstPoint);
         toEdgeBasisMem(edge.midPoint, edge.transformationMatrix, edge.srcPoint, transformedMidPoint);
@@ -204,15 +201,17 @@ function getPolynomialCurves(bufferSnapshots) {
     }
 
     function computePolynomial(x, betaVector) {
-        return numeric.dotVV(getQuadratic(x), betaVector);
+        var quadratic = getQuadratic(x);
+        return (quadratic[0] * betaVector[0]) + (quadratic[1] * betaVector[1]) + (quadratic[2] * betaVector[2]);
     }
 
+    var midPointMem = [0, 0];
     function getMidPointPosition(edge, betaVector, lambda) {
         var x;
         x = lambda * edge.length;
-        return numeric.add(edge.srcPoint,
-                             fromEdgeBasis([x, computePolynomial(x, betaVector)],
-                                           edge.transformationMatrixInv));
+        var vector = [x, computePolynomial(x, betaVector)];
+        fromEdgeBasisMem(vector, edge.transformationMatrixInv, midPointMem);
+        return numeric.add(edge.srcPoint, midPointMem);
     }
 
     function setMidEdge(edgeIdx, midEdgeIdx, srcPoint, dstPoint) {
