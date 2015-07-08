@@ -30,26 +30,27 @@ var integrateKernel = function (clContext) {
 
   this.execKernels = function(simulator, tempLayoutBuffers) {
     var buffers = simulator.buffers;
+    var numPoints = simulator.dataframe.getNumElements('point');
 
     this.faIntegrate.set({
         globalSpeed: tempLayoutBuffers.globalSpeed.buffer,
-        inputPositions: buffers.curPoints.buffer,
-        curForces: buffers.curForces.buffer,
-        swings: buffers.swings.buffer,
-        outputPositions: buffers.nextPoints.buffer
+        inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
+        curForces: simulator.dataframe.getBuffer('curForces', 'simulator').buffer,
+        swings: simulator.dataframe.getBuffer('swings', 'simulator').buffer,
+        outputPositions: simulator.dataframe.getBuffer('nextPoints', 'simulator').buffer
     });
 
     var resources = [
-        buffers.curPoints,
-        buffers.curForces,
-        buffers.swings,
-        buffers.nextPoints
+        simulator.dataframe.getBuffer('curPoints', 'simulator'),
+        simulator.dataframe.getBuffer('curForces', 'simulator'),
+        simulator.dataframe.getBuffer('swings', 'simulator'),
+        simulator.dataframe.getBuffer('nextPoints', 'simulator')
     ];
 
     simulator.tickBuffers(['nextPoints']);
 
     debug("Running kernel faIntegrate");
-    return this.faIntegrate.exec([simulator.numPoints], resources)
+    return this.faIntegrate.exec([numPoints], resources)
         .fail(eh.makeErrorHandler('Executing Integrate failed'));
 }
 

@@ -33,30 +33,29 @@ this.argsIntegrateMidPointsApprox = [
 
     this.execKernels = function(simulator) {
       var buffers = simulator.buffers;
+      var numMidPoints = simulator.dataframe.getNumElements('midPoints');
 
       this.faIntegrate.set({
-        numMidPoints: simulator.numMidPoints,
-        inputPositions: buffers.curMidPoints.buffer,
-        curForces: buffers.curForces.buffer,
-        swings: buffers.swings.buffer,
-        tractions: buffers.tractions.buffer,
-        outputPositions: buffers.nextMidPoints.buffer
+        numMidPoints: numMidPoints,
+        inputPositions: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
+        curForces: simulator.dataframe.getBuffer('curForces', 'simulator').buffer,
+        swings: simulator.dataframe.getBuffer('swings', 'simulator').buffer,
+        tractions: simulator.dataframe.getBuffer('tractions', 'simulator').buffer,
+        outputPositions: simulator.dataframe.getBuffer('nextMidPoints', 'simulator').buffer
       });
 
       var resources = [
-        buffers.curPoints,
-        buffers.forwardsDegrees,
-        buffers.backwardsDegrees,
-          buffers.curForces,
-          buffers.swings,
-            buffers.tractions,
-            buffers.nextPoints
+        simulator.dataframe.getBuffer('curMidPoints', 'simulator'),
+        simulator.dataframe.getBuffer('curForces', 'simulator'),
+        simulator.dataframe.getBuffer('swings', 'simulator'),
+        simulator.dataframe.getBuffer('tractions', 'simulator'),
+        simulator.dataframe.getBuffer('nextMidPoints', 'simulator')
       ];
 
       simulator.tickBuffers(['nextPoints']);
 
     debug('Running kernel faIntegrateApprox');
-    return this.faIntegrate.exec([simulator.numMidPoints], resources)
+    return this.faIntegrate.exec([numMidPoints], resources)
       .fail(eh.makeErrorHandler('Executing IntegrateApprox failed'));
     }
 

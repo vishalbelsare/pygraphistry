@@ -34,30 +34,31 @@ this.argsIntegrateApprox = [
     this.execKernels = function(simulator) {
       var buffers = simulator.buffers;
 
+      var numPoints = simulator.dataframe.getNumElements('point');
+
       this.faIntegrateApprox.set({
-        numPoints: simulator.numPoints,
-        inputPositions: buffers.curPoints.buffer,
-        pointDegrees: buffers.degrees.buffer,
-        curForces: buffers.curForces.buffer,
-        swings: buffers.swings.buffer,
-        tractions: buffers.tractions.buffer,
-        outputPositions: buffers.nextPoints.buffer
+        numPoints: numPoints,
+        inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
+        pointDegrees: simulator.dataframe.getBuffer('degrees', 'simulator').buffer,
+        curForces: simulator.dataframe.getBuffer('curForces', 'simulator').buffer,
+        swings: simulator.dataframe.getBuffer('swings', 'simulator').buffer,
+        tractions: simulator.dataframe.getBuffer('tractions', 'simulator').buffer,
+        outputPositions: simulator.dataframe.getBuffer('nextPoints', 'simulator').buffer
       });
 
       var resources = [
-        buffers.curPoints,
-        buffers.forwardsDegrees,
-        buffers.backwardsDegrees,
-          buffers.curForces,
-          buffers.swings,
-            buffers.tractions,
-            buffers.nextPoints
+        simulator.dataframe.getBuffer('curPoints', 'simulator'),
+        simulator.dataframe.getBuffer('degrees', 'simulator'),
+        simulator.dataframe.getBuffer('curForces', 'simulator'),
+        simulator.dataframe.getBuffer('swings', 'simulator'),
+        simulator.dataframe.getBuffer('tractions', 'simulator'),
+        simulator.dataframe.getBuffer('nextPoints', 'simulator')
       ];
 
       simulator.tickBuffers(['nextPoints']);
 
     debug('Running kernel faIntegrateApprox');
-    return this.faIntegrateApprox.exec([simulator.numPoints], resources)
+    return this.faIntegrateApprox.exec([numPoints], resources)
       .fail(eh.makeErrorHandler('Executing IntegrateApprox failed'));
     }
 
