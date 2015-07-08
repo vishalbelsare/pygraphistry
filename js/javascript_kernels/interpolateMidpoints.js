@@ -33,24 +33,24 @@ var interpolateMidpointsKernel = function (clContext) {
     this.execKernels = function (simulator) {
 
         var buffers = simulator.buffers,
-            numSprings = simulator.numEdges,
-            numSplits = simulator.numSplits,
+            numSprings = simulator.dataframe.getNumElements('edge'),
+            numSplits = simulator.dataframe.getNumElements('splits'),
             resources = [
-                buffers.forwardsEdges,
+                simulator.dataframe.getBuffer('forwardsEdges', 'simulator')
             ];
 
         this.interpolate.set({
-            edges: simulator.buffers.forwardsEdges.buffer,
-            points: simulator.buffers.curPoints.buffer,
+            edges: simulator.dataframe.getBuffer('forwardsEdges', 'simulator').buffer,
+            points: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
             numEdges: numSprings,
             numSplits: numSplits,
-            outputMidPoints: simulator.buffers.curMidPoints.buffer
+            outputMidPoints: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer
         });
 
         simulator.tickBuffers(['nextMidPoints']);
 
         debug('Running interpolateMidpoints kernel');
-        return this.interpolate.exec([simulator.numEdges], resources)
+        return this.interpolate.exec([numSprings], resources)
             .fail(eh.makeErrorHandler('Kernel interpolateMidPoints failed'));
     };
 };
