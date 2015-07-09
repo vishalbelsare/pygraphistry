@@ -42,10 +42,13 @@ function getLabels(graph, indices, dim) {
     var type = (dim === 2) ? 'edge' : 'point';
     var simulator = graph.simulator;
 
-    if (type === 'point' && simulator.pointLabels.length) {
-        return presetLabels(simulator.pointLabels, indices, simulator.timeSubset.pointsRange);
-    } else if (type === 'edge' && simulator.edgeLabels.length) {
-        return presetLabels(simulator.edgeLabels, indices, simulator.timeSubset.edgeRange);
+    var pointLabels = simulator.dataframe.getLabels('point');
+    var edgeLabels = simulator.dataframe.getLabels('edge');
+
+    if (type === 'point' && pointLabels && pointLabels.length) {
+        return presetLabels(pointLabels, indices, simulator.timeSubset.pointsRange);
+    } else if (type === 'edge' && edgeLabels && edgeLabels.length) {
+        return presetLabels(edgeLabels, indices, simulator.timeSubset.edgeRange);
     } else {
         return defaultLabels(graph, indices, type);
     }

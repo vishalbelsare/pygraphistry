@@ -274,6 +274,10 @@ Dataframe.prototype.getHostBuffer = function (name) {
     return res;
 };
 
+Dataframe.prototype.getLabels = function (type) {
+    return this.data.labels[type];
+};
+
 
 /** Returns an OpenCL buffer object.
  *  @param {string} name - name of the buffer
