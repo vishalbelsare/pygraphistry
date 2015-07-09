@@ -172,7 +172,7 @@ function create(dataframe, renderer, device, vendor, cfg) {
             dataframe.setNumElements('point', renderer.numPoints);
             dataframe.setNumElements('edge', renderer.numEdges);
             dataframe.setNumElements('splits', controls.global.numSplits);
-            dataframe.setNumElements('renderedSplits', controls.global.numRenderedSplits);
+            dataframe.setNumElements('renderedSplits', controls.global.numRenderedSplits || 0);
 
             Object.seal(simObj.buffers);
             Object.seal(simObj);
