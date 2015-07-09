@@ -25,29 +25,30 @@ function SelectNodes(clContext) {
 
 SelectNodes.prototype.run = function (simulator, selection, delta) {
     var that = this;
+    var numPoints = simulator.dataframe.getNumElements('point');
 
     if (!that.qMask) {
-        that.bytes = simulator.numPoints * Uint8Array.BYTES_PER_ELEMENT;
+        that.bytes = numPoints * Uint8Array.BYTES_PER_ELEMENT;
         that.qMask = simulator.cl.createBuffer(that.bytes, 'mask');
     }
 
     return that.qMask.then(function (mask) {
         debug('Computing selection mask');
-        var resources = [simulator.buffers.curPoints];
+        var resources = [simulator.dataframe.getBuffer('curPoints', 'simulator')];
 
         that.selectNodes.set({
             top: selection.tl.y,
             left: selection.tl.x,
             bottom: selection.br.y,
             right: selection.br.x,
-            positions: simulator.buffers.curPoints.buffer,
+            positions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
             mask: mask.buffer
         });
 
         simulator.tickBuffers(['nextPoints', 'curPoints']);
 
         debug('Running selectNodes');
-        return that.selectNodes.exec([simulator.numPoints], resources)
+        return that.selectNodes.exec([numPoints], resources)
             .then(function () {
                 var result = new Uint8Array(that.bytes);
                 return mask.read(result).then(function () {
