@@ -180,14 +180,14 @@ function edgeForcesOneWay(simulator, faEdges, edges, workItems, numWorkItems,
 function edgeForces(simulator, faEdges, stepNumber) {
     var buffers = simulator.buffers;
     return edgeForcesOneWay(simulator, faEdges,
-                            simulator.dataframe.getBuffer('forwardsEdges', simulator), simulator.dataframe.getBuffer('forwardsWorkItems', 'simulator'),
+                            simulator.dataframe.getBuffer('forwardsEdges', 'simulator'), simulator.dataframe.getBuffer('forwardsWorkItems', 'simulator'),
                             simulator.dataframe.getNumElements('forwardsWorkItems'),
                             simulator.dataframe.getBuffer('curPoints', 'simulator'), stepNumber,
-                            simulator.dataframe.getBuffer('partialForces1', 'simulator'), simulator.dataframe.getBuffer('partialForces2', 'simulator'));
+                            simulator.dataframe.getBuffer('partialForces1', 'simulator'), simulator.dataframe.getBuffer('partialForces2', 'simulator'))
     .then(function () {
         return edgeForcesOneWay(simulator, faEdges,
 
-                                simulator.dataframe.getBuffer('backwardsEdges', simulator), simulator.dataframe.getBuffer('backwardsWorkItems', 'simulator'),
+                                simulator.dataframe.getBuffer('backwardsEdges', 'simulator'), simulator.dataframe.getBuffer('backwardsWorkItems', 'simulator'),
                                 simulator.dataframe.getNumElements('backwardsWorkItems'),
                                 simulator.dataframe.getBuffer('curPoints', 'simulator'), stepNumber,
                                 simulator.dataframe.getBuffer('partialForces2', 'simulator'), simulator.dataframe.getBuffer('curForces', 'simulator'));
