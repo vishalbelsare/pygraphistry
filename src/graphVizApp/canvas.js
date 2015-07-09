@@ -155,30 +155,28 @@ function getPolynomialCurves(bufferSnapshots) {
     }
 
     function fromEdgeBasisMem(vectorX, vectorY, output) {
-        //output[0] = srcPoint[0] + (transformationMatrixInv[0] * vector[0] + transformationMatrixInv[1] * vector[1]);
-        //output[1] = srcPoint[1] + (transformationMatrixInv[2] * vector[0] + transformationMatrixInv[3] * vector[1]);
         output[0] = srcPointX + ((cos * vectorX) + (-sin * vectorY));
         output[1] = srcPointY + ((sin * vectorX) + (cos * vectorY));
     }
 
-    function inverseMem(matrix, mem) {
-        var det = matrix[0] * ((matrix[4] * matrix[8]) - (matrix[5] * matrix[7])) -
-            matrix[1] * ((matrix[3] * matrix[8]) - (matrix[5] * matrix[6])) +
-            matrix[2] * ((matrix[3] * matrix[7]) - (matrix[4] * matrix[6]));
+    function inverseMem(m0, m1, m2, m3, m4, m5, m6, m7, m8, mem) {
+        var det = m0 * ((m4 * m8) - (m5 * m7)) -
+            m1 * ((m3 * m8) - (m5 * m6)) +
+            m2 * ((m3 * m7) - (m4 * m6));
         // First row
-        mem[0] = ((matrix[4] * matrix[8]) - (matrix[5] * matrix[7])) / det;
-        mem[1] = ((matrix[2] * matrix[7]) - (matrix[1] * matrix[8])) / det;
-        mem[2] = ((matrix[1] * matrix[5]) - (matrix[2] * matrix[4])) / det;
+        mem[0] = ((m4 * m8) - (m5 * m7)) / det;
+        mem[1] = ((m2 * m7) - (m1 * m8)) / det;
+        mem[2] = ((m1 * m5) - (m2 * m4)) / det;
 
         // Second Row
-        mem[3] = ((matrix[5] * matrix[6]) - (matrix[3] * matrix[8])) / det;
-        mem[4] = ((matrix[1] * matrix[8]) - (matrix[2] * matrix[6])) / det;
-        mem[5] = ((matrix[2] * matrix[3]) - (matrix[1] * matrix[5])) / det;
+        mem[3] = ((m5 * m6) - (m3 * m8)) / det;
+        mem[4] = ((m1 * m8) - (m2 * m6)) / det;
+        mem[5] = ((m2 * m3) - (m1 * m5)) / det;
 
         // Third Row
-        mem[6] = ((matrix[3] * matrix[7]) - (matrix[4] * matrix[6])) / det;
-        mem[7] = ((matrix[1] * matrix[6]) - (matrix[1] * matrix[7])) / det;
-        mem[8] = ((matrix[1] * matrix[4]) - (matrix[1] * matrix[4])) / det;
+        mem[6] = ((m3 * m7) - (m4 * m6)) / det;
+        mem[7] = ((m1 * m6) - (m1 * m7)) / det;
+        mem[8] = ((m1 * m4) - (m1 * m4)) / det;
     }
 
     // output array that contains the vector of the transformed destination point
@@ -187,7 +185,6 @@ function getPolynomialCurves(bufferSnapshots) {
     var transformedMidPoint = new Float32Array(2);
     var curveParameters = new Float32Array(3);
     var invX = new Float32Array(9);
-    var xVector = new Float32Array(9);
     function getCurveParameters() {
         toEdgeBasisMem(dstPointX, dstPointY, transformedDstPoint);
         toEdgeBasisMem(midPointX, midPointY, transformedMidPoint);
@@ -196,17 +193,20 @@ function getPolynomialCurves(bufferSnapshots) {
         var yVector1 = transformedMidPoint[1];
         var yVector2 = transformedDstPoint[1];
 
-        xVector[0] = 0;
-        xVector[1] = 0;
-        xVector[2] = 1;
-        xVector[3] = Math.pow(transformedMidPoint[0], 2);
-        xVector[4] = transformedMidPoint[0];
-        xVector[5] = 1;
-        xVector[6] = Math.pow(transformedDstPoint[0], 2);
-        xVector[7] = transformedDstPoint[0];
-        xVector[8] = 1;
+        var xVector0 = 0;
+        var xVector1 = 0;
+        var xVector2 = 1;
+        var xVector3 = Math.pow(transformedMidPoint[0], 2);
+        var xVector4 = transformedMidPoint[0];
+        var xVector5 = 1;
+        var xVector6 = Math.pow(transformedDstPoint[0], 2);
+        var xVector7 = transformedDstPoint[0];
+        var xVector8 = 1;
 
-        inverseMem(xVector, invX);
+        inverseMem(xVector0, xVector1, xVector2, xVector3, xVector4, xVector5, xVector6, xVector7,
+                   xVector8, invX);
+
+        //inverseMem(xVector, invX);
         curveParameters[0] = (invX[0] * yVector0) + (invX[1] * yVector1) + (invX[2] * yVector2);
         curveParameters[1] = (invX[3] * yVector0) + (invX[4] * yVector1) + (invX[5] * yVector2);
         curveParameters[2] = (invX[6] * yVector0) + (invX[7] * yVector1) + (invX[8] * yVector2);
