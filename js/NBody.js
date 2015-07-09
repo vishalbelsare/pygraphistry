@@ -152,6 +152,7 @@ function makeDefaultSetter (name, arrConstructor, dimName, passthrough, f) {
     };
 }
 
+
 function makeSetter (name, defSetter, arrConstructor, dimName, passthrough) {
 
     return function (graph, rawArr) {
@@ -162,18 +163,19 @@ function makeSetter (name, defSetter, arrConstructor, dimName, passthrough) {
             return defSetter(graph.simulator);
         }
 
+        // TODO: Decide if the following setters are still relevant.
         var arr;
-        if (rawArr.constructor == arrConstructor && dimName == 'numPoints') {
+        if (rawArr.constructor == arrConstructor && dimName == 'point') {
             arr = rawArr;
-        } else if (dimName == 'numEdges') {
-            var len = graph.simulator[dimName];
+        } else if (dimName == 'edge') {
+            var len = graph.simulator.dataframe.getNumElements(dimName);
             arr = new arrConstructor(len);
-            var map = graph.simulator.bufferHostCopies.forwardsEdges.edgePermutation;
+            var map = graph.simulator.dataframe.getHostBuffer('forwardsEdges').edgePermutation;
             for (var i = 0; i < len; i++) {
                 arr[map[i]] = rawArr[i];
             }
         }else {
-            var len = graph.simulator[dimName];
+            var len = graph.simulator.dataframe.getNumElements(dimName);
             arr = new arrConstructor(len);
             for (var i = 0; i < len; i++) {
                 arr[i] = rawArr[i];
@@ -272,6 +274,8 @@ var setEdges = Q.promised(function(graph, edges) {
 
     debug('Number of edges: %d', edges.length / 2);
 
+    var numPoints = graph.simulator.dataframe.getNumElements('point');
+
     //FIXME THIS SHOULD WORK BUT CRASHES SAFARI
     var encapsulate = function (edges) {
 
@@ -297,10 +301,10 @@ var setEdges = Q.promised(function(graph, edges) {
 
 
          // [ [first edge number from src idx, numEdges from source idx, source idx], ... ]
-        var workItemsTyped = new Int32Array(graph.simulator.numPoints*4);
+        var workItemsTyped = new Int32Array(numPoints*4);
         var edgeListLastPos = 0;
         var edgeListLastSrc = edgeList[0][0];
-        for (var i = 0; i < graph.simulator.numPoints; i++) {
+        for (var i = 0; i < numPoints; i++) {
 
             // Case where node has edges
             if (edgeListLastSrc === i) {
@@ -323,10 +327,10 @@ var setEdges = Q.promised(function(graph, edges) {
         }
 
 
-        var degreesTyped = new Uint32Array(graph.simulator.numPoints);
-        var srcToWorkItem = new Int32Array(graph.simulator.numPoints);
+        var degreesTyped = new Uint32Array(numPoints);
+        var srcToWorkItem = new Int32Array(numPoints);
 
-        for (var i = 0; i < graph.simulator.numPoints; i++) {
+        for (var i = 0; i < numPoints; i++) {
             srcToWorkItem[workItemsTyped[i*4 + 2]] = i;
             degreesTyped[workItemsTyped[i*4 + 2]] = workItemsTyped[i*4 + 1];
         }
@@ -415,8 +419,8 @@ var setEdges = Q.promised(function(graph, edges) {
     var backwardsEdges = encapsulate(edgesFlipped);
     // console.log('Encapsulates executed in: ', Date.now() - start);
 
-    var degrees = new Uint32Array(graph.simulator.numPoints);
-    for (var i = 0; i < graph.simulator.numPoints; i++) {
+    var degrees = new Uint32Array(numPoints);
+    for (var i = 0; i < numPoints; i++) {
         degrees[i] = forwardEdges.degreesTyped[i] + backwardsEdges.degreesTyped[i];
     }
 
@@ -441,7 +445,7 @@ var setEdges = Q.promised(function(graph, edges) {
     var endPoints = scatterEdgePos(edges, graph.__pointsHostBuffer);
 
     console.info('Dataset    nodes:%d  edges:%d  splits:%d',
-                graph.simulator.numPoints, edges.length, numSplits);
+                numPoints, edges.length, numSplits);
 
     return graph.simulator.setEdges(edges, forwardEdges, backwardsEdges,
                                     degrees, midPoints, endPoints, graph.__pointsHostBuffer)
@@ -452,7 +456,7 @@ var setEdges = Q.promised(function(graph, edges) {
 
 function setEdgeColors(graph, edgeColors) {
     debug('Loading edgeColors');
-    var nedges = graph.simulator.numEdges;
+    var nedges = graph.simulator.dataframe.getNumElements('edge');
 
     if (!edgeColors) // Use default Colors
         return graph.simulator.setEdgeColors(undefined);
@@ -465,7 +469,7 @@ function setEdgeColors(graph, edgeColors) {
 
 
     var ec = new Uint32Array(nedges * 2);
-    var map = graph.simulator.bufferHostCopies.forwardsEdges.edgePermutation;
+    var map = graph.simulator.dataframe.getHostBuffer('forwardsEdges').edgePermutation;
     for (var edge = 0; edge < nedges; edge++) {
         var spot = 2 * map[edge];
         ec[spot] = edgeColors[edge];
@@ -477,7 +481,7 @@ function setEdgeColors(graph, edgeColors) {
 
 function setEdgeWeight(graph, edgeWeights) {
     debug('Loading edgeColors');
-    var nedges = graph.simulator.numEdges;
+    var nedges = graph.simulator.dataframe.getNumElements('edge');
 
     if (!edgeWeights) {
       return graph.simulator.setEdgeWeight(undefined);
@@ -491,7 +495,7 @@ function setEdgeWeight(graph, edgeWeights) {
     // Edges may be permuted, use forward permutation
 
     var ew = new Float32Array(nedges * 2);
-    var map = graph.simulator.bufferHostCopies.forwardsEdges.edgePermutation;
+    var map = graph.simulator.dataframe.getHostBuffer('forwardsEdges').edgePermutation;
     for (var edge = 0; edge < nedges; edge++) {
         var spot = 2 * map[edge];
         ew[spot] = edgeWeights[edge];
@@ -508,7 +512,7 @@ function setMidEdgeColors(graph, midEdgeColors) {
         return graph.simulator.setMidEdgeColors(undefined);
     }
 
-    var numMidEdges = graph.simulator.numMidEdges;
+    var numMidEdges = graph.simulator.dataframe.getNumElements('midEdges');
 
     if (midEdgeColors.length != numMidEdges)
        log.error('setMidEdgeColors expects one color per midEdge');
