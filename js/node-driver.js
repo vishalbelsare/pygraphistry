@@ -33,6 +33,8 @@ metrics.init('StreamGL:driver');
 //offset: in vertices
 //graph -> {<model>: {num: int, offset: int}
 function graphCounts(graph) {
+    var numRenderedSplits = graph.simulator.dataframe.getNumElements('renderedSplits');
+
     var numPoints       = graph.simulator.timeSubset.pointsRange.len;
     var numEdges        = graph.simulator.timeSubset.edgeRange.len;
     var offsetPoint     = graph.simulator.timeSubset.pointsRange.startIdx;
@@ -46,7 +48,7 @@ function graphCounts(graph) {
     var edge        = {num: numEdges,     offset: offsetEdge};
     var midPoint    = {num: numMidPoints, offset: offsetMidPoints};
     var midEdge     = {num: numMidEdges,  offset: offsetMidEdges};
-    var midEdgeColor ={num: numEdges * (graph.simulator.numRenderedSplits + 1), offset:offsetMidEdges};
+    var midEdgeColor ={num: numEdges * (numRenderedSplits + 1), offset:offsetMidEdges};
 
     return {
         curPoints: point,
@@ -109,7 +111,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
 
                 debug('Reading device buffer %s, stride %d', name, stride);
 
-                return graph.simulator.buffers[name].read(
+                return graph.simulator.dataframe.getBuffer(name, 'simulator').read(
                     new Float32Array(targetArrays[name].buffer),
                         counts[name].offset * stride,
                         counts[name].num * stride);
@@ -119,11 +121,11 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                 var stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
 
                 debug('Fetching host buffer %s', name);
-                if (!graph.simulator.buffersLocal[name]) {
+                if (!graph.simulator.dataframe.getLocalBuffer(name)) {
                     throw new Error('missing buffersLocal base buffer: ' + name);
                 }
 
-                var localBuffer = graph.simulator.buffersLocal[name];
+                var localBuffer = graph.simulator.dataframe.getLocalBuffer(name);
                 var bytes_per_element = localBuffer.BYTES_PER_ELEMENT;
 
                 // This will create another array (of type buffersLocal[name]) on top
@@ -264,9 +266,10 @@ function create(dataset) {
 
     }).then(function (graph) {
         // Load into dataframe data attributes that rely on the simulator existing.
-        var outDegrees = graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped;
-        var inDegrees = graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped;
-        var unsortedEdges = graph.simulator.bufferHostCopies.unsortedEdges;
+        var outDegrees = graph.simulator.dataframe.getHostBuffer('forwardsEdges').degreesTyped;
+        var inDegrees = graph.simulator.dataframe.getHostBuffer('backwardsEdges').degreesTyped;
+        var unsortedEdges = graph.simulator.dataframe.getHostBuffer('unsortedEdges');
+
         graph.dataframe.loadDegrees(outDegrees, inDegrees);
         graph.dataframe.loadEdgeDestinations(unsortedEdges);
         return graph;
