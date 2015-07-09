@@ -10,10 +10,9 @@ var util            = require('./util.js');
 
 
 function nameToLink (urlParams, name) {
-    var overrides = {static: true, contentKey: name};
-    // Cascade effect via extend(). omit() call provided to mute options.
-    var params = _.extend({}, _.omit(urlParams), overrides);
-    var paramStr = _.map(params, function (v, k) { return k + '=' + v; }).join('&');
+    var overrides = {static: true, contentKey: name},
+        params    = _.extend({}, _.omit(urlParams), overrides), // extend() to cascade, omit() to mute options.
+        paramStr  = _.map(params, function (v, k) { return k + '=' + v; }).join('&');
     return window.location.origin + window.location.pathname + '?' + paramStr;
 }
 
@@ -24,9 +23,9 @@ module.exports = function (socket, urlParams) {
     Rx.Observable.fromEvent($btn, 'click')
         //show
         .map(function () {
-            var uid = Math.random().toString(36).substring(8);
-            var parts = urlParams.dataset.split('/');
-            var suffix = parts.slice(-parts.length + 1);
+            var uid = Math.random().toString(36).substring(8),
+                parts = urlParams.dataset.split('/'),
+                suffix = parts.slice(-parts.length + 1);
             return $(Handlebars.compile($('#persistTemplate').html())(
                 {defName: suffix + '_' + uid}));
         })
@@ -54,11 +53,11 @@ module.exports = function (socket, urlParams) {
         //show
         .do(function (pair) {
             var reply = pair.reply;
-            if (!reply || !reply.success) {
+            if (!(reply && reply.success)) {
                 throw new Error({msg: 'Server error on inspectHeader', v: (reply || {}).error});
             }
-            var $modal = pair.$modal;
-            var url = nameToLink(urlParams, reply.name);
+            var $modal = pair.$modal,
+                url = nameToLink(urlParams, reply.name);
             $('.modal-body', $modal)
                 .empty()
                 .append($('<span>').text('Static copy at: '))
