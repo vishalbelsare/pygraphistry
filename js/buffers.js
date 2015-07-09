@@ -32,7 +32,7 @@ function getDegree(simulator, i) {
 //CL+GL+local vbos & setters will be created/exported, no need to modify anything else
 var FIELDS =     ['setterName',     'arrType',      'dims',     'defV'];
 var NAMED_CLGL_BUFFERS_SETUP = {
-    pointColors: ['setColors',      Uint32Array,    'numPoints',
+    pointColors: ['setColors',      Uint32Array,    'point',
         function (simulator, outArr, len) {
 
             //use hash of highest degree neighbor
@@ -65,7 +65,7 @@ var NAMED_CLGL_BUFFERS_SETUP = {
                 outArr[i] = color;
             }
         }],
-    pointSizes:  ['setSizes',       Uint8Array,     'numPoints',
+    pointSizes:  ['setSizes',       Uint8Array,     'point',
         function (simulator, outArr, len) {
 
             var minDegree = Number.MAX_VALUE;
@@ -85,8 +85,8 @@ var NAMED_CLGL_BUFFERS_SETUP = {
             }
         }
     ],
-    pointTags:   ['setPointTags',   Uint8Array,     'numPoints', 0],
-    edgeTags:    ['setEdgeTags',    Uint8Array,     'numEdges',  0]
+    pointTags:   ['setPointTags',   Uint8Array,     'point', 0],
+    edgeTags:    ['setEdgeTags',    Uint8Array,     'edge',  0]
 };
 
 //{<str>: {setterName: str, arrType: Function, dims: string, defV: 'a'}}

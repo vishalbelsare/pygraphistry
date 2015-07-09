@@ -141,7 +141,9 @@ function passthroughSetter(simulator, dimName, arr, passthrough) {
 function makeDefaultSetter (name, arrConstructor, dimName, passthrough, f) {
     return function (simulator) {
         debug("Using default %s", name);
-        var elts = simulator[dimName];
+
+        var elts = simulator.dataframe.getNumElements(dimName);
+
         var arr = new arrConstructor(elts);
         if (f) {
             f(simulator, arr, elts);
