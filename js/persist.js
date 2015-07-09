@@ -113,6 +113,14 @@ module.exports =
             debug('wrote/read', prevHeader, _.keys(buffers));
         },
 
+        /**
+         *
+         * @param {string} snapshotName - the name of the content, URL fragment.
+         * @param {CompressedVBOStructure} compressedVBOs - Holds the VBO buffers to serialize.
+         * @param {Dataframe} dataframe - the data for labels.
+         * @param {Object} renderConfig
+         * @param {Object} metadata
+         */
         publishStaticContents: function (snapshotName, compressedVBOs, metadata, dataframe, renderConfig) {
             debug('publishing current content to S3');
             var snapshotPath = 'Static/' + snapshotName + '/';
