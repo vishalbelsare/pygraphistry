@@ -257,6 +257,10 @@ Dataframe.prototype.getNumElements = function (type) {
     return res;
 };
 
+Dataframe.prototype.getAllBuffers = function (type) {
+    return this.data.buffers[type];
+};
+
 
 Dataframe.prototype.getLocalBuffer = function (name) {
     var res = this.data.localBuffers[name];
@@ -286,9 +290,14 @@ Dataframe.prototype.getLabels = function (type) {
 Dataframe.prototype.getBuffer = function (name, type) {
     var buffers = this.data.buffers[type];
     var res = buffers[name];
-    if (!res) {
-        throw "Invalid Buffer[" + type + "]: " + name;
-    }
+
+    // Too much of our code relies on being able to get back undefineds
+    // Will reenable this once we refactor those parts of the code.
+
+    // if (!res) {
+    //     console.log("Invalid Buffer[" + type + "]: " + name);
+    //     throw "Invalid Buffer[" + type + "]: " + name;
+    // }
     return res;
 };
 
