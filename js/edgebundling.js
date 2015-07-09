@@ -61,59 +61,62 @@ EdgeBundling.argsType = {
 
 
 EdgeBundling.prototype.setEdges = function (simulator) {
+    var numMidPoints = simulator.dataframe.getNumElements('midPoints');
     var localPosSize =
-        Math.min(simulator.cl.maxThreads, simulator.numMidPoints)
+        Math.min(simulator.cl.maxThreads, numMidPoints)
         * simulator.elementsPerPoint
         * Float32Array.BYTES_PER_ELEMENT;
 
     var global = simulator.controls.global;
 
     this.ebMidpoints.set({
-        numPoints: simulator.numMidPoints,
+        numPoints: numMidPoints,
         numSplits: global.numSplits,
-        inputMidPoints: simulator.buffers.curMidPoints.buffer,
-        outputMidPoints: simulator.buffers.nextMidPoints.buffer,
+        inputMidPoints: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
+        outputMidPoints: simulator.dataframe.getBuffer('nextMidPoints', 'simulator').buffer,
         tilePointsParam: localPosSize,
         width: global.dimensions[0],
         height: global.dimensions[1],
-        randValues: simulator.buffers.randValues.buffer
+        randValues: simulator.dataframe.getBuffer('randValues', 'simulator').buffer
     });
 
     this.ebMidsprings.set({
         numSplits: global.numSplits,
-        springs: simulator.buffers.forwardsEdges.buffer,
-        workList: simulator.buffers.forwardsWorkItems.buffer,
-        inputPoints: simulator.buffers.curPoints.buffer,
-        inputMidPoints: simulator.buffers.nextMidPoints.buffer,
-        outputMidPoints: simulator.buffers.curMidPoints.buffer,
-        springMidPositions: simulator.buffers.midSpringsPos.buffer,
-        midSpringsColorCoords: simulator.buffers.midSpringsColorCoord.buffer
+        springs: simulator.dataframe.getBuffer('forwardsEdges', 'simulator').buffer,
+        workList: simulator.dataframe.getBuffer('forwardsWorkItems', 'simulator').buffer,
+        inputPoints: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
+        inputMidPoints: simulator.dataframe.getBuffer('nextMidPoints', 'simulator').buffer,
+        outputMidPoints: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
+        springMidPositions: simulator.dataframe.getBuffer('midSpringsPos', 'simulator').buffer,
+        midSpringsColorCoords: simulator.dataframe.getBuffer('midSpringsColorCoord', 'simulator').buffer
     });
 }
 
 function midPoints(simulator, ebMidpoints, stepNumber) {
+    var numMidPoints = simulator.dataframe.getNumElements('midPoints');
     var resources = [
-        simulator.buffers.curMidPoints,
-        simulator.buffers.nextMidPoints,
-        simulator.buffers.midSpringsColorCoord
+        simulator.dataframe.getBuffer('curMidPoints', 'simulator'),
+        simulator.dataframe.getBuffer('nextMidPoints', 'simulator'),
+        simulator.dataframe.getBuffer('midSpringsColorCoord', 'simulator')
     ];
 
     ebMidpoints.set({stepNumber: stepNumber});
     simulator.tickBuffers(['curMidPoints', 'nextMidPoints']);
 
     debug('Running kernel gaussSeidelMidpoints')
-    return ebMidpoints.exec([simulator.numMidPoints], resources);
+    return ebMidpoints.exec([numMidPoints], resources);
 }
 
 function midEdges(simulator, ebMidsprings, stepNumber) {
+    var numForwardsWorkItems = simulator.dataframe.getNumElements('forwardsWorkItems');
     var resources = [
-        simulator.buffers.forwardsEdges,
-        simulator.buffers.forwardsWorkItems,
-        simulator.buffers.curPoints,
-        simulator.buffers.nextMidPoints,
-        simulator.buffers.curMidPoints,
-        simulator.buffers.midSpringsPos,
-        simulator.buffers.midSpringsColorCoord
+        simulator.dataframe.getBuffer('forwardsEdges', 'simulator'),
+        simulator.dataframe.getBuffer('forwardsWorkItems', 'simulator'),
+        simulator.dataframe.getBuffer('curPoints', 'simulator'),
+        simulator.dataframe.getBuffer('nextMidPoints', 'simulator'),
+        simulator.dataframe.getBuffer('curMidPoints', 'simulator'),
+        simulator.dataframe.getBuffer('midSpringsPos', 'simulator'),
+        simulator.dataframe.getBuffer('midSpringsColorCoord', 'simulator')
     ];
 
     ebMidsprings.set({stepNumber: stepNumber});
@@ -121,7 +124,7 @@ function midEdges(simulator, ebMidsprings, stepNumber) {
     simulator.tickBuffers(['curMidPoints', 'midSpringsPos', 'midSpringsColorCoord']);
 
     debug('Running kernel gaussSeidelMidsprings')
-    return ebMidsprings.exec([simulator.numForwardsWorkItems], resources);
+    return ebMidsprings.exec([numForwardsWorkItems], resources);
 }
 
 EdgeBundling.prototype.tick = function(simulator, stepNumber) {
@@ -135,16 +138,20 @@ EdgeBundling.prototype.tick = function(simulator, stepNumber) {
     return Q().then(function () {
         if (locks.lockMidpoints) {
             simulator.tickBuffers(['nextMidPoints']);
-            return simulator.buffers.curMidPoints.copyInto(simulator.buffers.nextMidPoints);
+            var curMidPoints = simulator.dataframe.getBuffer('curMidPoints', 'simulator');
+            var nextMidPoints = simulator.dataframe.getBuffer('nextMidPoints', 'simulator');
+            return curMidPoints.copyInto(nextMidPoints);
         } else {
             return midPoints(simulator, that.ebMidpoints, stepNumber);
         }
     }).then(function () { //TODO do both forwards and backwards?
-        if (simulator.numEdges > 0 && !locks.lockMidedges) {
+        if (simulator.dataframe.getNumElements('edge') > 0 && !locks.lockMidedges) {
             return midEdges(simulator, that.ebMidsprings, stepNumber);
         } else {
             simulator.tickBuffers(['curMidPoints']);
-            return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
+            var curMidPoints = simulator.dataframe.getBuffer('curMidPoints', 'simulator');
+            var nextMidPoints = simulator.dataframe.getBuffer('nextMidPoints', 'simulator');
+            return nextMidPoints.copyInto(curMidPoints);
         }
     }).fail(eh.makeErrorHandler('Failure in edgebundling tick'));
 }

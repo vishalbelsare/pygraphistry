@@ -21,8 +21,8 @@ function serializePositions(graph) {
     debug('Serializing');
     var vg = graph.simulator.vgraph;
 
-    var curPoints = graph.simulator.buffers.curPoints;
-    var numPoints = graph.simulator.numPoints;
+    var curPoints = graph.dataframe.getBuffer('curPoints', 'simulator');
+    var numPoints = graph.dataframe.getNumElements('point');
 
     var xVal = new Array(numPoints);
     var yVal = new Array(numPoints);

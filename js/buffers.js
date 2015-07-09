@@ -25,8 +25,8 @@ function makeMapper(v) {
 
 
 function getDegree(simulator, i) {
-    return simulator.bufferHostCopies.forwardsEdges.degreesTyped[i]
-        + simulator.bufferHostCopies.backwardsEdges.degreesTyped[i];
+    return simulator.dataframe.getHostBuffer('forwardsEdges').degreesTyped[i]
+        + simulator.dataframe.getHostBuffer('backwardsEdges').degreesTyped[i];
 }
 
 //CL+GL+local vbos & setters will be created/exported, no need to modify anything else
@@ -59,8 +59,8 @@ var NAMED_CLGL_BUFFERS_SETUP = {
             var pLen = palette.length;
             for (var i = 0; i < len; i++) {
                 var best = {id: i, degree: getDegree(simulator, i)};
-                var bestOut = compare(best, simulator, simulator.bufferHostCopies.forwardsEdges, i);
-                var bestIn = compare(bestOut, simulator, simulator.bufferHostCopies.backwardsEdges, i);
+                var bestOut = compare(best, simulator, simulator.dataframe.getHostBuffer('forwardsEdges'), i);
+                var bestIn = compare(bestOut, simulator, simulator.dataframe.getHostBuffer('backwardsEdges'), i);
                 var color = palette[bestIn.id % pLen];
                 outArr[i] = color;
             }
