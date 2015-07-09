@@ -191,7 +191,7 @@ var MidpointForces = function (clContext) {
 
     // Returns a buffer map with all of the bindings needed for the buffers used for this sequences
     var getBufferBindings = function (layoutBuffers, tempBuffers, simulator, warpsize, workItems) {
-        var numBodies = simulator.numEdges;
+        var numBodies = simulator.dataframe.getNumElements('edge');
         var numNodes = getNumNodes(numBodies, warpsize);
         return {
             THREADS_BOUND: workItems.boundBox[1],
@@ -212,16 +212,16 @@ var MidpointForces = function (clContext) {
             xmins:tempBuffers.xmins,
             ymaxs:tempBuffers.ymaxs,
             ymins:tempBuffers.ymins,
-            inputMidPositions: simulator.buffers.curMidPoints,
-            inputPositions: simulator.buffers.curPoints,
+            inputMidPositions: simulator.dataframe.getBuffer('curMidPoints', 'simulator'),
+            inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator'),
             maxDepth:tempBuffers.maxDepth,
             nextMidPoints:layoutBuffers.tempMidPoints,
             numBodies:numBodies,
             numNodes:numNodes,
-            numPoints:simulator.numEdges,
+            numPoints: simulator.dataframe.getNumElements('edge'),
             radius:tempBuffers.radius,
             sort:tempBuffers.sort,
-            springs: simulator.buffers.forwardsEdges,
+            springs: simulator.dataframe.getBuffer('forwardsEdges', 'simulator'),
             start:tempBuffers.start,
             step:tempBuffers.step,
             swings:layoutBuffers.swings,
@@ -273,7 +273,8 @@ var MidpointForces = function (clContext) {
 
     this.setMidPoints = function(simulator, layoutBuffers, warpsize, workItems) {
         var that = this;
-        return this.setupTempBuffers(simulator, warpsize, simulator.numEdges).then(function (tempBuffers) {
+        var numEdges = simulator.dataframe.getNumElements('edge');
+        return this.setupTempBuffers(simulator, warpsize, numEdges).then(function (tempBuffers) {
             var buffers = tempBuffers;
 
             var bufferBindings =
@@ -315,19 +316,21 @@ var MidpointForces = function (clContext) {
 
     this.execKernels = function(simulator, stepNumber, workItems, midpoint_index) {
 
+        var numSplits = simulator.dataframe.getNumElements('splits');
+
         var resources = [
-            simulator.buffers.curMidPoints,
-            simulator.buffers.forwardsDegrees,
-            simulator.buffers.backwardsDegrees,
-            simulator.buffers.nextMidPoints
+            simulator.dataframe.getBuffer('curMidPoints', 'simulator'),
+            simulator.dataframe.getBuffer('forwardsDegrees', 'simulator'),
+            simulator.dataframe.getBuffer('backwardsDegrees', 'simulator'),
+            simulator.dataframe.getBuffer('nextMidPoints', 'simulator')
         ];
 
-        this.toKDLayout.set({stepNumber: stepNumber, midpoint_stride: midpoint_index, midpoints_per_edge: simulator.numSplits});
+        this.toKDLayout.set({stepNumber: stepNumber, midpoint_stride: midpoint_index, midpoints_per_edge: numSplits});
         this.boundBox.set({stepNumber: stepNumber});
         this.buildTree.set({stepNumber: stepNumber});
         this.computeSums.set({stepNumber: stepNumber});
         this.sort.set({stepNumber: stepNumber});
-        this.calculateMidPoints.set({stepNumber: stepNumber, midpoint_stride: midpoint_index, midpoints_per_edge:simulator.numSplits});
+        this.calculateMidPoints.set({stepNumber: stepNumber, midpoint_stride: midpoint_index, midpoints_per_edge: numSplits});
 
         simulator.tickBuffers(['nextMidPoints']);
 

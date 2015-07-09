@@ -24,31 +24,32 @@ function midEdgeGather(clContext) {
 
     this.execKernels = function(simulator) {
       var buffers = simulator.buffers;
-    var resources = [
-        simulator.buffers.forwardsEdges,
-        simulator.buffers.forwardsWorkItems,
-        simulator.buffers.curPoints,
-        simulator.buffers.nextMidPoints,
-        simulator.buffers.curMidPoints,
-        simulator.buffers.midSpringsPos,
-        simulator.buffers.midSpringsColorCoord
-    ];
+      var resources = [
+        simulator.dataframe.getBuffer('forwardsEdges', 'simulator'),
+        simulator.dataframe.getBuffer('forwardsWorkItems', 'simulator'),
+        simulator.dataframe.getBuffer('curPoints', 'simulator'),
+        simulator.dataframe.getBuffer('nextMidPoints', 'simulator'),
+        simulator.dataframe.getBuffer('curMidPoints', 'simulator'),
+        simulator.dataframe.getBuffer('midSpringsPos', 'simulator'),
+        simulator.dataframe.getBuffer('midSpringsColorCoord', 'simulator')
+      ];
 
-
-      var numSprings = simulator.numEdges;
+      var numEdges = simulator.dataframe.getNumElements('edge');
+      var numSplits = simulator.dataframe.getNumElements('splits');
+      var numSprings = numEdges;
       this.gather.set({
-        edges: simulator.buffers.forwardsEdges.buffer,
-        midPoints: simulator.buffers.curMidPoints.buffer,
-        points: simulator.buffers.curPoints.buffer,
-        numEdges: simulator.numEdges,
-        numSplits: simulator.numSplits,
-        midEdgePositions: simulator.buffers.midSpringsPos.buffer
+        edges: simulator.dataframe.getBuffer('forwardsEdges', 'simulator').buffer,
+        midPoints: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
+        points: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
+        numEdges: numEdges,
+        numSplits: numSplits,
+        midEdgePositions: simulator.dataframe.getBuffer('midSpringsPos', 'simulator').buffer
       });
 
       simulator.tickBuffers(['curMidPoints', 'midSpringsPos', 'midSpringsColorCoord']);
 
       debug('Running midEdgeGather kernel');
-      return this.gather.exec([simulator.numEdges], resources)
+      return this.gather.exec([numEdges], resources)
         .fail(eh.makeErrorHandler('Kernel midEdgeGather failed'));
     };
 
