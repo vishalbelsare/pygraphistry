@@ -23,25 +23,27 @@ function SpringsGather(clContext) {
 }
 
 SpringsGather.prototype.tick = function(simulator) {
+    var numForwardsWorkItems = simulator.dataframe.getNumElements('forwardsWorkItems');
     var buffers = simulator.buffers;
     var resources = [
-        buffers.forwardsEdges,
-        buffers.curPoints,
-        buffers.springsPos
+        simulator.dataframe.getBuffer('forwardsEdges', 'simulator'),
+        simulator.dataframe.getBuffer('curPoints', 'simulator'),
+        simulator.dataframe.getBuffer('springsPos', 'simulator')
     ];
 
-    var numSprings = simulator.numEdges;
+    var numSprings = simulator.dataframe.getNumElements('edge');
     this.gather.set({
-        springs: simulator.buffers.forwardsEdges.buffer,
-        inputPoints: simulator.buffers.curPoints.buffer,
-        numSprings: simulator.numEdges,
-        springPositions: simulator.buffers.springsPos.buffer,
+
+        springs: simulator.dataframe.getBuffer('forwardsEdges', 'simulator').buffer,
+        inputPoints: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
+        numSprings: numSprings,
+        springPositions: simulator.dataframe.getBuffer('springsPos', 'simulator').buffer
     });
 
     simulator.tickBuffers(['springsPos']);
 
     debug('Running SpringsGather kernel');
-    return this.gather.exec([simulator.numForwardsWorkItems], resources)
+    return this.gather.exec([numForwardsWorkItems], resources)
         .fail(eh.makeErrorHandler('Kernel springGather failed'));
 }
 
