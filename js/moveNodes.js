@@ -28,7 +28,11 @@ function MoveNodes(clContext) {
 
 MoveNodes.prototype.run = function (simulator, selection, delta) {
     debug('Moving nodes');
-    var resources = [simulator.buffers.curPoints, simulator.buffers.nextPoints];
+    var numPoints = simulator.dataframe.getNumElements('point');
+    var resources = [
+        simulator.dataframe.getBuffer('curPoints', 'simulator'),
+        simulator.dataframe.getBuffer('nextPoints', 'simulator')
+    ];
 
     this.moveNodes.set({
         top: selection.tl.y,
@@ -37,16 +41,18 @@ MoveNodes.prototype.run = function (simulator, selection, delta) {
         right: selection.br.x,
         deltaX: delta.x,
         deltaY: delta.y,
-        inputPositions: simulator.buffers.curPoints.buffer,
-        outputPositions: simulator.buffers.nextPoints.buffer,
+        inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
+        outputPositions: simulator.dataframe.getBuffer('nextPoints', 'simulator').buffer
     });
 
     simulator.tickBuffers(['nextPoints', 'curPoints']);
 
     debug('Running moveNodes');
-    return this.moveNodes.exec([simulator.numPoints], resources)
+    return this.moveNodes.exec([numPoints], resources)
         .then(function () {
-            return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
+            var nextPoints = simulator.dataframe.getBuffer('nextPoints', 'simulator');
+            var curPoints = simulator.dataframe.getBuffer('curPoints', 'simulator');
+            return nextPoints.copyInto(curPoints);
         }).fail(eh.makeErrorHandler('Kernel moveNodes failed'));
 }
 
