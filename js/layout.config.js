@@ -63,7 +63,7 @@ function BoolParam(name, value) {
 BoolParam.prototype = Object.create(Param.prototype);
 BoolParam.prototype.constructor = BoolParam;
 
-var defaultNumSplits = 2;
+var defaultNumSplits = 1;
 var numRenderedSplits = 8;
 
 var uberControls = {
