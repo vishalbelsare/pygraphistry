@@ -252,7 +252,7 @@ Dataframe.prototype.getBufferKeys = function (type) {
 Dataframe.prototype.getNumElements = function (type) {
     var res = this.data.numElements[type];
     if (!res && res !== 0) {
-        throw "Invalid Num Elements";
+        throw "Invalid Num Elements: " + type;
     }
     return res;
 };
@@ -261,7 +261,7 @@ Dataframe.prototype.getNumElements = function (type) {
 Dataframe.prototype.getLocalBuffer = function (name) {
     var res = this.data.localBuffers[name];
     if (!res) {
-        throw "Invalid Local Buffer";
+        throw "Invalid Local Buffer: " + name;
     }
     return res;
 };
@@ -269,7 +269,7 @@ Dataframe.prototype.getLocalBuffer = function (name) {
 Dataframe.prototype.getHostBuffer = function (name) {
     var res = this.data.hostBuffers[name];
     if (!res) {
-        throw "Invalid Host Buffer";
+        throw "Invalid Host Buffer: " + name;
     }
     return res;
 };
@@ -283,7 +283,7 @@ Dataframe.prototype.getBuffer = function (name, type) {
     var buffers = this.data.buffers[type];
     var res = buffers[name];
     if (!res) {
-        throw "Invalid Buffer";
+        throw "Invalid Buffer[" + type + "]: " + name;
     }
     return res;
 };
