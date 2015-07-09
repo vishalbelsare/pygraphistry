@@ -1,3 +1,5 @@
+// TODO: Convert to use dataframe.
+
 'use strict'
 
 var debug = require('debug')('graphistry:graph-viz:cl:gaussseidel')

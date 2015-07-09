@@ -153,8 +153,9 @@ var setupTempLayoutBuffers = function(simulator) {
 
 
 ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
+    var numMidPoints = simulator.dataframe.getNumElements('midPoints');
     var localPosSize =
-            Math.min(simulator.cl.maxThreads, simulator.numMidPoints)
+            Math.min(simulator.cl.maxThreads, numMidPoints)
             * simulator.elementsPerPoint
             * Float32Array.BYTES_PER_ELEMENT;
 
@@ -190,9 +191,11 @@ function pointForces(simulator, barnesKernelSeq, stepNumber) {
 
 function edgeForces(simulator, edgeKernelSeq, stepNumber, workItems) {
     var buffers = simulator.buffers;
-     return edgeKernelSeq.execKernels(simulator, buffers.forwardsEdges, buffers.forwardsWorkItems,
-                                      simulator.numForwardsWorkItems, buffers.backwardsEdges, buffers.backwardsWorkItems,
-                                      simulator.numBackwardsWorkItems, buffers.curPoints, stepNumber, workItems);
+    var dataframe = simulator.dataframe;
+
+    return edgeKernelSeq.execKernels(simulator, dataframe.getBuffer('forwardsEdges', 'simulator'), dataframe.getBuffer('forwardsWorkItems', 'simulator'),
+                                      dataframe.getNumElements('forwardsWorkItems'), dataframe.getBuffer('backwardsEdges', 'simulator'), dataframe.getBuffer('backwardsWorkItems', 'simulator'),
+                                      dataframe.getNumElements('backwardsWorkItems'), dataframe.getBuffer('curPoints', 'simulator'), stepNumber, workItems);
 }
 
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
@@ -201,10 +204,10 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
       var buffers = simulator.buffers;
       simulator.tickBuffers(['curPoints', 'nextPoints']);
       return Q.all([]);
-      return Q.all([
-              buffers.nextPoints.copyInto(buffers.curPoints),
-              buffers.curPoints.copyInto(buffers.nextPoints)
-              ]);
+      // return Q.all([
+      //         buffers.nextPoints.copyInto(buffers.curPoints),
+      //         buffers.curPoints.copyInto(buffers.nextPoints)
+      //         ]);
       //return buffers.curPoints.copyInto(buffers.nextPoints);
       //return Q();
     }
@@ -222,9 +225,14 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);
+        var nextPoints = simulator.dataframe.getBuffer('nextPoints', 'simulator');
+        var curPoints = simulator.dataframe.getBuffer('curPoints', 'simulator');
+        var curForces = simulator.dataframe.getBuffer('curForces', 'simulator');
+        var prevForces = simulator.dataframe.getBuffer('prevForces', 'simulator');
+
         return Q.all([
-            buffers.nextPoints.copyInto(buffers.curPoints),
-            buffers.curForces.copyInto(buffers.prevForces)
+            nextPoints.copyInto(curPoints),
+            curForces.copyInto(prevForces)
         ]);
     }).then(function () {
         return simulator;

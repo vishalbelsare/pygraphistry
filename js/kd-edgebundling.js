@@ -32,8 +32,8 @@ function EdgeBundling(clContext) {
 
     this.midEdgeGather = new MidEdgeGather(clContext);
 
-    this.kernels = this.midpointForces.kernels.concat([this.ebMidsprings, 
-                                                      this.integrateMidpoints.faIntegrate, 
+    this.kernels = this.midpointForces.kernels.concat([this.ebMidsprings,
+                                                      this.integrateMidpoints.faIntegrate,
                                                       this.interpolateMidpoints.interpolate]);
 }
 
@@ -182,14 +182,15 @@ Object.seal(tempLayoutBuffers);
 
 // Create temporary buffers needed for layout
 var setupTempLayoutBuffers = function (simulator) {
+    var numMidPoints = simulator.dataframe.getNumElements('midPoints');
     simulator.resetBuffers(tempLayoutBuffers);
     return Q.all([
         simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed'),
-        simulator.cl.createBuffer(2 * simulator.numMidPoints * Float32Array.BYTES_PER_ELEMENT, 'prevForces'),
-        simulator.cl.createBuffer(2 * simulator.numMidPoints * Float32Array.BYTES_PER_ELEMENT, 'curForces'),
-        simulator.cl.createBuffer(2 * simulator.numMidPoints * Float32Array.BYTES_PER_ELEMENT, 'tempMidPoints'),
-        simulator.cl.createBuffer(1 * simulator.numMidPoints * Float32Array.BYTES_PER_ELEMENT, 'swings'),
-        simulator.cl.createBuffer(1 * simulator.numMidPoints * Float32Array.BYTES_PER_ELEMENT, 'tractions')
+        simulator.cl.createBuffer(2 * numMidPoints * Float32Array.BYTES_PER_ELEMENT, 'prevForces'),
+        simulator.cl.createBuffer(2 * numMidPoints * Float32Array.BYTES_PER_ELEMENT, 'curForces'),
+        simulator.cl.createBuffer(2 * numMidPoints * Float32Array.BYTES_PER_ELEMENT, 'tempMidPoints'),
+        simulator.cl.createBuffer(1 * numMidPoints * Float32Array.BYTES_PER_ELEMENT, 'swings'),
+        simulator.cl.createBuffer(1 * numMidPoints * Float32Array.BYTES_PER_ELEMENT, 'tractions')
     ]).spread(function (globalSpeed, prevForces, curForces, tempMidPoints, swings, tractions) {
         tempLayoutBuffers.globalSpeed = globalSpeed;
         tempLayoutBuffers.prevForces = prevForces;
@@ -231,14 +232,14 @@ EdgeBundling.prototype.setEdges = function (simulator) {
 
         that.ebMidsprings.set({
             numSplits: global.numSplits,
-            springs: simulator.buffers.forwardsEdges.buffer,
-            workList: simulator.buffers.forwardsWorkItems.buffer,
-            inputPoints: simulator.buffers.curPoints.buffer,
+            springs: simulator.dataframe.getBuffer('forwardsEdges', 'simulator').buffer,
+            workList: simulator.dataframe.getBuffer('forwardsWorkItems', 'simulator').buffer,
+            inputPoints: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
             inputForces: tempLayoutBuffers.tempMidPoints.buffer,
-            inputMidpoints: simulator.buffers.curMidPoints.buffer,
+            inputMidpoints: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
             outputMidpoints: tempLayoutBuffers.curForces.buffer,
-            springMidPositions: simulator.buffers.midSpringsPos.buffer,
-            midSpringsColorCoords: simulator.buffers.midSpringsColorCoord.buffer
+            springMidPositions: simulator.dataframe.getBuffer('midSpringsPos', 'simulator').buffer,
+            midSpringsColorCoords: simulator.dataframe.getBuffer('midSpringsColorCoord', 'simulator').buffer
         });
     })
     .fail( eh.makeErrorHandler('Failure in kd-edgebundling.js setEdges') )
@@ -246,14 +247,15 @@ EdgeBundling.prototype.setEdges = function (simulator) {
 
 // TODO Should we do forwards and backwards edges?
 function midEdges(simulator, ebMidsprings, stepNumber) {
+    var numForwardsWorkItems = simulator.dataframe.getNumElements('forwardsWorkItems');
     var resources = [
-        simulator.buffers.forwardsEdges,
-        simulator.buffers.forwardsWorkItems,
-        simulator.buffers.curPoints,
-        simulator.buffers.nextMidPoints,
-        simulator.buffers.curMidPoints,
-        simulator.buffers.midSpringsPos,
-        simulator.buffers.midSpringsColorCoord,
+        simulator.dataframe.getBuffer('forwardsEdges', 'simulator'),
+        simulator.dataframe.getBuffer('forwardsWorkItems', 'simulator'),
+        simulator.dataframe.getBuffer('curPoints', 'simulator'),
+        simulator.dataframe.getBuffer('nextMidPoints', 'simulator'),
+        simulator.dataframe.getBuffer('curMidPoints', 'simulator'),
+        simulator.dataframe.getBuffer('midSpringsPos', 'simulator'),
+        simulator.dataframe.getBuffer('midSpringsColorCoord', 'simulator')
     ];
 
     ebMidsprings.set({stepNumber: stepNumber});
@@ -261,12 +263,12 @@ function midEdges(simulator, ebMidsprings, stepNumber) {
     simulator.tickBuffers(['curMidPoints', 'midSpringsPos', 'midSpringsColorCoord']);
 
     debug('Running kernel gaussSeidelMidsprings');
-    return ebMidsprings.exec([simulator.numForwardsWorkItems], resources);
+    return ebMidsprings.exec([numForwardsWorkItems], resources);
 }
 
 
-// Helper function in order to create a chain of promises. It is needed in order to 
-// dynamically create a promise chain for a variable number of midpoints. 
+// Helper function in order to create a chain of promises. It is needed in order to
+// dynamically create a promise chain for a variable number of midpoints.
 function promiseWhile(condition, body) {
     var done = Q.defer();
 
@@ -301,7 +303,9 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
     if (locks.lockMidpoints) {
         console.log("Lock midpoints");
         simulator.tickBuffers(['nextMidPoints']);
-        return simulator.buffers.curMidPoints.copyInto(simulator.buffers.nextMidPoints);
+        var curMidPoints = simulator.dataframe.getBuffer('curMidPoints', 'simulator');
+        var nextMidPoints = simulator.dataframe.getBuffer('nextMidPoints', 'simulator');
+        return curMidPoints.copyInto(nextMidPoints);
     }
 
     if (locks.interpolateMidPointsOnce || locks.interpolateMidPoints) {
@@ -315,7 +319,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
 
             return that.interpolateMidpoints.execKernels(simulator)
             .then( function () {
-                simulator.tickBuffers(['nextMidpoints']);
+                simulator.tickBuffers(['nextMidPoints']);
             });
         });
     } else {
@@ -329,7 +333,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
             // Promise while loop to calculate each set of midpoints seperately.
             midpointIndex = 0;
             condition = function () {
-                return midpointIndex < simulator.numSplits;
+                return midpointIndex < simulator.dataframe.getNumElements('splits');
             };
 
             body = function () {
@@ -342,7 +346,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
             return promiseWhile(condition, body);
 
         }).then(function () { //TODO do both forwards and backwards?
-            if (simulator.numEdges > 0 && !locks.lockMidedges) {
+            if (simulator.dataframe.getNumElements('edge') > 0 && !locks.lockMidedges) {
                 return midEdges(simulator, that.ebMidsprings, stepNumber);
             }
 
@@ -353,13 +357,16 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
         }).then(function () {
             return that.integrateMidpoints.execKernels(simulator, tempLayoutBuffers, workItems);
         }).then(function () {
-            return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
+            var nextMidPoints = simulator.dataframe.getBuffer('nextMidPoints', 'simulator');
+            var curMidPoints = simulator.dataframe.getBuffer('curMidPoints', 'simulator');
+
+            return nextMidPoints.copyInto(curMidPoints);
         });
     }
     return calculateMidpoints.then(function () {
         return that.midEdgeGather.execKernels(simulator);
     }).then(function () {
-        simulator.tickBuffers(['curMidpoints']);
+        simulator.tickBuffers(['curMidPoints']);
         return Q.all([
             //tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
             tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
