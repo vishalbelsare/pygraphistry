@@ -12,6 +12,7 @@ var log = require('common/log.js');
 var eh = require('common/errorHandlers.js')(log);
 var util = require('../util.js');
 var weakcc = require('../weaklycc.js');
+var palettes = require('../palettes.js');
 
 var builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
 if (builder === null) {
@@ -389,8 +390,9 @@ var splunkMapper = {
         pointColor: {
             name: 'pointColor',
             transform: function (v) {
-                var palette = util.palettes.qual_palette2;
-                return int2color(groupRoundAndClamp(v, 0, palette.length - 1), palette);
+                return _.map(v, function (cat) {
+                    return palettes.bindings[cat];
+                });
             }
         },
         edgeColor2: {
