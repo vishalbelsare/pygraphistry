@@ -114,39 +114,30 @@ function getPolynomialCurves(bufferSnapshots) {
     var midSpringsPos = bufferSnapshots.midSpringsPos;
 
 
-    var srcPoint = new Float32Array(2);
-    var dstPoint = new Float32Array(2);
-    var midPoint = new Float32Array(2);
-    var length = 0;
+    //var srcPoint = new Float32Array(2);
+    //var dstPoint = new Float32Array(2);
     //var transformationMatrix = new Float32Array(4);
     //var transformationMatrixInv = new Float32Array(4);
     //var edgeVector = new Float32Array(2);
 
     // These variables are used to initialize an expanded edge. We declare them
     // outside the expandEdge function in order to save memory.
-    var srcPointIdx, dstPointIdx, midEdgeIndex, theta, cos, sin, srcPointX, srcPointY;
+    var srcPointIdx, dstPointIdx, midEdgeIndex, theta, cos, sin, srcPointX, srcPointY, dstPointX, dstPointY, midPointX, midPointY, length;
     function expandEdge(edgeIndex) {
         srcPointIdx = logicalEdges[edgeIndex * 2];
         dstPointIdx = logicalEdges[(edgeIndex * 2) + 1];
 
-        srcPoint[0] = curPoints[(2 * srcPointIdx)];
-        srcPoint[1] = curPoints[(2 * srcPointIdx)+ 1];
-        //srcPointX = curPoints[(2 * srcPointIdx)];
-        //srcPointY = curPoints[(2 * srcPointIdx)+ 1];
-        srcPoint[0] = curPoints[(2 * srcPointIdx)];
-        srcPoint[1] = curPoints[(2 * srcPointIdx)+ 1];
-        dstPoint[0] = curPoints[(2 * dstPointIdx)];
-        dstPoint[1] = curPoints[(2 * dstPointIdx) + 1];
+        srcPointX = curPoints[(2 * srcPointIdx)];
+        srcPointY = curPoints[(2 * srcPointIdx)+ 1];
+        dstPointX = curPoints[(2 * dstPointIdx)];
+        dstPointY = curPoints[(2 * dstPointIdx) + 1];
         // TODO this can be removed or should be generalized to multiple midpoints.
         midEdgeIndex = 0;
-        midPoint[0] = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIndex * 2)];
-        midPoint[1] = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIndex * 2) + 1];
+        midPointX = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIndex * 2)];
+        midPointY = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIndex * 2) + 1];
 
-        //edgeVector[0] = dstPoint[0] - srcPoint[0];
-        //edgeVector[1] = dstPoint[1] - srcPoint[1];
-        var edgeVectorX = dstPoint[0] - srcPoint[0];
-        var edgeVectorY = dstPoint[1] - srcPoint[1];
-
+        var edgeVectorX = dstPointX - srcPointX;
+        var edgeVectorY = dstPointY - srcPointY;
 
         length = Math.pow(Math.pow(edgeVectorX, 2) + Math.pow(edgeVectorY, 2), 0.5);
 
@@ -154,32 +145,20 @@ function getPolynomialCurves(bufferSnapshots) {
 
         cos = Math.cos(theta);
         sin = Math.sin(theta);
-
-        //transformationMatrix[0] = cos;
-        //transformationMatrix[1] = sin;
-        //transformationMatrix[2] = -sin;
-        //transformationMatrix[3] = cos;
-
-        //transformationMatrixInv[0] = cos;
-        //transformationMatrixInv[1] = -sin;
-        //transformationMatrixInv[2] = sin;
-        //transformationMatrixInv[3] = cos;
     }
 
-    function toEdgeBasisMem(vector, srcPoint, output) {
-        var diffX = vector[0] - srcPoint[0];
-        var diffY = vector[1] - srcPoint[1];
-        //output[0] = tranformationMatrix[0] * diffX + tranformationMatrix[1] * diffY;
-        //output[1] = tranformationMatrix[2] * diffX + tranformationMatrix[3] * diffY;
+    function toEdgeBasisMem(vectorX, vectorY, output) {
+        var diffX = vectorX - srcPointX;
+        var diffY = vectorY - srcPointY;
         output[0] = (cos * diffX) + (sin * diffY);
         output[1] = (-sin * diffX) + (cos * diffY);
     }
 
-    function fromEdgeBasisMem(vector, srcPoint, output) {
+    function fromEdgeBasisMem(vectorX, vectorY, output) {
         //output[0] = srcPoint[0] + (transformationMatrixInv[0] * vector[0] + transformationMatrixInv[1] * vector[1]);
         //output[1] = srcPoint[1] + (transformationMatrixInv[2] * vector[0] + transformationMatrixInv[3] * vector[1]);
-        output[0] = srcPoint[0] + ((cos * vector[0]) + (-sin * vector[1]));
-        output[1] = srcPoint[1] + ((sin * vector[0]) + (cos * vector[1]));
+        output[0] = srcPointX + ((cos * vectorX) + (-sin * vectorY));
+        output[1] = srcPointY + ((sin * vectorX) + (cos * vectorY));
     }
 
     function inverseMem(matrix, mem) {
@@ -202,20 +181,20 @@ function getPolynomialCurves(bufferSnapshots) {
         mem[8] = ((matrix[1] * matrix[4]) - (matrix[1] * matrix[4])) / det;
     }
 
+    // output array that contains the vector of the transformed destination point
     var transformedDstPoint = new Float32Array(2);
+    // output array that contains the vector of the transformed midpoint
     var transformedMidPoint = new Float32Array(2);
     var curveParameters = new Float32Array(3);
-    var yVector = new Float32Array(3);
     var invX = new Float32Array(9);
     var xVector = new Float32Array(9);
     function getCurveParameters() {
-        toEdgeBasisMem(dstPoint, srcPoint, transformedDstPoint);
-        toEdgeBasisMem(midPoint, srcPoint, transformedMidPoint);
+        toEdgeBasisMem(dstPointX, dstPointY, transformedDstPoint);
+        toEdgeBasisMem(midPointX, midPointY, transformedMidPoint);
 
-        // Set elements of y vector
-        yVector[0] = 0;
-        yVector[1] = transformedMidPoint[1];
-        yVector[2] = transformedDstPoint[1];
+        var yVector0 = 0;
+        var yVector1 = transformedMidPoint[1];
+        var yVector2 = transformedDstPoint[1];
 
         xVector[0] = 0;
         xVector[1] = 0;
@@ -228,60 +207,54 @@ function getPolynomialCurves(bufferSnapshots) {
         xVector[8] = 1;
 
         inverseMem(xVector, invX);
-        curveParameters[0] = (invX[0] * yVector[0]) + (invX[1] * yVector[1]) + (invX[2] * yVector[2]);
-        curveParameters[1] = (invX[3] * yVector[0]) + (invX[4] * yVector[1]) + (invX[5] * yVector[2]);
-        curveParameters[2] = (invX[6] * yVector[0]) + (invX[7] * yVector[1]) + (invX[8] * yVector[2]);
+        curveParameters[0] = (invX[0] * yVector0) + (invX[1] * yVector1) + (invX[2] * yVector2);
+        curveParameters[1] = (invX[3] * yVector0) + (invX[4] * yVector1) + (invX[5] * yVector2);
+        curveParameters[2] = (invX[6] * yVector0) + (invX[7] * yVector1) + (invX[8] * yVector2);
     }
 
     function computePolynomial(x, betaVector) {
         return (Math.pow(x, 2) * betaVector[0]) + (x * betaVector[1]) + (1 * betaVector[2]);
     }
 
-    var lambdaXVector = new Float32Array(2);
-    function getMidPointPosition(betaVector, lambda) {
+    function getMidPointPosition(betaVector, lambda, output) {
         var x;
         x = lambda * length;
-        lambdaXVector[0] = x;
-        lambdaXVector[1] = computePolynomial(x, betaVector);
-        fromEdgeBasisMem(lambdaXVector, srcPoint, dstMidPoint);
+        fromEdgeBasisMem(x, computePolynomial(x, betaVector), output);
     }
 
-    function setMidEdge(edgeIdx, midEdgeIdx, srcPoint, dstPoint) {
+    function setMidEdge(edgeIdx, midEdgeIdx, srcMidPointX, srcMidPointY, dstMidPointX, dstMidPointY) {
         var index = midEdgeStartIdx + (midEdgeIdx * 4);
-        midSpringsPos[index] = srcPoint[0];
-        midSpringsPos[index + 1] = srcPoint[1];
-        midSpringsPos[index + 2] = dstPoint[0];
-        midSpringsPos[index + 3] = dstPoint[1];
+        midSpringsPos[index] = srcMidPointX;
+        midSpringsPos[index + 1] = srcMidPointY;
+        midSpringsPos[index + 2] = dstMidPointX;
+        midSpringsPos[index + 3] = dstMidPointY;
     }
 
-
-    var srcMidPoint = new Float32Array(2);
     var dstMidPoint = new Float32Array(2);
     var elementsPerPoint = 2;
     var pointsPerEdge = 2;
     var midEdgesPerEdge = numRenderedSplits + 1;
     var midEdgeStride = elementsPerPoint * pointsPerEdge * midEdgesPerEdge;
+    var srcMidPointX;
+    var srcMidPointY;
     for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
-
         var midEdgeStartIdx = edgeIndex * midEdgeStride;
         expandEdge(edgeIndex);
         getCurveParameters();
-
         // Set first midpoint to source point of edge
-        srcMidPoint[0] = srcPoint[0];
-        srcMidPoint[1] = srcPoint[1];
-
+        srcMidPointX = srcPointX;
+        srcMidPointY = srcPointY;
         for (var midEdgeIdx = 0; midEdgeIdx < (numRenderedSplits); midEdgeIdx++) {
             var lambda = (midEdgeIdx + 1) / (numRenderedSplits + 1);
-            getMidPointPosition(curveParameters, lambda);
+            getMidPointPosition(curveParameters, lambda, dstMidPoint);
             //var dstPoint = midPointMem.slice();
-            setMidEdge(edgeIndex, midEdgeIdx, srcMidPoint, dstMidPoint);
-            srcMidPoint[0] = dstMidPoint[0];
-            srcMidPoint[1] = dstMidPoint[1];
+            setMidEdge(edgeIndex, midEdgeIdx, srcMidPointX, srcMidPointY, dstMidPoint[0], dstMidPoint[1]);
+            srcMidPointX = dstMidPoint[0];
+            srcMidPointY = dstMidPoint[1];
         }
 
         // Set last midedge position to previous midpoint and edge destination
-        setMidEdge(edgeIndex, numRenderedSplits, srcMidPoint, dstPoint);
+        setMidEdge(edgeIndex, numRenderedSplits, srcMidPointX, srcMidPointY, dstPointX, dstPointY);
     }
     return midSpringsPos;
 }
