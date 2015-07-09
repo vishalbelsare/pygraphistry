@@ -161,12 +161,9 @@ function getPolynomialCurves(bufferSnapshots) {
         midPointX = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIndex * 2)];
         midPointY = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIndex * 2) + 1];
 
-        var edgeVectorX = dstPointX - srcPointX;
-        var edgeVectorY = dstPointY - srcPointY;
+        length = Math.pow(Math.pow(dstPointX - srcPointX, 2) + Math.pow(dstPointY - srcPointY, 2), 0.5);
 
-        length = Math.pow(Math.pow(edgeVectorX, 2) + Math.pow(edgeVectorY, 2), 0.5);
-
-        theta = Math.atan2(edgeVectorY, edgeVectorX);
+        theta = Math.atan2(dstPointY - srcPointY, dstPointX - srcPointX);
 
         cos = Math.cos(theta);
         sin = Math.sin(theta);
@@ -229,12 +226,12 @@ function getPolynomialCurves(bufferSnapshots) {
         beta1 = (invX[3] * yVector0) + (invX[4] * yVector1) + (invX[5] * yVector2);
         beta2 = (invX[6] * yVector0) + (invX[7] * yVector1) + (invX[8] * yVector2);
     }
+    function computePolynomial(x) {
+        return (Math.pow(x, 2) * beta0) + (x * beta1) + (1 * beta2);
+    }
 
     function getMidPointPosition(lambda, output) {
         var x;
-        function computePolynomial(x) {
-            return (Math.pow(x, 2) * beta0) + (x * beta1) + (1 * beta2);
-        }
         x = lambda * length;
         fromEdgeBasisMem(x, computePolynomial(x), output);
     }
