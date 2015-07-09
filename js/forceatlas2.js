@@ -110,8 +110,10 @@ ForceAtlas2.prototype.setPhysics = function(cfg) {
 
 
 ForceAtlas2.prototype.setEdges = function(simulator) {
+    var numMidPoints = simulator.dataframe.getNumElements('midPoints');
+    var numPoints = simulator.dataframe.getNumElements('point');
     var localPosSize =
-        Math.min(simulator.cl.maxThreads, simulator.numMidPoints)
+        Math.min(simulator.cl.maxThreads, numMidPoints)
         * simulator.elementsPerPoint
         * Float32Array.BYTES_PER_ELEMENT;
 
@@ -121,22 +123,23 @@ ForceAtlas2.prototype.setEdges = function(simulator) {
         tilePointsParam: 1,
         tilePointsParam2: 1,
         tilesPerIteration: simulator.tilesPerIteration,
-        numPoints: simulator.numPoints,
-        inputPositions: simulator.buffers.curPoints.buffer,
+        numPoints: numPoints,
+        inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
         width: global.dimensions[0],
         height: global.dimensions[1],
-        pointDegrees: simulator.buffers.degrees.buffer,
-        pointForces: simulator.buffers.partialForces1.buffer
+        pointDegrees: simulator.dataframe.getBuffer('degrees', 'simulator').buffer,
+        pointForces: simulator.dataframe.getBuffer('partialForces1', 'simulator').buffer
     });
 }
 
 
 function pointForces(simulator, faPoints, stepNumber) {
+    var numPoints = simulator.dataframe.getNumElements('point');
     var resources = [
-        simulator.buffers.curPoints,
-        simulator.buffers.forwardsDegrees,
-        simulator.buffers.backwardsDegrees,
-        simulator.buffers.partialForces1
+        simulator.dataframe.getBuffer('curPoints', 'simulator'),
+        simulator.dataframe.getBuffer('forwardsDegrees', 'simulator'),
+        simulator.dataframe.getBuffer('backwardsDegrees', 'simulator'),
+        simulator.dataframe.getBuffer('partialForces1', 'simulator')
     ];
 
     faPoints.set({stepNumber: stepNumber});
@@ -144,7 +147,7 @@ function pointForces(simulator, faPoints, stepNumber) {
     simulator.tickBuffers(['partialForces1']);
 
     debug("Running kernel faPointForces");
-    return faPoints.exec([simulator.numPoints], resources)
+    return faPoints.exec([numPoints], resources)
         .fail(eh.makeErrorHandler('Kernel faPointForces failed'));
 }
 
@@ -164,8 +167,8 @@ function edgeForcesOneWay(simulator, faEdges, edges, workItems, numWorkItems,
     var resources = [edges, workItems, points, partialForces, outputForces];
 
     simulator.tickBuffers(
-        _.keys(simulator.buffers).filter(function (name) {
-            return simulator.buffers[name] == outputForces;
+        simulator.dataframe.getBufferKeys('simulator').filter(function (name) {
+            return simulator.dataframe.getBuffer(name, 'simulator') == outputForces;
         })
     );
 
@@ -177,95 +180,99 @@ function edgeForcesOneWay(simulator, faEdges, edges, workItems, numWorkItems,
 function edgeForces(simulator, faEdges, stepNumber) {
     var buffers = simulator.buffers;
     return edgeForcesOneWay(simulator, faEdges,
-                            buffers.forwardsEdges, buffers.forwardsWorkItems,
-                            simulator.numForwardsWorkItems,
-                            buffers.curPoints, stepNumber,
-                            buffers.partialForces1, buffers.partialForces2)
+                            simulator.dataframe.getBuffer('forwardsEdges', simulator), simulator.dataframe.getBuffer('forwardsWorkItems', 'simulator'),
+                            simulator.dataframe.getNumElements('forwardsWorkItems'),
+                            simulator.dataframe.getBuffer('curPoints', 'simulator'), stepNumber,
+                            simulator.dataframe.getBuffer('partialForces1', 'simulator'), simulator.dataframe.getBuffer('partialForces2', 'simulator'));
     .then(function () {
         return edgeForcesOneWay(simulator, faEdges,
-                                buffers.backwardsEdges, buffers.backwardsWorkItems,
-                                simulator.numBackwardsWorkItems,
-                                buffers.curPoints, stepNumber,
-                                buffers.partialForces2, buffers.curForces);
+
+                                simulator.dataframe.getBuffer('backwardsEdges', simulator), simulator.dataframe.getBuffer('backwardsWorkItems', 'simulator'),
+                                simulator.dataframe.getNumElements('backwardsWorkItems'),
+                                simulator.dataframe.getBuffer('curPoints', 'simulator'), stepNumber,
+                                simulator.dataframe.getBuffer('partialForces2', 'simulator'), simulator.dataframe.getBuffer('curForces', 'simulator'));
     }).fail(eh.makeErrorHandler('Kernel faPointEdges failed'));
 }
 
 
 function swingsTractions(simulator, faSwings) {
     var buffers = simulator.buffers;
+    var numPoints = simulator.dataframe.getNumElements('point');
     faSwings.set({
-        prevForces: buffers.prevForces.buffer,
-        curForces: buffers.curForces.buffer,
-        swings: buffers.swings.buffer,
-        tractions: buffers.tractions.buffer
+        prevForces: simulator.dataframe.getBuffer('prevForces', 'simulator').buffer,
+        curForces: simulator.dataframe.getBuffer('curForces', 'simulator').buffer,
+        swings: simulator.dataframe.getBuffer('swings', 'simulator').buffer,
+        tractions: simulator.dataframe.getBuffer('tractions', 'simulator').buffer
     });
 
     var resources = [
-        buffers.prevForces,
-        buffers.curForces,
-        buffers.swings,
-        buffers.tractions
+        simulator.dataframe.getBuffer('prevForces', 'simulator'),
+        simulator.dataframe.getBuffer('curForces', 'simulator'),
+        simulator.dataframe.getBuffer('swings', 'simulator'),
+        simulator.dataframe.getBuffer('tractions', 'simulator')
     ];
 
     simulator.tickBuffers(['swings', 'tractions']);
 
     debug("Running kernel faSwingsTractions");
-    return faSwings.exec([simulator.numPoints], resources)
+    return faSwings.exec([numPoints], resources)
         .fail(eh.makeErrorHandler('Kernel faSwingsTractions failed'));
 }
 
 
 function integrate(simulator, faIntegrate) {
     var buffers = simulator.buffers;
+    var numPoints = simulator.dataframe.getNumElements('point');
     faIntegrate.set({
         gSpeed: 1.0,
-        inputPositions: buffers.curPoints.buffer,
-        curForces: buffers.curForces.buffer,
-        swings: buffers.swings.buffer,
-        outputPositions: buffers.nextPoints.buffer
+        inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
+        curForces: simulator.dataframe.getBuffer('curForces', 'simulator').buffer,
+        swings: simulator.dataframe.getBuffer('swings', 'simulator').buffer,
+        outputPositions: simulator.dataframe.getBuffer('nextPoints', 'simulator').buffer
     });
 
     var resources = [
-        buffers.curPoints,
-        buffers.curForces,
-        buffers.swings,
-        buffers.nextPoints
+        simulator.dataframe.getBuffer('curPoints', 'simulator'),
+        simulator.dataframe.getBuffer('curForces', 'simulator'),
+        simulator.dataframe.getBuffer('swings', 'simulator'),
+        simulator.dataframe.getBuffer('nextPoints', 'simulator')
     ];
 
     simulator.tickBuffers(['nextPoints']);
 
     debug("Running kernel faIntegrate");
-    return faIntegrate.exec([simulator.numPoints], resources)
+    return faIntegrate.exec([numPoints], resources)
         .fail(eh.makeErrorHandler('Kernel faIntegrate failed'));
 }
 
 function integrateApprox(simulator, faIntegrateApprox) {
     var buffers = simulator.buffers;
+    var numPoints = simulator.dataframe.getNumElements('point');
 
     faIntegrateApprox.set({
-        numPoints: simulator.numPoints,
-        inputPositions: buffers.curPoints.buffer,
-        pointDegrees: buffers.degrees.buffer,
-        curForces: buffers.curForces.buffer,
-        swings: buffers.swings.buffer,
-        tractions: buffers.tractions.buffer,
-        outputPositions: buffers.nextPoints.buffer
+        numPoints: numPoints,
+        inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
+        pointDegrees: simulator.dataframe.getBuffer('degrees', 'simulator').buffer,
+        curForces: simulator.dataframe.getBuffer('curForces', 'simulator').buffer,
+        swings: simulator.dataframe.getBuffer('swings', 'simulator').buffer,
+        tractions: simulator.dataframe.getBuffer('tractions', 'simulator').buffer,
+        outputPositions: simulator.dataframe.getBuffer('nextPoints', 'simulator').buffer
     });
 
     var resources = [
-        buffers.curPoints,
-        buffers.forwardsDegrees,
-        buffers.backwardsDegrees,
-        buffers.curForces,
-        buffers.swings,
-        buffers.tractions,
-        buffers.nextPoints
+        simulator.dataframe.getBuffer('curPoints', 'simulator'),
+        simulator.dataframe.getBuffer('forwardsDegrees', 'simulator'),
+        simulator.dataframe.getBuffer('backwardsDegrees', 'simulator'),
+        simulator.dataframe.getBuffer('curForces', 'simulator'),
+        simulator.dataframe.getBuffer('swings', 'simulator'),
+        simulator.dataframe.getBuffer('tractions', 'simulator'),
+        simulator.dataframe.getBuffer('nextPoints', 'simulator')
     ];
 
     simulator.tickBuffers(['nextPoints']);
 
     debug('Running kernel faIntegrateApprox');
-    return faIntegrateApprox.exec([simulator.numPoints], resources)
+    return faIntegrateApprox.exec([numPoints], resources)
         .fail(eh.makeErrorHandler('Kernel faIntegrateApprox failed'));
 }
 
@@ -283,9 +290,15 @@ ForceAtlas2.prototype.tick = function(simulator, stepNumber) {
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);
+
+        var nextPoints = simulator.dataframe.getBuffer('nextPoints', 'simulator');
+        var curPoints = simulator.dataframe.getBuffer('curPoints', 'simulator');
+        var curForces = simulator.dataframe.getBuffer('curForces', 'simulator');
+        var prevForces = simulator.dataframe.getBuffer('prevForces', 'simulator');
+
         return Q.all([
-            buffers.nextPoints.copyInto(buffers.curPoints),
-            buffers.curForces.copyInto(buffers.prevForces)
+            nextPoints.copyInto(curPoints),
+            curForces.copyInto(prevForces)
         ]);
     }).then(function () {
         return simulator;
