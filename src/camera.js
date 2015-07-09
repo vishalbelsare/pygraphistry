@@ -20,6 +20,7 @@
         vec4 = window.vec4;
     }
 
+    //FIXME legacy Superconductor; should merge into normal camera
     function Camera3d(argsRaw) {
         //TODO extend
         var args = {
@@ -87,7 +88,7 @@
 
 
     // num * num * num * num *num * num * ({'2d', '3d'} = '2d') => Camera
-    function Camera2d(left, right, top, bottom, nearPlane, farPlane, mode) {
+    function Camera2d(left, right, top, bottom, nearPlane, farPlane /*, mode*/) {
         this.width = right - left;
         this.height = bottom - top;
         this.center = {
@@ -101,16 +102,14 @@
         this.pixelRatio = 1.0;
 
 
-        if (mode === '3d') {
-            debug('Using 3d camera');
-            this.is3d = true;
-            this.position = {x: 0.0, y: 0.0, z: 0.0};
-            this.rotation = {x: 0.0, y: 0.0, z: 0.0};
-            this.fov = 60;
-            this.near = 1;
-            this.far = 20;
-            this.aspect = 1;
-        }
+        //Always enable 3d
+        this.is3d = true;
+        this.position = {x: 0.0, y: 0.0, z: 0.0};
+        this.rotation = {x: 0.0, y: 0.0, z: 0.0};
+        this.fov = 60;
+        this.near = 1;
+        this.far = 20;
+        this.aspect = 1;
 
     }
 
@@ -167,13 +166,10 @@
                    this.nearPlane, this.farPlane);
 
 
-        if (this.is3d) {
-            mat4.rotateX(projectionMatrix, projectionMatrix, toRadian(this.rotation.x));
-            mat4.rotateY(projectionMatrix, projectionMatrix, toRadian(this.rotation.y));
-            mat4.rotateZ(projectionMatrix, projectionMatrix, toRadian(this.rotation.z));
-        }
-
-
+        //always enable 3d
+        mat4.rotateX(projectionMatrix, projectionMatrix, toRadian(this.rotation.x));
+        mat4.rotateY(projectionMatrix, projectionMatrix, toRadian(this.rotation.y));
+        mat4.rotateZ(projectionMatrix, projectionMatrix, toRadian(this.rotation.z));
 
 //        mat4.perspective(projectionMatrix, toRadian(this.fov), this.aspect, this.near, this.far);
 
