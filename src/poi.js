@@ -30,12 +30,12 @@ function makeErrorHandler(name) {
 
 
 function markHits(samples32) {
-    var hits = {};
-    var idx;
-    for (var i = 0; i < samples32.length; i++) {
-        idx = picking.decodeGpuIndex(samples32[i]).idx;
+    var hits = {},
+        idx;
+    _.forEach(samples32, function(sample32) {
+        idx = picking.decodeGpuIndex(sample32).idx;
         hits[idx] = {dim: 1, idx: idx};
-    }
+    });
     return hits;
 }
 
@@ -289,7 +289,7 @@ function init (streamClient, socket) {
         invalidateCache: invalidateCache.bind('', instance),
 
         // int * int -> String
-        cacheKey: cacheKey,
+        cacheKey: cacheKey
     });
 
     return instance;
