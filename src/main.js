@@ -54,13 +54,13 @@ var urlParams = getUrlParameters();
  * @return GraphistryURLParams
  */
 function getUrlParameters() {
-    var sPageURL = window.location.search.substring(1);
-    var sURLVariables = sPageURL.split('&');
-    var params = {};
-    for (var i = 0; i < sURLVariables.length; i++){
-        var sParameterName = sURLVariables[i].split('=');
+    var sPageURL = window.location.search.substring(1),
+        sURLVariables = sPageURL.split('&'),
+        params = {};
+    _.forEach(sURLVariables, function(sURLVariable) {
+        var sParameterName = sURLVariable.split('=');
         params[sParameterName[0]] = sParameterName[1];
-    }
+    });
 
     return params;
 }
