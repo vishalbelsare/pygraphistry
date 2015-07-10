@@ -123,9 +123,8 @@ module.exports = {
 
                 vboUpdates.onNext('start');
 
-                var fetchBuffer = makeFetcher().bind('', data.bufferByteLengths);
-                var fetchTexture = makeFetcher().bind('', data.bufferByteLengths);
-
+                var fetchBuffer = makeFetcher().bind(data.bufferByteLengths, '');
+                var fetchTexture = makeFetcher().bind(data.bufferByteLengths, '');
 
                 var readyBuffers = new Rx.ReplaySubject(1);
                 var readyTextures = new Rx.ReplaySubject(1);
