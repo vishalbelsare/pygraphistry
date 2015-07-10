@@ -40,12 +40,18 @@ function upload(S3, bucket, metadata, binaryBuffer, params) {
                 return Q.nfcall(S3.putObject.bind(S3), putParams);
             }).then(function () {
                 debug('Upload (gzipped) done', metadata.name);
+            }).catch(function (e) {
+                debug('Upload Error', e);
+                throw e;
             });
     } else {
         debug('Upload size', (putParams.Body.length / 1000).toFixed(1), 'KB');
         return Q.nfcall(S3.putObject.bind(S3), putParams)
             .then(function () {
                 debug('Upload done', metadata.name);
+            }).catch(function (e) {
+                debug('Upload Error', e);
+                throw e;
             });
     }
 }
