@@ -93,15 +93,29 @@ function setupBackgroundColor(renderingScheduler, bgColor) {
 
 function getPolynomialCurves(bufferSnapshots) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
-    var curMidPoints = new Float32Array(bufferSnapshots.curMidPoints.buffer);
+    var curMidPoints = null;
+    var interpolateMidPoints = true;
+    var numSplits = 0;
+    if (bufferSnapshots.curMidPoints) {
+        interpolateMidPoints = false;
+        curMidPoints = new Float32Array(bufferSnapshots.curMidPoints.buffer);
+        numSplits = curMidPoints.length  / logicalEdges.length;
+    } else {
+        // TODO We can only handle one midpoint as of now.
+        numSplits = 1;
+    }
+
     var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
-    var numSplits = curMidPoints.length  / logicalEdges.length;
     var numRenderedSplits = 8;
 
     //var numEdgesRendered = 3;
 
     if (numSplits < 1) {
         numSplits = 0;
+    }
+
+    if (numSplits > 1) {
+        console.info('More than one midpoint not supported!');
     }
     //var numMidEdges = numSplits + 1;
     var numEdges = (logicalEdges.length / 2);
@@ -157,13 +171,29 @@ function getPolynomialCurves(bufferSnapshots) {
         dstPointX = curPoints[(2 * dstPointIdx)];
         dstPointY = curPoints[(2 * dstPointIdx) + 1];
         // TODO this can be removed or should be generalized to multiple midpoints.
-        midEdgeIndex = 0;
-        midPointX = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIndex * 2)];
-        midPointY = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIndex * 2) + 1];
 
         length = Math.pow(Math.pow(dstPointX - srcPointX, 2) + Math.pow(dstPointY - srcPointY, 2), 0.5);
 
         theta = Math.atan2(dstPointY - srcPointY, dstPointX - srcPointX);
+
+        var HEIGHT = 0.2;
+        function interpolateArcMidPoint() {
+            var actualMidPointX = (srcPointX + dstPointX) / 2;
+            var actualMidPointY = (srcPointY + dstPointY) / 2;
+            var directionX = (srcPointX - dstPointX) / length;
+            var directionY = (srcPointY - dstPointY) / length;
+            midPointX = actualMidPointX + (directionY * HEIGHT * (length / 2));
+            midPointY = actualMidPointY + (-directionX * HEIGHT * (length / 2));
+        }
+
+        if (interpolateMidPoints) {
+            interpolateArcMidPoint();
+        } else {
+            midEdgeIndex = 0;
+            midPointX = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIndex * 2)];
+            midPointY = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIndex * 2) + 1];
+        }
+
 
         cos = Math.cos(theta);
         sin = Math.sin(theta);
@@ -339,36 +369,37 @@ function renderSlowEffects(renderingScheduler) {
     var appSnapshot = renderingScheduler.appSnapshot;
     var renderState = renderingScheduler.renderState;
     var logicalEdges = renderState.get('config').get('edgeMode') === 'INDEXEDCLIENT';
+    var arc = renderState.get('config').get('edgeMode') === 'ARC';
     var springsPos;
     var midSpringsPos;
+    var start;
+    var end1, end2;
 
 
     if (logicalEdges && appSnapshot.vboUpdated) {
-        var start = Date.now();
-        if (appSnapshot.buffers.curMidPoints) {
-            midSpringsPos = getPolynomialCurves(appSnapshot.buffers);
-            renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
-        } else {
-            springsPos = expandLogicalEdges(appSnapshot.buffers);
-            renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
-        }
-        var end1 = Date.now();
-        //renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
-        var end2 = Date.now();
+        start = Date.now();
+        springsPos = expandLogicalEdges(appSnapshot.buffers);
+        end1 = Date.now(); 
+        renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
+        end2 = Date.now();
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
-
-        if (!appSnapshot.buffers.curMidPoints) {
-            makeArrows(appSnapshot.buffers);
-            var end3 = Date.now();
-            renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
-            renderer.loadBuffers(renderState, {'arrowEndPos': appSnapshot.buffers.arrowEndPos});
-            renderer.loadBuffers(renderState, {'arrowNormalDir': appSnapshot.buffers.arrowNormalDir});
-            renderer.loadBuffers(renderState, {'arrowColors': appSnapshot.buffers.arrowColors});
-            renderer.loadBuffers(renderState, {'arrowPointSizes': appSnapshot.buffers.arrowPointSizes});
-            renderer.setNumElements(renderState, 'arrowculled', appSnapshot.buffers.arrowStartPos.length / 2);
-            var end4 = Date.now();
-            console.info('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
-        }
+        makeArrows(appSnapshot.buffers);
+        var end3 = Date.now();
+        renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
+        renderer.loadBuffers(renderState, {'arrowEndPos': appSnapshot.buffers.arrowEndPos});
+        renderer.loadBuffers(renderState, {'arrowNormalDir': appSnapshot.buffers.arrowNormalDir});
+        renderer.loadBuffers(renderState, {'arrowColors': appSnapshot.buffers.arrowColors});
+        renderer.loadBuffers(renderState, {'arrowPointSizes': appSnapshot.buffers.arrowPointSizes});
+        renderer.setNumElements(renderState, 'arrowculled', appSnapshot.buffers.arrowStartPos.length / 2);
+        var end4 = Date.now();
+        console.info('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
+    } else if (arc && appSnapshot.vboUpdated) {
+        start = Date.now();
+        midSpringsPos = getPolynomialCurves(appSnapshot.buffers);
+        end1 = Date.now();
+        renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
+        end2 = Date.now();
+        console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
     }
 
     renderer.setCamera(renderState);
@@ -539,7 +570,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
             });
         });
         return bufUpdates[0]
-            .combineLatest(bufUpdates[1], bufUpdates[2], bufUpdates[3], bufUpdates[4], _.identity);
+            .combineLatest(bufUpdates[1], bufUpdates[2], bufUpdates[3], /*bufUpdates[4],*/ _.identity);
     }).do(function () {
         that.appSnapshot.vboUpdated = true;
         that.renderScene('vboupdate', {trigger: 'renderSceneFast'});
