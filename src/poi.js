@@ -247,7 +247,7 @@ function invalidateCache (instance) {
 }
 
 
-function init (socket) {
+function init (streamClient, socket) {
     debug('initializing label engine');
 
     var instance = { };

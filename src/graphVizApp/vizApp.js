@@ -22,7 +22,7 @@ function init(streamClient, socket, initialRenderState, vboUpdates, workerParams
     //////////////////////////////////////////////////////////////////////////
     // App State
     //////////////////////////////////////////////////////////////////////////
-    var poi = poiLib(socket);
+    var poi = poiLib(streamClient, socket);
     // Observable DOM
     var labelHover = new Rx.Subject();
 
