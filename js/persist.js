@@ -59,7 +59,7 @@ function uploadPublic (path, buffer, params) {
 function staticContentForDataframe (dataframe, type) {
     var rows = dataframe.getRows(undefined, type),
         rowContents = new Array(rows.length),
-        indexes = new ArrayBuffer(rows.length * 4),
+        indexes = new Buffer(rows.length * 4),
         indexesView = new Uint32Array(indexes),
         currentContentIndex = 0;
     _.each(rows, function (row, rowIndex) {
