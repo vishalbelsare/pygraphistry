@@ -91,13 +91,12 @@ function setupBackgroundColor(renderingScheduler, bgColor) {
     }).subscribe(_.identity, util.makeErrorHandler('bg color updates'));
 }
 
-function getPolynomialCurves(bufferSnapshots) {
+function getPolynomialCurves(bufferSnapshots, interpolateMidPoints) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var curMidPoints = null;
-    var interpolateMidPoints = true;
     var numSplits = 0;
-    if (bufferSnapshots.curMidPoints) {
-        interpolateMidPoints = false;
+    if (!interpolateMidPoints) {
+        console.log('Render curves based on midpoints');
         curMidPoints = new Float32Array(bufferSnapshots.curMidPoints.buffer);
         numSplits = curMidPoints.length  / logicalEdges.length;
     } else {
@@ -395,7 +394,7 @@ function renderSlowEffects(renderingScheduler) {
         console.info('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
     } else if (arc && appSnapshot.vboUpdated) {
         start = Date.now();
-        midSpringsPos = getPolynomialCurves(appSnapshot.buffers);
+        midSpringsPos = getPolynomialCurves(appSnapshot.buffers, renderState.get('flags').interpolateMidPoints);
         end1 = Date.now();
         renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
         end2 = Date.now();
@@ -517,6 +516,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         vboUpdated: false,
         simulating: false,
         quietState: false,
+        interpolateMidPoints : true,
         buffers: {
             curPoints: undefined,
             curMidPoints: undefined,
@@ -559,6 +559,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         that.appSnapshot.simulating = val;
     }, util.makeErrorHandler('simulate updates'));
 
+    console.log(vboUpdates);
     vboUpdates.filter(function (status) {
         return status === 'received';
     }).flatMapLatest(function () {
@@ -570,7 +571,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
             });
         });
         return bufUpdates[0]
-            .combineLatest(bufUpdates[1], bufUpdates[2], bufUpdates[3], /*bufUpdates[4],*/ _.identity);
+            .combineLatest(bufUpdates[1], bufUpdates[2], bufUpdates[3], bufUpdates[4], _.identity);
     }).do(function () {
         that.appSnapshot.vboUpdated = true;
         that.renderScene('vboupdate', {trigger: 'renderSceneFast'});

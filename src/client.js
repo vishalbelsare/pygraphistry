@@ -298,6 +298,7 @@ function handleVboUpdates(socket, uri, renderState) {
             var changedBufferNames  = getUpdatedNames(bufferNames,  previousVersions.buffers,  data.versions ? data.versions.buffers : null);
             var changedTextureNames = getUpdatedNames(textureNames, previousVersions.textures, data.versions ? data.versions.textures : null);
 
+
             socket.emit('planned_binary_requests', {buffers: changedBufferNames, textures: changedTextureNames});
 
             debug('3. changed buffers/textures', previousVersions, data.versions, changedBufferNames, changedTextureNames, thisStep);
@@ -334,6 +335,11 @@ function handleVboUpdates(socket, uri, renderState) {
                         _.each(data.elements, function (num, itemName) {
                             renderer.setNumElements(renderState, itemName, num);
                         });
+                        if (changedBufferNames.indexOf('curMidPoints') > 0 && thisStep.step > 20) {
+                            renderer.setFlags(renderState, 'interpolateMidPoints', false);
+                        } else {
+                            renderer.setFlags(renderState, 'interpolateMidPoints', true);
+                        }
                         renderer.loadBuffers(renderState, bindings);
                         readyBuffers.onNext();
                     } catch (e) {
