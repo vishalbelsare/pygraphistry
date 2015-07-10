@@ -19,6 +19,7 @@ var BUCKET_REGION = 'us-west-1';
 var BUCKET_NAME = 'graphistry.data';
 var BUCKET_URL = 'https://s3-' + BUCKET_REGION + '.amazonaws.com/' + BUCKET_NAME;
 var BASE_URL = BUCKET_URL + '/Static/';
+// TODO: de-globalize:
 var contentKey;
 
 //======
@@ -182,5 +183,45 @@ module.exports = {
 
         return vboUpdates;
 
+    },
+
+    getLabels: function (socket, uri) {
+        function makeIndexFetcher () {
+            return function (bufferName) {
+
+                debug('fetching', bufferName);
+
+                //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
+                var res = new Rx.Subject(),
+                    oReq = new XMLHttpRequest(),
+                    assetURL = BASE_URL + contentKey + '/' + bufferName,
+                    now = Date.now();
+                oReq.open('GET', assetURL, true);
+                // Handling a response as an arraybuffer means bypassing $.ajax:
+                oReq.responseType = 'arraybuffer';
+
+                oReq.onload = function () {
+                    if (oReq.status !== 200) {
+                        console.error('HTTP error acquiring data at: ', assetURL, oReq.statusText);
+                        return;
+                    }
+                    try {
+                        debug('got index data', bufferName, Date.now() - now, 'ms');
+
+                        var arrayBuffer = oReq.response; // Note: not oReq.responseText
+                        res.onNext(arrayBuffer);
+                    } catch (e) {
+                        console.error('Render error on loading data:', e, e.stack);
+                    }
+                };
+
+                oReq.send(null);
+
+                return res.take(1);
+            };
+        }
+
+        var fetchEdgeIndex = makeIndexFetcher().bind('edgeIndexes.buffer');
+        var fetchPointIndex = makeIndexFetcher().bind('pointIndexes.buffer');
     }
 };
