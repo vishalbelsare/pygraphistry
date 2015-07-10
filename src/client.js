@@ -150,7 +150,7 @@ function connect(vizType, urlParams) {
     }
 
     // For compatibility with old way of specifying dataset
-    if ('datasetname' in urlParams) {
+    if (urlParams.hasOwnProperty('datasetname')) {
         urlParams.dataset = urlParams.datasetname;
     }
 
@@ -166,8 +166,8 @@ function connect(vizType, urlParams) {
         .value()
         .join('&');
 
-    var attempt = 0;
-    var latestError;
+    var attempt = 0,
+        latestError;
 
     return requestWorker(vizAddrArgs)
         .flatMap(function (uri) {
