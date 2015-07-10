@@ -137,7 +137,7 @@ function init(streamClient, canvasElement, vizType) {
                 });
         }).do(/** @param {RenderInfo} nfo */ function(nfo) {
             var vboUpdates = streamClient.handleVboUpdates(nfo.socket, nfo.uri, nfo.initialRenderState);
-            vizApp(nfo.socket, nfo.initialRenderState, vboUpdates, nfo.uri, urlParams);
+            vizApp(streamClient, nfo.socket, nfo.initialRenderState, vboUpdates, nfo.uri, urlParams);
 
             initialized.onNext({
                 vboUpdates: vboUpdates,

@@ -16,7 +16,7 @@ var poiLib          = require('../poi.js');
 var util            = require('./util.js');
 
 
-function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
+function init(streamClient, socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     debug('Initializing vizApp.');
 
     //////////////////////////////////////////////////////////////////////////
