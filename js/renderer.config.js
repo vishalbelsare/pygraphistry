@@ -830,8 +830,8 @@ var camera2D = {
 var sceneUber = {
     'options': stdOptions,
     'camera': camera2D,
-    'edgeMode': 'INDEXEDCLIENT',
-    'render': ['pointpicking',  'pointsampling', 'midedgeculledindexedclient', 'edgepicking',
+    'edgeMode': 'ARC',
+    'render': ['pointpicking',  'pointsampling', 'midedgeculledindexedclient', /*'edgepicking',*/
         'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2']
 }
