@@ -185,7 +185,8 @@ function createInfoOverlay(app) {
                 $('<span>')
                     .addClass('flavor')
                     .text('render'));
-    $('body').append(renderMeterD);
+    var $body = $('body');
+    $body.append(renderMeterD);
     var renderMeter = new FPSMeter(renderMeterD.get(0), {
         heat: 1,
         graph: 1,
@@ -195,7 +196,7 @@ function createInfoOverlay(app) {
         smoothing: 3,
         show: 'fps',
 
-        theme: 'transparent',
+        theme: 'transparent'
     });
     app.subscribe(function (app) {
         app.initialRenderState.get('renderPipeline').subscribe(function (evt) {
@@ -214,7 +215,7 @@ function createInfoOverlay(app) {
                 $('<span>')
                     .addClass('flavor')
                     .text('network'));
-    $('body').append(networkMeterD);
+    $body.append(networkMeterD);
     var networkMeter = new FPSMeter(networkMeterD.get(0), {
         heat: 1,
         graph: 1,
@@ -224,7 +225,7 @@ function createInfoOverlay(app) {
         smoothing: 5,
         show: 'fps',
 
-        theme: 'transparent',
+        theme: 'transparent'
     });
     app.pluck('vboUpdates').subscribe(function(evt) {
             switch (evt) {
