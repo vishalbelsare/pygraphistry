@@ -177,7 +177,6 @@ function init(socket, marquee) {
                     .take(1)
                     .do(function () {
                         var maxItems = Math.min((window.innerHeight - 110) / 85, 5);
-                        console.log('maxItems', maxItems);
                         attributes.forEach(function (attribute, i) {
                             if (i >= maxItems) {
                                 return;
@@ -304,7 +303,7 @@ function init(socket, marquee) {
         if (!data.reply) {
             console.error('Unexpected server error on aggregate');
         } else if (data.reply && !data.reply.success) {
-            console.log('Server replied with error:', data.reply.error);
+            console.error('Server replied with error:', data.reply.error);
         }
     // TODO: Do we want to treat no replies in some special way?
     }).filter(function (data) { return data.reply && data.reply.success; })
@@ -346,7 +345,7 @@ function checkReply (reply) {
     if (!reply) {
         console.error('Unexpected server error on global aggregate');
     } else if (reply && !reply.success) {
-        console.log('Server replied with error from global aggregate:', reply.error, reply.stack);
+        console.error('Server replied with error from global aggregate:', reply.error, reply.stack);
     }
 }
 
