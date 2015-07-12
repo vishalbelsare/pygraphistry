@@ -294,16 +294,25 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
 
         var goalNumberOfBins = binning ? binning._goalNumberOfBins : 0;
         var binningHint = binning ? binning[attribute] : undefined;
-        var dataType = that.data.attributes[type][attribute].type;
+
+        //FIXME need edge vs node attrib resolution
+        var attribType = type ? type
+            : that.data.attributes.point[attribute] ? 'point'
+            : 'edge';
+
+        var dataType = that.data.attributes[attribType][attribute].type;
 
         if (mode !== 'countBy' && dataType !== 'string') {
-            return that.histogram(attribute, binningHint, goalNumberOfBins, indices, type);
+            return that.histogram(attribute, binningHint, goalNumberOfBins, indices, attribType);
         } else {
-            return that.countBy(attribute, binningHint, indices, type);
+            return that.countBy(attribute, binningHint, indices, attribType);
         }
     }
 
-    var keysToAggregate = attributes ? attributes : this.getAttributeKeys(type);
+    var keysToAggregate = attributes ? attributes
+        : type == 'point' ? this.getAttributeKeys('point')
+        : type == 'edge' ? this.getAttributeKeys('edge')
+        : (this.getAttributeKeys('point').concat(this.getAttributeKeys('edge')));
     keysToAggregate = keysToAggregate.filter(function (val) {
         return val[0] !== '_';
     });
