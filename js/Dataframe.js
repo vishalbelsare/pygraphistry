@@ -283,10 +283,14 @@ Dataframe.prototype.serializeColumns = function (target, options) {
 //////////////////////////////////////////////////////////////////////////////
 
 
+// [int] * ?[ string ] * ?{string -> ??} * ?{countBy, ??} * {point, edge, undefined}
+// -> ??
+//undefined type signifies both nodes and edges
 Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, type) {
+
     var that = this;
 
-    function process(attribute, indices) {
+    var process = function (attribute, indices) {
 
         var goalNumberOfBins = binning ? binning._goalNumberOfBins : 0;
         var binningHint = binning ? binning[attribute] : undefined;
