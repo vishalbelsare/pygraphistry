@@ -2,6 +2,7 @@
 
 var _ = require('underscore');
 var dateFormat = require('dateformat');
+var Q = require('q');
 var fs = require('fs');
 
 var baseDirPath = __dirname + '/../assets/dataframe/';
@@ -14,10 +15,21 @@ var Dataframe = function () {
     // This is to allow tools like filters/selections to propagate to
     // all other tools that rely on data frames.
 
-    this.rawdata = {
+    this.rawdata = makeEmptyData();
+    this.filteredBufferCache = {
+        point: {},
+        edge: {},
+        simulator: {}
+    };
+    this.data = this.rawdata;
+};
+
+function makeEmptyData () {
+    return {
         attributes: {
             point: {},
-            edge: {}
+            edge: {},
+            simulator: {}
         },
         buffers: {
             point: {},
@@ -37,12 +49,323 @@ var Dataframe = function () {
         rendererBuffers: {
 
         },
-        graphData: {
-
-        },
         numElements: {}
     };
-    this.data = this.rawdata;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Data Filtering
+//////////////////////////////////////////////////////////////////////////////
+
+// Takes in a mask of points, and returns an object
+// containing masks for both the points and edges.
+// Relative to forwardsEdgesTyped. (so sorted)
+Dataframe.prototype.masksFromPoints = function (pointMask) {
+    var pointMaskOriginalLookup = {};
+    _.each(pointMask, function (newIdx, i) {
+        pointMaskOriginalLookup[newIdx] = 1;
+    });
+
+    var edgeMask = [];
+    var edges = this.rawdata.hostBuffers.forwardsEdges.edgesTyped;
+    for (var i = 0; i < edges.length/2; i++) {
+        var src = edges[2*i];
+        var dst = edges[2*i + 1];
+        var newSrc = pointMaskOriginalLookup[src];
+        var newDst = pointMaskOriginalLookup[dst];
+        if (newSrc && newDst) {
+            edgeMask.push(i);
+        };
+    }
+
+    return {
+        edge: edgeMask,
+        point: pointMask
+    };
+};
+
+
+// This does an inplace filter on this.data given masks.
+// Mask is implemented as a list of valid indices (in sorted order).
+// TODO: Take in Set objects, not just masks.
+Dataframe.prototype.filter = function (masks, simulator) {
+    var that = this;
+    var rawdata = that.rawdata;
+    var newData = makeEmptyData();
+    var numPoints = (masks.point) ? masks.point.length : rawdata.numElements.point;
+    var numEdges = (masks.edge) ? masks.edge.length : rawdata.numElements.edge;
+    // attributes;
+    // TODO: implement filter on attributes as a mask, since this can
+    // be huge.
+    _.each(TYPES, function (type) {
+        var mask;
+        // TODO: Support more complex masks.
+        if (type === 'edge') {
+            mask = masks['edge'];
+        } else {
+            mask = masks['point'];
+        }
+
+        var attrs = rawdata.attributes[type];
+        var newAttrs = newData.attributes[type];
+        _.each(_.keys(attrs), function (key) {
+            var attr = attrs[key];
+            var newValues = [];
+            _.each(mask, function (idx) {
+                newValues.push(attr.values[idx]);
+            });
+            newAttrs[key] = {
+                values: newValues,
+                type: attr.type,
+                target: attr.target
+            };
+        });
+    });
+
+    // TODO: Does this need to be updated, since it gets rewritten at each tick? Maybe zerod out?
+    // rendererBuffers;
+    // Skipping for now, since we use null renderer.
+
+    // labels;
+    _.each(['point', 'edge'], function (type) {
+        if (rawdata.labels[type]) {
+            var newLabels = [];
+            _.each(masks[type], function (idx) {
+                newLabels.push(rawdata.labels[type][idx]);
+            });
+            newData.labels[type] = newLabels;
+        }
+    });
+
+    // buffers;
+    // We have to deal with generic buffers differently from
+    // simulator buffers, since simulator buffers are more complex
+    // and not straightforward filters.
+    var newBuffers = newData.buffers;
+    var rawBuffers = rawdata.buffers;
+
+    // TODO: Regular Buffers
+    // _.each(_.keys(rawBuffers), function (key) {
+    //     // TODO, since we don't ever use these yet.
+    //     console.error('[Not implemented yet]: Attempting to filter with GPU attributes.');
+    // });
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Simulator / Graph Specific stuff. TODO: Should this be in the dataframe?
+    ///////////////////////////////////////////////////////////////////////////
+
+    // Filter out to new edges/points arrays.
+    var filteredEdges = Uint32Array(masks.edge.length * 2);
+    var forwardsEdges = rawdata.hostBuffers.forwardsEdges.edgesTyped;
+
+    var pointOriginalLookup = [];
+    _.each(masks.point, function (newIdx, i) {
+        pointOriginalLookup[newIdx] = i;
+    });
+
+    _.each(masks.edge, function (newIdx, i) {
+        filteredEdges[i*2] = pointOriginalLookup[forwardsEdges[newIdx*2]];
+        filteredEdges[i*2 + 1] = pointOriginalLookup[forwardsEdges[newIdx*2 + 1]];
+    });
+
+    var filteredPoints = []; // TODO:
+
+    // hostBuffers;
+    // hostBuffers: points,unsortedEdges,forwardsEdges,backwardsEdges
+    // TODO: Do points ever change? Ask Paden.
+
+    var edgesFlipped = new Uint32Array(filteredEdges.length);
+    for (var i = 0; i < filteredEdges.length/2; i++) {
+        edgesFlipped[2 * i] = filteredEdges[2 * i + 1];
+        edgesFlipped[2 * i + 1] = filteredEdges[2 * i];
+    }
+
+    newData.hostBuffers.unsortedEdges = filteredEdges;
+    var forwardsEdges = this.encapsulateEdges(filteredEdges, numPoints);
+    var backwardsEdges = this.encapsulateEdges(edgesFlipped, numPoints);
+    newData.hostBuffers.forwardsEdges = forwardsEdges;
+    newData.hostBuffers.backwardsEdges = backwardsEdges;
+    newData.hostBuffers.points = rawdata.hostBuffers.points;
+
+    // localBuffers;
+    // localBuffers: logicalEdges,pointTags,edgeTags_reverse,pointSizes,
+    // pointColors,edgeColors,midEdgeColors,edgeWeights
+
+    newData.localBuffers.logicalEdges = forwardsEdges.edgesTyped;
+
+    // TODO: Figured out what pointTags is used for
+    // TODO: Figure out what edgeTags are used for.
+
+    var newPointSizes = new Uint8Array(numPoints);
+    _.each(masks.point, function (idx, i) {
+        newPointSizes[i] = rawdata.localBuffers.pointSizes[idx];
+    });
+    newData.localBuffers.pointSizes = newPointSizes;
+
+    var newPointColors = new Uint32Array(numPoints);
+    _.each(masks.point, function (idx, i) {
+        newPointColors[i] = rawdata.localBuffers.pointColors[idx];
+    });
+    newData.localBuffers.pointColors = newPointColors;
+
+    var newEdgeColors = new Uint32Array(masks.edge.length * 2);
+    _.each(masks.edge, function (idx, i) {
+        newEdgeColors[i*2] = rawdata.localBuffers.edgeColors[idx*2];
+        newEdgeColors[i*2 + 1] = rawdata.localBuffers.edgeColors[idx*2 + 1];
+    });
+    newData.localBuffers.edgeColors = newEdgeColors;
+
+    var newMidEdgeColors = new Uint32Array(masks.edge.length * 4);
+    _.each(masks.edge, function (idx, i) {
+        newMidEdgeColors[i*2] = rawdata.localBuffers.midEdgeColors[idx*2];
+        newMidEdgeColors[i*2 + 1] = rawdata.localBuffers.midEdgeColors[idx*2 + 1];
+        newMidEdgeColors[i*2 + 2] = rawdata.localBuffers.midEdgeColors[idx*2 + 2];
+        newMidEdgeColors[i*2 + 3] = rawdata.localBuffers.midEdgeColors[idx*2 + 3];
+    });
+    newData.localBuffers.midEdgeColors = newMidEdgeColors;
+
+    var newEdgeWeights = new Uint32Array(masks.edge.length * 2);
+    _.each(masks.edge, function (idx, i) {
+        newEdgeWeights[i*2] = rawdata.localBuffers.edgeWeights[idx*2];
+        newEdgeWeights[i*2 + 1] = rawdata.localBuffers.edgeWeights[idx*2 + 1];
+    });
+    newData.localBuffers.edgeWeights = newEdgeWeights;
+
+    // numElements;
+    // Copy all old in.
+    _.each(_.keys(rawdata.numElements), function (key) {
+        newData.numElements[key] = rawdata.numElements[key];
+    });
+    // Update point/edge counts, since those were filtered,
+    // along with forwardsWorkItems/backwardsWorkItems.
+    _.each(['point', 'edge'], function (key) {
+        newData.numElements[key] = masks[key].length;
+    });
+    newData.numElements.forwardsWorkItems = newData.hostBuffers.forwardsEdges.workItemsTyped.length / 4;
+    newData.numElements.backwardsWorkItems = newData.hostBuffers.backwardsEdges.workItemsTyped.length / 4;
+    // TODO: NumMidPoints and MidEdges
+
+
+
+    //////////////////////////////////
+    // SIMULATOR BUFFERS.
+    //////////////////////////////////
+
+    // Prev Forces Float32Array * numPoint * 2
+    // degrees Uint32Array  * numPoint
+    // springsPos Float32Array * numEdge * 4
+    // edgeWeights Float32Array * numEdge
+
+    // TODO: curPoints so things don't fly around
+    // curPoints Float32Array * numPoint * 2
+    // TODO: Point Color + Point Size
+    var oldNumPoints = rawdata.numElements.point;
+    var oldNumEdges = rawdata.numElements.edge;
+
+    var tempPrevForces = new Float32Array(oldNumPoints * 2);
+    var tempDegrees = new Uint32Array(oldNumPoints);
+    var tempSpringsPos = new Float32Array(oldNumEdges * 4);
+    var tempEdgeWeights = new Float32Array(oldNumEdges);
+    var tempCurPoints = new Float32Array(oldNumPoints * 2);
+
+    var newPrevForces = new Float32Array(numPoints * 2);
+    var newDegrees = new Uint32Array(numPoints);
+    var newSpringsPos = new Float32Array(numEdges * 4);
+    var newEdgeWeights = new Float32Array(numEdges);
+    var newCurPoints = new Float32Array(numPoints * 2);
+
+    var simBuffers = rawdata.buffers.simulator;
+
+    Q.all([
+        simBuffers.prevForces.read(tempPrevForces),
+        simBuffers.degrees.read(tempDegrees),
+        simBuffers.springsPos.read(tempSpringsPos),
+        simBuffers.edgeWeights.read(tempEdgeWeights),
+        simBuffers.curPoints.read(tempCurPoints)
+    ]).spread(function () {
+        _.each(masks.point, function (oldIdx, i) {
+            newPrevForces[i*2] = tempPrevForces[oldIdx*2];
+            newPrevForces[i*2 + 1] = tempPrevForces[oldIdx*2 + 1];
+
+            newDegrees[i] = tempDegrees[oldIdx];
+
+            newCurPoints[i*2] = tempCurPoints[oldIdx*2];
+            newCurPoints[i*2 + 1] = tempCurPoints[oldIdx*2 + 1];
+
+        });
+
+        _.each(masks.edge, function (oldIdx, i) {
+            newSpringsPos[i*4] = tempSpringsPos[oldIdx*4];
+            newSpringsPos[i*4 + 1] = tempSpringsPos[oldIdx*4 + 1];
+            newSpringsPos[i*4 + 2] = tempSpringsPos[oldIdx*4 + 2];
+            newSpringsPos[i*4 + 3] = tempSpringsPos[oldIdx*4 + 3];
+
+            newEdgeWeights[i] = tempEdgeWeights[oldIdx];
+        });
+
+        _.each(['prevForces', 'degrees', 'forwardsEdges', 'forwardsDegrees',
+                'forwardsWorkItems', 'forwardsEdgeStartEndIdxs', 'backwardsEdges',
+                'backwardsDegrees', 'backwardsWorkItems', 'backwardsEdgeStartEndIdxs',
+                'springsPos', 'edgeWeights'
+                ], function (key) {
+
+            newData.buffers.simulator[key] = that.filteredBufferCache.simulator[key];
+        });
+        var newBuffers = newData.buffers.simulator;
+        return Q.all([
+            newBuffers.prevForces.write(newPrevForces),
+            newBuffers.degrees.write(newDegrees),
+            newBuffers.springsPos.write(newSpringsPos),
+            newBuffers.edgeWeights.write(newEdgeWeights),
+            newBuffers.forwardsEdges.write(forwardsEdges.edgesTyped),
+            newBuffers.forwardsDegrees.write(forwardsEdges.degreesTyped),
+            newBuffers.forwardsWorkItems.write(forwardsEdges.workItemsTyped),
+            newBuffers.forwardsEdgeStartEndIdxs.write(forwardsEdges.edgeStartEndIdxsTyped),
+            newBuffers.backwardsEdges.write(forwardsEdges.edgesTyped),
+            newBuffers.backwardsDegrees.write(forwardsEdges.degreesTyped),
+            newBuffers.backwardsWorkItems.write(forwardsEdges.workItemsTyped),
+            newBuffers.backwardsEdgeStartEndIdxs.write(forwardsEdges.edgeStartEndIdxsTyped)
+        ]);
+    }).then(function () {
+
+        // Just in case, copy over references from rawdata to newData
+        // This means we don't have to explicity overwrite everything.
+
+        _.each(_.keys(rawdata.buffers.simulator), function (key) {
+            if (!newData.buffers.simulator[key]) {
+                newData.buffers.simulator[key] = rawdata.buffers.simulator[key];
+            }
+        });
+
+        _.each(_.keys(rawdata.localBuffers), function (key) {
+            if (!newData.localBuffers[key]) {
+                newData.localBuffers[key] = rawdata.localBuffers[key];
+            }
+        });
+
+        _.each(_.keys(rawdata.numElements), function (key) {
+            if (!newData.numElements[key]) {
+                newData.numElements[key] = rawdata.numElements[key];
+            }
+        });
+
+        _.each(_.keys(rawdata.rendererBuffers), function (key) {
+            if (!newData.rendererBuffers[key]) {
+                newData.rendererBuffers[key] = rawdata.rendererBuffers[key];
+            }
+        });
+
+        _.each(_.keys(rawdata.hostBuffers), function (key) {
+            if (!newData.hostBuffers[key]) {
+                newData.hostBuffers[key] = rawdata.hostBuffers[key];
+            }
+        });
+    }).then(function () {
+        // console.log('newData: ', newData);
+        that.data = newData;
+    });
+
 };
 
 
@@ -171,9 +494,18 @@ Dataframe.prototype.loadBuffer = function (name, type, buffer) {
 };
 
 
-Dataframe.prototype.writeBuffer = function (name, type, values) {
+Dataframe.prototype.writeBuffer = function (name, type, values, simulator) {
+    var that = this;
+    var byteLength = values.byteLength;
     var buffer = this.rawdata.buffers[type][name];
-    return buffer.write(values);
+
+    // If it's written to directly, we assume we want to also
+    // have a buffer to write to during filters.
+    return simulator.cl.createBuffer(byteLength, name+'Filtered')
+        .then(function (filteredBuffer) {
+            that.filteredBufferCache.simulator[name] = filteredBuffer;
+            return buffer.write(values);
+        });
 };
 
 
@@ -208,11 +540,6 @@ Dataframe.prototype.loadRendererBuffer = function (name, buffer) {
 Dataframe.prototype.setHostBufferValue = function (name, idx, value) {
     var hostBuffers = this.rawdata.hostBuffers;
     hostBuffers[name][idx] = value;
-};
-
-
-Dataframe.prototype.loadGraphData = function (name, edges) {
-    this.rawdata.graphData[name] = edges;
 };
 
 
@@ -732,5 +1059,137 @@ function serialize(data, compressFunction, target) {
 
     fs.writeFileSync(baseDirPath + target, serialized);
 }
+
+Dataframe.prototype.encapsulateEdges = function (edges, numPoints) {
+
+    //[[src idx, dest idx, original idx]]
+    var edgeList = new Array(edges.length / 2);
+    for (var i = 0; i < edges.length/2; i++) {
+        edgeList[i] = [edges[2 * i], edges[2 * i + 1], i];
+    }
+
+    //sort by src idx
+    edgeList.sort(function(a, b) {
+        return a[0] < b[0] ? -1
+            : a[0] > b[0] ? 1
+            : a[1] - b[1];
+    });
+
+    var edgePermutationTyped = new Uint32Array(edgeList.length);
+    var edgePermutationInverseTyped = new Uint32Array(edgeList.length);
+    edgeList.forEach(function (edge, i) {
+        edgePermutationTyped[edge[2]] = i;
+        edgePermutationInverseTyped[i] = edge[2];
+    })
+
+
+     // [ [first edge number from src idx, numEdges from source idx, source idx], ... ]
+    var workItemsTyped = new Int32Array(numPoints*4);
+    var edgeListLastPos = 0;
+    var edgeListLastSrc = edgeList[0][0];
+    for (var i = 0; i < numPoints; i++) {
+
+        // Case where node has edges
+        if (edgeListLastSrc === i) {
+            var startingIdx = edgeListLastPos;
+            var count = 0;
+            while (edgeListLastPos < edgeList.length && edgeList[edgeListLastPos][0] === i) {
+                count++;
+                edgeListLastPos++;
+            }
+            edgeListLastSrc = edgeListLastPos < edgeList.length ? edgeList[edgeListLastPos][0] : -1;
+            workItemsTyped[i*4] = startingIdx;
+            workItemsTyped[i*4 + 1] = count;
+            workItemsTyped[i*4 + 2] = i;
+        // Case where node has no edges
+        } else {
+            workItemsTyped[i*4] = -1;
+            workItemsTyped[i*4 + 1] = 0;
+            workItemsTyped[i*4 + 2] = i;
+        }
+    }
+
+
+    var degreesTyped = new Uint32Array(numPoints);
+    var srcToWorkItem = new Int32Array(numPoints);
+
+    for (var i = 0; i < numPoints; i++) {
+        srcToWorkItem[workItemsTyped[i*4 + 2]] = i;
+        degreesTyped[workItemsTyped[i*4 + 2]] = workItemsTyped[i*4 + 1];
+    }
+
+    //workItemsTyped is a Uint32Array [first edge number from src idx, number of edges from src idx, src idx, 666]
+    //fetch edge to find src and dst idx (all src same)
+    //num edges > 0
+
+    // Without Underscore and with preallocation. Less clear than a flatten, but better perf.
+    var edgesTyped = new Uint32Array(edgeList.length * 2);
+    for (var idx = 0; idx < edgeList.length; idx++) {
+        edgesTyped[idx*2] = edgeList[idx][0];
+        edgesTyped[idx*2 + 1] = edgeList[idx][1];
+    }
+
+
+    var index = 0;
+    var edgeStartEndIdxs = [];
+    for(var i = 0; i < (workItemsTyped.length/4) - 1; i++) {
+      var start = workItemsTyped[i*4];
+      if (start == -1) {
+        edgeStartEndIdxs.push([-1, -1]);
+      } else {
+        var end = workItemsTyped[(i+1)*4];
+        var j = i+1;
+        while (end < 0 && ((j + 1) < (workItemsTyped.length/4))) {
+          end = workItemsTyped[(j + 1)*4];
+          j = j + 1;
+        }
+
+        if (end === -1) {
+            end = edgeList.length; // Special case for last workitem
+        }
+
+        edgeStartEndIdxs.push([start, end]);
+      }
+    }
+    if (workItemsTyped[(workItemsTyped.length - 4)] !== -1) {
+      edgeStartEndIdxs.push([workItemsTyped[workItemsTyped.length - 4], edges.length /2]);
+    } else {
+      edgeStartEndIdxs.push([-1, -1]);
+    }
+
+    // Flattening
+    var edgeStartEndIdxsTyped = new Uint32Array(edgeStartEndIdxs.length * 2);
+    for (var idx = 0; idx < edgeStartEndIdxs.length; idx++) {
+        edgeStartEndIdxsTyped[idx*2] = edgeStartEndIdxs[idx][0];
+        edgeStartEndIdxsTyped[idx*2 + 1] = edgeStartEndIdxs[idx][1];
+    }
+
+    return {
+        //Uint32Array
+        degreesTyped: degreesTyped,
+
+        //Uint32Array [(srcIdx, dstIdx), ...]
+        //(edges ordered by src idx)
+        edgesTyped: edgesTyped,
+
+        //Uint32Array [where unsorted edge now sits]
+        edgePermutation: edgePermutationTyped,
+
+        //Uint32Array [where sorted edge used to it]
+        edgePermutationInverseTyped: edgePermutationInverseTyped,
+
+        //Uint32Array [(edge number, number of sibling edges), ... ]
+        numWorkItems: workItemsTyped.length,
+
+        //Int32Array [(first edge number, number of sibling edges)]
+        workItemsTyped: workItemsTyped,
+
+        //Uint32Array [workitem number node belongs to]
+        srcToWorkItem: srcToWorkItem,
+
+        edgeStartEndIdxsTyped: edgeStartEndIdxsTyped
+    };
+}
+
 
 module.exports = Dataframe;

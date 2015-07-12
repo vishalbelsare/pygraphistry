@@ -263,6 +263,8 @@ function scatterEdgePos(edges, curPos) {
     return res;
 }
 
+
+
 var setEdges = Q.promised(function(graph, edges) {
     debug('Loading Edges');
     if (edges.length < 1)
@@ -276,138 +278,6 @@ var setEdges = Q.promised(function(graph, edges) {
 
     var numPoints = graph.simulator.dataframe.getNumElements('point');
 
-    //FIXME THIS SHOULD WORK BUT CRASHES SAFARI
-    var encapsulate = function (edges) {
-
-        //[[src idx, dest idx, original idx]]
-        var edgeList = new Array(edges.length / 2);
-        for (var i = 0; i < edges.length/2; i++) {
-            edgeList[i] = [edges[2 * i], edges[2 * i + 1], i];
-        }
-
-        //sort by src idx
-        edgeList.sort(function(a, b) {
-            return a[0] < b[0] ? -1
-                : a[0] > b[0] ? 1
-                : a[1] - b[1];
-        });
-
-        var edgePermutationTyped = new Uint32Array(edgeList.length);
-        var edgePermutationInverseTyped = new Uint32Array(edgeList.length);
-        edgeList.forEach(function (edge, i) {
-            edgePermutationTyped[edge[2]] = i;
-            edgePermutationInverseTyped[i] = edge[2];
-        })
-
-
-         // [ [first edge number from src idx, numEdges from source idx, source idx], ... ]
-        var workItemsTyped = new Int32Array(numPoints*4);
-        var edgeListLastPos = 0;
-        var edgeListLastSrc = edgeList[0][0];
-        for (var i = 0; i < numPoints; i++) {
-
-            // Case where node has edges
-            if (edgeListLastSrc === i) {
-                var startingIdx = edgeListLastPos;
-                var count = 0;
-                while (edgeListLastPos < edgeList.length && edgeList[edgeListLastPos][0] === i) {
-                    count++;
-                    edgeListLastPos++;
-                }
-                edgeListLastSrc = edgeListLastPos < edgeList.length ? edgeList[edgeListLastPos][0] : -1;
-                workItemsTyped[i*4] = startingIdx;
-                workItemsTyped[i*4 + 1] = count;
-                workItemsTyped[i*4 + 2] = i;
-            // Case where node has no edges
-            } else {
-                workItemsTyped[i*4] = -1;
-                workItemsTyped[i*4 + 1] = 0;
-                workItemsTyped[i*4 + 2] = i;
-            }
-        }
-
-
-        var degreesTyped = new Uint32Array(numPoints);
-        var srcToWorkItem = new Int32Array(numPoints);
-
-        for (var i = 0; i < numPoints; i++) {
-            srcToWorkItem[workItemsTyped[i*4 + 2]] = i;
-            degreesTyped[workItemsTyped[i*4 + 2]] = workItemsTyped[i*4 + 1];
-        }
-
-        //workItemsTyped is a Uint32Array [first edge number from src idx, number of edges from src idx, src idx, 666]
-        //fetch edge to find src and dst idx (all src same)
-        //num edges > 0
-
-        // Without Underscore and with preallocation. Less clear than a flatten, but better perf.
-        var edgesTyped = new Uint32Array(edgeList.length * 2);
-        for (var idx = 0; idx < edgeList.length; idx++) {
-            edgesTyped[idx*2] = edgeList[idx][0];
-            edgesTyped[idx*2 + 1] = edgeList[idx][1];
-        }
-
-
-        var index = 0;
-        var edgeStartEndIdxs = [];
-        for(var i = 0; i < (workItemsTyped.length/4) - 1; i++) {
-          var start = workItemsTyped[i*4];
-          if (start == -1) {
-            edgeStartEndIdxs.push([-1, -1]);
-          } else {
-            var end = workItemsTyped[(i+1)*4];
-            var j = i+1;
-            while (end < 0 && ((j + 1) < (workItemsTyped.length/4))) {
-              end = workItemsTyped[(j + 1)*4];
-              j = j + 1;
-            }
-
-            if (end === -1) {
-                end = edgeList.length; // Special case for last workitem
-            }
-
-            edgeStartEndIdxs.push([start, end]);
-          }
-        }
-        if (workItemsTyped[(workItemsTyped.length - 4)] !== -1) {
-          edgeStartEndIdxs.push([workItemsTyped[workItemsTyped.length - 4], edges.length /2]);
-        } else {
-          edgeStartEndIdxs.push([-1, -1]);
-        }
-
-        // Flattening
-        var edgeStartEndIdxsTyped = new Uint32Array(edgeStartEndIdxs.length * 2);
-        for (var idx = 0; idx < edgeStartEndIdxs.length; idx++) {
-            edgeStartEndIdxsTyped[idx*2] = edgeStartEndIdxs[idx][0];
-            edgeStartEndIdxsTyped[idx*2 + 1] = edgeStartEndIdxs[idx][1];
-        }
-
-        return {
-            //Uint32Array
-            degreesTyped: degreesTyped,
-
-            //Uint32Array [(srcIdx, dstIdx), ...]
-            //(edges ordered by src idx)
-            edgesTyped: edgesTyped,
-
-            //Uint32Array [where unsorted edge now sits]
-            edgePermutation: edgePermutationTyped,
-
-            //Uint32Array [where sorted edge used to it]
-            edgePermutationInverseTyped: edgePermutationInverseTyped,
-
-            //Uint32Array [(edge number, number of sibling edges), ... ]
-            numWorkItems: workItemsTyped.length,
-
-            //Int32Array [(first edge number, number of sibling edges)]
-            workItemsTyped: workItemsTyped,
-
-            //Uint32Array [workitem number node belongs to]
-            srcToWorkItem: srcToWorkItem,
-
-            edgeStartEndIdxsTyped: edgeStartEndIdxsTyped
-        };
-    }
-
     var edgesFlipped = new Uint32Array(edges.length);
     for (var i = 0; i < edges.length/2; i++) {
         edgesFlipped[2 * i] = edges[2 * i + 1];
@@ -415,8 +285,8 @@ var setEdges = Q.promised(function(graph, edges) {
     }
 
     // var start = Date.now();
-    var forwardEdges = encapsulate(edges);
-    var backwardsEdges = encapsulate(edgesFlipped);
+    var forwardEdges = graph.dataframe.encapsulateEdges(edges, numPoints);
+    var backwardsEdges = graph.dataframe.encapsulateEdges(edgesFlipped, numPoints);
     // console.log('Encapsulates executed in: ', Date.now() - start);
 
     var degrees = new Uint32Array(numPoints);
@@ -580,4 +450,6 @@ function tick(graph, cfg) {
 }
 
 
-module.exports = {create: create};
+module.exports = {
+    create: create
+};

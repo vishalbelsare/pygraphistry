@@ -483,8 +483,8 @@ function setPoints(simulator, points) {
 
         return Q.all([
             simulator.cl.createBufferGL(pointsVBO, 'curPoints'),
-            simulator.dataframe.writeBuffer('randValues', 'simulator', rands),
-            simulator.dataframe.writeBuffer('prevForces', 'simulator', zeros)]);
+            simulator.dataframe.writeBuffer('randValues', 'simulator', rands, simulator),
+            simulator.dataframe.writeBuffer('prevForces', 'simulator', zeros, simulator)]);
     })
     .spread(function(pointsBuf) {
         simulator.dataframe.loadBuffer('curPoints', 'simulator', pointsBuf);
@@ -721,6 +721,8 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
     //     simulator.buffers.midSpringsColorCoord
     // ]);
 
+    // console.log('endPoints: ', endPoints, endPoints.constructor);
+
     return Q().then(function() {
 
         // Init constant
@@ -821,15 +823,15 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
             // simulator.buffers.backwardsWorkItems.write(backwardsEdges.workItemsTyped),
             // simulator.buffers.forwardsEdgeStartEndIdxs.write(forwardsEdges.edgeStartEndIdxsTyped),
             // simulator.buffers.backwardsEdgeStartEndIdxs.write(backwardsEdges.edgeStartEndIdxsTyped),
-            simulator.dataframe.writeBuffer('degrees', 'simulator', degrees),
-            simulator.dataframe.writeBuffer('forwardsEdges', 'simulator', forwardsEdges.edgesTyped),
-            simulator.dataframe.writeBuffer('forwardsDegrees', 'simulator', forwardsEdges.degreesTyped),
-            simulator.dataframe.writeBuffer('forwardsWorkItems', 'simulator', forwardsEdges.workItemsTyped),
-            simulator.dataframe.writeBuffer('backwardsEdges', 'simulator', backwardsEdges.edgesTyped),
-            simulator.dataframe.writeBuffer('backwardsDegrees', 'simulator', backwardsEdges.degreesTyped),
-            simulator.dataframe.writeBuffer('backwardsWorkItems', 'simulator', backwardsEdges.workItemsTyped),
-            simulator.dataframe.writeBuffer('forwardsEdgeStartEndIdxs', 'simulator', forwardsEdges.edgeStartEndIdxsTyped),
-            simulator.dataframe.writeBuffer('backwardsEdgeStartEndIdxs', 'simulator', backwardsEdges.edgeStartEndIdxsTyped)
+            simulator.dataframe.writeBuffer('degrees', 'simulator', degrees, simulator),
+            simulator.dataframe.writeBuffer('forwardsEdges', 'simulator', forwardsEdges.edgesTyped, simulator),
+            simulator.dataframe.writeBuffer('forwardsDegrees', 'simulator', forwardsEdges.degreesTyped, simulator),
+            simulator.dataframe.writeBuffer('forwardsWorkItems', 'simulator', forwardsEdges.workItemsTyped, simulator),
+            simulator.dataframe.writeBuffer('backwardsEdges', 'simulator', backwardsEdges.edgesTyped, simulator),
+            simulator.dataframe.writeBuffer('backwardsDegrees', 'simulator', backwardsEdges.degreesTyped, simulator),
+            simulator.dataframe.writeBuffer('backwardsWorkItems', 'simulator', backwardsEdges.workItemsTyped, simulator),
+            simulator.dataframe.writeBuffer('forwardsEdgeStartEndIdxs', 'simulator', forwardsEdges.edgeStartEndIdxsTyped, simulator),
+            simulator.dataframe.writeBuffer('backwardsEdgeStartEndIdxs', 'simulator', backwardsEdges.edgeStartEndIdxsTyped, simulator)
         ]);
     })
     .spread(function(springsBuffer, midPointsBuf, midSpringsBuffer, midSpringsColorCoordBuffer) {
@@ -847,7 +849,7 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
     .then(function () {
         return Q.all([
             // simulator.buffers.springsPos.write(endPoints),
-            simulator.dataframe.writeBuffer('springsPos', 'simulator', endPoints)
+            simulator.dataframe.writeBuffer('springsPos', 'simulator', endPoints, simulator)
         ]);
     })
     .then( function () {
@@ -986,7 +988,7 @@ function setEdgeWeight(simulator, edgeWeights) {
     .then(function() {
         return Q.all([
             // simulator.buffers.edgeWeights.write(endWeights),
-            simulator.dataframe.writeBuffer('edgeWeights', 'simulator', edgeWeights)
+            simulator.dataframe.writeBuffer('edgeWeights', 'simulator', edgeWeights, simulator)
         ]);
     }).then(function() {
         simulator.dataframe.loadLocalBuffer('edgeWeights', edgeWeights);
