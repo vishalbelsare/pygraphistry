@@ -84,6 +84,17 @@ function toggleExpandedD3 (attribute, vizContainer, vizHeight, view) {
     }
 }
 
+//socket * ?? -> Observable ??
+function aggregatePointsAndEdges (socket, params) {
+    return Rx.Observable.zip(
+        Rx.Observable.fromCallback(socket.emit, socket)('aggregate', _.extend({}, params, {type: 'point'})),
+        Rx.Observable.fromCallback(socket.emit, socket)('aggregate', _.extend({}, params, {type: 'edge'})),
+        function (pointHists, edgeHists) {
+            return {success: pointHists.success && edgeHists.success,
+                    data: _.extend({}, pointHists.data || {}, edgeHists.data || {})};
+        });
+}
+
 
 function init(socket, marquee) {
     debug('Initializing histogram brush');
@@ -243,10 +254,10 @@ function init(socket, marquee) {
     // Setup Streams
     //////////////////////////////////////////////////////////////////////////
 
-    var params = {all: true, mode: MODE};
-    var paramsSparklines = {all: true, mode: MODE, binning: {'_goalNumberOfBins': NUM_SPARKLINES}};
-    var globalStream = Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params);
-    var globalStreamSparklines = Rx.Observable.fromCallback(socket.emit, socket)('aggregate', paramsSparklines);
+    var globalStream = aggregatePointsAndEdges(socket,
+        {all: true, mode: MODE});
+    var globalStreamSparklines = aggregatePointsAndEdges(socket,
+        {all: true, mode: MODE, binning: {'_goalNumberOfBins': NUM_SPARKLINES}});
 
     Rx.Observable.zip(globalStream, globalStreamSparklines, function (histogramsReply, sparkLinesReply) {
         checkReply(histogramsReply);
