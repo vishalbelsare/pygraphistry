@@ -35,14 +35,23 @@ metrics.init('StreamGL:driver');
 function graphCounts(graph) {
     var numRenderedSplits = graph.simulator.dataframe.getNumElements('renderedSplits');
 
-    var numPoints       = graph.simulator.timeSubset.pointsRange.len;
-    var numEdges        = graph.simulator.timeSubset.edgeRange.len;
-    var offsetPoint     = graph.simulator.timeSubset.pointsRange.startIdx;
-    var offsetEdge      = graph.simulator.timeSubset.edgeRange.startIdx;
-    var numMidPoints    = graph.simulator.timeSubset.midPointsRange.len;
-    var numMidEdges     = graph.simulator.timeSubset.midEdgeRange.len;
-    var offsetMidPoints = graph.simulator.timeSubset.midPointsRange.startIdx;
-    var offsetMidEdges  = graph.simulator.timeSubset.midEdgeRange.startIdx;
+    // var numPoints       = graph.simulator.timeSubset.pointsRange.len;
+    // var numEdges        = graph.simulator.timeSubset.edgeRange.len;
+    // var offsetPoint     = graph.simulator.timeSubset.pointsRange.startIdx;
+    // var offsetEdge      = graph.simulator.timeSubset.edgeRange.startIdx;
+    // var numMidPoints    = graph.simulator.timeSubset.midPointsRange.len;
+    // var numMidEdges     = graph.simulator.timeSubset.midEdgeRange.len;
+    // var offsetMidPoints = graph.simulator.timeSubset.midPointsRange.startIdx;
+    // var offsetMidEdges  = graph.simulator.timeSubset.midEdgeRange.startIdx;
+
+    var numPoints       = graph.dataframe.getNumElements('point');
+    var numEdges        = graph.dataframe.getNumElements('edge')*2;
+    var offsetPoint     = 0;
+    var offsetEdge      = 0;
+    var numMidPoints    = graph.dataframe.getNumElements('midPoints');
+    var numMidEdges     = graph.dataframe.getNumElements('midEdges');
+    var offsetMidPoints = 0;
+    var offsetMidEdges  = 0;
 
     var point       = {num: numPoints,    offset: offsetPoint};
     var edge        = {num: numEdges,     offset: offsetEdge};
@@ -50,7 +59,7 @@ function graphCounts(graph) {
     var midEdge     = {num: numMidEdges,  offset: offsetMidEdges};
     var midEdgeColor ={num: numEdges * (numRenderedSplits + 1), offset:offsetMidEdges};
 
-    return {
+    var counts = {
         curPoints: point,
         springsPos: edge,
         logicalEdges: edge,
@@ -63,6 +72,9 @@ function graphCounts(graph) {
         midEdgeColors: midEdgeColor
     };
 
+    // console.log('counts: ', counts);
+
+    return counts;
 }
 
 
