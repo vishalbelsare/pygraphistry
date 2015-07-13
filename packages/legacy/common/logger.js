@@ -160,7 +160,7 @@ var didLogConfig = false;
 var configLogger = module.exports.createLogger('config');
 
 if (config.CONFIG_ERRORS.length > 0) {
-    config.CONFIG_ERRORS.forEach( function(index, element) {
+    config.CONFIG_ERRORS.forEach( function(element, index, array) {
         configLogger.error(element, 'Config error');
     });
 }
