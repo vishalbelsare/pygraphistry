@@ -390,5 +390,8 @@ function handleVboUpdates(socket, uri, renderState) {
 module.exports = {
     connect: connect,
     createRenderer: createRenderer,
-    handleVboUpdates: handleVboUpdates
+    handleVboUpdates: handleVboUpdates,
+    fetchLabel: function fetchLabel(socket, dim, idx, callback) {
+        socket.emit('get_labels', {dim: dim, indices: [idx]}, callback);
+    }
 };
