@@ -31,8 +31,18 @@ metrics.init('StreamGL:driver');
 //number/offset of graph elements and how they relate to various models
 //num: # of vertices
 //offset: in vertices
-//graph -> {<model>: {num: int, offset: int}
+//graph -> {<model>: {num: int, offset: int
+var stepNum = 0;
 function graphCounts(graph) {
+
+    if (stepNum++ === 40) {
+        var pointMask = _.range(5);
+        var masks = graph.dataframe.masksFromPoints(pointMask);
+        graph.dataframe.filter(masks, graph.simulator);
+    }
+
+
+
     var numRenderedSplits = graph.simulator.dataframe.getNumElements('renderedSplits');
 
     // var numPoints       = graph.simulator.timeSubset.pointsRange.len;
@@ -73,6 +83,14 @@ function graphCounts(graph) {
     };
 
     // console.log('counts: ', counts);
+    // _.each(_.keys(graph.dataframe.rawdata), function (key1) {
+    //     console.log(key1 + ': ' + _.keys(graph.dataframe.rawdata[key1]));
+    // });
+    // console.log('Simulator Buffer Keys: ', _.keys(graph.dataframe.rawdata.buffers.simulator));
+    // console.log('Host Buffer Point: ', graph.dataframe.rawdata.hostBuffers.points);
+
+
+    // console.log('dataframe: ', graph.dataframe.rawdata);
 
     return counts;
 }
