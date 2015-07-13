@@ -95,6 +95,21 @@ Dataframe.prototype.filter = function (masks, simulator) {
 
     var start = Date.now();
 
+    /////////////////////////////////////////////////////////
+    // var correctEdgeMask = _.range(masks.edge.length);
+    // var correctPointMask = _.range(masks.point.length);
+    // _.each(masks.edge, function (v, i) {
+    //     if (correctEdgeMask[i] !== v) {
+    //         console.log('Error in Edge Mask');
+    //     }
+    // });
+    // _.each(masks.point, function (v, i) {
+    //     if (correctPointMask[i] !== v) {
+    //         console.log('Error in Point Mask');
+    //     }
+    // });
+    ///////////////////////////////////////////////////////
+
 
 
     var that = this;
@@ -147,6 +162,32 @@ Dataframe.prototype.filter = function (masks, simulator) {
         }
     });
 
+    /////////////////////////////////////////////////////////////////
+
+    //  _.each(TYPES, function (type) {
+    //     var mask;
+    //     // TODO: Support more complex masks.
+    //     if (type === 'edge') {
+    //         mask = masks['edge'];
+    //     } else {
+    //         mask = masks['point'];
+    //     }
+
+    //     var attrs = rawdata.attributes[type];
+    //     var newAttrs = newData.attributes[type];
+    //     _.each(_.keys(attrs), function (key) {
+
+    //         _.each(attrs[key].values, function (orig, i) {
+    //             if (orig !== newAttrs[key].values[i]) {
+    //                 console.log('BAD ATTR');
+    //             }
+    //         });
+
+    //     });
+    // });
+
+    /////////////////////////////////////////////////////////////////////
+
     console.log('Filtered Labels');
     console.log('Until here took ' + (Date.now() - start) + ' ms');
 
@@ -172,16 +213,27 @@ Dataframe.prototype.filter = function (masks, simulator) {
     var forwardsEdges = rawdata.hostBuffers.forwardsEdges.edgesTyped;
 
     var pointOriginalLookup = [];
-    _.each(masks.point, function (newIdx, i) {
-        pointOriginalLookup[newIdx] = i;
+    _.each(masks.point, function (oldIdx, i) {
+        pointOriginalLookup[oldIdx] = i;
     });
 
-    _.each(masks.edge, function (newIdx, i) {
-        filteredEdges[i*2] = pointOriginalLookup[forwardsEdges[newIdx*2]];
-        filteredEdges[i*2 + 1] = pointOriginalLookup[forwardsEdges[newIdx*2 + 1]];
+    _.each(masks.edge, function (oldIdx, i) {
+        filteredEdges[i*2] = pointOriginalLookup[forwardsEdges[oldIdx*2]];
+        filteredEdges[i*2 + 1] = pointOriginalLookup[forwardsEdges[oldIdx*2 + 1]];
     });
 
     console.log('Filtered Edges')
+
+    ///////////////////////////////////////////////////////
+    // _.each(forwardsEdges, function (edge, i) {
+    //     if (filteredEdges[i] !== edge) {
+    //         console.log('Bad Filtered Edge');
+    //     }
+    // });
+
+    ///////////////////////////////////////////////////////
+
+
 
     var filteredPoints = []; // TODO:
 
@@ -201,6 +253,36 @@ Dataframe.prototype.filter = function (masks, simulator) {
     newData.hostBuffers.forwardsEdges = forwardsEdges;
     newData.hostBuffers.backwardsEdges = backwardsEdges;
     newData.hostBuffers.points = rawdata.hostBuffers.points;
+
+    // console.log('forwardsEdgesRaw: ', rawdata.hostBuffers.forwardsEdges);
+    // console.log('forwardsEdgesNew: ', newData.hostBuffers.forwardsEdges);
+
+    ////////////////TESTING///////////////////////
+
+    // _.each(_.keys(rawdata.hostBuffers.forwardsEdges), function (key) {
+    //     if (key === 'edgePermutationInverseTyped' || key === 'edgePermutation') {
+    //         return;
+    //     }
+    //     _.each(rawdata.hostBuffers.forwardsEdges[key], function (orig, idx) {
+    //         if (newData.hostBuffers.forwardsEdges[key][idx] !== orig) {
+    //             console.log('ERROR[' + key + ']', newData.hostBuffers.forwardsEdges[key][idx], orig);
+    //         }
+    //     });
+    // });
+
+    // _.each(_.keys(rawdata.hostBuffers.backwardsEdges), function (key) {
+    //     if (key === 'edgePermutationInverseTyped' || key === 'edgePermutation') {
+    //         return;
+    //     }
+    //     _.each(rawdata.hostBuffers.backwardsEdges[key], function (orig, idx) {
+    //         if (newData.hostBuffers.backwardsEdges[key][idx] !== orig) {
+    //             console.log('ERROR[' + key + ']', newData.hostBuffers.backwardsEdges[key][idx], orig);
+    //         }
+    //     });
+    // });
+
+
+    ////////////////DONE TESTING//////////////////
 
     console.log('Created hostBuffers & encapsulated edges');
 
@@ -264,6 +346,15 @@ Dataframe.prototype.filter = function (masks, simulator) {
     newData.numElements.backwardsWorkItems = newData.hostBuffers.backwardsEdges.workItemsTyped.length / 4;
     // TODO: NumMidPoints and MidEdges
 
+    /////////////////////////////////////////////////////////////
+    // _.each(_.keys(rawdata.numElements), function (key) {
+    //     if (newData.numElements[key] !== rawdata.numElements[key]) {
+    //         console.log('Incorrect numElements');
+    //     }
+    // })
+    ///////////////////////////////////////////////////////////////
+
+
     console.log('Updated numElements');
 
 
@@ -284,6 +375,10 @@ Dataframe.prototype.filter = function (masks, simulator) {
 
     console.log('old num Points: ', oldNumPoints);
     console.log('old num Edges: ', oldNumEdges);
+
+    console.log('new num Points: ', numPoints);
+    console.log('new num Edges: ', numEdges);
+
 
     var tempPrevForces = new Float32Array(oldNumPoints * 2);
     var tempDegrees = new Uint32Array(oldNumPoints);
@@ -329,7 +424,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
             newSpringsPos[i*4 + 2] = tempSpringsPos[oldIdx*4 + 2];
             newSpringsPos[i*4 + 3] = tempSpringsPos[oldIdx*4 + 3];
 
-            newEdgeWeights[i] = tempEdgeWeights[oldIdx];
+            newEdgeWeights[i*2] = tempEdgeWeights[oldIdx*2];
+            newEdgeWeights[i*2 + 1] = tempEdgeWeights[oldIdx*2 + 1];
         });
 
         _.each(['prevForces', 'degrees', 'forwardsEdges', 'forwardsDegrees',
@@ -353,10 +449,10 @@ Dataframe.prototype.filter = function (masks, simulator) {
             newBuffers.forwardsDegrees.write(forwardsEdges.degreesTyped),
             newBuffers.forwardsWorkItems.write(forwardsEdges.workItemsTyped),
             newBuffers.forwardsEdgeStartEndIdxs.write(forwardsEdges.edgeStartEndIdxsTyped),
-            newBuffers.backwardsEdges.write(forwardsEdges.edgesTyped),
-            newBuffers.backwardsDegrees.write(forwardsEdges.degreesTyped),
-            newBuffers.backwardsWorkItems.write(forwardsEdges.workItemsTyped),
-            newBuffers.backwardsEdgeStartEndIdxs.write(forwardsEdges.edgeStartEndIdxsTyped)
+            newBuffers.backwardsEdges.write(backwardsEdges.edgesTyped),
+            newBuffers.backwardsDegrees.write(backwardsEdges.degreesTyped),
+            newBuffers.backwardsWorkItems.write(backwardsEdges.workItemsTyped),
+            newBuffers.backwardsEdgeStartEndIdxs.write(backwardsEdges.edgeStartEndIdxsTyped)
         ]);
     }).then(function () {
 
