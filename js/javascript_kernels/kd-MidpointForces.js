@@ -152,11 +152,9 @@ var MidpointForces = function (clContext) {
     var that = this;
     // Create the kernels described by kernel specifications
     _.each( kernelSpecs, function (kernel) {
-        console.log(kernel);
         var newKernel =
             new Kernel(kernel.kernelName, kernel.args, argsType, kernel.fileName, clContext)
         that[kernel.name] = newKernel;
-        console.log(that);
         that.kernels.push(newKernel);
     });
     console.log('Midpoint Forces', this);

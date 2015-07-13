@@ -86,9 +86,9 @@ var uberControls = {
             params: {
                 edgeBundling: new BoolParam('Edge Bundling', false),
                 midpoints: new DiscreteParam('Splits', defaultNumSplits , 0, 32),
-                tau: new ContinuousParam('Speed', 0.5, 0.0000001, 1),
-                charge: new ContinuousParam('Charge', -1, -200, -0.0000001),
-                springStrength: new ContinuousParam('Spring Strength', 100, 0, 200),
+                tau: new ContinuousParam('Speed', 0.1, 0.0000001, 1),
+                charge: new ContinuousParam('Charge', -1, -10, -0.0000001),
+                springStrength: new ContinuousParam('Spring Strength', 200, 0, 400),
                 springDistance: new ContinuousParam('Spring Distance', 0.5, 0.0000001, 1),
                 // TODO : Remove these
                 gravity: new ContinuousParam('Center Magnet', 1.0, 0.01, 100),
@@ -102,7 +102,7 @@ var uberControls = {
         }
     ],
     locks: {
-        lockPoints: false,
+        lockPoints: true,
         lockEdges: false,
         lockMidpoints: false,
         lockMidedges: false,

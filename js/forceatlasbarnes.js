@@ -200,10 +200,11 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     if (locks.lockPoints) {
       var buffers = simulator.buffers;
       simulator.tickBuffers(['curPoints', 'nextPoints']);
-      return Q.all([
-              buffers.nextPoints.copyInto(buffers.curPoints),
-              buffers.curPoints.copyInto(buffers.nextPoints)
-              ]);
+      return Q.all([]);
+      //return Q.all([
+              //buffers.nextPoints.copyInto(buffers.curPoints),
+              //buffers.curPoints.copyInto(buffers.nextPoints)
+              //]);
       //return buffers.curPoints.copyInto(buffers.nextPoints);
       //return Q();
     }
