@@ -91,7 +91,7 @@ Dataframe.prototype.masksFromPoints = function (pointMask) {
 // TODO: Take in Set objects, not just masks.
 Dataframe.prototype.filter = function (masks, simulator) {
     console.log('Filtering');
-    console.log(this.rawdata.attributes.point._title);
+    // console.log(this.rawdata.attributes.point._title);
 
     var start = Date.now();
 
@@ -282,16 +282,19 @@ Dataframe.prototype.filter = function (masks, simulator) {
     var oldNumPoints = rawdata.numElements.point;
     var oldNumEdges = rawdata.numElements.edge;
 
+    console.log('old num Points: ', oldNumPoints);
+    console.log('old num Edges: ', oldNumEdges);
+
     var tempPrevForces = new Float32Array(oldNumPoints * 2);
     var tempDegrees = new Uint32Array(oldNumPoints);
     var tempSpringsPos = new Float32Array(oldNumEdges * 4);
-    var tempEdgeWeights = new Float32Array(oldNumEdges);
+    var tempEdgeWeights = new Float32Array(oldNumEdges * 2);
     var tempCurPoints = new Float32Array(oldNumPoints * 2);
 
     var newPrevForces = new Float32Array(numPoints * 2);
     var newDegrees = new Uint32Array(numPoints);
     var newSpringsPos = new Float32Array(numEdges * 4);
-    var newEdgeWeights = new Float32Array(numEdges);
+    var newEdgeWeights = new Float32Array(numEdges * 2);
     var newCurPoints = new Float32Array(numPoints * 2);
 
     var simBuffers = rawdata.buffers.simulator;
