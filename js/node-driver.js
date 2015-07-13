@@ -32,17 +32,8 @@ metrics.init('StreamGL:driver');
 //num: # of vertices
 //offset: in vertices
 //graph -> {<model>: {num: int, offset: int
-var stepNum = 0;
+
 function graphCounts(graph) {
-
-    if (stepNum++ === 40) {
-        var pointMask = _.range(5);
-        var masks = graph.dataframe.masksFromPoints(pointMask);
-        graph.dataframe.filter(masks, graph.simulator);
-    }
-
-
-
     var numRenderedSplits = graph.simulator.dataframe.getNumElements('renderedSplits');
 
     // var numPoints       = graph.simulator.timeSubset.pointsRange.len;
