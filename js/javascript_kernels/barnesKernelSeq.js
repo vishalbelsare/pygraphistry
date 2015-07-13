@@ -141,8 +141,8 @@ var BarnesKernelSeq = function (clContext) {
         bottom: null,
         maxdepth: null,
     };
-    var setupTempBuffers = function(simulator, warpsize, numPoints) {
-        simulator.resetBuffers(tempBuffers);
+
+    var computeSizes = function (simulator, warpsize, numPoints) {
         var blocks = 8; //TODO (paden) should be set to multiprocecessor count
 
         if (numPoints === undefined) {
@@ -156,8 +156,23 @@ var BarnesKernelSeq = function (clContext) {
         var numNodes = num_nodes;
         var numBodies = num_bodies;
         // Set this to the number of workgroups in boundBox kernel
-        var num_work_groups = 30;
+        var numWorkGroups = 30;
 
+        return {
+            numWorkGroups: numWorkGroups,
+            numNodes: numNodes,
+            numBodies: numBodies
+        };
+    };
+
+    var setupTempBuffers = function(simulator, warpsize, numPoints) {
+        simulator.resetBuffers(tempBuffers);
+        var sizes = computeSizes(simulator, warpsize, numPoints);
+        var numNodes = sizes.numNodes;
+        var num_nodes = sizes.numNodes;
+        var numBodies = sizes.numBodies;
+        var num_bodies = sizes.numBodies;
+        var num_work_groups = sizes.numWorkGroups;
 
         return Q.all(
                 [
@@ -264,6 +279,36 @@ var BarnesKernelSeq = function (clContext) {
             setBarnesKernelArgs(that.calculatePointForces, tempBuffers);
 
         }).fail(eh.makeErrorHandler('setupTempBuffers'));
+    };
+
+    this.updateDataframeBuffers = function (simulator, warpsize) {
+        var that = this;
+        var sizes = computeSizes(simulator, warpsize, simulator.dataframe.getNumElements('point'));
+        var numNodes = sizes.numNodes;
+        var numBodies = sizes.numBodies;
+
+        var updateBarnesArgs = function (kernel) {
+            var args = {
+                swings: simulator.dataframe.getBuffer('swings', 'simulator').buffer,
+                tractions: simulator.dataframe.getBuffer('tractions', 'simulator').buffer,
+                pointForces: simulator.dataframe.getBuffer('partialForces1', 'simulator').buffer,
+                numBodies: numBodies,
+                numNodes: numNodes
+            };
+            kernel.set(args);
+        };
+
+        that.toBarnesLayout.set({
+            numPoints: simulator.dataframe.getNumElements('point'),
+            inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
+            pointDegrees: simulator.dataframe.getBuffer('degrees', 'simulator').buffer
+        });
+
+        updateBarnesArgs(that.boundBox);
+        updateBarnesArgs(that.buildTree);
+        updateBarnesArgs(that.computeSums);
+        updateBarnesArgs(that.sort);
+        updateBarnesArgs(that.calculatePointForces);
     };
 
     // TODO (paden) Can probably combine ExecKernel functions
