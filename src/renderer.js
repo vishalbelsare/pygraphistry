@@ -247,6 +247,7 @@ function init(config, canvas, urlParams) {
         boundBuffer:    undefined,
         bufferSize:     Immutable.Map({}),
         numElements:    {},
+        flags: {interpolateMidPoints: true},
 
         //keyed on instancing: 1 -> vertex, 2 -> line, 3 -> triangle, ...
         indexHostBuffers: {}, // {Uint32Array}
@@ -260,6 +261,27 @@ function init(config, canvas, urlParams) {
         //Observable [...]
         rendered: renderPipeline.pluck('rendered').filter(_.identity)
     });
+
+    if (urlParams.bg) {
+        try {
+            var hex = decodeURIComponent(urlParams.bg);
+            var c = parseInt(hex.slice(1), 16);
+            state.get('options').clearColor =
+                [
+                    [c >> 16, c >> 8, c]
+                        .map(function (v) {
+                            var res = (v & 255) / 255;
+                            if (isNaN(res)) {
+                                throw new Error('Bad color component');
+                            }
+                            return res;
+                        })
+                        .concat(1)
+                ];
+        } catch (e) {
+            console.error('Invalid color', e, urlParams.bg);
+        }
+    }
 
     resizeCanvas(state);
     window.addEventListener('resize', function () {
@@ -289,6 +311,11 @@ function init(config, canvas, urlParams) {
 
     debug('created', state.toJS());
     return state;
+}
+
+function setFlags(state, name, bool) {
+    var flags = state.get('flags');
+    flags[name] = bool;
 }
 
 
@@ -1109,4 +1136,5 @@ module.exports = {
     setupFullscreenBuffer: setupFullscreenBuffer,
     getServerBufferNames: getServerBufferNames,
     getServerTextureNames: getServerTextureNames,
+    setFlags: setFlags
 };

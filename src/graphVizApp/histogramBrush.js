@@ -84,6 +84,17 @@ function toggleExpandedD3 (attribute, vizContainer, vizHeight, view) {
     }
 }
 
+//socket * ?? -> Observable ??
+function aggregatePointsAndEdges (socket, params) {
+    return Rx.Observable.zip(
+        Rx.Observable.fromCallback(socket.emit, socket)('aggregate', _.extend({}, params, {type: 'point'})),
+        Rx.Observable.fromCallback(socket.emit, socket)('aggregate', _.extend({}, params, {type: 'edge'})),
+        function (pointHists, edgeHists) {
+            return {success: pointHists.success && edgeHists.success,
+                    data: _.extend({}, pointHists.data || {}, edgeHists.data || {})};
+        });
+}
+
 
 function init(socket, marquee) {
     debug('Initializing histogram brush');
@@ -177,7 +188,6 @@ function init(socket, marquee) {
                     .take(1)
                     .do(function () {
                         var maxItems = Math.min((window.innerHeight - 110) / 85, 5);
-                        console.log('maxItems', maxItems);
                         attributes.forEach(function (attribute, i) {
                             if (i >= maxItems) {
                                 return;
@@ -244,10 +254,10 @@ function init(socket, marquee) {
     // Setup Streams
     //////////////////////////////////////////////////////////////////////////
 
-    var params = {all: true, mode: MODE};
-    var paramsSparklines = {all: true, mode: MODE, binning: {'_goalNumberOfBins': NUM_SPARKLINES}};
-    var globalStream = Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params);
-    var globalStreamSparklines = Rx.Observable.fromCallback(socket.emit, socket)('aggregate', paramsSparklines);
+    var globalStream = aggregatePointsAndEdges(socket,
+        {all: true, mode: MODE});
+    var globalStreamSparklines = aggregatePointsAndEdges(socket,
+        {all: true, mode: MODE, binning: {'_goalNumberOfBins': NUM_SPARKLINES}});
 
     Rx.Observable.zip(globalStream, globalStreamSparklines, function (histogramsReply, sparkLinesReply) {
         checkReply(histogramsReply);
@@ -304,7 +314,7 @@ function init(socket, marquee) {
         if (!data.reply) {
             console.error('Unexpected server error on aggregate');
         } else if (data.reply && !data.reply.success) {
-            console.log('Server replied with error:', data.reply.error);
+            console.error('Server replied with error:', data.reply.error);
         }
     // TODO: Do we want to treat no replies in some special way?
     }).filter(function (data) { return data.reply && data.reply.success; })
@@ -346,7 +356,7 @@ function checkReply (reply) {
     if (!reply) {
         console.error('Unexpected server error on global aggregate');
     } else if (reply && !reply.success) {
-        console.log('Server replied with error from global aggregate:', reply.error, reply.stack);
+        console.error('Server replied with error from global aggregate:', reply.error, reply.stack);
     }
 }
 

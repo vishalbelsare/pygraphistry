@@ -282,10 +282,9 @@ function handleVboUpdates(socket, uri, renderState) {
 
         var thisStep = {step: vboUpdateStep++, data: data.step};
 
-        var demoWowFactor = 1.0;
-        $('#graph-node-count').text(data.elements.pointculled * demoWowFactor);
+        $('#graph-node-count').text(data.elements.pointculled || data.elements.uberpointculled);
         var numEdges = (data.elements.edgeculled || data.elements.edgeculledindexed ||
-                        data.elements.edgeculledindexedclient) / 2 * demoWowFactor;
+                        data.elements.edgeculledindexedclient || data.elements.indexeddummy) / 2;
         $('#graph-edge-count').text(numEdges);
 
         try {
@@ -297,6 +296,7 @@ function handleVboUpdates(socket, uri, renderState) {
 
             var changedBufferNames  = getUpdatedNames(bufferNames,  previousVersions.buffers,  data.versions ? data.versions.buffers : null);
             var changedTextureNames = getUpdatedNames(textureNames, previousVersions.textures, data.versions ? data.versions.textures : null);
+
 
             socket.emit('planned_binary_requests', {buffers: changedBufferNames, textures: changedTextureNames});
 
@@ -334,6 +334,11 @@ function handleVboUpdates(socket, uri, renderState) {
                         _.each(data.elements, function (num, itemName) {
                             renderer.setNumElements(renderState, itemName, num);
                         });
+                        if (changedBufferNames.indexOf('curMidPoints') > 0 && thisStep.step > 20) {
+                            renderer.setFlags(renderState, 'interpolateMidPoints', false);
+                        } else {
+                            renderer.setFlags(renderState, 'interpolateMidPoints', true);
+                        }
                         renderer.loadBuffers(renderState, bindings);
                         readyBuffers.onNext();
                     } catch (e) {
