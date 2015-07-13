@@ -38,5 +38,8 @@ LayoutAlgo.prototype.setEdges = function (simulator) {
 LayoutAlgo.prototype.tick = function (simulator, stepNumber) {
     debug('Default stub for tick');
 }
+LayoutAlgo.prototype.updateDataframeBuffers = function (simulator) {
+    console.log('Default stup for updateDataframeBuffers. Please implement.');
+}
 
 module.exports = LayoutAlgo;

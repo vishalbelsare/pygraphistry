@@ -151,6 +151,25 @@ var setupTempLayoutBuffers = function(simulator) {
     .catch(eh.makeErrorHandler('setupTempBuffers'));
 };
 
+var getWarpsize = function (vendor) {
+    var warpsize = 1; // Always correct
+    if (vendor.indexOf('intel') != -1) {
+        warpsize = 16;
+    } else if (vendor.indexOf('nvidia') != -1) {
+        warpsize = 32;
+    } else if (vendor.indexOf('amd') != -1) {
+        warpsize = 64;
+    }
+    return warpsize;
+
+}
+
+ForceAtlas2Barnes.prototype.updateDataframeBuffers = function(simulator) {
+    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
+    var warpsize = getWarpsize(vendor);
+    this.barnesKernelSeq.updateDataframeBuffers(simulator, warpsize);
+    // this.edgeKernelSeq.updateDataframeBuffers(simulator);
+};
 
 ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
     var numMidPoints = simulator.dataframe.getNumElements('midPoints');
@@ -163,14 +182,7 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
     var that = this;
 
     var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
-    var warpsize = 1; // Always correct
-    if (vendor.indexOf('intel') != -1) {
-        warpsize = 16;
-    } else if (vendor.indexOf('nvidia') != -1) {
-        warpsize = 32;
-    } else if (vendor.indexOf('amd') != -1) {
-        warpsize = 64;
-    }
+    var warpsize = getWarpsize(vendor);
 
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
     var that = this;
