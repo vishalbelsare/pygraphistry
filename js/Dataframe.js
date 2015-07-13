@@ -90,6 +90,13 @@ Dataframe.prototype.masksFromPoints = function (pointMask) {
 // Mask is implemented as a list of valid indices (in sorted order).
 // TODO: Take in Set objects, not just masks.
 Dataframe.prototype.filter = function (masks, simulator) {
+    console.log('Filtering');
+    console.log(this.rawdata.attributes.point._title);
+
+    var start = Date.now();
+
+
+
     var that = this;
     var rawdata = that.rawdata;
     var newData = makeEmptyData();
@@ -123,6 +130,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
         });
     });
 
+    console.log('Filtered Attributes');
+
     // TODO: Does this need to be updated, since it gets rewritten at each tick? Maybe zerod out?
     // rendererBuffers;
     // Skipping for now, since we use null renderer.
@@ -137,6 +146,9 @@ Dataframe.prototype.filter = function (masks, simulator) {
             newData.labels[type] = newLabels;
         }
     });
+
+    console.log('Filtered Labels');
+    console.log('Until here took ' + (Date.now() - start) + ' ms');
 
     // buffers;
     // We have to deal with generic buffers differently from
@@ -169,6 +181,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
         filteredEdges[i*2 + 1] = pointOriginalLookup[forwardsEdges[newIdx*2 + 1]];
     });
 
+    console.log('Filtered Edges')
+
     var filteredPoints = []; // TODO:
 
     // hostBuffers;
@@ -187,6 +201,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
     newData.hostBuffers.forwardsEdges = forwardsEdges;
     newData.hostBuffers.backwardsEdges = backwardsEdges;
     newData.hostBuffers.points = rawdata.hostBuffers.points;
+
+    console.log('Created hostBuffers & encapsulated edges');
 
     // localBuffers;
     // localBuffers: logicalEdges,pointTags,edgeTags_reverse,pointSizes,
@@ -232,6 +248,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
     });
     newData.localBuffers.edgeWeights = newEdgeWeights;
 
+    console.log('Copied / filtered localBuffers');
+
     // numElements;
     // Copy all old in.
     _.each(_.keys(rawdata.numElements), function (key) {
@@ -246,6 +264,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
     newData.numElements.backwardsWorkItems = newData.hostBuffers.backwardsEdges.workItemsTyped.length / 4;
     // TODO: NumMidPoints and MidEdges
 
+    console.log('Updated numElements');
 
 
     //////////////////////////////////
@@ -277,13 +296,19 @@ Dataframe.prototype.filter = function (masks, simulator) {
 
     var simBuffers = rawdata.buffers.simulator;
 
-    Q.all([
+    console.log('Starting Sim Buffer Update');
+    console.log('Until here took ' + (Date.now() - start) + ' ms');
+
+    return Q.all([
         simBuffers.prevForces.read(tempPrevForces),
         simBuffers.degrees.read(tempDegrees),
         simBuffers.springsPos.read(tempSpringsPos),
         simBuffers.edgeWeights.read(tempEdgeWeights),
         simBuffers.curPoints.read(tempCurPoints)
     ]).spread(function () {
+
+        console.log('Read buffers');
+
         _.each(masks.point, function (oldIdx, i) {
             newPrevForces[i*2] = tempPrevForces[oldIdx*2];
             newPrevForces[i*2 + 1] = tempPrevForces[oldIdx*2 + 1];
@@ -312,6 +337,9 @@ Dataframe.prototype.filter = function (masks, simulator) {
 
             newData.buffers.simulator[key] = that.filteredBufferCache.simulator[key];
         });
+
+        console.log('About to write buffers');
+
         var newBuffers = newData.buffers.simulator;
         return Q.all([
             newBuffers.prevForces.write(newPrevForces),
@@ -328,6 +356,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
             newBuffers.backwardsEdgeStartEndIdxs.write(forwardsEdges.edgeStartEndIdxsTyped)
         ]);
     }).then(function () {
+
+        console.log('Finished writes');
 
         // Just in case, copy over references from rawdata to newData
         // This means we don't have to explicity overwrite everything.
@@ -361,8 +391,12 @@ Dataframe.prototype.filter = function (masks, simulator) {
                 newData.hostBuffers[key] = rawdata.hostBuffers[key];
             }
         });
+
+        console.log('Finished copies of rest');
+
     }).then(function () {
         // console.log('newData: ', newData);
+        console.log('Filter took ' + (Date.now() - start) + ' ms.');
         that.data = newData;
     });
 
