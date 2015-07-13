@@ -63,7 +63,7 @@ function BoolParam(name, value) {
 BoolParam.prototype = Object.create(Param.prototype);
 BoolParam.prototype.constructor = BoolParam;
 
-var defaultNumSplits = 8;
+var defaultNumSplits = 7;
 
 var uberControls = {
     simulator: SimCL,
@@ -86,7 +86,7 @@ var uberControls = {
             params: {
                 edgeBundling: new BoolParam('Edge Bundling', false),
                 midpoints: new DiscreteParam('Splits', defaultNumSplits , 0, 32),
-                tau: new ContinuousParam('Speed', 0.1, 0.0000001, 1),
+                tau: new ContinuousParam('Speed', 0.5, 0.0000001, 1),
                 charge: new ContinuousParam('Charge', -1, -10, -0.0000001),
                 springStrength: new ContinuousParam('Spring Strength', 200, 0, 400),
                 springDistance: new ContinuousParam('Spring Distance', 0.5, 0.0000001, 1),
