@@ -262,6 +262,27 @@ function init(config, canvas, urlParams) {
         rendered: renderPipeline.pluck('rendered').filter(_.identity)
     });
 
+    if (urlParams.bg) {
+        try {
+            var hex = decodeURIComponent(urlParams.bg);
+            var c = parseInt(hex.slice(1), 16);
+            state.get('options').clearColor =
+                [
+                    [c >> 16, c >> 8, c]
+                        .map(function (v) {
+                            var res = (v & 255) / 255;
+                            if (isNaN(res)) {
+                                throw new Error('Bad color component');
+                            }
+                            return res;
+                        })
+                        .concat(1)
+                ];
+        } catch (e) {
+            console.error('Invalid color', e, urlParams.bg);
+        }
+    }
+
     resizeCanvas(state);
     window.addEventListener('resize', function () {
         resizeCanvas(state);
