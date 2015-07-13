@@ -2,7 +2,7 @@
 
 var _ = require('underscore');
 var debug = require('debug')('graphistry:graph-viz:weaklycc');
-var perf = require('common/perfStats.js');
+var perf = require('common/perfStats.js').createPerfMonitor();
 
 
 

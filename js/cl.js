@@ -237,10 +237,10 @@ var compile = Q.promised(function (cl, source, kernels) {
         program.build([cl.device], '-I ' + includeDir + ' -cl-fast-relaxed-math');
     } catch (e) {
         try {
-        var buildLog = program.getBuildInfo(cl.device, webcl.PROGRAM_BUILD_LOG)
-        Log.makeQErrorHandler(logger, 'OpenCL compilation error')(buildLog);
+            var buildLog = program.getBuildInfo(cl.device, webcl.PROGRAM_BUILD_LOG)
+            Log.makeQErrorHandler(logger, 'OpenCL compilation error')(buildLog);
         } catch (e2) {
-        Log.makeQErrorHandler(logger, 'OpenCL compilation failed, no build log possible')(e2);
+            Log.makeQErrorHandler(logger, 'OpenCL compilation failed, no build log possible')(e2);
         }
     }
 

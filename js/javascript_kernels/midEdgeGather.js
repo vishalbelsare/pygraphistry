@@ -4,6 +4,9 @@ var    cljs = require('../cl.js'),
           Q = require('q'),
      Kernel = require('../kernel.js');
 
+var Log         = require('common/logger.js');
+var logger      = Log.createLogger('graph-viz:cl:midEdgeGather');
+
 function midEdgeGather(clContext) {
     logger.trace('Creating springsGather kernel');
 
