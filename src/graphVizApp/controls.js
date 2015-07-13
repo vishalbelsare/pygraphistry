@@ -306,6 +306,21 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     toggleLogo($('.logo-container'), urlParams);
     var onElt = makeMouseSwitchboard();
 
+    // Create Filtering Function Stub.
+    // TODO: Remove this entirely and make it a UI element.
+    var filterRange = function(start, stop) {
+        var pointMask = _.range(start, stop);
+        var params = {
+            pointMask: pointMask
+        };
+        return Rx.Observable.fromCallback(socket.emit, socket)('filter', params)
+            .map(function (reply) {
+                console.log('Filter Request replied with: ', reply);
+            }).subscribe(_.identity);
+    }
+    window.filterRange = filterRange;
+
+
     // TODO: More general version for all toggle-able buttons?
     var marqueeIsOn = false;
     var turnOnMarquee =
