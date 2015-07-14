@@ -25,7 +25,7 @@ e.g. '{"BUNYAN_LOG":"/This/Directory/Foo/Bar"}'
 
 var bunyan = require('bunyan');
 var _ = require('underscore');
-var config = require('../config')();
+var config = require('config')();
 
 //////////Error handler/serializer from bunyan, modified for our needs
 /*
