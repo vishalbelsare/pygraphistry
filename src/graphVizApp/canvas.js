@@ -327,7 +327,7 @@ function makeArrows(bufferSnapshots) {
     var pointSizes = new Uint8Array(bufferSnapshots.pointSizes.buffer);
     var springsPos = new Float32Array(bufferSnapshots.springsPos.buffer);
     var edgeColors = new Uint32Array(bufferSnapshots.edgeColors.buffer);
-    var numEdges = springsPos.length / 4; // TWO coords (x,y) for each of the TWO endpoints.
+    var numEdges = logicalEdges.length / 2;
 
     if (!bufferSnapshots.arrowStartPos) {
         bufferSnapshots.arrowStartPos = new Float32Array(numEdges * 2 * 3);
@@ -378,7 +378,7 @@ function renderSlowEffects(renderingScheduler) {
     if (logicalEdges && appSnapshot.vboUpdated) {
         start = Date.now();
         springsPos = expandLogicalEdges(appSnapshot.buffers);
-        end1 = Date.now(); 
+        end1 = Date.now();
         renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
         end2 = Date.now();
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
@@ -389,7 +389,12 @@ function renderSlowEffects(renderingScheduler) {
         renderer.loadBuffers(renderState, {'arrowNormalDir': appSnapshot.buffers.arrowNormalDir});
         renderer.loadBuffers(renderState, {'arrowColors': appSnapshot.buffers.arrowColors});
         renderer.loadBuffers(renderState, {'arrowPointSizes': appSnapshot.buffers.arrowPointSizes});
-        renderer.setNumElements(renderState, 'arrowculled', appSnapshot.buffers.arrowStartPos.length / 2);
+
+        // numEdges = length / 4 (stored as UInt8) * 0.5 (biDirectional)
+        // numArrowElements = 3 * numEdges.
+        var numArrowCulled = ((appSnapshot.buffers.logicalEdges.length / 2) / 4) * 3;
+
+        renderer.setNumElements(renderState, 'arrowculled', numArrowCulled);
         var end4 = Date.now();
         console.info('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
     } else if (arc && appSnapshot.vboUpdated) {
