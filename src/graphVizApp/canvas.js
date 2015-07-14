@@ -275,6 +275,67 @@ function getPolynomialCurves(bufferSnapshots, interpolateMidPoints) {
 
 }
 
+function expandLogicalMidEdges(bufferSnapshots) {
+    var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
+    var curMidPoints = new Float32Array(bufferSnapshots.curMidPoints.buffer);
+    var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
+    var numSplits = curMidPoints.length  / logicalEdges.length;
+
+    if (numSplits < 1) {
+        numSplits = 0;
+    }
+    //var numMidEdges = numSplits + 1;
+    var numEdges = (logicalEdges.length / 2);
+
+    var numVertices = (2 * numEdges) * (numSplits + 1);
+
+    if (!bufferSnapshots.midSpringsPos) {
+        bufferSnapshots.midSpringsPos = new Float32Array(numVertices * 2);
+    }
+    var midSpringsPos = bufferSnapshots.midSpringsPos;
+
+    for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
+        var srcPointIdx = logicalEdges[edgeIndex * 2];
+        var dstPointIdx = logicalEdges[(edgeIndex * 2) + 1];
+
+        var srcPointX = curPoints[(2 * srcPointIdx)];
+        var srcPointY = curPoints[(2 * srcPointIdx)+ 1];
+        //var srcPoint = [srcPointX, srcPointY];
+        var dstPointX = curPoints[(2 * dstPointIdx)];
+        var dstPointY = curPoints[(2 * dstPointIdx) + 1];
+
+        var elementsPerPoint = 2;
+        var pointsPerEdge = 2;
+        var midEdgesPerEdge = numSplits + 1;
+        var midEdgeStride = elementsPerPoint * pointsPerEdge * midEdgesPerEdge;
+        var midEdgeStartIdx = edgeIndex * midEdgeStride;
+
+        midSpringsPos[midEdgeStartIdx] =  srcPointX;
+        midSpringsPos[midEdgeStartIdx + 1] =  srcPointY;
+        var prevX = srcPointX;
+        var prevY = srcPointY;
+
+        for (var midEdgeIdx = 0; midEdgeIdx < numSplits; midEdgeIdx++) {
+
+            midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4)] = prevX;
+            midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 1] = prevY;
+
+            prevX = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIdx * 2)];
+            prevY = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIdx * 2) + 1];
+
+            midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 2] = prevX;
+            midSpringsPos[midEdgeStartIdx + (midEdgeIdx * 4) + 3] = prevY;
+        }
+        midSpringsPos[((edgeIndex + 1) * midEdgeStride) - 4] =  prevX;
+        midSpringsPos[((edgeIndex + 1) * midEdgeStride) - 3] =  prevY;
+
+        midSpringsPos[((edgeIndex + 1) * midEdgeStride) - 2] =  dstPointX;
+        midSpringsPos[((edgeIndex + 1) * midEdgeStride) - 1] =  dstPointY;
+    }
+
+    return midSpringsPos;
+}
+
 /* Populate arrow buffers. The first argument is either an array of indices,
  * or an integer value of how many you want.
  */
