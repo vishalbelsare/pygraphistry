@@ -63,7 +63,7 @@ function BoolParam(name, value) {
 BoolParam.prototype = Object.create(Param.prototype);
 BoolParam.prototype.constructor = BoolParam;
 
-var defaultNumSplits = 7;
+var defaultNumSplits = 16;
 
 var uberControls = {
     simulator: SimCL,
