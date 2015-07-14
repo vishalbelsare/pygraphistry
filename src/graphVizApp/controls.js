@@ -308,10 +308,12 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     // Create Filtering Function Stub.
     // TODO: Remove this entirely and make it a UI element.
-    var filterRange = function(start, stop) {
-        var pointMask = _.range(start, stop);
+    var filterRange = function(type, attribute, start, stop) {
         var params = {
-            pointMask: pointMask
+            type: type,
+            attribute: attribute,
+            start: start,
+            stop: stop
         };
         return Rx.Observable.fromCallback(socket.emit, socket)('filter', params)
             .map(function (reply) {
