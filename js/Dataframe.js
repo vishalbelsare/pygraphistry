@@ -85,6 +85,17 @@ Dataframe.prototype.masksFromPoints = function (pointMask) {
     };
 };
 
+Dataframe.prototype.getPointAttributeMask = function (attribute, start, stop) {
+    var attr = this.rawdata.attributes.point[attribute];
+    var pointMask = [];
+    _.each(attr.values, function (val, idx) {
+        if (val > start && val < stop) {
+            pointMask.push(idx);
+        }
+    });
+    return pointMask;
+};
+
 
 // This does an inplace filter on this.data given masks.
 // Mask is implemented as a list of valid indices (in sorted order).
@@ -540,6 +551,7 @@ Dataframe.prototype.load = function (attributes, type) {
     if (filteredKeys.length === 0) {
         return;
     }
+    console.log('filteredKeys: ', filteredKeys);
 
 
     var numElements = filteredAttributes[filteredKeys[0]].values.length;
