@@ -157,7 +157,6 @@ var MidpointForces = function (clContext) {
         that[kernel.name] = newKernel;
         that.kernels.push(newKernel);
     });
-    console.log('Midpoint Forces', this);
 
     // Determine the size needed for each temporary buffer
     var BufferSizes = function(simulator, warpsize, numBodies, numNodes) {
