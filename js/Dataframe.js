@@ -85,6 +85,42 @@ Dataframe.prototype.masksFromPoints = function (pointMask) {
     };
 };
 
+Dataframe.prototype.masksFromEdges = function (edgeMask) {
+    var pointMask = [];
+    var pointLookup = {};
+    var edges = this.rawdata.hostBuffers.forwardsEdges.edgesTyped;
+
+    _.each(edgeMask, function (edgeIdx) {
+        var src = edges[2*edgeIdx];
+        var dst = edges[2*edgeIdx + 1];
+        pointLookup[src] = 1;
+        pointLookup[dst] = 1;
+    });
+
+    var numPoints = this.rawdata.numElements.point;
+    for (var i = 0; i < numPoints; i++) {
+        if (pointLookup[i]) {
+            pointMask.push(i);
+        }
+    }
+
+    return {
+        edge: edgeMask,
+        point: pointMask
+    };
+};
+
+Dataframe.prototype.getEdgeAttributeMask = function (attribute, start, stop) {
+    var attr = this.rawdata.attributes.edge[attribute];
+    var edgeMask = [];
+    _.each(attr.values, function (val, idx) {
+        if (val > start && val < stop) {
+            edgeMask.push(idx);
+        }
+    });
+    return edgeMask;
+}
+
 Dataframe.prototype.getPointAttributeMask = function (attribute, start, stop) {
     var attr = this.rawdata.attributes.point[attribute];
     var pointMask = [];
