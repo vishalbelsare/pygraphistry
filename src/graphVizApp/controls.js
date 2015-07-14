@@ -319,7 +319,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
             .map(function (reply) {
                 console.log('Filter Request replied with: ', reply);
             }).subscribe(_.identity);
-    }
+    };
     window.filterRange = filterRange;
 
 
