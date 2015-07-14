@@ -192,7 +192,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
         });
     });
 
-    console.log('Filtered Attributes');
+    // console.log('Filtered Attributes');
 
     // TODO: Does this need to be updated, since it gets rewritten at each tick? Maybe zerod out?
     // rendererBuffers;
@@ -235,8 +235,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
 
     /////////////////////////////////////////////////////////////////////
 
-    console.log('Filtered Labels');
-    console.log('Until here took ' + (Date.now() - start) + ' ms');
+    // console.log('Filtered Labels');
+    // console.log('Until here took ' + (Date.now() - start) + ' ms');
 
     // buffers;
     // We have to deal with generic buffers differently from
@@ -269,7 +269,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
         filteredEdges[i*2 + 1] = pointOriginalLookup[forwardsEdges[oldIdx*2 + 1]];
     });
 
-    console.log('Filtered Edges')
+    // console.log('Filtered Edges')
 
     ///////////////////////////////////////////////////////
     // _.each(forwardsEdges, function (edge, i) {
@@ -331,7 +331,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
 
     ////////////////DONE TESTING//////////////////
 
-    console.log('Created hostBuffers & encapsulated edges');
+    // console.log('Created hostBuffers & encapsulated edges');
 
     // localBuffers;
     // localBuffers: logicalEdges,pointTags,edgeTags_reverse,pointSizes,
@@ -377,7 +377,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
     });
     newData.localBuffers.edgeWeights = newEdgeWeights;
 
-    console.log('Copied / filtered localBuffers');
+    // console.log('Copied / filtered localBuffers');
 
     // numElements;
     // Copy all old in.
@@ -402,7 +402,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
     ///////////////////////////////////////////////////////////////
 
 
-    console.log('Updated numElements');
+    // console.log('Updated numElements');
 
 
     //////////////////////////////////
@@ -420,11 +420,11 @@ Dataframe.prototype.filter = function (masks, simulator) {
     var oldNumPoints = rawdata.numElements.point;
     var oldNumEdges = rawdata.numElements.edge;
 
-    console.log('old num Points: ', oldNumPoints);
-    console.log('old num Edges: ', oldNumEdges);
+    // console.log('old num Points: ', oldNumPoints);
+    // console.log('old num Edges: ', oldNumEdges);
 
-    console.log('new num Points: ', numPoints);
-    console.log('new num Edges: ', numEdges);
+    // console.log('new num Points: ', numPoints);
+    // console.log('new num Edges: ', numEdges);
 
 
     var tempPrevForces = new Float32Array(oldNumPoints * 2);
@@ -441,8 +441,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
 
     var simBuffers = rawdata.buffers.simulator;
 
-    console.log('Starting Sim Buffer Update');
-    console.log('Until here took ' + (Date.now() - start) + ' ms');
+    // console.log('Starting Sim Buffer Update');
+    // console.log('Until here took ' + (Date.now() - start) + ' ms');
 
     return Q.all([
         simBuffers.prevForces.read(tempPrevForces),
@@ -452,7 +452,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
         simBuffers.curPoints.read(tempCurPoints)
     ]).spread(function () {
 
-        console.log('Read buffers');
+        // console.log('Read buffers');
 
         _.each(masks.point, function (oldIdx, i) {
             newPrevForces[i*2] = tempPrevForces[oldIdx*2];
@@ -484,7 +484,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
             newData.buffers.simulator[key] = that.filteredBufferCache.simulator[key];
         });
 
-        console.log('About to write buffers');
+        // console.log('About to write buffers');
 
         var newBuffers = newData.buffers.simulator;
         return Q.all([
@@ -503,7 +503,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
         ]);
     }).then(function () {
 
-        console.log('Finished writes');
+        // console.log('Finished writes');
 
         // Just in case, copy over references from rawdata to newData
         // This means we don't have to explicity overwrite everything.
@@ -538,9 +538,18 @@ Dataframe.prototype.filter = function (masks, simulator) {
             }
         });
 
-        console.log('Finished copies of rest');
+        // Bump versions of every buffer.
+        // TODO: Decide if this is really necessary.
+        _.each(_.keys(simulator.versions.buffers), function (key) {
+            // console.log('OldVersion: ', key, simulator.versions.buffers[key]);
+            simulator.versions.buffers[key] += 1;
+        });
+
+        // console.log('Finished copies of rest');
 
     }).then(function () {
+
+
         // console.log('newData: ', newData);
         console.log('Filter took ' + (Date.now() - start) + ' ms.');
         that.data = newData;

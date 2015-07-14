@@ -379,11 +379,13 @@ function create(dataset) {
  * mapping render item names to number of elements that should be rendered for the given buffers.
  */
 function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, programNames) {
-
     var counts = graphCounts(graph);
+
+
     bufferVersions = bufferVersions || _.object(bufferNames.map(function (name) { return [name, -1]}));
     var bufferByteLengths = _.pick(fetchBufferByteLengths(counts, renderConfig),
                                           bufferNames);
+
     var elements = _.pick(fetchNumElements(counts, renderConfig), programNames);
     var neededBuffers =
         bufferNames.filter(function (name) {
@@ -455,8 +457,18 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
                         bufferNames,
                         bufferNames.map(function (_, i) {  return compressedVbos[i].version; })));
 
-            //want all versions
-            _.extend(versions, graph.simulator.versions.buffers);
+            // want all versions
+            // First check if it existed from earlier, otherwise copy in from simulator
+            _.each(_.keys(bufferVersions), function (key) {
+                if (versions[key] === undefined) {
+                    versions[key] = bufferVersions[key];
+                }
+            });
+            _.each(_.keys(graph.simulator.versions.buffers), function (key) {
+                if (versions[key] === undefined) {
+                    versions[key] = graph.simulator.versions.buffers[key];
+                }
+            });
 
             return {
                 compressed: buffers,
