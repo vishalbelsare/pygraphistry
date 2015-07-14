@@ -60,13 +60,7 @@ Dataframe.prototype.load = function (attributes, type) {
         return filteredKeys.indexOf(key) > -1;
     });
 
-    // Case of filtering out all attributes
-    if (filteredKeys.length === 0) {
-        return;
-    }
-
-
-    var numElements = filteredAttributes[filteredKeys[0]].values.length;
+    var numElements = attributes[_.keys(attributes)[0]].values.length;
     this.rawdata.numElements[type] = numElements;
 
     if (nodeTitleField) {
