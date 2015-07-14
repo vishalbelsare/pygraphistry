@@ -14,6 +14,7 @@ var canvas          = require('./canvas.js');
 var ui              = require('../ui.js');
 var poiLib          = require('../poi.js');
 var util            = require('./util.js');
+var timeslider      = require('./timeslider.js');
 
 
 function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
@@ -119,6 +120,8 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     var doneLoading = vboUpdates.filter(function (update) {
         return update === 'received';
     }).take(1).do(ui.hideSpinnerShowBody).delay(700);
+
+    timeslider.init(appState, socket, urlParams);
 
     controls.init(appState, socket, $simCont, doneLoading, workerParams, urlParams);
 }
