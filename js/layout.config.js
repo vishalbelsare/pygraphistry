@@ -107,8 +107,8 @@ var uberControls = {
         lockEdges: false,
         lockMidpoints: false,
         lockMidedges: false,
-        interpolateMidPoints: true,
-        interpolateMidPointsOnce: false
+        interpolateMidPoints: false,
+        interpolateMidPointsOnce: true
     },
     global: {
         simulationTime: 1, //SIMULATION_TIME, //milliseconds
