@@ -836,6 +836,15 @@ var sceneUber = {
     'indexeddummy', 'indexeddummy2']
 }
 
+var sceneNetFlowArcs= {
+    'options': stdOptions,
+    'camera': camera2D,
+    'edgeMode': 'ARCS',
+    'render': ['pointpicking',  'pointsampling', 'midedgeculledindexedclient', /*'edgepicking',*/
+        'pointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    'indexeddummy', 'indexeddummy2']
+}
+
 var sceneNetflow = {
     'options': stdOptions,
     'camera': camera2D,
@@ -866,7 +875,8 @@ var scenes = {
     'uber' : sceneUber,
     'netflow': sceneNetflow,
     'netflowIndexed': sceneNetflowIndexed,
-    'netflowIndexedClient': sceneNetflowIndexedClient
+    'netflowIndexedClient': sceneNetflowIndexedClient,
+    'netflowArcs': sceneNetFlowArcs
 }
 
 function saneProgram(program, progName) {
