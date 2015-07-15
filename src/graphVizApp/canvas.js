@@ -76,11 +76,32 @@ function setupLabelsAndCursor(appState, $eventTarget) {
 }
 
 function setupRenderUpdates(renderingScheduler, cameraStream, settingsChanges) {
-    var renderUpdates = cameraStream.combineLatest(settingsChanges, _.identity);
-
-    renderUpdates.do(function () {
-        renderingScheduler.renderScene('panzoom', {trigger: 'renderSceneFast'});
-    }).subscribe(_.identity, util.makeErrorHandler('render updates'));
+    settingsChanges
+        .do(function (settingsChange) {
+            var uniforms = renderingScheduler.renderState.get('uniforms');
+            switch (settingsChange.name) {
+                case 'pointOpacity':
+                    ['pointculled', 'pointoutline', 'uberpointculled', 'arrowculled'].forEach(function (item) {
+                        if (uniforms[item]) {
+                            uniforms[item].pointOpacity = [settingsChange.val];
+                        }
+                    });
+                    break;
+                case 'edgeOpacity':
+                    ['edgeculledindexedclient', 'midedgeculledindexedclient'].forEach(function (item) {
+                        if (uniforms[item]) {
+                            uniforms[item].edgeOpacity = [settingsChange.val];
+                        }
+                    });
+                    break;
+                default:
+                    break;
+            }
+        })
+        .combineLatest(cameraStream, _.identity)
+        .do(function () {
+            renderingScheduler.renderScene('panzoom', {trigger: 'renderSceneFast'});
+        }).subscribe(_.identity, util.makeErrorHandler('render updates'));
 }
 
 function setupBackgroundColor(renderingScheduler, bgColor) {
@@ -378,7 +399,7 @@ function renderSlowEffects(renderingScheduler) {
     if (logicalEdges && appSnapshot.vboUpdated) {
         start = Date.now();
         springsPos = expandLogicalEdges(appSnapshot.buffers);
-        end1 = Date.now(); 
+        end1 = Date.now();
         renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
         end2 = Date.now();
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');

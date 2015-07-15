@@ -216,6 +216,24 @@ function createControls(socket, appState, trigger) {
                 step: 1,
                 max: 100.0,
                 min: 1
+            },
+            {
+                name: 'pointOpacity',
+                prettyName: 'Point Opacity',
+                type: 'discrete',
+                value: 100,
+                step: 1,
+                max: 100,
+                min: 1
+            },
+            {
+                name: 'edgeOpacity',
+                prettyName: 'Edge Opacity',
+                type: 'discrete',
+                value: 100,
+                step: 1,
+                max: 100,
+                min: 1
             }
         ];
 
@@ -286,12 +304,21 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
     var camera = renderState.get('camera');
     var val = 0;
 
-    if (name === 'pointSize') {
-        val = toLog(1, 100, 0.1, 10, pos);
-        camera.setPointScaling(val);
-    } else if (name === 'edgeSize') {
-        val = toLog(1, 100, 0.1, 10, pos);
-        camera.setEdgeScaling(val);
+    switch (name) {
+        case 'pointSize':
+            val = toLog(1, 100, 0.1, 10, pos);
+            camera.setPointScaling(val);
+            break;
+        case 'edgeSize':
+            val = toLog(1, 100, 0.1, 10, pos);
+            camera.setEdgeScaling(val);
+            break;
+        case 'pointOpacity':
+        case 'edgeOpacity':
+            val = pos/100;
+            break;
+        default:
+            break;
     }
 
     settingsChanges.onNext({name: name, val: val});
