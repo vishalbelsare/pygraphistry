@@ -429,15 +429,21 @@ function renderSlowEffects(renderingScheduler) {
     var appSnapshot = renderingScheduler.appSnapshot;
     var renderState = renderingScheduler.renderState;
     var edgeMode = renderState.get('config').get('edgeMode');
-    var logicalEdges = renderState.get('config').get('edgeMode') === 'INDEXEDCLIENT';
-    var arc = renderState.get('config').get('edgeMode') === 'ARC';
     var springsPos;
     var midSpringsPos;
     var start;
-    var end1, end2;
+    var end1, end2, end3, end4;
 
 
-    if (logicalEdges && appSnapshot.vboUpdated) {
+    if (edgeMode === 'ARCS' && appSnapshot.vboUpdated) {
+        start = Date.now();
+        midSpringsPos = getPolynomialCurves(appSnapshot.buffers, true);
+        end1 = Date.now(); 
+        renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
+        end2 = Date.now();
+        console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
+    }
+    if (edgeMode === 'INDEXEDCLIENT' && appSnapshot.vboUpdated) {
         start = Date.now();
         springsPos = expandLogicalEdges(appSnapshot.buffers);
         end1 = Date.now(); 
@@ -445,16 +451,16 @@ function renderSlowEffects(renderingScheduler) {
         end2 = Date.now();
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
         makeArrows(appSnapshot.buffers);
-        var end3 = Date.now();
+        end3 = Date.now();
         renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
         renderer.loadBuffers(renderState, {'arrowEndPos': appSnapshot.buffers.arrowEndPos});
         renderer.loadBuffers(renderState, {'arrowNormalDir': appSnapshot.buffers.arrowNormalDir});
         renderer.loadBuffers(renderState, {'arrowColors': appSnapshot.buffers.arrowColors});
         renderer.loadBuffers(renderState, {'arrowPointSizes': appSnapshot.buffers.arrowPointSizes});
         renderer.setNumElements(renderState, 'arrowculled', appSnapshot.buffers.arrowStartPos.length / 2);
-        var end4 = Date.now();
+        end4 = Date.now();
         console.info('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
-    } else if (true && appSnapshot.vboUpdated) {
+    } else if (edgeMode === 'EDGEBUNDLING' && appSnapshot.vboUpdated) {
         start = Date.now();
         midSpringsPos = expandLogicalMidEdges(appSnapshot.buffers, renderState.get('flags').interpolateMidPoints);
         end1 = Date.now();
