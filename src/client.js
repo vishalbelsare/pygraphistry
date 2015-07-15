@@ -334,11 +334,6 @@ function handleVboUpdates(socket, uri, renderState) {
                         _.each(data.elements, function (num, itemName) {
                             renderer.setNumElements(renderState, itemName, num);
                         });
-                        if (changedBufferNames.indexOf('curMidPoints') > 0 && thisStep.step > 20) {
-                            renderer.setFlags(renderState, 'interpolateMidPoints', false);
-                        } else {
-                            renderer.setFlags(renderState, 'interpolateMidPoints', true);
-                        }
                         renderer.loadBuffers(renderState, bindings);
                         readyBuffers.onNext();
                     } catch (e) {
