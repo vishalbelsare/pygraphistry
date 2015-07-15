@@ -14,10 +14,14 @@ module.exports = {
         }
 
         var MAX_BOUNDS  = 1000;
-        var START       = 1380003953000;
-        var END         = 1380483953000;
+        // var START       = 1380003953000;
+        // var END         = 1380483953000;
+        var START       = 1376995086000 - 1;
+        var END         = 1381498590000 + 1;
 
-        var defaults = {min: MAX_BOUNDS/5, max:MAX_BOUNDS - MAX_BOUNDS/5};
+
+        // var defaults = {min: MAX_BOUNDS/5, max:MAX_BOUNDS - MAX_BOUNDS/5};
+        var defaults = {min: 10, max:MAX_BOUNDS - 10};
 
         var hits = new Rx.Subject();
 
