@@ -201,6 +201,17 @@ var models = {
             'normalize': false
         }
     },
+    'midSpringsPosClient': {
+        'curPos': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
     'highlightedEdgesPos': {
         'curPos': {
             'datasource': 'CLIENT',
@@ -416,6 +427,16 @@ var models = {
             'normalize': false
         }
     },
+    'curMidPointsClient': {
+        'curPos': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
     'fullscreenCoordinates': {
         'vertexPosition': {
             'datasource': 'CLIENT',
@@ -480,6 +501,30 @@ var items = {
         'index': ['logicalEdges', 'curIdx'],
         'drawType': 'LINES',
         'glOptions': {}
+    },
+    'indexeddummy2' : {
+        'program': 'midedgeculled',
+        'triggers': [],
+        'bindings': {
+            //'curPos': ['curMidPointsClient', 'curPos'],
+            'curPos': ['curMidPoints', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'index': ['logicalEdges', 'curIdx'],
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
+    'midedgeculledindexedclient' : {
+        'program': 'midedgeculled',
+        'triggers': ['renderSceneFull'],
+        'bindings': {
+            'curPos': ['midSpringsPosClient', 'curPos'],
+            'edgeColor': ['midEdgeColors', 'midEdgeColor']
+        },
+        'drawType': 'LINES',
+        'glOptions': {
+            'depthFunc': [['LESS']]
+        }
     },
     'edgeculledindexedclient' : {
         'program': 'edgeculled',
@@ -785,7 +830,10 @@ var camera2D = {
 var sceneUber = {
     'options': stdOptions,
     'camera': camera2D,
-    'render': ['pointpicking',  'pointsampling', 'midedgeculled', 'edgepicking', 'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight']
+    'edgeMode': 'EDGEBUNDLING',
+    'render': ['pointpicking',  'pointsampling', 'midedgeculledindexedclient', /*'edgepicking',*/
+        'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    'indexeddummy', 'indexeddummy2']
 }
 
 var sceneNetflow = {

@@ -258,8 +258,6 @@ function midEdges(simulator, ebMidsprings, stepNumber) {
 
     ebMidsprings.set({stepNumber: stepNumber});
 
-    simulator.tickBuffers(['curMidPoints', 'midSpringsPos', 'midSpringsColorCoord']);
-
     debug('Running kernel gaussSeidelMidsprings');
     return ebMidsprings.exec([simulator.numForwardsWorkItems], resources);
 }
@@ -299,8 +297,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
     }
 
     if (locks.lockMidpoints) {
-        console.log("Lock midpoints");
-        simulator.tickBuffers(['nextMidPoints']);
+        simulator.tickBuffers['curMidPoints'];
         return simulator.buffers.curMidPoints.copyInto(simulator.buffers.nextMidPoints);
     }
 
@@ -312,15 +309,12 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
         // If interpolateMidpoints is true, midpoints are calculate by
         // interpolating between corresponding edge points.
         calculateMidpoints = new Q().then(function () {
-
             return that.interpolateMidpoints.execKernels(simulator)
-            .then( function () {
-                simulator.tickBuffers(['nextMidpoints']);
-            });
         });
     } else {
       // If interpolateMidpoints is not true, calculate midpoints
       // by edge bundling algorithm.
+        simulator.tickBuffers(['curMidPoints']);
         calculateMidpoints =  new Q().then(function () {
             var midpointIndex,
                 condition,
@@ -359,7 +353,6 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
     return calculateMidpoints.then(function () {
         return that.midEdgeGather.execKernels(simulator);
     }).then(function () {
-        simulator.tickBuffers(['curMidpoints']);
         return Q.all([
             //tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
             tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)

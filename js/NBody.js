@@ -8,6 +8,7 @@ var _ = require('underscore');
 var debug = require("debug")("graphistry:graph-viz:graph:nbody");
 var log = require('common/log.js');
 var eh = require('common/errorHandlers.js')(log);
+var Dataframe = require('./Dataframe.js');
 
 
 var ELEMENTS_PER_POINTS = 2;
@@ -30,10 +31,13 @@ var boundBuffers = {};
  */
 function create(renderer, device, vendor, controls) {
 
+    var dataframe = new Dataframe();
+
     var graph = {
         renderer: renderer,
         stepNumber: 0,
-        __pointsHostBuffer: undefined
+        __pointsHostBuffer: undefined,
+        dataframe: dataframe
     };
 
     _.each({
@@ -57,7 +61,7 @@ function create(renderer, device, vendor, controls) {
         graph[cfg.setterName] = boundBuffers[name].setter.bind('', graph);
     });
 
-    return createSimulator(renderer, device, vendor, controls).then(function (simulator) {
+    return createSimulator(dataframe, renderer, device, vendor, controls).then(function (simulator) {
         graph.simulator = simulator;
         graph.globalControls = simulator.controls.global;
     }).then(function () {
@@ -66,13 +70,13 @@ function create(renderer, device, vendor, controls) {
     }).fail(eh.makeErrorHandler('Cannot initialize nbody'));
 }
 
-function createSimulator(renderer, device, vendor, controls) {
+function createSimulator(dataframe, renderer, device, vendor, controls) {
     debug('Creating Simulator')
 
     // Hack, but making simulator depend on CL device it not worth the work.
     var simulator = controls[0].simulator;
 
-    return simulator.create(renderer, device, vendor, controls)
+    return simulator.create(dataframe, renderer, device, vendor, controls)
         .fail(eh.makeErrorHandler('Cannot create simulator'));
 }
 
@@ -189,7 +193,6 @@ _.each(NAMED_CLGL_BUFFERS, function (cfg, name) {
 
 // TODO Deprecate and remove. Left for Uber compatibitily
 function setPoints(graph, points, pointSizes, pointColors) {
-
     debug('setPoints (DEPRECATED)');
 
     // FIXME: If there is already data loaded, we should to free it before loading new data
@@ -268,11 +271,10 @@ var setEdges = Q.promised(function(graph, edges) {
     //FIXME THIS SHOULD WORK BUT CRASHES SAFARI
     var encapsulate = function (edges) {
 
-        //[[src idx, dest idx]]
+        //[[src idx, dest idx, original idx]]
         var edgeList = new Array(edges.length / 2);
         for (var i = 0; i < edges.length/2; i++) {
-            edgeList[i] = [edges[2 * i], edges[2 * i + 1]];
-            edgeList[i].original = i;
+            edgeList[i] = [edges[2 * i], edges[2 * i + 1], i];
         }
 
         //sort by src idx
@@ -285,57 +287,49 @@ var setEdges = Q.promised(function(graph, edges) {
         var edgePermutationTyped = new Uint32Array(edgeList.length);
         var edgePermutationInverseTyped = new Uint32Array(edgeList.length);
         edgeList.forEach(function (edge, i) {
-            edgePermutationTyped[edge.original] = i;
-            edgePermutationInverseTyped[i] = edge.original;
+            edgePermutationTyped[edge[2]] = i;
+            edgePermutationInverseTyped[i] = edge[2];
         })
 
-        //[ [first edge number from src idx, numEdges from source idx, source idx], ... ]
-        var workItems = [[0, 0, edgeList[0][0]]];
-        var sourceHasEdge = [];
-        _.each(_.range(graph.simulator.numPoints), function () {
-            sourceHasEdge.push(false);
-        });
-        edgeList.forEach(function (edge, i) {
-            sourceHasEdge[edge[0]] = true;
-        });
-        edgeList.forEach(function (edge, i) {
-            var prev = workItems[workItems.length - 1];
-            if(edge[0] == prev[2]) {
-                prev[1]++;
+
+         // [ [first edge number from src idx, numEdges from source idx, source idx], ... ]
+        var workItemsTyped = new Int32Array(graph.simulator.numPoints*4);
+        var edgeListLastPos = 0;
+        var edgeListLastSrc = edgeList[0][0];
+        for (var i = 0; i < graph.simulator.numPoints; i++) {
+
+            // Case where node has edges
+            if (edgeListLastSrc === i) {
+                var startingIdx = edgeListLastPos;
+                var count = 0;
+                while (edgeListLastPos < edgeList.length && edgeList[edgeListLastPos][0] === i) {
+                    count++;
+                    edgeListLastPos++;
+                }
+                edgeListLastSrc = edgeListLastPos < edgeList.length ? edgeList[edgeListLastPos][0] : -1;
+                workItemsTyped[i*4] = startingIdx;
+                workItemsTyped[i*4 + 1] = count;
+                workItemsTyped[i*4 + 2] = i;
+            // Case where node has no edges
             } else {
-                workItems.push([i, 1, edge[0]])
+                workItemsTyped[i*4] = -1;
+                workItemsTyped[i*4 + 1] = 0;
+                workItemsTyped[i*4 + 2] = i;
             }
-        });
-        _.each(sourceHasEdge, function (hasEdge, src) {
-            if (!hasEdge)
-                workItems.push([-1, 0, src]);
-        });
-        //keep items contiguous to filter based on them
-        workItems.sort(function (a, b) {
-            return a[2] < b[2] ? -1
-                 : a[2] > b[2] ? 1
-                               : 0;
-        });
+        }
+
 
         var degreesTyped = new Uint32Array(graph.simulator.numPoints);
         var srcToWorkItem = new Int32Array(graph.simulator.numPoints);
-        workItems.forEach(function (edgeList, idx) {
-            srcToWorkItem[edgeList[2]] = idx;
-            degreesTyped[edgeList[2]] = edgeList[1];
-        });
+
+        for (var i = 0; i < graph.simulator.numPoints; i++) {
+            srcToWorkItem[workItemsTyped[i*4 + 2]] = i;
+            degreesTyped[workItemsTyped[i*4 + 2]] = workItemsTyped[i*4 + 1];
+        }
 
         //workItemsTyped is a Uint32Array [first edge number from src idx, number of edges from src idx, src idx, 666]
         //fetch edge to find src and dst idx (all src same)
         //num edges > 0
-
-        // Without Underscore and with preallocation. Less clear than a flatten + map, but better perf.
-        var workItemsTyped = new Int32Array(workItems.length * 4);
-        for (var idx = 0; idx < workItems.length ; idx++) {
-            workItemsTyped[idx*4] = workItems[idx][0];
-            workItemsTyped[idx*4 + 1] = workItems[idx][1];
-            workItemsTyped[idx*4 + 2] = workItems[idx][2];
-            workItemsTyped[idx*4 + 3] = 666;
-        }
 
         // Without Underscore and with preallocation. Less clear than a flatten, but better perf.
         var edgesTyped = new Uint32Array(edgeList.length * 2);
@@ -347,15 +341,15 @@ var setEdges = Q.promised(function(graph, edges) {
 
         var index = 0;
         var edgeStartEndIdxs = [];
-        for(var i = 0; i < workItems.length - 1; i++) {
-          var start = workItems[i][0];
+        for(var i = 0; i < (workItemsTyped.length/4) - 1; i++) {
+          var start = workItemsTyped[i*4];
           if (start == -1) {
             edgeStartEndIdxs.push([-1, -1]);
           } else {
-            var end = workItems[i+1][0];
+            var end = workItemsTyped[(i+1)*4];
             var j = i+1;
-            while (end < 0 && ((j + 1) < workItems.length)) {
-              end = workItems[j + 1][0];
+            while (end < 0 && ((j + 1) < (workItemsTyped.length/4))) {
+              end = workItemsTyped[(j + 1)*4];
               j = j + 1;
             }
 
@@ -366,8 +360,8 @@ var setEdges = Q.promised(function(graph, edges) {
             edgeStartEndIdxs.push([start, end]);
           }
         }
-        if (workItems[workItems.length - 1][0] != -1) {
-        edgeStartEndIdxs.push([workItems[workItems.length - 1][0], edges.length /2]);
+        if (workItemsTyped[(workItemsTyped.length - 4)] !== -1) {
+          edgeStartEndIdxs.push([workItemsTyped[workItemsTyped.length - 4], edges.length /2]);
         } else {
           edgeStartEndIdxs.push([-1, -1]);
         }
@@ -412,8 +406,10 @@ var setEdges = Q.promised(function(graph, edges) {
         edgesFlipped[2 * i + 1] = edges[2 * i];
     }
 
+    // var start = Date.now();
     var forwardEdges = encapsulate(edges);
     var backwardsEdges = encapsulate(edgesFlipped);
+    // console.log('Encapsulates executed in: ', Date.now() - start);
 
     var degrees = new Uint32Array(graph.simulator.numPoints);
     for (var i = 0; i < graph.simulator.numPoints; i++) {

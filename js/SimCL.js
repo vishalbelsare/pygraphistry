@@ -24,7 +24,7 @@ var randLength = 73;
 
 var NAMED_CLGL_BUFFERS = require('./buffers.js').NAMED_CLGL_BUFFERS;
 
-function create(renderer, device, vendor, cfg) {
+function create(dataframe, renderer, device, vendor, cfg) {
     return cljs.create(renderer, device, vendor).then(function (cl) {
         // Pick the first layout algorithm that matches our device type
         var type, // GPU device type
@@ -53,6 +53,7 @@ function create(renderer, device, vendor, cfg) {
                 buffers: { }
             },
             controls: controls,
+            dataframe: dataframe
         };
 
         return new Q().then(function () {
@@ -105,6 +106,7 @@ function create(renderer, device, vendor, cfg) {
             simObj.numMidPoints = 0;
             simObj.numMidEdges = 0;
             simObj.numSplits = controls.global.numSplits;
+            simObj.numRenderedSplits = controls.global.numRenderedSplits;
             simObj.pointLabels = [];
             simObj.edgeLabels = [];
 
@@ -521,15 +523,15 @@ function setMidEdges( simulator ) {
     numMidPoints = ( simulator.numEdges * (simulator.numSplits) );
 
     simulator.numMidPoints = numMidPoints;
-    simulator.renderer.numMidPoints = numMidPoints;
-    simulator.numMidEdges = ( simulator.numSplits + 1 ) * simulator.numEdges;
-    simulator.renderer.numMidEdges = simulator.numMidEdges;
 
+    simulator.numMidEdges = ( simulator.numRenderedSplits + 1 ) * simulator.numEdges;
+    simulator.renderer.numRenderedSplits = simulator.numRenderedSplits;
     midPointsByteLength = numMidPoints * bytesPerPoint;
     springsByteLength = simulator.numEdges * bytesPerEdge;
 
     simulator.buffers.curMidPoints.delete();
     simulator.buffers.nextMidPoints.delete();
+    simulator.tickBuffers(['curMidPoints']);
 
     return Q.all( [
         simulator.cl.createBuffer( midPointsByteLength , 'nextMidPoints' ),
@@ -590,6 +592,8 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
     var elementsPerEdge = 2; // The number of elements in the edges buffer per spring
     var elementsPerWorkItem = 4;
     var midPoints = new Float32Array((unsortedEdges.length / 2) * simulator.numSplits * nDim || 1);
+
+    debug("Number of midpoints: ", simulator.numSplits);
 
     if(forwardsEdges.edgesTyped.length < 1) {
         throw new Error("The edge buffer is empty");
@@ -756,6 +760,7 @@ function setEdgeColors(simulator, edgeColors) {
     return simulator;
 }
 
+// TODO Write kernel for this.
 function setMidEdgeColors(simulator, midEdgeColors) {
     var midEdgeColors, forwardsEdges, srcNodeIdx, dstNodeIdx, srcColorInt, srcColor,
         dstColorInt, dstColor, edgeIndex, midEdgeIndex, numSegments, lambda,
@@ -769,8 +774,8 @@ function setMidEdgeColors(simulator, midEdgeColors) {
 
     if (!midEdgeColors) {
         debug('Using default midedge colors');
-        midEdgeColors = new Uint32Array(4 * simulator.numMidPoints);
-        numSegments = simulator.numSplits + 1;
+        midEdgeColors = new Uint32Array(4 * numMidEdgeColors);
+        numSegments = simulator.numRenderedSplits + 1;
         forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
 
         // Interpolate colors in the HSV color space.
@@ -1004,23 +1009,30 @@ function connectedEdges(simulator, nodeIndices) {
     var forwardsBuffers = simulator.bufferHostCopies.forwardsEdges;
     var backwardsBuffers = simulator.bufferHostCopies.backwardsEdges;
 
-    function getOutgoingEdges(buffers, nodeIdx) {
-        var workItemId = buffers.srcToWorkItem[nodeIdx];
-        var firstEdgeId = buffers.workItemsTyped[4*workItemId];
-        var numEdges = buffers.workItemsTyped[4*workItemId + 1];
-        var permutation = buffers.edgePermutationInverseTyped;
+    var setOfEdges = [];
+    var edgeHash = {};
 
-        return _.range(numEdges).map(function (offset) {
-            return permutation[firstEdgeId + offset];
+    var addOutgoingEdgesToSet = function (buffers, nodeIndices) {
+        _.each(nodeIndices, function (idx) {
+            var workItemId = buffers.srcToWorkItem[idx];
+            var firstEdgeId = buffers.workItemsTyped[4*workItemId];
+            var numEdges = buffers.workItemsTyped[4*workItemId + 1];
+            var permutation = buffers.edgePermutationInverseTyped;
+
+            for (var i = 0; i < numEdges; i++) {
+                var edge = permutation[firstEdgeId + i];
+                if (!edgeHash[edge]) {
+                    setOfEdges.push(edge);
+                    edgeHash[edge] = true;
+                }
+            }
         });
     }
 
-    var edgeIndices = nodeIndices.map(function (idx) {
-        return getOutgoingEdges(forwardsBuffers, idx)
-            .concat(getOutgoingEdges(backwardsBuffers, idx));
-    });
+    addOutgoingEdgesToSet(forwardsBuffers, nodeIndices);
+    addOutgoingEdgesToSet(backwardsBuffers, nodeIndices);
 
-    return _.uniq(_.flatten(edgeIndices, true));
+    return setOfEdges;
 }
 
 function recolor(simulator, marquee) {

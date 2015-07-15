@@ -64,6 +64,7 @@ BoolParam.prototype = Object.create(Param.prototype);
 BoolParam.prototype.constructor = BoolParam;
 
 var defaultNumSplits = 8;
+var numRenderedSplits = 8;
 
 var uberControls = {
     simulator: SimCL,
@@ -112,7 +113,8 @@ var uberControls = {
     global: {
         simulationTime: 1, //SIMULATION_TIME, //milliseconds
         dimensions: [1, 1],
-        numSplits: defaultNumSplits
+        numSplits: defaultNumSplits,
+        numRenderedSplits: numRenderedSplits
     },
     devices: ['CPU', 'GPU']
 }

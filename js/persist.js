@@ -52,7 +52,24 @@ function checkWrite (snapshotName, vboPath, raw, buff) {
 function uploadPublic (path, buffer, params) {
     var uploadParams = !_.isEmpty(params) ? _.clone(params) : {};
     uploadParams.acl = 'public-read';
-    s3.upload(config.S3, config.BUCKET, {name: path}, buffer, uploadParams);
+    return s3.upload(config.S3, config.BUCKET, {name: path}, buffer, uploadParams);
+}
+
+
+function staticContentForDataframe (dataframe, type) {
+    var rows = dataframe.getRows(undefined, type),
+        rowContents = new Array(rows.length),
+        indexes = new Buffer(rows.length * 4),
+        indexesView = new Uint32Array(indexes),
+        currentContentIndex = 0;
+    _.each(rows, function (row, rowIndex) {
+        var content = new Buffer(JSON.stringify(row), 'utf8'),
+            contentLength = content.length;
+        indexesView[rowIndex] = currentContentIndex;
+        rowContents[rowIndex] = content;
+        currentContentIndex += contentLength;
+    });
+    return {contents: Buffer.concat(rowContents), indexes: indexes};
 }
 
 
@@ -96,9 +113,19 @@ module.exports =
             debug('wrote/read', prevHeader, _.keys(buffers));
         },
 
-        publishStaticContents: function (snapshotName, compressedVBOs, metadata, renderConfig) {
+        /**
+         *
+         * @param {string} snapshotName - the name of the content, URL fragment.
+         * @param {CompressedVBOStructure} compressedVBOs - Holds the VBO buffers to serialize.
+         * @param {Dataframe} dataframe - the data for labels.
+         * @param {Object} renderConfig
+         * @param {Object} metadata
+         */
+        publishStaticContents: function (snapshotName, compressedVBOs, metadata, dataframe, renderConfig) {
             debug('publishing current content to S3');
             var snapshotPath = 'Static/' + snapshotName + '/';
+            var edgeExport = staticContentForDataframe(dataframe, 'edge');
+            var pointExport = staticContentForDataframe(dataframe, 'point');
             uploadPublic(snapshotPath + 'renderconfig.json', JSON.stringify(renderConfig), {ContentType: 'application/json'});
             uploadPublic(snapshotPath + 'metadata.json', JSON.stringify(metadata), {ContentType: 'application/json'});
             uploadPublic(snapshotPath + 'curPoints.vbo', compressedVBOs.curPoints, {compressed: false});
@@ -107,5 +134,9 @@ module.exports =
             uploadPublic(snapshotPath + 'pointSizes.vbo', compressedVBOs.pointSizes, {compressed: false});
             uploadPublic(snapshotPath + 'pointColors.vbo', compressedVBOs.pointColors, {compressed: false});
             uploadPublic(snapshotPath + 'logicalEdges.vbo', compressedVBOs.logicalEdges, {compressed: false});
+            uploadPublic(snapshotPath + 'pointIndexes.buffer', pointExport.indexes, {compressed: false});
+            uploadPublic(snapshotPath + 'edgeIndexes.buffer', edgeExport.indexes, {compressed: false});
+            uploadPublic(snapshotPath + 'pointLabels.buffer', pointExport.contents, {compressed: false});
+            return uploadPublic(snapshotPath + 'edgeLabels.buffer', edgeExport.contents, {compressed: false});
         }
     };
