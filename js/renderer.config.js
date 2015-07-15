@@ -857,13 +857,19 @@ var camera2D = {
 var sceneUber = {
     'options': stdOptions,
     'camera': camera2D,
-    'edgeMode': 'ARC',
-    'render': ['pointpicking',  'pointsampling',  'pointoutlinetexture', 'pointculledtexture',
-                'edgehighlight', 'midedgeculledindexedclient', /*'edgepicking',*/
-                'pointoutline', 'pointculled', 'pointhighlight',
-                'indexeddummy', 'indexeddummy2',
-                'fullscreen', 'fullscreenDummy'
-    ]
+    'edgeMode': 'EDGEBUNDLING',
+    'render': ['pointpicking',  'pointsampling', 'midedgeculledindexedclient', /*'edgepicking',*/
+        'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    'indexeddummy', 'indexeddummy2']
+}
+
+var sceneNetFlowArcs= {
+    'options': stdOptions,
+    'camera': camera2D,
+    'edgeMode': 'ARCS',
+    'render': ['pointpicking',  'pointsampling', 'midedgeculledindexedclient', /*'edgepicking',*/
+        'pointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    'indexeddummy', 'indexeddummy2']
 }
 
 var sceneNetflow = {
@@ -898,7 +904,8 @@ var scenes = {
     'uber' : sceneUber,
     'netflow': sceneNetflow,
     'netflowIndexed': sceneNetflowIndexed,
-    'netflowIndexedClient': sceneNetflowIndexedClient
+    'netflowIndexedClient': sceneNetflowIndexedClient,
+    'netflowArcs': sceneNetFlowArcs
 }
 
 function saneProgram(program, progName) {
