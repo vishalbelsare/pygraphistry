@@ -298,11 +298,14 @@ function createControls(socket, appState, trigger, urlParams) {
     var makeControl = controlMaker.bind('', urlParams, $anchor);
 
 
+    $('#renderingItems').css({'display': 'block', 'left': '100%'});
     rxControls
-        //defer construction till first click due to toggle
-        //bug: https://github.com/nostalgiaz/bootstrap-switch/issues/446
-        .flatMap(function (controls) { return trigger.map(_.constant(controls)); })
     .do(function (controls) {
+        //workaround: https://github.com/nostalgiaz/bootstrap-switch/issues/446
+        setTimeout(function () {
+            $('#renderingItems').css({'display': 'none', 'left': '5em'});
+        }, 2000);
+
         //APPEARANCE
         $('<div>')
             .addClass('control-title').text('Appearance')
