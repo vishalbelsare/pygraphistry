@@ -36,20 +36,30 @@ function makeFetcher () {
 
         //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
         var oReq = new XMLHttpRequest();
-        oReq.open('GET', BASE_URL + contentKey + '/' + bufferName + '.vbo', true);
+        var assetURL = BASE_URL + contentKey + '/' + bufferName;
+        oReq.open('GET', assetURL, true);
+        // Handling a response as an arraybuffer means bypassing $.ajax:
         oReq.responseType = 'arraybuffer';
 
         var now = Date.now();
         oReq.onload = function () {
+            if (oReq.status !== 200) {
+                console.error('HTTP error acquiring data at: ', assetURL, oReq.statusText);
+                return;
+            }
             try {
                 debug('got texture/vbo data', bufferName, Date.now() - now, 'ms');
 
                 var arrayBuffer = oReq.response; // Note: not oReq.responseText
-                var bufferLength = bufferByteLengths[bufferName];
-                debug('Buffer length (%s): %d, %d', bufferName, bufferLength, arrayBuffer.byteLength);
-                var trimmedArray = new Uint8Array(arrayBuffer, 0, bufferLength);
+                if (bufferByteLengths.hasOwnProperty(bufferName)) {
+                    var bufferLength = bufferByteLengths[bufferName];
+                    debug('Buffer length (%s): %d, %d', bufferName, bufferLength, arrayBuffer.byteLength);
+                    var trimmedArray = new Uint8Array(arrayBuffer, 0, bufferLength);
 
-                res.onNext(trimmedArray);
+                    res.onNext(trimmedArray);
+                } else {
+                    res.onNext(arrayBuffer);
+                }
 
             } catch (e) {
                 console.error('Render error on loading data into WebGL:', e, e.stack);
@@ -127,7 +137,7 @@ module.exports = {
                 var changedBufferNames = _.keys(data.bufferByteLengths);
                 var bufferVBOs = Rx.Observable.zipArray(
                     [Rx.Observable.return()]
-                        .concat(changedBufferNames.map(fetchBuffer)))
+                        .concat(changedBufferNames.map(function(bufferName) {return bufferName + '.vbo';}).map(fetchBuffer)))
                     .take(1);
                 bufferVBOs
                     .subscribe(function (vbos) {

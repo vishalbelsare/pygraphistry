@@ -128,6 +128,8 @@ function requestWorker(args) {
 
             reply.data.uri.pathname = _.isString(reply.data.uri.pathname) ? reply.data.uri.pathname : '';
 
+            reply.data.uri.protocol = window.location.protocol;
+
             console.info('Assigned to viz worker at URL %s', urlModule.format(reply.data.uri));
             return reply.data.uri;
         })
@@ -189,7 +191,7 @@ function connect(vizType, urlParams) {
 
                     debug('Got worker URI', urlModule.format(socketUrl));
 
-                    var socket = io.Manager(socketUrl.host, {
+                    var socket = io.Manager(socketUrl.protocol + '//' + socketUrl.host, {
                             query: socketUrl.query,
                             path: socketUrl.pathname,
                             reconnection: false
@@ -280,10 +282,9 @@ function handleVboUpdates(socket, uri, renderState) {
 
         var thisStep = {step: vboUpdateStep++, data: data.step};
 
-        var demoWowFactor = 1.0;
-        $('#graph-node-count').text(data.elements.pointculled * demoWowFactor);
+        $('#graph-node-count').text(data.elements.pointculled || data.elements.uberpointculled);
         var numEdges = (data.elements.edgeculled || data.elements.edgeculledindexed ||
-                        data.elements.edgeculledindexedclient) / 2 * demoWowFactor;
+                        data.elements.edgeculledindexedclient || data.elements.indexeddummy) / 2;
         $('#graph-edge-count').text(numEdges);
 
         try {
@@ -295,6 +296,7 @@ function handleVboUpdates(socket, uri, renderState) {
 
             var changedBufferNames  = getUpdatedNames(bufferNames,  previousVersions.buffers,  data.versions ? data.versions.buffers : null);
             var changedTextureNames = getUpdatedNames(textureNames, previousVersions.textures, data.versions ? data.versions.textures : null);
+
 
             socket.emit('planned_binary_requests', {buffers: changedBufferNames, textures: changedTextureNames});
 
