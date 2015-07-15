@@ -62,3 +62,5 @@ module.exports = function ($fg, $bg, socket, renderState) {
     };
 
 };
+
+module.exports.makeInspector = makeInspector;
