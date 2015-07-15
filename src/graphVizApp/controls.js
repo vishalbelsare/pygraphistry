@@ -13,6 +13,48 @@ var marqueeFact     = require('./marquee.js');
 var runButton       = require('./runButton.js');
 var forkVgraph      = require('./fork.js');
 var persistButton   = require('./persist.js');
+var colorpicker     = require('./colorpicker.js');
+
+
+// Setup client side controls.
+var localParams = [
+    {
+        name: 'pointSize',
+        prettyName: 'Point Size',
+        type: 'discrete',
+        value: 50.0,
+        step: 1,
+        max: 100.0,
+        min: 1
+    },
+    {
+        name: 'edgeSize',
+        prettyName: 'Edge Size',
+        type: 'discrete',
+        value: 50.0,
+        step: 1,
+        max: 100.0,
+        min: 1
+    },
+    {
+        name: 'pointOpacity',
+        prettyName: 'Point Opacity',
+        type: 'discrete',
+        value: 100,
+        step: 1,
+        max: 100,
+        min: 1
+    },
+    {
+        name: 'edgeOpacity',
+        prettyName: 'Edge Opacity',
+        type: 'discrete',
+        value: 100,
+        step: 1,
+        max: 100,
+        min: 1
+    }
+];
 
 
 function sendLayoutSetting(socket, algo, param, value) {
@@ -134,7 +176,69 @@ function createLegend($elt, urlParams) {
     $elt.show();
 }
 
-function createControls(socket, appState, trigger) {
+
+//{?<param>: 'a'} * DOM *
+//  {type: 'continuous' + 'discrete', name: string, min: num, max: num, step: num, value: num}
+//  + {type: 'bool', name: string, value: bool}
+//  + {type: 'color', name: string, def: CSSColor, cb: (Stream {r,g,b,a}) -> () }
+//  * string -> DOM
+// (Will append at anchor position)
+function controlMaker (urlParams, $anchor, param, type) {
+    var $input;
+    if (param.type === 'continuous') {
+        $input = $('<input>').attr({
+            class: type + '-menu-slider menu-slider',
+            id: param.name,
+            type: 'text',
+            'data-slider-id': param.name + 'Slider',
+            'data-slider-min': 0,
+            'data-slider-max': 100,
+            'data-slider-step': 1,
+            'data-slider-value': urlParams[param.name] ? parseFloat(urlParams[param.name]) : param.value
+        }).data('param', param);
+    } else if (param.type === 'discrete') {
+        $input = $('<input>').attr({
+            class: type + '-menu-slider menu-slider',
+            id: param.name,
+            type: 'text',
+            'data-slider-id': param.name + 'Slider',
+            'data-slider-min': param.min,
+            'data-slider-max': param.max,
+            'data-slider-step': param.step,
+            'data-slider-value': urlParams[param.name] ? parseFloat(urlParams[param.name]) : param.value
+        }).data('param', param);
+    } else if (param.type === 'bool') {
+        $input = $('<input>').attr({
+            id: param.name,
+            type: 'checkbox',
+            checked: urlParams[param.name] ? urlParams[param.name] === 'true' : param.value
+        }).data('param', param);
+    } else if (param.type === 'color') {
+        $input = $('<div>').css({display: 'inline-block'})
+            .append($('<div>').addClass('colorSelector')
+                .append($('<div>').css({opacity: 0.3, background: 'white'})))
+            .append($('<div>').addClass('colorHolder'));
+        param.cb(colorpicker.makeInspector($input, urlParams[param.name] ? urlParams[param.name] : param.def));
+    } else {
+        console.warn('Ignoring param of unknown type', param);
+        $input = $('<div>').text('Unknown setting type' + param.type);
+    }
+    var $col = $('<div>').addClass('col-xs-8').append($input);
+    var $label = $('<label>').attr({
+        for: param.name,
+        class: 'control-label col-xs-4',
+    }).text(param.prettyName);
+
+    var $entry = $('<div>').addClass('form-group').append($label, $col);
+
+    $anchor.append($entry);
+
+    return $entry;
+}
+
+
+function createControls(socket, appState, trigger, urlParams) {
+
     var rxControls = Rx.Observable.fromCallback(socket.emit, socket)('layout_controls', null)
         .map(function (res) {
             if (res && res.success) {
@@ -145,108 +249,29 @@ function createControls(socket, appState, trigger) {
             }
         });
 
-    var makeControl = function (param, type) {
-        var $input;
-        if (param.type === 'continuous') {
-            $input = $('<input>').attr({
-                class: type + '-menu-slider menu-slider',
-                id: param.name,
-                type: 'text',
-                'data-slider-id': param.name + 'Slider',
-                'data-slider-min': 0,
-                'data-slider-max': 100,
-                'data-slider-step': 1,
-                'data-slider-value': param.value
-            }).data('param', param);
-        } else if (param.type === 'discrete') {
-            $input = $('<input>').attr({
-                class: type + '-menu-slider menu-slider',
-                id: param.name,
-                type: 'text',
-                'data-slider-id': param.name + 'Slider',
-                'data-slider-min': param.min,
-                'data-slider-max': param.max,
-                'data-slider-step': param.step,
-                'data-slider-value': param.value
-            }).data('param', param);
-
-        } else if (param.type === 'bool') {
-            $input = $('<input>').attr({
-                id: param.name,
-                type: 'checkbox',
-                checked: param.value
-            }).data('param', param);
-        } else {
-            console.warn('Ignoring param of unknown type', param);
-            $input = $('<div>').text('Unknown setting type' + param.type);
-        }
-        var $col = $('<div>').addClass('col-xs-8').append($input);
-        var $label = $('<label>').attr({
-            for: param.name,
-            class: 'control-label col-xs-4',
-        }).text(param.prettyName);
-
-        var $entry = $('<div>').addClass('form-group').append($label, $col);
-
-        $anchor.append($entry);
-    };
-
     var $anchor = $('#renderingItems').children('.form-horizontal').empty();
+
+    var makeControl = controlMaker.bind('', urlParams, $anchor);
+
+
     rxControls
         //defer construction till first click due to toggle
         //bug: https://github.com/nostalgiaz/bootstrap-switch/issues/446
         .flatMap(function (controls) { return trigger.map(_.constant(controls)); })
     .do(function (controls) {
-        // Setup client side controls.
-        var localParams = [
-            {
-                name: 'pointSize',
-                prettyName: 'Point Size',
-                type: 'discrete',
-                value: 50.0,
-                step: 1,
-                max: 100.0,
-                min: 1
-            },
-            {
-                name: 'edgeSize',
-                prettyName: 'Edge Size',
-                type: 'discrete',
-                value: 50.0,
-                step: 1,
-                max: 100.0,
-                min: 1
-            },
-            {
-                name: 'pointOpacity',
-                prettyName: 'Point Opacity',
-                type: 'discrete',
-                value: 100,
-                step: 1,
-                max: 100,
-                min: 1
-            },
-            {
-                name: 'edgeOpacity',
-                prettyName: 'Edge Opacity',
-                type: 'discrete',
-                value: 100,
-                step: 1,
-                max: 100,
-                min: 1
-            }
-        ];
-
-        var $heading = $('<div>').addClass('control-title').text('Appearance');
-        $anchor.append($heading);
+        //APPEARANCE
+        $('<div>')
+            .addClass('control-title').text('Appearance')
+            .appendTo($anchor);
         _.each(localParams, function (param) {
             makeControl(param, 'local');
         });
 
         // Setup layout controls
         _.each(controls, function (la) {
-            var $heading = $('<div>').addClass('control-title').text(la.name);
-            $anchor.append($heading);
+            $('<div>')
+                .addClass('control-title').text(la.name)
+                .appendTo($anchor);
             _.each(la.params, function (param) {
                 makeControl(param, 'layout');
             });
@@ -298,6 +323,7 @@ function toLog(minPos, maxPos, minVal, maxVal, pos) {
     var scale = (logMaxVal - logMinVal) / (maxPos - minPos);
     return Math.exp(logMinVal + scale * (pos - minPos));
 }
+
 
 
 function setLocalSetting(name, pos, renderState, settingsChanges) {
@@ -436,7 +462,8 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         appState,
         onElt
             .filter(function (elt) { return elt === $('#layoutSettingsButton')[0]; })
-            .take(1));
+            .take(1),
+        urlParams);
 
     Rx.Observable.zip(
         marquee.drags,
