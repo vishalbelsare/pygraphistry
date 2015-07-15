@@ -56,6 +56,50 @@ var localParams = [
     }
 ];
 
+var labelParams = [
+    {
+        name: 'labelFgColor',
+        prettyName: 'Text Color',
+        type: 'color',
+        def: '#1f1f33',
+        cb: (function () {
+            var sheet = $('<style type="text/css">');
+            sheet.appendTo($('head'));
+            return function (stream) {
+                stream.sample(20).subscribe(function (c) {
+                    sheet.text('.graph-label, .graph-label table { color: rgba(' + [c.r,c.g,c.b,c.a | 1].join(',') + ') }');
+                });
+            };
+        }())
+    },
+    {
+        name: 'labelBgColor',
+        prettyName: 'Background Color',
+        type: 'color',
+        def: 'rgba(255,255,255,0.9)',
+        cb: (function () {
+            var sheet = $('<style type="text/css">');
+            sheet.appendTo($('head'));
+            return function (stream) {
+                stream.sample(20).subscribe(function (c) {
+                    sheet.text('.graph-label .graph-label-container  { background-color: rgba(' + [c.r,c.g,c.b,c.a | 1].join(',') + ') }');
+                });
+            };
+        }())
+    },
+    {
+        name: 'labelTransparency',
+        prettyName: 'Transparency',
+        type: 'discrete',
+        value: 100,
+        step: 1,
+        max: 100,
+        min: 1
+    }
+];
+
+
+
 
 function sendLayoutSetting(socket, algo, param, value) {
     var update = {};
@@ -267,7 +311,15 @@ function createControls(socket, appState, trigger, urlParams) {
             makeControl(param, 'local');
         });
 
-        // Setup layout controls
+        //LABELS
+        $('<div>')
+            .addClass('control-title').text('Labels')
+            .appendTo($anchor);
+        _.each(labelParams, function (param) {
+            makeControl(param, 'local');
+        });
+
+        //LAYOUT
         _.each(controls, function (la) {
             $('<div>')
                 .addClass('control-title').text(la.name)
@@ -343,6 +395,13 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
         case 'edgeOpacity':
             val = pos/100;
             break;
+        case 'labelTransparency':
+            var opControl = $('#labelOpacity');
+            if (!opControl.length) {
+                opControl = $('<style>').appendTo($('body'));
+            }
+            opControl.text('.graph-label { opacity: ' + (pos/100) + '; }');
+            return;
         default:
             break;
     }
