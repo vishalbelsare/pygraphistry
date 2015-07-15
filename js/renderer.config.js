@@ -537,9 +537,7 @@ var items = {
             'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.5] }
         },
         'drawType': 'LINES',
-        'glOptions': {
-            'depthFunc': [['LESS']]
-        }
+        'glOptions': {}
     },
     'edgeculledindexedclient' : {
         'program': 'edgeculled',
