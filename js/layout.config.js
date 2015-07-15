@@ -170,7 +170,8 @@ function atlasControls(algo) {
         global: {
             simulationTime: SIMULATION_TIME, //milliseconds
             dimensions: [1, 1],
-            numSplits: 0
+            numSplits: 0,
+            numRenderedSplits: 8
         },
         devices: devices
     };
