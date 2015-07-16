@@ -309,6 +309,8 @@ function handleVboUpdates(socket, uri, renderState) {
             readyToRender
                 .subscribe(function () {
                     debug('6. All buffers and textures received, completing', thisStep);
+                    //TODO may be able to move this early
+                    socket.emit('received_buffers'); 
                     handshake(Date.now() - lastHandshake);
                     lastHandshake = Date.now();
                     vboUpdates.onNext('received');
@@ -328,7 +330,6 @@ function handleVboUpdates(socket, uri, renderState) {
                     var bindings = _.object(_.zip(changedBufferNames, vbos));
 
                     debug('5a. got all VBO data', Date.now() - now, 'ms', bindings, thisStep);
-                    socket.emit('received_buffers'); //TODO fire preemptively based on guess
 
                     try {
                         _.each(data.elements, function (num, itemName) {
