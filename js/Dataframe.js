@@ -21,6 +21,8 @@ var Dataframe = function () {
         edge: {},
         simulator: {}
     };
+    this.lastPointPositions = null;
+    this.lastPointMask = [];
     this.data = this.rawdata;
 };
 
@@ -138,26 +140,8 @@ Dataframe.prototype.getPointAttributeMask = function (attribute, start, stop) {
 // TODO: Take in Set objects, not just masks.
 Dataframe.prototype.filter = function (masks, simulator) {
     console.log('Filtering');
-    // console.log(this.rawdata.attributes.point._title);
 
     var start = Date.now();
-
-    /////////////////////////////////////////////////////////
-    // var correctEdgeMask = _.range(masks.edge.length);
-    // var correctPointMask = _.range(masks.point.length);
-    // _.each(masks.edge, function (v, i) {
-    //     if (correctEdgeMask[i] !== v) {
-    //         console.log('Error in Edge Mask');
-    //     }
-    // });
-    // _.each(masks.point, function (v, i) {
-    //     if (correctPointMask[i] !== v) {
-    //         console.log('Error in Point Mask');
-    //     }
-    // });
-    ///////////////////////////////////////////////////////
-
-
 
     var that = this;
     var rawdata = that.rawdata;
@@ -192,7 +176,6 @@ Dataframe.prototype.filter = function (masks, simulator) {
         });
     });
 
-    // console.log('Filtered Attributes');
 
     // TODO: Does this need to be updated, since it gets rewritten at each tick? Maybe zerod out?
     // rendererBuffers;
@@ -208,35 +191,6 @@ Dataframe.prototype.filter = function (masks, simulator) {
             newData.labels[type] = newLabels;
         }
     });
-
-    /////////////////////////////////////////////////////////////////
-
-    //  _.each(TYPES, function (type) {
-    //     var mask;
-    //     // TODO: Support more complex masks.
-    //     if (type === 'edge') {
-    //         mask = masks['edge'];
-    //     } else {
-    //         mask = masks['point'];
-    //     }
-
-    //     var attrs = rawdata.attributes[type];
-    //     var newAttrs = newData.attributes[type];
-    //     _.each(_.keys(attrs), function (key) {
-
-    //         _.each(attrs[key].values, function (orig, i) {
-    //             if (orig !== newAttrs[key].values[i]) {
-    //                 console.log('BAD ATTR');
-    //             }
-    //         });
-
-    //     });
-    // });
-
-    /////////////////////////////////////////////////////////////////////
-
-    // console.log('Filtered Labels');
-    // console.log('Until here took ' + (Date.now() - start) + ' ms');
 
     // buffers;
     // We have to deal with generic buffers differently from
@@ -269,22 +223,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
         filteredEdges[i*2 + 1] = pointOriginalLookup[forwardsEdges[oldIdx*2 + 1]];
     });
 
-    // console.log('Filtered Edges')
-
-    ///////////////////////////////////////////////////////
-    // _.each(forwardsEdges, function (edge, i) {
-    //     if (filteredEdges[i] !== edge) {
-    //         console.log('Bad Filtered Edge');
-    //     }
-    // });
-
-    ///////////////////////////////////////////////////////
-
-
-
     var filteredPoints = []; // TODO:
 
-    // hostBuffers;
     // hostBuffers: points,unsortedEdges,forwardsEdges,backwardsEdges
     // TODO: Do points ever change? Ask Paden.
 
@@ -300,42 +240,6 @@ Dataframe.prototype.filter = function (masks, simulator) {
     newData.hostBuffers.forwardsEdges = forwardsEdges;
     newData.hostBuffers.backwardsEdges = backwardsEdges;
     newData.hostBuffers.points = rawdata.hostBuffers.points;
-
-    // console.log('forwardsEdgesRaw: ', rawdata.hostBuffers.forwardsEdges);
-    // console.log('forwardsEdgesNew: ', newData.hostBuffers.forwardsEdges);
-
-    ////////////////TESTING///////////////////////
-
-    // _.each(_.keys(rawdata.hostBuffers.forwardsEdges), function (key) {
-    //     if (key === 'edgePermutationInverseTyped' || key === 'edgePermutation') {
-    //         return;
-    //     }
-    //     _.each(rawdata.hostBuffers.forwardsEdges[key], function (orig, idx) {
-    //         if (newData.hostBuffers.forwardsEdges[key][idx] !== orig) {
-    //             console.log('ERROR[' + key + ']', newData.hostBuffers.forwardsEdges[key][idx], orig);
-    //         }
-    //     });
-    // });
-
-    // _.each(_.keys(rawdata.hostBuffers.backwardsEdges), function (key) {
-    //     if (key === 'edgePermutationInverseTyped' || key === 'edgePermutation') {
-    //         return;
-    //     }
-    //     _.each(rawdata.hostBuffers.backwardsEdges[key], function (orig, idx) {
-    //         if (newData.hostBuffers.backwardsEdges[key][idx] !== orig) {
-    //             console.log('ERROR[' + key + ']', newData.hostBuffers.backwardsEdges[key][idx], orig);
-    //         }
-    //     });
-    // });
-
-
-    ////////////////DONE TESTING//////////////////
-
-    // console.log('Created hostBuffers & encapsulated edges');
-
-    // localBuffers;
-    // localBuffers: logicalEdges,pointTags,edgeTags_reverse,pointSizes,
-    // pointColors,edgeColors,midEdgeColors,edgeWeights
 
     newData.localBuffers.logicalEdges = forwardsEdges.edgesTyped;
 
@@ -377,8 +281,6 @@ Dataframe.prototype.filter = function (masks, simulator) {
     });
     newData.localBuffers.edgeWeights = newEdgeWeights;
 
-    // console.log('Copied / filtered localBuffers');
-
     // numElements;
     // Copy all old in.
     _.each(_.keys(rawdata.numElements), function (key) {
@@ -392,18 +294,6 @@ Dataframe.prototype.filter = function (masks, simulator) {
     newData.numElements.forwardsWorkItems = newData.hostBuffers.forwardsEdges.workItemsTyped.length / 4;
     newData.numElements.backwardsWorkItems = newData.hostBuffers.backwardsEdges.workItemsTyped.length / 4;
     // TODO: NumMidPoints and MidEdges
-
-    /////////////////////////////////////////////////////////////
-    // _.each(_.keys(rawdata.numElements), function (key) {
-    //     if (newData.numElements[key] !== rawdata.numElements[key]) {
-    //         console.log('Incorrect numElements');
-    //     }
-    // })
-    ///////////////////////////////////////////////////////////////
-
-
-    // console.log('Updated numElements');
-
 
     //////////////////////////////////
     // SIMULATOR BUFFERS.
@@ -420,13 +310,6 @@ Dataframe.prototype.filter = function (masks, simulator) {
     var oldNumPoints = rawdata.numElements.point;
     var oldNumEdges = rawdata.numElements.edge;
 
-    // console.log('old num Points: ', oldNumPoints);
-    // console.log('old num Edges: ', oldNumEdges);
-
-    // console.log('new num Points: ', numPoints);
-    // console.log('new num Edges: ', numEdges);
-
-
     var tempPrevForces = new Float32Array(oldNumPoints * 2);
     var tempDegrees = new Uint32Array(oldNumPoints);
     var tempSpringsPos = new Float32Array(oldNumEdges * 4);
@@ -439,20 +322,50 @@ Dataframe.prototype.filter = function (masks, simulator) {
     var newEdgeWeights = new Float32Array(numEdges * 2);
     var newCurPoints = new Float32Array(numPoints * 2);
 
-    var simBuffers = rawdata.buffers.simulator;
-
-    // console.log('Starting Sim Buffer Update');
-    // console.log('Until here took ' + (Date.now() - start) + ' ms');
+    var rawSimBuffers = rawdata.buffers.simulator;
+    var filteredSimBuffers = that.data.buffers.simulator;
 
     return Q.all([
-        simBuffers.prevForces.read(tempPrevForces),
-        simBuffers.degrees.read(tempDegrees),
-        simBuffers.springsPos.read(tempSpringsPos),
-        simBuffers.edgeWeights.read(tempEdgeWeights),
-        simBuffers.curPoints.read(tempCurPoints)
+        rawSimBuffers.prevForces.read(tempPrevForces),
+        rawSimBuffers.degrees.read(tempDegrees),
+        rawSimBuffers.springsPos.read(tempSpringsPos),
+        rawSimBuffers.edgeWeights.read(tempEdgeWeights),
+        filteredSimBuffers.curPoints.read(tempCurPoints)
     ]).spread(function () {
 
-        // console.log('Read buffers');
+        ///////////////////////////////////////
+        // Update last locations of points
+        ///////////////////////////////////////
+
+        var promise;
+        // TODO: Move this into general initialization
+        if (!that.lastPointPositions) {
+            console.log('Initializing lastPointPositions');
+            that.lastPointPositions = new Float32Array(rawdata.numElements.point * 2);
+            _.each(tempCurPoints, function (point, i) {
+                that.lastPointPositions[i] = point;
+            });
+
+            promise = simulator.renderer.createBuffer(that.lastPointPositions, 'curPointsFiltered')
+                    .then(function (pointVBO) {
+                        return simulator.cl.createBufferGL(pointVBO, 'curPointsFiltered');
+                    }).then(function (pointBuf) {
+                        that.filteredBufferCache.simulator.curPoints = pointBuf;
+                    });
+
+        } else {
+            console.log('Updating lastPointPositions');
+            _.each(that.lastPointMask, function (idx, i) {
+                that.lastPointPositions[idx*2] = tempCurPoints[i*2];
+                that.lastPointPositions[idx*2 + 1] = tempCurPoints[i*2 + 1];
+            });
+
+            promise = Q({});
+        }
+
+        return promise;
+
+    }).then(function () {
 
         _.each(masks.point, function (oldIdx, i) {
             newPrevForces[i*2] = tempPrevForces[oldIdx*2];
@@ -460,8 +373,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
 
             newDegrees[i] = tempDegrees[oldIdx];
 
-            newCurPoints[i*2] = tempCurPoints[oldIdx*2];
-            newCurPoints[i*2 + 1] = tempCurPoints[oldIdx*2 + 1];
+            newCurPoints[i*2] = that.lastPointPositions[oldIdx*2];
+            newCurPoints[i*2 + 1] = that.lastPointPositions[oldIdx*2 + 1];
 
         });
 
@@ -475,7 +388,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
             newEdgeWeights[i*2 + 1] = tempEdgeWeights[oldIdx*2 + 1];
         });
 
-        _.each(['prevForces', 'degrees', 'forwardsEdges', 'forwardsDegrees',
+        _.each(['curPoints', 'prevForces', 'degrees', 'forwardsEdges', 'forwardsDegrees',
                 'forwardsWorkItems', 'forwardsEdgeStartEndIdxs', 'backwardsEdges',
                 'backwardsDegrees', 'backwardsWorkItems', 'backwardsEdgeStartEndIdxs',
                 'springsPos', 'edgeWeights'
@@ -484,10 +397,9 @@ Dataframe.prototype.filter = function (masks, simulator) {
             newData.buffers.simulator[key] = that.filteredBufferCache.simulator[key];
         });
 
-        // console.log('About to write buffers');
-
         var newBuffers = newData.buffers.simulator;
         return Q.all([
+            newBuffers.curPoints.write(newCurPoints),
             newBuffers.prevForces.write(newPrevForces),
             newBuffers.degrees.write(newDegrees),
             newBuffers.springsPos.write(newSpringsPos),
@@ -502,8 +414,6 @@ Dataframe.prototype.filter = function (masks, simulator) {
             newBuffers.backwardsEdgeStartEndIdxs.write(backwardsEdges.edgeStartEndIdxsTyped)
         ]);
     }).then(function () {
-
-        // console.log('Finished writes');
 
         // Just in case, copy over references from rawdata to newData
         // This means we don't have to explicity overwrite everything.
@@ -541,16 +451,12 @@ Dataframe.prototype.filter = function (masks, simulator) {
         // Bump versions of every buffer.
         // TODO: Decide if this is really necessary.
         _.each(_.keys(simulator.versions.buffers), function (key) {
-            // console.log('OldVersion: ', key, simulator.versions.buffers[key]);
             simulator.versions.buffers[key] += 1;
         });
 
-        // console.log('Finished copies of rest');
+        that.lastPointMask = masks.point || [];
 
     }).then(function () {
-
-
-        // console.log('newData: ', newData);
         console.log('Filter took ' + (Date.now() - start) + ' ms.');
         that.data = newData;
     });
@@ -682,7 +588,6 @@ Dataframe.prototype.loadBuffer = function (name, type, buffer) {
     var buffers = this.rawdata.buffers[type];
     buffers[name] = buffer;
 };
-
 
 Dataframe.prototype.writeBuffer = function (name, type, values, simulator) {
     var that = this;
