@@ -43,6 +43,7 @@ function defaults() {
 
         HOSTNAME: 'localhost',
         ENVIRONMENT: 'local',
+        ALLOW_MULTIPLE_VIZ_CONNECTIONS: false,
 
         CLUSTER: util.format('%s.local', (process.env['USER'] || 'localuser')),
 
