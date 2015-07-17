@@ -191,7 +191,7 @@ app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
 
 // Temporarly handle ETL request from Splunk
 app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res) {
-    logger.debug('etl request');
+    logger.debug({req: req}, 'etl request');
     router.pickWorker(function (err, worker) {
         logger.debug('picked etl worker', req.ip, worker);
 
@@ -206,7 +206,7 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
         // Note: we specifically do not respect reverse proxy stuff, since we're presumably running
         // inside the cluster, and direct connections are more efficient.
         var redirect = 'http://' + worker.hostname + ':' + worker.port + '/';
-        logger.debug('create socket', redirect);
+        logger.trace('create socket', redirect);
         var socket = io(redirect, {forceNew: true, reconnection: false, transports: ['websocket']});
         //socket.io.engine.binaryType = 'arraybuffer';
 
@@ -219,7 +219,7 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
             socket.emit('viz', 'etl', function (resp) {
                 logger.trace('initialized, notifying client');
                 if (!resp.success) {
-                    logger.error(resp, 'Failed initializing worker');
+                    logger.error('Failed initializing worker');
                     return res.json({success: false, msg: 'failed connecting to work'});
                 }
                 var newEndpoint = redirect + 'etl';
@@ -246,12 +246,12 @@ app.use('/', express.static(MAIN_STATIC_PATH));
 
 
 app.get('/horizon', function(req, res) {
-    logger.debug('redirecting to horizon');
+    logger.info('redirecting to horizon');
     res.redirect('/horizon/src/demo/index.html' + (req.query.debug !== undefined ? '?debug' : ''));
 });
 
 app.get('/uber', function(req, res) {
-    logger.debug('redirecting to graph');
+    logger.info('redirecting to graph');
     res.redirect('/uber/index.html' + (req.query.debug !== undefined ? '?debug' : ''));
 });
 
