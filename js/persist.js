@@ -134,9 +134,9 @@ module.exports =
             uploadPublic(snapshotPath + 'pointSizes.vbo', compressedVBOs.pointSizes, {compressed: false});
             uploadPublic(snapshotPath + 'pointColors.vbo', compressedVBOs.pointColors, {compressed: false});
             uploadPublic(snapshotPath + 'logicalEdges.vbo', compressedVBOs.logicalEdges, {compressed: false});
-            uploadPublic(snapshotPath + 'pointIndexes.buffer', pointExport.indexes, {compressed: false});
-            uploadPublic(snapshotPath + 'edgeIndexes.buffer', edgeExport.indexes, {compressed: false});
-            uploadPublic(snapshotPath + 'pointLabels.buffer', pointExport.contents, {compressed: false});
-            return uploadPublic(snapshotPath + 'edgeLabels.buffer', edgeExport.contents, {compressed: false});
+            uploadPublic(snapshotPath + 'pointIndexes.buffer', pointExport.indexes, {compressed: true});
+            uploadPublic(snapshotPath + 'edgeIndexes.buffer', edgeExport.indexes, {compressed: true});
+            uploadPublic(snapshotPath + 'pointLabels.buffer', pointExport.contents, {compressed: true});
+            return uploadPublic(snapshotPath + 'edgeLabels.buffer', edgeExport.contents, {compressed: true});
         }
     };
