@@ -31,13 +31,13 @@ LayoutAlgo.prototype.setPhysics = function (cfg) {
 }
 // are the arguments going to be used for anything?
 LayoutAlgo.prototype.setPoints = function (simulator) {
-    logger.debug('Default stub for setPoints');
+    logger.trace('Default stub for setPoints');
 }
 LayoutAlgo.prototype.setEdges = function (simulator) {
-    logger.debug('Default stub for setEdges');
+    logger.trace('Default stub for setEdges');
 }
 LayoutAlgo.prototype.tick = function (simulator, stepNumber) {
-    logger.debug('Default stub for tick');
+    logger.trace('Default stub for tick');
 }
 
 module.exports = LayoutAlgo;
