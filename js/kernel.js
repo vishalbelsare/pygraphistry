@@ -25,12 +25,13 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     // Q promise
     var source = util.getKernelSource(file);
 
+    //TODO: Alternative way of doing this, since we aren't using debug module anymore
     // Set synchronous based on debug value
-    var synchronous = false;
-    if (process.env.DEBUG && process.env.DEBUG.indexOf('perf') != -1) {
-        logger.info('Kernel ' + name + ' is synchronous because DEBUG=perf');
-        synchronous = true;
-    }
+    // var synchronous = false;
+    // if (process.env.DEBUG && process.env.DEBUG.indexOf('perf') != -1) {
+    //     logger.info('Kernel ' + name + ' is synchronous because DEBUG=perf');
+    //     synchronous = true;
+    // }
 
     // For gathering performance data
     this.timings = [];
@@ -123,10 +124,11 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
 
         return source.then(function (source) {
             var processedSource = prefix + '\n\n' + source;
-            if (config.ENVIRONMENT === 'local') {
-                var debugFile = path.resolve(__dirname, '..', 'kernels', file + '.debug');
-                fs.writeFileSync(debugFile, processedSource);
-            }
+            // TODO: Alternative way of doing this, since we aren't using debug module anymore
+            // if (config.ENVIRONMENT === 'local') {
+            //     var debugFile = path.resolve(__dirname, '..', 'kernels', file + '.debug');
+            //     fs.writeFileSync(debugFile, processedSource);
+            // }
 
             return clContext.compile(processedSource, [name])
                 .then(function (kernels) {
