@@ -22,6 +22,12 @@ var BASE_URL = BUCKET_URL + '/Static/';
 // TODO: de-globalize:
 var contentKey;
 
+var pointLabels = {};
+var edgeLabels = {};
+var pointLabelsIndex;
+var edgeLabelsIndex;
+
+
 //======
 
 
@@ -74,6 +80,47 @@ function makeFetcher () {
 }
 
 
+function makeIndexFetcher () {
+    return function (bufferName) {
+
+        debug('fetching', bufferName);
+
+        //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
+        var res = new Rx.Subject(),
+            oReq = new XMLHttpRequest(),
+            assetURL = BASE_URL + contentKey + '/' + bufferName,
+            now = Date.now();
+        oReq.open('GET', assetURL, true);
+        // Handling a response as an arraybuffer means bypassing $.ajax:
+        oReq.responseType = 'arraybuffer';
+
+        oReq.onload = function () {
+            if (oReq.status !== 200) {
+                console.error('HTTP error acquiring data at: ', assetURL, oReq.statusText);
+                return;
+            }
+            try {
+                debug('got index data', bufferName, Date.now() - now, 'ms');
+
+                var arrayBuffer = oReq.response; // Note: not oReq.responseText
+                res.onNext(arrayBuffer);
+            } catch (e) {
+                console.error('Render error on loading data:', e, e.stack);
+            }
+        };
+
+        oReq.send(null);
+
+        return res.take(1);
+    };
+}
+
+
+function getLabels(uri, type) {
+    return makeIndexFetcher().bind(type + 'Indexes.buffer');
+}
+
+
 module.exports = {
 
     connect: function (vizType, urlParams) {
@@ -83,8 +130,19 @@ module.exports = {
 
         return Rx.Observable.return({
             socket: {
-                on: function (evt) { debug('ignoring on reg', evt); },
-                emit: function (evt) { debug('ignoring emit', evt); }
+                on: function (eventName) {
+                    debug('ignoring on event', eventName);
+                },
+                emit: function (eventName, data, cb) {
+                    if (eventName === 'get_labels') {
+                        var dim = data.dim,
+                            indices = data.indices,
+                            responseData, err;
+                        cb(err, responseData);
+                    } else {
+                        debug('ignoring emit event', eventName);
+                    }
+                }
             },
             uri: {}
         });
