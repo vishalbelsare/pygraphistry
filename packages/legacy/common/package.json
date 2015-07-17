@@ -21,6 +21,6 @@
     "config": "graphistry/config",
     "q": "~1.1.0",
     "underscore": "~1.8.3",
-    "fs-tools": "~0.2.0",
+    "fs-tools": "~0.2.0"
   }
 }
