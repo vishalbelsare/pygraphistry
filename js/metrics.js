@@ -12,7 +12,7 @@ var logger      = log.createLogger('metrics');
 logger.fields.name = 'boundary';
 
 
-logger.info('FIXME reject expired certs (currently relaxing for Boundary)');
+logger.warn('FIXME reject expired certs (currently relaxing for Boundary)');
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 
