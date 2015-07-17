@@ -9,6 +9,7 @@ var path = require('path');
 var config  = require('config')();
 var util = require('../util.js');
 var weakcc = require('../weaklycc.js');
+var palettes = require('../palettes.js');
 
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:data:vgraphloader');
@@ -111,6 +112,17 @@ function load(graph, dataset) {
     return decoders[vg.version](graph, vg, dataset.metadata);
 }
 
+function loadDataframe(graph, amap) {
+    var edgeAttrs = _.pick(amap, function (value) {
+        return value.target === EDGE;
+    });
+    var pointAttrs = _.pick(amap, function (value) {
+        return value.target === VERTEX;
+    });
+    graph.dataframe.load(edgeAttrs, 'edge');
+    graph.dataframe.load(pointAttrs, 'point');
+}
+
 function getAttributeMap(vg, attributes) {
     var vectors = vg.string_vectors.concat(vg.int32_vectors, vg.double_vectors);
     var map = {};
@@ -131,7 +143,8 @@ function decode0(graph, vg, metadata)  {
           vg.version, vg.name, vg.nvertices, vg.nedges);
 
     var amap = getAttributeMap(vg);
-    logger.debug('Graph has attribute: %o', Object.keys(amap))
+    loadDataframe(graph, amap);
+    logger.debug('Graph has attribute: %o', Object.keys(amap));
     var vertices = [];
     var edges = new Array(vg.nedges);
     var dimensions = [1, 1];
@@ -378,8 +391,9 @@ var splunkMapper = {
         pointColor: {
             name: 'pointColor',
             transform: function (v) {
-                var palette = util.palettes.qual_palette2;
-                return int2color(groupRoundAndClamp(v, 0, palette.length - 1), palette);
+                return _.map(v, function (cat) {
+                    return palettes.bindings[cat];
+                });
             }
         },
         edgeColor2: {

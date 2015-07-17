@@ -15,7 +15,9 @@ var Q = require("q"),
     rConf = require('./renderer.config.js'),
     lConf = require('./layout.config.js'),
     webcl = require('node-webcl'),
-    loader = require("./data-loader.js");
+    metrics = require("./metrics.js"),
+    loader = require("./data-loader.js"),
+    Dataframe = require('./Dataframe');
 
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:data:data-loader');
@@ -40,6 +42,7 @@ function graphCounts(graph) {
     var edge        = {num: numEdges,     offset: offsetEdge};
     var midPoint    = {num: numMidPoints, offset: offsetMidPoints};
     var midEdge     = {num: numMidEdges,  offset: offsetMidEdges};
+    var midEdgeColor ={num: numEdges * (graph.simulator.numRenderedSplits + 1), offset:offsetMidEdges}
 
     return {
         curPoints: point,
@@ -51,7 +54,7 @@ function graphCounts(graph) {
         curMidPoints: midPoint,
         midSpringsPos: midEdge,
         midSpringsColorCoord: midEdge,
-        midEdgeColors: midEdge
+        midEdgeColors: midEdgeColor
     };
 
 }
@@ -256,7 +259,17 @@ function create(dataset) {
 
     var graph = init(device, vendor, controls).then(function (graph) {
         logger.trace('LOADING DATASET');
-        return loader.loadDatasetIntoSim(graph, dataset);
+        return loader.loadDatasetIntoSim(graph, dataset)
+
+    }).then(function (graph) {
+        // Load into dataframe data attributes that rely on the simulator existing.
+        var outDegrees = graph.simulator.bufferHostCopies.forwardsEdges.degreesTyped;
+        var inDegrees = graph.simulator.bufferHostCopies.backwardsEdges.degreesTyped;
+        var unsortedEdges = graph.simulator.bufferHostCopies.unsortedEdges;
+        graph.dataframe.loadDegrees(outDegrees, inDegrees);
+        graph.dataframe.loadEdgeDestinations(unsortedEdges);
+        return graph;
+
     }).then(function (graph) {
         logger.trace('ANIMATING');
 
