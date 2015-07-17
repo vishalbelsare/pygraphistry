@@ -54,7 +54,7 @@ function makeFetcher (workerUrl, endpoint, queryKey) {
         oReq.responseType = 'arraybuffer';
         oReq.timeout = 5000;
         oReq.ontimeout = function () {
-            console.log("Fetch buffer timeout");
+            console.log('Fetch buffer timeout');
             res.onNext(true);
         };
 
@@ -316,13 +316,13 @@ function handleVboUpdates(socket, uri, renderState) {
             readyToRender
                 .subscribe(function () {
                     debug('6. All buffers and textures received, completing', thisStep);
-                    console.log("Before handshake");
+                    console.log('Before handshake');
                     //handshake(Date.now() - lastHandshake);
                     handshake(11111);
                     lastHandshake = Date.now();
-                    console.log("After handshake");
+                    console.log('After handshake');
                     vboUpdates.onNext('received');
-                    console.log("Recieved TEST in readyToRender");
+                    console.log('Received TEST in readyToRender');
                 },
                 function (err) { console.error('6 err. readyToRender error', err, (err||{}).stack, thisStep); });
 
