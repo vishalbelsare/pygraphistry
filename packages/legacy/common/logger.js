@@ -3,7 +3,7 @@
 /**
 Goals with this logger:
 
-1. Format error messages as the stack in an array of strings. 
+1. Format error messages as the stack in an array of strings.
 From the Bunyan API:
 log.info(err);  // Special case to log an `Error` instance to the record.
                 // This adds an "err" field with exception details
@@ -15,7 +15,7 @@ From the 'err' field, format 'stack' from "Exception:\n     TypeError..." into [
 Metadata should be set as a variable storing an object with fields, e.g. {"uid":"1001","hostname":"111"...}
 Files that use require('logger') should all use the same metadata object, which is where log.child comes in!
 ***MAKE SURE THAT***
-You NEVER reassign metadata to a new object! You may only mutate it, e.g. redefine fields, add fields, or delete fields. 
+You NEVER reassign metadata to a new object! You may only mutate it, e.g. redefine fields, add fields, or delete fields.
 Mutate the metadata using addMetadataField
 
 3. Control location + level of the logger. Probably from CLI. Example can be from log.js, where you pass in this info as JSON.
@@ -25,7 +25,7 @@ e.g. '{"BUNYAN_LOG":"/This/Directory/Foo/Bar"}'
 
 var bunyan = require('bunyan');
 var _ = require('underscore');
-var config = require('../config')();
+var config = require('config')();
 
 //////////Error handler/serializer from bunyan, modified for our needs
 /*
@@ -47,37 +47,42 @@ function getFullErrorStack(ex)
             ret += '\nCaused by: ' + getFullErrorStack(cex);
         }
     }
-    ret = ret.split("\n");
+    ret = ret.split('\n');
     ret.forEach(function(element, index, array) {
         array[index] = element.trim();
     });
-    
+
     return ret;
 }
 
 // Serialize an Error object
 // (Core error properties are enumerable in node 0.4, not in 0.6).
 // Modified error serializer
-var errSerializer = bunyan.stdSerializers.err = function err(err) {
-    if (!err || !err.stack)
-        return err;
-    var obj = {
-        message: err.message,
-        name: err.name,
-        stack: getFullErrorStack(err),
-        code: err.code,
-        signal: err.signal
+var errSerializer = bunyan.stdSerializers.err = function err(e) {
+    if (!e || !e.stack) {
+        return e;
     }
+    var obj = {
+        message: e.message,
+        name: e.name,
+        stack: getFullErrorStack(e),
+        code: e.code,
+        signal: e.signal
+    };
     return obj;
 };
 
 var CONSOLE_DEBUG_LEVEL = parseInt(process.env.CONSOLE_DEBUG_LEVEL) || config.CONSOLE_DEBUG_LEVEL; //empty function prevents logger from logging to console
 var BUNYAN_DEBUG_LEVEL = parseInt(process.env.BUNYAN_DEBUG_LEVEL) || config.BUNYAN_DEBUG_LEVEL; //defaults to 10 unless specified in command line or config
 
-var parentLogger = config.BUNYAN_LOG !== undefined ? 
+var parentLogger = config.BUNYAN_LOG !== undefined ?
     bunyan.createLogger({
-        name: "graphistry", 
-        metadata: {},
+        name: 'graphistry',
+        metadata: {
+            userInfo: {
+                tag: 'unknown'
+            }
+        },
         serializers: {
             err: bunyan.stdSerializers.err
         },
@@ -86,29 +91,81 @@ var parentLogger = config.BUNYAN_LOG !== undefined ?
             path: config.BUNYAN_LOG,
             level: BUNYAN_DEBUG_LEVEL,
         }]
-    }) : 
+    }) :
     //bunyan defaults to stdout if no stream is specified
     bunyan.createLogger({
-        name: "graphistry", 
-        metadata: {},
+        name: 'graphistry',
+        metadata: {
+            userInfo: {
+                tag: 'unknown'
+            }
+        },
         serializers: {
             err: bunyan.stdSerializers.err
         },
         level: CONSOLE_DEBUG_LEVEL
     });
 
+//add any additional logging methods here
+
+parentLogger.die = function(err, msg) {
+    parentLogger.fatal(err, msg);
+    process.exit(1);
+};
+
 process.on('SIGUSR2', function () {
-    l.reopenFileStreams();
+    parentLogger.reopenFileStreams();
 });
 
 
-module.exports = {
+var self = module.exports = {
     createLogger: function(name) {
-        return parentLogger.child({module: name}, true);
+        return (function () {
+            var childLogger = parentLogger.child({module: name}, true);
+
+            //add any additional logging methods here
+
+            childLogger.die = function(err, msg) {
+                childLogger.fatal(err, msg);
+                process.exit(1);
+            };
+
+            return childLogger;
+        })();
     },
     addMetadataField: function(metadata) {
-        if(!_.isObject(metadata)) { throw new Error("metadata must be an object"); }
+        //metadata is global, same for all loggers
+        if(!_.isObject(metadata)) { throw new Error('metadata must be an object'); }
         return _.extend(parentLogger.fields.metadata, metadata);
+    },
+    addUserInfo: function(newUserInfo) {
+        return _.extend(parentLogger.fields.metadata.userInfo, newUserInfo);
+    },
+    makeRxErrorHandler: function(childLogger, msg) {
+        //This should return a function that takes an error as an argument and logs a formatted version of it.
+        return function(err) {
+            childLogger.error(err, msg);
+        };
+    },
+    makeQErrorHandler: function(childLogger, msg) {
+        //This should return a function that takes an error as an argument and logs a formatted version of it, and rethrows the error.
+        return function(err) {
+            childLogger.error(err, msg);
+            throw new Error(err);
+        };
     }
 };
 
+var didLogConfig = false;
+var configLogger = module.exports.createLogger('config');
+
+if (config.CONFIG_ERRORS.length > 0) {
+    config.CONFIG_ERRORS.forEach( function(element, index, array) {
+        configLogger.error(element, 'Config error');
+    });
+}
+
+if(!didLogConfig) {
+    configLogger.debug('Program options resolved to:', config);
+    didLogConfig = true;
+}
