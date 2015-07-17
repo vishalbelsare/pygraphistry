@@ -4,6 +4,7 @@ var Q = require('q');
 var Long = require('./Long.js');
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:data:matrixloader');
+var perf        = require('common/perfStats.js').createPerfMonitor();
 var zlib = require("zlib");
 
 var exports = {
@@ -29,6 +30,7 @@ var exports = {
     loadBinary: function (nodeBuffer) { // -> Promise Binary
         logger.trace("Loading binary");
 
+        //unnecessary?
         var t0 = new Date().getTime();
 
         function Binary (buf) {
@@ -47,7 +49,7 @@ var exports = {
 
     load: function (str) {
         var t0 = new Date().getTime();
-
+        perf.startTiming('graph-viz:data:matrixloader');
         //http://bl.ocks.org/mbostock/2846454
         var nodes = [];
         var links = str
@@ -64,7 +66,7 @@ var exports = {
         });
 
         //might be better for a perflog?
-        logger.trace("Did naive parse & transform in %d ms", new Date().getTime() - t0);
+        perf.endTiming('graph-viz:data:matrixloader');
 
         return {
           nodes: nodes,
