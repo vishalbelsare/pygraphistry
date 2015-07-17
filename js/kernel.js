@@ -70,7 +70,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         _.each(args, function (val, arg) {
             if (arg in argValues) {
                 if (typeof val === 'undefined' || typeof val === 'null') {
-                    logger.warn('Setting argument %s to %s', arg, val);
+                    logger.trace('Setting argument %s to %s', arg, val);
                 }
 
                 argValues[arg] = {dirty: true, val: val};
@@ -145,7 +145,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 var dirty = argValues[arg].dirty;
                 var type = argTypes[arg];
                 if (val === null)
-                    logger.warn('In kernel %s, argument %s is null', name, arg);
+                    logger.trace('In kernel %s, argument %s is null', name, arg);
 
                 if (dirty) {
                     logger.trace('Setting arg %d with value', i, val);
