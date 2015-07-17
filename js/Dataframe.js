@@ -1248,9 +1248,12 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
         var lastOldIdx = 0;
         var mappedMaskInverse = new Uint32Array(mapped.length);
         for (var i = 0; i < edges.length/2; i++) {
-            while (lastOldIdx < edges.length/2) {
+            // console.log('Starting i;');
+            while (lastOldIdx < oldEdges.length/2) {
+                // console.log('Starting while');
                 var src = pointOriginalLookup[oldEdges[lastOldIdx*2]];
                 var dst = pointOriginalLookup[oldEdges[lastOldIdx*2 + 1]];
+                // console.log('Src: ', src, 'Dst: ', dst);
                 var lastPermutation = oldPermutation[lastOldIdx];
 
                 if (src !== undefined && dst !== undefined) {
@@ -1259,6 +1262,7 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
                     mapped[i] = lastPermutation;
                     mappedMaskInverse[lastOldIdx] = 0;
                     lastOldIdx++;
+                    // console.log('Breaking');
                     break;
                 } else {
                     mappedMaskInverse[lastOldIdx] = 1;
@@ -1266,6 +1270,8 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
                 }
             }
         }
+
+        // console.log('lastOldIdx: ', lastOldIdx, 'length: ', edges.length /2 );
 
         // Compute Scan of mappedMask:
         var mappedScan = new Uint32Array(mappedMaskInverse.length);
@@ -1278,8 +1284,8 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
             mapped[i] = mapped[i] - mappedScan[i];
         }
 
-        console.log('Some From edgeListTyped: ', edgeListTyped[1000], edgeListTyped[2000], edgeListTyped[3000]);
-        console.log('Some From mapped: ', mapped[1000], mapped[2000], mapped[3000]);
+        console.log('[1] Some From edgeListTyped: ', edgeListTyped[100], edgeListTyped[101], edgeListTyped[200]);
+        console.log('[1] Some From mapped: ', mapped[100], mapped[101], mapped[200]);
 
     }
     // First time through.
@@ -1308,8 +1314,10 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
         }
     // }
 
-    console.log('Some From edgeListTyped: ', edgeListTyped[1000], edgeListTyped[2000], edgeListTyped[3000]);
-    console.log('Some From mapped: ', mapped[1000], mapped[2000], mapped[3000]);
+    console.log('[2] Some From edgeListTyped: ', edgeListTyped[100], edgeListTyped[101], edgeListTyped[200]);
+    console.log('[2] Some From mapped: ', mapped[100], mapped[101], mapped[200]);
+
+    // console.log('Masks: ', masks && masks.point);
 
     return {
         edgeListTyped: edgeListTyped,
