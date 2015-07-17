@@ -59,7 +59,7 @@
                     location: e.filename + ':  ' + e.lineno,
                     error: e.error
                 }
-            }
+            };
 
             $.post(templatePaths.API_ROOT + 'error', JSON.stringify(msg));
             window.heap.track('error', msg.content);
@@ -79,7 +79,7 @@
                     result: e.result,
                     error: thrownError
                 }
-            }
+            };
 
             $.post(templatePaths.API_ROOT + 'error', JSON.stringify(msg));
             window.heap.track('error', msg.content);

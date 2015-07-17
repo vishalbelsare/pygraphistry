@@ -23,9 +23,9 @@ function defaultLabels(graph, indices, type) {
             columns: _.sortBy(
                 _.pairs(_.omit(row, '_title')),
                 function (kvPair) { return kvPair[0]; }
-            ),
+            )
         };
-    })
+    });
 }
 
 
