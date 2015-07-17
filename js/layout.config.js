@@ -63,33 +63,18 @@ function BoolParam(name, value) {
 BoolParam.prototype = Object.create(Param.prototype);
 BoolParam.prototype.constructor = BoolParam;
 
-var defaultNumSplits = 1;
-var numRenderedSplits = 8;
-
+var edgeBundlingSplits = 8;
 var uberControls = {
     simulator: SimCL,
     layoutAlgorithms: [
         {
-            algo: forceAtlasBarnes,
-            params: {
-                tau: new ContinuousParam('Precision vs. Speed', 10.0, 1.0, 25.0),
-                gravity: new ContinuousParam('Center Magnet', 1.0, 0.01, 100),
-                scalingRatio: new ContinuousParam('Expansion Ratio', 1.0, 0.01, 100),
-                edgeInfluence: new DiscreteParam('Edge Influence', 0, 0, 5, 1),
-                preventOverlap: new BoolParam('Prevent Overlap', false),
-                strongGravity: new BoolParam('Compact Layout', false),
-                dissuadeHubs: new BoolParam('Dissuade Hubs', false),
-                linLog: new BoolParam('Strong Separation (LinLog)', false)
-            }
-        }
-        ,{
             algo: EdgeBundling,
             params: {
                 edgeBundling: new BoolParam('Edge Bundling', false),
-                midpoints: new DiscreteParam('Splits', defaultNumSplits , 0, 32),
-                tau: new ContinuousParam('Speed', 10, 1.0, 25),
-                charge: new ContinuousParam('Charge', -100, -200, -0.0000001),
-                springStrength: new ContinuousParam('Spring Strength', 100, 0, 200),
+                midpoints: new DiscreteParam('Splits', edgeBundlingSplits, 0, 32),
+                tau: new ContinuousParam('Speed', 1, 0.01, 10),
+                charge: new ContinuousParam('Charge', -0.05, -1, -0.0000000001),
+                springStrength: new ContinuousParam('Spring Strength', 400, 0, 800),
                 springDistance: new ContinuousParam('Spring Distance', 0.5, 0.0000001, 1),
                 // TODO : Remove these
                 gravity: new ContinuousParam('Center Magnet', 1.0, 0.01, 100),
@@ -103,18 +88,18 @@ var uberControls = {
         }
     ],
     locks: {
-        lockPoints: false,
+        lockPoints: true,
         lockEdges: false,
         lockMidpoints: false,
         lockMidedges: false,
-        interpolateMidPoints: true,
-        interpolateMidPointsOnce: false
+        interpolateMidPoints: false,
+        interpolateMidPointsOnce: true
     },
     global: {
         simulationTime: 1, //SIMULATION_TIME, //milliseconds
         dimensions: [1, 1],
-        numSplits: defaultNumSplits,
-        numRenderedSplits: numRenderedSplits
+        numSplits: edgeBundlingSplits,
+        numRenderedSplits: edgeBundlingSplits
     },
     devices: ['CPU', 'GPU']
 }
@@ -185,7 +170,8 @@ function atlasControls(algo) {
         global: {
             simulationTime: SIMULATION_TIME, //milliseconds
             dimensions: [1, 1],
-            numSplits: 0
+            numSplits: 0,
+            numRenderedSplits: 8
         },
         devices: devices
     };

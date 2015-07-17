@@ -766,7 +766,6 @@ function setMidEdgeColors(simulator, midEdgeColors) {
         dstColorInt, dstColor, edgeIndex, midEdgeIndex, numSegments, lambda,
         colorHSVInterpolator, convertRGBInt2Color, convertColor2RGBInt, interpolatedColorInt;
 
-
     var numMidEdgeColors = simulator.numEdges * (simulator.numRenderedSplits + 1);
 
     var interpolatedColor = {};

@@ -21,7 +21,7 @@ var programs = {
         },
         'attributes': ['edgeColor', 'curPos'],
         'camera': 'mvp',
-        'uniforms': []
+        'uniforms': ['edgeOpacity']
     },
     'edgehighlight': {
         'sources': {
@@ -39,7 +39,7 @@ var programs = {
         },
         'attributes': ['startPos', 'endPos', 'normalDir', 'arrowColor', 'pointSize'],
         'camera': 'mvp',
-        'uniforms': ['zoomScalingFactor', 'maxPointSize', 'maxScreenSize', 'maxCanvasSize']
+        'uniforms': ['zoomScalingFactor', 'maxPointSize', 'maxScreenSize', 'maxCanvasSize', 'pointOpacity']
     },
     'arrowhighlight': {
         'sources': {
@@ -75,7 +75,7 @@ var programs = {
         },
         'attributes': ['curPos', 'edgeColor'],
         'camera': 'mvp',
-        'uniforms': []
+        'uniforms': ['edgeOpacity']
     },
     'midedgetextured': {
         'sources': {
@@ -94,7 +94,7 @@ var programs = {
         },
         'attributes': ['curPos', 'pointSize', 'pointColor'],
         'camera': 'mvp',
-        'uniforms': ['fog', 'stroke', 'zoomScalingFactor', 'maxPointSize', 'minPointSize']
+        'uniforms': ['fog', 'stroke', 'zoomScalingFactor', 'maxPointSize', 'minPointSize', 'pointOpacity']
     },
     'pointhighlight': {
         'sources': {
@@ -471,6 +471,7 @@ var models = {
 
 var pointCulledUniforms = {
     'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
+    'pointOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] },
     'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
     'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
     'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] },
@@ -485,6 +486,9 @@ var items = {
             'curPos': ['springsPos', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
         },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] }
+        },
         'drawType': 'LINES',
         'glOptions': {}
     },
@@ -494,6 +498,9 @@ var items = {
         'bindings': {
             'curPos': ['curPoints', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] }
         },
         'index': ['logicalEdges', 'curIdx'],
         'drawType': 'LINES',
@@ -505,6 +512,9 @@ var items = {
         'bindings': {
             'curPos': ['curPoints', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
         },
         'index': ['logicalEdges', 'curIdx'],
         'drawType': 'LINES',
@@ -518,6 +528,9 @@ var items = {
             'curPos': ['curMidPoints', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
         },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
         'index': ['logicalEdges', 'curIdx'],
         'drawType': 'LINES',
         'glOptions': {}
@@ -529,10 +542,11 @@ var items = {
             'curPos': ['midSpringsPosClient', 'curPos'],
             'edgeColor': ['midEdgeColors', 'midEdgeColor']
         },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.5] }
+        },
         'drawType': 'LINES',
-        'glOptions': {
-            'depthFunc': [['LESS']]
-        }
+        'glOptions': {}
     },
     'edgeculledindexedclient' : {
         'program': 'edgeculled',
@@ -540,6 +554,9 @@ var items = {
         'bindings': {
             'curPos': ['springsPosClient', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] }
         },
         'drawType': 'LINES',
         'glOptions': {
@@ -584,6 +601,7 @@ var items = {
             'pointSize': ['arrowPointSizes', 'pointSize'],
         },
         'uniforms': {
+            'pointOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] },
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
             'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] },
             'maxScreenSize': { 'uniformType': '1f', 'defaultValues': [1.0] },
@@ -753,6 +771,9 @@ var items = {
             'curPos': ['midSpringsPos', 'curPos'],
             'edgeColor' : ['midEdgeColors', 'midEdgeColor']
         },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] }
+        },
         'drawType': 'LINES',
         'glOptions': {}
     },
@@ -813,9 +834,18 @@ var camera2D = {
 var sceneUber = {
     'options': stdOptions,
     'camera': camera2D,
-    'edgeMode': 'ARC',
+    'edgeMode': 'EDGEBUNDLING',
     'render': ['pointpicking',  'pointsampling', 'midedgeculledindexedclient', /*'edgepicking',*/
         'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    'indexeddummy', 'indexeddummy2']
+}
+
+var sceneNetFlowArcs= {
+    'options': stdOptions,
+    'camera': camera2D,
+    'edgeMode': 'ARCS',
+    'render': ['pointpicking',  'pointsampling', 'midedgeculledindexedclient', /*'edgepicking',*/
+        'pointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2']
 }
 
@@ -831,7 +861,9 @@ var sceneNetflowIndexed = {
     'camera': camera2D,
     'edgeMode': 'CLIENTINDEXED',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'edgeculledindexed', 'edgepicking', 'pointoutline', 'pointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight']
+               'edgeculledindexed', 'edgepicking', 'edgehighlight',
+               'pointoutline', 'pointculled', 'pointhighlight',
+               'fullscreen', 'fullscreenDummy', ]
 }
 
 var sceneNetflowIndexedClient = {
@@ -849,7 +881,8 @@ var scenes = {
     'uber' : sceneUber,
     'netflow': sceneNetflow,
     'netflowIndexed': sceneNetflowIndexed,
-    'netflowIndexedClient': sceneNetflowIndexedClient
+    'netflowIndexedClient': sceneNetflowIndexedClient,
+    'netflowArcs': sceneNetFlowArcs
 }
 
 function saneProgram(program, progName) {

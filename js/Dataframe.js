@@ -60,13 +60,7 @@ Dataframe.prototype.load = function (attributes, type) {
         return filteredKeys.indexOf(key) > -1;
     });
 
-    // Case of filtering out all attributes
-    if (filteredKeys.length === 0) {
-        return;
-    }
-
-
-    var numElements = filteredAttributes[filteredKeys[0]].values.length;
+    var numElements = attributes[_.keys(attributes)[0]].values.length;
     this.rawdata.numElements[type] = numElements;
 
     if (nodeTitleField) {
@@ -283,23 +277,36 @@ Dataframe.prototype.serializeColumns = function (target, options) {
 //////////////////////////////////////////////////////////////////////////////
 
 
+// [int] * ?[ string ] * ?{string -> ??} * ?{countBy, ??} * {point, edge, undefined}
+// -> ??
+//undefined type signifies both nodes and edges
 Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, type) {
+
     var that = this;
 
-    function process(attribute, indices) {
+    var process = function (attribute, indices) {
 
         var goalNumberOfBins = binning ? binning._goalNumberOfBins : 0;
         var binningHint = binning ? binning[attribute] : undefined;
-        var dataType = that.data.attributes[type][attribute].type;
+
+        //FIXME need edge vs node attrib resolution
+        var attribType = type ? type
+            : that.data.attributes.point[attribute] ? 'point'
+            : 'edge';
+
+        var dataType = that.data.attributes[attribType][attribute].type;
 
         if (mode !== 'countBy' && dataType !== 'string') {
-            return that.histogram(attribute, binningHint, goalNumberOfBins, indices, type);
+            return that.histogram(attribute, binningHint, goalNumberOfBins, indices, attribType);
         } else {
-            return that.countBy(attribute, binningHint, indices, type);
+            return that.countBy(attribute, binningHint, indices, attribType);
         }
     }
 
-    var keysToAggregate = attributes ? attributes : this.getAttributeKeys(type);
+    var keysToAggregate = attributes ? attributes
+        : type == 'point' ? this.getAttributeKeys('point')
+        : type == 'edge' ? this.getAttributeKeys('edge')
+        : (this.getAttributeKeys('point').concat(this.getAttributeKeys('edge')));
     keysToAggregate = keysToAggregate.filter(function (val) {
         return val[0] !== '_';
     });
