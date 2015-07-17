@@ -75,7 +75,7 @@ function getNumWorkitemsByHardware(deviceProps) {
 
 
     } else if (deviceProps.NAME.indexOf('HD Graphics 4000') != -1) {
-        logger.warn('Expected slow kernels: sort, calculate_forces');
+        logger.debug('Expected slow kernels: sort, calculate_forces');
     }
 
     return _.mapObject(numWorkGroups, function(val, key) {
