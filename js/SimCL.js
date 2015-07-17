@@ -327,7 +327,7 @@ var tickBuffers = function (simulator, bufferNames, tick) {
     } else {
         _.keys(simulator.versions.buffers).forEach(function (name) {
             simulator.versions.buffers[name] = tick;
-            logger.info('tick', name, tick);
+            logger.trace('tick', name, tick);
         });
     }
 
@@ -993,7 +993,7 @@ function connectedEdges(simulator, nodeIndices) {
 }
 
 function recolor(simulator, marquee) {
-    logger.info('Recoloring', marquee);
+    logger.debug('Recoloring', marquee);
 
     var positions = new ArrayBuffer(simulator.numPoints * 4 * 2);
 
@@ -1011,7 +1011,7 @@ function recolor(simulator, marquee) {
 
         _.each(selectedIdx, function (idx) {
             simulator.buffersLocal.pointSizes[idx] = 255;
-            logger.info('Selected', simulator.pointLabels[idx]);
+            logger.debug('Selected', simulator.pointLabels[idx]);
         })
 
         simulator.tickBuffers(['pointSizes']);
@@ -1056,6 +1056,7 @@ function tick(simulator, stepNumber, cfg) {
         return tickAllHelper(simulator.layoutAlgorithms.slice(0));
     }).then(function() {
         if (stepNumber % 20 === 0 && stepNumber !== 0) {
+            //TODO: move to perflogging
             logger.trace('Layout Perf Report (step: %d)', stepNumber);
 
             var extraKernels = [simulator.otherKernels.springsGather.gather];
