@@ -77,7 +77,7 @@ var exports = {
         var t0 = new Date().getTime();
 
         //is the %s ever going to be formatted?
-        logger.trace("Loading Geo file %s");
+        logger.debug("Loading Geo file %s");
 
         function Binary (buf) {
             var f32 = new Float32Array(buf.buffer);
