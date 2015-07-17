@@ -121,8 +121,9 @@ function createProgram(renderer, vertexShaderID, fragmentShaderID) {
             renderer.gl.shaderSource(shader, sanitizedShaderSource);
             renderer.gl.compileShader(shader);
             if(!renderer.gl.getShaderParameter(shader, renderer.gl.COMPILE_STATUS)) {
-                logger.error(renderer.gl.getShaderInfoLog(shader));
-                throw new Error("Error compiling WebGL shader (shader type: " + shaderType + ")");
+                var err = new Error("Error compiling WebGL shader (shader type: " + shaderType + ")");
+                logger.error(err, renderer.gl.getShaderInfoLog(shader));
+                throw err;
             }
             if(!renderer.gl.isShader(shader)) {
                 throw new Error("After compiling shader, WebGL is reporting it is not valid");
@@ -283,7 +284,7 @@ var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
 
 //async (may trigger a write)
 var createBuffer = Q.promised(function(renderer, data) {
-    logger.debug("Creating gl buffer of type %s. Constructor: %o", typeof(data), (data||{}).constructor);
+    logger.trace("Creating gl buffer of type %s. Constructor: %o", typeof(data), (data||{}).constructor);
 
     var buffer = renderer.gl.createBuffer();
     var bufObj = {
