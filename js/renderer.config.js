@@ -690,7 +690,9 @@ var items = {
             'pointSize':    ['pointSizes', 'pointSize'],
             'pointColor':   ['pointColors', 'pointColor']
         },
-        'uniforms': pointCulledUniforms,
+        'uniforms': _.extend({}, pointCulledUniforms, {
+            'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH]}
+        }),
         'drawType': 'POINTS',
         'glOptions': {},
     },
@@ -702,7 +704,9 @@ var items = {
             'pointSize':    ['pointSizes', 'pointSize'],
             'pointColor':   ['pointColors', 'pointColor'],
         },
-        'uniforms': pointCulledUniforms,
+        'uniforms': _.extend({}, pointCulledUniforms, {
+            'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH]}
+        }),
         'drawType': 'POINTS',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'pointTexture',
