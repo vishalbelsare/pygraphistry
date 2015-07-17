@@ -2,28 +2,22 @@
 
 var _ = require('underscore');
 var Q = require('q');
-var debug = require('debug')('graphistry:graph-viz:cl:kernel');
 var sprintf = require('sprintf-js').sprintf;
 var path = require('path');
 var fs = require('fs');
 var util = require('./util');
-var log = require('common/log.js');
-var eh = require('common/errorHandlers.js')(log);
 
 var cljs = require('./cl.js');
 var config = require('config')();
 
-
-
-// Disable debug logging since this file is responsible for 90% of log output.
-// Comment me for local debugging.
-debug = function () {}
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:kernel');
 
 
 
 // String * [String] * {String: Type} * String * clCtx
 var Kernel = function (name, argNames, argTypes, file, clContext) {
-    debug('Creating Kernel', name);
+    logger.trace('Creating Kernel', name);
 
     var that = this;
     this.name = name;
@@ -31,12 +25,13 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     // Q promise
     var source = util.getKernelSource(file);
 
+    //TODO: Alternative way of doing this, since we aren't using debug module anymore
     // Set synchronous based on debug value
-    var synchronous = false;
-    if (process.env.DEBUG && process.env.DEBUG.indexOf('perf') != -1) {
-        log.info('Kernel ' + name + ' is synchronous because DEBUG=perf');
-        synchronous = true;
-    }
+    // var synchronous = false;
+    // if (process.env.DEBUG && process.env.DEBUG.indexOf('perf') != -1) {
+    //     logger.info('Kernel ' + name + ' is synchronous because DEBUG=perf');
+    //     synchronous = true;
+    // }
 
     // For gathering performance data
     this.timings = [];
@@ -46,7 +41,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     // Sanity Checks
     _.each(argNames, function (arg) {
         if (!(arg in argTypes))
-            log.die('In Kernel %s, argument %s has no type', name, arg);
+            logger.die('In Kernel %s, argument %s has no type', name, arg);
     });
 
     function isDefine(arg) {
@@ -70,13 +65,13 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
 
     // {String -> Value} -> Kernel
     this.set = function (args) {
-        debug('Setting args for kernel', this.name);
+        logger.trace('Setting args for kernel', this.name);
 
         var mustRecompile = false;
         _.each(args, function (val, arg) {
             if (arg in argValues) {
                 if (typeof val === 'undefined' || typeof val === 'null') {
-                    log.warn('Setting argument %s to %s', arg, val);
+                    logger.trace('Setting argument %s to %s', arg, val);
                 }
 
                 argValues[arg] = {dirty: true, val: val};
@@ -86,7 +81,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 }
                 defValues[arg] = val;
             } else {
-                log.die('Kernel %s has no argument/define named %s', name, arg);
+                logger.die('Kernel %s has no argument/define named %s', name, arg);
             }
         });
 
@@ -103,17 +98,17 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         } else if (_.contains(args, arg)) {
             return argValues[arg].val
         } else {
-            log.warn('Kernel %s has no parameter %s', name, arg);
+            logger.warn('Kernel %s has no parameter %s', name, arg);
             return undefined;
         }
     }
 
     function compile () {
-        debug('Compiling kernel', that.name);
+        logger.trace('Compiling kernel', that.name);
 
         _.each(defValues, function (arg, val) {
             if (val === null)
-                log.die('Define %s of kernel %s was never set', arg, name);
+                logger.die('Define %s of kernel %s was never set', arg, name);
         });
 
         var prefix = _.flatten(_.map(defValues, function (val, key) {
@@ -125,14 +120,15 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 return [];
             }
         }), true).join('\n');
-        debug('Prefix', prefix);
+        logger.trace('Prefix', prefix);
 
         return source.then(function (source) {
             var processedSource = prefix + '\n\n' + source;
-            if (debug.enabled && config.ENVIRONMENT === 'local') {
-                var debugFile = path.resolve(__dirname, '..', 'kernels', file + '.debug');
-                fs.writeFileSync(debugFile, processedSource);
-            }
+            // TODO: Alternative way of doing this, since we aren't using debug module anymore
+            // if (config.ENVIRONMENT === 'local') {
+            //     var debugFile = path.resolve(__dirname, '..', 'kernels', file + '.debug');
+            //     fs.writeFileSync(debugFile, processedSource);
+            // }
 
             return clContext.compile(processedSource, [name])
                 .then(function (kernels) {
@@ -142,7 +138,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     };
 
     function setAllArgs(kernel) {
-        debug('Setting arguments for kernel', name)
+        logger.trace('Setting arguments for kernel', name)
         var i;
         try {
             for (i = 0; i < args.length; i++) {
@@ -151,17 +147,17 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 var dirty = argValues[arg].dirty;
                 var type = argTypes[arg];
                 if (val === null)
-                    log.warn('In kernel %s, argument %s is null', name, arg);
+                    logger.trace('In kernel %s, argument %s is null', name, arg);
 
                 if (dirty) {
-                    debug('Setting arg %d with value', i, val);
+                    logger.trace('Setting arg %d with value', i, val);
                     kernel.setArg(i, val, type || undefined);
                     argValues[arg].dirty = false;
                 }
             }
 
         } catch (e) {
-            eh.makeErrorHandler('Error setting argument %s of kernel %s', args[i], name)(e);
+            log.makeQErrorHandler(logger, 'Error setting argument %s of kernel %s', args[i], name)(e);
         }
     };
 
@@ -169,11 +165,11 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         // TODO: Consider acquires and releases of buffers.
 
         var queue = clContext.queue;
-        debug('Enqueuing kernel %s', that.name, kernel);
+        logger.trace('Enqueuing kernel %s', that.name, kernel);
         var start = process.hrtime();
         queue.enqueueNDRangeKernel(kernel, null, workItems, workGroupSize || null);
         if (synchronous) {
-            debug('Waiting for kernel to finish');
+            logger.trace('Waiting for kernel to finish');
             clContext.queue.finish();
             var diff = process.hrtime(start);
             that.timings[that.totalRuns % maxTimings] = (diff[0] * 1000 + diff[1] / 1000000);
@@ -187,7 +183,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     this.exec = function(numWorkItems, resources, workGroupSize) {
         return qKernel.then(function (kernel) {
             if (kernel === null) {
-                log.error('Kernel is not compiled, aborting');
+                logger.error('Kernel is not compiled, aborting');
                 return Q();
             } else {
                 setAllArgs(kernel);

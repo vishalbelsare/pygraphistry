@@ -1,14 +1,14 @@
 'use strict'
 
-var   debug = require('debug')('graphistry:graph-viz:cl:midEdgegather'),
-       cljs = require('../cl.js'),
-        log = require('common/log.js'),
-         eh = require('common/errorHandlers.js')(log),
+var    cljs = require('../cl.js'),
           Q = require('q'),
      Kernel = require('../kernel.js');
 
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:midEdgeGather');
+
 function midEdgeGather(clContext) {
-    debug('Creating springsGather kernel');
+    logger.trace('Creating springsGather kernel');
 
     var args = ['edges', 'midPoints', 'points', 'numEdges', 'numSplits', 'midEdgePositions'];
     var argsType = {
@@ -47,9 +47,9 @@ function midEdgeGather(clContext) {
 
       simulator.tickBuffers(['midSpringsPos', 'midSpringsColorCoord']);
 
-      debug('Running midEdgeGather kernel');
+      logger.trace('Running midEdgeGather kernel');
       return this.gather.exec([simulator.numEdges], resources)
-        .fail(eh.makeErrorHandler('Kernel midEdgeGather failed'));
+        .fail(log.makeQErrorHandler('Kernel midEdgeGather failed'));
     };
 
 

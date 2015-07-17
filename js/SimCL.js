@@ -2,19 +2,19 @@
 
 var _ = require('underscore');
 var Q = require('q');
-var debug = require('debug')('graphistry:graph-viz:graph:simcl');
-var perf  = require('debug')('perf');
 var sprintf = require('sprintf-js').sprintf;
 var dijkstra = require('dijkstra');
 var util = require('./util.js');
-var log = require('common/log.js');
-var eh = require('common/errorHandlers.js')(log);
 var cljs = require('./cl.js');
 var MoveNodes = require('./moveNodes.js');
 var SelectNodes = require('./selectNodes.js');
 var SpringsGather = require('./springsGather.js');
 var webcl = require('node-webcl');
 var Color = require('color');
+
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:data:data-loader');
+
 
 // Do NOT enable this in prod. It destroys performance.
 // Seriously.
@@ -39,7 +39,7 @@ function create(dataframe, renderer, device, vendor, cfg) {
             return _.contains(algo.devices, type);
         });
         if (availableControls.length === 0) {
-            log.die('No layout controls satisfying device/vendor requirements', device, vendor);
+            logger.die('No layout controls satisfying device/vendor requirements', device, vendor);
         }
         controls = availableControls[0];
         layoutAlgorithms = controls.layoutAlgorithms;
@@ -57,7 +57,7 @@ function create(dataframe, renderer, device, vendor, cfg) {
         };
 
         return new Q().then(function () {
-            debug('Instantiating layout algorithms: %o', layoutAlgorithms);
+            logger.debug('Instantiating layout algorithms: %o', layoutAlgorithms);
             return _.map(layoutAlgorithms, function (la) {
                 var algo = new la.algo(cl);
                 algo.setPhysics(_.object(_.map(la.params, function (p, name) {
@@ -66,7 +66,7 @@ function create(dataframe, renderer, device, vendor, cfg) {
                 return algo;
             });
         }).then(function (algos) {
-            debug("Creating SimCL...");
+            logger.trace("Creating SimCL...");
 
             simObj.layoutAlgorithms = algos;
             simObj.otherKernels = {
@@ -172,10 +172,10 @@ function create(dataframe, renderer, device, vendor, cfg) {
             Object.seal(simObj.buffers);
             Object.seal(simObj);
 
-            debug('Simulator created');
+            logger.trace('Simulator created');
             return simObj
         })
-    }).fail(eh.makeErrorHandler('Cannot create SimCL'));
+    }).fail(log.makeQErrorHandler(logger, 'Cannot create SimCL'));
 }
 
 
@@ -329,7 +329,7 @@ var tickBuffers = function (simulator, bufferNames, tick) {
     } else {
         _.keys(simulator.versions.buffers).forEach(function (name) {
             simulator.versions.buffers[name] = tick;
-            console.log('tick', name, tick);
+            logger.trace('tick', name, tick);
         });
     }
 
@@ -399,13 +399,13 @@ function setPoints(simulator, points) {
 
     //FIXME HACK:
     var guess = (simulator.numPoints * -0.00625 + 210).toFixed(0);
-    debug('Points:%d\tGuess:%d', simulator.numPoints, guess);
+    logger.debug('Points:%d\tGuess:%d', simulator.numPoints, guess);
     simulator.tilesPerIteration = Math.min(Math.max(16, guess), 512);
-    debug('Using %d tiles per iterations', simulator.tilesPerIteration);
+    logger.debug('Using %d tiles per iterations', simulator.tilesPerIteration);
 
     simulator.renderer.numPoints = simulator.numPoints;
 
-    debug("Number of points in simulation: %d", simulator.renderer.numPoints);
+    logger.debug("Number of points in simulation: %d", simulator.renderer.numPoints);
 
     // Create buffers and write initial data to them, then set
     simulator.tickBuffers(['curPoints', 'randValues']);
@@ -425,7 +425,7 @@ function setPoints(simulator, points) {
         simulator.cl.createBuffer(randBufBytes, 'randValues')])
     .spread(function(pointsVBO, nextPointsBuf, partialForces1Buf, partialForces2Buf,
                      curForcesBuf, prevForcesBuf, swingsBuf, tractionsBuf, randBuf) {
-        debug('Created most of the points');
+        logger.trace('Created most of the points');
         simulator.buffers.nextPoints = nextPointsBuf;
         simulator.buffers.partialForces1 = partialForces1Buf;
         simulator.buffers.partialForces2 = partialForces2Buf;
@@ -461,7 +461,7 @@ function setPoints(simulator, points) {
             la.setPoints(simulator);
         });
         return simulator;
-    }).fail(eh.makeErrorHandler('Failure in SimCl.setPoints'));
+    }).fail(log.makeQErrorHandler(logger, 'Failure in SimCl.setPoints'));
 }
 
 
@@ -480,13 +480,13 @@ function makeSetter(simulator, name, dimName) {
 
         return simulator.renderer.createBuffer(data, buffName)
         .then(function(vbo) {
-            debug('Created %s VBO', buffName);
+            logger.debug('Created %s VBO', buffName);
             simulator.renderer.buffers[buffName] = vbo;
             return simulator.cl.createBufferGL(vbo, buffName);
         }).then(function (buffer) {
             simulator.buffers[buffName] = buffer;
             return simulator;
-        }).fail(eh.makeErrorHandler('ERROR Failure in SimCl.set %s', buffName));
+        }).fail(log.makeQErrorHandler(logger, 'ERROR Failure in SimCl.set %s', buffName));
     };
 }
 
@@ -510,7 +510,7 @@ function setEdgeLabels(simulator, labels) {
 }
 
 function setMidEdges( simulator ) {
-    debug("In set midedges");
+    logger.debug("In set midedges");
     simulator.controls.locks.interpolateMidPointsOnce = true;
     var bytesPerPoint,
         bytesPerEdge,
@@ -567,7 +567,7 @@ function setMidEdges( simulator ) {
                     return alg.setEdges(simulator);
                 }));
     } )
-    .fail( eh.makeErrorHandler('Failure in SimCL.setMidEdges') )
+    .fail( log.makeQErrorHandler(logger, 'Failure in SimCL.setMidEdges') )
 }
 
 /**
@@ -593,7 +593,7 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
     var elementsPerWorkItem = 4;
     var midPoints = new Float32Array((unsortedEdges.length / 2) * simulator.numSplits * nDim || 1);
 
-    debug("Number of midpoints: ", simulator.numSplits);
+    logger.debug("Number of midpoints: ", simulator.numSplits);
 
     if(forwardsEdges.edgesTyped.length < 1) {
         throw new Error("The edge buffer is empty");
@@ -635,7 +635,7 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
     return Q().then(function() {
         // Init constant
         simulator.numEdges = forwardsEdges.edgesTyped.length / elementsPerEdge;
-        debug("Number of edges in simulation: %d", simulator.numEdges);
+        logger.debug("Number of edges in simulation: %d", simulator.numEdges);
 
         simulator.renderer.numEdges = simulator.numEdges;
         simulator.numForwardsWorkItems = forwardsEdges.workItemsTyped.length / elementsPerWorkItem;
@@ -732,7 +732,7 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
         setTimeSubset(renderer, simulator, simulator.timeSubset.relRange);
         return simulator;
     })
-    .fail(eh.makeErrorHandler('Failure in SimCL.setEdges'));
+    .fail(log.makeQErrorHandler(logger, 'Failure in SimCL.setEdges'));
 }
 
 
@@ -745,7 +745,7 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
  */
 function setEdgeColors(simulator, edgeColors) {
     if (!edgeColors) {
-        debug('Using default edge colors');
+        logger.trace('Using default edge colors');
         var forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
         edgeColors = new Uint32Array(forwardsEdges.edgesTyped.length);
         for (var i = 0; i < edgeColors.length; i++) {
@@ -773,7 +773,7 @@ function setMidEdgeColors(simulator, midEdgeColors) {
     dstColor = {};
 
     if (!midEdgeColors) {
-        debug('Using default midedge colors');
+        logger.trace('Using default midedge colors');
         midEdgeColors = new Uint32Array(4 * numMidEdgeColors);
         numSegments = simulator.numRenderedSplits + 1;
         forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
@@ -859,7 +859,7 @@ function setMidEdgeColors(simulator, midEdgeColors) {
 
 function setEdgeWeight(simulator, edgeWeights) {
     if (!edgeWeights) {
-        debug('Using default edge weights');
+        logger.trace('Using default edge weights');
         var forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
         edgeWeights = new Float32Array(forwardsEdges.edgesTyped.length);
         for (var i = 0; i < edgeWeights.length; i++) {
@@ -887,7 +887,7 @@ function setLocks(simulator, cfg) {
 
 
 function setPhysics(simulator, cfg) {
-    debug('Simcl set physics', cfg)
+    logger.debug('Simcl set physics', cfg)
     _.each(simulator.layoutAlgorithms, function (algo) {
         if (algo.name in cfg) {
             algo.setPhysics(cfg[algo.name]);
@@ -918,7 +918,7 @@ function setTimeSubset(renderer, simulator, range) {
 
         var firstEdge = simulator.bufferHostCopies.forwardsEdges.workItemsTyped[4 * idx];
 
-        debug('pointToEdgeIdx', {ptIdx: ptIdx, workItem: workItem, idx: idx, firstEdge: firstEdge, isBeginning: isBeginning});
+        logger.debug('pointToEdgeIdx', {ptIdx: ptIdx, workItem: workItem, idx: idx, firstEdge: firstEdge, isBeginning: isBeginning});
 
         if (idx == 0 && firstEdge == -1) {
             return 0;
@@ -951,7 +951,7 @@ function setTimeSubset(renderer, simulator, range) {
                 startIdx: startEdgeIdx * 2 * (1 + numSplits),
                 len: numEdges * 2          * (1 + numSplits)}};
 
-    debug('subset args', {numPoints: renderer.numPoints, numEdges: renderer.numEdges, startEdgeIdx: startEdgeIdx, endIdx: endIdx, endEdgeIdx: endEdgeIdx, numSplits:numSplits});
+    logger.debug('subset args', {numPoints: renderer.numPoints, numEdges: renderer.numEdges, startEdgeIdx: startEdgeIdx, endIdx: endIdx, endEdgeIdx: endEdgeIdx, numSplits:numSplits});
 
 
     simulator.tickBuffers([
@@ -969,7 +969,7 @@ function setTimeSubset(renderer, simulator, range) {
 }
 
 function moveNodes(simulator, marqueeEvent) {
-    debug('marqueeEvent', marqueeEvent);
+    logger.debug('marqueeEvent', marqueeEvent);
 
     var drag = marqueeEvent.drag;
     var delta = {
@@ -983,11 +983,11 @@ function moveNodes(simulator, marqueeEvent) {
     return moveNodes.run(simulator, marqueeEvent.selection, delta)
         .then(function () {
             return springsGather.tick(simulator);
-        }).fail(eh.makeErrorHandler('Failure trying to move nodes'));
+        }).fail(log.makeQErrorHandler(logger, 'Failure trying to move nodes'));
 }
 
 function selectNodes(simulator, selection) {
-    debug('selectNodes', selection);
+    logger.debug('selectNodes', selection);
 
     var selectNodes = simulator.otherKernels.selectNodes;
 
@@ -1000,7 +1000,7 @@ function selectNodes(simulator, selection) {
                 }
             }
             return res;
-        }).fail(eh.makeErrorHandler('Failure trying to compute selection'));
+        }).fail(log.makeQErrorHandler(logger, 'Failure trying to compute selection'));
 }
 
 // Return the set of edge indices which are connected (either as src or dst)
@@ -1036,7 +1036,7 @@ function connectedEdges(simulator, nodeIndices) {
 }
 
 function recolor(simulator, marquee) {
-    console.log('Recoloring', marquee);
+    logger.debug('Recoloring', marquee);
 
     var positions = new ArrayBuffer(simulator.numPoints * 4 * 2);
 
@@ -1054,11 +1054,11 @@ function recolor(simulator, marquee) {
 
         _.each(selectedIdx, function (idx) {
             simulator.buffersLocal.pointSizes[idx] = 255;
-            console.log('Selected', simulator.pointLabels[idx]);
+            logger.debug('Selected', simulator.pointLabels[idx]);
         })
 
         simulator.tickBuffers(['pointSizes']);
-    }).fail(eh.makeErrorHandler('Read failed'));
+    }).fail(log.makeQErrorHandler(logger, 'Read failed'));
 }
 
 
@@ -1075,7 +1075,7 @@ function tick(simulator, stepNumber, cfg) {
     simulator.versions.tick++;
 
     if (!cfg.layout) {
-        debug('No layout algs to run, early exit');
+        logger.trace('No layout algs to run, early exit');
         return Q(simulator);
     }
 
@@ -1099,7 +1099,8 @@ function tick(simulator, stepNumber, cfg) {
         return tickAllHelper(simulator.layoutAlgorithms.slice(0));
     }).then(function() {
         if (stepNumber % 20 === 0 && stepNumber !== 0) {
-            perf('Layout Perf Report (step: %d)', stepNumber);
+            //TODO: move to perflogging
+            logger.trace('Layout Perf Report (step: %d)', stepNumber);
 
             var extraKernels = [simulator.otherKernels.springsGather.gather];
             var totals = {};
@@ -1118,10 +1119,10 @@ function tick(simulator, stepNumber, cfg) {
 
             _.each(simulator.layoutAlgorithms, function (la) {
                 var total = totals[la.name] / stepNumber;
-                perf(sprintf('  %s (Total:%f) [ms]', la.name, total.toFixed(0)));
+                logger.trace(sprintf('  %s (Total:%f) [ms]', la.name, total.toFixed(0)));
                 _.each(la.runtimeStats(extraKernels), function (stats) {
                     var percentage = (stats.mean * stats.runs / totals[la.name] * 100);
-                    perf(sprintf('\t%s        pct:%4.1f%%', stats.pretty, percentage));
+                    logger.trace(sprintf('\t%s        pct:%4.1f%%', stats.pretty, percentage));
                 });
            });
         }
@@ -1133,9 +1134,9 @@ function tick(simulator, stepNumber, cfg) {
         // argument to finish().
 
         simulator.cl.queue.finish();
-        perf('Tick Finished.');
+        logger.trace('Tick Finished.');
         simulator.renderer.finish();
-    }).fail(eh.makeErrorHandler('SimCl tick failed'));
+    }).fail(log.makeQErrorHandler(logger, 'SimCl tick failed'));
 }
 
 

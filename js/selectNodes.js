@@ -1,14 +1,14 @@
 'use strict';
 
-var   debug = require('debug')('graphistry:graph-viz:cl:selectnodes'),
-       cljs = require('./cl.js'),
-        log = require('common/log.js'),
-         eh = require('common/errorHandlers.js')(log),
+var    cljs = require('./cl.js'),
           Q = require('q'),
      Kernel = require('./kernel.js');
 
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:selectnodes');
+
 function SelectNodes(clContext) {
-    debug('Creating selectNodes kernel');
+    logger.trace('Creating selectNodes kernel');
 
     var args = ['top', 'left', 'bottom', 'right', 'positions', 'mask'];
     var argsType = {
@@ -32,7 +32,7 @@ SelectNodes.prototype.run = function (simulator, selection, delta) {
     }
 
     return that.qMask.then(function (mask) {
-        debug('Computing selection mask');
+        logger.trace('Computing selection mask');
         var resources = [simulator.buffers.curPoints];
 
         that.selectNodes.set({
@@ -46,15 +46,15 @@ SelectNodes.prototype.run = function (simulator, selection, delta) {
 
         simulator.tickBuffers(['nextPoints', 'curPoints']);
 
-        debug('Running selectNodes');
+        logger.trace('Running selectNodes');
         return that.selectNodes.exec([simulator.numPoints], resources)
             .then(function () {
                 var result = new Uint8Array(that.bytes);
                 return mask.read(result).then(function () {
                     return result;
                 });
-            }).fail(eh.makeErrorHandler('Kernel selectNodes failed'));
-    }).fail(eh.makeErrorHandler('Node selection failed'));
+            }).fail(log.makeQErrorHandler(logger, 'Kernel selectNodes failed'));
+    }).fail(log.makeQErrorHandler(logger, 'Node selection failed'));
 
 }
 

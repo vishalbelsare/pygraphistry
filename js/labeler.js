@@ -2,7 +2,6 @@
 
 var _ = require('underscore');
 
-
 function pickTitleField (attribs, prioritized) {
     for (var i = 0; i < prioritized.length; i++) {
         var field = prioritized[i];

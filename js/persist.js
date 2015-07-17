@@ -1,6 +1,7 @@
+'use strict';
+
 var fs          = require('fs');
 
-var debug       = require('debug')('graphistry:graph-viz:persist');
 var _           = require('underscore');
 
 var s3          = require('common/s3.js');
@@ -10,6 +11,9 @@ var config      = require('config')();
 var CHECK_AT_EACH_SAVE = true;
 
 var baseDirPath = __dirname + '/../assets/viz/';
+
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:persist');
 
 
 //============
@@ -31,21 +35,21 @@ function ensurePath(path) {
 
 function checkWrite (snapshotName, vboPath, raw, buff) {
     var readback = fs.readFileSync(vboPath);
-    debug('readback', readback.length);
+    logger.trace('readback', readback.length);
     for (var j = 0; j < raw.byteLength; j++) {
         if (buff[j] !== raw[j]) {
-            console.error('bad write', j, buff[j], raw[j]);
+            logger.error('bad write', j, buff[j], raw[j]);
             throw 'exn';
         }
     }
     for (var j = 0; j < raw.byteLength; j++) {
         if (buff[j] !== readback[j]) {
-            console.error('mismatch', j, buff[j], readback[j]);
+            logger.error('mismatch', j, buff[j], readback[j]);
             throw 'exn';
         }
     }
     var read = fs.readFileSync(baseDirPath + snapshotName + '.metadata.json', {encoding: 'utf8'});
-    debug('readback metadata', read);
+    logger.trace('readback metadata', read);
 }
 
 
@@ -77,7 +81,7 @@ module.exports =
     {
         saveConfig: function (snapshotName, renderConfig) {
 
-            debug('saving config', renderConfig);
+            logger.debug('saving config', renderConfig);
             ensurePath(baseDirPath);
             fs.writeFileSync(baseDirPath + snapshotName + '.renderconfig.json', JSON.stringify(renderConfig));
 
@@ -85,7 +89,7 @@ module.exports =
 
         saveVBOs: function (snapshotName, vbos, step) {
 
-            debug('serializing vbo');
+            logger.trace('serializing vbo');
             prevHeader = {
                 elements: _.extend(prevHeader.elements, vbos.elements),
                 bufferByteLengths: _.extend(prevHeader.bufferByteLengths, vbos.bufferByteLengths)
@@ -104,25 +108,17 @@ module.exports =
 
                 fs.writeFileSync(vboPath, buff);
 
-                debug('writing', vboPath, raw.byteLength, buff.length);
+                logger.debug('writing', vboPath, raw.byteLength, buff.length);
 
                 if (CHECK_AT_EACH_SAVE) {
                     checkWrite(snapshotName, vboPath, raw, buff);
                 }
             }
-            debug('wrote/read', prevHeader, _.keys(buffers));
+            logger.debug('wrote/read', prevHeader, _.keys(buffers));
         },
 
-        /**
-         *
-         * @param {string} snapshotName - the name of the content, URL fragment.
-         * @param {CompressedVBOStructure} compressedVBOs - Holds the VBO buffers to serialize.
-         * @param {Dataframe} dataframe - the data for labels.
-         * @param {Object} renderConfig
-         * @param {Object} metadata
-         */
         publishStaticContents: function (snapshotName, compressedVBOs, metadata, dataframe, renderConfig) {
-            debug('publishing current content to S3');
+            logger.trace('publishing current content to S3');
             var snapshotPath = 'Static/' + snapshotName + '/';
             var edgeExport = staticContentForDataframe(dataframe, 'edge');
             var pointExport = staticContentForDataframe(dataframe, 'point');

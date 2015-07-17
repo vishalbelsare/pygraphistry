@@ -1,19 +1,18 @@
 'use strict';
 
-var   debug = require("debug")("graphistry:graph-viz:cl:forceatlas2"),
-          _ = require('underscore'),
+var          _ = require('underscore'),
        cljs = require('./cl.js'),
           Q = require('q'),
-        log = require('common/log.js'),
-         eh = require('common/errorHandlers.js')(log),
  LayoutAlgo = require('./layoutAlgo.js'),
-     Kernel = require('./kernel.js');
+     Kernel = require('./kernel.js'),
+    log        = require('common/logger.js'),
+    logger     = log.createLogger('graph-viz:cl:forceatlas2');
 
 
 function ForceAtlas2(clContext) {
     LayoutAlgo.call(this, ForceAtlas2.name);
 
-    debug('Creating ForceAtlas2 kernels');
+    logger.trace('Creating ForceAtlas2 kernels');
     this.faPoints = new Kernel('faPointForces', ForceAtlas2.argsPoints,
                                ForceAtlas2.argsType, 'forceAtlas2Fast/faPointForces.cl', clContext);
     this.faEdges = new Kernel('faEdgeForces', ForceAtlas2.argsEdges,
@@ -145,9 +144,9 @@ function pointForces(simulator, faPoints, stepNumber) {
 
     simulator.tickBuffers(['partialForces1']);
 
-    debug("Running kernel faPointForces");
+    logger.trace("Running kernel faPointForces");
     return faPoints.exec([simulator.numPoints], resources)
-        .fail(eh.makeErrorHandler('Kernel faPointForces failed'));
+        .fail(log.makeQErrorHandler(logger, 'Kernel faPointForces failed'));
 }
 
 
@@ -170,7 +169,7 @@ function edgeForcesOneWay(simulator, faEdges, edges, workItems, numWorkItems,
         })
     );
 
-    debug("Running kernel faEdgeForces");
+    logger.trace("Running kernel faEdgeForces");
     return faEdges.exec([numWorkItems], resources);
 }
 
@@ -188,7 +187,7 @@ function edgeForces(simulator, faEdges, stepNumber) {
                                 simulator.numBackwardsWorkItems,
                                 buffers.curPoints, stepNumber,
                                 buffers.partialForces2, buffers.curForces);
-    }).fail(eh.makeErrorHandler('Kernel faPointEdges failed'));
+    }).fail(log.makeQErrorHandler(logger, 'Kernel faPointEdges failed'));
 }
 
 
@@ -210,9 +209,9 @@ function swingsTractions(simulator, faSwings) {
 
     simulator.tickBuffers(['swings', 'tractions']);
 
-    debug("Running kernel faSwingsTractions");
+    logger.trace("Running kernel faSwingsTractions");
     return faSwings.exec([simulator.numPoints], resources)
-        .fail(eh.makeErrorHandler('Kernel faSwingsTractions failed'));
+        .fail(log.makeQErrorHandler(logger, 'Kernel faSwingsTractions failed'));
 }
 
 
@@ -235,9 +234,9 @@ function integrate(simulator, faIntegrate) {
 
     simulator.tickBuffers(['nextPoints']);
 
-    debug("Running kernel faIntegrate");
+    logger.trace("Running kernel faIntegrate");
     return faIntegrate.exec([simulator.numPoints], resources)
-        .fail(eh.makeErrorHandler('Kernel faIntegrate failed'));
+        .fail(log.makeQErrorHandler(logger, 'Kernel faIntegrate failed'));
 }
 
 function integrateApprox(simulator, faIntegrateApprox) {
@@ -265,9 +264,9 @@ function integrateApprox(simulator, faIntegrateApprox) {
 
     simulator.tickBuffers(['nextPoints']);
 
-    debug('Running kernel faIntegrateApprox');
+    logger.trace('Running kernel faIntegrateApprox');
     return faIntegrateApprox.exec([simulator.numPoints], resources)
-        .fail(eh.makeErrorHandler('Kernel faIntegrateApprox failed'));
+        .fail(log.makeQErrorHandler(logger, 'Kernel faIntegrateApprox failed'));
 }
 
 

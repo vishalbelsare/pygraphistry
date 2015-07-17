@@ -6,10 +6,9 @@ var Q = require('q'),
 var RenderBase = require('./RenderBase.js');
 var glMatrix = require('gl-matrix');
 var util = require('./util.js');
-var log = require('common/log.js');
-var eh = require('common/errorHandlers.js')(log);
 
-var debug = require('debug')('graphistry:graph-viz:render:rendergl');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:render:rendergl');
 
 //[string] * document * canvas * int * [number, number] * {<string>: bool} -> Promise Renderer
 var create = Q.promised(function(document, canvas, bgColor, dimensions, visible) {
@@ -122,8 +121,9 @@ function createProgram(renderer, vertexShaderID, fragmentShaderID) {
             renderer.gl.shaderSource(shader, sanitizedShaderSource);
             renderer.gl.compileShader(shader);
             if(!renderer.gl.getShaderParameter(shader, renderer.gl.COMPILE_STATUS)) {
-                log.error(renderer.gl.getShaderInfoLog(shader));
-                throw new Error("Error compiling WebGL shader (shader type: " + shaderType + ")");
+                var err = new Error("Error compiling WebGL shader (shader type: " + shaderType + ")");
+                logger.error(err, renderer.gl.getShaderInfoLog(shader));
+                throw err;
             }
             if(!renderer.gl.isShader(shader)) {
                 throw new Error("After compiling shader, WebGL is reporting it is not valid");
@@ -201,10 +201,10 @@ var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
         var imageData;
         try {
         if (typeof(window) == 'undefined') {
-            debug("FIXME: no fancy setColorMap in node");
+            logger.trace("FIXME: no fancy setColorMap in node");
         } else if (maybeClusters) {
 
-            debug("Clustering colors");
+            logger.trace("Clustering colors");
 
             var canvas = renderer.document.createElement("canvas");
             canvas.width = texImg.width;
@@ -259,10 +259,10 @@ var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
                 }
             });
         }else {
-            debug("Using preset colors from %s", imageURL);
+            logger.debug("Using preset colors from %s", imageURL);
         }
         } catch (e) {
-            eh.makeErrorHandler('bad cluster load')(e);
+            log.makeQErrorHandler(logger, 'bad cluster load')(e);
         }
 
 
@@ -277,14 +277,14 @@ var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
         gl.bindTexture(gl.TEXTURE_2D, null);
 
 
-        debug("Finished setting colormap");
+        logger.trace("Finished setting colormap");
     });
 });
 
 
 //async (may trigger a write)
 var createBuffer = Q.promised(function(renderer, data) {
-    debug("Creating gl buffer of type %s. Constructor: %o", typeof(data), (data||{}).constructor);
+    logger.trace("Creating gl buffer of type %s. Constructor: %o", typeof(data), (data||{}).constructor);
 
     var buffer = renderer.gl.createBuffer();
     var bufObj = {

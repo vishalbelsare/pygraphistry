@@ -1,12 +1,12 @@
 'use strict';
 var Kernel = require('../kernel.js'),
     Q = require('q'),
-    debug = require("debug")("graphistry:graph-viz:cl:barensKernels"),
     _     = require('underscore'),
     cljs  = require('../cl.js'),
-    log = require('common/log.js'),
-    eh = require('common/errorHandlers.js')(log),
     ArgsType = require('./ArgsType.js');
+
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:barnesKernels');
 
 var faSwingKernel = function (clContext) {
 
@@ -62,9 +62,9 @@ var faSwingKernel = function (clContext) {
 
         simulator.tickBuffers(['swings', 'tractions']);
 
-        debug("Running kernel faSwingsTractions");
+        logger.trace("Running kernel faSwingsTractions");
         return this.faSwings.exec([simulator.numPoints], resources)
-        .fail(eh.makeErrorHandler('Executing FaSwing failed'));
+        .fail(log.makeQErrorHandler('Executing FaSwing failed'));
     };
 
     this.execMidPointsKernels = function(simulator, workItems) {
@@ -78,7 +78,7 @@ var faSwingKernel = function (clContext) {
       //simulator.tickBuffers(['swings', 'tractions']);
 
         return this.faSwings.exec([simulator.numMidPoints], resources)
-        .fail(eh.makeErrorHandler('Executing FaSwing failed'));
+        .fail(log.makeQErrorHandler('Executing FaSwing failed'));
     };
 
 }

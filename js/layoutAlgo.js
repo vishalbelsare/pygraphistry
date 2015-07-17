@@ -1,8 +1,8 @@
 'use strict';
 
 var     _ = require('underscore');
-var debug = require('debug')('graphistry:graph-viz:cl:layoutalgo');
-
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:layoutalgo');
 
 /* Abtract class for layout algorithms
  * GaussSeidel, ForceAtlas, etc. are subclasses of it */
@@ -23,20 +23,21 @@ LayoutAlgo.prototype.runtimeStats = function(extraKernels) {
  * Methods to override when creating new layout algorithms.
  */
 LayoutAlgo.prototype.setPhysics = function (cfg) {
-    debug('Default implementation for setPhysics', cfg);
+    logger.trace('Default implementation for setPhysics', cfg);
     // Set all kernel args matching with matching entry
     _.each(this.kernels, function (k) {
         k.set(_.pick(cfg, k.argNames))
     })
 }
+// are the arguments going to be used for anything?
 LayoutAlgo.prototype.setPoints = function (simulator) {
-    debug('Default stub for setPoints');
+    logger.trace('Default stub for setPoints');
 }
 LayoutAlgo.prototype.setEdges = function (simulator) {
-    debug('Default stub for setEdges');
+    logger.trace('Default stub for setEdges');
 }
 LayoutAlgo.prototype.tick = function (simulator, stepNumber) {
-    debug('Default stub for tick');
+    logger.trace('Default stub for tick');
 }
 
 module.exports = LayoutAlgo;
