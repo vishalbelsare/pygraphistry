@@ -16,13 +16,13 @@ var poiLib          = require('../poi.js');
 var util            = require('./util.js');
 
 
-function init(streamClient, socket, initialRenderState, vboUpdates, workerParams, urlParams) {
+function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     debug('Initializing vizApp.');
 
     //////////////////////////////////////////////////////////////////////////
     // App State
     //////////////////////////////////////////////////////////////////////////
-    var poi = poiLib(streamClient, socket);
+    var poi = poiLib(socket);
     // Observable DOM
     var labelHover = new Rx.Subject();
 

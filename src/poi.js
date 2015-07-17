@@ -179,7 +179,7 @@ function cacheKey(idx, dim) {
 
 
 function fetchLabel (instance, idx, dim) {
-    instance.state.client.getLabel(instance.state.socket, dim, idx, function(err, data) {
+    instance.state.socket.emit('get_labels', {dim: dim, indices: [idx]}, function(err, data) {
         if (err) {
             console.error('get_labels', err);
         } else {
@@ -261,7 +261,11 @@ function invalidateCache (instance) {
 }
 
 
-function init (streamClient, socket) {
+/**
+ * @param {socket.io socket} socket
+ * @returns POIHandler
+ */
+function init (socket) {
     debug('initializing label engine');
 
     var instance = { };
@@ -271,8 +275,6 @@ function init (streamClient, socket) {
         state: {
 
             socket: socket,
-
-            client: streamClient,
 
             //[ ReplaySubject_1 ?HtmlString ]
             labelCache: {},
