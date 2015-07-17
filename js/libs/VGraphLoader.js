@@ -225,7 +225,7 @@ function decode0(graph, vg, metadata)  {
 
     for (var vname in amap) {
         if (!(vname in loaders)) {
-            logger.trace('Skipping unmapped attribute', vname);
+            logger.debug('Skipping unmapped attribute', vname);
             continue;
         }
 
