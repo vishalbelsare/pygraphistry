@@ -73,6 +73,8 @@ function defaults() {
         //minimum level of messages you'd want going into stdout
         CONSOLE_DEBUG_LEVEL: 30,
 
+        // If defined, etl-worker posts notification on slack
+        SLACK_BOT_ETL_TOKEN: 'xoxb-7736668449-X6kR1n3omF4CoQ6VeNiXhZSc',
 
         // This string is prefixed to all Graphistry routes. For example, if BASE_URL is '/foo',
         // then central will append '/vizaddr' to get the route it will listen for viz server
