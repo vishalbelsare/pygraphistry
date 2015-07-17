@@ -5,9 +5,11 @@ var path    = require('path');
 var fstools = require('fs-tools');
 var crypto  = require('crypto');
 var Q       = require('q');
-var debug   = require('debug')('graphistry:common:cache');
 var _       = require('underscore');
 //var util    = require('./util.js');
+
+var log         = require('./logger.js');
+var logger      = log.createLogger('graphistry:common:cache');
 
 
 function Cache(cacheDir, enabled) {
@@ -30,14 +32,14 @@ function Cache(cacheDir, enabled) {
             if (!stats.isFile()) {
                 res.reject('Error: Cached dataset is not a file!');
             } else if (stats.mtime.getTime() > timestamp.getTime()) {
-                debug('Found up-to-date dataset in cache');
+                logger.debug('Found up-to-date dataset in cache');
                 res.resolve(fs.readFileSync(filePath));
             } else {
-                debug('Found obsolete dataset in cache (%s), ignoring...', stats.mtime);
+                logger.debug('Found obsolete dataset in cache (%s), ignoring...', stats.mtime);
                 res.reject();
             }
         }).fail(function (err) {
-            debug('No matching dataset found in cache', err);
+            logger.error(err, 'No matching dataset found in cache');
             res.reject(err);
         });
 
@@ -52,11 +54,11 @@ function Cache(cacheDir, enabled) {
         var path = getCacheFile(url);
         return Q.denodeify(fs.writeFile)(path, data, {encoding: 'utf8'}).then(
             function () {
-                debug('Dataset saved in cache:', path);
+                logger.debug('Dataset saved in cache:', path);
             },
             //util.makeErrorHandler('Failure while caching dataset')
-            function () {
-                console.error('Failure while caching dataset');
+            function (e) {
+                logger.error(e, 'Failure while caching dataset');
             }
         );
     };
