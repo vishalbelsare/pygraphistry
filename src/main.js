@@ -33,8 +33,6 @@ console.warn('%cWarning: having the console open can slow down execution signifi
 //===============
 
 
-var urlParams = getUrlParameters();
-
 /**
  * @typedef {Object} GraphistryURLParams
  * @type {string} usertag
@@ -64,6 +62,11 @@ function getUrlParameters() {
 
     return params;
 }
+
+
+var urlParams = getUrlParameters();
+
+
 function isParamTrue (param) {
     var val = (urlParams[param] || '').toLowerCase();
     return val === 'true' || val === '1' || val === 'yes';
