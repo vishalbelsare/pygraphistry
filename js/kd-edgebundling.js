@@ -1,10 +1,7 @@
 'use strict';
 var _          = require('underscore'),
     Q          = require('q'),
-    debug      = require('debug')('graphistry:graph-viz:cl:edgebundling'),
     cljs       = require('./cl.js'),
-    log        = require('common/log.js'),
-    eh         = require('common/errorHandlers.js')(log),
     webcl      = require('node-webcl'),
     Kernel     = require('./kernel.js'),
     LayoutAlgo = require('./layoutAlgo.js'),
@@ -15,10 +12,14 @@ var _          = require('underscore'),
     MidEdgeGather = require('./javascript_kernels/midEdgeGather.js');
 
 
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:edgebundling');
+
+
 function EdgeBundling(clContext) {
     LayoutAlgo.call(this, EdgeBundling.name);
 
-    debug('Creating edge bundling kernels');
+    logger.debug('Creating edge bundling kernels');
     this.midpointForces= new MidpointForces(clContext);
 
     this.ebMidsprings = new Kernel('gaussSeidelMidsprings', EdgeBundling.argsMidsprings,
@@ -32,8 +33,8 @@ function EdgeBundling(clContext) {
 
     this.midEdgeGather = new MidEdgeGather(clContext);
 
-    this.kernels = this.midpointForces.kernels.concat([this.ebMidsprings, 
-                                                      this.integrateMidpoints.faIntegrate, 
+    this.kernels = this.midpointForces.kernels.concat([this.ebMidsprings,
+                                                      this.integrateMidpoints.faIntegrate,
                                                       this.interpolateMidpoints.interpolate]);
 }
 
@@ -198,7 +199,7 @@ var setupTempLayoutBuffers = function (simulator) {
         tempLayoutBuffers.swings = swings;
         tempLayoutBuffers.tractions = tractions;
         return tempLayoutBuffers;
-    }).catch(eh.makeErrorHandler('setupTempBuffers'));
+    }).catch(log.makeQErrorHandler(logger, 'setupTempBuffers'));
 };
 
 
@@ -241,7 +242,7 @@ EdgeBundling.prototype.setEdges = function (simulator) {
             midSpringsColorCoords: simulator.buffers.midSpringsColorCoord.buffer
         });
     })
-    .fail( eh.makeErrorHandler('Failure in kd-edgebundling.js setEdges') )
+    .fail( log.makeQErrorHandler(logger, 'Failure in kd-edgebundling.js setEdges') )
 };
 
 // TODO Should we do forwards and backwards edges?
@@ -258,13 +259,13 @@ function midEdges(simulator, ebMidsprings, stepNumber) {
 
     ebMidsprings.set({stepNumber: stepNumber});
 
-    debug('Running kernel gaussSeidelMidsprings');
+    logger.debug('Running kernel gaussSeidelMidsprings');
     return ebMidsprings.exec([simulator.numForwardsWorkItems], resources);
 }
 
 
-// Helper function in order to create a chain of promises. It is needed in order to 
-// dynamically create a promise chain for a variable number of midpoints. 
+// Helper function in order to create a chain of promises. It is needed in order to
+// dynamically create a promise chain for a variable number of midpoints.
 function promiseWhile(condition, body) {
     var done = Q.defer();
 
@@ -292,7 +293,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
     that = this;
     var locks = simulator.controls.locks;
     if (locks.lockMidpoints && locks.lockMidedges) {
-        debug('LOCKED, EARLY EXIT');
+        logger.debug('LOCKED, EARLY EXIT');
         return new Q();
     }
 
@@ -303,7 +304,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
 
     if (locks.interpolateMidPointsOnce || locks.interpolateMidPoints) {
         if ( locks.interpolateMidpointsOnce ) {
-            debug("Force interpolation of midpoints");
+            logger.debug("Force interpolation of midpoints");
         }
         locks.interpolateMidPointsOnce = false;
         // If interpolateMidpoints is true, midpoints are calculate by
@@ -358,7 +359,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
             //tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
             tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
         ]);
-    }).fail(eh.makeErrorHandler('Failure in edgebundling tick'));
+    }).fail(log.makeQErrorHandler(logger, 'Failure in edgebundling tick'));
 };
 
 module.exports = EdgeBundling;
