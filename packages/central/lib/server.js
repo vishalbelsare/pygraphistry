@@ -190,7 +190,7 @@ app.use('/uber',   express.static(UBER_STATIC_PATH));
 app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
 
 // Temporarly handle ETL request from Splunk
-app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res) {
+app.post('/etl', bodyParser.json({type: '*', limit: '128mb'}), function (req, res) {
     logger.debug({req: req}, 'etl request');
     router.pickWorker(function (err, worker) {
         logger.debug('picked etl worker', req.ip, worker);
@@ -205,7 +205,7 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
 
         // Note: we specifically do not respect reverse proxy stuff, since we're presumably running
         // inside the cluster, and direct connections are more efficient.
-        var redirect = 'http://' + worker.hostname + ':' + worker.port + '/';
+        var redirect = 'http://' + worker.hostname + ':' + worker.port;
         logger.trace('create socket', redirect);
         var socket = io(redirect, {forceNew: true, reconnection: false, transports: ['websocket']});
         //socket.io.engine.binaryType = 'arraybuffer';
@@ -222,7 +222,7 @@ app.post('/etl', bodyParser.json({type: '*', limit: '64mb'}), function (req, res
                     logger.error('Failed initializing worker');
                     return res.json({success: false, msg: 'failed connecting to work'});
                 }
-                var newEndpoint = redirect + 'etl';
+                var newEndpoint = redirect + req.originalUrl;
                 logger.trace('telling client to redirect', newEndpoint);
 
                 req.pipe(request(newEndpoint)).pipe(res);
