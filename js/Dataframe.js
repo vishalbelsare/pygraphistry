@@ -1167,22 +1167,41 @@ function computeEdgeList(edges) {
     // console.log('edge constructor: ', edges.constructor);
     var start = Date.now();
     // var maskedEdges = new Float64Array(edges.buffer);
-    var edgeList = new Array(edges.length / 2);
+    // var edgeList = new Array(edges.length / 2);
+    var edgeListTyped = new Uint32Array(edges.length);
+    // for (var i = 0; i < edges.length; i++) {
+    //     edgeListTyped[i] = edges[i];
+    // }
+    // var edgeListMask = new Float64Array(edgeListTyped.buffer);
+
     // var mapped = new Array(edges.length / 2);
     // for (var i = 0; i < edges.length/2; i++) {
     //     // edgeList[i] = [edges[2 * i], edges[2 * i + 1], i];
     //     // mapped[i] = [edges[2*i] * 1000000000000 + edges[2*i + 1], i];
     //     mapped[i] = i;
     // }
-    var mapped = _.range(edges.length / 2);
+    var mapped = new Uint32Array(edges.length / 2);
+    for (var i = 0; i < mapped.length; i++) {
+        mapped[i] = i;
+    }
 
     var middle = Date.now();
 
-    mapped.sort(function (a, b) {
+    Array.prototype.sort.call(mapped, function (a, b) {
         return edges[a*2] < edges[b*2] ? -1
                 : edges[a*2] > edges[b*2] ? 1
                 : edges[a*2 + 1] - edges[b*2 + 1];
     });
+
+    // mapped.sort(function (a, b) {
+    //     return edges[a*2] < edges[b*2] ? -1
+    //             : edges[a*2] > edges[b*2] ? 1
+    //             : edges[a*2 + 1] - edges[b*2 + 1];
+    // });
+
+    // edgeListMask.sort(function (a, b) {
+    //     return
+    // })
 
     // mapped.sort(function (a, b) {
     //     return a[0] - b[0];
@@ -1192,9 +1211,15 @@ function computeEdgeList(edges) {
     //     return edgeList[el[1]];
     // });
 
-    for (var i = 0; i < edges.length/2 ; i++) {
-        var idx = mapped[i]*2;
-        edgeList[i] = [edges[idx], edges[idx + 1], idx / 2];
+    // for (var i = 0; i < edges.length/2 ; i++) {
+    //     var idx = mapped[i]*2;
+    //     edgeList[i] = [edges[idx], edges[idx + 1], idx / 2];
+    // }
+
+    for (var i = 0; i < edges.length/2; i++) {
+        var idx = mapped[i];
+        edgeListTyped[i*2] = edges[idx*2];
+        edgeListTyped[i*2 + 1] = edges[idx*2 + 1];
     }
 
 
@@ -1222,25 +1247,30 @@ function computeEdgeList(edges) {
     console.log('EdgeList Times: ', middle - start, end - middle);
 
     // return result;
-    return edgeList;
+    return {
+        edgeListTyped: edgeListTyped,
+        originals: mapped
+    }
+    // return edgeList;
 }
 
-function computeWorkItemsTyped(edgeList, numPoints) {
+function computeWorkItemsTyped(edgesTyped, originals, numPoints) {
      // [ [first edge number from src idx, numEdges from source idx, source idx], ... ]
     var workItemsTyped = new Int32Array(numPoints*4);
     var edgeListLastPos = 0;
-    var edgeListLastSrc = edgeList[0][0];
+    var edgeListLastSrc = edgesTyped[0];
+    var numEdges = edgesTyped.length / 2;
     for (var i = 0; i < numPoints; i++) {
 
         // Case where node has edges
         if (edgeListLastSrc === i) {
             var startingIdx = edgeListLastPos;
             var count = 0;
-            while (edgeListLastPos < edgeList.length && edgeList[edgeListLastPos][0] === i) {
+            while (edgeListLastPos < numEdges && edgesTyped[edgeListLastPos*2] === i) {
                 count++;
                 edgeListLastPos++;
             }
-            edgeListLastSrc = edgeListLastPos < edgeList.length ? edgeList[edgeListLastPos][0] : -1;
+            edgeListLastSrc = edgeListLastPos < numEdges ? edgesTyped[edgeListLastPos*2] : -1;
             workItemsTyped[i*4] = startingIdx;
             workItemsTyped[i*4 + 1] = count;
             workItemsTyped[i*4 + 2] = i;
@@ -1255,7 +1285,7 @@ function computeWorkItemsTyped(edgeList, numPoints) {
     return workItemsTyped;
 }
 
-function computeEdgeStartEndIdxs(workItemsTyped, edgeList, edges) {
+function computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals, edges) {
     var index = 0;
     var edgeStartEndIdxs = [];
     for(var i = 0; i < (workItemsTyped.length/4) - 1; i++) {
@@ -1271,14 +1301,14 @@ function computeEdgeStartEndIdxs(workItemsTyped, edgeList, edges) {
         }
 
         if (end === -1) {
-            end = edgeList.length; // Special case for last workitem
+            end = edgesTyped.length / 2; // Special case for last workitem
         }
 
         edgeStartEndIdxs.push([start, end]);
       }
     }
     if (workItemsTyped[(workItemsTyped.length - 4)] !== -1) {
-      edgeStartEndIdxs.push([workItemsTyped[workItemsTyped.length - 4], edges.length /2]);
+      edgeStartEndIdxs.push([workItemsTyped[workItemsTyped.length - 4], edgesTyped.length /2]);
     } else {
       edgeStartEndIdxs.push([-1, -1]);
     }
@@ -1289,18 +1319,24 @@ function computeEdgeStartEndIdxs(workItemsTyped, edgeList, edges) {
 Dataframe.prototype.encapsulateEdges = function (edges, numPoints) {
 
     //[[src idx, dest idx, original idx]]
-    var edgeList = computeEdgeList(edges);
+    var edgeListObj = computeEdgeList(edges);
+    var edgesTyped = edgeListObj.edgeListTyped;
+    var originals = edgeListObj.originals;
 
-    var edgePermutationTyped = new Uint32Array(edgeList.length);
-    var edgePermutationInverseTyped = new Uint32Array(edgeList.length);
-    edgeList.forEach(function (edge, i) {
-        edgePermutationTyped[edge[2]] = i;
-        edgePermutationInverseTyped[i] = edge[2];
-    })
+    var edgePermutationTyped = new Uint32Array(edgesTyped.length / 2);
+    var edgePermutationInverseTyped = new Uint32Array(edgesTyped.length / 2);
+    _.each(originals, function (val, i) {
+        edgePermutationTyped[val] = i;
+        edgePermutationInverseTyped[i] = val;
+    });
+    // edgeList.forEach(function (edge, i) {
+    //     edgePermutationTyped[edge[2]] = i;
+    //     edgePermutationInverseTyped[i] = edge[2];
+    // })
 
 
      // [ [first edge number from src idx, numEdges from source idx, source idx], ... ]
-    var workItemsTyped = computeWorkItemsTyped(edgeList, numPoints);
+    var workItemsTyped = computeWorkItemsTyped(edgesTyped, originals, numPoints);
 
     var degreesTyped = new Uint32Array(numPoints);
     var srcToWorkItem = new Int32Array(numPoints);
@@ -1315,13 +1351,13 @@ Dataframe.prototype.encapsulateEdges = function (edges, numPoints) {
     //num edges > 0
 
     // Without Underscore and with preallocation. Less clear than a flatten, but better perf.
-    var edgesTyped = new Uint32Array(edgeList.length * 2);
-    for (var idx = 0; idx < edgeList.length; idx++) {
-        edgesTyped[idx*2] = edgeList[idx][0];
-        edgesTyped[idx*2 + 1] = edgeList[idx][1];
-    }
+    // var edgesTyped = new Uint32Array(edgeList.length * 2);
+    // for (var idx = 0; idx < edgeList.length; idx++) {
+    //     edgesTyped[idx*2] = edgeList[idx][0];
+    //     edgesTyped[idx*2 + 1] = edgeList[idx][1];
+    // }
 
-    var edgeStartEndIdxs = computeEdgeStartEndIdxs(workItemsTyped, edgeList, edges);
+    var edgeStartEndIdxs = computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals, edges);
 
     // Flattening
     var edgeStartEndIdxsTyped = new Uint32Array(edgeStartEndIdxs.length * 2);
