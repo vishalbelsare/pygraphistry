@@ -51,11 +51,11 @@ function serializePositions(graph) {
 }
 
 function save(graph, name) {
-    logger.trace('Saving current graph as', name);
+    logger.debug('Saving current graph as', name);
 
     return serializePositions(graph).then(function (vg) {
         var blob = vg.encode().toBuffer();
-        logger.trace('Uploading to S3', name);
+        logger.debug('Uploading to S3', name);
         return s3.upload(config.S3, config.BUCKET, {name: name}, blob);
     }).fail(log.makeQErrorHandler(logger, 'save vgraph'));
 }
