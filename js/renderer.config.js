@@ -94,7 +94,7 @@ var programs = {
         },
         'attributes': ['curPos', 'pointSize', 'pointColor'],
         'camera': 'mvp',
-        'uniforms': ['fog', 'stroke', 'zoomScalingFactor', 'maxPointSize']
+        'uniforms': ['fog', 'stroke', 'zoomScalingFactor', 'maxPointSize', 'minPointSize']
     },
     'pointhighlight': {
         'sources': {
@@ -469,6 +469,14 @@ var models = {
     }
 }
 
+var pointCulledUniforms = {
+    'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
+    'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
+    'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+    'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] },
+    'minPointSize': { 'uniformType': '1f', 'defaultValues': [8.0] }
+}
+
 var items = {
     'edgeculled': {
         'program': 'edgeculled',
@@ -626,12 +634,7 @@ var items = {
             'pointSize':    ['pointSizes', 'pointSize'],
             'pointColor':   ['pointColors', 'pointColor'],
         },
-        'uniforms': {
-            'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
-            'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
-        },
+        'uniforms': pointCulledUniforms,
         'drawType': 'POINTS',
         'glOptions': {},
     },
@@ -643,12 +646,7 @@ var items = {
             'pointSize':    ['pointSizes', 'pointSize'],
             'pointColor':   ['pointColors', 'pointColor'],
         },
-        'uniforms': {
-            'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
-            'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [8.0] }
-        },
+        'uniforms': pointCulledUniforms,
         'drawType': 'POINTS',
         'glOptions': {},
     },
@@ -660,12 +658,7 @@ var items = {
             'pointSize':    ['pointSizes', 'pointSize'],
             'pointColor':   ['pointColors', 'pointColor']
         },
-        'uniforms': {
-            'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
-            'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
-        },
+        'uniforms': pointCulledUniforms,
         'drawType': 'POINTS',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'pointTexture',
@@ -679,12 +672,7 @@ var items = {
             'pointSize':    ['pointSizes', 'pointSize'],
             'pointColor':   ['pointColors', 'pointColor']
         },
-        'uniforms': {
-            'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
-            'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH] },
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
-        },
+        'uniforms': pointCulledUniforms,
         'drawType': 'POINTS',
         'glOptions': {},
     },
@@ -696,12 +684,7 @@ var items = {
             'pointSize':    ['pointSizes', 'pointSize'],
             'pointColor':   ['pointColors', 'pointColor'],
         },
-        'uniforms': {
-            'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
-            'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH] },
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
-        },
+        'uniforms': pointCulledUniforms,
         'drawType': 'POINTS',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'pointTexture',
