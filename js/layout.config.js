@@ -244,13 +244,13 @@ function fromClient(controls, simControls) {
 
     return _.object(_.map(simControls, function (update, algoName) {
         if (!(algoName in algoParams)) {
-            logger.error('Unknown algorithm, ignoring setting update', algoName);
+            logger.warn('Unknown algorithm, ignoring setting update', algoName);
             return [];
         }
         var params = algoParams[algoName];
         var cfg = _.object(_.map(update, function (val, paramName) {
             if (!(paramName in params)) {
-                logger.error('Unknown parameter, ignoring setting update', paramName);
+                logger.warn('Unknown parameter, ignoring setting update', paramName);
                 return [];
             }
             var param = params[paramName];
