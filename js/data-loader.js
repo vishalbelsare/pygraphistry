@@ -117,7 +117,7 @@ function graphistryS3Downloader(url) {
             res.resolve(tmpCache.get(url, new Date(0)));
         } else {
             var mtime = new Date(data['LastModified']);
-            logger.trace('Got S3 headers, dataset was last modified on', mtime);
+            logger.debug('Got S3 headers, dataset was last modified on', mtime);
             tmpCache.get(url, mtime).then(function (data) {
                 res.resolve(data);
             }).fail(function () { // Not in cache of stale
