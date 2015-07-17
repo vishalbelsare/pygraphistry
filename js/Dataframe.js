@@ -1179,7 +1179,7 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
             while (lastOldIdx < edges.length/2) {
                 var src = pointOriginalLookup[oldEdges[lastOldIdx*2]];
                 var dst = pointOriginalLookup[oldEdges[lastOldIdx*2 + 1]];
-                var lastPermutation = oldPermutation[i];
+                var lastPermutation = oldPermutation[lastOldIdx];
 
                 if (src !== undefined && dst !== undefined) {
                     edgeListTyped[i*2] = src;
@@ -1197,12 +1197,9 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
 
         // Compute Scan of mappedMask:
         var mappedScan = new Uint32Array(mappedMaskInverse.length);
-        for (var i = 0; i < mappedMaskInverse.length; i++) {
-            if (i === 0) {
-                mappedScan[i] = mappedMaskInverse[i];
-            } else {
-                mappedScan[i] = mappedMaskInverse[i] + mappedScan[i-1];
-            }
+        mappedScan[0] = mappedMaskInverse[0];
+        for (var i = 1; i < mappedMaskInverse.length; i++) {
+            mappedScan[i] = mappedMaskInverse[i] + mappedScan[i-1];
         }
 
         for (var i = 0; i < mapped.length; i++) {
