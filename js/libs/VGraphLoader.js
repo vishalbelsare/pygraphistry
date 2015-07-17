@@ -12,6 +12,7 @@ var weakcc = require('../weaklycc.js');
 
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:data:vgraphloader');
+var perf        = require('common/perfStats.js').createPerfMonitor();
 
 var builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
 if (builder === null) {
@@ -157,7 +158,7 @@ function decode0(graph, vg, metadata)  {
         var components = weakcc(vg.nvertices, edges, 2);
         var pointsPerRow = vg.nvertices / (Math.round(Math.sqrt(components.components.length)) + 1);
 
-        var t0 = Date.now();
+        perf.startTiming('graph-viz:data:vgraphloader, weakcc postprocess');
         var componentOffsets = [];
         var cumulativePoints = 0;
         var row = 0;
@@ -210,7 +211,7 @@ function decode0(graph, vg, metadata)  {
             }
             vertices.push(vertex);
         }
-        logger.trace('weakcc postprocess', Date.now() - t0);
+        perf.endTiming('graph-viz:data:vgraphloader, weakcc postprocess');
     }
 
     var loaders = attributeLoaders(graph);
