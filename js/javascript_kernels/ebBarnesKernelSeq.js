@@ -3,8 +3,8 @@ var Kernel = require('../kernel.js'),
     _     = require('underscore'),
     cljs  = require('../cl.js');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:cl:ebBarnesKernelSequence');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:ebBarnesKernelSequence');
 
 var EbBarnesKernelSeq = function (clContext) {
 
@@ -223,7 +223,7 @@ var EbBarnesKernelSeq = function (clContext) {
           tempBuffers.numBodies = numBodies;
           return tempBuffers;
     })
-    .fail(Log.makeQErrorHandler("Setting temporary buffers for barnesHutKernelSequence failed"));
+    .fail(log.makeQErrorHandler("Setting temporary buffers for barnesHutKernelSequence failed"));
   };
 
   this.setMidPoints = function(simulator, layoutBuffers, warpsize, workItems) {
@@ -326,7 +326,7 @@ var EbBarnesKernelSeq = function (clContext) {
         THREADS_FORCES: workItems.calculateForces[1],
         THREADS_BOUND: workItems.boundBox[1]
       });
-    }).fail(Log.makeQErrorHandler('setupTempBuffers'));
+    }).fail(log.makeQErrorHandler('setupTempBuffers'));
   };
 
   // TODO (paden) Can probably combine ExecKernel functions
@@ -372,7 +372,7 @@ var EbBarnesKernelSeq = function (clContext) {
     .then(function () {
       return that.calculateMidPoints.exec([workItems.calculateForces[0]], resources, [workItems.calculateForces[1]]);
     })
-    .fail(Log.makeQErrorHandler("Executing  EbBarnesKernelSeq failed"));
+    .fail(log.makeQErrorHandler("Executing  EbBarnesKernelSeq failed"));
   };
 
 };

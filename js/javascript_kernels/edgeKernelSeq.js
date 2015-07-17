@@ -4,8 +4,8 @@ var Kernel = require('../kernel.js'),
       cljs = require('../cl.js'),
   ArgsType = require('./ArgsType.js');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:cl:barnesKernels');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:barnesKernels');
 
 var edgeKernelSeq = function (clContext) {
 
@@ -53,7 +53,7 @@ var edgeKernelSeq = function (clContext) {
 
         logger.trace("Running kernel faEdgeForces");
         return this.faEdges.exec([256*256], resources, [256])
-        .fail(Log.makeQErrorHandler("Executing edgeKernelSeq failed"));
+        .fail(log.makeQErrorHandler("Executing edgeKernelSeq failed"));
     };
 
 }

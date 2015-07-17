@@ -7,8 +7,8 @@ var webcl = require('node-webcl');
 var LayoutAlgo = require('./layoutAlgo.js');
 var Kernel = require('./kernel.js');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:cl:gaussseidel');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:gaussseidel');
 
 function GaussSeidel(clContext) {
     LayoutAlgo.call(this, GaussSeidel.name);
@@ -97,7 +97,7 @@ function pointKernel(simulator, gsPoints, stepNumber) {
     return gsPoints.exec([simulator.numPoints], resources)
         .then(function () {
             return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-        }).fail(Log.makeQErrorHandler(logger, 'Kernel gaussSeidelPoints failed'));
+        }).fail(log.makeQErrorHandler(logger, 'Kernel gaussSeidelPoints failed'));
 }
 
 
@@ -123,7 +123,7 @@ function edgeKernelSeq(simulator, gsSprings, stepNumber, edges, workItems,
 
     logegr.trace('Running gaussSeidelSprings');
     return gsSprings.exec([numWorkItems], resources)
-        .fail(Log.makeQErrorHandler(logger, 'Kernel gaussSeidelSprings failed'));
+        .fail(log.makeQErrorHandler(logger, 'Kernel gaussSeidelSprings failed'));
 }
 
 
@@ -150,10 +150,10 @@ GaussSeidel.prototype.tick = function(simulator, stepNumber) {
                     simulator, that.gsSprings, stepNumber,
                     simulator.buffers.backwardsEdges, simulator.buffers.backwardsWorkItems, simulator.numBackwardsWorkItems,
                     simulator.buffers.nextPoints, simulator.buffers.curPoints, simulator.buffers.edgeTags_reverse);
-            }).fail(Log.makeQErrorHandler(logger, 'edgeKernelSeq failed'));
+            }).fail(log.makeQErrorHandler(logger, 'edgeKernelSeq failed'));
     }).then(function () {
         return simulator;
-    }).fail(Log.makeQErrorHandler(logger, 'GaussSeidel tick failed'));
+    }).fail(log.makeQErrorHandler(logger, 'GaussSeidel tick failed'));
 }
 
 module.exports = GaussSeidel;

@@ -12,8 +12,8 @@ var CHECK_AT_EACH_SAVE = true;
 
 var baseDirPath = __dirname + '/../assets/viz/';
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:persist');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:persist');
 
 
 //============

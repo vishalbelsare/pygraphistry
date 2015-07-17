@@ -2,8 +2,8 @@
 
 var _ = require('underscore');
 var SimCL = require('./SimCL.js');
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:cl:layoutconfig');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:layoutconfig');
 var ForceAtlas2         = require('./forceatlas2.js'),
     ForceAtlas2Fast     = require('./forceatlas2fast.js'),
     forceAtlasBarnes    = require('./forceatlasbarnes.js'),

@@ -6,8 +6,8 @@ var _          = require('underscore'),
     webcl      = require('node-webcl'),
     Kernel     = require('./kernel.js'),
     LayoutAlgo = require('./layoutAlgo.js'),
-    Log        = require('common/logger.js'),
-    logger     = Log.createLogger('graph-viz:cl:edgebundling');
+    log        = require('common/logger.js'),
+    logger     = log.createLogger('graph-viz:cl:edgebundling');
 
 
 function EdgeBundling(clContext) {
@@ -145,7 +145,7 @@ EdgeBundling.prototype.tick = function(simulator, stepNumber) {
             simulator.tickBuffers(['curMidPoints']);
             return simulator.buffers.nextMidPoints.copyInto(simulator.buffers.curMidPoints);
         }
-    }).fail(Log.makeQErrorHandler(logger, 'Failure in edgebundling tick'));
+    }).fail(log.makeQErrorHandler(logger, 'Failure in edgebundling tick'));
 }
 
 module.exports = EdgeBundling;

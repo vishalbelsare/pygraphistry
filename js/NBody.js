@@ -6,8 +6,8 @@ var lConf = require('./layout.config.js');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:graph-viz:graph:nbody');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:graph-viz:graph:nbody');
 
 var ELEMENTS_PER_POINTS = 2;
 
@@ -62,7 +62,7 @@ function create(renderer, device, vendor, controls) {
     }).then(function () {
         Object.seal(graph);
         return graph;
-    }).fail(Log.makeQErrorHandler(logger, 'Cannot initialize nbody'));
+    }).fail(log.makeQErrorHandler(logger, 'Cannot initialize nbody'));
 }
 
 function createSimulator(renderer, device, vendor, controls) {
@@ -72,7 +72,7 @@ function createSimulator(renderer, device, vendor, controls) {
     var simulator = controls[0].simulator;
 
     return simulator.create(renderer, device, vendor, controls)
-        .fail(Log.makeQErrorHandler(logger, 'Cannot create simulator'));
+        .fail(log.makeQErrorHandler(logger, 'Cannot create simulator'));
 }
 
 function updateSettings(graph, newCfg) {
@@ -208,7 +208,7 @@ function setPoints(graph, points, pointSizes, pointColors) {
     })
     .then(function() {
         return graph;
-    }).fail(Log.makeQErrorHandler(logger, 'Failure in setPoints'));
+    }).fail(log.makeQErrorHandler(logger, 'Failure in setPoints'));
 }
 
 function setVertices(graph, points) {
@@ -445,7 +445,7 @@ var setEdges = Q.promised(function(graph, edges) {
                                     degrees, midPoints, endPoints, graph.__pointsHostBuffer)
         .then(function() {
             return graph;
-        }).fail(Log.makeQErrorHandler(logger, 'Failure in setEdges'));
+        }).fail(log.makeQErrorHandler(logger, 'Failure in setEdges'));
 });
 
 function setEdgeColors(graph, edgeColors) {

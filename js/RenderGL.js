@@ -7,8 +7,8 @@ var RenderBase = require('./RenderBase.js');
 var glMatrix = require('gl-matrix');
 var util = require('./util.js');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:render:rendergl');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:render:rendergl');
 
 //[string] * document * canvas * int * [number, number] * {<string>: bool} -> Promise Renderer
 var create = Q.promised(function(document, canvas, bgColor, dimensions, visible) {
@@ -261,7 +261,7 @@ var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
             logger.debug("Using preset colors from %s", imageURL);
         }
         } catch (e) {
-            Log.makeQErrorHandler(logger, 'bad cluster load')(e);
+            log.makeQErrorHandler(logger, 'bad cluster load')(e);
         }
 
 

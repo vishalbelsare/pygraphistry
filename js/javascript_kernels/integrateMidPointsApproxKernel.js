@@ -4,8 +4,8 @@ var Kernel = require('../kernel.js'),
     cljs  = require('../cl.js');
     ArgsType = require('./ArgsType.js');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:cl:barnesKernels');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:barnesKernels');
 
 var integrateMidPointsApproxKernel = function (clContext) {
 
@@ -57,7 +57,7 @@ this.argsIntegrateMidPointsApprox = [
 
     logger.trace('Running kernel faIntegrateApprox');
     return this.faIntegrate.exec([simulator.numMidPoints], resources)
-      .fail(Log.makeQErrorHandler('Executing IntegrateApprox failed'));
+      .fail(log.makeQErrorHandler('Executing IntegrateApprox failed'));
     }
 
 }

@@ -11,8 +11,8 @@ var urllib = require('url');
 var util = require('./util.js');
 var Cache = require('common/cache.js');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:data:data-loader');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:data:data-loader');
 
 var MatrixLoader = require('./libs/MatrixLoader.js'),
     VGraphLoader = require('./libs/VGraphLoader.js'),
@@ -54,7 +54,7 @@ function downloadDataset(query) {
 
     return downloader[url.protocol](url).then(function (data) {
         return { body: data, metadata: config };
-    }).fail(Log.makeQErrorHandler(logger, 'Failure while retrieving dataset'));
+    }).fail(log.makeQErrorHandler(logger, 'Failure while retrieving dataset'));
 }
 
 function httpDownloader(http, url) {

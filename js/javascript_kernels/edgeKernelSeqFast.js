@@ -4,8 +4,8 @@ var Kernel = require('../kernel.js'),
     cljs  = require('../cl.js'),
     ArgsType = require('./ArgsType.js');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:cl:barnesKernels');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:barnesKernels');
 
 var edgeKernelSeqFast = function (clContext) {
 
@@ -117,7 +117,7 @@ var edgeKernelSeqFast = function (clContext) {
 
         return that.segReduce.exec([workItemsSize.segReduce[0]], resources, [workItemsSize.segReduce[1]]);
       })
-      .fail(Log.makeQErrorHandler("Executing edgeKernelSeqFast failed"));
+      .fail(log.makeQErrorHandler("Executing edgeKernelSeqFast failed"));
 
     }
 }

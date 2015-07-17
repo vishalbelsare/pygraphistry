@@ -1,14 +1,11 @@
 var Kernel = require('../kernel.js'),
     Q = require('q'),
-    // debug = require("debug")("graphistry:graph-viz:cl:barensKernels"),
     _     = require('underscore'),
     cljs  = require('../cl.js'),
-      // log = require('common/log.js'),
-       // eh = require('common/errorHandlers.js')(log),
     ArgsType = require('./ArgsType.js');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:cl:barnesKernels');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:barnesKernels');
 
 var integrateKernel = function (clContext) {
 
@@ -53,7 +50,7 @@ var integrateKernel = function (clContext) {
 
     logger.trace("Running kernel faIntegrate");
     return this.faIntegrate.exec([simulator.numMidPoints], resources)
-        .fail(Log.makeQErrorHandler('Executing Integrate failed'));
+        .fail(log.makeQErrorHandler('Executing Integrate failed'));
   }
 
 }

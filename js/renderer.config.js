@@ -8,8 +8,8 @@
 var fs = require('fs');
 var _ = require('underscore');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:driver:config');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:driver:config');
 
 
 var STROKE_WIDTH = 4.0;

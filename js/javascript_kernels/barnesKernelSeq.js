@@ -2,8 +2,8 @@ var Kernel = require('../kernel.js'),
     Q = require('q'),
     _     = require('underscore'),
     cljs  = require('../cl.js');
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:cl:barnesKernels');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:barnesKernels');
 
 var BarnesKernelSeq = function (clContext) {
 
@@ -204,7 +204,7 @@ var BarnesKernelSeq = function (clContext) {
                             tempBuffers.numBodies = numBodies;
                             return tempBuffers;
                         })
-        .fail(Log.makeQErrorHandler("Setting temporary buffers for barnesHutKernelSequence failed"));
+        .fail(log.makeQErrorHandler("Setting temporary buffers for barnesHutKernelSequence failed"));
     };
 
     this.setEdges = function(simulator, layoutBuffers, warpsize, workItems) {
@@ -261,7 +261,7 @@ var BarnesKernelSeq = function (clContext) {
             setBarnesKernelArgs(that.sort, tempBuffers);
             setBarnesKernelArgs(that.calculatePointForces, tempBuffers);
 
-        }).fail(Log.makeQErrorHandler('setupTempBuffers'));
+        }).fail(log.makeQErrorHandler('setupTempBuffers'));
     };
 
     // TODO (paden) Can probably combine ExecKernel functions
@@ -308,7 +308,7 @@ var BarnesKernelSeq = function (clContext) {
             return that.calculateForces.exec([workItems.calculateForces], resources, [256]);
         })
 
-        .fail(Log.makeQErrorHandler("Executing BarnesKernelSeq failed"));
+        .fail(log.makeQErrorHandler("Executing BarnesKernelSeq failed"));
     };
 
     this.execKernels = function(simulator, stepNumber, workItems) {
@@ -354,7 +354,7 @@ var BarnesKernelSeq = function (clContext) {
             return that.calculatePointForces.exec([workItems.calculateForces[0]], resources, [workItems.calculateForces[1]]);
         })
 
-        .fail(Log.makeQErrorHandler("Executing BarnesKernelSeq failed"));
+        .fail(log.makeQErrorHandler("Executing BarnesKernelSeq failed"));
     };
 
 };

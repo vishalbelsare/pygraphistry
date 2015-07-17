@@ -10,8 +10,8 @@ var config  = require('config')();
 var util = require('../util.js');
 var weakcc = require('../weaklycc.js');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:data:vgraphloader');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:data:vgraphloader');
 
 var builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
 if (builder === null) {
@@ -253,7 +253,7 @@ function decode0(graph, vg, metadata)  {
     }).then(function () {
         runLoaders(loaders);
         return graph;
-    }).fail(Log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
+    }).fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
 }
 
 

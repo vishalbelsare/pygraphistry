@@ -4,8 +4,8 @@ var Kernel = require('../kernel.js'),
     _     = require('underscore'),
     cljs  = require('../cl.js');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:cl:interpolationKernel');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:interpolationKernel');
 
 var interpolateMidpointsKernel = function (clContext) {
 
@@ -51,7 +51,7 @@ var interpolateMidpointsKernel = function (clContext) {
 
         logger.trace('Running interpolateMidpoints kernel');
         return this.interpolate.exec([simulator.numEdges], resources)
-            .fail(Log.makeQErrorHandler('Kernel interpolateMidPoints failed'));
+            .fail(log.makeQErrorHandler('Kernel interpolateMidPoints failed'));
     };
 };
 

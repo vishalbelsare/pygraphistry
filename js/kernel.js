@@ -10,8 +10,8 @@ var util = require('./util');
 var cljs = require('./cl.js');
 var config = require('config')();
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:cl:kernel');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:kernel');
 
 
 
@@ -155,7 +155,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
             }
 
         } catch (e) {
-            Log.makeQErrorHandler(logger, 'Error setting argument %s of kernel %s', args[i], name)(e);
+            log.makeQErrorHandler(logger, 'Error setting argument %s of kernel %s', args[i], name)(e);
         }
     };
 

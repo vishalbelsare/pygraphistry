@@ -17,8 +17,8 @@ var Q = require("q"),
     webcl = require('node-webcl'),
     loader = require("./data-loader.js");
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:data:data-loader');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:data:data-loader');
 var perf        = require('common/perfStats.js').createPerfMonitor();
 
 
@@ -131,7 +131,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                 };
             });
             return targetArrays;
-        }).fail(Log.makeQErrorHandler(logger, 'node-driver.fetchVBO'));
+        }).fail(log.makeQErrorHandler(logger, 'node-driver.fetchVBO'));
 }
 
 
@@ -191,7 +191,7 @@ function init(device, vendor, controls) {
     return RenderNull.create(null)
         .then(function (renderer) {
             return NBody.create(renderer, device, vendor, controls);
-        }).fail(Log.makeQErrorHandler(logger, 'Failure in NBody creation'));
+        }).fail(log.makeQErrorHandler(logger, 'Failure in NBody creation'));
 }
 
 
@@ -315,7 +315,7 @@ function create(dataset) {
             })
             .subscribe(
                 animStepSubj,
-                Log.makeRxErrorHandler(logger, 'node-driver: tick failed')
+                log.makeRxErrorHandler(logger, 'node-driver: tick failed')
             );
 
         logger.trace('Graph created');

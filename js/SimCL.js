@@ -12,8 +12,8 @@ var SpringsGather = require('./springsGather.js');
 var webcl = require('node-webcl');
 var Color = require('color');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:data:data-loader');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:data:data-loader');
 
 
 // Do NOT enable this in prod. It destroys performance.
@@ -173,7 +173,7 @@ function create(renderer, device, vendor, cfg) {
             logger.trace('Simulator created');
             return simObj
         })
-    }).fail(Log.makeQErrorHandler(logger, 'Cannot create SimCL'));
+    }).fail(log.makeQErrorHandler(logger, 'Cannot create SimCL'));
 }
 
 
@@ -459,7 +459,7 @@ function setPoints(simulator, points) {
             la.setPoints(simulator);
         });
         return simulator;
-    }).fail(Log.makeQErrorHandler(logger, 'Failure in SimCl.setPoints'));
+    }).fail(log.makeQErrorHandler(logger, 'Failure in SimCl.setPoints'));
 }
 
 
@@ -484,7 +484,7 @@ function makeSetter(simulator, name, dimName) {
         }).then(function (buffer) {
             simulator.buffers[buffName] = buffer;
             return simulator;
-        }).fail(Log.makeQErrorHandler(logger, 'ERROR Failure in SimCl.set %s', buffName));
+        }).fail(log.makeQErrorHandler(logger, 'ERROR Failure in SimCl.set %s', buffName));
     };
 }
 
@@ -564,7 +564,7 @@ function setMidEdges( simulator ) {
                     return alg.setEdges(simulator);
                 }));
     } )
-    .fail( Log.makeQErrorHandler(logger, 'Failure in SimCL.setMidEdges') )
+    .fail( log.makeQErrorHandler(logger, 'Failure in SimCL.setMidEdges') )
 }
 
 /**
@@ -727,7 +727,7 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
         setTimeSubset(renderer, simulator, simulator.timeSubset.relRange);
         return simulator;
     })
-    .fail(Log.makeQErrorHandler(logger, 'Failure in SimCL.setEdges'));
+    .fail(log.makeQErrorHandler(logger, 'Failure in SimCL.setEdges'));
 }
 
 
@@ -947,7 +947,7 @@ function moveNodes(simulator, marqueeEvent) {
     return moveNodes.run(simulator, marqueeEvent.selection, delta)
         .then(function () {
             return springsGather.tick(simulator);
-        }).fail(Log.makeQErrorHandler(logger, 'Failure trying to move nodes'));
+        }).fail(log.makeQErrorHandler(logger, 'Failure trying to move nodes'));
 }
 
 function selectNodes(simulator, selection) {
@@ -964,7 +964,7 @@ function selectNodes(simulator, selection) {
                 }
             }
             return res;
-        }).fail(Log.makeQErrorHandler(logger, 'Failure trying to compute selection'));
+        }).fail(log.makeQErrorHandler(logger, 'Failure trying to compute selection'));
 }
 
 // Return the set of edge indices which are connected (either as src or dst)
@@ -1015,7 +1015,7 @@ function recolor(simulator, marquee) {
         })
 
         simulator.tickBuffers(['pointSizes']);
-    }).fail(Log.makeQErrorHandler(logger, 'Read failed'));
+    }).fail(log.makeQErrorHandler(logger, 'Read failed'));
 }
 
 
@@ -1092,7 +1092,7 @@ function tick(simulator, stepNumber, cfg) {
         simulator.cl.queue.finish();
         logger.trace('Tick Finished.');
         simulator.renderer.finish();
-    }).fail(Log.makeQErrorHandler(logger, 'SimCl tick failed'));
+    }).fail(log.makeQErrorHandler(logger, 'SimCl tick failed'));
 }
 
 

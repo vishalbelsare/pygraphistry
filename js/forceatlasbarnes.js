@@ -12,8 +12,8 @@ var _     = require('underscore'),
     integrateApproxKernel = require('./javascript_kernels/integrateApproxKernel.js'),
     integrateKernel = require('./javascript_kernels/integrateKernel.js'),
 
-    Log        = require('common/logger.js'),
-    logger     = Log.createLogger('graph-viz:cl:forceatlas2barnes');
+    log        = require('common/logger.js'),
+    logger     = log.createLogger('graph-viz:cl:forceatlas2barnes');
 
 
 function getNumWorkitemsByHardware(deviceProps) {
@@ -148,7 +148,7 @@ var setupTempLayoutBuffers = function(simulator) {
       tempLayoutBuffers.globalSpeed = globalSpeed;
       return tempLayoutBuffers;
     })
-    .catch(Log.makeQErrorHandler(logger, 'setupTempBuffers'));
+    .catch(log.makeQErrorHandler(logger, 'setupTempBuffers'));
 };
 
 

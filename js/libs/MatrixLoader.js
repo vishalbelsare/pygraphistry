@@ -2,8 +2,8 @@
 
 var Q = require('q');
 var Long = require('./Long.js');
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:data:matrixloader');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:data:matrixloader');
 var zlib = require("zlib");
 
 var exports = {

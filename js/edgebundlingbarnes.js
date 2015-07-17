@@ -11,8 +11,8 @@ var _          = require('underscore'),
     //integrateKernel = require('./javascript_kernels/integrateKernel.js'),
     EbBarnesKernelSeq = require('./javascript_kernels/ebBarnesKernelSeq.js'),
     MidEdgeGather = require('./javascript_kernels/midEdgeGather.js'),
-    Log        = require('common/logger.js'),
-    logger     = Log.createLogger('graph-viz:cl:edgebundling');
+    log        = require('common/logger.js'),
+    logger     = log.createLogger('graph-viz:cl:edgebundling');
 
 
 function EdgeBundling(clContext) {
@@ -198,7 +198,7 @@ var setupTempLayoutBuffers = function (simulator) {
         tempLayoutBuffers.swings = swings;
         tempLayoutBuffers.tractions = tractions;
         return tempLayoutBuffers;
-    }).catch(Log.makeQErrorHandler(logger, 'setupTempBuffers'));
+    }).catch(log.makeQErrorHandler(logger, 'setupTempBuffers'));
 };
 
 
@@ -361,7 +361,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
             //tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
             tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
         ]);
-    }).fail(Log.makeQErrorHandler(logger, 'Failure in edgebundling tick'));
+    }).fail(log.makeQErrorHandler(logger, 'Failure in edgebundling tick'));
 };
 
 module.exports = EdgeBundling;

@@ -3,8 +3,8 @@
 var    cljs = require('./cl.js'),
           Q = require('q'),
      Kernel = require('./kernel.js'),
-        Log = require('common/logger.js'),
-     logger = Log.createLogger('graph-viz:cl:movenodes');
+        log = require('common/logger.js'),
+     logger = log.createLogger('graph-viz:cl:movenodes');
 
 function MoveNodes(clContext) {
     logger.trace('Creating moveNodes kernel');
@@ -46,7 +46,7 @@ MoveNodes.prototype.run = function (simulator, selection, delta) {
     return this.moveNodes.exec([simulator.numPoints], resources)
         .then(function () {
             return simulator.buffers.nextPoints.copyInto(simulator.buffers.curPoints);
-        }).fail(Log.makeQErrorHandler(logger, 'Kernel moveNodes failed'));
+        }).fail(log.makeQErrorHandler(logger, 'Kernel moveNodes failed'));
 }
 
 module.exports = MoveNodes;

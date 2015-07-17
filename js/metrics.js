@@ -7,8 +7,8 @@ var config = require('config')();
 var _ = require('underscore');
 var dns = require('dns');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('metrics');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('metrics');
 logger.fields.name = 'boundary';
 
 

@@ -4,8 +4,8 @@ var    cljs = require('./cl.js'),
           Q = require('q'),
      Kernel = require('./kernel.js');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:cl:selectnodes');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:selectnodes');
 
 function SelectNodes(clContext) {
     logger.trace('Creating selectNodes kernel');
@@ -53,8 +53,8 @@ SelectNodes.prototype.run = function (simulator, selection, delta) {
                 return mask.read(result).then(function () {
                     return result;
                 });
-            }).fail(Log.makeQErrorHandler(logger, 'Kernel selectNodes failed'));
-    }).fail(Log.makeQErrorHandler(logger, 'Node selection failed'));
+            }).fail(log.makeQErrorHandler(logger, 'Kernel selectNodes failed'));
+    }).fail(log.makeQErrorHandler(logger, 'Node selection failed'));
 
 }
 

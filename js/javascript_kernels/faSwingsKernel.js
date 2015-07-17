@@ -5,8 +5,8 @@ var Kernel = require('../kernel.js'),
     cljs  = require('../cl.js'),
     ArgsType = require('./ArgsType.js');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:cl:barnesKernels');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:barnesKernels');
 
 var faSwingKernel = function (clContext) {
 
@@ -64,7 +64,7 @@ var faSwingKernel = function (clContext) {
 
         logger.trace("Running kernel faSwingsTractions");
         return this.faSwings.exec([simulator.numPoints], resources)
-        .fail(Log.makeQErrorHandler('Executing FaSwing failed'));
+        .fail(log.makeQErrorHandler('Executing FaSwing failed'));
     };
 
     this.execMidPointsKernels = function(simulator, workItems) {
@@ -78,7 +78,7 @@ var faSwingKernel = function (clContext) {
       //simulator.tickBuffers(['swings', 'tractions']);
 
         return this.faSwings.exec([simulator.numMidPoints], resources)
-        .fail(Log.makeQErrorHandler('Executing FaSwing failed'));
+        .fail(log.makeQErrorHandler('Executing FaSwing failed'));
     };
 
 }

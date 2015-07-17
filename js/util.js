@@ -5,8 +5,8 @@ var path = require('path'),
     fs = require('fs'),
     Q = require('q'),
     _ = require('underscore'),
-    Log = require('common/logger.js'),
-    logger = Log.createLogger('util');
+    log = require('common/logger.js'),
+    logger = log.createLogger('util');
 
 
 function getShaderSource(id) {

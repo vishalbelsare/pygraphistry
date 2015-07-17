@@ -4,8 +4,8 @@ var    cljs = require('../cl.js'),
           Q = require('q'),
      Kernel = require('../kernel.js');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:cl:midEdgeGather');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:midEdgeGather');
 
 function midEdgeGather(clContext) {
     logger.trace('Creating springsGather kernel');
@@ -49,7 +49,7 @@ function midEdgeGather(clContext) {
 
       logger.trace('Running midEdgeGather kernel');
       return this.gather.exec([simulator.numEdges], resources)
-        .fail(Log.makeQErrorHandler('Kernel midEdgeGather failed'));
+        .fail(log.makeQErrorHandler('Kernel midEdgeGather failed'));
     };
 
 

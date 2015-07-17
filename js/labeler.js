@@ -4,8 +4,8 @@ var _ = require('underscore');
 var sprintf = require('sprintf-js').sprintf;
 var vgloader = require('./libs/VGraphLoader.js');
 var dateFormat = require('dateformat');
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:labeler');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:labeler');
 
 function pickTitleField (attribs, prioritized) {
     for (var i = 0; i < prioritized.length; i++) {

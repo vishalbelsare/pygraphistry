@@ -4,8 +4,8 @@ var Kernel = require('../kernel.js'),
     cljs  = require('../cl.js'),
     ArgsType = require('./ArgsType.js');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:cl:integrationKernel');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:integrationKernel');
 
 var integrateKernel = function (clContext) {
 
@@ -50,7 +50,7 @@ var integrateKernel = function (clContext) {
 
     logger.trace("Running kernel faIntegrate");
     return this.faIntegrate.exec([simulator.numPoints], resources)
-        .fail(Log.makeQErrorHandler('Executing Integrate failed'));
+        .fail(log.makeQErrorHandler('Executing Integrate failed'));
 }
 
 }

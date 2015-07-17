@@ -7,8 +7,8 @@ var path    = require('path');
 var config  = require('config')();
 var s3      = require('common/s3.js');
 
-var Log         = require('common/logger.js');
-var logger      = Log.createLogger('graph-viz:data:vgraphwriter');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:data:vgraphwriter');
 
 var builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
 if (builder === null) {
@@ -57,7 +57,7 @@ function save(graph, name) {
         var blob = vg.encode().toBuffer();
         logger.trace('Uploading to S3', name);
         return s3.upload(config.S3, config.BUCKET, {name: name}, blob);
-    }).fail(Log.makeQErrorHandler(logger, 'save vgraph'));
+    }).fail(log.makeQErrorHandler(logger, 'save vgraph'));
 }
 
 module.exports = {
