@@ -49,7 +49,7 @@ var exports = {
 
     load: function (str) {
         var t0 = new Date().getTime();
-        perf.startTiming('graph-viz:data:matrixloader');
+        perf.startTiming('graph-viz:data:matrixloader, naive parse and transform');
         //http://bl.ocks.org/mbostock/2846454
         var nodes = [];
         var links = str
@@ -66,7 +66,7 @@ var exports = {
         });
 
         //might be better for a perflog?
-        perf.endTiming('graph-viz:data:matrixloader');
+        perf.endTiming('graph-viz:data:matrixloader, naive parse and transform');
 
         return {
           nodes: nodes,
