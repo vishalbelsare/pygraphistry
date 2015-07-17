@@ -8,7 +8,6 @@ var path        = require('path');
 var url         = require('url');
 var util        = require('util');
 
-var debug       = require('debug')('graphistry:central:server');
 var _           = require('underscore');
 var Rx          = require('rx');
 var Q           = require('q');
@@ -23,14 +22,11 @@ var app         = express();
 var http        = require('http').Server(app);
 
 var config      = require('config')();
-var log         = require('common/log.js');
-var eh          = require('common/errorHandlers.js')(log);
-log.createLogger(config, 'central');
+
+var Log         = require('common/logger.js');
+var logger      = Log.createLogger('central:server');
 
 var router = require('./worker-router.js');
-
-
-debug('Config set to %j', config);
 
 // Tell Express to trust reverse-proxy connections from localhost, linklocal, and private IP ranges.
 // This allows Express to expose the client's real IP and protocol, not the proxy's.
@@ -69,15 +65,15 @@ var STREAMGL_MAP_PATH   = require.resolve('StreamGL/dist/StreamGL.map');
 var HTTP_SERVER_LISTEN_ADDRESS = config.HTTP_LISTEN_ADDRESS;
 var HTTP_SERVER_LISTEN_PORT = config.HTTP_LISTEN_PORT;
 
-
 function logClientError(req, res) {
     var writeError = function (msg) {
-        //debug('Logging client error', msg);
+        //logger.debug('Logging client error', msg);
         if(config.ENVIRONMENT === 'local') {
+            //TODO: determine which fields from req object you want to log
             if (msg.content) {
-                console.error('[Client]', msg.content);
+                logger.error({clientID: req.ip, clientError: msg.content}, 'Client Error');
             } else {
-                console.error('[Client]', JSON.stringify(msg, null, 2));
+                logger.error({clientID: req.ip, clientError: JSON.stringify(msg, null, 2)}, 'Client Error');
             }
             /* jshint -W064 */
             return Q();
@@ -85,7 +81,7 @@ function logClientError(req, res) {
         }
         var logFile = path.resolve('/', 'var', 'log', 'clients' ,'clients.log');
         return Q.denodeify(fs.appendFile)(logFile, JSON.stringify(msg) + '\n')
-            .fail(eh.makeErrorHandler('Error writing client error'));
+            .fail(Log.makeQErrorHandler(logger, 'Error writing client error'));
     };
 
     var data = '';
@@ -100,12 +96,11 @@ function logClientError(req, res) {
                 res.status(200).end();
             });
         } catch(err) {
-            log.exception(err, 'Error reading client error');
+            logger.error(err, 'Error reading client error');
             res.status(500).end();
         }
     });
 }
-
 
 /**
  * Converts ad-hoc URL object(s) (i.e., one we constructed by hand, possibly incomplete or
@@ -134,13 +129,13 @@ function ensureValidUrl() {
 function assignWorker(req, res) {
     router.pickWorker(function (err, worker) {
         if (err) {
-            log.error('Error while assigning visualization worker:', err);
+            logger.error(err, 'Error while assigning visualization worker');
             return res.json({
                 success: false,
                 error: (err||{}).message || 'Error while assigning visualization worker.'
             });
         }
-        debug('Assigning client a worker', req.ip, worker);
+        logger.debug('Assigning client a worker', req.ip, worker);
 
         // Get the request URL so that we can construct a worker URL from it
         var baseUrl = ensureValidUrl(url.parse(req.originalUrl), {host: req.get('Host')});
@@ -196,12 +191,12 @@ app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
 
 // Temporarly handle ETL request from Splunk
 app.post('/etl', bodyParser.json({type: '*', limit: '128mb'}), function (req, res) {
-    debug('etl request');
+    logger.debug({req: req}, 'etl request');
     router.pickWorker(function (err, worker) {
-        debug('picked etl worker', req.ip, worker);
+        logger.debug('picked etl worker', req.ip, worker);
 
         if (err) {
-            log.error('Error while assiging an ETL worker', err);
+            logger.error(err ,'Error while assiging an ETL worker');
             return res.send({
                 success: false,
                 msg: 'Error while assigning an ETL worker:' + err.message
@@ -211,29 +206,29 @@ app.post('/etl', bodyParser.json({type: '*', limit: '128mb'}), function (req, re
         // Note: we specifically do not respect reverse proxy stuff, since we're presumably running
         // inside the cluster, and direct connections are more efficient.
         var redirect = 'http://' + worker.hostname + ':' + worker.port;
-        debug('create socket', redirect);
+        logger.trace('create socket', redirect);
         var socket = io(redirect, {forceNew: true, reconnection: false, transports: ['websocket']});
         //socket.io.engine.binaryType = 'arraybuffer';
 
         socket.on('connect_error', function (err) {
-            log.error('Connect_error in socketio', err);
+            logger.error(err ,'Connect_error in socketio');
         });
 
         socket.on('connect', function () {
-            debug('connected socket, initializing app', redirect);
+            logger.trace('connected socket, initializing app', redirect);
             socket.emit('viz', 'etl', function (resp) {
-                debug('initialized, notifying client');
+                logger.trace('initialized, notifying client');
                 if (!resp.success) {
-                    log.error('Failed initializing worker', resp);
+                    logger.error('Failed initializing worker');
                     return res.json({success: false, msg: 'failed connecting to work'});
                 }
                 var newEndpoint = redirect + req.originalUrl;
-                debug('telling client to redirect', newEndpoint);
+                logger.trace('telling client to redirect', newEndpoint);
 
                 req.pipe(request(newEndpoint)).pipe(res);
                 //res.redirect(307, newEndpoint);
             });
-            debug('waiting for worker to initialize');
+            logger.trace('waiting for worker to initialize');
         });
 
     });
@@ -251,12 +246,12 @@ app.use('/', express.static(MAIN_STATIC_PATH));
 
 
 app.get('/horizon', function(req, res) {
-    debug('redirecting to horizon');
+    logger.info('redirecting to horizon');
     res.redirect('/horizon/src/demo/index.html' + (req.query.debug !== undefined ? '?debug' : ''));
 });
 
 app.get('/uber', function(req, res) {
-    debug('redirecting to graph');
+    logger.info('redirecting to graph');
     res.redirect('/uber/index.html' + (req.query.debug !== undefined ? '?debug' : ''));
 });
 
@@ -267,7 +262,7 @@ function start() {
             if (config.ENVIRONMENT === 'local') {
                 var from = '/worker/' + config.VIZ_LISTEN_PORT + '/';
                 var to = 'http://localhost:' + config.VIZ_LISTEN_PORT;
-                debug('setting up proxy', from, to);
+                logger.info('setting up proxy', from, to);
                 app.use(from, proxy(to, {
                     forwardPath: function(req) {
                         return url.parse(req.url).path.replace(new RegExp('worker/' + config.VIZ_LISTEN_PORT + '/'),'/');
@@ -290,5 +285,5 @@ module.exports = {
         listenIP: HTTP_SERVER_LISTEN_ADDRESS,
         listenPort: HTTP_SERVER_LISTEN_PORT
     },
-    log: log
+    logger: logger
 };

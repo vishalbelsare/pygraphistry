@@ -6,13 +6,13 @@
 var os          = require('os');
 var _           = require('underscore');
 var Rx          = require('rx');
-var debug       = require('debug')('graphistry:central:worker-router');
 var request     = require('request');
 var MongoClient = require('mongodb').MongoClient;
 
 var config      = require('config')();
-var log         = require('common/log.js');
-var eh          = require('common/errorHandlers.js')(log);
+
+var Log         = require('common/logger.js');
+var logger      = Log.createLogger('central:worker-router');
 
 var mongoClientConnect = Rx.Observable.fromNodeCallback(MongoClient.connect, MongoClient);
 var dbObs = (config.ENVIRONMENT === 'local') ?
@@ -72,7 +72,7 @@ function getIPs() {
             return Rx.Observable.fromNodeCallback(workerServers.toArray, workerServers)()
                 .flatMap(function (ips) {
                     if (ips.length < 1) {
-                        debug('No worker currently registered to this cluster.');
+                        logger.info('No worker currently registered to this cluster.');
                         return Rx.Observable.throw(new Error(
                             'There are no worker currently registered to this cluster. Please contact help@graphistry.com for further assistance.'));
                     }
@@ -86,7 +86,7 @@ function getIPs() {
                     return Rx.Observable.fromNodeCallback(nodeCollection.toArray, nodeCollection)()
                         .map(function (results) {
                             if (!results.length) {
-                                debug('All workers are currently busy');
+                                logger.info('All workers are currently busy');
                                 var msg = "All workers are currently busy, and your request can't be serviced at this time. Please contact help@graphistry.com for private access. (Reason: could not find an available worker in the worker ping database.)";
                                 throw new Error(msg);
                             }
@@ -110,16 +110,16 @@ function getIPs() {
 function handshakeIp (workerNfo) {
     var url = 'http://' + workerNfo.hostname + ':' + workerNfo.port + '/claim';
     var cfg = {url: url, json: true, timeout: 250};
-    debug('Trying worker', cfg, workerNfo);
+    logger.info('Trying worker', cfg, workerNfo);
     return Rx.Observable.fromNodeCallback(request.get.bind(request))(cfg)
         .pluck(1)
         .map(function (resp) {
-            debug('Worker response', resp);
+            logger.debug('Worker response', resp);
             return !!resp.success;
         })
         .catch(function catchHandshakeHTTPErrors(err) {
-            log.warn('Handshake error: encountered a HTTP error attempting to handshake "%s". Catching error and reporting unsuccessful handshake to caller. Error message: %s',
-                url, err);
+            logger.warn(err, 'Handshake error: encountered a HTTP error attempting to handshake "%s". Catching error and reporting unsuccessful handshake to caller.',
+                url);
             return Rx.Observable.return(false);
         });
 }
@@ -167,7 +167,7 @@ function pickWorker (cb) {
                 return Rx.Observable.fromArray(combineWorkerInfo(o.servers, o.workers));
             });
     } else {
-        debug('Using local hostname/port', VIZ_SERVER_HOST, VIZ_SERVER_PORT);
+        logger.debug('Using local hostname/port', VIZ_SERVER_HOST, VIZ_SERVER_PORT);
         ips = Rx.Observable.return({hostname: VIZ_SERVER_HOST, port: VIZ_SERVER_PORT});
     }
 
@@ -198,18 +198,18 @@ function pickWorker (cb) {
 
     var count = 0;
     ip.do(function (worker) {
-            debug("Assigning worker on %s, port %d", worker.hostname, worker.port);
+            logger.debug("Assigning worker on %s, port %d", worker.hostname, worker.port);
             cb(null, worker);
         })
         .subscribe(
             function () { count++; },
             function (err) {
-                log.exception(err, 'assign_worker error');
+                logger.exception(err, 'assign_worker error');
                 cb(err || new Error('Unexpected error while assigning workers.'));
             },
             function () {
                 if (!count) {
-                    log.error('assign_worker exhausted search (too many users?)');
+                    logger.error('assign_worker exhausted search (too many users?)');
                     cb(new Error('Too many users, please contact help@graphistry.com for private access.'));
                 }
             });
