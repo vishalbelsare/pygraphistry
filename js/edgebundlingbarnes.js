@@ -160,7 +160,7 @@ function getNumWorkitemsByHardware(deviceProps) {
 
 
     } else if (deviceProps.NAME.indexOf('HD Graphics 4000') !== -1) {
-        logger.warn('Expected slow kernels: sort, calculate_forces');
+        logger.debug('Expected slow kernels: sort, calculate_forces');
     }
 
     return _.mapObject(numWorkGroups, function (val) {
@@ -304,12 +304,12 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
 
     if (locks.interpolateMidPointsOnce || locks.interpolateMidPoints) {
         if ( locks.interpolateMidPointsOnce ) {
-            logger.info("Force interpolation of midpoints");
+            logger.debug("Force interpolation of midpoints");
         }
         locks.interpolateMidPointsOnce = false;
         // If interpolateMidpoints is true, midpoints are calculate by
         // interpolating between corresponding edge points.
-        logger.info("INTERPOLATION");
+        logger.trace("INTERPOLATION");
         calculateMidpoints = new Q().then(function () {
 
             simulator.tickBuffers(['nextMidPoints']);
