@@ -35,7 +35,7 @@ function ensurePath(path) {
 
 function checkWrite (snapshotName, vboPath, raw, buff) {
     var readback = fs.readFileSync(vboPath);
-    logger.debug('readback', readback.length);
+    logger.trace('readback', readback.length);
     for (var j = 0; j < raw.byteLength; j++) {
         if (buff[j] !== raw[j]) {
             logger.error('bad write', j, buff[j], raw[j]);
@@ -49,7 +49,7 @@ function checkWrite (snapshotName, vboPath, raw, buff) {
         }
     }
     var read = fs.readFileSync(baseDirPath + snapshotName + '.metadata.json', {encoding: 'utf8'});
-    logger.debug('readback metadata', read);
+    logger.trace('readback metadata', read);
 }
 
 
