@@ -33,7 +33,7 @@ var create = Q.promised(function(document) {
 
 
 var createBuffer = Q.promised(function(renderer, data) {
-    logger.debug("Creating (fake) null renderer buffer of type %s. Constructor: %o", typeof(data), (data||{}).constructor);
+    logger.trace("Creating (fake) null renderer buffer of type %s. Constructor: %o", typeof(data), (data||{}).constructor);
 
     var bufObj = {
         "buffer": null,
