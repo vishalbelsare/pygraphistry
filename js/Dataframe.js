@@ -65,7 +65,7 @@ function makeEmptyData () {
 
 // Takes in a mask of points, and returns an object
 // containing masks for both the points and edges.
-// Relative to forwardsEdgesTyped. (so sorted)
+// Relative to forwardsEdges (so sorted)
 Dataframe.prototype.masksFromPoints = function (pointMask) {
     var pointMaskOriginalLookup = {};
     _.each(pointMask, function (newIdx, i) {
@@ -215,14 +215,26 @@ Dataframe.prototype.filter = function (masks, simulator) {
     // Filter out to new edges/points arrays.
     var filteredEdges = Uint32Array(masks.edge.length * 2);
     var originalEdges = rawdata.hostBuffers.unsortedEdges;
-    // var forwardsEdges = rawdata.hostBuffers.forwardsEdges.edgesTyped;
+    var originalForwardsEdges = rawdata.hostBuffers.forwardsEdges.edgesTyped;
+
+    var unsortedEdgeMask = [];
+    var map = rawdata.hostBuffers.forwardsEdges.edgePermutation;
+    _.each(masks.edge, function (idx) {
+        unsortedEdgeMask.push(map[idx]);
+    });
+
+    var unsortedMasks = {
+        point: masks.point,
+        edge: unsortedEdgeMask
+    };
+
 
     var pointOriginalLookup = [];
     _.each(masks.point, function (oldIdx, i) {
         pointOriginalLookup[oldIdx] = i;
     });
 
-    _.each(masks.edge, function (oldIdx, i) {
+    _.each(unsortedEdgeMask, function (oldIdx, i) {
         filteredEdges[i*2] = pointOriginalLookup[originalEdges[oldIdx*2]];
         filteredEdges[i*2 + 1] = pointOriginalLookup[originalEdges[oldIdx*2 + 1]];
     });
@@ -236,9 +248,10 @@ Dataframe.prototype.filter = function (masks, simulator) {
         edgesFlipped[2 * i + 1] = filteredEdges[2 * i];
     }
 
+
     newData.hostBuffers.unsortedEdges = filteredEdges;
-    var forwardsEdges = this.encapsulateEdges(filteredEdges, numPoints, rawdata.hostBuffers.forwardsEdges, masks, pointOriginalLookup);
-    var backwardsEdges = this.encapsulateEdges(edgesFlipped, numPoints, rawdata.hostBuffers.backwardsEdges, masks, pointOriginalLookup);
+    var forwardsEdges = this.encapsulateEdges(filteredEdges, numPoints, rawdata.hostBuffers.forwardsEdges, unsortedMasks, pointOriginalLookup);
+    var backwardsEdges = this.encapsulateEdges(edgesFlipped, numPoints, rawdata.hostBuffers.backwardsEdges, unsortedMasks, pointOriginalLookup);
     newData.hostBuffers.forwardsEdges = forwardsEdges;
     newData.hostBuffers.backwardsEdges = backwardsEdges;
     newData.hostBuffers.points = rawdata.hostBuffers.points;
@@ -1260,9 +1273,12 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
             mapped[i] = mapped[i] - mappedScan[i];
         }
 
+        console.log('Some From edgeListTyped: ', edgeListTyped[1000], edgeListTyped[2000], edgeListTyped[3000]);
+        console.log('Some From mapped: ', mapped[1000], mapped[2000], mapped[3000]);
 
+    }
     // First time through.
-    } else {
+    // } else {
         var maskedEdgeList = new Float64Array(edgeListTyped.buffer);
         var maskedEdges = new Float64Array(edges.buffer);
 
@@ -1285,7 +1301,10 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
             edgeListTyped[i*2] = edges[idx*2];
             edgeListTyped[i*2 + 1] = edges[idx*2 + 1];
         }
-    }
+    // }
+
+    console.log('Some From edgeListTyped: ', edgeListTyped[1000], edgeListTyped[2000], edgeListTyped[3000]);
+    console.log('Some From mapped: ', mapped[1000], mapped[2000], mapped[3000]);
 
     return {
         edgeListTyped: edgeListTyped,
