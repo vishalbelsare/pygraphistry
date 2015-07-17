@@ -101,7 +101,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                     version: graph.simulator.versions.buffers[name]
                 };
 
-                logger.debug('Reading device buffer %s, stride %d', name, stride);
+                logger.trace('Reading device buffer %s, stride %d', name, stride);
 
                 return graph.simulator.buffers[name].read(
                     new Float32Array(targetArrays[name].buffer),
@@ -112,7 +112,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
             _.each(hostBufs, function (layout, name) {
                 var stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
 
-                logger.debug('Fetching host buffer %s', name);
+                logger.trace('Fetching host buffer %s', name);
                 if (!graph.simulator.buffersLocal[name]) {
                     throw new Error('missing buffersLocal base buffer: ' + name);
                 }
@@ -280,7 +280,7 @@ function create(dataset) {
         var isRunningRecent = new Rx.ReplaySubject(1);
 
         isRunningRecent.subscribe(function (v) {
-            logger.debug('=============================isRunningRecent:', v);
+            logger.trace('=============================isRunningRecent:', v);
         });
 
         isRunning.subscribe(isRunningRecent);
@@ -386,7 +386,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
                         {output: new Buffer(
                             Math.max(1024, Math.round(vbos[bufferName].buffer.byteLength * 1.5)))})
                         .map(function (compressed) {
-                            logger.debug('compress bufferName %s (size %d)', bufferName, vbos[bufferName].buffer.byteLength);
+                            logger.trace('compress bufferName %s (size %d)', bufferName, vbos[bufferName].buffer.byteLength);
                             perf.histogram('compress_inputBytes', vbos[bufferName].buffer.byteLength);
                             perf.histogram('compress_outputBytes', compressed.length);
                             perf.endTiming('compress_durationMS');
