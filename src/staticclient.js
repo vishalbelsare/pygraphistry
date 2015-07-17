@@ -22,10 +22,8 @@ var BASE_URL = BUCKET_URL + '/Static/';
 // TODO: de-globalize:
 var contentKey;
 
-var pointLabels = {};
-var edgeLabels = {};
-var pointLabelsIndex;
-var edgeLabelsIndex;
+var labelsByType = {point: {}, edge: {}};
+var labelsIndexesByType = {point: null, edge: null};
 
 
 //======
@@ -80,44 +78,93 @@ function makeFetcher () {
 }
 
 
-function makeIndexFetcher () {
-    return function (bufferName) {
+function fetchIndexBuffer (bufferName) {
+    debug('fetching', bufferName);
 
-        debug('fetching', bufferName);
+    //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
+    var res = new Rx.Subject(),
+        oReq = new XMLHttpRequest(),
+        assetURL = BASE_URL + contentKey + '/' + bufferName,
+        now = Date.now();
+    oReq.open('GET', assetURL, true);
+    // Handling a response as an arraybuffer means bypassing $.ajax:
+    oReq.responseType = 'arraybuffer';
 
-        //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
-        var res = new Rx.Subject(),
-            oReq = new XMLHttpRequest(),
-            assetURL = BASE_URL + contentKey + '/' + bufferName,
-            now = Date.now();
-        oReq.open('GET', assetURL, true);
-        // Handling a response as an arraybuffer means bypassing $.ajax:
-        oReq.responseType = 'arraybuffer';
+    oReq.onload = function () {
+        if (oReq.status !== 200) {
+            console.error('HTTP error acquiring data at: ', assetURL, oReq.statusText);
+            return;
+        }
+        try {
+            debug('got index data', bufferName, Date.now() - now, 'ms');
 
-        oReq.onload = function () {
-            if (oReq.status !== 200) {
-                console.error('HTTP error acquiring data at: ', assetURL, oReq.statusText);
-                return;
-            }
-            try {
-                debug('got index data', bufferName, Date.now() - now, 'ms');
-
-                var arrayBuffer = oReq.response; // Note: not oReq.responseText
-                res.onNext(arrayBuffer);
-            } catch (e) {
-                console.error('Render error on loading data:', e, e.stack);
-            }
-        };
-
-        oReq.send(null);
-
-        return res.take(1);
+            var arrayBuffer = oReq.response; // Note: not oReq.responseText
+            res.onNext(arrayBuffer);
+        } catch (e) {
+            console.error('Render error on loading data:', e, e.stack);
+        }
     };
+
+    oReq.send(null);
+
+    return res;
 }
 
 
-function getLabels(uri, type) {
-    return makeIndexFetcher().bind(type + 'Indexes.buffer');
+function getLabelIndexes(type) {
+    fetchIndexBuffer(type + 'Indexes.buffer').map(function(indexArrayBuffer) {
+        labelsIndexesByType[type] = new Uint32Array(indexArrayBuffer);
+    });
+}
+
+
+function getLabelViaRange(type, index, byteStart, byteEnd) {
+    var res = new Rx.Subject(),
+        oReq = new XMLHttpRequest(),
+        assetURL = BASE_URL + contentKey + '/' + type + 'Labels.buffer',
+        byteStartString = byteStart.toString ? byteStart.toString(10) : '',
+        byteEndString = byteEnd.toString ? byteEnd.toString(10) : '';
+    oReq.setRequestHeader('Range', 'bytes=' + byteStartString + '-' + byteEndString);
+    oReq.responseType = 'application/json';
+    oReq.open('GET', assetURL, true);
+
+    oReq.onload = function() {
+        if (oReq.status !== 206) {
+            console.error('HTTP error acquiring ranged data at: ', assetURL);
+            return;
+        }
+        try {
+            labelsByType[type][index] = oReq.response;
+            res.onNext(oReq.response);
+        } catch (e) {
+            console.error('Error on loading ranged data: ', e, e.stack);
+        }
+    };
+
+    oReq.send(null);
+
+    return res.take(1);
+}
+
+
+function getRangeForLabel(type, index) {
+    var indexesByType = labelsIndexesByType[type],
+        lowerBound = indexesByType[index];
+    if (lowerBound === undefined) {
+        throw new Error('Index not found', index, indexesByType);
+    }
+    return [indexesByType[index], indexesByType[index + 1]];
+}
+
+
+function getLabel(type, index) {
+    var labelCache = labelsByType[type];
+    if (labelCache.hasOwnProperty(index)) {
+        var res = new Rx.Subject();
+        res.onNext(labelCache[index]);
+        return res;
+    }
+    return getLabelViaRange(getRangeForLabel(type, index));
 }
 
 
@@ -136,9 +183,11 @@ module.exports = {
                 emit: function (eventName, data, cb) {
                     if (eventName === 'get_labels') {
                         var dim = data.dim,
-                            indices = data.indices,
-                            responseData, err;
-                        cb(err, responseData);
+                            indices = data.indices;
+                        getLabel(dim, indices[0])
+                            .flatMap(function (responseData) {
+                                cb(undefined, responseData);
+                            });
                     } else {
                         debug('ignoring emit event', eventName);
                     }
@@ -148,7 +197,7 @@ module.exports = {
         });
     },
 
-    createRenderer: function (socket, canvas) {
+    createRenderer: function (socket, canvas, urlParams) {
         debug('createRenderer');
 
         return $.ajaxAsObservable({
@@ -158,7 +207,7 @@ module.exports = {
             .pluck('data')
             .map(function (data) {
                 debug('got', data);
-                var renderState = renderer.init(data, canvas);
+                var renderState = renderer.init(data, canvas, urlParams);
                 debug('Renderer created');
                 return renderState;
             });
@@ -169,6 +218,9 @@ module.exports = {
 
         var vboUpdates = new Rx.ReplaySubject(1);
         vboUpdates.onNext('init');
+
+        getLabelIndexes('point');
+        getLabelIndexes('edge');
 
         $.ajaxAsObservable({url: BASE_URL + contentKey + '/metadata.json', dataType: 'json'})
             .pluck('data')
