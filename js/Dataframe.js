@@ -22,7 +22,10 @@ var Dataframe = function () {
         simulator: {}
     };
     this.lastPointPositions = null;
-    this.lastPointMask = [];
+    this.lastMasks = {
+        point: [],
+        edge: []
+    };
     this.data = this.rawdata;
 };
 
@@ -151,30 +154,30 @@ Dataframe.prototype.filter = function (masks, simulator) {
     // attributes;
     // TODO: implement filter on attributes as a mask, since this can
     // be huge.
-    _.each(TYPES, function (type) {
-        var mask;
-        // TODO: Support more complex masks.
-        if (type === 'edge') {
-            mask = masks['edge'];
-        } else {
-            mask = masks['point'];
-        }
+    // _.each(TYPES, function (type) {
+    //     var mask;
+    //     // TODO: Support more complex masks.
+    //     if (type === 'edge') {
+    //         mask = masks['edge'];
+    //     } else {
+    //         mask = masks['point'];
+    //     }
 
-        var attrs = rawdata.attributes[type];
-        var newAttrs = newData.attributes[type];
-        _.each(_.keys(attrs), function (key) {
-            var attr = attrs[key];
-            var newValues = [];
-            _.each(mask, function (idx) {
-                newValues.push(attr.values[idx]);
-            });
-            newAttrs[key] = {
-                values: newValues,
-                type: attr.type,
-                target: attr.target
-            };
-        });
-    });
+    //     var attrs = rawdata.attributes[type];
+    //     var newAttrs = newData.attributes[type];
+    //     _.each(_.keys(attrs), function (key) {
+    //         var attr = attrs[key];
+    //         var newValues = [];
+    //         _.each(mask, function (idx) {
+    //             newValues.push(attr.values[idx]);
+    //         });
+    //         newAttrs[key] = {
+    //             values: newValues,
+    //             type: attr.type,
+    //             target: attr.target
+    //         };
+    //     });
+    // });
 
 
     // TODO: Does this need to be updated, since it gets rewritten at each tick? Maybe zerod out?
@@ -223,8 +226,6 @@ Dataframe.prototype.filter = function (masks, simulator) {
         filteredEdges[i*2] = pointOriginalLookup[originalEdges[oldIdx*2]];
         filteredEdges[i*2 + 1] = pointOriginalLookup[originalEdges[oldIdx*2 + 1]];
     });
-
-    var filteredPoints = []; // TODO:
 
     // hostBuffers: points,unsortedEdges,forwardsEdges,backwardsEdges
     // TODO: Do points ever change? Ask Paden.
@@ -356,7 +357,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
 
         } else {
             console.log('Updating lastPointPositions');
-            _.each(that.lastPointMask, function (idx, i) {
+            _.each(that.lastMasks.point, function (idx, i) {
                 that.lastPointPositions[idx*2] = tempCurPoints[i*2];
                 that.lastPointPositions[idx*2 + 1] = tempCurPoints[i*2 + 1];
             });
@@ -455,7 +456,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
             simulator.versions.buffers[key] += 1;
         });
 
-        that.lastPointMask = masks.point || [];
+        that.lastMasks.point = masks.point || [];
+        that.lastMasks.edge = masks.edge || [];
 
     }).then(function () {
         console.log('Filter took ' + (Date.now() - start) + ' ms.');
@@ -731,7 +733,13 @@ Dataframe.prototype.getBuffer = function (name, type) {
  * @param {Object?} attributes - which attributes to extract from the row.
  */
 Dataframe.prototype.getRowAt = function (index, type, attributes) {
-    attributes = attributes || this.data.attributes[type];
+
+    var lastMask = this.lastMasks[type];
+    if (lastMask.length > 0) {
+        index = lastMask[index];
+    }
+
+    attributes = attributes || this.rawdata.attributes[type];
     var row = {};
     _.each(_.keys(attributes), function (key) {
         row[key] = attributes[key].values[index];
@@ -745,7 +753,7 @@ Dataframe.prototype.getRowAt = function (index, type, attributes) {
  * @param {string} type - any of [TYPES]{@link TYPES}.
  */
 Dataframe.prototype.getRows = function (indices, type) {
-    var attributes = this.data.attributes[type],
+    var attributes = this.rawdata.attributes[type],
         that = this;
 
     indices = indices || range(that.data.numElements[type]);
@@ -762,12 +770,17 @@ Dataframe.prototype.getRows = function (indices, type) {
  * @returns {{header, values}}
  */
 Dataframe.prototype.getRowsCompact = function (indices, type) {
-    var attributes = this.data.attributes[type],
+    var attributes = this.rawdata.attributes[type],
         keys = this.getAttributeKeys(type);
 
     indices = indices || range(that.data.numElements[type]);
 
+    var lastMask = this.lastMasks[type];
+
     var values = _.map(indices, function (index) {
+        if (lastMask.length > 0) {
+            index = lastMask[index];
+        }
         var row = [];
         _.each(keys, function (key) {
             row.push(attributes[key].values[index]);
@@ -782,6 +795,49 @@ Dataframe.prototype.getRowsCompact = function (indices, type) {
 };
 
 Dataframe.prototype.getColumn = function (column, type) {
+
+    // A filter has been done, and we need to apply the
+    // mask and compact.
+    if (!this.data.attributes[type][column]) {
+        var lastMask = this.lastMasks[type];
+        var rawAttrs = this.rawdata.attributes[type];
+        var newValues = [];
+        _.each(lastMask, function (idx) {
+            newValues.push(rawAttrs[column].values[idx]);
+        });
+        this.data.attributes[type][column] = {
+            values: newValues,
+            type: rawAttrs[column].type,
+            target: rawAttrs[column].target
+        };
+    }
+
+    // _.each(TYPES, function (type) {
+    //     var mask;
+    //     // TODO: Support more complex masks.
+    //     if (type === 'edge') {
+    //         mask = masks['edge'];
+    //     } else {
+    //         mask = masks['point'];
+    //     }
+
+    //     var attrs = rawdata.attributes[type];
+    //     var newAttrs = newData.attributes[type];
+    //     _.each(_.keys(attrs), function (key) {
+    //         var attr = attrs[key];
+    //         var newValues = [];
+    //         _.each(mask, function (idx) {
+    //             newValues.push(attr.values[idx]);
+    //         });
+    //         newAttrs[key] = {
+    //             values: newValues,
+    //             type: attr.type,
+    //             target: attr.target
+    //         };
+    //     });
+    // });
+
+
     var attributes = this.data.attributes[type];
     return attributes[column].values;
 };
@@ -1167,8 +1223,6 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
     var edgeListTyped = new Uint32Array(edges.length);
     var mapped = new Uint32Array(edges.length / 2);
 
-    var start = Date.now();
-
     // If we're filtering and have information on unfiltered data.
     if (oldEncapsulated && masks) {
         var oldEdges = oldEncapsulated.edgesTyped;
@@ -1232,8 +1286,6 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
             edgeListTyped[i*2 + 1] = edges[idx*2 + 1];
         }
     }
-
-    console.log('EdgeList took: ', Date.now() - start);
 
     return {
         edgeListTyped: edgeListTyped,
