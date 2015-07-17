@@ -223,11 +223,16 @@ Dataframe.prototype.filter = function (masks, simulator) {
         unsortedEdgeMask.push(map[idx]);
     });
 
+    // TODO: See if there's a way to do this without sorting.
+    // Sorting is slow as all hell.
+    unsortedEdgeMask.sort(function (a, b) {
+        return a - b;
+    });
+
     var unsortedMasks = {
         point: masks.point,
         edge: unsortedEdgeMask
     };
-
 
     var pointOriginalLookup = [];
     _.each(masks.point, function (oldIdx, i) {
