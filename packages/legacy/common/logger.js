@@ -151,7 +151,7 @@ var self = module.exports = {
         //This should return a function that takes an error as an argument and logs a formatted version of it, and rethrows the error.
         return function(err) {
             childLogger.error(err, msg);
-            throw new Error(err);
+            throw err;
         };
     }
 };
