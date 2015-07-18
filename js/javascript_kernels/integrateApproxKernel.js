@@ -58,7 +58,7 @@ this.argsIntegrateApprox = [
 
     logger.trace('Running kernel faIntegrateApprox');
     return this.faIntegrateApprox.exec([simulator.numPoints], resources)
-      .fail(log.makeQErrorHandler('Executing IntegrateApprox failed'));
+      .fail(log.makeQErrorHandler(logger, 'Executing IntegrateApprox failed'));
     }
 
 }

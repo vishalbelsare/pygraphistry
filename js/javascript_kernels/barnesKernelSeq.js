@@ -204,7 +204,7 @@ var BarnesKernelSeq = function (clContext) {
                             tempBuffers.numBodies = numBodies;
                             return tempBuffers;
                         })
-        .fail(log.makeQErrorHandler("Setting temporary buffers for barnesHutKernelSequence failed"));
+        .fail(log.makeQErrorHandler(logger, "Setting temporary buffers for barnesHutKernelSequence failed"));
     };
 
     this.setEdges = function(simulator, layoutBuffers, warpsize, workItems) {
@@ -261,7 +261,7 @@ var BarnesKernelSeq = function (clContext) {
             setBarnesKernelArgs(that.sort, tempBuffers);
             setBarnesKernelArgs(that.calculatePointForces, tempBuffers);
 
-        }).fail(log.makeQErrorHandler('setupTempBuffers'));
+        }).fail(log.makeQErrorHandler(logger, 'setupTempBuffers'));
     };
 
     // TODO (paden) Can probably combine ExecKernel functions
@@ -308,7 +308,7 @@ var BarnesKernelSeq = function (clContext) {
             return that.calculateForces.exec([workItems.calculateForces], resources, [256]);
         })
 
-        .fail(log.makeQErrorHandler("Executing BarnesKernelSeq failed"));
+        .fail(log.makeQErrorHandler(logger, "Executing BarnesKernelSeq failed"));
     };
 
     this.execKernels = function(simulator, stepNumber, workItems) {
@@ -354,10 +354,9 @@ var BarnesKernelSeq = function (clContext) {
             return that.calculatePointForces.exec([workItems.calculateForces[0]], resources, [workItems.calculateForces[1]]);
         })
 
-        .fail(log.makeQErrorHandler("Executing BarnesKernelSeq failed"));
+        .fail(log.makeQErrorHandler(logger, "Executing BarnesKernelSeq failed"));
     };
 
 };
 
 module.exports = BarnesKernelSeq;
-

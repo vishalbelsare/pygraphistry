@@ -64,7 +64,7 @@ var faSwingKernel = function (clContext) {
 
         logger.trace("Running kernel faSwingsTractions");
         return this.faSwings.exec([simulator.numPoints], resources)
-        .fail(log.makeQErrorHandler('Executing FaSwing failed'));
+        .fail(log.makeQErrorHandler(logger, 'Executing FaSwing failed'));
     };
 
     this.execMidPointsKernels = function(simulator, workItems) {
@@ -78,7 +78,7 @@ var faSwingKernel = function (clContext) {
       //simulator.tickBuffers(['swings', 'tractions']);
 
         return this.faSwings.exec([simulator.numMidPoints], resources)
-        .fail(log.makeQErrorHandler('Executing FaSwing failed'));
+        .fail(log.makeQErrorHandler(logger, 'Executing FaSwing failed'));
     };
 
 }

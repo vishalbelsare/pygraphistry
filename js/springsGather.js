@@ -42,7 +42,7 @@ SpringsGather.prototype.tick = function(simulator) {
 
     logger.trace('Running SpringsGather kernel');
     return this.gather.exec([simulator.numForwardsWorkItems], resources)
-        .fail(log.makeQErrorHandler('Kernel springGather failed'));
+        .fail(log.makeQErrorHandler(logger, 'Kernel springGather failed'));
 }
 
 module.exports = SpringsGather;

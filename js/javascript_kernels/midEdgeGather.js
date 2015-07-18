@@ -49,7 +49,7 @@ function midEdgeGather(clContext) {
 
       logger.trace('Running midEdgeGather kernel');
       return this.gather.exec([simulator.numEdges], resources)
-        .fail(log.makeQErrorHandler('Kernel midEdgeGather failed'));
+        .fail(log.makeQErrorHandler(logger, 'Kernel midEdgeGather failed'));
     };
 
 

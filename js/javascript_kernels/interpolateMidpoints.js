@@ -51,7 +51,7 @@ var interpolateMidpointsKernel = function (clContext) {
 
         logger.trace('Running interpolateMidpoints kernel');
         return this.interpolate.exec([simulator.numEdges], resources)
-            .fail(log.makeQErrorHandler('Kernel interpolateMidPoints failed'));
+            .fail(log.makeQErrorHandler(logger, 'Kernel interpolateMidPoints failed'));
     };
 };
 

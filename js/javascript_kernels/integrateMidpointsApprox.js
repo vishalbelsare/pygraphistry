@@ -57,7 +57,7 @@ this.argsIntegrateMidPointsApprox = [
 
     logger.trace('Running kernel faIntegrateApprox');
     return this.faIntegrate.exec([simulator.numMidPoints], resources)
-      .fail(log.makeQErrorHandler('Executing IntegrateApprox failed'));
+      .fail(log.makeQErrorHandler(logger, 'Executing IntegrateApprox failed'));
     }
 
 }
