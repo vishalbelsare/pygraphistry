@@ -308,7 +308,7 @@ var BarnesKernelSeq = function (clContext) {
             return that.calculateForces.exec([workItems.calculateForces], resources, [256]);
         })
 
-        .fail(log.makeQErrorHandler("Executing BarnesKernelSeq failed"));
+        .fail(log.makeQErrorHandler("Executing BarnesKernelSeq Midpoints failed"));
     };
 
     this.execKernels = function(simulator, stepNumber, workItems) {
