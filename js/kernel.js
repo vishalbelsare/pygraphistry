@@ -27,7 +27,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
 
     //TODO: Alternative way of doing this, since we aren't using debug module anymore
     // Set synchronous based on debug value
-    // var synchronous = false;
+    var synchronous = false;
     // if (process.env.DEBUG && process.env.DEBUG.indexOf('perf') != -1) {
     //     logger.info('Kernel ' + name + ' is synchronous because DEBUG=perf');
     //     synchronous = true;
