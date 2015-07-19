@@ -28,6 +28,8 @@ var logger      = Log.createLogger('central:server');
 
 var router = require('./worker-router.js');
 
+var apiKey      = require('common/api.js');
+
 // Tell Express to trust reverse-proxy connections from localhost, linklocal, and private IP ranges.
 // This allows Express to expose the client's real IP and protocol, not the proxy's.
 app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
@@ -183,7 +185,28 @@ app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
 
 // Temporarly handle ETL request from Splunk
 app.post('/etl', bodyParser.json({type: '*', limit: '128mb'}), function (req, res) {
-    logger.debug({req: req}, 'etl request');
+
+    logger.info({req: req.query}, 'etl request');
+    logger.debug({req: req}, 'etl request debug');
+
+    //TODO make an error once prod ssl server is up
+    if ((config.ENVIRONMENT !== 'local') && !req.secure) {
+
+        logger.warn('non-local /etl without https');
+
+        //logger.error('non-local /etl without https');
+        //return res.send({success: false, msg: 'requires https'});
+    }
+
+    if ( (config.ENVIRONMENT !== 'local') ) {
+        try {
+            var who = apiKey.decrypt(req.query.key);
+        } catch (err) {
+            logger.error(error, 'bad etl key');
+            return res.send({success: false, msg: 'bad API key'});
+        }
+    }
+
     router.pickWorker(function (err, worker) {
         logger.debug('picked etl worker', req.ip, worker);
 
@@ -241,6 +264,10 @@ app.get('/uber', function(req, res) {
     logger.info('redirecting to graph');
     res.redirect('/uber/index.html' + (req.query.debug !== undefined ? '?debug' : ''));
 });
+
+
+//https://.../api/encrypt?text=...
+apiKey.init(app);
 
 
 function start() {
