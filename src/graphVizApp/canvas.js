@@ -459,16 +459,18 @@ function renderSlowEffects(renderingScheduler) {
     if (edgeMode === 'ARCS' && appSnapshot.vboUpdated) {
         start = Date.now();
         midSpringsPos = getPolynomialCurves(appSnapshot.buffers, true);
-        end1 = Date.now(); 
+        end1 = Date.now();
         renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
         end2 = Date.now();
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
     }
-    if (edgeMode === 'INDEXEDCLIENT' && appSnapshot.vboUpdated) {
+    if ( (edgeMode === 'INDEXEDCLIENT' || edgeMode === 'ARCS') && appSnapshot.vboUpdated) {
         start = Date.now();
         springsPos = expandLogicalEdges(appSnapshot.buffers);
         end1 = Date.now();
-        renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
+        if (edgeMode === 'INDEXEDCLIENT') {
+            renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
+        }
         end2 = Date.now();
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
         makeArrows(appSnapshot.buffers);
