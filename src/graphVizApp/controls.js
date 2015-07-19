@@ -427,7 +427,7 @@ function menuToggler (onElt, $a, $menu, errLbl) {
             isOn = !isOn;
         } else {
             isOn = false;
-            $(elt).children('i').removeClass('toggle-on');
+            $a.children('i').removeClass('toggle-on');
         }
         return isOn;
     });
