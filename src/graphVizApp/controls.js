@@ -166,7 +166,7 @@ function setupBrush(appState, isOn) {
 //Side effect: highlight that element
 function makeMouseSwitchboard() {
 
-    var mouseElts = $('#marqueerectangle, #histogramBrush, #layoutSettingsButton');
+    var mouseElts = $('#marqueerectangle, #histogramBrush, #layoutSettingsButton, #filterButton');
 
     var onElt = Rx.Observable.merge.apply(Rx.Observable,
             mouseElts.get().map(function (elt) {
@@ -494,6 +494,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     });
 
     menuToggler(onElt, $('#layoutSettingsButton'),  $('#renderingItems'), 'Turning on/off settings');
+    menuToggler(onElt, $('#filterButton'),  $('#filteringItems'), 'Turning on/off filter');
 
 
     var marquee = setupMarquee(appState, turnOnMarquee);
