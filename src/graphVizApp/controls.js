@@ -274,7 +274,10 @@ function controlMaker (urlParams, $anchor, param, type) {
         class: 'control-label col-xs-4',
     }).text(param.prettyName);
 
-    var $entry = $('<div>').addClass('form-group').append($label, $col);
+    var $entry = $('<div>')
+        .addClass('form-group')
+        .addClass(param.type === 'color' ? 'colorer' : param.type)
+        .append($label, $col);
 
     $anchor.append($entry);
 
@@ -294,7 +297,7 @@ function createControls(socket, appState, trigger, urlParams) {
             }
         });
 
-    var $anchor = $('#renderingItems').children('.form-horizontal').empty();
+    var $anchor = $('#renderingItems').children('.form-horizontal');
 
     var makeControl = controlMaker.bind('', urlParams, $anchor);
 
