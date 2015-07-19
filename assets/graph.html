@@ -197,8 +197,6 @@
 
                       </a>
 
-                      <div class="divide-line" style="display:none"></div>
-
                       <!--
                       <a href="#" id="shortestpath" data-container="body" data-toggle="tooltip" data-placement="right" title="Find routes between two points" style="display:none">
                           <i class="fa fa-road fa-2x"></i>
@@ -206,54 +204,6 @@
                       -->
 
 
-
-
-<style scoped="scoped">
-.colorpicker {
-    right: 7em;
-}
-.colorSelector {
-    position: relative;
-    top: 0;
-    left: 0;
-    width: 36px;
-    height: 36px;
-    background: url(libs/images/select2.png);
-}
-
-.colorSelector div {
-    position: relative;
-    top: 4px;
-    left: 4px;
-    width: 28px;
-    height: 28px;
-    background: url(libs/images/select2.png) center;
-}
-</style>
-
-                      <div id="colorpickers">
-                            <div class="divide-line"></div>
-
-                            <div id="foregroundColor">
-
-                                <div class="colorSelector">
-                                    <div style="opacity: 0.3; background-color: #000"></div>
-                                </div>
-                                <div class="colorHolder"></div>
-
-                            </div>
-
-                            <div class="divide-line"></div>
-
-                            <div id="backgroundColor">
-
-                                <div class="colorSelector">
-                                    <div style="opacity: 0.3; background-color: #fff"></div>
-                                </div>
-                                <div class="colorHolder"></div>
-
-                            </div>
-                      </div>
 
                     </div> <!-- last options group -->
 
@@ -294,6 +244,68 @@
 
         <div id="renderingItems" class="settingsPanel">
             <div class="form-horizontal">
+
+
+                <div class="control-title">Background</div>
+
+                    <style scoped="scoped">
+                    .colorpicker {
+                        right: 7em;
+                    }
+                    .colorSelector {
+                        position: relative;
+                        top: 0;
+                        left: 0;
+                        width: 36px;
+                        height: 36px;
+                        background: url(libs/images/select2.png);
+                    }
+
+                    .colorSelector div {
+                        position: relative;
+                        top: 4px;
+                        left: 4px;
+                        width: 28px;
+                        height: 28px;
+                        background: url(libs/images/select2.png) center;
+                    }
+                    </style>
+
+                    <div id="colorpickers">
+
+                        <div class="form-group colorer">
+                            <label  class="control-label col-xs-4">Foreground</label>
+                            <div class="col-xs-8">
+
+                                <div id="foregroundColor">
+
+                                    <div class="colorSelector">
+                                        <div style="opacity: 0.3; background-color: #000"></div>
+                                    </div>
+                                    <div class="colorHolder"></div>
+
+                                </div>
+                            </div>
+                        </div><!-- /form-group -->
+
+                        <div class="form-group colorer">
+                            <label  class="control-label col-xs-4">Background</label>
+                            <div class="col-xs-8">
+
+                                <div id="backgroundColor">
+
+                                    <div class="colorSelector">
+                                        <div style="opacity: 0.3; background-color: #fff"></div>
+                                    </div>
+                                    <div class="colorHolder"></div>
+
+                                </div>
+                            </div>
+                        </div><!-- /form-group -->
+
+                    </div><!-- /colorpickers -->
+
+
             </div>  <!-- /form-horizontal -->
         </div> <!-- /renderingItems -->
 
