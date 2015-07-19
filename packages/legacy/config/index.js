@@ -80,6 +80,12 @@ function defaults() {
             }
         },
 
+        API: {
+            ALGORITHM: 'aes-256-cbc',
+            CANARY: 'Validated',
+            SECRET: 'Graphtacular'
+        },
+
         LOCAL_CACHE: true,
         LOCAL_CACHE_DIR: '/tmp/graphistry/data_cache',
 
