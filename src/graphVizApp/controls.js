@@ -14,6 +14,7 @@ var runButton       = require('./runButton.js');
 var forkVgraph      = require('./fork.js');
 var persistButton   = require('./persist.js');
 var colorpicker     = require('./colorpicker.js');
+var externalLink    = require('./externalLink.js');
 
 
 // Setup client side controls.
@@ -420,6 +421,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     createLegend($('#graph-legend'), urlParams);
     toggleLogo($('.logo-container'), urlParams);
     var onElt = makeMouseSwitchboard();
+    externalLink($('#externalLinkButton'));
 
     // TODO: More general version for all toggle-able buttons?
     var marqueeIsOn = false;
