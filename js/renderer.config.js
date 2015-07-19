@@ -849,8 +849,11 @@ var sceneNetFlowArcs= {
     'options': stdOptions,
     'camera': camera2D,
     'edgeMode': 'ARCS',
-    'render': ['pointpicking',  'pointsampling', 'midedgeculledindexedclient', /*'edgepicking',*/
-        'pointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
+    'midedgeculledindexedclient', /*'edgepicking',*/
+    'edgeculledindexedclient', //for arrows
+    'arrowculled', 'arrowhighlight',
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2']
 }
 
