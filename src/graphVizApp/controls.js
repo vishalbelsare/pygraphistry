@@ -414,6 +414,34 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
 }
 
 
+//Observable DOM * $DOM * $DOM * String -> Observable Bool
+//When onElt is $a, toggle $a and potentially show $menu, else toggle off $a and hide $menu
+//Return toggle status stream
+function menuToggler (onElt, $a, $menu, errLbl) {
+
+    var isOn = false;
+
+    var turnOn = onElt.map(function (elt) {
+        if (elt === $a[0]) {
+            $(elt).children('i').toggleClass('toggle-on');
+            isOn = !isOn;
+        } else {
+            isOn = false;
+            $(elt).children('i').removeClass('toggle-on');
+        }
+        return isOn;
+    });
+
+    turnOn.distinctUntilChanged().do(function (state) {
+        if (state) {
+            $menu.css('display', 'block');
+        } else {
+            $menu.css('display', 'none');
+        }
+    }).subscribe(_.identity, util.makeErrorHandler(errLbl));
+
+    return turnOn;
+}
 
 
 
@@ -465,23 +493,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         return brushIsOn;
     });
 
-    var settingsOn = false;
-    var turnOnSettings = onElt.map(function (elt) {
-        if (elt === $('#layoutSettingsButton')[0]) {
-            $(elt).children('i').toggleClass('toggle-on');
-            settingsOn = !settingsOn;
-        }
-        return settingsOn;
-    });
-
-    turnOnSettings.do(function (state) {
-        if (state) {
-            $('#renderingItems').css('display', 'block');
-        } else {
-            $('#renderingItems').css('display', 'none');
-        }
-    }).subscribe(_.identity, util.makeErrorHandler('Turning on/off settings'));
-
+    menuToggler(onElt, $('#layoutSettingsButton'),  $('#renderingItems'), 'Turning on/off settings');
 
 
     var marquee = setupMarquee(appState, turnOnMarquee);
