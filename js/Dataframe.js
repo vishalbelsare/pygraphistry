@@ -151,34 +151,6 @@ Dataframe.prototype.filter = function (masks, simulator) {
     var newData = makeEmptyData();
     var numPoints = (masks.point) ? masks.point.length : rawdata.numElements.point;
     var numEdges = (masks.edge) ? masks.edge.length : rawdata.numElements.edge;
-    // attributes;
-    // TODO: implement filter on attributes as a mask, since this can
-    // be huge.
-    // _.each(TYPES, function (type) {
-    //     var mask;
-    //     // TODO: Support more complex masks.
-    //     if (type === 'edge') {
-    //         mask = masks['edge'];
-    //     } else {
-    //         mask = masks['point'];
-    //     }
-
-    //     var attrs = rawdata.attributes[type];
-    //     var newAttrs = newData.attributes[type];
-    //     _.each(_.keys(attrs), function (key) {
-    //         var attr = attrs[key];
-    //         var newValues = [];
-    //         _.each(mask, function (idx) {
-    //             newValues.push(attr.values[idx]);
-    //         });
-    //         newAttrs[key] = {
-    //             values: newValues,
-    //             type: attr.type,
-    //             target: attr.target
-    //         };
-    //     });
-    // });
-
 
     // TODO: Does this need to be updated, since it gets rewritten at each tick? Maybe zerod out?
     // rendererBuffers;
@@ -1343,13 +1315,14 @@ function computeWorkItemsTyped(edgesTyped, originals, numPoints) {
     return workItemsTyped;
 }
 
-function computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals) {
+function computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals, numPoints) {
     var index = 0;
-    var edgeStartEndIdxs = [];
+    var edgeStartEndIdxsTyped = new Uint32Array(numPoints * 2);
     for(var i = 0; i < (workItemsTyped.length/4) - 1; i++) {
       var start = workItemsTyped[i*4];
       if (start == -1) {
-        edgeStartEndIdxs.push([-1, -1]);
+        edgeStartEndIdxsTyped[i*2] = -1;
+        edgeStartEndIdxsTyped[i*2 + 1] = -1;
       } else {
         var end = workItemsTyped[(i+1)*4];
         var j = i+1;
@@ -1361,16 +1334,18 @@ function computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals) {
         if (end === -1) {
             end = edgesTyped.length / 2; // Special case for last workitem
         }
-
-        edgeStartEndIdxs.push([start, end]);
+        edgeStartEndIdxsTyped[i*2] = start;
+        edgeStartEndIdxsTyped[i*2 + 1] = end;
       }
     }
     if (workItemsTyped[(workItemsTyped.length - 4)] !== -1) {
-      edgeStartEndIdxs.push([workItemsTyped[workItemsTyped.length - 4], edgesTyped.length /2]);
+      edgeStartEndIdxsTyped[edgeStartEndIdxsTyped.length - 2] = workItemsTyped[workItemsTyped.length - 4];
+      edgeStartEndIdxsTyped[edgeStartEndIdxsTyped.length - 1] = edgesTyped.length/2;
     } else {
-      edgeStartEndIdxs.push([-1, -1]);
+      edgeStartEndIdxsTyped[edgeStartEndIdxsTyped.length - 2] = -1;
+      edgeStartEndIdxsTyped[edgeStartEndIdxsTyped.length - 1] = -1;
     }
-    return edgeStartEndIdxs;
+    return edgeStartEndIdxsTyped;
 }
 
 
@@ -1387,7 +1362,8 @@ Dataframe.prototype.encapsulateEdges = function (edges, numPoints, oldEncapsulat
         edgePermutationInverseTyped[i] = val;
     });
 
-     // [ [first edge number from src idx, numEdges from source idx, source idx], ... ]
+    // [ [first edge number from src idx, numEdges from source idx, source idx], ... ]
+    //workItemsTyped is a Uint32Array [first edge number from src idx, number of edges from src idx, src idx, 666]
     var workItemsTyped = computeWorkItemsTyped(edgesTyped, originals, numPoints);
 
     var degreesTyped = new Uint32Array(numPoints);
@@ -1398,18 +1374,7 @@ Dataframe.prototype.encapsulateEdges = function (edges, numPoints, oldEncapsulat
         degreesTyped[workItemsTyped[i*4 + 2]] = workItemsTyped[i*4 + 1];
     }
 
-    //workItemsTyped is a Uint32Array [first edge number from src idx, number of edges from src idx, src idx, 666]
-    //fetch edge to find src and dst idx (all src same)
-    //num edges > 0
-
-    var edgeStartEndIdxs = computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals);
-
-    // Flattening
-    var edgeStartEndIdxsTyped = new Uint32Array(edgeStartEndIdxs.length * 2);
-    for (var idx = 0; idx < edgeStartEndIdxs.length; idx++) {
-        edgeStartEndIdxsTyped[idx*2] = edgeStartEndIdxs[idx][0];
-        edgeStartEndIdxsTyped[idx*2 + 1] = edgeStartEndIdxs[idx][1];
-    }
+    var edgeStartEndIdxsTyped = computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals, numPoints);
 
     return {
         //Uint32Array
