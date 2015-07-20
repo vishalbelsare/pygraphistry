@@ -15,6 +15,14 @@ function AND (a, b) {
 }
 
 
+var ALPHA_NUMERIC_RADIX = 36;
+
+
+function createAlphaNumericUID() {
+    return Math.random().toString(ALPHA_NUMERIC_RADIX).substring(8);
+}
+
+
 // Usage:
 // mainObservableStream
 //    .flatMapLatest(util.observableFilter(subStream, _.identity))
@@ -64,6 +72,7 @@ function notIdentity (val) {
 module.exports = {
     makeErrorHandler: makeErrorHandler,
     observableFilter: observableFilter,
+    createAlphaNumericUID: createAlphaNumericUID,
     notIdentity: notIdentity,
     OR: OR,
     AND: AND

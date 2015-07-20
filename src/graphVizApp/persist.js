@@ -21,26 +21,26 @@ module.exports = function (socket, urlParams) {
     var $btn = $('#persistButton');
 
     Rx.Observable.fromEvent($btn, 'click')
-        //show
+        // show
         .map(function () {
-            var uid = Math.random().toString(36).substring(8),
+            var uid = util.createAlphaNumericUID(),
                 parts = urlParams.dataset.split('/'),
                 suffix = parts.slice(-parts.length + 1);
             return $(Handlebars.compile($('#persistTemplate').html())(
                 {defName: suffix + '_' + uid}));
         })
         .do(function ($modal) {
-             $('body').append($modal);
-             $('.status', $modal).css('display','none');
-             $modal.modal('show');
+            $('body').append($modal);
+            $('.status', $modal).css('display', 'none');
+            $modal.modal('show');
         })
         .flatMap(function ($modal) {
             return Rx.Observable.fromEvent($('.modal-footer button', $modal), 'click')
                 .map(_.constant($modal));
         })
-        //notify server & wait
+        // notify server & wait
         .do(function ($modal) {
-            $('.status', $modal).css('display','inline');
+            $('.status', $modal).css('display', 'inline');
             $('.modal-footer button', $modal).css('display', 'none');
         })
         .flatMap(function ($modal) {
@@ -50,7 +50,7 @@ module.exports = function (socket, urlParams) {
                     return {reply: reply, $modal: $modal};
                 });
         })
-        //show
+        // show
         .do(function (pair) {
             var reply = pair.reply;
             if (!(reply && reply.success)) {
@@ -65,7 +65,7 @@ module.exports = function (socket, urlParams) {
                     .attr('target', '_blank')
                     .text(url)
                     .attr('href', url));
-            $('.status', $modal).css('display','none');
+            $('.status', $modal).css('display', 'none');
         })
         .subscribe(_.identity,
             function (err) {
