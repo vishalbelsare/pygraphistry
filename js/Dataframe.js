@@ -1246,33 +1246,28 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
         var oldEdges = oldEncapsulated.edgesTyped;
         var oldPermutation = oldEncapsulated.edgePermutation;
         var lastOldIdx = 0;
-        var mappedMaskInverse = new Uint32Array(mapped.length);
+        var mappedMaskInverse = new Uint32Array(oldPermutation.length);
+        for (var i = 0; i < mappedMaskInverse.length; i++) {
+            mappedMaskInverse[i] = 1;
+        }
+
         for (var i = 0; i < edges.length/2; i++) {
-            // console.log('Starting i;');
             while (lastOldIdx < oldEdges.length/2) {
-                // console.log('Starting while');
                 var src = pointOriginalLookup[oldEdges[lastOldIdx*2]];
                 var dst = pointOriginalLookup[oldEdges[lastOldIdx*2 + 1]];
-                // console.log('Src: ', src, 'Dst: ', dst);
-                var lastPermutation = oldPermutation[lastOldIdx];
 
                 if (src !== undefined && dst !== undefined) {
                     edgeListTyped[i*2] = src;
                     edgeListTyped[i*2 + 1] = dst;
-                    mapped[i] = lastPermutation;
-                    mappedMaskInverse[lastOldIdx] = 0;
+                    mapped[i] = oldPermutation[lastOldIdx];
+                    mappedMaskInverse[oldPermutation[lastOldIdx]] = 0;
                     lastOldIdx++;
-                    // console.log('Breaking');
                     break;
                 } else {
-                    mappedMaskInverse[lastOldIdx] = 1;
                     lastOldIdx++;
                 }
             }
         }
-
-        // console.log('lastOldIdx: ', lastOldIdx, 'length: ', edges.length /2 );
-
         // Compute Scan of mappedMask:
         var mappedScan = new Uint32Array(mappedMaskInverse.length);
         mappedScan[0] = mappedMaskInverse[0];
@@ -1281,15 +1276,12 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
         }
 
         for (var i = 0; i < mapped.length; i++) {
-            mapped[i] = mapped[i] - mappedScan[i];
+            var idx = mapped[i];
+            mapped[i] = idx - mappedScan[idx];
         }
 
-        console.log('[1] Some From edgeListTyped: ', edgeListTyped[100], edgeListTyped[101], edgeListTyped[200]);
-        console.log('[1] Some From mapped: ', mapped[100], mapped[101], mapped[200]);
-
-    }
     // First time through.
-    // } else {
+    } else {
         var maskedEdgeList = new Float64Array(edgeListTyped.buffer);
         var maskedEdges = new Float64Array(edges.buffer);
 
@@ -1306,18 +1298,13 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
         for (var i = 0; i < edges.length/2; i++) {
             var idx = mapped[i];
             // I believe it's slightly faster to copy it in using a 64 bit "cast"
-            // than to do it directly.
+            // than to do it directly. However, it should be tested more before being enabled.
 
             // maskedEdgeList[i] = maskedEdges[idx];
             edgeListTyped[i*2] = edges[idx*2];
             edgeListTyped[i*2 + 1] = edges[idx*2 + 1];
         }
-    // }
-
-    console.log('[2] Some From edgeListTyped: ', edgeListTyped[100], edgeListTyped[101], edgeListTyped[200]);
-    console.log('[2] Some From mapped: ', mapped[100], mapped[101], mapped[200]);
-
-    // console.log('Masks: ', masks && masks.point);
+    }
 
     return {
         edgeListTyped: edgeListTyped,
