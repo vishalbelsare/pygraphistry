@@ -335,30 +335,24 @@ var MidpointForces = function (clContext) {
 
         // For all calls, we must have the # work items be a multiple of the workgroup size.
         var that = this;
-        debug("Executing toKDLayout");
         return this.toKDLayout.exec([workItems.toBarnesLayout[0]], resources, [workItems.toBarnesLayout[1]])
         .then(function () {
-            debug("Executing boundBox");
             return that.boundBox.exec([workItems.boundBox[0]], resources, [workItems.boundBox[1]]);
         })
 
         .then(function () {
-        debug("Executing buildTree");
         return that.buildTree.exec([workItems.buildTree[0]], resources, [workItems.buildTree[1]]);
         })
 
         .then(function () {
-        debug("Executing compute sums");
         return that.computeSums.exec([workItems.computeSums[0]], resources, [workItems.computeSums[1]]);
         })
 
         .then(function () {
-        debug("Executing sort");
         return that.sort.exec([workItems.sort[0]], resources, [workItems.sort[1]]);
         })
 
         .then(function () {
-        debug("Executing calculate midpoints");
         return that.calculateMidPoints.exec([workItems.calculateForces[0]], resources, [workItems.calculateForces[1]]);
         })
         .fail(log.makeQErrorHandler(logger, "Executing kd-tree edge bundling failed"));
