@@ -32,7 +32,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     var source = util.getKernelSource(file);
 
     // Set synchronous based on debug value
-    var synchronous = false;
+    var synchronous = true;
     if (process.env.DEBUG && process.env.DEBUG.indexOf('perf') != -1) {
         log.info('Kernel ' + name + ' is synchronous because DEBUG=perf');
         synchronous = true;
