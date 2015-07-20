@@ -784,6 +784,11 @@ Dataframe.prototype.getRowsCompact = function (indices, type) {
     };
 };
 
+Dataframe.prototype.getDataType = function (column, type) {
+    // Assumes that types don't change after filtering
+    return this.rawdata.attributes[type][column].type;
+}
+
 Dataframe.prototype.getColumn = function (column, type) {
 
     // A filter has been done, and we need to apply the
@@ -802,40 +807,16 @@ Dataframe.prototype.getColumn = function (column, type) {
         };
     }
 
-    // _.each(TYPES, function (type) {
-    //     var mask;
-    //     // TODO: Support more complex masks.
-    //     if (type === 'edge') {
-    //         mask = masks['edge'];
-    //     } else {
-    //         mask = masks['point'];
-    //     }
-
-    //     var attrs = rawdata.attributes[type];
-    //     var newAttrs = newData.attributes[type];
-    //     _.each(_.keys(attrs), function (key) {
-    //         var attr = attrs[key];
-    //         var newValues = [];
-    //         _.each(mask, function (idx) {
-    //             newValues.push(attr.values[idx]);
-    //         });
-    //         newAttrs[key] = {
-    //             values: newValues,
-    //             type: attr.type,
-    //             target: attr.target
-    //         };
-    //     });
-    // });
-
-
     var attributes = this.data.attributes[type];
     return attributes[column].values;
 };
 
 
 Dataframe.prototype.getAttributeKeys = function (type) {
+    // Assumes that filtering doesn't add/remove columns
+    // TODO: Generalize so that we can add/remove columns
     return _.sortBy(
-        _.keys(this.data.attributes[type]),
+        _.keys(this.rawdata.attributes[type]),
         _.identity
     );
 };
@@ -879,7 +860,7 @@ Dataframe.prototype.serializeColumns = function (target, options) {
         toSerialize[type] = {};
         var keys = that.getAttributeKeys(type);
         _.each(keys, function (key) {
-            toSerialize[type][key] = that.data.attributes[type][key];
+            toSerialize[type][key] = that.getColumn(key, type);
         });
     });
 
@@ -899,7 +880,7 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
 
         var goalNumberOfBins = binning ? binning._goalNumberOfBins : 0;
         var binningHint = binning ? binning[attribute] : undefined;
-        var dataType = that.data.attributes[type][attribute].type;
+        var dataType = that.getDataType(attribute, type);
 
         if (mode !== 'countBy' && dataType !== 'string') {
             return that.histogram(attribute, binningHint, goalNumberOfBins, indices, type);
@@ -920,7 +901,7 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
 
 
 Dataframe.prototype.countBy = function (attribute, binning, indices, type) {
-    var values = this.data.attributes[type][attribute].values;
+    var values = this.getColumn(attribute, type);
 
     // TODO: Get this value from a proper source, instead of hard coding.
     var maxNumBins = 29;
@@ -1050,7 +1031,7 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
     // VGraph types.
     // values = _.filter(values, function (x) { return !isNaN(x)});
 
-    var values = this.data.attributes[type][attribute].values;
+    var values = this.getColumn(attribute, type);
 
     var numValues = indices.length;
     if (numValues === 0) {
