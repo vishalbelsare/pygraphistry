@@ -138,6 +138,10 @@ Dataframe.prototype.getPointAttributeMask = function (attribute, start, stop) {
     return pointMask;
 };
 
+Dataframe.prototype.initializeTypedArrayCache = function () {
+
+};
+
 
 // This does an inplace filter on this.data given masks.
 // Mask is implemented as a list of valid indices (in sorted order).
@@ -155,9 +159,10 @@ Dataframe.prototype.filter = function (masks, simulator) {
     var oldNumPoints = rawdata.numElements.point;
     var oldNumEdges = rawdata.numElements.edge;
 
-    // if (_.keys(that.typedArrayCache).length === 0) {
-
-    // }
+    // TODO: Should this be lazy, or done at startup?
+    if (_.keys(that.typedArrayCache).length === 0) {
+        that.initializeTypedArrayCache();
+    }
 
     // labels;
     _.each(['point', 'edge'], function (type) {
@@ -188,7 +193,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
     ///////////////////////////////////////////////////////////////////////////
 
     // Filter out to new edges/points arrays.
-    var filteredEdges = Uint32Array(masks.edge.length * 2);
+    var filteredEdges = new Uint32Array(masks.edge.length * 2);
     var originalEdges = rawdata.hostBuffers.unsortedEdges;
     var originalForwardsEdges = rawdata.hostBuffers.forwardsEdges.edgesTyped;
 
