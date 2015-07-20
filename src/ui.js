@@ -3,13 +3,14 @@
 var $ = window.$;
 
 
+// [ string ] * [ DOM ]_1 -> ()
 exports.error = function() {
     var args = Array.prototype.slice.call(arguments);
-    var message = args.join(' ');
+    var message = args.length === 1 ? args[0] : args.join(' ');
 
     if (typeof($) !== 'undefined') {
         var $icon = $('<i class="fa fa-exclamation-triangle"></i>');
-        var $text = $('<span>').text('  ' + message);
+        var $text = $('<span>').append(message);
         var $msg = $('<div>')
             .addClass('status-error')
             .append($icon, $text)
