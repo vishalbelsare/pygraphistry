@@ -33,8 +33,6 @@ console.warn('%cWarning: having the console open can slow down execution signifi
 //===============
 
 
-var urlParams = getUrlParameters();
-
 /**
  * @typedef {Object} GraphistryURLParams
  * @type {string} usertag
@@ -54,16 +52,21 @@ var urlParams = getUrlParameters();
  * @return GraphistryURLParams
  */
 function getUrlParameters() {
-    var sPageURL = window.location.search.substring(1);
-    var sURLVariables = sPageURL.split('&');
-    var params = {};
-    for (var i = 0; i < sURLVariables.length; i++){
-        var sParameterName = sURLVariables[i].split('=');
+    var sPageURL = window.location.search.substring(1),
+        sURLVariables = sPageURL.split('&'),
+        params = {};
+    _.forEach(sURLVariables, function(sURLVariable) {
+        var sParameterName = sURLVariable.split('=');
         params[sParameterName[0]] = sParameterName[1];
-    }
+    });
 
     return params;
 }
+
+
+var urlParams = getUrlParameters();
+
+
 function isParamTrue (param) {
     var val = (urlParams[param] || '').toLowerCase();
     return val === 'true' || val === '1' || val === 'yes';
@@ -85,7 +88,14 @@ function displayErrors(socket, $canvas) {
 
     socket.on('disconnect', function(reason){
         $canvas.parent().addClass('disconnected');
-        ui.error('Disconnected (reason:', reason, ')');
+        ui.error(
+            $('<span>')
+                .text('Disconnected (reason:' + reason + '). ')
+                .append($('<a>')
+                    .text('Reload the frame.')
+                    .click(function () {
+                        document.location.reload();
+                    })));
     });
 
     $('#do-disconnect').click(function(btn) {
@@ -185,7 +195,8 @@ function createInfoOverlay(app) {
                 $('<span>')
                     .addClass('flavor')
                     .text('render'));
-    $('body').append(renderMeterD);
+    var $body = $('body');
+    $body.append(renderMeterD);
     var renderMeter = new FPSMeter(renderMeterD.get(0), {
         heat: 1,
         graph: 1,
@@ -195,7 +206,7 @@ function createInfoOverlay(app) {
         smoothing: 3,
         show: 'fps',
 
-        theme: 'transparent',
+        theme: 'transparent'
     });
     app.subscribe(function (app) {
         app.initialRenderState.get('renderPipeline').subscribe(function (evt) {
@@ -214,7 +225,7 @@ function createInfoOverlay(app) {
                 $('<span>')
                     .addClass('flavor')
                     .text('network'));
-    $('body').append(networkMeterD);
+    $body.append(networkMeterD);
     var networkMeter = new FPSMeter(networkMeterD.get(0), {
         heat: 1,
         graph: 1,
@@ -224,7 +235,7 @@ function createInfoOverlay(app) {
         smoothing: 5,
         show: 'fps',
 
-        theme: 'transparent',
+        theme: 'transparent'
     });
     app.pluck('vboUpdates').subscribe(function(evt) {
             switch (evt) {

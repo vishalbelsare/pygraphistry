@@ -30,12 +30,12 @@ function makeErrorHandler(name) {
 
 
 function markHits(samples32) {
-    var hits = {};
-    var idx;
-    for (var i = 0; i < samples32.length; i++) {
-        idx = picking.decodeGpuIndex(samples32[i]).idx;
+    var hits = {},
+        idx;
+    _.forEach(samples32, function(sample32) {
+        idx = picking.decodeGpuIndex(sample32).idx;
         hits[idx] = {dim: 1, idx: idx};
-    }
+    });
     return hits;
 }
 
@@ -111,8 +111,22 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
 
 //DOM =======================
 
+/**
+ * @typedef {Object} LabelIndex
+ * @type {number} idx
+ * @type {number} dim
+ */
+
+
 //create label, attach to dom
 //label texts defined externall; can change idx to update
+/**
+ * @param instance
+ * @param {Element} $labelCont
+ * @param {number} idx
+ * @param {LabelIndex} info
+ * @returns {{idx: *, dim: (number|*|dim), elt: *, setIdx: (function(this:*))}}
+ */
 function genLabel (instance, $labelCont, idx, info) {
 
 
@@ -165,7 +179,7 @@ function cacheKey(idx, dim) {
 
 
 function fetchLabel (instance, idx, dim) {
-    instance.state.socket.emit('get_labels', {dim: dim, indices: [idx]}, function (err, data) {
+    instance.state.socket.emit('get_labels', {dim: dim, indices: [idx]}, function(err, data) {
         if (err) {
             console.error('get_labels', err);
         } else {
@@ -247,6 +261,10 @@ function invalidateCache (instance) {
 }
 
 
+/**
+ * @param {socket.io socket} socket
+ * @returns POIHandler
+ */
 function init (socket) {
     debug('initializing label engine');
 
@@ -289,7 +307,7 @@ function init (socket) {
         invalidateCache: invalidateCache.bind('', instance),
 
         // int * int -> String
-        cacheKey: cacheKey,
+        cacheKey: cacheKey
     });
 
     return instance;

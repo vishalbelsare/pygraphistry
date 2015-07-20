@@ -52,6 +52,11 @@ function makeFetcher (workerUrl, endpoint, queryKey) {
         var oReq = new XMLHttpRequest();
         oReq.open('GET', fetchUrl, true);
         oReq.responseType = 'arraybuffer';
+        oReq.timeout = 5000;
+        oReq.ontimeout = function () {
+            console.log('Fetch buffer timeout');
+            res.onNext(true);
+        };
 
         var now = Date.now();
         oReq.onload = function () {
@@ -150,7 +155,7 @@ function connect(vizType, urlParams) {
     }
 
     // For compatibility with old way of specifying dataset
-    if ('datasetname' in urlParams) {
+    if (urlParams.hasOwnProperty('datasetname')) {
         urlParams.dataset = urlParams.datasetname;
     }
 
@@ -166,8 +171,8 @@ function connect(vizType, urlParams) {
         .value()
         .join('&');
 
-    var attempt = 0;
-    var latestError;
+    var attempt = 0,
+        latestError;
 
     return requestWorker(vizAddrArgs)
         .flatMap(function (uri) {
@@ -279,6 +284,7 @@ function handleVboUpdates(socket, uri, renderState) {
     var vboUpdateStep = 0;
 
     socket.on('vbo_update', function (data, handshake) {
+        debug('0. socket vbo update');
 
         var thisStep = {step: vboUpdateStep++, data: data.step};
 
@@ -299,6 +305,7 @@ function handleVboUpdates(socket, uri, renderState) {
 
 
             socket.emit('planned_binary_requests', {buffers: changedBufferNames, textures: changedTextureNames});
+            console.log(changedBufferNames);
 
             debug('3. changed buffers/textures', previousVersions, data.versions, changedBufferNames, changedTextureNames, thisStep);
 
@@ -309,9 +316,13 @@ function handleVboUpdates(socket, uri, renderState) {
             readyToRender
                 .subscribe(function () {
                     debug('6. All buffers and textures received, completing', thisStep);
-                    handshake(Date.now() - lastHandshake);
+                    console.log('Before handshake');
+                    //handshake(Date.now() - lastHandshake);
+                    handshake(11111);
                     lastHandshake = Date.now();
+                    console.log('After handshake');
                     vboUpdates.onNext('received');
+                    console.log('Received TEST in readyToRender');
                 },
                 function (err) { console.error('6 err. readyToRender error', err, (err||{}).stack, thisStep); });
 
@@ -328,17 +339,13 @@ function handleVboUpdates(socket, uri, renderState) {
                     var bindings = _.object(_.zip(changedBufferNames, vbos));
 
                     debug('5a. got all VBO data', Date.now() - now, 'ms', bindings, thisStep);
-                    socket.emit('received_buffers'); //TODO fire preemptively based on guess
+                    //TODO may be able to move this early
+                    socket.emit('received_buffers'); 
 
                     try {
                         _.each(data.elements, function (num, itemName) {
                             renderer.setNumElements(renderState, itemName, num);
                         });
-                        if (changedBufferNames.indexOf('curMidPoints') > 0 && thisStep.step > 20) {
-                            renderer.setFlags(renderState, 'interpolateMidPoints', false);
-                        } else {
-                            renderer.setFlags(renderState, 'interpolateMidPoints', true);
-                        }
                         renderer.loadBuffers(renderState, bindings);
                         readyBuffers.onNext();
                     } catch (e) {
