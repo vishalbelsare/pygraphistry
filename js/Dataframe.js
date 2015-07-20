@@ -21,6 +21,7 @@ var Dataframe = function () {
         edge: {},
         simulator: {}
     };
+    this.typedArrayCache = {};
     this.lastPointPositions = null;
     this.lastMasks = {
         point: [],
@@ -151,10 +152,12 @@ Dataframe.prototype.filter = function (masks, simulator) {
     var newData = makeEmptyData();
     var numPoints = (masks.point) ? masks.point.length : rawdata.numElements.point;
     var numEdges = (masks.edge) ? masks.edge.length : rawdata.numElements.edge;
+    var oldNumPoints = rawdata.numElements.point;
+    var oldNumEdges = rawdata.numElements.edge;
 
-    // TODO: Does this need to be updated, since it gets rewritten at each tick? Maybe zerod out?
-    // rendererBuffers;
-    // Skipping for now, since we use null renderer.
+    // if (_.keys(that.typedArrayCache).length === 0) {
+
+    // }
 
     // labels;
     _.each(['point', 'edge'], function (type) {
@@ -189,15 +192,15 @@ Dataframe.prototype.filter = function (masks, simulator) {
     var originalEdges = rawdata.hostBuffers.unsortedEdges;
     var originalForwardsEdges = rawdata.hostBuffers.forwardsEdges.edgesTyped;
 
-    var unsortedEdgeMask = [];
+    var unsortedEdgeMask = new Uint32Array(masks.edge.length);
     var map = rawdata.hostBuffers.forwardsEdges.edgePermutation;
-    _.each(masks.edge, function (idx) {
-        unsortedEdgeMask.push(map[idx]);
-    });
+    for (var i = 0; i < masks.edge.length; i++) {
+        unsortedEdgeMask[i] = map[masks.edge[i]];
+    }
 
     // TODO: See if there's a way to do this without sorting.
     // Sorting is slow as all hell.
-    unsortedEdgeMask.sort(function (a, b) {
+    Array.prototype.sort.call(unsortedEdgeMask, function (a, b) {
         return a - b;
     });
 
@@ -207,14 +210,15 @@ Dataframe.prototype.filter = function (masks, simulator) {
     };
 
     var pointOriginalLookup = [];
-    _.each(masks.point, function (oldIdx, i) {
-        pointOriginalLookup[oldIdx] = i;
-    });
+    for (var i = 0; i < masks.point.length; i++) {
+        pointOriginalLookup[masks.point[i]] = i;
+    }
 
-    _.each(unsortedEdgeMask, function (oldIdx, i) {
+    for (var i = 0; i < unsortedEdgeMask.length; i++) {
+        var oldIdx = unsortedEdgeMask[i];
         filteredEdges[i*2] = pointOriginalLookup[originalEdges[oldIdx*2]];
         filteredEdges[i*2 + 1] = pointOriginalLookup[originalEdges[oldIdx*2 + 1]];
-    });
+    }
 
     // hostBuffers: points,unsortedEdges,forwardsEdges,backwardsEdges
     // TODO: Do points ever change? Ask Paden.
@@ -239,38 +243,34 @@ Dataframe.prototype.filter = function (masks, simulator) {
     // TODO: Figure out what edgeTags are used for.
 
     var newPointSizes = new Uint8Array(numPoints);
-    _.each(masks.point, function (idx, i) {
-        newPointSizes[i] = rawdata.localBuffers.pointSizes[idx];
-    });
-    newData.localBuffers.pointSizes = newPointSizes;
-
     var newPointColors = new Uint32Array(numPoints);
-    _.each(masks.point, function (idx, i) {
-        newPointColors[i] = rawdata.localBuffers.pointColors[idx];
-    });
+    for (var i = 0; i < masks.point.length; i++) {
+        newPointSizes[i] = rawdata.localBuffers.pointSizes[masks.point[i]];
+        newPointColors[i] = rawdata.localBuffers.pointColors[masks.point[i]];
+    }
+    newData.localBuffers.pointSizes = newPointSizes;
     newData.localBuffers.pointColors = newPointColors;
 
+
     var newEdgeColors = new Uint32Array(masks.edge.length * 2);
-    _.each(masks.edge, function (idx, i) {
+    var newMidEdgeColors = new Uint32Array(masks.edge.length * 4);
+    var newEdgeWeights = new Uint32Array(masks.edge.length * 2);
+    for (var i = 0; i < masks.edge.length; i++) {
+        var idx = masks.edge[i];
+
         newEdgeColors[i*2] = rawdata.localBuffers.edgeColors[idx*2];
         newEdgeColors[i*2 + 1] = rawdata.localBuffers.edgeColors[idx*2 + 1];
-    });
-    newData.localBuffers.edgeColors = newEdgeColors;
 
-    var newMidEdgeColors = new Uint32Array(masks.edge.length * 4);
-    _.each(masks.edge, function (idx, i) {
         newMidEdgeColors[i*2] = rawdata.localBuffers.midEdgeColors[idx*2];
         newMidEdgeColors[i*2 + 1] = rawdata.localBuffers.midEdgeColors[idx*2 + 1];
         newMidEdgeColors[i*2 + 2] = rawdata.localBuffers.midEdgeColors[idx*2 + 2];
         newMidEdgeColors[i*2 + 3] = rawdata.localBuffers.midEdgeColors[idx*2 + 3];
-    });
-    newData.localBuffers.midEdgeColors = newMidEdgeColors;
 
-    var newEdgeWeights = new Uint32Array(masks.edge.length * 2);
-    _.each(masks.edge, function (idx, i) {
         newEdgeWeights[i*2] = rawdata.localBuffers.edgeWeights[idx*2];
         newEdgeWeights[i*2 + 1] = rawdata.localBuffers.edgeWeights[idx*2 + 1];
-    });
+    }
+    newData.localBuffers.edgeColors = newEdgeColors;
+    newData.localBuffers.midEdgeColors = newMidEdgeColors;
     newData.localBuffers.edgeWeights = newEdgeWeights;
 
     // numElements;
@@ -290,17 +290,6 @@ Dataframe.prototype.filter = function (masks, simulator) {
     //////////////////////////////////
     // SIMULATOR BUFFERS.
     //////////////////////////////////
-
-    // Prev Forces Float32Array * numPoint * 2
-    // degrees Uint32Array  * numPoint
-    // springsPos Float32Array * numEdge * 4
-    // edgeWeights Float32Array * numEdge
-
-    // TODO: curPoints so things don't fly around
-    // curPoints Float32Array * numPoint * 2
-    // TODO: Point Color + Point Size
-    var oldNumPoints = rawdata.numElements.point;
-    var oldNumEdges = rawdata.numElements.edge;
 
     var tempPrevForces = new Float32Array(oldNumPoints * 2);
     var tempDegrees = new Uint32Array(oldNumPoints);
@@ -332,7 +321,6 @@ Dataframe.prototype.filter = function (masks, simulator) {
         var promise;
         // TODO: Move this into general initialization
         if (!that.lastPointPositions) {
-            console.log('Initializing lastPointPositions');
             that.lastPointPositions = new Float32Array(rawdata.numElements.point * 2);
             _.each(tempCurPoints, function (point, i) {
                 that.lastPointPositions[i] = point;
@@ -346,7 +334,6 @@ Dataframe.prototype.filter = function (masks, simulator) {
                     });
 
         } else {
-            console.log('Updating lastPointPositions');
             _.each(that.lastMasks.point, function (idx, i) {
                 that.lastPointPositions[idx*2] = tempCurPoints[i*2];
                 that.lastPointPositions[idx*2 + 1] = tempCurPoints[i*2 + 1];
