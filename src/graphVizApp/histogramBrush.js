@@ -314,7 +314,7 @@ function init(socket, marquee) {
         if (!data.reply) {
             console.error('Unexpected server error on aggregate');
         } else if (data.reply && !data.reply.success) {
-            console.error('Server replied with error:', data.reply.error);
+            console.error('Server replied with error:', data.reply.error, data.reply.stack);
         }
     // TODO: Do we want to treat no replies in some special way?
     }).filter(function (data) { return data.reply && data.reply.success; })
