@@ -169,6 +169,11 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
 Dataframe.prototype.filter = function (masks, simulator) {
     console.log('Filtering');
 
+    // Check for edge case where nothing was selected
+    if (masks.point.length === 0 && masks.edge.length === 0) {
+        return;
+    }
+
     var start = Date.now();
 
     var that = this;
