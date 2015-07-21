@@ -26,11 +26,13 @@ var SPARKLINE_HEIGHT = 50;
 var NUM_SPARKLINES = 30;
 var NUM_COUNTBY_SPARKLINES = NUM_SPARKLINES - 1;
 var NUM_COUNTBY_HISTOGRAM = NUM_COUNTBY_SPARKLINES;
+var FILTER_NUM_STEPS = 100;
 
 //////////////////////////////////////////////////////////////////////////////
 // Globals for updates
 //////////////////////////////////////////////////////////////////////////////
 
+// TODO: Pull these into the created histogram object, away from globals.
 var color = d3.scale.ordinal()
         .range(['#0FA5C5', '#C8C8C8', '#0FA5C5', '#00BBFF'])
         .domain(['local', 'global', 'globalSmaller', 'localBigger']);
@@ -47,7 +49,33 @@ var activeAttributes = [];
 var attributeChange = new Rx.Subject();
 var globalStatsCache = {}; // For add histogram. TODO: Get rid of this and use replay
 var d3DataMap = {};
+var activeFilters = {};
 
+function setupFilterHandler (socket, $slider, attribute) {
+    return Rx.Observable.merge(
+                $slider.onAsObservable('slide'),
+                $slider.onAsObservable('slideStop')
+            ).distinctUntilChanged()
+            .throttleFirst(50)
+            .map(function () {
+                var rawVal = $slider.val();
+                var splitString = rawVal.split(',');
+                var minVal = +splitString[0]; //Cast to number
+                var maxVal = +splitString[1]; //Cast to number
+                var type = globalStatsCache.histograms[attribute].dataType;
+
+                activeFilters[attribute] = {
+                    start: minVal,
+                    stop: maxVal,
+                    type: type
+                };
+
+                return Rx.Observable.fromCallback(socket.emit, socket)('filter', activeFilters)
+                    .subscribe(_.identity, util.makeErrorHandler('Emit Filter'));
+
+            })
+            .subscribe(_.identity, util.makeErrorHandler('menu slider'));
+}
 
 function updateAttribute (oldAttribute, newAttribute, type) {
     // Delete old if it exists
@@ -90,6 +118,17 @@ function aggregatePointsAndEdges (socket, params) {
         Rx.Observable.fromCallback(socket.emit, socket)('aggregate', _.extend({}, params, {type: 'point'})),
         Rx.Observable.fromCallback(socket.emit, socket)('aggregate', _.extend({}, params, {type: 'edge'})),
         function (pointHists, edgeHists) {
+
+            _.each(pointHists.data, function (val) {
+                val.dataType = 'point';
+            });
+            _.each(edgeHists.data, function (val) {
+                val.dataType = 'edge';
+            });
+
+            console.log('pointHists: ', pointHists);
+            console.log('edgeHists: ', edgeHists);
+
             return {success: pointHists.success && edgeHists.success,
                     data: _.extend({}, pointHists.data || {}, edgeHists.data || {})};
         });
@@ -137,6 +176,18 @@ function init(socket, marquee) {
                 attribute: this.model.attributes.attribute,
                 id: this.cid
             };
+            var attrStats = globalStatsCache.histograms[params.attribute];
+
+            if (attrStats.type === 'histogram') {
+                params.continuousFilter = {
+                    min: attrStats.minValue,
+                    max: attrStats.maxValue,
+                    step: ((attrStats.maxValue - attrStats.minValue) / FILTER_NUM_STEPS)
+                };
+            } else {
+                console.log('UNIMPLEMENTED FOR COUNTBY');
+            }
+
             var html = this.template(params);
             this.$el.html(html);
             return this;
@@ -213,6 +264,13 @@ function init(socket, marquee) {
             var vizContainer = $(childEl).children('.vizContainer');
             histogram.set('vizContainer', vizContainer);
             var vizHeight = SPARKLINE_HEIGHT;
+
+            var attrStats = globalStatsCache.histograms[attribute];
+            if (attrStats.type === 'histogram') {
+                var $slider = $('#histogramContinuousFilter' + view.cid);
+                $slider.bootstrapSlider({});
+                setupFilterHandler(socket, $slider, attribute);
+            }
 
             if (histogram.get('sparkLines')) {
                 vizContainer.height(String(vizHeight) + 'px');
