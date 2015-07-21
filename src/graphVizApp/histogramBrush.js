@@ -62,13 +62,18 @@ function setupFilterHandler (socket, $slider, attribute) {
                 var splitString = rawVal.split(',');
                 var minVal = +splitString[0]; //Cast to number
                 var maxVal = +splitString[1]; //Cast to number
-                var type = globalStatsCache.histograms[attribute].dataType;
+                var stats = globalStatsCache.histograms[attribute];
+                var type = stats.dataType;
 
-                activeFilters[attribute] = {
-                    start: minVal,
-                    stop: maxVal,
-                    type: type
-                };
+                if (minVal === stats.minValue && maxVal === stats.maxValue) {
+                    delete activeFilters[attribute];
+                } else {
+                    activeFilters[attribute] = {
+                        start: minVal,
+                        stop: maxVal,
+                        type: type
+                    };
+                }
 
                 return Rx.Observable.fromCallback(socket.emit, socket)('filter', activeFilters)
                     .subscribe(_.identity, util.makeErrorHandler('Emit Filter'));
