@@ -96,7 +96,6 @@ function getPolynomialCurves(bufferSnapshots, interpolateMidPoints) {
     var curMidPoints = null;
     var numSplits = 0;
     if (!interpolateMidPoints) {
-        console.log('Render curves based on midpoints');
         curMidPoints = new Float32Array(bufferSnapshots.curMidPoints.buffer);
         numSplits = curMidPoints.length  / logicalEdges.length;
     } else {
@@ -629,7 +628,6 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         that.appSnapshot.simulating = val;
     }, util.makeErrorHandler('simulate updates'));
 
-    console.log(vboUpdates);
     vboUpdates.filter(function (status) {
         return status === 'received';
     }).flatMapLatest(function () {
