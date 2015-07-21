@@ -77,27 +77,6 @@ function setupLabelsAndCursor(appState, $eventTarget) {
 
 function setupRenderUpdates(renderingScheduler, cameraStream, settingsChanges) {
     settingsChanges
-        .do(function (settingsChange) {
-            var uniforms = renderingScheduler.renderState.get('uniforms');
-            switch (settingsChange.name) {
-                case 'pointOpacity':
-                    ['pointculled', 'pointoutline', 'uberpointculled', 'arrowculled'].forEach(function (item) {
-                        if (uniforms[item]) {
-                            uniforms[item].pointOpacity = [settingsChange.val];
-                        }
-                    });
-                    break;
-                case 'edgeOpacity':
-                    ['edgeculledindexedclient', 'midedgeculledindexedclient'].forEach(function (item) {
-                        if (uniforms[item]) {
-                            uniforms[item].edgeOpacity = [settingsChange.val];
-                        }
-                    });
-                    break;
-                default:
-                    break;
-            }
-        })
         .combineLatest(cameraStream, _.identity)
         .do(function () {
             renderingScheduler.renderScene('panzoom', {trigger: 'renderSceneFast'});
@@ -117,7 +96,6 @@ function getPolynomialCurves(bufferSnapshots, interpolateMidPoints) {
     var curMidPoints = null;
     var numSplits = 0;
     if (!interpolateMidPoints) {
-        console.log('Render curves based on midpoints');
         curMidPoints = new Float32Array(bufferSnapshots.curMidPoints.buffer);
         numSplits = curMidPoints.length  / logicalEdges.length;
     } else {
@@ -650,7 +628,6 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         that.appSnapshot.simulating = val;
     }, util.makeErrorHandler('simulate updates'));
 
-    console.log(vboUpdates);
     vboUpdates.filter(function (status) {
         return status === 'received';
     }).flatMapLatest(function () {
