@@ -88,7 +88,14 @@ function displayErrors(socket, $canvas) {
 
     socket.on('disconnect', function(reason){
         $canvas.parent().addClass('disconnected');
-        ui.error('Disconnected (reason:', reason, ')');
+        ui.error(
+            $('<span>')
+                .text('Disconnected (reason:' + reason + '). ')
+                .append($('<a>')
+                    .text('Reload the frame.')
+                    .click(function () {
+                        document.location.reload();
+                    })));
     });
 
     $('#do-disconnect').click(function(btn) {
