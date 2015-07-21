@@ -15,18 +15,20 @@ var renderer     = require('./renderer.js');
 
 //======
 
+// Site-level configuration:
 var BUCKET_REGION = 'us-west-1';
 var BUCKET_NAME = 'graphistry.data';
 var BUCKET_URL = 'https://s3-' + BUCKET_REGION + '.amazonaws.com/' + BUCKET_NAME;
 var BASE_URL = BUCKET_URL + '/Static/';
+
+// Per-content-instance:
 // TODO: de-globalize:
 var contentKey;
-
 var labelsByType = {point: {}, edge: {}};
-var labelsIndexesByType = {point: null, edge: null};
+var labelsIndexesByType = {};
 
 
-//======
+// ======
 
 
 //string * {socketHost: string, socketPort: int} -> (... -> ...)
@@ -82,7 +84,7 @@ function fetchIndexBuffer (bufferName) {
     debug('fetching', bufferName);
 
     // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
-    var res = new Rx.Subject(),
+    var result = new Rx.Subject(),
         oReq = new XMLHttpRequest(),
         assetURL = BASE_URL + contentKey + '/' + bufferName,
         now = Date.now();
@@ -99,7 +101,7 @@ function fetchIndexBuffer (bufferName) {
             debug('got index data', bufferName, Date.now() - now, 'ms');
 
             var arrayBuffer = oReq.response; // Note: not oReq.responseText
-            res.onNext(arrayBuffer);
+            result.onNext(new Uint32Array(arrayBuffer));
         } catch (e) {
             console.error('Render error on loading data:', e, e.stack);
         }
@@ -107,13 +109,13 @@ function fetchIndexBuffer (bufferName) {
 
     oReq.send(null);
 
-    return res;
+    return result;
 }
 
 
 function getLabelIndexes(type) {
-    fetchIndexBuffer(type + 'Indexes.buffer').map(function(indexArrayBuffer) {
-        labelsIndexesByType[type] = new Uint32Array(indexArrayBuffer);
+    fetchIndexBuffer(type + 'Indexes.buffer').forEach(function (labelIndexOffsets) {
+        labelsIndexesByType[type] = labelIndexOffsets;
     });
 }
 
@@ -124,24 +126,30 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
         assetURL = BASE_URL + contentKey + '/' + type + 'Labels.buffer',
         byteStartString = byteStart !== undefined && byteStart.toString ? byteStart.toString(10) : '',
         byteEndString = byteEnd !== undefined && byteEnd.toString ? byteEnd.toString(10) : '';
-    oReq.responseType = 'application/json';
-    oReq.open('GET', assetURL, true);
-    oReq.setRequestHeader('Range', 'bytes=' + byteStartString + '-' + byteEndString);
+    // First label: start can be 0, but end must be set.
+    // Last label: start is set, end unspecified, okay.
+    if (byteStartString || byteEndString) {
+        oReq.responseType = 'application/json';
+        oReq.open('GET', assetURL, true);
+        oReq.setRequestHeader('Range', 'bytes=' + byteStartString + '-' + byteEndString);
 
-    oReq.onload = function () {
-        if (oReq.status !== 206) {
-            console.error('HTTP error acquiring ranged data at: ', assetURL);
-            return;
-        }
-        try {
-            labelsByType[type][index] = oReq.response;
-            res.onNext(oReq.response);
-        } catch (e) {
-            console.error('Error on loading ranged data: ', e, e.stack);
-        }
-    };
+        oReq.onload = function () {
+            if (oReq.status !== 206) {
+                console.error('HTTP error acquiring ranged data at: ', assetURL);
+                return;
+            }
+            try {
+                labelsByType[type][index] = oReq.response;
+                res.onNext(oReq.response);
+            } catch (e) {
+                console.error('Error on loading ranged data: ', e, e.stack);
+            }
+        };
 
-    oReq.send(null);
+        oReq.send(null);
+    } else {
+        throw new Error('Undefined labels range request', type, index, byteStart, byteEnd);
+    }
 
     return res.take(1);
 }
@@ -151,7 +159,7 @@ function getRangeForLabel(type, index) {
     var indexesByType = labelsIndexesByType[type],
         lowerBound = indexesByType && indexesByType[index];
     if (lowerBound === undefined) {
-        return [undefined, undefined];
+        throw new Error('Label indexes not found for type', type);
     }
     return [lowerBound, indexesByType[index + 1]];
 }
@@ -186,10 +194,14 @@ module.exports = {
                     if (eventName === 'get_labels') {
                         var dim = data.dim,
                             indices = data.indices;
-                        getLabel(dim, indices[0])
-                            .flatMap(function (responseData) {
-                                cb(undefined, responseData);
-                            });
+                        try {
+                            getLabel(dim, indices[0])
+                                .flatMap(function (responseData) {
+                                    cb(undefined, responseData);
+                                });
+                        } catch (e) {
+                            cb(e, data);
+                        }
                     } else if (eventName === 'interaction') {
                         // Ignored for now, cuts back on logs.
                         return undefined;
