@@ -499,6 +499,17 @@
             </a>
         </div>
     </div>
+    <div class="histogramFilter row">
+        <div class="col-xs-10 col-xs-offset-1">
+            {{#if continuousFilter}}
+                <input id="histogramContinuousFilter{{id}}" type="text" class="histogramContinuousFilter{{id}} filterSlider span4" data-slider-min="{{continuousFilter.min}}" data-slider-id="histogramContinuousSlider{{id}}" data-slider-max="{{continuousFilter.max}}" data-slider-step="{{continuousFilter.step}}" data-slider-value="[{{continuousFilter.min}},{{continuousFilter.max}}]"/>
+            {{else}}
+                {{#if discreteFilter}}
+                    <p>DISCRETE FILTER NOT IMPLEMENTED YET</p>
+                {{/if}}
+            {{/if}}
+        </div>
+    </div>
     <div class="vizContainer"></div>
     <div class="divide-line"></div>
 </script>
@@ -518,8 +529,6 @@
         </ul>
     </div>
 </script>
-
-
 
 </body>
 </html>
