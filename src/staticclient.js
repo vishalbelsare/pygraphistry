@@ -156,12 +156,16 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
 
 
 function getRangeForLabel(type, index) {
-    var indexesByType = labelsIndexesByType[type],
-        lowerBound = indexesByType && indexesByType[index];
-    if (lowerBound === undefined) {
+    var indexesByType = labelsIndexesByType[type];
+    if (!indexesByType) {
         throw new Error('Label indexes not found for type', type);
     }
-    return [lowerBound, indexesByType[index + 1]];
+    var lowerBound = indexesByType && indexesByType[index],
+        upperBound = indexesByType && indexesByType[index + 1];
+    if (lowerBound >= upperBound) {
+        throw new Error('Invalid byte range indicated at', type, index);
+    }
+    return [lowerBound, upperBound];
 }
 
 
