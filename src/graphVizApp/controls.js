@@ -389,6 +389,15 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
     var camera = renderState.get('camera');
     var val = 0;
 
+    function setUniform(name, value) {
+        var uniforms = renderState.get('uniforms');
+        _.each(uniforms, function (map) {
+            if (name in map) {
+                map[name] = value;
+            }
+        });
+    }
+
     switch (name) {
         case 'pointSize':
             val = toLog(1, 100, 0.1, 10, pos);
@@ -399,8 +408,12 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
             camera.setEdgeScaling(val);
             break;
         case 'pointOpacity':
+            val = pos / 100;
+            setUniform('pointOpacity', [val]);
+            break;
         case 'edgeOpacity':
-            val = pos/100;
+            val = pos / 100;
+            setUniform('edgeOpacity', [val]);
             break;
         case 'labelTransparency':
             var opControl = $('#labelOpacity');
