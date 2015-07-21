@@ -81,7 +81,7 @@ function makeFetcher () {
 function fetchIndexBuffer (bufferName) {
     debug('fetching', bufferName);
 
-    //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
+    // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
     var res = new Rx.Subject(),
         oReq = new XMLHttpRequest(),
         assetURL = BASE_URL + contentKey + '/' + bufferName,
@@ -128,7 +128,7 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
     oReq.responseType = 'application/json';
     oReq.open('GET', assetURL, true);
 
-    oReq.onload = function() {
+    oReq.onload = function () {
         if (oReq.status !== 206) {
             console.error('HTTP error acquiring ranged data at: ', assetURL);
             return;
@@ -188,6 +188,9 @@ module.exports = {
                             .flatMap(function (responseData) {
                                 cb(undefined, responseData);
                             });
+                    } else if (eventName === 'interaction') {
+                        // Ignored for now, cuts back on logs.
+                        return undefined;
                     } else {
                         debug('ignoring emit event', eventName);
                     }
@@ -245,9 +248,12 @@ module.exports = {
                     function (err) { console.error('readyToRender error', err, (err||{}).stack); });
 
                 var changedBufferNames = _.keys(data.bufferByteLengths);
+                var bufferFileNames = changedBufferNames.map(function (bufferName) {
+                    return bufferName + '.vbo';
+                });
                 var bufferVBOs = Rx.Observable.zipArray(
                     [Rx.Observable.return()]
-                        .concat(changedBufferNames.map(function(bufferName) {return bufferName + '.vbo';}).map(fetchBuffer)))
+                        .concat(bufferFileNames.map(fetchBuffer)))
                     .take(1);
                 bufferVBOs
                     .subscribe(function (vbos) {
@@ -283,7 +289,7 @@ module.exports = {
                             readyTextures.onNext();
                         },
                         function (err) {
-                                console.error('texturesData exn', err, (err||{}).stack);
+                            console.error('texturesData exn', err, (err||{}).stack);
                         });
 
             }).subscribe(_.identity,
