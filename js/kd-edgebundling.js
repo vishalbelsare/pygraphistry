@@ -353,7 +353,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
         });
     }
     return calculateMidpoints.then(function () {
-        return that.midEdgeGather.execKernels(simulator);
+        //return that.midEdgeGather.execKernels(simulator);
     }).then(function () {
         return Q.all([
             //tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)

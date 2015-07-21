@@ -71,20 +71,10 @@ var uberControls = {
         {
             algo: EdgeBundling,
             params: {
-                edgeBundling: new BoolParam('Edge Bundling', false),
-                midpoints: new DiscreteParam('Splits', edgeBundlingSplits, 0, 32),
                 tau: new ContinuousParam('Speed', 1, 0.01, 10),
                 charge: new ContinuousParam('Charge', -0.05, -1, -0.0000000001),
                 springStrength: new ContinuousParam('Spring Strength', 400, 0, 800),
                 springDistance: new ContinuousParam('Spring Distance', 0.5, 0.0000001, 1),
-                // TODO : Remove these
-                gravity: new ContinuousParam('Center Magnet', 1.0, 0.01, 100),
-                scalingRatio: new ContinuousParam('Expansion Ratio', 1.0, 0.01, 100),
-                edgeInfluence: new DiscreteParam('Edge Influence', 0, 0, 5, 1),
-                preventOverlap: new BoolParam('Prevent Overlap', false),
-                strongGravity: new BoolParam('Compact Layout', false),
-                dissuadeHubs: new BoolParam('Dissuade Hubs', false),
-                linLog: new BoolParam('Strong Separation (LinLog)', false)
             }
         }
     ],

@@ -337,27 +337,22 @@ var MidpointForces = function (clContext) {
         var that = this;
         return this.toKDLayout.exec([workItems.toBarnesLayout[0]], resources, [workItems.toBarnesLayout[1]])
         .then(function () {
-            //console.log("After Kd Layout");
             return that.boundBox.exec([workItems.boundBox[0]], resources, [workItems.boundBox[1]]);
         })
 
         .then(function () {
-        //console.log("After bound box");
         return that.buildTree.exec([workItems.buildTree[0]], resources, [workItems.buildTree[1]]);
         })
 
         .then(function () {
-        //console.log("After build Tree");
         return that.computeSums.exec([workItems.computeSums[0]], resources, [workItems.computeSums[1]]);
         })
 
         .then(function () {
-        //console.log("After sums");
         return that.sort.exec([workItems.sort[0]], resources, [workItems.sort[1]]);
         })
 
         .then(function () {
-        //console.log("Sort");
         return that.calculateMidPoints.exec([workItems.calculateForces[0]], resources, [workItems.calculateForces[1]]);
         })
         .fail(log.makeQErrorHandler(logger, "Executing kd-tree edge bundling failed"));

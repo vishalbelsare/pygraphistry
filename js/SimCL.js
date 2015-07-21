@@ -1091,7 +1091,7 @@ function tick(simulator, stepNumber, cfg) {
             .then(function () {
                 return tickAllHelper(remainingAlgorithms);
             }).then(function () {
-                return simulator.otherKernels.springsGather.tick(simulator);
+                //return simulator.otherKernels.springsGather.tick(simulator);
             });
     };
 

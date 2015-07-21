@@ -44,7 +44,7 @@ __kernel void faIntegrate (
 
 
     delta = min(speed, maxSpeed) * curForces[n1Idx];
-    /*delta = 0.001f * curForces[n1Idx];*/
+    /*delta = 0.01f * curForces[n1Idx];*/
 
     debug6("Speed (%d) %f max: %f, min %.9g globalSpeed: %.9g\n", n1Idx, speed, maxSpeed, min(speed, maxSpeed), *globalSpeed);
 

@@ -536,6 +536,19 @@ var items = {
         'drawType': 'LINES',
         'glOptions': {}
     },
+    'uberdemoedges' : {
+        'program': 'midedgeculled',
+        'triggers': ['renderSceneFull'],
+        'bindings': {
+            'curPos': ['midSpringsPosClient', 'curPos'],
+            'edgeColor': ['midEdgeColors', 'midEdgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.2] }
+        },
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
     'midedgeculledindexedclient' : {
         'program': 'midedgeculled',
         'triggers': ['renderSceneFull'],
@@ -665,7 +678,14 @@ var items = {
             'pointSize':    ['pointSizes', 'pointSize'],
             'pointColor':   ['pointColors', 'pointColor'],
         },
-        'uniforms': pointCulledUniforms,
+        'uniforms': {
+            'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
+            'pointOpacity': { 'uniformType': '1f', 'defaultValues': [0.4] },
+            'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] },
+            'minPointSize': { 'uniformType': '1f', 'defaultValues': [8.0] }
+        },
         'drawType': 'POINTS',
         'glOptions': {},
     },
@@ -840,8 +860,10 @@ var sceneUber = {
     'options': stdOptions,
     'camera': camera2D,
     'edgeMode': 'EDGEBUNDLING',
-    'render': ['pointpicking',  'pointsampling', 'midedgeculledindexedclient', /*'edgepicking',*/
+    'render': ['pointpicking',  'pointsampling', 'uberdemoedges', /*'edgepicking',*/
         'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    //'render': ['pointpicking',  'pointsampling', 'midedgeculledindexedclient', [>'edgepicking',<]
+        //'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2']
 }
 
