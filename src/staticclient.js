@@ -63,7 +63,7 @@ function makeFetcher () {
 
                     res.onNext(trimmedArray);
                 } else {
-                    res.onNext(arrayBuffer);
+                    res.onNext(new Uint8Array(arrayBuffer));
                 }
 
             } catch (e) {
