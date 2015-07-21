@@ -122,11 +122,11 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
     var res = new Rx.Subject(),
         oReq = new XMLHttpRequest(),
         assetURL = BASE_URL + contentKey + '/' + type + 'Labels.buffer',
-        byteStartString = byteStart.toString ? byteStart.toString(10) : '',
-        byteEndString = byteEnd.toString ? byteEnd.toString(10) : '';
-    oReq.setRequestHeader('Range', 'bytes=' + byteStartString + '-' + byteEndString);
+        byteStartString = byteStart !== undefined && byteStart.toString ? byteStart.toString(10) : '',
+        byteEndString = byteEnd !== undefined && byteEnd.toString ? byteEnd.toString(10) : '';
     oReq.responseType = 'application/json';
     oReq.open('GET', assetURL, true);
+    oReq.setRequestHeader('Range', 'bytes=' + byteStartString + '-' + byteEndString);
 
     oReq.onload = function () {
         if (oReq.status !== 206) {
@@ -149,22 +149,24 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
 
 function getRangeForLabel(type, index) {
     var indexesByType = labelsIndexesByType[type],
-        lowerBound = indexesByType[index];
+        lowerBound = indexesByType && indexesByType[index];
     if (lowerBound === undefined) {
-        throw new Error('Index not found', index, indexesByType);
+        return [undefined, undefined];
     }
-    return [indexesByType[index], indexesByType[index + 1]];
+    return [lowerBound, indexesByType[index + 1]];
 }
 
 
 function getLabel(type, index) {
-    var labelCache = labelsByType[type];
+    var translatedType = type === 1 ? 'point' : (type === 2 ? 'edge' : type),
+        labelCache = labelsByType[translatedType];
     if (labelCache.hasOwnProperty(index)) {
         var res = new Rx.Subject();
         res.onNext(labelCache[index]);
         return res;
     }
-    return getLabelViaRange(getRangeForLabel(type, index));
+    var range = getRangeForLabel(translatedType, index);
+    return getLabelViaRange(translatedType, index, range[0], range[1]);
 }
 
 
