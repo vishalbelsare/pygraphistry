@@ -912,9 +912,13 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
         }
     }
 
-    var keysToAggregate = attributes ? attributes : this.getAttributeKeys(type);
+    var validAttributes = this.getAttributeKeys(type);
+    var keysToAggregate = attributes ? attributes : validAttributes;
     keysToAggregate = keysToAggregate.filter(function (val) {
         return val[0] !== '_';
+    }).filter(function (val) {
+        // Make sure that valid attributes were passed in.
+        return validAttributes.indexOf(val) > -1;
     });
 
     return _.object(_.map(keysToAggregate, function (attribute) {
