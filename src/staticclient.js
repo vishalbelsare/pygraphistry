@@ -25,7 +25,7 @@ var BASE_URL = BUCKET_URL + '/Static/';
 // TODO: de-globalize:
 var contentKey;
 var labelsByType = {point: {}, edge: {}};
-var labelsIndexesByType = {};
+var labelsOffsetsByType = {};
 
 
 // ======
@@ -80,7 +80,7 @@ function makeFetcher () {
 }
 
 
-function fetchIndexBuffer (bufferName) {
+function fetchOffsetBuffer (bufferName) {
     debug('fetching', bufferName);
 
     // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
@@ -98,9 +98,10 @@ function fetchIndexBuffer (bufferName) {
             return;
         }
         try {
-            debug('got index data', bufferName, Date.now() - now, 'ms');
+            debug('got offset data', bufferName, Date.now() - now, 'ms');
 
             var arrayBuffer = oReq.response; // Note: not oReq.responseText
+            // Uint32Array to match persist.js static export format.
             result.onNext(new Uint32Array(arrayBuffer));
         } catch (e) {
             console.error('Render error on loading data:', e, e.stack);
@@ -113,9 +114,9 @@ function fetchIndexBuffer (bufferName) {
 }
 
 
-function getLabelIndexes(type) {
-    fetchIndexBuffer(type + 'Indexes.buffer').forEach(function (labelIndexOffsets) {
-        labelsIndexesByType[type] = labelIndexOffsets;
+function getLabelOffsets(type) {
+    fetchOffsetBuffer(type + 'Labels.offsets').forEach(function (labelContentOffsets) {
+        labelsOffsetsByType[type] = labelContentOffsets;
     });
 }
 
@@ -156,12 +157,12 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
 
 
 function getRangeForLabel(type, index) {
-    var indexesByType = labelsIndexesByType[type];
-    if (!indexesByType) {
-        throw new Error('Label indexes not found for type', type);
+    var offsetsForType = labelsOffsetsByType[type];
+    if (!offsetsForType) {
+        throw new Error('Label offsets not found for type', type);
     }
-    var lowerBound = indexesByType && indexesByType[index],
-        upperBound = indexesByType && indexesByType[index + 1];
+    var lowerBound = offsetsForType && offsetsForType[index],
+        upperBound = offsetsForType && offsetsForType[index + 1];
     if (lowerBound >= upperBound) {
         throw new Error('Invalid byte range indicated at', type, index);
     }
@@ -240,8 +241,8 @@ module.exports = {
         var vboUpdates = new Rx.ReplaySubject(1);
         vboUpdates.onNext('init');
 
-        getLabelIndexes('point');
-        getLabelIndexes('edge');
+        getLabelOffsets('point');
+        getLabelOffsets('edge');
 
         $.ajaxAsObservable({url: BASE_URL + contentKey + '/metadata.json', dataType: 'json'})
             .pluck('data')
