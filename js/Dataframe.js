@@ -120,7 +120,7 @@ Dataframe.prototype.getEdgeAttributeMask = function (attribute, start, stop) {
     var attr = this.rawdata.attributes.edge[attribute];
     var edgeMask = [];
     _.each(attr.values, function (val, idx) {
-        if (val > start && val < stop) {
+        if (val >= start && val <= stop) {
             edgeMask.push(idx);
         }
     });
@@ -131,7 +131,7 @@ Dataframe.prototype.getPointAttributeMask = function (attribute, start, stop) {
     var attr = this.rawdata.attributes.point[attribute];
     var pointMask = [];
     _.each(attr.values, function (val, idx) {
-        if (val > start && val < stop) {
+        if (val >= start && val <= stop) {
             pointMask.push(idx);
         }
     });
