@@ -77,27 +77,6 @@ function setupLabelsAndCursor(appState, $eventTarget) {
 
 function setupRenderUpdates(renderingScheduler, cameraStream, settingsChanges) {
     settingsChanges
-        .do(function (settingsChange) {
-            var uniforms = renderingScheduler.renderState.get('uniforms');
-            switch (settingsChange.name) {
-                case 'pointOpacity':
-                    ['pointculled', 'pointoutline', 'uberpointculled', 'arrowculled'].forEach(function (item) {
-                        if (uniforms[item]) {
-                            uniforms[item].pointOpacity = [settingsChange.val];
-                        }
-                    });
-                    break;
-                case 'edgeOpacity':
-                    ['edgeculledindexedclient', 'midedgeculledindexedclient'].forEach(function (item) {
-                        if (uniforms[item]) {
-                            uniforms[item].edgeOpacity = [settingsChange.val];
-                        }
-                    });
-                    break;
-                default:
-                    break;
-            }
-        })
         .combineLatest(cameraStream, _.identity)
         .do(function () {
             renderingScheduler.renderScene('panzoom', {trigger: 'renderSceneFast'});
