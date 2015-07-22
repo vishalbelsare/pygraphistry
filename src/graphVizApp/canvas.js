@@ -433,19 +433,20 @@ function renderSlowEffects(renderingScheduler) {
     var start;
     var end1, end2, end3, end4;
 
-
     if (edgeMode === 'ARCS' && appSnapshot.vboUpdated) {
         start = Date.now();
         midSpringsPos = getPolynomialCurves(appSnapshot.buffers, true);
         end1 = Date.now();
         renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
+        renderer.loadBuffers(renderState, {'springsPosClient': midSpringsPos});
+        renderer.setNumElements(renderState, 'edgepickingindexedclient', midSpringsPos.length / 2);
         end2 = Date.now();
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
     }
     if ( (edgeMode === 'INDEXEDCLIENT' || edgeMode === 'ARCS') && appSnapshot.vboUpdated) {
         start = Date.now();
-        springsPos = expandLogicalEdges(appSnapshot.buffers);
         end1 = Date.now();
+        springsPos = expandLogicalEdges(appSnapshot.buffers);
         if (edgeMode === 'INDEXEDCLIENT') {
             renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
             renderer.setNumElements(renderState, 'edgepickingindexedclient', springsPos.length / 2);
@@ -504,7 +505,9 @@ function renderMouseoverEffects(renderingScheduler, task) {
 
     // Extend node indices with edge endpoints
     // TODO: Decide if we need to dedupe.
+    console.log("Edge indices in CANVAS", edgeIndices);
     _.each(edgeIndices, function (val) {
+        val = Math.floor(val / 9);
         nodeIndices.push(logicalEdges[2*val]);
         nodeIndices.push(logicalEdges[2*val + 1]);
     });
@@ -534,6 +537,7 @@ function renderMouseoverEffects(renderingScheduler, task) {
         renderer.setNumElements(renderState, 'arrowhighlight', edgeIndices.length * 3);
 
         _.each(edgeIndices, function (val, idx) {
+            val = Math.floor(val / 9);
             buffers.highlightedEdges[idx*4] = buffers.springsPos[val*4];
             buffers.highlightedEdges[idx*4 + 1] = buffers.springsPos[val*4 + 1];
             buffers.highlightedEdges[idx*4 + 2] = buffers.springsPos[val*4 + 2];
