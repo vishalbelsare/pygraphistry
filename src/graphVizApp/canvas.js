@@ -556,9 +556,16 @@ function makeArrows(bufferSnapshots, numRenderedSplits) {
     }
     var arrowPointSizes = bufferSnapshots.arrowPointSizes;
 
+    if (numRenderedSplits) {
     populateArrowBuffersArcs(numEdges, bufferSnapshots.midSpringsPos, arrowStartPos,
             arrowEndPos, arrowNormalDir, pointSizes, logicalEdges,
             arrowPointSizes, arrowColors, edgeColors, numRenderedSplits);
+    } else {
+        populateArrowBuffers(numEdges, springsPos, arrowStartPos,
+            arrowEndPos, arrowNormalDir, pointSizes, logicalEdges,
+            arrowPointSizes, arrowColors, edgeColors, numRenderedSplits);
+    }
+
 }
 
 /*
