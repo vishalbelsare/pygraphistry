@@ -9,6 +9,16 @@ AWS.config.update({accessKeyId: 'AKIAJSGVPK46VRVYMU2A', secretAccessKey: 'w+SA6s
 AWS.config.update({region: 'us-west-1'});
 
 
+var configErrors = [];
+
+
+function getErrors(clear) {
+    var errors = configErrors.slice(0);
+
+    if(clear) { configErrors = []; }
+
+    return errors;
+}
 
 
 /**
@@ -19,6 +29,7 @@ AWS.config.update({region: 'us-west-1'});
 function defaults() {
     return {
         CONFIG_ERRORS: [],
+        getErrors: getErrors,
 
         HOSTNAME: 'localhost',
         ENVIRONMENT: 'local',
@@ -84,18 +95,16 @@ function defaults() {
  * @return {Object} A new set of options combining existing options with command-line options
  */
 function commandLine() {
-    var commandLineOptions = {};
-
     if (process.argv.length > 2) {
         try {
-            commandLineOptions = JSON.parse(process.argv[2]);
+            return JSON.parse(process.argv[2]);
         } catch (err) {
             err.message = 'WARNING Cannot parse command line arguments, ignoring. Error: ' + err.message;
-            commandLineOptions = {CONFIG_ERRORS: [err]};
+            configErrors.push(err);
+
+            return {};
         }
     }
-
-    return commandLineOptions;
 }
 
 
@@ -202,9 +211,18 @@ function getMongoURL(hosts, username, password, database, replicaSet) {
  * resolvers.
  */
 function resolve(resolvers) {
-    return _.reduce(arguments, function(resolved, resolver) {
-        return _.extend({}, resolved, (_.isFunction(resolver) ? resolver(resolved) : resolver));
-    }, {});
+    return _.reduce(
+        arguments,
+        function(resolved, resolver) {
+            try {
+                return extend(resolved, (_.isFunction(resolver) ? resolver(resolved) : resolver));
+            } catch(err) {
+                configErrors.push(err);
+                return resolved;
+            }
+        },
+        {}
+    );
 }
 
 
