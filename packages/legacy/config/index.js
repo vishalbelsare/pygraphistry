@@ -2,14 +2,24 @@
 'use strict';
 
 var util = require('util');
-
 var _ = require('lodash');
-var AWS = require('aws-sdk');
-AWS.config.update({accessKeyId: 'AKIAJSGVPK46VRVYMU2A', secretAccessKey: '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'});
-AWS.config.update({region: 'us-west-1'});
 
 
 var configErrors = [];
+
+
+function getS3() {
+    try {
+        var AWS = require('aws-sdk');
+        AWS.config.update({accessKeyId: 'AKIAJSGVPK46VRVYMU2A', secretAccessKey: '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'});
+        AWS.config.update({region: 'us-west-1'});
+
+        return new AWS.S3();
+    } catch(err) {
+        configErrors.push(err);
+        return null;
+    }
+}
 
 
 function getErrors(clear) {
@@ -49,7 +59,7 @@ function defaults() {
         HTTP_LISTEN_PORT: 3000,
 
         BUCKET: 'graphistry.data',
-        S3: new AWS.S3(),
+        S3: getS3(),
 
         MONGO_USERNAME: undefined,
         MONGO_PASSWORD: undefined,
