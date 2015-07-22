@@ -20,6 +20,11 @@ function nameToLink (urlParams, name) {
 module.exports = function (socket, urlParams) {
     var $btn = $('#persistButton');
 
+    if (urlParams.static === 'true') {
+        $btn.remove();
+        return;
+    }
+
     Rx.Observable.fromEvent($btn, 'click')
         // show
         .map(function () {

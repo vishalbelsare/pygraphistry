@@ -13,7 +13,8 @@ var marqueeFact     = require('./marquee.js');
 var runButton       = require('./runButton.js');
 var forkVgraph      = require('./fork.js');
 var persistButton   = require('./persist.js');
-var colorpicker     = require('./colorpicker.js');
+var goLiveButton    = require('./goLiveButton.js');
+var colorPicker     = require('./colorpicker.js');
 var externalLink    = require('./externalLink.js');
 
 
@@ -263,7 +264,7 @@ function controlMaker (urlParams, $anchor, param, type) {
             .append($('<div>').addClass('colorSelector')
                 .append($('<div>').css({opacity: 0.3, background: 'white'})))
             .append($('<div>').addClass('colorHolder'));
-        param.cb(colorpicker.makeInspector($input, urlParams[param.name] ? urlParams[param.name] : param.def));
+        param.cb(colorPicker.makeInspector($input, urlParams[param.name] ? urlParams[param.name] : param.def));
     } else {
         console.warn('Ignoring param of unknown type', param);
         $input = $('<div>').text('Unknown setting type' + param.type);
@@ -506,8 +507,8 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
                 $('#inspector').css('visibility', 'hidden');
                 appState.brushOn.onNext(false);
             }
-        return brushIsOn;
-    });
+            return brushIsOn;
+        });
 
     menuToggler(onElt, $('#layoutSettingsButton'),  $('#renderingItems'), 'Turning on/off settings');
     menuToggler(onElt, $('#filterButton'),  $('#filteringItems'), 'Turning on/off filter');
@@ -519,6 +520,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     histogramBrush.init(socket, brush);
     forkVgraph(socket, urlParams);
     persistButton(socket, urlParams);
+    goLiveButton(socket, urlParams);
 
 /*
 
