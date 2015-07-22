@@ -58,7 +58,7 @@ function getFullErrorStack(ex)
 // Serialize an Error object
 // (Core error properties are enumerable in node 0.4, not in 0.6).
 // Modified error serializer
-var errSerializer = bunyan.stdSerializers.err = function err(e) {
+bunyan.stdSerializers.err = function bunyanErrSerializer(e) {
     if (!e || !e.stack) {
         return e;
     }
@@ -81,7 +81,7 @@ if(_.isUndefined(config.BUNYAN_LOG)) {
         metadata: {
             userInfo: { tag: 'unknown' }
         },
-        serializers: {err: bunyan.stdSerializers.err},
+        serializers: bunyan.stdSerializers,
         level: config.BUNYAN_LEVEL
     });
 } else {
@@ -90,7 +90,7 @@ if(_.isUndefined(config.BUNYAN_LOG)) {
         metadata: {
             userInfo: { tag: 'unknown' }
         },
-        serializers: {err: bunyan.stdSerializers.err},
+        serializers: bunyan.stdSerializers,
         level: config.BUNYAN_LEVEL,
         streams: [{
             path: config.BUNYAN_LOG,
@@ -113,7 +113,7 @@ process.on('SIGUSR2', function () {
 });
 
 
-var self = module.exports = {
+module.exports = {
     createLogger: function(name) {
         return (function () {
             var childLogger = parentLogger.child({module: name}, true);
@@ -150,6 +150,7 @@ var self = module.exports = {
         };
     }
 };
+
 
 var configLogger = module.exports.createLogger('config');
 var configErrors = config.getErrors(true);
