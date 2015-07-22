@@ -72,39 +72,34 @@ var errSerializer = bunyan.stdSerializers.err = function err(e) {
     return obj;
 };
 
-var CONSOLE_DEBUG_LEVEL = parseInt(process.env.CONSOLE_DEBUG_LEVEL) || config.CONSOLE_DEBUG_LEVEL; //empty function prevents logger from logging to console
-var BUNYAN_DEBUG_LEVEL = parseInt(process.env.BUNYAN_DEBUG_LEVEL) || config.BUNYAN_DEBUG_LEVEL; //defaults to 10 unless specified in command line or config
 
-var parentLogger = config.BUNYAN_LOG !== undefined ?
-    bunyan.createLogger({
+var parentLogger;
+
+if(_.isUndefined(config.BUNYAN_LOG)) {
+    parentLogger = bunyan.createLogger({
         name: 'graphistry',
         metadata: {
-            userInfo: {
-                tag: 'unknown'
-            }
+            userInfo: { tag: 'unknown' }
         },
-        serializers: {
-            err: bunyan.stdSerializers.err
+        serializers: {err: bunyan.stdSerializers.err},
+        level: config.BUNYAN_LEVEL
+    });
+} else {
+    parentLogger = bunyan.createLogger({
+        name: 'graphistry',
+        metadata: {
+            userInfo: { tag: 'unknown' }
         },
-        level: CONSOLE_DEBUG_LEVEL,
+        serializers: {err: bunyan.stdSerializers.err},
+        level: config.BUNYAN_LEVEL,
         streams: [{
             path: config.BUNYAN_LOG,
-            level: BUNYAN_DEBUG_LEVEL,
+            level: config.BUNYAN_LEVEL,
         }]
-    }) :
-    //bunyan defaults to stdout if no stream is specified
-    bunyan.createLogger({
-        name: 'graphistry',
-        metadata: {
-            userInfo: {
-                tag: 'unknown'
-            }
-        },
-        serializers: {
-            err: bunyan.stdSerializers.err
-        },
-        level: CONSOLE_DEBUG_LEVEL
     });
+}
+
+
 
 //add any additional logging methods here
 
