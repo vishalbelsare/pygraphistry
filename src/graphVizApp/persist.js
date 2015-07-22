@@ -28,11 +28,15 @@ module.exports = function (socket, urlParams) {
     Rx.Observable.fromEvent($btn, 'click')
         // show
         .map(function () {
-            var uid = util.createAlphaNumericUID(),
-                parts = urlParams.dataset.split('/'),
-                suffix = parts.slice(-parts.length + 1);
+            var contentKey = urlParams.contentKey;
+            if (!contentKey) {
+                var uid = util.createAlphaNumericUID(),
+                    parts = urlParams.dataset.split('/'),
+                    suffix = parts.slice(-parts.length + 1);
+                contentKey = suffix + '_' + uid;
+            }
             return $(Handlebars.compile($('#persistTemplate').html())(
-                {defName: suffix + '_' + uid}));
+                {defName: contentKey}));
         })
         .do(function ($modal) {
             $('body').append($modal);
