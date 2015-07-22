@@ -650,10 +650,11 @@ var items = {
         'program': 'edges',
         'triggers': ['picking'],
         'bindings': {
-            'curPos': ['springsPos', 'curPos'],
+            'curPos': ['springsPosClient', 'curPos'],
             'edgeColor': ['edgeIndices', 'edgeColor']
         },
         'drawType': 'LINES',
+        'index': ['logicalEdges', 'curIdx'],
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'hitmap',
         'readTarget': true
