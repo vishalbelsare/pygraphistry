@@ -448,6 +448,7 @@ function renderSlowEffects(renderingScheduler) {
         end1 = Date.now();
         if (edgeMode === 'INDEXEDCLIENT') {
             renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
+            renderer.setNumElements(renderState, 'edgepickingindexedclient', springsPos.length / 2);
         }
         end2 = Date.now();
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
