@@ -165,9 +165,8 @@ if(_.isArray(configErrors) && configErrors.length > 0) {
     }
 }
 
-var didLogConfig;
 
-if(_.isUndefined(didLogConfig) || didLogConfig !== true) {
+if(_.isUndefined(process.env.didLogConfig) || process.env.didLogConfig !== true) {
     configLogger.debug('Program options resolved to:', config);
-    didLogConfig = true;
+    process.env.didLogConfig = true;
 }
