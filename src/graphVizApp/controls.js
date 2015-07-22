@@ -385,6 +385,10 @@ function toLog(minPos, maxPos, minVal, maxVal, pos) {
 }
 
 
+function toPercent(pos) {
+    return pos / 100;
+}
+
 
 function setLocalSetting(name, pos, renderState, settingsChanges) {
     var camera = renderState.get('camera');
@@ -409,11 +413,11 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
             camera.setEdgeScaling(val);
             break;
         case 'pointOpacity':
-            val = pos / 100;
+            val = toPercent(pos);
             setUniform('pointOpacity', [val]);
             break;
         case 'edgeOpacity':
-            val = pos / 100;
+            val = toPercent(pos);
             setUniform('edgeOpacity', [val]);
             break;
         case 'labelTransparency':
@@ -421,7 +425,7 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
             if (!opControl.length) {
                 opControl = $('<style>').appendTo($('body'));
             }
-            opControl.text('.graph-label { opacity: ' + (pos/100) + '; }');
+            opControl.text('.graph-label { opacity: ' + toPercent(pos) + '; }');
             return;
         default:
             break;
