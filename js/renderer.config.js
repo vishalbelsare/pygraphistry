@@ -396,6 +396,17 @@ var models = {
             'normalize': true
         }
     },
+    'midEdgeColorsClient': {
+        'midEdgeColor':  {
+            'datasource': 'CLIENT',
+            'type': 'UNSIGNED_BYTE',
+            'hint': 'STATIC_DRAW',
+            'count': 4,
+            'offset': 0,
+            'stride': 0,
+            'normalize': true
+        }
+    },
     'arrowColors': {
         'arrowColor':  {
             'datasource': 'CLIENT',
@@ -554,7 +565,7 @@ var items = {
         'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos': ['midSpringsPosClient', 'curPos'],
-            'edgeColor': ['midEdgeColors', 'midEdgeColor']
+            'edgeColor': ['midEdgeColorsClient', 'midEdgeColor']
         },
         'uniforms': {
             'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.5] }
@@ -879,11 +890,11 @@ var sceneUber = {
     'indexeddummy', 'indexeddummy2']
 }
 
-var sceneNetFlowArcs= {
+var sceneNetFlowArcs = {
     'options': stdOptions,
     'camera': camera2D,
     'edgeMode': 'ARCS',
-    'numRenderedSplits': 0,
+    'numRenderedSplits': 8,
     'arcHeight': 0.2,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
     'midedgeculledindexedclient', 'edgepickingindexedclient',
