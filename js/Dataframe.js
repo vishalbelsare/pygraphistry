@@ -93,26 +93,74 @@ Dataframe.prototype.masksFromPoints = function (pointMask) {
 
 Dataframe.prototype.masksFromEdges = function (edgeMask) {
     var pointMask = [];
-    var pointLookup = {};
-    var edges = this.rawdata.hostBuffers.forwardsEdges.edgesTyped;
-
-    _.each(edgeMask, function (edgeIdx) {
-        var src = edges[2*edgeIdx];
-        var dst = edges[2*edgeIdx + 1];
-        pointLookup[src] = 1;
-        pointLookup[dst] = 1;
-    });
-
     var numPoints = this.rawdata.numElements.point;
-    for (var i = 0; i < numPoints; i++) {
-        if (pointLookup[i]) {
-            pointMask.push(i);
-        }
-    }
+
+    pointMask = _.range(numPoints);
+
+    // var pointLookup = {};
+    // var edges = this.rawdata.hostBuffers.forwardsEdges.edgesTyped;
+
+    // _.each(edgeMask, function (edgeIdx) {
+    //     var src = edges[2*edgeIdx];
+    //     var dst = edges[2*edgeIdx + 1];
+    //     pointLookup[src] = 1;
+    //     pointLookup[dst] = 1;
+    // });
+
+    // for (var i = 0; i < numPoints; i++) {
+    //     if (pointLookup[i]) {
+    //         pointMask.push(i);
+    //     }
+    // }
 
     return {
         edge: edgeMask,
         point: pointMask
+    };
+};
+
+Dataframe.prototype.composeMasks = function (maskList) {
+    // TODO: Make this faster.
+
+    // Assumes we will never have more than 255 separate masks.
+    var numMasks = maskList.length;
+    if (numMasks > 255) {
+        console.error('TOO MANY MASKS');
+        return;
+    }
+
+    var edgeMask = [];
+    var pointMask = [];
+
+    // Assumes Uint8Array() constructor initializes to zero, which it should.
+    var pointLookup = new Uint8Array(this.rawdata.numElements.point);
+    var edgeLookup = new Uint8Array(this.rawdata.numElements.edge);
+
+    _.each(maskList, function (mask) {
+        _.each(mask.edge, function (idx) {
+            edgeLookup[idx]++;
+        });
+
+        _.each(mask.point, function (idx) {
+            pointLookup[idx]++;
+        });
+    });
+
+    _.each(edgeLookup, function (count, i) {
+        if (count === numMasks) {
+            edgeMask.push(i);
+        }
+    });
+
+    _.each(pointLookup, function (count, i) {
+        if (count === numMasks) {
+            pointMask.push(i);
+        }
+    });
+
+    return {
+        point: pointMask,
+        edge: edgeMask
     };
 };
 
