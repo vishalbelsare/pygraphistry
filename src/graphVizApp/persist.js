@@ -17,6 +17,14 @@ function nameToLink (urlParams, name) {
 }
 
 
+function generateContentKey(urlParams) {
+    var uid = util.createAlphaNumericUID(),
+        parts = urlParams.dataset.split('/'),
+        suffix = parts.slice(-parts.length + 1);
+    return suffix + '_' + uid;
+}
+
+
 module.exports = function (socket, urlParams) {
     var $btn = $('#persistButton');
 
@@ -28,13 +36,7 @@ module.exports = function (socket, urlParams) {
     Rx.Observable.fromEvent($btn, 'click')
         // show
         .map(function () {
-            var contentKey = urlParams.contentKey;
-            if (!contentKey) {
-                var uid = util.createAlphaNumericUID(),
-                    parts = urlParams.dataset.split('/'),
-                    suffix = parts.slice(-parts.length + 1);
-                contentKey = suffix + '_' + uid;
-            }
+            var contentKey = urlParams.contentKey || generateContentKey(urlParams);
             return $(Handlebars.compile($('#persistTemplate').html())(
                 {defName: contentKey}));
         })
