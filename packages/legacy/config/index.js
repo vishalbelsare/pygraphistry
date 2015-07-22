@@ -9,11 +9,6 @@ AWS.config.update({accessKeyId: 'AKIAJSGVPK46VRVYMU2A', secretAccessKey: 'w+SA6s
 AWS.config.update({region: 'us-west-1'});
 
 
-// TODO: Should we seal the final options object we return? Or make option lookup use dynamic
-// methods instead of properties? (`options.vizServerAddress()`)?
-// FIXME: Find HOSTNAME from the environment, not config file
-// FIXME: We need to grab DATALISTURI using npm path resolution, not as a hard-code UNIX path
-// FIXME: Use 'MONGO_{USERNAME,PASSWORD,URLS,DATABASE}' instead of 'MONGO_SERVER' and 'DATABASE'
 
 
 /**
