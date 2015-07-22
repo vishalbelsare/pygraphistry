@@ -11,7 +11,6 @@ var configErrors = [];
 function getS3() {
     try {
         var AWS = require('aws-sdk');
-        AWS.config.update({accessKeyId: 'AKIAJSGVPK46VRVYMU2A', secretAccessKey: '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'});
         AWS.config.update({region: 'us-west-1'});
 
         return new AWS.S3();
@@ -46,6 +45,8 @@ function defaults() {
 
         CLUSTER: util.format('%s.local', (process.env['USER'] || 'localuser')),
 
+        // FIXME: Change this to 'VIZ_BIND_ADDRESS', to clarify this is the IP the server binds to,
+        // not the IP it is reachable at. Binding to 0.0.0.0 is legal, but not a real, routable IP.
         VIZ_LISTEN_ADDRESS: '0.0.0.0',
         VIZ_LISTEN_PORT: 10000,
 
@@ -61,14 +62,8 @@ function defaults() {
         BUCKET: 'graphistry.data',
         S3: getS3(),
 
-        MONGO_USERNAME: undefined,
-        MONGO_PASSWORD: undefined,
-        MONGO_HOSTS: ['localhost'],
-        MONGO_DATABASE: 'graphistry-local',
         DATABASE: 'graphistry-local',   // legacy option name
-        MONGO_REPLICA_SET: undefined,
-        // This option will be set by synthesized; it's only here for reference
-        MONGO_SERVER: 'mongodb://localhost/graphistry-local',
+        MONGO_SERVER: 'mongodb://localhost/graphistry-cluster',
         PINGER_ENABLED: false,
 
         BOUNDARY: {
@@ -93,8 +88,22 @@ function defaults() {
 
         // This string is prefixed to all Graphistry routes. For example, if BASE_URL is '/foo',
         // then central will append '/vizaddr' to get the route it will listen for viz server
-        // address requests, "/foo/vizaddr". This applies to both static and dynamic content.
-        BASE_URL: ''
+        // address requests, '/foo/vizaddr'. This applies to both static and dynamic content.
+        BASE_PATH: '',
+
+        // Address of the Splunk web interface for the Splunk server associated with this cluster.
+        // This is used by the router to reverse-proxy connections to the Splunk web interface.
+        SERVICE_ADDRESSES: {
+            SPLUNK: '',
+            CENTRAL: ''
+        },
+
+        PROXY: {
+            ENABLED: false,
+            LISTEN_PORT: 9000,
+            LISTEN_ADDRESS: '127.0.0.1',
+            OUT_INTERFACE: undefined
+        }
     };
 }
 
@@ -129,85 +138,60 @@ function deployEnv(options) {
 
     // Common options for 'staging' and 'production'
     var cloudOptions = {
-        MONGO_USERNAME: 'graphistry',
-        MONGO_PASSWORD: 'graphtheplanet',
-
-        MONGO_HOSTS: ['c48.lighthouse.2.mongolayer.com:10048', 'c48.lighthouse.3.mongolayer.com:10048'],
-        MONGO_REPLICA_SET: 'set-545152bc461811298c009c03',
+        MONGO_SERVER: 'mongodb://graphistry:graphtheplanet@lighthouse.2.mongolayer.com:10048,lighthouse.3.mongolayer.com:10048/graphistry-cluster?replicaSet=set-545152bc461811298c009c03',
 
         BUNYAN_LOG: '/var/log/graphistry-json/' + process.env.SUPERVISOR_PROCESS_NAME + '.log',
         BUNYAN_LEVEL: 30,
 
-        PINGER_ENABLED: true
+        PINGER_ENABLED: true,
+
+        PROXY: {
+            ENABLED: true,
+            LISTEN_PORT: 9000,
+            LISTEN_ADDRESS: '0.0.0.0',
+            OUT_INTERFACE: undefined
+        }
     };
 
     var stagingOptions = {
-        CLUSTER: "staging",
-
+        CLUSTER: 'staging',
         DATABASE: 'graphistry-staging',
-        MONGO_DATABASE: 'graphistry-staging'
     };
 
     var prodOptions = {
-        CLUSTER: "production",
-
+        CLUSTER: 'production',
         DATABASE: 'graphistry-prod',
-        MONGO_DATABASE: 'graphistry-prod'
     };
 
     switch(options.ENVIRONMENT) {
         case 'staging':
             return _.extend({}, cloudOptions, stagingOptions);
-            break;
         case 'production':
             return _.extend({}, cloudOptions, prodOptions);
-            break;
         default:  // 'local'
             return {};
     }
 }
 
 
-/**
- * Sets options based off the value of existing options (except for `ENVIRONMENT`).
- * @param  {Object} options - The set of existing options.
- * @return {Object} A new set of options containing the existing options + new options synthesized
- * from the existing options. The synthesized values will override any existing options of the same
- * name.
- */
-function synthesized(options) {
-    var mongoServer = getMongoURL(
-        options['MONGO_HOSTS'],
-        options['MONGO_USERNAME'],
-        options['MONGO_PASSWORD'],
-        options['MONGO_DATABASE'],
-        options['MONGO_REPLICA_SET']);
+function extend() {
+    var args = [{}];
+    for(var i = 0; i < arguments.length; i++) {
+        args.push(arguments[i]);
+    }
 
-    return {MONGO_SERVER: mongoServer};
-}
+    function deepExtend(curVal, newVal) {
+        if((_.isObject(curVal) && !(_.isFunction(curVal))) &&
+           (_.isObject(newVal) && !(_.isFunction(newVal)))) {
+            return extend(curVal, newVal);
+        } else {
+            return newVal;
+        }
+    }
 
+    args.push(deepExtend);
 
-/**
- * Creates a MongoDB connection URL from individual parameters
- *
- * @param  {string[]} hosts      - List of MongoDB server hostnames
- * @param  {string} [username]   - MongoDB username (optional)
- * @param  {string} [password]   - MongoDB password (options; if given, username must be given)
- * @param  {string} database     - Name of the database to authenticate against
- * @param  {string} [replicaSet] - The replicaset to use for the MongoDB database (optional)
- *
- * @return {string} A URL you can pass to `MongoClient.connect()` to connect to the database with
- * the options given.
- */
-function getMongoURL(hosts, username, password, database, replicaSet) {
-    var passwordUrl = _.isString(password) ? util.format(':%s', password) : '';
-    var credentialsUrl = _.isString(username) ? util.format('%s%s@', username, passwordUrl) : '';
-
-    var replicaSetUrl = _.isString(replicaSet) ? util.format('?replicaSet=%s', replicaSet) : '';
-
-    var hostsUrl = hosts.join(',');
-
-    return util.format('mongodb://%s%s/%s%s', credentialsUrl, hostsUrl, database, replicaSetUrl);
+    return _.extend.apply(this, arguments);
 }
 
 
@@ -246,9 +230,10 @@ function getOptions(optionOverrides) {
     optionOverrides = optionOverrides || {};
     var overrides = resolve(commandLine, optionOverrides);
 
-    var optionsResolved = resolve(defaults, overrides, deployEnv, synthesized, overrides);
+    var optionsResolved = resolve(defaults, overrides, deployEnv, overrides);
+
     return optionsResolved;
-};
+}
 
 
 module.exports = (function() {
