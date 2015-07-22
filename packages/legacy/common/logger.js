@@ -156,7 +156,6 @@ var self = module.exports = {
     }
 };
 
-var didLogConfig = false;
 var configLogger = module.exports.createLogger('config');
 
 if (config.CONFIG_ERRORS.length > 0) {
@@ -165,7 +164,9 @@ if (config.CONFIG_ERRORS.length > 0) {
     });
 }
 
-if(!didLogConfig) {
+var didLogConfig;
+
+if(_.isUndefined(didLogConfig) || didLogConfig !== true) {
     configLogger.debug('Program options resolved to:', config);
     didLogConfig = true;
 }
