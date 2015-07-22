@@ -349,9 +349,8 @@ function populateArrowBuffersArcs (maybeIterable, midSpringsPos, arrowStartPos,
 
     for (var idx = 0; idx < forLimit; idx++) {
         var val = (isIterable) ? maybeIterable[idx] : idx;
-        var edgeVal = (isIterable) ? Math.floor(val / numMidEdges) : val;
 
-        var midEdgeIdx = ((edgeVal + 1) * ((numMidEdges) * 4) -4);
+        var midEdgeIdx = ((val + 1) * ((numMidEdges) * 4) -4);
         var start = [midSpringsPos[midEdgeIdx + 0], midSpringsPos[midEdgeIdx + 1]];
         var end   = [midSpringsPos[midEdgeIdx + 2], midSpringsPos[midEdgeIdx + 3]];
 
@@ -373,14 +372,14 @@ function populateArrowBuffersArcs (maybeIterable, midSpringsPos, arrowStartPos,
         arrowNormalDir[3*idx + 1] = 1;  // Left vertex
         arrowNormalDir[3*idx + 2] = -1; // Right vertex
 
-        var pointSize = pointSizes[logicalEdges[2*edgeVal + 1]];
+        var pointSize = pointSizes[logicalEdges[2*val+ 1]];
         arrowPointSizes[3*idx + 0] = pointSize;
         arrowPointSizes[3*idx + 1] = pointSize;
         arrowPointSizes[3*idx + 2] = pointSize;
 
-        arrowColors[3*idx + 0] = edgeColors[2*edgeVal + 1];
-        arrowColors[3*idx + 1] = edgeColors[2*edgeVal + 1];
-        arrowColors[3*idx + 2] = edgeColors[2*edgeVal + 1];
+        arrowColors[3*idx + 0] = edgeColors[2*val + 1];
+        arrowColors[3*idx + 1] = edgeColors[2*val + 1];
+        arrowColors[3*idx + 2] = edgeColors[2*val + 1];
 
     }
 }
@@ -574,7 +573,7 @@ function renderSlowEffects(renderingScheduler) {
     var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
     var springsPos;
     var midSpringsPos;
-    var midEdgesColors
+    var midEdgesColors;
     var start;
     var end1, end2, end3, end4;
 
@@ -660,9 +659,7 @@ function renderMouseoverEffects(renderingScheduler, task) {
 
     // Extend node indices with edge endpoints
     // TODO: Decide if we need to dedupe.
-    console.log("Edge indices in CANVAS", edgeIndices);
     _.each(edgeIndices, function (val) {
-        val = Math.floor(val / (numRenderedSplits + 1));
         nodeIndices.push(logicalEdges[2*val]);
         nodeIndices.push(logicalEdges[2*val + 1]);
     });
@@ -693,7 +690,7 @@ function renderMouseoverEffects(renderingScheduler, task) {
 
         _.each(edgeIndices, function (val, idx) {
             // The start at the first midedge corresponding to hovered edge
-            var edgeStartIdx = (Math.floor(val / numMidEdges) * 4 * numMidEdges);
+            var edgeStartIdx = (val * 4 * numMidEdges);
             var highlightStartIdx = (idx * 4 * numMidEdges);
             for (var midEdgeIdx = 0; midEdgeIdx < numMidEdges; midEdgeIdx = midEdgeIdx + 1) {
                 var midEdgeStride = midEdgeIdx * 4;
