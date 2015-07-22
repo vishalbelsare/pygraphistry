@@ -55,7 +55,6 @@ app.options('/api/v0.2/splunk/html/index.fragment.html', function(req, res) {
 
 var MAIN_STATIC_PATH    = path.resolve(__dirname, '../assets');
 var GRAPH_STATIC_PATH   = path.resolve(require('graph-viz').staticFilePath(), 'assets');
-var HORIZON_STATIC_PATH = path.resolve(require('horizon-viz').staticFilePath(), 'assets');
 var UBER_STATIC_PATH    = path.resolve(require('uber-viz').staticFilePath(), 'assets');
 var SPLUNK_STATIC_PATH  = path.resolve(require('splunk-viz').staticFilePath(), 'assets');
 var STREAMGL_PATH       = require.resolve('StreamGL/dist/StreamGL.js');
@@ -165,11 +164,6 @@ app.get('/vizaddr/graph', function(req, res) {
     assignWorker(req, res);
 });
 
-app.get('/vizaddr/horizon', function(req, res) {
-    assignWorker(req, res);
-});
-
-
 // Serve the StreamGL client library
 app.get('*/StreamGL.js', function(req, res) {
     res.sendFile(STREAMGL_PATH);
@@ -178,8 +172,6 @@ app.get('*/StreamGL.map', function(req, res) {
     res.sendFile(STREAMGL_MAP_PATH);
 });
 
-// Serve horizon static assets
-app.use('/horizon', express.static(HORIZON_STATIC_PATH));
 // Serve graph static assets
 app.use('/graph', function (req, res, next) {
     return express.static(GRAPH_STATIC_PATH)(req, res, next);
@@ -244,11 +236,6 @@ app.use('/graphistry', express.static(MAIN_STATIC_PATH));
 // Default '/' static assets
 app.use('/', express.static(MAIN_STATIC_PATH));
 
-
-app.get('/horizon', function(req, res) {
-    logger.info('redirecting to horizon');
-    res.redirect('/horizon/src/demo/index.html' + (req.query.debug !== undefined ? '?debug' : ''));
-});
 
 app.get('/uber', function(req, res) {
     logger.info('redirecting to graph');

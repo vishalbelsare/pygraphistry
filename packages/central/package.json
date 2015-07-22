@@ -20,7 +20,6 @@
     "express": "~4.12.3",
     "express-http-proxy": "~0.6.0",
     "graph-viz": "graphistry/graph-viz",
-    "horizon-viz": "graphistry/horizon-viz",
     "mongodb": "~2.0.25",
     "protobufjs": "~3.8.0",
     "q": "~1.1.0",
