@@ -517,7 +517,6 @@ function renderMouseoverEffects(renderingScheduler, task) {
     }
     lastHighlightedEdge = edgeIndices[0];
 
-    if (buffers.highLightedEdges) {
         // TODO: Start with a small buffer and increase if necessary, masking underlying
         // data so we don't have to clear out later values. This way we won't have to constantly allocate
         buffers.highlightedEdges = new Float32Array(edgeIndices.length * 4);
@@ -562,7 +561,6 @@ function renderMouseoverEffects(renderingScheduler, task) {
             'highlightedArrowNormalDir': buffers.highlightedArrowNormalDir,
             'highlightedArrowPointSizes': buffers.highlightedArrowPointSizes
         });
-    }
     renderer.setCamera(renderState);
     renderer.render(renderState, 'highlight', 'highlight');
 }
