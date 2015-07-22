@@ -51,7 +51,7 @@ var globalStatsCache = {}; // For add histogram. TODO: Get rid of this and use r
 var d3DataMap = {};
 var activeFilters = {};
 
-function setupFilterHandler (socket, $slider, attribute) {
+function setupFilterHandler (socket, $slider, attribute, poi) {
     return Rx.Observable.merge(
                 $slider.onAsObservable('slide'),
                 $slider.onAsObservable('slideStop')
@@ -76,6 +76,10 @@ function setupFilterHandler (socket, $slider, attribute) {
                 }
 
                 return Rx.Observable.fromCallback(socket.emit, socket)('filter', activeFilters)
+                    .do(function () {
+                        // Invalidate cache now that a filter has executed and possibly changed indices.
+                        poi.emptyCache();
+                    })
                     .subscribe(_.identity, util.makeErrorHandler('Emit Filter'));
 
             })
@@ -140,7 +144,7 @@ function aggregatePointsAndEdges (socket, params) {
 }
 
 
-function init(socket, marquee) {
+function init(socket, marquee, poi) {
     debug('Initializing histogram brush');
 
    // Grab global stats at initialization
@@ -274,7 +278,7 @@ function init(socket, marquee) {
             if (attrStats.type === 'histogram') {
                 var $slider = $('#histogramContinuousFilter' + view.cid);
                 $slider.bootstrapSlider({});
-                setupFilterHandler(socket, $slider, attribute);
+                setupFilterHandler(socket, $slider, attribute, poi);
             }
 
             if (histogram.get('sparkLines')) {

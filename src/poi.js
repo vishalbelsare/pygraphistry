@@ -245,6 +245,11 @@ function getLabelDom (instance, data) {
     return instance.state.labelCache[cacheKey(idx, dim)];
 }
 
+// instance ->
+// Invalidates Cache but does not attempt to refill.
+function emptyCache (instance) {
+    instance.state.labelCache = {};
+}
 
 // ?[ idx ] -> bool
 function invalidateCache (instance) {
@@ -305,6 +310,8 @@ function init (socket) {
 
         // ?[ idx ] -> bool
         invalidateCache: invalidateCache.bind('', instance),
+
+        emptyCache: emptyCache.bind('', instance),
 
         // int * int -> String
         cacheKey: cacheKey
