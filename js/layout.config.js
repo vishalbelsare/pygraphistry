@@ -64,7 +64,7 @@ function BoolParam(name, value) {
 BoolParam.prototype = Object.create(Param.prototype);
 BoolParam.prototype.constructor = BoolParam;
 
-var edgeBundlingSplits = 8;
+var edgeBundlingSplits = 7;
 var uberControls = {
     simulator: SimCL,
     layoutAlgorithms: [
@@ -162,7 +162,7 @@ function atlasControls(algo) {
             simulationTime: SIMULATION_TIME, //milliseconds
             dimensions: [1, 1],
             numSplits: 0,
-            numRenderedSplits: 8
+            numRenderedSplits: 0
         },
         devices: devices
     };
