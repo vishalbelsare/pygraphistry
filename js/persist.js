@@ -63,17 +63,24 @@ function uploadPublic (path, buffer, params) {
 function staticContentForDataframe (dataframe, type) {
     var rows = dataframe.getRows(undefined, type),
         rowContents = new Array(rows.length),
-        indexes = new Buffer(rows.length * 4),
-        indexesView = new Uint32Array(indexes),
-        currentContentIndex = 0;
+        offsetsBuffer = new Buffer(rows.length * 4),
+        offsetsView = new Uint32Array(offsetsBuffer),
+        offsets = new Array(rows.length),
+        currentContentOffset = 0,
+        lastContentOffset = currentContentOffset;
     _.each(rows, function (row, rowIndex) {
         var content = new Buffer(JSON.stringify(row), 'utf8'),
-            contentLength = content.length;
-        indexesView[rowIndex] = currentContentIndex;
+            contentLength = content.byteLength;
+        offsets[rowIndex] = currentContentOffset;
+        offsetsView[rowIndex] = currentContentOffset;
         rowContents[rowIndex] = content;
-        currentContentIndex += contentLength;
+        lastContentOffset = currentContentOffset;
+        currentContentOffset += contentLength;
+        if (currentContentOffset <= lastContentOffset) {
+            throw new Error('Non-monotonic offset detected.');
+        }
     });
-    return {contents: Buffer.concat(rowContents), indexes: indexes};
+    return {contents: Buffer.concat(rowContents), indexes: offsetsBuffer};
 }
 
 
@@ -130,9 +137,9 @@ module.exports =
             uploadPublic(snapshotPath + 'pointSizes.vbo', compressedVBOs.pointSizes, {compressed: false});
             uploadPublic(snapshotPath + 'pointColors.vbo', compressedVBOs.pointColors, {compressed: false});
             uploadPublic(snapshotPath + 'logicalEdges.vbo', compressedVBOs.logicalEdges, {compressed: false});
-            uploadPublic(snapshotPath + 'pointIndexes.buffer', pointExport.indexes, {compressed: true});
-            uploadPublic(snapshotPath + 'edgeIndexes.buffer', edgeExport.indexes, {compressed: true});
+            uploadPublic(snapshotPath + 'pointLabels.offsets', pointExport.indexes, {compressed: false});
             uploadPublic(snapshotPath + 'pointLabels.buffer', pointExport.contents, {compressed: true});
+            uploadPublic(snapshotPath + 'edgeLabels.offsets', edgeExport.indexes, {compressed: false});
             return uploadPublic(snapshotPath + 'edgeLabels.buffer', edgeExport.contents, {compressed: true});
         }
     };
