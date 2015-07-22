@@ -211,6 +211,27 @@ function getMongoURL(hosts, username, password, database, replicaSet) {
 }
 
 
+function extend() {
+    var args = [{}];
+    for(var i = 0; i < arguments.length; i++) {
+        args.push(arguments[i]);
+    }
+
+    function deepExtend(curVal, newVal) {
+        if((_.isObject(curVal) && !(_.isFunction(curVal))) &&
+           (_.isObject(newVal) && !(_.isFunction(newVal)))) {
+            return extend(curVal, newVal);
+        } else {
+            return newVal;
+        }
+    }
+
+    args.push(deepExtend);
+
+    return _.extend.apply(this, arguments);
+}
+
+
 /**
  * Run each resolver function (passing in the current options) and then combine their output (with
  * later resolvers taking precedence).
