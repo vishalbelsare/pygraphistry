@@ -91,7 +91,7 @@ function setupBackgroundColor(renderingScheduler, bgColor) {
     }).subscribe(_.identity, util.makeErrorHandler('bg color updates'));
 }
 
-function getPolynomialCurves(bufferSnapshots, interpolateMidPoints) {
+function getPolynomialCurves(bufferSnapshots, interpolateMidPoints, numRenderedSplits) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var curMidPoints = null;
     var numSplits = 0;
@@ -104,7 +104,6 @@ function getPolynomialCurves(bufferSnapshots, interpolateMidPoints) {
     }
 
     var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
-    var numRenderedSplits = 8;
 
     //var numEdgesRendered = 3;
 
@@ -340,9 +339,9 @@ function expandLogicalMidEdges(bufferSnapshots) {
  */
 function populateArrowBuffersArcs (maybeIterable, midSpringsPos, arrowStartPos,
         arrowEndPos, arrowNormalDir, pointSizes, logicalEdges,
-        arrowPointSizes, arrowColors, edgeColors) {
+        arrowPointSizes, arrowColors, edgeColors, numRenderedSplits) {
 
-    var numMidEdges = 9;
+    var numMidEdges = numRenderedSplits + 1;
 
 
     var isIterable = maybeIterable.constructor === Array;
@@ -433,7 +432,7 @@ function populateArrowBuffers (maybeIterable, springsPos, arrowStartPos,
 }
 
 
-function makeArrows(bufferSnapshots) {
+function makeArrows(bufferSnapshots, numRenderedSplits) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var pointSizes = new Uint8Array(bufferSnapshots.pointSizes.buffer);
     var springsPos = new Float32Array(bufferSnapshots.springsPos.buffer);
@@ -467,7 +466,7 @@ function makeArrows(bufferSnapshots) {
 
     populateArrowBuffersArcs(numEdges, bufferSnapshots.midSpringsPos, arrowStartPos,
             arrowEndPos, arrowNormalDir, pointSizes, logicalEdges,
-            arrowPointSizes, arrowColors, edgeColors);
+            arrowPointSizes, arrowColors, edgeColors, numRenderedSplits);
 }
 
 /*
@@ -479,6 +478,7 @@ function renderSlowEffects(renderingScheduler) {
     var appSnapshot = renderingScheduler.appSnapshot;
     var renderState = renderingScheduler.renderState;
     var edgeMode = renderState.get('config').get('edgeMode');
+    var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
     var springsPos;
     var midSpringsPos;
     var start;
@@ -486,7 +486,7 @@ function renderSlowEffects(renderingScheduler) {
 
     if (edgeMode === 'ARCS' && appSnapshot.vboUpdated) {
         start = Date.now();
-        midSpringsPos = getPolynomialCurves(appSnapshot.buffers, true);
+        midSpringsPos = getPolynomialCurves(appSnapshot.buffers, true, numRenderedSplits);
         appSnapshot.buffers.midSpringsPos = midSpringsPos;
         end1 = Date.now();
         renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
@@ -505,7 +505,7 @@ function renderSlowEffects(renderingScheduler) {
         }
         end2 = Date.now();
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
-        makeArrows(appSnapshot.buffers);
+        makeArrows(appSnapshot.buffers, numRenderedSplits);
         end3 = Date.now();
         renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
         renderer.loadBuffers(renderState, {'arrowEndPos': appSnapshot.buffers.arrowEndPos});
@@ -543,7 +543,7 @@ function renderMouseoverEffects(renderingScheduler, task) {
     var appSnapshot = renderingScheduler.appSnapshot;
     var renderState = renderingScheduler.renderState;
     var buffers = appSnapshot.buffers;
-    var numRenderedSplits = 8;
+    var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
     var numMidEdges = numRenderedSplits + 1;
 
     // We haven't received any VBOs yet, so we shouldn't attempt to render.
@@ -561,7 +561,7 @@ function renderMouseoverEffects(renderingScheduler, task) {
     // TODO: Decide if we need to dedupe.
     console.log("Edge indices in CANVAS", edgeIndices);
     _.each(edgeIndices, function (val) {
-        val = Math.floor(val / 9);
+        val = Math.floor(val / (numRenderedSplits + 1));
         nodeIndices.push(logicalEdges[2*val]);
         nodeIndices.push(logicalEdges[2*val + 1]);
     });
@@ -613,7 +613,7 @@ function renderMouseoverEffects(renderingScheduler, task) {
         populateArrowBuffersArcs(edgeIndices, buffers.midSpringsPos, buffers.highlightedArrowStartPos,
                 buffers.highlightedArrowEndPos, buffers.highlightedArrowNormalDir, hostNodeSizes,
                 logicalEdges, buffers.highlightedArrowPointSizes, buffers.highlightedArrowColors,
-                buffers.edgeColors);
+                buffers.edgeColors, numRenderedSplits);
 
         renderer.setupFullscreenBuffer(renderState);
         renderer.loadBuffers(renderState, {
