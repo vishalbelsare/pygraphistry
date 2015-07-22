@@ -431,6 +431,99 @@ function populateArrowBuffers (maybeIterable, springsPos, arrowStartPos,
     }
 }
 
+function getMidEdgeColors(bufferSnapshot, numEdges, numRenderedSplits) {
+    var midEdgeColors, edges, edgeColors, srcNodeIdx, dstNodeIdx, srcColorInt, srcColor,
+        dstColorInt, dstColor, edgeIndex, midEdgeIndex, numSegments, lambda,
+        colorHSVInterpolator, convertRGBInt2Color, convertColor2RGBInt, interpolatedColorInt;
+
+    var numMidEdgeColors = numEdges * (numRenderedSplits + 1);
+
+    var interpolatedColor = {};
+    srcColor = {};
+    dstColor = {};
+
+    if (!midEdgeColors) {
+        midEdgeColors = new Uint32Array(numMidEdgeColors);
+        numSegments = numRenderedSplits + 1;
+        edges = new Uint32Array(bufferSnapshot.logicalEdges.buffer);
+        edgeColors = new Uint32Array(bufferSnapshot.edgeColors.buffer);
+
+        // Interpolate colors in the HSV color space.
+        colorHSVInterpolator = function (color1, color2, lambda) {
+            var color1HSV, color2HSV, h, s, v;
+            color1HSV = color1.hsv();
+            color2HSV = color2.hsv();
+            var h1 = color1HSV.h;
+            var h2 = color2HSV.h;
+            var maxCCW = h1 - h2;
+            var maxCW =  (h2 + 360) - h1;
+            var hueStep;
+            if (maxCW > maxCCW) {
+                //hueStep = higherHue - lowerHue;
+                //hueStep = h2 - h1;
+                hueStep = h2 - h1;
+            } else {
+                //hueStep = higherHue - lowerHue;
+                hueStep = (360 + h2) - h1;
+            }
+            h = (h1 + (hueStep * (lambda))) % 360;
+            //h = color1HSV.h * (1 - lambda) + color2HSV.h * (lambda);
+            s = color1HSV.s * (1 - lambda) + color2HSV.s * (lambda);
+            v = color1HSV.v * (1 - lambda) + color2HSV.v * (lambda);
+            return interpolatedColor.hsv([h, s, v]);
+        };
+
+        var colorRGBInterpolator = function (color1, color2, lambda) {
+            var r, g, b;
+            r = color1.r * (1 - lambda) + color2.r * (lambda);
+            g = color1.g * (1 - lambda) + color2.g * (lambda);
+            b = color1.b * (1 - lambda) + color2.b * (lambda);
+            return {
+                r: r,
+                g: g,
+                b: b
+            };
+        };
+
+        // Convert from HSV to RGB Int
+        convertColor2RGBInt = function (color) {
+            return (color.r << 0) + (color.g << 8) + (color.b << 16);
+        };
+
+        // Convert from RGB Int to HSV
+        convertRGBInt2Color= function (rgbInt) {
+            return {
+                r:rgbInt & 0xFF,
+                g:(rgbInt >> 8) & 0xFF,
+                b:(rgbInt >> 16) & 0xFF
+            };
+        };
+
+        for (edgeIndex = 0; edgeIndex < numEdges; edgeIndex++) {
+            srcNodeIdx = edges[2 * edgeIndex];
+            dstNodeIdx = edges[2 * edgeIndex + 1];
+
+            srcColorInt = edgeColors[2 * edgeIndex];
+            dstColorInt = edgeColors[2 * edgeIndex + 1];
+
+            srcColor = convertRGBInt2Color(srcColorInt);
+            dstColor = convertRGBInt2Color(dstColorInt);
+
+            interpolatedColorInt = convertColor2RGBInt(srcColor);
+
+            for (midEdgeIndex = 0; midEdgeIndex < numSegments; midEdgeIndex++) {
+                midEdgeColors[(2 * edgeIndex) * numSegments + (2 * midEdgeIndex)] =
+                    interpolatedColorInt;
+                lambda = (midEdgeIndex + 1) / (numSegments);
+                interpolatedColorInt =
+                    convertColor2RGBInt(colorRGBInterpolator(srcColor, dstColor, lambda));
+                midEdgeColors[(2 * edgeIndex) * numSegments + (2 * midEdgeIndex) + 1] =
+                    interpolatedColorInt;
+            }
+        }
+        return midEdgeColors;
+    }
+}
 
 function makeArrows(bufferSnapshots, numRenderedSplits) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
@@ -481,17 +574,25 @@ function renderSlowEffects(renderingScheduler) {
     var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
     var springsPos;
     var midSpringsPos;
+    var midEdgesColors
     var start;
     var end1, end2, end3, end4;
 
     if (edgeMode === 'ARCS' && appSnapshot.vboUpdated) {
         start = Date.now();
         midSpringsPos = getPolynomialCurves(appSnapshot.buffers, true, numRenderedSplits);
+        if (!appSnapshot.buffers.midEdgesColors) {
+            var numEdges = midSpringsPos.length / 2 / (numRenderedSplits + 1);
+            midEdgesColors = getMidEdgeColors(appSnapshot.buffers, numEdges, numRenderedSplits);
+            appSnapshot.buffers.midEdgesColors = midEdgesColors;
+            renderer.loadBuffers(renderState, {'midEdgeColorsClient': midEdgesColors});
+        }
         appSnapshot.buffers.midSpringsPos = midSpringsPos;
         end1 = Date.now();
         renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
         renderer.loadBuffers(renderState, {'springsPosClient': midSpringsPos});
         renderer.setNumElements(renderState, 'edgepickingindexedclient', midSpringsPos.length / 2);
+        renderer.setNumElements(renderState, 'midedgeculledindexedclient', midSpringsPos.length / 2);
         end2 = Date.now();
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
     }
@@ -655,6 +756,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
             logicalEdges: undefined,
             springsPos: undefined,
             midSpringsPos: undefined,
+            midEdgesColors: undefined,
             highlightedEdges: undefined,
             highlightedNodePositions: undefined,
             highlightedNodeSizes: undefined,
