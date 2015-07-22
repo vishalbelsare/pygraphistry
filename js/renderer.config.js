@@ -654,7 +654,18 @@ var items = {
             'edgeColor': ['edgeIndices', 'edgeColor']
         },
         'drawType': 'LINES',
-        'index': ['logicalEdges', 'curIdx'],
+        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
+        'renderTarget': 'hitmap',
+        'readTarget': true
+    },
+    'edgepickingindexedclient': {
+        'program': 'edges',
+        'triggers': ['picking'],
+        'bindings': {
+            'curPos': ['springsPosClient', 'curPos'],
+            'edgeColor': ['edgeIndices', 'edgeColor']
+        },
+        'drawType': 'LINES',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'hitmap',
         'readTarget': true
@@ -902,7 +913,7 @@ var sceneNetflowIndexedClient = {
     'camera': camera2D,
     'edgeMode': 'INDEXEDCLIENT',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'indexeddummy', 'edgeculledindexedclient', 'arrowculled', 'arrowhighlight', 'edgepicking',
+               'indexeddummy', 'edgeculledindexedclient', 'arrowculled', 'arrowhighlight', 'edgepickingindexedclient',
                'pointoutline', 'pointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy',
                'pointhighlight']
 }
