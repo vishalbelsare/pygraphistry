@@ -157,11 +157,12 @@ var self = module.exports = {
 };
 
 var configLogger = module.exports.createLogger('config');
+var configErrors = config.getErrors(true);
 
-if (config.CONFIG_ERRORS.length > 0) {
-    config.CONFIG_ERRORS.forEach( function(element, index, array) {
-        configLogger.error(element, 'Config error');
-    });
+if(_.isArray(configErrors) && configErrors.length > 0) {
+    for(var ceIdx = 0; ceIdx < configErrors.length; ceIdx++) {
+        configLogger.error(configErrors[ceIdx], 'Config error');
+    }
 }
 
 var didLogConfig;
