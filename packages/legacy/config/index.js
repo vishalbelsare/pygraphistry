@@ -118,6 +118,19 @@ function commandLine() {
 }
 
 
+function getProcessName() {
+    if(process.env.SUPERVISOR_PROCESS_NAME) {
+        return process.env.SUPERVISOR_PROCESS_NAME;
+    } else if(process.env.npm_package_name) {
+        return process.env.npm_package_name + '-' + process.pid;
+    } else if(require.main) {
+        return path.basename(require.main.filename, '.js') + '-' + process.pid;
+    } else {
+        return __filename + '-' + process.pid;
+    }
+}
+
+
 /**
  * Sets/modifies the existing options based off the current `ENVIRONMENT` option value
  * @param  {Object} options - the set of options already set via other methods
