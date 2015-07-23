@@ -83,11 +83,10 @@ function defaults() {
         LOCAL_CACHE: true,
         LOCAL_CACHE_DIR: '/tmp/graphistry/data_cache',
 
-        // Path to which Bunyan will write log files. `undefined` means log to stdout.
-        BUNYAN_LOG: undefined,
-        // Minimum level of log messages to output. Can be 10-60, where `10` mean 'trace and above',
-        // and incrementing by 10 gets to debug, info, warning, error, and fatal.
-        BUNYAN_LEVEL: 20,
+        // Minimum level of log messages to output (can be an integer or string)
+        LOG_LEVEL: 'debug',
+        // Where Bunyan should write its logs. If undefined, uses stdout.
+        LOG_FILE: undefined,
 
         // If defined, etl-worker posts notification on slack
         SLACK_BOT_ETL_TOKEN: 'xoxb-7736668449-X6kR1n3omF4CoQ6VeNiXhZSc',
@@ -146,11 +145,12 @@ function deployEnv(options) {
         MONGO_USERNAME: 'graphistry',
         MONGO_PASSWORD: 'graphtheplanet',
 
+        LOG_OUTPUT: ('/var/log/graphistry-json/' + getProcessName() + '.log'),
+        LOG_LEVEL: 'info',
+
         MONGO_HOSTS: ['c48.lighthouse.2.mongolayer.com:10048', 'c48.lighthouse.3.mongolayer.com:10048'],
         MONGO_REPLICA_SET: 'set-545152bc461811298c009c03',
 
-        BUNYAN_LOG: '/var/log/graphistry-json/' + process.env.SUPERVISOR_PROCESS_NAME + '.log',
-        BUNYAN_LEVEL: 30,
 
         PINGER_ENABLED: true
     };
