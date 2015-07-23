@@ -180,6 +180,6 @@ if(_.isArray(configErrors) && configErrors.length > 0) {
 
 
 if(_.isUndefined(process.env.didLogConfig) || process.env.didLogConfig !== true) {
-    configLogger.debug('Program options resolved to:', config);
+    configLogger.debug({config: config}, 'Config options resolved');
     process.env.didLogConfig = true;
 }
