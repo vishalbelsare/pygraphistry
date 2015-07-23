@@ -141,10 +141,10 @@ function assignWorker(req, res) {
         // Get the request URL so that we can construct a worker URL from it
         var baseUrl = ensureValidUrl(url.parse(req.originalUrl), {host: req.get('Host')});
 
-        var workerPort = (config.ENVIRONMENT === 'local') ? worker.port : baseUrl.port;
-        var workerPath = (config.ENVIRONMENT === 'local') ?
-            util.format('%s', config.BASE_URL) :
-            util.format('%s/worker/%s', config.BASE_URL, encodeURIComponent(worker.port));
+        var workerPort = (config.PINGER_ENABLED) ? baseUrl.port : worker.port;
+        var workerPath = (config.PINGER_ENABLED) ?
+            util.format('%sworker/%s', config.BASE_PATH, encodeURIComponent(worker.port)) :
+            util.format('%s', config.BASE_PATH);
 //            util.format('%s/%s/%s',
 //                config.BASE_URL,
 //                encodeURIComponent(worker.hostname),
