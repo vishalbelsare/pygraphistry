@@ -48,7 +48,9 @@ function defaults() {
 
         CLUSTER: util.format('%s.local', (process.env['USER'] || 'localuser')),
 
-        VIZ_LISTEN_ADDRESS: '0.0.0.0',
+        // FIXME: Change this to 'VIZ_BIND_ADDRESS', to clarify this is the IP the server binds to,
+        // not the IP it is reachable at. Binding to 0.0.0.0 is legal, but not a real, routable IP.
+        VIZ_LISTEN_ADDRESS: '127.0.0.1',
         VIZ_LISTEN_PORT: 10000,
 
         // The number of seconds old a GPU ping may be before being considered stale
@@ -145,6 +147,8 @@ function deployEnv(options) {
     var cloudOptions = {
         MONGO_USERNAME: 'graphistry',
         MONGO_PASSWORD: 'graphtheplanet',
+
+        VIZ_LISTEN_ADDRESS: '0.0.0.0',
 
         LOG_OUTPUT: ('/var/log/graphistry-json/' + getProcessName() + '.log'),
         LOG_LEVEL: 'info',
