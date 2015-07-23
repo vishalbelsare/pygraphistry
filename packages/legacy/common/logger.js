@@ -53,6 +53,10 @@ bunyan.stdSerializers.err = function bunyanErrSerializer(e) {
       signal: e.signal
    };
 
+   if (e.cause && typeof (e.cause) === 'function') {
+      obj.cause = bunyanErrSerializer(e.cause);
+   }
+
    return obj;
 };
 
