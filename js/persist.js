@@ -129,17 +129,29 @@ module.exports =
             var snapshotPath = 'Static/' + snapshotName + '/';
             var edgeExport = staticContentForDataframe(dataframe, 'edge');
             var pointExport = staticContentForDataframe(dataframe, 'point');
-            uploadPublic(snapshotPath + 'renderconfig.json', JSON.stringify(renderConfig), {ContentType: 'application/json'});
-            uploadPublic(snapshotPath + 'metadata.json', JSON.stringify(metadata), {ContentType: 'application/json'});
-            uploadPublic(snapshotPath + 'curPoints.vbo', compressedVBOs.curPoints, {compressed: false});
-            uploadPublic(snapshotPath + 'springsPos.vbo', compressedVBOs.springsPos, {compressed: false});
-            uploadPublic(snapshotPath + 'edgeColors.vbo', compressedVBOs.edgeColors, {compressed: false});
-            uploadPublic(snapshotPath + 'pointSizes.vbo', compressedVBOs.pointSizes, {compressed: false});
-            uploadPublic(snapshotPath + 'pointColors.vbo', compressedVBOs.pointColors, {compressed: false});
-            uploadPublic(snapshotPath + 'logicalEdges.vbo', compressedVBOs.logicalEdges, {compressed: false});
-            uploadPublic(snapshotPath + 'pointLabels.offsets', pointExport.indexes, {compressed: false});
-            uploadPublic(snapshotPath + 'pointLabels.buffer', pointExport.contents, {compressed: true});
-            uploadPublic(snapshotPath + 'edgeLabels.offsets', edgeExport.indexes, {compressed: false});
-            return uploadPublic(snapshotPath + 'edgeLabels.buffer', edgeExport.contents, {compressed: true});
+            uploadPublic(snapshotPath + 'renderconfig.json', JSON.stringify(renderConfig),
+                {ContentType: 'application/json'});
+            uploadPublic(snapshotPath + 'metadata.json', JSON.stringify(metadata),
+                {ContentType: 'application/json'});
+            uploadPublic(snapshotPath + 'curPoints.vbo', compressedVBOs.curPoints,
+                {should_compress: false});
+            uploadPublic(snapshotPath + 'springsPos.vbo', compressedVBOs.springsPos,
+                {should_compress: false});
+            uploadPublic(snapshotPath + 'edgeColors.vbo', compressedVBOs.edgeColors,
+                {should_compress: false});
+            uploadPublic(snapshotPath + 'pointSizes.vbo', compressedVBOs.pointSizes,
+                {should_compress: false});
+            uploadPublic(snapshotPath + 'pointColors.vbo', compressedVBOs.pointColors,
+                {should_compress: false});
+            uploadPublic(snapshotPath + 'logicalEdges.vbo', compressedVBOs.logicalEdges,
+                {should_compress: false});
+            uploadPublic(snapshotPath + 'pointLabels.offsets', pointExport.indexes,
+                {should_compress: false});
+            uploadPublic(snapshotPath + 'pointLabels.buffer', pointExport.contents,
+                {should_compress: true});
+            uploadPublic(snapshotPath + 'edgeLabels.offsets', edgeExport.indexes,
+                {should_compress: false});
+            return uploadPublic(snapshotPath + 'edgeLabels.buffer', edgeExport.contents,
+                {should_compress: true});
         }
     };
