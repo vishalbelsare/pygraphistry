@@ -13,7 +13,7 @@ function upload(S3, bucket, metadata, binaryBuffer, params) {
     logger.debug('Uploading binary blob', metadata.name);
 
     var acl = params && params.acl,
-        compressed = true,
+        should_compress = true,
         putParams = {
             Bucket: bucket,
             Key: metadata.name,
@@ -21,12 +21,13 @@ function upload(S3, bucket, metadata, binaryBuffer, params) {
             Metadata: metadata,
             Body: binaryBuffer,
             ServerSideEncryption: 'AES256',
+            CacheControl: 'public, max-age=86400',
             ContentEncoding: 'gzip'
         };
 
     if (params && !_.isEmpty(params)) {
-        if (params.compressed !== undefined) {
-            compressed = params.compressed;
+        if (params.should_compress !== undefined) {
+            should_compress = params.should_compress;
         }
 
         if (params.ContentType) {
@@ -34,7 +35,7 @@ function upload(S3, bucket, metadata, binaryBuffer, params) {
         }
     }
 
-    if (compressed) {
+    if (should_compress) {
         return Q.nfcall(zlib.gzip, binaryBuffer)
             .then(function (zipped) {
                 putParams.Body = zipped;
