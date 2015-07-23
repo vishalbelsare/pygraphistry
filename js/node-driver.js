@@ -333,9 +333,11 @@ function create(dataset) {
 
         logger.trace('Graph created');
         return graph;
-    }).fail(function (err) {
+    })
+    .fail(function (err) {
         logger.die(err, 'Driver initialization error');
-    });
+    })
+    .done();
 
     return {
         interact: function (settings) {
