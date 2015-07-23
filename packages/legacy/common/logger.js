@@ -161,20 +161,6 @@ var SegfaultHandler = require('segfault-handler');
 SegfaultHandler.registerHandler();
 
 
-// Use `once` instead of `on`, since presumably this error is fatal and so this should only ever be
-// called once. This allows us to rethrow the error without getting caught in a loop.
-process.once('uncaughtException', function(uncaughtErr) {
-    console.error('Fatal Error: uncaught exception! Error:', uncaughtErr);
-
-    // TODO: If we exit immediately (or rethrow the error to cause Node to exit immediately), are
-    // we sure that the fs write to the log file (via Bunyan) will write this log message?
-    parentLogger.fatal(uncaughtErr, 'Globally uncaught exception');
-
-    // Rethrow the exception so it can be suitably fatal
-    throw uncaughtErr;
-});
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // `config` module logging
 //
