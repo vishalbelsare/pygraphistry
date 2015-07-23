@@ -4,7 +4,14 @@ var bunyan = require('bunyan');
 var _ = require('underscore');
 var config = require('config')();
 
-//////////Error handler/serializer from bunyan, modified for our needs
+
+////////////////////////////////////////////////////////////////////////////////
+// Error serializer
+//
+// A custom Bunyan serializer for `err` fields. Acts exactly like the regular Bunyan err serializer,
+// except that the stack trace of the error is made an array by splitting the string on newlines.
+////////////////////////////////////////////////////////////////////////////////
+
 /*
  * This function dumps long stack traces for exceptions having a cause()
  * method. The error classes from
@@ -50,6 +57,12 @@ bunyan.stdSerializers.err = function bunyanErrSerializer(e) {
 };
 
 
+////////////////////////////////////////////////////////////////////////////////
+// Parent logger
+//
+// A global singleton logger that all module-level loggers are children of.
+////////////////////////////////////////////////////////////////////////////////
+
 var parentLogger;
 
 if(_.isUndefined(config.BUNYAN_LOG)) {
@@ -88,6 +101,13 @@ process.on('SIGUSR2', function () {
     parentLogger.reopenFileStreams();
 });
 
+
+////////////////////////////////////////////////////////////////////////////////
+// Exports
+//
+// We export functions for creating module-level loggers, setting global metadata, and convienance
+// functions for creating error handler functions that log the error and rethrow it.
+////////////////////////////////////////////////////////////////////////////////
 
 module.exports = {
     createLogger: function(name) {
@@ -149,6 +169,14 @@ process.once('uncaughtException', function(uncaughtErr) {
     throw uncaughtErr;
 });
 
+
+////////////////////////////////////////////////////////////////////////////////
+// `config` module logging
+//
+// Since logger depends on config, config is unable to log errors using logger. We get around this
+// problem by having config save errors internally, then having logger check if config has
+// saved any errors and, if so, writing log messages about them here.
+////////////////////////////////////////////////////////////////////////////////
 
 var configLogger = module.exports.createLogger('config');
 var configErrors = config.getErrors(true);
