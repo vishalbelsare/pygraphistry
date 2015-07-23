@@ -129,6 +129,14 @@ module.exports = {
 };
 
 
+////////////////////////////////////////////////////////////////////////////////
+// Global error handlers
+////////////////////////////////////////////////////////////////////////////////
+
+var SegfaultHandler = require('segfault-handler');
+SegfaultHandler.registerHandler();
+
+
 var configLogger = module.exports.createLogger('config');
 var configErrors = config.getErrors(true);
 
