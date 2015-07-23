@@ -12,48 +12,48 @@ var config = require('config')();
 // except that the stack trace of the error is made an array by splitting the string on newlines.
 ////////////////////////////////////////////////////////////////////////////////
 
-/*
- * This function dumps long stack traces for exceptions having a cause()
- * method. The error classes from
- * [verror](https://github.com/davepacheco/node-verror) and
- * [restify v2.0](https://github.com/mcavage/node-restify) are examples.
- *
- * Based on `dumpException` in
- * https://github.com/davepacheco/node-extsprintf/blob/master/lib/extsprintf.js
- */
- //modified to display stack as array of strings
-function getFullErrorStack(ex)
-{
-    var ret = ex.stack || ex.toString();
-    if (ex.cause && typeof (ex.cause) === 'function') {
-        var cex = ex.cause();
-        if (cex) {
-            ret += '\nCaused by: ' + getFullErrorStack(cex);
-        }
-    }
-    ret = ret.split('\n');
-    ret.forEach(function(element, index, array) {
-        array[index] = element.trim();
-    });
 
-    return ret;
+
+var _stackRegExp = /at (?:(.+)\s+)?(?:\()?(?:(.+?):(\d+):(\d+)|([^)]+))(?:\))?/;
+
+function getFullErrorStack(ex) {
+   var framesStr = (ex.stack || ex.toString()).split('\n');
+   var framesObj = [];
+
+   for(var i = 1; i < framesStr.length; i++) {
+      var matches = framesStr[i].match(_stackRegExp);
+
+      if(matches) {
+         framesObj.push({
+            file: matches[2] || null,
+            line: parseInt(matches[3], 10) || null,
+            column: parseInt(matches[4], 10) || null,
+            function: matches[1] || null
+         });
+      }
+   }
+
+   return framesObj;
 }
+
 
 // Serialize an Error object
 // (Core error properties are enumerable in node 0.4, not in 0.6).
 // Modified error serializer
 bunyan.stdSerializers.err = function bunyanErrSerializer(e) {
-    if (!e || !e.stack) {
-        return e;
-    }
-    var obj = {
-        message: e.message,
-        name: e.name,
-        stack: getFullErrorStack(e),
-        code: e.code,
-        signal: e.signal
-    };
-    return obj;
+   if (!e || !e.stack) {
+      return e;
+   }
+
+   var obj = {
+      message: e.message,
+      name: e.name,
+      stack: getFullErrorStack(e),
+      code: e.code,
+      signal: e.signal
+   };
+
+   return obj;
 };
 
 
