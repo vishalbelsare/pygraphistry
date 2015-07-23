@@ -44,7 +44,7 @@ function defaults() {
 
         HOSTNAME: 'localhost',
         ENVIRONMENT: 'local',
-        ALLOW_MULTIPLE_VIZ_CONNECTIONS: false,
+        ALLOW_MULTIPLE_VIZ_CONNECTIONS: true,
 
         CLUSTER: util.format('%s.local', (process.env['USER'] || 'localuser')),
 
@@ -151,6 +151,7 @@ function deployEnv(options) {
 
         MONGO_HOSTS: ['c48.lighthouse.2.mongolayer.com:10048', 'c48.lighthouse.3.mongolayer.com:10048'],
         MONGO_REPLICA_SET: 'set-545152bc461811298c009c03',
+        ALLOW_MULTIPLE_VIZ_CONNECTIONS: false,
 
 
         PINGER_ENABLED: true
