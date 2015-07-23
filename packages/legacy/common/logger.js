@@ -67,31 +67,31 @@ bunyan.stdSerializers.err = function bunyanErrSerializer(e) {
 // A global singleton logger that all module-level loggers are children of.
 ////////////////////////////////////////////////////////////////////////////////
 
-var parentLogger;
+function createParentLogger() {
+   // Always starts with a stream that writes fatal errors to STDERR
+   var streams = [];
 
-if(_.isUndefined(config.BUNYAN_LOG)) {
-    parentLogger = bunyan.createLogger({
-        name: 'graphistry',
-        metadata: {
-            userInfo: { tag: 'unknown' }
-        },
-        serializers: bunyan.stdSerializers,
-        level: config.BUNYAN_LEVEL
-    });
-} else {
-    parentLogger = bunyan.createLogger({
-        name: 'graphistry',
-        metadata: {
-            userInfo: { tag: 'unknown' }
-        },
-        serializers: bunyan.stdSerializers,
-        streams: [{
-            path: config.BUNYAN_LOG,
-            level: config.BUNYAN_LEVEL,
-        }]
-    });
+   if(_.isUndefined(config.LOG_FILE)) {
+      streams = [{ name: 'stdout', stream: process.stdout, level: config.LOG_LEVEL }];
+   } else {
+      streams = [
+         { name: 'fatal', stream: process.stderr, level: 'fatal' },
+         { name: 'logfile', path: config.LOG_OUTPUT, level: config.LOG_LEVEL }
+      ];
+   }
+
+   return bunyan.createLogger({
+      name: 'graphistry',
+      metadata: {
+         userInfo: { }
+      },
+      serializers: bunyan.stdSerializers,
+      streams: streams
+   });
 }
 
+
+var parentLogger = createParentLogger();
 
 
 //add any additional logging methods here
