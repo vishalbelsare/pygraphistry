@@ -68,7 +68,6 @@ if(_.isUndefined(config.BUNYAN_LOG)) {
             userInfo: { tag: 'unknown' }
         },
         serializers: bunyan.stdSerializers,
-        level: config.BUNYAN_LEVEL,
         streams: [{
             path: config.BUNYAN_LOG,
             level: config.BUNYAN_LEVEL,
