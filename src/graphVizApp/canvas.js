@@ -91,7 +91,7 @@ function setupBackgroundColor(renderingScheduler, bgColor) {
     }).subscribe(_.identity, util.makeErrorHandler('bg color updates'));
 }
 
-function getPolynomialCurves(bufferSnapshots, interpolateMidPoints) {
+function getPolynomialCurves(bufferSnapshots, interpolateMidPoints, numRenderedSplits) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var curMidPoints = null;
     var numSplits = 0;
@@ -104,7 +104,6 @@ function getPolynomialCurves(bufferSnapshots, interpolateMidPoints) {
     }
 
     var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
-    var numRenderedSplits = 8;
 
     //var numEdgesRendered = 3;
 
@@ -338,6 +337,56 @@ function expandLogicalMidEdges(bufferSnapshots) {
 /* Populate arrow buffers. The first argument is either an array of indices,
  * or an integer value of how many you want.
  */
+function populateArrowBuffersArcs (maybeIterable, midSpringsPos, arrowStartPos,
+        arrowEndPos, arrowNormalDir, pointSizes, logicalEdges,
+        arrowPointSizes, arrowColors, edgeColors, numRenderedSplits) {
+
+    var numMidEdges = numRenderedSplits + 1;
+
+
+    var isIterable = maybeIterable.constructor === Array;
+    var forLimit = (isIterable) ? maybeIterable.length : maybeIterable;
+
+    for (var idx = 0; idx < forLimit; idx++) {
+        var val = (isIterable) ? maybeIterable[idx] : idx;
+
+        var midEdgeIdx = ((val + 1) * ((numMidEdges) * 4) -4);
+        var start = [midSpringsPos[midEdgeIdx + 0], midSpringsPos[midEdgeIdx + 1]];
+        var end   = [midSpringsPos[midEdgeIdx + 2], midSpringsPos[midEdgeIdx + 3]];
+
+        arrowStartPos[6*idx + 0] = start[0];
+        arrowStartPos[6*idx + 1] = start[1];
+        arrowStartPos[6*idx + 2] = start[0];
+        arrowStartPos[6*idx + 3] = start[1];
+        arrowStartPos[6*idx + 4] = start[0];
+        arrowStartPos[6*idx + 5] = start[1];
+
+        arrowEndPos[6*idx + 0] = end[0];
+        arrowEndPos[6*idx + 1] = end[1];
+        arrowEndPos[6*idx + 2] = end[0];
+        arrowEndPos[6*idx + 3] = end[1];
+        arrowEndPos[6*idx + 4] = end[0];
+        arrowEndPos[6*idx + 5] = end[1];
+
+        arrowNormalDir[3*idx + 0] = 0;  // Tip vertex
+        arrowNormalDir[3*idx + 1] = 1;  // Left vertex
+        arrowNormalDir[3*idx + 2] = -1; // Right vertex
+
+        var pointSize = pointSizes[logicalEdges[2*val+ 1]];
+        arrowPointSizes[3*idx + 0] = pointSize;
+        arrowPointSizes[3*idx + 1] = pointSize;
+        arrowPointSizes[3*idx + 2] = pointSize;
+
+        arrowColors[3*idx + 0] = edgeColors[2*val + 1];
+        arrowColors[3*idx + 1] = edgeColors[2*val + 1];
+        arrowColors[3*idx + 2] = edgeColors[2*val + 1];
+
+    }
+}
+
+/* Populate arrow buffers. The first argument is either an array of indices,
+ * or an integer value of how many you want.
+ */
 function populateArrowBuffers (maybeIterable, springsPos, arrowStartPos,
         arrowEndPos, arrowNormalDir, pointSizes, logicalEdges,
         arrowPointSizes, arrowColors, edgeColors) {
@@ -381,8 +430,101 @@ function populateArrowBuffers (maybeIterable, springsPos, arrowStartPos,
     }
 }
 
+function getMidEdgeColors(bufferSnapshot, numEdges, numRenderedSplits) {
+    var midEdgeColors, edges, edgeColors, srcNodeIdx, dstNodeIdx, srcColorInt, srcColor,
+        dstColorInt, dstColor, edgeIndex, midEdgeIndex, numSegments, lambda,
+        colorHSVInterpolator, convertRGBInt2Color, convertColor2RGBInt, interpolatedColorInt;
 
-function makeArrows(bufferSnapshots) {
+    var numMidEdgeColors = numEdges * (numRenderedSplits + 1);
+
+    var interpolatedColor = {};
+    srcColor = {};
+    dstColor = {};
+
+    if (!midEdgeColors) {
+        midEdgeColors = new Uint32Array(numMidEdgeColors);
+        numSegments = numRenderedSplits + 1;
+        edges = new Uint32Array(bufferSnapshot.logicalEdges.buffer);
+        edgeColors = new Uint32Array(bufferSnapshot.edgeColors.buffer);
+
+        // Interpolate colors in the HSV color space.
+        colorHSVInterpolator = function (color1, color2, lambda) {
+            var color1HSV, color2HSV, h, s, v;
+            color1HSV = color1.hsv();
+            color2HSV = color2.hsv();
+            var h1 = color1HSV.h;
+            var h2 = color2HSV.h;
+            var maxCCW = h1 - h2;
+            var maxCW =  (h2 + 360) - h1;
+            var hueStep;
+            if (maxCW > maxCCW) {
+                //hueStep = higherHue - lowerHue;
+                //hueStep = h2 - h1;
+                hueStep = h2 - h1;
+            } else {
+                //hueStep = higherHue - lowerHue;
+                hueStep = (360 + h2) - h1;
+            }
+            h = (h1 + (hueStep * (lambda))) % 360;
+            //h = color1HSV.h * (1 - lambda) + color2HSV.h * (lambda);
+            s = color1HSV.s * (1 - lambda) + color2HSV.s * (lambda);
+            v = color1HSV.v * (1 - lambda) + color2HSV.v * (lambda);
+            return interpolatedColor.hsv([h, s, v]);
+        };
+
+        var colorRGBInterpolator = function (color1, color2, lambda) {
+            var r, g, b;
+            r = color1.r * (1 - lambda) + color2.r * (lambda);
+            g = color1.g * (1 - lambda) + color2.g * (lambda);
+            b = color1.b * (1 - lambda) + color2.b * (lambda);
+            return {
+                r: r,
+                g: g,
+                b: b
+            };
+        };
+
+        // Convert from HSV to RGB Int
+        convertColor2RGBInt = function (color) {
+            return (color.r << 0) + (color.g << 8) + (color.b << 16);
+        };
+
+        // Convert from RGB Int to HSV
+        convertRGBInt2Color= function (rgbInt) {
+            return {
+                r:rgbInt & 0xFF,
+                g:(rgbInt >> 8) & 0xFF,
+                b:(rgbInt >> 16) & 0xFF
+            };
+        };
+
+        for (edgeIndex = 0; edgeIndex < numEdges; edgeIndex++) {
+            srcNodeIdx = edges[2 * edgeIndex];
+            dstNodeIdx = edges[2 * edgeIndex + 1];
+
+            srcColorInt = edgeColors[2 * edgeIndex];
+            dstColorInt = edgeColors[2 * edgeIndex + 1];
+
+            srcColor = convertRGBInt2Color(srcColorInt);
+            dstColor = convertRGBInt2Color(dstColorInt);
+
+            interpolatedColorInt = convertColor2RGBInt(srcColor);
+
+            for (midEdgeIndex = 0; midEdgeIndex < numSegments; midEdgeIndex++) {
+                midEdgeColors[(2 * edgeIndex) * numSegments + (2 * midEdgeIndex)] =
+                    interpolatedColorInt;
+                lambda = (midEdgeIndex + 1) / (numSegments);
+                interpolatedColorInt =
+                    convertColor2RGBInt(colorRGBInterpolator(srcColor, dstColor, lambda));
+                midEdgeColors[(2 * edgeIndex) * numSegments + (2 * midEdgeIndex) + 1] =
+                    interpolatedColorInt;
+            }
+        }
+        return midEdgeColors;
+    }
+}
+
+function makeArrows(bufferSnapshots, numRenderedSplits) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var pointSizes = new Uint8Array(bufferSnapshots.pointSizes.buffer);
     var springsPos = new Float32Array(bufferSnapshots.springsPos.buffer);
@@ -414,9 +556,16 @@ function makeArrows(bufferSnapshots) {
     }
     var arrowPointSizes = bufferSnapshots.arrowPointSizes;
 
-    populateArrowBuffers(numEdges, springsPos, arrowStartPos,
+    if (numRenderedSplits) {
+    populateArrowBuffersArcs(numEdges, bufferSnapshots.midSpringsPos, arrowStartPos,
             arrowEndPos, arrowNormalDir, pointSizes, logicalEdges,
-            arrowPointSizes, arrowColors, edgeColors);
+            arrowPointSizes, arrowColors, edgeColors, numRenderedSplits);
+    } else {
+        populateArrowBuffers(numEdges, springsPos, arrowStartPos,
+            arrowEndPos, arrowNormalDir, pointSizes, logicalEdges,
+            arrowPointSizes, arrowColors, edgeColors, numRenderedSplits);
+    }
+
 }
 
 /*
@@ -428,30 +577,42 @@ function renderSlowEffects(renderingScheduler) {
     var appSnapshot = renderingScheduler.appSnapshot;
     var renderState = renderingScheduler.renderState;
     var edgeMode = renderState.get('config').get('edgeMode');
+    var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
     var springsPos;
     var midSpringsPos;
+    var midEdgesColors;
     var start;
     var end1, end2, end3, end4;
 
-
     if (edgeMode === 'ARCS' && appSnapshot.vboUpdated) {
         start = Date.now();
-        midSpringsPos = getPolynomialCurves(appSnapshot.buffers, true);
+        midSpringsPos = getPolynomialCurves(appSnapshot.buffers, true, numRenderedSplits);
+        if (!appSnapshot.buffers.midEdgesColors) {
+            var numEdges = midSpringsPos.length / 2 / (numRenderedSplits + 1);
+            midEdgesColors = getMidEdgeColors(appSnapshot.buffers, numEdges, numRenderedSplits);
+            appSnapshot.buffers.midEdgesColors = midEdgesColors;
+            renderer.loadBuffers(renderState, {'midEdgeColorsClient': midEdgesColors});
+        }
+        appSnapshot.buffers.midSpringsPos = midSpringsPos;
         end1 = Date.now();
         renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
+        renderer.loadBuffers(renderState, {'springsPosClient': midSpringsPos});
+        renderer.setNumElements(renderState, 'edgepickingindexedclient', midSpringsPos.length / 2);
+        renderer.setNumElements(renderState, 'midedgeculledindexedclient', midSpringsPos.length / 2);
         end2 = Date.now();
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
     }
     if ( (edgeMode === 'INDEXEDCLIENT' || edgeMode === 'ARCS') && appSnapshot.vboUpdated) {
         start = Date.now();
-        springsPos = expandLogicalEdges(appSnapshot.buffers);
         end1 = Date.now();
+        springsPos = expandLogicalEdges(appSnapshot.buffers);
         if (edgeMode === 'INDEXEDCLIENT') {
             renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
+            renderer.setNumElements(renderState, 'edgepickingindexedclient', springsPos.length / 2);
         }
         end2 = Date.now();
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
-        makeArrows(appSnapshot.buffers);
+        makeArrows(appSnapshot.buffers, numRenderedSplits);
         end3 = Date.now();
         renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
         renderer.loadBuffers(renderState, {'arrowEndPos': appSnapshot.buffers.arrowEndPos});
@@ -489,6 +650,8 @@ function renderMouseoverEffects(renderingScheduler, task) {
     var appSnapshot = renderingScheduler.appSnapshot;
     var renderState = renderingScheduler.renderState;
     var buffers = appSnapshot.buffers;
+    var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
+    var numMidEdges = numRenderedSplits + 1;
 
     // We haven't received any VBOs yet, so we shouldn't attempt to render.
     if (!buffers.logicalEdges) {
@@ -517,10 +680,9 @@ function renderMouseoverEffects(renderingScheduler, task) {
     }
     lastHighlightedEdge = edgeIndices[0];
 
-    if (buffers.highLightedEdges) {
         // TODO: Start with a small buffer and increase if necessary, masking underlying
         // data so we don't have to clear out later values. This way we won't have to constantly allocate
-        buffers.highlightedEdges = new Float32Array(edgeIndices.length * 4);
+        buffers.highlightedEdges = new Float32Array(edgeIndices.length * 4 * numMidEdges);
         buffers.highlightedNodePositions = new Float32Array(nodeIndices.length * 2);
         buffers.highlightedNodeSizes = new Uint8Array(nodeIndices.length);
         buffers.highlightedArrowStartPos = new Float32Array(edgeIndices.length * 2 * 3);
@@ -529,15 +691,21 @@ function renderMouseoverEffects(renderingScheduler, task) {
         buffers.highlightedArrowColors = new Uint32Array(edgeIndices.length * 3);
         buffers.highlightedArrowPointSizes = new Uint8Array(edgeIndices.length * 3);
 
-        renderer.setNumElements(renderState, 'edgehighlight', edgeIndices.length * 2);
+        renderer.setNumElements(renderState, 'edgehighlight', edgeIndices.length * 2 * numMidEdges);
         renderer.setNumElements(renderState, 'pointhighlight', nodeIndices.length);
         renderer.setNumElements(renderState, 'arrowhighlight', edgeIndices.length * 3);
 
         _.each(edgeIndices, function (val, idx) {
-            buffers.highlightedEdges[idx*4] = buffers.springsPos[val*4];
-            buffers.highlightedEdges[idx*4 + 1] = buffers.springsPos[val*4 + 1];
-            buffers.highlightedEdges[idx*4 + 2] = buffers.springsPos[val*4 + 2];
-            buffers.highlightedEdges[idx*4 + 3] = buffers.springsPos[val*4 + 3];
+            // The start at the first midedge corresponding to hovered edge
+            var edgeStartIdx = (val * 4 * numMidEdges);
+            var highlightStartIdx = (idx * 4 * numMidEdges);
+            for (var midEdgeIdx = 0; midEdgeIdx < numMidEdges; midEdgeIdx = midEdgeIdx + 1) {
+                var midEdgeStride = midEdgeIdx * 4;
+                buffers.highlightedEdges[highlightStartIdx + midEdgeStride] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride)];
+                buffers.highlightedEdges[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 1];
+                buffers.highlightedEdges[highlightStartIdx + midEdgeStride + 2] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 2];
+                buffers.highlightedEdges[highlightStartIdx + midEdgeStride + 3] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 3];
+            }
         });
 
         _.each(nodeIndices, function (val, idx) {
@@ -547,10 +715,10 @@ function renderMouseoverEffects(renderingScheduler, task) {
             buffers.highlightedNodeSizes[idx] = hostNodeSizes[val];
         });
 
-        populateArrowBuffers(edgeIndices, buffers.springsPos, buffers.highlightedArrowStartPos,
+        populateArrowBuffersArcs(edgeIndices, buffers.midSpringsPos, buffers.highlightedArrowStartPos,
                 buffers.highlightedArrowEndPos, buffers.highlightedArrowNormalDir, hostNodeSizes,
                 logicalEdges, buffers.highlightedArrowPointSizes, buffers.highlightedArrowColors,
-                buffers.edgeColors);
+                buffers.edgeColors, numRenderedSplits);
 
         renderer.setupFullscreenBuffer(renderState);
         renderer.loadBuffers(renderState, {
@@ -562,7 +730,6 @@ function renderMouseoverEffects(renderingScheduler, task) {
             'highlightedArrowNormalDir': buffers.highlightedArrowNormalDir,
             'highlightedArrowPointSizes': buffers.highlightedArrowPointSizes
         });
-    }
     renderer.setCamera(renderState);
     renderer.render(renderState, 'highlight', 'highlight');
 }
@@ -593,6 +760,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
             logicalEdges: undefined,
             springsPos: undefined,
             midSpringsPos: undefined,
+            midEdgesColors: undefined,
             highlightedEdges: undefined,
             highlightedNodePositions: undefined,
             highlightedNodeSizes: undefined,

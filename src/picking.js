@@ -55,7 +55,7 @@ function decodeGpuIndex (raw) {
 
 
 //returns idx or -1
-function hitTest(maps, width, height, x, y) {
+function hitTest(maps, width, height, x, y, numRenderedSplits) {
     // debug('hit testing', texture);
     var retObj = {idx: -1, dim: 0};
 
@@ -64,6 +64,9 @@ function hitTest(maps, width, height, x, y) {
         var raw = maps[i][canvasIdx];
         retObj = decodeGpuIndex(raw);
         if (retObj.idx > -1) {
+            if (retObj.dim === 2) {
+                retObj.idx = Math.floor(retObj.idx / (numRenderedSplits + 1));
+            }
             return retObj;
         }
     }
@@ -73,11 +76,11 @@ function hitTest(maps, width, height, x, y) {
 
 //hit test by sampling for a hit on circle's perimeter
 //returns idx or -1
-function hitTestCircumference(maps, width, height, x, y, r) {
+function hitTestCircumference(maps, width, height, x, y, r, numRenderedSplits) {
     for (var attempt = 0; attempt < r * 2 * Math.PI; attempt++) {
         var attemptX = x + r * Math.round(Math.cos(attempt / r));
         var attemptY = y + r * Math.round(Math.sin(attempt / r));
-        var hit = hitTest(maps, width, height, attemptX, attemptY);
+        var hit = hitTest(maps, width, height, attemptX, attemptY, numRenderedSplits);
         if (hit.idx > -1) {
             return hit;
         }
@@ -88,6 +91,7 @@ function hitTestCircumference(maps, width, height, x, y, r) {
 //hit test by sampling for closest hit in area radius r (default to 0)
 //returns idx or -1
 function hitTestN(state, textures, x, y, r) {
+    var numRenderedSplits = state.get('config').get('numRenderedSplits');
     _.each(textures, function (texture) {
         if (!state.get('pixelreads')[texture]) {
             debug('no texture for hit test, escape early', texture);
@@ -115,12 +119,12 @@ function hitTestN(state, textures, x, y, r) {
 
     // If no r, just do plain hitTest
     if (!r) {
-        return hitTest(maps, cssWidth, cssHeight, x, y);
+        return hitTest(maps, cssWidth, cssHeight, x, y, numRenderedSplits);
     }
 
     //look up to r px away
     for (var offset = 0; offset < r; offset++) {
-        var hitOnCircle = hitTestCircumference(maps, cssWidth, cssHeight, x, y, offset + 1);
+        var hitOnCircle = hitTestCircumference(maps, cssWidth, cssHeight, x, y, offset + 1, numRenderedSplits);
         if (hitOnCircle.idx > -1) {
             return hitOnCircle;
         }
