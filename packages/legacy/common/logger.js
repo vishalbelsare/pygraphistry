@@ -1,28 +1,5 @@
 'use strict';
 
-/**
-Goals with this logger:
-
-1. Format error messages as the stack in an array of strings.
-From the Bunyan API:
-log.info(err);  // Special case to log an `Error` instance to the record.
-                // This adds an "err" field with exception details
-                // (including the stack) and sets "msg" to the exception
-                // message.
-From the 'err' field, format 'stack' from "Exception:\n     TypeError..." into ["Exception", "TypeError"...]
-
-2. Set metadata in logger. (Biggest concern so far...)
-Metadata should be set as a variable storing an object with fields, e.g. {"uid":"1001","hostname":"111"...}
-Files that use require('logger') should all use the same metadata object, which is where log.child comes in!
-***MAKE SURE THAT***
-You NEVER reassign metadata to a new object! You may only mutate it, e.g. redefine fields, add fields, or delete fields.
-Mutate the metadata using addMetadataField
-
-3. Control location + level of the logger. Probably from CLI. Example can be from log.js, where you pass in this info as JSON.
-e.g. '{"BUNYAN_LOG":"/This/Directory/Foo/Bar"}'
-
-**/
-
 var bunyan = require('bunyan');
 var _ = require('underscore');
 var config = require('config')();
