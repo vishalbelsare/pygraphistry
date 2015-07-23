@@ -98,7 +98,8 @@ var parentLogger = createParentLogger();
 
 parentLogger.die = function(err, msg) {
     parentLogger.fatal(err, msg);
-    process.exit(1);
+    parentLogger.fatal('Exiting process with return code of 60 due to previous fatal error');
+    process.exit(60);
 };
 
 process.on('SIGUSR2', function () {
