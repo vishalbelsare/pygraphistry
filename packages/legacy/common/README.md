@@ -40,7 +40,7 @@ http://proxy-staging.graphistry.com/api/decrypt?text=badkey
 
 ### Crypto
 
-AES-256-CBC cypher (w/ secret key in config) encrypts a value that *must* contain the canary suffix “Validated”. When the decryption runs, it then makes sure the canary is there, signifying we were the ones who made the key. We rate limit encrypt/decrypt calls (1 / sec?).
+AES-256-CBC cypher (w/ secret key in config) encrypts a value that *must* contain the canary suffix (fill in for SEECANARYVALUEINSIDECONFIGJSON). When the decryption runs, it then makes sure the canary is there, signifying we were the ones who made the key. We rate limit encrypt/decrypt calls (1 / sec?).
 
 ### When it runs
 
