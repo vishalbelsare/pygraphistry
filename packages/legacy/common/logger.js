@@ -125,28 +125,40 @@ module.exports = {
 
             //add any additional logging methods here
 
-            childLogger.die = function(err, msg) {
+            childLogger.die = function childLoggerDie(err, msg) {
                 childLogger.fatal(err, msg);
                 process.exit(1);
+            };
+
+            childLogger.makeQErrorHandler = function childLoggerMakeQErrorHandler(msg) {
+                return module.exports.makeQErrorHandler(childLogger, msg);
+            };
+
+            childLogger.makeRxErrorHandler = function childLoggerMakeRxErrorHandler(msg) {
+                return module.exports.makeRxErrorHandler(childLogger, msg);
             };
 
             return childLogger;
         })();
     },
+
     addMetadataField: function(metadata) {
         //metadata is global, same for all loggers
         if(!_.isObject(metadata)) { throw new Error('metadata must be an object'); }
         return _.extend(parentLogger.fields.metadata, metadata);
     },
+
     addUserInfo: function(newUserInfo) {
         return _.extend(parentLogger.fields.metadata.userInfo, newUserInfo);
     },
+
     makeRxErrorHandler: function(childLogger, msg) {
         //This should return a function that takes an error as an argument and logs a formatted version of it.
         return function(err) {
             childLogger.error(err, msg);
         };
     },
+
     makeQErrorHandler: function(childLogger, msg) {
         //This should return a function that takes an error as an argument and logs a formatted version of it, and rethrows the error.
         return function(err) {
