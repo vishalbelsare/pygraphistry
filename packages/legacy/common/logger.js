@@ -40,7 +40,7 @@ function getFullErrorStack(ex) {
 // Serialize an Error object
 // (Core error properties are enumerable in node 0.4, not in 0.6).
 // Modified error serializer
-bunyan.stdSerializers.err = function bunyanErrSerializer(e) {
+function errSerializer(e) {
    if (!e || !e.stack) {
       return e;
    }
@@ -58,7 +58,7 @@ bunyan.stdSerializers.err = function bunyanErrSerializer(e) {
    }
 
    return obj;
-};
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -68,6 +68,10 @@ bunyan.stdSerializers.err = function bunyanErrSerializer(e) {
 ////////////////////////////////////////////////////////////////////////////////
 
 function createParentLogger() {
+   var serializers = _.extend(bunyan.stdSerializers, {
+      err: errSerializer
+   });
+
    // Always starts with a stream that writes fatal errors to STDERR
    var streams = [];
 
@@ -85,7 +89,7 @@ function createParentLogger() {
       metadata: {
          userInfo: { }
       },
-      serializers: bunyan.stdSerializers,
+      serializers: serializers,
       streams: streams
    });
 }
