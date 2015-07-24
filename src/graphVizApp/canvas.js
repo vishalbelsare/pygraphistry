@@ -91,6 +91,73 @@ function setupBackgroundColor(renderingScheduler, bgColor) {
     }).subscribe(_.identity, util.makeErrorHandler('bg color updates'));
 }
 
+function getArcs(bufferSnapshots, numRenderedSplits) {
+    var logicalEdges, curPoints, srcPointIdx, dstPointIdx, srcPointX, srcPointY,
+            dstPointX, dstPointY;
+
+    logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
+    curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
+    var numEdges = (logicalEdges.length / 2);
+
+    var numVertices = (2 * numEdges) * (numRenderedSplits + 1);
+
+    if (!bufferSnapshots.midSpringsPos) {
+        bufferSnapshots.midSpringsPos = new Float32Array(numVertices * 2);
+    }
+    var midSpringsPos = bufferSnapshots.midSpringsPos;
+    var midEdgesPerEdge = numRenderedSplits + 1;
+    var midEdgeStride = 4 * midEdgesPerEdge;
+    function setMidEdge(edgeIdx, midEdgeIdx, srcMidPointX, srcMidPointY, dstMidPointX, dstMidPointY) {
+        var midEdgeStartIdx = edgeIndex * midEdgeStride;
+        var index = midEdgeStartIdx + (midEdgeIdx * 4);
+        midSpringsPos[index] = srcMidPointX;
+        midSpringsPos[index + 1] = srcMidPointY;
+        midSpringsPos[index + 2] = dstMidPointX;
+        midSpringsPos[index + 3] = dstMidPointY;
+    }
+
+    var TEMPHEIGHT = 0.2;
+    for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
+        srcPointIdx = logicalEdges[edgeIndex * 2];
+        dstPointIdx = logicalEdges[(edgeIndex * 2) + 1];
+        srcPointX = curPoints[(2 * srcPointIdx)];
+        srcPointY = curPoints[(2 * srcPointIdx)+ 1];
+        dstPointX = curPoints[(2 * dstPointIdx)];
+        dstPointY = curPoints[(2 * dstPointIdx) + 1];
+        var edgeLength = Math.sqrt(Math.pow((dstPointX - srcPointX), 2) + Math.pow((dstPointY - srcPointY), 2));
+        var height = TEMPHEIGHT * (edgeLength / 2);
+        var edgeDirectionX = (srcPointX -  dstPointX) / edgeLength;
+        var edgeDirectionY = (srcPointY -  dstPointY) / edgeLength;
+        var radius = (Math.pow(edgeLength / 2, 2) + Math.pow(height , 2)) /  (2 * height);
+        var midPointX = (srcPointX + dstPointX) / 2;
+        var midPointY = (srcPointY + dstPointY) / 2;
+        var theta = Math.asin((edgeLength / 2) / radius) * 2;
+        var thetaStep = -theta /  (numRenderedSplits + 1);
+        var centerPointX = midPointX + (radius - height) * (-1 * edgeDirectionY);
+        var centerPointY = midPointY + (radius - height) * (edgeDirectionX);
+        var startRadiusX = srcPointX - centerPointX;
+        var startRadiusY = srcPointY - centerPointY;
+
+        var prevPointX = srcPointX;
+        var prevPointY = srcPointY;
+        var nextPointX;
+        var nextPointY;
+        for (var midPointIdx = 0; midPointIdx < numRenderedSplits; midPointIdx++) {
+            var curTheta = thetaStep * (midPointIdx + 1);
+            nextPointX = centerPointX + (Math.cos(curTheta) * startRadiusX) - (Math.sin(curTheta) * startRadiusY);
+            nextPointY = centerPointY + (Math.sin(curTheta) * startRadiusX) + (Math.cos(curTheta) * startRadiusY);
+            setMidEdge(edgeIndex, midPointIdx, prevPointX, prevPointY, nextPointX, nextPointY);
+            prevPointX = nextPointX;
+            prevPointY = nextPointY;
+        }
+        setMidEdge(edgeIndex, numRenderedSplits,  nextPointX, nextPointY, dstPointX, dstPointY);
+    }
+    return midSpringsPos;
+}
+
+
+// interpolates a quadratic curve through the end points a midpoint. Then sets the
+// rendered midedge positions based on this curve
 function getPolynomialCurves(bufferSnapshots, interpolateMidPoints, numRenderedSplits) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var curMidPoints = null;
@@ -141,17 +208,19 @@ function getPolynomialCurves(bufferSnapshots, interpolateMidPoints, numRenderedS
     var srcMidPointY;
     for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
         var midEdgeStartIdx = edgeIndex * midEdgeStride;
-        expandEdge(edgeIndex);
-        setCurveParameters();
-        // Set first midpoint to source point of edge
         srcMidPointX = srcPointX;
         srcMidPointY = srcPointY;
-        for (var midEdgeIdx = 0; midEdgeIdx < (numRenderedSplits); midEdgeIdx++) {
-            var lambda = (midEdgeIdx + 1) / (numRenderedSplits + 1);
-            getMidPointPosition(lambda, dstMidPoint);
-            setMidEdge(edgeIndex, midEdgeIdx, srcMidPointX, srcMidPointY, dstMidPoint[0], dstMidPoint[1]);
-            srcMidPointX = dstMidPoint[0];
-            srcMidPointY = dstMidPoint[1];
+        expandEdge(edgeIndex);
+        if (numRenderedSplits > 0) {
+        setCurveParameters();
+        // Set first midpoint to source point of edge
+            for (var midEdgeIdx = 0; midEdgeIdx < (numRenderedSplits); midEdgeIdx++) {
+                var lambda = (midEdgeIdx + 1) / (numRenderedSplits + 1);
+                getMidPointPosition(lambda, dstMidPoint);
+                setMidEdge(edgeIndex, midEdgeIdx, srcMidPointX, srcMidPointY, dstMidPoint[0], dstMidPoint[1]);
+                srcMidPointX = dstMidPoint[0];
+                srcMidPointY = dstMidPoint[1];
+            }
         }
 
         // Set last midedge position to previous midpoint and edge destination
@@ -586,7 +655,7 @@ function renderSlowEffects(renderingScheduler) {
 
     if (edgeMode === 'ARCS' && appSnapshot.vboUpdated) {
         start = Date.now();
-        midSpringsPos = getPolynomialCurves(appSnapshot.buffers, true, numRenderedSplits);
+        midSpringsPos = getArcs(appSnapshot.buffers, numRenderedSplits);
         if (!appSnapshot.buffers.midEdgesColors) {
             var numEdges = midSpringsPos.length / 2 / (numRenderedSplits + 1);
             midEdgesColors = getMidEdgeColors(appSnapshot.buffers, numEdges, numRenderedSplits);
