@@ -2,7 +2,6 @@
 
 var _ = require('underscore');
 
-
 function pickTitleField (attribs, prioritized) {
     for (var i = 0; i < prioritized.length; i++) {
         var field = prioritized[i];
@@ -23,9 +22,9 @@ function defaultLabels(graph, indices, type) {
             columns: _.sortBy(
                 _.pairs(_.omit(row, '_title')),
                 function (kvPair) { return kvPair[0]; }
-            ),
+            )
         };
-    })
+    });
 }
 
 

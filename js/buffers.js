@@ -2,7 +2,6 @@
 
 //Declaratively define stock CL buffers used by the simulation and potentially passed to the browser
 
-var debug   = require('debug')('graphistry:graph-viz:buffers');
 var _       = require('underscore');
 
 var util    = require('./util.js');

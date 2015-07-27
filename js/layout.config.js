@@ -2,7 +2,8 @@
 
 var _ = require('underscore');
 var SimCL = require('./SimCL.js');
-var log = require('common/log.js');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:layoutconfig');
 var ForceAtlas2         = require('./forceatlas2.js'),
     ForceAtlas2Fast     = require('./forceatlas2fast.js'),
     forceAtlasBarnes    = require('./forceatlasbarnes.js'),
@@ -63,58 +64,33 @@ function BoolParam(name, value) {
 BoolParam.prototype = Object.create(Param.prototype);
 BoolParam.prototype.constructor = BoolParam;
 
-var defaultNumSplits = 2;
-var numRenderedSplits = 8;
-
+var edgeBundlingSplits = 7;
 var uberControls = {
     simulator: SimCL,
     layoutAlgorithms: [
         {
-            algo: forceAtlasBarnes,
-            params: {
-                tau: new ContinuousParam('Precision vs. Speed', 10.0, 1.0, 25.0),
-                gravity: new ContinuousParam('Center Magnet', 1.0, 0.01, 100),
-                scalingRatio: new ContinuousParam('Expansion Ratio', 1.0, 0.01, 100),
-                edgeInfluence: new DiscreteParam('Edge Influence', 0, 0, 5, 1),
-                preventOverlap: new BoolParam('Prevent Overlap', false),
-                strongGravity: new BoolParam('Compact Layout', false),
-                dissuadeHubs: new BoolParam('Dissuade Hubs', false),
-                linLog: new BoolParam('Strong Separation (LinLog)', false)
-            }
-        }
-        ,{
             algo: EdgeBundling,
             params: {
-                edgeBundling: new BoolParam('Edge Bundling', false),
-                midpoints: new DiscreteParam('Splits', defaultNumSplits , 0, 32),
-                tau: new ContinuousParam('Speed', 10, 1.0, 25),
-                charge: new ContinuousParam('Charge', -100, -200, -0.0000001),
-                springStrength: new ContinuousParam('Spring Strength', 100, 0, 200),
+                tau: new ContinuousParam('Speed', 1, 0.01, 10),
+                charge: new ContinuousParam('Charge', -0.05, -1, -0.0000000001),
+                springStrength: new ContinuousParam('Spring Strength', 400, 0, 800),
                 springDistance: new ContinuousParam('Spring Distance', 0.5, 0.0000001, 1),
-                // TODO : Remove these
-                gravity: new ContinuousParam('Center Magnet', 1.0, 0.01, 100),
-                scalingRatio: new ContinuousParam('Expansion Ratio', 1.0, 0.01, 100),
-                edgeInfluence: new DiscreteParam('Edge Influence', 0, 0, 5, 1),
-                preventOverlap: new BoolParam('Prevent Overlap', false),
-                strongGravity: new BoolParam('Compact Layout', false),
-                dissuadeHubs: new BoolParam('Dissuade Hubs', false),
-                linLog: new BoolParam('Strong Separation (LinLog)', false)
             }
         }
     ],
     locks: {
-        lockPoints: false,
+        lockPoints: true,
         lockEdges: false,
         lockMidpoints: false,
         lockMidedges: false,
-        interpolateMidPoints: true,
-        interpolateMidPointsOnce: false
+        interpolateMidPoints: false,
+        interpolateMidPointsOnce: true
     },
     global: {
         simulationTime: 1, //SIMULATION_TIME, //milliseconds
         dimensions: [1, 1],
-        numSplits: defaultNumSplits,
-        numRenderedSplits: numRenderedSplits
+        numSplits: edgeBundlingSplits,
+        numRenderedSplits: edgeBundlingSplits
     },
     devices: ['CPU', 'GPU']
 }
@@ -185,7 +161,7 @@ function atlasControls(algo) {
         global: {
             simulationTime: SIMULATION_TIME, //milliseconds
             dimensions: [1, 1],
-            numSplits: 0
+            numSplits: 0,
         },
         devices: devices
     };
@@ -206,17 +182,17 @@ function saneControl(control, name) {
     _.each(control, function(control) {
         _.each(['simulator', 'layoutAlgorithms', 'locks', 'global'], function (field) {
             if (!(field in control))
-                log.die('In control %s, block %s missing', name, field);
+                logger.die('In control %s, block %s missing', name, field);
         });
 
         _.each(['lockPoints', 'lockEdges', 'lockMidpoints', 'lockMidedges'], function (field) {
             if (!(field in control.locks))
-                log.die('In control %s, lock %s missing', name, field);
+                logger.die('In control %s, lock %s missing', name, field);
         });
 
         _.each(['simulationTime', 'dimensions'], function (field) {
             if (!(field in control.global))
-                log.die('In control %s.global, lock %s missing', name, field);
+                logger.die('In control %s.global, lock %s missing', name, field);
         });
     });
 }
@@ -244,13 +220,13 @@ function fromClient(controls, simControls) {
 
     return _.object(_.map(simControls, function (update, algoName) {
         if (!(algoName in algoParams)) {
-            log.error('Unknown algorithm, ignoring setting update', algoName);
+            logger.warn('Unknown algorithm, ignoring setting update', algoName);
             return [];
         }
         var params = algoParams[algoName];
         var cfg = _.object(_.map(update, function (val, paramName) {
             if (!(paramName in params)) {
-                log.error('Unknown parameter, ignoring setting update', paramName);
+                logger.warn('Unknown parameter, ignoring setting update', paramName);
                 return [];
             }
             var param = params[paramName];

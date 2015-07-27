@@ -5,12 +5,14 @@
 
 var RenderBase = require('./RenderBase.js');
 var Q = require('q');
-var debug = require('debug')('graphistry:graph-viz:render:rendernull');
+
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:render:rendernull');
 
 //[string] * document -> Promise Renderer
 var create = Q.promised(function(document) {
     var renderer = RenderBase.create();
-    debug("Created renderer RenderNull");
+    logger.trace("Created renderer RenderNull");
 
     renderer.document = document;
 
@@ -31,7 +33,7 @@ var create = Q.promised(function(document) {
 
 
 var createBuffer = Q.promised(function(renderer, data) {
-    debug("Creating (fake) null renderer buffer of type %s. Constructor: %o", typeof(data), (data||{}).constructor);
+    logger.trace("Creating (fake) null renderer buffer of type %s. Constructor: %o", typeof(data), (data||{}).constructor);
 
     var bufObj = {
         "buffer": null,

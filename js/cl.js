@@ -2,15 +2,16 @@
 
 var Q = require('q');
 var _ = require('underscore');
-var debug = require('debug')('graphistry:graph-viz:cl:cl');
-var perf = require('debug')('perf');
 var nodeutil = require('util');
 var path = require('path');
 var util = require('./util.js');
-var log = require('common/log.js');
-var eh = require('common/errorHandlers.js')(log);
 
-debug("Initializing node-webcl flavored cl.js");
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:cl');
+
+var perf        = require('common/perfStats.js').createPerfMonitor();
+
+logger.trace("Initializing node-webcl flavored cl.js");
 var webcl = require('node-webcl');
 
 var types = {
@@ -56,7 +57,7 @@ var create = Q.promised(function(renderer, device, vendor) {
     device = device || 'all';
     var clDevice = clDeviceType[device.toLowerCase()];
     if (!clDevice) {
-        log.warn('Unknown device %s, using "all"', device);
+        logger.warn('Unknown device %s, using "all"', device);
         clDevice = clDeviceType.all;
     }
     return createCLContextNode(renderer, clDevice, vendor.toLowerCase());
@@ -74,19 +75,19 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
     if (platforms.length === 0) {
         throw new Error("Can't find any WebCL platforms");
     }
-    debug("Found %d OpenCL platforms; using first", platforms.length);
+    logger.debug("Found %d OpenCL platforms; using first", platforms.length);
     var platform = platforms[0];
 
     var clDevices = platform.getDevices(DEVICE_TYPE);
 
-    debug("Devices found on platform: %d", clDevices.length);
+    logger.debug("Devices found on platform: %d", clDevices.length);
     if(clDevices.length < 1) {
         throw new Error("No WebCL devices of specified type (" + DEVICE_TYPE + ") found")
     }
 
     var devices = clDevices.map(function(d) {
     // var devices = platform.getDevices(DEVICE_TYPE).map(function(d) {
-        debug("Found device %s", nodeutil.inspect(d, {depth: null, showHidden: true, colors: true}));
+        logger.trace("Found device %s", nodeutil.inspect(d, {depth: null, showHidden: true, colors: true}));
 
         var typeToString = function (v) {
             return v === 2 ? 'CPU'
@@ -133,9 +134,9 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
 
         try {
             if(renderer.gl !== null) {
-                debug('Device with gl');
+                logger.trace('Device with gl');
                 if(wrapped.device.getInfo(webcl.DEVICE_EXTENSIONS).search(/gl.sharing/i) == -1) {
-                    debug("Skipping device %d due to no sharing. %o", i, wrapped);
+                    logger.trace("Skipping device %d due to no sharing. %o", i, wrapped);
                     continue;
                 }
 
@@ -158,7 +159,7 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
             wrapped.queue = wrapped.context.createCommandQueue(wrapped.device, 0);
             deviceWrapper = wrapped;
         } catch (e) {
-            debug("Skipping device %d due to error %o. %o", i, e, wrapped);
+            logger.trace("Skipping device %d due to error %o. %o", i, e, wrapped);
             err = e;
         }
     }
@@ -179,15 +180,15 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
     }));
     props.TYPE = deviceWrapper.deviceType;
 
-    console.info('OpenCL    Type:%s  Vendor:%s  Device:%s',
+    logger.info('OpenCL    Type:%s  Vendor:%s  Device:%s',
                 props.TYPE, props.VENDOR, props.NAME);
 
-    perf('Device Sizes   WorkGroup:%d  WorkItem:%s', props.MAX_WORK_GROUP_SIZE,
+    logger.trace('Device Sizes   WorkGroup:%d  WorkItem:%s', props.MAX_WORK_GROUP_SIZE,
          props.MAX_WORK_ITEM_SIZES);
-    perf('Max Mem (kB)   Global:%d  Alloc:%d  Local:%d  Constant:%d',
+    logger.trace('Max Mem (kB)   Global:%d  Alloc:%d  Local:%d  Constant:%d',
           props.GLOBAL_MEM_SIZE / 1024, props.MAX_MEM_ALLOC_SIZE / 1024,
           props.LOCAL_MEM_SIZE / 1024, props.MAX_CONSTANT_BUFFER_SIZE / 1024);
-    perf('Profile (ns)   Type:%s  Resolution:%d',
+    logger.trace('Profile (ns)   Type:%s  Resolution:%d',
          props.PROFILE, props.PROFILING_TIMER_RESOLUTION);
 
     var res = {
@@ -222,9 +223,11 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
  *          single kernel. If kernels was an array of kernel names, returns an object with each
  *          kernel name mapped to its kernel object.
  */
-var compile = Q.promised(util.perf.bind(null, perf, 'Compiling Kernels', function (cl, source, kernels) {
-    perf('Kernel: ', kernels[0]);
-    debug("Compiling kernels");
+var compile = Q.promised(function (cl, source, kernels) {
+    perf.startTiming('graph-viz:cl:compilekernel');
+
+    logger.trace('Kernel: ', kernels[0]);
+    logger.trace('Compiling kernels');
 
     var program;
     try {
@@ -234,10 +237,10 @@ var compile = Q.promised(util.perf.bind(null, perf, 'Compiling Kernels', functio
         program.build([cl.device], '-I ' + includeDir + ' -cl-fast-relaxed-math');
     } catch (e) {
         try {
-        var buildLog = program.getBuildInfo(cl.device, webcl.PROGRAM_BUILD_LOG)
-        eh.makeErrorHandler('OpenCL compilation error')(buildLog);
+            var buildLog = program.getBuildInfo(cl.device, webcl.PROGRAM_BUILD_LOG)
+            log.makeQErrorHandler(logger, 'OpenCL compilation error')(buildLog);
         } catch (e2) {
-        eh.makeErrorHandler('OpenCL compilation failed, no build log possible')(e2);
+            log.makeQErrorHandler(logger, 'OpenCL compilation failed, no build log possible')(e2);
         }
     }
 
@@ -246,19 +249,21 @@ var compile = Q.promised(util.perf.bind(null, perf, 'Compiling Kernels', functio
         var kernelsObjs = typeof kernels === "string" ? [ 'unknown' ] : kernels;
 
         var compiled = _.object(kernelsObjs.map(function (kernelName) {
-                debug('    Compiling ', kernelName);
+                logger.trace('    Compiling ', kernelName);
                 return [kernelName, program.createKernel(kernelName)];
         }));
 
 
-        debug('  Compiled kernels');
+        logger.trace('  Compiled kernels');
 
+        perf.endTiming('graph-viz:cl:compilekernel', true);
         return typeof kernels === "string" ? compiled.unknown : compiled;
 
     } catch (e) {
-        eh.makeErrorHandler('Kernel creation error:', kernels)(e);
+        perf.endTiming('graph-viz:cl:compilekernel');
+        log.makeQErrorHandler(logger, 'Kernel creation error:', kernels)(e);
     }
-}));
+});
 
 
 
@@ -291,7 +296,7 @@ var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
             var global = [globalSize];
             kernel.cl.queue.enqueueNDRangeKernel(kernel.kernel, null, global, workgroup);
         })
-        .fail(eh.makeErrorHandler('Kernel error'))
+        .fail(log.makeQErrorHandler(logger, 'Kernel error'))
         .then(release.bind('', buffers))
         .then(function () { kernel.cl.queue.finish(); })
         .then(_.constant(kernel));
@@ -299,7 +304,7 @@ var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
 
 
 var createBuffer = Q.promised(function(cl, size, name) {
-    debug("Creating buffer %s, size %d", name, size);
+    logger.debug("Creating buffer %s, size %d", name, size);
 
     var buffer = cl.context.createBuffer(cl.cl.MEM_READ_WRITE, size);
 
@@ -334,10 +339,10 @@ var createBuffer = Q.promised(function(cl, size, name) {
 // TODO: If we call buffer.acquire() twice without calling buffer.release(), it should have no
 // effect.
 function createBufferGL(cl, vbo, name) {
-    debug("Creating buffer %s from GL buffer", name);
+    logger.debug("Creating buffer %s from GL buffer", name);
 
     if(vbo.gl === null) {
-        debug("    GL not enabled; falling back to creating CL buffer");
+        logger.debug("GL not enabled; falling back to creating CL buffer");
         return createBuffer(cl, vbo.len, name)
             .then(function(bufObj) {
                 if(vbo.data !== null) {
@@ -360,7 +365,7 @@ function createBufferGL(cl, vbo, name) {
     if (buffer === null) {
         deferred.reject(new Error("Could not create WebCL buffer from WebGL buffer"))
     } else {
-        if (!buffer.getInfo) { debug("WARNING: no getInfo() available on buffer %s", name); }
+        if (!buffer.getInfo) { logger.debug("WARNING: no getInfo() available on buffer %s", name); }
 
         var bufObj = {
             "name": name,
@@ -392,7 +397,7 @@ function createBufferGL(cl, vbo, name) {
         bufObj.read = read.bind(this, bufObj);
         bufObj.copyInto = copyBuffer.bind(this, cl, bufObj);
 
-        debug("  Created buffer");
+        logger.trace("Created buffer");
         deferred.resolve(bufObj)
     }
 
@@ -401,7 +406,7 @@ function createBufferGL(cl, vbo, name) {
 
 
 var copyBuffer = Q.promised(function (cl, source, destination) {
-    debug("Copying buffer. Source: %s (%d bytes), destination %s (%d bytes)",
+    logger.debug("Copying buffer. Source: %s (%d bytes), destination %s (%d bytes)",
         source.name, source.size, destination.name, destination.size);
     return acquire([source, destination])
         .then(function () {
@@ -415,7 +420,7 @@ var copyBuffer = Q.promised(function (cl, source, destination) {
 
 
 var write = Q.promised(function write(buffer, data) {
-    debug('Writing to buffer', buffer.name, buffer.size, 'bytes');
+    logger.debug('Writing to buffer', buffer.name, buffer.size, 'bytes');
     return buffer.acquire()
         .then(function () {
             buffer.cl.queue.enqueueWriteBuffer(buffer.buffer, true, 0, data.byteLength, data);
@@ -423,7 +428,8 @@ var write = Q.promised(function write(buffer, data) {
         })
         .then(function() {
             // buffer.cl.queue.finish();
-            debug("  Finished buffer %s write", buffer.name);
+            logger.trace("Finished buffer %s write", buffer.name);
+
             return buffer;
         });
 });
@@ -440,7 +446,7 @@ var read = Q.promised(function (buffer, target, optStartIdx, optLen) {
         .then(function() {
             return buffer;
         })
-        .fail(eh.makeErrorHandler('Read error for buffer', buffer.name));
+        .fail(log.makeQErrorHandler(logger, 'Read error for buffer', buffer.name));
 });
 
 

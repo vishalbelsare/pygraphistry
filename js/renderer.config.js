@@ -7,8 +7,9 @@
 
 var fs = require('fs');
 var _ = require('underscore');
-var debug = require('debug')('graphistry:graph-viz:driver:config');
-var log = require('common/log.js');
+
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:driver:config');
 
 
 var STROKE_WIDTH = 4.0;
@@ -21,7 +22,7 @@ var programs = {
         },
         'attributes': ['edgeColor', 'curPos'],
         'camera': 'mvp',
-        'uniforms': []
+        'uniforms': ['edgeOpacity']
     },
     'edgehighlight': {
         'sources': {
@@ -39,7 +40,7 @@ var programs = {
         },
         'attributes': ['startPos', 'endPos', 'normalDir', 'arrowColor', 'pointSize'],
         'camera': 'mvp',
-        'uniforms': ['zoomScalingFactor', 'maxPointSize', 'maxScreenSize', 'maxCanvasSize']
+        'uniforms': ['zoomScalingFactor', 'maxPointSize', 'maxScreenSize', 'maxCanvasSize', 'edgeOpacity']
     },
     'arrowhighlight': {
         'sources': {
@@ -75,7 +76,7 @@ var programs = {
         },
         'attributes': ['curPos', 'edgeColor'],
         'camera': 'mvp',
-        'uniforms': []
+        'uniforms': ['edgeOpacity']
     },
     'midedgetextured': {
         'sources': {
@@ -94,7 +95,7 @@ var programs = {
         },
         'attributes': ['curPos', 'pointSize', 'pointColor'],
         'camera': 'mvp',
-        'uniforms': ['fog', 'stroke', 'zoomScalingFactor', 'maxPointSize']
+        'uniforms': ['fog', 'stroke', 'zoomScalingFactor', 'maxPointSize', 'minPointSize', 'pointOpacity']
     },
     'pointhighlight': {
         'sources': {
@@ -395,6 +396,17 @@ var models = {
             'normalize': true
         }
     },
+    'midEdgeColorsClient': {
+        'midEdgeColor':  {
+            'datasource': 'CLIENT',
+            'type': 'UNSIGNED_BYTE',
+            'hint': 'STATIC_DRAW',
+            'count': 4,
+            'offset': 0,
+            'stride': 0,
+            'normalize': true
+        }
+    },
     'arrowColors': {
         'arrowColor':  {
             'datasource': 'CLIENT',
@@ -469,6 +481,15 @@ var models = {
     }
 }
 
+var pointCulledUniforms = {
+    'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
+    'pointOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] },
+    'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
+    'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+    'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] },
+    'minPointSize': { 'uniformType': '1f', 'defaultValues': [8.0] }
+}
+
 var items = {
     'edgeculled': {
         'program': 'edgeculled',
@@ -476,6 +497,9 @@ var items = {
         'bindings': {
             'curPos': ['springsPos', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] }
         },
         'drawType': 'LINES',
         'glOptions': {}
@@ -487,6 +511,9 @@ var items = {
             'curPos': ['curPoints', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
         },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] }
+        },
         'index': ['logicalEdges', 'curIdx'],
         'drawType': 'LINES',
         'glOptions': {}
@@ -497,6 +524,9 @@ var items = {
         'bindings': {
             'curPos': ['curPoints', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
         },
         'index': ['logicalEdges', 'curIdx'],
         'drawType': 'LINES',
@@ -510,7 +540,23 @@ var items = {
             'curPos': ['curMidPoints', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
         },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
         'index': ['logicalEdges', 'curIdx'],
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
+    'uberdemoedges' : {
+        'program': 'midedgeculled',
+        'triggers': ['renderSceneFull'],
+        'bindings': {
+            'curPos': ['midSpringsPosClient', 'curPos'],
+            'edgeColor': ['midEdgeColors', 'midEdgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.2] }
+        },
         'drawType': 'LINES',
         'glOptions': {}
     },
@@ -519,12 +565,13 @@ var items = {
         'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos': ['midSpringsPosClient', 'curPos'],
-            'edgeColor': ['midEdgeColors', 'midEdgeColor']
+            'edgeColor': ['midEdgeColorsClient', 'midEdgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.5] }
         },
         'drawType': 'LINES',
-        'glOptions': {
-            'depthFunc': [['LESS']]
-        }
+        'glOptions': {}
     },
     'edgeculledindexedclient' : {
         'program': 'edgeculled',
@@ -532,6 +579,9 @@ var items = {
         'bindings': {
             'curPos': ['springsPosClient', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] }
         },
         'drawType': 'LINES',
         'glOptions': {
@@ -576,6 +626,7 @@ var items = {
             'pointSize': ['arrowPointSizes', 'pointSize'],
         },
         'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] },
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
             'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] },
             'maxScreenSize': { 'uniformType': '1f', 'defaultValues': [1.0] },
@@ -610,7 +661,19 @@ var items = {
         'program': 'edges',
         'triggers': ['picking'],
         'bindings': {
-            'curPos': ['springsPos', 'curPos'],
+            'curPos': ['springsPosClient', 'curPos'],
+            'edgeColor': ['edgeIndices', 'edgeColor']
+        },
+        'drawType': 'LINES',
+        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
+        'renderTarget': 'hitmap',
+        'readTarget': true
+    },
+    'edgepickingindexedclient': {
+        'program': 'edges',
+        'triggers': ['picking'],
+        'bindings': {
+            'curPos': ['springsPosClient', 'curPos'],
             'edgeColor': ['edgeIndices', 'edgeColor']
         },
         'drawType': 'LINES',
@@ -626,12 +689,7 @@ var items = {
             'pointSize':    ['pointSizes', 'pointSize'],
             'pointColor':   ['pointColors', 'pointColor'],
         },
-        'uniforms': {
-            'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
-            'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
-        },
+        'uniforms': pointCulledUniforms,
         'drawType': 'POINTS',
         'glOptions': {},
     },
@@ -645,9 +703,11 @@ var items = {
         },
         'uniforms': {
             'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
+            'pointOpacity': { 'uniformType': '1f', 'defaultValues': [0.4] },
             'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [8.0] }
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] },
+            'minPointSize': { 'uniformType': '1f', 'defaultValues': [8.0] }
         },
         'drawType': 'POINTS',
         'glOptions': {},
@@ -660,12 +720,7 @@ var items = {
             'pointSize':    ['pointSizes', 'pointSize'],
             'pointColor':   ['pointColors', 'pointColor']
         },
-        'uniforms': {
-            'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
-            'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
-        },
+        'uniforms': pointCulledUniforms,
         'drawType': 'POINTS',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'pointTexture',
@@ -679,12 +734,9 @@ var items = {
             'pointSize':    ['pointSizes', 'pointSize'],
             'pointColor':   ['pointColors', 'pointColor']
         },
-        'uniforms': {
-            'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
-            'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH] },
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
-        },
+        'uniforms': _.extend({}, pointCulledUniforms, {
+            'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH]}
+        }),
         'drawType': 'POINTS',
         'glOptions': {},
     },
@@ -696,12 +748,9 @@ var items = {
             'pointSize':    ['pointSizes', 'pointSize'],
             'pointColor':   ['pointColors', 'pointColor'],
         },
-        'uniforms': {
-            'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
-            'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH] },
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
-        },
+        'uniforms': _.extend({}, pointCulledUniforms, {
+            'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH]}
+        }),
         'drawType': 'POINTS',
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'pointTexture',
@@ -770,6 +819,9 @@ var items = {
             'curPos': ['midSpringsPos', 'curPos'],
             'edgeColor' : ['midEdgeColors', 'midEdgeColor']
         },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] }
+        },
         'drawType': 'LINES',
         'glOptions': {}
     },
@@ -815,7 +867,7 @@ var stdOptions = {
     'blendFuncSeparate': [['SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'ONE', 'ONE']],
     'blendEquationSeparate': [['FUNC_ADD', 'FUNC_ADD']],
     'depthFunc': [['LEQUAL']],
-    'clearColor': [[0.9412, 0.9569, 0.9765, 1.0]],
+    'clearColor': [[51/255, 51/255, 57/255, 1.0]],
     'lineWidth': [[1]]
 }
 
@@ -830,9 +882,53 @@ var camera2D = {
 var sceneUber = {
     'options': stdOptions,
     'camera': camera2D,
-    'edgeMode': 'INDEXEDCLIENT',
-    'render': ['pointpicking',  'pointsampling', 'midedgeculledindexedclient', 'edgepicking',
+    'edgeMode': 'EDGEBUNDLING',
+    'render': ['pointpicking',  'pointsampling', 'uberdemoedges', /*'edgepicking',*/
         'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    //'render': ['pointpicking',  'pointsampling', 'midedgeculledindexedclient', [>'edgepicking',<]
+        //'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    'indexeddummy', 'indexeddummy2']
+}
+
+var sceneNetflowArcs = {
+    'options': stdOptions,
+    'camera': camera2D,
+    'edgeMode': 'ARCS',
+    'numRenderedSplits': 8,
+    'arcHeight': 0.2,
+    'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
+    'midedgeculledindexedclient', 'edgepickingindexedclient',
+    'edgeculledindexedclient', //for arrows
+    'arrowculled', 'arrowhighlight', 'edgehighlight',
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    'indexeddummy', 'indexeddummy2']
+}
+
+var sceneNetflowBigArcs = {
+    'options': stdOptions,
+    'camera': camera2D,
+    'edgeMode': 'ARCS',
+    'numRenderedSplits': 32,
+    'arcHeight': 0.5,
+    'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
+    'midedgeculledindexedclient', 'edgepickingindexedclient',
+    'edgeculledindexedclient', //for arrows
+    'arrowculled', 'arrowhighlight', 'edgehighlight',
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    'indexeddummy', 'indexeddummy2']
+}
+
+var sceneNetflowStraight = {
+    'options': stdOptions,
+    'camera': camera2D,
+    'edgeMode': 'ARCS',
+    'numRenderedSplits': 0,
+    'arcHeight': 0.2,
+    'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
+    'midedgeculledindexedclient', 'edgepickingindexedclient',
+    'edgeculledindexedclient', //for arrows
+    'arrowculled', 'arrowhighlight', 'edgehighlight',
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2']
 }
 
@@ -848,7 +944,9 @@ var sceneNetflowIndexed = {
     'camera': camera2D,
     'edgeMode': 'CLIENTINDEXED',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'edgeculledindexed', 'edgepicking', 'pointoutline', 'pointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight']
+               'edgeculledindexed', 'edgepicking', 'edgehighlight',
+               'pointoutline', 'pointculled', 'pointhighlight',
+               'fullscreen', 'fullscreenDummy', ]
 }
 
 var sceneNetflowIndexedClient = {
@@ -856,7 +954,7 @@ var sceneNetflowIndexedClient = {
     'camera': camera2D,
     'edgeMode': 'INDEXEDCLIENT',
     'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               'indexeddummy', 'edgeculledindexedclient', 'arrowculled', 'arrowhighlight', 'edgepicking',
+               'indexeddummy', 'edgeculledindexedclient', 'arrowculled', 'arrowhighlight', 'edgepickingindexedclient',
                'pointoutline', 'pointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy',
                'pointhighlight']
 }
@@ -866,20 +964,23 @@ var scenes = {
     'uber' : sceneUber,
     'netflow': sceneNetflow,
     'netflowIndexed': sceneNetflowIndexed,
-    'netflowIndexedClient': sceneNetflowIndexedClient
+    'netflowIndexedClient': sceneNetflowIndexedClient,
+    'netflowArcs': sceneNetflowArcs,
+    'netflowBigArcs': sceneNetflowBigArcs,
+    'netflowStraight': sceneNetflowStraight
 }
 
 function saneProgram(program, progName) {
     _.each(['sources', 'attributes', 'camera', 'uniforms'], function (field) {
         if (!(field in program))
-            log.die('Program "%s" must have field "%s"', progName, field);
+            logger.die('Program "%s" must have field "%s"', progName, field);
     });
 }
 
 function saneTexture(texture, texName) {
     _.each(['datasource'], function (field) {
         if (!(field in texture))
-            log.die('Texture "%s" must have field "%s"', texName, field);
+            logger.die('Texture "%s" must have field "%s"', texName, field);
     });
 }
 
@@ -887,7 +988,7 @@ function saneModel(model, modName) {
     _.each(model, function (buffer, bufName) {
         _.each(['datasource', 'type', 'count', 'offset', 'stride', 'normalize'], function (field) {
             if (!(field in buffer))
-                log.die('Buffer "%s" in model "%s" must have field "%s"', bufName, modName, field);
+                logger.die('Buffer "%s" in model "%s" must have field "%s"', bufName, modName, field);
         });
     });
 }
@@ -895,76 +996,76 @@ function saneModel(model, modName) {
 function saneItem(programs, textures, models, item, itemName) {
     _.each(['program', 'bindings', 'drawType', 'glOptions'], function (field) {
         if (!(field in item))
-            log.die('Item "%s" must have field "%s"', itemName, field);
+            logger.die('Item "%s" must have field "%s"', itemName, field);
     });
 
     if ('renderTarget' in item)
         if (!('readTarget' in item))
-            log.die('Item "%s" must specify readTarget with renderTarget', itemName);
+            logger.die('Item "%s" must specify readTarget with renderTarget', itemName);
 
     var progName = item.program;
     if (!(progName in programs))
-        log.die('In item "%s", undeclared program "%s"', itemName, progName);
+        logger.die('In item "%s", undeclared program "%s"', itemName, progName);
     var program = programs[progName];
 
     if (program.textures) {
         _.each(program.textures, function (texName){
             if (!item.textureBindings)
-                log.die('Item "%s", must have textureBindings for program "%s"',
+                logger.die('Item "%s", must have textureBindings for program "%s"',
                         itemName, progName);
             if (!_.contains(_.keys(item.textureBindings), texName))
-                log.die('In item "%s", no bindings for texture "%s" (of program "%s")',
+                logger.die('In item "%s", no bindings for texture "%s" (of program "%s")',
                         itemName, texName, progName);
         });
         _.each(item.textureBindings, function (texName, texPname) {
             if (!_.contains(program.textures, texPname))
-                log.die('Program "%s" does not declare texture named "%s" bound by item "%s"',
+                logger.die('Program "%s" does not declare texture named "%s" bound by item "%s"',
                         progName, texPname, itemName);
             if (!(texName in textures))
-                log.die('In item "%s", undeclared texture "%s"', itemName, texName);
+                logger.die('In item "%s", undeclared texture "%s"', itemName, texName);
         });
     }
 
     _.each(program.uniforms, function (uniform) {
         if (!(item.uniforms) || !(uniform in item.uniforms))
-            log.die('Item "%s" does not bind uniform "%s"', itemName, uniform);
+            logger.die('Item "%s" does not bind uniform "%s"', itemName, uniform);
     });
 
     _.each(item.uniforms, function (binding, uniform) {
         if (!_.contains(program.uniforms, uniform))
-            log.die('Item "%s" binds uniform "%s" not declared by program "%s"',
+            logger.die('Item "%s" binds uniform "%s" not declared by program "%s"',
                      itemName, uniform, progName)
     })
 
     _.each(program.attributes, function (attr) {
         if (!(attr in item.bindings))
-            log.die('In item "%s", program attribute "%s" (of program "%s") is not bound',
+            logger.die('In item "%s", program attribute "%s" (of program "%s") is not bound',
                     itemName, progName, attr);
     });
     _.each(item.bindings, function (modelNames, attr) {
         if (!_.contains(program.attributes, attr))
-            log.die('Program %s does not declare attribute %s bound by item %s',
+            logger.die('Program %s does not declare attribute %s bound by item %s',
                         progName, attr, itemName);
         if (!(modelNames[0] in models) || !(modelNames[1] in models[modelNames[0]]))
-            log.die('In item "%s", undeclared model "%s"', itemName, modelNames);
+            logger.die('In item "%s", undeclared model "%s"', itemName, modelNames);
     });
 
     if (item.renderTarget) {
         var texName = item.renderTarget;
         if (!_.contains(_.keys(textures), texName))
-            log.die('In item "%s", underclared renderTarget texture "%s"', itemName, texName);
+            logger.die('In item "%s", underclared renderTarget texture "%s"', itemName, texName);
     }
 }
 
 function saneScene(items, scene, sceneName) {
     _.each(['options', 'camera', 'render'], function (field) {
         if (!(field in scene))
-            log.die('Scene "%s", must have field "%s"', sceneName, field);
+            logger.die('Scene "%s", must have field "%s"', sceneName, field);
     });
 
     _.each(scene.render, function (itemName) {
         if (!(itemName in items))
-            log.die('In scene "%s", undeclared render item "%s"', sceneName, itemName);
+            logger.die('In scene "%s", undeclared render item "%s"', sceneName, itemName);
     });
 }
 
@@ -1040,7 +1141,7 @@ function gl2Bytes(type) {
         'UNSIGNED_INT': 4
     };
     if (!(type in types))
-        log.die('Unknown GL type "%s"', type);
+        logger.die('Unknown GL type "%s"', type);
     return types[type];
 }
 

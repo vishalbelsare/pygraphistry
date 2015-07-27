@@ -9,23 +9,18 @@
 var Q = require("q"),
     Rx = require("rx"),
     _ = require('underscore'),
-
     request = require('request'),
-    debug = require("debug")("graphistry:graph-viz:driver:node-driver"),
-    log = require('common/log.js'),
-    eh = require('common/errorHandlers.js')(log),
     NBody = require("./NBody.js"),
     RenderNull = require('./RenderNull.js'),
     rConf = require('./renderer.config.js'),
     lConf = require('./layout.config.js'),
     webcl = require('node-webcl'),
-
     metrics = require("./metrics.js"),
     loader = require("./data-loader.js");
 
-
-metrics.init('StreamGL:driver');
-
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:data:data-loader');
+var perf        = require('common/perfStats.js').createPerfMonitor();
 
 
 //number/offset of graph elements and how they relate to various models
@@ -91,7 +86,7 @@ function graphCounts(graph) {
 function getBufferVersion (graph, bufferName) {
     var buffers = graph.simulator.versions.buffers;
     if (!(bufferName in buffers))
-        log.die('Cannot find version of buffer %s', bufferName);
+        logger.die('Cannot find version of buffer %s', bufferName);
 
     return buffers[bufferName];
 }
@@ -105,8 +100,9 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
 
     var layouts = _.object(_.map(bufferNames, function (name) {
         var model = renderConfig.models[name];
-        if (_.values(model).length != 1)
-            log.die('Currently assumes one view per model');
+        if (_.values(model).length != 1) {
+            logger.die('Currently assumes one view per model');
+        }
 
         return [name, _.values(model)[0]];
 
@@ -130,7 +126,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                     version: graph.simulator.versions.buffers[name]
                 };
 
-                debug('Reading device buffer %s, stride %d', name, stride);
+                logger.trace('Reading device buffer %s, stride %d', name, stride);
 
                 return graph.simulator.dataframe.getBuffer(name, 'simulator').read(
                     new Float32Array(targetArrays[name].buffer),
@@ -141,7 +137,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
             _.each(hostBufs, function (layout, name) {
                 var stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
 
-                debug('Fetching host buffer %s', name);
+                logger.trace('Fetching host buffer %s', name);
                 if (!graph.simulator.dataframe.getLocalBuffer(name)) {
                     throw new Error('missing buffersLocal base buffer: ' + name);
                 }
@@ -160,7 +156,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                 };
             });
             return targetArrays;
-        }).fail(eh.makeErrorHandler('node-driver.fetchVBO'));
+        }).fail(log.makeQErrorHandler(logger, 'node-driver.fetchVBO'));
 }
 
 
@@ -205,7 +201,7 @@ function fetchBufferByteLengths(counts, renderConfig) {
 
 
 function init(device, vendor, controls) {
-    debug("Starting initialization");
+    logger.trace("Starting initialization");
 
     /* Example of RenderGL instatiation.
      * Left for historical purposes, probably broken!
@@ -220,17 +216,19 @@ function init(device, vendor, controls) {
     return RenderNull.create(null)
         .then(function (renderer) {
             return NBody.create(renderer, device, vendor, controls);
-        }).fail(eh.makeErrorHandler('Failure in NBody creation'));
+        }).fail(log.makeQErrorHandler(logger, 'Failure in NBody creation'));
 }
 
 
 
 function getControls(controlsName) {
     var controls = lConf.controls.default;
-    if (controlsName in lConf.controls)
+    if (controlsName in lConf.controls) {
         controls = lConf.controls[controlsName];
-    else
-        log.warn('Unknown controls "%s", using defaults.', controlsName);
+    }
+    else {
+        logger.warn('Unknown controls "%s", using defaults.', controlsName);
+    }
 
     return controls;
 }
@@ -259,7 +257,7 @@ function delayObservableGenerator(delay, value, cb) {
                 setImmediate(function() { cb(v2); });
             })(v1);
         });
-};
+}
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -267,7 +265,7 @@ function delayObservableGenerator(delay, value, cb) {
 
 
 function create(dataset) {
-    debug("STARTING DRIVER");
+    logger.trace("STARTING DRIVER");
 
     //Observable {play: bool, layout: bool, ... cfg settings ...}
     //  play: animation stream
@@ -282,7 +280,7 @@ function create(dataset) {
     var vendor = dataset.metadata.vendor;
 
     var graph = init(device, vendor, controls).then(function (graph) {
-        debug('LOADING DATASET');
+        logger.trace('LOADING DATASET');
         return loader.loadDatasetIntoSim(graph, dataset)
 
     }).then(function (graph) {
@@ -296,7 +294,7 @@ function create(dataset) {
         return graph;
 
     }).then(function (graph) {
-        debug('ANIMATING');
+        logger.trace('ANIMATING');
 
         var play = userInteractions.filter(function (o) { return o && o.play; });
 
@@ -318,7 +316,7 @@ function create(dataset) {
         var isRunningRecent = new Rx.ReplaySubject(1);
 
         isRunningRecent.subscribe(function (v) {
-            debug('=============================isRunningRecent:', v)
+            logger.trace('=============================isRunningRecent:', v);
         });
 
         isRunning.subscribe(isRunningRecent);
@@ -330,7 +328,7 @@ function create(dataset) {
             //    return Rx.Observable.fromPromise(graph.tick(0, {play: true, layout: false}));
             //})
             .expand(function(graph) {
-                var now = Date.now();
+                perf.startTiming('tick_durationMS');
                 //return (Rx.Observable.fromCallback(graph.renderer.document.requestAnimationFrame))()
                 return Rx.Observable.return()
                     // Add in a delay to allow nodejs' event loop some breathing room
@@ -345,7 +343,7 @@ function create(dataset) {
                             graph.updateSettings(v).then(function () {
                                 return graph.tick(v);
                             }).then(function () {
-                                metrics.info({metric: {'tick_durationMS': Date.now() - now} });
+                                perf.endTiming('tick_durationMS');
                             })
                         );
                     })
@@ -353,14 +351,16 @@ function create(dataset) {
             })
             .subscribe(
                 animStepSubj,
-                eh.makeRxErrorHandler('node-driver: tick failed')
+                log.makeRxErrorHandler(logger, 'node-driver: tick failed')
             );
 
-        debug('Graph created');
+        logger.trace('Graph created');
         return graph;
-    }).fail(function (err) {
-        log.die('Driver initialization error', (err||{}).stack);
-    });
+    })
+    .fail(function (err) {
+        logger.die(err, 'Driver initialization error');
+    })
+    .done();
 
     return {
         interact: function (settings) {
@@ -368,7 +368,7 @@ function create(dataset) {
         },
         ticks: animStepSubj.skip(1),
         graph: graph
-    }
+    };
 }
 
 
@@ -395,16 +395,15 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
         });
     bufferNames = neededBuffers;
 
-    var now = Date.now();
+    perf.startTiming('fetchVBOs_durationMS');
     return Rx.Observable.fromPromise(fetchVBOs(graph, renderConfig, bufferNames, counts))
         .flatMap(function (vbos) {
-            //metrics.info({metric: {'fetchVBOs_lastVersions': bufferVersions}});
-            metrics.info({metric: {'fetchVBOs_buffers': bufferNames}});
-            metrics.info({metric: {'fetchVBOs_durationMS': Date.now() - now}});
+            //perf.getMetric({metric: {'fetchVBOs_lastVersions': bufferVersions}});
+            perf.endTiming('fetchVBOs_durationMS');
 
             bufferNames.forEach(function (bufferName) {
                 if (!vbos.hasOwnProperty(bufferName)) {
-                    log.die('Vbos does not have buffer %s', bufferName);
+                    logger.die('Vbos does not have buffer %s', bufferName);
                 }
             });
 
@@ -412,32 +411,31 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
                 var actualByteLength = vbos[bufferName].buffer.byteLength;
                 var expectedByteLength = bufferByteLengths[bufferName];
                 if( actualByteLength !== expectedByteLength) {
-                    log.error('Mismatch length for VBO %s (Expected:%d Got:%d)',
+                    logger.error('Mismatch length for VBO %s (Expected:%d Got:%d)',
                                bufferName, expectedByteLength, actualByteLength);
                 }
             });
 
             //[ {buffer, version, compressed} ] ordered by bufferName
-            var nowPreCompress = Date.now();
+            perf.startTiming('compressAll_durationMS');
             var compressed =
                 bufferNames.map(function (bufferName) {
-                    var now = Date.now();
+                    perf.startTiming('compress_durationMS');
                     return Rx.Observable.fromNodeCallback(compress.deflate)(
                         vbos[bufferName].buffer,//binary,
                         {output: new Buffer(
                             Math.max(1024, Math.round(vbos[bufferName].buffer.byteLength * 1.5)))})
                         .map(function (compressed) {
-                            debug('compress bufferName %s (size %d)', bufferName, vbos[bufferName].buffer.byteLength);
-                            metrics.info({metric: {'compress_buffer': bufferName} });
-                            metrics.info({metric: {'compress_inputBytes': vbos[bufferName].buffer.byteLength} });
-                            metrics.info({metric: {'compress_outputBytes': compressed.length} });
-                            metrics.info({metric: {'compress_durationMS': Date.now() - now} });
+                            logger.trace('compress bufferName %s (size %d)', bufferName, vbos[bufferName].buffer.byteLength);
+                            perf.histogram('compress_inputBytes', vbos[bufferName].buffer.byteLength);
+                            perf.histogram('compress_outputBytes', compressed.length);
+                            perf.endTiming('compress_durationMS');
                             return _.extend({}, vbos[bufferName], {compressed: compressed});
-                        })
+                        });
                 });
 
             return Rx.Observable.zipArray(compressed).take(1)
-                .do(function () { metrics.info({metric: {'compressAll_durationMS': Date.now() - nowPreCompress} }) });
+                .do(function () { perf.endTiming('compressAll_durationMS');
 
         })
         .map(function(compressedVbos) {
@@ -479,6 +477,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
             };
 
         });
+});
 }
 
 

@@ -1,11 +1,11 @@
 var Kernel = require('../kernel.js'),
     Q = require('q'),
-    debug = require("debug")("graphistry:graph-viz:cl:integrationKernel"),
     _     = require('underscore'),
     cljs  = require('../cl.js'),
-    log = require('common/log.js'),
-    eh = require('common/errorHandlers.js')(log),
     ArgsType = require('./ArgsType.js');
+
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:integrationKernel');
 
 var integrateKernel = function (clContext) {
 
@@ -49,9 +49,9 @@ var integrateKernel = function (clContext) {
 
     simulator.tickBuffers(['nextPoints']);
 
-    debug("Running kernel faIntegrate");
+    logger.trace("Running kernel faIntegrate");
     return this.faIntegrate.exec([numPoints], resources)
-        .fail(eh.makeErrorHandler('Executing Integrate failed'));
+        .fail(log.makeQErrorHandler(logger, 'Executing Integrate failed'));
 }
 
 }

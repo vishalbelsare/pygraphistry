@@ -1,10 +1,10 @@
 var Kernel = require('../kernel.js'),
     Q = require('q'),
-    debug = require("debug")("graphistry:graph-viz:cl:kd-MidpointForces"),
     _     = require('underscore'),
-    log = require('common/log.js'),
-    eh = require('common/errorHandlers.js')(log),
     cljs  = require('../cl.js');
+
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:cl:kd-MidpointForces');
 
 // This module is intended to calculate forces on midedges using a kd-tree.
 var MidpointForces = function (clContext) {
@@ -249,14 +249,14 @@ var MidpointForces = function (clContext) {
     this.setArgs = function (kernel, kernelName, bufferBindings) {
         var params = kernelSpecs[kernelName];
         var args = params.args;
-        var flags = ['tau', 'flags', 'stepNumber']
+        var flags = ['tau', 'flags', 'stepNumber'];
         try {
             var binding = {};
             _.each(args, function (element, index, list) {
                 var arg = element;
                 if (flags.indexOf(arg) < 0) {
                     if (bufferBindings[arg] === undefined) {
-                        return eh.makeErrorHandler('Error: no buffer bindings for arguement')
+                        return log.makeQErrorHandler(logger, 'Error: no buffer bindings for arguement');
                     }
                     if (bufferBindings[arg].name !== undefined) {
                         binding[arg] = bufferBindings[arg].buffer;
@@ -265,9 +265,9 @@ var MidpointForces = function (clContext) {
                     }
                 }
             })
-            return kernel.set(binding)
+            return kernel.set(binding);
         } catch (e) {
-            return eh.makeErrorHandler('Error setting arguments in kd-MidpointForces.js')
+            return log.makeQErrorHandler(logger, 'Error setting arguments in kd-MidpointForces.js');
         }
     };
 
@@ -288,7 +288,7 @@ var MidpointForces = function (clContext) {
                 that.setArgs(that.sort, 'sort', bufferBindings),
                 that.setArgs(that.calculateMidPoints, 'calculateMidPoints', bufferBindings)
             ]);
-        }).fail(eh.makeErrorHandler('setupTempBuffers'));
+        }).fail(log.makeQErrorHandler(logger, 'setupTempBuffers'));
     };
 
     this.setupTempBuffers = function(simulator, warpsize, numBodies) {
@@ -311,7 +311,7 @@ var MidpointForces = function (clContext) {
             });
             return kdBuffers;
         })
-        .fail(eh.makeErrorHandler("Setting temporary buffers for barnesHutKernelSequence failed"));
+        .fail(log.makeQErrorHandler(logger, "Setting temporary buffers for barnesHutKernelSequence failed"));
     };
 
     this.execKernels = function(simulator, stepNumber, workItems, midpoint_index) {
@@ -334,36 +334,31 @@ var MidpointForces = function (clContext) {
 
         simulator.tickBuffers(['nextMidPoints']);
 
-        debug("Running Edge Bundling with kd-tree Kernel Sequence");
+        logger.debug("Running Edge Bundling with kd-tree Kernel Sequence");
 
         // For all calls, we must have the # work items be a multiple of the workgroup size.
         var that = this;
         return this.toKDLayout.exec([workItems.toBarnesLayout[0]], resources, [workItems.toBarnesLayout[1]])
         .then(function () {
-            //console.log("After Kd Layout");
             return that.boundBox.exec([workItems.boundBox[0]], resources, [workItems.boundBox[1]]);
         })
 
         .then(function () {
-        //console.log("After bound box");
         return that.buildTree.exec([workItems.buildTree[0]], resources, [workItems.buildTree[1]]);
         })
 
         .then(function () {
-        //console.log("After build Tree");
         return that.computeSums.exec([workItems.computeSums[0]], resources, [workItems.computeSums[1]]);
         })
 
         .then(function () {
-        //console.log("After sums");
         return that.sort.exec([workItems.sort[0]], resources, [workItems.sort[1]]);
         })
 
         .then(function () {
-        //console.log("Sort");
         return that.calculateMidPoints.exec([workItems.calculateForces[0]], resources, [workItems.calculateForces[1]]);
         })
-        .fail(eh.makeErrorHandler("Executing kd-tree edge bundling failed"));
+        .fail(log.makeQErrorHandler(logger, "Executing kd-tree edge bundling failed"));
     };
 
     this.setPhysics = function(flag) {

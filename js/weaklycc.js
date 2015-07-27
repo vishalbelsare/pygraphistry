@@ -1,50 +1,52 @@
+'use strict';
+
 var _ = require('underscore');
-var debug = require("debug")("graphistry:graph-viz:weaklycc");
-var perf = require('debug')('perf');
-var perfWrapper = require('./util.js').perf.bind('', require("debug")("perf"));
+var debug = require('debug')('graphistry:graph-viz:weaklycc');
+var perf = require('common/perfStats.js').createPerfMonitor();
 
 
 
 //int -> [ [int, int] ] -> [ [int] ]
-var edgesToEdgeList = perfWrapper.bind('', 'edgesToEdgeList',
-    function (numPoints, edges) {
-        var edgeList = [];
-        for (var i = 0; i < numPoints; i++) {
-            edgeList[i] = [];
-        }
-        edges.forEach(function (pair) {
-            edgeList[pair[0]].push(pair[1]);
-            edgeList[pair[1]].push(pair[0]);
-        });
-        return edgeList;
+var edgesToEdgeList = function (numPoints, edges) {
+    perf.startTiming('graph-viz:weaklycc:edgesToEdgeList');
+    var edgeList = [];
+    for (var i = 0; i < numPoints; i++) {
+        edgeList[i] = [];
+    }
+    edges.forEach(function (pair) {
+        edgeList[pair[0]].push(pair[1]);
+        edgeList[pair[1]].push(pair[0]);
     });
+    perf.endTiming('graph-viz:weaklycc:edgesToEdgeList');
+    return edgeList;
+};
 
 
 //int * [ [int] ] -> Uint32Array
-var edgesToDegrees = perfWrapper.bind('', 'edgesToDegrees',
-    function (numPoints, edgeList) {
-
-        var degrees = new Uint32Array(numPoints);
-        for (var i = 0; i < numPoints; i++) {
-            degrees[i] = edgeList[i].length;
-        }
-
-        return degrees;
-    });
+var edgesToDegrees = function (numPoints, edgeList) {
+    perf.startTiming('graph-viz:weaklycc:edgesToDegrees');
+    var degrees = new Uint32Array(numPoints);
+    for (var i = 0; i < numPoints; i++) {
+        degrees[i] = edgeList[i].length;
+    }
+    perf.endTiming('graph-viz:weaklycc:edgesToDegrees');
+    return degrees;
+};
 
 
 //int * [ int ] -> [int]
-var computeRoots = perfWrapper.bind('', 'computeRoots',
-    function (numPoints, degrees) {
-        var roots = new Array(numPoints);
-        for (var i = 0; i < numPoints; i++) {
-            roots[i] = i;
-        }
-        roots.sort(function (a, b) {
-            return degrees[b] - degrees[a];
-        });
-        return roots;
+var computeRoots = function (numPoints, degrees) {
+    perf.startTiming('graph-viz:weaklycc:computeRoots');
+    var roots = new Array(numPoints);
+    for (var i = 0; i < numPoints; i++) {
+        roots[i] = i;
+    }
+    roots.sort(function (a, b) {
+        return degrees[b] - degrees[a];
     });
+    perf.endTiming('graph-viz:weaklycc:edgesToEdgeList');
+    return roots;
+};
 
 
 //for node i's !done edge destinations, mark done, add label, and enqueue
@@ -91,7 +93,7 @@ function traverse (edgeList, root, label, depth, done, nodeToComponent) {
 //   }
 module.exports = function weaklycc (numPoints, edges, depth) {
 
-    var t0 = Date.now();
+    perf.startTiming('graph-viz:weaklycc:all');
 
     depth = depth || Number.MAX_VALUE;
 
@@ -111,13 +113,13 @@ module.exports = function weaklycc (numPoints, edges, depth) {
     var nodeToComponent = new Uint32Array(numPoints);
     var done = new Uint32Array(numPoints);
 
-    var t1 = Date.now();
+    perf.startTiming('graph-viz:weaklycc:dfs');
     var lastSize = degrees[roots[0]];
     var threshold = Math.min(lastSize * 0.1, 1000);
     for (var i = 0; i < numPoints; i++) {
         var root = roots[i];
         if (!done[root]) {
-            if (true && lastSize < threshold) {
+            if (lastSize < threshold) { // originaly (true && lastSize < threshold), why true && ?
 
                 //skip first as likely supernode
                 var defC = components.length > 1 ? 1 : 0;
@@ -138,8 +140,8 @@ module.exports = function weaklycc (numPoints, edges, depth) {
         }
     }
 
-    perf('weaklycc dfs', Date.now() - t1, 'ms');
-    perf('weaklycc all', Date.now() - t0, 'ms');
+    perf.endTiming('graph-viz:weaklycc:dfs');
+    perf.endTiming('graph-viz:weaklycc:all');
 
     return {
         //Uint32Array

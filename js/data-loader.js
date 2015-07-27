@@ -3,16 +3,16 @@
 var http = require('http');
 var https = require('https');
 var Q = require('q');
-var debug = require('debug')('graphistry:graph-viz:data:data-loader');
 var _ = require('underscore');
 var config  = require('config')();
 var zlib = require('zlib');
 var Rx = require('rx');
 var urllib = require('url');
 var util = require('./util.js');
-var log = require('common/log.js');
-var eh = require('common/errorHandlers.js')(log);
 var Cache = require('common/cache.js');
+
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:data:data-loader');
 
 var MatrixLoader = require('./libs/MatrixLoader.js'),
     VGraphLoader = require('./libs/VGraphLoader.js'),
@@ -49,16 +49,16 @@ function downloadDataset(query) {
     config.vendor   = hasParam(query.vendor)   ? query.vendor   : 'default';
     config.type     = hasParam(query.type)     ? query.type     : 'default';
 
-    console.info('scene:%s  controls:%s  mapper:%s  device:%s',
+    logger.info('scene:%s  controls:%s  mapper:%s  device:%s',
                   config.scene, config.controls, config.mapper, config.device);
 
     return downloader[url.protocol](url).then(function (data) {
         return { body: data, metadata: config };
-    }).fail(eh.makeErrorHandler('Failure while retrieving dataset'));
+    }).fail(log.makeQErrorHandler(logger, 'Failure while retrieving dataset'));
 }
 
 function httpDownloader(http, url) {
-    debug('Attemping to download dataset using HTTP');
+    logger.trace('Attemping to download dataset using HTTP');
     var result = Q.defer();
 
     // Q.denodeify fails http.get because it does not follow
@@ -84,12 +84,12 @@ function httpDownloader(http, url) {
                     result.resolve(buffer);
                 });
             }).on('error', function (err) {
-                log.error('Cannot download dataset at', url.href, err.message);
+                logger.error(err, 'Cannot download dataset at', url.href);
                 result.reject(err);
             });
         })
     }).on('error', function (err) {
-        log.error('Cannot fetch headers from', url.href, err.message);
+        logger.error(err, 'Cannot fetch headers from', url.href);
         result.reject(err);
     }).end();
 
@@ -101,7 +101,7 @@ function httpDownloader(http, url) {
  * modified time and fetches from S3 accordingly.
 **/
 function graphistryS3Downloader(url) {
-    debug('Attempting to download from S3 ' + url.href);
+    logger.trace('Attempting to download from S3 ' + url.href);
     var params = {
       Bucket: config.BUCKET,
       Key: url.href
@@ -111,22 +111,22 @@ function graphistryS3Downloader(url) {
     // Attempt to download headers
     config.S3.headObject(params, function (err, data) {
         if (err) {
-            debug('Could not fetch S3 header', err.message)
-            debug('Falling back on local cache');
+            logger.trace('Could not fetch S3 header', err.message)
+            logger.trace('Falling back on local cache');
             // Try to load from cache regardless of timestamp.
             res.resolve(tmpCache.get(url, new Date(0)));
         } else {
             var mtime = new Date(data['LastModified']);
-            debug('Got S3 headers, dataset was last modified on', mtime);
+            logger.debug('Got S3 headers, dataset was last modified on', mtime);
             tmpCache.get(url, mtime).then(function (data) {
                 res.resolve(data);
             }).fail(function () { // Not in cache of stale
                 config.S3.getObject(params, function(err, data) {
                     if (err) {
-                        log.error('S3 Download failed', err.message);
+                        logger.error(err, 'S3 Download failed');
                         res.reject();
                     } else {
-                        debug('Successful S3 download');
+                        logger.trace('Successful S3 download');
                         tmpCache.put(url, data.Body);
                         res.resolve(data.Body);
                     }
@@ -140,13 +140,13 @@ function graphistryS3Downloader(url) {
 
 
 function loadDatasetIntoSim(graph, dataset) {
-    debug('Loading dataset: %o', dataset);
+    logger.debug('Loading dataset: %o', dataset);
 
     var loader = loaders[dataset.metadata.type];
 
     // If body is gzipped, decompress transparently
     if (dataset.body.readUInt16BE(0) === 0x1f8b) { //Do we care about big endian? ARM?
-        debug('Dataset body is gzipped, decompressing');
+        logger.trace('Dataset body is gzipped, decompressing');
         return Q.denodeify(zlib.gunzip)(dataset.body).then(function (gunzipped) {
             dataset.body = gunzipped;
             return loader(graph, dataset);
@@ -198,7 +198,7 @@ function loadRandom(graph, dataset) {
 
 function loadRectangle(graph, dataset) {
     var cfg = dataset.Metadata.config
-    debug("Loading rectangle", cfg.rows, cfg.columns);
+    logger.trace("Loading rectangle", cfg.rows, cfg.columns);
 
     var points =
         _.flatten(
@@ -218,7 +218,7 @@ function loadRectangle(graph, dataset) {
 
 
 function loadSocioPLT(graph, dataset) {
-    debug("Loading SocioPLT");
+    logger.trace("Loading SocioPLT");
 
     var data = require('./libs/socioplt/generateGraph.js').process(dataset.body);
 
@@ -261,13 +261,13 @@ function loadSocioPLT(graph, dataset) {
 
 
 function loadGeo(graph, dataset) {
-    debug("Loading Geo");
+    logger.trace("Loading Geo");
 
     return Q(MatrixLoader.loadGeo(dataset.body))
      .then(function(geoData) {
         var processedData = MatrixLoader.processGeo(geoData, 0.3);
 
-        debug("Processed %d/%d nodes/edges", processedData.points.length, processedData.edges.length);
+        logger.debug("Processed %d/%d nodes/edges", processedData.points.length, processedData.edges.length);
 
         return graph.setPoints(processedData.points)
             .then(function () {
@@ -312,7 +312,7 @@ function loadGeo(graph, dataset) {
                 });
     })
     .then(function() {
-        debug("Done setting geo points, edges");
+        logger.trace("Done setting geo points, edges");
         return graph;
     });
 }
@@ -324,7 +324,7 @@ function loadGeo(graph, dataset) {
 function loadMatrix(graph, dataset) {
     var graphFile;
 
-    debug("Loading dataset %s", dataset.body);
+    logger.debug("Loading dataset %s", dataset.body);
 
     var v = MatrixLoader.loadBinary(dataset.body)
     var graphFile = v;

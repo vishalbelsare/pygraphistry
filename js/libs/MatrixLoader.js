@@ -2,7 +2,9 @@
 
 var Q = require('q');
 var Long = require('./Long.js');
-var debug = require("debug")("graphistry:graph-viz:data:matrixloader");
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:data:matrixloader');
+var perf        = require('common/perfStats.js').createPerfMonitor();
 var zlib = require("zlib");
 
 var exports = {
@@ -26,8 +28,9 @@ var exports = {
 
 
     loadBinary: function (nodeBuffer) { // -> Promise Binary
-        debug("Loading binary");
+        logger.trace("Loading binary");
 
+        //unnecessary?
         var t0 = new Date().getTime();
 
         function Binary (buf) {
@@ -46,7 +49,7 @@ var exports = {
 
     load: function (str) {
         var t0 = new Date().getTime();
-
+        perf.startTiming('graph-viz:data:matrixloader, naive parse and transform');
         //http://bl.ocks.org/mbostock/2846454
         var nodes = [];
         var links = str
@@ -62,7 +65,8 @@ var exports = {
             };
         });
 
-        debug("Did naive parse & transform in %d ms", new Date().getTime() - t0);
+        //might be better for a perflog?
+        perf.endTiming('graph-viz:data:matrixloader, naive parse and transform');
 
         return {
           nodes: nodes,
@@ -74,7 +78,8 @@ var exports = {
     loadGeo: function(nodeBuffer) { // -> Promise Binary
         var t0 = new Date().getTime();
 
-        debug("Loading Geo file %s");
+        //is the %s ever going to be formatted?
+        logger.debug("Loading Geo file %s");
 
         function Binary (buf) {
             var f32 = new Float32Array(buf.buffer);
@@ -105,7 +110,7 @@ var exports = {
             };
         }
 
-        debug("Loading geo data with node.js fs module");
+        logger.trace("Loading geo data with node.js fs module");
         return Binary(new Uint32Array((new Uint8Array(nodeBuffer)).buffer));
     },
 

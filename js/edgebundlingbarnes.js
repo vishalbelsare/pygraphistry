@@ -1,10 +1,7 @@
 'use strict';
 var _          = require('underscore'),
     Q          = require('q'),
-    debug      = require('debug')('graphistry:graph-viz:cl:edgebundling'),
     cljs       = require('./cl.js'),
-    log        = require('common/log.js'),
-    eh         = require('common/errorHandlers.js')(log),
     webcl      = require('node-webcl'),
     Kernel     = require('./kernel.js'),
     LayoutAlgo = require('./layoutAlgo.js'),
@@ -13,13 +10,15 @@ var _          = require('underscore'),
     InterpolateMidPoints = require('./javascript_kernels/interpolateMidpoints.js'),
     //integrateKernel = require('./javascript_kernels/integrateKernel.js'),
     EbBarnesKernelSeq = require('./javascript_kernels/ebBarnesKernelSeq.js'),
-    MidEdgeGather = require('./javascript_kernels/midEdgeGather.js');
+    MidEdgeGather = require('./javascript_kernels/midEdgeGather.js'),
+    log        = require('common/logger.js'),
+    logger     = log.createLogger('graph-viz:cl:edgebundling');
 
 
 function EdgeBundling(clContext) {
     LayoutAlgo.call(this, EdgeBundling.name);
 
-    debug('Creating GaussSeidelBarnes kernels');
+    logger.trace('Creating GaussSeidelBarnes kernels');
     this.ebBarnesKernelSeq = new EbBarnesKernelSeq(clContext);
 
     this.ebMidsprings = new Kernel('gaussSeidelMidsprings', EdgeBundling.argsMidsprings,
@@ -161,7 +160,7 @@ function getNumWorkitemsByHardware(deviceProps) {
 
 
     } else if (deviceProps.NAME.indexOf('HD Graphics 4000') !== -1) {
-        log.warn('Expected slow kernels: sort, calculate_forces');
+        logger.debug('Expected slow kernels: sort, calculate_forces');
     }
 
     return _.mapObject(numWorkGroups, function (val) {
@@ -200,7 +199,7 @@ var setupTempLayoutBuffers = function (simulator) {
         tempLayoutBuffers.swings = swings;
         tempLayoutBuffers.tractions = tractions;
         return tempLayoutBuffers;
-    }).catch(eh.makeErrorHandler('setupTempBuffers'));
+    }).catch(log.makeQErrorHandler(logger, 'setupTempBuffers'));
 };
 
 
@@ -263,7 +262,7 @@ function midEdges(simulator, ebMidsprings, stepNumber) {
 
     simulator.tickBuffers(['curMidPoints', 'midSpringsPos', 'midSpringsColorCoord']);
 
-    debug('Running kernel gaussSeidelMidsprings');
+    logger.trace('Running kernel gaussSeidelMidsprings');
     return ebMidsprings.exec([numForwardsWorkItems], resources);
 }
 
@@ -297,7 +296,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
     that = this;
     locks = simulator.controls.locks;
     if (locks.lockMidpoints && locks.lockMidedges) {
-        debug('LOCKED, EARLY EXIT');
+        logger.trace('LOCKED, EARLY EXIT');
         return new Q();
     }
 
@@ -310,12 +309,12 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
 
     if (locks.interpolateMidPointsOnce || locks.interpolateMidPoints) {
         if ( locks.interpolateMidPointsOnce ) {
-            console.log("Force interpolation of midpoints");
+            logger.debug("Force interpolation of midpoints");
         }
         locks.interpolateMidPointsOnce = false;
         // If interpolateMidpoints is true, midpoints are calculate by
         // interpolating between corresponding edge points.
-        console.log("INTERPOLATION");
+        logger.trace("INTERPOLATION");
         calculateMidpoints = new Q().then(function () {
 
             simulator.tickBuffers(['nextMidPoints']);
@@ -369,7 +368,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
             //tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
             tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
         ]);
-    }).fail(eh.makeErrorHandler('Failure in edgebundling tick'));
+    }).fail(log.makeQErrorHandler(logger, 'Failure in edgebundling tick'));
 };
 
 module.exports = EdgeBundling;

@@ -1,5 +1,7 @@
+<!DOCTYPE html>
 <html>
 <head>
+    <meta name="robots" content="noindex, nofollow">
     <script type="text/javascript" src="libs/jquery-2.1.1.js"></script>
     <link rel="stylesheet" href="css/jquery-ui-1.10.4.css">
     <link rel="stylesheet" href="libs/jQRangeSlider-5.6.0/css/classic-min.css">
@@ -57,7 +59,7 @@
                     location: e.filename + ':  ' + e.lineno,
                     error: e.error
                 }
-            }
+            };
 
             $.post(templatePaths.API_ROOT + 'error', JSON.stringify(msg));
             window.heap.track('error', msg.content);
@@ -77,7 +79,7 @@
                     result: e.result,
                     error: thrownError
                 }
-            }
+            };
 
             $.post(templatePaths.API_ROOT + 'error', JSON.stringify(msg));
             window.heap.track('error', msg.content);
@@ -195,8 +197,6 @@
 
                       </a>
 
-                      <div class="divide-line" style="display:none"></div>
-
                       <!--
                       <a href="#" id="shortestpath" data-container="body" data-toggle="tooltip" data-placement="right" title="Find routes between two points" style="display:none">
                           <i class="fa fa-road fa-2x"></i>
@@ -205,56 +205,6 @@
 
 
 
-
-<style>
-.colorpicker {
-    z-index: 100000;
-    right: 7em;
-}
-
-#colorpickers .colorSelector {
-    position: relative;
-    top: 0;
-    left: 0;
-    width: 36px;
-    height: 36px;
-    background: url(libs/images/select2.png);
-}
-
-#colorpickers .colorSelector div {
-    position: relative;
-    top: 4px;
-    left: 4px;
-    width: 28px;
-    height: 28px;
-    background: url(libs/images/select2.png) center;
-}
-</style>
-
-                      <div id="colorpickers">
-                            <div class="divide-line"></div>
-
-                            <div id="foregroundColor">
-
-                                <div class="colorSelector">
-                                    <div style="opacity: 0.3; background-color: #000"></div>
-                                </div>
-                                <div class="colorHolder"></div>
-
-                            </div>
-
-                            <div class="divide-line"></div>
-
-                            <div id="backgroundColor">
-
-                                <div class="colorSelector">
-                                    <div style="opacity: 0.3; background-color: #fff"></div>
-                                </div>
-                                <div class="colorHolder"></div>
-
-                            </div>
-                      </div>
-
                     </div> <!-- last options group -->
 
 
@@ -262,17 +212,31 @@
                       <a href="#" id="histogramBrush" data-container="body" data-toggle="tooltip" data-placement="right" title="Histogram Brush">
                           <i class="fa fa-bar-chart fa-2x"></i>
                       </a>
+
+                      <a href="#" id="filterButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Filter" style="display: none">
+                          <i class="fa fa-filter fa-2x"></i>
+                      </a>
+
                     </div>
 
                     <div class="options-group">
                       <a href="#" id="forkButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Save A Copy">
                           <i class="fa fa-code-fork fa-2x"></i>
                       </a>
+
+                      <!-- only show if in iframe -->
+                      <a href="#" id="externalLinkButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Open in New Tab">
+                          <i class="fa fa-external-link fa-2x"></i>
+                      </a>
+
                     </div>
 
                     <div class="options-group">
                         <a href="#" id="persistButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Snapshot for Embed">
                             <i class="fa fa-share-square-o fa-2x"></i>
+                        </a>
+                        <a href="#" id="goLiveButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Go Live">
+                            <i class="fa fa-share-square fa-2x"></i>
                         </a>
                     </div>
 
@@ -283,8 +247,77 @@
 
         <div id="renderingItems" class="settingsPanel">
             <div class="form-horizontal">
+
+
+                <div class="control-title">Background</div>
+
+                    <style scoped="scoped">
+                    .colorpicker {
+                        right: 7em;
+                    }
+                    .colorSelector {
+                        position: relative;
+                        top: 0;
+                        left: 0;
+                        width: 36px;
+                        height: 36px;
+                        background: url(libs/images/select2.png);
+                    }
+
+                    .colorSelector div {
+                        position: relative;
+                        top: 4px;
+                        left: 4px;
+                        width: 28px;
+                        height: 28px;
+                        background: url(libs/images/select2.png) center;
+                    }
+                    </style>
+
+                    <div id="colorpickers">
+
+                        <div class="form-group colorer">
+                            <label  class="control-label col-xs-4">Foreground</label>
+                            <div class="col-xs-8">
+
+                                <div id="foregroundColor">
+
+                                    <div class="colorSelector">
+                                        <div style="opacity: 0.3; background-color: #000"></div>
+                                    </div>
+                                    <div class="colorHolder"></div>
+
+                                </div>
+                            </div>
+                        </div><!-- /form-group -->
+
+                        <div class="form-group colorer">
+                            <label  class="control-label col-xs-4">Background</label>
+                            <div class="col-xs-8">
+
+                                <div id="backgroundColor">
+
+                                    <div class="colorSelector">
+                                        <div style="opacity: 0.3; background-color: #fff"></div>
+                                    </div>
+                                    <div class="colorHolder"></div>
+
+                                </div>
+                            </div>
+                        </div><!-- /form-group -->
+
+                    </div><!-- /colorpickers -->
+
+
             </div>  <!-- /form-horizontal -->
         </div> <!-- /renderingItems -->
+
+        <div id="filteringItems" class="settingsPanel">
+            <div class="form-horizontal">
+            <!-- Placeholder -->
+            </div>  <!-- /form-horizontal -->
+        </div> <!-- /filteringItems -->
+
 
     </div> <!-- /section -->
 
@@ -356,7 +389,7 @@
             corners: 1, // Corner roundness (0..1)
             rotate: 0, // The rotation offset
             direction: 1, // 1: clockwise, -1: counterclockwise
-            color: '#333366', // #rgb or #rrggbb or array of colors
+            color: 'rgb(245,245,253)', // #rgb or #rrggbb or array of colors
             speed: 1, // Rounds per second
             trail: 60, // Afterglow percentage
             shadow: false, // Whether to render a shadow
@@ -373,18 +406,18 @@
     });
     </script>
 
-</div>
+<!--</div>-->
 
 <div class="meter meter-graphnodes" style="left: 21em;">
     <span class="flavor">graph</span>
-    <div style="padding: 0px; min-width: 95px; height: 30px; line-height: 30px; text-align: right; text-shadow: rgba(0, 0, 0, 0.498039) 1px 1px 0px; color: rgb(255, 255, 255); position: absolute; z-index: 10; left: 5px; top: 5px; right: auto; bottom: auto; margin: 0px; cursor: pointer;">
-        <div style="position: absolute; top: 0px; right: 0px; padding: 0px 5px; height: 40px; font-size: 24px; font-family: Consolas, 'Andale Mono', monospace; z-index: 2; line-height: 27px; text-align: right">
+    <div style="padding: 0; min-width: 95px; height: 30px; line-height: 30px; text-align: right; text-shadow: rgba(0, 0, 0, 0.498039) 1px 1px 0; color: rgb(255, 255, 255); position: absolute; z-index: 10; left: 5px; top: 5px; right: auto; bottom: auto; margin: 0; cursor: pointer;">
+        <div style="position: absolute; top: 0; right: 0; padding: 0 5px; height: 40px; font-size: 24px; font-family: Consolas, 'Andale Mono', monospace; z-index: 2; line-height: 27px; text-align: right">
             <span id="graph-node-count">0</span>
         </div>
-        <div style="position: absolute; top: 20px; right: 0px; padding: 0px 5px; height: 40px; font-size: 24px; font-family: Consolas, 'Andale Mono', monospace; z-index: 2; line-height: 27px; text-align: right">
+        <div style="position: absolute; top: 20px; right: 0; padding: 0 5px; height: 40px; font-size: 24px; font-family: Consolas, 'Andale Mono', monospace; z-index: 2; line-height: 27px; text-align: right">
             <span id="graph-edge-count">0</span>
         </div>
-        <div style="position: absolute; top: 15px; left: 0px; padding: 0px 5px; height: 40px; font-size: 12px; line-height: 15px; font-family: sans-serif; text-align: left; z-index: 2;">nodes<br/>edges</div>
+        <div style="position: absolute; top: 15px; left: 0; padding: 0 5px; height: 40px; font-size: 12px; line-height: 15px; font-family: sans-serif; text-align: left; z-index: 2;">nodes<br/>edges</div>
         <div style="position: relative; height: 40px; z-index: 1; width: 145px;">&nbsp;</div>
     </div>
 </div>

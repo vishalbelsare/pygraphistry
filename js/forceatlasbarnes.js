@@ -1,11 +1,8 @@
 'use strict';
 
-var debug = require("debug")("graphistry:graph-viz:cl:forceatlas2barnes"),
-    _     = require('underscore'),
+var _     = require('underscore'),
     cljs  = require('./cl.js'),
     Q     = require('q'),
-    log   = require('common/log.js'),
-    eh    = require('common/errorHandlers.js')(log),
 
     LayoutAlgo = require('./layoutAlgo.js'),
     Kernel = require('./kernel.js'),
@@ -13,7 +10,10 @@ var debug = require("debug")("graphistry:graph-viz:cl:forceatlas2barnes"),
     EdgeKernelSeqFast = require('./javascript_kernels/edgeKernelSeqFast.js'),
     faSwingsKernel = require('./javascript_kernels/faSwingsKernel.js'),
     integrateApproxKernel = require('./javascript_kernels/integrateApproxKernel.js'),
-    integrateKernel = require('./javascript_kernels/integrateKernel.js');
+    integrateKernel = require('./javascript_kernels/integrateKernel.js'),
+
+    log        = require('common/logger.js'),
+    logger     = log.createLogger('graph-viz:cl:forceatlas2barnes');
 
 
 function getNumWorkitemsByHardware(deviceProps) {
@@ -75,7 +75,7 @@ function getNumWorkitemsByHardware(deviceProps) {
 
 
     } else if (deviceProps.NAME.indexOf('HD Graphics 4000') != -1) {
-        log.warn('Expected slow kernels: sort, calculate_forces');
+        logger.debug('Expected slow kernels: sort, calculate_forces');
     }
 
     return _.mapObject(numWorkGroups, function(val, key) {
@@ -88,7 +88,7 @@ function getNumWorkitemsByHardware(deviceProps) {
 function ForceAtlas2Barnes(clContext) {
     LayoutAlgo.call(this, ForceAtlas2Barnes.name);
 
-    debug('Creating ForceAtlasBarnes kernels');
+    logger.trace('Creating ForceAtlasBarnes kernels');
     this.barnesKernelSeq = new BarnesKernelSeq(clContext);
 
     this.edgeKernelSeq = new EdgeKernelSeqFast(clContext);
@@ -148,7 +148,7 @@ var setupTempLayoutBuffers = function(simulator) {
       tempLayoutBuffers.globalSpeed = globalSpeed;
       return tempLayoutBuffers;
     })
-    .catch(eh.makeErrorHandler('setupTempBuffers'));
+    .catch(log.makeQErrorHandler(logger, 'setupTempBuffers'));
 };
 
 var getWarpsize = function (vendor) {
@@ -196,7 +196,7 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
 function pointForces(simulator, barnesKernelSeq, stepNumber) {
      return barnesKernelSeq.execKernels(simulator, stepNumber)
     .fail(function (err) {
-        console.error('Computing pointForces failed', err, (err||{}).stack);
+        logger.error(err, 'Computing pointForces failed');
     });
 }
 
@@ -216,12 +216,7 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
       var buffers = simulator.buffers;
       simulator.tickBuffers(['curPoints', 'nextPoints']);
       return Q.all([]);
-      // return Q.all([
-      //         buffers.nextPoints.copyInto(buffers.curPoints),
-      //         buffers.curPoints.copyInto(buffers.nextPoints)
-      //         ]);
-      //return buffers.curPoints.copyInto(buffers.nextPoints);
-      //return Q();
+
     }
     var that = this;
     var tickTime = Date.now();
