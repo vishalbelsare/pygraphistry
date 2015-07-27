@@ -566,8 +566,6 @@ Dataframe.prototype.load = function (attributes, type) {
     if (filteredKeys.length === 0) {
         return;
     }
-    console.log('filteredKeys: ', filteredKeys);
-
 
     var numElements = filteredAttributes[filteredKeys[0]].values.length;
     this.rawdata.numElements[type] = numElements;
@@ -969,9 +967,11 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
         return validAttributes.indexOf(val) > -1;
     });
 
-    return _.object(_.map(keysToAggregate, function (attribute) {
+    var aggregated = _.object(_.map(keysToAggregate, function (attribute) {
         return [attribute, process(attribute, indices)];
     }));
+
+    return aggregated;
 };
 
 
