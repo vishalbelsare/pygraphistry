@@ -52,6 +52,7 @@ var interpolateMidpointsKernel = function (clContext) {
         logger.trace('Running interpolateMidpoints kernel');
         return this.interpolate.exec([numSprings], resources)
             .fail(log.makeQErrorHandler(logger, 'Kernel interpolateMidPoints failed'));
+    };
 };
 
 module.exports = interpolateMidpointsKernel;
