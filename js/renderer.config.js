@@ -752,7 +752,8 @@ var sceneUber = {
     'options': stdOptions,
     'camera': camera2D,
     'clientMidEdgeInterpolation': false,
-    'render': ['pointpicking',  'pointsampling', 'uberdemoedges',
+    //'numRenderedSplits':7 ,
+    'render': ['pointpicking',  'pointsampling', 'uberdemoedges', 'edgepicking', 'arrowculled', 'arrowhighlight',
         'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2']
 }
