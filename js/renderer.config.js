@@ -40,7 +40,7 @@ var programs = {
         },
         'attributes': ['startPos', 'endPos', 'normalDir', 'arrowColor', 'pointSize'],
         'camera': 'mvp',
-        'uniforms': ['zoomScalingFactor', 'maxPointSize', 'maxScreenSize', 'maxCanvasSize', 'pointOpacity']
+        'uniforms': ['zoomScalingFactor', 'maxPointSize', 'maxScreenSize', 'maxCanvasSize', 'edgeOpacity']
     },
     'arrowhighlight': {
         'sources': {
@@ -626,7 +626,7 @@ var items = {
             'pointSize': ['arrowPointSizes', 'pointSize'],
         },
         'uniforms': {
-            'pointOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] },
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] },
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
             'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] },
             'maxScreenSize': { 'uniformType': '1f', 'defaultValues': [1.0] },
