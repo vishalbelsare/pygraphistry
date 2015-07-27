@@ -171,7 +171,7 @@ var models = {
             'normalize': false
         }
     },
-    'midSpringsPosClient': {
+    'midSpringsPos': {
         'curPos': {
             'datasource': 'CLIENT',
             'type': 'FLOAT',
@@ -473,7 +473,7 @@ var items = {
         'program': 'midedgeculled',
         'triggers': ['renderSceneFull'],
         'bindings': {
-            'curPos': ['midSpringsPosClient', 'curPos'],
+            'curPos': ['midSpringsPos', 'curPos'],
             'edgeColor': ['midEdgeColors', 'midEdgeColor']
         },
         'uniforms': {
@@ -482,11 +482,11 @@ var items = {
         'drawType': 'LINES',
         'glOptions': {}
     },
-    'midedgeculledindexedclient' : {
+    'midedgeculled' : {
         'program': 'midedgeculled',
         'triggers': ['renderSceneFull'],
         'bindings': {
-            'curPos': ['midSpringsPosClient', 'curPos'],
+            'curPos': ['midSpringsPos', 'curPos'],
             'edgeColor': ['midEdgeColorsClient', 'midEdgeColor']
         },
         'uniforms': {
@@ -494,21 +494,6 @@ var items = {
         },
         'drawType': 'LINES',
         'glOptions': {}
-    },
-    'edgeculledindexedclient' : {
-        'program': 'edgeculled',
-        'triggers': ['renderSceneFull'],
-        'bindings': {
-            'curPos': ['midSpringsPosClient', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor']
-        },
-        'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] }
-        },
-        'drawType': 'LINES',
-        'glOptions': {
-            'depthFunc': [['LESS']]
-        }
     },
     'edgehighlight': {
         'program': 'edgehighlight',
@@ -579,11 +564,11 @@ var items = {
             //'depthFunc': [['LESS']]
         }
     },
-    'edgepickingindexedclient': {
+    'edgepicking': {
         'program': 'edges',
         'triggers': ['picking'],
         'bindings': {
-            'curPos': ['midSpringsPosClient', 'curPos'],
+            'curPos': ['midSpringsPos', 'curPos'],
             'edgeColor': ['edgeIndices', 'edgeColor']
         },
         'drawType': 'LINES',
@@ -767,7 +752,7 @@ var sceneUber = {
     'options': stdOptions,
     'camera': camera2D,
     'clientMidEdgeInterpolation': false,
-    'render': ['pointpicking',  'pointsampling', 'uberdemoedges', /*'edgepicking',*/
+    'render': ['pointpicking',  'pointsampling', 'uberdemoedges',
         'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2']
 }
@@ -779,7 +764,7 @@ var sceneNetflowArcs = {
     'clientMidEdgeInterpolation': true,
     'arcHeight': 0.2,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-    'midedgeculledindexedclient', 'edgepickingindexedclient',
+    'midedgeculled', 'edgepicking',
     'arrowculled', 'arrowhighlight', 'edgehighlight',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2']
@@ -792,7 +777,7 @@ var sceneNetflowBigArcs = {
     'clientMidEdgeInterpolation': true,
     'arcHeight': 0.5,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-    'midedgeculledindexedclient', 'edgepickingindexedclient',
+    'midedgeculled', 'edgepicking',
     'arrowculled', 'arrowhighlight', 'edgehighlight',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2']
@@ -804,38 +789,11 @@ var sceneNetflowStraight = {
     'numRenderedSplits': 0,
     'clientMidEdgeInterpolation': true,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-    'midedgeculledindexedclient', 'edgepickingindexedclient',
+    'midedgeculled', 'edgepicking',
     'arrowculled', 'arrowhighlight', 'edgehighlight',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2']
 }
-
-//var sceneNetflow = {
-    //'options': stdOptions,
-    //'camera': camera2D,
-    //'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               //'edgeculled', 'edgepicking', 'pointoutline', 'pointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight']
-//}
-
-//var sceneNetflowIndexed = {
-    //'options': stdOptions,
-    //'camera': camera2D,
-    //'edgeMode': 'CLIENTINDEXED',
-    //'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               //'edgeculledindexed', 'edgepicking', 'edgehighlight',
-               //'pointoutline', 'pointculled', 'pointhighlight',
-               //'fullscreen', 'fullscreenDummy', ]
-//}
-
-//var sceneNetflowIndexedClient = {
-    //'options': stdOptions,
-    //'camera': camera2D,
-    //'edgeMode': 'INDEXEDCLIENT',
-    //'render': ['pointpicking', 'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-               //'indexeddummy', 'edgeculledindexedclient', 'arrowculled', 'arrowhighlight', 'edgepickingindexedclient',
-               //'pointoutline', 'pointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy',
-               //'pointhighlight']
-//}
 
 var scenes = {
     'default': sceneNetflowArcs,
