@@ -91,7 +91,7 @@ function setupBackgroundColor(renderingScheduler, bgColor) {
     }).subscribe(_.identity, util.makeErrorHandler('bg color updates'));
 }
 
-function getArcs(bufferSnapshots, numRenderedSplits) {
+function getArcs(bufferSnapshots, numRenderedSplits, edgeHeight) {
     var logicalEdges, curPoints, srcPointIdx, dstPointIdx, srcPointX, srcPointY,
             dstPointX, dstPointY;
 
@@ -117,10 +117,20 @@ function getArcs(bufferSnapshots, numRenderedSplits) {
         midSpringsPos[index + 3] = dstMidPointY;
     }
 
-    var TEMPHEIGHT = 0.5;
-    var unitRadius = (1 + Math.pow(TEMPHEIGHT, 2)) / (2 * TEMPHEIGHT);
+
+    var unitRadius = (1 + Math.pow(edgeHeight, 2)) / (2 * edgeHeight);
     var theta = Math.asin((1  / unitRadius)) * 2;
     var thetaStep = -theta /  (numRenderedSplits + 1);
+
+    var cosArray = new Float32Array(numRenderedSplits);
+    var sinArray = new Float32Array(numRenderedSplits);
+    var curTheta;
+    for (var midPointIdx = 0; midPointIdx < numRenderedSplits; midPointIdx++) {
+        curTheta = thetaStep * (midPointIdx + 1);
+        cosArray[midPointIdx] = Math.cos(curTheta);
+        sinArray[midPointIdx] = Math.sin(curTheta);
+    }
+
     for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
         srcPointIdx = logicalEdges[edgeIndex * 2];
         dstPointIdx = logicalEdges[(edgeIndex * 2) + 1];
@@ -129,7 +139,7 @@ function getArcs(bufferSnapshots, numRenderedSplits) {
         dstPointX = curPoints[(2 * dstPointIdx)];
         dstPointY = curPoints[(2 * dstPointIdx) + 1];
         var edgeLength = Math.sqrt(Math.pow((dstPointX - srcPointX), 2) + Math.pow((dstPointY - srcPointY), 2));
-        var height = TEMPHEIGHT * (edgeLength / 2);
+        var height = edgeHeight * (edgeLength / 2);
         var edgeDirectionX = (srcPointX -  dstPointX) / edgeLength;
         var edgeDirectionY = (srcPointY -  dstPointY) / edgeLength;
         var radius = unitRadius * (edgeLength / 2);
@@ -144,10 +154,11 @@ function getArcs(bufferSnapshots, numRenderedSplits) {
         var prevPointY = srcPointY;
         var nextPointX;
         var nextPointY;
-        for (var midPointIdx = 0; midPointIdx < numRenderedSplits; midPointIdx++) {
-            var curTheta = thetaStep * (midPointIdx + 1);
-            nextPointX = centerPointX + (Math.cos(curTheta) * startRadiusX) - (Math.sin(curTheta) * startRadiusY);
-            nextPointY = centerPointY + (Math.sin(curTheta) * startRadiusX) + (Math.cos(curTheta) * startRadiusY);
+        for (midPointIdx = 0; midPointIdx < numRenderedSplits; midPointIdx++) {
+            var cos = cosArray[midPointIdx];
+            var sin = sinArray[midPointIdx];
+            nextPointX = centerPointX + (cos * startRadiusX) - (sin * startRadiusY);
+            nextPointY = centerPointY + (sin * startRadiusX) + (cos * startRadiusY);
             setMidEdge(edgeIndex, midPointIdx, prevPointX, prevPointY, nextPointX, nextPointY);
             prevPointX = nextPointX;
             prevPointY = nextPointY;
@@ -656,6 +667,7 @@ function renderSlowEffects(renderingScheduler) {
     var appSnapshot = renderingScheduler.appSnapshot;
     var renderState = renderingScheduler.renderState;
     var edgeMode = renderState.get('config').get('edgeMode');
+    var edgeHeight = renderState.get('config').get('arcHeight');
     var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
     var springsPos;
     var midSpringsPos;
@@ -665,7 +677,7 @@ function renderSlowEffects(renderingScheduler) {
 
     if (edgeMode === 'ARCS' && appSnapshot.vboUpdated) {
         start = Date.now();
-        midSpringsPos = getArcs(appSnapshot.buffers, numRenderedSplits);
+        midSpringsPos = getArcs(appSnapshot.buffers, numRenderedSplits, edgeHeight);
         if (!appSnapshot.buffers.midEdgesColors) {
             var numEdges = midSpringsPos.length / 2 / (numRenderedSplits + 1);
             midEdgesColors = getMidEdgeColors(appSnapshot.buffers, numEdges, numRenderedSplits);
