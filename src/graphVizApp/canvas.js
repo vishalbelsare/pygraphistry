@@ -651,8 +651,9 @@ function renderSlowEffects(renderingScheduler) {
     } else if (appSnapshot.vboUpdated) {
         start = Date.now();
         midSpringsPos = expandLogicalMidEdges(appSnapshot.buffers);
-        end1 = Date.now();
         renderer.loadBuffers(renderState, {'midSpringsPos': midSpringsPos});
+        end1 = Date.now();
+        renderer.setNumElements(renderState, 'edgepicking', midSpringsPos.length / 2);
         end2 = Date.now();
         console.debug('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
     }
@@ -676,7 +677,13 @@ function renderMouseoverEffects(renderingScheduler, task) {
     var appSnapshot = renderingScheduler.appSnapshot;
     var renderState = renderingScheduler.renderState;
     var buffers = appSnapshot.buffers;
-    var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
+    //var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
+    var numRenderedSplits;
+    if (buffers.midSpringsPos) {
+        numRenderedSplits = ((buffers.midSpringsPos.length / 4) / (buffers.logicalEdges.length / 8)) - 1;
+    } else {
+        return;
+    }
     var numMidEdges = numRenderedSplits + 1;
 
     // We haven't received any VBOs yet, so we shouldn't attempt to render.
