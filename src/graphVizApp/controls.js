@@ -13,7 +13,8 @@ var marqueeFact     = require('./marquee.js');
 var runButton       = require('./runButton.js');
 var forkVgraph      = require('./fork.js');
 var persistButton   = require('./persist.js');
-var colorpicker     = require('./colorpicker.js');
+var goLiveButton    = require('./goLiveButton.js');
+var colorPicker     = require('./colorpicker.js');
 var externalLink    = require('./externalLink.js');
 
 
@@ -263,7 +264,7 @@ function controlMaker (urlParams, $anchor, param, type) {
             .append($('<div>').addClass('colorSelector')
                 .append($('<div>').css({opacity: 0.3, background: 'white'})))
             .append($('<div>').addClass('colorHolder'));
-        param.cb(colorpicker.makeInspector($input, urlParams[param.name] ? urlParams[param.name] : param.def));
+        param.cb(colorPicker.makeInspector($input, urlParams[param.name] ? urlParams[param.name] : param.def));
     } else {
         console.warn('Ignoring param of unknown type', param);
         $input = $('<div>').text('Unknown setting type' + param.type);
@@ -384,10 +385,23 @@ function toLog(minPos, maxPos, minVal, maxVal, pos) {
 }
 
 
+function toPercent(pos) {
+    return pos / 100;
+}
+
 
 function setLocalSetting(name, pos, renderState, settingsChanges) {
     var camera = renderState.get('camera');
     var val = 0;
+
+    function setUniform(name, value) {
+        var uniforms = renderState.get('uniforms');
+        _.each(uniforms, function (map) {
+            if (name in map) {
+                map[name] = value;
+            }
+        });
+    }
 
     switch (name) {
         case 'pointSize':
@@ -399,15 +413,19 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
             camera.setEdgeScaling(val);
             break;
         case 'pointOpacity':
+            val = toPercent(pos);
+            setUniform('pointOpacity', [val]);
+            break;
         case 'edgeOpacity':
-            val = pos/100;
+            val = toPercent(pos);
+            setUniform('edgeOpacity', [val]);
             break;
         case 'labelTransparency':
             var opControl = $('#labelOpacity');
             if (!opControl.length) {
                 opControl = $('<style>').appendTo($('body'));
             }
-            opControl.text('.graph-label { opacity: ' + (pos/100) + '; }');
+            opControl.text('.graph-label { opacity: ' + toPercent(pos) + '; }');
             return;
         default:
             break;
@@ -510,8 +528,8 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
                 $('#inspector').css('visibility', 'hidden');
                 appState.brushOn.onNext(false);
             }
-        return brushIsOn;
-    });
+            return brushIsOn;
+        });
 
     menuToggler(onElt, $('#layoutSettingsButton'),  $('#renderingItems'), 'Turning on/off settings');
     menuToggler(onElt, $('#filterButton'),  $('#filteringItems'), 'Turning on/off filter');
@@ -523,6 +541,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     histogramBrush.init(socket, brush, appState.poi);
     forkVgraph(socket, urlParams);
     persistButton(socket, urlParams);
+    goLiveButton(socket, urlParams);
 
 /*
 

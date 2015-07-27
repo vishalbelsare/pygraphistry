@@ -17,17 +17,28 @@ function nameToLink (urlParams, name) {
 }
 
 
+function generateContentKey(urlParams) {
+    var uid = util.createAlphaNumericUID(),
+        parts = urlParams.dataset.split('/'),
+        suffix = parts.slice(-parts.length + 1);
+    return suffix + '_' + uid;
+}
+
+
 module.exports = function (socket, urlParams) {
     var $btn = $('#persistButton');
+
+    if (urlParams.static === 'true') {
+        $btn.remove();
+        return;
+    }
 
     Rx.Observable.fromEvent($btn, 'click')
         // show
         .map(function () {
-            var uid = util.createAlphaNumericUID(),
-                parts = urlParams.dataset.split('/'),
-                suffix = parts.slice(-parts.length + 1);
+            var contentKey = urlParams.contentKey || generateContentKey(urlParams);
             return $(Handlebars.compile($('#persistTemplate').html())(
-                {defName: suffix + '_' + uid}));
+                {defName: contentKey}));
         })
         .do(function ($modal) {
             $('body').append($modal);
