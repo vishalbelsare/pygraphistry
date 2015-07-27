@@ -362,13 +362,19 @@ function init(socket, marquee, poi) {
 
     }).flatMapLatest(function (data) {
         var binning = {};
-        var attributes = _.pluck(activeAttributes, 'name');
+        var attributeNames = _.pluck(activeAttributes, 'name');
         _.each(activeAttributes, function (attr) {
             if (attr.type === 'sparkLines') {
                 binning[attr.name] = data.globalStats.sparkLines[attr.name];
             } else {
                 binning[attr.name] = data.globalStats.histograms[attr.name];
             }
+        });
+        var attributes = _.map(attributeNames, function (name) {
+            return {
+                name: name,
+                type: data.globalStats.histograms[name].dataType
+            };
         });
 
         var params = {sel: data.sel, attributes: attributes, binning: binning, mode: MODE};
