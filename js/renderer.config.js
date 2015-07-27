@@ -78,16 +78,6 @@ var programs = {
         'camera': 'mvp',
         'uniforms': ['edgeOpacity']
     },
-    'midedgetextured': {
-        'sources': {
-            'vertex': fs.readFileSync(__dirname + '/../shaders/midedge-textured.vertex.glsl', 'utf8').toString('ascii'),
-            'fragment': fs.readFileSync(__dirname + '/../shaders/midedge-textured.fragment.glsl', 'utf8').toString('ascii')
-        },
-        'attributes': ['curPos', 'aColorCoord'],
-        'textures': ['uSampler'],
-        'camera': 'mvp',
-        'uniforms': []
-    },
     'pointculled': {
         'sources': {
             'vertex': fs.readFileSync(__dirname + '/../shaders/pointculled.vertex.glsl', 'utf8').toString('ascii'),
@@ -169,16 +159,6 @@ var textures = {
  * CLIENT -> computed on client
  */
 var models = {
-    //'springsPos': {
-        //'curPos': {
-            //'datasource': 'DEVICE',
-            //'type': 'FLOAT',
-            //'count': 2,
-            //'offset': 0,
-            //'stride': 8,
-            //'normalize': false
-        //}
-    //},
     'logicalEdges': {
         'curIdx': {
             'datasource': 'HOST',
@@ -188,17 +168,6 @@ var models = {
             'count': 1,
             'offset': 0,
             'stride': 0,
-            'normalize': false
-        }
-    },
-    'springsPosClient': {
-        'curPos': {
-            'datasource': 'CLIENT',
-            'type': 'FLOAT',
-            'hint': 'DYNAMIC_DRAW',
-            'count': 2,
-            'offset': 0,
-            'stride': 8,
             'normalize': false
         }
     },
@@ -287,26 +256,6 @@ var models = {
             'count': 1,
             'offset': 0,
             'stride': 0,
-            'normalize': false
-        }
-    },
-    'midSpringsPos': {
-        'curPos': {
-            'datasource': 'DEVICE',
-            'type': 'FLOAT',
-            'count': 2,
-            'offset': 0,
-            'stride': 8,
-            'normalize': false
-        }
-    },
-    'midSpringsColorCoord': {
-        'colorCoord': {
-            'datasource': 'DEVICE',
-            'type': 'FLOAT',
-            'count': 2,
-            'offset': 0,
-            'stride': 8,
             'normalize': false
         }
     },
@@ -491,33 +440,6 @@ var pointCulledUniforms = {
 }
 
 var items = {
-    //'edgeculled': {
-        //'program': 'edgeculled',
-        //'triggers': ['renderSceneFull'],
-        //'bindings': {
-            //'curPos': ['springsPos', 'curPos'],
-            //'edgeColor': ['edgeColors', 'edgeColor']
-        //},
-        //'uniforms': {
-            //'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] }
-        //},
-        //'drawType': 'LINES',
-        //'glOptions': {}
-    //},
-    'edgeculledindexed' : {
-        'program': 'edgeculled',
-        'triggers': ['renderSceneFull'],
-        'bindings': {
-            'curPos': ['curPoints', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor']
-        },
-        'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] }
-        },
-        'index': ['logicalEdges', 'curIdx'],
-        'drawType': 'LINES',
-        'glOptions': {}
-    },
     'indexeddummy' : {
         'program': 'edgeculled',
         'triggers': [],
@@ -657,18 +579,6 @@ var items = {
             //'depthFunc': [['LESS']]
         }
     },
-    'edgepicking': {
-        'program': 'edges',
-        'triggers': ['picking'],
-        'bindings': {
-            'curPos': ['springsPosClient', 'curPos'],
-            'edgeColor': ['edgeIndices', 'edgeColor']
-        },
-        'drawType': 'LINES',
-        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
-        'renderTarget': 'hitmap',
-        'readTarget': true
-    },
     'edgepickingindexedclient': {
         'program': 'edges',
         'triggers': ['picking'],
@@ -799,32 +709,6 @@ var items = {
         'drawType': 'POINTS',
         'glOptions': {}
     },
-    'midedgetextured': {
-        'program': 'midedgetextured',
-        'triggers': ['renderSceneFull'],
-        'bindings': {
-            'curPos': ['midSpringsPos', 'curPos'],
-            'aColorCoord': ['midSpringsColorCoord', 'colorCoord']
-        },
-        'textureBindings': {
-            'uSampler': 'colorMap'
-        },
-        'drawType': 'LINES',
-        'glOptions': {}
-    },
-    'midedgeculled': {
-        'program': 'midedgeculled',
-        'triggers': ['renderSceneFull'],
-        'bindings': {
-            'curPos': ['midSpringsPos', 'curPos'],
-            'edgeColor' : ['midEdgeColors', 'midEdgeColor']
-        },
-        'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] }
-        },
-        'drawType': 'LINES',
-        'glOptions': {}
-    },
     'fullscreen': {
         'program': 'fullscreen',
         'triggers': ['highlight'],
@@ -885,8 +769,6 @@ var sceneUber = {
     'clientMidEdgeInterpolation': false,
     'render': ['pointpicking',  'pointsampling', 'uberdemoedges', /*'edgepicking',*/
         'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
-    //'render': ['pointpicking',  'pointsampling', 'midedgeculledindexedclient', [>'edgepicking',<]
-        //'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2']
 }
 
@@ -911,7 +793,6 @@ var sceneNetflowBigArcs = {
     'arcHeight': 0.5,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
     'midedgeculledindexedclient', 'edgepickingindexedclient',
-    'edgeculledindexedclient', //for arrows
     'arrowculled', 'arrowhighlight', 'edgehighlight',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2']
@@ -924,7 +805,6 @@ var sceneNetflowStraight = {
     'clientMidEdgeInterpolation': true,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
     'midedgeculledindexedclient', 'edgepickingindexedclient',
-    'edgeculledindexedclient', //for arrows
     'arrowculled', 'arrowhighlight', 'edgehighlight',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2']
