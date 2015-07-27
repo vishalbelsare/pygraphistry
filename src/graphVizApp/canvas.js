@@ -192,7 +192,7 @@ function getPolynomialCurves(bufferSnapshots, interpolateMidPoints, numRenderedS
     }
 
     if (numSplits > 1) {
-        console.info('More than one midpoint not supported!');
+        console.debug('More than one midpoint not supported!');
     }
     //var numMidEdges = numSplits + 1;
     var numEdges = (logicalEdges.length / 2);
@@ -691,7 +691,7 @@ function renderSlowEffects(renderingScheduler) {
         renderer.setNumElements(renderState, 'edgepickingindexedclient', midSpringsPos.length / 2);
         renderer.setNumElements(renderState, 'midedgeculledindexedclient', midSpringsPos.length / 2);
         end2 = Date.now();
-        console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
+        console.debug('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
         makeArrows(appSnapshot.buffers, edgeMode, numRenderedSplits);
         end3 = Date.now();
         renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
@@ -701,7 +701,7 @@ function renderSlowEffects(renderingScheduler) {
         renderer.loadBuffers(renderState, {'arrowPointSizes': appSnapshot.buffers.arrowPointSizes});
         renderer.setNumElements(renderState, 'arrowculled', appSnapshot.buffers.arrowStartPos.length / 2);
         end4 = Date.now();
-        console.info('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
+        console.debug('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
     }
     if ( edgeMode === 'INDEXEDCLIENT'  && appSnapshot.vboUpdated) {
         start = Date.now();
@@ -710,7 +710,7 @@ function renderSlowEffects(renderingScheduler) {
         renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
         renderer.setNumElements(renderState, 'edgepickingindexedclient', springsPos.length / 2);
         end2 = Date.now();
-        console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
+        console.debug('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
         makeArrows(appSnapshot.buffers, edgeMode, numRenderedSplits);
         end3 = Date.now();
         renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
@@ -720,14 +720,14 @@ function renderSlowEffects(renderingScheduler) {
         renderer.loadBuffers(renderState, {'arrowPointSizes': appSnapshot.buffers.arrowPointSizes});
         renderer.setNumElements(renderState, 'arrowculled', appSnapshot.buffers.arrowStartPos.length / 2);
         end4 = Date.now();
-        console.info('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
+        console.debug('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
     } else if (edgeMode === 'EDGEBUNDLING' && appSnapshot.vboUpdated) {
         start = Date.now();
         midSpringsPos = expandLogicalMidEdges(appSnapshot.buffers, renderState.get('flags').interpolateMidPoints);
         end1 = Date.now();
         renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
         end2 = Date.now();
-        console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
+        console.debug('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
     }
 
     renderer.setCamera(renderState);
