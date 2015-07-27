@@ -428,7 +428,8 @@ var write = Q.promised(function write(buffer, data) {
         })
         .then(function() {
             // buffer.cl.queue.finish();
-            logger.debug("Finished buffer %s write", buffer.name);
+            logger.trace("Finished buffer %s write", buffer.name);
+
             return buffer;
         });
 });

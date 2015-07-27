@@ -125,7 +125,8 @@ function sliceSelection(dataFrame, type, indices, start, end, sort_by, ascending
 }
 
 function read_selection(type, query, res) {
-    animStep.graph.then(function (graph) {
+    graph.take(1).do(function (graph) {
+
         qLastSelectionIndices.then(function (lastSelectionIndices) {
             // TODO: Change these on the client side.
             if (type === 'nodes') type = 'point';
@@ -145,10 +146,13 @@ function read_selection(type, query, res) {
             res.send(data);
         }).fail(log.makeQErrorHandler(logger, 'read_selection qLastSelectionIndices'));
 
-    }).fail(function (err) {
-        cb({success: false, error: 'Server error when fetching graph for read selection'});
-        log.makeQErrorHandler(logger, 'read_selection qLastSelection')(err);
-    });
+    }).subscribe(
+        _.identity,
+        function (err) {
+            cb({success: false, error: 'read_selection error'});
+            log.makeRxErrorHandler(logger, 'read_selection handler')(err);
+        }
+    );
 }
 
 function init(app, socket) {
@@ -279,12 +283,16 @@ function init(app, socket) {
 
     socket.on('layout_controls', function(_, cb) {
         logger.info('Sending layout controls to client');
-        animStep.graph.then(function (graph) {
+
+        graph.take(1).do(function (graph) {
+            logger.info('Got layout controls');
             var controls = graph.simulator.controls;
             cb({success: true, controls: lConf.toClient(controls.layoutAlgorithms)});
-        }).fail(function (err) {
+        })
+        .subscribeOnError(function (err) {
+            logger.error(err, 'Error sending layout_controls');
             cb({success: false, error: 'Server error when fetching controls'});
-            log.makeQErrorHandler(logger, 'sending layout_controls')(err);
+            throw err;
         });
     });
 
@@ -337,9 +345,11 @@ function init(app, socket) {
            qIndices.then(function (indices) {
                 logger.trace('Done selecting indices');
                 try {
-                    var data = graph.dataframe.aggregate(indices, query.attributes, query.binning, query.mode, query.type);
-                    logger.trace('Sending back data');
-                    cb({success: true, data: data});
+                    var qData = graph.dataframe.aggregate(indices, query.attributes, query.binning, query.mode, query.type);
+                    qData.then(function (data) {
+                        logger.trace('Sending back data');
+                        cb({success: true, data: data});
+                    }).done(_.identity, log.makeQErrorHandler(logger, 'Aggregate Promise'));
                 } catch (err) {
                     cb({success: false, error: err.message, stack: err.stack});
                     log.makeRxErrorHandler(logger,'aggregate inner handler')(err);
@@ -421,11 +431,11 @@ function stream(socket, renderConfig, colorTexture) {
                     success: true,
                     params: {
                         nodes: {
-                            urn: '/read_node_selection',
+                            urn: 'read_node_selection',
                             count: nodeIndices.length
                         },
                         edges: {
-                            urn: '/read_edge_selection',
+                            urn: 'read_edge_selection',
                             count: edgeIndices.length
                         }
                     }

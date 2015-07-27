@@ -3,6 +3,7 @@
 var _ = require('underscore');
 var dateFormat = require('dateformat');
 var fs = require('fs');
+var Q = require('q');
 
 var baseDirPath = __dirname + '/../assets/dataframe/';
 var TYPES = ['point', 'edge'];
@@ -311,9 +312,9 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
         return val[0] !== '_';
     });
 
-    return _.object(_.map(keysToAggregate, function (attribute) {
+    return Q(_.object(_.map(keysToAggregate, function (attribute) {
         return [attribute, process(attribute, indices)];
-    }));
+    })));
 };
 
 

@@ -40,7 +40,7 @@ var programs = {
         },
         'attributes': ['startPos', 'endPos', 'normalDir', 'arrowColor', 'pointSize'],
         'camera': 'mvp',
-        'uniforms': ['zoomScalingFactor', 'maxPointSize', 'maxScreenSize', 'maxCanvasSize', 'pointOpacity']
+        'uniforms': ['zoomScalingFactor', 'maxPointSize', 'maxScreenSize', 'maxCanvasSize', 'edgeOpacity']
     },
     'arrowhighlight': {
         'sources': {
@@ -626,7 +626,7 @@ var items = {
             'pointSize': ['arrowPointSizes', 'pointSize'],
         },
         'uniforms': {
-            'pointOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] },
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] },
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
             'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] },
             'maxScreenSize': { 'uniformType': '1f', 'defaultValues': [1.0] },
@@ -867,7 +867,7 @@ var stdOptions = {
     'blendFuncSeparate': [['SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'ONE', 'ONE']],
     'blendEquationSeparate': [['FUNC_ADD', 'FUNC_ADD']],
     'depthFunc': [['LEQUAL']],
-    'clearColor': [[0.9412, 0.9569, 0.9765, 1.0]],
+    'clearColor': [[51/255, 51/255, 57/255, 1.0]],
     'lineWidth': [[1]]
 }
 
