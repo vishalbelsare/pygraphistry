@@ -163,7 +163,7 @@ function getArcs(bufferSnapshots, numRenderedSplits, edgeHeight) {
             prevPointX = nextPointX;
             prevPointY = nextPointY;
         }
-        setMidEdge(edgeIndex, numRenderedSplits,  nextPointX, nextPointY, dstPointX, dstPointY);
+        setMidEdge(edgeIndex, numRenderedSplits,  prevPointX, prevPointY, dstPointX, dstPointY);
     }
     return midSpringsPos;
 }
@@ -614,7 +614,7 @@ function getMidEdgeColors(bufferSnapshot, numEdges, numRenderedSplits) {
     }
 }
 
-function makeArrows(bufferSnapshots, numRenderedSplits) {
+function makeArrows(bufferSnapshots, edgeMode, numRenderedSplits) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var pointSizes = new Uint8Array(bufferSnapshots.pointSizes.buffer);
     var edgeColors = new Uint32Array(bufferSnapshots.edgeColors.buffer);
@@ -645,7 +645,7 @@ function makeArrows(bufferSnapshots, numRenderedSplits) {
     }
     var arrowPointSizes = bufferSnapshots.arrowPointSizes;
 
-    if (numRenderedSplits) {
+    if (edgeMode === 'ARCS') {
     populateArrowBuffersArcs(numEdges, bufferSnapshots.midSpringsPos, arrowStartPos,
             arrowEndPos, arrowNormalDir, pointSizes, logicalEdges,
             arrowPointSizes, arrowColors, edgeColors, numRenderedSplits);
@@ -692,7 +692,7 @@ function renderSlowEffects(renderingScheduler) {
         renderer.setNumElements(renderState, 'midedgeculledindexedclient', midSpringsPos.length / 2);
         end2 = Date.now();
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
-        makeArrows(appSnapshot.buffers, numRenderedSplits);
+        makeArrows(appSnapshot.buffers, edgeMode, numRenderedSplits);
         end3 = Date.now();
         renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
         renderer.loadBuffers(renderState, {'arrowEndPos': appSnapshot.buffers.arrowEndPos});
@@ -707,13 +707,11 @@ function renderSlowEffects(renderingScheduler) {
         start = Date.now();
         springsPos = expandLogicalEdges(appSnapshot.buffers);
         end1 = Date.now();
-        if (edgeMode === 'INDEXEDCLIENT') {
-            renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
-            renderer.setNumElements(renderState, 'edgepickingindexedclient', springsPos.length / 2);
-        }
+        renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
+        renderer.setNumElements(renderState, 'edgepickingindexedclient', springsPos.length / 2);
         end2 = Date.now();
         console.info('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
-        makeArrows(appSnapshot.buffers, numRenderedSplits);
+        makeArrows(appSnapshot.buffers, edgeMode, numRenderedSplits);
         end3 = Date.now();
         renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
         renderer.loadBuffers(renderState, {'arrowEndPos': appSnapshot.buffers.arrowEndPos});
