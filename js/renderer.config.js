@@ -904,6 +904,20 @@ var sceneNetflowArcs = {
     'indexeddummy', 'indexeddummy2']
 }
 
+var sceneNetflowBigArcs = {
+    'options': stdOptions,
+    'camera': camera2D,
+    'edgeMode': 'ARCS',
+    'numRenderedSplits': 8,
+    'arcHeight': 0.5,
+    'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
+    'midedgeculledindexedclient', 'edgepickingindexedclient',
+    'edgeculledindexedclient', //for arrows
+    'arrowculled', 'arrowhighlight', 'edgehighlight',
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    'indexeddummy', 'indexeddummy2']
+}
+
 var sceneNetflowStraight = {
     'options': stdOptions,
     'camera': camera2D,
@@ -952,6 +966,7 @@ var scenes = {
     'netflowIndexed': sceneNetflowIndexed,
     'netflowIndexedClient': sceneNetflowIndexedClient,
     'netflowArcs': sceneNetflowArcs,
+    'netflowBigArcs': sceneNetflowBigArcs,
     'netflowStraight': sceneNetflowStraight
 }
 
