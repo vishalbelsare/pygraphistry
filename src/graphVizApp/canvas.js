@@ -471,55 +471,6 @@ function populateArrowBuffers(maybeIterable, midSpringsPos, arrowStartPos,
     }
 }
 
-/* Populate arrow buffers. The first argument is either an array of indices,
- * or an integer value of how many you want.
- */
-//function populateArrowBuffers (maybeIterable, springsPos, arrowStartPos, arrowEndPos, arrowNormalDir,
-                        //pointSizes, logicalEdges, arrowPointSizes, arrowColors, edgeColors) {
-
-        //var isIterable = maybeIterable.constructor === Array;
-        //var forLimit = (isIterable) ? maybeIterable.length : maybeIterable;
-
-        //var start = new Float32Array(2);
-        //var end = new Float32Array(2);
-        //for (var idx = 0; idx < forLimit; idx++) {
-            //var val = (isIterable) ? maybeIterable[idx] : idx;
-
-            //start[0] = springsPos[4 * val];
-            //start[1] = springsPos[4 * val + 1];
-            //end[0] = springsPos[4 * val + 2];
-            //end[1] = springsPos[4 * val + 3];
-
-            //arrowStartPos[6*idx + 0] = start[0];
-            //arrowStartPos[6*idx + 1] = start[1];
-            //arrowStartPos[6*idx + 2] = start[0];
-            //arrowStartPos[6*idx + 3] = start[1];
-            //arrowStartPos[6*idx + 4] = start[0];
-            //arrowStartPos[6*idx + 5] = start[1];
-
-            //arrowEndPos[6*idx + 0] = end[0];
-            //arrowEndPos[6*idx + 1] = end[1];
-            //arrowEndPos[6*idx + 2] = end[0];
-            //arrowEndPos[6*idx + 3] = end[1];
-            //arrowEndPos[6*idx + 4] = end[0];
-            //arrowEndPos[6*idx + 5] = end[1];
-
-            //arrowNormalDir[3*idx + 0] = 0;  // Tip vertex
-            //arrowNormalDir[3*idx + 1] = 1;  // Left vertex
-            //arrowNormalDir[3*idx + 2] = -1; // Right vertex
-
-            //var pointSize = pointSizes[logicalEdges[2*val + 1]];
-            //arrowPointSizes[3*idx + 0] = pointSize;
-            //arrowPointSizes[3*idx + 1] = pointSize;
-            //arrowPointSizes[3*idx + 2] = pointSize;
-
-            //arrowColors[3*idx + 0] = edgeColors[2*val + 1];
-            //arrowColors[3*idx + 1] = edgeColors[2*val + 1];
-            //arrowColors[3*idx + 2] = edgeColors[2*val + 1];
-
-        //}
-//}
-
 function getMidEdgeColors(bufferSnapshot, numEdges, numRenderedSplits) {
     var midEdgeColors, edges, edgeColors, srcNodeIdx, dstNodeIdx, srcColorInt, srcColor,
         dstColorInt, dstColor, edgeIndex, midEdgeIndex, numSegments, lambda,
@@ -662,7 +613,6 @@ function renderSlowEffects(renderingScheduler) {
     var edgeHeight = renderState.get('config').get('arcHeight');
     var clientMidEdgeInterpolation = renderState.get('config').get('clientMidEdgeInterpolation');
     var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
-    var springsPos;
     var midSpringsPos;
     var midEdgesColors;
     var start;
@@ -683,9 +633,9 @@ function renderSlowEffects(renderingScheduler) {
         }
 
         end1 = Date.now();
-        renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
-        renderer.setNumElements(renderState, 'edgepickingindexedclient', midSpringsPos.length / 2);
-        renderer.setNumElements(renderState, 'midedgeculledindexedclient', midSpringsPos.length / 2);
+        renderer.loadBuffers(renderState, {'midSpringsPos': midSpringsPos});
+        renderer.setNumElements(renderState, 'edgepicking', midSpringsPos.length / 2);
+        renderer.setNumElements(renderState, 'midedgeculled', midSpringsPos.length / 2);
         end2 = Date.now();
         console.debug('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
         makeArrows(appSnapshot.buffers, edgeMode, numRenderedSplits);
@@ -702,7 +652,7 @@ function renderSlowEffects(renderingScheduler) {
         start = Date.now();
         midSpringsPos = expandLogicalMidEdges(appSnapshot.buffers);
         end1 = Date.now();
-        renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
+        renderer.loadBuffers(renderState, {'midSpringsPos': midSpringsPos});
         end2 = Date.now();
         console.debug('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
     }
