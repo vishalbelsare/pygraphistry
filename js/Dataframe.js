@@ -952,9 +952,9 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
         var dataType = that.getDataType(attribute, type);
 
         if (mode !== 'countBy' && dataType !== 'string') {
-            return that.histogram(attribute, binningHint, goalNumberOfBins, indices, attribType);
+            return that.histogram(attribute, binningHint, goalNumberOfBins, indices, type);
         } else {
-            return that.countBy(attribute, binningHint, indices, attribType);
+            return that.countBy(attribute, binningHint, indices, type);
         }
     }
 
