@@ -215,7 +215,6 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
 // Mask is implemented as a list of valid indices (in sorted order).
 // TODO: Take in Set objects, not just masks.
 Dataframe.prototype.filter = function (masks, simulator) {
-    console.log('Filtering');
 
     // Check for edge case where nothing was selected
     if (masks.point.length === 0 && masks.edge.length === 0) {
@@ -521,7 +520,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
         that.lastMasks.edge = masks.edge || [];
 
     }).then(function () {
-        console.log('Filter took ' + (Date.now() - start) + ' ms.');
+        // console.log('Filter took ' + (Date.now() - start) + ' ms.');
         that.data = newData;
     });
 
