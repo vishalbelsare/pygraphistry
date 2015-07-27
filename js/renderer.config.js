@@ -908,7 +908,7 @@ var sceneNetflowBigArcs = {
     'options': stdOptions,
     'camera': camera2D,
     'edgeMode': 'ARCS',
-    'numRenderedSplits': 8,
+    'numRenderedSplits': 32,
     'arcHeight': 0.5,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
     'midedgeculledindexedclient', 'edgepickingindexedclient',
