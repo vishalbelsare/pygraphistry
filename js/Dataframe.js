@@ -319,6 +319,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
     newData.hostBuffers.points = rawdata.hostBuffers.points;
 
     newData.localBuffers.logicalEdges = forwardsEdges.edgesTyped;
+    newData.localBuffers.forwardsEdgeStartEndIdxs = forwardsEdges.edgeStartEndIdxsTyped;
+    newData.localBuffers.backwardsEdgeStartEndIdxs = backwardsEdges.edgeStartEndIdxsTyped;
 
     // TODO: Figured out what pointTags is used for
     // TODO: Figure out what edgeTags are used for.

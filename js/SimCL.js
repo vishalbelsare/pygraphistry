@@ -687,7 +687,9 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
     var logicalEdges = forwardsEdges.edgesTyped;
     // simulator.buffersLocal.logicalEdges = logicalEdges;
     simulator.dataframe.loadLocalBuffer('logicalEdges', logicalEdges);
-    simulator.tickBuffers(['logicalEdges']);
+    simulator.dataframe.loadLocalBuffer('forwardsEdgeStartEndIdxs', forwardsEdges.edgeStartEndIdxsTyped);
+    simulator.dataframe.loadLocalBuffer('backwardsEdgeStartEndIdxs', backwardsEdges.edgeStartEndIdxsTyped);
+    simulator.tickBuffers(['logicalEdges', 'forwardsEdgeStartEndIdxs', 'backwardsEdgeStartEndIdxs']);
 
     simulator.resetBuffers([
 

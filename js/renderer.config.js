@@ -171,6 +171,30 @@ var models = {
             'normalize': false
         }
     },
+    'forwardsEdgeStartEndIdxs': {
+        'curIdx': {
+            'datasource': 'HOST',
+            'index': true,
+            'type': 'UNSIGNED_INT',
+            'hint': 'STATIC_DRAW',
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': false
+        }
+    },
+    'backwardsEdgeStartEndIdxs': {
+        'curIdx': {
+            'datasource': 'HOST',
+            'index': true,
+            'type': 'UNSIGNED_INT',
+            'hint': 'STATIC_DRAW',
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': false
+        }
+    },
     'midSpringsPos': {
         'curPos': {
             'datasource': 'CLIENT',
@@ -469,6 +493,64 @@ var items = {
         'drawType': 'LINES',
         'glOptions': {}
     },
+    'indexeddummyForwardsEdgeIdxs1' : {
+        'program': 'edgeculled',
+        'triggers': [],
+        'bindings': {
+            'curPos': ['curPoints', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'index': ['forwardsEdgeStartEndIdxs', 'curIdx'],
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
+    'indexeddummyForwardsEdgeIdxs2' : {
+        'program': 'midedgeculled',
+        'triggers': [],
+        'bindings': {
+            //'curPos': ['curMidPointsClient', 'curPos'],
+            'curPos': ['curMidPoints', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'index': ['forwardsEdgeStartEndIdxs', 'curIdx'],
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
+    'indexeddummyBackwardsEdgeIdxs1' : {
+        'program': 'edgeculled',
+        'triggers': [],
+        'bindings': {
+            'curPos': ['curPoints', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'index': ['backwardsEdgeStartEndIdxs', 'curIdx'],
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
+    'indexeddummyBackwardsEdgeIdxs2' : {
+        'program': 'midedgeculled',
+        'triggers': [],
+        'bindings': {
+            //'curPos': ['curMidPointsClient', 'curPos'],
+            'curPos': ['curMidPoints', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'index': ['backwardsEdgeStartEndIdxs', 'curIdx'],
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
     'uberdemoedges' : {
         'program': 'midedgeculled',
         'triggers': ['renderSceneFull'],
@@ -755,7 +837,8 @@ var sceneUber = {
     //'numRenderedSplits':7 ,
     'render': ['pointpicking',  'pointsampling', 'uberdemoedges', 'edgepicking', 'arrowculled', 'arrowhighlight',
         'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
-    'indexeddummy', 'indexeddummy2']
+    'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
+    'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 }
 
 var sceneNetflowArcs = {
@@ -768,7 +851,8 @@ var sceneNetflowArcs = {
     'midedgeculled', 'edgepicking',
     'arrowculled', 'arrowhighlight', 'edgehighlight',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
-    'indexeddummy', 'indexeddummy2']
+    'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
+    'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 }
 
 var sceneNetflowBigArcs = {
@@ -781,7 +865,8 @@ var sceneNetflowBigArcs = {
     'midedgeculled', 'edgepicking',
     'arrowculled', 'arrowhighlight', 'edgehighlight',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
-    'indexeddummy', 'indexeddummy2']
+    'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
+    'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 }
 
 var sceneNetflowStraight = {
@@ -793,7 +878,8 @@ var sceneNetflowStraight = {
     'midedgeculled', 'edgepicking',
     'arrowculled', 'arrowhighlight', 'edgehighlight',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
-    'indexeddummy', 'indexeddummy2']
+    'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
+    'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 }
 
 var scenes = {
