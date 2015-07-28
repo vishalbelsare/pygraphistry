@@ -627,10 +627,9 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
     attributes.Source = {values: source};
     attributes.Destination = {values: destination};
 
-    // If no attributes for edges have ever been loaded, just make title the index.
-    // TODO: Deal with this more elegantly / elsewhere
-    if (!this.rawdata.numElements['edge']) {
-        this.rawdata.numElements['edge'] = numElements;
+    // If no title has been set, just make title the index.
+    // TODO: Is there a more appropriate place to put this?
+    if (!attributes._title) {
         attributes._title = {type: 'number', values: range(numElements)};
     }
 
