@@ -48,23 +48,23 @@ function setupCameraInteractions(appState, $eventTarget) {
 
 /* Deindexed logical edges by looking up the x/y positions of the source and destination
  * nodes. */
-function expandLogicalEdges(bufferSnapshots) {
-    var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
-    var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
-    var numVertices = logicalEdges.length;
+//function expandLogicalEdges(bufferSnapshots) {
+    //var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
+    //var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
+    //var numVertices = logicalEdges.length;
 
-    if (!bufferSnapshots.springsPos) {
-        bufferSnapshots.springsPos = new Float32Array(numVertices * 2);
-    }
-    var springsPos = bufferSnapshots.springsPos;
+    //if (!bufferSnapshots.springsPos) {
+        //bufferSnapshots.springsPos = new Float32Array(numVertices * 2);
+    //}
+    //var springsPos = bufferSnapshots.springsPos;
 
-    for (var i = 0; i < numVertices; i++) {
-        springsPos[2 * i]     = curPoints[2 * logicalEdges[i]];
-        springsPos[2 * i + 1] = curPoints[2 * logicalEdges[i] + 1];
-    }
+    //for (var i = 0; i < numVertices; i++) {
+        //springsPos[2 * i]     = curPoints[2 * logicalEdges[i]];
+        //springsPos[2 * i + 1] = curPoints[2 * logicalEdges[i] + 1];
+    //}
 
-    return springsPos;
-}
+    //return springsPos;
+//}
 
 function setupLabelsAndCursor(appState, $eventTarget) {
     // Picks objects in priority based on order.
@@ -91,7 +91,7 @@ function setupBackgroundColor(renderingScheduler, bgColor) {
     }).subscribe(_.identity, util.makeErrorHandler('bg color updates'));
 }
 
-function getArcs(bufferSnapshots, numRenderedSplits, edgeHeight) {
+function expandLogicalEdges(bufferSnapshots, numRenderedSplits, edgeHeight) {
     var logicalEdges, curPoints, srcPointIdx, dstPointIdx, srcPointX, srcPointY,
             dstPointX, dstPointY;
 
@@ -103,7 +103,12 @@ function getArcs(bufferSnapshots, numRenderedSplits, edgeHeight) {
 
     if (!bufferSnapshots.midSpringsPos) {
         bufferSnapshots.midSpringsPos = new Float32Array(numVertices * 2);
+    } else {
+        // Wrap it again with an updated size.
+        bufferSnapshots.midSpringsPos = new Float32Array(bufferSnapshots.midSpringsPos.buffer, 0, numVertices * 2);
     }
+
+
     var midSpringsPos = bufferSnapshots.midSpringsPos;
     var midEdgesPerEdge = numRenderedSplits + 1;
     var midEdgeStride = 4 * midEdgesPerEdge;
@@ -419,7 +424,7 @@ function expandLogicalMidEdges(bufferSnapshots) {
 /* Populate arrow buffers. The first argument is either an array of indices,
  * or an integer value of how many you want.
  */
-function populateArrowBuffersArcs (maybeIterable, midSpringsPos, arrowStartPos,
+function populateArrowBuffers(maybeIterable, midSpringsPos, arrowStartPos,
         arrowEndPos, arrowNormalDir, pointSizes, logicalEdges,
         arrowPointSizes, arrowColors, edgeColors, numRenderedSplits) {
 
@@ -469,55 +474,6 @@ function populateArrowBuffersArcs (maybeIterable, midSpringsPos, arrowStartPos,
         arrowColors[3*idx + 2] = edgeColors[2*val + 1];
 
     }
-}
-
-/* Populate arrow buffers. The first argument is either an array of indices,
- * or an integer value of how many you want.
- */
-function populateArrowBuffers (maybeIterable, springsPos, arrowStartPos, arrowEndPos, arrowNormalDir,
-                        pointSizes, logicalEdges, arrowPointSizes, arrowColors, edgeColors) {
-
-        var isIterable = maybeIterable.constructor === Array;
-        var forLimit = (isIterable) ? maybeIterable.length : maybeIterable;
-
-        var start = new Float32Array(2);
-        var end = new Float32Array(2);
-        for (var idx = 0; idx < forLimit; idx++) {
-            var val = (isIterable) ? maybeIterable[idx] : idx;
-
-            start[0] = springsPos[4 * val];
-            start[1] = springsPos[4 * val + 1];
-            end[0] = springsPos[4 * val + 2];
-            end[1] = springsPos[4 * val + 3];
-
-            arrowStartPos[6*idx + 0] = start[0];
-            arrowStartPos[6*idx + 1] = start[1];
-            arrowStartPos[6*idx + 2] = start[0];
-            arrowStartPos[6*idx + 3] = start[1];
-            arrowStartPos[6*idx + 4] = start[0];
-            arrowStartPos[6*idx + 5] = start[1];
-
-            arrowEndPos[6*idx + 0] = end[0];
-            arrowEndPos[6*idx + 1] = end[1];
-            arrowEndPos[6*idx + 2] = end[0];
-            arrowEndPos[6*idx + 3] = end[1];
-            arrowEndPos[6*idx + 4] = end[0];
-            arrowEndPos[6*idx + 5] = end[1];
-
-            arrowNormalDir[3*idx + 0] = 0;  // Tip vertex
-            arrowNormalDir[3*idx + 1] = 1;  // Left vertex
-            arrowNormalDir[3*idx + 2] = -1; // Right vertex
-
-            var pointSize = pointSizes[logicalEdges[2*val + 1]];
-            arrowPointSizes[3*idx + 0] = pointSize;
-            arrowPointSizes[3*idx + 1] = pointSize;
-            arrowPointSizes[3*idx + 2] = pointSize;
-
-            arrowColors[3*idx + 0] = edgeColors[2*val + 1];
-            arrowColors[3*idx + 1] = edgeColors[2*val + 1];
-            arrowColors[3*idx + 2] = edgeColors[2*val + 1];
-
-        }
 }
 
 function getMidEdgeColors(bufferSnapshot, numEdges, numRenderedSplits) {
@@ -645,17 +601,9 @@ function makeArrows(bufferSnapshots, edgeMode, numRenderedSplits) {
     }
     var arrowPointSizes = bufferSnapshots.arrowPointSizes;
 
-    if (edgeMode === 'ARCS') {
-    populateArrowBuffersArcs(numEdges, bufferSnapshots.midSpringsPos, arrowStartPos,
+    populateArrowBuffers(numEdges, bufferSnapshots.midSpringsPos, arrowStartPos,
             arrowEndPos, arrowNormalDir, pointSizes, logicalEdges,
             arrowPointSizes, arrowColors, edgeColors, numRenderedSplits);
-    } else {
-        var springsPos = new Float32Array(bufferSnapshots.springsPos.buffer);
-        populateArrowBuffers(numEdges, springsPos, arrowStartPos,
-            arrowEndPos, arrowNormalDir, pointSizes, logicalEdges,
-            arrowPointSizes, arrowColors, edgeColors, numRenderedSplits);
-    }
-
 }
 
 /*
@@ -668,47 +616,33 @@ function renderSlowEffects(renderingScheduler) {
     var renderState = renderingScheduler.renderState;
     var edgeMode = renderState.get('config').get('edgeMode');
     var edgeHeight = renderState.get('config').get('arcHeight');
+    var clientMidEdgeInterpolation = renderState.get('config').get('clientMidEdgeInterpolation');
     var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
-    var springsPos;
     var midSpringsPos;
     var midEdgesColors;
     var start;
     var end1, end2, end3, end4;
 
-    if (edgeMode === 'ARCS' && appSnapshot.vboUpdated) {
+    if ( clientMidEdgeInterpolation && appSnapshot.vboUpdated) {
         start = Date.now();
-        midSpringsPos = getArcs(appSnapshot.buffers, numRenderedSplits, edgeHeight);
-        if (!appSnapshot.buffers.midEdgesColors) {
-            var numEdges = midSpringsPos.length / 2 / (numRenderedSplits + 1);
+
+        midSpringsPos = expandLogicalEdges(appSnapshot.buffers, numRenderedSplits, edgeHeight);
+        appSnapshot.buffers.midSpringsPos = midSpringsPos;
+
+        // Only setup midedge colors once, or when filtered.
+        // Approximates filtering when number of logicalEdges changes.
+        var numEdges = midSpringsPos.length / 2 / (numRenderedSplits + 1);
+        var expectedNumMidEdgeColors = numEdges * (numRenderedSplits + 1);
+        if (!appSnapshot.buffers.midEdgesColors || (appSnapshot.buffers.midEdgesColors.length !== expectedNumMidEdgeColors)) {
             midEdgesColors = getMidEdgeColors(appSnapshot.buffers, numEdges, numRenderedSplits);
             appSnapshot.buffers.midEdgesColors = midEdgesColors;
             renderer.loadBuffers(renderState, {'midEdgeColorsClient': midEdgesColors});
         }
-        appSnapshot.buffers.midSpringsPos = midSpringsPos;
+
         end1 = Date.now();
-        renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
-        renderer.loadBuffers(renderState, {'springsPosClient': midSpringsPos});
-        renderer.setNumElements(renderState, 'edgepickingindexedclient', midSpringsPos.length / 2);
-        renderer.setNumElements(renderState, 'midedgeculledindexedclient', midSpringsPos.length / 2);
-        end2 = Date.now();
-        console.debug('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
-        makeArrows(appSnapshot.buffers, edgeMode, numRenderedSplits);
-        end3 = Date.now();
-        renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
-        renderer.loadBuffers(renderState, {'arrowEndPos': appSnapshot.buffers.arrowEndPos});
-        renderer.loadBuffers(renderState, {'arrowNormalDir': appSnapshot.buffers.arrowNormalDir});
-        renderer.loadBuffers(renderState, {'arrowColors': appSnapshot.buffers.arrowColors});
-        renderer.loadBuffers(renderState, {'arrowPointSizes': appSnapshot.buffers.arrowPointSizes});
-        renderer.setNumElements(renderState, 'arrowculled', appSnapshot.buffers.arrowStartPos.length / 2);
-        end4 = Date.now();
-        console.debug('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
-    }
-    if ( edgeMode === 'INDEXEDCLIENT'  && appSnapshot.vboUpdated) {
-        start = Date.now();
-        springsPos = expandLogicalEdges(appSnapshot.buffers);
-        end1 = Date.now();
-        renderer.loadBuffers(renderState, {'springsPosClient': springsPos});
-        renderer.setNumElements(renderState, 'edgepickingindexedclient', springsPos.length / 2);
+        renderer.loadBuffers(renderState, {'midSpringsPos': midSpringsPos});
+        renderer.setNumElements(renderState, 'edgepicking', midSpringsPos.length / 2);
+        renderer.setNumElements(renderState, 'midedgeculled', midSpringsPos.length / 2);
         end2 = Date.now();
         console.debug('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
         makeArrows(appSnapshot.buffers, edgeMode, numRenderedSplits);
@@ -728,11 +662,12 @@ function renderSlowEffects(renderingScheduler) {
 
         console.debug('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
 
-    } else if (edgeMode === 'EDGEBUNDLING' && appSnapshot.vboUpdated) {
+    } else if (appSnapshot.vboUpdated) {
         start = Date.now();
-        midSpringsPos = expandLogicalMidEdges(appSnapshot.buffers, renderState.get('flags').interpolateMidPoints);
+        midSpringsPos = expandLogicalMidEdges(appSnapshot.buffers);
+        renderer.loadBuffers(renderState, {'midSpringsPos': midSpringsPos});
         end1 = Date.now();
-        renderer.loadBuffers(renderState, {'midSpringsPosClient': midSpringsPos});
+        renderer.setNumElements(renderState, 'edgepicking', midSpringsPos.length / 2);
         end2 = Date.now();
         console.debug('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
     }
@@ -756,7 +691,13 @@ function renderMouseoverEffects(renderingScheduler, task) {
     var appSnapshot = renderingScheduler.appSnapshot;
     var renderState = renderingScheduler.renderState;
     var buffers = appSnapshot.buffers;
-    var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
+    //var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
+    var numRenderedSplits;
+    if (buffers.midSpringsPos) {
+        numRenderedSplits = ((buffers.midSpringsPos.length / 4) / (buffers.logicalEdges.length / 8)) - 1;
+    } else {
+        return;
+    }
     var numMidEdges = numRenderedSplits + 1;
 
     // We haven't received any VBOs yet, so we shouldn't attempt to render.
@@ -821,7 +762,7 @@ function renderMouseoverEffects(renderingScheduler, task) {
             buffers.highlightedNodeSizes[idx] = hostNodeSizes[val];
         });
 
-        populateArrowBuffersArcs(edgeIndices, buffers.midSpringsPos, buffers.highlightedArrowStartPos,
+        populateArrowBuffers(edgeIndices, buffers.midSpringsPos, buffers.highlightedArrowStartPos,
                 buffers.highlightedArrowEndPos, buffers.highlightedArrowNormalDir, hostNodeSizes,
                 logicalEdges, buffers.highlightedArrowPointSizes, buffers.highlightedArrowColors,
                 buffers.edgeColors, numRenderedSplits);
