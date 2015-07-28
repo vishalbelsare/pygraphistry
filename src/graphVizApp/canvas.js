@@ -684,7 +684,7 @@ function renderSlowEffects(renderingScheduler) {
  * Render mouseover effects. These should only occur during a quiet state.
  *
  */
- var lastHighlightedEdge = -1;
+ var lastHighlighted = {edges: [], nodes: []};
 
 // TODO: Make this work on safari.
 function renderMouseoverEffects(renderingScheduler, task) {
@@ -721,11 +721,12 @@ function renderMouseoverEffects(renderingScheduler, task) {
     var hostNodePositions = new Float32Array(hostBuffers.curPoints.buffer);
     var hostNodeSizes = hostBuffers.pointSizes;
 
+    var wrappedHighlighted = {edges: edgeIndices, nodes: nodeIndices};
     // Don't render if nothing has changed
-    if (lastHighlightedEdge === edgeIndices[0]) {
+    if (_.isEqual(lastHighlighted, wrappedHighlighted)) {
         return;
     }
-    lastHighlightedEdge = edgeIndices[0];
+    lastHighlighted = wrappedHighlighted;
 
         // TODO: Start with a small buffer and increase if necessary, masking underlying
         // data so we don't have to clear out later values. This way we won't have to constantly allocate
