@@ -103,7 +103,12 @@ function expandLogicalEdges(bufferSnapshots, numRenderedSplits, edgeHeight) {
 
     if (!bufferSnapshots.midSpringsPos) {
         bufferSnapshots.midSpringsPos = new Float32Array(numVertices * 2);
+    } else {
+        // Wrap it again with an updated size.
+        bufferSnapshots.midSpringsPos = new Float32Array(bufferSnapshots.midSpringsPos.buffer, 0, numVertices * 2);
     }
+
+
     var midSpringsPos = bufferSnapshots.midSpringsPos;
     var midEdgesPerEdge = numRenderedSplits + 1;
     var midEdgeStride = 4 * midEdgesPerEdge;
@@ -569,7 +574,7 @@ function makeArrows(bufferSnapshots, edgeMode, numRenderedSplits) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var pointSizes = new Uint8Array(bufferSnapshots.pointSizes.buffer);
     var edgeColors = new Uint32Array(bufferSnapshots.edgeColors.buffer);
-    var numEdges = logicalEdges.length / 2; // TWO coords (x,y) for each of the TWO endpoints.
+    var numEdges = logicalEdges.length / 2;
 
     if (!bufferSnapshots.arrowStartPos) {
         bufferSnapshots.arrowStartPos = new Float32Array(numEdges * 2 * 3);
@@ -624,9 +629,11 @@ function renderSlowEffects(renderingScheduler) {
         midSpringsPos = expandLogicalEdges(appSnapshot.buffers, numRenderedSplits, edgeHeight);
         appSnapshot.buffers.midSpringsPos = midSpringsPos;
 
-        // Only setup midedge colors once
-        if (!appSnapshot.buffers.midEdgesColors) {
-            var numEdges = midSpringsPos.length / 2 / (numRenderedSplits + 1);
+        // Only setup midedge colors once, or when filtered.
+        // Approximates filtering when number of logicalEdges changes.
+        var numEdges = midSpringsPos.length / 2 / (numRenderedSplits + 1);
+        var expectedNumMidEdgeColors = numEdges * (numRenderedSplits + 1);
+        if (!appSnapshot.buffers.midEdgesColors || (appSnapshot.buffers.midEdgesColors.length !== expectedNumMidEdgeColors)) {
             midEdgesColors = getMidEdgeColors(appSnapshot.buffers, numEdges, numRenderedSplits);
             appSnapshot.buffers.midEdgesColors = midEdgesColors;
             renderer.loadBuffers(renderState, {'midEdgeColorsClient': midEdgesColors});
@@ -645,9 +652,16 @@ function renderSlowEffects(renderingScheduler) {
         renderer.loadBuffers(renderState, {'arrowNormalDir': appSnapshot.buffers.arrowNormalDir});
         renderer.loadBuffers(renderState, {'arrowColors': appSnapshot.buffers.arrowColors});
         renderer.loadBuffers(renderState, {'arrowPointSizes': appSnapshot.buffers.arrowPointSizes});
-        renderer.setNumElements(renderState, 'arrowculled', appSnapshot.buffers.arrowStartPos.length / 2);
+
+        // numEdges = length / 4 (stored as UInt8) * 0.5 (biDirectional)
+        // numArrowElements = 3 * numEdges.
+        var numArrowCulled = ((appSnapshot.buffers.logicalEdges.length / 2) / 4) * 3;
+
+        renderer.setNumElements(renderState, 'arrowculled', numArrowCulled);
         end4 = Date.now();
+
         console.debug('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
+
     } else if (appSnapshot.vboUpdated) {
         start = Date.now();
         midSpringsPos = expandLogicalMidEdges(appSnapshot.buffers);

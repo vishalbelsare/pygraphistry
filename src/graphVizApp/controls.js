@@ -472,6 +472,23 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var onElt = makeMouseSwitchboard();
     externalLink($('#externalLinkButton'));
 
+    // Create Filtering Function Stub.
+    // TODO: Remove this entirely and make it a UI element.
+    var filterRange = function(type, attribute, start, stop) {
+        var params = {
+            type: type,
+            attribute: attribute,
+            start: start,
+            stop: stop
+        };
+        return Rx.Observable.fromCallback(socket.emit, socket)('filter', params)
+            .map(function (reply) {
+                console.log('Filter Request replied with: ', reply);
+            }).subscribe(_.identity);
+    };
+    window.filterRange = filterRange;
+
+
     // TODO: More general version for all toggle-able buttons?
     var marqueeIsOn = false;
     var turnOnMarquee =
@@ -521,7 +538,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var marquee = setupMarquee(appState, turnOnMarquee);
     var brush = setupBrush(appState, turnOnBrush);
     dataInspector.init(appState, socket, workerParams.href, brush);
-    histogramBrush.init(socket, brush);
+    histogramBrush.init(socket, brush, appState.poi);
     forkVgraph(socket, urlParams);
     persistButton(socket, urlParams);
     goLiveButton(socket, urlParams);
