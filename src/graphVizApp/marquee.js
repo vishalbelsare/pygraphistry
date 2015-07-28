@@ -82,6 +82,13 @@ function marqueeSelections (appState, $cont, $elt, isOn, marqueeState, doAfterSe
                 debug('start listening for marquee selections');
                 var firstRunSinceMousedown;
                 return Rx.Observable.fromEvent($cont, 'mousedown')
+                    .merge(
+                        Rx.Observable.fromEvent($('#highlighted-point-cont'), 'mousedown')
+                        .filter(function (evt) {
+                            var offset = $elt.offset();
+                            return !((evt.pageX > offset.left) && (evt.pageX < offset.left + $elt.width()) &&
+                                (evt.pageY > offset.top) && (evt.pageY < offset.top + $elt.height()));
+                        }))
                     .do(function (evt) {
                         debug('stopPropagation: marquee down');
                         marqueeState.onNext('selecting');
@@ -176,6 +183,13 @@ function marqueeDrags(selections, $cont, $elt, appState, marqueeState, takeLast,
         var firstRunSinceMousedown = true;
         var dragDelta = {x: 0, y: 0};
         return Rx.Observable.fromEvent($elt, 'mousedown')
+            .merge(
+                Rx.Observable.fromEvent($('#highlighted-point-cont'), 'mousedown')
+                .filter(function (evt) {
+                    var offset = $elt.offset();
+                    return ((evt.pageX > offset.left) && (evt.pageX < offset.left + $elt.width()) &&
+                        (evt.pageY > offset.top) && (evt.pageY < offset.top + $elt.height()));
+                }))
             .do(function (evt) {
                 debug('stopPropagation: marquee down 2');
                 marqueeState.onNext('dragging');
