@@ -143,7 +143,7 @@ function assignWorker(req, res) {
 
         var workerPort = (config.PINGER_ENABLED) ? baseUrl.port : worker.port;
         var workerPath = (config.PINGER_ENABLED) ?
-            util.format('%sworker/%s', config.BASE_PATH, encodeURIComponent(worker.port)) :
+            util.format('%sworker/%s/', config.BASE_PATH, encodeURIComponent(worker.port)) :
             util.format('%s', config.BASE_PATH);
 //            util.format('%s/%s/%s',
 //                config.BASE_URL,
