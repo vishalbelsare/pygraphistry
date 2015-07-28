@@ -707,9 +707,35 @@ function renderMouseoverEffects(renderingScheduler, task) {
 
     var logicalEdges = new Uint32Array(buffers.logicalEdges.buffer);
     var hostBuffers = renderState.get('hostBuffersCache');
+    var forwardsEdgeStartEndIdxs = new Uint32Array(hostBuffers.forwardsEdgeStartEndIdxs.buffer);
 
     var edgeIndices = task.data.edgeIndices || [];
     var nodeIndices = task.data.nodeIndices || [];
+
+    // Cheap sets so we don't duplicate edges, but want to avoid using the slow _.uniq
+    var seenEdges = {};
+    var seenNodes = {};
+
+    _.each(edgeIndices, function (idx) {
+        seenEdges[idx] = 1;
+    });
+    _.each(nodeIndices, function (idx) {
+        seenNodes[idx] = 1;
+    });
+
+    // Extend edges with neighbors of nodes
+    _.each(nodeIndices, function (val) {
+        var start = forwardsEdgeStartEndIdxs[2*val];
+        var end = forwardsEdgeStartEndIdxs[2*val + 1];
+        while (start < end) {
+            var edgeIdx = start;
+            if (!seenEdges[edgeIdx]) {
+                edgeIndices.push(edgeIdx);
+                seenEdges[edgeIdx] = 1;
+            }
+            start++;
+        }
+    });
 
     // Extend node indices with edge endpoints
     // TODO: Decide if we need to dedupe.
