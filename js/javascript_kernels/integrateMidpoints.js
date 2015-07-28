@@ -35,7 +35,7 @@ var integrateKernel = function (clContext) {
     this.faIntegrate.set({
         globalSpeed: tempLayoutBuffers.globalSpeed.buffer,
         inputPositions: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
-        curForces: simulator.dataframe.getBuffer('curForces', 'simulator').buffer,
+        curForces: tempLayoutBuffers.curForces.buffer,
         swings: simulator.dataframe.getBuffer('swings', 'simulator').buffer,
         outputPositions: simulator.dataframe.getBuffer('nextMidPoints', 'simulator').buffer
     });
