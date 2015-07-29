@@ -34,7 +34,11 @@ var FILTER_NUM_STEPS = 100;
 
 // TODO: Pull these into the created histogram object, away from globals.
 var color = d3.scale.ordinal()
-        .range(['#0FA5C5', '#C8C8C8', '#0FA5C5', '#00BBFF'])
+        .range(['#0FA5C5', '#929292', '#0FA5C5', '#00BBFF'])
+        .domain(['local', 'global', 'globalSmaller', 'localBigger']);
+
+var colorUnselected = d3.scale.ordinal()
+        .range(['#96D8E6', '#C8C8C8', '#0FA5C5', '#00BBFF'])
         .domain(['local', 'global', 'globalSmaller', 'localBigger']);
 
 var colorHighlighted = d3.scale.ordinal()
@@ -50,6 +54,38 @@ var attributeChange = new Rx.Subject();
 var globalStatsCache = {}; // For add histogram. TODO: Get rid of this and use replay
 var d3DataMap = {};
 var activeFilters = {};
+// var histogramFilters = {
+//     degree: {
+//         firstBin: 2,
+//         lastBin: 6
+//     }
+// };
+var histogramFilters = {};
+var globalSocket;
+var globalPoi;
+
+function sendHistogramFilters () {
+    var payload = {};
+    _.each(histogramFilters, function (val, key) {
+        var stats = globalStatsCache.sparkLines[key];
+        var type = stats.dataType;
+        var start = stats.minValue + (stats.binWidth * val.firstBin);
+        var stop = stats.minValue + (stats.binWidth * val.lastBin);
+        payload[key] = {
+            start: start,
+            stop: stop,
+            type: type
+        };
+    });
+
+    Rx.Observable.fromCallback(globalSocket.emit, globalSocket)('filter', payload)
+        .do(function () {
+            // Invalidate cache now that a filter has executed and possibly changed indices.
+            globalPoi.emptyCache();
+        })
+        .subscribe(_.identity, util.makeErrorHandler('Emit Filter'));
+}
+
 
 function setupFilterHandler (socket, $slider, attribute, poi) {
     return Rx.Observable.merge(
@@ -135,9 +171,6 @@ function aggregatePointsAndEdges (socket, params) {
                 val.dataType = 'edge';
             });
 
-            console.log('pointHists: ', pointHists);
-            console.log('edgeHists: ', edgeHists);
-
             return {success: pointHists.success && edgeHists.success,
                     data: _.extend({}, pointHists.data || {}, edgeHists.data || {})};
         });
@@ -149,6 +182,8 @@ function init(socket, marquee, poi) {
 
    // Grab global stats at initialization
     var globalStats = new Rx.ReplaySubject(1);
+    globalSocket = socket;
+    globalPoi = poi;
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -433,7 +468,7 @@ function checkReply (reply) {
     }
 }
 
-function toStackedObject(local, total, idx, key, numLocal, numTotal, distribution) {
+function toStackedObject(local, total, idx, key, attr, numLocal, numTotal, distribution) {
     // If we want to normalize to a distribution as percentage of total.
     var stackedObj;
     if (distribution) {
@@ -442,21 +477,21 @@ function toStackedObject(local, total, idx, key, numLocal, numTotal, distributio
 
         if (local <= total) {
             stackedObj = [
-                {y0: 0, y1: local, val: local, type: 'local', binId: idx, barNum: 0},
-                {y0: local, y1: total, val: total, type: 'global', binId: idx, barNum: 1}
+                {y0: 0, y1: local, val: local, type: 'local', binId: idx, barNum: 0, attr: attr},
+                {y0: local, y1: total, val: total, type: 'global', binId: idx, barNum: 1, attr: attr}
             ];
         } else {
             stackedObj = [
-                {y0: 0, y1: total, val: total, type: 'globalSmaller', binId: idx, barNum: 1},
-                {y0: total, y1: local, val: local, type: 'localBigger', binId: idx, barNum: 0}
+                {y0: 0, y1: total, val: total, type: 'globalSmaller', binId: idx, barNum: 1, attr: attr},
+                {y0: total, y1: local, val: local, type: 'localBigger', binId: idx, barNum: 0, attr: attr}
             ];
         }
 
     } else {
         stackedObj = [
             // We do a max because sometimes we get incorrect global values that are slightly too small
-            {y0: 0, y1: local, val: local, type: 'local', binId: idx, barNum: 0},
-            {y0: local, y1: Math.max(total, local), val: total, type: 'global', binId: idx, barNum: 1}
+            {y0: 0, y1: local, val: local, type: 'local', binId: idx, barNum: 0, attr: attr},
+            {y0: local, y1: Math.max(total, local), val: total, type: 'global', binId: idx, barNum: 1, attr: attr}
         ];
     }
 
@@ -464,10 +499,11 @@ function toStackedObject(local, total, idx, key, numLocal, numTotal, distributio
     stackedObj.local = local;
     stackedObj.name = key;
     stackedObj.id = idx;
+    stackedObj.attr = attr;
     return stackedObj;
 }
 
-function toStackedBins(bins, globalBins, type, numLocal, numTotal, distribution, limit) {
+function toStackedBins(bins, globalBins, type, attr, numLocal, numTotal, distribution, limit) {
     // Transform bins and global bins into stacked format.
     // Assumes that globalBins is always a superset of bins
     // TODO: Get this in a cleaner, more extensible way
@@ -478,7 +514,7 @@ function toStackedBins(bins, globalBins, type, numLocal, numTotal, distribution,
             var key = globalKeys[idx];
             var local = bins[key] || 0;
             var total = globalBins[key];
-            var stackedObj = toStackedObject(local, total, idx, key, numLocal, numTotal, distribution);
+            var stackedObj = toStackedObject(local, total, idx, key, attr, numLocal, numTotal, distribution);
             stackedBins.push(stackedObj);
         });
 
@@ -491,7 +527,7 @@ function toStackedBins(bins, globalBins, type, numLocal, numTotal, distribution,
         _.each(zippedBins, function (stack, idx) {
             var local = stack[0] || 0;
             var total = stack[1] || 0;
-            var stackedObj = toStackedObject(local, total, idx, '', numLocal, numTotal, distribution);
+            var stackedObj = toStackedObject(local, total, idx, '', attr, numLocal, numTotal, distribution);
             stackedBins.push(stackedObj);
         });
     }
@@ -501,8 +537,21 @@ function toStackedBins(bins, globalBins, type, numLocal, numTotal, distribution,
 
 function highlight(selection, toggle) {
     _.each(selection[0], function (sel) {
-        var colorScale = (toggle) ? colorHighlighted : color;
         var data = sel.__data__;
+        var unhighlightedColor;
+        if (histogramFilters[data.attr] !== undefined) {
+            var min = histogramFilters[data.attr].firstBin;
+            var max = histogramFilters[data.attr].lastBin;
+            if (data.binId >= min && data.binId <= max) {
+                unhighlightedColor = color;
+            } else {
+                unhighlightedColor = colorUnselected;
+            }
+        } else {
+            unhighlightedColor = color;
+        }
+
+        var colorScale = (toggle) ? colorHighlighted : unhighlightedColor;
         $(sel).css('fill', colorScale(data.type));
     });
 }
@@ -523,7 +572,7 @@ function updateHistogram($el, model, attribute) {
     var yScale = d3DataMap[attribute].yScale;
 
     var barPadding = 2;
-    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues,
+    var stackedBins = toStackedBins(bins, globalBins, type, attribute, data.numValues, globalStats.numValues,
             DIST, (type === 'countBy' ? NUM_COUNTBY_HISTOGRAM : 0));
     var barHeight = (type === 'countBy') ? yScale.rangeBand() : Math.floor(height/numBins) - barPadding;
 
@@ -589,10 +638,16 @@ function updateSparkline($el, model, attribute) {
     var yScale = d3DataMap[attribute].yScale;
 
     var barPadding = 1;
-    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues,
+    var stackedBins = toStackedBins(bins, globalBins, type, attribute, data.numValues, globalStats.numValues,
             DIST, (type === 'countBy' ? NUM_COUNTBY_SPARKLINES : 0));
 
-    var barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/numBins) - barPadding;
+    // var barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/numBins) - barPadding;
+    var barWidth = (type === 'countBy') ? xScale.rangeBand() : (width/numBins) - barPadding;
+
+
+    // TODO: Figure out a cleaner way to pass data between the two events.
+    var mouseClickData = {};
+    var filterCallback = updateSparkline.bind(null, $el, model, attribute);
 
     //////////////////////////////////////////////////////////////////////////
     // Create Columns
@@ -600,6 +655,10 @@ function updateSparkline($el, model, attribute) {
 
     var columns = selectColumns(svg, stackedBins);
     applyAttrColumns(columns.enter().append('g'))
+        .attr('attribute', attribute)
+        .attr('binnumber', function (d, i) {
+            return i;
+        })
         .attr('transform', function (d, i) {
             return 'translate(' + xScale(i) + ',0)';
         })
@@ -607,6 +666,8 @@ function updateSparkline($el, model, attribute) {
             .attr('width', barWidth + barPadding)
             .attr('height', height)
             .attr('opacity', 0)
+            .on('mousedown', handleHistogramDown.bind(null, mouseClickData))
+            .on('mouseup', handleHistogramUp.bind(null, mouseClickData, filterCallback))
             .on('mouseover', toggleTooltips.bind(null, true))
             .on('mouseout', toggleTooltips.bind(null, false));
 
@@ -614,7 +675,8 @@ function updateSparkline($el, model, attribute) {
     // Create and Update Bars
     //////////////////////////////////////////////////////////////////////////
 
-    var bars = selectBars(columns);
+    var bars = selectBars(columns)
+        .style('fill', reColor);
 
     bars.transition().duration(DRAG_SAMPLE_INTERVAL)
         .attr('data-original-title', function(d) {
@@ -639,6 +701,53 @@ function updateSparkline($el, model, attribute) {
 
 }
 
+function handleHistogramDown (data) {
+    console.log('Down Event');
+    var col = d3.select(d3.event.target.parentNode);
+    var $element = $(col[0][0]);
+    // console.log('Unwrapped: ', $element[0]);
+    // console.log('$element: ', $element);
+
+    if (_.keys(data).length > 0) {
+        _.each(_.keys(data), function (key) {
+            delete data[key];
+        });
+        return;
+    }
+
+    var binNumber = $element.attr('binnumber');
+    // console.log('Attr: ', $element.attr('attribute'));
+    // console.log('binNumber: ', binNumber);
+    data.downBin = binNumber;
+}
+
+function handleHistogramUp (data, cb) {
+    console.log('Up Event');
+    var col = d3.select(d3.event.target.parentNode);
+    var $element = $(col[0][0]);
+    if (_.keys(data).length === 0) {
+        return;
+    }
+
+    console.log('$element: ', $element);
+    var ends = [+data.downBin, +$element.attr('binnumber')];
+    console.log('ends: ', ends);
+    var firstBin = _.min(ends);
+    var lastBin = _.max(ends);
+
+    histogramFilters[$element.attr('attribute')] = {
+        firstBin: firstBin,
+        lastBin: lastBin
+    };
+
+    _.each(_.keys(data), function (key) {
+        delete data[key];
+    });
+
+    sendHistogramFilters();
+    cb();
+}
+
 function selectColumns (svg, stackedBins) {
     return svg.selectAll('.column')
         .data(stackedBins, function (d) {
@@ -658,6 +767,20 @@ function selectBars (columns) {
 function applyAttrColumns (columns) {
     return columns.classed('g', true)
         .classed('column', true);
+}
+
+function reColor (d) {
+    if (histogramFilters[d.attr] !== undefined) {
+        var min = histogramFilters[d.attr].firstBin;
+        var max = histogramFilters[d.attr].lastBin;
+        if (d.binId >= min && d.binId <= max) {
+            return color(d.type);
+        } else {
+            return colorUnselected(d.type);
+        }
+    } else {
+        return color(d.type);
+    }
 }
 
 function applyAttrBars (bars, globalPos, localPos) {
@@ -684,9 +807,7 @@ function applyAttrBars (bars, globalPos, localPos) {
         })
 
         .style('pointer-events', 'none')
-        .style('fill', function (d) {
-            return color(d.type);
-        });
+        .style('fill', reColor);
 }
 
 function toggleTooltips (showTooltip) {
@@ -778,7 +899,7 @@ function initializeHistogramViz($el, model) {
     data.numValues = data.numValues || 0;
 
     // Transform bins and global bins into stacked format.
-    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues,
+    var stackedBins = toStackedBins(bins, globalBins, type, attribute, data.numValues, globalStats.numValues,
         DIST, (type === 'countBy' ? NUM_COUNTBY_HISTOGRAM : 0));
 
     width = width - margin.left - margin.right;
@@ -827,7 +948,7 @@ function initializeSparklineViz($el, model) {
     data.numValues = data.numValues || 0;
 
     // Transform bins and global bins into stacked format.
-    var stackedBins = toStackedBins(bins, globalBins, type, data.numValues, globalStats.numValues,
+    var stackedBins = toStackedBins(bins, globalBins, type, attribute, data.numValues, globalStats.numValues,
         DIST, (type === 'countBy' ? NUM_COUNTBY_SPARKLINES : 0));
 
     width = width - marginSparklines.left - marginSparklines.right;
