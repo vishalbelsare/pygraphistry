@@ -6,6 +6,9 @@ var Q = require('q');
 var fs = require('fs');
 var Q = require('q');
 
+var log = require('common/logger.js');
+var logger = log.createLogger('graph-viz:dataframe');
+
 var baseDirPath = __dirname + '/../assets/dataframe/';
 var TYPES = ['point', 'edge', 'simulator'];
 
@@ -216,6 +219,7 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
 // Mask is implemented as a list of valid indices (in sorted order).
 // TODO: Take in Set objects, not just masks.
 Dataframe.prototype.filter = function (masks, simulator) {
+    logger.debug('Starting Filter');
 
     // Check for edge case where nothing was selected
     if (masks.point.length === 0 && masks.edge.length === 0) {
@@ -523,7 +527,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
         that.lastMasks.edge = masks.edge || [];
 
     }).then(function () {
-        // console.log('Filter took ' + (Date.now() - start) + ' ms.');
+        logger.debug('Filter Completed in ' + (Date.now() - start) + ' ms.');
         that.data = newData;
     });
 
