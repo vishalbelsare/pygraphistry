@@ -47,7 +47,7 @@ var programs = {
             'vertex': fs.readFileSync(__dirname + '/../shaders/arrowhighlighted.vertex.glsl', 'utf8').toString('ascii'),
             'fragment': fs.readFileSync(__dirname + '/../shaders/arrowhighlighted.fragment.glsl', 'utf8').toString('ascii')
         },
-        'attributes': ['startPos', 'endPos', 'normalDir', 'pointSize'],
+        'attributes': ['startPos', 'endPos', 'normalDir', 'pointSize', 'arrowColor'],
         'camera': 'mvp',
         'uniforms': ['zoomScalingFactor', 'maxPointSize', 'maxScreenSize', 'maxCanvasSize']
     },
@@ -92,9 +92,9 @@ var programs = {
             'vertex': fs.readFileSync(__dirname + '/../shaders/pointhighlighted.vertex.glsl', 'utf8').toString('ascii'),
             'fragment': fs.readFileSync(__dirname + '/../shaders/pointhighlighted.fragment.glsl', 'utf8').toString('ascii')
         },
-        'attributes': ['curPos', 'pointSize'],
+        'attributes': ['curPos', 'pointSize', 'pointColor'],
         'camera': 'mvp',
-        'uniforms': ['fog', 'stroke', 'zoomScalingFactor', 'maxPointSize']
+        'uniforms': ['fog', 'stroke', 'zoomScalingFactor', 'maxPointSize', 'minPointSize', 'pointOpacity']
     },
     'points': {
         'sources': {
@@ -314,6 +314,17 @@ var models = {
             'normalize': false
         }
     },
+    'highlightedPointsColors': {
+        'pointColor': {
+            'datasource': 'CLIENT',
+            'type': 'UNSIGNED_BYTE',
+            'hint': 'STATIC_DRAW',
+            'count': 4,
+            'offset': 0,
+            'stride': 0,
+            'normalize': true
+        }
+    },
     'pointSizes': {
         'pointSize':  {
             'datasource': 'HOST',
@@ -345,6 +356,17 @@ var models = {
             'offset': 0,
             'stride': 0,
             'normalize': false
+        }
+    },
+    'highlightedArrowPointColors': {
+        'arrowColor':  {
+            'datasource': 'CLIENT',
+            'type': 'UNSIGNED_BYTE',
+            'hint': 'STATIC_DRAW',
+            'count': 4,
+            'offset': 0,
+            'stride': 0,
+            'normalize': true
         }
     },
     'edgeColors': {
@@ -588,22 +610,6 @@ var items = {
             'depthFunc': [['LESS']]
         }
     },
-    'pointhighlight': {
-        'program': 'pointhighlight',
-        'triggers': ['highlight'],
-        'bindings': {
-            'curPos':       ['highlightedPointsPos', 'curPos'],
-            'pointSize':    ['highlightedPointsSizes', 'pointSize'],
-        },
-        'uniforms': {
-            'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
-            'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
-        },
-        'drawType': 'POINTS',
-        'glOptions': {}
-    },
     'arrowculled' : {
         'program': 'arrow',
         'triggers': ['renderSceneFull'],
@@ -633,6 +639,7 @@ var items = {
             'startPos': ['highlightedArrowStartPos', 'curPos'],
             'endPos': ['highlightedArrowEndPos', 'curPos'],
             'normalDir': ['highlightedArrowNormalDir', 'normalDir'],
+            'arrowColor': ['highlightedArrowPointColors', 'arrowColor'],
             'pointSize': ['highlightedArrowPointSizes', 'pointSize'],
         },
         'uniforms': {
@@ -669,6 +676,18 @@ var items = {
         'uniforms': pointCulledUniforms,
         'drawType': 'POINTS',
         'glOptions': {},
+    },
+    'pointhighlight': {
+        'program': 'pointhighlight',
+        'triggers': ['highlight'],
+        'bindings': {
+            'curPos':       ['highlightedPointsPos', 'curPos'],
+            'pointSize':    ['highlightedPointsSizes', 'pointSize'],
+            'pointColor':   ['highlightedPointsColors', 'pointColor'],
+        },
+        'uniforms': pointCulledUniforms,
+        'drawType': 'POINTS',
+        'glOptions': {}
     },
     'uberpointculled': {
         'program': 'pointculled',
