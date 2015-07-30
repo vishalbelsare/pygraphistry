@@ -198,7 +198,10 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
     this.typedArrayCache.newPointSizes = new Uint8Array(oldNumPoints);
     this.typedArrayCache.newPointColors = new Uint32Array(oldNumPoints);
     this.typedArrayCache.newEdgeColors = new Uint32Array(oldNumEdges * 2);
-    this.typedArrayCache.newMidEdgeColors = new Uint32Array(oldNumEdges * 4);
+    var numRenderedSplits = this.rawdata.numElements.renderedSplits;
+    var numMidEdgeColorsPerEdge = 2 * (numRenderedSplits + 1);
+    var numMidEdgeColors = numMidEdgeColorsPerEdge * oldNumEdges;
+    this.typedArrayCache.newMidEdgeColors = new Uint32Array(numMidEdgeColors);
     this.typedArrayCache.newEdgeWeights = new Uint32Array(oldNumEdges * 2);
 
     this.typedArrayCache.tempPrevForces = new Float32Array(oldNumPoints * 2);
@@ -339,9 +342,11 @@ Dataframe.prototype.filter = function (masks, simulator) {
     newData.localBuffers.pointSizes = newPointSizes;
     newData.localBuffers.pointColors = newPointColors;
 
-
+    var numRenderedSplits = rawdata.numElements.renderedSplits;
+    var numMidEdgeColorsPerEdge = 2 * (numRenderedSplits + 1);
+    var numMidEdgeColors = numMidEdgeColorsPerEdge * masks.edge.length;
     var newEdgeColors = new Uint32Array(that.typedArrayCache.newEdgeColors.buffer, 0, masks.edge.length * 2);
-    var newMidEdgeColors = new Uint32Array(that.typedArrayCache.newMidEdgeColors.buffer, 0, masks.edge.length * 4);
+    var newMidEdgeColors = new Uint32Array(that.typedArrayCache.newMidEdgeColors.buffer, 0, numMidEdgeColors);
     var newEdgeWeights = new Uint32Array(that.typedArrayCache.newEdgeWeights.buffer, 0, masks.edge.length * 2);
 
     for (var i = 0; i < masks.edge.length; i++) {
@@ -350,10 +355,10 @@ Dataframe.prototype.filter = function (masks, simulator) {
         newEdgeColors[i*2] = rawdata.localBuffers.edgeColors[idx*2];
         newEdgeColors[i*2 + 1] = rawdata.localBuffers.edgeColors[idx*2 + 1];
 
-        newMidEdgeColors[i*2] = rawdata.localBuffers.midEdgeColors[idx*2];
-        newMidEdgeColors[i*2 + 1] = rawdata.localBuffers.midEdgeColors[idx*2 + 1];
-        newMidEdgeColors[i*2 + 2] = rawdata.localBuffers.midEdgeColors[idx*2 + 2];
-        newMidEdgeColors[i*2 + 3] = rawdata.localBuffers.midEdgeColors[idx*2 + 3];
+        for (var j = 0; j < numMidEdgeColorsPerEdge; j++) {
+            newMidEdgeColors[i*numMidEdgeColorsPerEdge + j] =
+                    rawdata.localBuffers.midEdgeColors[idx*numMidEdgeColorsPerEdge + j];
+        }
 
         newEdgeWeights[i*2] = rawdata.localBuffers.edgeWeights[idx*2];
         newEdgeWeights[i*2 + 1] = rawdata.localBuffers.edgeWeights[idx*2 + 1];

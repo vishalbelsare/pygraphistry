@@ -154,6 +154,10 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
 
                 // This will create another array (of type buffersLocal[name]) on top
                 // of the exisiting array
+
+                logger.debug('Copying hostBuffer[' + name + ']. Orig Buffer len: ', localBuffer.length, 'counts: ', counts[name]);
+                logger.debug('constructor: ', localBuffer.constructor);
+
                 targetArrays[name] = {
                     buffer: new localBuffer.constructor(
                         localBuffer.buffer,
