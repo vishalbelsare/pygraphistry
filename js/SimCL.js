@@ -887,11 +887,9 @@ function setEdgeColors(simulator, edgeColors) {
         for (var i = 0; i < edgeColors.length; i++) {
             var nodeIdx = unsortedEdges[i];
             edgeColors[i] = simulator.dataframe.getLocalBuffer('pointColors')[nodeIdx];
-            // edgeColors[i] = simulator.buffersLocal.pointColors[nodeIdx];
         }
     }
 
-    // simulator.buffersLocal.edgeColors = edgeColors;
     simulator.dataframe.loadLocalBuffer('edgeColors', edgeColors);
     simulator.tickBuffers(['edgeColors']);
 

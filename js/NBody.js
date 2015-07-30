@@ -332,15 +332,10 @@ function setEdgeColors(graph, edgeColors) {
        logger.error('setEdgeColors expects one color per edge');
 
     // Internaly we have two colors, one per endpoint.
-    // Edges may be permuted, use forward permutation
-
-
     var ec = new Uint32Array(nedges * 2);
-    var map = graph.simulator.dataframe.getHostBuffer('forwardsEdges').edgePermutation;
     for (var edge = 0; edge < nedges; edge++) {
-        var spot = 2 * map[edge];
-        ec[spot] = edgeColors[edge];
-        ec[spot + 1] = edgeColors[edge];
+        ec[2*edge] = edgeColors[edge];
+        ec[2*edge + 1] = edgeColors[edge];
     }
 
     return graph.simulator.setEdgeColors(ec);
