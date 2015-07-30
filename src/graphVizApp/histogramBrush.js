@@ -785,7 +785,7 @@ function reColor (d) {
 
 function applyAttrBars (bars, globalPos, localPos) {
     return bars
-        .attr('data-container', '#histogram')
+        .attr('data-container', 'body')
         .attr('data-placement', function (d) {
             if (d.type === 'global') {
                 return globalPos;
@@ -798,7 +798,7 @@ function applyAttrBars (bars, globalPos, localPos) {
         .attr('data-template', function (d) {
             var fill = colorHighlighted(d.type);
             return '<div class="tooltip" role="tooltip"><div class="tooltip-arrow"></div>' +
-                '<div class="tooltip-inner" style="background-color: ' + fill + '"></div></div>';
+                '<div class="tooltip-inner" style="background-color: ' + fill + '; border-style: solid; border-width: 1px"></div></div>';
         })
 
         .attr('data-toggle', 'tooltip')
@@ -843,7 +843,7 @@ function maybePrecise(v) {
     }
 }
 
-function prettyPrint (d, attributeName) {
+function prettyPrint (d, attributeName, noLimit) {
     if (!isNaN(d)) {
         d = Number(d); // Cast to number in case it's a string
 
@@ -877,7 +877,7 @@ function prettyPrint (d, attributeName) {
     } else {
         var str = String(d);
         var limit = 10;
-        if (str.length > limit) {
+        if (str.length > limit && !noLimit) {
             return str.substr(0, limit-1) + '...';
         } else {
             return str;
@@ -909,14 +909,17 @@ function initializeHistogramViz($el, model) {
     var xScale = setupAmountScale(width, stackedBins, DIST);
 
     var numTicks = (type === 'countBy' ? numBins : numBins + 1);
+    var fullTitles = [];
     var yAxis = d3.svg.axis()
         .scale(yScale)
         .orient('right')
         .ticks(numTicks)
         .tickFormat(function (d) {
             if (type === 'countBy') {
+                fullTitles[d] = prettyPrint(stackedBins[d].name, name, true);
                 return prettyPrint(stackedBins[d].name, name); // name of bin
             } else {
+                fullTitles[d] = prettyPrint(d * globalStats.binWidth + globalStats.minValue, name, true);
                 return prettyPrint(d * globalStats.binWidth + globalStats.minValue, name);
             }
         });
@@ -925,8 +928,30 @@ function initializeHistogramViz($el, model) {
 
     svg.append('g')
         .attr('class', 'y axis')
+        .attr('id', 'yaxis-' + attribute)
         .attr('transform', 'translate(' + (width + 4) + ',0)')
         .call(yAxis);
+
+    d3.select('#yaxis-' + attribute)
+        .selectAll('text')
+        .attr('data-container', 'body')
+        .attr('data-placement', 'left')
+        .attr('data-toggle', 'tooltip')
+        .attr('data-original-title', function(d) {
+            return fullTitles[d];
+        });
+
+    d3.select('#yaxis-' + attribute)
+        .selectAll('text')
+        .on('mouseover', function () {
+            var target = d3.event.target;
+            $(target).tooltip('fixTitle');
+            $(target).tooltip('show');
+        })
+        .on('mouseout', function () {
+            var target = d3.event.target;
+            $(target).tooltip('hide');
+        });
 
     d3DataMap[attribute] = {
         xScale: xScale,
