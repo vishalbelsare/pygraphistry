@@ -47,7 +47,7 @@ var programs = {
             'vertex': fs.readFileSync(__dirname + '/../shaders/arrowhighlighted.vertex.glsl', 'utf8').toString('ascii'),
             'fragment': fs.readFileSync(__dirname + '/../shaders/arrowhighlighted.fragment.glsl', 'utf8').toString('ascii')
         },
-        'attributes': ['startPos', 'endPos', 'normalDir', 'pointSize'],
+        'attributes': ['startPos', 'endPos', 'normalDir', 'pointSize', 'arrowColor'],
         'camera': 'mvp',
         'uniforms': ['zoomScalingFactor', 'maxPointSize', 'maxScreenSize', 'maxCanvasSize']
     },
@@ -92,9 +92,9 @@ var programs = {
             'vertex': fs.readFileSync(__dirname + '/../shaders/pointhighlighted.vertex.glsl', 'utf8').toString('ascii'),
             'fragment': fs.readFileSync(__dirname + '/../shaders/pointhighlighted.fragment.glsl', 'utf8').toString('ascii')
         },
-        'attributes': ['curPos', 'pointSize'],
+        'attributes': ['curPos', 'pointSize', 'pointColor'],
         'camera': 'mvp',
-        'uniforms': ['fog', 'stroke', 'zoomScalingFactor', 'maxPointSize']
+        'uniforms': ['fog', 'stroke', 'zoomScalingFactor', 'maxPointSize', 'minPointSize', 'pointOpacity']
     },
     'points': {
         'sources': {
@@ -160,6 +160,30 @@ var textures = {
  */
 var models = {
     'logicalEdges': {
+        'curIdx': {
+            'datasource': 'HOST',
+            'index': true,
+            'type': 'UNSIGNED_INT',
+            'hint': 'STATIC_DRAW',
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': false
+        }
+    },
+    'forwardsEdgeStartEndIdxs': {
+        'curIdx': {
+            'datasource': 'HOST',
+            'index': true,
+            'type': 'UNSIGNED_INT',
+            'hint': 'STATIC_DRAW',
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': false
+        }
+    },
+    'backwardsEdgeStartEndIdxs': {
         'curIdx': {
             'datasource': 'HOST',
             'index': true,
@@ -290,6 +314,17 @@ var models = {
             'normalize': false
         }
     },
+    'highlightedPointsColors': {
+        'pointColor': {
+            'datasource': 'CLIENT',
+            'type': 'UNSIGNED_BYTE',
+            'hint': 'STATIC_DRAW',
+            'count': 4,
+            'offset': 0,
+            'stride': 0,
+            'normalize': true
+        }
+    },
     'pointSizes': {
         'pointSize':  {
             'datasource': 'HOST',
@@ -321,6 +356,17 @@ var models = {
             'offset': 0,
             'stride': 0,
             'normalize': false
+        }
+    },
+    'highlightedArrowPointColors': {
+        'arrowColor':  {
+            'datasource': 'CLIENT',
+            'type': 'UNSIGNED_BYTE',
+            'hint': 'STATIC_DRAW',
+            'count': 4,
+            'offset': 0,
+            'stride': 0,
+            'normalize': true
         }
     },
     'edgeColors': {
@@ -469,6 +515,64 @@ var items = {
         'drawType': 'LINES',
         'glOptions': {}
     },
+    'indexeddummyForwardsEdgeIdxs1' : {
+        'program': 'edgeculled',
+        'triggers': [],
+        'bindings': {
+            'curPos': ['curPoints', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'index': ['forwardsEdgeStartEndIdxs', 'curIdx'],
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
+    'indexeddummyForwardsEdgeIdxs2' : {
+        'program': 'midedgeculled',
+        'triggers': [],
+        'bindings': {
+            //'curPos': ['curMidPointsClient', 'curPos'],
+            'curPos': ['curMidPoints', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'index': ['forwardsEdgeStartEndIdxs', 'curIdx'],
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
+    'indexeddummyBackwardsEdgeIdxs1' : {
+        'program': 'edgeculled',
+        'triggers': [],
+        'bindings': {
+            'curPos': ['curPoints', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'index': ['backwardsEdgeStartEndIdxs', 'curIdx'],
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
+    'indexeddummyBackwardsEdgeIdxs2' : {
+        'program': 'midedgeculled',
+        'triggers': [],
+        'bindings': {
+            //'curPos': ['curMidPointsClient', 'curPos'],
+            'curPos': ['curMidPoints', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'index': ['backwardsEdgeStartEndIdxs', 'curIdx'],
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
     'uberdemoedges' : {
         'program': 'midedgeculled',
         'triggers': ['renderSceneFull'],
@@ -506,22 +610,6 @@ var items = {
             'depthFunc': [['LESS']]
         }
     },
-    'pointhighlight': {
-        'program': 'pointhighlight',
-        'triggers': ['highlight'],
-        'bindings': {
-            'curPos':       ['highlightedPointsPos', 'curPos'],
-            'pointSize':    ['highlightedPointsSizes', 'pointSize'],
-        },
-        'uniforms': {
-            'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
-            'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
-            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
-        },
-        'drawType': 'POINTS',
-        'glOptions': {}
-    },
     'arrowculled' : {
         'program': 'arrow',
         'triggers': ['renderSceneFull'],
@@ -551,6 +639,7 @@ var items = {
             'startPos': ['highlightedArrowStartPos', 'curPos'],
             'endPos': ['highlightedArrowEndPos', 'curPos'],
             'normalDir': ['highlightedArrowNormalDir', 'normalDir'],
+            'arrowColor': ['highlightedArrowPointColors', 'arrowColor'],
             'pointSize': ['highlightedArrowPointSizes', 'pointSize'],
         },
         'uniforms': {
@@ -587,6 +676,18 @@ var items = {
         'uniforms': pointCulledUniforms,
         'drawType': 'POINTS',
         'glOptions': {},
+    },
+    'pointhighlight': {
+        'program': 'pointhighlight',
+        'triggers': ['highlight'],
+        'bindings': {
+            'curPos':       ['highlightedPointsPos', 'curPos'],
+            'pointSize':    ['highlightedPointsSizes', 'pointSize'],
+            'pointColor':   ['highlightedPointsColors', 'pointColor'],
+        },
+        'uniforms': pointCulledUniforms,
+        'drawType': 'POINTS',
+        'glOptions': {}
     },
     'uberpointculled': {
         'program': 'pointculled',
@@ -755,7 +856,8 @@ var sceneUber = {
     //'numRenderedSplits':7 ,
     'render': ['pointpicking',  'pointsampling', 'uberdemoedges', 'edgepicking', 'arrowculled', 'arrowhighlight',
         'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
-    'indexeddummy', 'indexeddummy2']
+    'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
+    'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 }
 
 var sceneNetflowArcs = {
@@ -768,7 +870,8 @@ var sceneNetflowArcs = {
     'midedgeculled', 'edgepicking',
     'arrowculled', 'arrowhighlight', 'edgehighlight',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
-    'indexeddummy', 'indexeddummy2']
+    'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
+    'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 }
 
 var sceneNetflowBigArcs = {
@@ -781,7 +884,8 @@ var sceneNetflowBigArcs = {
     'midedgeculled', 'edgepicking',
     'arrowculled', 'arrowhighlight', 'edgehighlight',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
-    'indexeddummy', 'indexeddummy2']
+    'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
+    'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 }
 
 var sceneNetflowStraight = {
@@ -793,7 +897,8 @@ var sceneNetflowStraight = {
     'midedgeculled', 'edgepicking',
     'arrowculled', 'arrowhighlight', 'edgehighlight',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
-    'indexeddummy', 'indexeddummy2']
+    'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
+    'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 }
 
 var scenes = {

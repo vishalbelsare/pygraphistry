@@ -48,12 +48,17 @@ function graphCounts(graph) {
     var numMidEdges     = graph.dataframe.getNumElements('midEdges');
     var offsetMidPoints = 0;
     var offsetMidEdges  = 0;
+    var numForwardsEdgeStartEndIdxs = graph.dataframe.getNumElements('point')*2;
+    var numBackwardsEdgeStartEndIdxs = graph.dataframe.getNumElements('point')*2;
+    var offsetEdgeStartEndIdxs = 0;
 
     var point       = {num: numPoints,    offset: offsetPoint};
     var edge        = {num: numEdges,     offset: offsetEdge};
     var midPoint    = {num: numMidPoints, offset: offsetMidPoints};
     var midEdge     = {num: numMidEdges,  offset: offsetMidEdges};
     var midEdgeColor ={num: numEdges * (numRenderedSplits + 1), offset:offsetMidEdges};
+    var forwardsEdgeStartEndIdxs = {num: numForwardsEdgeStartEndIdxs, offset: offsetEdgeStartEndIdxs};
+    var backwardsEdgeStartEndIdxs = {num: numBackwardsEdgeStartEndIdxs, offset: offsetEdgeStartEndIdxs};
 
     var counts = {
         curPoints: point,
@@ -65,7 +70,9 @@ function graphCounts(graph) {
         curMidPoints: midPoint,
         midSpringsPos: midEdge,
         midSpringsColorCoord: midEdge,
-        midEdgeColors: midEdgeColor
+        midEdgeColors: midEdgeColor,
+        forwardsEdgeStartEndIdxs: forwardsEdgeStartEndIdxs,
+        backwardsEdgeStartEndIdxs: backwardsEdgeStartEndIdxs
     };
 
     // console.log('counts: ', counts);
@@ -147,6 +154,10 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
 
                 // This will create another array (of type buffersLocal[name]) on top
                 // of the exisiting array
+
+                logger.debug('Copying hostBuffer[' + name + ']. Orig Buffer len: ', localBuffer.length, 'counts: ', counts[name]);
+                logger.debug('constructor: ', localBuffer.constructor);
+
                 targetArrays[name] = {
                     buffer: new localBuffer.constructor(
                         localBuffer.buffer,

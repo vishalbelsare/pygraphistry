@@ -6,6 +6,9 @@ var Q = require('q');
 var fs = require('fs');
 var Q = require('q');
 
+var log = require('common/logger.js');
+var logger = log.createLogger('graph-viz:dataframe');
+
 var baseDirPath = __dirname + '/../assets/dataframe/';
 var TYPES = ['point', 'edge', 'simulator'];
 
@@ -195,7 +198,10 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
     this.typedArrayCache.newPointSizes = new Uint8Array(oldNumPoints);
     this.typedArrayCache.newPointColors = new Uint32Array(oldNumPoints);
     this.typedArrayCache.newEdgeColors = new Uint32Array(oldNumEdges * 2);
-    this.typedArrayCache.newMidEdgeColors = new Uint32Array(oldNumEdges * 4);
+    var numRenderedSplits = this.rawdata.numElements.renderedSplits;
+    var numMidEdgeColorsPerEdge = 2 * (numRenderedSplits + 1);
+    var numMidEdgeColors = numMidEdgeColorsPerEdge * oldNumEdges;
+    this.typedArrayCache.newMidEdgeColors = new Uint32Array(numMidEdgeColors);
     this.typedArrayCache.newEdgeWeights = new Uint32Array(oldNumEdges * 2);
 
     this.typedArrayCache.tempPrevForces = new Float32Array(oldNumPoints * 2);
@@ -216,6 +222,7 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
 // Mask is implemented as a list of valid indices (in sorted order).
 // TODO: Take in Set objects, not just masks.
 Dataframe.prototype.filter = function (masks, simulator) {
+    logger.debug('Starting Filter');
 
     // Check for edge case where nothing was selected
     if (masks.point.length === 0 && masks.edge.length === 0) {
@@ -319,6 +326,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
     newData.hostBuffers.points = rawdata.hostBuffers.points;
 
     newData.localBuffers.logicalEdges = forwardsEdges.edgesTyped;
+    newData.localBuffers.forwardsEdgeStartEndIdxs = forwardsEdges.edgeStartEndIdxsTyped;
+    newData.localBuffers.backwardsEdgeStartEndIdxs = backwardsEdges.edgeStartEndIdxsTyped;
 
     // TODO: Figured out what pointTags is used for
     // TODO: Figure out what edgeTags are used for.
@@ -333,9 +342,11 @@ Dataframe.prototype.filter = function (masks, simulator) {
     newData.localBuffers.pointSizes = newPointSizes;
     newData.localBuffers.pointColors = newPointColors;
 
-
+    var numRenderedSplits = rawdata.numElements.renderedSplits;
+    var numMidEdgeColorsPerEdge = 2 * (numRenderedSplits + 1);
+    var numMidEdgeColors = numMidEdgeColorsPerEdge * masks.edge.length;
     var newEdgeColors = new Uint32Array(that.typedArrayCache.newEdgeColors.buffer, 0, masks.edge.length * 2);
-    var newMidEdgeColors = new Uint32Array(that.typedArrayCache.newMidEdgeColors.buffer, 0, masks.edge.length * 4);
+    var newMidEdgeColors = new Uint32Array(that.typedArrayCache.newMidEdgeColors.buffer, 0, numMidEdgeColors);
     var newEdgeWeights = new Uint32Array(that.typedArrayCache.newEdgeWeights.buffer, 0, masks.edge.length * 2);
 
     for (var i = 0; i < masks.edge.length; i++) {
@@ -344,10 +355,10 @@ Dataframe.prototype.filter = function (masks, simulator) {
         newEdgeColors[i*2] = rawdata.localBuffers.edgeColors[idx*2];
         newEdgeColors[i*2 + 1] = rawdata.localBuffers.edgeColors[idx*2 + 1];
 
-        newMidEdgeColors[i*2] = rawdata.localBuffers.midEdgeColors[idx*2];
-        newMidEdgeColors[i*2 + 1] = rawdata.localBuffers.midEdgeColors[idx*2 + 1];
-        newMidEdgeColors[i*2 + 2] = rawdata.localBuffers.midEdgeColors[idx*2 + 2];
-        newMidEdgeColors[i*2 + 3] = rawdata.localBuffers.midEdgeColors[idx*2 + 3];
+        for (var j = 0; j < numMidEdgeColorsPerEdge; j++) {
+            newMidEdgeColors[i*numMidEdgeColorsPerEdge + j] =
+                    rawdata.localBuffers.midEdgeColors[idx*numMidEdgeColorsPerEdge + j];
+        }
 
         newEdgeWeights[i*2] = rawdata.localBuffers.edgeWeights[idx*2];
         newEdgeWeights[i*2 + 1] = rawdata.localBuffers.edgeWeights[idx*2 + 1];
@@ -521,7 +532,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
         that.lastMasks.edge = masks.edge || [];
 
     }).then(function () {
-        // console.log('Filter took ' + (Date.now() - start) + ' ms.');
+        logger.debug('Filter Completed in ' + (Date.now() - start) + ' ms.');
         that.data = newData;
     });
 
@@ -627,10 +638,9 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
     attributes.Source = {values: source};
     attributes.Destination = {values: destination};
 
-    // If no attributes for edges have ever been loaded, just make title the index.
-    // TODO: Deal with this more elegantly / elsewhere
-    if (!this.rawdata.numElements['edge']) {
-        this.rawdata.numElements['edge'] = numElements;
+    // If no title has been set, just make title the index.
+    // TODO: Is there a more appropriate place to put this?
+    if (!attributes._title) {
         attributes._title = {type: 'number', values: range(numElements)};
     }
 
@@ -673,6 +683,17 @@ Dataframe.prototype.loadHostBuffer = function (name, buffer) {
 
 
 Dataframe.prototype.loadLocalBuffer = function (name, buffer) {
+    // TODO: Generalize
+    if (name === 'edgeColors') {
+        var sortedBuffer = new buffer.constructor(buffer.length);
+        var permutation = this.rawdata.hostBuffers.forwardsEdges.edgePermutation;
+        for (var i = 0; i < buffer.length / 2; i++) {
+            sortedBuffer[i*2] = buffer[permutation[i]*2];
+            sortedBuffer[i*2 + 1] = buffer[permutation[i]*2 +1];
+        }
+        buffer = sortedBuffer;
+    }
+
     var localBuffers = this.rawdata.localBuffers;
     localBuffers[name] = buffer;
 };

@@ -687,7 +687,9 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
     var logicalEdges = forwardsEdges.edgesTyped;
     // simulator.buffersLocal.logicalEdges = logicalEdges;
     simulator.dataframe.loadLocalBuffer('logicalEdges', logicalEdges);
-    simulator.tickBuffers(['logicalEdges']);
+    simulator.dataframe.loadLocalBuffer('forwardsEdgeStartEndIdxs', forwardsEdges.edgeStartEndIdxsTyped);
+    simulator.dataframe.loadLocalBuffer('backwardsEdgeStartEndIdxs', backwardsEdges.edgeStartEndIdxsTyped);
+    simulator.tickBuffers(['logicalEdges', 'forwardsEdgeStartEndIdxs', 'backwardsEdgeStartEndIdxs']);
 
     simulator.resetBuffers([
 
@@ -878,11 +880,12 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
 function setEdgeColors(simulator, edgeColors) {
     if (!edgeColors) {
         logger.trace('Using default edge colors');
-        var forwardsEdges = simulator.dataframe.getHostBuffer('forwardsEdges');
+        // Using unsorted edges so it can be consistent with provided edge colors.
+        var unsortedEdges = simulator.dataframe.getHostBuffer('unsortedEdges');
 
-        edgeColors = new Uint32Array(forwardsEdges.edgesTyped.length);
+        edgeColors = new Uint32Array(unsortedEdges.length);
         for (var i = 0; i < edgeColors.length; i++) {
-            var nodeIdx = forwardsEdges.edgesTyped[i];
+            var nodeIdx = unsortedEdges[i];
             edgeColors[i] = simulator.dataframe.getLocalBuffer('pointColors')[nodeIdx];
             // edgeColors[i] = simulator.buffersLocal.pointColors[nodeIdx];
         }
