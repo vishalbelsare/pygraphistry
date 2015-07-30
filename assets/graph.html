@@ -47,22 +47,24 @@
             API_ROOT: window.location.protocol + "//" + window.location.host + "/"
         };
 
-        window.heap=window.heap||[],heap.load=function(t,e){window.heap.appid=t,window.heap.config=e;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https:":"http:")+"//cdn.heapanalytics.com/js/heap.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n);for(var o=function(t){return function(){heap.push([t].concat(Array.prototype.slice.call(arguments,0)))}},p=["clearEventProperties","identify","setEventProperties","track","unsetEventProperty"],c=0;c<p.length;c++)heap[p[c]]=o(p[c])};
-        heap.load("348604669");
-
         // Track JavaScript errors
         window.addEventListener('error', function(e) {
+            var content = {
+                message: e.message,
+                filename: e.filename,
+                lineno: e.lineno
+            };
+
+            if (e.error) { // Modern browsers report the stack trace
+                content.stack = e.error.stack;
+            }
+
             var msg = {
                 type: 'JSError',
-                content: {
-                    message: e.message,
-                    location: e.filename + ':  ' + e.lineno,
-                    error: e.error
-                }
+                content: content
             };
 
             $.post(templatePaths.API_ROOT + 'error', JSON.stringify(msg));
-            window.heap.track('error', msg.content);
         });
 
         // Track AJAX errors (jQuery API)
@@ -82,7 +84,6 @@
             };
 
             $.post(templatePaths.API_ROOT + 'error', JSON.stringify(msg));
-            window.heap.track('error', msg.content);
         });
     </script>
 
