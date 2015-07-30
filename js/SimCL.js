@@ -540,14 +540,12 @@ function createSetters (simulator) {
 
 //Simulator * ?[HtmlString] -> ()
 function setPointLabels(simulator, labels) {
-    this.dataframe.loadLabels('point', (labels || []));
-    // simulator.pointLabels = labels || [];
+    simulator.dataframe.loadLabels('point', (labels || []));
 }
 
 //Simulator * ?[HtmlString] -> ()
 function setEdgeLabels(simulator, labels) {
-    this.dataframe.loadLabels('edge', (labels || []));
-    // simulator.edgeLabels = labels || [];
+    simulator.dataframe.loadLabels('edge', (labels || []));
 }
 
 function setMidEdges( simulator ) {
