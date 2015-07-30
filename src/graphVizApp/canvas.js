@@ -428,6 +428,9 @@ function populateArrowBuffers(maybeIterable, midSpringsPos, arrowStartPos,
         arrowEndPos, arrowNormalDir, pointSizes, logicalEdges,
         arrowPointSizes, arrowColors, edgeColors, numRenderedSplits) {
 
+
+    var edgeColors32 = new Uint32Array(edgeColors.buffer);
+
     var numMidEdges = numRenderedSplits + 1;
 
 
@@ -469,9 +472,9 @@ function populateArrowBuffers(maybeIterable, midSpringsPos, arrowStartPos,
         arrowPointSizes[3*idx + 1] = pointSize;
         arrowPointSizes[3*idx + 2] = pointSize;
 
-        arrowColors[3*idx + 0] = edgeColors[2*val + 1];
-        arrowColors[3*idx + 1] = edgeColors[2*val + 1];
-        arrowColors[3*idx + 2] = edgeColors[2*val + 1];
+        arrowColors[3*idx + 0] = edgeColors32[2*val + 1];
+        arrowColors[3*idx + 1] = edgeColors32[2*val + 1];
+        arrowColors[3*idx + 2] = edgeColors32[2*val + 1];
 
     }
 }
@@ -684,7 +687,7 @@ function renderSlowEffects(renderingScheduler) {
  * Render mouseover effects. These should only occur during a quiet state.
  *
  */
- var lastHighlightedEdge = -1;
+ var lastHighlighted = {edges: [], nodes: []};
 
 // TODO: Make this work on safari.
 function renderMouseoverEffects(renderingScheduler, task) {
@@ -707,9 +710,35 @@ function renderMouseoverEffects(renderingScheduler, task) {
 
     var logicalEdges = new Uint32Array(buffers.logicalEdges.buffer);
     var hostBuffers = renderState.get('hostBuffersCache');
+    var forwardsEdgeStartEndIdxs = new Uint32Array(hostBuffers.forwardsEdgeStartEndIdxs.buffer);
 
     var edgeIndices = task.data.edgeIndices || [];
     var nodeIndices = task.data.nodeIndices || [];
+
+    // Cheap sets so we don't duplicate edges, but want to avoid using the slow _.uniq
+    var seenEdges = {};
+    var seenNodes = {};
+
+    _.each(edgeIndices, function (idx) {
+        seenEdges[idx] = 1;
+    });
+    _.each(nodeIndices, function (idx) {
+        seenNodes[idx] = 1;
+    });
+
+    // Extend edges with neighbors of nodes
+    _.each(nodeIndices, function (val) {
+        var start = forwardsEdgeStartEndIdxs[2*val];
+        var end = forwardsEdgeStartEndIdxs[2*val + 1];
+        while (start < end) {
+            var edgeIdx = start;
+            if (!seenEdges[edgeIdx]) {
+                edgeIndices.push(edgeIdx);
+                seenEdges[edgeIdx] = 1;
+            }
+            start++;
+        }
+    });
 
     // Extend node indices with edge endpoints
     // TODO: Decide if we need to dedupe.
@@ -720,22 +749,25 @@ function renderMouseoverEffects(renderingScheduler, task) {
 
     var hostNodePositions = new Float32Array(hostBuffers.curPoints.buffer);
     var hostNodeSizes = hostBuffers.pointSizes;
+    var hostNodeColors = new Uint32Array(hostBuffers.pointColors.buffer);
 
+    var wrappedHighlighted = {edges: edgeIndices, nodes: nodeIndices};
     // Don't render if nothing has changed
-    if (lastHighlightedEdge === edgeIndices[0]) {
+    if (_.isEqual(lastHighlighted, wrappedHighlighted)) {
         return;
     }
-    lastHighlightedEdge = edgeIndices[0];
+    lastHighlighted = wrappedHighlighted;
 
         // TODO: Start with a small buffer and increase if necessary, masking underlying
         // data so we don't have to clear out later values. This way we won't have to constantly allocate
         buffers.highlightedEdges = new Float32Array(edgeIndices.length * 4 * numMidEdges);
         buffers.highlightedNodePositions = new Float32Array(nodeIndices.length * 2);
         buffers.highlightedNodeSizes = new Uint8Array(nodeIndices.length);
+        buffers.highlightedNodeColors = new Uint32Array(nodeIndices.length);
         buffers.highlightedArrowStartPos = new Float32Array(edgeIndices.length * 2 * 3);
         buffers.highlightedArrowEndPos = new Float32Array(edgeIndices.length * 2 * 3);
         buffers.highlightedArrowNormalDir = new Float32Array(edgeIndices.length * 3);
-        buffers.highlightedArrowColors = new Uint32Array(edgeIndices.length * 3);
+        buffers.highlightedArrowPointColors = new Uint32Array(edgeIndices.length * 3);
         buffers.highlightedArrowPointSizes = new Uint8Array(edgeIndices.length * 3);
 
         renderer.setNumElements(renderState, 'edgehighlight', edgeIndices.length * 2 * numMidEdges);
@@ -755,16 +787,17 @@ function renderMouseoverEffects(renderingScheduler, task) {
             }
         });
 
+
         _.each(nodeIndices, function (val, idx) {
             buffers.highlightedNodePositions[idx*2] = hostNodePositions[val*2];
             buffers.highlightedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
-
             buffers.highlightedNodeSizes[idx] = hostNodeSizes[val];
+            buffers.highlightedNodeColors[idx] = hostNodeColors[val];
         });
 
         populateArrowBuffers(edgeIndices, buffers.midSpringsPos, buffers.highlightedArrowStartPos,
                 buffers.highlightedArrowEndPos, buffers.highlightedArrowNormalDir, hostNodeSizes,
-                logicalEdges, buffers.highlightedArrowPointSizes, buffers.highlightedArrowColors,
+                logicalEdges, buffers.highlightedArrowPointSizes, buffers.highlightedArrowPointColors,
                 buffers.edgeColors, numRenderedSplits);
 
         renderer.setupFullscreenBuffer(renderState);
@@ -772,9 +805,11 @@ function renderMouseoverEffects(renderingScheduler, task) {
             'highlightedEdgesPos': buffers.highlightedEdges,
             'highlightedPointsPos': buffers.highlightedNodePositions,
             'highlightedPointsSizes': buffers.highlightedNodeSizes,
+            'highlightedPointsColors': buffers.highlightedNodeColors,
             'highlightedArrowStartPos': buffers.highlightedArrowStartPos,
             'highlightedArrowEndPos': buffers.highlightedArrowEndPos,
             'highlightedArrowNormalDir': buffers.highlightedArrowNormalDir,
+            'highlightedArrowPointColors': buffers.highlightedArrowPointColors,
             'highlightedArrowPointSizes': buffers.highlightedArrowPointSizes
         });
     renderer.setCamera(renderState);
@@ -800,6 +835,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         simulating: false,
         quietState: false,
         interpolateMidPoints : true,
+        //TODO these should be inferred from renderconfig
         buffers: {
             curPoints: undefined,
             curMidPoints: undefined,
@@ -811,6 +847,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
             highlightedEdges: undefined,
             highlightedNodePositions: undefined,
             highlightedNodeSizes: undefined,
+            highlightedNodeColors: undefined,
             edgeColors: undefined,
             arrowStartPos: undefined,
             arrowEndPos: undefined,
@@ -820,7 +857,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
             highlightedArrowStartPos: undefined,
             highlightedArrowEndPos: undefined,
             highlightedArrowNormalDir: undefined,
-            highlightedArrowColors: undefined,
+            highlightedArrowPointColors: undefined,
             highlightedArrowPointSizes: undefined
         },
         hitmapUpdates: hitmapUpdates

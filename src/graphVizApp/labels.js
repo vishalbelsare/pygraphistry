@@ -73,19 +73,20 @@ function renderCursor(renderState, renderingScheduler, $cont, $point, $center, p
     var dim = indices[indices.length - 1].dim;
 
     // Renderer Highlights
-    if (dim === 2) {
+    if (idx !== undefined && idx >= 0) {
         $cont.css({display: 'none'});
         renderingScheduler.renderScene('mouseOver', {
             trigger: 'mouseOverEdgeHighlight',
             data: {
-                edgeIndices: [idx],
-                nodeIndices: []
+                edgeIndices: (dim === 2) ? [idx] : [],
+                nodeIndices: (dim === 1) ? [idx] : []
             }
         });
-        return;
-    }
-
-    if (idx === undefined || idx < 0) {
+        if (dim === 2) {
+            return;
+        }
+    } else {
+    // if (idx === undefined || idx < 0) {
         $cont.css({display: 'none'});
         renderingScheduler.renderScene('mouseOver', {
             trigger: 'mouseOverEdgeHighlight',
