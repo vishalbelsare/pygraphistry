@@ -198,12 +198,12 @@ app.post('/etl', bodyParser.json({type: '*', limit: '128mb'}), function (req, re
         //return res.send({success: false, msg: 'requires https'});
     }
 
-    if ( (config.ENVIRONMENT !== 'local') ) {
+    if (config.ENVIRONMENT !== 'local') {
         try {
             var who = apiKey.decrypt(req.query.key);
         } catch (err) {
-            logger.error(error, 'bad etl key');
-            return res.send({success: false, msg: 'bad API key'});
+            logger.error(err, 'Invalid API key for ETL');
+            return res.send({success: false, msg: 'Invalid API key'});
         }
     }
 
