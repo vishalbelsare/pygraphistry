@@ -49,13 +49,19 @@
 
         // Track JavaScript errors
         window.addEventListener('error', function(e) {
+            var content = {
+                message: e.message,
+                filename: e.filename,
+                lineno: e.lineno
+            };
+
+            if (e.error) { // Modern browsers report the stack trace
+                content.stack = e.error.stack;
+            }
+
             var msg = {
                 type: 'JSError',
-                content: {
-                    message: e.message,
-                    location: e.filename + ':  ' + e.lineno,
-                    error: e.error
-                }
+                content: content
             };
 
             $.post(templatePaths.API_ROOT + 'error', JSON.stringify(msg));
