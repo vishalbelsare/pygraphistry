@@ -17,6 +17,11 @@ rl.on('line', function (line) {
             return;
         }
 
+        if (log.level === 50) {
+            console.log(line);
+            return;
+        }
+
         var str = '[' + log.module + '][' + log.level + '] ' + log.msg;
         var date = new Date(log.time);
 
