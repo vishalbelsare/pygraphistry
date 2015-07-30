@@ -267,10 +267,6 @@ window.addEventListener('load', function() {
 
     var tag = urlParams.usertag;
     if (tag !== undefined && tag !== '') {
-        if (window.heap) {
-            window.heap.identify({handle: tag, name: tag});
-        }
-
         if (window.ga) {
             window.ga('set', 'userId', tag);
         }
