@@ -524,7 +524,6 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
             if (brushIsOn) {
                 appState.brushOn.onNext('toggled');
             } else {
-                $('#histogram').css('visibility', 'hidden');
                 $('#inspector').css('visibility', 'hidden');
                 appState.brushOn.onNext(false);
             }

@@ -237,10 +237,7 @@ function init(socket, marquee, poi) {
             this.listenTo(histograms, 'reset', this.addAll);
             this.listenTo(histograms, 'all', this.render);
             this.listenTo(histograms, 'change:timeStamp', this.update);
-        },
-        render: function () {
-            // TODO: Use something other than visibility
-            this.$el.css('visibility', 'visible');
+
             if (!started) {
                 started = true;
 
@@ -263,6 +260,12 @@ function init(socket, marquee, poi) {
                     .subscribe(_.identity, util.makeErrorHandler('Error prepopulating histograms'));
 
             }
+
+        },
+        render: function () {
+            // TODO: Use something other than visibility
+            // this.$el.css('visibility', 'visible');
+
         },
         addHistogram: function (histogram) {
             var view = new HistogramView({model: histogram});
