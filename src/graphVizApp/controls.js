@@ -167,7 +167,7 @@ function setupBrush(appState, isOn) {
 //Side effect: highlight that element
 function makeMouseSwitchboard() {
 
-    var mouseElts = $('#marqueerectangle, #histogramBrush, #layoutSettingsButton, #filterButton');
+    var mouseElts = $('#marqueerectangle, #histogramBrush, #layoutSettingsButton, #filterButton, #histogramPanelControl');
 
     var onElt = Rx.Observable.merge.apply(Rx.Observable,
             mouseElts.get().map(function (elt) {
@@ -504,6 +504,19 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
             $('#marqueerectangle').children('i').toggleClass('toggle-on', marqueeIsOn);
             appState.marqueeOn.onNext(marqueeIsOn ? 'toggled' : false);
         });
+
+    var histogramPanelIsOpen = false;
+    Rx.Observable.merge(
+            onElt.filter(function (elt) { return elt === $('#histogramPanelControl')[0]; })
+                .map(function () { return !histogramPanelIsOpen; }),
+            onElt.filter(function (elt) { return elt === $('#histogramBrush')[0]; })
+                .map(_.constant(true)))
+        .do(function (isTurnOn) {
+            histogramPanelIsOpen = isTurnOn;
+            $('#histogramPanelControl').children('i').toggleClass('toggle-on', marqueeIsOn);
+            $('#histogram.panel').css('visibility', isTurnOn ? 'visible' : 'hidden');
+        }).subscribe(_.identity, util.makeErrorHandler('histogram visibility toggle'));
+
 
 
     //hist
