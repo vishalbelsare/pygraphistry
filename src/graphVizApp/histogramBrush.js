@@ -71,7 +71,7 @@ function sendHistogramFilters () {
         var stats = globalStatsCache.sparkLines[key];
         var type = stats.dataType;
         var start = stats.minValue + (stats.binWidth * val.firstBin);
-        var stop = stats.minValue + (stats.binWidth * (val.lastBin + 1));
+        var stop = stats.minValue + (stats.binWidth * val.lastBin) + stats.binWidth;
         payload[key] = {
             start: start,
             stop: stop,
