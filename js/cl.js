@@ -18,23 +18,23 @@ var ocl = require('node-opencl');
 
 // TODO: remove types from SimCL, since they are no longer needed
 var types = {
-    char_t: null,
-    double_t: null,
-    float_t: null,
-    half_t: null,
-    int_t: null,
-    local_t: null,
-    long_t: null,
-    short_t: null,
-    uchar_t: null,
-    uint_t: null,
-    ulong_t: null,
-    ushort_t: null,
-    float2_t: null,
-    float3_t: null,
-    float4_t: null,
-    float8_t: null,
-    float16_t: null,
+    char_t: "char",
+    double_t: "double",
+    float_t: "float",
+    half_t: "half",
+    int_t: "int",
+    local_t: "__local",
+    long_t: "long",
+    short_t: "short",
+    uchar_t: "uchar",
+    uint_t: "uint",
+    ulong_t: "ulong",
+    ushort_t: "ushort",
+    float2_t: "float2",
+    float3_t: "float3",
+    float4_t: "float4",
+    float8_t: "float8",
+    float16_t: "float16",
     define: '#define',
 };
 
@@ -174,6 +174,7 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
         'MAX_CONSTANT_BUFFER_SIZE', 'PROFILE', 'PROFILING_TIMER_RESOLUTION'
     ];
 
+
     var props = _.object(attribs.map(function (name) {
         return [name, ocl.getDeviceInfo(deviceWrapper.device, ocl['DEVICE_' + name])];
     }));
@@ -181,6 +182,10 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
 
     logger.info('OpenCL    Type:%s  Vendor:%s  Device:%s',
                 props.TYPE, props.VENDOR, props.NAME);
+
+    logger.trace('Device Sizes   WorkGroup:%d  WorkItem:%s', props.MAX_WORK_GROUP_SIZE,
+    // extract supported OpenCL version
+    props.MAX_CL_VERSION = props.VERSION.substring(7,10);
 
     logger.trace('Device Sizes   WorkGroup:%d  WorkItem:%s', props.MAX_WORK_GROUP_SIZE,
          props.MAX_WORK_ITEM_SIZES);
@@ -234,7 +239,12 @@ var compile = Q.promised(function (cl, source, kernels) {
         program = ocl.createProgramWithSource(cl.context, source);
         // Note: Include dir is not official webcl, won't work in the browser.
         var includeDir = path.resolve(__dirname, '..', 'kernels');
-        ocl.buildProgram(program, [cl.device], '-I ' + includeDir + ' -cl-fast-relaxed-math');
+        var clver = '';
+        // use OpenCL 2.0 if available
+        if (parseFloat(cl.deviceProps.MAX_CL_VERSION) >= 2.0 && ocl.VERSION_2_0) {
+            clver = ' -cl-std=CL2.0';
+        }
+        ocl.buildProgram(program, [cl.device], '-I ' + includeDir + ' -cl-fast-relaxed-math ' + clver);
 
         // create kernels
         try {

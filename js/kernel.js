@@ -8,7 +8,7 @@ var fs = require('fs');
 var util = require('./util');
 
 var cljs = require('./cl.js');
-var opencl = require('node-opencl');
+var ocl = require('node-opencl');
 var config = require('config')();
 
 var log         = require('common/logger.js');
@@ -153,13 +153,13 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 var arg = args[i];
                 var val = argValues[arg].val;
                 var dirty = argValues[arg].dirty;
-                var type = argTypes[arg];
+                var type = argTypes[arg] || "cl_mem";
                 if (val === null)
                     logger.trace('In kernel %s, argument %s is null', name, arg);
 
                 if (dirty) {
                     logger.trace('Setting arg %d of kernel %s to value %s', i, name, val);
-                    opencl.setKernelArg(kernel, i, val);
+                    ocl.setKernelArg(kernel, i, val, type);
                     argValues[arg].dirty = false;
                 }
             }
