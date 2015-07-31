@@ -191,6 +191,14 @@
 
                       <div class="divide-line"></div>
 
+                      <!--
+                      <a href="#" id="histogramPanel" data-container="body" data-toggle="tooltip" data-placement="right" title="Expand/Shrink Histogram Panel">
+                        <i class="fa fa-bar-chart fa-2x"></i>
+                      </a>
+
+                      <div class="divide-line"></div>
+                      -->
+
                       <a href="#" id="marqueerectangle" data-container="body" data-toggle="tooltip" data-placement="right" title="Move Nodes">
 
                               <i class="fa fa-square-o"></i>
@@ -519,29 +527,23 @@
 
 <script type="text/template" id="histogramTemplateNoDropdown">
     <div class="topMenu">
-        <div class="col-xs-1 expandButton">
+        <div class="col-xs-1 histogramButton expandButton">
             <a href="#">
-                <i class="fa fa-play expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
+                <i class="fa fa-play histogramButton expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
-        <div class="col-xs-9 attributeName">
+        <div class="col-xs-8 attributeName">
             {{attribute}}
         </div>
-        <div class="col-xs-1 closeButton">
+        <div class="col-xs-1 histogramButton closeButton">
             <a href="#">
-                <i class="fa fa-times closeHistogramButton" id="closeHistogramButton{{id}}" cid="{{id}}"></i>
+                <i class="fa fa-times histogramButton closeHistogramButton" id="closeHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
-    </div>
-    <div class="histogramFilter row">
-        <div class="col-xs-10 col-xs-offset-1">
-            {{#if continuousFilter}}
-                <input id="histogramContinuousFilter{{id}}" type="text" class="histogramContinuousFilter{{id}} filterSlider span4" data-slider-min="{{continuousFilter.min}}" data-slider-id="histogramContinuousSlider{{id}}" data-slider-max="{{continuousFilter.max}}" data-slider-step="{{continuousFilter.step}}" data-slider-value="[{{continuousFilter.min}},{{continuousFilter.max}}]"/>
-            {{else}}
-                {{#if discreteFilter}}
-                    <p>DISCRETE FILTER NOT IMPLEMENTED YET</p>
-                {{/if}}
-            {{/if}}
+        <div class="col-xs-1 histogramButton refreshButton refreshHistogramButton-{{attribute}}">
+            <a href="#">
+                <i class="fa fa-refresh histogramButton refreshHistogramButton refreshHistogramButton-{{attribute}}" id="refreshHistogramButton{{id}}" cid="{{id}}"></i>
+            </a>
         </div>
     </div>
     <div class="vizContainer"></div>
