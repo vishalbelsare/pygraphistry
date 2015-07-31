@@ -698,7 +698,7 @@ function handleHistogramDown (data, cb) {
             cb();
         }).subscribe(_.identity, util.makeErrorHandler('Histogram Filter Dragging'));
 
-    Rx.Observable.fromEvent($parent, 'mouseup')
+    Rx.Observable.fromEvent($(document.body), 'mouseup')
         .take(1)
         .do(function () {
             positionChanges.dispose();
