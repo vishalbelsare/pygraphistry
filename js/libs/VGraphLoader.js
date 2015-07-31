@@ -112,15 +112,16 @@ function load(graph, dataset) {
     return decoders[vg.version](graph, vg, dataset.metadata);
 }
 
-function loadDataframe(graph, amap) {
+function loadDataframe(graph, amap, numPoints, numEdges) {
     var edgeAttrs = _.pick(amap, function (value) {
         return value.target === EDGE;
     });
     var pointAttrs = _.pick(amap, function (value) {
         return value.target === VERTEX;
     });
-    graph.dataframe.load(edgeAttrs, 'edge');
-    graph.dataframe.load(pointAttrs, 'point');
+
+    graph.dataframe.load(edgeAttrs, 'edge', numEdges);
+    graph.dataframe.load(pointAttrs, 'point', numPoints);
 }
 
 function getAttributeMap(vg, attributes) {
@@ -143,7 +144,7 @@ function decode0(graph, vg, metadata)  {
           vg.version, vg.name, vg.nvertices, vg.nedges);
 
     var amap = getAttributeMap(vg);
-    loadDataframe(graph, amap);
+    loadDataframe(graph, amap, vg.nvertices, vg.nedges);
     logger.debug('Graph has attribute: %o', Object.keys(amap));
     var vertices = [];
     var edges = new Array(vg.nedges);

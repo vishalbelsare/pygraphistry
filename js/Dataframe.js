@@ -548,16 +548,17 @@ Dataframe.prototype.filter = function (masks, simulator) {
  * @param {Object} attributes
  * @param {string} type - any of [TYPES]{@link TYPES}
  */
-Dataframe.prototype.load = function (attributes, type) {
+Dataframe.prototype.load = function (attributes, type, numElements) {
 
     // Case of loading with no data.
-    if (_.keys(attributes).length === 0) {
-        return;
-    }
+    // if (_.keys(attributes).length === 0) {
+    //     return;
+    // }
 
     // TODO: Decoding at the presentation layer.
     // decodeStrings(attributes);
     // decodeDates(attributes);
+    console.log(_.keys(attributes));
 
     var nodeTitleField = getNodeTitleField(attributes);
     var edgeTitleField = getEdgeTitleField(attributes);
@@ -572,8 +573,6 @@ Dataframe.prototype.load = function (attributes, type) {
     var filteredAttributes = _.pick(attributes, function (value, key) {
         return filteredKeys.indexOf(key) > -1;
     });
-
-    var numElements = attributes[_.keys(attributes)[0]].values.length;
 
     this.rawdata.numElements[type] = numElements;
 
