@@ -80,7 +80,7 @@ function createParentLogger() {
    } else {
       streams = [
          { name: 'fatal', stream: process.stderr, level: 'fatal' },
-         { name: 'logfile', path: config.LOG_OUTPUT, level: config.LOG_LEVEL }
+         { name: 'logfile', path: config.LOG_FILE, level: config.LOG_LEVEL }
       ];
    }
 
