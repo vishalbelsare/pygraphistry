@@ -54,7 +54,7 @@ function errSerializer(e) {
    };
 
    if (e.cause && typeof (e.cause) === 'function') {
-      obj.cause = bunyanErrSerializer(e.cause);
+      obj.cause = errSerializer(e.cause);
    }
 
    return obj;
