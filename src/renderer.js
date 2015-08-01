@@ -283,9 +283,9 @@ function init(config, canvas, urlParams) {
         }
     }
 
-    resizeCanvas(state);
+    resizeCanvas(state, urlParams);
     window.addEventListener('resize', function () {
-        resizeCanvas(state);
+        resizeCanvas(state, urlParams);
     });
 
     var gl = createContext(state);
@@ -351,7 +351,7 @@ function enableExtensions(gl, extensions) {
 
 function createCamera(state, urlParams) {
     var canvas = state.get('canvas');
-    var pixelRatio = window.devicePixelRatio || 1;
+    var pixelRatio = urlParams.pixelRatio || window.devicePixelRatio || 1;
     var camConfig = state.get('config').get('camera');
 
     var bounds = camConfig.get('bounds');
@@ -403,7 +403,7 @@ function getItemsForTrigger(state, trigger) {
 /*
  * Update the size of the canvas to match what is visible
  */
-function resizeCanvas(state) {
+function resizeCanvas(state, urlParams) {
     var canvas = state.get('canvas');
     var camera = state.get('camera');
 
