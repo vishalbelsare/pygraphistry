@@ -14,7 +14,8 @@ var $               = window.$,
     Rx              = require('rx'),
     nodeutil        = require('util'),
     debug           = require('debug')('graphistry:StreamGL:main');
-                      require('./rx-jquery-stub');
+
+require('./rx-jquery-stub');
 
 var ui              = require('./ui.js');
 var vizApp          = require('./graphVizApp/vizApp.js');
@@ -95,7 +96,7 @@ debug('Parsed URL paramters:', urlParams);
 // Sets up event handlers to display socket errors + disconnects on screen
 function displayErrors(socket, $canvas) {
     socket.on('error', function(reason) {
-        ui.error('Connection error (reason:', reason, (reason||{}).description, ')');
+        ui.error('Connection error (reason:', reason, (reason || {}).description, ')');
     });
 
     socket.on('disconnect', function(reason){
@@ -184,10 +185,10 @@ function init(streamClient, canvasElement, vizType) {
         }).subscribe(
             _.identity,
             function (err) {
-                var msg = (err||{}).message || 'Error when connecting to visualization server. Try refreshing the page...';
+                var msg = (err || {}).message || 'Error when connecting to visualization server. Try refreshing the page...';
                 ui.error('Oops, something went wrong: ', msg);
                 ui.hideSpinnerShowBody();
-                console.error('General init error', err, (err||{}).stack);
+                console.error('General init error', err, (err || {}).stack);
             }
         );
 
@@ -220,14 +221,14 @@ function createInfoOverlay(app) {
 
         theme: 'transparent'
     });
-    app.subscribe(function (app) {
-        app.initialRenderState.get('renderPipeline').subscribe(function (evt) {
+    app.subscribe(function (subApp) {
+        subApp.initialRenderState.get('renderPipeline').subscribe(function (evt) {
             if (evt.rendered) {
                 renderMeter.tick();
             }
         },
-        function (err) { console.error('renderPipeline error', err, (err||{}).stack); });
-    }, function (err) { console.error('app error', err, (err||{}).stack); });
+        function (err) { console.error('renderPipeline error', err, (err || {}).stack); });
+    }, function (err) { console.error('app error', err, (err || {}).stack); });
 
 
     var networkMeterD =
@@ -261,7 +262,7 @@ function createInfoOverlay(app) {
                     break;
             }
         },
-        function (err) { console.error('app vboUpdates error', err, (err||{}).stack); });
+        function (err) { console.error('app vboUpdates error', err, (err || {}).stack); });
 }
 
 window.addEventListener('load', function() {
