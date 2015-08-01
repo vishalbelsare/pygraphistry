@@ -68,7 +68,7 @@ function errSerializer(e) {
 ////////////////////////////////////////////////////////////////////////////////
 
 function createParentLogger() {
-   var serializers = _.extend(bunyan.stdSerializers, {
+   var serializers = _.extend({}, bunyan.stdSerializers, {
       err: errSerializer
    });
 
