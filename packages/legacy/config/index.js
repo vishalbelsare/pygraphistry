@@ -156,7 +156,7 @@ function deployEnv(options) {
 
         VIZ_LISTEN_ADDRESS: '0.0.0.0',
 
-        LOG_OUTPUT: ('/var/log/graphistry-json/' + getProcessName() + '.log'),
+        LOG_FILE: '/var/log/graphistry-json/' + getProcessName() + '.log',
         LOG_LEVEL: 'info',
 
         MONGO_HOSTS: ['c48.lighthouse.2.mongolayer.com:10048', 'c48.lighthouse.3.mongolayer.com:10048'],
