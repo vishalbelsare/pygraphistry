@@ -17,23 +17,23 @@ var config = require('config')();
 var _stackRegExp = /at (?:(.+)\s+)?(?:\()?(?:(.+?):(\d+):(\d+)|([^)]+))(?:\))?/;
 
 function getFullErrorStack(ex) {
-   var framesStr = (ex.stack || ex.toString()).split('\n');
-   var framesObj = [];
+    var framesStr = (ex.stack || ex.toString()).split('\n');
+    var framesObj = [];
 
-   for(var i = 1; i < framesStr.length; i++) {
-      var matches = framesStr[i].match(_stackRegExp);
+    for(var i = 1; i < framesStr.length; i++) {
+        var matches = framesStr[i].match(_stackRegExp);
 
-      if(matches) {
-         framesObj.push({
-            file: matches[2] || null,
-            line: parseInt(matches[3], 10) || null,
-            column: parseInt(matches[4], 10) || null,
-            function: matches[1] || null
-         });
-      }
-   }
+        if(matches) {
+            framesObj.push({
+                file: matches[2] || null,
+                line: parseInt(matches[3], 10) || null,
+                column: parseInt(matches[4], 10) || null,
+                function: matches[1] || null
+            });
+        }
+    }
 
-   return framesObj;
+    return framesObj;
 }
 
 
@@ -41,23 +41,23 @@ function getFullErrorStack(ex) {
 // (Core error properties are enumerable in node 0.4, not in 0.6).
 // Modified error serializer
 function errSerializer(e) {
-   if (!e || !e.stack) {
-      return e;
-   }
+    if (!e || !e.stack) {
+        return e;
+    }
 
-   var obj = {
-      message: e.message,
-      name: e.name,
-      stack: getFullErrorStack(e),
-      code: e.code,
-      signal: e.signal
-   };
+    var obj = {
+        message: e.message,
+        name: e.name,
+        stack: getFullErrorStack(e),
+        code: e.code,
+        signal: e.signal
+    };
 
-   if (e.cause && typeof (e.cause) === 'function') {
-      obj.cause = errSerializer(e.cause);
-   }
+    if (e.cause && typeof (e.cause) === 'function') {
+        obj.cause = errSerializer(e.cause);
+    }
 
-   return obj;
+    return obj;
 }
 
 
@@ -68,30 +68,30 @@ function errSerializer(e) {
 ////////////////////////////////////////////////////////////////////////////////
 
 function createParentLogger() {
-   var serializers = _.extend({}, bunyan.stdSerializers, {
-      err: errSerializer
-   });
+    var serializers = _.extend({}, bunyan.stdSerializers, {
+        err: errSerializer
+    });
 
-   // Always starts with a stream that writes fatal errors to STDERR
-   var streams = [];
+    // Always starts with a stream that writes fatal errors to STDERR
+    var streams = [];
 
-   if(_.isUndefined(config.LOG_FILE)) {
-      streams = [{ name: 'stdout', stream: process.stdout, level: config.LOG_LEVEL }];
-   } else {
-      streams = [
-         { name: 'fatal', stream: process.stderr, level: 'fatal' },
-         { name: 'logfile', path: config.LOG_FILE, level: config.LOG_LEVEL }
-      ];
-   }
+    if(_.isUndefined(config.LOG_FILE)) {
+        streams = [{ name: 'stdout', stream: process.stdout, level: config.LOG_LEVEL }];
+    } else {
+        streams = [
+            { name: 'fatal', stream: process.stderr, level: 'fatal' },
+            { name: 'logfile', path: config.LOG_FILE, level: config.LOG_LEVEL }
+        ];
+    }
 
-   return bunyan.createLogger({
-      name: 'graphistry',
-      metadata: {
-         userInfo: { }
-      },
-      serializers: serializers,
-      streams: streams
-   });
+    return bunyan.createLogger({
+        name: 'graphistry',
+        metadata: {
+            userInfo: { }
+        },
+        serializers: serializers,
+        streams: streams
+    });
 }
 
 
