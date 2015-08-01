@@ -52,29 +52,41 @@ console.warn('%cWarning: having the console open can slow down execution signifi
  * @return GraphistryURLParams
  */
 function getUrlParameters() {
-    var sPageURL = window.location.search.substring(1),
-        sURLVariables = sPageURL.split('&'),
-        params = {};
-    _.forEach(sURLVariables, function(sURLVariable) {
-        var sParameterName = sURLVariable.split('=');
-        params[sParameterName[0]] = sParameterName[1];
-    });
+    var query = window.location.search.substring(1);
+    var queryParts = query.split('&');
 
-    return params;
+    return _.chain(queryParts)
+        .map(function decodeParam(param) {
+            var ps = param.split('=');
+
+            var key = decodeURIComponent(ps.shift());
+            var val = decodeURIComponent(ps.join('='));
+
+            // var valNorm = valRaw.toLowerCase();
+            switch(val.toLowerCase()) {
+                case 'true':
+                case 'yes':
+                case '':
+                    return [key, true];
+                case 'false':
+                case 'no':
+                    return [key, false];
+                case 'null':
+                    return [key, null];
+            }
+
+            if(!isNaN(parseFloat(val))) {
+                return [key, parseFloat(val)];
+            }
+
+            return [key, val];
+        })
+        .filter(function filterEmptyParams(paramKV) { return paramKV.length !== 0; })
+        .object()
+        .value();
 }
-
-
 var urlParams = getUrlParameters();
-
-
-function isParamTrue (param) {
-    var val = (urlParams[param] || '').toLowerCase();
-    return val === 'true' || val === '1' || val === 'yes';
-}
-function isParamFalse (param) {
-    var val = (urlParams[param] || '').toLowerCase();
-    return val === 'false' || val === '0' || val === 'no';
-}
+debug('Parsed URL paramters:', urlParams);
 
 
 //==================
@@ -184,7 +196,7 @@ function init(streamClient, canvasElement, vizType) {
 
 function createInfoOverlay(app) {
 
-    if (!isParamTrue('info')) {
+    if (!urlParams[1]) {
         return;
     }
 
@@ -272,15 +284,15 @@ window.addEventListener('load', function() {
         }
     }
 
-    debug('IS_OFFLINE', isParamTrue('offline'));
-    debug('IS_STATIC', isParamTrue('static'));
+    debug('IS_OFFLINE', urlParams.offline);
+    debug('IS_STATIC', urlParams.static);
     var streamClient = null;
-    if (isParamTrue('offline')) {
+    if (urlParams.offline) {
         streamClient = localClient;
         if (urlParams.basePath !== undefined) {
-            streamClient.setPath(decodeURIComponent(urlParams.basePath));
+            streamClient.setPath(urlParams.basePath);
         }
-    } else if (isParamTrue('static')) {
+    } else if (urlParams.static) {
         streamClient = staticClient;
     } else {
         streamClient = serverClient;
@@ -291,20 +303,20 @@ window.addEventListener('load', function() {
 
 
     // URL info parameter can ???
-    if (isParamTrue('info')) {
+    if (urlParams.info) {
         $('html').addClass('info');
     }
     // URL debug parameter can ???
-    if (isParamTrue('debug')) {
+    if (urlParams.debug) {
         $('html').addClass('debug');
     }
 
     // URL logo parameter can disable the logo via CSS:
-    if (isParamFalse('logo')) {
+    if (urlParams.logo === false) {
         $('html').addClass('nologo');
     }
     // URL menu parameter can disable the menu/marquee entirely via CSS:
-    if (isParamFalse('menu')) {
+    if (urlParams.menu === false) {
         $('html').addClass('nomenu');
     }
 

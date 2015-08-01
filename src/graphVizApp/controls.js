@@ -199,7 +199,7 @@ function createLegend($elt, urlParams) {
 
     var legend;
     try {
-        legend = JSON.parse(decodeURIComponent(urlParams.legend));
+        legend = JSON.parse(urlParams.legend);
     } catch (err) {
         console.error('Error parsing legend', err);
         return;
