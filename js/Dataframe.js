@@ -168,25 +168,33 @@ Dataframe.prototype.composeMasks = function (maskList) {
     };
 };
 
-Dataframe.prototype.getEdgeAttributeMask = function (attribute, start, stop) {
+Dataframe.prototype.getEdgeAttributeMask = function (attribute, params) {
     var attr = this.rawdata.attributes.edge[attribute];
     var edgeMask = [];
-    _.each(attr.values, function (val, idx) {
-        if (val >= start && val <= stop) {
-            edgeMask.push(idx);
-        }
-    });
+
+    if (params.start && params.stop) {
+        _.each(attr.values, function (val, idx) {
+            if (val >= params.start && val < params.stop) {
+                edgeMask.push(idx);
+            }
+        });
+    }
+
     return edgeMask;
 }
 
-Dataframe.prototype.getPointAttributeMask = function (attribute, start, stop) {
+Dataframe.prototype.getPointAttributeMask = function (attribute, params) {
     var attr = this.rawdata.attributes.point[attribute];
     var pointMask = [];
-    _.each(attr.values, function (val, idx) {
-        if (val >= start && val <= stop) {
-            pointMask.push(idx);
-        }
-    });
+
+    if (params.start && params.stop) {
+        _.each(attr.values, function (val, idx) {
+            if (val >= params.start && val < params.stop) {
+                pointMask.push(idx);
+            }
+        });
+    }
+
     return pointMask;
 };
 
