@@ -92,8 +92,14 @@ function sendHistogramFilters () {
     });
 
     Rx.Observable.fromCallback(globalSocket.emit, globalSocket)('filter', payload)
-        .do(function () {
+        .do(function (res) {
             // Invalidate cache now that a filter has executed and possibly changed indices.
+            if (!res.success && res.error === 'empty selection') {
+                $('#histogramErrors').html('<p style="color: red; text-align: center">Empty Selection.</p>');
+                return;
+            }
+
+            $('#histogramErrors').empty();
             globalPoi.emptyCache();
         })
         .subscribe(_.identity, util.makeErrorHandler('Emit Filter'));
