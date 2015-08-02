@@ -178,6 +178,13 @@ Dataframe.prototype.getEdgeAttributeMask = function (attribute, params) {
                 edgeMask.push(idx);
             }
         });
+
+    } else if (params.equals) {
+        _.each(attr.values, function (val, idx) {
+            if (_.contains(params.equals, val)) {
+                edgeMask.push(idx);
+            }
+        });
     }
 
     return edgeMask;
@@ -190,6 +197,13 @@ Dataframe.prototype.getPointAttributeMask = function (attribute, params) {
     if (params.start && params.stop) {
         _.each(attr.values, function (val, idx) {
             if (val >= params.start && val < params.stop) {
+                pointMask.push(idx);
+            }
+        });
+
+    } else if (params.equals) {
+        _.each(attr.values, function (val, idx) {
+            if (_.contains(params.equals, val)) {
                 pointMask.push(idx);
             }
         });
