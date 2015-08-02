@@ -69,14 +69,26 @@ function sendHistogramFilters () {
     var payload = {};
     _.each(histogramFilters, function (val, key) {
         var stats = globalStatsCache.sparkLines[key];
-        var type = stats.dataType;
-        var start = stats.minValue + (stats.binWidth * val.firstBin);
-        var stop = stats.minValue + (stats.binWidth * val.lastBin) + stats.binWidth;
-        payload[key] = {
-            start: start,
-            stop: stop,
-            type: type
-        };
+        var dataType = stats.dataType;
+        payload[key] = {};
+
+        if (stats.type === 'histogram') {
+            var start = stats.minValue + (stats.binWidth * val.firstBin);
+            var stop = stats.minValue + (stats.binWidth * val.lastBin) + stats.binWidth;
+            payload[key].start = start;
+            payload[key].stop = stop;
+        } else {
+            var list = [];
+            // TODO: Determine if this order is deterministic,
+            // and if not, explicitly send over a bin ordering from aggregate.
+            var binNames = _.keys(stats.bins);
+            for (var i = val.firstBin; i <= val.lastBin; i++) {
+                list.push(binNames[i]);
+            }
+            payload[key].equals = list;
+        }
+
+        payload[key].type = dataType;
     });
 
     Rx.Observable.fromCallback(globalSocket.emit, globalSocket)('filter', payload)
