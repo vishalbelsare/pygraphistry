@@ -515,31 +515,31 @@ Dataframe.prototype.filter = function (masks, simulator) {
         // This means we don't have to explicity overwrite everything.
 
         _.each(_.keys(rawdata.buffers.simulator), function (key) {
-            if (!newData.buffers.simulator[key]) {
+            if (newData.buffers.simulator[key] === undefined) {
                 newData.buffers.simulator[key] = rawdata.buffers.simulator[key];
             }
         });
 
         _.each(_.keys(rawdata.localBuffers), function (key) {
-            if (!newData.localBuffers[key]) {
+            if (newData.localBuffers[key] === undefined) {
                 newData.localBuffers[key] = rawdata.localBuffers[key];
             }
         });
 
         _.each(_.keys(rawdata.numElements), function (key) {
-            if (!newData.numElements[key]) {
+            if (newData.numElements[key] === undefined) {
                 newData.numElements[key] = rawdata.numElements[key];
             }
         });
 
         _.each(_.keys(rawdata.rendererBuffers), function (key) {
-            if (!newData.rendererBuffers[key]) {
+            if (newData.rendererBuffers[key] === undefined) {
                 newData.rendererBuffers[key] = rawdata.rendererBuffers[key];
             }
         });
 
         _.each(_.keys(rawdata.hostBuffers), function (key) {
-            if (!newData.hostBuffers[key]) {
+            if (newData.hostBuffers[key] === undefined) {
                 newData.hostBuffers[key] = rawdata.hostBuffers[key];
             }
         });
