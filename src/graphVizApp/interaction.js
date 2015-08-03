@@ -211,6 +211,12 @@ function setupCenter($toggle, curPoints, camera) {
             debug('click on center');
             return curPoints.take(1).map(function (curPoints) {
                 var points = new Float32Array(curPoints.buffer);
+
+                // Don't attempt to center when nothing is on screen
+                if (points.length < 1) {
+                    return camera;
+                }
+
                 var bbox = {
                     left: Number.MAX_VALUE, right: Number.MIN_VALUE,
                     top: Number.MAX_VALUE, bottom: Number.MIN_VALUE
