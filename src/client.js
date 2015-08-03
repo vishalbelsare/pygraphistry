@@ -288,9 +288,10 @@ function handleVboUpdates(socket, uri, renderState) {
 
         var thisStep = {step: vboUpdateStep++, data: data.step};
 
-        $('#graph-node-count').text(data.elements.pointculled || data.elements.uberpointculled);
+        // TODO: Pull this out of VBO client into the primary app.
+        $('#graph-node-count').text(data.elements.pointculled || data.elements.uberpointculled || 0);
         var numEdges = (data.elements.edgeculled || data.elements.edgeculledindexed ||
-                        data.elements.edgeculledindexedclient || data.elements.indexeddummy) / 2;
+                        data.elements.edgeculledindexedclient || data.elements.indexeddummy || 0) / 2;
         $('#graph-edge-count').text(numEdges);
 
         try {
@@ -335,7 +336,7 @@ function handleVboUpdates(socket, uri, renderState) {
 
                     debug('5a. got all VBO data', Date.now() - now, 'ms', bindings, thisStep);
                     //TODO may be able to move this early
-                    socket.emit('received_buffers'); 
+                    socket.emit('received_buffers');
 
                     try {
                         _.each(data.elements, function (num, itemName) {
