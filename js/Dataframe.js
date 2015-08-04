@@ -172,14 +172,14 @@ Dataframe.prototype.getEdgeAttributeMask = function (attribute, params) {
     var attr = this.rawdata.attributes.edge[attribute];
     var edgeMask = [];
 
-    if (params.start && params.stop) {
+    if (params.start !== undefined && params.stop !== undefined) {
         _.each(attr.values, function (val, idx) {
             if (val >= params.start && val < params.stop) {
                 edgeMask.push(idx);
             }
         });
 
-    } else if (params.equals) {
+    } else if (params.equals !== undefined) {
         _.each(attr.values, function (val, idx) {
             if (_.contains(params.equals, val)) {
                 edgeMask.push(idx);
@@ -194,14 +194,14 @@ Dataframe.prototype.getPointAttributeMask = function (attribute, params) {
     var attr = this.rawdata.attributes.point[attribute];
     var pointMask = [];
 
-    if (params.start && params.stop) {
+    if (params.start !== undefined && params.stop !== undefined) {
         _.each(attr.values, function (val, idx) {
             if (val >= params.start && val < params.stop) {
                 pointMask.push(idx);
             }
         });
 
-    } else if (params.equals) {
+    } else if (params.equals !== undefined) {
         _.each(attr.values, function (val, idx) {
             if (_.contains(params.equals, val)) {
                 pointMask.push(idx);
@@ -247,9 +247,9 @@ Dataframe.prototype.filter = function (masks, simulator) {
     logger.debug('Starting Filter');
 
     // Check for edge case where nothing was selected
-    if (masks.point.length === 0 && masks.edge.length === 0) {
-        return;
-    }
+    // if (masks.point.length === 0 && masks.edge.length === 0) {
+    //     return;
+    // }
 
     var start = Date.now();
 
@@ -408,7 +408,6 @@ Dataframe.prototype.filter = function (masks, simulator) {
     //////////////////////////////////
 
     var tempPrevForces = new Float32Array(that.typedArrayCache.tempPrevForces.buffer, 0, oldNumPoints * 2);
-    var tempDegrees = new Uint32Array(that.typedArrayCache.tempDegrees.buffer, 0, oldNumPoints);
     var tempSpringsPos = new Float32Array(that.typedArrayCache.tempSpringsPos.buffer, 0, oldNumEdges * 4);
     var tempEdgeWeights = new Float32Array(that.typedArrayCache.tempEdgeWeights.buffer, 0, oldNumEdges * 2);
     var tempCurPoints = new Float32Array(that.typedArrayCache.tempCurPoints.buffer, 0, oldNumPoints * 2);
@@ -424,7 +423,6 @@ Dataframe.prototype.filter = function (masks, simulator) {
 
     return Q.all([
         rawSimBuffers.prevForces.read(tempPrevForces),
-        rawSimBuffers.degrees.read(tempDegrees),
         rawSimBuffers.springsPos.read(tempSpringsPos),
         rawSimBuffers.edgeWeights.read(tempEdgeWeights),
         filteredSimBuffers.curPoints.read(tempCurPoints)
@@ -467,7 +465,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
             newPrevForces[i*2] = tempPrevForces[oldIdx*2];
             newPrevForces[i*2 + 1] = tempPrevForces[oldIdx*2 + 1];
 
-            newDegrees[i] = tempDegrees[oldIdx];
+            newDegrees[i] = forwardsEdges.degreesTyped[i] + backwardsEdges.degreesTyped[i];
 
             newCurPoints[i*2] = that.lastPointPositions[oldIdx*2];
             newCurPoints[i*2 + 1] = that.lastPointPositions[oldIdx*2 + 1];
