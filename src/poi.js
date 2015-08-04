@@ -251,6 +251,7 @@ function emptyCache (instance) {
     instance.state.labelCache = {};
     _.each(instance.state.activeLabels, function (val, key) {
         instance.state.inactiveLabels.push(val);
+        val.elt.css('display','none');
         delete instance.state.activeLabels[key];
     });
 }
