@@ -301,7 +301,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
 
     var unsortedEdgeMask = new Uint32Array(that.typedArrayCache.unsortedEdgeMask.buffer, 0, masks.edge.length);
 
-    var map = rawdata.hostBuffers.forwardsEdges.edgePermutation;
+    var map = rawdata.hostBuffers.forwardsEdges.edgePermutationInverseTyped;
     for (var i = 0; i < masks.edge.length; i++) {
         unsortedEdgeMask[i] = map[masks.edge[i]];
     }
@@ -1311,7 +1311,7 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
     var mapped = new Uint32Array(edges.length / 2);
 
     // If we're filtering and have information on unfiltered data.
-    if (oldEncapsulated && masks) {
+    if (false && oldEncapsulated && masks) {
         var oldEdges = oldEncapsulated.edgesTyped;
         var oldPermutation = oldEncapsulated.edgePermutation;
         var lastOldIdx = 0;
