@@ -1311,10 +1311,23 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
     var mapped = new Uint32Array(edges.length / 2);
 
     // If we're filtering and have information on unfiltered data.
-    if (false && oldEncapsulated && masks) {
+    if (oldEncapsulated && masks) {
         var oldEdges = oldEncapsulated.edgesTyped;
         var oldPermutation = oldEncapsulated.edgePermutation;
         var lastOldIdx = 0;
+
+        // Lookup to see if an edge is included.
+        var edgeLookup = {};
+        for (var i = 0; i < edges.length/2; i++) {
+            var src = edges[i*2];
+            var dst = edges[i*2 + 1];
+            if (!edgeLookup[src]) {
+                edgeLookup[src] = [];
+            }
+            edgeLookup[src].push(dst);
+        }
+
+
         var mappedMaskInverse = new Uint32Array(oldPermutation.length);
         for (var i = 0; i < mappedMaskInverse.length; i++) {
             mappedMaskInverse[i] = 1;
@@ -1322,10 +1335,11 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
 
         for (var i = 0; i < edges.length/2; i++) {
             while (lastOldIdx < oldEdges.length/2) {
+
                 var src = pointOriginalLookup[oldEdges[lastOldIdx*2]];
                 var dst = pointOriginalLookup[oldEdges[lastOldIdx*2 + 1]];
 
-                if (src !== undefined && dst !== undefined) {
+                if ( edgeLookup[src] && edgeLookup[src].indexOf(dst) > -1 ) {
                     edgeListTyped[i*2] = src;
                     edgeListTyped[i*2 + 1] = dst;
                     mapped[i] = oldPermutation[lastOldIdx];
