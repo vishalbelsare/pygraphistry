@@ -249,6 +249,10 @@ function getLabelDom (instance, data) {
 // Invalidates Cache but does not attempt to refill.
 function emptyCache (instance) {
     instance.state.labelCache = {};
+    _.each(instance.state.activeLabels, function (val, key) {
+        instance.state.inactiveLabels.push(val);
+        delete instance.state.activeLabels[key];
+    });
 }
 
 // ?[ idx ] -> bool
