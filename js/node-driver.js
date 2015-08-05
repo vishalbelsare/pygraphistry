@@ -382,6 +382,23 @@ function create(dataset) {
     };
 }
 
+function extendDataVersions (data, bufferVersions, graph) {
+    var versions = data.versions;
+
+    _.each(_.keys(bufferVersions), function (key) {
+        if (versions[key] === undefined) {
+            versions[key] = bufferVersions[key];
+        }
+    });
+    _.each(_.keys(graph.simulator.versions.buffers), function (key) {
+        if (versions[key] === undefined) {
+            versions[key] = graph.simulator.versions.buffers[key];
+        }
+    });
+
+    return data;
+}
+
 
 /**
  * Fetches compressed VBO data and # of elements for active buffers and programs
@@ -405,6 +422,19 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
             return clientVersion < liveVersion;
         });
     bufferNames = neededBuffers;
+
+    if (bufferNames.length === 0) {
+        var obj = {
+            compressed: [],
+            uncompressed: [],
+            elements: [],
+            bufferByteLengths: [],
+            versions: []
+        };
+        extendDataVersions(obj, bufferVersions, graph);
+        logger.debug('fetchData has no requested buffers. Returning empty arrays.');
+        return Rx.Observable.from([obj]);
+    }
 
     perf.startTiming('fetchVBOs_durationMS');
     return Rx.Observable.fromPromise(fetchVBOs(graph, renderConfig, bufferNames, counts))
@@ -466,20 +496,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
                         bufferNames,
                         bufferNames.map(function (_, i) {  return compressedVbos[i].version; })));
 
-            // want all versions
-            // First check if it existed from earlier, otherwise copy in from simulator
-            _.each(_.keys(bufferVersions), function (key) {
-                if (versions[key] === undefined) {
-                    versions[key] = bufferVersions[key];
-                }
-            });
-            _.each(_.keys(graph.simulator.versions.buffers), function (key) {
-                if (versions[key] === undefined) {
-                    versions[key] = graph.simulator.versions.buffers[key];
-                }
-            });
-
-            return {
+            var bundledData = {
                 compressed: buffers,
                 uncompressed: uncompressed,
                 elements: elements,
@@ -487,6 +504,8 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
                 versions: versions
             };
 
+            extendDataVersions(bundledData, bufferVersions, graph);
+            return bundledData;
         });
 });
 }
