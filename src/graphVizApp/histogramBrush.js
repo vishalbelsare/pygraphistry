@@ -56,13 +56,13 @@ var histogramFilters = {};
 var globalSocket;
 var globalPoi;
 
-function updateHistogramFilters (attr, firstBin, lastBin, redraw) {
+function updateHistogramFilters (attr, id, firstBin, lastBin, redraw) {
     histogramFilters[attr] = {
         firstBin: firstBin,
         lastBin: lastBin,
         redraw: redraw
     };
-    $('.refreshHistogramButton-'+attr).css('display', 'block');
+    $('.refreshHistogramButton-'+id).css('display', 'block');
 }
 
 function sendHistogramFilters () {
@@ -202,6 +202,7 @@ function init(socket, marquee, poi) {
             var params = {
                 fields: attributes,
                 attribute: this.model.attributes.attribute,
+                modelId: this.model.cid,
                 id: this.cid
             };
 
@@ -230,7 +231,8 @@ function init(socket, marquee, poi) {
 
         refresh: function() {
             var attribute = this.model.get('attribute');
-            $('.refreshHistogramButton-'+attribute).css('display', 'none');
+            var id = this.cid;
+            $('.refreshHistogramButton-'+id).css('display', 'none');
             var redraw = histogramFilters[attribute].redraw;
             delete histogramFilters[attribute];
             sendHistogramFilters();
@@ -606,6 +608,7 @@ function updateSparkline($el, model, attribute) {
     var width = $el.width() - marginSparklines.left - marginSparklines.right;
     var height = $el.height() - marginSparklines.top - marginSparklines.bottom;
     var data = model.attributes.data;
+    var id = model.cid;
     var globalStats = model.attributes.globalStats.sparkLines[attribute];
     var bins = data.bins || []; // Guard against empty bins.
     var globalBins = globalStats.bins || [];
@@ -660,7 +663,7 @@ function updateSparkline($el, model, attribute) {
             .attr('height', height)
             .attr('fill', '#556ED4')
             .attr('opacity', updateOpacity)
-            .on('mousedown', handleHistogramDown.bind(null, mouseClickData, filterCallback))
+            .on('mousedown', handleHistogramDown.bind(null, mouseClickData, filterCallback, id))
             .on('mouseover', toggleTooltips.bind(null, true))
             .on('mouseout', toggleTooltips.bind(null, false));
 
@@ -695,14 +698,14 @@ function updateSparkline($el, model, attribute) {
 
 }
 
-function handleHistogramDown (data, cb) {
+function handleHistogramDown (data, cb, id) {
     var col = d3.select(d3.event.target.parentNode);
     var $element = $(col[0][0]);
     var $parent = $element.parent();
 
     var startBin = $element.attr('binnumber');
     var attr = $element.attr('attribute');
-    updateHistogramFilters(attr, startBin, startBin, cb);
+    updateHistogramFilters(attr, id, startBin, startBin, cb);
 
     var positionChanges = Rx.Observable.fromEvent($parent, 'mouseover')
         .map(function (evt) {
@@ -712,7 +715,7 @@ function handleHistogramDown (data, cb) {
             var ends = [+startBin, +binNum];
             var firstBin = _.min(ends);
             var lastBin = _.max(ends);
-            updateHistogramFilters(attr, firstBin, lastBin, cb);
+            updateHistogramFilters(attr, id, firstBin, lastBin, cb);
             cb();
         }).subscribe(_.identity, util.makeErrorHandler('Histogram Filter Dragging'));
 
@@ -868,6 +871,7 @@ function initializeHistogramViz($el, model) {
     var width = $el.width();
     var height = $el.height(); // TODO: Get this more naturally.
     var data = model.attributes.data;
+    var id = model.cid;
     var attribute = model.attributes.attribute;
     var globalStats = model.attributes.globalStats.histograms[attribute];
     var name = model.get('attribute');
@@ -907,11 +911,11 @@ function initializeHistogramViz($el, model) {
 
     svg.append('g')
         .attr('class', 'y axis')
-        .attr('id', 'yaxis-' + attribute)
+        .attr('id', 'yaxis-' + id)
         .attr('transform', 'translate(' + (width + 4) + ',0)')
         .call(yAxis);
 
-    d3.select('#yaxis-' + attribute)
+    d3.select('#yaxis-' + id)
         .selectAll('text')
         .attr('data-container', 'body')
         .attr('data-placement', 'left')
@@ -920,7 +924,7 @@ function initializeHistogramViz($el, model) {
             return fullTitles[d];
         });
 
-    d3.select('#yaxis-' + attribute)
+    d3.select('#yaxis-' + id)
         .selectAll('text')
         .on('mouseover', function () {
             var target = d3.event.target;
