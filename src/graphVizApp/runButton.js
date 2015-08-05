@@ -54,10 +54,7 @@ module.exports = function (appState, socket, urlParams, isAutoCentering) {
     runLayout
         .subscribe(
             function () {
-                // TODO: Get this more elegantly, or deal with it on the server.
-                if (appState.renderingScheduler.appSnapshot.buffers.curPoints.length !== 0) {
-                    socket.emit('interaction', {play: true, layout: true});
-                }
+                socket.emit('interaction', {play: true, layout: true});
             },
             util.makeErrorHandler('Error stimulating graph'));
 
