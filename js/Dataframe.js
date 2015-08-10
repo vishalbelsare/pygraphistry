@@ -482,11 +482,12 @@ Dataframe.prototype.filter = function (masks, simulator) {
             newEdgeWeights[i*2 + 1] = tempEdgeWeights[oldIdx*2 + 1];
         }
 
-        _.each(['curPoints', 'prevForces', 'degrees', 'forwardsEdges', 'forwardsDegrees',
-                'forwardsWorkItems', 'forwardsEdgeStartEndIdxs', 'backwardsEdges',
-                'backwardsDegrees', 'backwardsWorkItems', 'backwardsEdgeStartEndIdxs',
-                'springsPos', 'edgeWeights'
-                ], function (key) {
+        var someBufferPropertyNames = ['curPoints', 'prevForces', 'degrees', 'forwardsEdges', 'forwardsDegrees',
+            'forwardsWorkItems', 'forwardsEdgeStartEndIdxs', 'backwardsEdges',
+            'backwardsDegrees', 'backwardsWorkItems', 'backwardsEdgeStartEndIdxs',
+            'springsPos', 'edgeWeights'
+        ];
+        _.each(someBufferPropertyNames, function (key) {
 
             newData.buffers.simulator[key] = that.filteredBufferCache.simulator[key];
         });
