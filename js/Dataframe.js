@@ -1012,7 +1012,7 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
         return [attribute, process(attribute, indices)];
     }));
 
-    return aggregated;
+    return Q(aggregated);
 };
 
 
