@@ -39,7 +39,7 @@ function Cache(cacheDir, enabled) {
                 res.reject();
             }
         }).fail(function (err) {
-            logger.error(err, 'No matching dataset found in cache');
+            logger.debug(err, 'No matching dataset found in cache');
             res.reject(err);
         });
 
