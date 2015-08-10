@@ -133,18 +133,20 @@ module.exports =
                 {ContentType: 'application/json'});
             uploadPublic(snapshotPath + 'metadata.json', JSON.stringify(metadata),
                 {ContentType: 'application/json'});
-            uploadPublic(snapshotPath + 'curPoints.vbo', compressedVBOs.curPoints,
-                {should_compress: false});
-            uploadPublic(snapshotPath + 'springsPos.vbo', compressedVBOs.springsPos,
-                {should_compress: false});
-            uploadPublic(snapshotPath + 'edgeColors.vbo', compressedVBOs.edgeColors,
-                {should_compress: false});
-            uploadPublic(snapshotPath + 'pointSizes.vbo', compressedVBOs.pointSizes,
-                {should_compress: false});
-            uploadPublic(snapshotPath + 'pointColors.vbo', compressedVBOs.pointColors,
-                {should_compress: false});
-            uploadPublic(snapshotPath + 'logicalEdges.vbo', compressedVBOs.logicalEdges,
-                {should_compress: false});
+            var vboAttributes = [
+                'curPoints',
+                'springsPos',
+                'edgeColors',
+                'pointSizes',
+                'pointColors',
+                'logicalEdges'
+            ];
+            _.each(vboAttributes, function(attributeName) {
+                if (compressedVBOs.hasOwnProperty(attributeName) && !_.isUndefined(compressedVBOs[attributeName])) {
+                    uploadPublic(snapshotPath + attributeName + '.vbo', compressedVBOs[attributeName],
+                        {should_compress: false});
+                }
+            });
             uploadPublic(snapshotPath + 'pointLabels.offsets', pointExport.indexes,
                 {should_compress: false});
             uploadPublic(snapshotPath + 'pointLabels.buffer', pointExport.contents,
