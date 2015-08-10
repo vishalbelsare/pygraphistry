@@ -612,7 +612,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     var finalCenter = (function () {
         var flag = urlParams.center;
-        return flag === undefined || flag.toLowerCase() === 'true';
+        return flag === undefined || flag.toString().toLowerCase() === 'true';
     }());
 
 
