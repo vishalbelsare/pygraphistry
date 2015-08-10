@@ -135,8 +135,11 @@ module.exports =
                 {ContentType: 'application/json'});
             var vboAttributes = [
                 'curPoints',
+                'curMidPoints',
                 'springsPos',
                 'edgeColors',
+                'forwardsEdgeStartEndIdxs',
+                'backwardsEdgeStartEndIdxs',
                 'pointSizes',
                 'pointColors',
                 'logicalEdges'
