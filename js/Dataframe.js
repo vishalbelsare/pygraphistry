@@ -510,8 +510,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
         ]);
     }).then(function () {
 
-        // Just in case, copy over references from rawdata to newData
-        // This means we don't have to explicity overwrite everything.
+        // Just in case, copy over references from raw data to newData
+        // This means we don't have to explicitly overwrite everything.
 
         _.each(_.keys(rawdata.buffers.simulator), function (key) {
             if (newData.buffers.simulator[key] === undefined) {
@@ -893,7 +893,7 @@ Dataframe.prototype.getRowsCompact = function (indices, type) {
 Dataframe.prototype.getDataType = function (column, type) {
     // Assumes that types don't change after filtering
     return this.rawdata.attributes[type][column].type;
-}
+};
 
 Dataframe.prototype.getColumn = function (column, type) {
 

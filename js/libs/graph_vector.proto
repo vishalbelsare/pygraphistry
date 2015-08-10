@@ -10,7 +10,9 @@ message VectorGraph {
   required uint32 nedges = 5;
   
   message Edge {
+    // Encodes which column to use for the source of the edges.
     required uint32 src = 1;
+    // Encodes which column to use for the destination of the edges.
     required uint32 dst = 2;
   }
   repeated Edge edges = 6;
