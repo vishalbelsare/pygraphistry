@@ -290,8 +290,6 @@ function init(config, canvas, urlParams) {
 
     var gl = createContext(state);
     state = state.set('gl', gl);
-    var ext = enableExtensions(gl, ['OES_element_index_uint']);
-    state = state.set('ext', ext);
     setGlOptions(state);
 
     state = createPrograms(state);
