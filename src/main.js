@@ -87,7 +87,7 @@ function getUrlParameters() {
         .value();
 }
 var urlParams = getUrlParameters();
-debug('Parsed URL paramters:', urlParams);
+debug('Parsed URL parameters:', urlParams);
 
 
 //==================
