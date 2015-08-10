@@ -610,6 +610,9 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var numTicks = urlParams.play !== undefined ? urlParams.play : 5000;
 
 
+    /**
+     * Returns whether camera auto-centering is specified; defaults to true.
+     */
     var finalCenter = (function () {
         var flag = urlParams.center;
         return flag === undefined || flag.toString().toLowerCase() === 'true';
