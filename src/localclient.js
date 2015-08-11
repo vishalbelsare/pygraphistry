@@ -11,6 +11,7 @@ var Rx           = require('rx');
 var _            = require('underscore');
 
 var renderer     = require('./renderer.js');
+var caption      = require('./caption.js');
 
 
 //======
@@ -108,10 +109,7 @@ module.exports = {
             .do(function (data) {
                 debug('got metadata', data);
 
-                $('#graph-node-count').text(data.elements.pointculled);
-                var numEdges = (data.elements.edgeculled || data.elements.edgeculledindexed ||
-                                data.elements.edgeculledindexedclient) / 2;
-                $('#graph-edge-count').text(numEdges);
+                caption.renderCaptionFromData(data);
 
                 vboUpdates.onNext('start');
 

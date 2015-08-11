@@ -14,6 +14,7 @@ var _            = require('underscore');
 var io           = require('socket.io-client');
 
 var renderer     = require('./renderer.js');
+var caption      = require('./caption.js');
 
 
 /**
@@ -253,19 +254,6 @@ function createRenderer(socket, canvas, urlParams) {
 
 
 /**
- * Takes the vbo_update data argument and updates the DOM directly to summarize.
- * TODO: make this an Rx-dependent model/view component.
- */
-function renderGraphCaption(data) {
-    var numNodes = data.elements.pointculled || data.elements.uberpointculled || 0,
-        numEdges = (data.elements.edgeculled || data.elements.edgeculledindexed ||
-            data.elements.edgeculledindexedclient || data.elements.indexeddummy || 0) / 2;
-    $('#graph-node-count').text(numNodes);
-    $('#graph-edge-count').text(numEdges);
-}
-
-
-/**
  * Sets up event loop to receive VBO update messages from the server, load them onto the GPU and
  * render them.
  *
@@ -300,7 +288,7 @@ function handleVboUpdates(socket, uri, renderState) {
 
         var thisStep = {step: vboUpdateStep++, data: data.step};
 
-        renderGraphCaption(data);
+        caption.renderCaptionFromData(data);
 
         try {
             debug('1. VBO update', thisStep);
