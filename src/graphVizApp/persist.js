@@ -65,7 +65,7 @@ module.exports = function (socket, urlParams) {
         .do(function (pair) {
             var reply = pair.reply;
             if (!(reply && reply.success)) {
-                throw new Error({msg: 'Server error on inspectHeader', v: (reply || {}).error});
+                throw new Error({msg: 'Server error on inspectHeader', v: (reply || {error: 'unknown'}).error});
             }
             var $modal = pair.$modal,
                 url = nameToLink(urlParams, reply.name);
