@@ -9,6 +9,7 @@ var cljs = require('./cl.js');
 var MoveNodes = require('./moveNodes.js');
 var SelectNodes = require('./selectNodes.js');
 var SpringsGather = require('./springsGather.js');
+var HistogramKernel = require('./histogramKernel.js');
 var webcl = require('node-webcl');
 var Color = require('color');
 
@@ -72,6 +73,7 @@ function create(dataframe, renderer, device, vendor, cfg) {
             simObj.otherKernels = {
                 moveNodes: new MoveNodes(cl),
                 selectNodes: new SelectNodes(cl),
+                histogramKernel: new HistogramKernel(cl),
                 springsGather: new SpringsGather(cl)
             };
             simObj.tilesPerIteration = 1;

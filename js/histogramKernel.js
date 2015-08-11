@@ -7,56 +7,100 @@ var    cljs = require('./cl.js'),
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:cl:histogramKernel');
 
+var MAX_NUM_BINS = 256;
+
 function HistogramKernel(clContext) {
     logger.trace('Creating histogram kernel');
 
-    var args = ['top', 'left', 'bottom', 'right', 'positions', 'mask'];
+    var args = ['numBins', 'dataSize', 'check', 'binStart', 'data', 'output',
+            'outputSum', 'outputMean', 'outputMax', 'outputMin'
+    ];
     var argsType = {
-        top: cljs.types.float_t,
-        left: cljs.types.float_t,
-        bottom: cljs.types.float_t,
-        right: cljs.types.float_t,
-        positions: null,
-        mask:null
-    }
-    this.selectNodes = new Kernel('selectNodes', args, argsType, 'selectNodes.cl', clContext);
+        numBins: cljs.types.uint_t,
+        dataSize: cljs.types.uint_t,
+        check: null,
+        binStart: null,
+        data: null,
+        output: null,
+        outputSum: null,
+        outputMean: null,
+        outputMax: null,
+        outputMin: null
+    };
+
+    this.histogramKernel = new Kernel('histogram', args, argsType, 'histogram.cl', clContext);
 }
 
 
-SelectNodes.prototype.run = function (simulator, selection, delta) {
+HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataTyped, bins) {
     var that = this;
-    var numPoints = simulator.dataframe.getNumElements('point');
 
-    if (!that.qMask) {
-        that.bytes = numPoints * Uint8Array.BYTES_PER_ELEMENT;
-        that.qMask = simulator.cl.createBuffer(that.bytes, 'mask');
+    // TODO: Take in type(s) to run as an argument.
+    var checkTyped = new Uint32Array([0]);
+    checkTyped[0] = checkTyped[0] | (1);
+
+    if (!that.qBuffers) {
+        var maxSizeInput = Math.max(simulator.dataframe.rawdata.numElements.point, simulator.dataframe.rawdata.numElements.edge);
+        var maxSizeOutput = MAX_NUM_BINS;
+        var maxBytesInput = maxSizeInput * Float32Array.BYTES_PER_ELEMENT;
+        var maxBytesOutput = maxSizeOutput * Float32Array.BYTES_PER_ELEMENT;
+        that.qBuffers = [
+            simulator.cl.createBuffer(maxBytesOutput, 'histogram_output'),
+            simulator.cl.createBuffer(maxBytesOutput, 'histogram_outputSum'),
+            imulator.cl.createBuffer(maxBytesOutput, 'histogram_outputMean'),
+            simulator.cl.createBuffer(maxBytesOutput, 'histogram_outputMax'),
+            simulator.cl.createBuffer(maxBytesOutput, 'histogram_outputMin'),
+            simulator.cl.createBuffer(maxBytesInput, 'histogram_data'),
+            simulator.cl.createBuffer(maxBytesOutput, 'histogram_binStart'),
+            simulator.cl.createBuffer(4, 'histogram_check')
+        ];
     }
 
-    return that.qMask.then(function (mask) {
-        logger.trace('Computing selection mask');
-        var resources = [simulator.dataframe.getBuffer('curPoints', 'simulator')];
+    return Q.all(that.qBuffers).spread(function (
+            output, outputSum, outputMean, outputMax, outputMin, data, binStart, check
+    ){
+        logger.trace('Running historam kernel');
+        that.buffers = {
+            output: output,
+            outputSum: outputSum,
+            outputMean: outputMean,
+            outputMax: outputMax,
+            outputMin: outputMin,
+            data: data,
+            binStart: binStart,
+            check: check
+        };
 
-        that.selectNodes.set({
-            top: selection.tl.y,
-            left: selection.tl.x,
-            bottom: selection.br.y,
-            right: selection.br.x,
-            positions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
-            mask: mask.buffer
+        that.histogramKernel.set({
+            numBins: numBins,
+            dataSize: dataSize,
+            output: output.buffer,
+            outputSum: outputSum.buffer,
+            outputMean: outputMean.buffer,
+            outputMax: outputMax.buffer,
+            outputMin: outputMin.buffer,
+            data: data.buffer,
+            binStart: binStart.buffer,
+            check: check.buffer
         });
 
-        simulator.tickBuffers(['nextPoints', 'curPoints']);
-
-        logger.trace('Running selectNodes');
-        return that.selectNodes.exec([numPoints], resources)
+        return Q.all([
+            data.write(dataTyped),
+            binStart.write(bins),
+            check.write(checkTyped)
+        ]).fail(log.makeQErrorHandler(logger, 'Writing to buffers for histogram kernel failed'));
+    }).then(function () {
+        return that.histogramKernel.exec([dataSize], resources)
             .then(function () {
-                var result = new Uint8Array(that.bytes);
-                return mask.read(result).then(function () {
-                    return result;
+                var retOutput = new Int32Array(numBins * Int32Array.BYTES_PER_ELEMENT);
+                // TODO: Return all outputs, not just count;
+                return that.buffers.output.read(retOutput).then(function () {
+                    return retOutput;
                 });
-            }).fail(log.makeQErrorHandler(logger, 'Kernel selectNodes failed'));
-    }).fail(log.makeQErrorHandler(logger, 'Node selection failed'));
+
+            }).fail(log.makeQErrorHandler(logger, 'Kernel histogram failed'));
+    }).fail(log.makeQErrorHandler(logger, 'Histogram Failed'));
 
 }
 
-module.exports = SelectNodes;
+module.exports = HistogramKernel;

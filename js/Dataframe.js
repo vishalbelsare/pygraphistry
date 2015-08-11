@@ -4,7 +4,6 @@ var _ = require('underscore');
 var dateFormat = require('dateformat');
 var Q = require('q');
 var fs = require('fs');
-var Q = require('q');
 
 var log = require('common/logger.js');
 var logger = log.createLogger('graph-viz:dataframe');
@@ -981,7 +980,7 @@ Dataframe.prototype.serializeColumns = function (target, options) {
 // [int] * ?[ string ] * ?{string -> ??} * ?{countBy, ??} * {point, edge, undefined}
 // -> ??
 //undefined type signifies both nodes and edges
-Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, type) {
+Dataframe.prototype.aggregate = function (simulator, indices, attributes, binning, mode, type) {
 
     var that = this;
 
@@ -992,9 +991,9 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
         var dataType = that.getDataType(attribute, type);
 
         if (mode !== 'countBy' && dataType !== 'string') {
-            return that.histogram(attribute, binningHint, goalNumberOfBins, indices, type);
+            return that.histogram(simulator, attribute, binningHint, goalNumberOfBins, indices, type);
         } else {
-            return that.countBy(attribute, binningHint, indices, type);
+            return that.countBy(simulator, attribute, binningHint, indices, type);
         }
     }
 
@@ -1016,7 +1015,7 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
 };
 
 
-Dataframe.prototype.countBy = function (attribute, binning, indices, type) {
+Dataframe.prototype.countBy = function (simulator, attribute, binning, indices, type) {
     var values = this.getColumn(attribute, type);
 
     // TODO: Get this value from a proper source, instead of hard coding.
@@ -1140,7 +1139,7 @@ function calculateBinning(numValues, values, indices, goalNumberOfBins) {
 }
 
 
-Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, indices, type) {
+Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNumberOfBins, indices, type) {
     // Binning has binWidth, minValue, maxValue, and numBins
 
     // Disabled because filtering is expensive, and we now have type safety coming from
