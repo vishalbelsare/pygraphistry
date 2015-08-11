@@ -1007,11 +1007,18 @@ Dataframe.prototype.aggregate = function (simulator, indices, attributes, binnin
         return validAttributes.indexOf(val) > -1;
     });
 
-    var aggregated = _.object(_.map(keysToAggregate, function (attribute) {
-        return [attribute, process(attribute, indices)];
-    }));
+    // Array of promises
+    var promisedAggregates = _.map(keysToAggregate, function (attribute) {
+        return process(attribute, indices);
+    });
 
-    return Q(aggregated);
+    return Q.all(promisedAggregates).then(function (aggregated) {
+        var ret = {};
+        _.each(aggregated, function (agg, idx) {
+            ret[keysToAggregate[idx]] = agg;
+        });
+        return ret;
+    });
 };
 
 
@@ -1056,12 +1063,12 @@ Dataframe.prototype.countBy = function (simulator, attribute, binning, indices, 
         return memo + num;
     }, 0);
 
-    return {
+    return Q({
         type: 'countBy',
         numValues: numValues,
         numBins: _.keys(bins).length,
         bins: bins,
-    };
+    });
 }
 
 // Returns a binning object with properties numBins, binWidth, minValue,
@@ -1179,7 +1186,7 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
         bins[binId]++;
     }
 
-    return {
+    return Q({
         type: 'histogram',
         numBins: numBins,
         binWidth: binWidth,
@@ -1187,7 +1194,7 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
         maxValue: topVal,
         minValue: bottomVal,
         bins: bins
-    };
+    });
 };
 
 
