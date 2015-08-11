@@ -360,6 +360,7 @@ function createCamera(state, urlParams) {
         });
     }
 
+    /** Allow &camera=3d to override camera type (defaults to 2d); currently deprecated. */
     var mode =
         urlParams && urlParams.camera ? (urlParams.camera === '3d' ? '3d' : '2d')
         : camConfig.get('type') === '3d' ? '3d'
