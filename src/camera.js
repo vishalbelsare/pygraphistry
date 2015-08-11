@@ -143,6 +143,16 @@
     };
 
 
+    /** Returns an array of [left, right, top, bottom] that reconstructs the constructor/centerOn arguments. */
+    Camera2d.prototype.getBounds = function() {
+        var left = this.center.x - this.width / 2.0,
+            right = this.center.x + this.width / 2.0,
+            top = this.center.y - this.height / 2.0,
+            bottom = this.center.y + this.height / 2.0;
+        return [left, right, top, bottom];
+    };
+
+
     Camera2d.prototype.resize = function(width, height, pixelRatio) {
         var aspectRatio = width / height;
         this.width = aspectRatio * this.height;
