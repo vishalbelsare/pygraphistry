@@ -9,9 +9,18 @@ var Handlebars = require('handlebars');
 var util            = require('./util.js');
 
 
-function nameToLink (urlParams, name) {
+/**
+ * Returns a URL string for the export specified.
+ * @param {Camera2d} camera
+ * @param {Object} urlParams
+ * @param {string} name
+ * @returns {string}
+ */
+function getExportURL (camera, urlParams, name) {
     var overrides = {static: true, contentKey: name},
-        params    = _.extend({}, _.omit(urlParams), overrides), // extend() to cascade, omit() to mute options.
+        boundsArray = camera.getBounds(),
+        bounds    = {left: boundsArray[0], right: boundsArray[1], top: boundsArray[2], bottom: boundsArray[3]},
+        params    = _.extend({}, urlParams, overrides, bounds),
         paramStr  = _.map(params, function (v, k) { return k + '=' + v; }).join('&');
     return window.location.origin + window.location.pathname + '?' + paramStr;
 }
@@ -25,7 +34,7 @@ function generateContentKey(urlParams) {
 }
 
 
-module.exports = function (socket, urlParams) {
+module.exports = function (appState, socket, urlParams) {
     var $btn = $('#persistButton');
 
     if (urlParams.static === 'true') {
@@ -67,8 +76,10 @@ module.exports = function (socket, urlParams) {
             if (!(reply && reply.success)) {
                 throw new Error({msg: 'Server error on inspectHeader', v: (reply || {error: 'unknown'}).error});
             }
-            var $modal = pair.$modal,
-                url = nameToLink(urlParams, reply.name);
+            var renderState = appState.renderState,
+                camera = renderState.get('camera'),
+                $modal = pair.$modal,
+                url = getExportURL(camera, urlParams, reply.name);
             $('.modal-body', $modal)
                 .empty()
                 .append($('<span>').text('Static copy at: '))

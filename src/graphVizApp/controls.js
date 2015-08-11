@@ -552,7 +552,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     dataInspector.init(appState, socket, workerParams.href, brush);
     histogramBrush.init(socket, brush, appState.poi);
     forkVgraph(socket, urlParams);
-    persistButton(socket, urlParams);
+    persistButton(appState, socket, urlParams);
     goLiveButton(socket, urlParams);
 
 /*

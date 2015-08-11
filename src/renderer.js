@@ -359,8 +359,9 @@ function createCamera(state, urlParams) {
             top: 0, bottom: canvas.height
         });
     }
+    bounds = bounds.merge(_.pick(urlParams, 'left', 'right', 'top', 'bottom'));
 
-    /** Allow &camera=3d to override camera type (defaults to 2d); currently deprecated. */
+    /** Allow &camera=3d to override camera type (defaults to 2d); currently deprecated/ignored. */
     var mode =
         urlParams && urlParams.camera ? (urlParams.camera === '3d' ? '3d' : '2d')
         : camConfig.get('type') === '3d' ? '3d'
@@ -369,10 +370,10 @@ function createCamera(state, urlParams) {
     console.log('url', mode, urlParams);
 
     var camera = new cameras.Camera2d(
-            bounds.get('left'), bounds.get('right'),
-            bounds.get('top'), bounds.get('bottom'),
-            camConfig.get('nearPlane'), camConfig.get('farPlane'),
-            mode);
+        bounds.get('left'), bounds.get('right'),
+        bounds.get('top'), bounds.get('bottom'),
+        camConfig.get('nearPlane'), camConfig.get('farPlane'),
+        mode);
 
     console.info('Display\'s pixel ratio is', pixelRatio);
     camera.resize(canvas.width, canvas.height, pixelRatio);
