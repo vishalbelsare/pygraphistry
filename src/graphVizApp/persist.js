@@ -17,7 +17,9 @@ var util            = require('./util.js');
  * @returns {string}
  */
 function getExportURL (camera, urlParams, name) {
-    var overrides = {static: true, contentKey: name},
+    // static+contentKey identify static content
+    // TODO: Infer play/center settings from static=true on load to avoid these overrides.
+    var overrides = {static: true, contentKey: name, play: 0, center: false},
         boundsArray = camera.getBounds(),
         bounds    = {left: boundsArray[0], right: boundsArray[1], top: boundsArray[2], bottom: boundsArray[3]},
         params    = _.extend({}, urlParams, overrides, bounds),
