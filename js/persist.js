@@ -124,9 +124,13 @@ module.exports =
             logger.debug('wrote/read', prevHeader, _.keys(buffers));
         },
 
+        pathForContentKey: function (snapshotName) {
+            return 'Static/' + snapshotName + '/';
+        },
+
         publishStaticContents: function (snapshotName, compressedVBOs, metadata, dataframe, renderConfig) {
             logger.trace('publishing current content to S3');
-            var snapshotPath = 'Static/' + snapshotName + '/';
+            var snapshotPath = exports.pathForContentKey(snapshotName);
             var edgeExport = staticContentForDataframe(dataframe, 'edge');
             var pointExport = staticContentForDataframe(dataframe, 'point');
             uploadPublic(snapshotPath + 'renderconfig.json', JSON.stringify(renderConfig),
@@ -158,5 +162,12 @@ module.exports =
                 {should_compress: false});
             return uploadPublic(snapshotPath + 'edgeLabels.buffer', edgeExport.contents,
                 {should_compress: true});
+        },
+
+        publishPNGToStaticContents: function (snapshotName, imageName, binaryData) {
+            logger.trace('publishing a PNG preview for content already in S3');
+            var snapshotPath = exports.pathForContentKey(snapshotName);
+            imageName = imageName || 'preview.png';
+            return uploadPublic(snapshotPath + imageName, binaryData, {should_compress: true});
         }
     };
