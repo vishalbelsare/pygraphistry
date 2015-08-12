@@ -66,46 +66,57 @@ module.exports = function (appState, socket, urlParams) {
             $('.modal-footer button', $modal).css('display', 'none');
         })
         .flatMap(function ($modal) {
-            var name = $('.modal-body input', $modal).val();
-            return Rx.Observable.fromCallback(socket.emit, socket)('persist_current_vbo', name)
+            var contentKey = $('.modal-body input', $modal).val();
+            return Rx.Observable.fromCallback(socket.emit, socket)('persist_current_vbo', contentKey)
                 .map(function (reply) {
-                    return {reply: reply, $modal: $modal};
+                    return {reply: reply, $modal: $modal, contentKey: contentKey};
                 });
         })
-        .flatMap(function (pair) {
-            var name = pair.reply.name,
+        .flatMap(function (response) {
+            var contentKey = response.reply.name || response.contentKey,
                 $canvas = $('canvas#simulation')[0],
                 previewDataURL = $canvas.toDataURL('image/png');
-            return Rx.Observable.fromCallback(socket.emit, socket)('persist_upload_png_export', previewDataURL, name, 'preview.png')
+            if (!contentKey) {
+                throw new Error('No content key provided: ', response);
+            }
+            return Rx.Observable.fromCallback(socket.emit, socket)('persist_upload_png_export', previewDataURL, contentKey, 'preview.png')
                 .map(function () {
-                    return pair;
+                    return response;
                 })
         })
         // show
-        .do(function (pair) {
-            var reply = pair.reply;
+        .do(function (response) {
+            var reply = response.reply;
             if (!(reply && reply.success)) {
                 throw new Error({msg: 'Server error on inspectHeader', v: (reply || {error: 'unknown'}).error});
             }
             var renderState = appState.renderState,
                 camera = renderState.get('camera'),
-                $modal = pair.$modal,
-                url = getExportURL(camera, urlParams, reply.name),
-                previewURL = staticclient.getStaticContentURL(name, 'preview.png');
+                $modal = response.$modal,
+                targetURL = getExportURL(camera, urlParams, reply.name),
+                previewURL = staticclient.getStaticContentURL(reply.name, 'preview.png');
+            var embedElement = $('<a>')
+                .attr('target', '_blank')
+                .append($('<img>')
+                    .attr('height', 150)
+                    //.attr('width', 150)
+                    .attr('src', previewURL))
+                .attr('href', targetURL);
             $('.modal-body', $modal)
                 .empty()
+                //.append($('<p>')
+                //    .append($('<span>').text('Direct link: '))
+                //    .append($('<a>')
+                //        .attr('target', '_blank')
+                //        .text(targetURL)
+                //        .attr('href', targetURL)))
                 .append($('<p>')
-                    .append($('<span>').text('Static copy at: '))
-                    .append($('<a>')
-                        .attr('target', '_blank')
-                        .text(url)
-                        .attr('href', url)))
+                    .append($('<span>').text('Preview:'))
+                    .append(embedElement))
                 .append($('<p>')
-                    .append($('<span>').text('Preview image at: '))
-                    .append($('<a>')
-                        .attr('target', '_blank')
-                        .text(staticclient.getStaticContentURL(reply.name, 'preview.png'))
-                        .attr('href', previewURL)));
+                    .append($('<span>').text('HTML:'))
+                    .append($('<textarea>')
+                        .text(embedElement.outerHTML)));
             $('.status', $modal).css('display', 'none');
         })
         .subscribe(_.identity,
