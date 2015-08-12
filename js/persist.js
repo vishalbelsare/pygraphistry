@@ -130,7 +130,7 @@ module.exports =
 
         publishStaticContents: function (snapshotName, compressedVBOs, metadata, dataframe, renderConfig) {
             logger.trace('publishing current content to S3');
-            var snapshotPath = exports.pathForContentKey(snapshotName);
+            var snapshotPath = this.pathForContentKey(snapshotName);
             var edgeExport = staticContentForDataframe(dataframe, 'edge');
             var pointExport = staticContentForDataframe(dataframe, 'point');
             uploadPublic(snapshotPath + 'renderconfig.json', JSON.stringify(renderConfig),
@@ -166,7 +166,7 @@ module.exports =
 
         publishPNGToStaticContents: function (snapshotName, imageName, binaryData) {
             logger.trace('publishing a PNG preview for content already in S3');
-            var snapshotPath = exports.pathForContentKey(snapshotName);
+            var snapshotPath = this.pathForContentKey(snapshotName);
             imageName = imageName || 'preview.png';
             return uploadPublic(snapshotPath + imageName, binaryData, {should_compress: true});
         }
