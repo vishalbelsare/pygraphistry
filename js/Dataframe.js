@@ -1007,18 +1007,38 @@ Dataframe.prototype.aggregate = function (simulator, indices, attributes, binnin
         return validAttributes.indexOf(val) > -1;
     });
 
-    // Array of promises
-    var promisedAggregates = _.map(keysToAggregate, function (attribute) {
-        return process(attribute, indices);
+
+    var chain = Q();
+    var aggregated = {};
+
+    _.each(keysToAggregate, function (attribute) {
+        chain = chain.then(function() {
+            return process(attribute, indices)
+                .then(function (agg) {
+                    aggregated[attribute] = agg;
+                });
+        });
     });
 
-    return Q.all(promisedAggregates).then(function (aggregated) {
-        var ret = {};
-        _.each(aggregated, function (agg, idx) {
-            ret[keysToAggregate[idx]] = agg;
-        });
-        return ret;
+    return chain.then(function() {
+        return aggregated;
     });
+
+
+
+
+    // Array of promises
+    // var promisedAggregates = _.map(keysToAggregate, function (attribute) {
+    //     return process(attribute, indices);
+    // });
+
+    // return Q.all(promisedAggregates).then(function (aggregated) {
+    //     var ret = {};
+    //     _.each(aggregated, function (agg, idx) {
+    //         ret[keysToAggregate[idx]] = agg;
+    //     });
+    //     return ret;
+    // });
 };
 
 
@@ -1157,7 +1177,7 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
 
     var numValues = indices.length;
     if (numValues === 0) {
-        return {type: 'nodata'};
+        return Q({type: 'nodata'});
     }
 
     // Override if provided binning data.
@@ -1177,6 +1197,32 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
         bottomVal = min;
     }
 
+
+    var dataTyped = new Float32Array(values);
+    var dataSize = dataTyped.length;
+    var binStart = new Float32Array(numBins);
+    for (var i = 0; i < numBins; i++) {
+        binStart[i] = bottomVal + (binWidth * i);
+    }
+
+    var retObj = {
+        type: 'histogram',
+        numBins: numBins,
+        binWidth: binWidth,
+        numValues: numValues,
+        maxValue: topVal,
+        minValue: bottomVal
+    };
+
+
+    return simulator.otherKernels.histogramKernel.run(simulator, numBins, dataSize, dataTyped, binStart)
+        .then(function (bins) {
+            return _.extend(retObj, {bins: bins});
+        }).fail(log.makeQErrorHandler(logger, 'Failure trying to run histogramKernel'));
+
+    // Dead code, exists solely for timing.
+    // TODO: Make this a config option.
+
     var bins = Array.apply(null, new Array(numBins)).map(function () { return 0; });
 
     var binId;
@@ -1186,15 +1232,8 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
         bins[binId]++;
     }
 
-    return Q({
-        type: 'histogram',
-        numBins: numBins,
-        binWidth: binWidth,
-        numValues: numValues,
-        maxValue: topVal,
-        minValue: bottomVal,
-        bins: bins
-    });
+    _.extend(retObj, {bins: bins});
+    return Q(retObj);
 };
 
 

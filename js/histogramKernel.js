@@ -38,28 +38,30 @@ HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataType
     // TODO: Take in type(s) to run as an argument.
     var checkTyped = new Uint32Array([0]);
     checkTyped[0] = checkTyped[0] | (1);
+    checkTyped[0] = checkTyped[0] | (1 << 5);
 
     if (!that.qBuffers) {
         var maxSizeInput = Math.max(simulator.dataframe.rawdata.numElements.point, simulator.dataframe.rawdata.numElements.edge);
         var maxSizeOutput = MAX_NUM_BINS;
         var maxBytesInput = maxSizeInput * Float32Array.BYTES_PER_ELEMENT;
         var maxBytesOutput = maxSizeOutput * Float32Array.BYTES_PER_ELEMENT;
+        that.outputZeros = new Uint32Array(maxSizeOutput);
         that.qBuffers = [
             simulator.cl.createBuffer(maxBytesOutput, 'histogram_output'),
             simulator.cl.createBuffer(maxBytesOutput, 'histogram_outputSum'),
-            imulator.cl.createBuffer(maxBytesOutput, 'histogram_outputMean'),
+            simulator.cl.createBuffer(maxBytesOutput, 'histogram_outputMean'),
             simulator.cl.createBuffer(maxBytesOutput, 'histogram_outputMax'),
             simulator.cl.createBuffer(maxBytesOutput, 'histogram_outputMin'),
             simulator.cl.createBuffer(maxBytesInput, 'histogram_data'),
             simulator.cl.createBuffer(maxBytesOutput, 'histogram_binStart'),
-            simulator.cl.createBuffer(4, 'histogram_check')
+            simulator.cl.createBuffer(8, 'histogram_check')
         ];
     }
 
     return Q.all(that.qBuffers).spread(function (
             output, outputSum, outputMean, outputMax, outputMin, data, binStart, check
     ){
-        logger.trace('Running historam kernel');
+        logger.debug('Running histogram kernel');
         that.buffers = {
             output: output,
             outputSum: outputSum,
@@ -84,18 +86,23 @@ HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataType
             check: check.buffer
         });
 
+
         return Q.all([
+            output.write(that.outputZeros),
             data.write(dataTyped),
             binStart.write(bins),
             check.write(checkTyped)
         ]).fail(log.makeQErrorHandler(logger, 'Writing to buffers for histogram kernel failed'));
     }).then(function () {
-        return that.histogramKernel.exec([dataSize], resources)
+        logger.debug('Wrote to buffers, executing histogram kernel');
+        return that.histogramKernel.exec([dataSize], [])
             .then(function () {
-                var retOutput = new Int32Array(numBins * Int32Array.BYTES_PER_ELEMENT);
+                var retOutput = new Int32Array(MAX_NUM_BINS * Int32Array.BYTES_PER_ELEMENT);
                 // TODO: Return all outputs, not just count;
+                logger.debug('Executed histogram, about to read');
                 return that.buffers.output.read(retOutput).then(function () {
-                    return retOutput;
+                    logger.debug('Read histogram, returning');
+                    return new Int32Array(retOutput.buffer, 0, numBins);
                 });
 
             }).fail(log.makeQErrorHandler(logger, 'Kernel histogram failed'));
