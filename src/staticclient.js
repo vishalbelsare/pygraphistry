@@ -31,6 +31,16 @@ var labelsOffsetsByType = {};
 
 // ======
 
+/**
+ * URL composition for static content access.
+ * @param {string} contentKey - identifies which content bundle sub-part of the bucket
+ * @param {string} contentPath - identifies the member of the content bundle (relative file name/path)
+ * @returns {string}
+ */
+function getStaticContentURL(contentKey, contentPath) {
+    return BASE_URL + contentKey + '/' + (contentPath || '');
+}
+
 
 //string * {socketHost: string, socketPort: int} -> (... -> ...)
 // where fragment == 'vbo?buffer' or 'texture?name'
@@ -44,7 +54,7 @@ function makeFetcher () {
 
         //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
         var oReq = new XMLHttpRequest();
-        var assetURL = BASE_URL + contentKey + '/' + bufferName;
+        var assetURL = getStaticContentURL(contentKey, bufferName);
         oReq.open('GET', assetURL, true);
         // Handling a response as an arraybuffer means bypassing $.ajax:
         oReq.responseType = 'arraybuffer';
@@ -87,7 +97,7 @@ function fetchOffsetBuffer (bufferName) {
     // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
     var result = new Rx.Subject(),
         oReq = new XMLHttpRequest(),
-        assetURL = BASE_URL + contentKey + '/' + bufferName,
+        assetURL = getStaticContentURL(contentKey, bufferName),
         now = Date.now();
     oReq.open('GET', assetURL, true);
     // Handling a response as an arraybuffer means bypassing $.ajax:
@@ -125,7 +135,7 @@ function getLabelOffsets(type) {
 function getLabelViaRange(type, index, byteStart, byteEnd) {
     var res = new Rx.Subject(),
         oReq = new XMLHttpRequest(),
-        assetURL = BASE_URL + contentKey + '/' + type + 'Labels.buffer',
+        assetURL = getStaticContentURL(contentKey, type + 'Labels.buffer'),
         byteStartString = byteStart !== undefined && byteStart.toString ? byteStart.toString(10) : '',
         byteEndString = byteEnd !== undefined && byteEnd.toString ? byteEnd.toString(10) : '';
     // First label: start can be 0, but end must be set.
@@ -186,6 +196,8 @@ function getLabel(type, index) {
 
 module.exports = {
 
+    getStaticContentURL: getStaticContentURL,
+
     connect: function (vizType, urlParams) {
         debug('connect', vizType, urlParams);
 
@@ -224,7 +236,7 @@ module.exports = {
         debug('createRenderer');
 
         return $.ajaxAsObservable({
-                url: BASE_URL + contentKey + '/renderconfig.json',
+                url: getStaticContentURL(contentKey, 'renderconfig.json'),
                 dataType: 'json'
             })
             .pluck('data')
@@ -245,7 +257,7 @@ module.exports = {
         getLabelOffsets('point');
         getLabelOffsets('edge');
 
-        $.ajaxAsObservable({url: BASE_URL + contentKey + '/metadata.json', dataType: 'json'})
+        $.ajaxAsObservable({url: getStaticContentURL(contentKey, 'metadata.json'), dataType: 'json'})
             .pluck('data')
             .do(function (data) {
                 debug('got metadata', data);
