@@ -7,7 +7,7 @@ var Rx              = require('rx');
 var Handlebars = require('handlebars');
 
 var util            = require('./util.js');
-
+var staticclient    = require('../staticclient.js');
 
 /**
  * Returns a URL string for the export specified.
@@ -81,14 +81,24 @@ module.exports = function (appState, socket, urlParams) {
             var renderState = appState.renderState,
                 camera = renderState.get('camera'),
                 $modal = pair.$modal,
-                url = getExportURL(camera, urlParams, reply.name);
+                url = getExportURL(camera, urlParams, reply.name),
+                $canvas = $('canvas#simulation')[0],
+                previewDataURL = $canvas.toDataURL('image/png');
+            Rx.Observable.fromCallback(socket.emit, socket)('persist_upload_png_export', previewDataURL, reply.name);
             $('.modal-body', $modal)
                 .empty()
-                .append($('<span>').text('Static copy at: '))
-                .append($('<a>')
-                    .attr('target', '_blank')
-                    .text(url)
-                    .attr('href', url));
+                .append($('<p>')
+                    .append($('<span>').text('Static copy at: '))
+                    .append($('<a>')
+                        .attr('target', '_blank')
+                        .text(url)
+                        .attr('href', url)))
+                .append($('<p>')
+                    .append($('<span>').text('Preview image at: '))
+                    .append($('<a>')
+                        .attr('target', '_blank')
+                        .text(staticclient.getStaticContentURL(reply.name, 'preview.png'))
+                        .attr('href', previewURL)));
             $('.status', $modal).css('display', 'none');
         })
         .subscribe(_.identity,
