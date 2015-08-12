@@ -72,6 +72,15 @@ module.exports = function (appState, socket, urlParams) {
                     return {reply: reply, $modal: $modal};
                 });
         })
+        .flatMap(function (pair) {
+            var name = pair.reply.name,
+                $canvas = $('canvas#simulation')[0],
+                previewDataURL = $canvas.toDataURL('image/png');
+            return Rx.Observable.fromCallback(socket.emit, socket)('persist_upload_png_export', previewDataURL, name, 'preview.png')
+                .map(function () {
+                    return pair;
+                })
+        })
         // show
         .do(function (pair) {
             var reply = pair.reply;
@@ -82,9 +91,7 @@ module.exports = function (appState, socket, urlParams) {
                 camera = renderState.get('camera'),
                 $modal = pair.$modal,
                 url = getExportURL(camera, urlParams, reply.name),
-                $canvas = $('canvas#simulation')[0],
-                previewDataURL = $canvas.toDataURL('image/png');
-            Rx.Observable.fromCallback(socket.emit, socket)('persist_upload_png_export', previewDataURL, reply.name);
+                previewURL = staticclient.getStaticContentURL(name, 'preview.png');
             $('.modal-body', $modal)
                 .empty()
                 .append($('<p>')
