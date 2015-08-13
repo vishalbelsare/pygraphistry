@@ -116,7 +116,8 @@ module.exports = function (appState, socket, urlParams) {
                     .css('min-width', 150)
                     .css('min-height', 150))
                 .attr('href', targetURL);
-            $('.modal-body', $modal)
+            $('.modal-body', $modal).hide();
+            $('.snapshot-preview', $modal)
                 .empty()
                 //.append($('<p>')
                 //    .append($('<span>').text('Direct link: '))
