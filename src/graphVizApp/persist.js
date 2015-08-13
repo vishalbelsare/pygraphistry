@@ -106,16 +106,16 @@ module.exports = function (appState, socket, urlParams) {
                 camera = renderState.get('camera'),
                 $modal = response.$modal,
                 targetURL = getExportURL(camera, urlParams, reply.name),
-                previewURL = staticclient.getStaticContentURL(reply.name, 'preview.png');
-            var embedElement = $('<a>')
-                .attr('target', '_blank')
-                .append($('<img>')
-                    .attr('height', 150)
-                    //.attr('width', 150)
-                    .attr('src', previewURL)
-                    .css('min-width', 150)
-                    .css('min-height', 150))
-                .attr('href', targetURL);
+                previewURL = staticclient.getStaticContentURL(reply.name, 'preview.png'),
+                previewElement = $('<a>')
+                    .attr('target', '_blank')
+                    .append($('<img>')
+                        .attr('height', 150)
+                        //.attr('width', 150)
+                        .attr('src', previewURL)
+                        .css('min-width', 150)
+                        .css('min-height', 150))
+                    .attr('href', targetURL);
             $('.modal-body', $modal).hide();
             $('.snapshot-preview', $modal)
                 .empty()
@@ -127,11 +127,11 @@ module.exports = function (appState, socket, urlParams) {
                 //        .attr('href', targetURL)))
                 .append($('<p>')
                     .append($('<span>').text('Preview:'))
-                    .append(embedElement))
+                    .append(previewElement))
                 .append($('<p>')
                     .append($('<span>').text('HTML:'))
                     .append($('<textarea>')
-                        .text(_.escape(embedElement.outerHTML))
+                        .text(_.escape(previewElement.outerHTML))
                         .css('width', '100%')));
             $('.status', $modal).css('display', 'none');
         })
