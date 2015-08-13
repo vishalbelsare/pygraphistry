@@ -281,14 +281,50 @@ function createElt() {
 }
 
 // Callback takes texture as arg.
-// TODO: Consider using RX here instead of callbacks?
-function getTexture(renderState, dims, cb) {
+function getTextureObservable(renderState, dims) {
+    var result = new Rx.ReplaySubject(1);
     renderer.render(renderState, 'marqueeGetTexture', 'marquee', undefined, dims, function () {
             var texture = renderState.get('pixelreads').pointTexture;
             if (!texture) {
                 console.error('error reading texture');
             }
-            cb(texture);
+            result.onNext(texture);
+        });
+    return result;
+}
+
+/**
+ * @returns {Rx.ReplaySubject} - contains string of the image data uri
+ */
+function getGhostImageObservable(renderState, sel, mimeType, imgCanvas) {
+    /** @type HTMLCanvasElement */
+    var canvas = renderState.get('gl').canvas;
+    var pixelRatio = renderState.get('camera').pixelRatio;
+
+    // Default the selection to the entire canvas dimensions.
+    sel = sel || {tl: {x: 0, y: 0}, br: {x: canvas.width, y: canvas.height}};
+
+    var dims = {
+        x: sel.tl.x * pixelRatio,
+        y: canvas.height - pixelRatio * (sel.tl.y + Math.abs(sel.tl.y - sel.br.y)), // Flip y coordinate
+        width: Math.max(1, pixelRatio * Math.abs(sel.tl.x - sel.br.x)),
+        height: Math.max(1, pixelRatio * Math.abs(sel.tl.y - sel.br.y))
+    };
+
+    return getTextureObservable(renderState, dims)
+        .map(function (texture) {
+            /** @type HTMLCanvasElement */
+            if (imgCanvas === undefined) {
+                imgCanvas = document.createElement('canvas');
+                imgCanvas.width = dims.width;
+                imgCanvas.height = dims.height;
+            }
+            var ctx = imgCanvas.getContext('2d');
+
+            var imgData = ctx.createImageData(dims.width, dims.height);
+            imgData.data.set(texture);
+            ctx.putImageData(imgData, 0, 0);
+            return mimeType ? imgCanvas.toDataURL(mimeType) : imgCanvas.toDataURL();
         });
 }
 
@@ -303,40 +339,22 @@ function getTexture(renderState, dims, cb) {
  * TODO kill cssWidth & cssHeight, letting imgCanvas use sel parameter and pixel ratio?
  */
 function createGhostImg(renderState, sel, $elt, cssWidth, cssHeight) {
-    /** @type HTMLCanvasElement */
-    var canvas = renderState.get('gl').canvas;
-    var pixelRatio = renderState.get('camera').pixelRatio;
+    getGhostImageObservable(renderState, sel)
+        .flatMap(function (dataURL) {
+            var img = new Image();
+            img.src = dataURL;
 
-    // Default the selection to the entire canvas dimensions.
-    sel = sel || {tl: {x: 0, y: 0}, br: {x: canvas.height, y: canvas.width}};
-
-    var dims = {
-        x: sel.tl.x * pixelRatio,
-        y: canvas.height - pixelRatio * (sel.tl.y + Math.abs(sel.tl.y - sel.br.y)), // Flip y coordinate
-        width: Math.max(1, pixelRatio * Math.abs(sel.tl.x - sel.br.x)),
-        height: Math.max(1, pixelRatio * Math.abs(sel.tl.y - sel.br.y))
-    };
-
-    getTexture(renderState, dims, function (texture) {
-        var imgCanvas = document.createElement('canvas');
-        imgCanvas.width = dims.width;
-        imgCanvas.height = dims.height;
-        var ctx = imgCanvas.getContext('2d');
-
-        var imgData = ctx.createImageData(dims.width, dims.height);
-        imgData.data.set(texture);
-        ctx.putImageData(imgData, 0, 0);
-        var img = new Image();
-        img.src = imgCanvas.toDataURL();
-
-        $(img).css({
-            'pointer-events': 'none',
-            'transform': 'scaleY(-1)',
-            'width': cssWidth,
-            'height': cssHeight
+            $(img).css({
+                'pointer-events': 'none',
+                'transform': 'scaleY(-1)',
+                'width': cssWidth,
+                'height': cssHeight
+            });
+            $elt.append(img);
+        })
+        .subscribe(_.identity, function (e) {
+            console.error('Error extracting image data', e);
         });
-        $elt.append(img);
-    });
 }
 
 function makeTransformer (cfg) {
@@ -437,5 +455,6 @@ function initMarquee (appState, $cont, toggle, cfg) {
 
 module.exports = {
     initMarquee: initMarquee,
+    getGhostImageObservable: getGhostImageObservable, // TODO move this to renderer
     initBrush: initBrush
 };

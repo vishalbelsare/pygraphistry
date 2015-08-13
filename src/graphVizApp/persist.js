@@ -8,6 +8,7 @@ var Handlebars = require('handlebars');
 
 var util            = require('./util.js');
 var staticclient    = require('../staticclient.js');
+var marquee         = require('./marquee.js');
 
 /**
  * Returns a URL string for the export specified.
@@ -73,11 +74,22 @@ module.exports = function (appState, socket, urlParams) {
                 });
         })
         .flatMap(function (response) {
+            var renderState = appState.renderState;
+            //    $renderCanvas = document.createElement('canvas'),
+            //    ctx = $renderCanvas.getContext('2d');
+            //ctx.fillStyle = 'green';
+            //ctx.fillRect(0, 0, $renderCanvas.width, $renderCanvas.height);
+            return marquee.getGhostImageObservable(renderState, undefined, 'image/png' /*, $renderCanvas*/)
+                .map(function (imageDataURL) {
+                    response.imageDataURL = imageDataURL;
+                    return response;
+                });
+        })
+        .flatMap(function (response) {
             var contentKey = response.reply.name || response.contentKey,
-                $canvas = $('canvas#simulation')[0],
-                previewDataURL = $canvas.toDataURL('image/png');
-            if (!contentKey) {
-                throw new Error('No content key provided: ', response);
+                previewDataURL = response.imageDataURL;
+            if (!contentKey || !previewDataURL) {
+                throw new Error('No content provided: ', response);
             }
             return Rx.Observable.fromCallback(socket.emit, socket)('persist_upload_png_export', previewDataURL, contentKey, 'preview.png')
                 .map(function () {
@@ -100,7 +112,9 @@ module.exports = function (appState, socket, urlParams) {
                 .append($('<img>')
                     .attr('height', 150)
                     //.attr('width', 150)
-                    .attr('src', previewURL))
+                    .attr('src', previewURL)
+                    .css('min-width', 150)
+                    .css('min-height', 150))
                 .attr('href', targetURL);
             $('.modal-body', $modal)
                 .empty()
@@ -116,7 +130,8 @@ module.exports = function (appState, socket, urlParams) {
                 .append($('<p>')
                     .append($('<span>').text('HTML:'))
                     .append($('<textarea>')
-                        .text(embedElement.outerHTML)));
+                        .text(_.escape(embedElement.outerHTML))
+                        .css('width', '100%')));
             $('.status', $modal).css('display', 'none');
         })
         .subscribe(_.identity,
