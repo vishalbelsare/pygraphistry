@@ -293,9 +293,22 @@ function getTexture(renderState, dims, cb) {
 }
 
 
+/**
+ *
+ * @param {Immutable.Map} renderState
+ * @param {{tl: {x: number, y: number}, br: {x: number, y: number}}} sel - the selection area, defaults to the entire canvas, has top-left/bottom-right points.
+ * @param $elt - where to put the resulting <img>
+ * @param cssWidth - differs from selection because retina/DPP-related?
+ * @param cssHeight - differs from selection because retina/DPP-related?
+ * TODO kill cssWidth & cssHeight, letting imgCanvas use sel parameter and pixel ratio?
+ */
 function createGhostImg(renderState, sel, $elt, cssWidth, cssHeight) {
+    /** @type HTMLCanvasElement */
     var canvas = renderState.get('gl').canvas;
     var pixelRatio = renderState.get('camera').pixelRatio;
+
+    // Default the selection to the entire canvas dimensions.
+    sel = sel || {tl: {x: 0, y: 0}, br: {x: canvas.height, y: canvas.width}};
 
     var dims = {
         x: sel.tl.x * pixelRatio,
