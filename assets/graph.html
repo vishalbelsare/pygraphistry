@@ -474,15 +474,17 @@
                     <h3 class="modal-title">Embed Interactive Snapshot</h3>
                 </div>
                 <div class="modal-body">
-                    <p>For best results, resize the window and frame the view as desired.</p>
-                    <form class="form-horizontal">
-                        <div class="form-group">
-                            <label for="snapshotName" class="col-sm-2 control-label">Save As</label>
-                            <div class="col-sm-10">
-                                <input type="text" class="form-control" id="snapshotName" value="{{defName}}" />
+                    <div class="snapshot-form-area">
+                        <p>For best results, resize the window and frame the view as desired.</p>
+                        <form class="form-horizontal">
+                            <div class="form-group">
+                                <label for="snapshotName" class="col-sm-2 control-label">Save As</label>
+                                <div class="col-sm-10">
+                                    <input type="text" class="form-control" id="snapshotName" value="{{defName}}" />
+                                </div>
                             </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                     <div class="snapshot-preview">
                     </div>
                 </div>
