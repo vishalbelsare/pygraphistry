@@ -148,12 +148,14 @@ module.exports =
                 'pointColors',
                 'logicalEdges'
             ];
+            // compressedVBOs attributes are already gzipped:
             _.each(vboAttributes, function(attributeName) {
                 if (compressedVBOs.hasOwnProperty(attributeName) && !_.isUndefined(compressedVBOs[attributeName])) {
                     uploadPublic(snapshotPath + attributeName + '.vbo', compressedVBOs[attributeName],
                         {should_compress: false});
                 }
             });
+            // These are ArrayBuffers, so ask for compression:
             uploadPublic(snapshotPath + 'pointLabels.offsets', pointExport.indexes,
                 {should_compress: false});
             uploadPublic(snapshotPath + 'pointLabels.buffer', pointExport.contents,
