@@ -631,9 +631,9 @@ Dataframe.prototype.loadDegrees = function (outDegrees, inDegrees) {
         degree[i] = inDegrees[i] + outDegrees[i];
     }
 
-    attributes.degree = {values: degree};
-    attributes.degree_in = {values: degree_in};
-    attributes.degree_out = {values: degree_out};
+    attributes.degree = {values: degree, type: 'number'};
+    attributes.degree_in = {values: degree_in, type: 'number'};
+    attributes.degree_out = {values: degree_out, type: 'number'};
 };
 
 
@@ -653,13 +653,13 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
         destination[i] = nodeTitles[unsortedEdges[2*i + 1]];
     }
 
-    attributes.Source = {values: source};
-    attributes.Destination = {values: destination};
+    attributes.Source = {values: source, type: 'string'};
+    attributes.Destination = {values: destination, type: 'string'};
 
     // If no title has been set, just make title the index.
     // TODO: Is there a more appropriate place to put this?
     if (!attributes._title) {
-        attributes._title = {type: 'number', values: range(numElements)};
+        attributes._title = {type: 'string', values: range(numElements)};
     }
 
 };
@@ -1049,7 +1049,7 @@ Dataframe.prototype.countBy = function (simulator, attribute, binning, indices, 
     var maxNumBins = 29;
 
     if (indices.length === 0) {
-        return {type: 'nodata'};
+        return Q({type: 'nodata'});
     }
 
     var rawBins = _.countBy(indices, function (valIdx) {
@@ -1156,6 +1156,8 @@ function calculateBinning(numValues, values, indices, goalNumberOfBins) {
         numBins = Math.round((topVal - bottomVal) / binWidth);
     }
 
+    console.log('NUM BINS: ', numBins);
+    console.log('max: ', max, 'min: ', min, 'goalBins: ', goalBins);
 
     return {
         numBins: numBins,
@@ -1174,6 +1176,7 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
     // values = _.filter(values, function (x) { return !isNaN(x)});
 
     var values = this.getColumn(attribute, type);
+    console.log('ATTRIBUTE: ', attribute);
 
     var numValues = indices.length;
     if (numValues === 0) {
@@ -1199,11 +1202,12 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
 
 
     var dataTyped = new Float32Array(values);
-    var dataSize = dataTyped.length;
     var binStart = new Float32Array(numBins);
     for (var i = 0; i < numBins; i++) {
         binStart[i] = bottomVal + (binWidth * i);
     }
+    var indicesTyped = new Uint32Array(indices);
+    var dataSize = indicesTyped.length;
 
     var retObj = {
         type: 'histogram',
@@ -1214,11 +1218,13 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
         minValue: bottomVal
     };
 
+    var first = Date.now();
 
-    return simulator.otherKernels.histogramKernel.run(simulator, numBins, dataSize, dataTyped, binStart)
-        .then(function (bins) {
-            return _.extend(retObj, {bins: bins});
-        }).fail(log.makeQErrorHandler(logger, 'Failure trying to run histogramKernel'));
+    // return simulator.otherKernels.histogramKernel.run(simulator, numBins, dataSize, dataTyped, indicesTyped, binStart)
+    //     .then(function (bins) {
+    //         console.log('[HISTOGRAM] Time Spent: ', (Date.now() - first));
+    //         return _.extend(retObj, {bins: bins});
+    //     }).fail(log.makeQErrorHandler(logger, 'Failure trying to run histogramKernel'));
 
     // Dead code, exists solely for timing.
     // TODO: Make this a config option.
@@ -1232,6 +1238,7 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
         bins[binId]++;
     }
 
+    console.log('[HISTOGRAM] Time Spent: ', (Date.now() - first));
     _.extend(retObj, {bins: bins});
     return Q(retObj);
 };

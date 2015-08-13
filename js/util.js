@@ -22,6 +22,27 @@ function getKernelSource(id) {
     return Q.denodeify(fs.readFile)(kernel_path, {encoding: 'utf8'});
 }
 
+// Should be used as a (mostly) drop in replacement for Q.all when you want each promise to run sequentially
+// instead of in parallel. It requires an array of functions that produce promises (as opposed to an array of promises)
+function chainQAll (arr) {
+    var values = [];
+    var chain = Q();
+
+    _.each(arr, function (func, i) {
+        chain = chain.delay(10).then(function () {
+            return func().then(function (val) {
+                values[i] = val;
+                return
+            });
+        });
+
+    });
+
+    return chain.then(function () {
+        return values;
+    });
+}
+
 
 /**
  * Fetch an image as an HTML Image object
@@ -114,5 +135,6 @@ module.exports = {
     rgb: rgb,
     palettes: palettes,
     int2color: int2color,
-    perf: perf
+    perf: perf,
+    chainQAll: chainQAll
 };

@@ -12,7 +12,7 @@ var MAX_NUM_BINS = 256;
 function HistogramKernel(clContext) {
     logger.trace('Creating histogram kernel');
 
-    var args = ['numBins', 'dataSize', 'check', 'binStart', 'data', 'output',
+    var args = ['numBins', 'dataSize', 'check', 'binStart', 'indices', 'data', 'output',
             'outputSum', 'outputMean', 'outputMax', 'outputMin'
     ];
     var argsType = {
@@ -20,6 +20,7 @@ function HistogramKernel(clContext) {
         dataSize: cljs.types.uint_t,
         check: null,
         binStart: null,
+        indices: null,
         data: null,
         output: null,
         outputSum: null,
@@ -32,8 +33,9 @@ function HistogramKernel(clContext) {
 }
 
 
-HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataTyped, bins) {
+HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataTyped, indicesTyped, bins) {
     var that = this;
+    var start;
 
     // TODO: Take in type(s) to run as an argument.
     var checkTyped = new Uint32Array([0]);
@@ -53,15 +55,18 @@ HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataType
             simulator.cl.createBuffer(maxBytesOutput, 'histogram_outputMax'),
             simulator.cl.createBuffer(maxBytesOutput, 'histogram_outputMin'),
             simulator.cl.createBuffer(maxBytesInput, 'histogram_data'),
+            simulator.cl.createBuffer(maxBytesInput, 'histogram_indices'),
             simulator.cl.createBuffer(maxBytesOutput, 'histogram_binStart'),
             simulator.cl.createBuffer(8, 'histogram_check')
         ];
     }
 
     return Q.all(that.qBuffers).spread(function (
-            output, outputSum, outputMean, outputMax, outputMin, data, binStart, check
+            output, outputSum, outputMean, outputMax, outputMin, data, indices, binStart, check
     ){
         logger.debug('Running histogram kernel');
+        logger.debug('numBins: ', numBins);
+        logger.debug('dataSize: ', dataSize);
         that.buffers = {
             output: output,
             outputSum: outputSum,
@@ -69,6 +74,7 @@ HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataType
             outputMax: outputMax,
             outputMin: outputMin,
             data: data,
+            indices: indices,
             binStart: binStart,
             check: check
         };
@@ -82,18 +88,22 @@ HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataType
             outputMax: outputMax.buffer,
             outputMin: outputMin.buffer,
             data: data.buffer,
+            indices: indices.buffer,
             binStart: binStart.buffer,
             check: check.buffer
         });
 
+        start = Date.now();
 
         return Q.all([
             output.write(that.outputZeros),
             data.write(dataTyped),
             binStart.write(bins),
-            check.write(checkTyped)
+            check.write(checkTyped),
+            indices.write(indicesTyped)
         ]).fail(log.makeQErrorHandler(logger, 'Writing to buffers for histogram kernel failed'));
     }).then(function () {
+        console.log('[HISTOGRAM] Writing took: ', (Date.now() - start));
         logger.debug('Wrote to buffers, executing histogram kernel');
         return that.histogramKernel.exec([dataSize], [])
             .then(function () {
@@ -103,7 +113,7 @@ HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataType
                 return that.buffers.output.read(retOutput).then(function () {
                     logger.debug('Read histogram, returning');
                     return new Int32Array(retOutput.buffer, 0, numBins);
-                });
+                }).fail(log.makeQErrorHandler(logger, 'Reading histogram output failed'));
 
             }).fail(log.makeQErrorHandler(logger, 'Kernel histogram failed'));
     }).fail(log.makeQErrorHandler(logger, 'Histogram Failed'));

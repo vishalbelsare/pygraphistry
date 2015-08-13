@@ -428,7 +428,7 @@ var write = Q.promised(function write(buffer, data) {
         })
         .then(function() {
             // buffer.cl.queue.finish();
-            logger.trace("Finished buffer %s write", buffer.name);
+            logger.debug("Finished buffer %s write", buffer.name);
 
             return buffer;
         });
@@ -438,12 +438,14 @@ var write = Q.promised(function write(buffer, data) {
 var read = Q.promised(function (buffer, target, optStartIdx, optLen) {
     return buffer.acquire()
         .then(function() {
+            logger.debug('Reading Buffer', buffer.name);
             var start = Math.min(optStartIdx || 0, buffer.size);
             var len = optLen !== undefined ? optLen : (buffer.size - start);
             buffer.cl.queue.enqueueReadBuffer(buffer.buffer, true, start, len, target);
             return buffer.release();
         })
         .then(function() {
+            logger.debug('Done Reading: ', buffer.name);
             return buffer;
         })
         .fail(log.makeQErrorHandler(logger, 'Read error for buffer', buffer.name));
