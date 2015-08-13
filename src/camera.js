@@ -143,7 +143,8 @@
     };
 
 
-    /** Returns an array of [left, right, top, bottom] that reconstructs the constructor/centerOn arguments. */
+    /** Returns an array of [left, right, top, bottom] that reconstructs the constructor/centerOn arguments.
+     * @returns {Array.<number>} an array of [left, right, top, bottom] */
     Camera2d.prototype.getBounds = function() {
         var left = this.center.x - this.width / 2.0,
             right = this.center.x + this.width / 2.0,

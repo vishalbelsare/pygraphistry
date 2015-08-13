@@ -20,7 +20,7 @@ function getExportURL (camera, urlParams, name) {
     // static+contentKey identify static content
     // TODO: Infer play/center settings from static=true on load to avoid these overrides.
     var overrides = {static: true, contentKey: name, play: 0, center: false},
-        boundsArray = camera.getBounds(),
+        boundsArray = _.map(camera.getBounds(), function (value) { return value.toPrecision(3); }),
         bounds    = {left: boundsArray[0], right: boundsArray[1], top: boundsArray[2], bottom: boundsArray[3]},
         params    = _.extend({}, urlParams, overrides, bounds),
         paramStr  = _.map(params, function (v, k) { return k + '=' + v; }).join('&');
