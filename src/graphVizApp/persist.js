@@ -93,16 +93,12 @@ module.exports = function (appState, socket, urlParams) {
         })
         .flatMap(function (response) {
             var renderState = appState.renderState,
-                $renderCanvas = document.createElement('canvas'),
-                ctx = $renderCanvas.getContext('2d'),
-                backgroundColorHex = rgb2hex($('#simulation').css('backgroundColor'));
+                backgroundColorCSS = $('#simulation').css('backgroundColor');
             // colorpicker sets background color as CSS, so we match it thus:
-            ctx.fillStyle = backgroundColorHex;
-            ctx.fillRect(0, 0, $renderCanvas.width, $renderCanvas.height);
-            return marquee.getGhostImageObservable(renderState, undefined, 'image/png', $renderCanvas, ctx)
+            return marquee.getGhostImageObservable(renderState, undefined, 'image/png')
                 .map(function (imageDataURL) {
                     response.imageDataURL = imageDataURL;
-                    response.backgroundColor = backgroundColorHex;
+                    response.backgroundColor = backgroundColorCSS;
                     return response;
                 });
         })
@@ -126,7 +122,7 @@ module.exports = function (appState, socket, urlParams) {
             var renderState = appState.renderState,
                 camera = renderState.get('camera'),
                 $modal = response.$modal,
-                targetURL = getExportURL(camera, urlParams, reply.name, response.backgroundColor),
+                targetURL = getExportURL(camera, urlParams, reply.name, rgb2hex(response.backgroundColor)),
                 previewURL = staticclient.getStaticContentURL(reply.name, 'preview.png');
             var embedElement = $('<a>')
                 .attr('target', '_blank')
@@ -135,7 +131,8 @@ module.exports = function (appState, socket, urlParams) {
                     //.attr('width', 150)
                     .attr('src', previewURL)
                     .css('min-width', 150)
-                    .css('min-height', 150))
+                    .css('min-height', 150)
+                    .css('background-color', response.backgroundColor))
                 .attr('href', targetURL);
             $('.modal-body', $modal)
                 .empty()

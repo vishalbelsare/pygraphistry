@@ -296,7 +296,7 @@ function getTextureObservable(renderState, dims) {
 /**
  * @returns {Rx.ReplaySubject} - contains string of the image data uri
  */
-function getGhostImageObservable(renderState, sel, mimeType, imgCanvas, ctx) {
+function getGhostImageObservable(renderState, sel, mimeType) {
     /** @type HTMLCanvasElement */
     var canvas = renderState.get('gl').canvas;
     var pixelRatio = renderState.get('camera').pixelRatio;
@@ -314,14 +314,10 @@ function getGhostImageObservable(renderState, sel, mimeType, imgCanvas, ctx) {
     return getTextureObservable(renderState, dims)
         .map(function (texture) {
             /** @type HTMLCanvasElement */
-            if (imgCanvas === undefined) {
-                imgCanvas = document.createElement('canvas');
-                imgCanvas.width = dims.width;
-                imgCanvas.height = dims.height;
-            }
-            if (ctx === undefined) {
-                ctx = imgCanvas.getContext('2d');
-            }
+            var imgCanvas = document.createElement('canvas');
+            imgCanvas.width = dims.width;
+            imgCanvas.height = dims.height;
+            var ctx = imgCanvas.getContext('2d');
 
             var imgData = ctx.createImageData(dims.width, dims.height);
             imgData.data.set(texture);
