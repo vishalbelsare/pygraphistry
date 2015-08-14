@@ -338,7 +338,7 @@ function getGhostImageObservable(renderState, sel, mimeType) {
  */
 function createGhostImg(renderState, sel, $elt, cssWidth, cssHeight) {
     getGhostImageObservable(renderState, sel)
-        .flatMap(function (dataURL) {
+        .do(function (dataURL) {
             var img = new Image();
             img.src = dataURL;
 
