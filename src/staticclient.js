@@ -175,8 +175,8 @@ function getRangeForLabel(type, index) {
         throw new Error('Label offsets not found for type', type);
     }
     var lowerBound = offsetsForType && offsetsForType[index],
-        upperBound = offsetsForType && offsetsForType[index + 1] - 1;  // FIXME Maybe What happens of index is last element
-    if (lowerBound >= upperBound) {
+        upperBound = offsetsForType && (offsetsForType.length > index ? offsetsForType[index + 1] - 1 : undefined);
+    if (upperBound !== undefined && lowerBound >= upperBound) {
         throw new Error('Invalid byte range indicated at', type, index);
     }
     return [lowerBound, upperBound];
