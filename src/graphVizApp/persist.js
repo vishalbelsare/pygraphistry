@@ -142,25 +142,25 @@ module.exports = function (appState, socket, urlParams) {
                         'min-width': 150,
                         'transform': 'scaleY(-1)',
                         'min-height': 150,
-                        'background-color': response.backgroundColor
+                        'background-color': response.backgroundColor || $('.graphistry-body').css('backgroundColor')
                     }))
                 .attr('href', targetURL);
             $('.modal-body', $modal)
                 .empty()
-                //.append($('<p>')
-                //    .append($('<span>').text('Direct link: '))
-                //    .append($('<a>')
-                //        .attr('target', '_blank')
-                //        .text(targetURL)
-                //        .attr('href', targetURL)))
                 .append($('<p>')
-                    .append($('<span>').text('Preview:'))
-                    .append(embedElement))
+                    .append($('<a>')
+                        .attr('target', '_blank')
+                        .text('URL for IFrame embed')
+                        .attr('href', targetURL)))
                 .append($('<p>')
-                    .append($('<span>').text('HTML:'))
+                    .text('Direct HTML:'))
+                .append($('<p>')
                     .append($('<textarea>')
                         .text(_.escape(embedElement.outerHTML))
-                        .css('width', '100%')));
+                        .css('width', '100%')))
+                .append($('<p>').text('Preview:'))
+                .append($('<p>')
+                    .append(embedElement));
             $('.status', $modal).css('display', 'none');
         })
         .subscribe(_.identity,
