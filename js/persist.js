@@ -52,7 +52,7 @@ function checkWrite (snapshotName, vboPath, raw, buff) {
     logger.trace('readback metadata', read);
 }
 
-
+// Distinguish already compressed VBO from setting gzip encoding
 function uploadPublic (path, buffer, params) {
     var uploadParams = !_.isEmpty(params) ? _.clone(params) : {};
     uploadParams.acl = 'public-read';
@@ -63,15 +63,15 @@ function uploadPublic (path, buffer, params) {
 function staticContentForDataframe (dataframe, type) {
     var rows = dataframe.getRows(undefined, type),
         rowContents = new Array(rows.length),
-        offsetsBuffer = new Buffer(rows.length * 4),
-        offsetsView = new Uint32Array(offsetsBuffer),
-        offsets = new Array(rows.length),
+        //offsetsBuffer = new Buffer(rows.length * 4),
+        offsetsView = new Uint32Array(rows.length),
+        //offsets = new Array(rows.length),
         currentContentOffset = 0,
         lastContentOffset = currentContentOffset;
     _.each(rows, function (row, rowIndex) {
-        var content = new Buffer(JSON.stringify(row), 'utf8'),
-            contentLength = content.byteLength;
-        offsets[rowIndex] = currentContentOffset;
+        var content = new Buffer(JSON.stringify(row), 'utf8')
+        var contentLength = content.length;
+        //offsets[rowIndex] = currentContentOffset;
         offsetsView[rowIndex] = currentContentOffset;
         rowContents[rowIndex] = content;
         lastContentOffset = currentContentOffset;
@@ -80,7 +80,14 @@ function staticContentForDataframe (dataframe, type) {
             throw new Error('Non-monotonic offset detected.');
         }
     });
-    return {contents: Buffer.concat(rowContents), indexes: offsetsBuffer};
+
+    // Make a TypedArray to Buffer function. Use that here.
+    var idx = new Buffer(offsetsView.byteLength);
+    var bView = new Uint8Array(offsetsView.buffer);
+    for (var i = 0; i < idx.length; i++) {
+        idx[i] = bView[i];
+    }
+    return {contents: Buffer.concat(rowContents), indexes: idx};
 }
 
 
@@ -159,11 +166,11 @@ module.exports =
             uploadPublic(snapshotPath + 'pointLabels.offsets', pointExport.indexes,
                 {should_compress: false});
             uploadPublic(snapshotPath + 'pointLabels.buffer', pointExport.contents,
-                {should_compress: true});
+                {should_compress: false});
             uploadPublic(snapshotPath + 'edgeLabels.offsets', edgeExport.indexes,
                 {should_compress: false});
             return uploadPublic(snapshotPath + 'edgeLabels.buffer', edgeExport.contents,
-                {should_compress: true});
+                {should_compress: false});
         },
 
         publishPNGToStaticContents: function (snapshotName, imageName, binaryData) {
