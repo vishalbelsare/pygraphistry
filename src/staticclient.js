@@ -142,7 +142,7 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
     // First label: start can be 0, but end must be set.
     // Last label: start is set, end unspecified, okay.
     if (byteStartString || byteEndString) {
-        oReq.responseType = 'text'; // FIXME Try 'json'
+        oReq.responseType = 'text'; // 'json' does not work for a range request!
         oReq.open('GET', assetURL, true);
         oReq.setRequestHeader('Range', 'bytes=' + byteStartString + '-' + byteEndString);
 
