@@ -21,8 +21,7 @@ function upload(S3, bucket, metadata, binaryBuffer, params) {
             Metadata: metadata,
             Body: binaryBuffer,
             ServerSideEncryption: 'AES256',
-            CacheControl: 'public, max-age=86400',
-            ContentEncoding: 'gzip'
+            CacheControl: 'public, max-age=86400'
         };
 
     if (params && !_.isEmpty(params)) {
@@ -32,6 +31,10 @@ function upload(S3, bucket, metadata, binaryBuffer, params) {
 
         if (params.ContentType) {
             putParams.ContentType = params.ContentType;
+        }
+
+        if (params.ContentEncoding) {
+            putParams.ContentEncoding = params.ContentEncoding;
         }
     }
 
