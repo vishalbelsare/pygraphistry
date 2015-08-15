@@ -10,17 +10,35 @@ var util            = require('./util.js');
 var staticclient    = require('../staticclient.js');
 var marquee         = require('./marquee.js');
 
+
+/** Simple utility to auto-coerce CSS rgb color strings to hex strings. */
+function rgb2hex(rgb) {
+    if (/^#[0-9A-F]{6}$/i.test(rgb)) return rgb;
+
+    rgb = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+    function hex(x) {
+        return ("0" + parseInt(x).toString(16)).slice(-2);
+    }
+    return "#" + hex(rgb[1]) + hex(rgb[2]) + hex(rgb[3]);
+}
+
+
 /**
  * Returns a URL string for the export specified.
- * @param {Camera2d} camera
- * @param {Object} urlParams
- * @param {string} name
+ * @param {Camera2d} camera - the current/desired viewport.
+ * @param {Object} urlParams - the original view URL parameters, mostly carried over.
+ * @param {string} contentKey - the key into the content bucket where the export resides.
+ * @param {string} backgroundColor - the background color string from CSS.
  * @returns {string}
  */
-function getExportURL (camera, urlParams, name) {
+function getExportURL (camera, urlParams, contentKey, backgroundColor) {
     // static+contentKey identify static content
-    // TODO: Infer play/center settings from static=true on load to avoid these overrides.
-    var overrides = {static: true, contentKey: name, play: 0, center: false},
+    var overrides = {
+            static: true, contentKey: contentKey,
+            play: 0, center: false, // TODO: Infer these play/center settings from static=true on load.
+            bg: encodeURIComponent(backgroundColor),
+            menu: false, goLive: false
+        },
         boundsArray = _.map(camera.getBounds(), function (value) { return value.toPrecision(3); }),
         bounds    = {left: boundsArray[0], right: boundsArray[1], top: boundsArray[2], bottom: boundsArray[3]},
         params    = _.extend({}, urlParams, overrides, bounds),
@@ -74,14 +92,13 @@ module.exports = function (appState, socket, urlParams) {
                 });
         })
         .flatMap(function (response) {
-            var renderState = appState.renderState;
-            //    $renderCanvas = document.createElement('canvas'),
-            //    ctx = $renderCanvas.getContext('2d');
-            //ctx.fillStyle = 'green';
-            //ctx.fillRect(0, 0, $renderCanvas.width, $renderCanvas.height);
-            return marquee.getGhostImageObservable(renderState, undefined, 'image/png' /*, $renderCanvas*/)
+            var renderState = appState.renderState,
+                backgroundColorCSS = $('#simulation').css('backgroundColor');
+            // colorpicker sets background color as CSS, so we match it thus:
+            return marquee.getGhostImageObservable(renderState, undefined, 'image/png')
                 .map(function (imageDataURL) {
                     response.imageDataURL = imageDataURL;
+                    response.backgroundColor = backgroundColorCSS;
                     return response;
                 });
         })
@@ -105,7 +122,7 @@ module.exports = function (appState, socket, urlParams) {
             var renderState = appState.renderState,
                 camera = renderState.get('camera'),
                 $modal = response.$modal,
-                targetURL = getExportURL(camera, urlParams, reply.name),
+                targetURL = getExportURL(camera, urlParams, reply.name, rgb2hex(response.backgroundColor)),
                 previewURL = staticclient.getStaticContentURL(reply.name, 'preview.png');
             var embedElement = $('<a>')
                 .attr('target', '_blank')
@@ -114,7 +131,8 @@ module.exports = function (appState, socket, urlParams) {
                     //.attr('width', 150)
                     .attr('src', previewURL)
                     .css('min-width', 150)
-                    .css('min-height', 150))
+                    .css('min-height', 150)
+                    .css('background-color', response.backgroundColor))
                 .attr('href', targetURL);
             $('.modal-body', $modal)
                 .empty()
