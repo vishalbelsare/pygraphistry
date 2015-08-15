@@ -130,9 +130,12 @@ module.exports = function (appState, socket, urlParams) {
                     .attr('height', 150)
                     //.attr('width', 150)
                     .attr('src', previewURL)
-                    .css('min-width', 150)
-                    .css('min-height', 150)
-                    .css('background-color', response.backgroundColor))
+                    .css({
+                        'min-width': 150,
+                        'transform': 'scaleY(-1)',
+                        'min-height': 150,
+                        'background-color': response.backgroundColor
+                    }))
                 .attr('href', targetURL);
             $('.modal-body', $modal)
                 .empty()
