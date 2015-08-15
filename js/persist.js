@@ -52,10 +52,8 @@ function checkWrite (snapshotName, vboPath, raw, buff) {
     logger.trace('readback metadata', read);
 }
 
-// Distinguish already compressed VBO from setting gzip encoding
 function uploadPublic (path, buffer, params) {
-    var uploadParams = !_.isEmpty(params) ? _.clone(params) : {};
-    uploadParams.acl = 'public-read';
+    var uploadParams = _.extend(params || {}, {acl: 'public-read'});
     return s3.upload(config.S3, config.BUCKET, {name: path}, buffer, uploadParams);
 }
 
@@ -137,9 +135,9 @@ module.exports =
 
         publishStaticContents: function (snapshotName, compressedVBOs, metadata, dataframe, renderConfig) {
             logger.trace('publishing current content to S3');
-            var snapshotPath = this.pathForContentKey(snapshotName);
-            var edgeExport = staticContentForDataframe(dataframe, 'edge');
-            var pointExport = staticContentForDataframe(dataframe, 'point');
+            var snapshotPath = this.pathForContentKey(snapshotName),
+                edgeExport = staticContentForDataframe(dataframe, 'edge'),
+                pointExport = staticContentForDataframe(dataframe, 'point');
             uploadPublic(snapshotPath + 'renderconfig.json', JSON.stringify(renderConfig),
                 {ContentType: 'application/json'});
             uploadPublic(snapshotPath + 'metadata.json', JSON.stringify(metadata),
@@ -159,7 +157,7 @@ module.exports =
             _.each(vboAttributes, function(attributeName) {
                 if (compressedVBOs.hasOwnProperty(attributeName) && !_.isUndefined(compressedVBOs[attributeName])) {
                     uploadPublic(snapshotPath + attributeName + '.vbo', compressedVBOs[attributeName],
-                        {should_compress: false});
+                        {should_compress: false, ContentEncoding: 'gzip'});
                 }
             });
             // These are ArrayBuffers, so ask for compression:
