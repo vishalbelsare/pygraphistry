@@ -152,9 +152,15 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
                 return;
             }
             try {
-                debug('restxt', JSON.parse(oReq.responseText));
-                labelsByType[type][index] = JSON.parse(oReq.responseText);
-                res.onNext(oReq.response);
+                var responseData = JSON.parse(oReq.responseText),
+                    responseTabular = _.pairs(_.omit(responseData, '_title'));
+                debug('restxt', responseData);
+                labelsByType[type][index] = responseData;
+                res.onNext([{
+                    formatted: false,
+                    title: responseData._title,
+                    columns: responseTabular
+                }]);
             } catch (e) {
                 console.error('Error on loading ranged data: ', e, e.stack);
             }
@@ -165,7 +171,7 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
         throw new Error('Undefined labels range request', type, index, byteStart, byteEnd);
     }
 
-    return res.take(1);
+    return res;
 }
 
 
@@ -216,9 +222,12 @@ module.exports = {
                             indices = data.indices;
                         try {
                             getLabel(dim, indices[0])
-                                .flatMap(function (responseData) {
+                                .do(function (responseData) {
                                     cb(undefined, responseData);
+                                }).subscribe(_.identity, function (err) {
+                                    console.error('fetch vbo exn', err, (err||{}).stack);
                                 });
+
                         } catch (e) {
                             cb(e, data);
                         }
