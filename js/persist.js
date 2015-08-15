@@ -139,9 +139,9 @@ module.exports =
                 edgeExport = staticContentForDataframe(dataframe, 'edge'),
                 pointExport = staticContentForDataframe(dataframe, 'point');
             uploadPublic(snapshotPath + 'renderconfig.json', JSON.stringify(renderConfig),
-                {ContentType: 'application/json'});
+                {ContentType: 'application/json', ContentEncoding: 'gzip'});
             uploadPublic(snapshotPath + 'metadata.json', JSON.stringify(metadata),
-                {ContentType: 'application/json'});
+                {ContentType: 'application/json', ContentEncoding: 'gzip'});
             var vboAttributes = [
                 'curPoints',
                 'curMidPoints',
@@ -175,6 +175,6 @@ module.exports =
             logger.trace('publishing a PNG preview for content already in S3');
             var snapshotPath = this.pathForContentKey(snapshotName);
             imageName = imageName || 'preview.png';
-            return uploadPublic(snapshotPath + imageName, binaryData, {should_compress: true});
+            return uploadPublic(snapshotPath + imageName, binaryData, {should_compress: true, ContentEncoding: 'gzip'});
         }
     };
