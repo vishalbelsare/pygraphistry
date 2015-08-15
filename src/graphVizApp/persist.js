@@ -42,12 +42,14 @@ function getExportURL (camera, urlParams, contentKey, backgroundColor) {
     var overrides = {
             static: true, contentKey: contentKey,
             play: 0, center: false, // TODO: Infer these play/center settings from static=true on load.
-            bg: backgroundColor && encodeURIComponent(backgroundColor),
             menu: false, goLive: false
         },
         boundsArray = _.map(camera.getBounds(), function (value) { return value.toPrecision(3); }),
-        bounds    = {left: boundsArray[0], right: boundsArray[1], top: boundsArray[2], bottom: boundsArray[3]},
-        params    = _.extend({}, urlParams, overrides, bounds),
+        bounds    = {left: boundsArray[0], right: boundsArray[1], top: boundsArray[2], bottom: boundsArray[3]};
+    if (backgroundColor) {
+        overrides.bg = encodeURIComponent(backgroundColor);
+    }
+    var params    = _.extend({}, urlParams, overrides, bounds),
         paramStr  = _.map(params, function (v, k) { return k + '=' + v; }).join('&');
     return window.location.origin + window.location.pathname + '?' + paramStr;
 }
