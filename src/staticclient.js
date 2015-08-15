@@ -127,6 +127,7 @@ function fetchOffsetBuffer (bufferName) {
 
 function getLabelOffsets(type) {
     fetchOffsetBuffer(type + 'Labels.offsets').forEach(function (labelContentOffsets) {
+        debug('Got offsets for', type, labelContentOffsets);
         labelsOffsetsByType[type] = labelContentOffsets;
     });
 }
@@ -141,7 +142,7 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
     // First label: start can be 0, but end must be set.
     // Last label: start is set, end unspecified, okay.
     if (byteStartString || byteEndString) {
-        oReq.responseType = 'application/json';
+        oReq.responseType = 'text'; // FIXME Try 'json'
         oReq.open('GET', assetURL, true);
         oReq.setRequestHeader('Range', 'bytes=' + byteStartString + '-' + byteEndString);
 
@@ -151,7 +152,8 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
                 return;
             }
             try {
-                labelsByType[type][index] = oReq.response;
+                debug('restxt', JSON.parse(oReq.responseText));
+                labelsByType[type][index] = JSON.parse(oReq.responseText);
                 res.onNext(oReq.response);
             } catch (e) {
                 console.error('Error on loading ranged data: ', e, e.stack);
@@ -173,7 +175,7 @@ function getRangeForLabel(type, index) {
         throw new Error('Label offsets not found for type', type);
     }
     var lowerBound = offsetsForType && offsetsForType[index],
-        upperBound = offsetsForType && offsetsForType[index + 1];
+        upperBound = offsetsForType && offsetsForType[index + 1] - 1;  // FIXME Maybe What happens of index is last element
     if (lowerBound >= upperBound) {
         throw new Error('Invalid byte range indicated at', type, index);
     }
