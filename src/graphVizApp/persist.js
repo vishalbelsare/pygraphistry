@@ -13,13 +13,19 @@ var marquee         = require('./marquee.js');
 
 /** Simple utility to auto-coerce CSS rgb color strings to hex strings. */
 function rgb2hex(rgb) {
-    if (/^#[0-9A-F]{6}$/i.test(rgb)) return rgb;
+    try {
+        if (!rgb) return undefined;
+        if (/^#[0-9A-F]{6}$/i.test(rgb)) return rgb;
 
-    rgb = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
-    function hex(x) {
-        return ("0" + parseInt(x).toString(16)).slice(-2);
+        rgb = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+        function hex(x) {
+            return ("0" + parseInt(x).toString(16)).slice(-2);
+        }
+
+        return "#" + hex(rgb[1]) + hex(rgb[2]) + hex(rgb[3]);
+    } catch (e) {
+        return undefined;
     }
-    return "#" + hex(rgb[1]) + hex(rgb[2]) + hex(rgb[3]);
 }
 
 
@@ -36,7 +42,7 @@ function getExportURL (camera, urlParams, contentKey, backgroundColor) {
     var overrides = {
             static: true, contentKey: contentKey,
             play: 0, center: false, // TODO: Infer these play/center settings from static=true on load.
-            bg: encodeURIComponent(backgroundColor),
+            bg: backgroundColor && encodeURIComponent(backgroundColor),
             menu: false, goLive: false
         },
         boundsArray = _.map(camera.getBounds(), function (value) { return value.toPrecision(3); }),
