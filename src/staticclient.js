@@ -147,6 +147,11 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
     // Last label: start is set, end unspecified, okay.
     if (byteStartString || byteEndString) {
         oReq.responseType = 'text'; // 'json' does not work for a range request!
+        if (!isNaN(byteEnd - byteStart)) {
+            if (byteEnd - byteStart > LABEL_SIZE_LIMIT) {
+                throw new Error('Too large labels range request', type, index, byteStart, byteEnd);
+            }
+        }
         oReq.open('GET', assetURL, true);
         oReq.setRequestHeader('Range', 'bytes=' + byteStartString + '-' + byteEndString);
 
@@ -253,6 +258,9 @@ module.exports = {
         return $.ajaxAsObservable({
                 url: getStaticContentURL(contentKey, 'renderconfig.json'),
                 dataType: 'json'
+            })
+            .catch(function (error) {
+                console.error('Error retrieving render config.', error);
             })
             .pluck('data')
             .map(function (data) {
