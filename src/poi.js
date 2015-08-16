@@ -179,7 +179,7 @@ function cacheKey(idx, dim) {
 
 
 function fetchLabel (instance, idx, dim) {
-    instance.state.socket.emit('get_labels', {dim: dim, indices: [idx]}, function(err, data) {
+    instance.state.socket.emit('get_labels', {dim: dim, indices: [idx]}, function (err, data) {
         if (err) {
             console.error('get_labels', err);
         } else {
@@ -270,6 +270,29 @@ function invalidateCache (instance) {
     });
 }
 
+/**
+ * @typedef {Object} POIHandlerState
+ * @type {socket.io socket} socket
+ * @type {GraphistryClient} client
+ * @type {Object} labelCache
+ * @type {Object} activeLabels
+ * @type {Array} inactiveLabels
+ */
+
+
+/**
+ * @typedef {Object} POIHandler
+ * @type POIHandlerState state
+ * @type number MAX_LABELS
+ * @type Function resetActiveLabels
+ * @type (function(this:POIHandler)) getLabelDom
+ * @type Function getActiveApprox
+ * @type Function finishApprox
+ * @type (function(this:POIHandler)) genLabel
+ * @type (function(this:POIHandler)) invalidateCache
+ * @type Function cacheKey
+ */
+
 
 /**
  * @param {socket.io socket} socket
@@ -278,7 +301,7 @@ function invalidateCache (instance) {
 function init (socket) {
     debug('initializing label engine');
 
-    var instance = { };
+    var instance = {};
 
     _.extend(instance, {
 

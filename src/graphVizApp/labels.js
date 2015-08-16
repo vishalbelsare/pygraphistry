@@ -35,7 +35,7 @@ function renderPointLabels(appState, $labelCont, labels, clicked) {
         .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
 }
 
-// RenderState * Obserbable * Observable
+// RenderState * Observable * Observable
 function setupCursor(renderState, renderingScheduler, isAnimating, latestHighlightedObject) {
     var rxPoints = renderState.get('hostBuffers').curPoints;
     var rxSizes = renderState.get('hostBuffers').pointSizes;
@@ -116,10 +116,10 @@ function renderCursor(renderState, renderingScheduler, $cont, $point, $center, p
         left: pos.x
     });
     $point.css({
-        'left' : -offset,
-        'top' : -offset,
-        'width': size,
-        'height': size,
+        left: -offset,
+        top: -offset,
+        width: size,
+        height: size,
         'border-radius': size / 2
     });
 
@@ -128,8 +128,8 @@ function renderCursor(renderState, renderingScheduler, $cont, $point, $center, p
     * issues when I tried that. */
     var csize = parseInt($center.css('width'), 10);
     $center.css({
-        'left' : offset - csize / 2.0,
-        'top' : offset - csize / 2.0
+        left: offset - csize / 2.0,
+        top: offset - csize / 2.0
     });
 }
 
@@ -161,9 +161,9 @@ function newLabelPositions(renderState, labels, points) {
 
 function effectLabels(toClear, toShow, labels, newPos, highlighted, clicked, poi) {
 
-    //DOM effects: disable old, then move->enable new
+    // DOM effects: disable old, then move->enable new
     toClear.forEach(function (lbl) {
-        lbl.elt.css('display','none');
+        lbl.elt.css('display', 'none');
     });
 
     labels.forEach(function (elt, i) {
@@ -223,7 +223,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
     var toClear = poi.finishApprox(poi.state.activeLabels, poi.state.inactiveLabels,
                                    hits, appState.renderState, points);
 
-    //select label elts (and make active if needed)
+    // select label elements (and make active if needed)
     var toShow = [];
     var labels = _.values(hits)
         .map(function (hit) {
@@ -236,15 +236,15 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
             if (idx === -1) {
                 return null;
             } else if (poi.state.activeLabels[poi.cacheKey(idx, dim)]) {
-                //label already on, resuse
+                // label already on, re-use
                 var alreadyActiveLabel = poi.state.activeLabels[poi.cacheKey(idx, dim)];
                 toShow.push(alreadyActiveLabel);
                 return alreadyActiveLabel;
             } else if ((_.keys(poi.state.activeLabels).length > poi.MAX_LABELS) && (_.pluck(highlighted, 'idx').indexOf(idx) === -1)) {
-                //no label but too many on screen, don't create new
+                // no label but too many on screen, don't create new
                 return null;
             } else if (!poi.state.inactiveLabels.length) {
-                //no label and no preallocated elts, create new
+                // no label and no pre-allocated elements, create new
                 var freshLabel = poi.genLabel($labelCont, idx, hits[poi.cacheKey(idx, dim)]);
                 freshLabel.elt.on('mouseover', function () {
                     appState.labelHover.onNext(this);
@@ -258,7 +258,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
                 toShow.push(freshLabel);
                 return freshLabel;
             } else {
-                //no label and available inactive preallocated, reuse
+                // no label and available inactive preallocated, reuse
                 var lbl = poi.state.inactiveLabels.pop();
                 lbl.idx = idx;
                 lbl.dim = dim;
@@ -289,7 +289,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
         'labels:', labels.length, '/', _.keys(hits).length, poi.state.inactiveLabels.length);
 }
 
-//move labels when new highlight or finish noisy rendering section
+// move labels when new highlight or finish noisy rendering section
 // AppState * $DOM * Observable [ {dim: int, idx: int} ] * Observable DOM -> ()
 function setupLabels (appState, $eventTarget, latestHighlightedObject) {
     var $labelCont = $('<div>').addClass('graph-label-container');
@@ -302,7 +302,7 @@ function setupLabels (appState, $eventTarget, latestHighlightedObject) {
         return latestHighlightedObject;
     }).do(function (highlighted) {
 
-        //always pin (unpin-if-drag may happen later)
+        // always pin (unpin-if-drag may happen later)
         var clicked = highlighted.filter(function (o) {
             return o.click;
         });
@@ -313,10 +313,10 @@ function setupLabels (appState, $eventTarget, latestHighlightedObject) {
     .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
 }
 
-//AppState * $DOM * textureName-> Observable [ {dim: 1, idx: int} ]
-//Changes either from point mouseover or a label mouseover
-//Clicking (coexists with hovering) will open at most 1 label
-//Most recent interaction goes at the end
+// AppState * $DOM * textureName-> Observable [ {dim: 1, idx: int} ]
+// Changes either from point mouseover or a label mouseover
+// Clicking (coexists with hovering) will open at most 1 label
+// Most recent interaction goes at the end
 function getLatestHighlightedObject (appState, $eventTarget, textures) {
 
     var OFF = [{idx: -1, dim: 0}];

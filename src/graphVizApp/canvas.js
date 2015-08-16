@@ -687,7 +687,7 @@ function renderSlowEffects(renderingScheduler) {
  * Render mouseover effects. These should only occur during a quiet state.
  *
  */
- var lastHighlighted = {edges: [], nodes: []};
+var lastHighlighted = {edges: [], nodes: []};
 
 // TODO: Make this work on safari.
 function renderMouseoverEffects(renderingScheduler, task) {
@@ -728,8 +728,9 @@ function renderMouseoverEffects(renderingScheduler, task) {
 
     // Extend edges with neighbors of nodes
     _.each(nodeIndices, function (val) {
-        var start = forwardsEdgeStartEndIdxs[2*val];
-        var end = forwardsEdgeStartEndIdxs[2*val + 1];
+        var stride = 2 * val;
+        var start = forwardsEdgeStartEndIdxs[stride];
+        var end = forwardsEdgeStartEndIdxs[stride + 1];
         while (start < end) {
             var edgeIdx = start;
             if (!seenEdges[edgeIdx]) {
@@ -743,8 +744,9 @@ function renderMouseoverEffects(renderingScheduler, task) {
     // Extend node indices with edge endpoints
     // TODO: Decide if we need to dedupe.
     _.each(edgeIndices, function (val) {
-        nodeIndices.push(logicalEdges[2*val]);
-        nodeIndices.push(logicalEdges[2*val + 1]);
+        var stride = 2 * val;
+        nodeIndices.push(logicalEdges[stride]);
+        nodeIndices.push(logicalEdges[stride + 1]);
     });
 
     var hostNodePositions = new Float32Array(hostBuffers.curPoints.buffer);
