@@ -296,17 +296,28 @@ function getTextureObservable(renderState, dims) {
 /**
  * @returns {Rx.ReplaySubject} - contains string of the image data uri
  */
-function getGhostImageObservable(renderState, sel, mimeType, imgCanvas) {
+function getGhostImageObservable(renderState, sel, mimeType, flip_y) {
     /** @type HTMLCanvasElement */
     var canvas = renderState.get('gl').canvas;
     var pixelRatio = renderState.get('camera').pixelRatio;
 
+    if (flip_y === undefined) {
+        flip_y = true;
+    }
+
     // Default the selection to the entire canvas dimensions.
-    sel = sel || {tl: {x: 0, y: 0}, br: {x: canvas.width, y: canvas.height}};
+    if (sel === undefined) {
+        sel = {tl: {x: 0, y: 0}, br: {x: canvas.width, y: canvas.height}};
+    }
+
+    // We flip Y to support WebGL e.g. the marquee tool for "move nodes" selection highlight.
+    // TODO allow not flipping because PNG export needs CSS "transform: scaleY(-1)" to use at all!
+    var unflipped_y = pixelRatio * (sel.tl.y + Math.abs(sel.tl.y - sel.br.y)),
+        flipped_y = canvas.height - unflipped_y;
 
     var dims = {
         x: sel.tl.x * pixelRatio,
-        y: canvas.height - pixelRatio * (sel.tl.y + Math.abs(sel.tl.y - sel.br.y)), // Flip y coordinate
+        y: flip_y ? flipped_y : unflipped_y,
         width: Math.max(1, pixelRatio * Math.abs(sel.tl.x - sel.br.x)),
         height: Math.max(1, pixelRatio * Math.abs(sel.tl.y - sel.br.y))
     };
@@ -314,11 +325,9 @@ function getGhostImageObservable(renderState, sel, mimeType, imgCanvas) {
     return getTextureObservable(renderState, dims)
         .map(function (texture) {
             /** @type HTMLCanvasElement */
-            if (imgCanvas === undefined) {
-                imgCanvas = document.createElement('canvas');
-                imgCanvas.width = dims.width;
-                imgCanvas.height = dims.height;
-            }
+            var imgCanvas = document.createElement('canvas');
+            imgCanvas.width = dims.width;
+            imgCanvas.height = dims.height;
             var ctx = imgCanvas.getContext('2d');
 
             var imgData = ctx.createImageData(dims.width, dims.height);
@@ -340,7 +349,7 @@ function getGhostImageObservable(renderState, sel, mimeType, imgCanvas) {
  */
 function createGhostImg(renderState, sel, $elt, cssWidth, cssHeight) {
     getGhostImageObservable(renderState, sel)
-        .flatMap(function (dataURL) {
+        .do(function (dataURL) {
             var img = new Image();
             img.src = dataURL;
 

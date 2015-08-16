@@ -127,6 +127,7 @@ function fetchOffsetBuffer (bufferName) {
 
 function getLabelOffsets(type) {
     fetchOffsetBuffer(type + 'Labels.offsets').forEach(function (labelContentOffsets) {
+        debug('Got offsets for', type, labelContentOffsets);
         labelsOffsetsByType[type] = labelContentOffsets;
     });
 }
@@ -141,7 +142,7 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
     // First label: start can be 0, but end must be set.
     // Last label: start is set, end unspecified, okay.
     if (byteStartString || byteEndString) {
-        oReq.responseType = 'application/json';
+        oReq.responseType = 'text'; // 'json' does not work for a range request!
         oReq.open('GET', assetURL, true);
         oReq.setRequestHeader('Range', 'bytes=' + byteStartString + '-' + byteEndString);
 
@@ -151,8 +152,15 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
                 return;
             }
             try {
-                labelsByType[type][index] = oReq.response;
-                res.onNext(oReq.response);
+                var responseData = JSON.parse(oReq.responseText),
+                    responseTabular = _.pairs(_.omit(responseData, '_title'));
+                debug('restxt', responseData);
+                labelsByType[type][index] = responseData;
+                res.onNext([{
+                    formatted: false,
+                    title: responseData._title,
+                    columns: responseTabular
+                }]);
             } catch (e) {
                 console.error('Error on loading ranged data: ', e, e.stack);
             }
@@ -163,7 +171,7 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
         throw new Error('Undefined labels range request', type, index, byteStart, byteEnd);
     }
 
-    return res.take(1);
+    return res;
 }
 
 
@@ -173,8 +181,8 @@ function getRangeForLabel(type, index) {
         throw new Error('Label offsets not found for type', type);
     }
     var lowerBound = offsetsForType && offsetsForType[index],
-        upperBound = offsetsForType && offsetsForType[index + 1];
-    if (lowerBound >= upperBound) {
+        upperBound = offsetsForType && (offsetsForType.length > index ? offsetsForType[index + 1] - 1 : undefined);
+    if (upperBound !== undefined && lowerBound >= upperBound) {
         throw new Error('Invalid byte range indicated at', type, index);
     }
     return [lowerBound, upperBound];
@@ -214,9 +222,12 @@ module.exports = {
                             indices = data.indices;
                         try {
                             getLabel(dim, indices[0])
-                                .flatMap(function (responseData) {
+                                .do(function (responseData) {
                                     cb(undefined, responseData);
+                                }).subscribe(_.identity, function (err) {
+                                    console.error('fetch vbo exn', err, (err||{}).stack);
                                 });
+
                         } catch (e) {
                             cb(e, data);
                         }
