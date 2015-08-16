@@ -156,7 +156,7 @@ module.exports = function (appState, socket, urlParams) {
                 .append($('<p>')
                     .append($('<span>').text('HTML:'))
                     .append($('<textarea>')
-                        .text(_.escape(previewElement.outerHTML))
+                        .text(previewElement[0].outerHTML)
                         .css('width', '100%')));
             $('.status', $modal).css('display', 'none');
         })
