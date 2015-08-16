@@ -56,7 +56,7 @@ function save(graph, name) {
     return serializePositions(graph).then(function (vg) {
         var blob = vg.encode().toBuffer();
         logger.debug('Uploading to S3', name);
-        return s3.upload(config.S3, config.BUCKET, {name: name}, blob);
+        return s3.upload(config.S3, config.BUCKET, {name: name}, blob, {ContentEncoding: 'gzip'});
     }).fail(log.makeQErrorHandler(logger, 'save vgraph'));
 }
 

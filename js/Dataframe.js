@@ -633,9 +633,9 @@ Dataframe.prototype.loadDegrees = function (outDegrees, inDegrees) {
         degree[i] = inDegrees[i] + outDegrees[i];
     }
 
-    attributes.degree = {values: degree};
-    attributes.degree_in = {values: degree_in};
-    attributes.degree_out = {values: degree_out};
+    attributes.degree = {values: degree, type: 'number'};
+    attributes.degree_in = {values: degree_in, type: 'number'};
+    attributes.degree_out = {values: degree_out, type: 'number'};
 };
 
 
@@ -655,13 +655,13 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
         destination[i] = nodeTitles[unsortedEdges[2*i + 1]];
     }
 
-    attributes.Source = {values: source};
-    attributes.Destination = {values: destination};
+    attributes.Source = {values: source, type: 'string'};
+    attributes.Destination = {values: destination, type: 'string'};
 
     // If no title has been set, just make title the index.
     // TODO: Is there a more appropriate place to put this?
     if (!attributes._title) {
-        attributes._title = {type: 'number', values: range(numElements)};
+        attributes._title = {type: 'string', values: range(numElements)};
     }
 
 };
