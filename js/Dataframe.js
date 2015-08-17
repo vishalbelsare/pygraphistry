@@ -506,6 +506,22 @@ Dataframe.prototype.filter = function (masks, simulator) {
             newBuffers.backwardsWorkItems.write(backwardsEdges.workItemsTyped),
             newBuffers.backwardsEdgeStartEndIdxs.write(backwardsEdges.edgeStartEndIdxsTyped)
         ]);
+
+
+    }).then(function () {
+        // Delete all GPU buffers for values.
+        var promises = [];
+        _.each(['point', 'edge'], function (type) {
+            var buffers = that.data.buffers[type];
+            _.each(_.keys(buffers), function (name) {
+                var buf = buffers[name];
+                promises.push(buffers.delete);
+                delete buffers[name];
+            });
+        });
+
+        return Q.all(promises);
+
     }).then(function () {
 
         // Just in case, copy over references from rawdata to newData
@@ -807,18 +823,36 @@ Dataframe.prototype.getLabels = function (type) {
  *  @param {string} type - any of [TYPES]{@link TYPES}.
  */
 Dataframe.prototype.getBuffer = function (name, type) {
+    // TODO: Specialize the 'simulator' type case into its own function.
+    // It should be treated differently, since we manually load the buffers
     var buffers = this.data.buffers[type];
     var res = buffers[name];
+    var that = this;
 
-    // Too much of our code relies on being able to get back undefineds
-    // Will reenable this once we refactor those parts of the code.
+    if (type === 'simulator') {
+        return res;
+    }
 
-    // if (!res) {
-    //     console.log("Invalid Buffer[" + type + "]: " + name);
-    //     throw "Invalid Buffer[" + type + "]: " + name;
-    // }
-    return res;
-};
+    if (res) {
+        return Q(res);
+    } else {
+        var data = this.data.attributes[type][name].values;
+        var dataType = this.getDataType(name, type);
+
+        if (dataType !== 'number') {
+            throw "Attempting to get buffer that is non-numberic";
+        }
+
+        var typedData = new Float32Array(data);
+        var byteLength = typedData.byteLength;
+
+        return this.simulator.cl.createBuffer(byteLength, '_' + type + '_' + name)
+            .then(function (newBuffer) {
+                buffers[name] = newBuffer;
+                return newBuffer.write(typedData);
+            });
+    }
+}
 
 
 /** Returns one row object.
@@ -1200,8 +1234,7 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
         bottomVal = min;
     }
 
-
-    var dataTyped = new Float32Array(values);
+    var qDataBuffer = this.getBuffer(attribute, type);
     var binStart = new Float32Array(numBins);
     for (var i = 0; i < numBins; i++) {
         binStart[i] = bottomVal + (binWidth * i);
@@ -1220,8 +1253,9 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
 
     var first = Date.now();
 
-    return simulator.otherKernels.histogramKernel.run(simulator, numBins, dataSize, dataTyped, indices, binStart)
-        .then(function (bins) {
+    return qDataBuffer.then(function (dataBuffer) {
+            return simulator.otherKernels.histogramKernel.run(simulator, numBins, dataSize, dataBuffer, indices, binStart);
+        }).then(function (bins) {
             console.log('[HISTOGRAM] Time Spent: ', (Date.now() - first));
             return _.extend(retObj, {bins: bins});
         }).fail(log.makeQErrorHandler(logger, 'Failure trying to run histogramKernel'));

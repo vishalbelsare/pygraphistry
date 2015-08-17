@@ -57,6 +57,10 @@ function create(dataframe, renderer, device, vendor, cfg) {
             dataframe: dataframe
         };
 
+        // Give dataframe pointer to simObj
+        dataframe.simulator = simObj;
+
+
         return new Q().then(function () {
             logger.debug('Instantiating layout algorithms: %o', layoutAlgorithms);
             return _.map(layoutAlgorithms, function (la) {

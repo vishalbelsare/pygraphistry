@@ -33,7 +33,7 @@ function HistogramKernel(clContext) {
 }
 
 
-HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataTyped, indicesTyped, bins) {
+HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataBuffer, indicesTyped, bins) {
     logger.debug('Running histogram kernel.');
     var that = this;
     var start;
@@ -85,7 +85,7 @@ HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataType
             outputMean: outputMean.buffer,
             outputMax: outputMax.buffer,
             outputMin: outputMin.buffer,
-            data: data.buffer,
+            data: dataBuffer.buffer,
             indices: indices.buffer,
             binStart: binStart.buffer,
             check: check.buffer
@@ -95,7 +95,7 @@ HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataType
 
         return Q.all([
             output.write(that.outputZeros),
-            data.write(dataTyped),
+            // data.write(dataTyped),
             binStart.write(bins),
             check.write(checkTyped),
             indices.write(indicesTyped)
