@@ -406,7 +406,7 @@ function createBufferGL(cl, vbo, name) {
 
 
 var copyBuffer = Q.promised(function (cl, source, destination) {
-    logger.debug("Copying buffer. Source: %s (%d bytes), destination %s (%d bytes)",
+    logger.trace("Copying buffer. Source: %s (%d bytes), destination %s (%d bytes)",
         source.name, source.size, destination.name, destination.size);
     return acquire([source, destination])
         .then(function () {
@@ -420,7 +420,7 @@ var copyBuffer = Q.promised(function (cl, source, destination) {
 
 
 var write = Q.promised(function write(buffer, data) {
-    logger.debug('Writing to buffer', buffer.name, buffer.size, 'bytes');
+    logger.trace('Writing to buffer', buffer.name, buffer.size, 'bytes');
     return buffer.acquire()
         .then(function () {
             buffer.cl.queue.enqueueWriteBuffer(buffer.buffer, true, 0, data.byteLength, data);
@@ -428,7 +428,7 @@ var write = Q.promised(function write(buffer, data) {
         })
         .then(function() {
             // buffer.cl.queue.finish();
-            logger.debug("Finished buffer %s write", buffer.name);
+            logger.trace("Finished buffer %s write", buffer.name);
 
             return buffer;
         });
@@ -438,14 +438,14 @@ var write = Q.promised(function write(buffer, data) {
 var read = Q.promised(function (buffer, target, optStartIdx, optLen) {
     return buffer.acquire()
         .then(function() {
-            logger.debug('Reading Buffer', buffer.name);
+            logger.trace('Reading Buffer', buffer.name);
             var start = Math.min(optStartIdx || 0, buffer.size);
             var len = optLen !== undefined ? optLen : (buffer.size - start);
             buffer.cl.queue.enqueueReadBuffer(buffer.buffer, true, start, len, target);
             return buffer.release();
         })
         .then(function() {
-            logger.debug('Done Reading: ', buffer.name);
+            logger.trace('Done Reading: ', buffer.name);
             return buffer;
         })
         .fail(log.makeQErrorHandler(logger, 'Read error for buffer', buffer.name));

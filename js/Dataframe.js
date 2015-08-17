@@ -1251,12 +1251,9 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
         minValue: bottomVal
     };
 
-    var first = Date.now();
-
     return qDataBuffer.then(function (dataBuffer) {
             return simulator.otherKernels.histogramKernel.run(simulator, numBins, dataSize, dataBuffer, indices, binStart);
         }).then(function (bins) {
-            console.log('[HISTOGRAM] Time Spent: ', (Date.now() - first));
             return _.extend(retObj, {bins: bins});
         }).fail(log.makeQErrorHandler(logger, 'Failure trying to run histogramKernel'));
 
