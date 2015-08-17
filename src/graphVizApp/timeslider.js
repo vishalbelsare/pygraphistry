@@ -4,7 +4,6 @@ var debug   = require('debug')('graphistry:StreamGL:graphVizApp:timeslider');
 var $       = window.$;
 var Rx      = require('rx');
               require('../rx-jquery-stub');
-var _       = require('underscore');
 
 module.exports = {
     init: function (appState, socket, urlParams) {
