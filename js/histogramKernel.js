@@ -34,6 +34,7 @@ function HistogramKernel(clContext) {
 
 
 HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataTyped, indicesTyped, bins) {
+    logger.debug('Running histogram kernel.');
     var that = this;
     var start;
 
@@ -64,9 +65,6 @@ HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataType
     return Q.all(that.qBuffers).spread(function (
             output, outputSum, outputMean, outputMax, outputMin, data, indices, binStart, check
     ){
-        logger.debug('Running histogram kernel');
-        logger.debug('numBins: ', numBins);
-        logger.debug('dataSize: ', dataSize);
         that.buffers = {
             output: output,
             outputSum: outputSum,
@@ -105,11 +103,15 @@ HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataType
     }).then(function () {
         console.log('[HISTOGRAM] Writing took: ', (Date.now() - start));
         logger.debug('Wrote to buffers, executing histogram kernel');
-        return that.histogramKernel.exec([dataSize], [])
+
+        var workGroupSize = 128;
+        var numWorkItems = dataSize + (workGroupSize - (dataSize % workGroupSize));
+
+        return that.histogramKernel.exec([numWorkItems], [], [workGroupSize])
             .then(function () {
+
                 var retOutput = new Int32Array(MAX_NUM_BINS * Int32Array.BYTES_PER_ELEMENT);
                 // TODO: Return all outputs, not just count;
-                logger.debug('Executed histogram, about to read');
                 return that.buffers.output.read(retOutput).then(function () {
                     logger.debug('Read histogram, returning');
                     return new Int32Array(retOutput.buffer, 0, numBins);
