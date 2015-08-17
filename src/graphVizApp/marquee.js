@@ -294,6 +294,10 @@ function getTextureObservable(renderState, dims) {
 }
 
 /**
+ * @param {Immutable.Map} renderState - RenderState
+ * @param {{tl: {x: number, y: number}, br: {x: number, y: number}}} sel - Optional selection, whole image by default.
+ * @param {string} mimeType - optional mime-type specifier. Raw image data by default.
+ * @param {Boolean} flipY - whether to flip the image data vertically to escape WebGL orientation.
  * @returns {Rx.ReplaySubject} - contains string of the image data uri
  */
 function getGhostImageObservable(renderState, sel, mimeType, flipY) {
@@ -311,13 +315,9 @@ function getGhostImageObservable(renderState, sel, mimeType, flipY) {
     }
 
     // We flip Y to support WebGL e.g. the marquee tool for "move nodes" selection highlight.
-    // TODO allow not flipping because PNG export needs CSS "transform: scaleY(-1)" to use at all!
-    var unflippedY = pixelRatio * (sel.tl.y + Math.abs(sel.tl.y - sel.br.y)),
-        flippedY = canvas.height - unflippedY;
-
     var dims = {
         x: sel.tl.x * pixelRatio,
-        y: flipY ? flippedY : unflippedY,
+        y: canvas.height - pixelRatio * (sel.tl.y + Math.abs(sel.tl.y - sel.br.y)),
         width: Math.max(1, pixelRatio * Math.abs(sel.tl.x - sel.br.x)),
         height: Math.max(1, pixelRatio * Math.abs(sel.tl.y - sel.br.y))
     };
@@ -329,6 +329,12 @@ function getGhostImageObservable(renderState, sel, mimeType, flipY) {
             imgCanvas.width = dims.width;
             imgCanvas.height = dims.height;
             var ctx = imgCanvas.getContext('2d');
+            if (flipY) {
+                // Translate context to center:
+                ctx.translate(imgCanvas.width / 2, imgCanvas.height / 2);
+                // Flip horizontally:
+                ctx.scale(1, -1);
+            }
 
             var imgData = ctx.createImageData(dims.width, dims.height);
             imgData.data.set(texture);
@@ -355,7 +361,6 @@ function createGhostImg(renderState, sel, $elt, cssWidth, cssHeight) {
 
             $(img).css({
                 'pointer-events': 'none',
-                transform: 'scaleY(-1)',
                 width: cssWidth,
                 height: cssHeight
             });

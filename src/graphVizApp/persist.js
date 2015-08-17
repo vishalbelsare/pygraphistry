@@ -141,7 +141,6 @@ module.exports = function (appState, socket, urlParams) {
                         // TODO: extract these into LESS and use a class attribute:
                         .css({
                             'min-width': 150,
-                            'transform': 'scaleY(-1)',
                             'min-height': 150,
                             'background-color': response.backgroundColor || $('.graphistry-body').css('backgroundColor')
                         }))
