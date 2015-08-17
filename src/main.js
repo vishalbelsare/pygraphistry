@@ -43,6 +43,7 @@ console.warn('%cWarning: having the console open can slow down execution signifi
  * @type {string} logo - bool, defaults to true, can override to disable Graphistry brand/logo.
  * @type {string} menu - bool, defaults to true, can override to disable menu.
  * @type {string} static - bool, defaults to false, indicates whether to load static content instead of connect live.
+ * @type {string} bg - hex color, URI-encoded, indicates the DOM background color to use instead of default.
  * @type {string} contentKey - specifies where static content resides.
  * @type {string} camera - defaults to '2d', can also be '3d'
  */
