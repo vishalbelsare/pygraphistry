@@ -37,6 +37,8 @@
     <link rel="stylesheet" href="css/gpustreaming.css" type="text/css" media="screen" charset="utf-8">
     <link rel="stylesheet" href="css/graph.css" type="text/css" media="screen" charset="utf-8">
 
+    <link rel="shortcut icon" "/favicon.ico" />
+
 </head>
 <body class="graphistry-body">
 
@@ -182,6 +184,14 @@
                         <i class="fa fa-play-circle fa-2x"></i>
                       </a>
 
+                      <div class="divide-line"></div>
+
+                      <a href="#" id="marqueerectangle" data-container="body" data-toggle="tooltip" data-placement="right" title="Move Nodes">
+
+                              <i class="fa fa-square-o"></i>
+                              <i class="fa fa-long-arrow-right" style="font-size: 0.9em; position: absolute; margin-left: -0.5em; margin-top: 0.1em"></i>
+
+                      </a>
 
                       <div class="divide-line"></div>
 
@@ -197,11 +207,14 @@
 
                       <div class="divide-line"></div>
 
-                      <a href="#" id="marqueerectangle" data-container="body" data-toggle="tooltip" data-placement="right" title="Move Nodes">
+                      <a href="#" id="histogramBrush" data-container="body" data-toggle="tooltip" data-placement="right" title="Data Inspector">
+                          <i class="fa fa-table fa-2x"></i>
+                      </a>
 
-                              <i class="fa fa-square-o"></i>
-                              <i class="fa fa-long-arrow-right" style="font-size: 0.9em; position: absolute; margin-left: -0.5em; margin-top: 0.1em"></i>
+                      <div class="divide-line"></div>
 
+                      <a href="#" id="filterButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Filter" style="display: none">
+                          <i class="fa fa-filter fa-2x"></i>
                       </a>
 
                       <!--
@@ -214,37 +227,27 @@
 
                     </div> <!-- last options group -->
 
-
                     <div class="options-group">
-                      <a href="#" id="histogramBrush" data-container="body" data-toggle="tooltip" data-placement="right" title="Data Inspector">
-                          <i class="fa fa-table fa-2x"></i>
-                      </a>
 
-                      <a href="#" id="filterButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Filter" style="display: none">
-                          <i class="fa fa-filter fa-2x"></i>
-                      </a>
-
-                    </div>
-
-                    <div class="options-group">
                       <a href="#" id="forkButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Save A Copy">
                           <i class="fa fa-code-fork fa-2x"></i>
                       </a>
 
-                      <!-- only show if in iframe -->
-                      <a href="#" id="externalLinkButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Open in New Tab">
-                          <i class="fa fa-external-link fa-2x"></i>
-                      </a>
+                      <div class="divide-line"></div>
 
-                    </div>
-
-                    <div class="options-group">
-                        <a href="#" id="persistButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Snapshot for Embed">
-                            <i class="fa fa-share-square-o fa-2x"></i>
+                      <a href="#" id="persistButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Share/Embed Snapshot">
+                            <i class="fa fa-share-alt fa-2x"></i>
                         </a>
                         <a href="#" id="goLiveButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Go Live">
                             <i class="fa fa-share-square fa-2x"></i>
                         </a>
+                    </div>
+
+                    <div class="options-group">
+                      <!-- only show if in iframe -->
+                      <a href="#" id="externalLinkButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Open in New Tab">
+                          <i class="fa fa-external-link fa-2x"></i>
+                      </a>
                     </div>
 
                 </div> <!-- accordion heading -->
@@ -471,17 +474,23 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                    <h3 class="modal-title">Save to Embed</h3>
+                    <h3 class="modal-title">Share / Embed Snapshot</h3>
                 </div>
                 <div class="modal-body">
-                    <form class="form-horizontal">
-                        <div class="form-group">
-                            <label for="snapshotName" class="col-sm-2 control-label">Save As</label>
-                            <div class="col-sm-10">
-                                <input type="text" class="form-control" id="snapshotName" value="{{defName}}" />
+                    <div class="snapshot-form-area">
+                        <p>For publication, avoid sharing a live view with your API keys and GPU cluster access. Instead, name a location below to save the current static, embeddable layout.</p>
+                        <p><b>Configure:</b> To control dimensions, resize the window. Move the view as desired.</p>
+                        <form class="form-horizontal">
+                            <div class="form-group">
+                                <label for="snapshotName" class="col-sm-2 control-label">Save As</label>
+                                <div class="col-sm-10">
+                                    <input type="text" class="form-control" id="snapshotName" value="{{defName}}" />
+                                </div>
                             </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
+                    <div class="snapshot-preview">
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <i class="fa fa-spinner fa-spin status"></i>

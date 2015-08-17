@@ -481,11 +481,12 @@ Dataframe.prototype.filter = function (masks, simulator) {
             newEdgeWeights[i*2 + 1] = tempEdgeWeights[oldIdx*2 + 1];
         }
 
-        _.each(['curPoints', 'prevForces', 'degrees', 'forwardsEdges', 'forwardsDegrees',
-                'forwardsWorkItems', 'forwardsEdgeStartEndIdxs', 'backwardsEdges',
-                'backwardsDegrees', 'backwardsWorkItems', 'backwardsEdgeStartEndIdxs',
-                'springsPos', 'edgeWeights'
-                ], function (key) {
+        var someBufferPropertyNames = ['curPoints', 'prevForces', 'degrees', 'forwardsEdges', 'forwardsDegrees',
+            'forwardsWorkItems', 'forwardsEdgeStartEndIdxs', 'backwardsEdges',
+            'backwardsDegrees', 'backwardsWorkItems', 'backwardsEdgeStartEndIdxs',
+            'springsPos', 'edgeWeights'
+        ];
+        _.each(someBufferPropertyNames, function (key) {
 
             newData.buffers.simulator[key] = that.filteredBufferCache.simulator[key];
         });
@@ -524,8 +525,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
 
     }).then(function () {
 
-        // Just in case, copy over references from rawdata to newData
-        // This means we don't have to explicity overwrite everything.
+        // Just in case, copy over references from raw data to newData
+        // This means we don't have to explicitly overwrite everything.
 
         _.each(_.keys(rawdata.buffers.simulator), function (key) {
             if (newData.buffers.simulator[key] === undefined) {
@@ -925,7 +926,7 @@ Dataframe.prototype.getRowsCompact = function (indices, type) {
 Dataframe.prototype.getDataType = function (column, type) {
     // Assumes that types don't change after filtering
     return this.rawdata.attributes[type][column].type;
-}
+};
 
 Dataframe.prototype.getColumn = function (column, type) {
 
