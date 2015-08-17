@@ -1,9 +1,8 @@
+// Provides palettes
+// When run as main, writes palette order to stdout && values to palettes.json
+
 var brewer = require('colorbrewer');
 
-
-
-var OUTPUT_ORDER = false;
-var OUTPUT_JSON = false;
 
 //////////// SORT PALETTES
 
@@ -11,7 +10,7 @@ var OUTPUT_JSON = false;
 var palettes = ["Paired", "Blues", "BrBG", "BuGn", "BuPu", "Dark2", "GnBu", "Greens", "Greys", "OrRd", "Oranges", "PRGn", "Accent", "Pastel1", "Pastel2", "PiYG", "PuBu", "PuBuGn", "PuOr", "PuRd", "Purples", "RdBu", "RdGy", "RdPu", "RdYlBu", "RdYlGn", "Reds", "Set1", "Set2", "Set3", "Spectral", "YlGn", "YlGnBu", "YlOrBr", "YlOrRd"];
 
 //how it was generated
-if (OUTPUT_ORDER) {
+if (require.main === module) {
 
     palettes = Object.keys(brewer);
     palettes.sort();
@@ -83,7 +82,7 @@ palettes.forEach(function (palette) {
 
 
 //use to create palette.json
-if (OUTPUT_JSON) {
+if (require.main === module) {
     var fs = require('fs');
     fs.writeFile('palette.js', 'palettes = ' + JSON.stringify(all), function (err) {
         console.log('wrote palette.json?', err);
