@@ -1,6 +1,5 @@
 'use strict';
 
-var debug = require('debug')('graphistry:StreamGL:caption');
 var $     = window.$;
 
 

@@ -2,11 +2,6 @@
 
 var $               = window.$;
 var _               = require('underscore');
-var Rx              = require('rx');
-                      require('../rx-jquery-stub');
-var Handlebars = require('handlebars');
-
-var util            = require('./util.js');
 
 
 function liveLink(urlParams) {
