@@ -1150,7 +1150,7 @@ function selectNodes(simulator, selection) {
                     res.push(i);
                 }
             }
-            return res;
+            return new Uint32Array(res);
         }).fail(log.makeQErrorHandler(logger, 'Failure trying to compute selection'));
 }
 
@@ -1187,7 +1187,7 @@ function connectedEdges(simulator, nodeIndices) {
     addOutgoingEdgesToSet(forwardsBuffers, nodeIndices);
     addOutgoingEdgesToSet(backwardsBuffers, nodeIndices);
 
-    return setOfEdges;
+    return new Uint32Array(setOfEdges);
 }
 
 function recolor(simulator, marquee) {

@@ -1206,8 +1206,8 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
     for (var i = 0; i < numBins; i++) {
         binStart[i] = bottomVal + (binWidth * i);
     }
-    var indicesTyped = new Uint32Array(indices);
-    var dataSize = indicesTyped.length;
+
+    var dataSize = indices.length;
 
     var retObj = {
         type: 'histogram',
@@ -1220,11 +1220,11 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
 
     var first = Date.now();
 
-    // return simulator.otherKernels.histogramKernel.run(simulator, numBins, dataSize, dataTyped, indicesTyped, binStart)
-    //     .then(function (bins) {
-    //         console.log('[HISTOGRAM] Time Spent: ', (Date.now() - first));
-    //         return _.extend(retObj, {bins: bins});
-    //     }).fail(log.makeQErrorHandler(logger, 'Failure trying to run histogramKernel'));
+    return simulator.otherKernels.histogramKernel.run(simulator, numBins, dataSize, dataTyped, indices, binStart)
+        .then(function (bins) {
+            console.log('[HISTOGRAM] Time Spent: ', (Date.now() - first));
+            return _.extend(retObj, {bins: bins});
+        }).fail(log.makeQErrorHandler(logger, 'Failure trying to run histogramKernel'));
 
     // Dead code, exists solely for timing.
     // TODO: Make this a config option.
