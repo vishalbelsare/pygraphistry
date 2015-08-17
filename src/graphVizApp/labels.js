@@ -297,6 +297,12 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
 
+    if (urlParams.labels === false) {
+        $labelCont.addClass('off');
+        return;
+    }
+
+
     appState.cameraChanges.combineLatest(
         appState.vboUpdates,
         _.identity
