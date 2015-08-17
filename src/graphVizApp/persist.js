@@ -14,15 +14,15 @@ var marquee         = require('./marquee.js');
 /** Simple utility to auto-coerce CSS rgb color strings to hex strings. */
 function rgb2hex(rgb) {
     try {
-        if (!rgb) return undefined;
-        if (/^#[0-9A-F]{6}$/i.test(rgb)) return rgb;
+        if (!rgb) { return undefined; }
+        if (/^#[0-9A-F]{6}$/i.test(rgb)) { return rgb; }
 
         rgb = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
-        function hex(x) {
-            return ("0" + parseInt(x).toString(16)).slice(-2);
-        }
+        var hex = function (x) {
+            return ('0' + parseInt(x).toString(16)).slice(-2);
+        };
 
-        return "#" + hex(rgb[1]) + hex(rgb[2]) + hex(rgb[3]);
+        return '#' + hex(rgb[1]) + hex(rgb[2]) + hex(rgb[3]);
     } catch (e) {
         return undefined;
     }
@@ -119,7 +119,7 @@ module.exports = function (appState, socket, urlParams) {
             return Rx.Observable.fromCallback(socket.emit, socket)('persist_upload_png_export', previewDataURL, contentKey, 'preview.png')
                 .map(function () {
                     return response;
-                })
+                });
         })
         // show
         .do(function (response) {
@@ -131,21 +131,24 @@ module.exports = function (appState, socket, urlParams) {
                 camera = renderState.get('camera'),
                 $modal = response.$modal,
                 targetURL = getExportURL(camera, urlParams, reply.name, rgb2hex(response.backgroundColor)),
-                previewURL = staticclient.getStaticContentURL(reply.name, 'preview.png');
-            var embedElement = $('<a>')
-                .attr('target', '_blank')
-                .append($('<img>')
-                    .attr('height', 150)
-                    //.attr('width', 150)
-                    .attr('src', previewURL)
-                    .css({
-                        'min-width': 150,
-                        'transform': 'scaleY(-1)',
-                        'min-height': 150,
-                        'background-color': response.backgroundColor || $('.graphistry-body').css('backgroundColor')
-                    }))
-                .attr('href', targetURL);
-            $('.modal-body', $modal)
+                previewURL = staticclient.getStaticContentURL(reply.name, 'preview.png'),
+                previewElement = $('<a>')
+                    .attr('target', '_blank')
+                    .append($('<img>')
+                        .attr('height', 150)
+                        //.attr('width', 150)
+                        .attr('src', previewURL)
+                        // TODO: extract these into LESS and use a class attribute:
+                        .css({
+                            'min-width': 150,
+                            'transform': 'scaleY(-1)',
+                            'min-height': 150,
+                            'background-color': response.backgroundColor || $('.graphistry-body').css('backgroundColor')
+                        }))
+                    .attr('href', targetURL);
+            $('.snapshot-form-area', $modal)
+                .hide();
+            $('.snapshot-preview', $modal)
                 .empty()
                 .append($('<p>')
                     .append($('<a>')
@@ -153,14 +156,14 @@ module.exports = function (appState, socket, urlParams) {
                         .text('URL for IFrame embed')
                         .attr('href', targetURL)))
                 .append($('<p>')
+                    .append($('<p>').text('Preview:'))
+                    .append(previewElement))
+                .append($('<p>')
                     .text('Direct HTML:'))
                 .append($('<p>')
                     .append($('<textarea>')
-                        .text(_.escape(embedElement.outerHTML))
-                        .css('width', '100%')))
-                .append($('<p>').text('Preview:'))
-                .append($('<p>')
-                    .append(embedElement));
+                        .text(previewElement[0].outerHTML)
+                        .css('width', '100%')));
             $('.status', $modal).css('display', 'none');
         })
         .subscribe(_.identity,

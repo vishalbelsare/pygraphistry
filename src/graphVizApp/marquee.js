@@ -101,8 +101,8 @@ function marqueeSelections (appState, $cont, $elt, isOn, marqueeState, doAfterSe
                         $cont.removeClass('done');
                     }).map(toPoint.bind('', $cont))
                     .do(function () {
-                            debug('marquee instance started, listening');
-                            firstRunSinceMousedown = true;
+                        debug('marquee instance started, listening');
+                        firstRunSinceMousedown = true;
                     }).flatMapLatest(function (startPoint) {
                         return Rx.Observable.fromEvent($(window.document), 'mousemove')
                             .do(function (evt) {
@@ -296,13 +296,13 @@ function getTextureObservable(renderState, dims) {
 /**
  * @returns {Rx.ReplaySubject} - contains string of the image data uri
  */
-function getGhostImageObservable(renderState, sel, mimeType, flip_y) {
+function getGhostImageObservable(renderState, sel, mimeType, flipY) {
     /** @type HTMLCanvasElement */
     var canvas = renderState.get('gl').canvas;
     var pixelRatio = renderState.get('camera').pixelRatio;
 
-    if (flip_y === undefined) {
-        flip_y = true;
+    if (flipY === undefined) {
+        flipY = true;
     }
 
     // Default the selection to the entire canvas dimensions.
@@ -312,12 +312,12 @@ function getGhostImageObservable(renderState, sel, mimeType, flip_y) {
 
     // We flip Y to support WebGL e.g. the marquee tool for "move nodes" selection highlight.
     // TODO allow not flipping because PNG export needs CSS "transform: scaleY(-1)" to use at all!
-    var unflipped_y = pixelRatio * (sel.tl.y + Math.abs(sel.tl.y - sel.br.y)),
-        flipped_y = canvas.height - unflipped_y;
+    var unflippedY = pixelRatio * (sel.tl.y + Math.abs(sel.tl.y - sel.br.y)),
+        flippedY = canvas.height - unflippedY;
 
     var dims = {
         x: sel.tl.x * pixelRatio,
-        y: flip_y ? flipped_y : unflipped_y,
+        y: flipY ? flippedY : unflippedY,
         width: Math.max(1, pixelRatio * Math.abs(sel.tl.x - sel.br.x)),
         height: Math.max(1, pixelRatio * Math.abs(sel.tl.y - sel.br.y))
     };
@@ -345,9 +345,9 @@ function getGhostImageObservable(renderState, sel, mimeType, flip_y) {
  * @param $elt - where to put the resulting <img>
  * @param cssWidth - differs from selection because retina/DPP-related?
  * @param cssHeight - differs from selection because retina/DPP-related?
- * TODO kill cssWidth & cssHeight, letting imgCanvas use sel parameter and pixel ratio?
  */
 function createGhostImg(renderState, sel, $elt, cssWidth, cssHeight) {
+    // TODO kill cssWidth & cssHeight, letting imgCanvas use sel parameter and pixel ratio?
     getGhostImageObservable(renderState, sel)
         .do(function (dataURL) {
             var img = new Image();
@@ -355,9 +355,9 @@ function createGhostImg(renderState, sel, $elt, cssWidth, cssHeight) {
 
             $(img).css({
                 'pointer-events': 'none',
-                'transform': 'scaleY(-1)',
-                'width': cssWidth,
-                'height': cssHeight
+                transform: 'scaleY(-1)',
+                width: cssWidth,
+                height: cssHeight
             });
             $elt.append(img);
         })
@@ -378,7 +378,7 @@ function setupContainer ($cont, toggle, cfg, isOn, $elt) {
     cfg = cfg || {};
     cfg.transform = cfg.transform || _.identity;
 
-    //starts false
+    // starts false
     toggle.merge(Rx.Observable.return(false)).subscribe(isOn, util.makeErrorHandler('on/off'));
 
     isOn.subscribe(function (flag) {
@@ -387,7 +387,7 @@ function setupContainer ($cont, toggle, cfg, isOn, $elt) {
         }
     }, util.makeErrorHandler('blur canvas'));
 
-    //Effect scene
+    // Effect scene
     $cont.append($elt);
     maintainContainerStyle($cont, isOn);
 }

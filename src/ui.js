@@ -40,14 +40,14 @@ exports.hideSpinnerShowBody = function () {
  *                                then the current state is toggled.
  * @param {boolean} [all=false] - Print debugging output from non-StreamGL modules.
  */
-window.logging = function(enable, all) {
+window.logging = function (enable, all) {
     enable = (typeof enable === 'undefined' || enable === null) ?
         !(localStorage.debug === '*' || localStorage.debug === 'StreamGL:*') : enable;
-    all = !!(all); // If all is undefined/null, it's set to false
+    all = !!all; // If all is undefined/null, it's set to false
     var reloadDelay = 4;
 
-    if(enable) {
-        localStorage.debug = (all) ? '*' : 'StreamGL:*';
+    if (enable) {
+        localStorage.debug = all ? '*' : 'StreamGL:*';
     } else {
         localStorage.removeItem('debug');
     }
@@ -58,7 +58,7 @@ window.logging = function(enable, all) {
         (enable ? (all ? ' all modules' : 'StreamGL modules') : ''),
         reloadDelay);
 
-    window.setTimeout(function() { window.location.reload(); }, reloadDelay * 1000);
+    window.setTimeout(function () { window.location.reload(); }, reloadDelay * 1000);
 
     return enable;
 };
@@ -68,14 +68,14 @@ window.logging = function(enable, all) {
  * Returns an Object representing each of the window URL's query paramters.
  * @example the url "index.html?foo=bar&baz" returns {"foo": "bar", "baz": true}
  */
-exports.getQueryParams = function() {
+exports.getQueryParams = function () {
     var query = window.location.search.substring(1);
 
     var spaces = /\+/g;
     var qParts = /([^&=]+)(=([^&]*))?/;
 
-    return query.split('&').reduce(function(res, param) {
-        if(param === '') { return res; }
+    return query.split('&').reduce(function (res, param) {
+        if (param === '') { return res; }
 
         var parts = qParts.exec(param);
         var key = parts[1].replace(spaces, ' ');

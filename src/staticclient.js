@@ -42,17 +42,17 @@ function getStaticContentURL(contentKey, contentPath) {
 }
 
 
-//string * {socketHost: string, socketPort: int} -> (... -> ...)
+// string * {socketHost: string, socketPort: int} -> (... -> ...)
 // where fragment == 'vbo?buffer' or 'texture?name'
 function makeFetcher () {
-//string * {<name> -> int} * name -> Subject ArrayBuffer
+// string * {<name> -> int} * name -> Subject ArrayBuffer
     return function (bufferByteLengths, bufferName) {
 
         debug('fetching', bufferName);
 
         var res = new Rx.Subject();
 
-        //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
+        // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
         var oReq = new XMLHttpRequest();
         var assetURL = getStaticContentURL(contentKey, bufferName);
         oReq.open('GET', assetURL, true);
@@ -133,6 +133,10 @@ function getLabelOffsets(type) {
 }
 
 
+/** Arbitrary limit to prevent large range requests, ~ 260kb. */
+var LABEL_SIZE_LIMIT = Math.pow(2, 18);
+
+
 function getLabelViaRange(type, index, byteStart, byteEnd) {
     var res = new Rx.Subject(),
         oReq = new XMLHttpRequest(),
@@ -143,6 +147,11 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
     // Last label: start is set, end unspecified, okay.
     if (byteStartString || byteEndString) {
         oReq.responseType = 'text'; // 'json' does not work for a range request!
+        if (!isNaN(byteEnd - byteStart)) {
+            if (byteEnd - byteStart > LABEL_SIZE_LIMIT) {
+                throw new Error('Too large labels range request', type, index, byteStart, byteEnd);
+            }
+        }
         oReq.open('GET', assetURL, true);
         oReq.setRequestHeader('Range', 'bytes=' + byteStartString + '-' + byteEndString);
 
@@ -249,6 +258,9 @@ module.exports = {
         return $.ajaxAsObservable({
                 url: getStaticContentURL(contentKey, 'renderconfig.json'),
                 dataType: 'json'
+            })
+            .catch(function (error) {
+                console.error('Error retrieving render config.', error);
             })
             .pluck('data')
             .map(function (data) {
