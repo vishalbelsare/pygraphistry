@@ -1270,7 +1270,6 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
         bins[binId]++;
     }
 
-    console.log('[HISTOGRAM] Time Spent: ', (Date.now() - first));
     _.extend(retObj, {bins: bins});
     return Q(retObj);
 };
