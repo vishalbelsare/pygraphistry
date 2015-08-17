@@ -296,13 +296,13 @@ function getTextureObservable(renderState, dims) {
 /**
  * @returns {Rx.ReplaySubject} - contains string of the image data uri
  */
-function getGhostImageObservable(renderState, sel, mimeType, flip_y) {
+function getGhostImageObservable(renderState, sel, mimeType, flipY) {
     /** @type HTMLCanvasElement */
     var canvas = renderState.get('gl').canvas;
     var pixelRatio = renderState.get('camera').pixelRatio;
 
-    if (flip_y === undefined) {
-        flip_y = true;
+    if (flipY === undefined) {
+        flipY = true;
     }
 
     // Default the selection to the entire canvas dimensions.
@@ -312,12 +312,12 @@ function getGhostImageObservable(renderState, sel, mimeType, flip_y) {
 
     // We flip Y to support WebGL e.g. the marquee tool for "move nodes" selection highlight.
     // TODO allow not flipping because PNG export needs CSS "transform: scaleY(-1)" to use at all!
-    var unflipped_y = pixelRatio * (sel.tl.y + Math.abs(sel.tl.y - sel.br.y)),
-        flipped_y = canvas.height - unflipped_y;
+    var unflippedY = pixelRatio * (sel.tl.y + Math.abs(sel.tl.y - sel.br.y)),
+        flippedY = canvas.height - unflippedY;
 
     var dims = {
         x: sel.tl.x * pixelRatio,
-        y: flip_y ? flipped_y : unflipped_y,
+        y: flipY ? flippedY : unflippedY,
         width: Math.max(1, pixelRatio * Math.abs(sel.tl.x - sel.br.x)),
         height: Math.max(1, pixelRatio * Math.abs(sel.tl.y - sel.br.y))
     };

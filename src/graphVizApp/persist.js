@@ -11,18 +11,21 @@ var staticclient    = require('../staticclient.js');
 var marquee         = require('./marquee.js');
 
 
+/** Hex byte digits for the integer value of the input. */
+function hex(x) {
+    return ('0' + parseInt(x).toString(16)).slice(-2);
+}
+
+
 /** Simple utility to auto-coerce CSS rgb color strings to hex strings. */
 function rgb2hex(rgb) {
     try {
-        if (!rgb) return undefined;
-        if (/^#[0-9A-F]{6}$/i.test(rgb)) return rgb;
+        if (!rgb) { return undefined; }
+        if (/^#[0-9A-F]{6}$/i.test(rgb)) { return rgb; }
 
         rgb = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
-        function hex(x) {
-            return ("0" + parseInt(x).toString(16)).slice(-2);
-        }
 
-        return "#" + hex(rgb[1]) + hex(rgb[2]) + hex(rgb[3]);
+        return '#' + hex(rgb[1]) + hex(rgb[2]) + hex(rgb[3]);
     } catch (e) {
         return undefined;
     }
@@ -119,7 +122,7 @@ module.exports = function (appState, socket, urlParams) {
             return Rx.Observable.fromCallback(socket.emit, socket)('persist_upload_png_export', previewDataURL, contentKey, 'preview.png')
                 .map(function () {
                     return response;
-                })
+                });
         })
         // show
         .do(function (response) {
