@@ -290,8 +290,10 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
 }
 
 // move labels when new highlight or finish noisy rendering section
-// AppState * $DOM * Observable [ {dim: int, idx: int} ] * Observable DOM -> ()
-function setupLabels (appState, $eventTarget, latestHighlightedObject) {
+// (or hide if off)
+// AppState * UrlParams * $DOM * Observable [ {dim: int, idx: int} ] * Observable DOM -> ()
+function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject) {
+
     var $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
 
