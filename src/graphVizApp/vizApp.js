@@ -29,6 +29,7 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     var labelHover = new Rx.Subject();
 
     var cameraChanges = new Rx.ReplaySubject(1);
+    cameraChanges.onNext(initialRenderState.get('camera'));
     var isAnimating = new Rx.ReplaySubject(1);
     isAnimating.onNext(false);
 
