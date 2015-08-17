@@ -111,7 +111,7 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
         util.makeErrorHandler('cameraChanges')
     );
 
-    canvas.setupLabelsAndCursor(appState, $simCont);
+    canvas.setupLabelsAndCursor(appState, urlParams, $simCont);
     canvas.setupRenderUpdates(appState.renderingScheduler, appState.cameraChanges, appState.settingsChanges);
 
     var colors = colorpicker($fgPicker, $bgPicker, socket, initialRenderState);

@@ -66,13 +66,13 @@ function setupCameraInteractions(appState, $eventTarget) {
     //return springsPos;
 //}
 
-function setupLabelsAndCursor(appState, $eventTarget) {
+function setupLabelsAndCursor(appState, urlParams, $eventTarget) {
     // Picks objects in priority based on order.
     var hitMapTextures = ['hitmap'];
     var latestHighlightedObject = labels.getLatestHighlightedObject(appState, $eventTarget, hitMapTextures);
 
     labels.setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating, latestHighlightedObject);
-    labels.setupLabels(appState, $eventTarget, latestHighlightedObject);
+    labels.setupLabels(appState, urlParams, $eventTarget, latestHighlightedObject);
 }
 
 function setupRenderUpdates(renderingScheduler, cameraStream, settingsChanges) {
