@@ -110,7 +110,7 @@ function getURL(dataset) {
     var args = [
         'dataset=' + encodeURIComponent(dataset),
         //'controls=' + controls,
-        'scene=' + (controls === 'uber' ? 'uber' : 'netflowIndexedClient'),
+        'scene=' + (controls === 'uber' ? 'uber' : 'default'),
         'info=true',
         'play=10000',
         'mapper=' + cfg.mapper,
