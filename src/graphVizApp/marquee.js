@@ -334,22 +334,20 @@ function getGhostImageObservable(renderState, sel, mimeType, flipY) {
             imgData.data.set(texture);
             if (flipY) {
                 var h = imgData.height,
-                    w = imgData.width,
-                    flippedData = ctx.createImageData(w, h),
                     imgInner = imgData.data,
-                    flippedInner = flippedData.data,
-                    rowByteLength = w * 4;
-                for (var y = 0; y < h; y++) {
+                    rowByteLength = imgData.width * 4,
+                    rowSwapBuffer = new Uint8Array(rowByteLength);
+                for (var y = 0; y < h / 2; y++) {
                     var rowOffset = y * rowByteLength,
-                        flippedRowOffset = (h - y) * rowByteLength;
-                    for (var rowByteOffset = 0; rowByteOffset < rowByteLength; rowByteOffset++) {
-                        flippedInner[flippedRowOffset + rowByteOffset] = imgInner[rowOffset + rowByteOffset];
-                    }
+                        flippedRowOffset = (h - y - 1) * rowByteLength,
+                        row = new Uint8Array(imgInner.buffer, rowOffset, rowByteLength),
+                        rowTarget = new Uint8Array(imgInner.buffer, flippedRowOffset, rowByteLength);
+                    rowSwapBuffer.set(rowTarget);
+                    rowTarget.set(row);
+                    row.set(rowSwapBuffer);
                 }
-                ctx.putImageData(flippedData, 0, 0);
-            } else {
-                ctx.putImageData(imgData, 0, 0);
             }
+            ctx.putImageData(imgData, 0, 0);
             return mimeType ? imgCanvas.toDataURL(mimeType) : imgCanvas.toDataURL();
         });
 }
