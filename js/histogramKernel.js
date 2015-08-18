@@ -99,13 +99,16 @@ HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataBuff
         ]).fail(log.makeQErrorHandler(logger, 'Writing to buffers for histogram kernel failed'));
     }).then(function () {
 
-        var workGroupSize = 128;
+        var workGroupSize = Math.max(256, simulator.cl.deviceProps.MAX_WORK_GROUP_SIZE);
+        var VT = 16;
         var numWorkItems = dataSize + (workGroupSize - (dataSize % workGroupSize));
-
+        // numWorkItems = numWorkItems + (VT - (numWorkItems % VT));
         return that.histogramKernel.exec([numWorkItems], [], [workGroupSize])
             .then(function () {
+                simulator.cl.queue.finish();
 
                 var retOutput = new Int32Array(MAX_NUM_BINS * Int32Array.BYTES_PER_ELEMENT);
+
                 // TODO: Return all outputs, not just count;
                 return that.buffers.output.read(retOutput).then(function () {
                     return new Int32Array(retOutput.buffer, 0, numBins);
