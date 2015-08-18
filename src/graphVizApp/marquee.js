@@ -294,6 +294,10 @@ function getTextureObservable(renderState, dims) {
 }
 
 /**
+ * @param {Immutable.Map} renderState - RenderState
+ * @param {{tl: {x: number, y: number}, br: {x: number, y: number}}} sel - Optional selection, whole image by default.
+ * @param {string} mimeType - optional mime-type specifier. Raw image data by default.
+ * @param {Boolean} flipY - whether to flip the image data vertically to escape WebGL orientation.
  * @returns {Rx.ReplaySubject} - contains string of the image data uri
  */
 function getGhostImageObservable(renderState, sel, mimeType, flipY) {
@@ -311,13 +315,9 @@ function getGhostImageObservable(renderState, sel, mimeType, flipY) {
     }
 
     // We flip Y to support WebGL e.g. the marquee tool for "move nodes" selection highlight.
-    // TODO allow not flipping because PNG export needs CSS "transform: scaleY(-1)" to use at all!
-    var unflippedY = pixelRatio * (sel.tl.y + Math.abs(sel.tl.y - sel.br.y)),
-        flippedY = canvas.height - unflippedY;
-
     var dims = {
         x: sel.tl.x * pixelRatio,
-        y: flipY ? flippedY : unflippedY,
+        y: canvas.height - pixelRatio * (sel.tl.y + Math.abs(sel.tl.y - sel.br.y)),
         width: Math.max(1, pixelRatio * Math.abs(sel.tl.x - sel.br.x)),
         height: Math.max(1, pixelRatio * Math.abs(sel.tl.y - sel.br.y))
     };
@@ -332,6 +332,21 @@ function getGhostImageObservable(renderState, sel, mimeType, flipY) {
 
             var imgData = ctx.createImageData(dims.width, dims.height);
             imgData.data.set(texture);
+            if (flipY) {
+                var h = imgData.height,
+                    imgInner = imgData.data,
+                    rowByteLength = imgData.width * 4,
+                    rowSwapBuffer = new Uint8Array(rowByteLength);
+                for (var y = 0; y < h / 2; y++) {
+                    var rowOffset = y * rowByteLength,
+                        flippedRowOffset = (h - y - 1) * rowByteLength,
+                        row = new Uint8Array(imgInner.buffer, rowOffset, rowByteLength),
+                        rowTarget = new Uint8Array(imgInner.buffer, flippedRowOffset, rowByteLength);
+                    rowSwapBuffer.set(rowTarget);
+                    rowTarget.set(row);
+                    row.set(rowSwapBuffer);
+                }
+            }
             ctx.putImageData(imgData, 0, 0);
             return mimeType ? imgCanvas.toDataURL(mimeType) : imgCanvas.toDataURL();
         });
@@ -355,7 +370,6 @@ function createGhostImg(renderState, sel, $elt, cssWidth, cssHeight) {
 
             $(img).css({
                 'pointer-events': 'none',
-                transform: 'scaleY(-1)',
                 width: cssWidth,
                 height: cssHeight
             });
