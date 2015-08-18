@@ -1211,7 +1211,6 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
     // values = _.filter(values, function (x) { return !isNaN(x)});
 
     var values = this.getColumn(attribute, type);
-    console.log('Histogram on: ', attribute);
 
     var numValues = indices.length;
     if (numValues === 0) {

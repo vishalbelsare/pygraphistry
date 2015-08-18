@@ -72,7 +72,6 @@ HistogramKernel.prototype.initializeBuffers = function (simulator) {
 
 HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataBuffer, indicesTyped, bins) {
     logger.debug('Running histogram kernel.');
-    var startTime = Date.now();
     var that = this;
 
     // TODO: Take in type(s) to run as an argument.
@@ -113,12 +112,6 @@ HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataBuff
             check: check.buffer
         });
 
-        console.log('Time before initial finish: ', (Date.now() - startTime));
-
-        simulator.cl.queue.finish();
-
-        console.log('Time before Writes: ', (Date.now() - startTime));
-
         return Q.all([
             output.write(that.outputZeros),
             // data.write(dataTyped),
@@ -127,7 +120,6 @@ HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataBuff
             // indices.write(indicesTyped)
         ]).fail(log.makeQErrorHandler(logger, 'Writing to buffers for histogram kernel failed'));
     }).then(function () {
-        console.log('Time before Exec: ', (Date.now() - startTime));
 
         var workGroupSize = Math.max(256, simulator.cl.deviceProps.MAX_WORK_GROUP_SIZE);
         var VT = 16;
@@ -135,15 +127,11 @@ HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataBuff
         // numWorkItems = numWorkItems + (VT - (numWorkItems % VT));
         return that.histogramKernel.exec([numWorkItems], [], [workGroupSize])
             .then(function () {
-                simulator.cl.queue.finish();
-
-                console.log('Time before read: ', (Date.now() - startTime));
 
                 var retOutput = new Int32Array(MAX_NUM_BINS * Int32Array.BYTES_PER_ELEMENT);
 
                 // TODO: Return all outputs, not just count;
                 return that.buffers.output.read(retOutput).then(function () {
-                    console.log('Time after read: ', (Date.now() - startTime));
                     return new Int32Array(retOutput.buffer, 0, numBins);
                 }).fail(log.makeQErrorHandler(logger, 'Reading histogram output failed'));
 
