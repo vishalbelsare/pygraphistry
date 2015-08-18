@@ -29,10 +29,10 @@ function chainQAll (arr) {
     var chain = Q();
 
     _.each(arr, function (func, i) {
-        chain = chain.delay(10).then(function () {
+        chain = chain.then(function () {
             return func().then(function (val) {
                 values[i] = val;
-                return
+                return;
             });
         });
 
