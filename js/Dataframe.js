@@ -1252,6 +1252,12 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
         minValue: bottomVal
     };
 
+    // Fast path for case of only one bin.
+    if (numBins === 1) {
+        _.extend(retObj, {bins: [numValues]});
+        return Q(retObj);
+    }
+
     return qDataBuffer.then(function (dataBuffer) {
             return simulator.otherKernels.histogramKernel.run(simulator, numBins, dataSize, dataBuffer, indices, binStart);
         }).then(function (bins) {
