@@ -100,13 +100,14 @@ module.exports = function (appState, socket, urlParams) {
                 });
         })
         .flatMap(function (response) {
-            var renderState = appState.renderState,
-                backgroundColorCSS = $('#simulation').css('backgroundColor');
-            // colorpicker sets background color as CSS, so we match it thus:
-            return marquee.getGhostImageObservable(renderState, undefined, 'image/png')
+            // The colorpicker sets background color via CSS, so we match it thus:
+            return marquee.getGhostImageObservable(appState.renderState, undefined, 'image/png', true)
                 .map(function (imageDataURL) {
                     response.imageDataURL = imageDataURL;
-                    response.backgroundColor = backgroundColorCSS;
+                    var backgroundColor = $('#simulation').css('backgroundColor');
+                    if (backgroundColor && !backgroundColor.match("^rgba?\\(0+, 0+, 0+[,)]")) {
+                        response.backgroundColor = backgroundColor;
+                    }
                     return response;
                 });
         })
