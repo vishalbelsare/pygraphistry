@@ -337,16 +337,13 @@ function getGhostImageObservable(renderState, sel, mimeType, flipY) {
                     w = imgData.width,
                     flippedData = ctx.createImageData(w, h),
                     imgInner = imgData.data,
-                    flippedInner = flippedData.data;
+                    flippedInner = flippedData.data,
+                    rowByteLength = w * 4;
                 for (var y = 0; y < h; y++) {
-                    var rowOffset = y * w,
-                        targetRowOffset = (h - y) * w;
-                    for (var x = 0; x < w; x++) {
-                        var index = (rowOffset + x) * 4,
-                            targetIndex = (targetRowOffset + x) * 4;
-                        for (var byte = 0; byte < 4; byte++) {
-                            flippedInner[targetIndex + byte] = imgInner[index + byte];
-                        }
+                    var rowOffset = y * rowByteLength,
+                        flippedRowOffset = (h - y) * rowByteLength;
+                    for (var rowByteOffset = 0; rowByteOffset < rowByteLength; rowByteOffset++) {
+                        flippedInner[flippedRowOffset + rowByteOffset] = imgInner[rowOffset + rowByteOffset];
                     }
                 }
                 ctx.putImageData(flippedData, 0, 0);
