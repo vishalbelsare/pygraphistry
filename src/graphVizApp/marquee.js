@@ -329,16 +329,30 @@ function getGhostImageObservable(renderState, sel, mimeType, flipY) {
             imgCanvas.width = dims.width;
             imgCanvas.height = dims.height;
             var ctx = imgCanvas.getContext('2d');
-            if (flipY) {
-                // Translate context to center:
-                ctx.translate(imgCanvas.width / 2, imgCanvas.height / 2);
-                // Flip horizontally:
-                ctx.scale(1, -1);
-            }
 
             var imgData = ctx.createImageData(dims.width, dims.height);
             imgData.data.set(texture);
-            ctx.putImageData(imgData, 0, 0);
+            if (flipY) {
+                var h = imgData.height,
+                    w = imgData.width,
+                    flippedData = ctx.createImageData(w, h),
+                    imgInner = imgData.data,
+                    flippedInner = flippedData.data;
+                for (var y = 0; y < h; y++) {
+                    var rowOffset = y * w,
+                        targetRowOffset = (h - y) * w;
+                    for (var x = 0; x < w; x++) {
+                        var index = (rowOffset + x) * 4,
+                            targetIndex = (targetRowOffset + x) * 4;
+                        for (var byte = 0; byte < 4; byte++) {
+                            flippedInner[targetIndex + byte] = imgInner[index + byte];
+                        }
+                    }
+                }
+                ctx.putImageData(flippedData, 0, 0);
+            } else {
+                ctx.putImageData(imgData, 0, 0);
+            }
             return mimeType ? imgCanvas.toDataURL(mimeType) : imgCanvas.toDataURL();
         });
 }
