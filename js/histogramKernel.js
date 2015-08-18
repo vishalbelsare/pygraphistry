@@ -121,10 +121,11 @@ HistogramKernel.prototype.run = function (simulator, numBins, dataSize, dataBuff
         ]).fail(log.makeQErrorHandler(logger, 'Writing to buffers for histogram kernel failed'));
     }).then(function () {
 
-        var workGroupSize = Math.max(256, simulator.cl.deviceProps.MAX_WORK_GROUP_SIZE);
+        var workGroupSize = Math.min(256, simulator.cl.deviceProps.MAX_WORK_GROUP_SIZE);
         var VT = 16;
         var numWorkItems = dataSize + (workGroupSize - (dataSize % workGroupSize));
         // numWorkItems = numWorkItems + (VT - (numWorkItems % VT));
+        // console.log(numWorkItems, workGroupSize, simulator.cl.deviceProps.MAX_WORK_GROUP_SIZE);
         return that.histogramKernel.exec([numWorkItems], [], [workGroupSize])
             .then(function () {
 

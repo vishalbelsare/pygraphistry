@@ -1191,8 +1191,8 @@ function calculateBinning(numValues, values, indices, goalNumberOfBins) {
         numBins = Math.round((topVal - bottomVal) / binWidth);
     }
 
-    console.log('NUM BINS: ', numBins);
-    console.log('max: ', max, 'min: ', min, 'goalBins: ', goalBins);
+    // console.log('NUM BINS: ', numBins);
+    // console.log('max: ', max, 'min: ', min, 'goalBins: ', goalBins);
 
     return {
         numBins: numBins,
@@ -1257,11 +1257,11 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
         return Q(retObj);
     }
 
-    return qDataBuffer.then(function (dataBuffer) {
-            return simulator.otherKernels.histogramKernel.run(simulator, numBins, dataSize, dataBuffer, indices, binStart);
-        }).then(function (bins) {
-            return _.extend(retObj, {bins: bins});
-        }).fail(log.makeQErrorHandler(logger, 'Failure trying to run histogramKernel'));
+    // return qDataBuffer.then(function (dataBuffer) {
+    //         return simulator.otherKernels.histogramKernel.run(simulator, numBins, dataSize, dataBuffer, indices, binStart);
+    //     }).then(function (bins) {
+    //         return _.extend(retObj, {bins: bins});
+    //     }).fail(log.makeQErrorHandler(logger, 'Failure trying to run histogramKernel'));
 
     // Dead code, exists solely for timing.
     // TODO: Make this a config option.
