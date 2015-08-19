@@ -261,6 +261,7 @@ module.exports = {
             })
             .catch(function (error) {
                 console.error('Error retrieving render config.', error);
+                throw new Error('Content Not Found');
             })
             .pluck('data')
             .map(function (data) {
@@ -347,6 +348,7 @@ module.exports = {
             }).subscribe(_.identity,
                 function (err) {
                     console.error('fetch vbo exn', err, (err||{}).stack);
+                    throw new Error('Content Not Found');
                 });
 
         return vboUpdates;
