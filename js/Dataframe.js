@@ -1043,7 +1043,7 @@ Dataframe.prototype.aggregate = function (simulator, indices, attributes, binnin
     });
 
 
-    var chain = simulator.otherKernels.histogramKernel.setIndices(simulator, indices);
+    var chain = Q(); //simulator.otherKernels.histogramKernel.setIndices(simulator, indices);
     var aggregated = {};
 
     _.each(keysToAggregate, function (attribute) {
@@ -1234,7 +1234,7 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
         bottomVal = min;
     }
 
-    var qDataBuffer = this.getBuffer(attribute, type);
+    //var qDataBuffer = this.getBuffer(attribute, type);
     var binStart = new Float32Array(numBins);
     for (var i = 0; i < numBins; i++) {
         binStart[i] = bottomVal + (binWidth * i);

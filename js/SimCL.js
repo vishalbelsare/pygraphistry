@@ -77,7 +77,7 @@ function create(dataframe, renderer, device, vendor, cfg) {
             simObj.otherKernels = {
                 moveNodes: new MoveNodes(cl),
                 selectNodes: new SelectNodes(cl),
-                histogramKernel: new HistogramKernel(cl),
+                //histogramKernel: new HistogramKernel(cl),
                 springsGather: new SpringsGather(cl)
             };
             simObj.tilesPerIteration = 1;
