@@ -290,7 +290,7 @@ function init(config, canvas, urlParams) {
 
     var gl = createContext(state);
     state = state.set('gl', gl);
-    setGlOptions(state);
+    setGlOptions(gl, state.get('options'));
 
     state = createPrograms(state);
     state = createBuffers(state);
@@ -522,8 +522,7 @@ function createStandardTextures(config, canvas, gl) {
  * Set global GL settings
  * @param {WebGLRenderingContext}
  */
-function setGlOptions(state) {
-    var gl = state.get('gl');
+function setGlOptions(gl, glOpts) {
     var whiteList = {
         'enable': true,
         'disable': true,
@@ -534,7 +533,7 @@ function setGlOptions(state) {
         'lineWidth': true
     };
 
-    _.each(state.get('options'), function(optionCalls, optionName) {
+    _.each(glOpts || {}, function(optionCalls, optionName) {
         if(whiteList[optionName] !== true ||
             typeof gl[optionName] !== 'function') {
             return;
