@@ -223,18 +223,18 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
     var numMidEdgeColorsPerEdge = 2 * (numRenderedSplits + 1);
     var numMidEdgeColors = numMidEdgeColorsPerEdge * oldNumEdges;
     this.typedArrayCache.newMidEdgeColors = new Uint32Array(numMidEdgeColors);
-    this.typedArrayCache.newEdgeWeights = new Uint32Array(oldNumEdges * 2);
+    this.typedArrayCache.newEdgeWeights = new Uint32Array(oldNumEdges);
 
     this.typedArrayCache.tempPrevForces = new Float32Array(oldNumPoints * 2);
     this.typedArrayCache.tempDegrees = new Uint32Array(oldNumPoints);
     this.typedArrayCache.tempSpringsPos = new Float32Array(oldNumEdges * 4);
-    this.typedArrayCache.tempEdgeWeights = new Float32Array(oldNumEdges * 2);
+    this.typedArrayCache.tempEdgeWeights = new Float32Array(oldNumEdges);
     this.typedArrayCache.tempCurPoints = new Float32Array(oldNumPoints * 2);
 
     this.typedArrayCache.newPrevForces = new Float32Array(oldNumPoints * 2);
     this.typedArrayCache.newDegrees = new Uint32Array(oldNumPoints);
     this.typedArrayCache.newSpringsPos = new Float32Array(oldNumEdges * 4);
-    this.typedArrayCache.newEdgeWeights = new Float32Array(oldNumEdges * 2);
+    this.typedArrayCache.newEdgeWeights = new Float32Array(oldNumEdges);
     this.typedArrayCache.newCurPoints = new Float32Array(oldNumPoints * 2);
 };
 
@@ -352,7 +352,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
     var numMidEdgeColors = numMidEdgeColorsPerEdge * masks.edge.length;
     var newEdgeColors = new Uint32Array(that.typedArrayCache.newEdgeColors.buffer, 0, masks.edge.length * 2);
     var newMidEdgeColors = new Uint32Array(that.typedArrayCache.newMidEdgeColors.buffer, 0, numMidEdgeColors);
-    var newEdgeWeights = new Uint32Array(that.typedArrayCache.newEdgeWeights.buffer, 0, masks.edge.length * 2);
+    var newEdgeWeights = new Float32Array(that.typedArrayCache.newEdgeWeights.buffer, 0, masks.edge.length) ;
 
     for (var i = 0; i < masks.edge.length; i++) {
         var idx = masks.edge[i];
@@ -365,8 +365,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
                     rawdata.localBuffers.midEdgeColors[idx*numMidEdgeColorsPerEdge + j];
         }
 
-        newEdgeWeights[i*2] = rawdata.localBuffers.edgeWeights[idx*2];
-        newEdgeWeights[i*2 + 1] = rawdata.localBuffers.edgeWeights[idx*2 + 1];
+        newEdgeWeights[i] = rawdata.localBuffers.edgeWeights[idx];
     }
     newData.localBuffers.edgeColors = newEdgeColors;
     newData.localBuffers.midEdgeColors = newMidEdgeColors;
@@ -392,13 +391,13 @@ Dataframe.prototype.filter = function (masks, simulator) {
 
     var tempPrevForces = new Float32Array(that.typedArrayCache.tempPrevForces.buffer, 0, oldNumPoints * 2);
     var tempSpringsPos = new Float32Array(that.typedArrayCache.tempSpringsPos.buffer, 0, oldNumEdges * 4);
-    var tempEdgeWeights = new Float32Array(that.typedArrayCache.tempEdgeWeights.buffer, 0, oldNumEdges * 2);
+    var tempEdgeWeights = new Float32Array(that.typedArrayCache.tempEdgeWeights.buffer, 0, oldNumEdges);
     var tempCurPoints = new Float32Array(that.typedArrayCache.tempCurPoints.buffer, 0, oldNumPoints * 2);
 
     var newPrevForces = new Float32Array(that.typedArrayCache.newPrevForces.buffer, 0, numPoints * 2);
     var newDegrees = new Uint32Array(that.typedArrayCache.newDegrees.buffer, 0, numPoints);
     var newSpringsPos = new Float32Array(that.typedArrayCache.newSpringsPos.buffer, 0, numEdges * 4);
-    var newEdgeWeights = new Float32Array(that.typedArrayCache.newEdgeWeights.buffer, 0, numEdges * 2);
+    var newEdgeWeights = new Float32Array(that.typedArrayCache.newEdgeWeights.buffer, 0, numEdges);
     var newCurPoints = new Float32Array(that.typedArrayCache.newCurPoints.buffer, 0, numPoints * 2);
 
     var rawSimBuffers = rawdata.buffers.simulator;
@@ -461,8 +460,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
             newSpringsPos[i*4 + 2] = tempSpringsPos[oldIdx*4 + 2];
             newSpringsPos[i*4 + 3] = tempSpringsPos[oldIdx*4 + 3];
 
-            newEdgeWeights[i*2] = tempEdgeWeights[oldIdx*2];
-            newEdgeWeights[i*2 + 1] = tempEdgeWeights[oldIdx*2 + 1];
+            newEdgeWeights[i] = tempEdgeWeights[oldIdx];
         }
 
         var someBufferPropertyNames = ['curPoints', 'prevForces', 'degrees', 'forwardsEdges', 'forwardsDegrees',
