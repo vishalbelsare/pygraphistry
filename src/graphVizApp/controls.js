@@ -19,7 +19,7 @@ var externalLink    = require('./externalLink.js');
 
 
 // Setup client side controls.
-var localParams = [
+var encodingPerElementParams = [
     {
         name: 'pointSize',
         prettyName: 'Point Size',
@@ -62,7 +62,7 @@ function colorObjectToCSS(c) {
     return 'rgba(' + [c.r, c.g, c.b, c.a | 1].join(',') + ')';
 }
 
-var labelParams = [
+var encodingForLabelParams = [
     {
         name: 'labelFgColor',
         prettyName: 'Text Color',
@@ -321,7 +321,7 @@ function createControls(socket, appState, trigger, urlParams) {
         $('<div>')
             .addClass('control-title').text('Appearance')
             .appendTo($anchor);
-        _.each(localParams, function (param) {
+        _.each(encodingPerElementParams, function (param) {
             makeControl(param, 'local');
         });
 
@@ -329,7 +329,7 @@ function createControls(socket, appState, trigger, urlParams) {
         $('<div>')
             .addClass('control-title').text('Labels')
             .appendTo($anchor);
-        _.each(labelParams, function (param) {
+        _.each(encodingForLabelParams, function (param) {
             makeControl(param, 'local');
         });
 
