@@ -32,7 +32,7 @@ var downloader = {
     'http:': httpDownloader.bind(undefined, http),
     'https:': httpDownloader.bind(undefined, https),
     'null': graphistryS3Downloader // For legacy compatibility
-}
+};
 
 var tmpCache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);
 
