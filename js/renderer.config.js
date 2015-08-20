@@ -485,6 +485,12 @@ var pointCulledUniforms = {
     'minPointSize': { 'uniformType': '1f', 'defaultValues': [8.0] }
 }
 
+var pickingGlOpts = {
+    'clearColor': [[1, 1, 1, 0.0]],
+    'blendFuncSeparate': [['SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'ONE', 'ONE']],
+    'blendEquationSeparate': [['FUNC_ADD', 'FUNC_ADD']],
+};
+
 var items = {
     'indexeddummy' : {
         'program': 'edgeculled',
@@ -661,7 +667,7 @@ var items = {
             'edgeColor': ['edgeIndices', 'edgeColor']
         },
         'drawType': 'LINES',
-        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
+        'glOptions': pickingGlOpts,
         'renderTarget': 'hitmap',
         'readTarget': true
     },
@@ -765,7 +771,7 @@ var items = {
             'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
         },
         'drawType': 'POINTS',
-        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
+        'glOptions': pickingGlOpts,
         'renderTarget': 'hitmap',
         'readTarget': true,
     },
@@ -782,7 +788,7 @@ var items = {
             'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
         },
         'drawType': 'POINTS',
-        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
+        'glOptions': pickingGlOpts,
         'renderTarget': 'pointHitmapDownsampled',
         'readTarget': true,
     },
@@ -839,7 +845,13 @@ var stdOptions = {
     'depthFunc': [['LEQUAL']],
     'clearColor': [[51/255, 51/255, 57/255, 1.0]],
     'lineWidth': [[1]]
-}
+};
+
+var transparentOptions =
+    _.extend({},
+        stdOptions,
+        {'clearColor': [[51/255, 51/255, 57/255, 0.0]]});
+
 
 var camera2D = {
     'type': '2d',
@@ -872,7 +884,21 @@ var sceneNetflowArcs = {
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
-}
+};
+
+var sceneTransparent = {
+    'options': transparentOptions,
+    'camera': camera2D,
+    'numRenderedSplits': 8,
+    'clientMidEdgeInterpolation': true,
+    'arcHeight': 0.2,
+    'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
+    'midedgeculled', 'edgepicking',
+    'arrowculled', 'arrowhighlight', 'edgehighlight',
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
+    'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
+};
 
 var sceneNetflowBigArcs = {
     'options': stdOptions,
@@ -903,6 +929,7 @@ var sceneNetflowStraight = {
 
 var scenes = {
     'default': sceneNetflowArcs,
+    'transparent': sceneTransparent,
     'uber' : sceneUber,
     'netflowArcs': sceneNetflowArcs,
     'netflowBigArcs': sceneNetflowBigArcs,
