@@ -117,14 +117,14 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     var colors = colorpicker($fgPicker, $bgPicker, socket, initialRenderState);
     canvas.setupBackgroundColor(appState.renderingScheduler, colors.backgroundColor);
     //TODO expose through cascade and provide to export
-    if (urlParams["background-image"]) {
-        $simCont.css('background-image', 'url("' + urlParams["background-image"] + '")');
+    if (urlParams['background-image']) {
+        $simCont.css('background-image', 'url("' + urlParams['background-image'] + '")');
     }
-    if (urlParams["mix-blend-mode"]) {
+    if (urlParams['mix-blend-mode']) {
         $('#simulation').css('mix-blend-mode', urlParams['mix-blend-mode']);
     }
-    if (urlParams["opacity"]) {
-        $('#simulation').css('opacity', urlParams['opacity']);
+    if (urlParams.opacity) {
+        $('#simulation').css('opacity', urlParams.opacity);
     }
 
     shortestpaths($spButton, poi, socket);
