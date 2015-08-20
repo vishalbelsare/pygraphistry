@@ -58,6 +58,10 @@ var localParams = [
     }
 ];
 
+function colorObjectToCSS(c) {
+    return 'rgba(' + [c.r, c.g, c.b, c.a | 1].join(',') + ')';
+}
+
 var labelParams = [
     {
         name: 'labelFgColor',
@@ -69,7 +73,7 @@ var labelParams = [
             sheet.appendTo($('head'));
             return function (stream) {
                 stream.sample(20).subscribe(function (c) {
-                    sheet.text('.graph-label, .graph-label table { color: rgba(' + [c.r,c.g,c.b,c.a | 1].join(',') + ') }');
+                    sheet.text('.graph-label, .graph-label table { color: ' + colorObjectToCSS(c) + ' }');
                 });
             };
         }())
@@ -78,13 +82,14 @@ var labelParams = [
         name: 'labelBgColor',
         prettyName: 'Background Color',
         type: 'color',
-        def: 'rgba(255,255,255,0.9)',
+        def: colorObjectToCSS({r: 255, g: 255, b: 255, a: 0.9}),
         cb: (function () {
             var sheet = $('<style type="text/css">');
             sheet.appendTo($('head'));
             return function (stream) {
                 stream.sample(20).subscribe(function (c) {
-                    sheet.text('.graph-label .graph-label-container  { background-color: rgba(' + [c.r,c.g,c.b,c.a | 1].join(',') + ') }');
+                    var colorCSS = colorObjectToCSS(c);
+                    sheet.text('.graph-label .graph-label-container  { background-color: ' + colorCSS + ' }');
                 });
             };
         }())
