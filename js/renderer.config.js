@@ -288,6 +288,7 @@ var models = {
             'datasource': 'DEVICE',
             'type': 'FLOAT',
             'count': 2,
+            'hint': 'DYNAMIC_DRAW',
             'offset': 0,
             'stride': 8,
             'normalize': false
@@ -297,6 +298,7 @@ var models = {
         'curPos': {
             'datasource': 'CLIENT',
             'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
             'count': 2,
             'offset': 0,
             'stride': 8,
@@ -307,7 +309,7 @@ var models = {
         'pointSize': {
             'datasource': 'CLIENT',
             'type': 'UNSIGNED_BYTE',
-            'hint': 'STATIC_DRAW',
+            'hint': 'DYNAMIC_DRAW',
             'count': 1,
             'offset': 0,
             'stride': 0,
@@ -318,7 +320,7 @@ var models = {
         'pointColor': {
             'datasource': 'CLIENT',
             'type': 'UNSIGNED_BYTE',
-            'hint': 'STATIC_DRAW',
+            'hint': 'DYNAMIC_DRAW',
             'count': 4,
             'offset': 0,
             'stride': 0,
@@ -351,7 +353,7 @@ var models = {
         'pointSize':  {
             'datasource': 'CLIENT',
             'type': 'UNSIGNED_BYTE',
-            'hint': 'STATIC_DRAW',
+            'hint': 'DYNAMIC_DRAW',
             'count': 1,
             'offset': 0,
             'stride': 0,
@@ -362,7 +364,7 @@ var models = {
         'arrowColor':  {
             'datasource': 'CLIENT',
             'type': 'UNSIGNED_BYTE',
-            'hint': 'STATIC_DRAW',
+            'hint': 'DYNAMIC_DRAW',
             'count': 4,
             'offset': 0,
             'stride': 0,
@@ -428,6 +430,7 @@ var models = {
         'curPos': {
             'datasource': 'DEVICE',
             'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
             'count': 2,
             'offset': 0,
             'stride': 8,
@@ -438,6 +441,7 @@ var models = {
         'curPos': {
             'datasource': 'CLIENT',
             'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
             'count': 2,
             'offset': 0,
             'stride': 8,
@@ -468,6 +472,7 @@ var models = {
         'edgeColor': {
             'datasource': 'EDGE_INDEX',
             'type': 'UNSIGNED_BYTE',
+            'hint': 'STATIC_DRAW',
             'count': 4,
             'offset': 0,
             'stride': 0,
