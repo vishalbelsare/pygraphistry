@@ -7,13 +7,28 @@ var Rx              = require('rx');
 var util            = require('./util.js');
 
 
+function colorObjectToCSS(c) {
+    return 'rgba(' + [c.r, c.g, c.b, c.a | 1].join(',') + ')';
+}
+
+
+function colorObjectToHex(c) {
+    return '#' + (c.r | 0).toString(16) + (c.g | 0).toString(16) + (c.b | 0).toString(16) + (c.a | 0).toString(16);
+}
+
+
+function colorObjectToBytes(c) {
+    return [c.r, c.g, c.b, c.a];
+}
+
+
 //$DOM * hex -> Observable hex
-function makeInspector ($elt, color) {
+function makeInspector ($elt, hexColor) {
 
     var colors = new Rx.Subject();
 
     $elt.find('.colorSelector').ColorPicker({
-        color: color,
+        color: hexColor,
         onShow: function (colpkr) {
             $(colpkr).fadeIn(500);
             return false;
@@ -31,36 +46,55 @@ function makeInspector ($elt, color) {
     return colors;
 }
 
-module.exports = function ($fg, $bg, socket, renderState) {
+/**
+ *
+ * @param {HTMLElement} $fg - Element for the foreground color button affordance.
+ * @param {HTMLElement} $bg - Element for the background color button affordance.
+ * @param {Socket} socket - socket or proxy
+ * @param {RenderState} renderState
+ * @returns {{foregroundColor: *, backgroundColor: *}} - streams of r,g,b objects
+ */
+module.exports = {
+    init: function ($fg, $bg, socket, renderState) {
 
-    var foregroundColor = new Rx.ReplaySubject(1);
-    foregroundColor.onNext({r: 0, g: 0, b: 0});
-    makeInspector($fg, '#000')
-        .throttleFirst(10)
-        .do(function (rgb) {
-            socket.emit('set_colors', {rgb: rgb});
-        })
-        .subscribe(foregroundColor, util.makeErrorHandler('bad fg color'));
+        var foregroundColor = new Rx.ReplaySubject(1),
+            blackForegroundDefault = {r: 0, g: 0, b: 0};
+        foregroundColor.onNext(blackForegroundDefault);
+        makeInspector($fg, colorObjectToHex(blackForegroundDefault))
+            .throttleFirst(10)
+            .do(function (foregroundColor) {
+                socket.emit('set_colors', {rgb: foregroundColor});
+            })
+            .subscribe(foregroundColor, util.makeErrorHandler('bad fg color'));
 
-    var backgroundColor = new Rx.ReplaySubject(1);
+        var backgroundColor = new Rx.ReplaySubject(1);
 
-    var initColor = _.chain(renderState.get('options').clearColor[0]).zip(['r', 'g', 'b', 'a']).map(function (pair) {
-        return [pair[1], pair[0] * 255];
-    }).object().value();
+        var renderStateBackgroundColorRGBA = renderState.get('options').clearColor[0],
+            rgbaBytes = _.map(renderStateBackgroundColorRGBA, function (value) { return value * 255; }),
+            renderStateBackgroundColorObject = {r: rgbaBytes[0], g: rgbaBytes[1], b: rgbaBytes[2], a: rgbaBytes[3]};
 
-    backgroundColor.onNext(initColor);
-    makeInspector($bg, '#fff')
-        .throttleFirst(10)
-        .do(function (rgb) {
-            $('#simulation').css('backgroundColor', 'rgba(' + [rgb.r, rgb.g, rgb.b, 255].join(',') + ')');
-        })
-        .subscribe(backgroundColor, util.makeErrorHandler('bad bg color'));
+        backgroundColor.onNext(renderStateBackgroundColorObject);
+        makeInspector($bg, colorObjectToHex(renderStateBackgroundColorObject))
+            .throttleFirst(10)
+            .do(function (backgroundColor) {
+                // Set the background color directly/locally via CSS:
+                $('#simulation').css('backgroundColor', colorObjectToCSS(backgroundColor));
+                // Update the server render config:
+                socket.emit('update_render_config', {'options': {'clearColor': [colorObjectToBytes(backgroundColor)]}});
+            })
+            .subscribe(backgroundColor, util.makeErrorHandler('bad background color'));
 
-    return {
-        foregroundColor: foregroundColor,
-        backgroundColor: backgroundColor
-    };
+        return {
+            foregroundColor: foregroundColor,
+            backgroundColor: backgroundColor
+        };
+    },
 
+    makeInspector: makeInspector,
+
+    colorObjectToCSS: colorObjectToCSS,
+
+    colorObjectToHex: colorObjectToHex,
+
+    colorObjectToBytes: colorObjectToBytes
 };
-
-module.exports.makeInspector = makeInspector;

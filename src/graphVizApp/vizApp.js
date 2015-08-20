@@ -114,7 +114,7 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     canvas.setupLabelsAndCursor(appState, urlParams, $simCont);
     canvas.setupRenderUpdates(appState.renderingScheduler, appState.cameraChanges, appState.settingsChanges);
 
-    var colors = colorpicker($fgPicker, $bgPicker, socket, initialRenderState);
+    var colors = colorpicker.init($fgPicker, $bgPicker, socket, initialRenderState);
     canvas.setupBackgroundColor(appState.renderingScheduler, colors.backgroundColor);
     //TODO expose through cascade and provide to export
     if (urlParams['background-image']) {
