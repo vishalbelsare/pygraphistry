@@ -485,12 +485,6 @@ var pointCulledUniforms = {
     'minPointSize': { 'uniformType': '1f', 'defaultValues': [8.0] }
 }
 
-var pickingGlOpts = {
-    'clearColor': [[1, 1, 1, 0.0]],
-    'blendFuncSeparate': [['SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'ONE', 'ONE']],
-    'blendEquationSeparate': [['FUNC_ADD', 'FUNC_ADD']],
-};
-
 var items = {
     'indexeddummy' : {
         'program': 'edgeculled',
@@ -667,7 +661,7 @@ var items = {
             'edgeColor': ['edgeIndices', 'edgeColor']
         },
         'drawType': 'LINES',
-        'glOptions': pickingGlOpts,
+        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'hitmap',
         'readTarget': true
     },
@@ -771,7 +765,7 @@ var items = {
             'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
         },
         'drawType': 'POINTS',
-        'glOptions': pickingGlOpts,
+        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'hitmap',
         'readTarget': true,
     },
@@ -788,7 +782,7 @@ var items = {
             'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
         },
         'drawType': 'POINTS',
-        'glOptions': pickingGlOpts,
+        'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'pointHitmapDownsampled',
         'readTarget': true,
     },
@@ -843,11 +837,9 @@ var stdOptions = {
     'blendFuncSeparate': [['SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'ONE', 'ONE']],
     'blendEquationSeparate': [['FUNC_ADD', 'FUNC_ADD']],
     'depthFunc': [['LEQUAL']],
-    'clearColor': [[51/255, 51/255, 57/255, 0.0]],
+    'clearColor': [[51/255, 51/255, 57/255, 1.0]],
     'lineWidth': [[1]]
-};
-
-
+}
 
 var camera2D = {
     'type': '2d',
