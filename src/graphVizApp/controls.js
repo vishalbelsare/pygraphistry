@@ -303,12 +303,13 @@ function createControls(socket, appState, trigger, urlParams) {
             }
         });
 
-    var $anchor = $('#renderingItems').children('.form-horizontal');
+    var $renderingItems = $('#renderingItems');
+    var $anchor = $renderingItems.children('.form-horizontal');
 
     var makeControl = controlMaker.bind('', urlParams, $anchor);
 
 
-    $('#renderingItems').css({'display': 'block', 'left': '100%'});
+    $renderingItems.css({'display': 'block', 'left': '100%'});
     rxControls
     .do(function (controls) {
         //workaround: https://github.com/nostalgiaz/bootstrap-switch/issues/446
