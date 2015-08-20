@@ -349,22 +349,11 @@ function setEdgeWeight(graph, edgeWeights) {
       return graph.simulator.setEdgeWeight(undefined);
     }
 
-
-    if (edgeWeights.length != nedges)
+    if (edgeWeights.length != nedges) {
        logger.error('setEdgeWeigts expects one weight per edge');
-
-    // Internaly we have two weights, one per endpoint.
-    // Edges may be permuted, use forward permutation
-
-    var ew = new Float32Array(nedges * 2);
-    var map = graph.simulator.dataframe.getHostBuffer('forwardsEdges').edgePermutation;
-    for (var edge = 0; edge < nedges; edge++) {
-        var spot = 2 * map[edge];
-        ew[spot] = edgeWeights[edge];
-        ew[spot + 1] = edgeWeights[edge];
     }
 
-    return graph.simulator.setEdgeWeight(ew);
+    return graph.simulator.setEdgeWeight(edgeWeights);
 }
 
 function setMidEdgeColors(graph, midEdgeColors) {
