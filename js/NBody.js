@@ -357,7 +357,7 @@ function setEdgeWeight(graph, edgeWeights) {
     // Edges may be permuted, use forward permutation
 
     var ew = new Float32Array(nedges * 2);
-    var map = graph.simulator.dataframe.getHostBuffer('forwardsEdges').edgePermutation;
+    var map = graph.simulator.dataframe.getHostBuffer('forwardsEdges').edgePermutationInverseTyped;
     for (var edge = 0; edge < nedges; edge++) {
         var spot = 2 * map[edge];
         ew[spot] = edgeWeights[edge];

@@ -705,7 +705,7 @@ Dataframe.prototype.loadLocalBuffer = function (name, buffer) {
     // TODO: Generalize
     if (name === 'edgeColors') {
         var sortedBuffer = new buffer.constructor(buffer.length);
-        var permutation = this.rawdata.hostBuffers.forwardsEdges.edgePermutation;
+        var permutation = this.rawdata.hostBuffers.forwardsEdges.edgePermutationInverseTyped;
         for (var i = 0; i < buffer.length / 2; i++) {
             sortedBuffer[i*2] = buffer[permutation[i]*2];
             sortedBuffer[i*2 + 1] = buffer[permutation[i]*2 +1];
@@ -1385,7 +1385,7 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
     // If we're filtering and have information on unfiltered data.
     if (oldEncapsulated && masks) {
         var oldEdges = oldEncapsulated.edgesTyped;
-        var oldPermutation = oldEncapsulated.edgePermutation;
+        var oldPermutation = oldEncapsulated.edgePermutationInverseTyped;
         var lastOldIdx = 0;
 
         // Lookup to see if an edge is included.
@@ -1539,10 +1539,11 @@ Dataframe.prototype.encapsulateEdges = function (edges, numPoints, oldEncapsulat
     var edgesTyped = edgeListObj.edgeListTyped;
     var originals = edgeListObj.originals;
 
-    var edgePermutationTyped = originals;
-    var edgePermutationInverseTyped = new Uint32Array(edgesTyped.length / 2);
-    _.each(originals, function (val, i) {
-        edgePermutationInverseTyped[i] = val;
+    var edgePermutationInverseTyped = originals;
+    // var edgePermutationTyped = originals;
+    var edgePermutationTyped = new Uint32Array(edgesTyped.length / 2);
+    _.each(edgePermutationInverseTyped, function (val, i) {
+        edgePermutationTyped[val] = i;
     });
 
     // [ [first edge number from src idx, numEdges from source idx, source idx], ... ]
@@ -1568,9 +1569,11 @@ Dataframe.prototype.encapsulateEdges = function (edges, numPoints, oldEncapsulat
         edgesTyped: edgesTyped,
 
         //Uint32Array [where unsorted edge now sits]
+        // map original idx -> new idx
         edgePermutation: edgePermutationTyped,
 
         //Uint32Array [where sorted edge used to it]
+        // map new idx -> original idx
         edgePermutationInverseTyped: edgePermutationInverseTyped,
 
         //Uint32Array [(edge number, number of sibling edges), ... ]
