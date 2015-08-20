@@ -843,7 +843,7 @@ var stdOptions = {
     'blendFuncSeparate': [['SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'ONE', 'ONE']],
     'blendEquationSeparate': [['FUNC_ADD', 'FUNC_ADD']],
     'depthFunc': [['LEQUAL']],
-    'clearColor': [[51/255, 51/255, 57/255, 0.0]],
+    'clearColor': [[51/255, 51/255, 57/255, 1.0]],
     'lineWidth': [[1]]
 };
 
