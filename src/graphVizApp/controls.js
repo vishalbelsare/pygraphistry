@@ -291,6 +291,13 @@ function controlMaker (urlParams, $anchor, param, type) {
 }
 
 
+function createControlHeader($anchor, name) {
+    $('<div>')
+        .addClass('control-title').text(name)
+        .appendTo($anchor);
+}
+
+
 function createControls(socket, appState, trigger, urlParams) {
 
     var rxControls = Rx.Observable.fromCallback(socket.emit, socket)('layout_controls', null)
@@ -318,26 +325,20 @@ function createControls(socket, appState, trigger, urlParams) {
         }, 2000);
 
         //APPEARANCE
-        $('<div>')
-            .addClass('control-title').text('Appearance')
-            .appendTo($anchor);
+        createControlHeader($anchor, 'Appearance');
         _.each(encodingPerElementParams, function (param) {
             makeControl(param, 'local');
         });
 
         //LABELS
-        $('<div>')
-            .addClass('control-title').text('Labels')
-            .appendTo($anchor);
+        createControlHeader($anchor, 'Labels');
         _.each(encodingForLabelParams, function (param) {
             makeControl(param, 'local');
         });
 
         //LAYOUT
         _.each(controls, function (la) {
-            $('<div>')
-                .addClass('control-title').text(la.name)
-                .appendTo($anchor);
+            createControlHeader($anchor, la.name);
             _.each(la.params, function (param) {
                 makeControl(param, 'layout');
             });
