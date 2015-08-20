@@ -245,11 +245,6 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
 Dataframe.prototype.filter = function (masks, simulator) {
     logger.debug('Starting Filter');
 
-    // Check for edge case where nothing was selected
-    // if (masks.point.length === 0 && masks.edge.length === 0) {
-    //     return;
-    // }
-
     var start = Date.now();
 
     var that = this;
@@ -276,18 +271,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
         }
     });
 
-    // buffers;
-    // We have to deal with generic buffers differently from
-    // simulator buffers, since simulator buffers are more complex
-    // and not straightforward filters.
-    var newBuffers = newData.buffers;
-    var rawBuffers = rawdata.buffers;
-
-    // TODO: Regular Buffers
-    // _.each(_.keys(rawBuffers), function (key) {
-    //     // TODO, since we don't ever use these yet.
-    //     console.error('[Not implemented yet]: Attempting to filter with GPU attributes.');
-    // });
+    // TODO: Regular Data GPU Buffers
+    // TODO: Figure out how GC/memory management works.
 
     ///////////////////////////////////////////////////////////////////////////
     // Simulator / Graph Specific stuff. TODO: Should this be in the dataframe?
@@ -327,17 +312,12 @@ Dataframe.prototype.filter = function (masks, simulator) {
         filteredEdges[i*2 + 1] = pointOriginalLookup[originalEdges[oldIdx*2 + 1]];
     }
 
-    // hostBuffers: points,unsortedEdges,forwardsEdges,backwardsEdges
-    // TODO: Do points ever change? Ask Paden.
-
     var edgesFlipped = new Uint32Array(that.typedArrayCache.edgesFlipped.buffer, 0, filteredEdges.length);
-    // var edgesFlipped = new Uint32Array(filteredEdges.length);
 
     for (var i = 0; i < filteredEdges.length/2; i++) {
         edgesFlipped[2 * i] = filteredEdges[2 * i + 1];
         edgesFlipped[2 * i + 1] = filteredEdges[2 * i];
     }
-
 
     newData.hostBuffers.unsortedEdges = filteredEdges;
     var forwardsEdges = this.encapsulateEdges(filteredEdges, numPoints, rawdata.hostBuffers.forwardsEdges, unsortedMasks, pointOriginalLookup);
@@ -349,6 +329,10 @@ Dataframe.prototype.filter = function (masks, simulator) {
     newData.localBuffers.logicalEdges = forwardsEdges.edgesTyped;
     newData.localBuffers.forwardsEdgeStartEndIdxs = forwardsEdges.edgeStartEndIdxsTyped;
     newData.localBuffers.backwardsEdgeStartEndIdxs = backwardsEdges.edgeStartEndIdxsTyped;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Copy non-GPU buffers
+    ///////////////////////////////////////////////////////////////////////////
 
     // TODO: Figured out what pointTags is used for
     // TODO: Figure out what edgeTags are used for.
@@ -564,8 +548,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
             simulator.versions.buffers[key] += 1;
         });
 
-        that.lastMasks.point = masks.point || [];
-        that.lastMasks.edge = masks.edge || [];
+        that.lastMasks.point = unsortedMasks.point || [];
+        that.lastMasks.edge = unsortedMasks.edge || [];
 
     }).then(function () {
         logger.debug('Filter Completed in ' + (Date.now() - start) + ' ms.');
