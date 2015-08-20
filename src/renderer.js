@@ -1027,6 +1027,8 @@ function renderItem(state, config, camera, gl, options, ext, programs, buffers, 
         clearedFBOs[renderTarget] = true;
     }
 
+    setGlOptions(gl, _.omit(_.extend({}, state.get('options'), itemDef.glOptions), 'clearColor'));
+
     var depthFunc = ((itemDef.glOptions || {}).depthFunc || config.options.depthFunc)[0][0];
     gl.depthFunc(gl[depthFunc]);
 
