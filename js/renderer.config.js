@@ -847,6 +847,10 @@ var stdOptions = {
     'lineWidth': [[1]]
 };
 
+var transparentOptions =
+    _.extend({},
+        stdOptions,
+        {'clearColor': [[51/255, 51/255, 57/255, 0.0]]});
 
 
 var camera2D = {
@@ -880,7 +884,21 @@ var sceneNetflowArcs = {
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
-}
+};
+
+var sceneTransparent = {
+    'options': transparentOptions,
+    'camera': camera2D,
+    'numRenderedSplits': 8,
+    'clientMidEdgeInterpolation': true,
+    'arcHeight': 0.2,
+    'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
+    'midedgeculled', 'edgepicking',
+    'arrowculled', 'arrowhighlight', 'edgehighlight',
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
+    'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
+};
 
 var sceneNetflowBigArcs = {
     'options': stdOptions,
@@ -911,6 +929,7 @@ var sceneNetflowStraight = {
 
 var scenes = {
     'default': sceneNetflowArcs,
+    'transparent': sceneTransparent,
     'uber' : sceneUber,
     'netflowArcs': sceneNetflowArcs,
     'netflowBigArcs': sceneNetflowBigArcs,
