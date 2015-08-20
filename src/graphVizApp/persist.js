@@ -105,7 +105,7 @@ module.exports = function (appState, socket, urlParams) {
                 .map(function (imageDataURL) {
                     response.imageDataURL = imageDataURL;
                     var backgroundColor = $('#simulation').css('backgroundColor');
-                    if (backgroundColor && !backgroundColor.match("^rgba?\\(0+, 0+, 0+[,)]")) {
+                    if (backgroundColor && !backgroundColor.match('^rgba?\\(0+, 0+, 0+[,)]')) {
                         response.backgroundColor = backgroundColor;
                     }
                     return response;
