@@ -62,6 +62,7 @@ module.exports = {
         segStart: null,
         carryOutGlobal: null,
         edgeStartEndIdxs: null,
-        edgeWeights: null
+        edgeWeights: null,
+        isForward: cljs.types.uint_t
     }
 

@@ -10,7 +10,7 @@ var logger      = log.createLogger('graph-viz:cl:barnesKernels');
 var edgeKernelSeqFast = function (clContext) {
 
     this.argsMapEdges = [
-        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges', 'numEdges',
+        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'isForward', 'edges', 'numEdges',
         'pointDegrees', 'inputPoints', 'edgeWeights', 'outputForcesMap'
     ];
 
@@ -81,7 +81,8 @@ var edgeKernelSeqFast = function (clContext) {
                                    simulator.dataframe.getBuffer('partialForces1', 'simulator'),
                                    simulator.dataframe.getBuffer('partialForces2', 'simulator'),
                                    simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator'),
-                                   workItemsSize)
+                                   workItemsSize,
+                                   1)
         .then(function () {
             return that.edgeForcesOneWay(simulator, backwardsEdges, backwardsWorkItems,
                                          points,
@@ -90,13 +91,14 @@ var edgeKernelSeqFast = function (clContext) {
                                          simulator.dataframe.getBuffer('partialForces2', 'simulator'),
                                          simulator.dataframe.getBuffer('curForces', 'simulator'),
                                          simulator.dataframe.getBuffer('backwardsEdgeStartEndIdxs', 'simulator'),
-                                         workItemsSize);
+                                         workItemsSize,
+                                         0);
         });
     }
 
 
     this.edgeForcesOneWay = function(simulator, edges, workItems, points, pointDegrees, edgeWeights,
-                                     partialForces, outputForces, startEnd, workItemsSize) {
+                                     partialForces, outputForces, startEnd, workItemsSize, isForward) {
 
       var numEdges = simulator.dataframe.getNumElements('edge');
       var numPoints = simulator.dataframe.getNumElements('point');
@@ -107,7 +109,8 @@ var edgeKernelSeqFast = function (clContext) {
         pointDegrees: pointDegrees.buffer,
         inputPoints: points.buffer,
         edgeWeights: edgeWeights.buffer,
-        outputForcesMap: simulator.dataframe.getBuffer('outputEdgeForcesMap', 'simulator').buffer
+        outputForcesMap: simulator.dataframe.getBuffer('outputEdgeForcesMap', 'simulator').buffer,
+        isForward: isForward
       });
 
       var resources = [edges, workItems, points, partialForces, outputForces];
