@@ -5,10 +5,11 @@ var _           = require('underscore');
 var Immutable   = require('immutable');
 var Rx          = require('rx');
 var debug       = require('debug')('graphistry:StreamGL:renderer');
+var Color       = require('color');
 
 var ui                  = require('./ui.js');
 var cameras             = require('./camera.js');
-
+var colorPicker         = require('./graphVizApp/colorpicker.js');
 
 
 /** @module Renderer */
@@ -265,19 +266,8 @@ function init(config, canvas, urlParams) {
     if (urlParams.bg) {
         try {
             var hex = decodeURIComponent(urlParams.bg);
-            var c = parseInt(hex.slice(1), 16);
-            state.get('options').clearColor =
-                [
-                    [c >> 16, c >> 8, c]
-                        .map(function (v) {
-                            var res = (v & 255) / 255;
-                            if (isNaN(res)) {
-                                throw new Error('Bad color component');
-                            }
-                            return res;
-                        })
-                        .concat(1)
-                ];
+            var color = new Color(hex);
+            state.get('options').clearColor = [colorPicker.renderConfigValueForColor(color)];
         } catch (e) {
             console.error('Invalid color', e, urlParams.bg);
         }
