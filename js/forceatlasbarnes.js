@@ -205,9 +205,14 @@ function edgeForces(simulator, edgeKernelSeq, stepNumber, workItems) {
     var buffers = simulator.buffers;
     var dataframe = simulator.dataframe;
 
-    return edgeKernelSeq.execKernels(simulator, dataframe.getBuffer('forwardsEdges', 'simulator'), dataframe.getBuffer('forwardsWorkItems', 'simulator'),
-                                      dataframe.getNumElements('forwardsWorkItems'), dataframe.getBuffer('backwardsEdges', 'simulator'), dataframe.getBuffer('backwardsWorkItems', 'simulator'),
-                                      dataframe.getNumElements('backwardsWorkItems'), dataframe.getBuffer('curPoints', 'simulator'), stepNumber, workItems);
+    return edgeKernelSeq.execKernels(simulator,
+                                     dataframe.getBuffer('forwardsEdges', 'simulator'),
+                                     dataframe.getBuffer('forwardsWorkItems', 'simulator'),
+                                     dataframe.getBuffer('backwardsEdges', 'simulator'),
+                                     dataframe.getBuffer('backwardsWorkItems', 'simulator'),
+                                     dataframe.getBuffer('curPoints', 'simulator'),
+                                     dataframe.getBuffer('degrees', 'simulator'),
+                                     workItems);
 }
 
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {

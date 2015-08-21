@@ -10,13 +10,14 @@ var logger      = log.createLogger('graph-viz:cl:barnesKernels');
 var edgeKernelSeqFast = function (clContext) {
 
     this.argsMapEdges = [
-    'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges', 'numEdges',
-    'workList', 'inputPoints', 'edgeWeights', 'stepNumber', 'numWorkItems', 'outputForcesMap'
-];
+        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges', 'numEdges',
+        'pointDegrees', 'inputPoints', 'edgeWeights', 'outputForcesMap'
+    ];
 
     this.argsSegReduce = [
         'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numInput', 'input',
-        'edgeStartEndIdxs', 'segStart', 'workList', 'numOutput', 'carryOutGlobal', 'output', 'partialForces'];
+        'edgeStartEndIdxs', 'segStart', 'workList', 'numOutput', 'carryOutGlobal', 'output', 'partialForces'
+    ];
 
 
     this.mapEdges = new Kernel('faEdgeMap', this.argsMapEdges, ArgsType, 'forceAtlas2/faEdgeMap.cl', clContext);
@@ -69,22 +70,22 @@ var edgeKernelSeqFast = function (clContext) {
     })
     };
 
-    this.execKernels = function(simulator, forwardsEdges, forwardsWorkItems, numForwardsWorkItems,
-                                backwardsEdges, backwardsWorkItems, numBackwardsWorkItems, points,
-                                stepNumber, workItemsSize) {
+    this.execKernels = function(simulator, forwardsEdges, forwardsWorkItems,
+                                backwardsEdges, backwardsWorkItems, points,
+                                pointDegrees, workItemsSize) {
       var that = this;
-      return this.edgeForcesOneWay(simulator, forwardsEdges, forwardsWorkItems, numForwardsWorkItems,
-                                   simulator.dataframe.getBuffer('curPoints', 'simulator'),
-                                   stepNumber,
+      return this.edgeForcesOneWay(simulator, forwardsEdges, forwardsWorkItems,
+                                   points,
+                                   pointDegrees,
                                    simulator.dataframe.getBuffer('forwardsEdgeWeights', 'simulator'),
                                    simulator.dataframe.getBuffer('partialForces1', 'simulator'),
                                    simulator.dataframe.getBuffer('partialForces2', 'simulator'),
                                    simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator'),
                                    workItemsSize)
         .then(function () {
-            return that.edgeForcesOneWay(simulator, backwardsEdges, backwardsWorkItems, numBackwardsWorkItems,
-                                         simulator.dataframe.getBuffer('curPoints', 'simulator'),
-                                         stepNumber,
+            return that.edgeForcesOneWay(simulator, backwardsEdges, backwardsWorkItems,
+                                         points,
+                                         pointDegrees,
                                          simulator.dataframe.getBuffer('backwardsEdgeWeights', 'simulator'),
                                          simulator.dataframe.getBuffer('partialForces2', 'simulator'),
                                          simulator.dataframe.getBuffer('curForces', 'simulator'),
@@ -94,8 +95,8 @@ var edgeKernelSeqFast = function (clContext) {
     }
 
 
-    this.edgeForcesOneWay = function(simulator, edges, workItems, numWorkItems,
-        points, stepNumber, edgeWeights, partialForces, outputForces, startEnd, workItemsSize) {
+    this.edgeForcesOneWay = function(simulator, edges, workItems, points, pointDegrees, edgeWeights,
+                                     partialForces, outputForces, startEnd, workItemsSize) {
 
       var numEdges = simulator.dataframe.getNumElements('edge');
       var numPoints = simulator.dataframe.getNumElements('point');
@@ -103,10 +104,8 @@ var edgeKernelSeqFast = function (clContext) {
       this.mapEdges.set({
         numEdges: numEdges,
         edges: edges.buffer,
-        workList: workItems.buffer,
+        pointDegrees: pointDegrees.buffer,
         inputPoints: points.buffer,
-        stepNumber: stepNumber,
-        numWorkItems: numWorkItems,
         edgeWeights: edgeWeights.buffer,
         outputForcesMap: simulator.dataframe.getBuffer('outputEdgeForcesMap', 'simulator').buffer
       });
