@@ -170,7 +170,7 @@ function atlasControls(algo) {
 
 var controls = {
     'default':      [atlasControls(forceAtlasBarnes), atlasControls(ForceAtlas2Fast)],
-    'uber':         [uberControls],
+    'gis':         [uberControls],
     'gauss':        [gsControls],
     'atlas':        [atlasControls(forceAtlasBarnes), atlasControls(ForceAtlas2Fast)],
     'atlas2':       [atlasControls(ForceAtlas2)],

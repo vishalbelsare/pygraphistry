@@ -930,7 +930,7 @@ var sceneNetflowStraight = {
 var scenes = {
     'default': sceneNetflowArcs,
     'transparent': sceneTransparent,
-    'uber' : sceneUber,
+    'gis' : sceneUber,
     'netflowArcs': sceneNetflowArcs,
     'netflowBigArcs': sceneNetflowBigArcs,
     'netflowStraight': sceneNetflowStraight
