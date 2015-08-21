@@ -25,7 +25,8 @@ function makeInspector ($elt, hexColor) {
         },
         onChange: function (hsb, hex, rgb) {
             $elt.find('.colorSelector div').css('backgroundColor', '#' + hex);
-            colors.onNext(rgb);
+            var color = new Color(rgb);
+            colors.onNext(color);
         }
     });
 
