@@ -327,7 +327,7 @@ var testMapper = {
             }
         },
         edgeColor: {
-            name: 'weight',
+            name: 'bytes',
             transform: function (v) {
                 var palette = util.palettes.green2red_palette;
                 return int2color(normalize(logTransform(v), 0, palette.length - 1), palette);
@@ -336,7 +336,7 @@ var testMapper = {
         edgeWeight: {
             name: 'weight',
             transform: function (v) {
-                return normalizeFloat(logTransform(v), 0, 2)
+                return normalizeFloat(logTransform(v), 0.5, 1.5)
             }
         }
     },
@@ -426,7 +426,7 @@ var splunkMapper = {
         edgeWeight: {
             name: 'edgeWeight',
             transform: function (v) {
-                return normalizeFloat(v, 0, 2)
+                return normalizeFloat(v, 0.5, 1.5)
             }
         }
     }

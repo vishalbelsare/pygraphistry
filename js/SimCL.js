@@ -1009,28 +1009,37 @@ function setEdgeWeight(simulator, edgeWeights) {
         logger.trace('Using default edge weights');
         var forwardsEdges = simulator.dataframe.getHostBuffer('forwardsEdges');
 
-        edgeWeights = new Float32Array(forwardsEdges.edgesTyped.length);
+        edgeWeights = new Float32Array(forwardsEdges.edgesTyped.length / 2);
         for (var i = 0; i < edgeWeights.length; i++) {
             edgeWeights[i] = 1.0;
         }
     }
-    return simulator.cl.createBuffer(edgeWeights.byteLength, 'edgeWeights')
-    .then(function(edgeWeightsBuffer) {
-      return simulator.dataframe.loadBuffer('edgeWeights', 'simulator', edgeWeightsBuffer);
-      // return simulator.buffers.edgeWeights = edgeWeightsBuffer;
-    })
-    .then(function() {
-        return Q.all([
-            // simulator.buffers.edgeWeights.write(endWeights),
-            simulator.dataframe.writeBuffer('edgeWeights', 'simulator', edgeWeights, simulator)
-        ]);
-    }).then(function() {
-        simulator.dataframe.loadLocalBuffer('edgeWeights', edgeWeights);
-        // simulator.buffersLocal.edgeWeights = edgeWeights;
-        simulator.tickBuffers(['edgeWeights']);
 
-        return simulator;
-    })
+    var forwardsEdgeWeights = new Float32Array(edgeWeights.length);
+    var backwardsEdgeWeights = new Float32Array(edgeWeights.length);
+    var forwardsPermutation = simulator.dataframe.rawdata.hostBuffers.forwardsEdges.edgePermutationInverseTyped;
+    var backwardsPermutation = simulator.dataframe.rawdata.hostBuffers.backwardsEdges.edgePermutationInverseTyped;
+    for (var i = 0; i < edgeWeights.length; i++) {
+        forwardsEdgeWeights[i] = edgeWeights[forwardsPermutation[i]];
+        backwardsEdgeWeights[i] = edgeWeights[backwardsPermutation[i]];
+    }
+
+    return Q.all([
+            simulator.cl.createBuffer(forwardsEdgeWeights.byteLength, 'forwardsEdgeWeights'),
+            simulator.cl.createBuffer(backwardsEdgeWeights.byteLength, 'backwardsEdgeWeights'),
+        ]).spread(function(fwBuffer, bwBuffer) {
+            return Q.all([
+                simulator.dataframe.loadBuffer('forwardsEdgeWeights', 'simulator', fwBuffer),
+                simulator.dataframe.loadBuffer('backwardsEdgeWeights', 'simulator', bwBuffer)
+            ]);
+        }).then(function() {
+            return Q.all([
+                simulator.dataframe.writeBuffer('forwardsEdgeWeights', 'simulator', forwardsEdgeWeights, simulator),
+                simulator.dataframe.writeBuffer('backwardsEdgeWeights', 'simulator', backwardsEdgeWeights, simulator)
+            ]);
+        }).then(function() {
+            return simulator;
+        });
 }
 
 function setLocks(simulator, cfg) {

@@ -74,18 +74,28 @@ var edgeKernelSeqFast = function (clContext) {
                                 stepNumber, workItemsSize) {
       var that = this;
       return this.edgeForcesOneWay(simulator, forwardsEdges, forwardsWorkItems, numForwardsWorkItems,
-          simulator.dataframe.getBuffer('curPoints', 'simulator'), stepNumber, simulator.dataframe.getBuffer('partialForces1', 'simulator'),
-          simulator.dataframe.getBuffer('partialForces2', 'simulator'), simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator'), workItemsSize)
+                                   simulator.dataframe.getBuffer('curPoints', 'simulator'),
+                                   stepNumber,
+                                   simulator.dataframe.getBuffer('forwardsEdgeWeights', 'simulator'),
+                                   simulator.dataframe.getBuffer('partialForces1', 'simulator'),
+                                   simulator.dataframe.getBuffer('partialForces2', 'simulator'),
+                                   simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator'),
+                                   workItemsSize)
         .then(function () {
-          return that.edgeForcesOneWay(simulator, backwardsEdges, backwardsWorkItems, numBackwardsWorkItems,
-              simulator.dataframe.getBuffer('curPoints', 'simulator'), stepNumber, simulator.dataframe.getBuffer('partialForces2', 'simulator'),
-              simulator.dataframe.getBuffer('curForces', 'simulator'), simulator.dataframe.getBuffer('backwardsEdgeStartEndIdxs', 'simulator'), workItemsSize);
+            return that.edgeForcesOneWay(simulator, backwardsEdges, backwardsWorkItems, numBackwardsWorkItems,
+                                         simulator.dataframe.getBuffer('curPoints', 'simulator'),
+                                         stepNumber,
+                                         simulator.dataframe.getBuffer('backwardsEdgeWeights', 'simulator'),
+                                         simulator.dataframe.getBuffer('partialForces2', 'simulator'),
+                                         simulator.dataframe.getBuffer('curForces', 'simulator'),
+                                         simulator.dataframe.getBuffer('backwardsEdgeStartEndIdxs', 'simulator'),
+                                         workItemsSize);
         });
-        }
+    }
 
 
     this.edgeForcesOneWay = function(simulator, edges, workItems, numWorkItems,
-        points, stepNumber, partialForces, outputForces, startEnd, workItemsSize) {
+        points, stepNumber, edgeWeights, partialForces, outputForces, startEnd, workItemsSize) {
 
       var numEdges = simulator.dataframe.getNumElements('edge');
       var numPoints = simulator.dataframe.getNumElements('point');
@@ -97,7 +107,7 @@ var edgeKernelSeqFast = function (clContext) {
         inputPoints: points.buffer,
         stepNumber: stepNumber,
         numWorkItems: numWorkItems,
-        edgeWeights: simulator.dataframe.getBuffer('edgeWeights', 'simulator').buffer,
+        edgeWeights: edgeWeights.buffer,
         outputForcesMap: simulator.dataframe.getBuffer('outputEdgeForcesMap', 'simulator').buffer
       });
 
