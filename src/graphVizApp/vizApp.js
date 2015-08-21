@@ -115,6 +115,7 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     canvas.setupRenderUpdates(appState.renderingScheduler, appState.cameraChanges, appState.settingsChanges);
 
     var colors = colorpicker.init($fgPicker, $bgPicker, socket, initialRenderState);
+    // TODO use colors.foregroundColor for the renderer/canvas!
     canvas.setupBackgroundColor(appState.renderingScheduler, colors.backgroundColor);
     //TODO expose through cascade and provide to export
     if (urlParams['background-image']) {
