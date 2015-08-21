@@ -65,21 +65,21 @@ i * @param {HTMLElement} $fg - Element for the foreground color button affordanc
 module.exports = {
     init: function ($fg, $bg, socket, renderState) {
 
-        var foregroundColor = new Rx.ReplaySubject(1),
+        var foregroundColorObservable = new Rx.ReplaySubject(1),
             blackForegroundDefault = (new Color()).rgb(0, 0, 0);
-        foregroundColor.onNext(blackForegroundDefault);
+        foregroundColorObservable.onNext(blackForegroundDefault);
         makeInspector($fg, blackForegroundDefault.hexString())
             .throttleFirst(10)
             .do(function (foregroundColor) {
                 socket.emit('set_colors', {rgb: foregroundColor});
             })
-            .subscribe(foregroundColor, util.makeErrorHandler('bad foreground color'));
+            .subscribe(foregroundColorObservable, util.makeErrorHandler('bad foreground color'));
 
-        var backgroundColor = new Rx.ReplaySubject(1);
+        var backgroundColorObservable = new Rx.ReplaySubject(1);
 
         var renderStateBackgroundColor = colorFromRenderConfigValue(renderState.get('options').clearColor[0]);
 
-        backgroundColor.onNext(renderStateBackgroundColor);
+        backgroundColorObservable.onNext(renderStateBackgroundColor);
         makeInspector($bg, renderStateBackgroundColor.hexString())
             .throttleFirst(10)
             .do(function (backgroundColor) {
@@ -88,11 +88,11 @@ module.exports = {
                 // Update the server render config:
                 socket.emit('update_render_config', {'options': {'clearColor': [renderConfigValueForColor(backgroundColor)]}});
             })
-            .subscribe(backgroundColor, util.makeErrorHandler('bad background color'));
+            .subscribe(backgroundColorObservable, util.makeErrorHandler('bad background color'));
 
         return {
-            foregroundColor: foregroundColor,
-            backgroundColor: backgroundColor
+            foregroundColor: foregroundColorObservable,
+            backgroundColor: backgroundColorObservable
         };
     },
 
