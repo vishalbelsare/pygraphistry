@@ -39,8 +39,7 @@ function addressMemoizer(cache, cacheName, glLocationMethodName) {
 
     return function (gl, program, programName, address) {
 
-        if(typeof cache[programName] !== 'undefined' &&
-            typeof cache[programName][address] !== 'undefined') {
+        if (cache[programName] !== undefined && cache[programName][address] !== undefined) {
             debug('  Get %s %s: using fast path', cacheName, address);
             return cache[programName][address];
         }
@@ -85,7 +84,7 @@ var getUniformLocationFast = addressMemoizer(uniformLocations, 'uniform', 'getUn
  * @type {?WebGLProgram} */
 var activeProgram = null;
 function useProgram(gl, program) {
-    if(activeProgram !== program) {
+    if (activeProgram !== program) {
         debug('Use program: on slow path');
         gl.useProgram(program);
         activeProgram = program;
@@ -101,7 +100,7 @@ function useProgram(gl, program) {
  * @type {?WebGLBuffer} */
 var boundBuffer = null;
 function bindBuffer(gl, glArrayType, buffer) {
-    if(boundBuffer !== buffer) {
+    if (boundBuffer !== buffer) {
         gl.bindBuffer(glArrayType, buffer);
         boundBuffer = buffer;
         return true;
@@ -112,10 +111,10 @@ function bindBuffer(gl, glArrayType, buffer) {
 
 // Polyfill to get requestAnimationFrame cross browser.
 // Falls back to setTimeout. Based on https://gist.github.com/paulirish/1579671
-(function() {
+(function () {
     var lastTime = 0;
     var vendors = ['ms', 'moz', 'webkit', 'o'];
-    for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+    for (var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
         window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
         window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame'] ||
                                       window[vendors[x]+'CancelRequestAnimationFrame'];
