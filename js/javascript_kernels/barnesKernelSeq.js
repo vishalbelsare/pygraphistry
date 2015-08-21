@@ -309,52 +309,6 @@ var BarnesKernelSeq = function (clContext) {
         updateBarnesArgs(that.calculatePointForces);
     };
 
-    // TODO (paden) Can probably combine ExecKernel functions
-    this.execKernelsMidPoints = function(simulator, stepNumber, workItems) {
-
-        var resources = [
-            simulator.dataframe.getBuffer('curMidPoints', 'simulator'),
-            simulator.dataframe.getBuffer('forwardsDegrees', 'simulator'),
-            simulator.dataframe.getBuffer('backwardsDegrees', 'simulator'),
-            simulator.dataframe.getBuffer('partialForces1', 'simulator')
-        ];
-
-        this.toBarnesLayout.set({stepNumber: stepNumber});
-        this.boundBox.set({stepNumber: stepNumber});
-        this.buildTree.set({stepNumber: stepNumber});
-        this.computeSums.set({stepNumber: stepNumber});
-        this.sort.set({stepNumber: stepNumber});
-        this.calculateForces.set({stepNumber: stepNumber});
-
-        simulator.tickBuffers(['nextMidPoints']);
-
-        logger.trace("Running Force Atlas2 with BarnesHut Kernels");
-
-        // For all calls, we must have the # work items be a multiple of the workgroup size.
-        var that = this;
-        return this.toBarnesLayout.exec([workItems.toBarnesLayout], resources, [256])
-        .then(function () {
-            return that.boundBox.exec([workItems.boundBox], resources, [256]);
-        })
-
-        .then(function () {
-            return that.buildTree.exec([workItems.buildTree], resources, [256]);
-        })
-
-        .then(function () {
-            return that.computeSums.exec([workItems.computeSums], resources, [256]);
-        })
-
-        .then(function () {
-            return that.sort.exec([workItems.sort], resources, [256]);
-        })
-
-        .then(function () {
-            return that.calculateForces.exec([workItems.calculateForces], resources, [256]);
-        })
-        .fail(log.makeQErrorHandler(logger, 'Executing BarnesKernelSeq Midpoints failed'));
-    };
-
     this.execKernels = function(simulator, stepNumber, workItems) {
 
         var resources = [
