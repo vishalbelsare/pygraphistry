@@ -88,7 +88,7 @@ function setupBackgroundColor(renderingScheduler, bgColor) {
     bgColor.do(function (color) {
         renderingScheduler.renderState.get('options').clearColor = [colorPicker.renderConfigValueForColor(color)];
         renderingScheduler.renderScene('bgcolor', {trigger: 'renderSceneFast'});
-    }).subscribe(_.identity, util.makeErrorHandler('bg color updates'));
+    }).subscribe(_.identity, util.makeErrorHandler('background color updates'));
 }
 
 function expandLogicalEdges(bufferSnapshots, numRenderedSplits, edgeHeight) {
