@@ -72,7 +72,7 @@ var encodingForLabelParams = [
         name: 'labelFgColor',
         prettyName: 'Text Color',
         type: 'color',
-        def: Color('#1f1f33'),
+        def: new Color('#1f1f33'),
         cb: (function () {
             var sheet = createStyleElement();
             return function (stream) {
@@ -86,7 +86,7 @@ var encodingForLabelParams = [
         name: 'labelBgColor',
         prettyName: 'Background Color',
         type: 'color',
-        def: Color('#fff').alpha(0.9),
+        def: (new Color('#fff')).alpha(0.9),
         cb: (function () {
             var sheet = createStyleElement();
             return function (stream) {
