@@ -412,7 +412,17 @@
         };
         var spinner = new Spinner(opts).spin();
         var $text = $('<div>').attr('id', 'load-text').text('locating graphistry\'s farm');
-        var $spinner= $(spinner.el).append($text);
+        var $spinner=
+            $(spinner.el)
+                .append($text)
+                .append($('<a>')
+                    .attr('href', '#')
+                    .attr('id', 'retry-load')
+                    .text('Reload')
+                    .click(function () {
+                        document.location.reload();
+                    }));
+
         $('<div>').addClass('load-spinner').append($spinner).appendTo($('body'));
     });
     </script>
