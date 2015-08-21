@@ -34,7 +34,13 @@ function makeInspector ($elt, hexColor) {
 
 
 function renderConfigValueForColor(colorValue) {
-    return _.map(colorValue.rgbaArray(), function (value) { return value / 255; });
+    return _.map(colorValue.rgbaArray(), function (value, index) {
+        // Unspecified alpha => opaque
+        if (index === 3 && value === undefined) {
+            return 1;
+        }
+        return value / 255;
+    });
 }
 
 
@@ -90,5 +96,7 @@ module.exports = {
         };
     },
 
-    makeInspector: makeInspector
+    makeInspector: makeInspector,
+
+    renderConfigValueForColor: renderConfigValueForColor
 };

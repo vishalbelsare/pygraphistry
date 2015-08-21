@@ -10,6 +10,7 @@ var interaction     = require('./interaction.js');
 var util            = require('./util.js');
 var labels          = require('./labels.js');
 var renderer        = require('../renderer');
+var colorPicker     = require('./colorpicker.js');
 
 
 function setupCameraInteractions(appState, $eventTarget) {
@@ -84,9 +85,8 @@ function setupRenderUpdates(renderingScheduler, cameraStream, settingsChanges) {
 }
 
 function setupBackgroundColor(renderingScheduler, bgColor) {
-    bgColor.do(function (rgb) {
-        var color = [rgb.r/255, rgb.g/255, rgb.b/255, rgb.a === undefined ? 1 : rgb.a/255];
-        renderingScheduler.renderState.get('options').clearColor = [color];
+    bgColor.do(function (color) {
+        renderingScheduler.renderState.get('options').clearColor = [colorPicker.renderConfigValueForColor(color)];
         renderingScheduler.renderScene('bgcolor', {trigger: 'renderSceneFast'});
     }).subscribe(_.identity, util.makeErrorHandler('bg color updates'));
 }
