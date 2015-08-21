@@ -56,11 +56,11 @@ function colorFromRenderConfigValue(rgbaFractions) {
 
 /**
  *
- * @param {HTMLElement} $fg - Element for the foreground color button affordance.
+i * @param {HTMLElement} $fg - Element for the foreground color button affordance.
  * @param {HTMLElement} $bg - Element for the background color button affordance.
  * @param {Socket} socket - socket or proxy
  * @param {RenderState} renderState
- * @returns {{foregroundColor: *, backgroundColor: *}} - streams of r,g,b objects
+ * @returns {{foregroundColor: *, backgroundColor: *}} - streams of Color objects
  */
 module.exports = {
     init: function ($fg, $bg, socket, renderState) {
