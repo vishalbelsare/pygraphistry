@@ -318,12 +318,11 @@ function setFlags(state, name, bool) {
 
 
 function createContext(state) {
-    var gl = null;
-    var canvas = state.get('canvas');
-
-    gl = canvas.getContext('webgl', {antialias: true, premultipliedAlpha: false});
+    var canvas = state.get('canvas'),
+        glOptions = {antialias: true, premultipliedAlpha: false},
+        gl = canvas.getContext('webgl', glOptions);
     if(gl === null) {
-        gl = canvas.getContext('experimental-webgl', {antialias: true, premultipliedAlpha: false});
+        gl = canvas.getContext('experimental-webgl', glOptions);
     }
     if(gl === null) { throw new Error('Could not initialize WebGL'); }
 
