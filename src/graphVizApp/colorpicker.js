@@ -56,7 +56,7 @@ function colorFromRenderConfigValue(rgbaFractions) {
 
 /**
  *
-i * @param {HTMLElement} $fg - Element for the foreground color button affordance.
+ * @param {HTMLElement} $fg - Element for the foreground color button affordance.
  * @param {HTMLElement} $bg - Element for the background color button affordance.
  * @param {Socket} socket - socket or proxy
  * @param {RenderState} renderState
