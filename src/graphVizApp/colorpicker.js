@@ -41,8 +41,10 @@ function renderConfigValueForColor(colorValue) {
 function colorFromRenderConfigValue(rgbaFractions) {
     var rgbaBytes = _.map(rgbaFractions, function (value) {
         return value * 255;
-    });
-    return Color().rgb(rgbaBytes.slice(0, 3)).alpha(rgbaBytes[3]);
+    }),
+        result = new Color();
+    result.rgb(rgbaBytes.slice(0, 3)).alpha(rgbaBytes[3]);
+    return result;
 }
 
 
@@ -58,7 +60,7 @@ module.exports = {
     init: function ($fg, $bg, socket, renderState) {
 
         var foregroundColor = new Rx.ReplaySubject(1),
-            blackForegroundDefault = Color().rgb(0, 0, 0);
+            blackForegroundDefault = (new Color()).rgb(0, 0, 0);
         foregroundColor.onNext(blackForegroundDefault);
         makeInspector($fg, blackForegroundDefault.hexString())
             .throttleFirst(10)
