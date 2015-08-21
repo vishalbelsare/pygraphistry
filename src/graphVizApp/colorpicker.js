@@ -72,7 +72,6 @@ module.exports = {
         var backgroundColor = new Rx.ReplaySubject(1);
 
         var renderStateBackgroundColor = colorFromRenderConfigValue(renderState.get('options').clearColor[0]);
-        console.log(renderStateBackgroundColor);
 
         backgroundColor.onNext(renderStateBackgroundColor);
         makeInspector($bg, renderStateBackgroundColor.hexString())
