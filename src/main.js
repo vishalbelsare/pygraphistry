@@ -266,10 +266,10 @@ function createInfoOverlay(app) {
         function (err) { console.error('app vboUpdates error', err, (err || {}).stack); });
 }
 
-window.addEventListener('load', function() {
+window.addEventListener('load', function () {
     // Patch console calls to forward errors to central
-    var loggedFuns = ['error', 'warn'];
-    _.each(loggedFuns, function (fun) {
+    var loggedConsoleFunctions = ['error', 'warn'];
+    _.each(loggedConsoleFunctions, function (fun) {
         monkey.patch(console, fun, monkey.after(function () {
             var msg = {
                 type: 'console.' + fun,
