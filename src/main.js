@@ -266,6 +266,66 @@ function createInfoOverlay(app) {
         function (err) { console.error('app vboUpdates error', err, (err || {}).stack); });
 }
 
+function createSpinner() {
+    var opts = {
+        lines: 13, // The number of lines to draw
+        length: 0, // The length of each line
+        width: 15, // The line thickness
+        radius: 30, // The radius of the inner circle
+        corners: 1, // Corner roundness (0..1)
+        rotate: 0, // The rotation offset
+        direction: 1, // 1: clockwise, -1: counterclockwise
+        color: 'rgb(245,245,253)', // #rgb or #rrggbb or array of colors
+        speed: 1, // Rounds per second
+        trail: 60, // Afterglow percentage
+        shadow: false, // Whether to render a shadow
+        hwaccel: true, // Whether to use hardware acceleration
+        className: 'spinner', // The CSS class to assign to the spinner
+        zIndex: 2e9, // The z-index (defaults to 2000000000)
+        top: '50%', // Top position relative to parent
+        left: '50%' // Left position relative to parent
+    };
+    var spinner = new window.Spinner(opts).spin();
+    var $text = $('<div>').attr('id', 'load-text').text('locating graphistry\'s farm');
+    var $spinner = $(spinner.el);
+    var $reload = $('<a>').attr('href', '#').attr('id', 'retry-load').text('Reload').click(function () {
+        document.location.reload();
+    }).hide();
+
+    $spinner.append($text).append($reload).hide();
+    $('<div>').addClass('load-spinner').append($spinner).appendTo($('body'));
+
+    $spinner.fadeIn(300);
+    setTimeout(function () {
+        $('#retry-load').fadeIn(200);
+    }, 5000);
+}
+
+function launch(streamClient, urlParams) {
+    createSpinner();
+
+    // URL info parameter can ???
+    if (urlParams.info) {
+        $('html').addClass('info');
+    }
+    // URL debug parameter can ???
+    if (urlParams.debug) {
+        $('html').addClass('debug');
+    }
+
+    // URL logo parameter can disable the logo via CSS:
+    if (urlParams.logo === false) {
+        $('html').addClass('nologo');
+    }
+    // URL menu parameter can disable the menu/marquee entirely via CSS:
+    if (urlParams.menu === false) {
+        $('html').addClass('nomenu');
+    }
+
+   var app = init(streamClient, $('#simulation')[0], 'graph', urlParams);
+   createInfoOverlay(app);
+}
+
 window.addEventListener('load', function() {
     // Patch console calls to forward errors to central
     var loggedFuns = ['error', 'warn'];
@@ -300,26 +360,19 @@ window.addEventListener('load', function() {
         streamClient = serverClient;
     }
 
-    var app = init(streamClient, $('#simulation')[0], 'graph', urlParams);
-    createInfoOverlay(app);
-
-
-    // URL info parameter can ???
-    if (urlParams.info) {
-        $('html').addClass('info');
+    if (urlParams.splashAfter === undefined || Date.now() / 1000 <= urlParams.splashAfter) {
+        launch(streamClient, urlParams);
+    } else {
+        var clickHandler = function() {
+            $('.splash').fadeOut(100, function () {
+                $(this).empty();
+                launch(streamClient, urlParams);
+            });
+        };
+        var $logo = $('<img>').attr('src', 'img/logowhite.png').click(clickHandler);
+        var $golink = $('<a>').attr('href', '#').attr('id', 'go-load')
+                              .text('Launch Visualization').click(clickHandler);
+        var $span = $('<span>').append($golink);
+        $('<div>').attr('class', 'splash').append($logo).append($span).prependTo($('body'));
     }
-    // URL debug parameter can ???
-    if (urlParams.debug) {
-        $('html').addClass('debug');
-    }
-
-    // URL logo parameter can disable the logo via CSS:
-    if (urlParams.logo === false) {
-        $('html').addClass('nologo');
-    }
-    // URL menu parameter can disable the menu/marquee entirely via CSS:
-    if (urlParams.menu === false) {
-        $('html').addClass('nomenu');
-    }
-
 });
