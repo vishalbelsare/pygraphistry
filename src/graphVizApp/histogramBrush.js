@@ -56,42 +56,14 @@ var histogramFilters = {};
 var globalSocket;
 var globalPoi;
 
-function updateHistogramFilters (attr, id, firstBin, lastBin, redraw) {
-    histogramFilters[attr] = {
-        firstBin: firstBin,
-        lastBin: lastBin,
-        redraw: redraw
-    };
-    $('.refreshHistogramButton-'+id).css('display', 'block');
-}
 
+//////////////////////////////////////////////////////////////////////////////
+// Rx/State
+//////////////////////////////////////////////////////////////////////////////
+
+// TODO: Pull this out of histogram tool, since it's a filtering call.
 function sendHistogramFilters () {
-    var payload = {};
-    _.each(histogramFilters, function (val, key) {
-        var stats = globalStatsCache.sparkLines[key];
-        var dataType = stats.dataType;
-        payload[key] = {};
-
-        if (stats.type === 'histogram') {
-            var start = stats.minValue + (stats.binWidth * val.firstBin);
-            var stop = stats.minValue + (stats.binWidth * val.lastBin) + stats.binWidth;
-            payload[key].start = start;
-            payload[key].stop = stop;
-        } else {
-            var list = [];
-            // TODO: Determine if this order is deterministic,
-            // and if not, explicitly send over a bin ordering from aggregate.
-            var binNames = _.keys(stats.bins);
-            for (var i = val.firstBin; i <= val.lastBin; i++) {
-                list.push(binNames[i]);
-            }
-            payload[key].equals = list;
-        }
-
-        payload[key].type = dataType;
-    });
-
-    Rx.Observable.fromCallback(globalSocket.emit, globalSocket)('filter', payload)
+    Rx.Observable.fromCallback(globalSocket.emit, globalSocket)('filter', histogramFilters)
         .do(function (res) {
             // Invalidate cache now that a filter has executed and possibly changed indices.
             if (!res.success && res.error === 'empty selection') {
@@ -104,61 +76,6 @@ function sendHistogramFilters () {
         })
         .subscribe(_.identity, util.makeErrorHandler('Emit Filter'));
 }
-
-function updateAttribute (oldAttribute, newAttribute, type) {
-    // Delete old if it exists
-    var indexOfOld = _.pluck(activeAttributes, 'name').indexOf(oldAttribute);
-    if (indexOfOld > -1) {
-        activeAttributes.splice(indexOfOld, 1);
-    }
-
-    // Add new one if it exists
-    if (newAttribute) {
-        activeAttributes.push({name: newAttribute, type: type});
-    }
-
-    // Only resend selections if an add/update
-    if (newAttribute) {
-        attributeChange.onNext(newAttribute);
-    }
-}
-
-function toggleExpandedD3 (attribute, vizContainer, vizHeight, view) {
-    d3DataMap[attribute].svg.selectAll('*').remove();
-    vizContainer.empty();
-    vizContainer.height(String(vizHeight) + 'px');
-
-    var sparkLines = view.model.get('sparkLines');
-    if (sparkLines) {
-        view.model.set('sparkLines', !sparkLines);
-        initializeHistogramViz(vizContainer, view.model);
-        updateAttribute(attribute, attribute, 'histogram');
-    } else {
-        view.model.set('sparkLines', !sparkLines);
-        initializeSparklineViz(vizContainer, view.model);
-        updateAttribute(attribute, attribute, 'sparkLines');
-    }
-}
-
-//socket * ?? -> Observable ??
-function aggregatePointsAndEdges (socket, params) {
-    return Rx.Observable.zip(
-        Rx.Observable.fromCallback(socket.emit, socket)('aggregate', _.extend({}, params, {type: 'point'})),
-        Rx.Observable.fromCallback(socket.emit, socket)('aggregate', _.extend({}, params, {type: 'edge'})),
-        function (pointHists, edgeHists) {
-
-            _.each(pointHists.data, function (val) {
-                val.dataType = 'point';
-            });
-            _.each(edgeHists.data, function (val) {
-                val.dataType = 'edge';
-            });
-
-            return {success: pointHists.success && edgeHists.success,
-                    data: _.extend({}, pointHists.data || {}, edgeHists.data || {})};
-        });
-}
-
 
 function init(socket, marquee, poi) {
     debug('Initializing histogram brush');
@@ -258,6 +175,7 @@ function init(socket, marquee, poi) {
             this.listenTo(histograms, 'all', this.render);
             this.listenTo(histograms, 'change:timeStamp', this.update);
 
+            // TODO: Kill this. All. It should be outside or in more general init.
             if (!started) {
                 started = true;
 
@@ -441,6 +359,7 @@ function init(socket, marquee, poi) {
     });
 }
 
+
 function checkReply (reply) {
     if (!reply) {
         console.error('Unexpected server error on global aggregate');
@@ -448,6 +367,24 @@ function checkReply (reply) {
         console.error('Server replied with error from global aggregate:', reply.error, reply.stack);
     }
 }
+
+function updateHistogramData (socket, marquee, collection, data, globalStats, Model) {
+    var histograms = [];
+    _.each(data, function (val, key) {
+        var histogram = new Model();
+        histogram.set({data: val, globalStats: globalStats, firstTime: false, timeStamp: Date.now()});
+        histogram.id = key;
+        histogram.set('attribute', key);
+        histograms.push(histogram);
+
+    });
+    collection.set(histograms);
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Histogram Widget
+//////////////////////////////////////////////////////////////////////////////
 
 function toStackedObject(local, total, idx, key, attr, numLocal, numTotal, distribution) {
     // If we want to normalize to a distribution as percentage of total.
@@ -1008,18 +945,99 @@ function setupSvg (el, margin, width, height) {
 }
 
 
-function updateHistogramData (socket, marquee, collection, data, globalStats, Model) {
-    var histograms = [];
-    _.each(data, function (val, key) {
-        var histogram = new Model();
-        histogram.set({data: val, globalStats: globalStats, firstTime: false, timeStamp: Date.now()});
-        histogram.id = key;
-        histogram.set('attribute', key);
-        histograms.push(histogram);
 
-    });
-    collection.set(histograms);
+//////////////////////////////////////////////////////////////////////////////
+// Side Panel
+//////////////////////////////////////////////////////////////////////////////
+
+// TODO: Move active filters out of histogram Brush.
+// Should we still keep details inside for rendering?
+function updateHistogramFilters (attr, id, firstBin, lastBin, redraw) {
+
+    histogramFilters[attr] = {
+        firstBin: firstBin,
+        lastBin: lastBin,
+        redraw: redraw
+    };
+
+    var stats = globalStatsCache.sparkLines[attr];
+    var dataType = stats.dataType;
+
+    if (stats.type === 'histogram') {
+        var start = stats.minValue + (stats.binWidth * firstBin);
+        var stop = stats.minValue + (stats.binWidth * lastBin) + stats.binWidth;
+        histogramFilters[attr].start = start;
+        histogramFilters[attr].stop = stop;
+    } else {
+        var list = [];
+        // TODO: Determine if this order is deterministic,
+        // and if not, explicitly send over a bin ordering from aggregate.
+        var binNames = _.keys(stats.bins);
+        for (var i = firstBin; i <= lastBin; i++) {
+            list.push(binNames[i]);
+        }
+        histogramFilters[attr].equals = list;
+    }
+    histogramFilters[attr].type = dataType;
+
+    $('.refreshHistogramButton-'+id).css('display', 'block');
 }
+
+function updateAttribute (oldAttribute, newAttribute, type) {
+    // Delete old if it exists
+    var indexOfOld = _.pluck(activeAttributes, 'name').indexOf(oldAttribute);
+    if (indexOfOld > -1) {
+        activeAttributes.splice(indexOfOld, 1);
+    }
+
+    // Add new one if it exists
+    if (newAttribute) {
+        activeAttributes.push({name: newAttribute, type: type});
+    }
+
+    // Only resend selections if an add/update
+    if (newAttribute) {
+        attributeChange.onNext(newAttribute);
+    }
+}
+
+
+function toggleExpandedD3 (attribute, vizContainer, vizHeight, view) {
+    d3DataMap[attribute].svg.selectAll('*').remove();
+    vizContainer.empty();
+    vizContainer.height(String(vizHeight) + 'px');
+
+    var sparkLines = view.model.get('sparkLines');
+    if (sparkLines) {
+        view.model.set('sparkLines', !sparkLines);
+        initializeHistogramViz(vizContainer, view.model);
+        updateAttribute(attribute, attribute, 'histogram');
+    } else {
+        view.model.set('sparkLines', !sparkLines);
+        initializeSparklineViz(vizContainer, view.model);
+        updateAttribute(attribute, attribute, 'sparkLines');
+    }
+}
+
+//socket * ?? -> Observable ??
+function aggregatePointsAndEdges (socket, params) {
+    return Rx.Observable.zip(
+        Rx.Observable.fromCallback(socket.emit, socket)('aggregate', _.extend({}, params, {type: 'point'})),
+        Rx.Observable.fromCallback(socket.emit, socket)('aggregate', _.extend({}, params, {type: 'edge'})),
+        function (pointHists, edgeHists) {
+
+            _.each(pointHists.data, function (val) {
+                val.dataType = 'point';
+            });
+            _.each(edgeHists.data, function (val) {
+                val.dataType = 'edge';
+            });
+
+            return {success: pointHists.success && edgeHists.success,
+                    data: _.extend({}, pointHists.data || {}, edgeHists.data || {})};
+        });
+}
+
 
 module.exports = {
     init: init
