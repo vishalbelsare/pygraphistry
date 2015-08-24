@@ -13,7 +13,7 @@ Same with decrypt, except take care not to reveal canary
 **/
 
 var crypto = require('crypto');
-
+var _      = require('underscore');
 var config = require('config')();
 var logger = require('./logger.js').createLogger('central:api');
 
@@ -39,24 +39,25 @@ function decrypt (ciphertext) {
     return cleartext.slice(0, canaryOffset);
 }
 
+function checkSSL(req) {
+    //TODO make an error once prod ssl server enabled
+    if (!req.secure && (config.ENVIRONMENT !== 'local')) {
+        logger.warn('/encrypt needs https when not local');
+        //return res.json({error: 'requires https'});
+    }
+}
+
 
 function init (app) {
-
     var nextEta = Date.now();
 
     // https://.../api/encrypt?text=... => {encrypted: string} + {error: string}
     // allow at most 1 req per second
     // allow unsecure local
     app.get('/api/encrypt', function(req, res) {
-
         logger.info('encrypting', req.query.text);
 
-        //TODO make an error once prod ssl server enabled
-        if (!req.secure && (config.ENVIRONMENT !== 'local')) {
-            logger.warn('/encrypt needs https when not local');
-            //logger.error('/encrypt needs https when not local');
-            //return res.json({error: 'requires https'});
-        }
+        checkSSL(req);
 
         //immediate if not used in awhile, otherwise in 1s after next queued
         var now = Date.now();
@@ -64,29 +65,22 @@ function init (app) {
         setTimeout(
             function () {
                 try {
-                    res.json({encrypted: encrypt(req.query.text)});
+                    res.json({success: true, encrypted: encrypt(req.query.text)});
                 } catch (err) {
                     logger.error(err, 'encrypter');
-                    res.json({error: 'failed to encrypt'});
+                    res.json({success: false, error: 'failed to encrypt'});
                 }
             },
             nextEta - now);
-
     });
 
     // https://.../api/decrypt?text=... => {decrypted: string} + {error: string}
     // allow at most 1 req per second
     // allow unsecure local
-    app.get('/api/decrypt', function(req, res) {
-
+    function decryptOrCheck(checkOnly, req, res) {
         logger.info('decrypting', req.query.text);
 
-        //TODO make an error once prod ssl server enabled
-        if (!req.secure && (config.ENVIRONMENT !== 'local')) {
-            logger.warn('/decrypt needs https when not local');
-            //logger.error('/decrypt needs https when not local');
-            //return res.json({error: 'requires https'});
-        }
+        checkSSL(req);
 
         //immediate if not used in awhile, otherwise in 1s after next queued
         var now = Date.now();
@@ -94,16 +88,18 @@ function init (app) {
         setTimeout(
             function () {
                 try {
-                    res.json({decrypted: decrypt(req.query.text)});
+                    var payload = {success: true, decrypted: decrypt(req.query.text)};
+                    res.json(checkOnly ? _.omit(payload, 'decrypted') : payload);
                 } catch (err) {
                     logger.error(err, 'decrypter');
-                    res.json({error: 'failed to decrypt'});
+                    res.json({success: false, error: 'Invalid key'});
                 }
             },
             nextEta - now);
+    }
 
-    });
-
+    app.get('/api/decrypt', decryptOrCheck.bind('', false));
+    app.get('/api/check', decryptOrCheck.bind('', true));
 }
 
 
@@ -112,7 +108,3 @@ module.exports = {
     encrypt: encrypt,
     decrypt: decrypt
 };
-
-
-//var word = "hello!Validated";
-//console.log(word, encrypt(word), decrypt(encrypt(word)));
