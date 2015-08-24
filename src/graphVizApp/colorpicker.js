@@ -34,10 +34,14 @@ function makeInspector ($elt, hexColor) {
 }
 
 
-function renderConfigValueForColor(colorValue) {
+function renderConfigValueForColor(colorValue, existingRenderConfigValue) {
     return _.map(colorValue.rgbaArray(), function (value, index) {
         // Unspecified alpha => opaque
         if (index === 3 && value === undefined) {
+            // Unspecified alpha + existing alpha => retain alpha
+            if (existingRenderConfigValue && existingRenderConfigValue[3]) {
+                return existingRenderConfigValue[3];
+            }
             return 1;
         }
         return value / 255;
@@ -95,7 +99,8 @@ module.exports = {
                 // Set the background color directly/locally via CSS:
                 $('#simulation').css('backgroundColor', backgroundColor.rgbaString());
                 // Update the server render config:
-                socket.emit('update_render_config', {'options': {'clearColor': [renderConfigValueForColor(backgroundColor)]}});
+                var newValue = renderConfigValueForColor(backgroundColor, renderState.get('options').clearColor);
+                socket.emit('update_render_config', {'options': {'clearColor': [newValue]}});
                 // Update the color picker swatch affordance:
                 $('.colorSelector div', $bg).css('background-color', backgroundColor.hexString());
             })
