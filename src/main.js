@@ -298,7 +298,7 @@ function createSpinner() {
     $spinner.fadeIn(300);
     setTimeout(function () {
         $('#retry-load').fadeIn(200);
-    }, 5000);
+    }, 8000);
 }
 
 function launch(streamClient, urlParams) {
