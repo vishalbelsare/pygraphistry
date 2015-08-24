@@ -5,10 +5,11 @@ var _           = require('underscore');
 var Immutable   = require('immutable');
 var Rx          = require('rx');
 var debug       = require('debug')('graphistry:StreamGL:renderer');
+var Color       = require('color');
 
 var ui                  = require('./ui.js');
 var cameras             = require('./camera.js');
-
+var colorPicker         = require('./graphVizApp/colorpicker.js');
 
 
 /** @module Renderer */
@@ -38,8 +39,7 @@ function addressMemoizer(cache, cacheName, glLocationMethodName) {
 
     return function (gl, program, programName, address) {
 
-        if(typeof cache[programName] !== 'undefined' &&
-            typeof cache[programName][address] !== 'undefined') {
+        if (cache[programName] !== undefined && cache[programName][address] !== undefined) {
             debug('  Get %s %s: using fast path', cacheName, address);
             return cache[programName][address];
         }
@@ -84,7 +84,7 @@ var getUniformLocationFast = addressMemoizer(uniformLocations, 'uniform', 'getUn
  * @type {?WebGLProgram} */
 var activeProgram = null;
 function useProgram(gl, program) {
-    if(activeProgram !== program) {
+    if (activeProgram !== program) {
         debug('Use program: on slow path');
         gl.useProgram(program);
         activeProgram = program;
@@ -100,7 +100,7 @@ function useProgram(gl, program) {
  * @type {?WebGLBuffer} */
 var boundBuffer = null;
 function bindBuffer(gl, glArrayType, buffer) {
-    if(boundBuffer !== buffer) {
+    if (boundBuffer !== buffer) {
         gl.bindBuffer(glArrayType, buffer);
         boundBuffer = buffer;
         return true;
@@ -111,10 +111,10 @@ function bindBuffer(gl, glArrayType, buffer) {
 
 // Polyfill to get requestAnimationFrame cross browser.
 // Falls back to setTimeout. Based on https://gist.github.com/paulirish/1579671
-(function() {
+(function () {
     var lastTime = 0;
     var vendors = ['ms', 'moz', 'webkit', 'o'];
-    for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+    for (var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
         window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
         window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame'] ||
                                       window[vendors[x]+'CancelRequestAnimationFrame'];
@@ -265,19 +265,8 @@ function init(config, canvas, urlParams) {
     if (urlParams.bg) {
         try {
             var hex = decodeURIComponent(urlParams.bg);
-            var c = parseInt(hex.slice(1), 16);
-            state.get('options').clearColor =
-                [
-                    [c >> 16, c >> 8, c]
-                        .map(function (v) {
-                            var res = (v & 255) / 255;
-                            if (isNaN(res)) {
-                                throw new Error('Bad color component');
-                            }
-                            return res;
-                        })
-                        .concat(1)
-                ];
+            var color = new Color(hex);
+            state.get('options').clearColor = [colorPicker.renderConfigValueForColor(color)];
         } catch (e) {
             console.error('Invalid color', e, urlParams.bg);
         }
@@ -318,12 +307,11 @@ function setFlags(state, name, bool) {
 
 
 function createContext(state) {
-    var gl = null;
-    var canvas = state.get('canvas');
-
-    gl = canvas.getContext('webgl', {antialias: true, premultipliedAlpha: false});
+    var canvas = state.get('canvas'),
+        glOptions = {antialias: true, premultipliedAlpha: false},
+        gl = canvas.getContext('webgl', glOptions);
     if(gl === null) {
-        gl = canvas.getContext('experimental-webgl', {antialias: true, premultipliedAlpha: false});
+        gl = canvas.getContext('experimental-webgl', glOptions);
     }
     if(gl === null) { throw new Error('Could not initialize WebGL'); }
 

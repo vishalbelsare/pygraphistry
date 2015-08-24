@@ -4,29 +4,12 @@ var $               = window.$;
 var _               = require('underscore');
 var Rx              = require('rx');
                       require('../rx-jquery-stub');
-var Handlebars = require('handlebars');
+var Handlebars      = require('handlebars');
+var Color           = require('color');
 
 var util            = require('./util.js');
 var staticclient    = require('../staticclient.js');
 var marquee         = require('./marquee.js');
-
-
-/** Simple utility to auto-coerce CSS rgb color strings to hex strings. */
-function rgb2hex(rgb) {
-    try {
-        if (!rgb) { return undefined; }
-        if (/^#[0-9A-F]{6}$/i.test(rgb)) { return rgb; }
-
-        rgb = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
-        var hex = function (x) {
-            return ('0' + parseInt(x).toString(16)).slice(-2);
-        };
-
-        return '#' + hex(rgb[1]) + hex(rgb[2]) + hex(rgb[3]);
-    } catch (e) {
-        return undefined;
-    }
-}
 
 
 /**
@@ -104,9 +87,10 @@ module.exports = function (appState, socket, urlParams) {
             return marquee.getGhostImageObservable(appState.renderState, undefined, 'image/png', true)
                 .map(function (imageDataURL) {
                     response.imageDataURL = imageDataURL;
+                    // TODO Fix this to just grab any non-default Color setting:
                     var backgroundColor = $('#simulation').css('backgroundColor');
                     if (backgroundColor && !backgroundColor.match('^rgba?\\(0+, 0+, 0+[,)]')) {
-                        response.backgroundColor = backgroundColor;
+                        response.backgroundColor = new Color(backgroundColor);
                     }
                     return response;
                 });
@@ -131,7 +115,7 @@ module.exports = function (appState, socket, urlParams) {
             var renderState = appState.renderState,
                 camera = renderState.get('camera'),
                 $modal = response.$modal,
-                targetURL = getExportURL(camera, urlParams, reply.name, rgb2hex(response.backgroundColor)),
+                targetURL = getExportURL(camera, urlParams, reply.name, response.backgroundColor.hexString()),
                 previewURL = staticclient.getStaticContentURL(reply.name, 'preview.png'),
                 previewElement = $('<a>')
                     .attr('target', '_blank')

@@ -21,7 +21,7 @@ var ui              = require('./ui.js');
 var vizApp          = require('./graphVizApp/vizApp.js');
 var monkey          = require('./monkey.js');
 
-//defer choice to after urlParam
+// defer choice to after urlParam
 var serverClient    = require('./client.js');
 var localClient     = require('./localclient.js');
 var staticClient    = require('./staticclient.js');
@@ -31,7 +31,7 @@ console.warn('%cWarning: having the console open can slow down execution signifi
     'font-size: 18pt; font-weight: bold; font-family: \'Helvetica Neue\', Helvetica, sans-serif; background-color: rgb(255, 242, 0);');
 
 
-//===============
+// ===============
 
 
 /**
@@ -65,7 +65,7 @@ function getUrlParameters() {
             var val = decodeURIComponent(ps.join('='));
 
             // var valNorm = valRaw.toLowerCase();
-            switch(val.toLowerCase()) {
+            switch (val.toLowerCase()) {
                 case 'true':
                 case 'yes':
                 case '':
@@ -77,7 +77,7 @@ function getUrlParameters() {
                     return [key, null];
             }
 
-            if(!isNaN(parseFloat(val))) {
+            if (!isNaN(parseFloat(val))) {
                 return [key, parseFloat(val)];
             }
 
@@ -96,11 +96,11 @@ debug('Parsed URL parameters:', urlParams);
 
 // Sets up event handlers to display socket errors + disconnects on screen
 function displayErrors(socket, $canvas) {
-    socket.on('error', function(reason) {
+    socket.on('error', function (reason) {
         ui.error('Connection error (reason:', reason, (reason || {}).description, ')');
     });
 
-    socket.on('disconnect', function(reason){
+    socket.on('disconnect', function (reason) {
         $canvas.parent().addClass('disconnected');
         ui.error(
             $('<span>')
@@ -112,7 +112,7 @@ function displayErrors(socket, $canvas) {
                     })));
     });
 
-    $('#do-disconnect').click(function(btn) {
+    $('#do-disconnect').click(function (btn) {
         btn.disabled = true;
         socket.disconnect();
     });
@@ -145,13 +145,13 @@ function init(streamClient, canvasElement, vizType) {
      **/
 
     streamClient.connect(vizType, urlParams)
-        .flatMap(/** @param {RenderInfo} nfo */ function(nfo) {
+        .flatMap(/** @param {RenderInfo} nfo */ function (nfo) {
             var socket  = nfo.socket;
             displayErrors(socket, $(canvasElement));
 
             debug('Creating renderer');
             return streamClient.createRenderer(socket, canvasElement, urlParams)
-                .map(/** @param {renderer} initialRenderState @returns {RenderInfo} */ function(initialRenderState) {
+                .map(/** @param {renderer} initialRenderState @returns {RenderInfo} */ function (initialRenderState) {
                     debug('Renderer created');
                     return {
                         socket: socket,
@@ -159,7 +159,7 @@ function init(streamClient, canvasElement, vizType) {
                         initialRenderState: initialRenderState
                     };
                 });
-        }).do(/** @param {RenderInfo} nfo */ function(nfo) {
+        }).do(/** @param {RenderInfo} nfo */ function (nfo) {
             var vboUpdates = streamClient.handleVboUpdates(nfo.socket, nfo.uri, nfo.initialRenderState);
             vizApp(nfo.socket, nfo.initialRenderState, vboUpdates, nfo.uri, urlParams);
 
@@ -251,7 +251,7 @@ function createInfoOverlay(app) {
 
         theme: 'transparent'
     });
-    app.pluck('vboUpdates').subscribe(function(evt) {
+    app.pluck('vboUpdates').subscribe(function (evt) {
             switch (evt) {
                 case 'start':
                     networkMeter.resume();
@@ -326,10 +326,10 @@ function launch(streamClient, urlParams) {
    createInfoOverlay(app);
 }
 
-window.addEventListener('load', function() {
+window.addEventListener('load', function () {
     // Patch console calls to forward errors to central
-    var loggedFuns = ['error', 'warn'];
-    _.each(loggedFuns, function (fun) {
+    var loggedConsoleFunctions = ['error', 'warn'];
+    _.each(loggedConsoleFunctions, function (fun) {
         monkey.patch(console, fun, monkey.after(function () {
             var msg = {
                 type: 'console.' + fun,

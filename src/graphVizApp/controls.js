@@ -5,6 +5,7 @@ var $       = window.$;
 var Rx      = require('rx');
               require('../rx-jquery-stub');
 var _       = require('underscore');
+var Color   = require('color');
 
 var util            = require('./util.js');
 var dataInspector   = require('./dataInspector.js');
@@ -59,18 +60,24 @@ var encodingPerElementParams = [
 ];
 
 
+function createStyleElement() {
+    var sheet = $('<style type="text/css">');
+    sheet.appendTo($('head'));
+    return sheet;
+}
+
+
 var encodingForLabelParams = [
     {
         name: 'labelFgColor',
         prettyName: 'Text Color',
         type: 'color',
-        def: '#1f1f33',
+        def: new Color('#1f1f33'),
         cb: (function () {
-            var sheet = $('<style type="text/css">');
-            sheet.appendTo($('head'));
+            var sheet = createStyleElement();
             return function (stream) {
                 stream.sample(20).subscribe(function (c) {
-                    sheet.text('.graph-label, .graph-label table { color: ' + colorPicker.colorObjectToCSS(c) + ' }');
+                    sheet.text('.graph-label, .graph-label table { color: ' + c.rgbaString() + ' }');
                 });
             };
         }())
@@ -79,14 +86,12 @@ var encodingForLabelParams = [
         name: 'labelBgColor',
         prettyName: 'Background Color',
         type: 'color',
-        def: colorPicker.colorObjectToCSS({r: 255, g: 255, b: 255, a: 0.9}),
+        def: (new Color('#fff')).alpha(0.9),
         cb: (function () {
-            var sheet = $('<style type="text/css">');
-            sheet.appendTo($('head'));
+            var sheet = createStyleElement();
             return function (stream) {
                 stream.sample(20).subscribe(function (c) {
-                    var colorCSS = colorPicker.colorObjectToCSS(c);
-                    sheet.text('.graph-label .graph-label-container  { background-color: ' + colorCSS + ' }');
+                    sheet.text('.graph-label .graph-label-container  { background-color: ' + c.rgbaString() + ' }');
                 });
             };
         }())
