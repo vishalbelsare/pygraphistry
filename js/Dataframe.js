@@ -223,18 +223,19 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
     var numMidEdgeColorsPerEdge = 2 * (numRenderedSplits + 1);
     var numMidEdgeColors = numMidEdgeColorsPerEdge * oldNumEdges;
     this.typedArrayCache.newMidEdgeColors = new Uint32Array(numMidEdgeColors);
-    this.typedArrayCache.newEdgeWeights = new Uint32Array(oldNumEdges);
+    this.typedArrayCache.newBackwardsEdgeWeights = new Float32Array(oldNumEdges);
+    this.typedArrayCache.newForwardsEdgeWeights = new Float32Array(oldNumEdges);
 
     this.typedArrayCache.tempPrevForces = new Float32Array(oldNumPoints * 2);
     this.typedArrayCache.tempDegrees = new Uint32Array(oldNumPoints);
     this.typedArrayCache.tempSpringsPos = new Float32Array(oldNumEdges * 4);
-    this.typedArrayCache.tempEdgeWeights = new Float32Array(oldNumEdges);
+    this.typedArrayCache.tempBackwardsEdgeWeights = new Float32Array(oldNumEdges);
+    this.typedArrayCache.tempForwardsEdgeWeights = new Float32Array(oldNumEdges);
     this.typedArrayCache.tempCurPoints = new Float32Array(oldNumPoints * 2);
 
     this.typedArrayCache.newPrevForces = new Float32Array(oldNumPoints * 2);
     this.typedArrayCache.newDegrees = new Uint32Array(oldNumPoints);
     this.typedArrayCache.newSpringsPos = new Float32Array(oldNumEdges * 4);
-    this.typedArrayCache.newEdgeWeights = new Float32Array(oldNumEdges);
     this.typedArrayCache.newCurPoints = new Float32Array(oldNumPoints * 2);
 };
 
@@ -352,7 +353,6 @@ Dataframe.prototype.filter = function (masks, simulator) {
     var numMidEdgeColors = numMidEdgeColorsPerEdge * masks.edge.length;
     var newEdgeColors = new Uint32Array(that.typedArrayCache.newEdgeColors.buffer, 0, masks.edge.length * 2);
     var newMidEdgeColors = new Uint32Array(that.typedArrayCache.newMidEdgeColors.buffer, 0, numMidEdgeColors);
-    var newEdgeWeights = new Float32Array(that.typedArrayCache.newEdgeWeights.buffer, 0, masks.edge.length) ;
 
     for (var i = 0; i < masks.edge.length; i++) {
         var idx = masks.edge[i];
@@ -364,12 +364,9 @@ Dataframe.prototype.filter = function (masks, simulator) {
             newMidEdgeColors[i*numMidEdgeColorsPerEdge + j] =
                     rawdata.localBuffers.midEdgeColors[idx*numMidEdgeColorsPerEdge + j];
         }
-
-        newEdgeWeights[i] = rawdata.localBuffers.edgeWeights[idx];
     }
     newData.localBuffers.edgeColors = newEdgeColors;
     newData.localBuffers.midEdgeColors = newMidEdgeColors;
-    newData.localBuffers.edgeWeights = newEdgeWeights;
 
     // numElements;
     // Copy all old in.
@@ -391,13 +388,15 @@ Dataframe.prototype.filter = function (masks, simulator) {
 
     var tempPrevForces = new Float32Array(that.typedArrayCache.tempPrevForces.buffer, 0, oldNumPoints * 2);
     var tempSpringsPos = new Float32Array(that.typedArrayCache.tempSpringsPos.buffer, 0, oldNumEdges * 4);
-    var tempEdgeWeights = new Float32Array(that.typedArrayCache.tempEdgeWeights.buffer, 0, oldNumEdges);
+    var tempForwardsEdgeWeights = new Float32Array(that.typedArrayCache.tempForwardsEdgeWeights.buffer, 0, oldNumEdges);
+    var tempBackwardsEdgeWeights = new Float32Array(that.typedArrayCache.tempBackwardsEdgeWeights.buffer, 0, oldNumEdges);
     var tempCurPoints = new Float32Array(that.typedArrayCache.tempCurPoints.buffer, 0, oldNumPoints * 2);
 
     var newPrevForces = new Float32Array(that.typedArrayCache.newPrevForces.buffer, 0, numPoints * 2);
     var newDegrees = new Uint32Array(that.typedArrayCache.newDegrees.buffer, 0, numPoints);
     var newSpringsPos = new Float32Array(that.typedArrayCache.newSpringsPos.buffer, 0, numEdges * 4);
-    var newEdgeWeights = new Float32Array(that.typedArrayCache.newEdgeWeights.buffer, 0, numEdges);
+    var newForwardsEdgeWeights = new Float32Array(that.typedArrayCache.newForwardsEdgeWeights.buffer, 0, numEdges);
+    var newBackwardsEdgeWeights = new Float32Array(that.typedArrayCache.newBackwardsEdgeWeights.buffer, 0, numEdges);
     var newCurPoints = new Float32Array(that.typedArrayCache.newCurPoints.buffer, 0, numPoints * 2);
 
     var rawSimBuffers = rawdata.buffers.simulator;
@@ -406,7 +405,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
     return Q.all([
         rawSimBuffers.prevForces.read(tempPrevForces),
         rawSimBuffers.springsPos.read(tempSpringsPos),
-        rawSimBuffers.edgeWeights.read(tempEdgeWeights),
+        rawSimBuffers.forwardsEdgeWeights.read(tempForwardsEdgeWeights),
+        rawSimBuffers.backwardsEdgeWeights.read(tempBackwardsEdgeWeights),
         filteredSimBuffers.curPoints.read(tempCurPoints)
     ]).spread(function () {
 
@@ -460,13 +460,14 @@ Dataframe.prototype.filter = function (masks, simulator) {
             newSpringsPos[i*4 + 2] = tempSpringsPos[oldIdx*4 + 2];
             newSpringsPos[i*4 + 3] = tempSpringsPos[oldIdx*4 + 3];
 
-            newEdgeWeights[i] = tempEdgeWeights[oldIdx];
+            newForwardsEdgeWeights[i] = tempForwardsEdgeWeights[oldIdx];
+            newBackwardsEdgeWeights[i] = tempBackwardsEdgeWeights[oldIdx];
         }
 
         var someBufferPropertyNames = ['curPoints', 'prevForces', 'degrees', 'forwardsEdges', 'forwardsDegrees',
             'forwardsWorkItems', 'forwardsEdgeStartEndIdxs', 'backwardsEdges',
             'backwardsDegrees', 'backwardsWorkItems', 'backwardsEdgeStartEndIdxs',
-            'springsPos', 'edgeWeights'
+            'springsPos', 'forwardsEdgeWeights', 'backwardsEdgeWeights'
         ];
         _.each(someBufferPropertyNames, function (key) {
 
@@ -479,7 +480,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
             newBuffers.prevForces.write(newPrevForces),
             newBuffers.degrees.write(newDegrees),
             newBuffers.springsPos.write(newSpringsPos),
-            newBuffers.edgeWeights.write(newEdgeWeights),
+            newBuffers.forwardsEdgeWeights.write(newForwardsEdgeWeights),
+            newBuffers.backwardsEdgeWeights.write(newBackwardsEdgeWeights),
             newBuffers.forwardsEdges.write(forwardsEdges.edgesTyped),
             newBuffers.forwardsDegrees.write(forwardsEdges.degreesTyped),
             newBuffers.forwardsWorkItems.write(forwardsEdges.workItemsTyped),
