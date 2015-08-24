@@ -72,7 +72,15 @@ module.exports = {
         makeInspector($fg, blackForegroundDefault.hexString())
             .throttleFirst(10)
             .do(function (foregroundColor) {
-                socket.emit('set_colors', {rgb: foregroundColor});
+                // Execute the server command:
+                socket.emit('set_colors', {rgb: {
+                    r: foregroundColor.red(),
+                    g: foregroundColor.green(),
+                    b: foregroundColor.blue(),
+                    a: foregroundColor.alpha()
+                }});
+                // Update the color picker swatch affordance:
+                $('.colorSelector div', $fg).css('background-color', foregroundColor.hexString());
             })
             .subscribe(foregroundColorObservable, util.makeErrorHandler('bad foreground color'));
 
@@ -88,6 +96,8 @@ module.exports = {
                 $('#simulation').css('backgroundColor', backgroundColor.rgbaString());
                 // Update the server render config:
                 socket.emit('update_render_config', {'options': {'clearColor': [renderConfigValueForColor(backgroundColor)]}});
+                // Update the color picker swatch affordance:
+                $('.colorSelector div', $bg).css('background-color', backgroundColor.hexString());
             })
             .subscribe(backgroundColorObservable, util.makeErrorHandler('bad background color'));
 
