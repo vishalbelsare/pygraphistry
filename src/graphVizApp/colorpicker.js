@@ -34,28 +34,18 @@ function makeInspector ($elt, hexColor) {
 }
 
 
-function renderConfigValueForColor(colorValue, existingRenderConfigValue) {
+function renderConfigValueForColor(colorValue) {
     return _.map(colorValue.rgbaArray(), function (value, index) {
-        // Unspecified alpha => opaque
-        if (index === 3 && value === undefined) {
-            // Unspecified alpha + existing alpha => retain alpha
-            if (existingRenderConfigValue && existingRenderConfigValue[3]) {
-                return existingRenderConfigValue[3];
-            }
-            return 1;
-        }
-        return value / 255;
+        //255,255,255,1 -> 1,1,1,1
+        return index === 3 ? value : (value/255);
     });
 }
 
 
 function colorFromRenderConfigValue(rgbaFractions) {
-    var rgbaBytes = _.map(rgbaFractions, function (value) {
-        return value * 255;
-    }),
-        result = new Color();
-    result.rgb(rgbaBytes.slice(0, 3)).alpha(rgbaBytes[3]);
-    return result;
+    return new Color()
+        .rgb(rgbaFractions.slice(0,3).map(function (v) { return v * 255; }))
+        .alpha(rgbaFractions[3]);
 }
 
 
@@ -67,7 +57,7 @@ function colorFromRenderConfigValue(rgbaFractions) {
  * @param {RenderState} renderState
  */
 module.exports = {
-    init: function ($fg, $bg, foregroundColorObservable, backgroundColorObservable, socket, renderState) {
+    init: function ($fg, $bg, foregroundColorObservable, backgroundColorObservable, socket) {
 
         foregroundColorObservable.first()
             .subscribe(function (initForegroundColor) {
@@ -97,7 +87,7 @@ module.exports = {
                         // Set the background color directly/locally via CSS:
                         $('#simulation').css('backgroundColor', backgroundColor.rgbaString());
                         // Update the server render config:
-                        var newValue = renderConfigValueForColor(backgroundColor, renderState.get('options').clearColor);
+                        var newValue = renderConfigValueForColor(backgroundColor);
                         socket.emit('update_render_config', {'options': {'clearColor': [newValue]}});
                         // Update the color picker swatch affordance:
                         $('.colorSelector div', $bg).css('background-color', backgroundColor.hexString());
@@ -121,19 +111,21 @@ module.exports = {
 
     backgroundColorObservable: function (initialRenderState, urlParams) {
         var backgroundColorObservable = new Rx.ReplaySubject(1);
-        var renderStateBackgroundColor = colorFromRenderConfigValue(initialRenderState.get('options').clearColor[0]);
         var urlParamsBackgroundColor;
         if (urlParams.hasOwnProperty('bg')) {
             try {
                 var hex = decodeURIComponent(urlParams.bg);
                 urlParamsBackgroundColor = new Color(hex);
-                var configValueForColor = renderConfigValueForColor(urlParamsBackgroundColor, renderStateBackgroundColor);
+                var configValueForColor = renderConfigValueForColor(urlParamsBackgroundColor);
                 initialRenderState.get('options').clearColor = [configValueForColor];
+                backgroundColorObservable.onNext(urlParamsBackgroundColor);
             } catch (e) {
                 console.error('Invalid color from URL', e, urlParams.bg);
             }
+        } else {
+            var renderStateBackgroundColor = colorFromRenderConfigValue(initialRenderState.get('options').clearColor[0]);
+            backgroundColorObservable.onNext(renderStateBackgroundColor);
         }
-        backgroundColorObservable.onNext(renderStateBackgroundColor);
         return backgroundColorObservable;
     }
 };
