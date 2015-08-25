@@ -61,7 +61,7 @@ module.exports = {
 
         foregroundColorObservable.first()
             .subscribe(function (initForegroundColor) {
-                makeInspector($fg, initForegroundColor.hexString())
+                makeInspector($fg, initForegroundColor && initForegroundColor.hexString())
                     .throttleFirst(10)
                     .do(function (foregroundColor) {
                         // Execute the server command:
@@ -81,7 +81,7 @@ module.exports = {
 
         backgroundColorObservable.first()
             .subscribe(function (initBackgroundColor) {
-                makeInspector($bg, initBackgroundColor.hexString())
+                makeInspector($bg, initBackgroundColor && initBackgroundColor.hexString())
                     .throttleFirst(10)
                     .do(function (backgroundColor) {
                         // Set the background color directly/locally via CSS:
@@ -104,8 +104,7 @@ module.exports = {
 
     foregroundColorObservable: function () {
         var foregroundColorObservable = new Rx.ReplaySubject(1);
-        var blackForegroundDefault = (new Color()).rgb(0, 0, 0);
-        foregroundColorObservable.onNext(blackForegroundDefault);
+        foregroundColorObservable.onNext(undefined);
         return foregroundColorObservable;
     },
 
