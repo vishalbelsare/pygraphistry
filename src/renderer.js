@@ -7,7 +7,6 @@ var Rx          = require('rx');
 var debug       = require('debug')('graphistry:StreamGL:renderer');
 var Color       = require('color');
 
-var ui                  = require('./ui.js');
 var cameras             = require('./camera.js');
 var colorPicker         = require('./graphVizApp/colorpicker.js');
 
@@ -320,7 +319,8 @@ function createContext(state) {
     return gl;
 }
 
-
+/*
+//Temp unused due to b8cf84ea158bf42821a019f8c115827fefeda7f6
 function enableExtensions(gl, extensions) {
     var supportedExtensions = gl.getSupportedExtensions();
     debug('Supported extensions', supportedExtensions);
@@ -333,6 +333,7 @@ function enableExtensions(gl, extensions) {
         }
     }, {});
 }
+*/
 
 
 function createCamera(state, urlParams) {
