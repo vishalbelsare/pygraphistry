@@ -178,56 +178,71 @@ Dataframe.prototype.composeMasks = function (maskList) {
     };
 };
 
-// Returns sorted edge mask
-Dataframe.prototype.getEdgeAttributeMask = function (attribute, params) {
-    var attr = this.rawdata.attributes.edge[attribute];
-    var edgeMask = [];
+
+Dataframe.prototype.filterFuncForQueryObject = function (params) {
+    var filterFunc;
 
     if (params.start !== undefined && params.stop !== undefined) {
-        _.each(attr.values, function (val, idx) {
-            if (val >= params.start && val < params.stop) {
-                edgeMask.push(idx);
-            }
-        });
+        // Range:
+        filterFunc = function (val) {
+            return val >= params.start && val < params.stop;
+        };
 
     } else if (params.equals !== undefined) {
-        _.each(attr.values, function (val, idx) {
-            if (_.contains(params.equals, val)) {
-                edgeMask.push(idx);
+        // Exact match or list-contains:
+        var compareValue = params.equals;
+        if (_.isArray(compareValue)) {
+            filterFunc = function (val) {
+                return _.contains(compareValue, val);
+            };
+        } else {
+            filterFunc = function (val) {
+                return compareValue === val;
+            };
+        }
+    }
+    return filterFunc;
+};
+
+
+/**
+ * @param {Array} attributes
+ * @param {Function} filterFunc
+ * @returns {Array<Number>}
+ */
+Dataframe.prototype.getMaskForFilterOnAttributes = function (attributes, filterFunc) {
+    var mask = [];
+    if (filterFunc) {
+        _.each(attributes, function (val, idx) {
+            if (filterFunc(val)) {
+                mask.push(idx);
             }
         });
     }
+    return mask;
+};
 
+
+// Returns sorted edge mask
+Dataframe.prototype.getEdgeAttributeMask = function (attribute, params) {
+    var attr = this.rawdata.attributes.edge[attribute];
+    var filterFunc = this.filterFuncForQueryObject(params);
+    var edgeMask = this.getMaskForFilterOnAttributes(attr.values, filterFunc);
     // Convert to sorted order
     var map = this.rawdata.hostBuffers.forwardsEdges.edgePermutation;
     for (var i = 0; i < edgeMask.length; i++) {
         edgeMask[i] = map[edgeMask[i]];
     }
-
     return edgeMask;
-}
+};
+
 
 Dataframe.prototype.getPointAttributeMask = function (attribute, params) {
     var attr = this.rawdata.attributes.point[attribute];
-    var pointMask = [];
-
-    if (params.start !== undefined && params.stop !== undefined) {
-        _.each(attr.values, function (val, idx) {
-            if (val >= params.start && val < params.stop) {
-                pointMask.push(idx);
-            }
-        });
-
-    } else if (params.equals !== undefined) {
-        _.each(attr.values, function (val, idx) {
-            if (_.contains(params.equals, val)) {
-                pointMask.push(idx);
-            }
-        });
-    }
-
-    return pointMask;
+    var filterFunc = this.filterFuncForQueryObject(params);
+    return this.getMaskForFilterOnAttributes(attr.values, filterFunc);
 };
+
 
 Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEdges) {
     this.typedArrayCache.filteredEdges = new Uint32Array(oldNumEdges * 2);
