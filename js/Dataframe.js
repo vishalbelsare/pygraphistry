@@ -94,9 +94,20 @@ Dataframe.prototype.masksFromPoints = function (pointMask) {
     };
 };
 
+
+Dataframe.prototype.numPoints = function numPoints() {
+    return this.rawdata.numElements.point;
+};
+
+
+Dataframe.prototype.numEdges = function numEdges() {
+    return this.rawdata.numElements.edge;
+};
+
+
 Dataframe.prototype.masksFromEdges = function (edgeMask) {
     var pointMask = [];
-    var numPoints = this.rawdata.numElements.point;
+    var numPoints = this.numPoints();
 
     pointMask = _.range(numPoints);
 
@@ -136,8 +147,8 @@ Dataframe.prototype.composeMasks = function (maskList) {
     var pointMask = [];
 
     // Assumes Uint8Array() constructor initializes to zero, which it should.
-    var pointLookup = new Uint8Array(this.rawdata.numElements.point);
-    var edgeLookup = new Uint8Array(this.rawdata.numElements.edge);
+    var pointLookup = new Uint8Array(this.numPoints());
+    var edgeLookup = new Uint8Array(this.numEdges());
 
     _.each(maskList, function (mask) {
         _.each(mask.edge, function (idx) {

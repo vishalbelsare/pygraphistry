@@ -51,7 +51,7 @@ HistogramKernel.prototype.setIndices = function (simulator, indices) {
 }
 
 HistogramKernel.prototype.initializeBuffers = function (simulator) {
-    var maxSizeInput = Math.max(simulator.dataframe.rawdata.numElements.point, simulator.dataframe.rawdata.numElements.edge);
+    var maxSizeInput = Math.max(simulator.dataframe.numPoints(), simulator.dataframe.numEdges());
     var maxSizeOutput = MAX_NUM_BINS;
     var maxBytesInput = maxSizeInput * Float32Array.BYTES_PER_ELEMENT;
     var maxBytesOutput = maxSizeOutput * Float32Array.BYTES_PER_ELEMENT;
