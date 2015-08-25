@@ -5,10 +5,10 @@ var $       = window.$;
 var Rx      = require('rx');
               require('../rx-jquery-stub');
 var _       = require('underscore');
-var Handlebars = require('handlebars');
+// var Handlebars = require('handlebars');
 var Backbone = require('backbone');
     Backbone.$ = $;
-var d3 = require('d3');
+// var d3 = require('d3');
 
 var histogramPanel = require('./histogramPanel');
 var util    = require('./util.js');
@@ -18,44 +18,11 @@ var util    = require('./util.js');
 // CONSTANTS
 //////////////////////////////////////////////////////////////////////////////
 
-// var MODE = 'countBy';
-var MODE = 'default';
-// var DIST = false;
 var DRAG_SAMPLE_INTERVAL = 200;
-// var BAR_THICKNESS = 16;
-// var SPARKLINE_HEIGHT = 50;
 var NUM_SPARKLINES = 30;
-// var NUM_COUNTBY_SPARKLINES = NUM_SPARKLINES - 1;
-// var NUM_COUNTBY_HISTOGRAM = NUM_COUNTBY_SPARKLINES;
-
-// //////////////////////////////////////////////////////////////////////////////
-// // Globals for updates
-// //////////////////////////////////////////////////////////////////////////////
-
-// // // TODO: Pull these into the created histogram object, away from globals.
-// var color = d3.scale.ordinal()
-//         .range(['#0FA5C5', '#929292', '#0FA5C5', '#00BBFF'])
-//         .domain(['local', 'global', 'globalSmaller', 'localBigger']);
-
-// var colorUnselected = d3.scale.ordinal()
-//         .range(['#96D8E6', '#C8C8C8', '#0FA5C5', '#00BBFF'])
-//         .domain(['local', 'global', 'globalSmaller', 'localBigger']);
-
-// var colorHighlighted = d3.scale.ordinal()
-//         .range(['#E35E13', '#6B6868', '#E35E13', '#FF3000'])
-//         .domain(['local', 'global', 'globalSmaller', 'localBigger']);
-
-// var margin = {top: 10, right: 70, bottom: 20, left:20};
-// var marginSparklines = {top: 10, right: 20, bottom: 10, left: 20};
 var lastSelection;
-// var attributes = [];
 var activeAttributes = [];
 var attributeChange = new Rx.Subject();
-// var globalStatsCache = {}; // For add histogram. TODO: Get rid of this and use replay
-// var d3DataMap = {};
-// var histogramFilters = {};
-// var globalSocket;
-// var globalPoi;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -133,9 +100,9 @@ function init(socket, marquee, poi) {
 
 
     var globalStream = aggregatePointsAndEdges(socket,
-        {all: true, mode: MODE});
+        {all: true});
     var globalStreamSparklines = aggregatePointsAndEdges(socket,
-        {all: true, mode: MODE, binning: {'_goalNumberOfBins': NUM_SPARKLINES}});
+        {all: true, binning: {'_goalNumberOfBins': NUM_SPARKLINES}});
 
     Rx.Observable.zip(globalStream, globalStreamSparklines, function (histogramsReply, sparkLinesReply) {
         checkReply(histogramsReply);
@@ -150,6 +117,17 @@ function init(socket, marquee, poi) {
         allHistogramsView = panel.view;
         histograms = panel.collection;
         HistogramModel = panel.model;
+
+        var maxInitialItems = Math.min(Math.round((window.innerHeight - 110) / 85), 5);
+        var filteredAttributes = {};
+        var firstKeys = _.first(_.keys(data.sparkLines), maxInitialItems);
+        _.each(firstKeys, function (key) {
+            filteredAttributes[key] = data.sparkLines[key];
+            filteredAttributes[key].firstTime = true;
+            filteredAttributes[key].sparkLines = true;
+            updateAttribute(null, key, 'sparkLines');
+        });
+        updateHistogramData(histograms, filteredAttributes, data, HistogramModel, true);
 
     }).subscribe(globalStats, util.makeErrorHandler('Global stat aggregate call'));
 
@@ -185,7 +163,7 @@ function init(socket, marquee, poi) {
             };
         });
 
-        var params = {sel: data.sel, attributes: attributes, binning: binning, mode: MODE};
+        var params = {sel: data.sel, attributes: attributes, binning: binning};
         lastSelection = data.sel;
         return Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
             .map(function (agg) {
@@ -203,14 +181,10 @@ function init(socket, marquee, poi) {
 
         // TODO: Figure out if we need to treat these separately or not
         if (data.type === 'selection' || data.type === 'attributeChange') {
-            updateHistogramData(socket, marquee, histograms, data.reply.data, data.globalStats, HistogramModel);
+            updateHistogramData(histograms, data.reply.data, data.globalStats, HistogramModel);
         } else if (data.type === 'drag') {
-            updateHistogramData(socket, marquee, histograms, data.reply.data, data.globalStats, HistogramModel);
+            updateHistogramData(histograms, data.reply.data, data.globalStats, HistogramModel);
         }
-
-        // TODO: Pull this out from here.
-        //do after updates because may trigger prepopulation
-        allHistogramsView.render();
 
     }).subscribe(_.identity, util.makeErrorHandler('Brush selection aggregate error'));
 }
@@ -224,11 +198,27 @@ function checkReply (reply) {
     }
 }
 
-function updateHistogramData (socket, marquee, collection, data, globalStats, Model) {
+function updateHistogramData (collection, data, globalStats, Model, empty) {
+    console.log('Data: ', data);
     var histograms = [];
     _.each(data, function (val, key) {
         var histogram = new Model();
-        histogram.set({data: val, globalStats: globalStats, firstTime: false, timeStamp: Date.now()});
+        var params = {
+            data: empty ? {} : val,
+            globalStats: globalStats,
+            timeStamp: Date.now(),
+            firstTime: false
+        };
+
+        if (val.firstTime) {
+            params.firstTime = true;
+        }
+
+        if (val.sparkLines !== undefined) {
+            params.sparkLines = val.sparkLines;
+        }
+
+        histogram.set(params);
         histogram.id = key;
         histogram.set('attribute', key);
         histograms.push(histogram);

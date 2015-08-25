@@ -1,6 +1,6 @@
 'use strict';
 
-var debug   = require('debug')('graphistry:StreamGL:graphVizApp:histogramBrush');
+var debug   = require('debug')('graphistry:StreamGL:graphVizApp:histogramPanel');
 var $       = window.$;
 var Rx      = require('rx');
               require('../rx-jquery-stub');
@@ -18,7 +18,7 @@ var util    = require('./util.js');
 //////////////////////////////////////////////////////////////////////////////
 
 // var MODE = 'countBy';
-var MODE = 'default';
+// var MODE = 'default';
 var DIST = false;
 var DRAG_SAMPLE_INTERVAL = 200;
 var BAR_THICKNESS = 16;
@@ -143,8 +143,6 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
         }
     });
 
-    var started = false;
-
     var AllHistogramsView = Backbone.View.extend({
         el: $histogram,
         histogramsContainer: $('#histograms'),
@@ -154,35 +152,8 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
             this.listenTo(histograms, 'reset', this.addAll);
             this.listenTo(histograms, 'all', this.render);
             this.listenTo(histograms, 'change:timeStamp', this.update);
-
-            // TODO: Kill this. All. It should be outside or in more general init.
-            if (!started) {
-                started = true;
-                var maxItems = Math.min((window.innerHeight - 110) / 85, 5);
-                attributes.forEach(function (attribute, i) {
-                    if (i >= maxItems) {
-                        return;
-                    }
-
-                    updateAttributeSubject.onNext({
-                        oldAttr: null,
-                        newAttr: attribute,
-                        type: 'sparkLines'
-                    });
-
-                    // updateAttribute(null, attribute, 'sparkLines');
-                    var histogram = new HistogramModel();
-                    histogram.set({data: {}, globalStats: globalStatsCache, firstTime: true, sparkLines: true});
-                    histogram.id = attribute;
-                    histogram.set('attribute', attribute);
-                    histograms.add([histogram]);
-                });
-            }
-
         },
         render: function () {
-            // TODO: Use something other than visibility
-            // this.$el.css('visibility', 'visible');
 
         },
         addHistogram: function (histogram) {
@@ -254,6 +225,7 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
             type: 'sparkLines'
         });
 
+        // TODO: Represent this generically.
         var histogram = new HistogramModel();
         histogram.set({data: {}, globalStats: globalStatsCache, firstTime: true, sparkLines: true});
         histogram.id = attribute;
