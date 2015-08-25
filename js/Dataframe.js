@@ -178,6 +178,7 @@ Dataframe.prototype.composeMasks = function (maskList) {
     };
 };
 
+// Returns sorted edge mask
 Dataframe.prototype.getEdgeAttributeMask = function (attribute, params) {
     var attr = this.rawdata.attributes.edge[attribute];
     var edgeMask = [];
@@ -195,6 +196,12 @@ Dataframe.prototype.getEdgeAttributeMask = function (attribute, params) {
                 edgeMask.push(idx);
             }
         });
+    }
+
+    // Convert to sorted order
+    var map = this.rawdata.hostBuffers.forwardsEdges.edgePermutation;
+    for (var i = 0; i < edgeMask.length; i++) {
+        edgeMask[i] = map[edgeMask[i]];
     }
 
     return edgeMask;
