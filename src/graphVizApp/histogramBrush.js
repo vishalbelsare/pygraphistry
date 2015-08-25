@@ -5,10 +5,6 @@ var $       = window.$;
 var Rx      = require('rx');
               require('../rx-jquery-stub');
 var _       = require('underscore');
-// var Handlebars = require('handlebars');
-var Backbone = require('backbone');
-    Backbone.$ = $;
-// var d3 = require('d3');
 
 var histogramPanel = require('./histogramPanel');
 var util    = require('./util.js');
@@ -19,7 +15,6 @@ var util    = require('./util.js');
 //////////////////////////////////////////////////////////////////////////////
 
 var DRAG_SAMPLE_INTERVAL = 200;
-var NUM_SPARKLINES = 30;
 var lastSelection;
 var activeAttributes = [];
 var attributeChange = new Rx.Subject();
@@ -77,13 +72,11 @@ function init(socket, marquee, poi) {
     var filterSubject = new Rx.ReplaySubject(1);
     var attributeChange = new Rx.Subject();
     var updateAttributeSubject = new Rx.Subject();
-    // globalSocket = socket;
-    // globalPoi = poi;
-
 
     //////////////////////////////////////////////////////////////////////////
     // Backbone views and models
     //////////////////////////////////////////////////////////////////////////
+    // TODO: Get declaration and initialization closer.
     var allHistogramsView;
     var histograms;
     var HistogramModel;
@@ -92,18 +85,19 @@ function init(socket, marquee, poi) {
     // Setup Streams
     //////////////////////////////////////////////////////////////////////////
 
+    // Setup filtering
     setupSendHistogramFilters(filterSubject, socket, poi);
 
+    // Setup update attribute subject that histogram panel can write to
     updateAttributeSubject.do(function (data){
         updateAttribute(data.oldAttr, data.newAttr, data.type);
     }).subscribe(_.identity, util.makeErrorHandler('Update Attribute'));
 
-
+    // Setup initial stream of global statistics.
     var globalStream = aggregatePointsAndEdges(socket,
         {all: true});
     var globalStreamSparklines = aggregatePointsAndEdges(socket,
-        {all: true, binning: {'_goalNumberOfBins': NUM_SPARKLINES}});
-
+        {all: true, binning: {'_goalNumberOfBins': histogramPanel.NUM_SPARKLINES}});
     Rx.Observable.zip(globalStream, globalStreamSparklines, function (histogramsReply, sparkLinesReply) {
         checkReply(histogramsReply);
         checkReply(sparkLinesReply);
@@ -178,14 +172,7 @@ function init(socket, marquee, poi) {
     // TODO: Do we want to treat no replies in some special way?
     }).filter(function (data) { return data.reply && data.reply.success; })
     .do(function (data) {
-
-        // TODO: Figure out if we need to treat these separately or not
-        if (data.type === 'selection' || data.type === 'attributeChange') {
-            updateHistogramData(histograms, data.reply.data, data.globalStats, HistogramModel);
-        } else if (data.type === 'drag') {
-            updateHistogramData(histograms, data.reply.data, data.globalStats, HistogramModel);
-        }
-
+        updateHistogramData(histograms, data.reply.data, data.globalStats, HistogramModel);
     }).subscribe(_.identity, util.makeErrorHandler('Brush selection aggregate error'));
 }
 
@@ -199,7 +186,6 @@ function checkReply (reply) {
 }
 
 function updateHistogramData (collection, data, globalStats, Model, empty) {
-    console.log('Data: ', data);
     var histograms = [];
     _.each(data, function (val, key) {
         var histogram = new Model();

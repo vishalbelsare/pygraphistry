@@ -46,17 +46,11 @@ var colorHighlighted = d3.scale.ordinal()
 
 var margin = {top: 10, right: 70, bottom: 20, left:20};
 var marginSparklines = {top: 10, right: 20, bottom: 10, left: 20};
-var lastSelection;
-var attributes = [];
-var activeAttributes = [];
 var attributeChange;
 var updateAttributeSubject;
-// var attributeChange = new Rx.Subject();
 var globalStatsCache = {}; // For add histogram. TODO: Get rid of this and use replay
 var d3DataMap = {};
 var histogramFilters = {};
-var globalSocket;
-var globalPoi;
 var histogramFilterSubject;
 
 
@@ -179,12 +173,7 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
 
         },
         removeHistogram: function (histogram) {
-            // updateAttribute(histogram.attributes.attribute);
-            updateAttributeSubject.onNext({
-                oldAttr: histogram.attributes.attribute,
-                newAttr: null,
-                type: null
-            });
+            updateAttribute(histogram.attributes.attribute);
         },
         update: function (histogram) {
             // TODO: Find way to not fire this on first time
@@ -216,14 +205,10 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
 
     // We use this more verbose approach to click handlers because it watches
     // the DOM for added elements.
+    // TODO: Wrap this into the panel view?
     $('#histogram').on('click', '.addHistogramDropdownField', function () {
         var attribute = $(this).text().trim();
-        // updateAttribute(null, attribute, 'sparkLines');
-        updateAttributeSubject.onNext({
-            oldAttr: null,
-            newAttr: attribute,
-            type: 'sparkLines'
-        });
+        updateAttribute(null, attribute, 'sparkLines');
 
         // TODO: Represent this generically.
         var histogram = new HistogramModel();
@@ -232,9 +217,6 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
         histogram.set('attribute', attribute);
         histograms.add([histogram]);
     });
-
-    console.log('INIT ============');
-
 
     return {
         view: allHistogramsView,
@@ -861,53 +843,25 @@ function toggleExpandedD3 (attribute, vizContainer, vizHeight, view) {
     if (sparkLines) {
         view.model.set('sparkLines', !sparkLines);
         initializeHistogramViz(vizContainer, view.model);
-        updateAttributeSubject.onNext({
-            oldAttr: attribute,
-            newAttr: attribute,
-            type: 'histogram'
-        });
-        // updateAttribute(attribute, attribute, 'histogram');
+        updateAttribute(attribute, attribute, 'histogram');
     } else {
         view.model.set('sparkLines', !sparkLines);
         initializeSparklineViz(vizContainer, view.model);
-        updateAttributeSubject.onNext({
-            oldAttr: attribute,
-            newAttr: attribute,
-            type: 'sparkLines'
-        });
-        // updateAttribute(attribute, attribute, 'sparkLines');
+        updateAttribute(attribute, attribute, 'sparkLines');
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+function updateAttribute(oldAttr, newAttr, type) {
+    updateAttributeSubject.onNext({
+        oldAttr: oldAttr,
+        newAttr: newAttr,
+        type: type
+    });
+}
 
 
 module.exports = {
-    initHistograms: initHistograms
+    initHistograms: initHistograms,
+    NUM_SPARKLINES: NUM_SPARKLINES
 };
 
