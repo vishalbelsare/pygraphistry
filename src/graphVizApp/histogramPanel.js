@@ -58,11 +58,11 @@ var histogramFilterSubject;
 // Models
 //////////////////////////////////////////////////////////////////////////////
 
-function initHistograms (globalStats, attributes, filterSubject, attrChangeSubject, updateAttribute) {
+function initHistograms (globalStats, attributes, filterSubject, attrChangeSubject, updateAttributeSubj) {
     histogramFilterSubject = filterSubject;
     globalStatsCache = globalStats;
     attributeChange = attrChangeSubject;
-    updateAttributeSubject = updateAttribute;
+    updateAttributeSubject = updateAttributeSubj;
 
     var $histogram = $('#histogram');
 
