@@ -1183,7 +1183,7 @@ function calculateBinning(numValues, values, indices, goalNumberOfBins) {
         var numBins = goalNumberOfBins;
         var bottomVal = min;
         var topVal = max;
-        var binWidth = (max - min) / numBins;
+        var binWidth = (max - min) / (goalNumberOfBins - 1);
 
     // Try to find a good division.
     } else {
@@ -1221,7 +1221,7 @@ function calculateBinning(numValues, values, indices, goalNumberOfBins) {
 
         var bottomVal = round_down(min, binWidth);
         var topVal = round_up(max, binWidth);
-        numBins = Math.round((topVal - bottomVal) / binWidth);
+        numBins = Math.floor((topVal - bottomVal) / binWidth) + 1;
     }
 
     // console.log('NUM BINS: ', numBins);
@@ -1304,6 +1304,8 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
     var binId;
     for (var i = 0; i < indices.length; i++) {
         // Here we use an optimized "Floor" because we know it's a smallish, positive number.
+        // TODO: Have to be careful because floating point error.
+        // In particular, we need to math math as closely as possible on filters.
         binId = ((values[indices[i]] - bottomVal) / binWidth) | 0;
         bins[binId]++;
     }
