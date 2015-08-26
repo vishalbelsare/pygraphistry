@@ -85,7 +85,7 @@ Dataframe.prototype.masksFromPoints = function (pointMask) {
         var newDst = pointMaskOriginalLookup[dst];
         if (newSrc && newDst) {
             edgeMask.push(i);
-        };
+        }
     }
 
     return {
