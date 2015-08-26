@@ -1,7 +1,11 @@
+'use strict';
+
 var $       = window.$;
+/*
 var Rx      = require('rx');
               require('../rx-jquery-stub');
 var _       = require('underscore');
+*/
 var Backbone = require('backbone');
     Backbone.$ = $;
 
