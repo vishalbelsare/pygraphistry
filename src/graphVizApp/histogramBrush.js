@@ -70,7 +70,6 @@ function init(socket, marquee, poi) {
     // Grab global stats at initialization
     var globalStats = new Rx.ReplaySubject(1);
     var filterSubject = new Rx.ReplaySubject(1);
-    var attributeChange = new Rx.Subject();
     var updateAttributeSubject = new Rx.Subject();
 
     //////////////////////////////////////////////////////////////////////////
