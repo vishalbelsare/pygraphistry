@@ -104,6 +104,7 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
 
         shrink: function (evt) {
             $(evt.target).removeClass('expandedHistogramButton').addClass('expandHistogramButton');
+            $(evt.target).removeClass('fa-caret-right').addClass('fa-caret-down');
             var vizContainer = this.model.get('vizContainer');
             var attribute = this.model.get('attribute');
             var vizHeight = SPARKLINE_HEIGHT;
@@ -112,6 +113,7 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
 
         expand: function (evt) {
             $(evt.target).removeClass('expandHistogramButton').addClass('expandedHistogramButton');
+            $(evt.target).removeClass('fa-caret-down').addClass('fa-caret-right');
             var vizContainer = this.model.get('vizContainer');
             var attribute = this.model.get('attribute');
             var histogram = this.model.get('globalStats').histograms[attribute];
