@@ -115,7 +115,7 @@ module.exports = function (appState, socket, urlParams) {
             var renderState = appState.renderState,
                 camera = renderState.get('camera'),
                 $modal = response.$modal,
-                targetURL = getExportURL(camera, urlParams, reply.name, response.backgroundColor.hexString()),
+                targetURL = getExportURL(camera, urlParams, reply.name, response.backgroundColor && response.backgroundColor.hexString()),
                 previewURL = staticclient.getStaticContentURL(reply.name, 'preview.png'),
                 previewElement = $('<a>')
                     .attr('target', '_blank')
