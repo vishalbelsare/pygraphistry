@@ -360,7 +360,9 @@ window.addEventListener('load', function () {
         streamClient = serverClient;
     }
 
-    if (urlParams.splashAfter === undefined || Date.now() / 1000 <= urlParams.splashAfter) {
+    if (urlParams.splashAfter === undefined || Date.now() / 1000 <= urlParams.splashAfter ||
+        urlParams.offline || urlParams.static) {
+
         launch(streamClient, urlParams);
     } else {
         var clickHandler = function() {
