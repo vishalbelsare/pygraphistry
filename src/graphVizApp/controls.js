@@ -536,7 +536,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         });
 
     menuToggler(onElt, $('#layoutSettingsButton'),  $('#renderingItems'), 'Turning on/off settings');
-    menuToggler(onElt, $('#filterButton'),  $('#filteringItems'), 'Turning on/off the filter panel');
+    menuToggler(onElt, $('#filterButton'),  $('#filtersPanel'), 'Turning on/off the filter panel');
 
 
     var marquee = setupMarquee(appState, turnOnMarquee);

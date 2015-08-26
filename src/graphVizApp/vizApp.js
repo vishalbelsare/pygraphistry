@@ -139,7 +139,7 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     timeslider.init(appState, socket, urlParams);
 
     controls.init(appState, socket, $simCont, doneLoading, workerParams, urlParams);
-    filterer.init(appState, socket, urlParams, $('#filterButton'), $('#filteringItems'));
+    filterer.init(appState, socket, urlParams, $('#filterButton'), $('#filtersPanel'));
 
 }
 
