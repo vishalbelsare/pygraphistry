@@ -1,6 +1,6 @@
 'use strict';
 
-var debug   = require('debug')('graphistry:StreamGL:graphVizApp:histogramPanel');
+// var debug   = require('debug')('graphistry:StreamGL:graphVizApp:histogramPanel');
 var $       = window.$;
 var Rx      = require('rx');
               require('../rx-jquery-stub');
@@ -22,7 +22,7 @@ var util    = require('./util.js');
 var DIST = false;
 var DRAG_SAMPLE_INTERVAL = 200;
 var BAR_THICKNESS = 16;
-var SPARKLINE_HEIGHT = 50;
+var SPARKLINE_HEIGHT = 60;
 var NUM_SPARKLINES = 30;
 var NUM_COUNTBY_SPARKLINES = NUM_SPARKLINES - 1;
 var NUM_COUNTBY_HISTOGRAM = NUM_COUNTBY_SPARKLINES;
@@ -45,11 +45,13 @@ var colorHighlighted = d3.scale.ordinal()
         .domain(['local', 'global', 'globalSmaller', 'localBigger']);
 
 var margin = {top: 10, right: 70, bottom: 20, left:20};
-var marginSparklines = {top: 10, right: 20, bottom: 10, left: 20};
+var marginSparklines = {top: 15, right: 20, bottom: 15, left: 20};
 var attributeChange;
 var updateAttributeSubject;
 var globalStatsCache = {}; // For add histogram. TODO: Get rid of this and use replay
+// TODO: Extract this into the model.
 var d3DataMap = {};
+// TODO: Extract this out into the model.
 var histogramFilters = {};
 var histogramFilterSubject;
 
@@ -269,10 +271,11 @@ function toStackedObject(local, total, idx, key, attr, numLocal, numTotal, distr
     return stackedObj;
 }
 
-function toStackedBins(bins, globalBins, type, attr, numLocal, numTotal, distribution, limit) {
+function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distribution, limit) {
     // Transform bins and global bins into stacked format.
     // Assumes that globalBins is always a superset of bins
     // TODO: Get this in a cleaner, more extensible way
+    var globalBins = globalStats.bins || [];
     var stackedBins = [];
     if (type === 'countBy') {
         var globalKeys = _.keys(globalBins);
@@ -293,7 +296,10 @@ function toStackedBins(bins, globalBins, type, attr, numLocal, numTotal, distrib
         _.each(zippedBins, function (stack, idx) {
             var local = stack[0] || 0;
             var total = stack[1] || 0;
-            var stackedObj = toStackedObject(local, total, idx, '', attr, numLocal, numTotal, distribution);
+            var start = globalStats.minValue + (globalStats.binWidth * idx);
+            var stop = start + globalStats.binWidth;
+            var name = prettyPrint(start, attr) + '  :  ' + prettyPrint(stop, attr);
+            var stackedObj = toStackedObject(local, total, idx, name, attr, numLocal, numTotal, distribution);
             stackedBins.push(stackedObj);
         });
     }
@@ -328,7 +334,6 @@ function updateHistogram($el, model, attribute) {
     var data = model.attributes.data;
     var globalStats = model.attributes.globalStats.histograms[attribute];
     var bins = data.bins || []; // Guard against empty bins.
-    var globalBins = globalStats.bins || [];
     var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
     var numBins = (type === 'countBy' ? Math.min(NUM_COUNTBY_HISTOGRAM, globalStats.numBins) : globalStats.numBins);
     data.numValues = data.numValues || 0;
@@ -338,7 +343,7 @@ function updateHistogram($el, model, attribute) {
     var yScale = d3DataMap[attribute].yScale;
 
     var barPadding = 2;
-    var stackedBins = toStackedBins(bins, globalBins, type, attribute, data.numValues, globalStats.numValues,
+    var stackedBins = toStackedBins(bins, globalStats, type, attribute, data.numValues, globalStats.numValues,
             DIST, (type === 'countBy' ? NUM_COUNTBY_HISTOGRAM : 0));
     var barHeight = (type === 'countBy') ? yScale.rangeBand() : Math.floor(height/numBins) - barPadding;
 
@@ -354,8 +359,8 @@ function updateHistogram($el, model, attribute) {
             .attr('height', barHeight + barPadding)
             .attr('width', width)
             .attr('opacity', 0)
-            .on('mouseover', toggleTooltips.bind(null, true))
-            .on('mouseout', toggleTooltips.bind(null, false));
+            .on('mouseover', toggleTooltips.bind(null, true, svg))
+            .on('mouseout', toggleTooltips.bind(null, false, svg));
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -396,7 +401,6 @@ function updateSparkline($el, model, attribute) {
     var id = model.cid;
     var globalStats = model.attributes.globalStats.sparkLines[attribute];
     var bins = data.bins || []; // Guard against empty bins.
-    var globalBins = globalStats.bins || [];
     var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
     var numBins = (type === 'countBy' ? Math.min(NUM_COUNTBY_SPARKLINES, globalStats.numBins) : globalStats.numBins);
     data.numValues = data.numValues || 0;
@@ -406,7 +410,7 @@ function updateSparkline($el, model, attribute) {
     var yScale = d3DataMap[attribute].yScale;
 
     var barPadding = 1;
-    var stackedBins = toStackedBins(bins, globalBins, type, attribute, data.numValues, globalStats.numValues,
+    var stackedBins = toStackedBins(bins, globalStats, type, attribute, data.numValues, globalStats.numValues,
             DIST, (type === 'countBy' ? NUM_COUNTBY_SPARKLINES : 0));
 
     // var barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/numBins) - barPadding;
@@ -416,6 +420,20 @@ function updateSparkline($el, model, attribute) {
     // TODO: Figure out a cleaner way to pass data between the two events.
     var mouseClickData = {};
     var filterCallback = updateSparkline.bind(null, $el, model, attribute);
+
+    //////////////////////////////////////////////////////////////////////////
+    // Create Tooltip Text Elements
+    //////////////////////////////////////////////////////////////////////////
+
+    // TODO: Is there a better/cleaner way to create fixed elements in D3?
+    svg.selectAll('.lowerTooltip')
+        .data([''])
+        .enter().append('text')
+        .attr('class', 'lowerTooltip')
+        .attr('y', height + marginSparklines.bottom - 4)
+        .attr('x', 0)
+        .attr('opacity', 0)
+        .attr('font-size', '0.7em');
 
     //////////////////////////////////////////////////////////////////////////
     // Create Columns
@@ -449,8 +467,8 @@ function updateSparkline($el, model, attribute) {
             .attr('fill', '#556ED4')
             .attr('opacity', updateOpacity)
             .on('mousedown', handleHistogramDown.bind(null, mouseClickData, filterCallback, id))
-            .on('mouseover', toggleTooltips.bind(null, true))
-            .on('mouseout', toggleTooltips.bind(null, false));
+            .on('mouseover', toggleTooltips.bind(null, true, svg))
+            .on('mouseout', toggleTooltips.bind(null, false, svg));
 
     //////////////////////////////////////////////////////////////////////////
     // Create and Update Bars
@@ -576,9 +594,12 @@ function applyAttrBars (bars, globalPos, localPos) {
         .style('fill', reColor);
 }
 
-function toggleTooltips (showTooltip) {
+function toggleTooltips (showTooltip, svg) {
     var col = d3.select(d3.event.target.parentNode);
     var bars = col.selectAll('.bar-rect');
+
+    // TODO: Convert numeric to string representing range.
+    var data = col[0][0].__data__;
 
     _.each(bars[0], function (child) {
         if (showTooltip) {
@@ -588,6 +609,16 @@ function toggleTooltips (showTooltip) {
             $(child).tooltip('hide');
         }
     });
+
+    var textBox = svg.select('.lowerTooltip');
+    if (showTooltip) {
+        textBox.text(data.name);
+        textBox.attr('opacity', 1);
+    } else {
+        textBox.text('');
+        textBox.attr('opacity', 0);
+    }
+
     highlight(bars, showTooltip);
 }
 
@@ -661,13 +692,12 @@ function initializeHistogramViz($el, model) {
     var globalStats = model.attributes.globalStats.histograms[attribute];
     var name = model.get('attribute');
     var bins = data.bins || []; // Guard against empty bins.
-    var globalBins = globalStats.bins || [];
     var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
     var numBins = (type === 'countBy' ? Math.min(NUM_COUNTBY_HISTOGRAM, globalStats.numBins) : globalStats.numBins);
     data.numValues = data.numValues || 0;
 
     // Transform bins and global bins into stacked format.
-    var stackedBins = toStackedBins(bins, globalBins, type, attribute, data.numValues, globalStats.numValues,
+    var stackedBins = toStackedBins(bins, globalStats, type, attribute, data.numValues, globalStats.numValues,
         DIST, (type === 'countBy' ? NUM_COUNTBY_HISTOGRAM : 0));
 
     width = width - margin.left - margin.right;
@@ -735,13 +765,12 @@ function initializeSparklineViz($el, model) {
     var attribute = model.attributes.attribute;
     var globalStats = model.attributes.globalStats.sparkLines[attribute];
     var bins = data.bins || []; // Guard against empty bins.
-    var globalBins = globalStats.bins || [];
     var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
     var numBins = (type === 'countBy' ? Math.min(NUM_COUNTBY_SPARKLINES, globalStats.numBins) : globalStats.numBins);
     data.numValues = data.numValues || 0;
 
     // Transform bins and global bins into stacked format.
-    var stackedBins = toStackedBins(bins, globalBins, type, attribute, data.numValues, globalStats.numValues,
+    var stackedBins = toStackedBins(bins, globalStats, type, attribute, data.numValues, globalStats.numValues,
         DIST, (type === 'countBy' ? NUM_COUNTBY_SPARKLINES : 0));
 
     width = width - marginSparklines.left - marginSparklines.right;
