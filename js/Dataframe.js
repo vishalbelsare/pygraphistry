@@ -940,6 +940,7 @@ Dataframe.prototype.getRowsCompact = function (indices, type) {
     };
 };
 
+/** Answers the type for the column name and type (point/edge). */
 Dataframe.prototype.getDataType = function (column, type) {
     // Assumes that types don't change after filtering
     return this.rawdata.attributes[type][column].type;
@@ -975,6 +976,21 @@ Dataframe.prototype.getAttributeKeys = function (type) {
         _.keys(this.rawdata.attributes[type]),
         _.identity
     );
+};
+
+
+Dataframe.prototype.getColumnsByType = function () {
+    var types = ['point', 'edge'];
+    var result = {};
+    _.each(types, function (typeName) {
+        var typeResult = {};
+        var columnNamesPerType = this.getAttributeKeys(typeName);
+        _.each(columnNamesPerType, function (columnName) {
+            typeResult[columnNamesPerType] = this.getColumn(columnName, typeName);
+        });
+        result[typeName] = typeResult;
+    });
+    return result;
 };
 
 
