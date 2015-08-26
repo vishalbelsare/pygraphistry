@@ -481,23 +481,6 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var onElt = makeMouseSwitchboard();
     externalLink($('#externalLinkButton'));
 
-    // Create Filtering Function Stub.
-    // TODO: Remove this entirely and make it a UI element.
-    var filterRange = function(type, attribute, start, stop) {
-        var params = {
-            type: type,
-            attribute: attribute,
-            start: start,
-            stop: stop
-        };
-        return Rx.Observable.fromCallback(socket.emit, socket)('filter', params)
-            .map(function (reply) {
-                console.log('Filter Request replied with: ', reply);
-            }).subscribe(_.identity);
-    };
-    window.filterRange = filterRange;
-
-
     // TODO: More general version for all toggle-able buttons?
     var marqueeIsOn = false;
     var turnOnMarquee =
@@ -528,7 +511,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
 
 
-    //hist
+    // histogram brush:
     var brushIsOn = false;
     var turnOnBrush = onElt
         .merge(
@@ -553,7 +536,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         });
 
     menuToggler(onElt, $('#layoutSettingsButton'),  $('#renderingItems'), 'Turning on/off settings');
-    menuToggler(onElt, $('#filterButton'),  $('#filteringItems'), 'Turning on/off filter');
+    menuToggler(onElt, $('#filterButton'),  $('#filteringItems'), 'Turning on/off the filter panel');
 
 
     var marquee = setupMarquee(appState, turnOnMarquee);

@@ -4,14 +4,10 @@ var debug   = require('debug')('graphistry:StreamGL:graphVizApp:timeslider');
 var $       = window.$;
 var Rx      = require('rx');
               require('../rx-jquery-stub');
+var filter  = require('./filter.js');
 
 module.exports = {
-    init: function (appState, socket, urlParams) {
-
-        if (urlParams.filter !== 'true') {
-            return;
-        }
-
+    init: function (appState, socket/*, urlParams*/) {
         var MAX_BOUNDS  = 1000;
         // var START       = 1380003953000;
         // var END         = 1380483953000;
@@ -39,9 +35,7 @@ module.exports = {
             var start = START + len * v[0] / MAX_BOUNDS;
             var stop = END - len * (MAX_BOUNDS - v[1]) / MAX_BOUNDS;
             debug('emit filter', v, '->', [start, stop]);
-            window.filterRange('edge', 'Date',
-                start,
-                stop);
+            filter.filterObservable(socket, filter.filterRangeParameters('edge', 'Date', start, stop));
         });
 
         //FIXME kickoff may fire before filterRange defined

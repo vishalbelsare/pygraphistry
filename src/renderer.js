@@ -5,11 +5,8 @@ var _           = require('underscore');
 var Immutable   = require('immutable');
 var Rx          = require('rx');
 var debug       = require('debug')('graphistry:StreamGL:renderer');
-var Color       = require('color');
 
-var ui                  = require('./ui.js');
 var cameras             = require('./camera.js');
-var colorPicker         = require('./graphVizApp/colorpicker.js');
 
 
 /** @module Renderer */
@@ -262,16 +259,6 @@ function init(config, canvas, urlParams) {
         rendered: renderPipeline.pluck('rendered').filter(_.identity)
     });
 
-    if (urlParams.bg) {
-        try {
-            var hex = decodeURIComponent(urlParams.bg);
-            var color = new Color(hex);
-            state.get('options').clearColor = [colorPicker.renderConfigValueForColor(color)];
-        } catch (e) {
-            console.error('Invalid color', e, urlParams.bg);
-        }
-    }
-
     resizeCanvas(state, urlParams);
     window.addEventListener('resize', function () {
         resizeCanvas(state, urlParams);
@@ -320,7 +307,8 @@ function createContext(state) {
     return gl;
 }
 
-
+/*
+//Temp unused due to b8cf84ea158bf42821a019f8c115827fefeda7f6
 function enableExtensions(gl, extensions) {
     var supportedExtensions = gl.getSupportedExtensions();
     debug('Supported extensions', supportedExtensions);
@@ -333,6 +321,7 @@ function enableExtensions(gl, extensions) {
         }
     }, {});
 }
+*/
 
 
 function createCamera(state, urlParams) {
@@ -391,7 +380,7 @@ function getItemsForTrigger(state, trigger) {
 /*
  * Update the size of the canvas to match what is visible
  */
-function resizeCanvas(state, urlParams) {
+function resizeCanvas(state/*, urlParams*/) {
     var canvas = state.get('canvas');
     var camera = state.get('camera');
 
@@ -416,7 +405,7 @@ function resizeCanvas(state, urlParams) {
 }
 
 
-//RenderState * canvas * string -> {x: int, y:int, width: float, height: float}
+// RenderState * canvas * string -> {x: int, y:int, width: float, height: float}
 function getTextureDims(config, canvas, camera, name) {
     if (!name || name === 'CANVAS') {
         return {width: canvas.width, height: canvas.height};
