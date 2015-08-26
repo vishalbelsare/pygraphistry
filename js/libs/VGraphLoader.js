@@ -112,40 +112,50 @@ function load(graph, dataset) {
     return decoders[vg.version](graph, vg, dataset.metadata);
 }
 
-function loadDataframe(graph, amap, numPoints, numEdges) {
-    var edgeAttrs = _.pick(amap, function (value) {
+function loadDataframe(graph, attrs, numPoints, numEdges) {
+    var edgeAttrsList = _.filter(attrs, function (value) {
         return value.target === EDGE;
     });
-    var pointAttrs = _.pick(amap, function (value) {
+    var pointAttrsList = _.filter(attrs, function (value) {
         return value.target === VERTEX;
     });
+
+    var edgeAttrs = _.object(_.map(edgeAttrsList, function (value) {
+        return [value.name, value];
+    }));
+
+    var pointAttrs = _.object(_.map(pointAttrsList, function (value) {
+        return [value.name, value];
+    }));
 
     graph.dataframe.load(edgeAttrs, 'edge', numEdges);
     graph.dataframe.load(pointAttrs, 'point', numPoints);
 }
 
-function getAttributeMap(vg, attributes) {
+function getAttributes(vg, attributes) {
     var vectors = vg.string_vectors.concat(vg.int32_vectors, vg.double_vectors);
-    var map = {};
+    var attrs = [];
     for (var i = 0; i < vectors.length; i++) {
         var v = vectors[i];
-        if (v.values.length > 0 && (!attributes || attributes.length === 0 || attributes.indexOf(v.name) > -1) )
-            map[v.name] = {
+        if (v.values.length > 0 && (!attributes || attributes.length === 0 || attributes.indexOf(v.name) > -1) ) {
+            attrs.push({
+                name: v.name,
                 target : v.target,
                 type: typeof(v.values[0]),
                 values: v.values
-            };
+            });
+        }
     }
-    return map;
+    return attrs;
 }
 
 function decode0(graph, vg, metadata)  {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
           vg.version, vg.name, vg.nvertices, vg.nedges);
 
-    var amap = getAttributeMap(vg);
-    loadDataframe(graph, amap, vg.nvertices, vg.nedges);
-    logger.debug('Graph has attribute: %o', Object.keys(amap));
+    var attrs = getAttributes(vg);
+    loadDataframe(graph, attrs, vg.nvertices, vg.nedges);
+    logger.debug('Graph has attribute: %o', _.pluck(attrs, 'name'));
     var vertices = [];
     var edges = new Array(vg.nedges);
     var dimensions = [1, 1];
@@ -237,25 +247,26 @@ function decode0(graph, vg, metadata)  {
     loaders = wrap(mapper.mappings, loaders);
     logger.trace('Attribute loaders: %o', loaders);
 
-    for (var vname in amap) {
+    _.each(attrs, function (attr) {
+        var vname = attr.name;
         if (!(vname in loaders)) {
             logger.debug('Skipping unmapped attribute', vname);
-            continue;
+            return;
         }
 
-        var vec = amap[vname];
         var loaderArray = loaders[vname];
 
         _.each(loaderArray, function (loader) {
-            if (vec.target != loader.target) {
+            if (attr.target != loader.target) {
                 logger.warn('Vertex/Node attribute mismatch for ' + vname);
-            } else if (vec.type != loader.type) {
-                logger.warn('Expected type ' + loader.type + ' but got ' + vec.type + ' for' + vname);
+            } else if (attr.type != loader.type) {
+                logger.warn('Expected type ' + loader.type + ' but got ' + attr.type + ' for' + vname);
             } else {
-                loader.values = vec.values;
+                loader.values = attr.values;
             }
         });
-    }
+
+    });
 
     // Create map from attribute name -> type
     vg.attributeTypeMap = createAttributeTypeMap([[vg.string_vectors, 'string'],
@@ -512,7 +523,6 @@ var int2color = util.int2color;
 
 module.exports = {
     load: load,
-    getAttributeMap: getAttributeMap,
     getAttributeType: getAttributeType,
     types: {
         VERTEX: VERTEX,
