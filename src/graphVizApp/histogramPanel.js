@@ -45,7 +45,7 @@ var colorHighlighted = d3.scale.ordinal()
         .domain(['local', 'global', 'globalSmaller', 'localBigger']);
 
 var margin = {top: 10, right: 70, bottom: 20, left:20};
-var marginSparklines = {top: 15, right: 20, bottom: 15, left: 20};
+var marginSparklines = {top: 15, right: 10, bottom: 15, left: 10};
 var attributeChange;
 var updateAttributeSubject;
 var globalStatsCache = {}; // For add histogram. TODO: Get rid of this and use replay
@@ -433,7 +433,29 @@ function updateSparkline($el, model, attribute) {
         .attr('y', height + marginSparklines.bottom - 4)
         .attr('x', 0)
         .attr('opacity', 0)
+        .attr('fill', color('global'))
         .attr('font-size', '0.7em');
+
+    var upperTooltip = svg.selectAll('.upperTooltip')
+        .data([''])
+        .enter().append('text')
+        .attr('class', 'upperTooltip')
+        .attr('y', -4)
+        .attr('x', 0)
+        .attr('opacity', 0)
+        .attr('font-size', '0.7em');
+
+    upperTooltip.selectAll('.globalTooltip').data([''])
+        .enter().append('tspan')
+        .attr('class', 'globalTooltip')
+        .attr('fill', color('global'))
+        .text('global, ');
+
+    upperTooltip.selectAll('.localTooltip').data([''])
+        .enter().append('tspan')
+        .attr('class', 'localTooltip')
+        .attr('fill', color('local'))
+        .text('local');
 
     //////////////////////////////////////////////////////////////////////////
     // Create Columns
@@ -598,17 +620,33 @@ function toggleTooltips (showTooltip, svg) {
     var col = d3.select(d3.event.target.parentNode);
     var bars = col.selectAll('.bar-rect');
 
-    // TODO: Convert numeric to string representing range.
     var data = col[0][0].__data__;
 
-    _.each(bars[0], function (child) {
-        if (showTooltip) {
-            $(child).tooltip('fixTitle');
-            $(child).tooltip('show');
-        } else {
-            $(child).tooltip('hide');
-        }
-    });
+    // _.each(bars[0], function (child) {
+    //     if (showTooltip) {
+    //         $(child).tooltip('fixTitle');
+    //         $(child).tooltip('show');
+    //     } else {
+    //         $(child).tooltip('hide');
+    //     }
+    // });
+
+    var local = bars[0][0].__data__.val;
+    var global = bars[0][1].__data__.val;
+
+    var tooltipBox = svg.select('.upperTooltip');
+    var globalTooltip = tooltipBox.select('.globalTooltip');
+    var localTooltip = tooltipBox.select('.localTooltip');
+    if (showTooltip) {
+        globalTooltip.text('TOTAL: ' + String(global) + ', ');
+        localTooltip.text('SELECTED: ' + String(local));
+        tooltipBox.attr('opacity', 1);
+    } else {
+        globalTooltip.text('');
+        localTooltip.text('');
+        tooltipBox.attr('opacity', 0);
+    }
+
 
     var textBox = svg.select('.lowerTooltip');
     if (showTooltip) {
