@@ -9,6 +9,10 @@ var Backbone = require('backbone');
     Backbone.$ = $;
 var Ace     = require('brace');
 
+
+var COLLAPSED_FILTER_HEIGHT = 80;
+
+
 module.exports = {
     init: function () {
         var $filterPanel = $('#filtersPanel');
@@ -27,6 +31,19 @@ module.exports = {
                 'click .disableFilterButton': 'disable',
                 'click .expandFilterButton': 'expand',
                 'click .expendedFilterButton': 'shrink'
+            },
+
+            initialize: function () {
+                this.listenTo(this.model, 'destroy', this.remove);
+            },
+            render: function () {
+                var html = this.template({
+                });
+                this.$el.html(html);
+                return this;
+            },
+            shrink: function (event) {
+                $(event.target).removeClass('expandedFilterButton').addClass('expandFilterButton');
             }
         });
 
@@ -43,8 +60,15 @@ module.exports = {
             render: function () {
 
             },
-            addFilter: undefined,
-            removeFilter: undefined,
+            addFilter: function (filter) {
+                var view = new FilterView({model: filter});
+                var childElement = view.render().el;
+                var attribute = filter.get('attribute');
+                $(this.filtersContainer).append(childElement);
+                filter.set('$el', $(childElement));
+            },
+            removeFilter: function (/*filter*/) {
+            },
             refresh: function () {
                 $(this.filtersContainer).empty();
                 filterSet.each(this.addFilter, this);
