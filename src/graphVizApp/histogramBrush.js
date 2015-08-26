@@ -67,7 +67,7 @@ function setupSendHistogramFilters (subject, socket, poi) {
 function init(socket, marquee, poi) {
     debug('Initializing histogram brush');
 
-   // Grab global stats at initialization
+    // Grab global stats at initialization
     var globalStats = new Rx.ReplaySubject(1);
     var filterSubject = new Rx.ReplaySubject(1);
     var attributeChange = new Rx.Subject();

@@ -86,10 +86,10 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
             'click .refreshHistogramButton': 'refresh'
         },
 
-        initialize: function() {
+        initialize: function () {
             this.listenTo(this.model, 'destroy', this.remove);
         },
-        render: function() {
+        render: function () {
             var params = {
                 fields: attributes,
                 attribute: this.model.attributes.attribute,
@@ -102,7 +102,7 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
             return this;
         },
 
-        shrink: function(evt) {
+        shrink: function (evt) {
             $(evt.target).removeClass('expandedHistogramButton').addClass('expandHistogramButton');
             var vizContainer = this.model.get('vizContainer');
             var attribute = this.model.get('attribute');
@@ -110,7 +110,7 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
             toggleExpandedD3(attribute, vizContainer, vizHeight, this);
         },
 
-        expand: function(evt) {
+        expand: function (evt) {
             $(evt.target).removeClass('expandHistogramButton').addClass('expandedHistogramButton');
             var vizContainer = this.model.get('vizContainer');
             var attribute = this.model.get('attribute');
@@ -120,7 +120,7 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
             toggleExpandedD3(attribute, vizContainer, vizHeight, this);
         },
 
-        refresh: function() {
+        refresh: function () {
             var attribute = this.model.get('attribute');
             var id = this.cid;
             $('.refreshHistogramButton-'+id).css('display', 'none');
@@ -206,7 +206,7 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
     // We use this more verbose approach to click handlers because it watches
     // the DOM for added elements.
     // TODO: Wrap this into the panel view?
-    $('#histogram').on('click', '.addHistogramDropdownField', function () {
+    $histogram.on('click', '.addHistogramDropdownField', function () {
         var attribute = $(this).text().trim();
         updateAttribute(null, attribute, 'sparkLines');
 
