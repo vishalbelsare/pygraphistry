@@ -380,7 +380,7 @@ function getItemsForTrigger(state, trigger) {
 /*
  * Update the size of the canvas to match what is visible
  */
-function resizeCanvas(state, urlParams) {
+function resizeCanvas(state/*, urlParams*/) {
     var canvas = state.get('canvas');
     var camera = state.get('camera');
 
@@ -405,7 +405,7 @@ function resizeCanvas(state, urlParams) {
 }
 
 
-//RenderState * canvas * string -> {x: int, y:int, width: float, height: float}
+// RenderState * canvas * string -> {x: int, y:int, width: float, height: float}
 function getTextureDims(config, canvas, camera, name) {
     if (!name || name === 'CANVAS') {
         return {width: canvas.width, height: canvas.height};
