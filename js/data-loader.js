@@ -36,10 +36,8 @@ var downloader = {
 
 var tmpCache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);
 
-function downloadDataset(query) {
-    var url = urllib.parse(decodeURIComponent(query.dataset));
-
-    function hasParam(param) { return param !== undefined && param !== 'undefined' }
+function datasetMetadataFromURLQuery(query) {
+    function hasParam(param) { return param !== undefined && param !== 'undefined'; }
     var config = {};
 
     config.scene    = hasParam(query.scene)    ? query.scene    : 'default';
@@ -48,12 +46,19 @@ function downloadDataset(query) {
     config.device   = hasParam(query.device)   ? query.device   : 'default';
     config.vendor   = hasParam(query.vendor)   ? query.vendor   : 'default';
     config.type     = hasParam(query.type)     ? query.type     : 'default';
+    return config;
+}
+
+function downloadDataset(query) {
+    var url = urllib.parse(decodeURIComponent(query.dataset));
+
+    var config = datasetMetadataFromURLQuery(query);
 
     logger.info('scene:%s  controls:%s  mapper:%s  device:%s',
                   config.scene, config.controls, config.mapper, config.device);
 
     return downloader[url.protocol](url).then(function (data) {
-        return { body: data, metadata: config };
+        return {body: data, metadata: config};
     }).fail(log.makeQErrorHandler(logger, 'Failure while retrieving dataset'));
 }
 
