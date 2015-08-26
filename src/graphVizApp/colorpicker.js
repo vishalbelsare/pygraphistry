@@ -74,7 +74,7 @@ module.exports = {
                             }
                         });
                         // Update the color picker swatch affordance:
-                        $('.colorSelector div', $fg).css('background-color', foregroundColor.hexString());
+                        $('.colorSelector div', $fg).css('background-color', foregroundColor && foregroundColor.hexString());
                     })
                     .subscribe(foregroundColorObservable, util.makeErrorHandler('bad foreground color'));
             });
@@ -90,7 +90,7 @@ module.exports = {
                         var newValue = renderConfigValueForColor(backgroundColor);
                         socket.emit('update_render_config', {'options': {'clearColor': [newValue]}});
                         // Update the color picker swatch affordance:
-                        $('.colorSelector div', $bg).css('background-color', backgroundColor.hexString());
+                        $('.colorSelector div', $bg).css('background-color', backgroundColor && backgroundColor.hexString());
                     })
                     .subscribe(backgroundColorObservable, util.makeErrorHandler('bad background color'));
             });
