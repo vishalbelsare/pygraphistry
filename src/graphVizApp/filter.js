@@ -8,7 +8,7 @@ require('../rx-jquery-stub');
 module.exports = {
     init: function (appState, socket, urlParams, $button /*, $filteringItems */) {
 
-        if (urlParams.debug !== 'true') {
+        if (!urlParams.debug) {
             $button.css({display: 'none'});
         }
 
