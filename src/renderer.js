@@ -893,7 +893,7 @@ function setupFullscreenBuffer(state) {
  * @param {String} renderListTrigger - The trigger tag of the render items to execute
  * @param {[String]} renderListOverride - List of render items to execute
  * @param {Object} readPixelsOverride - Dimensions for readPixels
- * @param {Function} callback - Callback executed after readPixels
+ * @param {Function<Boolean>} callback - Callback executed after readPixels
  */
 function render(state, tag, renderListTrigger, renderListOverride, readPixelsOverride, callback) {
     var config      = state.get('config').toJS(),
@@ -907,6 +907,9 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
     var toRender = getItemsForTrigger(state, renderListTrigger) || renderListOverride;
     if (toRender === undefined || toRender.length === 0) {
         console.warn('Nothing to render for tag', tag);
+        if (callback) {
+            callback(false);
+        }
         return;
     }
 
@@ -976,7 +979,7 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
     // that rendering is done. However, gl.readpixels does trigger a GPU/CPU sync, so the callback can be used
     // to process the results of readpixels.
     if (callback) {
-        callback();
+        callback(true);
     }
 }
 
