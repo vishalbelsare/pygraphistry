@@ -72,9 +72,15 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
     var HistogramModel = Backbone.Model.extend({});
 
     var HistogramCollection = Backbone.Collection.extend({
-        model: HistogramModel
+        model: HistogramModel,
+        comparator: 'position'
     });
     var histograms = new HistogramCollection();
+
+    // TODO: Replace this with a proper data transfer through the HTML5
+    // drag and drop spec. It seems to be pretty broken outside of firefox,
+    // so will not be using today.
+    var lastDraggedCid;
 
     var HistogramView = Backbone.View.extend({
         tagName: 'div',
@@ -85,13 +91,12 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
             'click .closeHistogramButton': 'close',
             'click .expandHistogramButton': 'expand',
             'click .expandedHistogramButton': 'shrink',
-            'click .refreshHistogramButton': 'refresh'
+            'click .refreshHistogramButton': 'refresh',
+            'dragstart .topMenu': 'dragStart'
         },
 
         initialize: function () {
             this.listenTo(this.model, 'destroy', this.remove);
-        },
-        render: function () {
             var params = {
                 fields: attributes,
                 attribute: this.model.attributes.attribute,
@@ -101,7 +106,15 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
 
             var html = this.template(params);
             this.$el.html(html);
+            this.$el.attr('cid', this.cid);
+        },
+        render: function () {
+            // TODO: Wrap updates into render
             return this;
+        },
+
+        dragStart: function () {
+            lastDraggedCid = this.cid;
         },
 
         shrink: function (evt) {
@@ -141,21 +154,86 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
         }
     });
 
+
     var AllHistogramsView = Backbone.View.extend({
         el: $histogram,
         histogramsContainer: $('#histograms'),
+        events: {
+            'click .addHistogramDropdownField': 'addHistogramFromDropdown',
+        },
         initialize: function () {
+            var that = this;
             this.listenTo(histograms, 'add', this.addHistogram);
             this.listenTo(histograms, 'remove', this.removeHistogram);
             this.listenTo(histograms, 'reset', this.addAll);
-            this.listenTo(histograms, 'all', this.render);
             this.listenTo(histograms, 'change:timeStamp', this.update);
+
+            // Setup add histogram button.
+            var template = Handlebars.compile($('#addHistogramTemplate').html());
+            var params = { fields: attributes };
+            var html = template(params);
+            $('#addHistogram').html(html);
+            $histogram.on('dragover', function (evt) {
+                evt.preventDefault();
+            });
+            $histogram.on('drop', function (evt) {
+                var srcCid = lastDraggedCid;
+                var destCid = $(evt.target).parents('.histogramDiv').attr('cid');
+                that.moveHistogram(srcCid, destCid);
+            });
         },
         render: function () {
+            this.collection.sort();
+            var newDiv = $('<div></div>');
+            this.collection.each(function (child) {
+                newDiv.append(child.view.el);
+            });
 
+            $(this.histogramsContainer).empty();
+            $(this.histogramsContainer).append(newDiv);
+        },
+        moveHistogram: function (from, to) {
+            // var length = this.collection.length;
+            var srcIdx, dstIdx;
+            this.collection.each(function (hist, i) {
+                if (hist.view.cid === from) srcIdx = i;
+                if (hist.view.cid === to) dstIdx = i;
+            });
+
+            if (srcIdx === dstIdx) {
+                return;
+            }
+
+            // TODO: Do this in a clean way that isn't obscure as all hell.
+            var min = Math.min(srcIdx, dstIdx);
+            var max = Math.max(srcIdx, dstIdx);
+            this.collection.each(function (hist, i) {
+                if (i > max || i < min) {
+                    hist.set('position', i);
+                    return;
+                }
+                if (srcIdx < dstIdx) {
+                    if (i === srcIdx) {
+                        hist.set('position', dstIdx);
+                    } else {
+                        hist.set('position', i - 1);
+                    }
+                } else {
+                    if (i === dstIdx) {
+                        hist.set('position', i)
+                        return;
+                    } else if (i === srcIdx) {
+                        hist.set('position', dstIdx + 1);
+                    } else {
+                        hist.set('position', i + 1);
+                    }
+                }
+            });
+            this.render();
         },
         addHistogram: function (histogram) {
             var view = new HistogramView({model: histogram});
+            histogram.view = view;
             var childEl = view.render().el;
             var attribute = histogram.get('attribute');
             $(this.histogramsContainer).append(childEl);
@@ -192,35 +270,17 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
                 });
             }
         },
+        addHistogramFromDropdown: function (evt) {
+            var attribute = $(evt.currentTarget).text().trim();
+            updateAttribute(null, attribute, 'sparkLines');
+        },
         addAll: function () {
             $(this.histogramsContainer).empty();
             histograms.each(this.addHistogram, this);
         }
     });
-    var allHistogramsView = new AllHistogramsView();
+    var allHistogramsView = new AllHistogramsView({collection: histograms});
 
-    // Setup add histogram button.
-    var template = Handlebars.compile($('#addHistogramTemplate').html());
-    var params = {
-        fields: attributes
-    };
-    var html = template(params);
-    $('#addHistogram').html(html);
-
-    // We use this more verbose approach to click handlers because it watches
-    // the DOM for added elements.
-    // TODO: Wrap this into the panel view?
-    $histogram.on('click', '.addHistogramDropdownField', function () {
-        var attribute = $(this).text().trim();
-        updateAttribute(null, attribute, 'sparkLines');
-
-        // TODO: Represent this generically.
-        var histogram = new HistogramModel();
-        histogram.set({data: {}, globalStats: globalStatsCache, firstTime: true, sparkLines: true});
-        histogram.id = attribute;
-        histogram.set('attribute', attribute);
-        histograms.add([histogram]);
-    });
 
     return {
         view: allHistogramsView,
@@ -230,7 +290,30 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
 }
 
 
+function toggleExpandedD3 (attribute, vizContainer, vizHeight, view) {
+    d3DataMap[attribute].svg.selectAll('*').remove();
+    vizContainer.empty();
+    vizContainer.height(String(vizHeight) + 'px');
 
+    var sparkLines = view.model.get('sparkLines');
+    if (sparkLines) {
+        view.model.set('sparkLines', !sparkLines);
+        initializeHistogramViz(vizContainer, view.model);
+        updateAttribute(attribute, attribute, 'histogram');
+    } else {
+        view.model.set('sparkLines', !sparkLines);
+        initializeSparklineViz(vizContainer, view.model);
+        updateAttribute(attribute, attribute, 'sparkLines');
+    }
+}
+
+function updateAttribute(oldAttr, newAttr, type) {
+    updateAttributeSubject.onNext({
+        oldAttr: oldAttr,
+        newAttr: newAttr,
+        type: type
+    });
+}
 
 
 
@@ -865,7 +948,7 @@ function setupSvg (el, margin, width, height) {
 
 
 //////////////////////////////////////////////////////////////////////////////
-// Side Panel
+// Util
 //////////////////////////////////////////////////////////////////////////////
 
 // TODO: Move active filters out of histogram Brush.
@@ -904,30 +987,7 @@ function updateHistogramFilters (attr, id, firstBin, lastBin, redraw) {
 
 
 
-function toggleExpandedD3 (attribute, vizContainer, vizHeight, view) {
-    d3DataMap[attribute].svg.selectAll('*').remove();
-    vizContainer.empty();
-    vizContainer.height(String(vizHeight) + 'px');
 
-    var sparkLines = view.model.get('sparkLines');
-    if (sparkLines) {
-        view.model.set('sparkLines', !sparkLines);
-        initializeHistogramViz(vizContainer, view.model);
-        updateAttribute(attribute, attribute, 'histogram');
-    } else {
-        view.model.set('sparkLines', !sparkLines);
-        initializeSparklineViz(vizContainer, view.model);
-        updateAttribute(attribute, attribute, 'sparkLines');
-    }
-}
-
-function updateAttribute(oldAttr, newAttr, type) {
-    updateAttributeSubject.onNext({
-        oldAttr: oldAttr,
-        newAttr: newAttr,
-        type: type
-    });
-}
 
 
 module.exports = {

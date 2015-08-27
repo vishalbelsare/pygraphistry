@@ -186,6 +186,7 @@ function checkReply (reply) {
 
 function updateHistogramData (collection, data, globalStats, Model, empty) {
     var histograms = [];
+    var length = collection.length;
     _.each(data, function (val, key) {
         var histogram = new Model();
         var params = {
@@ -197,10 +198,19 @@ function updateHistogramData (collection, data, globalStats, Model, empty) {
 
         if (val.firstTime) {
             params.firstTime = true;
+            params.position = length++;
         }
 
         if (val.sparkLines !== undefined) {
             params.sparkLines = val.sparkLines;
+        } else {
+            // TODO: Make sure that sparkLines is always passed in, so we don't have
+            // to do this check.
+            _.each(activeAttributes, function (attr) {
+                if (attr.name === key) {
+                    params.sparkLines = (attr.type === 'sparkLines');
+                }
+            });
         }
 
         histogram.set(params);
