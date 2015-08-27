@@ -140,10 +140,12 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
     });
 
 
-
     var AllHistogramsView = Backbone.View.extend({
         el: $histogram,
         histogramsContainer: $('#histograms'),
+        events: {
+            'click .addHistogramDropdownField': 'addHistogramFromDropdown'
+        },
         initialize: function () {
             this.listenTo(histograms, 'add', this.addHistogram);
             this.listenTo(histograms, 'remove', this.removeHistogram);
@@ -192,6 +194,10 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
                 });
             }
         },
+        addHistogramFromDropdown: function (evt) {
+            var attribute = $(evt.currentTarget).text().trim();
+            updateAttribute(null, attribute, 'sparkLines');
+        },
         addAll: function () {
             $(this.histogramsContainer).empty();
             histograms.each(this.addHistogram, this);
@@ -200,20 +206,13 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
     var allHistogramsView = new AllHistogramsView({collection: histograms});
 
     // Setup add histogram button.
+    // TODO: Move into histogram panel view.
     var template = Handlebars.compile($('#addHistogramTemplate').html());
     var params = {
         fields: attributes
     };
     var html = template(params);
     $('#addHistogram').html(html);
-
-    // We use this more verbose approach to click handlers because it watches
-    // the DOM for added elements.
-    // TODO: Wrap this into the panel view?
-    $histogram.on('click', '.addHistogramDropdownField', function () {
-        var attribute = $(this).text().trim();
-        updateAttribute(null, attribute, 'sparkLines');
-    });
 
     return {
         view: allHistogramsView,
