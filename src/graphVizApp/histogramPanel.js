@@ -72,9 +72,15 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
     var HistogramModel = Backbone.Model.extend({});
 
     var HistogramCollection = Backbone.Collection.extend({
-        model: HistogramModel
+        model: HistogramModel,
+        comparator: 'position'
     });
     var histograms = new HistogramCollection();
+
+    // TODO: Replace this with a proper data transfer through the HTML5
+    // drag and drop spec. It seems to be pretty broken outside of firefox,
+    // so will not be using today.
+    var lastDraggedCid;
 
     var HistogramView = Backbone.View.extend({
         tagName: 'div',
@@ -85,13 +91,12 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
             'click .closeHistogramButton': 'close',
             'click .expandHistogramButton': 'expand',
             'click .expandedHistogramButton': 'shrink',
-            'click .refreshHistogramButton': 'refresh'
+            'click .refreshHistogramButton': 'refresh',
+            'dragstart .topMenu': 'dragStart'
         },
 
         initialize: function () {
             this.listenTo(this.model, 'destroy', this.remove);
-        },
-        render: function () {
             var params = {
                 fields: attributes,
                 attribute: this.model.attributes.attribute,
@@ -101,7 +106,15 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
 
             var html = this.template(params);
             this.$el.html(html);
+            this.$el.attr('cid', this.cid);
+        },
+        render: function () {
+            // TODO: Wrap updates into render
             return this;
+        },
+
+        dragStart: function () {
+            lastDraggedCid = this.cid;
         },
 
         shrink: function (evt) {
@@ -144,13 +157,13 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
         el: $histogram,
         histogramsContainer: $('#histograms'),
         events: {
-            'click .addHistogramDropdownField': 'addHistogramFromDropdown'
+            'click .addHistogramDropdownField': 'addHistogramFromDropdown',
         },
         initialize: function () {
+            var that = this;
             this.listenTo(histograms, 'add', this.addHistogram);
             this.listenTo(histograms, 'remove', this.removeHistogram);
             this.listenTo(histograms, 'reset', this.addAll);
-            this.listenTo(histograms, 'all', this.render);
             this.listenTo(histograms, 'change:timeStamp', this.update);
 
             // Setup add histogram button.
@@ -158,12 +171,67 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
             var params = { fields: attributes };
             var html = template(params);
             $('#addHistogram').html(html);
+            $histogram.on('dragover', function (evt) {
+                evt.preventDefault();
+            });
+            $histogram.on('drop', function (evt) {
+                var srcCid = lastDraggedCid;
+                var destCid = $(evt.target).parents('.histogramDiv').attr('cid');
+                that.moveHistogram(srcCid, destCid);
+            });
         },
         render: function () {
+            this.collection.sort();
+            var newDiv = $('<div></div>');
+            this.collection.each(function (child) {
+                newDiv.append(child.view.el);
+            });
 
+            $(this.histogramsContainer).empty();
+            $(this.histogramsContainer).append(newDiv);
+        },
+        moveHistogram: function (from, to) {
+            // var length = this.collection.length;
+            var srcIdx, dstIdx;
+            this.collection.each(function (hist, i) {
+                if (hist.view.cid === from) srcIdx = i;
+                if (hist.view.cid === to) dstIdx = i;
+            });
+
+            if (srcIdx === dstIdx) {
+                return;
+            }
+
+            // TODO: Do this in a clean way that isn't obscure as all hell.
+            var min = Math.min(srcIdx, dstIdx);
+            var max = Math.max(srcIdx, dstIdx);
+            this.collection.each(function (hist, i) {
+                if (i > max || i < min) {
+                    hist.set('position', i);
+                    return;
+                }
+                if (srcIdx < dstIdx) {
+                    if (i === srcIdx) {
+                        hist.set('position', dstIdx);
+                    } else {
+                        hist.set('position', i - 1);
+                    }
+                } else {
+                    if (i === dstIdx) {
+                        hist.set('position', i)
+                        return;
+                    } else if (i === srcIdx) {
+                        hist.set('position', dstIdx + 1);
+                    } else {
+                        hist.set('position', i + 1);
+                    }
+                }
+            });
+            this.render();
         },
         addHistogram: function (histogram) {
             var view = new HistogramView({model: histogram});
+            histogram.view = view;
             var childEl = view.render().el;
             var attribute = histogram.get('attribute');
             $(this.histogramsContainer).append(childEl);
@@ -211,6 +279,25 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
     });
     var allHistogramsView = new AllHistogramsView({collection: histograms});
 
+
+
+    var changeOrder = function () {
+        var length = histograms.length;
+        histograms.each(function (hist, i) {
+            console.log('originalPosition: ', hist.attributes.position);
+            // console.log('hist: ', hist);
+            // console.log('histPosition: ', hist.position);
+            hist.set('position', length - i);
+            // console.log('hist: ', hist);
+            console.log('newPosition: ', hist.attributes.position);
+            // hist.position = length - i;
+        });
+        allHistogramsView.render();
+    };
+    window.changeOrder = changeOrder;
+
+
+
     return {
         view: allHistogramsView,
         collection: histograms,
@@ -243,8 +330,6 @@ function updateAttribute(oldAttr, newAttr, type) {
         type: type
     });
 }
-
-
 
 
 
