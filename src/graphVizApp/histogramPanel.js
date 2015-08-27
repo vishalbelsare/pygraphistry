@@ -280,24 +280,6 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
     var allHistogramsView = new AllHistogramsView({collection: histograms});
 
 
-
-    var changeOrder = function () {
-        var length = histograms.length;
-        histograms.each(function (hist, i) {
-            console.log('originalPosition: ', hist.attributes.position);
-            // console.log('hist: ', hist);
-            // console.log('histPosition: ', hist.position);
-            hist.set('position', length - i);
-            // console.log('hist: ', hist);
-            console.log('newPosition: ', hist.attributes.position);
-            // hist.position = length - i;
-        });
-        allHistogramsView.render();
-    };
-    window.changeOrder = changeOrder;
-
-
-
     return {
         view: allHistogramsView,
         collection: histograms,
