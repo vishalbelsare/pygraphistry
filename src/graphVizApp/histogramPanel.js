@@ -139,6 +139,8 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
         }
     });
 
+
+
     var AllHistogramsView = Backbone.View.extend({
         el: $histogram,
         histogramsContainer: $('#histograms'),
@@ -195,7 +197,7 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
             histograms.each(this.addHistogram, this);
         }
     });
-    var allHistogramsView = new AllHistogramsView();
+    var allHistogramsView = new AllHistogramsView({collection: histograms});
 
     // Setup add histogram button.
     var template = Handlebars.compile($('#addHistogramTemplate').html());
@@ -211,13 +213,6 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
     $histogram.on('click', '.addHistogramDropdownField', function () {
         var attribute = $(this).text().trim();
         updateAttribute(null, attribute, 'sparkLines');
-
-        // TODO: Represent this generically.
-        var histogram = new HistogramModel();
-        histogram.set({data: {}, globalStats: globalStatsCache, firstTime: true, sparkLines: true});
-        histogram.id = attribute;
-        histogram.set('attribute', attribute);
-        histograms.add([histogram]);
     });
 
     return {
@@ -227,6 +222,31 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
     };
 }
 
+
+function toggleExpandedD3 (attribute, vizContainer, vizHeight, view) {
+    d3DataMap[attribute].svg.selectAll('*').remove();
+    vizContainer.empty();
+    vizContainer.height(String(vizHeight) + 'px');
+
+    var sparkLines = view.model.get('sparkLines');
+    if (sparkLines) {
+        view.model.set('sparkLines', !sparkLines);
+        initializeHistogramViz(vizContainer, view.model);
+        updateAttribute(attribute, attribute, 'histogram');
+    } else {
+        view.model.set('sparkLines', !sparkLines);
+        initializeSparklineViz(vizContainer, view.model);
+        updateAttribute(attribute, attribute, 'sparkLines');
+    }
+}
+
+function updateAttribute(oldAttr, newAttr, type) {
+    updateAttributeSubject.onNext({
+        oldAttr: oldAttr,
+        newAttr: newAttr,
+        type: type
+    });
+}
 
 
 
@@ -863,7 +883,7 @@ function setupSvg (el, margin, width, height) {
 
 
 //////////////////////////////////////////////////////////////////////////////
-// Side Panel
+// Util
 //////////////////////////////////////////////////////////////////////////////
 
 // TODO: Move active filters out of histogram Brush.
@@ -902,30 +922,7 @@ function updateHistogramFilters (attr, id, firstBin, lastBin, redraw) {
 
 
 
-function toggleExpandedD3 (attribute, vizContainer, vizHeight, view) {
-    d3DataMap[attribute].svg.selectAll('*').remove();
-    vizContainer.empty();
-    vizContainer.height(String(vizHeight) + 'px');
 
-    var sparkLines = view.model.get('sparkLines');
-    if (sparkLines) {
-        view.model.set('sparkLines', !sparkLines);
-        initializeHistogramViz(vizContainer, view.model);
-        updateAttribute(attribute, attribute, 'histogram');
-    } else {
-        view.model.set('sparkLines', !sparkLines);
-        initializeSparklineViz(vizContainer, view.model);
-        updateAttribute(attribute, attribute, 'sparkLines');
-    }
-}
-
-function updateAttribute(oldAttr, newAttr, type) {
-    updateAttributeSubject.onNext({
-        oldAttr: oldAttr,
-        newAttr: newAttr,
-        type: type
-    });
-}
 
 
 module.exports = {

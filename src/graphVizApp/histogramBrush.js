@@ -201,6 +201,14 @@ function updateHistogramData (collection, data, globalStats, Model, empty) {
 
         if (val.sparkLines !== undefined) {
             params.sparkLines = val.sparkLines;
+        } else {
+            // TODO: Make sure that sparkLines is always passed in, so we don't have
+            // to do this check.
+            _.each(activeAttributes, function (attr) {
+                if (attr.name === key) {
+                    params.sparkLines = (attr.type === 'sparkLines');
+                }
+            });
         }
 
         histogram.set(params);
