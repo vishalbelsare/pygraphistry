@@ -858,6 +858,7 @@ function setupSvg (el, margin, width, height) {
             .attr('width', width + margin.left + margin.right)
             .attr('height', height + margin.top + margin.bottom)
         .append('g')
+            .attr('class', 'crosshair-cursor')
             .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 }
 
