@@ -196,8 +196,8 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
             // var length = this.collection.length;
             var srcIdx, dstIdx;
             this.collection.each(function (hist, i) {
-                if (hist.view.cid === from) srcIdx = i;
-                if (hist.view.cid === to) dstIdx = i;
+                if (hist.view.cid === from) { srcIdx = i; }
+                if (hist.view.cid === to) { dstIdx = i; }
             });
 
             if (srcIdx === dstIdx) {
@@ -220,7 +220,7 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
                     }
                 } else {
                     if (i === dstIdx) {
-                        hist.set('position', i)
+                        hist.set('position', i);
                         return;
                     } else if (i === srcIdx) {
                         hist.set('position', dstIdx + 1);
