@@ -152,6 +152,12 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
             this.listenTo(histograms, 'reset', this.addAll);
             this.listenTo(histograms, 'all', this.render);
             this.listenTo(histograms, 'change:timeStamp', this.update);
+
+            // Setup add histogram button.
+            var template = Handlebars.compile($('#addHistogramTemplate').html());
+            var params = { fields: attributes };
+            var html = template(params);
+            $('#addHistogram').html(html);
         },
         render: function () {
 
@@ -204,15 +210,6 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
         }
     });
     var allHistogramsView = new AllHistogramsView({collection: histograms});
-
-    // Setup add histogram button.
-    // TODO: Move into histogram panel view.
-    var template = Handlebars.compile($('#addHistogramTemplate').html());
-    var params = {
-        fields: attributes
-    };
-    var html = template(params);
-    $('#addHistogram').html(html);
 
     return {
         view: allHistogramsView,
