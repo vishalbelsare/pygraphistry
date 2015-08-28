@@ -167,7 +167,7 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
                 labelsByType[type][index] = responseData;
                 res.onNext([{
                     formatted: false,
-                    title: responseData._title,
+                    title: decodeURIComponent(responseData._title),
                     columns: responseTabular
                 }]);
             } catch (e) {
