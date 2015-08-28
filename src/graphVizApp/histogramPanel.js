@@ -46,13 +46,14 @@ var colorHighlighted = d3.scale.ordinal()
 
 var margin = {top: 10, right: 70, bottom: 20, left:20};
 var marginSparklines = {top: 15, right: 10, bottom: 15, left: 10};
+
+// How the model-view communicate back to underlying Rx.
 var attributeChange;
 var updateAttributeSubject;
-var globalStatsCache = {}; // For add histogram. TODO: Get rid of this and use replay
-// TODO: Extract this into the model.
+var histogramFilterSubject;
+
 // TODO: Extract this out into the model.
 var histogramFilters = {};
-var histogramFilterSubject;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -61,7 +62,6 @@ var histogramFilterSubject;
 
 function initHistograms (globalStats, attributes, filterSubject, attrChangeSubject, updateAttributeSubj) {
     histogramFilterSubject = filterSubject;
-    globalStatsCache = globalStats;
     attributeChange = attrChangeSubject;
     updateAttributeSubject = updateAttributeSubj;
 
@@ -570,7 +570,7 @@ function updateSparkline($el, model, attribute) {
             .attr('height', height)
             .attr('fill', '#556ED4')
             .attr('opacity', updateOpacity)
-            .on('mousedown', handleHistogramDown.bind(null, filterCallback, id))
+            .on('mousedown', handleHistogramDown.bind(null, filterCallback, id, model.attributes.globalStats))
             .on('mouseover', toggleTooltips.bind(null, true, svg))
             .on('mouseout', toggleTooltips.bind(null, false, svg));
 
@@ -605,14 +605,14 @@ function updateSparkline($el, model, attribute) {
 
 }
 
-function handleHistogramDown (cb, id) {
+function handleHistogramDown (cb, id, globalStats) {
     var col = d3.select(d3.event.target.parentNode);
     var $element = $(col[0][0]);
     var $parent = $element.parent();
 
     var startBin = $element.attr('binnumber');
     var attr = $element.attr('attribute');
-    updateHistogramFilters(attr, id, startBin, startBin);
+    updateHistogramFilters(attr, id, globalStats, startBin, startBin);
 
     var positionChanges = Rx.Observable.fromEvent($parent, 'mouseover')
         .map(function (evt) {
@@ -622,7 +622,7 @@ function handleHistogramDown (cb, id) {
             var ends = [+startBin, +binNum];
             var firstBin = _.min(ends);
             var lastBin = _.max(ends);
-            updateHistogramFilters(attr, id, firstBin, lastBin);
+            updateHistogramFilters(attr, id, globalStats, firstBin, lastBin);
             cb();
         }).subscribe(_.identity, util.makeErrorHandler('Histogram Filter Dragging'));
 
@@ -954,14 +954,14 @@ function setupSvg (el, margin, width, height) {
 
 // TODO: Move active filters out of histogram Brush.
 // Should we still keep details inside for rendering?
-function updateHistogramFilters (attr, id, firstBin, lastBin) {
+function updateHistogramFilters (attr, id, globalStats, firstBin, lastBin) {
 
     histogramFilters[attr] = {
         firstBin: firstBin,
         lastBin: lastBin
     };
 
-    var stats = globalStatsCache.sparkLines[attr];
+    var stats = globalStats.sparkLines[attr];
     var dataType = stats.dataType;
 
     if (stats.type === 'histogram') {
@@ -983,11 +983,6 @@ function updateHistogramFilters (attr, id, firstBin, lastBin) {
 
     $('.refreshHistogramButton-'+id).css('display', 'block');
 }
-
-
-
-
-
 
 
 module.exports = {
