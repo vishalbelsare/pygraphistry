@@ -115,10 +115,10 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
 
     }));
     var hostBufs = _.omit(layouts, function (layout) {
-        return layout.datasource !== 'HOST';
+        return layout.datasource !== rConf.VBODataSources.HOST;
     });
     var devBufs = _.omit(layouts, function (layout) {
-        return layout.datasource !== 'DEVICE';
+        return layout.datasource !== rConf.VBODataSources.DEVICE;
     });
 
     // TODO: Instead of doing blocking CL reads, use CL events and wait on those.

@@ -1145,5 +1145,6 @@ module.exports = {
     'gl2Bytes': gl2Bytes,
     'isBufClientSide': isBufClientSide,
     'isBufServerSide': isBufServerSide,
-    'isTextureServerSide': isTextureServerSide
+    'isTextureServerSide': isTextureServerSide,
+    VBODataSources: VBODataSources
 };
