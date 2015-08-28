@@ -187,6 +187,9 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
         },
 
         close: function() {
+            if (histogramFilters[this.model.get('attribute')]) {
+                this.refresh();
+            }
             this.$el.remove();
             histograms.remove(this.model);
         }
