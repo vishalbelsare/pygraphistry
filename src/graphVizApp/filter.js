@@ -7,6 +7,13 @@ require('../rx-jquery-stub');
 var util    = require('./util.js');
 
 
+function filterParametersCore(type, attribute) {
+    return {
+        type: type,
+        attribute: attribute
+    };
+}
+
 module.exports = {
     init: function (appState, socket, urlParams, $button /*, $filteringItems */) {
         if (!urlParams.debug) {
@@ -20,18 +27,28 @@ module.exports = {
                     console.error('Server error on inspectHeader', (reply||{}).error);
                 }
             }).filter(function (reply) { return reply && reply.success; })
-            .map(function (metadata) {
+            .map(function (/*metadata*/) {
 
             }).subscribe(_.identity, util.makeErrorHandler('fetch inspectHeader'));
     },
 
     filterRangeParameters: function (type, attribute, start, stop) {
-        return {
-            type: type,
-            attribute: attribute,
+        return _.extend(filterParametersCore(type, attribute), {
             start: start,
             stop: stop
-        };
+        });
+    },
+
+    filterExactValueParameters: function (type, attribute, value) {
+        return _.extend(filterParametersCore(type, attribute), {
+            equals: value
+        });
+    },
+
+    filterExactValuesParameters: function (type, attribute, values) {
+        return _.extend(filterParametersCore(type, attribute), {
+            equals: values
+        });
     },
 
     filterObservable: function (socket, params) {
