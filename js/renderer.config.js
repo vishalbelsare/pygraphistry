@@ -131,29 +131,39 @@ var programs = {
 
 var textures = {
     'hitmap': {
-        'datasource': 'CLIENT',
+        'datasource': VBODataSources.CLIENT,
     },
     'pointTexture': {
-        'datasource': 'CLIENT',
+        'datasource': VBODataSources.CLIENT,
         'retina': true
     },
     'steadyStateTexture': {
-        'datasource': 'CLIENT',
+        'datasource': VBODataSources.CLIENT,
         'retina': true
     },
     'pointHitmapDownsampled': {
-        'datasource': 'CLIENT',
+        'datasource': VBODataSources.CLIENT,
         'width': {'unit': 'percent', 'value': 5},
         'height': {'unit': 'percent', 'value': 5}
     },
     'colorMap': {
-        'datasource': 'SERVER',
+        'datasource': VBODataSources.SERVER,
         'path': 'test-colormap2.png'
     }
-}
+};
 
 
-/* datasource can be
+var VBODataSources = {
+    DEVICE: 'DEVICE', // OpenCL server buffer
+    HOST: 'HOST',     // Plain server buffer
+    CLIENT: 'CLIENT'  // Client-computed buffer
+};
+
+
+/**
+ * These represent different kinds/roles of VBOs.
+ *
+ * datasource can be:
  * DEVICE -> OpenCL server buffer
  * HOST   -> plain server buffer
  * CLIENT -> computed on client
@@ -161,7 +171,7 @@ var textures = {
 var models = {
     'logicalEdges': {
         'curIdx': {
-            'datasource': 'HOST',
+            'datasource': VBODataSources.HOST,
             'index': true,
             'type': 'UNSIGNED_INT',
             'hint': 'STATIC_DRAW',
@@ -173,7 +183,7 @@ var models = {
     },
     'forwardsEdgeStartEndIdxs': {
         'curIdx': {
-            'datasource': 'HOST',
+            'datasource': VBODataSources.HOST,
             'index': true,
             'type': 'UNSIGNED_INT',
             'hint': 'STATIC_DRAW',
@@ -185,7 +195,7 @@ var models = {
     },
     'backwardsEdgeStartEndIdxs': {
         'curIdx': {
-            'datasource': 'HOST',
+            'datasource': VBODataSources.HOST,
             'index': true,
             'type': 'UNSIGNED_INT',
             'hint': 'STATIC_DRAW',
@@ -197,7 +207,7 @@ var models = {
     },
     'midSpringsPos': {
         'curPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
             'hint': 'DYNAMIC_DRAW',
             'count': 2,
@@ -208,7 +218,7 @@ var models = {
     },
     'highlightedEdgesPos': {
         'curPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
             'hint': 'DYNAMIC_DRAW',
             'count': 2,
@@ -219,7 +229,7 @@ var models = {
     },
     'arrowStartPos': {
         'curPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
             'hint': 'DYNAMIC_DRAW',
             'count': 2,
@@ -230,7 +240,7 @@ var models = {
     },
     'arrowEndPos': {
         'curPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
             'hint': 'DYNAMIC_DRAW',
             'count': 2,
@@ -241,7 +251,7 @@ var models = {
     },
     'arrowNormalDir': {
         'normalDir': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
             'hint': 'DYNAMIC_DRAW',
             'count': 1,
@@ -252,7 +262,7 @@ var models = {
     },
     'highlightedArrowStartPos': {
         'curPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
             'hint': 'DYNAMIC_DRAW',
             'count': 2,
@@ -263,7 +273,7 @@ var models = {
     },
     'highlightedArrowEndPos': {
         'curPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
             'hint': 'DYNAMIC_DRAW',
             'count': 2,
@@ -274,7 +284,7 @@ var models = {
     },
     'highlightedArrowNormalDir': {
         'normalDir': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
             'hint': 'DYNAMIC_DRAW',
             'count': 1,
@@ -285,7 +295,7 @@ var models = {
     },
     'curPoints': {
         'curPos': {
-            'datasource': 'DEVICE',
+            'datasource': VBODataSources.DEVICE,
             'type': 'FLOAT',
             'count': 2,
             'hint': 'DYNAMIC_DRAW',
@@ -296,7 +306,7 @@ var models = {
     },
     'highlightedPointsPos': {
         'curPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
             'hint': 'DYNAMIC_DRAW',
             'count': 2,
@@ -307,7 +317,7 @@ var models = {
     },
     'highlightedPointsSizes': {
         'pointSize': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'UNSIGNED_BYTE',
             'hint': 'DYNAMIC_DRAW',
             'count': 1,
@@ -318,7 +328,7 @@ var models = {
     },
     'highlightedPointsColors': {
         'pointColor': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'UNSIGNED_BYTE',
             'hint': 'DYNAMIC_DRAW',
             'count': 4,
@@ -329,7 +339,7 @@ var models = {
     },
     'pointSizes': {
         'pointSize':  {
-            'datasource': 'HOST',
+            'datasource': VBODataSources.HOST,
             'type': 'UNSIGNED_BYTE',
             'hint': 'STATIC_DRAW',
             'count': 1,
@@ -340,7 +350,7 @@ var models = {
     },
     'arrowPointSizes': {
         'pointSize':  {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'UNSIGNED_BYTE',
             'hint': 'STATIC_DRAW',
             'count': 1,
@@ -351,7 +361,7 @@ var models = {
     },
     'highlightedArrowPointSizes': {
         'pointSize':  {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'UNSIGNED_BYTE',
             'hint': 'DYNAMIC_DRAW',
             'count': 1,
@@ -362,7 +372,7 @@ var models = {
     },
     'highlightedArrowPointColors': {
         'arrowColor':  {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'UNSIGNED_BYTE',
             'hint': 'DYNAMIC_DRAW',
             'count': 4,
@@ -373,7 +383,7 @@ var models = {
     },
     'edgeColors': {
         'edgeColor':  {
-            'datasource': 'HOST',
+            'datasource': VBODataSources.HOST,
             'type': 'UNSIGNED_BYTE',
             'hint': 'STATIC_DRAW',
             'count': 4,
@@ -384,7 +394,7 @@ var models = {
     },
     'midEdgeColors': {
         'midEdgeColor':  {
-            'datasource': 'HOST',
+            'datasource': VBODataSources.HOST,
             'type': 'UNSIGNED_BYTE',
             'hint': 'STATIC_DRAW',
             'count': 4,
@@ -395,7 +405,7 @@ var models = {
     },
     'midEdgeColorsClient': {
         'midEdgeColor':  {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'UNSIGNED_BYTE',
             'hint': 'STATIC_DRAW',
             'count': 4,
@@ -406,7 +416,7 @@ var models = {
     },
     'arrowColors': {
         'arrowColor':  {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'UNSIGNED_BYTE',
             'hint': 'STATIC_DRAW',
             'count': 4,
@@ -417,7 +427,7 @@ var models = {
     },
     'pointColors': {
         'pointColor':  {
-            'datasource': 'HOST',
+            'datasource': VBODataSources.HOST,
             'type': 'UNSIGNED_BYTE',
             'hint': 'STATIC_DRAW',
             'count': 4,
@@ -428,7 +438,7 @@ var models = {
     },
     'curMidPoints': {
         'curPos': {
-            'datasource': 'DEVICE',
+            'datasource': VBODataSources.DEVICE,
             'type': 'FLOAT',
             'hint': 'DYNAMIC_DRAW',
             'count': 2,
@@ -439,7 +449,7 @@ var models = {
     },
     'curMidPointsClient': {
         'curPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
             'hint': 'DYNAMIC_DRAW',
             'count': 2,
@@ -450,7 +460,7 @@ var models = {
     },
     'fullscreenCoordinates': {
         'vertexPosition': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
             'count': 2,
             'offset': 0,
