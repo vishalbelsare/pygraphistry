@@ -503,19 +503,26 @@
                 <i class="fa fa-play histogramButton expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
-        <div class="col-xs-8 attributeName">
+        <div class="col-xs-9 attributeName">
             {{attribute}}
         </div>
+        <!--
+        <div class="col-xs-1 histogramButton refreshButton refreshHistogramButton-{{modelId}}">
+            <a href="#">
+                <span class="fa-stack">
+                    <i class="fa fa-filter histogramButton refreshHistogramButton refreshHistogramButton-{{modelId}}" id="refreshHistogramButton{{modelId}}" cid="{{id}}"></i>
+                    <i class="fa fa-trash histogramRemoveIcon" style="font-size: 0.9em; position: absolute; margin-left: -0.5em; margin-top: 0.5em; pointer-events: none"></i>
+                </span>
+
+            </a>
+        </div>
+        -->
         <div class="col-xs-1 histogramButton closeButton">
             <a href="#">
                 <i class="fa fa-times histogramButton closeHistogramButton" id="closeHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
-        <div class="col-xs-1 histogramButton refreshButton refreshHistogramButton-{{modelId}}">
-            <a href="#">
-                <i class="fa fa-refresh histogramButton refreshHistogramButton refreshHistogramButton-{{modelId}}" id="refreshHistogramButton{{modelId}}" cid="{{id}}"></i>
-            </a>
-        </div>
+
     </div>
     <div class="vizContainer"></div>
     <div class="divide-line"></div>
