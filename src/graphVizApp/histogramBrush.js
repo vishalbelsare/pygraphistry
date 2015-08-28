@@ -117,7 +117,6 @@ function init(socket, marquee, poi) {
         var firstKeys = _.first(_.keys(data.sparkLines), maxInitialItems);
         _.each(firstKeys, function (key) {
             filteredAttributes[key] = data.sparkLines[key];
-            filteredAttributes[key].firstTime = true;
             filteredAttributes[key].sparkLines = true;
             updateAttribute(null, key, 'sparkLines');
         });
@@ -208,7 +207,8 @@ function updateHistogramData (collection, data, globalStats, Model, empty) {
         var params = {
             data: empty ? {} : val,
             globalStats: globalStats,
-            timeStamp: Date.now()
+            timeStamp: Date.now(),
+            position: length++
         };
 
         if (val.sparkLines !== undefined) {
