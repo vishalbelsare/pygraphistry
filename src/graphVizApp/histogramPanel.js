@@ -180,7 +180,7 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
         refresh: function () {
             var attribute = this.model.get('attribute');
             var id = this.model.cid;
-            $('.refreshHistogramButton-'+id).css('display', 'none');
+            $('.refreshHistogramButton-'+id).css('visibility', 'hidden');
             delete histogramFilters[attribute];
             histogramFilterSubject.onNext(histogramFilters);
             this.render();
@@ -554,10 +554,20 @@ function updateSparkline($el, model, attribute) {
             return 0;
         }
     };
+    var updateCursor = function (d, i) {
+        var filters = histogramFilters[attribute];
+        if (filters && i >= filters.firstBin && i <= filters.lastBin && filters.completed) {
+            return 'pointer';
+        } else {
+            return 'crosshair';
+        }
+    };
+
 
     var columns = selectColumns(svg, stackedBins);
     var columnRects = svg.selectAll('.column-rect');
     columnRects.attr('opacity', updateOpacity);
+    columnRects.style('cursor', updateCursor);
 
     applyAttrColumns(columns.enter().append('g'))
         .attr('attribute', attribute)
@@ -573,6 +583,7 @@ function updateSparkline($el, model, attribute) {
             .attr('height', height)
             .attr('fill', '#556ED4')
             .attr('opacity', updateOpacity)
+            .style('cursor', updateCursor)
             .on('mousedown', handleHistogramDown.bind(null, filterCallback, id, model.attributes.globalStats))
             .on('mouseover', toggleTooltips.bind(null, true, svg))
             .on('mouseout', toggleTooltips.bind(null, false, svg));
@@ -615,6 +626,7 @@ function handleHistogramDown (cb, id, globalStats) {
 
     var startBin = $element.attr('binnumber');
     var attr = $element.attr('attribute');
+    var lastHistogramFilter = histogramFilters[attr];
     updateHistogramFilters(attr, id, globalStats, startBin, startBin);
 
     var positionChanges = Rx.Observable.fromEvent($parent, 'mouseover')
@@ -631,8 +643,18 @@ function handleHistogramDown (cb, id, globalStats) {
 
     Rx.Observable.fromEvent($(document.body), 'mouseup')
         .take(1)
-        .do(function () {
+        .do(function (evt) {
             positionChanges.dispose();
+            var $col = $(evt.target).parent();
+            var binNum = $col.attr('binnumber');
+            histogramFilters[attr].completed = true;
+
+            // Click on selection, so undo all filters.
+            if (lastHistogramFilter && binNum === startBin &&
+                    (lastHistogramFilter.firstBin <= binNum && lastHistogramFilter.lastBin >= binNum)) {
+                delete histogramFilters[attr];
+            }
+
             histogramFilterSubject.onNext(histogramFilters);
             cb();
         })
@@ -945,7 +967,7 @@ function setupSvg (el, margin, width, height) {
             .attr('width', width + margin.left + margin.right)
             .attr('height', height + margin.top + margin.bottom)
         .append('g')
-            .attr('class', 'crosshair-cursor')
+            // .attr('class', 'crosshair-cursor')
             .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 }
 
@@ -984,7 +1006,7 @@ function updateHistogramFilters (attr, id, globalStats, firstBin, lastBin) {
     }
     histogramFilters[attr].type = dataType;
 
-    $('.refreshHistogramButton-'+id).css('display', 'block');
+    $('.refreshHistogramButton-'+id).css('visibility', 'visible');
 }
 
 
