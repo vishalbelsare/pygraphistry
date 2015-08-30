@@ -74,7 +74,7 @@ var programs = {
             'vertex': fs.readFileSync(__dirname + '/../shaders/midedgeculled.vertex.glsl', 'utf8').toString('ascii'),
             'fragment': fs.readFileSync(__dirname + '/../shaders/midedgeculled.fragment.glsl', 'utf8').toString('ascii')
         },
-        'attributes': ['curPos', 'edgeColor', 'startPos', 'endPos'],
+        'attributes': ['curPos', 'edgeColor'],
         'camera': 'mvp',
         'uniforms': ['edgeOpacity']
     },
@@ -197,28 +197,6 @@ var models = {
     },
     'midSpringsPos': {
         'curPos': {
-            'datasource': 'CLIENT',
-            'type': 'FLOAT',
-            'hint': 'DYNAMIC_DRAW',
-            'count': 2,
-            'offset': 0,
-            'stride': 8,
-            'normalize': false
-        }
-    },
-    'midSpringsStarts': {
-        'startPos': {
-            'datasource': 'CLIENT',
-            'type': 'FLOAT',
-            'hint': 'DYNAMIC_DRAW',
-            'count': 2,
-            'offset': 0,
-            'stride': 8,
-            'normalize': false
-        }
-    },
-    'midSpringsEnds': {
-        'endPos': {
             'datasource': 'CLIENT',
             'type': 'FLOAT',
             'hint': 'DYNAMIC_DRAW',
@@ -539,9 +517,7 @@ var items = {
         'bindings': {
             //'curPos': ['curMidPointsClient', 'curPos'],
             'curPos': ['curMidPoints', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor'],
-            'startPos': ['midSpringsStarts', 'startPos'],
-            'endPos': ['midSpringsEnds', 'endPos']
+            'edgeColor': ['edgeColors', 'edgeColor']
         },
         'uniforms': {
             'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
@@ -570,9 +546,7 @@ var items = {
         'bindings': {
             //'curPos': ['curMidPointsClient', 'curPos'],
             'curPos': ['curMidPoints', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor'],
-            'startPos': ['midSpringsStarts', 'startPos'],
-            'endPos': ['midSpringsEnds', 'endPos']
+            'edgeColor': ['edgeColors', 'edgeColor']
         },
         'uniforms': {
             'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
@@ -601,9 +575,7 @@ var items = {
         'bindings': {
             //'curPos': ['curMidPointsClient', 'curPos'],
             'curPos': ['curMidPoints', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor'],
-            'startPos': ['midSpringsStarts', 'startPos'],
-            'endPos': ['midSpringsEnds', 'endPos']
+            'edgeColor': ['edgeColors', 'edgeColor']
         },
         'uniforms': {
             'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
@@ -617,9 +589,7 @@ var items = {
         'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos': ['midSpringsPos', 'curPos'],
-            'edgeColor': ['midEdgeColors', 'midEdgeColor'],
-            'startPos': ['midSpringsStarts', 'startPos'],
-            'endPos': ['midSpringsEnds', 'endPos']
+            'edgeColor': ['midEdgeColors', 'midEdgeColor']
         },
         'uniforms': {
             'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.2] }
@@ -632,9 +602,7 @@ var items = {
         'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos': ['midSpringsPos', 'curPos'],
-            'edgeColor': ['midEdgeColorsClient', 'midEdgeColor'],
-            'startPos': ['midSpringsStarts', 'startPos'],
-            'endPos': ['midSpringsEnds', 'endPos']
+            'edgeColor': ['midEdgeColorsClient', 'midEdgeColor']
         },
         'uniforms': {
             'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
