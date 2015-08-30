@@ -91,6 +91,39 @@ function setupBackgroundColor(renderingScheduler, bgColor) {
     }).subscribe(_.identity, util.makeErrorHandler('background color updates'));
 }
 
+//int * int * Int32Array * Float32Array -> {starts: Float32Array, ends: Float32Array}
+//Scatter: label each midedge with containing edge's start/end pos (used for dynamic culling)
+function expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPoints) {
+
+    var starts = new Float32Array(numEdges * (numRenderedSplits + 1) * 4);
+    var ends = new Float32Array(numEdges * (numRenderedSplits + 1) * 4);
+    var offset = 0;
+
+    for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex++) {
+        var srcPointIdx = logicalEdges[edgeIndex * 2];
+        var dstPointIdx = logicalEdges[(edgeIndex * 2) + 1];
+        var srcPointX = curPoints[(2 * srcPointIdx)];
+        var srcPointY = curPoints[(2 * srcPointIdx)+ 1];
+        var dstPointX = curPoints[(2 * dstPointIdx)];
+        var dstPointY = curPoints[(2 * dstPointIdx) + 1];
+        for (var midPointIdx = 0; midPointIdx < numRenderedSplits + 1; midPointIdx++) {
+            starts[offset + 0] = srcPointX;
+            starts[offset + 1] = srcPointY;
+            starts[offset + 2] = srcPointX;
+            starts[offset + 3] = srcPointY;
+            ends[offset + 0] = dstPointX;
+            ends[offset + 1] = dstPointY;
+            ends[offset + 2] = dstPointX;
+            ends[offset + 3] = dstPointY;
+            offset += 4;
+        }
+    }
+
+    return {starts: starts, ends: ends};
+
+}
+
+// -> {midSpringsPos: Float32Array, midSpringsEndpoints: Float32Array}
 function expandLogicalEdges(bufferSnapshots, numRenderedSplits, edgeHeight) {
     var logicalEdges, curPoints, srcPointIdx, dstPointIdx, srcPointX, srcPointY,
             dstPointX, dstPointY;
@@ -136,6 +169,10 @@ function expandLogicalEdges(bufferSnapshots, numRenderedSplits, edgeHeight) {
         sinArray[midPointIdx] = Math.sin(curTheta);
     }
 
+
+    //for each midedge, start x/y & end x/y
+    var midSpringsEndpoints = expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPoints);
+
     for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
         srcPointIdx = logicalEdges[edgeIndex * 2];
         dstPointIdx = logicalEdges[(edgeIndex * 2) + 1];
@@ -170,7 +207,11 @@ function expandLogicalEdges(bufferSnapshots, numRenderedSplits, edgeHeight) {
         }
         setMidEdge(edgeIndex, numRenderedSplits,  prevPointX, prevPointY, dstPointX, dstPointY);
     }
-    return midSpringsPos;
+    return {
+        midSpringsPos: midSpringsPos,
+        midSpringsStarts: midSpringsEndpoints.starts,
+        midSpringsEnds: midSpringsEndpoints.ends
+    };
 }
 
 
@@ -626,10 +667,15 @@ function renderSlowEffects(renderingScheduler) {
     var start;
     var end1, end2, end3, end4;
 
+    var expanded;
+    if (appSnapshot.vboUpdated) {
+        expanded = expandLogicalEdges(appSnapshot.buffers, numRenderedSplits, edgeHeight);
+    }
+
     if ( clientMidEdgeInterpolation && appSnapshot.vboUpdated) {
         start = Date.now();
 
-        midSpringsPos = expandLogicalEdges(appSnapshot.buffers, numRenderedSplits, edgeHeight);
+        midSpringsPos = expanded.midSpringsPos;
         appSnapshot.buffers.midSpringsPos = midSpringsPos;
 
         // Only setup midedge colors once, or when filtered.
@@ -644,6 +690,8 @@ function renderSlowEffects(renderingScheduler) {
 
         end1 = Date.now();
         renderer.loadBuffers(renderState, {'midSpringsPos': midSpringsPos});
+        renderer.loadBuffers(renderState, {'midSpringsStarts': expanded.midSpringsStarts});
+        renderer.loadBuffers(renderState, {'midSpringsEnds': expanded.midSpringsEnds});
         renderer.setNumElements(renderState, 'edgepicking', midSpringsPos.length / 2);
         renderer.setNumElements(renderState, 'midedgeculled', midSpringsPos.length / 2);
         end2 = Date.now();
@@ -667,8 +715,10 @@ function renderSlowEffects(renderingScheduler) {
 
     } else if (appSnapshot.vboUpdated) {
         start = Date.now();
-        midSpringsPos = expandLogicalMidEdges(appSnapshot.buffers);
+        midSpringsPos = expanded.midSpringsPos;
         renderer.loadBuffers(renderState, {'midSpringsPos': midSpringsPos});
+        renderer.loadBuffers(renderState, {'midSpringsStarts': expanded.midSpringsStarts});
+        renderer.loadBuffers(renderState, {'midSpringsEnds': expanded.midSpringsEnds});
         end1 = Date.now();
         renderer.setNumElements(renderState, 'edgepicking', midSpringsPos.length / 2);
         end2 = Date.now();
