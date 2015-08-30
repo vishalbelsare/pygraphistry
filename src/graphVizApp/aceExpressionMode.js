@@ -1,3 +1,5 @@
+/* global ace */
+
 ace.define('ace/mode/graphistry_highlight_rules',
     ['require', 'exports', 'module', 'ace/lib/oop', 'ace/mode/text_highlight_rules'],
     function (acequire, exports/*, module*/) {
@@ -40,7 +42,7 @@ ace.define('ace/mode/graphistry_highlight_rules',
                     regex : '".*?"'
                 }, {
                     token : 'string',           // ' string
-                    regex : "'.*?'"
+                    regex : '\'.*?\''
                 }, {
                     token : 'constant.numeric', // float
                     regex : '[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b'
@@ -83,9 +85,9 @@ ace.define('ace/mode/graphistry',
         var oop = acequire('../lib/oop');
         var TextMode = acequire('./text').Mode;
         var GraphistryHighlightRules = acequire('./graphistry_highlight_rules').GraphistryHighlightRules;
-        var Range = acequire('../range').Range;
+        //var Range = acequire('../range').Range;
 
-        var Mode = function() {
+        var Mode = function () {
             this.HighlightRules = GraphistryHighlightRules;
         };
         oop.inherits(Mode, TextMode);
