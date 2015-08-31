@@ -145,8 +145,10 @@ function requestWorker(args) {
 
 
 // URL query params whitelist for the worker API
-var validWorkerParams = ['dataset', 'scene', 'device', 'controls',
-    'mapper', 'type', 'vendor', 'usertag'];
+var validWorkerParams = [
+    'dataset', 'scene', 'device', 'controls', 'mapper', 'type', 'vendor',
+    'usertag', 'token'
+];
 
 
 function connect(vizType, urlParams) {

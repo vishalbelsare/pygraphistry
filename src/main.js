@@ -77,7 +77,7 @@ function getUrlParameters() {
                     return [key, null];
             }
 
-            if (!isNaN(parseFloat(val))) {
+            if (Number(val) === val) {
                 return [key, parseFloat(val)];
             }
 
