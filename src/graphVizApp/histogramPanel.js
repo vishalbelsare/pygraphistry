@@ -148,7 +148,7 @@ function initHistograms(globalStats, attributes, filterSubject, attrChangeSubjec
             redraw();
         },
 
-        close: function() {
+        close: function () {
             this.$el.remove();
             histograms.remove(this.model);
         }
@@ -500,7 +500,7 @@ function updateSparkline($el, model, attribute) {
             DIST, (type === 'countBy' ? NUM_COUNTBY_SPARKLINES : 0));
 
     // var barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/numBins) - barPadding;
-    var barWidth = (type === 'countBy') ? xScale.rangeBand() : (width/numBins) - barPadding;
+    var barWidth = (type === 'countBy') ? xScale.rangeBand() : (width / numBins) - barPadding;
 
 
     // TODO: Figure out a cleaner way to pass data between the two events.

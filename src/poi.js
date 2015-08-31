@@ -298,7 +298,7 @@ function invalidateCache (instance) {
  * @param {socket.io socket} socket
  * @returns POIHandler
  */
-function init (socket) {
+function init(socket) {
     debug('initializing label engine');
 
     var instance = {};
