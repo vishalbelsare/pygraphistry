@@ -74,9 +74,9 @@ var programs = {
             'vertex': fs.readFileSync(__dirname + '/../shaders/midedgeculled.vertex.glsl', 'utf8').toString('ascii'),
             'fragment': fs.readFileSync(__dirname + '/../shaders/midedgeculled.fragment.glsl', 'utf8').toString('ascii')
         },
-        'attributes': ['curPos', 'edgeColor'],
+        'attributes': ['curPos', 'edgeColor', 'startPos', 'endPos'],
         'camera': 'mvp',
-        'uniforms': ['edgeOpacity']
+        'uniforms': ['edgeOpacity', 'isOpaque']
     },
     'pointculled': {
         'sources': {
@@ -197,6 +197,28 @@ var models = {
     },
     'midSpringsPos': {
         'curPos': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
+    'midSpringsStarts': {
+        'startPos': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
+    'midSpringsEnds': {
+        'endPos': {
             'datasource': 'CLIENT',
             'type': 'FLOAT',
             'hint': 'DYNAMIC_DRAW',
@@ -517,10 +539,13 @@ var items = {
         'bindings': {
             //'curPos': ['curMidPointsClient', 'curPos'],
             'curPos': ['curMidPoints', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor']
+            'edgeColor': ['edgeColors', 'edgeColor'],
+            'startPos': ['midSpringsStarts', 'startPos'],
+            'endPos': ['midSpringsEnds', 'endPos']
         },
         'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
         },
         'index': ['logicalEdges', 'curIdx'],
         'drawType': 'LINES',
@@ -546,10 +571,13 @@ var items = {
         'bindings': {
             //'curPos': ['curMidPointsClient', 'curPos'],
             'curPos': ['curMidPoints', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor']
+            'edgeColor': ['edgeColors', 'edgeColor'],
+            'startPos': ['midSpringsStarts', 'startPos'],
+            'endPos': ['midSpringsEnds', 'endPos']
         },
         'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
         },
         'index': ['forwardsEdgeStartEndIdxs', 'curIdx'],
         'drawType': 'LINES',
@@ -575,10 +603,13 @@ var items = {
         'bindings': {
             //'curPos': ['curMidPointsClient', 'curPos'],
             'curPos': ['curMidPoints', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor']
+            'edgeColor': ['edgeColors', 'edgeColor'],
+            'startPos': ['midSpringsStarts', 'startPos'],
+            'endPos': ['midSpringsEnds', 'endPos']
         },
         'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
         },
         'index': ['backwardsEdgeStartEndIdxs', 'curIdx'],
         'drawType': 'LINES',
@@ -589,10 +620,13 @@ var items = {
         'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos': ['midSpringsPos', 'curPos'],
-            'edgeColor': ['midEdgeColors', 'midEdgeColor']
+            'edgeColor': ['midEdgeColors', 'midEdgeColor'],
+            'startPos': ['midSpringsStarts', 'startPos'],
+            'endPos': ['midSpringsEnds', 'endPos']
         },
         'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.2] }
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.2] },
+            'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
         },
         'drawType': 'LINES',
         'glOptions': {}
@@ -602,13 +636,19 @@ var items = {
         'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos': ['midSpringsPos', 'curPos'],
-            'edgeColor': ['midEdgeColorsClient', 'midEdgeColor']
+            'edgeColor': ['midEdgeColorsClient', 'midEdgeColor'],
+            'startPos': ['midSpringsStarts', 'startPos'],
+            'endPos': ['midSpringsEnds', 'endPos']
         },
         'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
         },
         'drawType': 'LINES',
-        'glOptions': {}
+        'glOptions': {
+            //prioritize edges more on screen than those more off
+            'depthFunc': [['LESS']]
+        }
     },
     'edgehighlight': {
         'program': 'edgehighlight',
@@ -640,7 +680,8 @@ var items = {
         },
         'drawType': 'TRIANGLES',
         'glOptions': {
-            //'depthFunc': [['LESS']]
+            //prioritize edges more on screen than those more off
+            'depthFunc': [['LESS']]
         }
     },
     'arrowhighlight' : {
@@ -665,11 +706,17 @@ var items = {
         }
     },
     'edgepicking': {
-        'program': 'edges',
+        'program': 'midedgeculled',
         'triggers': ['picking'],
         'bindings': {
             'curPos': ['midSpringsPos', 'curPos'],
+            'startPos': ['midSpringsStarts', 'startPos'],
+            'endPos': ['midSpringsEnds', 'endPos'],
             'edgeColor': ['edgeIndices', 'edgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'isOpaque': { 'uniformType': '1f', 'defaultValues': [1.0] }
         },
         'drawType': 'LINES',
         'glOptions': pickingGlOpts,
