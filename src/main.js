@@ -111,11 +111,6 @@ function displayErrors(socket, $canvas) {
                         document.location.reload();
                     })));
     });
-
-    $('#do-disconnect').click(function (btn) {
-        btn.disabled = true;
-        socket.disconnect();
-    });
 }
 
 //CanvasD * <string> * Observable renderState->

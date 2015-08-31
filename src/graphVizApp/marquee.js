@@ -283,13 +283,17 @@ function createElt() {
 // Callback takes texture as arg.
 function getTextureObservable(renderState, dims) {
     var result = new Rx.ReplaySubject(1);
-    renderer.render(renderState, 'marqueeGetTexture', 'marquee', undefined, dims, function () {
+    renderer.render(renderState, 'marqueeGetTexture', 'marquee', undefined, dims, function (success) {
+        if (success) {
             var texture = renderState.get('pixelreads').pointTexture;
             if (!texture) {
                 console.error('error reading texture');
             }
             result.onNext(texture);
-        });
+        } else {
+            result.onNext(undefined);
+        }
+    });
     return result;
 }
 
@@ -331,7 +335,9 @@ function getGhostImageObservable(renderState, sel, mimeType, flipY) {
             var ctx = imgCanvas.getContext('2d');
 
             var imgData = ctx.createImageData(dims.width, dims.height);
-            imgData.data.set(texture);
+            if (texture) {
+                imgData.data.set(texture);
+            }
             if (flipY) {
                 var h = imgData.height,
                     imgInner = imgData.data,

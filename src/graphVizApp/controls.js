@@ -536,7 +536,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         });
 
     menuToggler(onElt, $('#layoutSettingsButton'),  $('#renderingItems'), 'Turning on/off settings');
-    menuToggler(onElt, $('#filterButton'),  $('#filteringItems'), 'Turning on/off the filter panel');
+    menuToggler(onElt, $('#filterButton'),  $('#filtersPanel'), 'Turning on/off the filter panel');
 
 
     var marquee = setupMarquee(appState, turnOnMarquee);
@@ -546,36 +546,6 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     forkVgraph(socket, urlParams);
     persistButton(appState, socket, urlParams);
     goLiveButton(socket, urlParams);
-
-/*
-
-    //FIXME: some reason this is firing events while supposedly idling
-
-    var timeSlide = new Rx.Subject();
-    $('#timeSlider').rangeSlider({
-        bounds: {min: 0, max: 100},
-        arrows: false,
-        defaultValues: {min: 0, max: 30},
-        valueLabels: 'hide', //show, change, hide
-        //wheelMode: 'zoom'
-    });
-
-    //FIXME: replace $OLD w/ browserfied jquery+jqrangeslider
-    $('#timeSlider').on('valuesChanging', function (e, data) {
-            timeSlide.onNext({min: data.values.min, max: data.values.max});
-            appState.poi.invalidateCache();
-        });
-
-    timeSlide.throttleFirst(3)
-        .do(function (when) {
-            var payload = {
-                play: true, layout: false,
-                timeSubset: {min: when.min, max: when.max}
-            };
-            socket.emit('interaction', payload);
-        })
-        .subscribe(_.identity, util.makeErrorHandler('timeSlide'));
-*/
 
     createControls(
         socket,
