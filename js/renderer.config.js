@@ -605,7 +605,7 @@ var items = {
             'edgeColor': ['midEdgeColorsClient', 'midEdgeColor']
         },
         'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.5] }
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
         },
         'drawType': 'LINES',
         'glOptions': {}
@@ -632,7 +632,7 @@ var items = {
             'pointSize': ['arrowPointSizes', 'pointSize'],
         },
         'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] },
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
             'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] },
             'maxScreenSize': { 'uniformType': '1f', 'defaultValues': [1.0] },

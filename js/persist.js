@@ -147,6 +147,7 @@ module.exports =
                 'curMidPoints',
                 'springsPos',
                 'edgeColors',
+                'midEdgeColors',
                 'forwardsEdgeStartEndIdxs',
                 'backwardsEdgeStartEndIdxs',
                 'pointSizes',

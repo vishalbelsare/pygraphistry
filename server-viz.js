@@ -218,7 +218,7 @@ function init(app, socket) {
 
 
 
-    app.get('/vbo', function(req, res) {
+    app.get('/vbo', function (req, res) {
         logger.info('VBOs: HTTP GET %s', req.originalUrl);
         // perfmonitor here?
         // profiling.debug('VBO request');
@@ -294,7 +294,7 @@ function init(app, socket) {
 
             lastRenderConfig = renderConfig;
         }).fail(function (err) {
-            cb({success: false, error: 'Unknown dataset or scene error'});
+            cb({success: false, error: 'Render config read error'});
             log.makeQErrorHandler(logger, 'sending render_config')(err);
         });
     });
@@ -314,7 +314,7 @@ function init(app, socket) {
 
             lastRenderConfig = renderConfig;
         }).fail(function (err) {
-            cb({success: false, error: 'Unknown dataset or scene error'});
+            cb({success: false, error: 'Render config update error'});
             log.makeQErrorHandler(logger, 'updating render_config')(err);
         });
     });
@@ -367,6 +367,22 @@ function init(app, socket) {
         );
     });
 
+    /** Implements/gets a namespace comprehension, for calculation references and metadata. */
+    socket.on('namespace_metadata', function (_, cb) {
+        logger.trace('Sending Namespace metadata to client');
+        graph.take(1).do(function (graph) {
+            var dataframeColumnsByType = graph.dataframe.getColumnsByType();
+            // TODO add special names that can be used in calculation references.
+            // TODO handle multiple datasources.
+            var metadata = _.extend({}, dataframeColumnsByType);
+            cb({success: true,
+                metadata: metadata});
+        }).fail(function (err) {
+            cb({success: false, error: 'Namespace metadata error'});
+            log.makeQErrorHandler(logger, 'sending namespace metadata');
+        });
+    });
+
     socket.on('filter', function (query, cb) {
         logger.info('Got filter', query);
         graph.take(1).do(function (graph) {
@@ -395,8 +411,8 @@ function init(app, socket) {
                 masks = graph.dataframe.composeMasks(maskList);
             } else {
                 // TODO: Don't get these directly -- add function to get these values
-                var edgeMask = _.range(graph.dataframe.rawdata.numElements.edge);
-                var pointMask = _.range(graph.dataframe.rawdata.numElements.point);
+                var edgeMask = _.range(graph.dataframe.numEdges());
+                var pointMask = _.range(graph.dataframe.numPoints());
                 masks = {
                     edge: edgeMask,
                     point: pointMask
@@ -419,7 +435,7 @@ function init(app, socket) {
                     simulator.layoutAlgorithms
                         .map(function (alg) {
                             return alg.updateDataframeBuffers(simulator);
-                        })
+                        });
                 }).then(function () {
                     simulator.tickBuffers([
                         'curPoints', 'pointSizes', 'pointColors',
