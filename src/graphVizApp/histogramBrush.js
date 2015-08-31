@@ -16,8 +16,8 @@ var util    = require('./util.js');
 
 var DRAG_SAMPLE_INTERVAL = 200;
 var lastSelection;
-var activeAttributes = [];
-var attributeChange = new Rx.Subject();
+var activeDataframeAttributes = [];
+var dataframeAttributeChange = new Rx.Subject();
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -26,19 +26,19 @@ var attributeChange = new Rx.Subject();
 
 function updateAttribute (oldAttribute, newAttribute, type) {
     // Delete old if it exists
-    var indexOfOld = _.pluck(activeAttributes, 'name').indexOf(oldAttribute);
+    var indexOfOld = _.pluck(activeDataframeAttributes, 'name').indexOf(oldAttribute);
     if (indexOfOld > -1) {
-        activeAttributes.splice(indexOfOld, 1);
+        activeDataframeAttributes.splice(indexOfOld, 1);
     }
 
     // Add new one if it exists
     if (newAttribute) {
-        activeAttributes.push({name: newAttribute, type: type});
+        activeDataframeAttributes.push({name: newAttribute, type: type});
     }
 
     // Only resend selections if an add/update
     if (newAttribute) {
-        attributeChange.onNext(newAttribute);
+        dataframeAttributeChange.onNext(newAttribute);
     }
 }
 
@@ -106,7 +106,7 @@ function init(socket, marquee, poi) {
             return (val !== '_title');
         });
 
-        var panel = histogramPanel.initHistograms(data, attributes, filterSubject, attributeChange, updateAttributeSubject);
+        var panel = histogramPanel.initHistograms(data, attributes, filterSubject, dataframeAttributeChange, updateAttributeSubject);
         allHistogramsView = panel.view;
         histograms = panel.collection;
         HistogramModel = panel.model;
@@ -131,8 +131,8 @@ function init(socket, marquee, poi) {
     }).merge(marquee.drags.throttleFirst(DRAG_SAMPLE_INTERVAL).map(function (val) {
             return {type: 'drag', sel: val};
         })
-    ).merge(attributeChange.map(function () {
-            return {type: 'attributeChange', sel: lastSelection};
+    ).merge(dataframeAttributeChange.map(function () {
+            return {type: 'dataframeAttributeChange', sel: lastSelection};
         })
     ).flatMapLatest(function (selContainer) {
         return globalStats.map(function (globalVal) {
@@ -141,8 +141,8 @@ function init(socket, marquee, poi) {
 
     }).flatMapLatest(function (data) {
         var binning = {};
-        var attributeNames = _.pluck(activeAttributes, 'name');
-        _.each(activeAttributes, function (attr) {
+        var attributeNames = _.pluck(activeDataframeAttributes, 'name');
+        _.each(activeDataframeAttributes, function (attr) {
             if (attr.type === 'sparkLines') {
                 binning[attr.name] = data.globalStats.sparkLines[attr.name];
             } else {
@@ -206,7 +206,7 @@ function updateHistogramData (collection, data, globalStats, Model, empty) {
         } else {
             // TODO: Make sure that sparkLines is always passed in, so we don't have
             // to do this check.
-            _.each(activeAttributes, function (attr) {
+            _.each(activeDataframeAttributes, function (attr) {
                 if (attr.name === key) {
                     params.sparkLines = (attr.type === 'sparkLines');
                 }

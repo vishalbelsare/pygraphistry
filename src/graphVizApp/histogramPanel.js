@@ -46,7 +46,7 @@ var colorHighlighted = d3.scale.ordinal()
 
 var margin = {top: 10, right: 70, bottom: 20, left:20};
 var marginSparklines = {top: 15, right: 10, bottom: 15, left: 10};
-var attributeChange;
+var dataframeAttributeChange;
 var updateAttributeSubject;
 var globalStatsCache = {}; // For add histogram. TODO: Get rid of this and use replay
 // TODO: Extract this into the model.
@@ -63,7 +63,7 @@ var histogramFilterSubject;
 function initHistograms(globalStats, attributes, filterSubject, attrChangeSubject, updateAttributeSubj) {
     histogramFilterSubject = filterSubject;
     globalStatsCache = globalStats;
-    attributeChange = attrChangeSubject;
+    dataframeAttributeChange = attrChangeSubject;
     updateAttributeSubject = updateAttributeSubj;
 
     var $histogram = $('#histogram');
