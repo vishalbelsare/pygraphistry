@@ -16,6 +16,7 @@ var util    = require('./util.js');
 //////////////////////////////////////////////////////////////////////////////
 
 var DRAG_SAMPLE_INTERVAL = 200;
+// TODO: Move these out of module global scope.
 var lastSelection;
 var activeDataframeAttributes = [];
 var dataframeAttributeChange = new Rx.Subject();
@@ -97,8 +98,6 @@ function init(socket, marquee, poi) {
         var firstKeys = _.first(_.keys(data.sparkLines), maxInitialItems);
         _.each(firstKeys, function (key) {
             filteredAttributes[key] = data.sparkLines[key];
-            /** firstTime is meant to gate update during create. */
-            filteredAttributes[key].firstTime = true;
             filteredAttributes[key].sparkLines = true;
             updateDataframeAttribute(null, key, 'sparkLines');
         });
@@ -169,20 +168,29 @@ function checkReply(reply) {
 function updateHistogramData(collection, data, globalStats, Model, empty) {
     var histograms = [];
     var length = collection.length;
+
+    // Update models that exist.
+    collection.each(function (histogram) {
+        var attr = histogram.get('attribute');
+        if (data[attr] !== undefined) {
+            var params = {
+                data: empty ? {} : data[attr],
+                timeStamp: Date.now()
+            };
+            histogram.set(params);
+            delete data[attr];
+            histograms.push(histogram);
+        }
+    });
+
     _.each(data, function (val, key) {
         var histogram = new Model();
         var params = {
             data: empty ? {} : val,
             globalStats: globalStats,
             timeStamp: Date.now(),
-            /** firstTime is meant to gate update during create. */
-            firstTime: false
+            position: length++
         };
-
-        if (val.firstTime) {
-            params.firstTime = true;
-            params.position = length++;
-        }
 
         if (val.sparkLines !== undefined) {
             params.sparkLines = val.sparkLines;
@@ -202,6 +210,7 @@ function updateHistogramData(collection, data, globalStats, Model, empty) {
         histograms.push(histogram);
 
     });
+
     collection.set(histograms);
 }
 
