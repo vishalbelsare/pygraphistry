@@ -60,7 +60,7 @@ var histogramFilterSubject;
 // Models
 //////////////////////////////////////////////////////////////////////////////
 
-function initHistograms (globalStats, attributes, filterSubject, attrChangeSubject, updateAttributeSubj) {
+function initHistograms(globalStats, attributes, filterSubject, attrChangeSubject, updateAttributeSubj) {
     histogramFilterSubject = filterSubject;
     globalStatsCache = globalStats;
     attributeChange = attrChangeSubject;
@@ -159,7 +159,7 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
         el: $histogram,
         histogramsContainer: $('#histograms'),
         events: {
-            'click .addHistogramDropdownField': 'addHistogramFromDropdown',
+            'click .addHistogramDropdownField': 'addHistogramFromDropdown'
         },
         initialize: function () {
             var that = this;
@@ -192,12 +192,13 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
             $(this.histogramsContainer).empty();
             $(this.histogramsContainer).append(newDiv);
         },
-        moveHistogram: function (from, to) {
+        moveHistogram: function (fromCID, toCID) {
             // var length = this.collection.length;
-            var srcIdx, dstIdx;
+            var srcIdx = undefined,
+                dstIdx = undefined;
             this.collection.each(function (hist, i) {
-                if (hist.view.cid === from) { srcIdx = i; }
-                if (hist.view.cid === to) { dstIdx = i; }
+                if (hist.view.cid === fromCID) { srcIdx = i; }
+                if (hist.view.cid === toCID) { dstIdx = i; }
             });
 
             if (srcIdx === dstIdx) {
@@ -221,7 +222,6 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
                 } else {
                     if (i === dstIdx) {
                         hist.set('position', i);
-                        return;
                     } else if (i === srcIdx) {
                         hist.set('position', dstIdx + 1);
                     } else {
@@ -290,7 +290,7 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
 }
 
 
-function toggleExpandedD3 (attribute, vizContainer, vizHeight, view) {
+function toggleExpandedD3(attribute, vizContainer, vizHeight, view) {
     d3DataMap[attribute].svg.selectAll('*').remove();
     vizContainer.empty();
     vizContainer.height(String(vizHeight) + 'px');
@@ -306,6 +306,7 @@ function toggleExpandedD3 (attribute, vizContainer, vizHeight, view) {
         updateAttribute(attribute, attribute, 'sparkLines');
     }
 }
+
 
 function updateAttribute(oldAttr, newAttr, type) {
     updateAttributeSubject.onNext({
@@ -786,6 +787,7 @@ function prettyPrint (d, attributeName, noLimit) {
             return String(d);
         }
 
+        // FIXME: unreachable
         // Large Number
         var precision = 4;
         if (Math.abs(d) > 1000000 || (d !== 0 && Math.abs(d) < 0.00001)) {
