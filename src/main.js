@@ -326,6 +326,26 @@ function launch(streamClient, urlParams) {
    createInfoOverlay(app);
 }
 
+function initAnalytics(urlParams) {
+    var datasetName = urlParams.dataset;
+    if (urlParams.static) {
+        datasetName += ' (exported)';
+    }
+    document.title = datasetName + ' -- Graphistry\'s Graph Explorer';
+
+    var ga = window.ga;
+    if (ga) {
+        ga('create', 'UA-59712214-1', 'auto');
+        ga('require', 'linkid', 'linkid.js');
+        ga('send', 'pageview');
+
+        var tag = urlParams.usertag;
+        if (tag !== undefined && tag !== '') {
+            ga('set', 'userId', tag);
+        }
+    }
+}
+
 window.addEventListener('load', function () {
     // Patch console calls to forward errors to central
     var loggedConsoleFunctions = ['error', 'warn'];
@@ -339,12 +359,7 @@ window.addEventListener('load', function () {
         }));
     });
 
-    var tag = urlParams.usertag;
-    if (tag !== undefined && tag !== '') {
-        if (window.ga) {
-            window.ga('set', 'userId', tag);
-        }
-    }
+    initAnalytics(urlParams);
 
     debug('IS_OFFLINE', urlParams.offline);
     debug('IS_STATIC', urlParams.static);
