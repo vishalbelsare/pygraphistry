@@ -176,7 +176,7 @@ function init(socket, marquee, poi) {
 }
 
 
-function checkReply (reply) {
+function checkReply(reply) {
     if (!reply) {
         console.error('Unexpected server error on global aggregate');
     } else if (reply && !reply.success) {
@@ -184,7 +184,7 @@ function checkReply (reply) {
     }
 }
 
-function updateHistogramData (collection, data, globalStats, Model, empty) {
+function updateHistogramData(collection, data, globalStats, Model, empty) {
     var histograms = [];
     var length = collection.length;
     _.each(data, function (val, key) {
@@ -224,7 +224,7 @@ function updateHistogramData (collection, data, globalStats, Model, empty) {
 
 
 //socket * ?? -> Observable ??
-function aggregatePointsAndEdges (socket, params) {
+function aggregatePointsAndEdges(socket, params) {
     return Rx.Observable.zip(
         Rx.Observable.fromCallback(socket.emit, socket)('aggregate', _.extend({}, params, {type: 'point'})),
         Rx.Observable.fromCallback(socket.emit, socket)('aggregate', _.extend({}, params, {type: 'edge'})),
