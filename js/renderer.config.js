@@ -645,7 +645,10 @@ var items = {
             'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
         },
         'drawType': 'LINES',
-        'glOptions': {}
+        'glOptions': {
+            //prioritize edges more on screen than those more off
+            'depthFunc': [['LESS']]
+        }
     },
     'edgehighlight': {
         'program': 'edgehighlight',
@@ -677,7 +680,8 @@ var items = {
         },
         'drawType': 'TRIANGLES',
         'glOptions': {
-            //'depthFunc': [['LESS']]
+            //prioritize edges more on screen than those more off
+            'depthFunc': [['LESS']]
         }
     },
     'arrowhighlight' : {
