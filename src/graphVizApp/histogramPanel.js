@@ -140,7 +140,7 @@ function initHistograms(globalStats, attributes, filterSubject, attrChangeSubjec
         refresh: function () {
             var attribute = this.model.get('attribute');
             var id = this.cid;
-            $('.refreshHistogramButton-'+id).css('display', 'none');
+            $('.refreshHistogramButton-' + id).css('display', 'none');
             var redraw = histogramFilters[attribute].redraw;
             delete histogramFilters[attribute];
             histogramFilterSubject.onNext(histogramFilters);
@@ -505,7 +505,7 @@ function updateSparkline($el, model, attribute) {
 
     // TODO: Figure out a cleaner way to pass data between the two events.
     var mouseClickData = {};
-    var filterCallback = updateSparkline.bind(null, $el, model, attribute);
+    var filterRedrawCallback = updateSparkline.bind(null, $el, model, attribute);
 
     //////////////////////////////////////////////////////////////////////////
     // Create Tooltip Text Elements
@@ -574,7 +574,7 @@ function updateSparkline($el, model, attribute) {
             .attr('height', height)
             .attr('fill', '#556ED4')
             .attr('opacity', updateOpacity)
-            .on('mousedown', handleHistogramDown.bind(null, mouseClickData, filterCallback, id))
+            .on('mousedown', handleHistogramDown.bind(null, mouseClickData, filterRedrawCallback, id))
             .on('mouseover', toggleTooltips.bind(null, true, svg))
             .on('mouseout', toggleTooltips.bind(null, false, svg));
 
@@ -609,14 +609,14 @@ function updateSparkline($el, model, attribute) {
 
 }
 
-function handleHistogramDown (data, cb, id) {
+function handleHistogramDown (data, redrawCallback, id) {
     var col = d3.select(d3.event.target.parentNode);
     var $element = $(col[0][0]);
     var $parent = $element.parent();
 
     var startBin = $element.attr('binnumber');
     var attr = $element.attr('attribute');
-    updateHistogramFilters(attr, id, startBin, startBin, cb);
+    updateHistogramFilters(attr, id, startBin, startBin, redrawCallback);
 
     var positionChanges = Rx.Observable.fromEvent($parent, 'mouseover')
         .map(function (evt) {
@@ -626,8 +626,8 @@ function handleHistogramDown (data, cb, id) {
             var ends = [+startBin, +binNum];
             var firstBin = _.min(ends);
             var lastBin = _.max(ends);
-            updateHistogramFilters(attr, id, firstBin, lastBin, cb);
-            cb();
+            updateHistogramFilters(attr, id, firstBin, lastBin, redrawCallback);
+            redrawCallback();
         }).subscribe(_.identity, util.makeErrorHandler('Histogram Filter Dragging'));
 
     Rx.Observable.fromEvent($(document.body), 'mouseup')
@@ -635,7 +635,7 @@ function handleHistogramDown (data, cb, id) {
         .do(function () {
             positionChanges.dispose();
             histogramFilterSubject.onNext(histogramFilters);
-            cb();
+            redrawCallback();
         })
         .subscribe(_.identity, util.makeErrorHandler('Histogram Filter Mouseup'));
 }
@@ -955,12 +955,12 @@ function setupSvg (el, margin, width, height) {
 
 // TODO: Move active filters out of histogram Brush.
 // Should we still keep details inside for rendering?
-function updateHistogramFilters (attr, id, firstBin, lastBin, redraw) {
+function updateHistogramFilters (attr, id, firstBin, lastBin, redrawCallback) {
 
     histogramFilters[attr] = {
         firstBin: firstBin,
         lastBin: lastBin,
-        redraw: redraw
+        redraw: redrawCallback
     };
 
     var stats = globalStatsCache.sparkLines[attr];

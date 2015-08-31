@@ -7,6 +7,7 @@ var Rx      = require('rx');
 var _       = require('underscore');
 
 var histogramPanel = require('./histogramPanel');
+var filterPanel = require('./filterPanel');
 var util    = require('./util.js');
 
 
@@ -24,60 +25,36 @@ var dataframeAttributeChange = new Rx.Subject();
 // Rx/State
 //////////////////////////////////////////////////////////////////////////////
 
-function updateAttribute (oldAttribute, newAttribute, type) {
+function updateDataframeAttribute (oldAttributeName, newAttributeName, type) {
     // Delete old if it exists
-    var indexOfOld = _.pluck(activeDataframeAttributes, 'name').indexOf(oldAttribute);
+    var indexOfOld = _.pluck(activeDataframeAttributes, 'name').indexOf(oldAttributeName);
     if (indexOfOld > -1) {
         activeDataframeAttributes.splice(indexOfOld, 1);
     }
 
     // Add new one if it exists
-    if (newAttribute) {
-        activeDataframeAttributes.push({name: newAttribute, type: type});
+    if (newAttributeName) {
+        activeDataframeAttributes.push({name: newAttributeName, type: type});
     }
 
     // Only resend selections if an add/update
-    if (newAttribute) {
-        dataframeAttributeChange.onNext(newAttribute);
+    if (newAttributeName) {
+        dataframeAttributeChange.onNext(newAttributeName);
     }
 }
 
-
-// TODO: Pull this out of histogram tool, since it's a filtering call.
-function setupSendHistogramFilters (subject, socket, poi) {
-    subject.do(function (filters) {
-
-        Rx.Observable.fromCallback(socket.emit, socket)('filter', filters)
-            .do(function (res) {
-                // Invalidate cache now that a filter has executed and possibly changed indices.
-                if (!res.success && res.error === 'empty selection') {
-                    $('#histogramErrors').html('<p style="color: red; text-align: center">Empty Selection.</p>');
-                    return;
-                }
-
-                $('#histogramErrors').empty();
-                poi.emptyCache();
-            })
-            .subscribe(_.identity, util.makeErrorHandler('Emit Filter'));
-
-    })
-    .subscribe(_.identity, util.makeErrorHandler('Read Filters'));
-}
 
 function init(socket, marquee, poi) {
     debug('Initializing histogram brush');
 
     // Grab global stats at initialization
     var globalStats = new Rx.ReplaySubject(1);
-    var filterSubject = new Rx.ReplaySubject(1);
-    var updateAttributeSubject = new Rx.Subject();
+    var updateDataframeAttributeSubject = new Rx.Subject();
 
     //////////////////////////////////////////////////////////////////////////
     // Backbone views and models
     //////////////////////////////////////////////////////////////////////////
-    // TODO: Get declaration and initialization closer.
-    var allHistogramsView;
-    var histograms;
+    // We only fill this in once Rx sets up its histogram chain; from histogramPanel.initHistograms.
     var HistogramModel;
 
     //////////////////////////////////////////////////////////////////////////
@@ -85,11 +62,14 @@ function init(socket, marquee, poi) {
     //////////////////////////////////////////////////////////////////////////
 
     // Setup filtering
-    setupSendHistogramFilters(filterSubject, socket, poi);
+    var filtersPanel = filterPanel.init(),
+        allFiltersView = filtersPanel.view,
+        filterSet = filtersPanel.collection,
+        FilterModel = filtersPanel.model;
 
     // Setup update attribute subject that histogram panel can write to
-    updateAttributeSubject.do(function (data){
-        updateAttribute(data.oldAttr, data.newAttr, data.type);
+    updateDataframeAttributeSubject.do(function (data) {
+        updateDataframeAttribute(data.oldAttr, data.newAttr, data.type);
     }).subscribe(_.identity, util.makeErrorHandler('Update Attribute'));
 
     // Setup initial stream of global statistics.
@@ -106,19 +86,21 @@ function init(socket, marquee, poi) {
             return (val !== '_title');
         });
 
-        var panel = histogramPanel.initHistograms(data, attributes, filterSubject, dataframeAttributeChange, updateAttributeSubject);
-        allHistogramsView = panel.view;
-        histograms = panel.collection;
-        HistogramModel = panel.model;
+        var primaryPanel = histogramPanel.initHistograms(
+                data, attributes, filterSet, dataframeAttributeChange, updateDataframeAttributeSubject),
+            histograms = primaryPanel.collection;
+        HistogramModel = primaryPanel.model;
 
+        // On auto-populate, at most 5 histograms, or however many * 85 + 110 px = window height.
         var maxInitialItems = Math.min(Math.round((window.innerHeight - 110) / 85), 5);
         var filteredAttributes = {};
         var firstKeys = _.first(_.keys(data.sparkLines), maxInitialItems);
         _.each(firstKeys, function (key) {
             filteredAttributes[key] = data.sparkLines[key];
+            /** firstTime is meant to gate update during create. */
             filteredAttributes[key].firstTime = true;
             filteredAttributes[key].sparkLines = true;
-            updateAttribute(null, key, 'sparkLines');
+            updateDataframeAttribute(null, key, 'sparkLines');
         });
         updateHistogramData(histograms, filteredAttributes, data, HistogramModel, true);
 
@@ -193,6 +175,7 @@ function updateHistogramData(collection, data, globalStats, Model, empty) {
             data: empty ? {} : val,
             globalStats: globalStats,
             timeStamp: Date.now(),
+            /** firstTime is meant to gate update during create. */
             firstTime: false
         };
 
