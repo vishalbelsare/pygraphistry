@@ -76,7 +76,7 @@ var programs = {
         },
         'attributes': ['curPos', 'edgeColor', 'startPos', 'endPos'],
         'camera': 'mvp',
-        'uniforms': ['edgeOpacity']
+        'uniforms': ['edgeOpacity', 'isOpaque']
     },
     'pointculled': {
         'sources': {
@@ -544,7 +544,8 @@ var items = {
             'endPos': ['midSpringsEnds', 'endPos']
         },
         'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
         },
         'index': ['logicalEdges', 'curIdx'],
         'drawType': 'LINES',
@@ -575,7 +576,8 @@ var items = {
             'endPos': ['midSpringsEnds', 'endPos']
         },
         'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
         },
         'index': ['forwardsEdgeStartEndIdxs', 'curIdx'],
         'drawType': 'LINES',
@@ -606,7 +608,8 @@ var items = {
             'endPos': ['midSpringsEnds', 'endPos']
         },
         'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
         },
         'index': ['backwardsEdgeStartEndIdxs', 'curIdx'],
         'drawType': 'LINES',
@@ -622,7 +625,8 @@ var items = {
             'endPos': ['midSpringsEnds', 'endPos']
         },
         'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.2] }
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.2] },
+            'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
         },
         'drawType': 'LINES',
         'glOptions': {}
@@ -637,7 +641,8 @@ var items = {
             'endPos': ['midSpringsEnds', 'endPos']
         },
         'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
         },
         'drawType': 'LINES',
         'glOptions': {}
@@ -697,11 +702,17 @@ var items = {
         }
     },
     'edgepicking': {
-        'program': 'edges',
+        'program': 'midedgeculled',
         'triggers': ['picking'],
         'bindings': {
             'curPos': ['midSpringsPos', 'curPos'],
+            'startPos': ['midSpringsStarts', 'startPos'],
+            'endPos': ['midSpringsEnds', 'endPos'],
             'edgeColor': ['edgeIndices', 'edgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'isOpaque': { 'uniformType': '1f', 'defaultValues': [1.0] }
         },
         'drawType': 'LINES',
         'glOptions': pickingGlOpts,
