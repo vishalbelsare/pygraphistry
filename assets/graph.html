@@ -48,45 +48,6 @@
         var templatePaths = {
             API_ROOT: window.location.protocol + "//" + window.location.host + "/"
         };
-
-        // Track JavaScript errors
-        window.addEventListener('error', function(e) {
-            var content = {
-                message: e.message,
-                filename: e.filename,
-                lineno: e.lineno
-            };
-
-            if (e.error) { // Modern browsers report the stack trace
-                content.stack = e.error.stack;
-            }
-
-            var msg = {
-                type: 'JSError',
-                content: content
-            };
-
-            $.post(templatePaths.API_ROOT + 'error', JSON.stringify(msg));
-        });
-
-        // Track AJAX errors (jQuery API)
-        $(document).ajaxError(function(e, request, settings, thrownError) {
-            // Skip ajaxError caused by posting errors to /error
-            var errorPage = '/error'
-            if (settings.url.indexOf(errorPage, settings.url.length - errorPage.length) !== -1)
-                return;
-
-            var msg = {
-                type: 'AjaxError',
-                content: {
-                    url: settings.url,
-                    result: e.result,
-                    error: thrownError
-                }
-            };
-
-            $.post(templatePaths.API_ROOT + 'error', JSON.stringify(msg));
-        });
     </script>
 
     <!-- GA init is done in StreamGL -->

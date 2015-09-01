@@ -1169,10 +1169,13 @@ function selectNodes(simulator, selection) {
 
 // Return the set of edge indices which are connected (either as src or dst)
 // to nodes in nodeIndices
+// Returns SORTED EDGE INDICES
+// TODO: Move into dataframe, since it has the crazy sorted/unsorted knowledge?
 function connectedEdges(simulator, nodeIndices) {
 
     var forwardsBuffers = simulator.dataframe.getHostBuffer('forwardsEdges');
     var backwardsBuffers = simulator.dataframe.getHostBuffer('backwardsEdges');
+    var forwardsPermutation = forwardsBuffers.edgePermutation;
 
     // var forwardsBuffers = simulator.bufferHostCopies.forwardsEdges;
     // var backwardsBuffers = simulator.bufferHostCopies.backwardsEdges;
@@ -1188,7 +1191,7 @@ function connectedEdges(simulator, nodeIndices) {
             var permutation = buffers.edgePermutationInverseTyped;
 
             for (var i = 0; i < numEdges; i++) {
-                var edge = permutation[firstEdgeId + i];
+                var edge = forwardsPermutation[permutation[firstEdgeId + i]];
                 if (!edgeHash[edge]) {
                     setOfEdges.push(edge);
                     edgeHash[edge] = true;
