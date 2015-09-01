@@ -225,14 +225,16 @@ module.exports = {
 
         contentKey = urlParams.contentKey;
 
-        var offsetsSource = Rx.Observable.of(getLabelOffsets('point')).zip(
-            getLabelOffsets('edge')
+        var offsetsSource = Rx.Observable.combineLatest(
+            getLabelOffsets('point'),
+            getLabelOffsets('edge'),
+            function (pointsOffsets, edgesOffsets) {
+                // Ensure that points and edges are accessed at the same enum dim value (1 and 2):
+                return [undefined, pointsOffsets, edgesOffsets];
+            }
         );
         var offsetsCombined = new Rx.ReplaySubject(1);
         offsetsSource.subscribe(offsetsCombined);
-        offsetsCombined.subscribe(_.identity, function (err) {
-            console.error('Errors combining offsets buffers (1)', err);
-        });
 
         return Rx.Observable.return({
             socket: {
@@ -244,14 +246,11 @@ module.exports = {
                         var dim = data.dim,
                             indices = data.indices;
                         offsetsCombined.flatMap(function (offsetsArray) {
-                            if (typeof offsetsArray !== Uint32Array) {
-                                return undefined;
-                            }
-                            return getLabel(offsetsArray[dim - 1], dim, indices[0]);
+                            return getLabel(offsetsArray[dim], dim, indices[0]);
                         }).do(function (responseData) {
                             cb(undefined, responseData);
                         }).subscribe(_.identity, function (err) {
-                            console.error('Error fetching VBO', err, (err || {}).stack);
+                            console.error('Error fetching labels', data, err, (err || {}).stack);
                             cb(err, data);
                         });
                     } else if (eventName === 'interaction') {
