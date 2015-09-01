@@ -70,11 +70,11 @@ function logClientError(req, res) {
     var writeError = function (msg) {
         //logger.debug('Logging client error', msg);
         if(config.ENVIRONMENT === 'local') {
-            //TODO: determine which fields from req object you want to log
-            if (msg.content) {
-                logger.error({clientID: req.ip, clientError: msg.content}, 'Client Error');
+            msg.ip = req.ip;
+            if (msg.err) {
+                logger.error(msg.err, 'Client Error');
             } else {
-                logger.error({clientID: req.ip, clientError: JSON.stringify(msg, null, 2)}, 'Client Error');
+                logger.error(msg, 'Client Error');
             }
             /* jshint -W064 */
             return Q();
