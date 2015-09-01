@@ -89,7 +89,11 @@ function makeFetcher() {
     };
 }
 
-
+/**
+ * Observable stream for one AJAX GET for a label offsets buffer (pure binary, UInt32Array).
+ * @param {String} bufferName
+ * @returns {Rx.ReplaySubject}
+ */
 function fetchOffsetBuffer(bufferName) {
     debug('fetching', bufferName);
 
@@ -123,7 +127,10 @@ function fetchOffsetBuffer(bufferName) {
     return result;
 }
 
-
+/**
+ * @param {String} type 'point' or 'edge'
+ * @returns {Rx.ReplaySubject}
+ */
 function getLabelOffsets(type) {
     var bufferName = type + 'Labels.offsets';
     return fetchOffsetBuffer(bufferName).do(function (labelContentOffsets) {
