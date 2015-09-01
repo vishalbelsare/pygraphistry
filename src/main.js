@@ -140,7 +140,8 @@ function init(streamClient, canvasElement, vizType) {
      **/
 
     streamClient.connect(vizType, urlParams)
-        .flatMap(/** @param {RenderInfo} nfo */ function (nfo) {
+        .flatMap(function (nfo) {
+            /** @param {RenderInfo} nfo */
             var socket  = nfo.socket;
             displayErrors(socket, $(canvasElement));
 
