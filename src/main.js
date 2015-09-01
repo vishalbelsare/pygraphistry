@@ -349,6 +349,7 @@ function setupErrorReporters(urlParams) {
             time: (new Date()).toUTCString(),
             useragent: window.navigator.userAgent,
             params: urlParams,
+            origin: document.location.origin
         };
     }
     var reportURL = window.templatePaths.API_ROOT + 'error';
