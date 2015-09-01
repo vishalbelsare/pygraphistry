@@ -77,7 +77,7 @@ function getUrlParameters() {
                     return [key, null];
             }
 
-            if (Number(val) === val) {
+            if (!isNaN(val)) {
                 return [key, Number(val)];
             }
 
@@ -342,18 +342,70 @@ function initAnalytics(urlParams) {
     }
 }
 
-window.addEventListener('load', function () {
+function setupErrorReporters(urlParams) {
+    function makeMsg() {
+        return {
+            module: 'streamgl',
+            time: (new Date()).toUTCString(),
+            useragent: window.navigator.userAgent,
+            params: urlParams,
+        };
+    }
+    var reportURL = window.templatePaths.API_ROOT + 'error';
+
+    // Track JavaScript errors
+    window.addEventListener('error', function(e) {
+        var content = {
+            message: e.message,
+            filename: e.filename,
+            lineno: e.lineno
+        };
+
+        if (e.error) { // Modern browsers report the stack trace
+            content.stack = e.error.stack;
+        }
+
+        var msg = makeMsg();
+        msg.type = 'JSError';
+        msg.err = content;
+
+        $.post(reportURL, JSON.stringify(msg));
+    });
+
+    // Track AJAX errors (jQuery API)
+    $(document).ajaxError(function(e, request, settings, thrownError) {
+        // Skip ajaxError caused by posting errors to /error
+        var errorPage = '/error';
+        if (settings.url.indexOf(errorPage, settings.url.length - errorPage.length) !== -1) {
+            return;
+        }
+
+        var msg = makeMsg();
+        msg.type = 'AjaxError';
+        msg.err = {
+            url: settings.url,
+            result: e.result,
+            message: thrownError
+        };
+
+        $.post(reportURL, JSON.stringify(msg));
+    });
+
     // Patch console calls to forward errors to central
     var loggedConsoleFunctions = ['error', 'warn'];
     _.each(loggedConsoleFunctions, function (fun) {
         monkey.patch(console, fun, monkey.after(function () {
-            var msg = {
-                type: 'console.' + fun,
-                content: nodeutil.format.apply(this, arguments)
-            };
-            $.post(window.location.origin + '/error', JSON.stringify(msg));
+            var msg = makeMsg();
+            msg.type = 'console.' + fun;
+            msg.err = {message: nodeutil.format.apply(this, arguments)};
+
+            $.post(reportURL, JSON.stringify(msg));
         }));
     });
+}
+
+window.addEventListener('load', function () {
+    setupErrorReporters(urlParams);
 
     initAnalytics(urlParams);
 
