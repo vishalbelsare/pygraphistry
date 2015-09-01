@@ -415,6 +415,12 @@ function expandLogicalMidEdges(bufferSnapshots) {
 
     var numVertices = (2 * numEdges) * (numSplits + 1);
 
+
+    //for each midedge, start x/y & end x/y
+    var midSpringsEndpoints = expandMidEdgeEndpoints(numEdges, numSplits, logicalEdges, curPoints);
+
+
+
     if (!bufferSnapshots.midSpringsPos) {
         bufferSnapshots.midSpringsPos = new Float32Array(numVertices * 2);
     }
@@ -459,7 +465,11 @@ function expandLogicalMidEdges(bufferSnapshots) {
         midSpringsPos[((edgeIndex + 1) * midEdgeStride) - 1] =  dstPointY;
     }
 
-    return midSpringsPos;
+    return {
+        midSpringsPos: midSpringsPos,
+        midSpringsStarts: midSpringsEndpoints.starts,
+        midSpringsEnds: midSpringsEndpoints.ends
+    }
 }
 
 /* Populate arrow buffers. The first argument is either an array of indices,
@@ -668,13 +678,11 @@ function renderSlowEffects(renderingScheduler) {
     var end1, end2, end3, end4;
 
     var expanded;
-    if (appSnapshot.vboUpdated) {
-        expanded = expandLogicalEdges(appSnapshot.buffers, numRenderedSplits, edgeHeight);
-    }
 
     if ( clientMidEdgeInterpolation && appSnapshot.vboUpdated) {
         start = Date.now();
 
+        expanded = expandLogicalEdges(appSnapshot.buffers, numRenderedSplits, edgeHeight);
         midSpringsPos = expanded.midSpringsPos;
         appSnapshot.buffers.midSpringsPos = midSpringsPos;
 
@@ -715,7 +723,10 @@ function renderSlowEffects(renderingScheduler) {
 
     } else if (appSnapshot.vboUpdated) {
         start = Date.now();
+
+        expanded = expandLogicalMidEdges(appSnapshot.buffers);
         midSpringsPos = expanded.midSpringsPos;
+
         renderer.loadBuffers(renderState, {'midSpringsPos': midSpringsPos});
         renderer.loadBuffers(renderState, {'midSpringsStarts': expanded.midSpringsStarts});
         renderer.loadBuffers(renderState, {'midSpringsEnds': expanded.midSpringsEnds});
