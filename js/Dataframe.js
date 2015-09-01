@@ -880,6 +880,11 @@ Dataframe.prototype.getBuffer = function (name, type) {
  */
 Dataframe.prototype.getRowAt = function (index, type, attributes) {
 
+    if (index && type === 'edge') {
+        var forwardsEdgePermutationInverse = this.getHostBuffer('forwardsEdges').edgePermutationInverseTyped;
+        index = forwardsEdgePermutationInverse[index];
+    }
+
     var lastMask = this.lastMasks[type];
     if (lastMask.length > 0) {
         index = lastMask[index];
@@ -890,6 +895,7 @@ Dataframe.prototype.getRowAt = function (index, type, attributes) {
     _.each(_.keys(attributes), function (key) {
         row[key] = attributes[key].values[index];
     });
+    row._index = index;
     return row;
 };
 
@@ -921,6 +927,8 @@ Dataframe.prototype.getRows = function (indices, type) {
 
 
 /** Returns a descriptor of a set of rows.
+ * This works relative to UNSORTED edge orders, since it's meant
+ * for serializing raw data.
  * @param {Array.<number>} indices - which elements to extract.
  * @param {string} type - any of [TYPES]{@link TYPES}.
  * @returns {{header, values}}
