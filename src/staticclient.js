@@ -218,17 +218,13 @@ module.exports = {
 
         contentKey = urlParams.contentKey;
 
+        var offsetsSource = Rx.Observable.of(getLabelOffsets('point')).zip(
+            getLabelOffsets('edge')
+        );
         var offsetsCombined = new Rx.ReplaySubject(1);
-        var offsetsObservables = _.map(['point', 'edge'], function (type) {
-            return getLabelOffsets(type).subscribe(_.identity, function (err) {
-                console.error('Error retrieving offsets buffer', type, err);
-            });
-        });
-        Rx.Observable.of(offsetsObservables[0]).zip(
-            offsetsObservables[1],
-            function (pointOffsets, edgeOffsets) { return {point: pointOffsets, edge: edgeOffsets}; }
-        ).subscribe(offsetsCombined, function (err) {
-            console.error('Errors combining offsets buffers', err);
+        offsetsSource.subscribe(offsetsCombined);
+        offsetsCombined.subscribe(_.identity, function (err) {
+            console.error('Errors combining offsets buffers (1)', err);
         });
 
         return Rx.Observable.return({
@@ -240,8 +236,11 @@ module.exports = {
                     if (eventName === 'get_labels') {
                         var dim = data.dim,
                             indices = data.indices;
-                        offsetsCombined.flatMap(function (offsetsHash) {
-                            return getLabel(offsetsHash[dim], dim, indices[0]);
+                        offsetsCombined.flatMap(function (offsetsArray) {
+                            if (typeof offsetsArray !== Uint32Array) {
+                                return undefined;
+                            }
+                            return getLabel(offsetsArray[dim - 1], dim, indices[0]);
                         }).do(function (responseData) {
                             cb(undefined, responseData);
                         }).subscribe(_.identity, function (err) {
