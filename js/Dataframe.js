@@ -858,7 +858,7 @@ Dataframe.prototype.getBuffer = function (name, type) {
         var dataType = this.getDataType(name, type);
 
         if (dataType !== 'number') {
-            throw "Attempting to get buffer that is non-numberic";
+            throw "Attempting to get buffer that is non-numeric";
         }
 
         var typedData = new Float32Array(data);
@@ -903,6 +903,16 @@ Dataframe.prototype.getRows = function (indices, type) {
         that = this;
 
     indices = indices || range(that.data.numElements[type]);
+    // Convert from sorted into unsorted edge indices
+    if (indices && type === 'edge') {
+        var newIndices = [];
+        var forwardsEdgePermutationInverse = this.getHostBuffer('forwardsEdges').edgePermutationInverseTyped;
+        _.each(indices, function (v) {
+            newIndices.push(forwardsEdgePermutationInverse[v]);
+        });
+        indices = newIndices;
+    }
+
 
     return _.map(indices, function (index) {
         return that.getRowAt(index, type, attributes);
@@ -1051,6 +1061,15 @@ Dataframe.prototype.serializeColumns = function (target, options) {
 Dataframe.prototype.aggregate = function (simulator, indices, attributes, binning, mode, type) {
 
     var that = this;
+    // convert indices for edges from sorted to unsorted;
+    if (type === 'edge') {
+        var unsortedIndices = [];
+        var forwardsEdgePermutationInverse = this.getHostBuffer('forwardsEdges').edgePermutationInverseTyped;
+        _.each(indices, function (v) {
+            unsortedIndices.push(forwardsEdgePermutationInverse[v]);
+        });
+        indices = unsortedIndices;
+    }
 
     var process = function (attribute, indices) {
 
