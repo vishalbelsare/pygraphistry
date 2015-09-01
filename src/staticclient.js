@@ -26,6 +26,7 @@ var BASE_URL = BUCKET_URL + '/Static/';
 // TODO: de-globalize:
 var contentKey;
 var labelsByType = {point: {}, edge: {}};
+var labelsOffsetsByType = {};
 
 
 // ======
@@ -43,7 +44,7 @@ function getStaticContentURL(contentKey, contentPath) {
 
 // string * {socketHost: string, socketPort: int} -> (... -> ...)
 // where fragment == 'vbo?buffer' or 'texture?name'
-function makeFetcher() {
+function makeFetcher () {
 // string * {<name> -> int} * name -> Subject ArrayBuffer
     return function (bufferByteLengths, bufferName) {
 
@@ -90,11 +91,11 @@ function makeFetcher() {
 }
 
 
-function fetchOffsetBuffer(bufferName) {
+function fetchOffsetBuffer (bufferName) {
     debug('fetching', bufferName);
 
     // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
-    var result = new Rx.ReplaySubject(1),
+    var result = new Rx.Subject(),
         oReq = new XMLHttpRequest(),
         assetURL = getStaticContentURL(contentKey, bufferName),
         now = Date.now();
@@ -125,9 +126,9 @@ function fetchOffsetBuffer(bufferName) {
 
 
 function getLabelOffsets(type) {
-    var bufferName = type + 'Labels.offsets';
-    return fetchOffsetBuffer(bufferName).do(function (labelContentOffsets) {
+    fetchOffsetBuffer(type + 'Labels.offsets').forEach(function (labelContentOffsets) {
         debug('Got offsets for', type, labelContentOffsets);
+        labelsOffsetsByType[type] = labelContentOffsets;
     });
 }
 
@@ -162,7 +163,7 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
             try {
                 var responseData = JSON.parse(oReq.responseText),
                     responseTabular = _.pairs(_.omit(responseData, '_title'));
-                debug('response text', responseData);
+                debug('restxt', responseData);
                 labelsByType[type][index] = responseData;
                 res.onNext([{
                     formatted: false,
@@ -183,7 +184,8 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
 }
 
 
-function getRangeForLabel(offsetsForType, type, index) {
+function getRangeForLabel(type, index) {
+    var offsetsForType = labelsOffsetsByType[type];
     if (!offsetsForType) {
         throw new Error('Label offsets not found for type', type);
     }
@@ -196,7 +198,7 @@ function getRangeForLabel(offsetsForType, type, index) {
 }
 
 
-function getLabel(offsetsForType, type, index) {
+function getLabel(type, index) {
     var translatedType = type === 1 ? 'point' : (type === 2 ? 'edge' : type),
         labelCache = labelsByType[translatedType];
     if (labelCache.hasOwnProperty(index)) {
@@ -204,7 +206,7 @@ function getLabel(offsetsForType, type, index) {
         res.onNext(labelCache[index]);
         return res;
     }
-    var range = getRangeForLabel(offsetsForType, translatedType, index);
+    var range = getRangeForLabel(translatedType, index);
     return getLabelViaRange(translatedType, index, range[0], range[1]);
 }
 
@@ -218,19 +220,6 @@ module.exports = {
 
         contentKey = urlParams.contentKey;
 
-        var offsetsCombined = new Rx.ReplaySubject(1);
-        var offsetsObservables = _.map(['point', 'edge'], function (type) {
-            return getLabelOffsets(type).subscribe(_.identity, function (err) {
-                console.error('Error retrieving offsets buffer', type, err);
-            });
-        });
-        Rx.Observable.of(offsetsObservables[0]).zip(
-            offsetsObservables[1],
-            function (pointOffsets, edgeOffsets) { return {point: pointOffsets, edge: edgeOffsets}; }
-        ).subscribe(offsetsCombined, function (err) {
-            console.error('Errors combining offsets buffers', err);
-        });
-
         return Rx.Observable.return({
             socket: {
                 on: function (eventName) {
@@ -240,14 +229,17 @@ module.exports = {
                     if (eventName === 'get_labels') {
                         var dim = data.dim,
                             indices = data.indices;
-                        offsetsCombined.flatMap(function (offsetsHash) {
-                            return getLabel(offsetsHash[dim], dim, indices[0]);
-                        }).do(function (responseData) {
-                            cb(undefined, responseData);
-                        }).subscribe(_.identity, function (err) {
-                            console.error('Error fetching VBO', err, (err || {}).stack);
-                            cb(err, data);
-                        });
+                        try {
+                            getLabel(dim, indices[0])
+                                .do(function (responseData) {
+                                    cb(undefined, responseData);
+                                }).subscribe(_.identity, function (err) {
+                                    console.error('fetch vbo exn', err, (err||{}).stack);
+                                });
+
+                        } catch (e) {
+                            cb(e, data);
+                        }
                     } else if (eventName === 'interaction') {
                         // Ignored for now, cuts back on logs.
                         return undefined;
@@ -286,6 +278,9 @@ module.exports = {
         var vboUpdates = new Rx.ReplaySubject(1);
         vboUpdates.onNext('init');
 
+        getLabelOffsets('point');
+        getLabelOffsets('edge');
+
         $.ajaxAsObservable({url: getStaticContentURL(contentKey, 'metadata.json'), dataType: 'json'})
             .pluck('data')
             .do(function (data) {
@@ -314,8 +309,7 @@ module.exports = {
                         .concat(bufferFileNames.map(fetchBuffer)))
                     .take(1);
                 bufferVBOs
-                    .subscribe(
-                        function (vbos) {
+                    .subscribe(function (vbos) {
                             vbos.shift();
                             var bindings = _.object(_.zip(changedBufferNames, vbos));
                             try {
