@@ -956,6 +956,8 @@ Dataframe.prototype.getDataType = function (column, type) {
     return this.rawdata.attributes[type][column].type;
 };
 
+// TODO: Have this return edge attributes in sorted order, unless
+// explicitly requested to be unsorted (for internal perf reasons)
 Dataframe.prototype.getColumn = function (column, type) {
 
     // A filter has been done, and we need to apply the
