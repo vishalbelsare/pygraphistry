@@ -56,7 +56,8 @@ function init(socket, marquee, poi) {
     // Backbone views and models
     //////////////////////////////////////////////////////////////////////////
     // We only fill this in once Rx sets up its histogram chain; from histogramPanel.initHistograms.
-    var HistogramModel;
+    var HistogramModel,
+        histograms;
 
     //////////////////////////////////////////////////////////////////////////
     // Setup Streams
@@ -88,8 +89,8 @@ function init(socket, marquee, poi) {
         });
 
         var primaryPanel = histogramPanel.initHistograms(
-                data, attributes, filterSet, dataframeAttributeChange, updateDataframeAttributeSubject),
-            histograms = primaryPanel.collection;
+                data, attributes, filterSet, dataframeAttributeChange, updateDataframeAttributeSubject);
+        histograms = primaryPanel.collection;
         HistogramModel = primaryPanel.model;
 
         // On auto-populate, at most 5 histograms, or however many * 85 + 110 px = window height.
