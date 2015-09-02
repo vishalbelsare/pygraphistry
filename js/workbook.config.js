@@ -8,5 +8,5 @@ module.exports = {
 
     },
     /** Describes URL parameters that can persist across save/reload instead of just override per view: */
-    URLParamsThatPersist: ['dataset', 'datasetname', 'layout', 'controls']
+    URLParamsThatPersist: ['dataset', 'datasetname', 'layout', 'scene', 'controls', 'mapper', 'device']
 };
