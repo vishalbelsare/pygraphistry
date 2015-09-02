@@ -261,8 +261,14 @@ Dataframe.prototype.getEdgeAttributeMask = function (dataframeAttribute, params)
 };
 
 
-Dataframe.prototype.getPointAttributeMask = function (attribute, params) {
-    var attr = this.rawdata.attributes.point[attribute];
+/**
+ * Returns sorted point mask
+ * @param {String} dataframeAttribute
+ * @param {ClientQuery} params
+ * @returns {Mask}
+ */
+Dataframe.prototype.getPointAttributeMask = function (dataframeAttribute, params) {
+    var attr = this.rawdata.attributes.point[dataframeAttribute];
     var filterFunc = this.filterFuncForQueryObject(params);
     return this.getMaskForFilterOnAttributes(attr.values, filterFunc);
 };
