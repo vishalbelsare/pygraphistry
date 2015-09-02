@@ -173,6 +173,9 @@ Dataframe.prototype.masksFromEdges = function (edgeMask) {
  * @returns MaskSet
  */
 Dataframe.prototype.composeMasks = function (maskList) {
+    if (maskList === undefined || !maskList.length || maskList.length === 0) {
+        return this.fullMaskSet();
+    }
     // TODO: Make this faster.
 
     // Assumes we will never have more than 255 separate masks.
