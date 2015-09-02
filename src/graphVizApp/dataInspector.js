@@ -10,6 +10,7 @@ var Backbone = require('backbone');
     require('backbone.paginator');
 var Backgrid = require('backgrid');
     require('backgrid-paginator');
+    require('backgrid-filter');
 
 var util        = require('./util.js');
 
@@ -50,8 +51,8 @@ function init(appState, socket, workerUrl, marquee) {
             }
         }).filter(function (reply) { return reply && reply.success; })
         .do(function (reply) {
-            showPageableGrid(workerUrl, columns.nodes, reply.params.nodes, $nodesInspector);
-            showPageableGrid(workerUrl, columns.edges, reply.params.edges, $edgesInspector);
+            showPageableGrid(workerUrl, columns.nodes, reply.params.nodes, $nodesInspector, appState.activeSelection, 1);
+            showPageableGrid(workerUrl, columns.edges, reply.params.edges, $edgesInspector, appState.activeSelection, 2);
             $('#inspector').css({visibility: 'visible'});
         }).subscribe(_.identity, util.makeErrorHandler('fetch data for inspector'));
     }).subscribe(_.identity, util.makeErrorHandler('fetch inspectHeader'));
@@ -76,7 +77,39 @@ function createColumns(header, title) {
 }
 
 
-function showPageableGrid(workerUrl, columns, params, $inspector) {
+function showPageableGrid(workerUrl, columns, params, $inspector, activeSelection, dim) {
+
+    console.log('SHOWING GRID');
+
+    var SelectableRow = Backgrid.Row.extend({
+        mouseoverColor: 'lightblue',
+        activeColor: 'blue',
+        events: {
+            mouseover: 'rowMouseOver',
+            mouseout: 'rowMouseOut',
+            click: 'rowClick'
+        },
+        rowClick: function (evt) {
+            if (!this.model.get('selected')) {
+                this.model.set('selected', true);
+                $(this.el).css('backgroundColor', this.activeColor);
+                activeSelection.onNext([[this.model.attributes._index, dim]]);
+            } else {
+                this.model.set('selected', false);
+                $(this.el).css('backgroundColor', '');
+                activeSelection.onNext([]);
+            }
+            console.log('Clicked on: ', this);
+        },
+        rowMouseOver: function () {
+            // $(this.el).css('backgroundColor', this.mouseoverColor);
+        },
+        rowMouseOut: function () {
+            // $(this.el).css('backgroundColor', '');
+        }
+    });
+
+
     var InspectData = Backbone.Model.extend({});
     var DataFrame = Backbone.PageableCollection.extend({
         model: InspectData,
@@ -90,6 +123,7 @@ function showPageableGrid(workerUrl, columns, params, $inspector) {
     var dataFrame = new DataFrame([], {mode: 'server'});
 
     var grid = new Backgrid.Grid({
+        // row: SelectableRow,
         columns: columns,
         collection: dataFrame,
         emptyText: 'Empty selection'
@@ -113,9 +147,24 @@ function showPageableGrid(workerUrl, columns, params, $inspector) {
 
     dataFrame.fetch({reset: true});
 
+    var serverSideFilter = new Backgrid.Extension.ServerSideFilter({
+        collection: dataFrame,
+        name: 'search'
+    });
+
+    // TODO: Use templates for this stuff instead of making in jquery.
     var divider = $('<div>').addClass('divide-line');
+    // var $controlsContainer = $('<div>').addClass('row');
+    var paginatorEl = paginator.render().el;
+    var filterEl = serverSideFilter.render().el;
+    // $(paginatorEl).addClass('col-xs-8');
+    // $(filterEl).addClass('col-xs-4');
+    // $controlsContainer.append(filterEl).append(paginatorEl);
+
     $inspector.prepend(divider);
-    $inspector.prepend(paginator.render().el);
+    // $inspector.prepend($controlsContainer);
+    $inspector.append(paginatorEl);
+    $inspector.prepend(filterEl);
 
     var $colHeaders = $inspector.find('.backgrid').find('thead').find('tr').children();
     $colHeaders.each(function () {

@@ -206,6 +206,12 @@ function createLabelDom(dim, labelObj) {
         $title = $('<span>').addClass('graph-label-title').append(labelObj.formatted)
                 .append($labelType);
     } else {
+        // Filter out 'hidden' columns
+        // TODO: Encode this in a proper schema instead of hungarian-ish notation
+        labelObj.columns = _.filter(labelObj.columns, function (pair) {
+            return (pair[0][0] !== '_');
+        });
+
         $cont.addClass('graph-label-default');
         $title = $('<div>').addClass('graph-label-title').append($pin).append(' ' + labelObj.title)
                 .append($labelType);

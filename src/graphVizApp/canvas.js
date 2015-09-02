@@ -765,6 +765,16 @@ function renderMouseoverEffects(renderingScheduler, task) {
     var edgeIndices = task.data.edgeIndices || [];
     var nodeIndices = task.data.nodeIndices || [];
 
+    // Also highlight selections.
+    // TODO: Generalize selection highlights from mouseover highlights.
+    _.each(appSnapshot.activeSelection, function (sel) {
+        if (sel[1] === 1) {
+            nodeIndices.push(sel[0]);
+        } else {
+            edgeIndices.push(sel[1]);
+        }
+    });
+
     // Cheap sets so we don't duplicate edges, but want to avoid using the slow _.uniq
     var seenEdges = {};
     var seenNodes = {};
@@ -870,7 +880,7 @@ function renderMouseoverEffects(renderingScheduler, task) {
 
 
 var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
-                                  isAnimating, simulateOn) {
+                                  isAnimating, simulateOn, activeSelection) {
     var that = this;
     this.renderState = renderState;
 
@@ -887,6 +897,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         simulating: false,
         quietState: false,
         interpolateMidPoints : true,
+        activeSelection: [],
         //TODO these should be inferred from renderconfig
         buffers: {
             curPoints: undefined,
@@ -931,6 +942,10 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
     simulateOn.subscribe(function (val) {
         that.appSnapshot.simulating = val;
     }, util.makeErrorHandler('simulate updates'));
+
+    activeSelection.subscribe(function (val) {
+        that.appSnapshot.activeSelection = val;
+    }, util.makeErrorHandler('activeSelection updates'));
 
     vboUpdates.filter(function (status) {
         return status === 'received';
