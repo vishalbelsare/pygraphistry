@@ -57,7 +57,7 @@ function init(socket, marquee, poi) {
     //////////////////////////////////////////////////////////////////////////
 
     // Share the panel between Rx streams via scope:
-    var primaryPanel;
+    var histogramsPanel;
 
     // Setup filtering
     var filtersPanel = filterPanel.init();
@@ -81,9 +81,9 @@ function init(socket, marquee, poi) {
             return (val !== '_title');
         });
 
-        primaryPanel = histogramPanel.initHistograms(
+        histogramsPanel = histogramPanel.initHistograms(
             data, attributes, filtersPanel.collection, dataframeAttributeChange, updateDataframeAttributeSubject);
-        data.histogramPanel = primaryPanel;
+        data.histogramPanel = histogramsPanel;
 
         // On auto-populate, at most 5 histograms, or however many * 85 + 110 px = window height.
         var maxInitialItems = Math.min(Math.round((window.innerHeight - 110) / 85), 5);
@@ -145,7 +145,7 @@ function init(socket, marquee, poi) {
     // TODO: Do we want to treat no replies in some special way?
     }).filter(function (data) { return data.reply && data.reply.success; })
     .do(function (data) {
-        updateHistogramData(primaryPanel.collection, data.reply.data, data.globalStats, primaryPanel.model);
+        updateHistogramData(histogramsPanel.collection, data.reply.data, data.globalStats, histogramsPanel.model);
     }).subscribe(_.identity, util.makeErrorHandler('Brush selection aggregate error'));
 }
 
