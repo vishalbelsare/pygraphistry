@@ -2,13 +2,13 @@
 
 /* global Superconductor */
 
-(function() {
+(function () {
     'use strict';
 
     var debug = require('debug')('graphistry:StreamGL:camera');
 
     var glMatrix, mat4, vec3, vec4;
-    if(typeof window === 'undefined' || !window.glMatrix) {
+    if (typeof window === 'undefined' || !window.glMatrix) {
         glMatrix = require('gl-matrix');
         mat4 = glMatrix.mat4;
         vec3 = glMatrix.vec3;

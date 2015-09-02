@@ -21,13 +21,13 @@ function setupCameraInteractions(appState, $eventTarget) {
     //pan/zoom
     //Observable Event
     var interactions;
-    if(interaction.isTouchBased) {
+    if (interaction.isTouchBased) {
         debug('Detected touch-based device. Setting up touch interaction event handlers.');
         var eventTarget = $eventTarget[0];
         interactions = interaction.setupSwipe(eventTarget, camera)
             .merge(
                 interaction.setupPinch($eventTarget, camera)
-                .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity)));
+                    .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity)));
     } else {
         debug('Detected mouse-based device. Setting up mouse interaction event handlers.');
         interactions = interaction.setupDrag($eventTarget, camera, appState)
