@@ -237,8 +237,8 @@ function initHistograms(globalStats, attributes, filterSubject, attrChangeSubjec
         },
         moveHistogram: function (fromCID, toCID) {
             // var length = this.collection.length;
-            var srcIdx = undefined,
-                dstIdx = undefined;
+            var srcIdx,
+                dstIdx;
             this.collection.each(function (hist, i) {
                 if (hist.view.cid === fromCID) { srcIdx = i; }
                 if (hist.view.cid === toCID) { dstIdx = i; }
