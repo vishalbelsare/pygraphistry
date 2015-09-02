@@ -109,6 +109,33 @@ Dataframe.prototype.numEdges = function numEdges() {
     return this.rawdata.numElements.edge;
 };
 
+
+/**
+ * @returns Mask
+ */
+Dataframe.prototype.fullPointMask = function() {
+    return _.range(this.numPoints());
+};
+
+/**
+ * @returns Mask
+ */
+Dataframe.prototype.fullEdgeMask = function() {
+    return _.range(this.numEdges());
+};
+
+
+/**
+ * @returns MaskSet
+ */
+Dataframe.prototype.fullMaskSet = function() {
+    return {
+        point: this.fullPointMask(),
+        edge: this.fullEdgeMask()
+    }
+};
+
+
 /**
  * @param {Mask} edgeMask
  * @returns MaskSet
