@@ -7,5 +7,6 @@ module.exports = {
         var url = urllib.parse(workbookSpecifier);
 
     },
-    URLParamsWhitelist: ['dataset', 'datasetname', 'layout', 'controls']
+    /** Describes URL parameters that can persist across save/reload instead of just override per view: */
+    URLParamsThatPersist: ['dataset', 'datasetname', 'layout', 'controls']
 };
