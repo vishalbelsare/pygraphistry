@@ -53,21 +53,14 @@ function init(socket, marquee, poi) {
     var updateDataframeAttributeSubject = new Rx.Subject();
 
     //////////////////////////////////////////////////////////////////////////
-    // Backbone views and models
-    //////////////////////////////////////////////////////////////////////////
-    // We only fill this in once Rx sets up its histogram chain; from histogramPanel.initHistograms.
-    var HistogramModel,
-        histograms;
-
-    //////////////////////////////////////////////////////////////////////////
     // Setup Streams
     //////////////////////////////////////////////////////////////////////////
 
+    // Share the panel between Rx streams via scope:
+    var primaryPanel;
+
     // Setup filtering
-    var filtersPanel = filterPanel.init(),
-        allFiltersView = filtersPanel.view,
-        filterSet = filtersPanel.collection,
-        FilterModel = filtersPanel.model;
+    var filtersPanel = filterPanel.init();
 
     // Setup update attribute subject that histogram panel can write to
     updateDataframeAttributeSubject.do(function (data) {
@@ -88,10 +81,9 @@ function init(socket, marquee, poi) {
             return (val !== '_title');
         });
 
-        var primaryPanel = histogramPanel.initHistograms(
-                data, attributes, filterSet, dataframeAttributeChange, updateDataframeAttributeSubject);
-        histograms = primaryPanel.collection;
-        HistogramModel = primaryPanel.model;
+        primaryPanel = histogramPanel.initHistograms(
+            data, attributes, filtersPanel.collection, dataframeAttributeChange, updateDataframeAttributeSubject);
+        data.histogramPanel = primaryPanel;
 
         // On auto-populate, at most 5 histograms, or however many * 85 + 110 px = window height.
         var maxInitialItems = Math.min(Math.round((window.innerHeight - 110) / 85), 5);
@@ -102,7 +94,7 @@ function init(socket, marquee, poi) {
             filteredAttributes[key].sparkLines = true;
             updateDataframeAttribute(null, key, 'sparkLines');
         });
-        updateHistogramData(histograms, filteredAttributes, data, HistogramModel, true);
+        updateHistogramData(data.histogramPanel.collection, filteredAttributes, data, data.histogramPanel.model, true);
 
     }).subscribe(globalStats, util.makeErrorHandler('Global stat aggregate call'));
 
@@ -142,7 +134,7 @@ function init(socket, marquee, poi) {
         lastSelection = data.sel;
         return Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
             .map(function (agg) {
-                return {reply: agg, sel: data.sel, globalStats: data.globalStats, type: data.type};
+                return _.extend(data, {reply: agg});
             });
     }).do(function (data) {
         if (!data.reply) {
@@ -153,7 +145,7 @@ function init(socket, marquee, poi) {
     // TODO: Do we want to treat no replies in some special way?
     }).filter(function (data) { return data.reply && data.reply.success; })
     .do(function (data) {
-        updateHistogramData(histograms, data.reply.data, data.globalStats, HistogramModel);
+        updateHistogramData(primaryPanel.collection, data.reply.data, data.globalStats, primaryPanel.model);
     }).subscribe(_.identity, util.makeErrorHandler('Brush selection aggregate error'));
 }
 
