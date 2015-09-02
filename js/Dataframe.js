@@ -26,6 +26,7 @@ var Dataframe = function () {
     };
     this.typedArrayCache = {};
     this.lastPointPositions = null;
+    /** @type MaskSet */
     this.lastMasks = {
         point: [],
         edge: []
@@ -67,9 +68,13 @@ function makeEmptyData () {
 // Data Filtering
 //////////////////////////////////////////////////////////////////////////////
 
-// Takes in a mask of points, and returns an object
-// containing masks for both the points and edges.
-// Relative to forwardsEdges (so sorted)
+/**
+ * Takes in a mask of points, and returns an object
+ * containing masks for both the points and edges.
+ * Relative to forwardsEdges (so sorted)
+ * @param {Mask} pointMask
+ * @returns MaskSet
+ */
 Dataframe.prototype.masksFromPoints = function (pointMask) {
     var pointMaskOriginalLookup = {};
     _.each(pointMask, function (newIdx, i) {
@@ -104,7 +109,10 @@ Dataframe.prototype.numEdges = function numEdges() {
     return this.rawdata.numElements.edge;
 };
 
-
+/**
+ * @param {Mask} edgeMask
+ * @returns MaskSet
+ */
 Dataframe.prototype.masksFromEdges = function (edgeMask) {
     var pointMask = [];
     var numPoints = this.numPoints();
@@ -133,6 +141,10 @@ Dataframe.prototype.masksFromEdges = function (edgeMask) {
     };
 };
 
+/**
+ * @param {MaskList} maskList
+ * @returns MaskSet
+ */
 Dataframe.prototype.composeMasks = function (maskList) {
     // TODO: Make this faster.
 
@@ -178,7 +190,14 @@ Dataframe.prototype.composeMasks = function (maskList) {
     };
 };
 
+/**
+ * @typedef {Object} ClientQuery
+ */
 
+/**
+ * @param {ClientQuery} params
+ * @returns Function<Object>
+ */
 Dataframe.prototype.filterFuncForQueryObject = function (params) {
     var filterFunc;
 
@@ -207,8 +226,8 @@ Dataframe.prototype.filterFuncForQueryObject = function (params) {
 
 /**
  * @param {Array} attributes
- * @param {Function} filterFunc
- * @returns {Array<Number>}
+ * @param {Function<Object>} filterFunc
+ * @returns Mask
  */
 Dataframe.prototype.getMaskForFilterOnAttributes = function (attributes, filterFunc) {
     var mask = [];
@@ -223,9 +242,14 @@ Dataframe.prototype.getMaskForFilterOnAttributes = function (attributes, filterF
 };
 
 
-// Returns sorted edge mask
-Dataframe.prototype.getEdgeAttributeMask = function (attribute, params) {
-    var attr = this.rawdata.attributes.edge[attribute];
+/**
+ * Returns sorted edge mask
+ * @param {String} dataframeAttribute
+ * @param {ClientQuery} params
+ * @returns {Mask}
+ */
+Dataframe.prototype.getEdgeAttributeMask = function (dataframeAttribute, params) {
+    var attr = this.rawdata.attributes.edge[dataframeAttribute];
     var filterFunc = this.filterFuncForQueryObject(params);
     var edgeMask = this.getMaskForFilterOnAttributes(attr.values, filterFunc);
     // Convert to sorted order
@@ -272,10 +296,25 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
     this.typedArrayCache.newCurPoints = new Float32Array(oldNumPoints * 2);
 };
 
+/**
+ * Mask is implemented as a list of valid indices (in sorted order).
+ * @typedef Array<Number> Mask
+ */
 
-// This does an inplace filter on this.data given masks.
-// Mask is implemented as a list of valid indices (in sorted order).
-// TODO: Take in Set objects, not just masks.
+/**
+ * @typedef Array<Mask> MaskList
+ */
+
+/**
+ * @typedef {{point: Mask, edge: Mask}} MaskSet
+ */
+
+/**
+ * Filters this.data in-place given masks. Does not modify this.rawdata.
+ * TODO: Take in Set objects, not just Mask.
+ * @param {MaskSet} masks
+ * @returns {Promise.<Array<Buffer>>}
+ */
 Dataframe.prototype.filter = function (masks, simulator) {
     logger.debug('Starting Filter');
 
@@ -600,6 +639,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
  * TODO: Implicit degrees for points and src/dst for edges.
  * @param {Object} attributes
  * @param {string} type - any of [TYPES]{@link TYPES}
+ * @param {Number} numElements - prescribe or describe? number present
  */
 Dataframe.prototype.load = function (attributes, type, numElements) {
 
@@ -1417,6 +1457,11 @@ function round_up(num, multiple) {
     return multiple * Math.ceil(div);
 }
 
+/**
+ * @param {Array<Number>} values
+ * @param {Mask} indices
+ * @returns {{max: number, min: Number}}
+ */
 function minMaxMasked(values, indices) {
     var min = Infinity;
     var max = -Infinity;
