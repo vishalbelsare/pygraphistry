@@ -503,7 +503,7 @@ function updateSparkline($el, model, attribute) {
     var barWidth = (type === 'countBy') ? xScale.rangeBand() : (width / numBins) - barPadding;
 
     // TODO: Is there a way to avoid this bind? What is the backbone way to do this?
-    var filterCallback = model.view.render.bind(model.view);
+    var filterRedrawCallback = model.view.render.bind(model.view);
 
 
     //////////////////////////////////////////////////////////////////////////
