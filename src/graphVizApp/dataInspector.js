@@ -30,6 +30,7 @@ function init(appState, socket, workerUrl, marquee) {
         }
     }).subscribe(_.identity, util.makeErrorHandler('Grey / Ungrey Data Inspector'));
 
+
     // Update data inspector when new selections are available.
     Rx.Observable.fromCallback(socket.emit, socket)('inspect_header', null)
     .do(function (reply) {
@@ -39,10 +40,22 @@ function init(appState, socket, workerUrl, marquee) {
     }).filter(function (reply) { return reply && reply.success; })
     .map(function (data) {
         return {
-            nodes: createColumns(data.header.nodes, 'Node'),
-            edges: createColumns(data.header.edges, 'Edge')
+
+            nodes: {
+                columns: createColumns(data.header.nodes, 'Node'),
+                urn: data.urns.nodes
+            },
+            edges: {
+                columns: createColumns(data.header.edges, 'Edge'),
+                urn: data.urns.edges
+            }
         };
-    }).do(function (columns) {
+    }).map(function (data) {
+        return {
+            nodes: initPageableGrid(workerUrl, data.nodes.columns, data.nodes.urn, $nodesInspector, appState.activeSelection, 1),
+            edges: initPageableGrid(workerUrl, data.edges.columns, data.edges.urn, $edgesInspector, appState.activeSelection, 2)
+        };
+    }).do(function (grids) {
         marqueeTriggers.flatMap(function (sel) {
             return Rx.Observable.fromCallback(socket.emit, socket)('set_selection', sel);
         }).do(function (reply) {
@@ -51,8 +64,8 @@ function init(appState, socket, workerUrl, marquee) {
             }
         }).filter(function (reply) { return reply && reply.success; })
         .do(function (reply) {
-            showPageableGrid(workerUrl, columns.nodes, reply.params.nodes, $nodesInspector, appState.activeSelection, 1);
-            showPageableGrid(workerUrl, columns.edges, reply.params.edges, $edgesInspector, appState.activeSelection, 2);
+            updateGrid(grids.nodes, reply.params.nodes);
+            updateGrid(grids.edges, reply.params.edges);
             $('#inspector').css({visibility: 'visible'});
         }).subscribe(_.identity, util.makeErrorHandler('fetch data for inspector'));
     }).subscribe(_.identity, util.makeErrorHandler('fetch inspectHeader'));
@@ -76,9 +89,12 @@ function createColumns(header, title) {
     }));
 }
 
+function updateGrid(grid, params) {
+    grid.collection.state.totalRecords = params.count;
+    grid.collection.fetch({reset: true});
+}
 
-function showPageableGrid(workerUrl, columns, params, $inspector, activeSelection, dim) {
-
+function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, dim) {
     console.log('SHOWING GRID');
 
     var SelectableRow = Backgrid.Row.extend({
@@ -113,10 +129,9 @@ function showPageableGrid(workerUrl, columns, params, $inspector, activeSelectio
     var InspectData = Backbone.Model.extend({});
     var DataFrame = Backbone.PageableCollection.extend({
         model: InspectData,
-        url: workerUrl + params.urn,
+        url: workerUrl + urn,
         state: {
-            pageSize: 8,
-            totalRecords: params.count,
+            pageSize: 8
         },
     });
 
@@ -175,7 +190,10 @@ function showPageableGrid(workerUrl, columns, params, $inspector, activeSelectio
             });
         });
     });
+
+    return grid;
 }
+
 
 module.exports = {
     init: init
