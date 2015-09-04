@@ -270,7 +270,8 @@
 
         <div id="filtersPanel" class="settingsPanel">
             <div class="form-horizontal">
-            <!-- Placeholder -->
+                <div id="filters"></div>
+                <div id="addFilter"></div>
             </div>  <!-- /form-horizontal -->
         </div> <!-- /filtersPanel -->
 
@@ -436,8 +437,50 @@
             <i class="fa fa-check-circle deleteFilterButton" id="deleteFilterButton{{id}}" cid="{{id}}"></i>
         </a>
     </div>
+    <div class="filterName control-title">{{model.title}}</div>
+    <form class="filterEditor">
+        <label for="filterDataType{{id}}">Data Type:</label>
+        <select class="filterDataTypeSelector" id="filterDataType{{id}}" title="Data Type">
+            <option value="">(Unknown)</option>
+            {{#list dataTypes}}
+            {{#if this.selected}}
+                <option value="{{this.name}}" selected="selected">{{this.name}}</option>
+            {{#else}}
+                <option value="{{this.name}}">{{this.name}}</option>
+            {{/if}}
+            {{/list}}
+        </select>
+        <label for="filterControlType{{id}}">Control Type:</label>
+        <select class="filterControlTypeSelector" id="filterControlType{{id}}" title="Control Type">
+            <option value="">(Unknown)</option>
+            {{#list controlTypes}}
+            {{#if this.selected}}
+                <option value="{{this.name}}" selected="selected">{{this.name}}</option>
+            {{#else}}
+                <option value="{{this.name}}">{{this.name}}</option>
+            {{/if}}
+            {{/list}}
+        </select>
+        <label for="filterExpression{{id}}">Expression:</label>
+        <textarea id="filterExpression{{id}}" name="expression" title="Filter expression" rows="2" cols="40">{{expression}}</textarea>
+    </form>
 </script>
 
+<script type="text/template" id="addFilterTemplate">
+    <div class="topMenu grab-cursor" draggable="true">
+        <a href="#">
+            <i class="fa fa-caret-right filterButton expandFilterButton" id="expandFilterButton{{id}}" cid="{{id}}"></i>
+        </a>
+    </div>
+    <div class="col-xs-9 attributeName">
+        {{attribute}}
+    </div>
+    <div class="col-xs-1 filterButton closeButton">
+        <a href="#">
+            <i class="fa fa-times filterButton closeFilterButton" id="closeFilterbutton{{id}}" cid="{{id}}"></i>
+        </a>
+    </div>
+</script>
 
 <script type="text/template" id="histogramTemplate">
     <div class="topMenu">
