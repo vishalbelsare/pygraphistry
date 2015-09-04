@@ -45,7 +45,7 @@ function updateDataframeAttribute (oldAttributeName, newAttributeName, type) {
 }
 
 
-function init(socket, marquee, poi) {
+function init(socket, marquee/*, poi*/) {
     debug('Initializing histogram brush');
 
     // Grab global stats at initialization
@@ -59,8 +59,10 @@ function init(socket, marquee, poi) {
     // Share the panel between Rx streams via scope:
     var histogramsPanel;
 
-    // Setup filtering
-    var filtersPanel = filterPanel.init();
+    // Setup filtering:
+    var filtersSubjectFromPanel = new Rx.ReplaySubject(1);
+    var filtersSubjectFromHistogram = new Rx.ReplaySubject(1);
+    var filtersPanel = filterPanel.init(filtersSubjectFromPanel, filtersSubjectFromHistogram);
 
     // Setup update attribute subject that histogram panel can write to
     updateDataframeAttributeSubject.do(function (data) {
