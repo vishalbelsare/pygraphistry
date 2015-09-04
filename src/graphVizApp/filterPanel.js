@@ -15,8 +15,9 @@ var COLLAPSED_FILTER_HEIGHT = 80;
 
 
 module.exports = {
-    init: function (filtersSubjectFromPanel/*, filtersSubjectFromHistogram*/) {
-        var $filterPanel = $('#filtersPanel');
+    init: function (socket, urlParams, filtersSubjectFromPanel, filtersSubjectFromHistogram) {
+        var $filtersPanel = $('#filtersPanel');
+        filterer.init(socket, urlParams, $('#filterButton'), $filtersPanel);
 
         var FilterModel = Backbone.Model.extend({
 
@@ -107,7 +108,7 @@ module.exports = {
         });
 
         var AllFiltersView = Backbone.View.extend({
-            el: $filterPanel,
+            el: $filtersPanel,
             filtersContainer: $('#filters'),
             initialize: function () {
                 this.listenTo(filterSet, 'add', this.addFilter);
@@ -116,18 +117,20 @@ module.exports = {
                 this.listenTo(filterSet, 'all', this.render);
                 this.listenTo(filterSet, 'change:timestamp', this.update);
 
-                filterer.namespaceMetadataObservable().combineLatest(filtersSubjectFromPanel, function (dfa, fs) {
-                    return {dataframeAttributes: dfa, filterSet: fs};
-                }).do(function (data) {
-                    // Setup add filter button.
-                    var template = Handlebars.compile($('#addFilterTemplate').html());
-                    // TODO flatten the namespace into selectable elements:
-                    var params = {fields: data.dataframeAttributes};
-                    var html = template(params);
-                    $('#addFilter').html(html);
-                }).subscribe(_.identity, function (err) {
-                    console.log('Error updating Add Filter', err);
-                });
+                this.combinedSubscription = filterer.namespaceMetadataObservable().combineLatest(
+                    filtersSubjectFromPanel,
+                    function (dfa, fs) {
+                        return {dataframeAttributes: dfa, filterSet: fs};
+                    }).do(function (data) {
+                        // Setup add filter button.
+                        var template = Handlebars.compile($('#addFilterTemplate').html());
+                        // TODO flatten the namespace into selectable elements:
+                        var params = {fields: data.dataframeAttributes};
+                        var html = template(params);
+                        $('#addFilter').html(html);
+                    }).subscribe(function (data) { console.log(data); }, function (err) {
+                        console.log('Error updating Add Filter', err);
+                    });
             },
             render: function () {
                 filtersSubjectFromPanel.onNext(filterSet);

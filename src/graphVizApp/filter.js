@@ -18,7 +18,7 @@ function filterParametersCore(type, attribute) {
 }
 
 module.exports = {
-    init: function (appState, socket, urlParams, $button /*, $filteringItems */) {
+    init: function (socket, urlParams, $button) {
         if (!urlParams.debug) {
             $button.css({display: 'none'});
             return;
@@ -27,12 +27,13 @@ module.exports = {
         Rx.Observable.fromCallback(socket.emit, socket)('get_namespace_metadata', null)
             .do(function (reply) {
                 if (!reply || !reply.success) {
-                    console.error('Server error on inspectHeader', (reply||{}).error);
+                    console.error('Server error on get_namespace_metadata', (reply||{}).error);
                 }
-            }).filter(function (reply) { return reply && reply.success; })
-            .map(function (/*metadata*/) {
-
-            }).subscribe(namespaceMetadataSubject, util.makeErrorHandler('fetch get_namespace_metadata'));
+            }).filter(function (reply) {
+                return reply && reply.success;
+            }).do(function (reply) {
+                namespaceMetadataSubject.onNext(reply.metadata);
+            }).subscribe(function (data) { console.log(data); }, util.makeErrorHandler('fetch get_namespace_metadata'));
     },
 
     namespaceMetadataObservable: function () {
