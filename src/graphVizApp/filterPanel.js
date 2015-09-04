@@ -89,13 +89,13 @@ module.exports = {
                     model: this.model.toJSON(),
                     dataTypes: _.map(possibleDataTypes, function (dataType) {
                         if (dataType.name === this.model.get('dataType')) {
-                            return _.extendOwn({selected: true}, dataType);
+                            return _.extend({selected: true}, dataType);
                         }
                         return dataType;
                     }, this),
                     controlTypes: _.map(possibleControlTypes, function (controlType) {
                         if (controlType.name === this.model.get('controlType')) {
-                            return _.extendOwn({selected: true}, controlType);
+                            return _.extend({selected: true}, controlType);
                         }
                         return controlType;
                     }, this)
@@ -144,7 +144,7 @@ module.exports = {
             addFilter: function (filter) {
                 var view = new FilterView({model: filter});
                 var childElement = view.render().el;
-                var dataframeAttribute = filter.get('attribute');
+                // var dataframeAttribute = filter.get('attribute');
                 $(this.filtersContainer).append(childElement);
                 filter.set('$el', $(childElement));
                 filtersSubjectFromPanel.onNext(filterSet);
