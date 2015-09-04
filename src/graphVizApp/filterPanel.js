@@ -77,6 +77,12 @@ module.exports = {
 
             initialize: function () {
                 this.listenTo(this.model, 'destroy', this.remove);
+                var collection = this.model.collection;
+                filtersSubjectFromHistogram.do(function (histogramFilters) {
+                    collection.updateSubset(histogramFilters);
+                }).subscribe(_.identity, function (err) {
+                    console.error('error updating filters collection from histograms', err);
+                });
             },
             render: function () {
                 var html = this.template({
@@ -142,6 +148,9 @@ module.exports = {
                 $(this.filtersContainer).append(childElement);
                 filter.set('$el', $(childElement));
                 filtersSubjectFromPanel.onNext(filterSet);
+            },
+            remove: function () {
+                this.combinedSubscription.dispose();
             },
             removeFilter: function (/*filter*/) {
                 filtersSubjectFromPanel.onNext(filterSet);
