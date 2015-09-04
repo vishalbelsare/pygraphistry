@@ -469,7 +469,7 @@ function expandLogicalMidEdges(bufferSnapshots) {
         midSpringsPos: midSpringsPos,
         midSpringsStarts: midSpringsEndpoints.starts,
         midSpringsEnds: midSpringsEndpoints.ends
-    }
+    };
 }
 
 /* Populate arrow buffers. The first argument is either an array of indices,
