@@ -7,6 +7,9 @@ require('../rx-jquery-stub');
 var util    = require('./util.js');
 
 
+var namespaceMetadataSubject = new Rx.ReplaySubject(1);
+
+
 function filterParametersCore(type, attribute) {
     return {
         type: type,
@@ -21,7 +24,7 @@ module.exports = {
             return;
         }
 
-        Rx.Observable.fromCallback(socket.emit, socket)('inspect_header', null)
+        Rx.Observable.fromCallback(socket.emit, socket)('get_namespace_metadata', null)
             .do(function (reply) {
                 if (!reply || !reply.success) {
                     console.error('Server error on inspectHeader', (reply||{}).error);
@@ -29,7 +32,11 @@ module.exports = {
             }).filter(function (reply) { return reply && reply.success; })
             .map(function (/*metadata*/) {
 
-            }).subscribe(_.identity, util.makeErrorHandler('fetch inspectHeader'));
+            }).subscribe(namespaceMetadataSubject, util.makeErrorHandler('fetch get_namespace_metadata'));
+    },
+
+    namespaceMetadataObservable: function () {
+        return namespaceMetadataSubject;
     },
 
     filterRangeParameters: function (type, attribute, start, stop) {
