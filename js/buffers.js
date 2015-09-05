@@ -85,13 +85,14 @@ var NAMED_CLGL_BUFFERS_SETUP = {
             }
         }
     ],
-    edgeHeights: ['setEdgeHeights', Uint8Array,     'edge', function (simulator, outArr, len) {
+    edgeHeights: ['setEdgeHeights', Float32Array,     'edge', function (simulator, outArr, numEdges) {
 
-        for (var i = 0; i < len; i++) {
-            outArr[i] = 1 + (i % 5) / 5;
+        for (var i = 0; i < numEdges * 2; i++) {
+            outArr[i] = 1 + (i % 5) / 10;
         }
 
         console.log('FIXME correct height calc');
+//        process.exit();
 
         /*
 

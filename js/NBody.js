@@ -340,7 +340,7 @@ function setEdgeColors(graph, edgeColors) {
 }
 
 function setEdgeWeight(graph, edgeWeights) {
-    logger.trace('Loading edgeColors');
+    logger.trace('Loading edgeWeights');
     var nedges = graph.simulator.dataframe.getNumElements('edge');
 
     if (!edgeWeights) {

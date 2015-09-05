@@ -66,6 +66,13 @@ var attributeLoaders = function(graph) {
             target: EDGE,
             values: undefined
         },
+        edgeHeight: {
+            load: graph.setEdgeHeights,
+            type: 'number',
+            default: graph.setEdgeHeights,
+            target: EDGE,
+            values: undefined
+        },
         midEdgeColor: {
             load: graph.setMidEdgeColors,
             type: 'number',
@@ -421,6 +428,9 @@ var defaultMapper = {
                 var palette = util.palettes.green2red_palette;
                 return int2color(normalize(v, 0, palette.length - 1), palette);
             }
+        },
+        edgeHeight: {
+            name: 'edgeHeight'
         },
         pointTag: {
             name: 'pointType',

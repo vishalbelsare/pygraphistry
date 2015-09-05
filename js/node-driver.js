@@ -67,6 +67,7 @@ function graphCounts(graph) {
         pointSizes: point,
         pointColors: point,
         edgeColors: edge,
+        edgeHeights: edge,
         curMidPoints: midPoint,
         midSpringsPos: midEdge,
         midSpringsColorCoord: midEdge,
