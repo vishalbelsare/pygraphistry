@@ -145,10 +145,6 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                 var stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
 
                 logger.trace('Fetching host buffer %s', name);
-                if (!graph.simulator.dataframe.getLocalBuffer(name)) {
-                    throw new Error('missing buffersLocal base buffer: ' + name);
-                }
-
                 var localBuffer = graph.simulator.dataframe.getLocalBuffer(name);
                 var bytes_per_element = localBuffer.BYTES_PER_ELEMENT;
 
