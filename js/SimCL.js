@@ -512,11 +512,10 @@ function setPoints(simulator, points) {
 // returns corresponding setter
 function makeSetter(simulator, name, dimName) {
 
-    return function (data, isReverse) {
+    return function (data) {
 
         var buffName = name;
 
-        // simulator.buffersLocal[buffName] = data;
         simulator.dataframe.loadLocalBuffer(buffName, data);
 
         simulator.resetBuffers([simulator.dataframe.getBuffer(buffName, 'simulator')]);

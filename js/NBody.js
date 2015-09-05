@@ -131,14 +131,14 @@ function passthroughSetter(simulator, dimName, arr, passthrough) {
     simulator[passthrough](arr);
 }
 
-//str * TypedArrayConstructor * {'numPoints', 'numEdges'} * {'set...'} * ?(simulator * array * len -> ())
+//str * TypedArrayConstructor * {'point', 'edge'} * {'set...'} * ?(simulator * array * len -> ())
 //  -> simulator -> Q simulator
 //Create default setter
 function makeDefaultSetter (name, arrConstructor, dimName, passthrough, f) {
     return function (simulator) {
         logger.trace("Using default %s", name);
         var elts = simulator.dataframe.getNumElements(dimName);
-        var arr = new arrConstructor(elts);
+        var arr = new arrConstructor(elts * (dimName == 'point' ? 1 : 2));
         if (f) {
             f(simulator, arr, elts);
         }
@@ -162,13 +162,14 @@ function makeSetter (name, defSetter, arrConstructor, dimName, passthrough) {
         if (rawArr.constructor == arrConstructor && dimName == 'point') {
             arr = rawArr;
         } else if (dimName == 'edge') {
-            var len = graph.simulator.dataframe.getNumElements(dimName);
+            var len = graph.simulator.dataframe.getNumElements(dimName) * 2;
             arr = new arrConstructor(len);
             var map = graph.simulator.dataframe.getHostBuffer('forwardsEdges').edgePermutation;
-            for (var i = 0; i < len; i++) {
-                arr[map[i]] = rawArr[i];
+            for (var i = 0; i < len/2; i++) {
+                arr[2 * map[i]] = rawArr[i];
+                arr[2 * map[i] + 1] = rawArr[i];
             }
-        }else {
+        } else {
             var len = graph.simulator.dataframe.getNumElements(dimName);
             arr = new arrConstructor(len);
             for (var i = 0; i < len; i++) {
