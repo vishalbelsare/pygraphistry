@@ -937,7 +937,7 @@ var camera2D = {
     'farPlane': 10
 }
 
-var sceneUber = {
+var sceneGis = {
     'options': stdOptions,
     'camera': camera2D,
     'clientMidEdgeInterpolation': false,
@@ -948,7 +948,7 @@ var sceneUber = {
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 }
 
-var sceneNetflowArcs = {
+var sceneArcs = {
     'options': stdOptions,
     'camera': camera2D,
     'numRenderedSplits': 8,
@@ -976,21 +976,7 @@ var sceneTransparent = {
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 };
 
-var sceneNetflowBigArcs = {
-    'options': stdOptions,
-    'camera': camera2D,
-    'numRenderedSplits': 32,
-    'clientMidEdgeInterpolation': true,
-    'arcHeight': 0.5,
-    'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-    'midedgeculled', 'edgepicking',
-    'arrowculled', 'arrowhighlight', 'edgehighlight',
-    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
-    'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
-    'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
-}
-
-var sceneNetflowStraight = {
+var sceneStraight = {
     'options': stdOptions,
     'camera': camera2D,
     'numRenderedSplits': 0,
@@ -1004,12 +990,10 @@ var sceneNetflowStraight = {
 }
 
 var scenes = {
-    'default': sceneNetflowArcs,
+    'default': sceneArcs,
     'transparent': sceneTransparent,
-    'gis' : sceneUber,
-    'netflowArcs': sceneNetflowArcs,
-    'netflowBigArcs': sceneNetflowBigArcs,
-    'netflowStraight': sceneNetflowStraight
+    'gis' : sceneGis,
+    'netflowStraight': sceneStraight
 }
 
 function saneProgram(program, progName) {
