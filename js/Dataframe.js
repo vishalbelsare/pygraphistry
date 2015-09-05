@@ -805,7 +805,7 @@ Dataframe.prototype.getBufferKeys = function (type) {
 Dataframe.prototype.getNumElements = function (type) {
     var res = this.data.numElements[type];
     if (!res && res !== 0) {
-        throw "Invalid Num Elements: " + type;
+        throw new Error("Invalid Num Elements: " + type);
     }
     return res;
 };
@@ -818,7 +818,7 @@ Dataframe.prototype.getAllBuffers = function (type) {
 Dataframe.prototype.getLocalBuffer = function (name) {
     var res = this.data.localBuffers[name];
     if (!res) {
-        throw "Invalid Local Buffer: " + name;
+        throw new Error("Invalid Local Buffer: " + name);
     }
     return res;
 };
@@ -826,7 +826,7 @@ Dataframe.prototype.getLocalBuffer = function (name) {
 Dataframe.prototype.getHostBuffer = function (name) {
     var res = this.data.hostBuffers[name];
     if (!res) {
-        throw "Invalid Host Buffer: " + name;
+        throw new Error("Invalid Host Buffer: " + name);
     }
     return res;
 };
@@ -858,7 +858,7 @@ Dataframe.prototype.getBuffer = function (name, type) {
         var dataType = this.getDataType(name, type);
 
         if (dataType !== 'number') {
-            throw "Attempting to get buffer that is non-numeric";
+            throw new Error("Attempting to get buffer that is non-numeric");
         }
 
         var typedData = new Float32Array(data);
