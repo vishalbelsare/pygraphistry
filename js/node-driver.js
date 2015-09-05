@@ -19,7 +19,7 @@ var Q = require("q"),
     loader = require("./data-loader.js");
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:data:data-loader');
+var logger      = log.createLogger('graph-viz:data:node-driver');
 var perf        = require('common/perfStats.js').createPerfMonitor();
 
 

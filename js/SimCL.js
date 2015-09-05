@@ -14,7 +14,7 @@ var webcl = require('node-webcl');
 var Color = require('color');
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:data:data-loader');
+var logger      = log.createLogger('graph-viz:data:simcl');
 
 
 // Do NOT enable this in prod. It destroys performance.
