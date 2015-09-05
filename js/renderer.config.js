@@ -360,6 +360,17 @@ var models = {
             'normalize': false
         }
     },
+    'edgeHeights': {
+        'edgeHeight':  {
+            'datasource': 'HOST',
+            'type': 'UNSIGNED_BYTE',
+            'hint': 'STATIC_DRAW',
+            'count': 4,
+            'offset': 0,
+            'stride': 0,
+            'normalize': true
+        }
+    },
     'arrowPointSizes': {
         'pointSize':  {
             'datasource': 'CLIENT',
@@ -626,6 +637,23 @@ var items = {
         },
         'uniforms': {
             'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [0.2] },
+            'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
+        },
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
+    'dummyHeights' : {
+        'program': 'midedgeculled',
+        'triggers': [],
+        'bindings': {
+            //'curPos': ['curMidPointsClient', 'curPos'],
+            'curPos': ['curMidPoints', 'curPos'],
+            'edgeColor': ['edgeHeights', 'edgeHeight'],
+            'startPos': ['midSpringsStarts', 'startPos'],
+            'endPos': ['midSpringsEnds', 'endPos']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
             'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
         },
         'drawType': 'LINES',
@@ -915,7 +943,7 @@ var sceneUber = {
     'clientMidEdgeInterpolation': false,
     //'numRenderedSplits':7 ,
     'render': ['pointpicking',  'pointsampling', 'uberdemoedges', 'edgepicking', 'arrowculled', 'arrowhighlight',
-        'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+        'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight', 'dummyHeights',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 }
@@ -927,7 +955,7 @@ var sceneNetflowArcs = {
     'clientMidEdgeInterpolation': true,
     'arcHeight': 0.2,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-    'midedgeculled', 'edgepicking',
+    'midedgeculled', 'edgepicking', 'dummyHeights',
     'arrowculled', 'arrowhighlight', 'edgehighlight',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
@@ -941,7 +969,7 @@ var sceneTransparent = {
     'clientMidEdgeInterpolation': true,
     'arcHeight': 0.2,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-    'midedgeculled', 'edgepicking',
+    'midedgeculled', 'edgepicking', 'dummyHeights',
     'arrowculled', 'arrowhighlight', 'edgehighlight',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',

@@ -85,7 +85,30 @@ var NAMED_CLGL_BUFFERS_SETUP = {
         }
     ],
     pointTags:   ['setPointTags',   Uint8Array,     'point', 0],
-    edgeTags:    ['setEdgeTags',    Uint8Array,     'edge',  0]
+    edgeTags:    ['setEdgeTags',    Uint8Array,     'edge',  0],
+    edgeHeights: ['setEdgeHeights', Uint8Array,     'edge', function (simulator, outArr, len) {
+
+        for (var i = 0; i < len; i++) {
+            outArr[i] = 1 + (i % 5) / 5;
+        }
+
+        console.log('FIXME correct height calc');
+
+        /*
+
+        var forwards = simulator.dataframe.getHostBuffer('forwardsEdges');
+
+        for (each node) {
+            var increment = 2 / (degree(node) + 1);
+            var height = 0.5;
+            for (each edge) {
+                out [ ?? ] = height;
+                height += increment;
+            }
+        }
+        */
+
+    }]
 };
 
 //{<str>: {setterName: str, arrType: Function, dims: string, defV: 'a'}}
