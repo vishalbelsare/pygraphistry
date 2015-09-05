@@ -84,8 +84,6 @@ var NAMED_CLGL_BUFFERS_SETUP = {
             }
         }
     ],
-    pointTags:   ['setPointTags',   Uint8Array,     'point', 0],
-    edgeTags:    ['setEdgeTags',    Uint8Array,     'edge',  0],
     edgeHeights: ['setEdgeHeights', Uint8Array,     'edge', function (simulator, outArr, len) {
 
         for (var i = 0; i < len; i++) {

@@ -514,7 +514,7 @@ function makeSetter(simulator, name, dimName) {
 
     return function (data, isReverse) {
 
-        var buffName = name + (dimName === 'edge' && !!isReverse ? '_reverse' : '');
+        var buffName = name;
 
         // simulator.buffersLocal[buffName] = data;
         simulator.dataframe.loadLocalBuffer(buffName, data);

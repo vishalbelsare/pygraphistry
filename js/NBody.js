@@ -128,10 +128,7 @@ function updateSettings(graph, newCfg) {
 
 
 function passthroughSetter(simulator, dimName, arr, passthrough) {
-    simulator[passthrough](arr, true);
-    if (dimName == 'numEdges') {
-        simulator[passthrough](arr, false);
-    }
+    simulator[passthrough](arr);
 }
 
 //str * TypedArrayConstructor * {'numPoints', 'numEdges'} * {'set...'} * ?(simulator * array * len -> ())
