@@ -386,7 +386,7 @@ var debugMapper = {
     },
 }
 
-var splunkMapper = {
+var defaultMapper = {
     mappings: {
         pointSize: {
             name: 'pointSize',
@@ -479,8 +479,8 @@ var mappers = {
     'opentsdbDemo': testMapperDemo,
     'miserables': misMapper,
     'debug': debugMapper,
-    'splunk': splunkMapper,
-    'default': splunkMapper
+    'splunk': defaultMapper,
+    'default': defaultMapper
 }
 
 function logTransform(values) {
