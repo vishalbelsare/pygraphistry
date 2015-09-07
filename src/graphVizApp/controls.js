@@ -493,7 +493,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
                 .map(_.constant(false)))
         .do(function (isTurnOn) {
             marqueeIsOn = isTurnOn;
-            $('#marqueerectangle').children('i').toggleClass('toggle-on', marqueeIsOn);
+            $('#marqueerectangle').find('i').toggleClass('toggle-on', marqueeIsOn);
             appState.marqueeOn.onNext(marqueeIsOn ? 'toggled' : false);
         });
 
