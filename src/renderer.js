@@ -1036,18 +1036,32 @@ function renderItem(state, config, camera, gl, options, ext, programs, buffers, 
 }
 
 // Get names of buffers needed from server
-// RenderOptions -> [ string ]
+// RenderConfig -> [ string ]
 function getServerBufferNames (config) {
+    return getBufferNames(
+        config,
+        function (modelAttr) {
+            return modelAttr.datasource === 'HOST' || modelAttr.datasource === 'DEVICE';
+        });
+}
+
+// Get list of live buffers, where live means referenced by a renderitem
+// Optional filter predicate
+// RenderConfig * ?(ModelView -> Bool) -> [ String ]
+function getBufferNames (config, optFilter) {
+
+    var filterPred = optFilter || function () { return true; };
+
     var renderItems = config.render;
     var bufferNamesLists = renderItems.map(function (itemName) {
         var iDef = config.items[itemName];
         var elementIndex = iDef.index ? [iDef.index] : [];
         var bindings = _.values(iDef.bindings).concat(elementIndex);
-        return bindings.filter(function (binding) {
+        return bindings
+            .filter(function (binding) {
                 var modelName = binding[0];
                 var attribName = binding[1];
-                var datasource = config.models[modelName][attribName].datasource;
-                return (datasource === 'HOST' || datasource === 'DEVICE');
+                return filterPred(config.models[modelName][attribName]);
             }).map(function (binding) {
                 var modelName = binding[0];
                 return modelName;
@@ -1117,5 +1131,6 @@ module.exports = {
     setupFullscreenBuffer: setupFullscreenBuffer,
     getServerBufferNames: getServerBufferNames,
     getServerTextureNames: getServerTextureNames,
+    getBufferNames: getBufferNames,
     setFlags: setFlags
 };

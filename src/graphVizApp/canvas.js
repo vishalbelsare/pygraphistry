@@ -694,31 +694,19 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         simulating: false,
         quietState: false,
         interpolateMidPoints : true,
-        //TODO these should be inferred from renderconfig
-        buffers: {
-            curPoints: undefined,
-            curMidPoints: undefined,
-            pointSizes: undefined,
-            logicalEdges: undefined,
-            springsPos: undefined,
-            midSpringsPos: undefined,
-            midEdgesColors: undefined,
-            highlightedEdges: undefined,
-            highlightedNodePositions: undefined,
-            highlightedNodeSizes: undefined,
-            highlightedNodeColors: undefined,
-            edgeColors: undefined,
-            arrowStartPos: undefined,
-            arrowEndPos: undefined,
-            arrowNormalDir: undefined,
-            arrowColors: undefined,
-            arrowPointSizes: undefined,
-            highlightedArrowStartPos: undefined,
-            highlightedArrowEndPos: undefined,
-            highlightedArrowNormalDir: undefined,
-            highlightedArrowPointColors: undefined,
-            highlightedArrowPointSizes: undefined
-        },
+
+        //{ <activeBufferName> -> undefined}
+        // Seem to be client-defined local buffers
+        buffers:
+            _.object(
+                renderer.getBufferNames(renderState.get('config').toJS())
+                .concat(
+                    //TODO move client-only into render.config dummys when more sane
+                    ['highlightedEdges', 'highlightedNodePositions', 'highlightedNodeSizes', 'highlightedNodeColors',
+                     'highlightedArrowStartPos', 'highlightedArrowEndPos', 'highlightedArrowNormalDir',
+                     'highlightedArrowPointColors', 'highlightedArrowPointSizes'])
+                .map(function (v) { return [v, undefined]; })),
+
         hitmapUpdates: hitmapUpdates
     };
 
