@@ -173,7 +173,7 @@ function expandLogicalEdges(renderState, bufferSnapshots, numRenderedSplits, edg
         prevSrcIdx = srcPointIdx;
         prevDstIdx = dstPointIdx;
 
-        var moduloHeight = edgeHeight * (1.0 + ((heightCounter % 20)/20));
+        var moduloHeight = edgeHeight * (1.0 + ((heightCounter % 20)/5));
         var unitRadius = (1 + Math.pow(moduloHeight, 2)) / (2 * moduloHeight);
         var theta = Math.asin((1 / unitRadius)) * 2;
         var thetaStep = -theta / (numRenderedSplits + 1);
