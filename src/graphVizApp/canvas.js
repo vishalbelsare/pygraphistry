@@ -489,7 +489,7 @@ function renderSlowEffects(renderingScheduler) {
         if (!appSnapshot.buffers.midEdgesColors || (appSnapshot.buffers.midEdgesColors.length !== expectedNumMidEdgeColors)) {
             midEdgesColors = getMidEdgeColors(appSnapshot.buffers, numEdges, numRenderedSplits);
             appSnapshot.buffers.midEdgesColors = midEdgesColors;
-            renderer.loadBuffers(renderState, {'midEdgeColorsClient': midEdgesColors});
+            renderer.loadBuffers(renderState, {'midEdgesColors': midEdgesColors});
         }
 
         end1 = Date.now();
