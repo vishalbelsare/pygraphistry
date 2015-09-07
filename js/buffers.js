@@ -87,24 +87,12 @@ var NAMED_CLGL_BUFFERS_SETUP = {
     ],
     edgeHeights: ['setEdgeHeights', Float32Array,     'edge', function (simulator, outArr, numEdges) {
 
-        for (var i = 0; i < numEdges * 2; i++) {
-            outArr[i] = 1 + (i % 5) / 10;
-        }
-
-        console.log('FIXME correct height calc');
-//        process.exit();
-
         /*
 
-        var forwards = simulator.dataframe.getHostBuffer('forwardsEdges');
+        //TODO: set multi-edges to different heights (duplicate on each involved vertex)
 
-        for (each node) {
-            var increment = 2 / (degree(node) + 1);
-            var height = 0.5;
-            for (each edge) {
-                out [ ?? ] = height;
-                height += increment;
-            }
+        for (var i = 0; i < outArr.length; i++) {
+            outArr[i] = 1 + (i % 5) / 10;
         }
         */
 
