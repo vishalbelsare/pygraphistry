@@ -132,6 +132,8 @@ var programs = {
 var textures = {
     'hitmap': {
         'datasource': 'CLIENT',
+        'width': {'unit': 'percent', 'value': 25},
+        'height': {'unit': 'percent', 'value': 25}
     },
     'pointTexture': {
         'datasource': 'CLIENT',
