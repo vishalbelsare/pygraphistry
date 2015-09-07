@@ -415,6 +415,7 @@ var models = {
             'normalize': true
         }
     },
+    //GIS
     'midEdgeColors': {
         'midEdgeColor':  {
             'datasource': 'HOST',
@@ -426,7 +427,7 @@ var models = {
             'normalize': true
         }
     },
-    'midEdgeColorsClient': {
+    'midEdgesColors': {
         'midEdgeColor':  {
             'datasource': 'CLIENT',
             'type': 'UNSIGNED_BYTE',
@@ -660,7 +661,7 @@ var items = {
         'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos': ['midSpringsPos', 'curPos'],
-            'edgeColor': ['midEdgeColorsClient', 'midEdgeColor'],
+            'edgeColor': ['midEdgesColors', 'midEdgeColor'],
             'startPos': ['midSpringsStarts', 'startPos'],
             'endPos': ['midSpringsEnds', 'endPos']
         },
