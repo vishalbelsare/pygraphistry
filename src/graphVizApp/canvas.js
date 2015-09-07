@@ -104,14 +104,16 @@ function expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPo
 
 }
 
-// -> {midSpringsPos: Float32Array, midSpringsEndpoints: Float32Array}
-function expandLogicalEdges(bufferSnapshots, numRenderedSplits, edgeHeight) {
-    var logicalEdges, curPoints, srcPointIdx, dstPointIdx, srcPointX, srcPointY,
-            dstPointX, dstPointY;
+// RenderState
+// {logicalEdges: Uint32Array, curPoints: Float32Array, edgeHeights: Float32Array, ?midSpringsPos: Float32Array}
+//  * int * float
+//  -> {midSpringsPos: Float32Array, midSpringsStarts: Float32Array, midSpringsEnds: Float32Array}
+function expandLogicalEdges(renderState, bufferSnapshots, numRenderedSplits, edgeHeight) {
 
-    logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
-    curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
-    var numEdges = (logicalEdges.length / 2);
+
+    var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
+    var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
+    var numEdges = logicalEdges.length / 2;
 
     var numVertices = (2 * numEdges) * (numRenderedSplits + 1);
 
@@ -127,42 +129,66 @@ function expandLogicalEdges(bufferSnapshots, numRenderedSplits, edgeHeight) {
     var midEdgesPerEdge = numRenderedSplits + 1;
     var midEdgeStride = 4 * midEdgesPerEdge;
 
-    function setMidEdge(edgeIdx, midEdgeIdx, srcMidPointX, srcMidPointY, dstMidPointX, dstMidPointY) {
+    var setMidEdge = function (edgeIdx, midEdgeIdx, srcMidPointX, srcMidPointY, dstMidPointX, dstMidPointY) {
         var midEdgeStartIdx = edgeIndex * midEdgeStride;
         var index = midEdgeStartIdx + (midEdgeIdx * 4);
         midSpringsPos[index] = srcMidPointX;
         midSpringsPos[index + 1] = srcMidPointY;
         midSpringsPos[index + 2] = dstMidPointX;
         midSpringsPos[index + 3] = dstMidPointY;
-    }
-
-
-    var unitRadius = (1 + Math.pow(edgeHeight, 2)) / (2 * edgeHeight);
-    var theta = Math.asin((1  / unitRadius)) * 2;
-    var thetaStep = -theta /  (numRenderedSplits + 1);
-
-    var cosArray = new Float32Array(numRenderedSplits);
-    var sinArray = new Float32Array(numRenderedSplits);
-    var curTheta;
-    for (var midPointIdx = 0; midPointIdx < numRenderedSplits; midPointIdx++) {
-        curTheta = thetaStep * (midPointIdx + 1);
-        cosArray[midPointIdx] = Math.cos(curTheta);
-        sinArray[midPointIdx] = Math.sin(curTheta);
-    }
-
+    };
 
     //for each midedge, start x/y & end x/y
     var midSpringsEndpoints = expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPoints);
 
+    //TODO have server precompute real heights, and use them here
+    //var edgeHeights = renderState.get('hostBuffersCache').edgeHeights;
+    var srcPointIdx;
+    var dstPointIdx;
+    var srcPointX;
+    var srcPointY;
+    var dstPointX;
+    var dstPointY;
+    var cosArray = new Float32Array(numRenderedSplits);
+    var sinArray = new Float32Array(numRenderedSplits);
+    var heightCounter = 0;
+    var prevSrcIdx = -1;
+    var prevDstIdx = -1;
     for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
-        srcPointIdx = logicalEdges[edgeIndex * 2];
-        dstPointIdx = logicalEdges[(edgeIndex * 2) + 1];
-        srcPointX = curPoints[(2 * srcPointIdx)];
-        srcPointY = curPoints[(2 * srcPointIdx)+ 1];
-        dstPointX = curPoints[(2 * dstPointIdx)];
-        dstPointY = curPoints[(2 * dstPointIdx) + 1];
-        var edgeLength = Math.sqrt(Math.pow((dstPointX - srcPointX), 2) + Math.pow((dstPointY - srcPointY), 2));
-        var height = edgeHeight * (edgeLength / 2);
+
+
+        srcPointIdx = logicalEdges[2 * edgeIndex];
+        dstPointIdx = logicalEdges[2 * edgeIndex + 1];
+        srcPointX = curPoints[2 * srcPointIdx];
+        srcPointY = curPoints[2 * srcPointIdx + 1];
+        dstPointX = curPoints[2 * dstPointIdx];
+        dstPointY = curPoints[2 * dstPointIdx + 1];
+
+        //edgeHeight +/- 50%
+        if (prevSrcIdx === srcPointIdx && prevDstIdx === dstPointIdx) {
+            heightCounter++;
+        } else {
+            heightCounter = 0;
+        }
+        prevSrcIdx = srcPointIdx;
+        prevDstIdx = dstPointIdx;
+
+        var moduloHeight = edgeHeight * (1.0 + ((heightCounter % 20)/20));
+        var unitRadius = (1 + Math.pow(moduloHeight, 2)) / (2 * moduloHeight);
+        var theta = Math.asin((1 / unitRadius)) * 2;
+        var thetaStep = -theta / (numRenderedSplits + 1);
+        var curTheta;
+        for (var midPointIdx = 0; midPointIdx < numRenderedSplits; midPointIdx++) {
+            curTheta = thetaStep * (midPointIdx + 1);
+            cosArray[midPointIdx] = Math.cos(curTheta);
+            sinArray[midPointIdx] = Math.sin(curTheta);
+        }
+
+        var edgeLength =
+            srcPointIdx === dstPointIdx ? 1.0
+            : Math.sqrt(Math.pow((dstPointX - srcPointX), 2) + Math.pow((dstPointY - srcPointY), 2));
+
+        var height = moduloHeight * (edgeLength / 2);
         var edgeDirectionX = (srcPointX -  dstPointX) / edgeLength;
         var edgeDirectionY = (srcPointY -  dstPointY) / edgeLength;
         var radius = unitRadius * (edgeLength / 2);
@@ -170,8 +196,8 @@ function expandLogicalEdges(bufferSnapshots, numRenderedSplits, edgeHeight) {
         var midPointY = (srcPointY + dstPointY) / 2;
         var centerPointX = midPointX + (radius - height) * (-1 * edgeDirectionY);
         var centerPointY = midPointY + (radius - height) * (edgeDirectionX);
-        var startRadiusX = srcPointX - centerPointX;
-        var startRadiusY = srcPointY - centerPointY;
+        var startRadiusX = srcPointIdx === dstPointIdx ? 1.0 : (srcPointX - centerPointX);
+        var startRadiusY = srcPointIdx === dstPointIdx ? 1.0 : (srcPointY - centerPointY);
 
         var prevPointX = srcPointX;
         var prevPointY = srcPointY;
@@ -476,9 +502,10 @@ function renderSlowEffects(renderingScheduler) {
     var expanded;
 
     if ( clientMidEdgeInterpolation && appSnapshot.vboUpdated) {
+        //ARCS
         start = Date.now();
 
-        expanded = expandLogicalEdges(appSnapshot.buffers, numRenderedSplits, edgeHeight);
+        expanded = expandLogicalEdges(renderState, appSnapshot.buffers, numRenderedSplits, edgeHeight);
         midSpringsPos = expanded.midSpringsPos;
         appSnapshot.buffers.midSpringsPos = midSpringsPos;
 
@@ -518,6 +545,8 @@ function renderSlowEffects(renderingScheduler) {
         console.debug('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
 
     } else if (appSnapshot.vboUpdated) {
+        //EDGE BUNDLING
+        //TODO deprecate/integrate?
         start = Date.now();
 
         expanded = expandLogicalMidEdges(appSnapshot.buffers);

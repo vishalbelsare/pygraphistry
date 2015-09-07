@@ -231,6 +231,13 @@ function setupCenter($toggle, curPoints, camera) {
                     bbox.bottom = y > bbox.bottom ? y : bbox.bottom;
                 }
 
+                if (points.length === 1) {
+                    bbox.left -= 0.1;
+                    bbox.right += 0.1;
+                    bbox.top -= 0.1;
+                    bbox.bottom += 0.1;
+                }
+
                 debug('Bounding box: ', bbox);
                 camera.centerOn(bbox.left, bbox.right, bbox.bottom * -1, bbox.top * -1);
                 return camera;
