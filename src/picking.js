@@ -104,14 +104,19 @@ function hitTestN(state, textures, x, y, r) {
         return {idx: -1, dim: 0};
     }
 
+
+    var SAMPLER = state.get('config').get('textures').get('hitmap').toJS();
+    var SAMPLE_RATE_WIDTH = SAMPLER.width ?  0.01 * SAMPLER.width.value : 1;
+    var SAMPLE_RATE_HEIGHT = SAMPLER.height ? 0.01 * SAMPLER.height.value : 1;
+
     var canvas = state.get('gl').canvas;
     //already retina-expanded
-    var textureWidth = canvas.width;
-    var textureHeight = canvas.height;
+    var textureWidth = Math.floor(canvas.width * SAMPLE_RATE_WIDTH);
+    var textureHeight = Math.floor(canvas.height * SAMPLE_RATE_HEIGHT);
     var pixelRatio = state.get('camera').pixelRatio;
 
-    var retinaX = Math.floor(x * pixelRatio);
-    var retinaY = Math.floor(y * pixelRatio);
+    var retinaX = Math.floor(x * pixelRatio * SAMPLE_RATE_WIDTH);
+    var retinaY = Math.floor(y * pixelRatio * SAMPLE_RATE_HEIGHT);
 
     var maps = _.map(activeTextures, function (texture) {
         return new Uint32Array(state.get('pixelreads')[texture].buffer);

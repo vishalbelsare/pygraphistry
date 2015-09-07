@@ -418,12 +418,12 @@ function getTextureDims(config, canvas, camera, name) {
     //Retina-quality
     var width =
         textureConfig.hasOwnProperty('width') ?
-            Math.round(0.01 * textureConfig.width.value * canvas.width)
-        : Math.round(canvas.width);
+            Math.floor(0.01 * textureConfig.width.value * canvas.width)
+        : Math.floor(canvas.width);
     var height =
         textureConfig.hasOwnProperty('height') ?
-            Math.round(0.01 * textureConfig.height.value * canvas.height)
-        : Math.round(canvas.height);
+            Math.floor(0.01 * textureConfig.height.value * canvas.height)
+        : Math.floor(canvas.height);
 
     return { width: width, height: height };
 }
