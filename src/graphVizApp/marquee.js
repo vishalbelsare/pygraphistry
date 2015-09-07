@@ -320,10 +320,10 @@ function getGhostImageObservable(renderState, sel, mimeType, flipY) {
 
     // We flip Y to support WebGL e.g. the marquee tool for "move nodes" selection highlight.
     var dims = {
-        x: sel.tl.x * pixelRatio,
-        y: canvas.height - pixelRatio * (sel.tl.y + Math.abs(sel.tl.y - sel.br.y)),
-        width: Math.max(1, pixelRatio * Math.abs(sel.tl.x - sel.br.x)),
-        height: Math.max(1, pixelRatio * Math.abs(sel.tl.y - sel.br.y))
+        x: Math.floor(sel.tl.x * pixelRatio),
+        y: Math.floor(canvas.height - pixelRatio * (sel.tl.y + Math.abs(sel.tl.y - sel.br.y))),
+        width: Math.floor(Math.max(1, pixelRatio * Math.abs(sel.tl.x - sel.br.x))),
+        height: Math.floor(Math.max(1, pixelRatio * Math.abs(sel.tl.y - sel.br.y)))
     };
 
     return getTextureObservable(renderState, dims)
