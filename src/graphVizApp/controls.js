@@ -598,7 +598,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var autoCentering =
         doneLoading.flatMapLatest(function () {
             return Rx.Observable.interval(1000)
-                .do(function () { console.log('auto center interval'); })
+                .do(function () { debug('auto center interval'); })
                 .merge(centeringDone)
                 .takeUntil(centeringDone.delay(1));
         });
