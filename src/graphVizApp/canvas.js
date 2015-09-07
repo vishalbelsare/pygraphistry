@@ -47,25 +47,6 @@ function setupCameraInteractions(appState, $eventTarget) {
     );
 }
 
-/* Deindexed logical edges by looking up the x/y positions of the source and destination
- * nodes. */
-//function expandLogicalEdges(bufferSnapshots) {
-    //var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
-    //var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
-    //var numVertices = logicalEdges.length;
-
-    //if (!bufferSnapshots.springsPos) {
-        //bufferSnapshots.springsPos = new Float32Array(numVertices * 2);
-    //}
-    //var springsPos = bufferSnapshots.springsPos;
-
-    //for (var i = 0; i < numVertices; i++) {
-        //springsPos[2 * i]     = curPoints[2 * logicalEdges[i]];
-        //springsPos[2 * i + 1] = curPoints[2 * logicalEdges[i] + 1];
-    //}
-
-    //return springsPos;
-//}
 
 function setupLabelsAndCursor(appState, urlParams, $eventTarget) {
     // Picks objects in priority based on order.
