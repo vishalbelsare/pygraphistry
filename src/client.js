@@ -320,7 +320,7 @@ function handleVboUpdates(socket, uri, renderState) {
                 },
                 function (err) { console.error('6 err. readyToRender error', err, (err||{}).stack, thisStep); });
 
-            var bufferVBOs = Rx.Observable.zipArray(
+            var bufferVBOs = Rx.Observable.combineLatest(
                 [Rx.Observable.return()]
                     .concat(changedBufferNames.map(fetchBuffer.bind('', socket.io.engine.id, data.bufferByteLengths))))
                 .take(1);
@@ -356,7 +356,7 @@ function handleVboUpdates(socket, uri, renderState) {
                         var nfo = pair[1];
                         return [name, nfo.bytes]; }));
 
-            var texturesData = Rx.Observable.zipArray(
+            var texturesData = Rx.Observable.combineLatest(
                 [Rx.Observable.return()]
                     .concat(changedTextureNames.map(fetchTexture.bind('', socket.io.engine.id, textureLengths))))
                 .take(1);

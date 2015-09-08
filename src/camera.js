@@ -276,8 +276,8 @@
         var normalizedScalingFactor =
             scalingFactor * ((1-alpha)*pointSizeConstantSmall + alpha*pointSizeConstantBig);
 
-
-        return Math.max(1, Math.min(8, this.edgeScaling * normalizedScalingFactor));
+        //FIXME coerces NaNs to 1.0 due to degenerate bounding box
+        return Math.max(1, Math.min(8, this.edgeScaling * normalizedScalingFactor)) || 1.0;
     };
 
     //FIXME should not depend on SC

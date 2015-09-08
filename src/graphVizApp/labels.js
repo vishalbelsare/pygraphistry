@@ -413,7 +413,7 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
                 .map(function (highlightedLabels) {
                     return {cmd: 'hover', pt: {dim: highlightedLabels[0].dim, idx: highlightedLabels[0].idx}};
                 }))
-        .scan([], function (acc, cmd) {
+        .scan(function (acc, cmd) {
             switch (cmd.cmd) {
                 case 'hover':
                     return acc
@@ -426,7 +426,7 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
                 case 'declick':
                     return [];
             }
-        })
+        }, [])
         .flatMapLatest(util.observableFilter(appState.isAnimatingOrSimulating, util.notIdentity))
         .map(function (arr) {
             return arr.filter(function (v) { return v.idx !== -1; });

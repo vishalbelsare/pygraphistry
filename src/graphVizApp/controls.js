@@ -367,7 +367,7 @@ function createControls(socket, appState, trigger, urlParams) {
                 $slider.onAsObservable('slide'),
                 $slider.onAsObservable('slideStop')
             ).distinctUntilChanged()
-            .throttleFirst(50)
+            .sample(50)
             .subscribe(
                 function () {
                     if ($that.hasClass('layout-menu-slider')) {
@@ -494,7 +494,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
                 .map(_.constant(false)))
         .do(function (isTurnOn) {
             marqueeIsOn = isTurnOn;
-            $('#marqueerectangle').children('i').toggleClass('toggle-on', marqueeIsOn);
+            $('#marqueerectangle').find('i').toggleClass('toggle-on', marqueeIsOn);
             appState.marqueeOn.onNext(marqueeIsOn ? 'toggled' : false);
         });
 
@@ -599,7 +599,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var autoCentering =
         doneLoading.flatMapLatest(function () {
             return Rx.Observable.interval(1000)
-                .do(function () { console.log('auto center interval'); })
+                .do(function () { debug('auto center interval'); })
                 .merge(centeringDone)
                 .takeUntil(centeringDone.delay(1));
         });

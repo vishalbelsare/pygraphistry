@@ -294,8 +294,9 @@ function setFlags(state, name, bool) {
 
 
 function createContext(state) {
+
     var canvas = state.get('canvas');
-    var glOptions = {antialias: true, premultipliedAlpha: false};
+    var glOptions = {antialias: false, premultipliedAlpha: false};
     var gl = canvas.getContext('webgl', glOptions);
     if (gl === null) {
         gl = canvas.getContext('experimental-webgl', glOptions);
@@ -388,8 +389,9 @@ function resizeCanvas(state/*, urlParams*/) {
     // reallocated. All other code paths should use camera.pixelRatio!
     var pixelRatio = window.devicePixelRatio || 1;
 
-    var width = Math.round(canvas.clientWidth * pixelRatio);
-    var height = Math.round(canvas.clientHeight * pixelRatio);
+    //Note that the size is *floored*, not *rounded*
+    var width = Math.floor(canvas.clientWidth * pixelRatio);
+    var height = Math.floor(canvas.clientHeight * pixelRatio);
 
     debug('Resize: old=(%d,%d) new=(%d,%d)', canvas.width, canvas.height, width, height);
     if (canvas.width !== width || canvas.height !== height) {
@@ -412,17 +414,16 @@ function getTextureDims(config, canvas, camera, name) {
     }
 
     var textureConfig = config.get ? config.get('textures').get(name).toJS() : config.textures[name];
-    // Do not downsample texture if retina is set
-    var pixelRatio = textureConfig.retina ? 1 : camera.pixelRatio;
 
+    //Retina-quality
     var width =
         textureConfig.hasOwnProperty('width') ?
-            Math.round(0.01 * textureConfig.width.value * canvas.width / pixelRatio)
-        : Math.round(canvas.width / pixelRatio);
+            Math.floor(0.01 * textureConfig.width.value * canvas.width)
+        : Math.floor(canvas.width);
     var height =
         textureConfig.hasOwnProperty('height') ?
-            Math.round(0.01 * textureConfig.height.value * canvas.height / pixelRatio)
-        : Math.round(canvas.height / pixelRatio);
+            Math.floor(0.01 * textureConfig.height.value * canvas.height)
+        : Math.floor(canvas.height);
 
     return { width: width, height: height };
 }
@@ -1036,18 +1037,32 @@ function renderItem(state, config, camera, gl, options, ext, programs, buffers, 
 }
 
 // Get names of buffers needed from server
-// RenderOptions -> [ string ]
+// RenderConfig -> [ string ]
 function getServerBufferNames (config) {
+    return getBufferNames(
+        config,
+        function (modelAttr) {
+            return modelAttr.datasource === 'HOST' || modelAttr.datasource === 'DEVICE';
+        });
+}
+
+// Get list of live buffers, where live means referenced by a renderitem
+// Optional filter predicate
+// RenderConfig * ?(ModelView -> Bool) -> [ String ]
+function getBufferNames (config, optFilter) {
+
+    var filterPred = optFilter || function () { return true; };
+
     var renderItems = config.render;
     var bufferNamesLists = renderItems.map(function (itemName) {
         var iDef = config.items[itemName];
         var elementIndex = iDef.index ? [iDef.index] : [];
         var bindings = _.values(iDef.bindings).concat(elementIndex);
-        return bindings.filter(function (binding) {
+        return bindings
+            .filter(function (binding) {
                 var modelName = binding[0];
                 var attribName = binding[1];
-                var datasource = config.models[modelName][attribName].datasource;
-                return (datasource === 'HOST' || datasource === 'DEVICE');
+                return filterPred(config.models[modelName][attribName]);
             }).map(function (binding) {
                 var modelName = binding[0];
                 return modelName;
@@ -1117,5 +1132,6 @@ module.exports = {
     setupFullscreenBuffer: setupFullscreenBuffer,
     getServerBufferNames: getServerBufferNames,
     getServerTextureNames: getServerTextureNames,
+    getBufferNames: getBufferNames,
     setFlags: setFlags
 };
