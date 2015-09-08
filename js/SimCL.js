@@ -1155,6 +1155,10 @@ function selectNodes(simulator, selection) {
 
     var selectNodes = simulator.otherKernels.selectNodes;
 
+    if (selection.all) {
+        return Q(_.range(simulator.dataframe.getNumElements('point')));
+    }
+
     return selectNodes.run(simulator, selection)
         .then(function (mask) {
             var res = [];
