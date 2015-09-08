@@ -5,6 +5,7 @@ var Rx      = require('rx');
 require('../rx-jquery-stub');
 
 var util    = require('./util.js');
+var Command = require('./command.js');
 
 
 function filterParametersCore(type, attribute) {
@@ -18,21 +19,34 @@ function filterParametersCore(type, attribute) {
 function FilterControl(socket) {
     this.namespaceMetadataSubject = new Rx.ReplaySubject(1);
 
-    this.namespaceSubscription = Rx.Observable.fromCallback(socket.emit, socket)('get_namespace_metadata', null)
+    this.namespaceCommand = new Command('get_namespace_metadata', socket);
+    this.updateFiltersCommand = new Command('update_filters', socket);
+    // this.getFiltersCommand = new Command('get_filters', socket);
+    this.namespaceSubscription = this.namespaceCommand.sendWithObservableResult(null)
         .do(function (reply) {
-            if (!reply || !reply.success) {
-                console.error('Server error on get_namespace_metadata', (reply||{}).error);
-            }
-        }).filter(function (reply) {
-            return reply && reply.success;
-        }).do(function (reply) {
             this.namespaceMetadataSubject.onNext(reply.metadata);
         }.bind(this)).subscribe(function (data) { console.log(data); }, util.makeErrorHandler('fetch get_namespace_metadata'));
+
+    /** @type Rx.ReplaySubject */
+    this.filtersSubject = Rx.ReplaySubject(1);
 }
 
 
 FilterControl.prototype.namespaceMetadataObservable = function () {
     return this.namespaceMetadataSubject;
+};
+
+FilterControl.prototype.filtersObservable = function () {
+    return this.filtersSubject;
+};
+
+FilterControl.prototype.updateFilters = function (filterSet) {
+    this.updateFiltersCommand.sendWithObservableResult(filterSet)
+        .do(function (reply) {
+            this.filtersSubject.onNext(reply.filters);
+        }.bind(this)).subscribe(
+            function (data) { console.log(data); },
+            util.makeErrorHandler('handle update_filters response'));
 };
 
 FilterControl.prototype.filterRangeParameters = function (type, attribute, start, stop) {
@@ -62,6 +76,7 @@ FilterControl.prototype.filterObservable = function (socket, params) {
 };
 
 FilterControl.prototype.dispose = function () {
+    this.namespaceSubscription.dispose();
     this.namespaceMetadataSubject.dispose();
     this.namespaceSubscription = this.namespaceMetadataSubject = undefined;
 };
