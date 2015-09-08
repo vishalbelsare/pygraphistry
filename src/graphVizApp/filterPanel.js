@@ -8,7 +8,7 @@ var Handlebars = require('handlebars');
 var Backbone = require('backbone');
     Backbone.$ = $;
 //var Ace     = require('brace');
-var filterer = require('./filter.js');
+var FilterControl = require('./filter.js');
 
 
 var COLLAPSED_FILTER_HEIGHT = 80;
@@ -17,7 +17,7 @@ var COLLAPSED_FILTER_HEIGHT = 80;
 module.exports = {
     init: function (socket, urlParams, filtersSubjectFromPanel, filtersSubjectFromHistogram) {
         var $filtersPanel = $('#filtersPanel');
-        filterer.init(socket, urlParams, $('#filterButton'), $filtersPanel);
+        FilterControl(socket, urlParams, $('#filterButton'), $filtersPanel);
 
         var FilterModel = Backbone.Model.extend({
 
@@ -123,7 +123,7 @@ module.exports = {
                 this.listenTo(filterSet, 'all', this.render);
                 this.listenTo(filterSet, 'change:timestamp', this.update);
 
-                this.combinedSubscription = filterer.namespaceMetadataObservable().combineLatest(
+                this.combinedSubscription = FilterControl.namespaceMetadataObservable().combineLatest(
                     filtersSubjectFromPanel,
                     function (dfa, fs) {
                         return {dataframeAttributes: dfa, filterSet: fs};

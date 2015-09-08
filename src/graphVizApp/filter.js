@@ -7,9 +7,6 @@ require('../rx-jquery-stub');
 var util    = require('./util.js');
 
 
-var namespaceMetadataSubject = new Rx.ReplaySubject(1);
-
-
 function filterParametersCore(type, attribute) {
     return {
         type: type,
@@ -17,52 +14,61 @@ function filterParametersCore(type, attribute) {
     };
 }
 
-module.exports = {
-    init: function (socket, urlParams, $button) {
-        if (!urlParams.debug) {
-            $button.css({display: 'none'});
-            return;
-        }
 
-        Rx.Observable.fromCallback(socket.emit, socket)('get_namespace_metadata', null)
-            .do(function (reply) {
-                if (!reply || !reply.success) {
-                    console.error('Server error on get_namespace_metadata', (reply||{}).error);
-                }
-            }).filter(function (reply) {
-                return reply && reply.success;
-            }).do(function (reply) {
-                namespaceMetadataSubject.onNext(reply.metadata);
-            }).subscribe(function (data) { console.log(data); }, util.makeErrorHandler('fetch get_namespace_metadata'));
-    },
+function FilterControl(socket, urlParams, $button/*, $panel*/) {
+    this.namespaceMetadataSubject = new Rx.ReplaySubject(1);
 
-    namespaceMetadataObservable: function () {
-        return namespaceMetadataSubject;
-    },
-
-    filterRangeParameters: function (type, attribute, start, stop) {
-        return _.extend(filterParametersCore(type, attribute), {
-            start: start,
-            stop: stop
-        });
-    },
-
-    filterExactValueParameters: function (type, attribute, value) {
-        return _.extend(filterParametersCore(type, attribute), {
-            equals: value
-        });
-    },
-
-    filterExactValuesParameters: function (type, attribute, values) {
-        return _.extend(filterParametersCore(type, attribute), {
-            equals: values
-        });
-    },
-
-    filterObservable: function (socket, params) {
-        return Rx.Observable.fromCallback(socket.emit, socket)('filter', params)
-            .map(function (reply) {
-                console.log('Filter Request replied with: ', reply);
-            }).subscribe(_.identity);
+    if (!urlParams.debug) {
+        $button.css({display: 'none'});
+        return;
     }
+
+    this.namespaceSubscription = Rx.Observable.fromCallback(socket.emit, socket)('get_namespace_metadata', null)
+        .do(function (reply) {
+            if (!reply || !reply.success) {
+                console.error('Server error on get_namespace_metadata', (reply||{}).error);
+            }
+        }).filter(function (reply) {
+            return reply && reply.success;
+        }).do(function (reply) {
+            this.namespaceMetadataSubject.onNext(reply.metadata);
+        }.bind(this)).subscribe(function (data) { console.log(data); }, util.makeErrorHandler('fetch get_namespace_metadata'));
+}
+
+
+FilterControl.prototype.namespaceMetadataObservable = function () {
+    return this.namespaceMetadataSubject;
 };
+
+FilterControl.prototype.filterRangeParameters = function (type, attribute, start, stop) {
+    return _.extend(filterParametersCore(type, attribute), {
+        start: start,
+        stop: stop
+    });
+};
+
+FilterControl.prototype.filterExactValueParameters = function (type, attribute, value) {
+    return _.extend(filterParametersCore(type, attribute), {
+        equals: value
+    });
+};
+
+FilterControl.prototype.filterExactValuesParameters = function (type, attribute, values) {
+    return _.extend(filterParametersCore(type, attribute), {
+        equals: values
+    });
+};
+
+FilterControl.prototype.filterObservable = function (socket, params) {
+    return Rx.Observable.fromCallback(socket.emit, socket)('filter', params)
+        .map(function (reply) {
+            console.log('Filter Request replied with: ', reply);
+        }).subscribe(_.identity);
+};
+
+FilterControl.prototype.dispose = function () {
+    this.namespaceMetadataSubject.dispose();
+    this.namespaceSubscription = this.namespaceMetadataSubject = undefined;
+};
+
+module.exports = FilterControl;
