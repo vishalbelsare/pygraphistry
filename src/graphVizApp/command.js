@@ -1,5 +1,7 @@
 'use strict';
 
+var Rx = require('rx');
+
 function Command(commandName, socket) {
     this.commandName = commandName;
     this.socket = socket;
