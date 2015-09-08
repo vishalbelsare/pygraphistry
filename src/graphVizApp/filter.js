@@ -23,10 +23,6 @@ function FilterControl(socket) {
     this.updateFiltersCommand = new Command('update_filters', socket);
     // this.getFiltersCommand = new Command('get_filters', socket);
     this.runFilterCommand = new Command('filter', socket);
-    this.namespaceSubscription = this.namespaceCommand.sendWithObservableResult(null)
-        .do(function (reply) {
-            this.namespaceMetadataSubject.onNext(reply.metadata);
-        }.bind(this)).subscribe(function (data) { console.log(data); }, util.makeErrorHandler('fetch get_namespace_metadata'));
 
     /** @type Rx.ReplaySubject */
     this.filtersSubject = Rx.ReplaySubject(1);
@@ -34,6 +30,12 @@ function FilterControl(socket) {
 
 
 FilterControl.prototype.namespaceMetadataObservable = function () {
+    if (this.namespaceSubscription === undefined) {
+        this.namespaceSubscription = this.namespaceCommand.sendWithObservableResult(null)
+            .do(function (reply) {
+                this.namespaceMetadataSubject.onNext(reply.metadata);
+            }.bind(this)).subscribe(function (data) { console.log(data); }, util.makeErrorHandler('fetch get_namespace_metadata'));
+    }
     return this.namespaceMetadataSubject;
 };
 
@@ -77,9 +79,12 @@ FilterControl.prototype.filterObservable = function (params) {
 };
 
 FilterControl.prototype.dispose = function () {
-    this.namespaceSubscription.dispose();
+    if (this.namespaceSubscription !== undefined) {
+        this.namespaceSubscription.dispose();
+        this.namespaceSubscription = undefined;
+    }
     this.namespaceMetadataSubject.dispose();
-    this.namespaceSubscription = this.namespaceMetadataSubject = undefined;
+    this.namespaceMetadataSubject = undefined;
 };
 
 module.exports = FilterControl;
