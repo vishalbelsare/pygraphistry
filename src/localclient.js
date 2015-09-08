@@ -125,7 +125,7 @@ module.exports = {
                     function (err) { console.error('readyToRender error', err, (err||{}).stack); });
 
                 var changedBufferNames = _.keys(data.bufferByteLengths);
-                var bufferVBOs = Rx.Observable.zipArray(
+                var bufferVBOs = Rx.Observable.combineLatest(
                     [Rx.Observable.return()]
                         .concat(changedBufferNames.map(fetchBuffer)))
                     .take(1);
@@ -148,7 +148,7 @@ module.exports = {
                         });
 
                 var changedTextureNames = [];
-                var texturesData = Rx.Observable.zipArray(
+                var texturesData = Rx.Observable.combineLatest(
                     [Rx.Observable.return()]
                         .concat(changedTextureNames.map(fetchTexture)))
                     .take(1);
