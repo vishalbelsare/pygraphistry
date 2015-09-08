@@ -473,7 +473,17 @@
         </a>
     </div>
     <div class="col-xs-9 attributeName">
-        {{attribute}}
+        <button class="btn btn-primary dropdown-toggle" type="button" id="addFilterButton" data-toggle="dropdown" aria-expanded="true">
+            Add Filter
+            <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
+            {{#each fields}}
+            <li role="presentation"><a class="addFilterDropdownField" role="menuitem" tabindex="-1" href="#">
+                {{this}}
+            </a></li>
+            {{/each}}
+        </ul>
     </div>
     <div class="col-xs-1 filterButton closeButton">
         <a href="#">
