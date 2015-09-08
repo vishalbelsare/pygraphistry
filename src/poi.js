@@ -148,7 +148,7 @@ function genLabel (instance, $labelCont, idx, info) {
     };
 
     setter
-        .throttleFirst(3)
+        .sample(3)
         .do(function (data) {
             res.dim = data.dim;
             res.idx = data.idx;

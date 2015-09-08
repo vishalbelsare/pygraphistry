@@ -109,7 +109,7 @@ function marqueeSelections (appState, $cont, $elt, isOn, marqueeState, doAfterSe
                                 debug('stopPropagation: marquee move');
                                 evt.stopPropagation();
                             })
-                            .throttleFirst(1)
+                            .sample(1)
                             .map(function (moveEvt) {
                                 return toRect(startPoint, toPoint($cont, moveEvt));
                             }).do(function (rect) {
@@ -205,7 +205,7 @@ function marqueeDrags(selections, $cont, $elt, appState, marqueeState, takeLast,
                         debug('stopPropagation: marquee move 2');
                         evt.stopPropagation();
                     })
-                    .throttleFirst(1)
+                    .sample(1)
                     .map(function (evt) {
                         return {start: startPoint, end: toPoint($cont, evt)};
                     }).do(function (drag) {

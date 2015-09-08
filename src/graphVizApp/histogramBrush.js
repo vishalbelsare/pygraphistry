@@ -128,7 +128,7 @@ function init(socket, marquee, poi) {
     // Take stream of selections and drags and use them for histograms
     marquee.selections.map(function (val) {
         return {type: 'selection', sel: val};
-    }).merge(marquee.drags.throttleFirst(DRAG_SAMPLE_INTERVAL).map(function (val) {
+    }).merge(marquee.drags.sample(DRAG_SAMPLE_INTERVAL).map(function (val) {
             return {type: 'drag', sel: val};
         })
     ).merge(attributeChange.map(function () {

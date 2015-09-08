@@ -367,7 +367,7 @@ function createControls(socket, appState, trigger, urlParams) {
                 $slider.onAsObservable('slide'),
                 $slider.onAsObservable('slideStop')
             ).distinctUntilChanged()
-            .throttleFirst(50)
+            .sample(50)
             .subscribe(
                 function () {
                     if ($that.hasClass('layout-menu-slider')) {

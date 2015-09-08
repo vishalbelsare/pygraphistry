@@ -62,7 +62,7 @@ module.exports = {
         foregroundColorObservable.first()
             .subscribe(function (initForegroundColor) {
                 makeInspector($fg, initForegroundColor && initForegroundColor.hexString())
-                    .throttleFirst(10)
+                    .sample(10)
                     .do(function (foregroundColor) {
                         // Execute the server command:
                         socket.emit('set_colors', {
@@ -82,7 +82,7 @@ module.exports = {
         backgroundColorObservable.first()
             .subscribe(function (initBackgroundColor) {
                 makeInspector($bg, initBackgroundColor && initBackgroundColor.hexString())
-                    .throttleFirst(10)
+                    .sample(10)
                     .do(function (backgroundColor) {
                         // Set the background color directly/locally via CSS:
                         $('#simulation').css('backgroundColor', backgroundColor.rgbaString());
