@@ -14,7 +14,7 @@ var Backgrid = require('backgrid');
 
 var util        = require('./util.js');
 
-function init(appState, socket, workerUrl, marquee) {
+function init(appState, socket, workerUrl, marquee, histogramPanelToggle) {
     var $nodesInspector = $('#inspector-nodes').find('.inspector');
     var $edgesInspector = $('#inspector-edges').find('.inspector');
 
@@ -56,6 +56,18 @@ function init(appState, socket, workerUrl, marquee) {
             edges: initPageableGrid(workerUrl, data.edges.columns, data.edges.urn, $edgesInspector, appState.activeSelection, 2)
         };
     }).do(function (grids) {
+
+        histogramPanelToggle.do(function (histogramsOn) {
+            // TODO: Why is this inversed here?
+            if (!histogramsOn) {
+                $('#inspector').css('width', '85%');
+                $inspectorOverlay.css('width', '85%');
+            } else {
+                $('#inspector').css('width', '100%');
+                $inspectorOverlay.css('width', '100%');
+            }
+        }).subscribe(_.identity, util.makeErrorHandler('change width on inspectorOverlay'));
+
         marqueeTriggers.flatMap(function (sel) {
             return Rx.Observable.fromCallback(socket.emit, socket)('set_selection', sel);
         }).do(function (reply) {
@@ -66,7 +78,6 @@ function init(appState, socket, workerUrl, marquee) {
         .do(function (reply) {
             updateGrid(grids.nodes, reply.params.nodes);
             updateGrid(grids.edges, reply.params.edges);
-            $('#inspector').css({visibility: 'visible'});
         }).subscribe(_.identity, util.makeErrorHandler('fetch data for inspector'));
     }).subscribe(_.identity, util.makeErrorHandler('fetch inspectHeader'));
 }
@@ -91,11 +102,11 @@ function createColumns(header, title) {
 
 function updateGrid(grid, params) {
     grid.collection.state.totalRecords = params.count;
+    grid.collection.state.currentPage = 1;
     grid.collection.fetch({reset: true});
 }
 
 function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, dim) {
-    console.log('SHOWING GRID');
 
     var SelectableRow = Backgrid.Row.extend({
         mouseoverColor: 'lightblue',
