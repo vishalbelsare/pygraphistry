@@ -705,7 +705,7 @@ function renderMouseoverEffects(renderingScheduler, task) {
 }
 
 
-var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
+function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
                                   isAnimating, simulateOn) {
     var that = this;
     this.renderState = renderState;
@@ -819,7 +819,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
             // Nothing to render
             if (_.keys(renderQueue).length === 0) {
                 var timeDelta = Date.now() - lastRenderTime;
-                if (timeDelta > 200 && !quietSignaled) {
+                if (timeDelta > 75 && !quietSignaled) {
                     quietCallback();
                     quietSignaled = true;
                     isAnimating.onNext(false);
@@ -877,7 +877,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
             that.appSnapshot.vboUpdated = false;
         }
     }
-};
+}
 
 
 module.exports = {
