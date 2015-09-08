@@ -472,7 +472,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
                         });
                 });
 
-            return Rx.Observable.zipArray(compressed).take(1)
+            return Rx.Observable.combineLatest.apply(Rx.Observable, compressed).take(1)
                 .do(function () { perf.endTiming('compressAll_durationMS');
 
         })
