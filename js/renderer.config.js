@@ -145,7 +145,7 @@ var DrawOptions = {
 
 var textures = {
     'hitmap': {
-        'datasource': VBODataSources.CLIENT
+        'datasource': VBODataSources.CLIENT,
         'width': {'unit': 'percent', 'value': 25},
         'height': {'unit': 'percent', 'value': 25}
     },
