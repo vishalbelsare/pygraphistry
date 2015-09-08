@@ -15,13 +15,8 @@ function filterParametersCore(type, attribute) {
 }
 
 
-function FilterControl(socket, urlParams, $button/*, $panel*/) {
+function FilterControl(socket) {
     this.namespaceMetadataSubject = new Rx.ReplaySubject(1);
-
-    if (!urlParams.debug) {
-        $button.css({display: 'none'});
-        return;
-    }
 
     this.namespaceSubscription = Rx.Observable.fromCallback(socket.emit, socket)('get_namespace_metadata', null)
         .do(function (reply) {

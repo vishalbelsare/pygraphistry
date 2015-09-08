@@ -17,7 +17,13 @@ var COLLAPSED_FILTER_HEIGHT = 80;
 module.exports = {
     init: function (socket, urlParams, filtersSubjectFromPanel, filtersSubjectFromHistogram) {
         var $filtersPanel = $('#filtersPanel');
-        FilterControl(socket, urlParams, $('#filterButton'), $filtersPanel);
+        var $button = $('#filterButton');
+
+        if (!urlParams.debug) {
+            $button.css({display: 'none'});
+        }
+
+        FilterControl(socket);
 
         var FilterModel = Backbone.Model.extend({
 
