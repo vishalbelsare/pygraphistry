@@ -61,7 +61,7 @@ function setupDrag($eventTarget, camera, appState) {
                         $sim.toggleClass('moving', false);
                     }))
                 .distinctUntilChanged(function(pos) { return {x: pos.pageX, y: pos.pageY}; })
-                .scan({x: clickPos.pageX, y: clickPos.pageY, deltaX: 0, deltaY: 0}, function(accPos, curPos) {
+                .scan(function(accPos, curPos) {
                     // Calculate the distance moved (since last event) for each move event
                     return {
                         deltaX: (curPos.pageX - accPos.x) / $eventTarget.width(),
@@ -69,7 +69,7 @@ function setupDrag($eventTarget, camera, appState) {
                         x: curPos.pageX,
                         y: curPos.pageY
                     };
-                })
+                }, {x: clickPos.pageX, y: clickPos.pageY, deltaX: 0, deltaY: 0})
                 .filter(function (dragEvent) {
                     return dragEvent.deltaX !== 0 || dragEvent.deltaY !== 0;
                 })
@@ -281,7 +281,7 @@ function setupSwipe(eventTarget, camera) {
         .merge(Rx.Observable.fromEvent($$eventTarget, 'swipe')
             .map( function (ev) {ev.preventDefault(); return 0; }))
 
-        .scan(0, function (acc, ev) {
+        .scan(function (acc, ev) {
             var data = {
                 cam: camera,
                 oldX: 0.0,
@@ -322,7 +322,7 @@ function setupSwipe(eventTarget, camera) {
 
             return data;
 
-        })
+        }, 0)
         .map(function(data) {
             return data.cam;
         });
@@ -336,7 +336,7 @@ function setupPinch(eventTarget, camera) {
         .merge(Rx.Observable.fromEvent($$eventTarget, 'pinch')
             .map( function (ev) {ev.preventDefault(); return 0; }))
 
-        .scan(0, function (acc, ev) {
+        .scan(function (acc, ev) {
             var data = {
                 cam: camera,
                 oldDist: -1,
@@ -362,7 +362,7 @@ function setupPinch(eventTarget, camera) {
             }
             return data;
 
-        })
+        }, 0)
         .map(function(data) {
             return data.cam;
         });
