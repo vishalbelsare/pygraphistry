@@ -19,6 +19,7 @@ Command.prototype.makeServerErrorHandler = function(commandName) {
         commandName = this.commandName;
     }
     return function (reply) {
+        console.debug('Server responded to ' + commandName, reply);
         if (!reply || !reply.success) {
             console.error('Server error on ' + commandName, (reply || {}).error);
         }
