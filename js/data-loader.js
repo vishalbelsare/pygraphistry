@@ -24,7 +24,6 @@ var loaders = {
     'matrix': loadMatrix,
     'random': loadRandom,
     'OBSOLETE_geo': loadGeo,
-    'OBSOLETE_socioPLT': loadSocioPLT,
     'OBSOLETE_rectangle': loadRectangle
 };
 
@@ -222,47 +221,6 @@ function loadRectangle(graph, dataset) {
 }
 
 
-function loadSocioPLT(graph, dataset) {
-    logger.trace('Loading SocioPLT');
-
-    var data = require('./libs/socioplt/generateGraph.js').process(dataset.body);
-
-    var nodesPerRow = Math.floor(Math.sqrt(data.nodes.length));
-    var points =
-        data.nodes.map(
-            function (_, i) {
-                return [i % nodesPerRow, Math.floor(i / nodesPerRow)];
-            });
-    var pointSizes = new Uint8Array(_.pluck(data.nodes, 'size'));
-    var pointColors = new Uint32Array(_.pluck(data.nodes, 'color'));
-
-    // data.edges = [{src: 0, dst: 1}];
-
-    var edges = _.flatten(data.edges.map(function (edge) {
-            return [edge.src, edge.dst];
-        }));
-    var edgeColors = _.flatten(data.edges.map(function (edge) {
-            return [edge.color, edge.color];
-        }));
-
-    // graph.setVisible({edgeStrength: -10});
-    // physicsControls.gravity     ( 0.020083175556898723);
-    // physicsControls.edgeStrength( 4.292198241799153);
-    // physicsControls.edgeDistance( 0.0000158);
-
-
-
-    return graph.setPoints(new Float32Array(_.flatten(points)), pointSizes, pointColors)
-        .then(function () {
-            return graph.setEdgesAndColors(
-                new Uint32Array(edges), // new Uint32Array(_.flatten(edges).map(function (idx, i) { return idx; })),
-                new Uint32Array(edgeColors));
-        }).then(function () {
-            return graph;
-        }, function (err) {
-            throw err;
-        });
-}
 
 
 function loadGeo(graph, dataset) {

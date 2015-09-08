@@ -14,7 +14,7 @@ var webcl = require('node-webcl');
 var Color = require('color');
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:data:data-loader');
+var logger      = log.createLogger('graph-viz:data:simcl');
 
 
 // Do NOT enable this in prod. It destroys performance.
@@ -512,11 +512,10 @@ function setPoints(simulator, points) {
 // returns corresponding setter
 function makeSetter(simulator, name, dimName) {
 
-    return function (data, isReverse) {
+    return function (data) {
 
-        var buffName = name + (dimName === 'edge' && !!isReverse ? '_reverse' : '');
+        var buffName = name;
 
-        // simulator.buffersLocal[buffName] = data;
         simulator.dataframe.loadLocalBuffer(buffName, data);
 
         simulator.resetBuffers([simulator.dataframe.getBuffer(buffName, 'simulator')]);

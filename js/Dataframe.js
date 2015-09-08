@@ -312,6 +312,7 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
     this.typedArrayCache.newPointSizes = new Uint8Array(oldNumPoints);
     this.typedArrayCache.newPointColors = new Uint32Array(oldNumPoints);
     this.typedArrayCache.newEdgeColors = new Uint32Array(oldNumEdges * 2);
+    this.typedArrayCache.newEdgeHeights = new Uint32Array(oldNumEdges * 2);
     var numRenderedSplits = this.rawdata.numElements.renderedSplits;
     var numMidEdgeColorsPerEdge = 2 * (numRenderedSplits + 1);
     var numMidEdgeColors = numMidEdgeColorsPerEdge * oldNumEdges;
@@ -460,6 +461,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
     var numMidEdgeColorsPerEdge = 2 * (numRenderedSplits + 1);
     var numMidEdgeColors = numMidEdgeColorsPerEdge * masks.edge.length;
     var newEdgeColors = new Uint32Array(that.typedArrayCache.newEdgeColors.buffer, 0, masks.edge.length * 2);
+    var newEdgeHeights = new Uint32Array(that.typedArrayCache.newEdgeHeights.buffer, 0, masks.edge.length * 2);
     var newMidEdgeColors = new Uint32Array(that.typedArrayCache.newMidEdgeColors.buffer, 0, numMidEdgeColors);
 
     for (var i = 0; i < masks.edge.length; i++) {
@@ -468,12 +470,16 @@ Dataframe.prototype.filter = function (masks, simulator) {
         newEdgeColors[i*2] = rawdata.localBuffers.edgeColors[idx*2];
         newEdgeColors[i*2 + 1] = rawdata.localBuffers.edgeColors[idx*2 + 1];
 
+        newEdgeHeights[i*2] = rawdata.localBuffers.edgeHeights[idx*2];
+        newEdgeHeights[i*2 + 1] = rawdata.localBuffers.edgeHeights[idx*2 + 1];
+
         for (var j = 0; j < numMidEdgeColorsPerEdge; j++) {
             newMidEdgeColors[i*numMidEdgeColorsPerEdge + j] =
                     rawdata.localBuffers.midEdgeColors[idx*numMidEdgeColorsPerEdge + j];
         }
     }
     newData.localBuffers.edgeColors = newEdgeColors;
+    newData.localBuffers.edgeHeights = newEdgeHeights;
     newData.localBuffers.midEdgeColors = newMidEdgeColors;
 
     // numElements;
@@ -695,7 +701,7 @@ Dataframe.prototype.load = function (attributes, type, numElements) {
     var filteredKeys = _.keys(attributes)
         .filter(function (name) {
             return ['pointColor', 'pointSize', 'pointTitle', 'pointLabel',
-                    'edgeLabel', 'edgeTitle', 'degree'].indexOf(name) === -1;
+                    'edgeLabel', 'edgeTitle', 'edgeHeight', 'degree'].indexOf(name) === -1;
         })
         .filter(function (name) { return name !== nodeTitleField && name !== edgeTitleField; });
 
@@ -812,7 +818,7 @@ Dataframe.prototype.loadHostBuffer = function (name, buffer) {
 
 Dataframe.prototype.loadLocalBuffer = function (name, buffer) {
     // TODO: Generalize
-    if (name === 'edgeColors') {
+    if (name === 'edgeColors' || name === 'edgeHeights') {
         var sortedBuffer = new buffer.constructor(buffer.length);
         var permutation = this.rawdata.hostBuffers.forwardsEdges.edgePermutationInverseTyped;
         for (var i = 0; i < buffer.length / 2; i++) {
@@ -881,7 +887,7 @@ Dataframe.prototype.getBufferKeys = function (type) {
 Dataframe.prototype.getNumElements = function (type) {
     var res = this.data.numElements[type];
     if (!res && res !== 0) {
-        throw "Invalid Num Elements: " + type;
+        throw new Error("Invalid Num Elements: " + type);
     }
     return res;
 };
@@ -894,7 +900,7 @@ Dataframe.prototype.getAllBuffers = function (type) {
 Dataframe.prototype.getLocalBuffer = function (name) {
     var res = this.data.localBuffers[name];
     if (!res) {
-        throw "Invalid Local Buffer: " + name;
+        throw new Error("Invalid Local Buffer: " + name);
     }
     return res;
 };
@@ -902,7 +908,7 @@ Dataframe.prototype.getLocalBuffer = function (name) {
 Dataframe.prototype.getHostBuffer = function (name) {
     var res = this.data.hostBuffers[name];
     if (!res) {
-        throw "Invalid Host Buffer: " + name;
+        throw new Error("Invalid Host Buffer: " + name);
     }
     return res;
 };
@@ -934,7 +940,7 @@ Dataframe.prototype.getBuffer = function (name, type) {
         var dataType = this.getDataType(name, type);
 
         if (dataType !== 'number') {
-            throw "Attempting to get buffer that is non-numeric";
+            throw new Error("Attempting to get buffer that is non-numeric");
         }
 
         var typedData = new Float32Array(data);
