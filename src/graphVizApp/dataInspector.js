@@ -23,7 +23,8 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle) {
     var $inspectorOverlay = $('#inspector-overlay');
     // Grey out data inspector when marquee is being dragged.
     appState.brushOn.do(function (state) {
-        if (state === 'dragging') {
+        // TODO: Don't rely on CSS state here.
+        if (state === 'dragging' && $('#inspector').css('visibility') === 'visible') {
             $inspectorOverlay.css('visibility', 'visible');
         } else {
             $inspectorOverlay.css('visibility', 'hidden');
