@@ -23,7 +23,7 @@ module.exports = {
             $button.css({display: 'none'});
         }
 
-        FilterControl(socket);
+        /*var control = */new FilterControl(socket);
 
         var FilterModel = Backbone.Model.extend({
 
