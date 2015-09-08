@@ -119,13 +119,15 @@ function error2JSON(self, type, msg, error) {
         localTime: (new Date()).toString(),
         module: self.moduleName,
         tag: self.usertag,
-        msg: msg,
+        msg: msg
     }
 
     if (error && error.stack) {
         payload.stack = error.stack;
     } else if (error) {
         payload.error = error;
+    } else {
+        payload.catcher = (new Error()).stack;
     }
 
     return payload;
