@@ -31,6 +31,19 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle) {
         }
     }).subscribe(_.identity, util.makeErrorHandler('Grey / Ungrey Data Inspector'));
 
+    // Change sizes based on whether or not histogram is open.
+    // TODO: Separate this into some sort of control/window manager.
+    histogramPanelToggle.do(function (histogramsOn) {
+        // TODO: Why is this inversed here?
+        if (!histogramsOn) {
+            $('#inspector').css('width', '85%');
+            $inspectorOverlay.css('width', '85%');
+        } else {
+            $('#inspector').css('width', '100%');
+            $inspectorOverlay.css('width', '100%');
+        }
+    }).subscribe(_.identity, util.makeErrorHandler('change width on inspectorOverlay'));
+
 
     // Update data inspector when new selections are available.
     Rx.Observable.fromCallback(socket.emit, socket)('inspect_header', null)
@@ -58,17 +71,6 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle) {
         };
     }).do(function (grids) {
 
-        histogramPanelToggle.do(function (histogramsOn) {
-            // TODO: Why is this inversed here?
-            if (!histogramsOn) {
-                $('#inspector').css('width', '85%');
-                $inspectorOverlay.css('width', '85%');
-            } else {
-                $('#inspector').css('width', '100%');
-                $inspectorOverlay.css('width', '100%');
-            }
-        }).subscribe(_.identity, util.makeErrorHandler('change width on inspectorOverlay'));
-
         marqueeTriggers.flatMap(function (sel) {
             return Rx.Observable.fromCallback(socket.emit, socket)('set_selection', sel);
         }).do(function (reply) {
@@ -76,9 +78,9 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle) {
                 console.error('Server error on set_selection', (reply||{}).error);
             }
         }).filter(function (reply) { return reply && reply.success; })
-        .do(function (reply) {
-            updateGrid(grids.nodes, reply.params.nodes);
-            updateGrid(grids.edges, reply.params.edges);
+        .do(function () {
+            updateGrid(grids.nodes);
+            updateGrid(grids.edges);
         }).subscribe(_.identity, util.makeErrorHandler('fetch data for inspector'));
     }).subscribe(_.identity, util.makeErrorHandler('fetch inspectHeader'));
 }
@@ -101,9 +103,7 @@ function createColumns(header, title) {
     }));
 }
 
-function updateGrid(grid, params) {
-    grid.collection.state.totalRecords = params.count;
-    grid.collection.state.currentPage = 1;
+function updateGrid(grid) {
     grid.collection.fetch({reset: true});
 }
 
@@ -145,6 +145,17 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
         state: {
             pageSize: 8
         },
+
+        parseState: function (resp) {
+            return {
+                totalRecords: resp.count,
+                currentPage: 1
+            };
+        },
+
+        parseRecords: function (resp) {
+            return resp.values;
+        }
     });
 
     var dataFrame = new DataFrame([], {mode: 'server'});
@@ -176,7 +187,8 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
 
     var serverSideFilter = new Backgrid.Extension.ServerSideFilter({
         collection: dataFrame,
-        name: 'search'
+        name: 'search',
+        placeholder: 'Search'
     });
 
     // TODO: Use templates for this stuff instead of making in jquery.
