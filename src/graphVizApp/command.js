@@ -6,6 +6,7 @@ function Command(commandName, socket) {
 }
 
 Command.prototype.sendWithObservableResult = function(argument) {
+    console.debug('Sent command ' + this.commandName, argument);
     return Rx.Observable.fromCallback(this.socket.emit, this.socket)(this.commandName, argument)
         .do(this.makeServerErrorHandler())
         .filter(this.isServerResponseSuccess);
