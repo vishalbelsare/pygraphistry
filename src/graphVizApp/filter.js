@@ -22,6 +22,7 @@ function FilterControl(socket) {
     this.namespaceCommand = new Command('get_namespace_metadata', socket);
     this.updateFiltersCommand = new Command('update_filters', socket);
     // this.getFiltersCommand = new Command('get_filters', socket);
+    this.runFilterCommand = new Command('filter', socket);
     this.namespaceSubscription = this.namespaceCommand.sendWithObservableResult(null)
         .do(function (reply) {
             this.namespaceMetadataSubject.onNext(reply.metadata);
@@ -68,8 +69,8 @@ FilterControl.prototype.filterExactValuesParameters = function (type, attribute,
     });
 };
 
-FilterControl.prototype.filterObservable = function (socket, params) {
-    return Rx.Observable.fromCallback(socket.emit, socket)('filter', params)
+FilterControl.prototype.filterObservable = function (params) {
+    return this.runFilterCommand.sendWithObservableResult(params)
         .map(function (reply) {
             console.log('Filter Request replied with: ', reply);
         }).subscribe(_.identity);

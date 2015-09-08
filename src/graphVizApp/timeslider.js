@@ -30,12 +30,15 @@ module.exports = {
                 hits.onNext([data.values.min, data.values.max]);
             });
 
+        // Should just acquire the backend control from a standard place.
+        var control = new FilterControl(socket);
+
         hits.sample(100).subscribe(function (v) {
             var len = END - START;
             var start = START + len * v[0] / MAX_BOUNDS;
             var stop = END - len * (MAX_BOUNDS - v[1]) / MAX_BOUNDS;
             debug('emit filter', v, '->', [start, stop]);
-            FilterControl.filterObservable(socket, FilterControl.filterRangeParameters('edge', 'Date', start, stop));
+            control.filterObservable(control.filterRangeParameters('edge', 'Date', start, stop));
         });
 
         //FIXME kickoff may fire before filterRange defined

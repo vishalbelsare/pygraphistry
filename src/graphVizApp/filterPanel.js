@@ -23,7 +23,7 @@ module.exports = {
             $button.css({display: 'none'});
         }
 
-        /*var control = */new FilterControl(socket);
+        var control = new FilterControl(socket);
 
         var FilterModel = Backbone.Model.extend({
 
@@ -129,7 +129,7 @@ module.exports = {
                 this.listenTo(filterSet, 'all', this.render);
                 this.listenTo(filterSet, 'change:timestamp', this.update);
 
-                this.combinedSubscription = FilterControl.namespaceMetadataObservable().combineLatest(
+                this.combinedSubscription = control.namespaceMetadataObservable().combineLatest(
                     filtersSubjectFromPanel,
                     function (dfa, fs) {
                         return {dataframeAttributes: dfa, filterSet: fs};
