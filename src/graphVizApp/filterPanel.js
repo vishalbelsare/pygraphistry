@@ -11,6 +11,13 @@ var FilterControl = require('./filter.js');
 
 var COLLAPSED_FILTER_HEIGHT = 80;
 
+// TODO: Wrap Handlebars with this as a module:
+Handlebars.registerHelper('list', function(context, options) {
+    return '<ul>' + _.map(function(item) {
+        return '<li>' + options.fn(item) + '</li>';
+    }).join('\n') + '</ul>';
+});
+
 var FilterModel = Backbone.Model.extend({
     defaults: {
         control: undefined,
