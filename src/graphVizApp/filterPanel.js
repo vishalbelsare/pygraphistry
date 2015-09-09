@@ -111,7 +111,6 @@ var AllFiltersView = Backbone.View.extend({
         this.filterTemplate = Handlebars.compile($('#filterTemplate').html());
     },
     render: function () {
-        var template =
         this.filtersSubjectFromPanel.onNext(this.collection);
     },
     addFilter: function (filter) {
