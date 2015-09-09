@@ -34,7 +34,7 @@ FilterControl.prototype.namespaceMetadataObservable = function () {
         this.namespaceSubscription = this.namespaceCommand.sendWithObservableResult(null)
             .do(function (reply) {
                 this.namespaceMetadataSubject.onNext(reply.metadata);
-            }.bind(this)).subscribe(function (data) { console.log(data); }, util.makeErrorHandler('fetch get_namespace_metadata'));
+            }.bind(this)).subscribe(_.identity, util.makeErrorHandler('fetch get_namespace_metadata'));
     }
     return this.namespaceMetadataSubject;
 };
@@ -48,7 +48,7 @@ FilterControl.prototype.updateFilters = function (filterSet) {
         .do(function (reply) {
             this.filtersSubject.onNext(reply.filters);
         }.bind(this)).subscribe(
-            function (data) { console.log(data); },
+            _.identity,
             util.makeErrorHandler('handle update_filters response'));
 };
 
