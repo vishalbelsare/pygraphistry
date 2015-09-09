@@ -210,10 +210,16 @@ function FilterPanel(socket, urlParams, filtersSubjectFromPanel, filtersSubjectF
             // Setup add filter button.
             var addFilterTemplate = Handlebars.compile($('#addFilterTemplate').html());
             // TODO flatten the namespace into selectable elements:
-            var params = {fields: data.dataframeAttributes};
+            var fields = [];
+            _.each(data.dataframeAttributes, function (attributeNames, typeName) {
+                _.each(attributeNames, function (attributeName) {
+                    fields.push(typeName + ':' + attributeName);
+                });
+            });
+            var params = {fields: fields};
             var html = addFilterTemplate(params);
             $('#addFilter').html(html);
-        }).subscribe(function (data) { console.log(data); }, function (err) {
+        }).subscribe(_.identity, function (err) {
             console.log('Error updating Add Filter', err);
         });
 
