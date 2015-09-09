@@ -53,7 +53,7 @@ FilterControl.prototype.updateFilters = function (filterSet) {
     return this.filtersResponsesSubject;
 };
 
-FilterControl.prototype.clearFilters = function () { this.updateFilters([]); };
+FilterControl.prototype.clearFilters = function () { return this.updateFilters([]); };
 
 FilterControl.prototype.queryToExpression = function(query) {
     if (!query) { return undefined; }
