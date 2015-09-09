@@ -1038,6 +1038,10 @@ Dataframe.prototype.getDataType = function (column, type) {
     return this.rawdata.attributes[type][column].type;
 };
 
+Dataframe.prototype.getColumn = function (column, type) {
+    return _.omit(this.rawdata.attributes[type][column], 'values');
+};
+
 // TODO: Have this return edge attributes in sorted order, unless
 // explicitly requested to be unsorted (for internal perf reasons)
 Dataframe.prototype.getColumnValues = function (column, type) {
@@ -1081,7 +1085,7 @@ Dataframe.prototype.getColumnsByType = function () {
         var typeResult = {};
         var columnNamesPerType = that.getAttributeKeys(typeName);
         _.each(columnNamesPerType, function (columnName) {
-            typeResult[columnName] = that.getColumnValues(columnName, typeName);
+            typeResult[columnName] = that.getColumn(columnName, typeName);
         });
         result[typeName] = typeResult;
     });
