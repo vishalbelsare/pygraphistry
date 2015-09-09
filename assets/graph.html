@@ -494,7 +494,11 @@
         <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
             {{#each fields}}
             <li role="presentation"><a class="addFilterDropdownField" role="menuitem" tabindex="-1" href="#">
-                {{this}}
+                {{#if dataType}}
+                {{type}}:{{name}} ({{dataType}})
+                {{else}}
+                {{type}}:{{name}}
+                {{/if}}
             </a></li>
             {{/each}}
         </ul>
