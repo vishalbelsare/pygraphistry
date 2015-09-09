@@ -1040,7 +1040,7 @@ Dataframe.prototype.getDataType = function (column, type) {
 
 // TODO: Have this return edge attributes in sorted order, unless
 // explicitly requested to be unsorted (for internal perf reasons)
-Dataframe.prototype.getColumn = function (column, type) {
+Dataframe.prototype.getColumnValues = function (column, type) {
 
     // A filter has been done, and we need to apply the
     // mask and compact.
@@ -1081,7 +1081,7 @@ Dataframe.prototype.getColumnsByType = function () {
         var typeResult = {};
         var columnNamesPerType = that.getAttributeKeys(typeName);
         _.each(columnNamesPerType, function (columnName) {
-            typeResult[columnNamesPerType] = that.getColumn(columnName, typeName);
+            typeResult[columnName] = that.getColumnValues(columnName, typeName);
         });
         result[typeName] = typeResult;
     });
@@ -1127,7 +1127,7 @@ Dataframe.prototype.serializeColumns = function (target, options) {
         toSerialize[type] = {};
         var keys = that.getAttributeKeys(type);
         _.each(keys, function (key) {
-            toSerialize[type][key] = that.getColumn(key, type);
+            toSerialize[type][key] = that.getColumnValues(key, type);
         });
     });
 
@@ -1215,7 +1215,7 @@ Dataframe.prototype.aggregate = function (simulator, indices, attributes, binnin
 
 
 Dataframe.prototype.countBy = function (simulator, attribute, binning, indices, type) {
-    var values = this.getColumn(attribute, type);
+    var values = this.getColumnValues(attribute, type);
 
     // TODO: Get this value from a proper source, instead of hard coding.
     var maxNumBins = 29;
@@ -1347,7 +1347,7 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
     // VGraph types.
     // values = _.filter(values, function (x) { return !isNaN(x)});
 
-    var values = this.getColumn(attribute, type);
+    var values = this.getColumnValues(attribute, type);
 
     var numValues = indices.length;
     if (numValues === 0) {
