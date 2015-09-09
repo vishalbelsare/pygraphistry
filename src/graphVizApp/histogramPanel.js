@@ -11,6 +11,7 @@ var Backbone = require('backbone');
 var d3 = require('d3');
 
 var util    = require('./util.js');
+var FilterControl = require('./filter.js');
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -54,13 +55,32 @@ var histogramFilterSubject;
 
 // TODO: Extract this out into the model.
 var histogramFilters = {};
+var filterModel;
 
 
 //////////////////////////////////////////////////////////////////////////////
 // Models
 //////////////////////////////////////////////////////////////////////////////
 
-function initHistograms(globalStats, attributes, filterSubject, attrChangeSubject, updateAttributeSubj) {
+function histogramFiltersToFilterModelUpdates(histogramFilters, filterModel) {
+    var filterModels = [];
+    var filterer = new FilterControl();
+    _.each(histogramFilters, function (histFilter, attribute) {
+        var newModel = new filterModel();
+        newModel.set('attribute', attribute);
+        newModel.set('control', 'histogram');
+        newModel.set('query', filterer.filterRangeParameters(
+                histFilter.type,
+                histFilter.attribute,
+                histFilter.start,
+                histFilter.stop));
+        filterModels.push(newModel);
+    });
+    return filterModels;
+}
+
+function initHistograms(globalStats, attributes, filterModelFromPanel, filterSubject, attrChangeSubject, updateAttributeSubj) {
+    filterModel = filterModelFromPanel;
     histogramFilterSubject = filterSubject;
     dataframeAttributeChange = attrChangeSubject;
     updateAttributeSubject = updateAttributeSubj;
@@ -182,7 +202,8 @@ function initHistograms(globalStats, attributes, filterSubject, attrChangeSubjec
             var id = this.model.cid;
             $('.refreshHistogramButton-' + id).css('visibility', 'hidden');
             delete histogramFilters[attribute];
-            histogramFilterSubject.onNext(histogramFilters);
+            var filterModels = histogramFiltersToFilterModelUpdates(histogramFilters, filterModel);
+            histogramFilterSubject.onNext(filterModels);
             this.render();
         },
 
@@ -655,7 +676,8 @@ function handleHistogramDown (redrawCallback, id, globalStats) {
                 delete histogramFilters[attr];
             }
 
-            histogramFilterSubject.onNext(histogramFilters);
+            var filterModels = histogramFiltersToFilterModelUpdates(histogramFilters, filterModel);
+            histogramFilterSubject.onNext(filterModels);
             redrawCallback();
         })
         .subscribe(_.identity, util.makeErrorHandler('Histogram Filter Mouseup'));

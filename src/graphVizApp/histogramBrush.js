@@ -84,7 +84,7 @@ function init(socket, urlParams, marquee/*, poi*/) {
         });
 
         histogramsPanel = histogramPanel.initHistograms(
-            data, attributes, filtersSubjectFromHistogram, dataframeAttributeChange, updateDataframeAttributeSubject);
+            data, attributes, filtersPanel.model, filtersSubjectFromHistogram, dataframeAttributeChange, updateDataframeAttributeSubject);
         data.histogramPanel = histogramsPanel;
 
         // On auto-populate, at most 5 histograms, or however many * 85 + 110 px = window height.
