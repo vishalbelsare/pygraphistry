@@ -52,6 +52,34 @@ FilterControl.prototype.updateFilters = function (filterSet) {
             util.makeErrorHandler('handle update_filters response'));
 };
 
+FilterControl.prototype.queryToExpression = function(query) {
+    if (!query) { return undefined; }
+    var attribute = query.attribute;
+    if (!attribute) {
+        attribute = '<unknown>';
+    }
+    // Basic namespace-indication:
+    if (query.type) {
+        attribute = query.type + ':' + attribute;
+    }
+    // Should quote inner brackets if we commit to this:
+    // attribute = '[' + attribute + ']';
+    if (query.hasOwnProperty('start') && query.hasOwnProperty('stop')) {
+        return attribute + ' BETWEEN ' + query.start.toString(10) +
+            ' AND ' + query.stop.toString(10);
+    } else if (query.hasOwnProperty('start')) {
+        return attribute + ' > ' + query.start.toString(10);
+    } else if (query.hasOwnProperty('stop')) {
+        return query.stop.toString(10) + ' < ' + attribute;
+    } else if (query.hasOwnProperty('equals')) {
+        if (Array.isArray(query.equals)) {
+            return attribute + ' IN ' + query.equals.toString();
+        } else {
+            return attribute + ' = ' + query.equals.toString();
+        }
+    }
+};
+
 FilterControl.prototype.filterRangeParameters = function (type, attribute, start, stop) {
     return _.extend(filterParametersCore(type, attribute), {
         start: start,
