@@ -11,16 +11,8 @@ var FilterControl = require('./filter.js');
 
 var COLLAPSED_FILTER_HEIGHT = 80;
 
-// TODO: Wrap Handlebars with this as a module:
-Handlebars.registerHelper('list', function(context, options) {
-    return '<ul>' + _.map(function(item) {
-        return '<li>' + options.fn(item) + '</li>';
-    }).join('\n') + '</ul>';
-});
-
 var FilterModel = Backbone.Model.extend({
     defaults: {
-        control: undefined,
         title: undefined,
         attribute: undefined,
         dataType: undefined,
@@ -53,22 +45,37 @@ var FilterCollection = Backbone.Collection.extend({
     }
 });
 
+/**
+ * This is not the underlying data type but the logical type for the query.
+ * @type {{name: String, value: String}}[]
+ */
 var DataTypes = [
-    {name: 'string'},
-    {name: 'number'},
-    {name: 'date'},
-    {name: 'datetime'},
-    {name: 'boolean'},
-    {name: 'categorical'}
+    {value: 'string', name: 'String'},
+    {value: 'number', name: 'Numeric'}, // decimal
+    {value: 'float', name: 'Float'},
+    {value: 'date', name: 'Date'},
+    {value: 'datetime', name: 'Date and Time'},
+    {value: 'boolean', name: 'Boolean'},
+    {value: 'categorical', name: 'Categorical'}
 ];
 
+/**
+ * What kinds of controls can be selected at top-level (then configured/styled).
+ * TODO make these parametric or hierarchical.
+ * @type {{name: String, value: String}}[]
+ */
 var FilterControlTypes = [
-    {name: 'select'},
-    {name: 'multiselect'},
-    {name: 'range'},
-    {name: 'slider'},
-    {name: 'calendar'},
-    {name: 'text'}
+    {value: 'select', name: 'Select'},
+    // Might include All and/or None:
+    {value: 'multiselect', name: 'Multi-Select'},
+    // Single vs double-bounded range:
+    {value: 'range', name: 'Range'},
+    // Continuous vs discrete slider:
+    {value: 'slider', name: 'Slider'},
+    {value: 'histogram', name: 'Histogram'},
+    {value: 'calendar', name: 'Calendar'},
+    // Role of text (substring vs prefix or blob).
+    {value: 'text', name: 'Text'}
 ];
 
 var FilterView = Backbone.View.extend({
@@ -85,21 +92,22 @@ var FilterView = Backbone.View.extend({
         this.template = Handlebars.compile($('#filterTemplate').html());
     },
     render: function () {
-        var html = this.template({
+        var bindings = {
             model: this.model.toJSON(),
             dataTypes: _.map(DataTypes, function (dataType) {
-                if (dataType.name === this.model.get('dataType')) {
+                if (dataType.value === this.model.get('dataType')) {
                     return _.extend({selected: true}, dataType);
                 }
                 return dataType;
             }, this),
             controlTypes: _.map(FilterControlTypes, function (controlType) {
-                if (controlType.name === this.model.get('controlType')) {
+                if (controlType.value === this.model.get('controlType')) {
                     return _.extend({selected: true}, controlType);
                 }
                 return controlType;
             }, this)
-        });
+        };
+        var html = this.template(bindings);
         this.$el.html(html);
 
         return this;
