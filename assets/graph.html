@@ -269,10 +269,8 @@
         </div> <!-- /renderingItems -->
 
         <div id="filtersPanel" class="filterPanel">
-            <div class="form-horizontal">
-                <div id="filters"></div>
-                <div id="addFilter"></div>
-            </div>  <!-- /form-horizontal -->
+            <div id="filters"></div>
+            <div id="addFilter"></div>
         </div> <!-- /filtersPanel -->
 
 
@@ -429,7 +427,7 @@
             </a>
         </div>
         <div class="col-md-7 filterName control-title">{{model.title}}</div>
-        <div class="col-md-1"></div>
+        <div class="col-md-2"></div>
         <div class="col-md-1 disableButton">
             <a href="#">
                 <i class="fa fa-toggle-off disableFilterButton" id="disableFilterButton{{id}}" cid="{{id}}"></i>
@@ -442,10 +440,10 @@
         </div>
     </div>
     <form class="filterEditor form-horizontal">
-        <div class="row form-group" title="Data Type">
+        <div class="form-group-sm" title="Data Type">
             <label class="control-label" for="filterDataType{{id}}">Data Type</label>
-            <p class="form-control-static">{{model.dataType}}</p>
-            <select class="filterDataTypeSelector form-control hidden" id="filterDataType{{id}}" title="Data Type">
+            <p class="form-control-static hidden">{{model.dataType}}</p>
+            <select class="filterDataTypeSelector form-control" id="filterDataType{{id}}" title="Data Type">
                 <option value="">(Unknown)</option>
                 {{#each dataTypes}}
                 {{#if selected}}
@@ -456,10 +454,10 @@
                 {{/each}}
             </select>
         </div>
-        <div class="row form-group" title="Control Type">
+        <div class="form-group-sm" title="Control Type">
             <label class="control-label" for="filterControlType{{id}}">Control Type</label>
-            <p class="form-control-static">{{model.controlType}}</p>
-            <select class="filterControlTypeSelector form-control hidden" id="filterControlType{{id}}" title="Control Type">
+            <p class="form-control-static hidden">{{model.controlType}}</p>
+            <select class="filterControlTypeSelector form-control" id="filterControlType{{id}}" title="Control Type">
                 <option value="">(Unknown)</option>
                 {{#each controlTypes}}
                 {{#if selected}}
