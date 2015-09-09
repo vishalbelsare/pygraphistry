@@ -1076,11 +1076,12 @@ Dataframe.prototype.getAttributeKeys = function (type) {
 Dataframe.prototype.getColumnsByType = function () {
     var types = ['point', 'edge'];
     var result = {};
+    var that = this;
     _.each(types, function (typeName) {
         var typeResult = {};
-        var columnNamesPerType = this.getAttributeKeys(typeName);
+        var columnNamesPerType = that.getAttributeKeys(typeName);
         _.each(columnNamesPerType, function (columnName) {
-            typeResult[columnNamesPerType] = this.getColumn(columnName, typeName);
+            typeResult[columnNamesPerType] = that.getColumn(columnName, typeName);
         });
         result[typeName] = typeResult;
     });
