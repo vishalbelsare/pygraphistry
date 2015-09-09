@@ -68,9 +68,9 @@ FilterControl.prototype.queryToExpression = function(query) {
         return attribute + ' BETWEEN ' + query.start.toString(10) +
             ' AND ' + query.stop.toString(10);
     } else if (query.hasOwnProperty('start')) {
-        return attribute + ' > ' + query.start.toString(10);
+        return attribute + ' >= ' + query.start.toString(10);
     } else if (query.hasOwnProperty('stop')) {
-        return query.stop.toString(10) + ' < ' + attribute;
+        return query.stop.toString(10) + ' <= ' + attribute;
     } else if (query.hasOwnProperty('equals')) {
         if (Array.isArray(query.equals)) {
             return attribute + ' IN ' + query.equals.toString();
