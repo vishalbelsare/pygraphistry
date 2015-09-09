@@ -25,7 +25,7 @@ function FilterControl(socket) {
     this.runFilterCommand = new Command('filter', socket);
 
     /** @type Rx.ReplaySubject */
-    this.filtersSubject = Rx.ReplaySubject(1);
+    this.filtersResponsesSubject = new Rx.ReplaySubject(1);
 }
 
 
@@ -39,18 +39,21 @@ FilterControl.prototype.namespaceMetadataObservable = function () {
     return this.namespaceMetadataSubject;
 };
 
-FilterControl.prototype.filtersObservable = function () {
-    return this.filtersSubject;
+FilterControl.prototype.filtersResponsesObservable = function () {
+    return this.filtersResponsesSubject;
 };
 
 FilterControl.prototype.updateFilters = function (filterSet) {
-    this.updateFiltersCommand.sendWithObservableResult(filterSet)
+    this.updateFiltersCommand.sendWithObservableResult(filterSet, true)
         .do(function (reply) {
-            this.filtersSubject.onNext(reply.filters);
+            this.filtersResponsesSubject.onNext(reply);
         }.bind(this)).subscribe(
-            _.identity,
-            util.makeErrorHandler('handle update_filters response'));
+        _.identity,
+        util.makeErrorHandler('handle update_filters response'));
+    return this.filtersResponsesSubject;
 };
+
+FilterControl.prototype.clearFilters = function () { this.updateFilters([]); };
 
 FilterControl.prototype.queryToExpression = function(query) {
     if (!query) { return undefined; }
@@ -100,9 +103,9 @@ FilterControl.prototype.filterExactValuesParameters = function (type, attribute,
 };
 
 FilterControl.prototype.filterObservable = function (params) {
-    return this.runFilterCommand.sendWithObservableResult(params)
-        .map(function (reply) {
-            console.log('Filter Request replied with: ', reply);
+    return this.runFilterCommand.sendWithObservableResult(params, true)
+        .do(function (reply) {
+            this.filtersResponsesSubject.onNext(reply);
         }).subscribe(_.identity);
 };
 
@@ -113,8 +116,8 @@ FilterControl.prototype.dispose = function () {
     }
     this.namespaceMetadataSubject.dispose();
     this.namespaceMetadataSubject = undefined;
-    this.filtersSubject.dispose();
-    this.filtersSubject = undefined;
+    this.filtersResponsesSubject.dispose();
+    this.filtersResponsesSubject = undefined;
 };
 
 module.exports = FilterControl;
