@@ -111,7 +111,6 @@ var AllFiltersView = Backbone.View.extend({
         this.filterTemplate = Handlebars.compile($('#filterTemplate').html());
     },
     render: function () {
-        this.filtersSubjectFromPanel.onNext(this.collection);
     },
     addFilter: function (filter) {
         var view = new FilterView({
@@ -122,13 +121,11 @@ var AllFiltersView = Backbone.View.extend({
         // var dataframeAttribute = filter.get('attribute');
         this.filtersContainer.append(childElement);
         filter.set('$el', $(childElement));
-        this.filtersSubjectFromPanel.onNext(this.collection);
     },
     remove: function () {
         this.combinedSubscription.dispose();
     },
     removeFilter: function (/*filter*/) {
-        this.filtersSubjectFromPanel.onNext(this.collection);
     },
     refresh: function () {
         this.filtersContainer.empty();
@@ -157,16 +154,20 @@ function FilterPanel(socket, urlParams, filtersSubjectFromPanel, filtersSubjectF
         console.error('error updating filters collection from histograms', err);
     });
 
+    this.collection.on('change', function (eventName, context) {
+        filtersSubjectFromPanel.onNext(context);
+    }.bind(this));
+
     this.combinedSubscription = this.control.namespaceMetadataObservable().combineLatest(
         filtersSubjectFromPanel,
         function (dfa, fs) {
             return {dataframeAttributes: dfa, filterSet: fs};
         }).do(function (data) {
             // Setup add filter button.
-            var template = Handlebars.compile($('#addFilterTemplate').html());
+            var addFilterTemplate = Handlebars.compile($('#addFilterTemplate').html());
             // TODO flatten the namespace into selectable elements:
             var params = {fields: data.dataframeAttributes};
-            var html = template(params);
+            var html = addFilterTemplate(params);
             $('#addFilter').html(html);
         }).subscribe(function (data) { console.log(data); }, function (err) {
             console.log('Error updating Add Filter', err);
