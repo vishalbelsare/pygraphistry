@@ -202,6 +202,12 @@ function FilterPanel(socket, urlParams, filtersSubjectFromPanel, filtersSubjectF
         filtersSubjectFromPanel.onNext(context);
     }.bind(this));
 
+    filtersSubjectFromPanel.subscribe(
+        function () {
+            this.control.updateFilters(this.collection);
+        }.bind(this)
+    );
+
     this.combinedSubscription = this.control.namespaceMetadataObservable().combineLatest(
         filtersSubjectFromPanel,
         function (dfa, fs) {

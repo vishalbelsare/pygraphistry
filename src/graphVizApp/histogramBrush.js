@@ -44,8 +44,26 @@ function updateDataframeAttribute (oldAttributeName, newAttributeName, type) {
     }
 }
 
+var EmptySelectionMessage = '<p style="color: red; text-align: center">Empty Selection.</p>';
 
-function init(socket, urlParams, marquee/*, poi*/) {
+function respondToFiltersCall (filtersResponseObservable, poi) {
+    filtersResponseObservable
+        .do(function (res) {
+            // Invalidate cache now that a filter has executed and possibly changed indices.
+            var $histogramErrors = $('#histogramErrors');
+            if (!res.success && res.error === 'empty selection') {
+                $histogramErrors.html(EmptySelectionMessage);
+                return;
+            }
+
+            $histogramErrors.empty();
+            poi.emptyCache();
+        })
+        .subscribe(_.identity, util.makeErrorHandler('Emit Filter'));
+}
+
+
+function init(socket, urlParams, marquee, poi) {
     debug('Initializing histogram brush');
 
     // Grab global stats at initialization
@@ -63,6 +81,7 @@ function init(socket, urlParams, marquee/*, poi*/) {
     var filtersSubjectFromPanel = new Rx.ReplaySubject(1);
     var filtersSubjectFromHistogram = new Rx.ReplaySubject(1);
     var filtersPanel = new FilterPanel(socket, urlParams, filtersSubjectFromPanel, filtersSubjectFromHistogram);
+    respondToFiltersCall(filtersPanel.control.filtersResponsesObservable(), poi);
 
     // Setup update attribute subject that histogram panel can write to
     updateDataframeAttributeSubject.do(function (data) {
