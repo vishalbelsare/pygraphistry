@@ -85,6 +85,8 @@ FilterControl.prototype.dispose = function () {
     }
     this.namespaceMetadataSubject.dispose();
     this.namespaceMetadataSubject = undefined;
+    this.filtersSubject.dispose();
+    this.filtersSubject = undefined;
 };
 
 module.exports = FilterControl;
