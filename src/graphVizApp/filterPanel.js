@@ -16,7 +16,8 @@ var FilterModel = Backbone.Model.extend({
         title: undefined,
         attribute: undefined,
         dataType: undefined,
-        controlType: undefined
+        controlType: undefined,
+        query: undefined
     }
 });
 
@@ -92,8 +93,12 @@ var FilterView = Backbone.View.extend({
         this.template = Handlebars.compile($('#filterTemplate').html());
     },
     render: function () {
+        var control = new FilterControl();
         var bindings = {
-            model: this.model.toJSON(),
+            model: _.extend({
+                    expression: control.queryToExpression(this.model.get('query'))
+                },
+                this.model.toJSON()),
             dataTypes: _.map(DataTypes, function (dataType) {
                 if (dataType.value === this.model.get('dataType')) {
                     return _.extend({selected: true}, dataType);

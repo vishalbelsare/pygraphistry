@@ -66,6 +66,9 @@ function histogramFiltersToFilterModelUpdates(histogramFilters, filterModel) {
     var filterModels = [];
     var filterer = new FilterControl();
     _.each(histogramFilters, function (histFilter, attribute) {
+        if (!attribute) {
+            attribute = histFilter.attribute;
+        }
         var newModel = new filterModel({
             title: attribute,
             attribute: attribute,
@@ -73,7 +76,7 @@ function histogramFiltersToFilterModelUpdates(histogramFilters, filterModel) {
             dataType: 'float',
             query: filterer.filterRangeParameters(
                 histFilter.type,
-                histFilter.attribute,
+                attribute,
                 histFilter.start,
                 histFilter.stop)});
         filterModels.push(newModel);
