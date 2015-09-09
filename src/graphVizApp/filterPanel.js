@@ -211,9 +211,14 @@ function FilterPanel(socket, urlParams, filtersSubjectFromPanel, filtersSubjectF
             var addFilterTemplate = Handlebars.compile($('#addFilterTemplate').html());
             // TODO flatten the namespace into selectable elements:
             var fields = [];
-            _.each(data.dataframeAttributes, function (attributeNames, typeName) {
-                _.each(attributeNames, function (attributeName) {
-                    fields.push(typeName + ':' + attributeName);
+            _.each(data.dataframeAttributes, function (columns, typeName) {
+                _.each(columns, function (column, attributeName) {
+                    // PATCH rename "type" to "dataType" to avoid collisions:
+                    if (column.hasOwnProperty('type') && !column.hasOwnProperty('dataType')) {
+                        column.dataType = column.type;
+                        delete column.type;
+                    }
+                    fields.push(_.extend({type: typeName, name: attributeName}, column));
                 });
             });
             var params = {fields: fields};
