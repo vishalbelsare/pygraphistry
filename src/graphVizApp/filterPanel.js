@@ -204,7 +204,9 @@ function FilterPanel(socket, urlParams, filtersSubjectFromPanel, filtersSubjectF
 
     filtersSubjectFromPanel.subscribe(
         function () {
-            this.control.updateFilters(this.collection);
+            this.control.updateFilters(this.collection.map(function (model) {
+                return _.omit(model.toJSON(), '$el');
+            }));
         }.bind(this)
     );
 
