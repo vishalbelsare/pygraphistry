@@ -7,9 +7,13 @@ function Command(commandName, socket) {
     this.socket = socket;
 }
 
-Command.prototype.sendWithObservableResult = function(argument) {
+Command.prototype.sendWithObservableResult = function(argument, disableErrorFiltering) {
     console.debug('Sent command ' + this.commandName, argument);
-    return Rx.Observable.fromCallback(this.socket.emit, this.socket)(this.commandName, argument)
+    var src = Rx.Observable.fromCallback(this.socket.emit, this.socket)(this.commandName, argument);
+    if (disableErrorFiltering === true) {
+        return src;
+    }
+    return src
         .do(this.makeServerErrorHandler())
         .filter(this.isServerResponseSuccess);
 };
