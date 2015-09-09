@@ -17,6 +17,7 @@ var FilterModel = Backbone.Model.extend({
         attribute: undefined,
         dataType: undefined,
         controlType: undefined,
+        enabled: true,
         query: undefined
     }
 });
@@ -84,6 +85,7 @@ var FilterView = Backbone.View.extend({
     className: 'filterInspector',
     events: {
         'click .disableFilterButton': 'disable',
+        'click .disabledFilterButton': 'enable',
         'click .expandFilterButton': 'expand',
         'click .expendedFilterButton': 'shrink'
     },
@@ -116,6 +118,22 @@ var FilterView = Backbone.View.extend({
         this.$el.html(html);
 
         return this;
+    },
+    disable: function (event) {
+        var $button = $(event.target);
+        $button.removeClass('disableFilterButton').addClass('disabledFilterButton');
+        $button.removeClass('fa-toggle-off').addClass('fa-toggle-on');
+        $('input', this.$el).setAttribute('disabled');
+        $('textarea', this.$el).setAttribute('disabled');
+        this.model.set('enabled', false);
+    },
+    enable: function (event) {
+        var $button = $(event.target);
+        $button.removeClass('disabledFilterButton').addClass('disableFilterButton');
+        $button.removeClass('fa-toggle-on').addClass('fa-toggle-off');
+        $('input', this.$el).removeAttribute('disabled');
+        $('textarea', this.$el).removeAttribute('disabled');
+        this.model.set('enabled', true);
     },
     expand: function (event) {
         $(event.target).removeClass('expandFilterButton').addClass('expandedFilterButton');
