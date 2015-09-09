@@ -12,7 +12,13 @@ var FilterControl = require('./filter.js');
 var COLLAPSED_FILTER_HEIGHT = 80;
 
 var FilterModel = Backbone.Model.extend({
-
+    defaults: {
+        control: undefined,
+        title: undefined,
+        attribute: undefined,
+        dataType: undefined,
+        controlType: undefined
+    }
 });
 
 var FilterCollection = Backbone.Collection.extend({
@@ -36,7 +42,7 @@ var FilterCollection = Backbone.Collection.extend({
             } else {
                 this.add(filterModel);
             }
-        });
+        }, this);
     }
 });
 
@@ -69,6 +75,7 @@ var FilterView = Backbone.View.extend({
 
     initialize: function () {
         this.listenTo(this.model, 'destroy', this.remove);
+        this.template = Handlebars.compile($('#filterTemplate').html());
     },
     render: function () {
         var html = this.template({
@@ -108,7 +115,6 @@ var AllFiltersView = Backbone.View.extend({
         this.listenTo(this.collection, 'change:timestamp', this.update);
 
         this.filtersContainer = $('#filters');
-        this.filterTemplate = Handlebars.compile($('#filterTemplate').html());
     },
     render: function () {
     },
