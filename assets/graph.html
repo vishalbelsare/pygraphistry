@@ -442,24 +442,24 @@
         <label for="filterDataType{{id}}">Data Type:</label>
         <select class="filterDataTypeSelector" id="filterDataType{{id}}" title="Data Type">
             <option value="">(Unknown)</option>
-            {{#list dataTypes}}
-            {{#if this.selected}}
-                <option value="{{this.name}}" selected="selected">{{this.name}}</option>
+            {{#each dataTypes}}
+            {{#if selected}}
+                <option value="{{name}}" selected="selected">{{name}}</option>
             {{else}}
-                <option value="{{this.name}}">{{this.name}}</option>
+                <option value="{{name}}">{{name}}</option>
             {{/if}}
-            {{/list}}
+            {{/each}}
         </select>
         <label for="filterControlType{{id}}">Control Type:</label>
         <select class="filterControlTypeSelector" id="filterControlType{{id}}" title="Control Type">
             <option value="">(Unknown)</option>
-            {{#list controlTypes}}
-            {{#if this.selected}}
-                <option value="{{this.name}}" selected="selected">{{this.name}}</option>
+            {{#each controlTypes}}
+            {{#if selected}}
+                <option value="{{value}}" selected="selected">{{name}}</option>
             {{else}}
-                <option value="{{this.name}}">{{this.name}}</option>
+                <option value="{{value}}">{{name}}</option>
             {{/if}}
-            {{/list}}
+            {{/each}}
         </select>
         <label for="filterExpression{{id}}">Expression:</label>
         <textarea id="filterExpression{{id}}" name="expression" title="Filter expression" rows="2" cols="40">{{expression}}</textarea>
