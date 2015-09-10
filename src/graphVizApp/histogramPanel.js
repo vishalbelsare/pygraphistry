@@ -55,21 +55,21 @@ var histogramFilterSubject;
 
 // TODO: Extract this out into the model.
 var histogramFilters = {};
-var filterModel;
+var FilterModel;
 
 
 //////////////////////////////////////////////////////////////////////////////
 // Models
 //////////////////////////////////////////////////////////////////////////////
 
-function histogramFiltersToFilterModelUpdates(histogramFilters, filterModel) {
+function histogramFiltersToFilterModelUpdates(histogramFilters, FilterModel) {
     var filterModels = [];
     var filterer = new FilterControl();
     _.each(histogramFilters, function (histFilter, attribute) {
         if (!attribute) {
             attribute = histFilter.attribute;
         }
-        var newModel = new filterModel({
+        var newModel = new FilterModel({
             title: attribute,
             attribute: attribute,
             controlType: 'histogram',
@@ -85,7 +85,7 @@ function histogramFiltersToFilterModelUpdates(histogramFilters, filterModel) {
 }
 
 function initHistograms(globalStats, attributes, filterModelFromPanel, filterSubject, attrChangeSubject, updateAttributeSubj) {
-    filterModel = filterModelFromPanel;
+    FilterModel = filterModelFromPanel;
     histogramFilterSubject = filterSubject;
     dataframeAttributeChange = attrChangeSubject;
     updateAttributeSubject = updateAttributeSubj;
@@ -207,7 +207,7 @@ function initHistograms(globalStats, attributes, filterModelFromPanel, filterSub
             var id = this.model.cid;
             $('.refreshHistogramButton-' + id).css('visibility', 'hidden');
             delete histogramFilters[attribute];
-            var filterModels = histogramFiltersToFilterModelUpdates(histogramFilters, filterModel);
+            var filterModels = histogramFiltersToFilterModelUpdates(histogramFilters, FilterModel);
             histogramFilterSubject.onNext(filterModels);
             this.render();
         },
@@ -681,7 +681,7 @@ function handleHistogramDown (redrawCallback, id, globalStats) {
                 delete histogramFilters[attr];
             }
 
-            var filterModels = histogramFiltersToFilterModelUpdates(histogramFilters, filterModel);
+            var filterModels = histogramFiltersToFilterModelUpdates(histogramFilters, FilterModel);
             histogramFilterSubject.onNext(filterModels);
             redrawCallback();
         })
