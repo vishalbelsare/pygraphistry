@@ -9,6 +9,7 @@ var Backbone = require('backbone');
     Backbone.$ = $;
 //var Ace     = require('brace');
 var FilterControl = require('./filter.js');
+var util          = require('./util.js');
 
 
 var COLLAPSED_FILTER_HEIGHT = 80;
@@ -252,9 +253,9 @@ FiltersPanel.prototype.listenToHistogramChangesFrom = function(filtersSubjectFro
     this.filtersSubjectFromHistogram = filtersSubjectFromHistogram;
     return this.filtersSubjectFromHistogram.do(function (histogramFilters) {
         this.collection.updateSubset(histogramFilters);
-    }.bind(this)).subscribe(_.identity, function (err) {
-        console.error('error updating filters collection from histograms', err);
-    });
+    }.bind(this)).subscribe(
+        _.identity,
+        util.makeErrorHandler('error updating filters collection from histograms'));
 };
 
 
