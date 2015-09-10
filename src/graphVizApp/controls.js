@@ -9,6 +9,7 @@ var Color   = require('color');
 
 var util            = require('./util.js');
 var dataInspector   = require('./dataInspector.js');
+var FiltersPanel    = require('./filterPanel.js');
 var histogramBrush  = require('./histogramBrush.js');
 var marqueeFact     = require('./marquee.js');
 var runButton       = require('./runButton.js');
@@ -543,7 +544,8 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var marquee = setupMarquee(appState, turnOnMarquee);
     var brush = setupBrush(appState, turnOnBrush);
     dataInspector.init(appState, socket, workerParams.href, brush);
-    histogramBrush.init(socket, urlParams, brush, appState.poi);
+    var filtersPanel = new FiltersPanel(socket, urlParams);
+    histogramBrush.init(socket, filtersPanel, brush, appState.poi);
     forkVgraph(socket, urlParams);
     persistButton(appState, socket, urlParams);
     goLiveButton(socket, urlParams);

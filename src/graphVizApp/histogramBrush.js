@@ -7,7 +7,6 @@ var Rx      = require('rx');
 var _       = require('underscore');
 
 var histogramPanel = require('./histogramPanel');
-var FiltersPanel = require('./filterPanel');
 var util    = require('./util.js');
 
 
@@ -63,7 +62,7 @@ function respondToFiltersCall (filtersResponseObservable, poi) {
 }
 
 
-function init(socket, urlParams, marquee, poi) {
+function init(socket, filtersPanel, marquee, poi) {
     debug('Initializing histogram brush');
 
     // Grab global stats at initialization
@@ -79,7 +78,7 @@ function init(socket, urlParams, marquee, poi) {
 
     // Setup filtering:
     var filtersSubjectFromHistogram = new Rx.ReplaySubject(1);
-    var filtersPanel = new FiltersPanel(socket, urlParams, filtersSubjectFromHistogram);
+    filtersPanel.listenToHistogramChangesFrom(filtersSubjectFromHistogram);
     respondToFiltersCall(filtersPanel.control.filtersResponsesObservable(), poi);
 
     // Setup update attribute subject that histogram panel can write to

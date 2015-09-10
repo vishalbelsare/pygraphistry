@@ -2,6 +2,8 @@
 
 var $       = window.$;
 var _       = require('underscore');
+var Rx      = require('rx');
+              require('../rx-jquery-stub');
 var Handlebars = require('handlebars');
 var Backbone = require('backbone');
     Backbone.$ = $;
@@ -187,7 +189,7 @@ var AllFiltersView = Backbone.View.extend({
 });
 
 
-function FiltersPanel(socket, urlParams, filtersSubjectFromHistogram) {
+function FiltersPanel(socket, urlParams) {
     var $button = $('#filterButton');
 
     if (!urlParams.debug) {
@@ -200,19 +202,13 @@ function FiltersPanel(socket, urlParams, filtersSubjectFromHistogram) {
 
     this.model = FilterModel;
 
-    var filtersSubjectFromPanel = new Rx.ReplaySubject(1);
-
-    filtersSubjectFromHistogram.do(function (histogramFilters) {
-        this.collection.updateSubset(histogramFilters);
-    }.bind(this)).subscribe(_.identity, function (err) {
-        console.error('error updating filters collection from histograms', err);
-    });
+    this.filtersSubjectFromPanel = new Rx.ReplaySubject(1);
 
     this.collection.on('change', function (eventName, context) {
-        filtersSubjectFromPanel.onNext(context);
+        this.filtersSubjectFromPanel.onNext(context);
     }.bind(this));
 
-    filtersSubjectFromPanel.subscribe(
+    this.filtersSubjectFromPanel.subscribe(
         function () {
             this.control.updateFilters(this.collection.map(function (model) {
                 return _.omit(model.toJSON(), '$el');
@@ -221,7 +217,7 @@ function FiltersPanel(socket, urlParams, filtersSubjectFromHistogram) {
     );
 
     this.combinedSubscription = this.control.namespaceMetadataObservable().combineLatest(
-        filtersSubjectFromPanel,
+        this.filtersSubjectFromPanel,
         function (dfa, fs) {
             return {dataframeAttributes: dfa, filterSet: fs};
         }).do(function (data) {
@@ -251,5 +247,21 @@ function FiltersPanel(socket, urlParams, filtersSubjectFromHistogram) {
         el: $('#filtersPanel')
     });
 }
+
+FiltersPanel.prototype.listenToHistogramChangesFrom = function(filtersSubjectFromHistogram) {
+    this.filtersSubjectFromHistogram = filtersSubjectFromHistogram;
+    return this.filtersSubjectFromHistogram.do(function (histogramFilters) {
+        this.collection.updateSubset(histogramFilters);
+    }.bind(this)).subscribe(_.identity, function (err) {
+        console.error('error updating filters collection from histograms', err);
+    });
+};
+
+
+FiltersPanel.prototype.dispose = function () {
+    this.filtersSubjectFromPanel.dispose();
+    this.filtersSubjectFromHistogram.dispose();
+};
+
 
 module.exports = FiltersPanel;
