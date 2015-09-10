@@ -72,7 +72,8 @@ function setupLabelsAndCursor(appState, urlParams, $eventTarget) {
     var hitMapTextures = ['hitmap'];
     var latestHighlightedObject = labels.getLatestHighlightedObject(appState, $eventTarget, hitMapTextures);
 
-    labels.setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating, latestHighlightedObject);
+    labels.setupClickSelections(appState, $eventTarget, hitMapTextures);
+    labels.setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating, latestHighlightedObject, appState.activeSelection);
     labels.setupLabels(appState, urlParams, $eventTarget, latestHighlightedObject);
 }
 
@@ -768,10 +769,10 @@ function renderMouseoverEffects(renderingScheduler, task) {
     // Also highlight selections.
     // TODO: Generalize selection highlights from mouseover highlights.
     _.each(appSnapshot.activeSelection, function (sel) {
-        if (sel[1] === 1) {
-            nodeIndices.push(sel[0]);
+        if (sel.dim === 1) {
+            nodeIndices.push(sel.idx);
         } else {
-            edgeIndices.push(sel[1]);
+            edgeIndices.push(sel.idx);
         }
     });
 

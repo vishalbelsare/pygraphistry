@@ -552,7 +552,6 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     menuToggler(onElt, $('#layoutSettingsButton'),  $('#renderingItems'), 'Turning on/off settings');
     menuToggler(onElt, $('#filterButton'),  $('#filtersPanel'), 'Turning on/off the filter panel');
 
-
     var marquee = setupMarquee(appState, turnOnMarquee);
     var brush = setupBrush(appState, turnOnBrush);
     dataInspector.init(appState, socket, workerParams.href, brush, histogramPanelToggle);

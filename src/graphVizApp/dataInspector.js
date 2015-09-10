@@ -14,11 +14,19 @@ var Backgrid = require('backgrid');
 
 var util        = require('./util.js');
 
+var ROWS_PER_PAGE = 8;
+
+
 function init(appState, socket, workerUrl, marquee, histogramPanelToggle) {
     var $nodesInspector = $('#inspector-nodes').find('.inspector');
     var $edgesInspector = $('#inspector-edges').find('.inspector');
 
     var marqueeTriggers = marquee.selections.merge(marquee.doneDragging);
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // Interactions with other tools.
+    //////////////////////////////////////////////////////////////////////////
 
     var $inspectorOverlay = $('#inspector-overlay');
     // Grey out data inspector when marquee is being dragged.
@@ -45,7 +53,11 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle) {
     }).subscribe(_.identity, util.makeErrorHandler('change width on inspectorOverlay'));
 
 
-    // Update data inspector when new selections are available.
+    //////////////////////////////////////////////////////////////////////////
+    // Setup Inspector
+    //////////////////////////////////////////////////////////////////////////
+
+    // Grab header.
     Rx.Observable.fromCallback(socket.emit, socket)('inspect_header', null)
     .do(function (reply) {
         if (!reply || !reply.success) {
@@ -54,7 +66,6 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle) {
     }).filter(function (reply) { return reply && reply.success; })
     .map(function (data) {
         return {
-
             nodes: {
                 columns: createColumns(data.header.nodes, 'Node'),
                 urn: data.urns.nodes
@@ -71,6 +82,7 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle) {
         };
     }).do(function (grids) {
 
+        // Now that we have grids, we need to process updates.
         marqueeTriggers.flatMap(function (sel) {
             return Rx.Observable.fromCallback(socket.emit, socket)('set_selection', sel);
         }).do(function (reply) {
@@ -104,52 +116,69 @@ function createColumns(header, title) {
 }
 
 function updateGrid(grid) {
+    grid.resetSelectedModels();
     grid.collection.fetch({reset: true});
 }
 
 function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, dim) {
 
+    //////////////////////////////////////////////////////////////////////////
+    // Setup Backbone Views and Models
+    //////////////////////////////////////////////////////////////////////////
+
     var SelectableRow = Backgrid.Row.extend({
         mouseoverColor: 'lightblue',
-        activeColor: 'blue',
+        activeColor: '#0FA5C5',
         events: {
             mouseover: 'rowMouseOver',
             mouseout: 'rowMouseOut',
             click: 'rowClick'
         },
-        rowClick: function (evt) {
-            if (!this.model.get('selected')) {
-                this.model.set('selected', true);
+
+        // Give pointer back to view from model.
+        initalize: function () {
+            this.model.view = this;
+        },
+
+        userRender: function () {
+            if (this.model.get('selected')) {
                 $(this.el).css('backgroundColor', this.activeColor);
-                activeSelection.onNext([[this.model.attributes._index, dim]]);
             } else {
-                this.model.set('selected', false);
                 $(this.el).css('backgroundColor', '');
+            }
+        },
+
+        rowClick: function () {
+            if (!this.model.get('selected')) {
+                activeSelection.onNext([{idx: this.model.attributes._index, dim: dim}]);
+            } else {
                 activeSelection.onNext([]);
             }
-            console.log('Clicked on: ', this);
         },
         rowMouseOver: function () {
-            // $(this.el).css('backgroundColor', this.mouseoverColor);
+            if (!this.model.get('selected')) {
+                $(this.el).css('backgroundColor', this.mouseoverColor);
+            }
         },
         rowMouseOut: function () {
-            // $(this.el).css('backgroundColor', '');
+            if (!this.model.get('selected')) {
+                $(this.el).css('backgroundColor', '');
+            }
         }
     });
-
 
     var InspectData = Backbone.Model.extend({});
     var DataFrame = Backbone.PageableCollection.extend({
         model: InspectData,
         url: workerUrl + urn,
         state: {
-            pageSize: 8
+            pageSize: ROWS_PER_PAGE
         },
 
         parseState: function (resp) {
             return {
                 totalRecords: resp.count,
-                currentPage: 1
+                currentPage: resp.page
             };
         },
 
@@ -161,47 +190,93 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
     var dataFrame = new DataFrame([], {mode: 'server'});
 
     var grid = new Backgrid.Grid({
-        // row: SelectableRow,
+        row: SelectableRow,
         columns: columns,
         collection: dataFrame,
-        emptyText: 'Empty selection'
+        emptyText: 'Empty selection',
+        selectedModels: [],
+        selection: []
     });
+
+    // Backgrid does some magic with how it assigns properties,
+    // so I'm attaching these functions on the outside.
+    grid.resetSelectedModels = function () {
+        _.each(grid.selectedModels, function (model) {
+            model.set('selected', false);
+            model.view.userRender();
+        });
+        grid.selectedModels = [];
+        grid.selection = [];
+        activeSelection.onNext([]);
+    };
+    grid.getSelectedModels = function () {
+        return grid.selectedModels;
+    };
+
+    grid.renderRows = function () {
+        grid.selectedModels = [];
+        _.each(grid.body.rows, function (row) {
+            row.model.set('selected', false);
+            _.each(grid.selection, function (sel) {
+                if (row.model.attributes._index === sel[0] && dim === sel[1]) {
+                    grid.selectedModels.push(row.model);
+                    row.model.set('selected', true);
+                }
+            });
+            // Seems to be racy at initialization, so guard for now.
+            // TODO: Clean up so this guard isn't necessary.
+            if (row.userRender) {
+                row.userRender();
+            }
+        });
+    };
+
+    grid.listenTo(grid.collection, 'reset', grid.renderRows);
 
     // Render the grid and attach the root to your HTML document
     $inspector.empty().append(grid.render().el);
 
     var paginator = new Backgrid.Extension.Paginator({
-        // If you anticipate a large number of pages, you can adjust
-        // the number of page handles to show. The sliding window
-        // will automatically show the next set of page handles when
-        // you click next at the end of a window.
         windowSize: 20, // Default is 10
-
-        // Used to multiple windowSize to yield a number of pages to slide,
-        // in the case the number is 5
-        //slideScale: 0.25, // Default is 0.5
         collection: dataFrame
     });
 
     dataFrame.fetch({reset: true});
 
+    // Propagate active selection changes to views
+    activeSelection.do(function (selection) {
+        grid.selectedModels = [];
+        grid.selection = selection;
+
+        _.each(grid.body.rows, function (row) {
+            // Guard against initialization issues.
+            // TODO: Figure out instantiation order.
+            if (!row.model) {
+                return;
+            }
+            row.model.set('selected', false);
+            _.each(selection, function (sel) {
+                if (row.model.attributes._index === sel.idx && dim === sel.dim) {
+                    grid.selectedModels.push(row.model);
+                    row.model.set('selected', true);
+                }
+            });
+            row.userRender();
+        });
+    }).subscribe(_.identity, util.makeErrorHandler('Render active selection in data inspector'));
+
     var serverSideFilter = new Backgrid.Extension.ServerSideFilter({
         collection: dataFrame,
         name: 'search',
-        placeholder: 'Search'
+        placeholder: 'Search ' + columns[0].label + 's'
     });
 
     // TODO: Use templates for this stuff instead of making in jquery.
     var divider = $('<div>').addClass('divide-line');
-    // var $controlsContainer = $('<div>').addClass('row');
     var paginatorEl = paginator.render().el;
     var filterEl = serverSideFilter.render().el;
-    // $(paginatorEl).addClass('col-xs-8');
-    // $(filterEl).addClass('col-xs-4');
-    // $controlsContainer.append(filterEl).append(paginatorEl);
 
     $inspector.prepend(divider);
-    // $inspector.prepend($controlsContainer);
     $inspector.append(paginatorEl);
     $inspector.prepend(filterEl);
 

@@ -36,7 +36,7 @@ function renderPointLabels(appState, $labelCont, labels, clicked) {
 }
 
 // RenderState * Observable * Observable
-function setupCursor(renderState, renderingScheduler, isAnimating, latestHighlightedObject) {
+function setupCursor(renderState, renderingScheduler, isAnimating, latestHighlightedObject, activeSelection) {
     var rxPoints = renderState.get('hostBuffers').curPoints;
     var rxSizes = renderState.get('hostBuffers').pointSizes;
 
@@ -54,35 +54,49 @@ function setupCursor(renderState, renderingScheduler, isAnimating, latestHighlig
         return rxPoints.combineLatest(
             rxSizes,
             latestHighlightedObject,
-            function (p, s, i) {
+            activeSelection,
+            function (p, s, i, sel) {
                 return {
                     points: new Float32Array(p.buffer),
                     sizes: new Uint8Array(s.buffer),
-                    indices: i
+                    indices: i,
+                    selection: sel
                 };
             }
         ).takeUntil(animating);
     }).do(function (data) {
-        renderCursor(renderState, renderingScheduler, $cont, $point, $center, data.points, data.sizes, data.indices);
+        var combinedIndices = data.indices.concat(data.selection);
+        renderCursor(renderState, renderingScheduler, $cont, $point, $center, data.points, data.sizes, combinedIndices);
     }).subscribe(_.identity, util.makeErrorHandler('setupCursor'));
 }
 
 // RenderState * Dom * Dom * Dom * Float32Array * Uint8Array * [Object]
+// TODO: Implement the highlighted point CSS as a generic generated (and maybe cached)
+// DOM element, not a fixed one that we embed in our graph.html
 function renderCursor(renderState, renderingScheduler, $cont, $point, $center, points, sizes, indices) {
-    var idx = indices[indices.length - 1].idx;
-    var dim = indices[indices.length - 1].dim;
+
+    var validIndices = _.filter(indices, function (val) {
+        return (val.idx !== undefined && val.idx >= 0);
+    });
+    var pointIndices = _.pluck(_.filter(validIndices, function (val) {
+        return (val.dim === 1);
+    }), 'idx');
+    var edgeIndices = _.pluck(_.filter(validIndices, function (val) {
+        return (val.dim === 2);
+    }), 'idx');
+
 
     // Renderer Highlights
-    if (idx !== undefined && idx >= 0) {
+    if (validIndices.length > 0) {
         $cont.css({display: 'none'});
         renderingScheduler.renderScene('mouseOver', {
             trigger: 'mouseOverEdgeHighlight',
             data: {
-                edgeIndices: (dim === 2) ? [idx] : [],
-                nodeIndices: (dim === 1) ? [idx] : []
+                edgeIndices: edgeIndices,
+                nodeIndices: pointIndices
             }
         });
-        if (dim === 2) {
+        if (pointIndices.length === 0) {
             return;
         }
     } else {
@@ -97,6 +111,11 @@ function renderCursor(renderState, renderingScheduler, $cont, $point, $center, p
         });
         return;
     }
+
+    // Handle CSS element on points.
+    // Currently only shows for first. Will be fixed when the css cont is made generic.
+
+    var idx = pointIndices[0];
 
     $cont.css({display: 'block'});
 
@@ -308,12 +327,22 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
         _.identity
     ).flatMapLatest(function () {
         return latestHighlightedObject;
-    }).do(function (highlighted) {
-
-        // always pin (unpin-if-drag may happen later)
-        var clicked = highlighted.filter(function (o) {
-            return o.click;
+    }).flatMapLatest(function (highlighted) {
+        return appState.activeSelection.map(function (selection) {
+            return {
+                highlighted: highlighted,
+                selection: selection
+            };
         });
+    }).do(function (toShow) {
+
+        // TODO: Rework how labels system takes in selections vs highlights.
+        // E.g., selections do not need to be a subset of highlight.
+        var clicked = _.map(toShow.selection, function (sel) {
+            return _.extend(sel, {click: true});
+        });
+        var highlighted = toShow.highlighted;
+        highlighted = highlighted.concat(clicked);
 
         renderPointLabels(appState, $labelCont, highlighted, clicked);
 
@@ -321,14 +350,67 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
     .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
 }
 
+
+// AppState * $DOM * textureName -> Nothing
+// Sets up clicking to set active selections in the appState.
+function setupClickSelections (appState, $eventTarget, textures) {
+    var $cont = $('#highlighted-point-cont');
+    var activeSelection = appState.activeSelection;
+
+    $eventTarget.mousedownAsObservable()
+        .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
+        .flatMapLatest(function (down) {
+            return $eventTarget.mouseupAsObservable().take(1).map(function (up) {
+                return [down, up];
+            });
+        })
+        .filter(function (downUp) {
+            var dist =
+                Math.abs(downUp[0].clientX - downUp[1].clientX) +
+                Math.abs(downUp[0].clientY - downUp[1].clientY);
+            return dist < 5;
+        })
+        .map(function (downUp) {
+            var evt = downUp[1];
+            // Clicked on CSS highlight over node
+            if ($(evt.target).hasClass('highlighted-point') ||
+                    $(evt.target).hasClass('highlighted-point-center')) {
+                return {
+                    cmd: 'click',
+                    pt: {dim: 1, idx: parseInt($cont.attr('pointidx'))}
+                };
+            // Clicked on existing POI label
+            } else if ($(evt.target).hasClass('graph-label') ||
+                    $(evt.target).parents('.graph-label').length) {
+
+                var elt = $(evt.target).hasClass('graph-label') ? evt.target
+                    : ($(evt.target).parents('.graph-label')[0]);
+                var pt = _.values(appState.poi.state.activeLabels)
+                    .filter(function (lbl) { return lbl.elt.get(0) === elt; })[0];
+                return {
+                    cmd: 'click',
+                    pt: {dim: pt.dim, idx: pt.idx}
+                };
+            // Clicked on canvas
+            } else {
+                var clickedObject = picking.hitTestN(appState.renderState, textures, downUp[1].clientX, downUp[1].clientY, 10);
+                return {cmd: 'click', pt: clickedObject};
+            }
+        }).do(function (clickData) {
+            if (clickData.pt.idx > -1) {
+                activeSelection.onNext([{idx: clickData.pt.idx, dim: clickData.pt.dim}]);
+            } else {
+                activeSelection.onNext([]);
+            }
+        }).subscribe(_.identity, util.makeErrorHandler('setupClickSelections'));
+}
+
 // AppState * $DOM * textureName-> Observable [ {dim: 1, idx: int} ]
 // Changes either from point mouseover or a label mouseover
 // Clicking (coexists with hovering) will open at most 1 label
 // Most recent interaction goes at the end
 function getLatestHighlightedObject (appState, $eventTarget, textures) {
-
     var OFF = [{idx: -1, dim: 0}];
-    var $cont = $('#highlighted-point-cont');
     var res = new Rx.ReplaySubject(1);
     res.onNext(OFF);
 
@@ -355,53 +437,6 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
             lastHoverHighlighted = {cmd: 'hover', pt: v};
             return lastHoverHighlighted;
         })
-        // TODO: Make it so this only responds to clicks, not drags
-        // e.g., if time between mousedown and mouseup are less than 1/2 sec.
-        .merge($eventTarget.mousedownAsObservable()
-            .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
-            .flatMapLatest(function (down) {
-                return $eventTarget.mouseupAsObservable().take(1).map(function (up) {
-                    return [down, up];
-                });
-            })
-            .filter(function (downUp) {
-                var dist =
-                    Math.abs(downUp[0].clientX - downUp[1].clientX) +
-                    Math.abs(downUp[0].clientY - downUp[1].clientY);
-                return dist < 5;
-            })
-            .map(function (downUp) {
-                var evt = downUp[1];
-                // Clicked on CSS highlight over node
-                if ($(evt.target).hasClass('highlighted-point') ||
-                        $(evt.target).hasClass('highlighted-point-center')) {
-                    return {
-                        cmd: 'click',
-                        pt: {dim: 1, idx: parseInt($cont.attr('pointidx'))}
-                    };
-                // Clicked on existing POI label
-                } else if ($(evt.target).hasClass('graph-label') ||
-                        $(evt.target).parents('.graph-label').length) {
-
-                    var elt = $(evt.target).hasClass('graph-label') ? evt.target
-                        : ($(evt.target).parents('.graph-label')[0]);
-                    var pt = _.values(appState.poi.state.activeLabels)
-                        .filter(function (lbl) { return lbl.elt.get(0) === elt; })[0];
-                    return {
-                        cmd: 'click',
-                        pt: {dim: pt.dim, idx: pt.idx}
-                    };
-                // Clicked on canvas
-                } else {
-                    // Clicked on highlighted element.
-                    if (lastHoverHighlighted && lastHoverHighlighted.pt.idx > -1) {
-                        return {cmd: 'click', pt: lastHoverHighlighted.pt};
-                    }
-
-                    // Clicked on nothing.
-                    return {cmd: 'declick'};
-                }
-            }))
         .merge(
             appState.labelHover
                 .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
@@ -443,5 +478,6 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
 module.exports = {
     setupLabels: setupLabels,
     setupCursor: setupCursor,
-    getLatestHighlightedObject: getLatestHighlightedObject
+    getLatestHighlightedObject: getLatestHighlightedObject,
+    setupClickSelections: setupClickSelections
 };

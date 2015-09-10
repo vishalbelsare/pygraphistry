@@ -15,6 +15,7 @@ var canvas          = require('./canvas.js');
 var ui              = require('../ui.js');
 var poiLib          = require('../poi.js');
 var util            = require('./util.js');
+var selections      = require('./selections.js');
 
 
 function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
@@ -114,6 +115,7 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
         util.makeErrorHandler('cameraChanges')
     );
 
+    selections.init(appState);
     canvas.setupLabelsAndCursor(appState, urlParams, $simCont);
     canvas.setupRenderUpdates(appState.renderingScheduler, appState.cameraChanges, appState.settingsChanges);
 
