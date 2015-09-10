@@ -778,7 +778,7 @@ var items = {
     },
     'pointoutline': {
         'program': 'pointculled',
-        'triggers': ['renderSceneFast', 'renderSceneFull'],
+        'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
