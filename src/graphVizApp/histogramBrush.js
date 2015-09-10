@@ -7,7 +7,7 @@ var Rx      = require('rx');
 var _       = require('underscore');
 
 var histogramPanel = require('./histogramPanel');
-var FilterPanel = require('./filterPanel');
+var FiltersPanel = require('./filterPanel');
 var util    = require('./util.js');
 
 
@@ -79,7 +79,7 @@ function init(socket, urlParams, marquee, poi) {
 
     // Setup filtering:
     var filtersSubjectFromHistogram = new Rx.ReplaySubject(1);
-    var filtersPanel = new FilterPanel(socket, urlParams, filtersSubjectFromHistogram);
+    var filtersPanel = new FiltersPanel(socket, urlParams, filtersSubjectFromHistogram);
     respondToFiltersCall(filtersPanel.control.filtersResponsesObservable(), poi);
 
     // Setup update attribute subject that histogram panel can write to

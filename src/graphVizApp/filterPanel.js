@@ -187,7 +187,7 @@ var AllFiltersView = Backbone.View.extend({
 });
 
 
-function FilterPanel(socket, urlParams, filtersSubjectFromHistogram) {
+function FiltersPanel(socket, urlParams, filtersSubjectFromHistogram) {
     var $button = $('#filterButton');
 
     if (!urlParams.debug) {
@@ -252,4 +252,4 @@ function FilterPanel(socket, urlParams, filtersSubjectFromHistogram) {
     });
 }
 
-module.exports = FilterPanel;
+module.exports = FiltersPanel;
