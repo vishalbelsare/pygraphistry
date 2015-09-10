@@ -10,7 +10,6 @@ var Rx      = require('rx');
 var shortestpaths   = require('./shortestpaths.js');
 var colorpicker     = require('./colorpicker.js');
 var controls        = require('./controls.js');
-var filterer        = require('./filter.js');
 var canvas          = require('./canvas.js');
 var ui              = require('../ui.js');
 var poiLib          = require('../poi.js');
@@ -137,7 +136,6 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
 
 
     controls.init(appState, socket, $simCont, doneLoading, workerParams, urlParams);
-    filterer.init(appState, socket, urlParams, $('#filterButton'), $('#filtersPanel'));
 
 }
 

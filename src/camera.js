@@ -2,13 +2,13 @@
 
 /* global Superconductor */
 
-(function() {
+(function () {
     'use strict';
 
     var debug = require('debug')('graphistry:StreamGL:camera');
 
     var glMatrix, mat4, vec3, vec4;
-    if(typeof window === 'undefined' || !window.glMatrix) {
+    if (typeof window === 'undefined' || !window.glMatrix) {
         glMatrix = require('gl-matrix');
         mat4 = glMatrix.mat4;
         vec3 = glMatrix.vec3;
@@ -276,8 +276,8 @@
         var normalizedScalingFactor =
             scalingFactor * ((1-alpha)*pointSizeConstantSmall + alpha*pointSizeConstantBig);
 
-
-        return Math.max(1, Math.min(8, this.edgeScaling * normalizedScalingFactor));
+        //FIXME coerces NaNs to 1.0 due to degenerate bounding box
+        return Math.max(1, Math.min(8, this.edgeScaling * normalizedScalingFactor)) || 1.0;
     };
 
     //FIXME should not depend on SC

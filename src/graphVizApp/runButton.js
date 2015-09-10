@@ -18,7 +18,8 @@ var INTERACTION_INTERVAL = 40;
 module.exports = function (appState, socket, urlParams, isAutoCentering) {
 
     var $tooltips = $('[data-toggle="tooltip"]');
-    var $bolt = $('#simulate .fa');
+    var $graph = $('#simulate');
+    var $bolt = $('.fa', $graph);
     var numTicks = urlParams.play !== undefined ? urlParams.play : 5000;
 
     var disable = Rx.Observable.merge(
@@ -30,16 +31,16 @@ module.exports = function (appState, socket, urlParams, isAutoCentering) {
         Rx.Observable.merge(
             Rx.Observable.return(Rx.Observable.interval(20)),
             Rx.Observable.merge(
-                    $('#simulate').onAsObservable('click')
-                        .filter(function (evt){ return evt.originalEvent !== undefined; }),
-                    disable,
-                    Rx.Observable.timer(numTicks))
+                $graph.onAsObservable('click')
+                    .filter(function (evt) { return evt.originalEvent !== undefined; }),
+                disable,
+                Rx.Observable.timer(numTicks))
                 .take(1)
                 .map(_.constant(Rx.Observable.return(false))))
         .flatMapLatest(_.identity);
 
     var runLayout =
-        Rx.Observable.fromEvent($('#simulate'), 'click')
+        Rx.Observable.fromEvent($graph, 'click')
             .map(function () { return $bolt.hasClass('toggle-on'); })
             .merge(disable.map(_.constant(true)))
             .do(function (wasOn) {

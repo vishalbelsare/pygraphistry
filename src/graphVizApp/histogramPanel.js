@@ -11,6 +11,7 @@ var Backbone = require('backbone');
 var d3 = require('d3');
 
 var util    = require('./util.js');
+var FilterControl = require('./filter.js');
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -48,21 +49,45 @@ var margin = {top: 10, right: 70, bottom: 20, left:20};
 var marginSparklines = {top: 15, right: 10, bottom: 15, left: 10};
 
 // How the model-view communicate back to underlying Rx.
-var attributeChange;
+var dataframeAttributeChange;
 var updateAttributeSubject;
 var histogramFilterSubject;
 
 // TODO: Extract this out into the model.
 var histogramFilters = {};
+var FilterModel;
 
 
 //////////////////////////////////////////////////////////////////////////////
 // Models
 //////////////////////////////////////////////////////////////////////////////
 
-function initHistograms (globalStats, attributes, filterSubject, attrChangeSubject, updateAttributeSubj) {
+function histogramFiltersToFilterModelUpdates(histogramFilters, FilterModel) {
+    var filterModels = [];
+    var filterer = new FilterControl();
+    _.each(histogramFilters, function (histFilter, attribute) {
+        if (!attribute) {
+            attribute = histFilter.attribute;
+        }
+        var newModel = new FilterModel({
+            title: attribute,
+            attribute: attribute,
+            controlType: 'histogram',
+            dataType: 'float',
+            query: filterer.filterRangeParameters(
+                histFilter.type,
+                attribute,
+                histFilter.start,
+                histFilter.stop)});
+        filterModels.push(newModel);
+    });
+    return filterModels;
+}
+
+function initHistograms(globalStats, attributes, filterModelFromPanel, filterSubject, attrChangeSubject, updateAttributeSubj) {
+    FilterModel = filterModelFromPanel;
     histogramFilterSubject = filterSubject;
-    attributeChange = attrChangeSubject;
+    dataframeAttributeChange = attrChangeSubject;
     updateAttributeSubject = updateAttributeSubj;
 
     var $histogram = $('#histogram');
@@ -180,13 +205,14 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
         refresh: function () {
             var attribute = this.model.get('attribute');
             var id = this.model.cid;
-            $('.refreshHistogramButton-'+id).css('visibility', 'hidden');
+            $('.refreshHistogramButton-' + id).css('visibility', 'hidden');
             delete histogramFilters[attribute];
-            histogramFilterSubject.onNext(histogramFilters);
+            var filterModels = histogramFiltersToFilterModelUpdates(histogramFilters, FilterModel);
+            histogramFilterSubject.onNext(filterModels);
             this.render();
         },
 
-        close: function() {
+        close: function () {
             if (histogramFilters[this.model.get('attribute')]) {
                 this.refresh();
             }
@@ -200,7 +226,7 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
         el: $histogram,
         histogramsContainer: $('#histograms'),
         events: {
-            'click .addHistogramDropdownField': 'addHistogramFromDropdown',
+            'click .addHistogramDropdownField': 'addHistogramFromDropdown'
         },
         initialize: function () {
             var that = this;
@@ -235,12 +261,13 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
             $(this.histogramsContainer).empty();
             $(this.histogramsContainer).append(newDiv);
         },
-        moveHistogram: function (from, to) {
+        moveHistogram: function (fromCID, toCID) {
             // var length = this.collection.length;
-            var srcIdx, dstIdx;
+            var srcIdx,
+                dstIdx;
             this.collection.each(function (hist, i) {
-                if (hist.view.cid === from) { srcIdx = i; }
-                if (hist.view.cid === to) { dstIdx = i; }
+                if (hist.view.cid === fromCID) { srcIdx = i; }
+                if (hist.view.cid === toCID) { dstIdx = i; }
             });
 
             if (srcIdx === dstIdx) {
@@ -264,7 +291,6 @@ function initHistograms (globalStats, attributes, filterSubject, attrChangeSubje
                 } else {
                     if (i === dstIdx) {
                         hist.set('position', i);
-                        return;
                     } else if (i === srcIdx) {
                         hist.set('position', dstIdx + 1);
                     } else {
@@ -500,10 +526,10 @@ function updateSparkline($el, model, attribute) {
             DIST, (type === 'countBy' ? NUM_COUNTBY_SPARKLINES : 0));
 
     // var barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/numBins) - barPadding;
-    var barWidth = (type === 'countBy') ? xScale.rangeBand() : (width/numBins) - barPadding;
+    var barWidth = (type === 'countBy') ? xScale.rangeBand() : (width / numBins) - barPadding;
 
     // TODO: Is there a way to avoid this bind? What is the backbone way to do this?
-    var filterCallback = model.view.render.bind(model.view);
+    var filterRedrawCallback = model.view.render.bind(model.view);
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -584,7 +610,7 @@ function updateSparkline($el, model, attribute) {
             .attr('fill', '#556ED4')
             .attr('opacity', updateOpacity)
             .style('cursor', updateCursor)
-            .on('mousedown', handleHistogramDown.bind(null, filterCallback, id, model.attributes.globalStats))
+            .on('mousedown', handleHistogramDown.bind(null, filterRedrawCallback, id, model.attributes.globalStats))
             .on('mouseover', toggleTooltips.bind(null, true, svg))
             .on('mouseout', toggleTooltips.bind(null, false, svg));
 
@@ -619,7 +645,7 @@ function updateSparkline($el, model, attribute) {
 
 }
 
-function handleHistogramDown (cb, id, globalStats) {
+function handleHistogramDown (redrawCallback, id, globalStats) {
     var col = d3.select(d3.event.target.parentNode);
     var $element = $(col[0][0]);
     var $parent = $element.parent();
@@ -638,7 +664,7 @@ function handleHistogramDown (cb, id, globalStats) {
             var firstBin = _.min(ends);
             var lastBin = _.max(ends);
             updateHistogramFilters(attr, id, globalStats, firstBin, lastBin);
-            cb();
+            redrawCallback();
         }).subscribe(_.identity, util.makeErrorHandler('Histogram Filter Dragging'));
 
     Rx.Observable.fromEvent($(document.body), 'mouseup')
@@ -655,8 +681,9 @@ function handleHistogramDown (cb, id, globalStats) {
                 delete histogramFilters[attr];
             }
 
-            histogramFilterSubject.onNext(histogramFilters);
-            cb();
+            var filterModels = histogramFiltersToFilterModelUpdates(histogramFilters, FilterModel);
+            histogramFilterSubject.onNext(filterModels);
+            redrawCallback();
         })
         .subscribe(_.identity, util.makeErrorHandler('Histogram Filter Mouseup'));
 }
@@ -808,6 +835,7 @@ function prettyPrint (d, attributeName, noLimit) {
             return String(d);
         }
 
+        // FIXME: unreachable
         // Large Number
         var precision = 4;
         if (Math.abs(d) > 1000000 || (d !== 0 && Math.abs(d) < 0.00001)) {
@@ -1006,7 +1034,7 @@ function updateHistogramFilters (attr, id, globalStats, firstBin, lastBin) {
     }
     histogramFilters[attr].type = dataType;
 
-    $('.refreshHistogramButton-'+id).css('visibility', 'visible');
+    $('.refreshHistogramButton-' + id).css('visibility', 'visible');
 }
 
 

@@ -61,7 +61,7 @@ function setupDrag($eventTarget, camera, appState) {
                         $sim.toggleClass('moving', false);
                     }))
                 .distinctUntilChanged(function(pos) { return {x: pos.pageX, y: pos.pageY}; })
-                .scan({x: clickPos.pageX, y: clickPos.pageY, deltaX: 0, deltaY: 0}, function(accPos, curPos) {
+                .scan(function(accPos, curPos) {
                     // Calculate the distance moved (since last event) for each move event
                     return {
                         deltaX: (curPos.pageX - accPos.x) / $eventTarget.width(),
@@ -69,7 +69,7 @@ function setupDrag($eventTarget, camera, appState) {
                         x: curPos.pageX,
                         y: curPos.pageY
                     };
-                })
+                }, {x: clickPos.pageX, y: clickPos.pageY, deltaX: 0, deltaY: 0})
                 .filter(function (dragEvent) {
                     return dragEvent.deltaX !== 0 || dragEvent.deltaY !== 0;
                 })
@@ -92,7 +92,7 @@ function setupMousemove($eventTarget) {
         .filter(function (v) {
             return ! $(v.target).parents('.graph-label').length;
         })
-        .throttleFirst(1)
+        .sample(1)
         .map(function (evt) {
             evt.preventDefault();
             return {
@@ -146,7 +146,7 @@ function setupScroll($eventTarget, canvas, camera, appState) {
     var zoomBase = 1.1;
 
     return $eventTarget.onAsObservable('mousewheel')
-        .throttleFirst(1)
+        .sample(1)
         .flatMapLatest(util.observableFilter([appState.marqueeOn, appState.brushOn],
             function (val) {
                 return val !== 'done';
@@ -206,7 +206,7 @@ function zoom(camera, zoomFactor, zoomPoint) {
 
 function setupCenter($toggle, curPoints, camera) {
     return $toggle.onAsObservable('click')
-        .throttleFirst(1)
+        .sample(1)
         .flatMapLatest(function () {
             debug('click on center');
             return curPoints.take(1).map(function (curPoints) {
@@ -229,6 +229,13 @@ function setupCenter($toggle, curPoints, camera) {
                     bbox.right = x > bbox.right ? x : bbox.right;
                     bbox.top = y < bbox.top ? y : bbox.top;
                     bbox.bottom = y > bbox.bottom ? y : bbox.bottom;
+                }
+
+                if (points.length === 1) {
+                    bbox.left -= 0.1;
+                    bbox.right += 0.1;
+                    bbox.top -= 0.1;
+                    bbox.bottom += 0.1;
                 }
 
                 debug('Bounding box: ', bbox);
@@ -274,7 +281,7 @@ function setupSwipe(eventTarget, camera) {
         .merge(Rx.Observable.fromEvent($$eventTarget, 'swipe')
             .map( function (ev) {ev.preventDefault(); return 0; }))
 
-        .scan(0, function (acc, ev) {
+        .scan(function (acc, ev) {
             var data = {
                 cam: camera,
                 oldX: 0.0,
@@ -315,7 +322,7 @@ function setupSwipe(eventTarget, camera) {
 
             return data;
 
-        })
+        }, 0)
         .map(function(data) {
             return data.cam;
         });
@@ -329,7 +336,7 @@ function setupPinch(eventTarget, camera) {
         .merge(Rx.Observable.fromEvent($$eventTarget, 'pinch')
             .map( function (ev) {ev.preventDefault(); return 0; }))
 
-        .scan(0, function (acc, ev) {
+        .scan(function (acc, ev) {
             var data = {
                 cam: camera,
                 oldDist: -1,
@@ -355,7 +362,7 @@ function setupPinch(eventTarget, camera) {
             }
             return data;
 
-        })
+        }, 0)
         .map(function(data) {
             return data.cam;
         });

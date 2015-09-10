@@ -72,6 +72,7 @@ module.exports = function (appState, socket, urlParams) {
         })
         // notify server & wait
         .do(function ($modal) {
+            $('.persist-status-text', $modal).text('Saving graph');
             $('.status', $modal).css('display', 'inline');
             $('.modal-footer button', $modal).css('display', 'none');
         })
@@ -92,10 +93,18 @@ module.exports = function (appState, socket, urlParams) {
                     if (backgroundColor && !backgroundColor.match('^rgba?\\(0+, 0+, 0+[,)]')) {
                         response.backgroundColor = new Color(backgroundColor);
                     }
+
                     return response;
                 });
         })
+        .do(function (response) {
+            $('.persist-status-text', response.$modal)
+                .text('Uploading screenshot (' +
+                    (response.imageDataURL.length / (1024*1024)).toFixed(1) +
+                    'MB)');
+        })
         .flatMap(function (response) {
+            //FIXME upload concurrently w/ save
             var contentKey = response.reply.name || response.contentKey,
                 previewDataURL = response.imageDataURL;
             if (!contentKey || !previewDataURL) {
@@ -148,7 +157,7 @@ module.exports = function (appState, socket, urlParams) {
                     .append($('<textarea>')
                         .text(previewElement[0].outerHTML)
                         .css('width', '100%')));
-            $('.status', $modal).css('display', 'none');
+            $('.status, .persist-status-text', $modal).css('display', 'none');
         })
         .subscribe(_.identity,
             function (err) {

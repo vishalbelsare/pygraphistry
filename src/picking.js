@@ -90,41 +90,46 @@ function hitTestCircumference(maps, width, height, x, y, r, numRenderedSplits) {
 
 //hit test by sampling for closest hit in area radius r (default to 0)
 //returns idx or -1
+//RenderState * [ String ] * float * float * uint -> {idx: -1 + int, dim: 0 + 1 + 2}
+//  where dim: 0 = none, 1 = point, 2 = edge
+//Textures are retina-expanded, x/y are still in CSS-space
 function hitTestN(state, textures, x, y, r) {
     var numRenderedSplits = state.get('config').get('numRenderedSplits');
-    _.each(textures, function (texture) {
-        if (!state.get('pixelreads')[texture]) {
-            debug('no texture for hit test, escape early', texture);
-            return;
-        }
+
+    var activeTextures = _.filter(textures, function (texture) {
+        return state.get('pixelreads')[texture];
     });
+    if (!activeTextures.length) {
+        debug('no texture for hit test, escape early');
+        return {idx: -1, dim: 0};
+    }
+
+
+    var SAMPLER = state.get('config').get('textures').get('hitmap').toJS();
+    var SAMPLE_RATE_WIDTH = SAMPLER.width ?  0.01 * SAMPLER.width.value : 1;
+    var SAMPLE_RATE_HEIGHT = SAMPLER.height ? 0.01 * SAMPLER.height.value : 1;
 
     var canvas = state.get('gl').canvas;
+    //already retina-expanded
+    var textureWidth = Math.floor(canvas.width * SAMPLE_RATE_WIDTH);
+    var textureHeight = Math.floor(canvas.height * SAMPLE_RATE_HEIGHT);
     var pixelRatio = state.get('camera').pixelRatio;
-    var cssWidth =canvas.width / pixelRatio;
-    var cssHeight = canvas.height / pixelRatio;
 
-    var maps = [];
+    var retinaX = Math.floor(x * pixelRatio * SAMPLE_RATE_WIDTH);
+    var retinaY = Math.floor(y * pixelRatio * SAMPLE_RATE_HEIGHT);
 
-    _.each(textures, function (texture) {
-        var rawMap = state.get('pixelreads')[texture];
-        if (!rawMap) {
-            debug('not texture for hit test', texture);
-            return;
-        }
-
-        var map = new Uint32Array(rawMap.buffer);
-        maps.push(map);
+    var maps = _.map(activeTextures, function (texture) {
+        return new Uint32Array(state.get('pixelreads')[texture].buffer);
     });
 
     // If no r, just do plain hitTest
     if (!r) {
-        return hitTest(maps, cssWidth, cssHeight, x, y, numRenderedSplits);
+        return hitTest(maps, textureWidth, textureHeight, retinaX, retinaY, numRenderedSplits);
     }
 
     //look up to r px away
     for (var offset = 0; offset < r; offset++) {
-        var hitOnCircle = hitTestCircumference(maps, cssWidth, cssHeight, x, y, offset + 1, numRenderedSplits);
+        var hitOnCircle = hitTestCircumference(maps, textureWidth, textureHeight, retinaX, retinaY, offset + 1, numRenderedSplits);
         if (hitOnCircle.idx > -1) {
             return hitOnCircle;
         }
