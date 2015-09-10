@@ -82,6 +82,7 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle, urlPar
     }).do(function (grids) {
 
         // Now that we have grids, we need to process updates.
+        // TODO: This triggers on simulate, when it shouldn't have to (should it?)
         marqueeTriggers.flatMap(function (sel) {
             return Rx.Observable.fromCallback(socket.emit, socket)('set_selection', sel);
         }).do(function (reply) {
@@ -115,7 +116,7 @@ function createColumns(header, title) {
 }
 
 function updateGrid(grid) {
-    grid.resetSelectedModels();
+    // grid.resetSelectedModels();
     grid.collection.fetch({reset: true});
 }
 
@@ -199,15 +200,18 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
 
     // Backgrid does some magic with how it assigns properties,
     // so I'm attaching these functions on the outside.
-    grid.resetSelectedModels = function () {
-        _.each(grid.selectedModels, function (model) {
-            model.set('selected', false);
-            model.view.userRender();
-        });
-        grid.selectedModels = [];
-        grid.selection = [];
-        activeSelection.onNext([]);
-    };
+
+    // TODO: Do we need this as an option?
+    // grid.resetSelectedModels = function () {
+    //     _.each(grid.selectedModels, function (model) {
+    //         console.log('model: ', model);
+    //         model.set('selected', false);
+    //         model.view.userRender();
+    //     });
+    //     grid.selectedModels = [];
+    //     grid.selection = [];
+    //     activeSelection.onNext([]);
+    // };
     grid.getSelectedModels = function () {
         return grid.selectedModels;
     };
@@ -221,7 +225,7 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
             }
             row.model.set('selected', false);
             _.each(grid.selection, function (sel) {
-                if (row.model.attributes._index === sel[0] && dim === sel[1]) {
+                if (row.model.attributes._index === sel.idx && dim === sel.dim) {
                     grid.selectedModels.push(row.model);
                     row.model.set('selected', true);
                 }
