@@ -8,6 +8,7 @@ var _       = require('underscore');
 
 var histogramPanel = require('./histogramPanel');
 var util    = require('./util.js');
+var Command = require('./command.js');
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -69,6 +70,8 @@ function HistogramBrush(socket, filtersPanel) {
     var globalStats = new Rx.ReplaySubject(1);
     var updateDataframeAttributeSubject = new Rx.Subject();
 
+    this.aggregationCommand = new Command('aggregate', socket);
+
     //////////////////////////////////////////////////////////////////////////
     // Setup Streams
     //////////////////////////////////////////////////////////////////////////
@@ -78,11 +81,14 @@ function HistogramBrush(socket, filtersPanel) {
         updateDataframeAttribute(data.oldAttr, data.newAttr, data.type);
     }).subscribe(_.identity, util.makeErrorHandler('Update Attribute'));
 
+    this.filtersSubjectFromHistogram = new Rx.ReplaySubject(1);
+
     // Setup initial stream of global statistics.
-    var globalStream = aggregatePointsAndEdges(socket,
-        {all: true});
-    var globalStreamSparklines = aggregatePointsAndEdges(socket,
-        {all: true, binning: {'_goalNumberOfBins': histogramPanel.NUM_SPARKLINES}});
+    var globalStream = this.aggregatePointsAndEdges({
+        all: true});
+    var globalStreamSparklines = this.aggregatePointsAndEdges({
+        all: true,
+        binning: {'_goalNumberOfBins': histogramPanel.NUM_SPARKLINES}});
     Rx.Observable.zip(globalStream, globalStreamSparklines, function (histogramsReply, sparkLinesReply) {
         checkReply(histogramsReply);
         checkReply(sparkLinesReply);
@@ -93,7 +99,7 @@ function HistogramBrush(socket, filtersPanel) {
         });
 
         this.histogramsPanel = histogramPanel.initHistograms(
-            data, attributes, filtersPanel.model, filtersSubjectFromHistogram, dataframeAttributeChange, updateDataframeAttributeSubject);
+            data, attributes, filtersPanel.model, this.filtersSubjectFromHistogram, dataframeAttributeChange, updateDataframeAttributeSubject);
         data.histogramPanel = this.histogramsPanel;
 
         // On auto-populate, at most 5 histograms, or however many * 85 + 110 px = window height.
@@ -113,8 +119,7 @@ function HistogramBrush(socket, filtersPanel) {
 
 HistogramBrush.prototype.setupFiltersInteraction = function(filtersPanel, poi) {
     // Setup filtering:
-    var filtersSubjectFromHistogram = new Rx.ReplaySubject(1);
-    filtersPanel.listenToHistogramChangesFrom(filtersSubjectFromHistogram);
+    filtersPanel.listenToHistogramChangesFrom(this.filtersSubjectFromHistogram);
     handleFiltersResponse(filtersPanel.control.filtersResponsesObservable(), poi);
 };
 
@@ -155,11 +160,11 @@ HistogramBrush.prototype.setupMarqueeInteraction = function(marquee) {
 
         var params = {sel: data.sel, attributes: attributes, binning: binning};
         lastSelection = data.sel;
-        return Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
+        return this.aggregationCommand.sendWithObservableResult(params, true)
             .map(function (agg) {
                 return _.extend(data, {reply: agg});
             });
-    }).do(function (data) {
+    }.bind(this)).do(function (data) {
         if (!data.reply) {
             console.error('Unexpected server error on aggregate');
         } else if (data.reply && !data.reply.success) {
@@ -233,11 +238,11 @@ HistogramBrush.prototype.updateHistogramData = function (data, globalStats, empt
 };
 
 
-//socket * ?? -> Observable ??
-function aggregatePointsAndEdges(socket, params) {
+// ?? -> Observable ??
+HistogramBrush.prototype.aggregatePointsAndEdges = function(params) {
     return Rx.Observable.zip(
-        Rx.Observable.fromCallback(socket.emit, socket)('aggregate', _.extend({}, params, {type: 'point'})),
-        Rx.Observable.fromCallback(socket.emit, socket)('aggregate', _.extend({}, params, {type: 'edge'})),
+        this.aggregationCommand.sendWithObservableResult(_.extend({}, params, {type: 'point'}), true),
+        this.aggregationCommand.sendWithObservableResult(_.extend({}, params, {type: 'edge'}), true),
         function (pointHists, edgeHists) {
 
             _.each(pointHists.data, function (val) {
@@ -250,9 +255,7 @@ function aggregatePointsAndEdges(socket, params) {
             return {success: pointHists.success && edgeHists.success,
                     data: _.extend({}, pointHists.data || {}, edgeHists.data || {})};
         });
-}
-
-
-module.exports = {
-    init: init
 };
+
+
+module.exports = HistogramBrush;
