@@ -296,7 +296,8 @@ function setFlags(state, name, bool) {
 function createContext(state) {
 
     var canvas = state.get('canvas');
-    var glOptions = {antialias: false, premultipliedAlpha: false};
+    var aa = (window.devicePixelRatio || 1) <= 1; // Disable AA on retina display
+    var glOptions = {antialias: aa, premultipliedAlpha: false};
     var gl = canvas.getContext('webgl', glOptions);
     if (gl === null) {
         gl = canvas.getContext('experimental-webgl', glOptions);
