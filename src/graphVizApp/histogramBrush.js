@@ -78,9 +78,8 @@ function init(socket, urlParams, marquee, poi) {
     var histogramsPanel;
 
     // Setup filtering:
-    var filtersSubjectFromPanel = new Rx.ReplaySubject(1);
     var filtersSubjectFromHistogram = new Rx.ReplaySubject(1);
-    var filtersPanel = new FilterPanel(socket, urlParams, filtersSubjectFromPanel, filtersSubjectFromHistogram);
+    var filtersPanel = new FilterPanel(socket, urlParams, filtersSubjectFromHistogram);
     respondToFiltersCall(filtersPanel.control.filtersResponsesObservable(), poi);
 
     // Setup update attribute subject that histogram panel can write to

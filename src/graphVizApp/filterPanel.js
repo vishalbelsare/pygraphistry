@@ -187,7 +187,7 @@ var AllFiltersView = Backbone.View.extend({
 });
 
 
-function FilterPanel(socket, urlParams, filtersSubjectFromPanel, filtersSubjectFromHistogram) {
+function FilterPanel(socket, urlParams, filtersSubjectFromHistogram) {
     var $button = $('#filterButton');
 
     if (!urlParams.debug) {
@@ -199,6 +199,8 @@ function FilterPanel(socket, urlParams, filtersSubjectFromPanel, filtersSubjectF
     this.collection = new FilterCollection();
 
     this.model = FilterModel;
+
+    var filtersSubjectFromPanel = new Rx.ReplaySubject(1);
 
     filtersSubjectFromHistogram.do(function (histogramFilters) {
         this.collection.updateSubset(histogramFilters);
