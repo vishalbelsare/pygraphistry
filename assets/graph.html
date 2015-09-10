@@ -268,11 +268,10 @@
             </div>  <!-- /form-horizontal -->
         </div> <!-- /renderingItems -->
 
-        <div id="filteringItems" class="settingsPanel">
-            <div class="form-horizontal">
-            <!-- Placeholder -->
-            </div>  <!-- /form-horizontal -->
-        </div> <!-- /filteringItems -->
+        <div id="filtersPanel" class="filterPanel">
+            <div id="filters"></div>
+            <div id="addFilter"></div>
+        </div> <!-- /filtersPanel -->
 
 
     </div> <!-- /section -->
@@ -420,11 +419,102 @@
     </div>
 </script>
 
+<script type="text/template" id="filterTemplate">
+    <div class="topMenu row">
+        <div class="col-md-1 expandButton">
+            <a href="#">
+                <i class="fa fa-caret-right expandFilterButton" id="expandFilterButton{{id}}" cid="{{id}}"></i>
+            </a>
+        </div>
+        <div class="col-md-7 filterName control-title">{{model.title}}</div>
+        <div class="col-md-2"></div>
+        <div class="col-md-1 disableButton">
+            <a href="#">
+                <i class="fa fa-toggle-off disableFilterButton" id="disableFilterButton{{id}}" cid="{{id}}"></i>
+            </a>
+        </div>
+        <div class="col-md-1 deleteButton">
+            <a href="#">
+                <i class="fa fa-close deleteFilterButton" id="deleteFilterButton{{id}}" cid="{{id}}"></i>
+            </a>
+        </div>
+    </div>
+    <form class="filterEditor form-horizontal">
+        <div class="form-group-sm" title="Data Type">
+            <label class="control-label" for="filterDataType{{id}}">Data Type</label>
+            <p class="form-control-static hidden">{{model.dataType}}</p>
+            <select class="filterDataTypeSelector form-control" id="filterDataType{{id}}" title="Data Type">
+                <option value="">(Unknown)</option>
+                {{#each dataTypes}}
+                {{#if selected}}
+                    <option value="{{name}}" selected="selected">{{name}}</option>
+                {{else}}
+                    <option value="{{name}}">{{name}}</option>
+                {{/if}}
+                {{/each}}
+            </select>
+        </div>
+        <div class="form-group-sm" title="Control Type">
+            <label class="control-label" for="filterControlType{{id}}">Control Type</label>
+            <p class="form-control-static hidden">{{model.controlType}}</p>
+            <select class="filterControlTypeSelector form-control" id="filterControlType{{id}}" title="Control Type">
+                <option value="">(Unknown)</option>
+                {{#each controlTypes}}
+                {{#if selected}}
+                    <option value="{{value}}" selected="selected">{{name}}</option>
+                {{else}}
+                    <option value="{{value}}">{{name}}</option>
+                {{/if}}
+                {{/each}}
+            </select>
+        </div>
+        <div class="row form-group" title="Expression">
+            <label class="control-label" for="filterExpression{{id}}">Expression</label>
+            <textarea class="form-control" id="filterExpression{{id}}" name="expression" title="Filter expression"
+                      rows="2" cols="40" placeholder="node:degree > 2">{{model.expression}}</textarea>
+        </div>
+    </form>
+</script>
+
+<script type="text/template" id="addFilterTemplate">
+    <!--
+    <div class="topMenu grab-cursor" draggable="true">
+        <a href="#">
+            <i class="fa fa-caret-right filterButton expandFilterButton" id="expandFilterButton{{id}}" cid="{{id}}"></i>
+        </a>
+    </div>
+    -->
+    <div class="col-xs-9 attributeName">
+        <button class="btn btn-primary dropdown-toggle" type="button" id="addFilterButton" data-toggle="dropdown" aria-expanded="true">
+            Add Filter
+            <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
+            {{#each fields}}
+            <li role="presentation"><a class="addFilterDropdownField" role="menuitem" tabindex="-1" href="#">
+                {{#if dataType}}
+                {{type}}:{{name}} ({{dataType}})
+                {{else}}
+                {{type}}:{{name}}
+                {{/if}}
+            </a></li>
+            {{/each}}
+        </ul>
+    </div>
+    <!--
+    <div class="col-xs-1 filterButton closeButton">
+        <a href="#">
+            <i class="fa fa-times filterButton closeFilterButton" id="closeFilterbutton{{id}}" cid="{{id}}"></i>
+        </a>
+    </div>
+    -->
+</script>
+
 <script type="text/template" id="histogramTemplate">
     <div class="topMenu">
         <div class="col-xs-1 expandButton">
             <a href="#">
-                <i class="fa fa-play expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
+                <i class="fa fa-caret-right expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
         <div class="col-xs-9">
@@ -456,7 +546,7 @@
     <div class="topMenu grab-cursor" draggable="true">
         <div class="col-xs-1 histogramButton expandButton">
             <a href="#">
-                <i class="fa fa-play histogramButton expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
+                <i class="fa fa-caret-right histogramButton expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
         <div class="col-xs-9 attributeName">

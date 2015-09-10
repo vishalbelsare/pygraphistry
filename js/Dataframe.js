@@ -26,6 +26,7 @@ var Dataframe = function () {
     };
     this.typedArrayCache = {};
     this.lastPointPositions = null;
+    /** @type MaskSet */
     this.lastMasks = {
         point: [],
         edge: []
@@ -67,9 +68,13 @@ function makeEmptyData () {
 // Data Filtering
 //////////////////////////////////////////////////////////////////////////////
 
-// Takes in a mask of points, and returns an object
-// containing masks for both the points and edges.
-// Relative to forwardsEdges (so sorted)
+/**
+ * Takes in a mask of points, and returns an object
+ * containing masks for both the points and edges.
+ * Relative to forwardsEdges (so sorted)
+ * @param {Mask} pointMask
+ * @returns MaskSet
+ */
 Dataframe.prototype.masksFromPoints = function (pointMask) {
     var pointMaskOriginalLookup = {};
     _.each(pointMask, function (newIdx, i) {
@@ -105,6 +110,36 @@ Dataframe.prototype.numEdges = function numEdges() {
 };
 
 
+/**
+ * @returns Mask
+ */
+Dataframe.prototype.fullPointMask = function() {
+    return _.range(this.numPoints());
+};
+
+/**
+ * @returns Mask
+ */
+Dataframe.prototype.fullEdgeMask = function() {
+    return _.range(this.numEdges());
+};
+
+
+/**
+ * @returns MaskSet
+ */
+Dataframe.prototype.fullMaskSet = function() {
+    return {
+        point: this.fullPointMask(),
+        edge: this.fullEdgeMask()
+    }
+};
+
+
+/**
+ * @param {Mask} edgeMask
+ * @returns MaskSet
+ */
 Dataframe.prototype.masksFromEdges = function (edgeMask) {
     var pointMask = [];
     var numPoints = this.numPoints();
@@ -133,7 +168,14 @@ Dataframe.prototype.masksFromEdges = function (edgeMask) {
     };
 };
 
+/**
+ * @param {MaskList} maskList
+ * @returns MaskSet
+ */
 Dataframe.prototype.composeMasks = function (maskList) {
+    if (maskList === undefined || !maskList.length || maskList.length === 0) {
+        return this.fullMaskSet();
+    }
     // TODO: Make this faster.
 
     // Assumes we will never have more than 255 separate masks.
@@ -178,7 +220,14 @@ Dataframe.prototype.composeMasks = function (maskList) {
     };
 };
 
+/**
+ * @typedef {Object} ClientQuery
+ */
 
+/**
+ * @param {ClientQuery} params
+ * @returns Function<Object>
+ */
 Dataframe.prototype.filterFuncForQueryObject = function (params) {
     var filterFunc;
 
@@ -207,8 +256,8 @@ Dataframe.prototype.filterFuncForQueryObject = function (params) {
 
 /**
  * @param {Array} attributes
- * @param {Function} filterFunc
- * @returns {Array<Number>}
+ * @param {Function<Object>} filterFunc
+ * @returns Mask
  */
 Dataframe.prototype.getMaskForFilterOnAttributes = function (attributes, filterFunc) {
     var mask = [];
@@ -223,9 +272,14 @@ Dataframe.prototype.getMaskForFilterOnAttributes = function (attributes, filterF
 };
 
 
-// Returns sorted edge mask
-Dataframe.prototype.getEdgeAttributeMask = function (attribute, params) {
-    var attr = this.rawdata.attributes.edge[attribute];
+/**
+ * Returns sorted edge mask
+ * @param {String} dataframeAttribute
+ * @param {ClientQuery} params
+ * @returns {Mask}
+ */
+Dataframe.prototype.getEdgeAttributeMask = function (dataframeAttribute, params) {
+    var attr = this.rawdata.attributes.edge[dataframeAttribute];
     var filterFunc = this.filterFuncForQueryObject(params);
     var edgeMask = this.getMaskForFilterOnAttributes(attr.values, filterFunc);
     // Convert to sorted order
@@ -237,8 +291,14 @@ Dataframe.prototype.getEdgeAttributeMask = function (attribute, params) {
 };
 
 
-Dataframe.prototype.getPointAttributeMask = function (attribute, params) {
-    var attr = this.rawdata.attributes.point[attribute];
+/**
+ * Returns sorted point mask
+ * @param {String} dataframeAttribute
+ * @param {ClientQuery} params
+ * @returns {Mask}
+ */
+Dataframe.prototype.getPointAttributeMask = function (dataframeAttribute, params) {
+    var attr = this.rawdata.attributes.point[dataframeAttribute];
     var filterFunc = this.filterFuncForQueryObject(params);
     return this.getMaskForFilterOnAttributes(attr.values, filterFunc);
 };
@@ -273,10 +333,25 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
     this.typedArrayCache.newCurPoints = new Float32Array(oldNumPoints * 2);
 };
 
+/**
+ * Mask is implemented as a list of valid indices (in sorted order).
+ * @typedef Array<Number> Mask
+ */
 
-// This does an inplace filter on this.data given masks.
-// Mask is implemented as a list of valid indices (in sorted order).
-// TODO: Take in Set objects, not just masks.
+/**
+ * @typedef Array<Mask> MaskList
+ */
+
+/**
+ * @typedef {{point: Mask, edge: Mask}} MaskSet
+ */
+
+/**
+ * Filters this.data in-place given masks. Does not modify this.rawdata.
+ * TODO: Take in Set objects, not just Mask.
+ * @param {MaskSet} masks
+ * @returns {Promise.<Array<Buffer>>}
+ */
 Dataframe.prototype.filter = function (masks, simulator) {
     logger.debug('Starting Filter');
 
@@ -606,6 +681,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
  * TODO: Implicit degrees for points and src/dst for edges.
  * @param {Object} attributes
  * @param {string} type - any of [TYPES]{@link TYPES}
+ * @param {Number} numElements - prescribe or describe? number present
  */
 Dataframe.prototype.load = function (attributes, type, numElements) {
 
@@ -962,9 +1038,13 @@ Dataframe.prototype.getDataType = function (column, type) {
     return this.rawdata.attributes[type][column].type;
 };
 
+Dataframe.prototype.getColumn = function (column, type) {
+    return _.omit(this.rawdata.attributes[type][column], 'values');
+};
+
 // TODO: Have this return edge attributes in sorted order, unless
 // explicitly requested to be unsorted (for internal perf reasons)
-Dataframe.prototype.getColumn = function (column, type) {
+Dataframe.prototype.getColumnValues = function (column, type) {
 
     // A filter has been done, and we need to apply the
     // mask and compact.
@@ -1000,11 +1080,12 @@ Dataframe.prototype.getAttributeKeys = function (type) {
 Dataframe.prototype.getColumnsByType = function () {
     var types = ['point', 'edge'];
     var result = {};
+    var that = this;
     _.each(types, function (typeName) {
         var typeResult = {};
-        var columnNamesPerType = this.getAttributeKeys(typeName);
+        var columnNamesPerType = that.getAttributeKeys(typeName);
         _.each(columnNamesPerType, function (columnName) {
-            typeResult[columnNamesPerType] = this.getColumn(columnName, typeName);
+            typeResult[columnName] = that.getColumn(columnName, typeName);
         });
         result[typeName] = typeResult;
     });
@@ -1050,7 +1131,7 @@ Dataframe.prototype.serializeColumns = function (target, options) {
         toSerialize[type] = {};
         var keys = that.getAttributeKeys(type);
         _.each(keys, function (key) {
-            toSerialize[type][key] = that.getColumn(key, type);
+            toSerialize[type][key] = that.getColumnValues(key, type);
         });
     });
 
@@ -1138,7 +1219,7 @@ Dataframe.prototype.aggregate = function (simulator, indices, attributes, binnin
 
 
 Dataframe.prototype.countBy = function (simulator, attribute, binning, indices, type) {
-    var values = this.getColumn(attribute, type);
+    var values = this.getColumnValues(attribute, type);
 
     // TODO: Get this value from a proper source, instead of hard coding.
     var maxNumBins = 29;
@@ -1270,7 +1351,7 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
     // VGraph types.
     // values = _.filter(values, function (x) { return !isNaN(x)});
 
-    var values = this.getColumn(attribute, type);
+    var values = this.getColumnValues(attribute, type);
 
     var numValues = indices.length;
     if (numValues === 0) {
@@ -1423,6 +1504,11 @@ function round_up(num, multiple) {
     return multiple * Math.ceil(div);
 }
 
+/**
+ * @param {Array<Number>} values
+ * @param {Mask} indices
+ * @returns {{max: number, min: Number}}
+ */
 function minMaxMasked(values, indices) {
     var min = Infinity;
     var max = -Infinity;
