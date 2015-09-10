@@ -123,16 +123,16 @@ var FilterView = Backbone.View.extend({
         var $button = $(event.target);
         $button.removeClass('disableFilterButton').addClass('disabledFilterButton');
         $button.removeClass('fa-toggle-off').addClass('fa-toggle-on');
-        $('input', this.$el).setAttribute('disabled');
-        $('textarea', this.$el).setAttribute('disabled');
+        $('input', this.$el).attr('disabled');
+        $('textarea', this.$el).attr('disabled');
         this.model.set('enabled', false);
     },
     enable: function (event) {
         var $button = $(event.target);
         $button.removeClass('disabledFilterButton').addClass('disableFilterButton');
         $button.removeClass('fa-toggle-on').addClass('fa-toggle-off');
-        $('input', this.$el).removeAttribute('disabled');
-        $('textarea', this.$el).removeAttribute('disabled');
+        $('input', this.$el).removeAttr('disabled');
+        $('textarea', this.$el).removeAttr('disabled');
         this.model.set('enabled', true);
     },
     expand: function (event) {
