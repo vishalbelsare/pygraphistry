@@ -138,11 +138,11 @@ var LABEL_SIZE_LIMIT = Math.pow(2, 18);
 
 
 function getLabelViaRange(type, index, byteStart, byteEnd) {
-    var res = new Rx.Subject(),
-        oReq = new XMLHttpRequest(),
-        assetURL = getStaticContentURL(contentKey, type + 'Labels.buffer'),
-        byteStartString = byteStart !== undefined && byteStart.toString ? byteStart.toString(10) : '',
-        byteEndString = byteEnd !== undefined && byteEnd.toString ? byteEnd.toString(10) : '';
+    var res = new Rx.Subject();
+    var oReq = new XMLHttpRequest();
+    var assetURL = getStaticContentURL(contentKey, type + 'Labels.buffer');
+    var byteStartString = byteStart !== undefined && byteStart.toString ? byteStart.toString(10) : '';
+    var byteEndString = byteEnd !== undefined && byteEnd.toString ? byteEnd.toString(10) : '';
 
     // First label: start can be 0, but end must be set.
     // Last label: start is set, end unspecified, okay.
@@ -166,7 +166,7 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
             try {
                 var responseData = JSON.parse(oReq.responseText),
                     responseTabular = _.pairs(_.omit(responseData, '_title'));
-                debug('restxt', responseData);
+                debug('Label fetched', responseData);
                 labelsByType[type][index] = responseData;
                 res.onNext([{
                     formatted: false,
@@ -186,7 +186,6 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
     return res;
 }
 
-
 function getRangeForLabel(type, index) {
     var offsetsForType = labelsOffsetsByType[type];
     if (!offsetsForType) {
@@ -194,6 +193,7 @@ function getRangeForLabel(type, index) {
     }
 
     var lowerBound = offsetsForType[index];
+    // Upper bound will be undefined for last label
     var upperBound = index < offsetsForType.length ? offsetsForType[index + 1] - 1 : undefined;
 
     if (upperBound !== undefined && lowerBound >= upperBound) {
