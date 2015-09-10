@@ -41,7 +41,7 @@ var FilterCollection = Backbone.Collection.extend({
     updateSubset: function (updatedCollection) {
         _.each(updatedCollection, function (filterModel/*, idx*/) {
             var match = this.matchElement(filterModel);
-            if (match) {
+            if (match !== undefined) {
                 match.set(filterModel.toJSON());
             } else {
                 this.add(filterModel);
