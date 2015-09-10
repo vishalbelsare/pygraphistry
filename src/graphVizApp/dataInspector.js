@@ -17,12 +17,11 @@ var util        = require('./util.js');
 var ROWS_PER_PAGE = 8;
 
 
-function init(appState, socket, workerUrl, marquee, histogramPanelToggle) {
+function init(appState, socket, workerUrl, marquee, histogramPanelToggle, urlParams) {
     var $nodesInspector = $('#inspector-nodes').find('.inspector');
     var $edgesInspector = $('#inspector-edges').find('.inspector');
 
     var marqueeTriggers = marquee.selections.merge(marquee.doneDragging);
-
 
     //////////////////////////////////////////////////////////////////////////
     // Interactions with other tools.
@@ -77,8 +76,8 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle) {
         };
     }).map(function (data) {
         return {
-            nodes: initPageableGrid(workerUrl, data.nodes.columns, data.nodes.urn, $nodesInspector, appState.activeSelection, 1),
-            edges: initPageableGrid(workerUrl, data.edges.columns, data.edges.urn, $edgesInspector, appState.activeSelection, 2)
+            nodes: initPageableGrid(workerUrl, data.nodes.columns, data.nodes.urn, $nodesInspector, appState.activeSelection, urlParams, 1),
+            edges: initPageableGrid(workerUrl, data.edges.columns, data.edges.urn, $edgesInspector, appState.activeSelection, urlParams, 2)
         };
     }).do(function (grids) {
 
@@ -120,7 +119,7 @@ function updateGrid(grid) {
     grid.collection.fetch({reset: true});
 }
 
-function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, dim) {
+function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, urlParams, dim) {
 
     //////////////////////////////////////////////////////////////////////////
     // Setup Backbone Views and Models
@@ -269,20 +268,26 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
         });
     }).subscribe(_.identity, util.makeErrorHandler('Render active selection in data inspector'));
 
-    var serverSideFilter = new Backgrid.Extension.ServerSideFilter({
-        collection: dataFrame,
-        name: 'search',
-        placeholder: 'Search ' + columns[0].label + 's'
-    });
+
 
     // TODO: Use templates for this stuff instead of making in jquery.
     var divider = $('<div>').addClass('divide-line');
     var paginatorEl = paginator.render().el;
-    var filterEl = serverSideFilter.render().el;
 
     $inspector.prepend(divider);
     $inspector.append(paginatorEl);
-    $inspector.prepend(filterEl);
+
+
+    // TODO: Ungate this feature when it's tested.
+    if (urlParams.debug) {
+        var serverSideFilter = new Backgrid.Extension.ServerSideFilter({
+            collection: dataFrame,
+            name: 'search',
+            placeholder: 'Search ' + columns[0].label + 's'
+        });
+        var filterEl = serverSideFilter.render().el;
+        $inspector.prepend(filterEl);
+    }
 
     var $colHeaders = $inspector.find('.backgrid').find('thead').find('tr').children();
     $colHeaders.each(function () {
