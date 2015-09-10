@@ -1,6 +1,6 @@
 'use strict';
 
-// var debug   = require('debug')('graphistry:StreamGL:graphVizApp:histogramPanel');
+// var debug   = require('debug')('graphistry:StreamGL:graphVizApp:HistogramsPanel');
 var $       = window.$;
 var Rx      = require('rx');
               require('../rx-jquery-stub');
@@ -48,15 +48,6 @@ var colorHighlighted = d3.scale.ordinal()
 var margin = {top: 10, right: 70, bottom: 20, left:20};
 var marginSparklines = {top: 15, right: 10, bottom: 15, left: 10};
 
-// How the model-view communicate back to underlying Rx.
-var dataframeAttributeChange;
-var updateAttributeSubject;
-var histogramFilterSubject;
-
-// TODO: Extract this out into the model.
-var histogramFilters = {};
-var FilterModel;
-
 
 //////////////////////////////////////////////////////////////////////////////
 // Models
@@ -84,22 +75,27 @@ function histogramFiltersToFilterModelUpdates(histogramFilters, FilterModel) {
     return filterModels;
 }
 
-function initHistograms(globalStats, attributes, filterModelFromPanel, filterSubject, attrChangeSubject, updateAttributeSubj) {
-    FilterModel = filterModelFromPanel;
-    histogramFilterSubject = filterSubject;
-    dataframeAttributeChange = attrChangeSubject;
-    updateAttributeSubject = updateAttributeSubj;
+// Setup Backbone for the brushing histogram
+var HistogramModel = Backbone.Model.extend({});
+
+var HistogramCollection = Backbone.Collection.extend({
+    model: HistogramModel,
+    comparator: 'position'
+});
+
+function HistogramsPanel(globalStats, attributes, filterModelFromPanel,
+                         filterSubject, attrChangeSubject, updateAttributeSubject) {
+    this.FilterModel = filterModelFromPanel;
+    // How the model-view communicate back to underlying Rx.
+    this.histogramFilterSubject = filterSubject;
+    this.dataframeAttributeChange = attrChangeSubject;
+    this.updateAttributeSubject = updateAttributeSubject;
+    this.histogramFilters = {};
 
     var $histogram = $('#histogram');
 
-    // Setup Backbone for the brushing histogram
-    var HistogramModel = Backbone.Model.extend({});
-
-    var HistogramCollection = Backbone.Collection.extend({
-        model: HistogramModel,
-        comparator: 'position'
-    });
-    var histograms = new HistogramCollection();
+    this.histograms = new HistogramCollection();
+    var panel = this;
 
     // TODO: Replace this with a proper data transfer through the HTML5
     // drag and drop spec. It seems to be pretty broken outside of firefox,
@@ -140,9 +136,9 @@ function initHistograms(globalStats, attributes, filterModelFromPanel, filterSub
             // TODO: Don't have a 'sparkLines' boolean in the model, but a general vizType field.
             if (histogram.get('d3Data') && ((histogram.get('d3Data').vizType === 'sparkLines') === histogram.get('sparkLines'))) {
                 if (histogram.get('sparkLines')) {
-                    updateSparkline(histogram.get('vizContainer'), histogram, histogram.get('attribute'));
+                    panel.updateSparkline(histogram.get('vizContainer'), histogram, histogram.get('attribute'));
                 } else {
-                    updateHistogram(histogram.get('vizContainer'), histogram, histogram.get('attribute'));
+                    panel.updateHistogram(histogram.get('vizContainer'), histogram, histogram.get('attribute'));
                 }
                 return;
             }
@@ -157,12 +153,12 @@ function initHistograms(globalStats, attributes, filterModelFromPanel, filterSub
             if (histogram.get('sparkLines')) {
                 vizContainer.height(String(vizHeight) + 'px');
                 initializeSparklineViz(vizContainer, histogram); // TODO: Link to data?
-                updateSparkline(vizContainer, histogram, attribute);
+                panel.updateSparkline(vizContainer, histogram, attribute);
             } else {
                 vizHeight = histogram.get('globalStats').histograms[attribute].numBins * BAR_THICKNESS + margin.top + margin.bottom;
                 vizContainer.height(String(vizHeight) + 'px');
                 initializeHistogramViz(vizContainer, histogram); // TODO: Link to data?
-                updateHistogram(vizContainer, histogram, attribute);
+                panel.updateHistogram(vizContainer, histogram, attribute);
             }
 
             return this;
@@ -183,7 +179,7 @@ function initHistograms(globalStats, attributes, filterModelFromPanel, filterSub
             vizContainer.empty();
             vizContainer.height(String(vizHeight) + 'px');
             this.model.set('sparkLines', true);
-            updateAttribute(attribute, attribute, 'sparkLines');
+            panel.updateAttribute(attribute, attribute, 'sparkLines');
         },
 
         expand: function (evt) {
@@ -199,25 +195,25 @@ function initHistograms(globalStats, attributes, filterModelFromPanel, filterSub
             vizContainer.empty();
             vizContainer.height(String(vizHeight) + 'px');
             this.model.set('sparkLines', false);
-            updateAttribute(attribute, attribute, 'histogram');
+            panel.updateAttribute(attribute, attribute, 'histogram');
         },
 
         refresh: function () {
             var attribute = this.model.get('attribute');
             var id = this.model.cid;
             $('.refreshHistogramButton-' + id).css('visibility', 'hidden');
-            delete histogramFilters[attribute];
-            var filterModels = histogramFiltersToFilterModelUpdates(histogramFilters, FilterModel);
-            histogramFilterSubject.onNext(filterModels);
+            delete panel.histogramFilters[attribute];
+            var filterModels = histogramFiltersToFilterModelUpdates(panel.histogramFilters, panel.FilterModel);
+            panel.histogramFilterSubject.onNext(filterModels);
             this.render();
         },
 
         close: function () {
-            if (histogramFilters[this.model.get('attribute')]) {
+            if (panel.histogramFilters[this.model.get('attribute')]) {
                 this.refresh();
             }
             this.$el.remove();
-            histograms.remove(this.model);
+            panel.histograms.remove(this.model);
         }
     });
 
@@ -230,9 +226,9 @@ function initHistograms(globalStats, attributes, filterModelFromPanel, filterSub
         },
         initialize: function () {
             var that = this;
-            this.listenTo(histograms, 'add', this.addHistogram);
-            this.listenTo(histograms, 'remove', this.removeHistogram);
-            this.listenTo(histograms, 'reset', this.addAll);
+            this.listenTo(panel.histograms, 'add', this.addHistogram);
+            this.listenTo(panel.histograms, 'remove', this.removeHistogram);
+            this.listenTo(panel.histograms, 'reset', this.addAll);
 
             // Setup add histogram button.
             var template = Handlebars.compile($('#addHistogramTemplate').html());
@@ -251,7 +247,7 @@ function initHistograms(globalStats, attributes, filterModelFromPanel, filterSub
             });
         },
         render: function () {
-            // Rerender by showing the histograms in correct sorted order.
+            // Re-render by showing the histograms in correct sorted order.
             this.collection.sort();
             var newDiv = $('<div></div>');
             this.collection.each(function (child) {
@@ -301,7 +297,7 @@ function initHistograms(globalStats, attributes, filterModelFromPanel, filterSub
             this.render();
         },
         addHistogram: function (histogram) {
-            // Theres a slight quirk here due to using D3, where we need to make sure
+            // There's a slight quirk here due to using D3, where we need to make sure
             // that the view doesn't get rendered until it's attached to the container.
             // If it isn't attached yet, it has zero size, and D3 freaks out.
             var view = new HistogramView({model: histogram});
@@ -310,34 +306,30 @@ function initHistograms(globalStats, attributes, filterModelFromPanel, filterSub
             view.render();
         },
         removeHistogram: function (histogram) {
-            updateAttribute(histogram.attributes.attribute);
+            panel.updateAttribute(histogram.attributes.attribute);
         },
         addHistogramFromDropdown: function (evt) {
             var attribute = $(evt.currentTarget).text().trim();
-            updateAttribute(null, attribute, 'sparkLines');
+            panel.updateAttribute(null, attribute, 'sparkLines');
         },
         addAll: function () {
             $(this.histogramsContainer).empty();
-            histograms.each(this.addHistogram, this);
+            panel.histograms.each(this.addHistogram, this);
         }
     });
-    var allHistogramsView = new AllHistogramsView({collection: histograms});
 
-
-    return {
-        view: allHistogramsView,
-        collection: histograms,
-        model: HistogramModel
-    };
+    this.view = new AllHistogramsView({collection: panel.histograms});
+    panel.collection = this.histograms;
+    panel.model = HistogramModel;
 }
 
-function updateAttribute(oldAttr, newAttr, type) {
-    updateAttributeSubject.onNext({
+HistogramsPanel.prototype.updateAttribute = function (oldAttr, newAttr, type) {
+    this.updateAttributeSubject.onNext({
         oldAttr: oldAttr,
         newAttr: newAttr,
         type: type
     });
-}
+};
 
 
 
@@ -417,28 +409,29 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
 }
 
 
-function highlight(selection, toggle) {
+HistogramsPanel.prototype.highlight = function (selection, toggle) {
+    var histogramFilters = this.histogramFilters;
     _.each(selection[0], function (sel) {
         var data = sel.__data__;
-        var unhighlightedColor;
+        var colorWithoutHighlight;
         if (histogramFilters[data.attr] !== undefined) {
             var min = histogramFilters[data.attr].firstBin;
             var max = histogramFilters[data.attr].lastBin;
             if (data.binId >= min && data.binId <= max) {
-                unhighlightedColor = color;
+                colorWithoutHighlight = color;
             } else {
-                unhighlightedColor = colorUnselected;
+                colorWithoutHighlight = colorUnselected;
             }
         } else {
-            unhighlightedColor = color;
+            colorWithoutHighlight = color;
         }
 
-        var colorScale = (toggle) ? colorHighlighted : unhighlightedColor;
+        var colorScale = (toggle) ? colorHighlighted : colorWithoutHighlight;
         $(sel).css('fill', colorScale(data.type));
     });
-}
+};
 
-function updateHistogram($el, model, attribute) {
+HistogramsPanel.prototype.updateHistogram = function ($el, model, attribute) {
     var height = $el.height() - margin.top - margin.bottom;
     var width = $el.width() - margin.left - margin.right;
     var data = model.attributes.data;
@@ -470,8 +463,8 @@ function updateHistogram($el, model, attribute) {
             .attr('height', barHeight + barPadding)
             .attr('width', width)
             .attr('opacity', 0)
-            .on('mouseover', toggleTooltips.bind(null, true, svg))
-            .on('mouseout', toggleTooltips.bind(null, false, svg));
+            .on('mouseover', this.toggleTooltips.bind(this, true, svg))
+            .on('mouseout', this.toggleTooltips.bind(this, false, svg));
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -492,7 +485,7 @@ function updateHistogram($el, model, attribute) {
         });
 
 
-    applyAttrBars(bars.enter().append('rect'), 'bottom', 'top')
+    this.applyAttrBars(bars.enter().append('rect'), 'bottom', 'top')
         .attr('class', 'bar-rect')
         .attr('height', barHeight)
         .attr('width', function (d) {
@@ -501,11 +494,10 @@ function updateHistogram($el, model, attribute) {
         .attr('x', function (d) {
             return xScale(d.y1) - heightDelta(d, xScale);
         });
+};
 
 
-}
-
-function updateSparkline($el, model, attribute) {
+HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     var width = $el.width() - marginSparklines.left - marginSparklines.right;
     var height = $el.height() - marginSparklines.top - marginSparklines.bottom;
     var data = model.attributes.data;
@@ -572,6 +564,8 @@ function updateSparkline($el, model, attribute) {
     // Create Columns
     //////////////////////////////////////////////////////////////////////////
 
+    var histogramFilters = this.histogramFilters;
+
     var updateOpacity = function (d, i) {
         var filters = histogramFilters[attribute];
         if (filters && i >= filters.firstBin && i <= filters.lastBin) {
@@ -591,9 +585,9 @@ function updateSparkline($el, model, attribute) {
 
 
     var columns = selectColumns(svg, stackedBins);
-    var columnRects = svg.selectAll('.column-rect');
-    columnRects.attr('opacity', updateOpacity);
-    columnRects.style('cursor', updateCursor);
+    var columnRectangles = svg.selectAll('.column-rect');
+    columnRectangles.attr('opacity', updateOpacity);
+    columnRectangles.style('cursor', updateCursor);
 
     applyAttrColumns(columns.enter().append('g'))
         .attr('attribute', attribute)
@@ -610,16 +604,16 @@ function updateSparkline($el, model, attribute) {
             .attr('fill', '#556ED4')
             .attr('opacity', updateOpacity)
             .style('cursor', updateCursor)
-            .on('mousedown', handleHistogramDown.bind(null, filterRedrawCallback, id, model.attributes.globalStats))
-            .on('mouseover', toggleTooltips.bind(null, true, svg))
-            .on('mouseout', toggleTooltips.bind(null, false, svg));
+            .on('mousedown', this.handleHistogramDown.bind(this, filterRedrawCallback, id, model.attributes.globalStats))
+            .on('mouseover', this.toggleTooltips.bind(this, true, svg))
+            .on('mouseout', this.toggleTooltips.bind(this, false, svg));
 
     //////////////////////////////////////////////////////////////////////////
     // Create and Update Bars
     //////////////////////////////////////////////////////////////////////////
 
     var bars = selectBars(columns)
-        .style('fill', reColor);
+        .style('fill', this.reColor.bind(this));
 
     bars.transition().duration(DRAG_SAMPLE_INTERVAL)
         .attr('data-original-title', function(d) {
@@ -633,7 +627,7 @@ function updateSparkline($el, model, attribute) {
         });
 
 
-    applyAttrBars(bars.enter().append('rect'), 'left', 'right')
+    this.applyAttrBars(bars.enter().append('rect'), 'left', 'right')
         .attr('class', 'bar-rect')
         .attr('width', barWidth)
         .attr('height', function (d) {
@@ -643,17 +637,18 @@ function updateSparkline($el, model, attribute) {
             return yScale(d.y1) - heightDelta(d, yScale);
         });
 
-}
+};
 
-function handleHistogramDown (redrawCallback, id, globalStats) {
+HistogramsPanel.prototype.handleHistogramDown = function (redrawCallback, id, globalStats) {
     var col = d3.select(d3.event.target.parentNode);
     var $element = $(col[0][0]);
     var $parent = $element.parent();
 
     var startBin = $element.attr('binnumber');
     var attr = $element.attr('attribute');
+    var histogramFilters = this.histogramFilters;
     var lastHistogramFilter = histogramFilters[attr];
-    updateHistogramFilters(attr, id, globalStats, startBin, startBin);
+    this.updateHistogramFilters(attr, id, globalStats, startBin, startBin);
 
     var positionChanges = Rx.Observable.fromEvent($parent, 'mouseover')
         .map(function (evt) {
@@ -663,9 +658,9 @@ function handleHistogramDown (redrawCallback, id, globalStats) {
             var ends = [+startBin, +binNum];
             var firstBin = _.min(ends);
             var lastBin = _.max(ends);
-            updateHistogramFilters(attr, id, globalStats, firstBin, lastBin);
+            this.updateHistogramFilters(attr, id, globalStats, firstBin, lastBin);
             redrawCallback();
-        }).subscribe(_.identity, util.makeErrorHandler('Histogram Filter Dragging'));
+        }, this).subscribe(_.identity, util.makeErrorHandler('Histogram Filter Dragging'));
 
     Rx.Observable.fromEvent($(document.body), 'mouseup')
         .take(1)
@@ -681,12 +676,12 @@ function handleHistogramDown (redrawCallback, id, globalStats) {
                 delete histogramFilters[attr];
             }
 
-            var filterModels = histogramFiltersToFilterModelUpdates(histogramFilters, FilterModel);
-            histogramFilterSubject.onNext(filterModels);
+            var filterModels = histogramFiltersToFilterModelUpdates(histogramFilters, this.FilterModel);
+            this.histogramFilterSubject.onNext(filterModels);
             redrawCallback();
-        })
+        }.bind(this))
         .subscribe(_.identity, util.makeErrorHandler('Histogram Filter Mouseup'));
-}
+};
 
 function selectColumns (svg, stackedBins) {
     return svg.selectAll('.column')
@@ -709,10 +704,10 @@ function applyAttrColumns (columns) {
         .classed('column', true);
 }
 
-function reColor (d) {
-    if (histogramFilters[d.attr] !== undefined) {
-        var min = histogramFilters[d.attr].firstBin;
-        var max = histogramFilters[d.attr].lastBin;
+HistogramsPanel.prototype.reColor = function (d) {
+    if (this.histogramFilters[d.attr] !== undefined) {
+        var min = this.histogramFilters[d.attr].firstBin;
+        var max = this.histogramFilters[d.attr].lastBin;
         if (d.binId >= min && d.binId <= max) {
             return color(d.type);
         } else {
@@ -721,9 +716,9 @@ function reColor (d) {
     } else {
         return color(d.type);
     }
-}
+};
 
-function applyAttrBars (bars, globalPos, localPos) {
+HistogramsPanel.prototype.applyAttrBars = function (bars, globalPos, localPos) {
     return bars
         .attr('data-container', 'body')
         .attr('data-placement', function (d) {
@@ -747,10 +742,10 @@ function applyAttrBars (bars, globalPos, localPos) {
         })
 
         .style('pointer-events', 'none')
-        .style('fill', reColor);
-}
+        .style('fill', this.reColor.bind(this));
+};
 
-function toggleTooltips (showTooltip, svg) {
+HistogramsPanel.prototype.toggleTooltips = function (showTooltip, svg) {
     var col = d3.select(d3.event.target.parentNode);
     var bars = col.selectAll('.bar-rect');
 
@@ -791,8 +786,8 @@ function toggleTooltips (showTooltip, svg) {
         textBox.attr('opacity', 0);
     }
 
-    highlight(bars, showTooltip);
-}
+    this.highlight(bars, showTooltip);
+};
 
 function heightDelta(d, xScale) {
     var minimumHeight = 5;
@@ -822,24 +817,15 @@ function prettyPrint (d, attributeName, noLimit) {
         }
 
         var abs = Math.abs(d);
+        var precision = 4;
         if (abs > 1000000000000 || (d !== 0 && Math.abs(d) < 0.00001)) {
-            return String(d.toExponential(4));
+            return String(d.toExponential(precision));
         } else if (abs > 1000000000) {
             return String( maybePrecise(d/1000000000) ) + 'B';
         } else if (abs > 1000000) {
             return String( maybePrecise(d/1000000) ) + 'M';
         } else if (abs > 1000) {
             return String( maybePrecise(d/1000) ) + 'K';
-        } else {
-            d = Math.round(d*1000000) / 1000000; // Kill rounding errors
-            return String(d);
-        }
-
-        // FIXME: unreachable
-        // Large Number
-        var precision = 4;
-        if (Math.abs(d) > 1000000 || (d !== 0 && Math.abs(d) < 0.00001)) {
-            return String(d.toExponential(precision));
         } else {
             d = Math.round(d*1000000) / 1000000; // Kill rounding errors
             return String(d);
@@ -1005,23 +991,29 @@ function setupSvg (el, margin, width, height) {
 // Util
 //////////////////////////////////////////////////////////////////////////////
 
-// TODO: Move active filters out of histogram Brush.
-// Should we still keep details inside for rendering?
-function updateHistogramFilters (attr, id, globalStats, firstBin, lastBin) {
+/**
+ * Retains histogram-control-specific filter details while allowing coordination with the underlying filter model.
+ * @param {String} dataframeAttribute
+ * @param {String} id
+ * @param globalStats
+ * @param {Number} firstBin index of first bin, inclusive
+ * @param {Number} lastBin index of last bin, inclusive
+ */
+HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute, id, globalStats, firstBin, lastBin) {
 
-    histogramFilters[attr] = {
+    this.histogramFilters[dataframeAttribute] = {
         firstBin: firstBin,
         lastBin: lastBin
     };
 
-    var stats = globalStats.sparkLines[attr];
+    var stats = globalStats.sparkLines[dataframeAttribute];
     var dataType = stats.dataType;
 
     if (stats.type === 'histogram') {
         var start = stats.minValue + (stats.binWidth * firstBin);
         var stop = stats.minValue + (stats.binWidth * lastBin) + stats.binWidth;
-        histogramFilters[attr].start = start;
-        histogramFilters[attr].stop = stop;
+        this.histogramFilters[dataframeAttribute].start = start;
+        this.histogramFilters[dataframeAttribute].stop = stop;
     } else {
         var list = [];
         // TODO: Determine if this order is deterministic,
@@ -1030,16 +1022,15 @@ function updateHistogramFilters (attr, id, globalStats, firstBin, lastBin) {
         for (var i = firstBin; i <= lastBin; i++) {
             list.push(binNames[i]);
         }
-        histogramFilters[attr].equals = list;
+        this.histogramFilters[dataframeAttribute].equals = list;
     }
-    histogramFilters[attr].type = dataType;
+    this.histogramFilters[dataframeAttribute].type = dataType;
 
     $('.refreshHistogramButton-' + id).css('visibility', 'visible');
-}
-
-
-module.exports = {
-    initHistograms: initHistograms,
-    NUM_SPARKLINES: NUM_SPARKLINES
 };
 
+
+HistogramsPanel.NUM_SPARKLINES = NUM_SPARKLINES;
+
+
+module.exports = HistogramsPanel;

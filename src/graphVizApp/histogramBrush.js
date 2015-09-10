@@ -6,7 +6,7 @@ var Rx      = require('rx');
               require('../rx-jquery-stub');
 var _       = require('underscore');
 
-var histogramPanel = require('./histogramPanel');
+var HistogramsPanel = require('./histogramPanel');
 var util    = require('./util.js');
 var Command = require('./command.js');
 
@@ -70,7 +70,7 @@ function HistogramBrush(socket, filtersPanel) {
         all: true});
     var globalStreamSparklines = this.aggregatePointsAndEdges({
         all: true,
-        binning: {'_goalNumberOfBins': histogramPanel.NUM_SPARKLINES}});
+        binning: {'_goalNumberOfBins': HistogramsPanel.NUM_SPARKLINES}});
     Rx.Observable.zip(globalStream, globalStreamSparklines, function (histogramsReply, sparkLinesReply) {
         checkReply(histogramsReply);
         checkReply(sparkLinesReply);
@@ -80,7 +80,7 @@ function HistogramBrush(socket, filtersPanel) {
             return (val !== '_title');
         });
 
-        this.histogramsPanel = histogramPanel.initHistograms(
+        this.histogramsPanel = new HistogramsPanel(
             data, attributes, filtersPanel.model,
             this.filtersSubjectFromHistogram, this.dataframeAttributeChange, updateDataframeAttributeSubject);
         data.histogramPanel = this.histogramsPanel;
