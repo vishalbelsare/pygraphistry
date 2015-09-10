@@ -129,31 +129,50 @@ var programs = {
 
 /* datasource can be either SERVER or CLIENT */
 
+var VBODataSources = {
+    DEVICE: 'DEVICE', // OpenCL server buffer
+    HOST: 'HOST',     // Plain server buffer
+    CLIENT: 'CLIENT', // Client-computed buffer
+    SERVER: 'SERVER'
+};
+
+
+var DrawOptions = {
+    DYNAMIC_DRAW: 'DYNAMIC_DRAW',
+    STATIC_DRAW: 'STATIC_DRAW'
+};
+
+
 var textures = {
     'hitmap': {
-        'datasource': 'CLIENT',
+        'datasource': VBODataSources.CLIENT,
+        'width': {'unit': 'percent', 'value': 25},
+        'height': {'unit': 'percent', 'value': 25}
     },
     'pointTexture': {
-        'datasource': 'CLIENT',
+        'datasource': VBODataSources.CLIENT,
         'retina': true
     },
     'steadyStateTexture': {
-        'datasource': 'CLIENT',
+        'datasource': VBODataSources.CLIENT,
         'retina': true
     },
     'pointHitmapDownsampled': {
-        'datasource': 'CLIENT',
+        'datasource': VBODataSources.CLIENT,
         'width': {'unit': 'percent', 'value': 5},
         'height': {'unit': 'percent', 'value': 5}
     },
     'colorMap': {
-        'datasource': 'SERVER',
+        'datasource': VBODataSources.SERVER,
         'path': 'test-colormap2.png'
     }
-}
+};
 
 
-/* datasource can be
+/**
+ * These represent different kinds/roles of VBOs.
+ *
+ * datasource can be:
  * DEVICE -> OpenCL server buffer
  * HOST   -> plain server buffer
  * CLIENT -> computed on client
@@ -161,10 +180,10 @@ var textures = {
 var models = {
     'logicalEdges': {
         'curIdx': {
-            'datasource': 'HOST',
+            'datasource': VBODataSources.HOST,
             'index': true,
             'type': 'UNSIGNED_INT',
-            'hint': 'STATIC_DRAW',
+            'hint': DrawOptions.STATIC_DRAW,
             'count': 1,
             'offset': 0,
             'stride': 0,
@@ -173,10 +192,10 @@ var models = {
     },
     'forwardsEdgeStartEndIdxs': {
         'curIdx': {
-            'datasource': 'HOST',
+            'datasource': VBODataSources.HOST,
             'index': true,
             'type': 'UNSIGNED_INT',
-            'hint': 'STATIC_DRAW',
+            'hint': DrawOptions.STATIC_DRAW,
             'count': 1,
             'offset': 0,
             'stride': 0,
@@ -185,10 +204,10 @@ var models = {
     },
     'backwardsEdgeStartEndIdxs': {
         'curIdx': {
-            'datasource': 'HOST',
+            'datasource': VBODataSources.HOST,
             'index': true,
             'type': 'UNSIGNED_INT',
-            'hint': 'STATIC_DRAW',
+            'hint': DrawOptions.STATIC_DRAW,
             'count': 1,
             'offset': 0,
             'stride': 0,
@@ -197,9 +216,9 @@ var models = {
     },
     'midSpringsPos': {
         'curPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
-            'hint': 'DYNAMIC_DRAW',
+            'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 2,
             'offset': 0,
             'stride': 8,
@@ -230,9 +249,9 @@ var models = {
     },
     'highlightedEdgesPos': {
         'curPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
-            'hint': 'DYNAMIC_DRAW',
+            'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 2,
             'offset': 0,
             'stride': 8,
@@ -241,9 +260,9 @@ var models = {
     },
     'arrowStartPos': {
         'curPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
-            'hint': 'DYNAMIC_DRAW',
+            'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 2,
             'offset': 0,
             'stride': 8,
@@ -252,9 +271,9 @@ var models = {
     },
     'arrowEndPos': {
         'curPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
-            'hint': 'DYNAMIC_DRAW',
+            'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 2,
             'offset': 0,
             'stride': 8,
@@ -263,9 +282,9 @@ var models = {
     },
     'arrowNormalDir': {
         'normalDir': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
-            'hint': 'DYNAMIC_DRAW',
+            'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 1,
             'offset': 0,
             'stride': 0,
@@ -274,9 +293,9 @@ var models = {
     },
     'highlightedArrowStartPos': {
         'curPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
-            'hint': 'DYNAMIC_DRAW',
+            'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 2,
             'offset': 0,
             'stride': 8,
@@ -285,9 +304,9 @@ var models = {
     },
     'highlightedArrowEndPos': {
         'curPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
-            'hint': 'DYNAMIC_DRAW',
+            'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 2,
             'offset': 0,
             'stride': 8,
@@ -296,9 +315,9 @@ var models = {
     },
     'highlightedArrowNormalDir': {
         'normalDir': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
-            'hint': 'DYNAMIC_DRAW',
+            'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 1,
             'offset': 0,
             'stride': 0,
@@ -307,10 +326,10 @@ var models = {
     },
     'curPoints': {
         'curPos': {
-            'datasource': 'DEVICE',
+            'datasource': VBODataSources.DEVICE,
             'type': 'FLOAT',
             'count': 2,
-            'hint': 'DYNAMIC_DRAW',
+            'hint': DrawOptions.DYNAMIC_DRAW,
             'offset': 0,
             'stride': 8,
             'normalize': false
@@ -318,9 +337,9 @@ var models = {
     },
     'highlightedPointsPos': {
         'curPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
-            'hint': 'DYNAMIC_DRAW',
+            'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 2,
             'offset': 0,
             'stride': 8,
@@ -329,9 +348,9 @@ var models = {
     },
     'highlightedPointsSizes': {
         'pointSize': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'UNSIGNED_BYTE',
-            'hint': 'DYNAMIC_DRAW',
+            'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 1,
             'offset': 0,
             'stride': 0,
@@ -340,9 +359,9 @@ var models = {
     },
     'highlightedPointsColors': {
         'pointColor': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'UNSIGNED_BYTE',
-            'hint': 'DYNAMIC_DRAW',
+            'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 4,
             'offset': 0,
             'stride': 0,
@@ -351,20 +370,31 @@ var models = {
     },
     'pointSizes': {
         'pointSize':  {
-            'datasource': 'HOST',
+            'datasource': VBODataSources.HOST,
             'type': 'UNSIGNED_BYTE',
-            'hint': 'STATIC_DRAW',
+            'hint': DrawOptions.STATIC_DRAW,
             'count': 1,
             'offset': 0,
             'stride': 0,
             'normalize': false
         }
     },
+    'edgeHeights': {
+        'edgeHeight':  {
+            'datasource': 'HOST',
+            'type': 'FLOAT',
+            'hint': 'STATIC_DRAW',
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': true
+        }
+    },
     'arrowPointSizes': {
         'pointSize':  {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'UNSIGNED_BYTE',
-            'hint': 'STATIC_DRAW',
+            'hint': DrawOptions.STATIC_DRAW,
             'count': 1,
             'offset': 0,
             'stride': 0,
@@ -373,9 +403,9 @@ var models = {
     },
     'highlightedArrowPointSizes': {
         'pointSize':  {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'UNSIGNED_BYTE',
-            'hint': 'DYNAMIC_DRAW',
+            'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 1,
             'offset': 0,
             'stride': 0,
@@ -384,9 +414,9 @@ var models = {
     },
     'highlightedArrowPointColors': {
         'arrowColor':  {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'UNSIGNED_BYTE',
-            'hint': 'DYNAMIC_DRAW',
+            'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 4,
             'offset': 0,
             'stride': 0,
@@ -395,31 +425,32 @@ var models = {
     },
     'edgeColors': {
         'edgeColor':  {
-            'datasource': 'HOST',
+            'datasource': VBODataSources.HOST,
             'type': 'UNSIGNED_BYTE',
-            'hint': 'STATIC_DRAW',
+            'hint': DrawOptions.STATIC_DRAW,
             'count': 4,
             'offset': 0,
             'stride': 0,
             'normalize': true
         }
     },
+    //GIS
     'midEdgeColors': {
         'midEdgeColor':  {
-            'datasource': 'HOST',
+            'datasource': VBODataSources.HOST,
             'type': 'UNSIGNED_BYTE',
-            'hint': 'STATIC_DRAW',
+            'hint': DrawOptions.STATIC_DRAW,
             'count': 4,
             'offset': 0,
             'stride': 0,
             'normalize': true
         }
     },
-    'midEdgeColorsClient': {
+    'midEdgesColors': {
         'midEdgeColor':  {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'UNSIGNED_BYTE',
-            'hint': 'STATIC_DRAW',
+            'hint': DrawOptions.STATIC_DRAW,
             'count': 4,
             'offset': 0,
             'stride': 0,
@@ -428,9 +459,9 @@ var models = {
     },
     'arrowColors': {
         'arrowColor':  {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'UNSIGNED_BYTE',
-            'hint': 'STATIC_DRAW',
+            'hint': DrawOptions.STATIC_DRAW,
             'count': 4,
             'offset': 0,
             'stride': 0,
@@ -439,9 +470,9 @@ var models = {
     },
     'pointColors': {
         'pointColor':  {
-            'datasource': 'HOST',
+            'datasource': VBODataSources.HOST,
             'type': 'UNSIGNED_BYTE',
-            'hint': 'STATIC_DRAW',
+            'hint': DrawOptions.STATIC_DRAW,
             'count': 4,
             'offset': 0,
             'stride': 0,
@@ -450,9 +481,9 @@ var models = {
     },
     'curMidPoints': {
         'curPos': {
-            'datasource': 'DEVICE',
+            'datasource': VBODataSources.DEVICE,
             'type': 'FLOAT',
-            'hint': 'DYNAMIC_DRAW',
+            'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 2,
             'offset': 0,
             'stride': 8,
@@ -461,9 +492,9 @@ var models = {
     },
     'curMidPointsClient': {
         'curPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
-            'hint': 'DYNAMIC_DRAW',
+            'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 2,
             'offset': 0,
             'stride': 8,
@@ -472,7 +503,7 @@ var models = {
     },
     'fullscreenCoordinates': {
         'vertexPosition': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
             'count': 2,
             'offset': 0,
@@ -494,7 +525,7 @@ var models = {
         'edgeColor': {
             'datasource': 'EDGE_INDEX',
             'type': 'UNSIGNED_BYTE',
-            'hint': 'STATIC_DRAW',
+            'hint': DrawOptions.STATIC_DRAW,
             'count': 4,
             'offset': 0,
             'stride': 0,
@@ -631,12 +662,25 @@ var items = {
         'drawType': 'LINES',
         'glOptions': {}
     },
+    'dummyheights': {
+        'program': 'edgeculled',
+        'triggers': [],
+        'bindings': {
+            'curPos': ['curMidPoints', 'curPos'],
+            'edgeColor': ['edgeHeights', 'edgeHeight']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
     'midedgeculled' : {
         'program': 'midedgeculled',
         'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos': ['midSpringsPos', 'curPos'],
-            'edgeColor': ['midEdgeColorsClient', 'midEdgeColor'],
+            'edgeColor': ['midEdgesColors', 'midEdgeColor'],
             'startPos': ['midSpringsStarts', 'startPos'],
             'endPos': ['midSpringsEnds', 'endPos']
         },
@@ -778,7 +822,7 @@ var items = {
     },
     'pointoutline': {
         'program': 'pointculled',
-        'triggers': ['renderSceneFast', 'renderSceneFull'],
+        'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos':       ['curPoints', 'curPos'],
             'pointSize':    ['pointSizes', 'pointSize'],
@@ -909,25 +953,25 @@ var camera2D = {
     'farPlane': 10
 }
 
-var sceneUber = {
+var sceneGis = {
     'options': stdOptions,
     'camera': camera2D,
     'clientMidEdgeInterpolation': false,
     //'numRenderedSplits':7 ,
     'render': ['pointpicking',  'pointsampling', 'uberdemoedges', 'edgepicking', 'arrowculled', 'arrowhighlight',
-        'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+        'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight', 'dummyheights',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 }
 
-var sceneNetflowArcs = {
+var sceneArcs = {
     'options': stdOptions,
     'camera': camera2D,
     'numRenderedSplits': 8,
     'clientMidEdgeInterpolation': true,
     'arcHeight': 0.2,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-    'midedgeculled', 'edgepicking',
+    'midedgeculled', 'edgepicking', 'dummyheights',
     'arrowculled', 'arrowhighlight', 'edgehighlight',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
@@ -941,28 +985,14 @@ var sceneTransparent = {
     'clientMidEdgeInterpolation': true,
     'arcHeight': 0.2,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-    'midedgeculled', 'edgepicking',
+    'midedgeculled', 'edgepicking', 'dummyheights',
     'arrowculled', 'arrowhighlight', 'edgehighlight',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 };
 
-var sceneNetflowBigArcs = {
-    'options': stdOptions,
-    'camera': camera2D,
-    'numRenderedSplits': 32,
-    'clientMidEdgeInterpolation': true,
-    'arcHeight': 0.5,
-    'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-    'midedgeculled', 'edgepicking',
-    'arrowculled', 'arrowhighlight', 'edgehighlight',
-    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
-    'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
-    'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
-}
-
-var sceneNetflowStraight = {
+var sceneStraight = {
     'options': stdOptions,
     'camera': camera2D,
     'numRenderedSplits': 0,
@@ -976,12 +1006,10 @@ var sceneNetflowStraight = {
 }
 
 var scenes = {
-    'default': sceneNetflowArcs,
+    'default': sceneArcs,
     'transparent': sceneTransparent,
-    'gis' : sceneUber,
-    'netflowArcs': sceneNetflowArcs,
-    'netflowBigArcs': sceneNetflowBigArcs,
-    'netflowStraight': sceneNetflowStraight
+    'gis' : sceneGis,
+    'netflowStraight': sceneStraight
 }
 
 function saneProgram(program, progName) {
@@ -1161,16 +1189,16 @@ function gl2Bytes(type) {
 
 function isBufClientSide(buf) {
     var datasource = _.values(buf)[0].datasource;
-    return (datasource === 'CLIENT' || datasource === 'VERTEX_INDEX' || datasource === "EDGE_INDEX");
+    return (datasource === VBODataSources.CLIENT || datasource === 'VERTEX_INDEX' || datasource === 'EDGE_INDEX');
 }
 
 function isBufServerSide(buf) {
     var datasource = _.values(buf)[0].datasource;
-    return (datasource === 'HOST' || datasource === 'DEVICE');
+    return (datasource === 'HOST' || datasource === VBODataSources.DEVICE);
 }
 
 function isTextureServerSide(texture) {
-    return texture.datasource  === 'SERVER';
+    return texture.datasource  === VBODataSources.SERVER;
 }
 
 module.exports = {
@@ -1178,5 +1206,6 @@ module.exports = {
     'gl2Bytes': gl2Bytes,
     'isBufClientSide': isBufClientSide,
     'isBufServerSide': isBufServerSide,
-    'isTextureServerSide': isTextureServerSide
+    'isTextureServerSide': isTextureServerSide,
+    VBODataSources: VBODataSources
 };

@@ -19,7 +19,7 @@ var Q = require("q"),
     loader = require("./data-loader.js");
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:data:data-loader');
+var logger      = log.createLogger('graph-viz:data:node-driver');
 var perf        = require('common/perfStats.js').createPerfMonitor();
 
 
@@ -67,6 +67,7 @@ function graphCounts(graph) {
         pointSizes: point,
         pointColors: point,
         edgeColors: edge,
+        edgeHeights: edge,
         curMidPoints: midPoint,
         midSpringsPos: midEdge,
         midSpringsColorCoord: midEdge,
@@ -115,10 +116,10 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
 
     }));
     var hostBufs = _.omit(layouts, function (layout) {
-        return layout.datasource !== 'HOST';
+        return layout.datasource !== rConf.VBODataSources.HOST;
     });
     var devBufs = _.omit(layouts, function (layout) {
-        return layout.datasource !== 'DEVICE';
+        return layout.datasource !== rConf.VBODataSources.DEVICE;
     });
 
     // TODO: Instead of doing blocking CL reads, use CL events and wait on those.
@@ -145,10 +146,6 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                 var stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
 
                 logger.trace('Fetching host buffer %s', name);
-                if (!graph.simulator.dataframe.getLocalBuffer(name)) {
-                    throw new Error('missing buffersLocal base buffer: ' + name);
-                }
-
                 var localBuffer = graph.simulator.dataframe.getLocalBuffer(name);
                 var bytes_per_element = localBuffer.BYTES_PER_ELEMENT;
 
@@ -475,7 +472,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
                         });
                 });
 
-            return Rx.Observable.zipArray(compressed).take(1)
+            return Rx.Observable.combineLatest.apply(Rx.Observable, compressed).take(1)
                 .do(function () { perf.endTiming('compressAll_durationMS');
 
         })
