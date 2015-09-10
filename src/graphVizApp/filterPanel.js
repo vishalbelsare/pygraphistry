@@ -90,7 +90,7 @@ var FilterView = Backbone.View.extend({
         'click .disabledFilterButton': 'enable',
         'click .expandFilterButton': 'expand',
         'click .expendedFilterButton': 'shrink',
-        'click .deleteFilterbutton': 'delete'
+        'click .deleteFilterButton': 'delete'
     },
 
     initialize: function () {
