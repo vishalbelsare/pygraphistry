@@ -143,6 +143,7 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
         assetURL = getStaticContentURL(contentKey, type + 'Labels.buffer'),
         byteStartString = byteStart !== undefined && byteStart.toString ? byteStart.toString(10) : '',
         byteEndString = byteEnd !== undefined && byteEnd.toString ? byteEnd.toString(10) : '';
+
     // First label: start can be 0, but end must be set.
     // Last label: start is set, end unspecified, okay.
     if (byteStartString || byteEndString) {
@@ -152,8 +153,10 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
                 throw new Error('Too large labels range request', type, index, byteStart, byteEnd);
             }
         }
+
         oReq.open('GET', assetURL, true);
         oReq.setRequestHeader('Range', 'bytes=' + byteStartString + '-' + byteEndString);
+        debug(assetURL, 'Range', 'bytes=' + byteStartString + '-' + byteEndString);
 
         oReq.onload = function () {
             if (oReq.status !== 206) {
@@ -189,8 +192,10 @@ function getRangeForLabel(type, index) {
     if (!offsetsForType) {
         throw new Error('Label offsets not found for type', type);
     }
-    var lowerBound = offsetsForType && offsetsForType[index],
-        upperBound = offsetsForType && (offsetsForType.length > index ? offsetsForType[index + 1] - 1 : undefined);
+
+    var lowerBound = offsetsForType[index];
+    var upperBound = index < offsetsForType.length ? offsetsForType[index + 1] - 1 : undefined;
+
     if (upperBound !== undefined && lowerBound >= upperBound) {
         throw new Error('Invalid byte range indicated at', type, index);
     }
