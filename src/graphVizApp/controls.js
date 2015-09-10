@@ -545,7 +545,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var brush = setupBrush(appState, turnOnBrush);
     dataInspector.init(appState, socket, workerParams.href, brush);
     var filtersPanel = new FiltersPanel(socket, urlParams);
-    var histogramBrush = new HistogramBrush(socket, filtersPanel/*, brush, appState.poi*/);
+    var histogramBrush = new HistogramBrush(socket, filtersPanel);
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
     histogramBrush.setupMarqueeInteraction(brush);
     forkVgraph(socket, urlParams);
