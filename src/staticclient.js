@@ -26,7 +26,6 @@ var BASE_URL = BUCKET_URL + '/Static/';
 // TODO: de-globalize:
 var contentKey;
 var labelsByType = {point: {}, edge: {}};
-var labelsOffsetsByType = {};
 
 
 // ======
@@ -44,7 +43,7 @@ function getStaticContentURL(contentKey, contentPath) {
 
 // string * {socketHost: string, socketPort: int} -> (... -> ...)
 // where fragment == 'vbo?buffer' or 'texture?name'
-function makeFetcher () {
+function makeFetcher() {
 // string * {<name> -> int} * name -> Subject ArrayBuffer
     return function (bufferByteLengths, bufferName) {
 
@@ -90,12 +89,16 @@ function makeFetcher () {
     };
 }
 
-
-function fetchOffsetBuffer (bufferName) {
+/**
+ * Observable stream for one AJAX GET for a label offsets buffer (pure binary, UInt32Array).
+ * @param {String} bufferName
+ * @returns {Rx.ReplaySubject}
+ */
+function fetchOffsetBuffer(bufferName) {
     debug('fetching', bufferName);
 
     // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
-    var result = new Rx.Subject(),
+    var result = new Rx.ReplaySubject(1),
         oReq = new XMLHttpRequest(),
         assetURL = getStaticContentURL(contentKey, bufferName),
         now = Date.now();
@@ -124,11 +127,14 @@ function fetchOffsetBuffer (bufferName) {
     return result;
 }
 
-
+/**
+ * @param {String} type 'point' or 'edge'
+ * @returns {Rx.ReplaySubject}
+ */
 function getLabelOffsets(type) {
-    fetchOffsetBuffer(type + 'Labels.offsets').forEach(function (labelContentOffsets) {
+    var bufferName = type + 'Labels.offsets';
+    return fetchOffsetBuffer(bufferName).do(function (labelContentOffsets) {
         debug('Got offsets for', type, labelContentOffsets);
-        labelsOffsetsByType[type] = labelContentOffsets;
     });
 }
 
@@ -138,11 +144,12 @@ var LABEL_SIZE_LIMIT = Math.pow(2, 18);
 
 
 function getLabelViaRange(type, index, byteStart, byteEnd) {
-    var res = new Rx.Subject(),
-        oReq = new XMLHttpRequest(),
-        assetURL = getStaticContentURL(contentKey, type + 'Labels.buffer'),
-        byteStartString = byteStart !== undefined && byteStart.toString ? byteStart.toString(10) : '',
-        byteEndString = byteEnd !== undefined && byteEnd.toString ? byteEnd.toString(10) : '';
+    var res = new Rx.Subject();
+    var oReq = new XMLHttpRequest();
+    var assetURL = getStaticContentURL(contentKey, type + 'Labels.buffer');
+    var byteStartString = byteStart !== undefined && byteStart.toString ? byteStart.toString(10) : '';
+    var byteEndString = byteEnd !== undefined && byteEnd.toString ? byteEnd.toString(10) : '';
+
     // First label: start can be 0, but end must be set.
     // Last label: start is set, end unspecified, okay.
     if (byteStartString || byteEndString) {
@@ -152,8 +159,10 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
                 throw new Error('Too large labels range request', type, index, byteStart, byteEnd);
             }
         }
+
         oReq.open('GET', assetURL, true);
         oReq.setRequestHeader('Range', 'bytes=' + byteStartString + '-' + byteEndString);
+        debug(assetURL, 'Range', 'bytes=' + byteStartString + '-' + byteEndString);
 
         oReq.onload = function () {
             if (oReq.status !== 206) {
@@ -161,9 +170,10 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
                 return;
             }
             try {
-                var responseData = JSON.parse(oReq.responseText),
-                    responseTabular = _.pairs(_.omit(responseData, '_title'));
-                debug('restxt', responseData);
+                var responseData = JSON.parse(oReq.responseText);
+                var responseTabular = _.pairs(_.omit(responseData, '_title'));
+
+                debug('Label fetched', responseData);
                 labelsByType[type][index] = responseData;
                 res.onNext([{
                     formatted: false,
@@ -184,13 +194,15 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
 }
 
 
-function getRangeForLabel(type, index) {
-    var offsetsForType = labelsOffsetsByType[type];
+function getRangeForLabel(offsetsForType, type, index) {
     if (!offsetsForType) {
         throw new Error('Label offsets not found for type', type);
     }
-    var lowerBound = offsetsForType && offsetsForType[index],
-        upperBound = offsetsForType && (offsetsForType.length > index ? offsetsForType[index + 1] - 1 : undefined);
+
+    var lowerBound = offsetsForType[index];
+    // Upper bound will be undefined for last label
+    var upperBound = index < offsetsForType.length ? offsetsForType[index + 1] - 1 : undefined;
+
     if (upperBound !== undefined && lowerBound >= upperBound) {
         throw new Error('Invalid byte range indicated at', type, index);
     }
@@ -198,7 +210,7 @@ function getRangeForLabel(type, index) {
 }
 
 
-function getLabel(type, index) {
+function getLabel(offsetsForType, type, index) {
     var translatedType = type === 1 ? 'point' : (type === 2 ? 'edge' : type),
         labelCache = labelsByType[translatedType];
     if (labelCache.hasOwnProperty(index)) {
@@ -206,7 +218,7 @@ function getLabel(type, index) {
         res.onNext(labelCache[index]);
         return res;
     }
-    var range = getRangeForLabel(translatedType, index);
+    var range = getRangeForLabel(offsetsForType, translatedType, index);
     return getLabelViaRange(translatedType, index, range[0], range[1]);
 }
 
@@ -220,6 +232,17 @@ module.exports = {
 
         contentKey = urlParams.contentKey;
 
+        var offsetsSource = Rx.Observable.combineLatest(
+            getLabelOffsets('point'),
+            getLabelOffsets('edge'),
+            function (pointsOffsets, edgesOffsets) {
+                // Ensure that points and edges are accessed at the same enum dim value (1 and 2):
+                return [undefined, pointsOffsets, edgesOffsets];
+            }
+        );
+        var offsetsCombined = new Rx.ReplaySubject(1);
+        offsetsSource.subscribe(offsetsCombined);
+
         return Rx.Observable.return({
             socket: {
                 on: function (eventName) {
@@ -229,17 +252,14 @@ module.exports = {
                     if (eventName === 'get_labels') {
                         var dim = data.dim,
                             indices = data.indices;
-                        try {
-                            getLabel(dim, indices[0])
-                                .do(function (responseData) {
-                                    cb(undefined, responseData);
-                                }).subscribe(_.identity, function (err) {
-                                    console.error('fetch vbo exn', err, (err||{}).stack);
-                                });
-
-                        } catch (e) {
-                            cb(e, data);
-                        }
+                        offsetsCombined.flatMap(function (offsetsArray) {
+                            return getLabel(offsetsArray[dim], dim, indices[0]);
+                        }).do(function (responseData) {
+                            cb(undefined, responseData);
+                        }).subscribe(_.identity, function (err) {
+                            console.error('Error fetching labels', data, err, (err || {}).stack);
+                            cb(err, data);
+                        });
                     } else if (eventName === 'interaction') {
                         // Ignored for now, cuts back on logs.
                         return undefined;
@@ -278,9 +298,6 @@ module.exports = {
         var vboUpdates = new Rx.ReplaySubject(1);
         vboUpdates.onNext('init');
 
-        getLabelOffsets('point');
-        getLabelOffsets('edge');
-
         $.ajaxAsObservable({url: getStaticContentURL(contentKey, 'metadata.json'), dataType: 'json'})
             .pluck('data')
             .do(function (data) {
@@ -304,12 +321,13 @@ module.exports = {
                 var bufferFileNames = changedBufferNames.map(function (bufferName) {
                     return bufferName + '.vbo';
                 });
-                var bufferVBOs = Rx.Observable.zipArray(
+                var bufferVBOs = Rx.Observable.combineLatest(
                     [Rx.Observable.return()]
                         .concat(bufferFileNames.map(fetchBuffer)))
                     .take(1);
                 bufferVBOs
-                    .subscribe(function (vbos) {
+                    .subscribe(
+                        function (vbos) {
                             vbos.shift();
                             var bindings = _.object(_.zip(changedBufferNames, vbos));
                             try {
@@ -327,7 +345,7 @@ module.exports = {
                         });
 
                 var changedTextureNames = [];
-                var texturesData = Rx.Observable.zipArray(
+                var texturesData = Rx.Observable.combineLatest(
                     [Rx.Observable.return()]
                         .concat(changedTextureNames.map(fetchTexture)))
                     .take(1);

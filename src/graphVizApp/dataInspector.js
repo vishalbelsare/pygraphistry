@@ -216,6 +216,10 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
     grid.renderRows = function () {
         grid.selectedModels = [];
         _.each(grid.body.rows, function (row) {
+            // TODO: Kill this hack.
+            if (!row.model) {
+                return;
+            }
             row.model.set('selected', false);
             _.each(grid.selection, function (sel) {
                 if (row.model.attributes._index === sel[0] && dim === sel[1]) {

@@ -367,7 +367,7 @@ function createControls(socket, appState, trigger, urlParams) {
                 $slider.onAsObservable('slide'),
                 $slider.onAsObservable('slideStop')
             ).distinctUntilChanged()
-            .throttleFirst(50)
+            .sample(50)
             .subscribe(
                 function () {
                     if ($that.hasClass('layout-menu-slider')) {
@@ -483,17 +483,18 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     // TODO: More general version for all toggle-able buttons?
     var marqueeIsOn = false;
+    var $graph = $('#simulate');
     var turnOnMarquee =
         Rx.Observable.merge(
             onElt.filter(function (elt) { return elt === $('#marqueerectangle')[0]; })
                 .map(function () { return !marqueeIsOn; }),
             onElt.filter(function (elt) { return elt === $('#histogramBrush')[0]; })
                 .map(_.constant(false)),
-            Rx.Observable.fromEvent($('#simulate'), 'click')
+            Rx.Observable.fromEvent($graph, 'click')
                 .map(_.constant(false)))
         .do(function (isTurnOn) {
             marqueeIsOn = isTurnOn;
-            $('#marqueerectangle').children('i').toggleClass('toggle-on', marqueeIsOn);
+            $('#marqueerectangle').find('i').toggleClass('toggle-on', marqueeIsOn);
             appState.marqueeOn.onNext(marqueeIsOn ? 'toggled' : false);
         });
 
@@ -530,14 +531,14 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var turnOnBrush = new Rx.Subject(1);
     onElt
         .merge(
-            Rx.Observable.fromEvent($('#simulate'), 'click')
-            .map(_.constant($('#simulate')[0])))
-        .do(function (elt) {
+            Rx.Observable.fromEvent($graph, 'click')
+            .map(_.constant($graph[0])))
+        .map(function (elt) {
             if (elt === $('#brushButton')[0]) {
                 $(elt).children('i').toggleClass('toggle-on');
                 brushIsOn = !brushIsOn;
             } else if (brushIsOn &&
-                    (elt === $('#marqueerectangle')[0] || elt === $('#simulate')[0])) {
+                    (elt === $('#marqueerectangle')[0] || elt === $graph[0])) {
                 brushIsOn = false;
                 $('#brushButton').children('i').toggleClass('toggle-on', false);
             }
@@ -554,8 +555,9 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     var marquee = setupMarquee(appState, turnOnMarquee);
     var brush = setupBrush(appState, turnOnBrush);
+
     dataInspector.init(appState, socket, workerParams.href, brush, histogramPanelToggle);
-    histogramBrush.init(socket, brush, appState.poi);
+    histogramBrush.init(socket, urlParams, brush, appState.poi);
     forkVgraph(socket, urlParams);
     persistButton(appState, socket, urlParams);
     goLiveButton(socket, urlParams);
@@ -597,7 +599,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var centeringDone =
         Rx.Observable.merge(
             Rx.Observable.fromEvent($('#center'), 'click'),
-            Rx.Observable.fromEvent($('#simulate'), 'click'),
+            Rx.Observable.fromEvent($graph, 'click'),
             $('#simulation').onAsObservable('mousewheel'),
             $('#simulation').onAsObservable('mousedown'),
             $('#zoomin').onAsObservable('click'),
@@ -611,7 +613,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var autoCentering =
         doneLoading.flatMapLatest(function () {
             return Rx.Observable.interval(1000)
-                .do(function () { console.log('auto center interval'); })
+                .do(function () { debug('auto center interval'); })
                 .merge(centeringDone)
                 .takeUntil(centeringDone.delay(1));
         });

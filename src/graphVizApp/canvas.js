@@ -21,13 +21,13 @@ function setupCameraInteractions(appState, $eventTarget) {
     //pan/zoom
     //Observable Event
     var interactions;
-    if(interaction.isTouchBased) {
+    if (interaction.isTouchBased) {
         debug('Detected touch-based device. Setting up touch interaction event handlers.');
         var eventTarget = $eventTarget[0];
         interactions = interaction.setupSwipe(eventTarget, camera)
             .merge(
                 interaction.setupPinch($eventTarget, camera)
-                .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity)));
+                    .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity)));
     } else {
         debug('Detected mouse-based device. Setting up mouse interaction event handlers.');
         interactions = interaction.setupDrag($eventTarget, camera, appState)
@@ -47,25 +47,6 @@ function setupCameraInteractions(appState, $eventTarget) {
     );
 }
 
-/* Deindexed logical edges by looking up the x/y positions of the source and destination
- * nodes. */
-//function expandLogicalEdges(bufferSnapshots) {
-    //var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
-    //var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
-    //var numVertices = logicalEdges.length;
-
-    //if (!bufferSnapshots.springsPos) {
-        //bufferSnapshots.springsPos = new Float32Array(numVertices * 2);
-    //}
-    //var springsPos = bufferSnapshots.springsPos;
-
-    //for (var i = 0; i < numVertices; i++) {
-        //springsPos[2 * i]     = curPoints[2 * logicalEdges[i]];
-        //springsPos[2 * i + 1] = curPoints[2 * logicalEdges[i] + 1];
-    //}
-
-    //return springsPos;
-//}
 
 function setupLabelsAndCursor(appState, urlParams, $eventTarget) {
     // Picks objects in priority based on order.
@@ -124,14 +105,16 @@ function expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPo
 
 }
 
-// -> {midSpringsPos: Float32Array, midSpringsEndpoints: Float32Array}
-function expandLogicalEdges(bufferSnapshots, numRenderedSplits, edgeHeight) {
-    var logicalEdges, curPoints, srcPointIdx, dstPointIdx, srcPointX, srcPointY,
-            dstPointX, dstPointY;
+// RenderState
+// {logicalEdges: Uint32Array, curPoints: Float32Array, edgeHeights: Float32Array, ?midSpringsPos: Float32Array}
+//  * int * float
+//  -> {midSpringsPos: Float32Array, midSpringsStarts: Float32Array, midSpringsEnds: Float32Array}
+function expandLogicalEdges(renderState, bufferSnapshots, numRenderedSplits, edgeHeight) {
 
-    logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
-    curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
-    var numEdges = (logicalEdges.length / 2);
+
+    var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
+    var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
+    var numEdges = logicalEdges.length / 2;
 
     var numVertices = (2 * numEdges) * (numRenderedSplits + 1);
 
@@ -147,42 +130,66 @@ function expandLogicalEdges(bufferSnapshots, numRenderedSplits, edgeHeight) {
     var midEdgesPerEdge = numRenderedSplits + 1;
     var midEdgeStride = 4 * midEdgesPerEdge;
 
-    function setMidEdge(edgeIdx, midEdgeIdx, srcMidPointX, srcMidPointY, dstMidPointX, dstMidPointY) {
+    var setMidEdge = function (edgeIdx, midEdgeIdx, srcMidPointX, srcMidPointY, dstMidPointX, dstMidPointY) {
         var midEdgeStartIdx = edgeIndex * midEdgeStride;
         var index = midEdgeStartIdx + (midEdgeIdx * 4);
         midSpringsPos[index] = srcMidPointX;
         midSpringsPos[index + 1] = srcMidPointY;
         midSpringsPos[index + 2] = dstMidPointX;
         midSpringsPos[index + 3] = dstMidPointY;
-    }
-
-
-    var unitRadius = (1 + Math.pow(edgeHeight, 2)) / (2 * edgeHeight);
-    var theta = Math.asin((1  / unitRadius)) * 2;
-    var thetaStep = -theta /  (numRenderedSplits + 1);
-
-    var cosArray = new Float32Array(numRenderedSplits);
-    var sinArray = new Float32Array(numRenderedSplits);
-    var curTheta;
-    for (var midPointIdx = 0; midPointIdx < numRenderedSplits; midPointIdx++) {
-        curTheta = thetaStep * (midPointIdx + 1);
-        cosArray[midPointIdx] = Math.cos(curTheta);
-        sinArray[midPointIdx] = Math.sin(curTheta);
-    }
-
+    };
 
     //for each midedge, start x/y & end x/y
     var midSpringsEndpoints = expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPoints);
 
+    //TODO have server precompute real heights, and use them here
+    //var edgeHeights = renderState.get('hostBuffersCache').edgeHeights;
+    var srcPointIdx;
+    var dstPointIdx;
+    var srcPointX;
+    var srcPointY;
+    var dstPointX;
+    var dstPointY;
+    var cosArray = new Float32Array(numRenderedSplits);
+    var sinArray = new Float32Array(numRenderedSplits);
+    var heightCounter = 0;
+    var prevSrcIdx = -1;
+    var prevDstIdx = -1;
     for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
-        srcPointIdx = logicalEdges[edgeIndex * 2];
-        dstPointIdx = logicalEdges[(edgeIndex * 2) + 1];
-        srcPointX = curPoints[(2 * srcPointIdx)];
-        srcPointY = curPoints[(2 * srcPointIdx)+ 1];
-        dstPointX = curPoints[(2 * dstPointIdx)];
-        dstPointY = curPoints[(2 * dstPointIdx) + 1];
-        var edgeLength = Math.sqrt(Math.pow((dstPointX - srcPointX), 2) + Math.pow((dstPointY - srcPointY), 2));
-        var height = edgeHeight * (edgeLength / 2);
+
+
+        srcPointIdx = logicalEdges[2 * edgeIndex];
+        dstPointIdx = logicalEdges[2 * edgeIndex + 1];
+        srcPointX = curPoints[2 * srcPointIdx];
+        srcPointY = curPoints[2 * srcPointIdx + 1];
+        dstPointX = curPoints[2 * dstPointIdx];
+        dstPointY = curPoints[2 * dstPointIdx + 1];
+
+        //edgeHeight +/- 50%
+        if (prevSrcIdx === srcPointIdx && prevDstIdx === dstPointIdx) {
+            heightCounter++;
+        } else {
+            heightCounter = 0;
+        }
+        prevSrcIdx = srcPointIdx;
+        prevDstIdx = dstPointIdx;
+
+        var moduloHeight = edgeHeight * (1.0 + ((heightCounter % 20)/5));
+        var unitRadius = (1 + Math.pow(moduloHeight, 2)) / (2 * moduloHeight);
+        var theta = Math.asin((1 / unitRadius)) * 2;
+        var thetaStep = -theta / (numRenderedSplits + 1);
+        var curTheta;
+        for (var midPointIdx = 0; midPointIdx < numRenderedSplits; midPointIdx++) {
+            curTheta = thetaStep * (midPointIdx + 1);
+            cosArray[midPointIdx] = Math.cos(curTheta);
+            sinArray[midPointIdx] = Math.sin(curTheta);
+        }
+
+        var edgeLength =
+            srcPointIdx === dstPointIdx ? 1.0
+            : Math.sqrt(Math.pow((dstPointX - srcPointX), 2) + Math.pow((dstPointY - srcPointY), 2));
+
+        var height = moduloHeight * (edgeLength / 2);
         var edgeDirectionX = (srcPointX -  dstPointX) / edgeLength;
         var edgeDirectionY = (srcPointY -  dstPointY) / edgeLength;
         var radius = unitRadius * (edgeLength / 2);
@@ -190,8 +197,8 @@ function expandLogicalEdges(bufferSnapshots, numRenderedSplits, edgeHeight) {
         var midPointY = (srcPointY + dstPointY) / 2;
         var centerPointX = midPointX + (radius - height) * (-1 * edgeDirectionY);
         var centerPointY = midPointY + (radius - height) * (edgeDirectionX);
-        var startRadiusX = srcPointX - centerPointX;
-        var startRadiusY = srcPointY - centerPointY;
+        var startRadiusX = srcPointIdx === dstPointIdx ? 1.0 : (srcPointX - centerPointX);
+        var startRadiusY = srcPointIdx === dstPointIdx ? 1.0 : (srcPointY - centerPointY);
 
         var prevPointX = srcPointX;
         var prevPointY = srcPointY;
@@ -216,191 +223,6 @@ function expandLogicalEdges(bufferSnapshots, numRenderedSplits, edgeHeight) {
 }
 
 
-// interpolates a quadratic curve through the end points a midpoint. Then sets the
-// rendered midedge positions based on this curve
-function getPolynomialCurves(bufferSnapshots, interpolateMidPoints, numRenderedSplits) {
-    var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
-    var curMidPoints = null;
-    var numSplits = 0;
-    if (!interpolateMidPoints) {
-        curMidPoints = new Float32Array(bufferSnapshots.curMidPoints.buffer);
-        numSplits = curMidPoints.length  / logicalEdges.length;
-    } else {
-        // TODO We can only handle one midpoint as of now.
-        numSplits = 1;
-    }
-
-    var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
-
-    //var numEdgesRendered = 3;
-
-    if (numSplits < 1) {
-        numSplits = 0;
-    }
-
-    if (numSplits > 1) {
-        console.debug('More than one midpoint not supported!');
-    }
-    //var numMidEdges = numSplits + 1;
-    var numEdges = (logicalEdges.length / 2);
-
-    var numVertices = (2 * numEdges) * (numRenderedSplits + 1);
-
-    if (!bufferSnapshots.midSpringsPos) {
-        bufferSnapshots.midSpringsPos = new Float32Array(numVertices * 2);
-    }
-    var midSpringsPos = bufferSnapshots.midSpringsPos;
-
-    var srcPointIdx, dstPointIdx, midEdgeIndex, theta, cos, sin, srcPointX, srcPointY, dstPointX, dstPointY, midPointX, midPointY, length;
-
-    // output array that contains the vector of the transformed destination point
-    var transformedDstPoint = new Float32Array(2);
-    // output array that contains the vector of the transformed midpoint
-    var transformedMidPoint = new Float32Array(2);
-    // Quadratic curve parameters. Set by setCurveParameters.
-    var beta0, beta1, beta2;
-    var invX = new Float32Array(9);
-
-    var dstMidPoint = new Float32Array(2);
-    var midEdgesPerEdge = numRenderedSplits + 1;
-    var midEdgeStride = 4 * midEdgesPerEdge;
-    var srcMidPointX;
-    var srcMidPointY;
-    for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
-        var midEdgeStartIdx = edgeIndex * midEdgeStride;
-        srcMidPointX = srcPointX;
-        srcMidPointY = srcPointY;
-        expandEdge(edgeIndex);
-        if (numRenderedSplits > 0) {
-        setCurveParameters();
-        // Set first midpoint to source point of edge
-            for (var midEdgeIdx = 0; midEdgeIdx < (numRenderedSplits); midEdgeIdx++) {
-                var lambda = (midEdgeIdx + 1) / (numRenderedSplits + 1);
-                getMidPointPosition(lambda, dstMidPoint);
-                setMidEdge(edgeIndex, midEdgeIdx, srcMidPointX, srcMidPointY, dstMidPoint[0], dstMidPoint[1]);
-                srcMidPointX = dstMidPoint[0];
-                srcMidPointY = dstMidPoint[1];
-            }
-        }
-
-        // Set last midedge position to previous midpoint and edge destination
-        setMidEdge(edgeIndex, numRenderedSplits, srcMidPointX, srcMidPointY, dstPointX, dstPointY);
-    }
-    return midSpringsPos;
-
-    function expandEdge(edgeIndex) {
-        srcPointIdx = logicalEdges[edgeIndex * 2];
-        dstPointIdx = logicalEdges[(edgeIndex * 2) + 1];
-
-        srcPointX = curPoints[(2 * srcPointIdx)];
-        srcPointY = curPoints[(2 * srcPointIdx)+ 1];
-        dstPointX = curPoints[(2 * dstPointIdx)];
-        dstPointY = curPoints[(2 * dstPointIdx) + 1];
-        // TODO this can be removed or should be generalized to multiple midpoints.
-
-        length = Math.pow(Math.pow(dstPointX - srcPointX, 2) + Math.pow(dstPointY - srcPointY, 2), 0.5);
-
-        theta = Math.atan2(dstPointY - srcPointY, dstPointX - srcPointX);
-
-        var HEIGHT = 0.2;
-        function interpolateArcMidPoint() {
-            var actualMidPointX = (srcPointX + dstPointX) / 2;
-            var actualMidPointY = (srcPointY + dstPointY) / 2;
-            var directionX = (srcPointX - dstPointX) / length;
-            var directionY = (srcPointY - dstPointY) / length;
-            midPointX = actualMidPointX + (directionY * HEIGHT * (length / 2));
-            midPointY = actualMidPointY + (-directionX * HEIGHT * (length / 2));
-        }
-
-        if (interpolateMidPoints) {
-            interpolateArcMidPoint();
-        } else {
-            midEdgeIndex = 0;
-            midPointX = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIndex * 2)];
-            midPointY = curMidPoints[(edgeIndex * 2 * (numSplits)) + (midEdgeIndex * 2) + 1];
-        }
-
-
-        cos = Math.cos(theta);
-        sin = Math.sin(theta);
-    }
-
-    function toEdgeBasisMem(vectorX, vectorY, output) {
-        var diffX = vectorX - srcPointX;
-        var diffY = vectorY - srcPointY;
-        output[0] = (cos * diffX) + (sin * diffY);
-        output[1] = (-sin * diffX) + (cos * diffY);
-    }
-
-    function fromEdgeBasisMem(vectorX, vectorY, output) {
-        output[0] = srcPointX + ((cos * vectorX) + (-sin * vectorY));
-        output[1] = srcPointY + ((sin * vectorX) + (cos * vectorY));
-    }
-
-    function inverseMem(m0, m1, m2, m3, m4, m5, m6, m7, m8, mem) {
-        var det = m0 * ((m4 * m8) - (m5 * m7)) -
-            m1 * ((m3 * m8) - (m5 * m6)) +
-            m2 * ((m3 * m7) - (m4 * m6));
-        // First row
-        mem[0] = ((m4 * m8) - (m5 * m7)) / det;
-        mem[1] = ((m2 * m7) - (m1 * m8)) / det;
-        mem[2] = ((m1 * m5) - (m2 * m4)) / det;
-
-        // Second Row
-        mem[3] = ((m5 * m6) - (m3 * m8)) / det;
-        mem[4] = ((m1 * m8) - (m2 * m6)) / det;
-        mem[5] = ((m2 * m3) - (m1 * m5)) / det;
-
-        // Third Row
-        mem[6] = ((m3 * m7) - (m4 * m6)) / det;
-        mem[7] = ((m1 * m6) - (m1 * m7)) / det;
-        mem[8] = ((m1 * m4) - (m1 * m4)) / det;
-    }
-
-    function setCurveParameters() {
-        toEdgeBasisMem(dstPointX, dstPointY, transformedDstPoint);
-        toEdgeBasisMem(midPointX, midPointY, transformedMidPoint);
-
-        var yVector0 = 0;
-        var yVector1 = transformedMidPoint[1];
-        var yVector2 = transformedDstPoint[1];
-
-        var xVector0 = 0;
-        var xVector1 = 0;
-        var xVector2 = 1;
-        var xVector3 = Math.pow(transformedMidPoint[0], 2);
-        var xVector4 = transformedMidPoint[0];
-        var xVector5 = 1;
-        var xVector6 = Math.pow(transformedDstPoint[0], 2);
-        var xVector7 = transformedDstPoint[0];
-        var xVector8 = 1;
-
-        inverseMem(xVector0, xVector1, xVector2, xVector3, xVector4, xVector5, xVector6, xVector7,
-                   xVector8, invX);
-
-        beta0 = (invX[0] * yVector0) + (invX[1] * yVector1) + (invX[2] * yVector2);
-        beta1 = (invX[3] * yVector0) + (invX[4] * yVector1) + (invX[5] * yVector2);
-        beta2 = (invX[6] * yVector0) + (invX[7] * yVector1) + (invX[8] * yVector2);
-    }
-    function computePolynomial(x) {
-        return (Math.pow(x, 2) * beta0) + (x * beta1) + (1 * beta2);
-    }
-
-    function getMidPointPosition(lambda, output) {
-        var x;
-        x = lambda * length;
-        fromEdgeBasisMem(x, computePolynomial(x), output);
-    }
-
-    function setMidEdge(edgeIdx, midEdgeIdx, srcMidPointX, srcMidPointY, dstMidPointX, dstMidPointY) {
-        var index = midEdgeStartIdx + (midEdgeIdx * 4);
-        midSpringsPos[index] = srcMidPointX;
-        midSpringsPos[index + 1] = srcMidPointY;
-        midSpringsPos[index + 2] = dstMidPointX;
-        midSpringsPos[index + 3] = dstMidPointY;
-    }
-
-}
 
 function expandLogicalMidEdges(bufferSnapshots) {
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
@@ -415,6 +237,12 @@ function expandLogicalMidEdges(bufferSnapshots) {
     var numEdges = (logicalEdges.length / 2);
 
     var numVertices = (2 * numEdges) * (numSplits + 1);
+
+
+    //for each midedge, start x/y & end x/y
+    var midSpringsEndpoints = expandMidEdgeEndpoints(numEdges, numSplits, logicalEdges, curPoints);
+
+
 
     if (!bufferSnapshots.midSpringsPos) {
         bufferSnapshots.midSpringsPos = new Float32Array(numVertices * 2);
@@ -460,7 +288,11 @@ function expandLogicalMidEdges(bufferSnapshots) {
         midSpringsPos[((edgeIndex + 1) * midEdgeStride) - 1] =  dstPointY;
     }
 
-    return midSpringsPos;
+    return {
+        midSpringsPos: midSpringsPos,
+        midSpringsStarts: midSpringsEndpoints.starts,
+        midSpringsEnds: midSpringsEndpoints.ends
+    };
 }
 
 /* Populate arrow buffers. The first argument is either an array of indices,
@@ -669,13 +501,12 @@ function renderSlowEffects(renderingScheduler) {
     var end1, end2, end3, end4;
 
     var expanded;
-    if (appSnapshot.vboUpdated) {
-        expanded = expandLogicalEdges(appSnapshot.buffers, numRenderedSplits, edgeHeight);
-    }
 
     if ( clientMidEdgeInterpolation && appSnapshot.vboUpdated) {
+        //ARCS
         start = Date.now();
 
+        expanded = expandLogicalEdges(renderState, appSnapshot.buffers, numRenderedSplits, edgeHeight);
         midSpringsPos = expanded.midSpringsPos;
         appSnapshot.buffers.midSpringsPos = midSpringsPos;
 
@@ -686,7 +517,7 @@ function renderSlowEffects(renderingScheduler) {
         if (!appSnapshot.buffers.midEdgesColors || (appSnapshot.buffers.midEdgesColors.length !== expectedNumMidEdgeColors)) {
             midEdgesColors = getMidEdgeColors(appSnapshot.buffers, numEdges, numRenderedSplits);
             appSnapshot.buffers.midEdgesColors = midEdgesColors;
-            renderer.loadBuffers(renderState, {'midEdgeColorsClient': midEdgesColors});
+            renderer.loadBuffers(renderState, {'midEdgesColors': midEdgesColors});
         }
 
         end1 = Date.now();
@@ -715,8 +546,13 @@ function renderSlowEffects(renderingScheduler) {
         console.debug('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
 
     } else if (appSnapshot.vboUpdated) {
+        //EDGE BUNDLING
+        //TODO deprecate/integrate?
         start = Date.now();
+
+        expanded = expandLogicalMidEdges(appSnapshot.buffers);
         midSpringsPos = expanded.midSpringsPos;
+
         renderer.loadBuffers(renderState, {'midSpringsPos': midSpringsPos});
         renderer.loadBuffers(renderState, {'midSpringsStarts': expanded.midSpringsStarts});
         renderer.loadBuffers(renderState, {'midSpringsEnds': expanded.midSpringsEnds});
@@ -880,7 +716,7 @@ function renderMouseoverEffects(renderingScheduler, task) {
 }
 
 
-var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
+function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
                                   isAnimating, simulateOn, activeSelection) {
     var that = this;
     this.renderState = renderState;
@@ -899,31 +735,19 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
         quietState: false,
         interpolateMidPoints : true,
         activeSelection: [],
-        //TODO these should be inferred from renderconfig
-        buffers: {
-            curPoints: undefined,
-            curMidPoints: undefined,
-            pointSizes: undefined,
-            logicalEdges: undefined,
-            springsPos: undefined,
-            midSpringsPos: undefined,
-            midEdgesColors: undefined,
-            highlightedEdges: undefined,
-            highlightedNodePositions: undefined,
-            highlightedNodeSizes: undefined,
-            highlightedNodeColors: undefined,
-            edgeColors: undefined,
-            arrowStartPos: undefined,
-            arrowEndPos: undefined,
-            arrowNormalDir: undefined,
-            arrowColors: undefined,
-            arrowPointSizes: undefined,
-            highlightedArrowStartPos: undefined,
-            highlightedArrowEndPos: undefined,
-            highlightedArrowNormalDir: undefined,
-            highlightedArrowPointColors: undefined,
-            highlightedArrowPointSizes: undefined
-        },
+
+        //{ <activeBufferName> -> undefined}
+        // Seem to be client-defined local buffers
+        buffers:
+            _.object(
+                renderer.getBufferNames(renderState.get('config').toJS())
+                .concat(
+                    //TODO move client-only into render.config dummys when more sane
+                    ['highlightedEdges', 'highlightedNodePositions', 'highlightedNodeSizes', 'highlightedNodeColors',
+                     'highlightedArrowStartPos', 'highlightedArrowEndPos', 'highlightedArrowNormalDir',
+                     'highlightedArrowPointColors', 'highlightedArrowPointSizes'])
+                .map(function (v) { return [v, undefined]; })),
+
         hitmapUpdates: hitmapUpdates
     };
 
@@ -1011,7 +835,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
             // Nothing to render
             if (_.keys(renderQueue).length === 0) {
                 var timeDelta = Date.now() - lastRenderTime;
-                if (timeDelta > 200 && !quietSignaled) {
+                if (timeDelta > 75 && !quietSignaled) {
                     quietCallback();
                     quietSignaled = true;
                     isAnimating.onNext(false);
@@ -1069,7 +893,7 @@ var RenderingScheduler = function(renderState, vboUpdates, hitmapUpdates,
             that.appSnapshot.vboUpdated = false;
         }
     }
-};
+}
 
 
 module.exports = {
