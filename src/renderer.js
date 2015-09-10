@@ -263,6 +263,9 @@ function init(config, canvas, urlParams) {
     window.addEventListener('resize', function () {
         resizeCanvas(state, urlParams);
     });
+    canvas.addEventListener('webglcontextlost', function() {
+        console.error('WebGL Context Loss');
+    }, false);
 
     var gl = createContext(state);
     state = state.set('gl', gl);
