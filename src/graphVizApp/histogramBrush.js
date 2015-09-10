@@ -16,35 +16,13 @@ var Command = require('./command.js');
 //////////////////////////////////////////////////////////////////////////////
 
 var DRAG_SAMPLE_INTERVAL = 200;
-// TODO: Move these out of module global scope.
-var lastSelection;
-var activeDataframeAttributes = [];
-var dataframeAttributeChange = new Rx.Subject();
 
 
 //////////////////////////////////////////////////////////////////////////////
 // Rx/State
 //////////////////////////////////////////////////////////////////////////////
 
-function updateDataframeAttribute (oldAttributeName, newAttributeName, type) {
-    // Delete old if it exists
-    var indexOfOld = _.pluck(activeDataframeAttributes, 'name').indexOf(oldAttributeName);
-    if (indexOfOld > -1) {
-        activeDataframeAttributes.splice(indexOfOld, 1);
-    }
-
-    // Add new one if it exists
-    if (newAttributeName) {
-        activeDataframeAttributes.push({name: newAttributeName, type: type});
-    }
-
-    // Only resend selections if an add/update
-    if (newAttributeName) {
-        dataframeAttributeChange.onNext(newAttributeName);
-    }
-}
-
-var EmptySelectionMessage = '<p style="color: red; text-align: center">Empty Selection.</p>';
+var EmptySelectionMessage = '<p class="bg-danger text-center">Empty Selection.</p>';
 
 function handleFiltersResponse (filtersResponseObservable, poi) {
     filtersResponseObservable
@@ -66,8 +44,12 @@ function handleFiltersResponse (filtersResponseObservable, poi) {
 function HistogramBrush(socket, filtersPanel) {
     debug('Initializing histogram brush');
 
+    this.lastSelection = undefined;
+    this.activeDataframeAttributes = [];
+    this.dataframeAttributeChange = new Rx.Subject();
+
     // Grab global stats at initialization
-    var globalStats = new Rx.ReplaySubject(1);
+    this.globalStats = new Rx.ReplaySubject(1);
     var updateDataframeAttributeSubject = new Rx.Subject();
 
     this.aggregationCommand = new Command('aggregate', socket);
@@ -78,8 +60,8 @@ function HistogramBrush(socket, filtersPanel) {
 
     // Setup update attribute subject that histogram panel can write to
     updateDataframeAttributeSubject.do(function (data) {
-        updateDataframeAttribute(data.oldAttr, data.newAttr, data.type);
-    }).subscribe(_.identity, util.makeErrorHandler('Update Attribute'));
+        this.updateDataframeAttribute(data.oldAttr, data.newAttr, data.type);
+    }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Update Attribute'));
 
     this.filtersSubjectFromHistogram = new Rx.ReplaySubject(1);
 
@@ -99,7 +81,8 @@ function HistogramBrush(socket, filtersPanel) {
         });
 
         this.histogramsPanel = histogramPanel.initHistograms(
-            data, attributes, filtersPanel.model, this.filtersSubjectFromHistogram, dataframeAttributeChange, updateDataframeAttributeSubject);
+            data, attributes, filtersPanel.model,
+            this.filtersSubjectFromHistogram, this.dataframeAttributeChange, updateDataframeAttributeSubject);
         data.histogramPanel = this.histogramsPanel;
 
         // On auto-populate, at most 5 histograms, or however many * 85 + 110 px = window height.
@@ -109,11 +92,11 @@ function HistogramBrush(socket, filtersPanel) {
         _.each(firstKeys, function (key) {
             filteredAttributes[key] = data.sparkLines[key];
             filteredAttributes[key].sparkLines = true;
-            updateDataframeAttribute(null, key, 'sparkLines');
-        });
+            this.updateDataframeAttribute(null, key, 'sparkLines');
+        }, this);
         this.updateHistogramData(filteredAttributes, data, true);
 
-    }.bind(this)).subscribe(globalStats, util.makeErrorHandler('Global stat aggregate call'));
+    }.bind(this)).subscribe(this.globalStats, util.makeErrorHandler('Global stat aggregate call'));
 }
 
 
@@ -133,18 +116,17 @@ HistogramBrush.prototype.setupMarqueeInteraction = function(marquee) {
     }).merge(marquee.drags.sample(DRAG_SAMPLE_INTERVAL).map(function (val) {
             return {type: 'drag', sel: val};
         })
-    ).merge(dataframeAttributeChange.map(function () {
-            return {type: 'dataframeAttributeChange', sel: lastSelection};
-        })
+    ).merge(this.dataframeAttributeChange.map(function () {
+            return {type: 'dataframeAttributeChange', sel: this.lastSelection};
+        }, this)
     ).flatMapLatest(function (selContainer) {
         return this.globalStats.map(function (globalVal) {
             return {type: selContainer.type, sel: selContainer.sel, globalStats: globalVal};
         });
-
-    }).flatMapLatest(function (data) {
+    }.bind(this)).flatMapLatest(function (data) {
         var binning = {};
-        var attributeNames = _.pluck(activeDataframeAttributes, 'name');
-        _.each(activeDataframeAttributes, function (attr) {
+        var attributeNames = _.pluck(this.activeDataframeAttributes, 'name');
+        _.each(this.activeDataframeAttributes, function (attr) {
             if (attr.type === 'sparkLines') {
                 binning[attr.name] = data.globalStats.sparkLines[attr.name];
             } else {
@@ -159,7 +141,7 @@ HistogramBrush.prototype.setupMarqueeInteraction = function(marquee) {
         });
 
         var params = {sel: data.sel, attributes: attributes, binning: binning};
-        lastSelection = data.sel;
+        this.lastSelection = data.sel;
         return this.aggregationCommand.sendWithObservableResult(params, true)
             .map(function (agg) {
                 return _.extend(data, {reply: agg});
@@ -175,6 +157,25 @@ HistogramBrush.prototype.setupMarqueeInteraction = function(marquee) {
     .do(function (data) {
         this.updateHistogramData(data.reply.data, data.globalStats);
     }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Brush selection aggregate error'));
+};
+
+
+HistogramBrush.prototype.updateDataframeAttribute = function (oldAttributeName, newAttributeName, type) {
+    // Delete old if it exists
+    var indexOfOld = _.pluck(this.activeDataframeAttributes, 'name').indexOf(oldAttributeName);
+    if (indexOfOld > -1) {
+        this.activeDataframeAttributes.splice(indexOfOld, 1);
+    }
+
+    // Add new one if it exists
+    if (newAttributeName) {
+        this.activeDataframeAttributes.push({name: newAttributeName, type: type});
+    }
+
+    // Only resend selections if an add/update
+    if (newAttributeName) {
+        this.dataframeAttributeChange.onNext(newAttributeName);
+    }
 };
 
 
@@ -220,7 +221,7 @@ HistogramBrush.prototype.updateHistogramData = function (data, globalStats, empt
         } else {
             // TODO: Make sure that sparkLines is always passed in, so we don't have
             // to do this check.
-            _.each(activeDataframeAttributes, function (attr) {
+            _.each(this.activeDataframeAttributes, function (attr) {
                 if (attr.name === key) {
                     params.sparkLines = (attr.type === 'sparkLines');
                 }
@@ -232,7 +233,7 @@ HistogramBrush.prototype.updateHistogramData = function (data, globalStats, empt
         histogram.set('attribute', key);
         histograms.push(histogram);
 
-    });
+    }.bind(this));
 
     collection.set(histograms);
 };
