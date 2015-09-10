@@ -45,7 +45,7 @@ function updateDataframeAttribute (oldAttributeName, newAttributeName, type) {
 
 var EmptySelectionMessage = '<p style="color: red; text-align: center">Empty Selection.</p>';
 
-function respondToFiltersCall (filtersResponseObservable, poi) {
+function handleFiltersResponse (filtersResponseObservable, poi) {
     filtersResponseObservable
         .do(function (res) {
             // Invalidate cache now that a filter has executed and possibly changed indices.
@@ -62,7 +62,7 @@ function respondToFiltersCall (filtersResponseObservable, poi) {
 }
 
 
-function init(socket, filtersPanel, marquee, poi) {
+function HistogramBrush(socket, filtersPanel) {
     debug('Initializing histogram brush');
 
     // Grab global stats at initialization
@@ -72,14 +72,6 @@ function init(socket, filtersPanel, marquee, poi) {
     //////////////////////////////////////////////////////////////////////////
     // Setup Streams
     //////////////////////////////////////////////////////////////////////////
-
-    // Share the panel between Rx streams via scope:
-    var histogramsPanel;
-
-    // Setup filtering:
-    var filtersSubjectFromHistogram = new Rx.ReplaySubject(1);
-    filtersPanel.listenToHistogramChangesFrom(filtersSubjectFromHistogram);
-    respondToFiltersCall(filtersPanel.control.filtersResponsesObservable(), poi);
 
     // Setup update attribute subject that histogram panel can write to
     updateDataframeAttributeSubject.do(function (data) {
@@ -100,9 +92,9 @@ function init(socket, filtersPanel, marquee, poi) {
             return (val !== '_title');
         });
 
-        histogramsPanel = histogramPanel.initHistograms(
+        this.histogramsPanel = histogramPanel.initHistograms(
             data, attributes, filtersPanel.model, filtersSubjectFromHistogram, dataframeAttributeChange, updateDataframeAttributeSubject);
-        data.histogramPanel = histogramsPanel;
+        data.histogramPanel = this.histogramsPanel;
 
         // On auto-populate, at most 5 histograms, or however many * 85 + 110 px = window height.
         var maxInitialItems = Math.min(Math.round((window.innerHeight - 110) / 85), 5);
@@ -113,12 +105,24 @@ function init(socket, filtersPanel, marquee, poi) {
             filteredAttributes[key].sparkLines = true;
             updateDataframeAttribute(null, key, 'sparkLines');
         });
-        updateHistogramData(data.histogramPanel.collection, filteredAttributes, data, data.histogramPanel.model, true);
+        this.updateHistogramData(filteredAttributes, data, true);
 
-    }).subscribe(globalStats, util.makeErrorHandler('Global stat aggregate call'));
+    }.bind(this)).subscribe(globalStats, util.makeErrorHandler('Global stat aggregate call'));
+}
 
 
-    // Take stream of selections and drags and use them for histograms
+HistogramBrush.prototype.setupFiltersInteraction = function(filtersPanel, poi) {
+    // Setup filtering:
+    var filtersSubjectFromHistogram = new Rx.ReplaySubject(1);
+    filtersPanel.listenToHistogramChangesFrom(filtersSubjectFromHistogram);
+    handleFiltersResponse(filtersPanel.control.filtersResponsesObservable(), poi);
+};
+
+
+/**
+ * Take stream of selections and drags and use them for histograms
+ */
+HistogramBrush.prototype.setupMarqueeInteraction = function(marquee) {
     marquee.selections.map(function (val) {
         return {type: 'selection', sel: val};
     }).merge(marquee.drags.sample(DRAG_SAMPLE_INTERVAL).map(function (val) {
@@ -128,7 +132,7 @@ function init(socket, filtersPanel, marquee, poi) {
             return {type: 'dataframeAttributeChange', sel: lastSelection};
         })
     ).flatMapLatest(function (selContainer) {
-        return globalStats.map(function (globalVal) {
+        return this.globalStats.map(function (globalVal) {
             return {type: selContainer.type, sel: selContainer.sel, globalStats: globalVal};
         });
 
@@ -164,9 +168,9 @@ function init(socket, filtersPanel, marquee, poi) {
     // TODO: Do we want to treat no replies in some special way?
     }).filter(function (data) { return data.reply && data.reply.success; })
     .do(function (data) {
-        updateHistogramData(histogramsPanel.collection, data.reply.data, data.globalStats, histogramsPanel.model);
-    }).subscribe(_.identity, util.makeErrorHandler('Brush selection aggregate error'));
-}
+        this.updateHistogramData(data.reply.data, data.globalStats);
+    }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Brush selection aggregate error'));
+};
 
 
 function checkReply(reply) {
@@ -177,8 +181,10 @@ function checkReply(reply) {
     }
 }
 
-function updateHistogramData(collection, data, globalStats, Model, empty) {
+HistogramBrush.prototype.updateHistogramData = function (data, globalStats, empty) {
     var histograms = [];
+    var Model = this.histogramsPanel.model;
+    var collection = this.histogramsPanel.collection;
     var length = collection.length;
 
     // Update models that exist.
@@ -224,7 +230,7 @@ function updateHistogramData(collection, data, globalStats, Model, empty) {
     });
 
     collection.set(histograms);
-}
+};
 
 
 //socket * ?? -> Observable ??
