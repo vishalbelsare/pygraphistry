@@ -183,72 +183,83 @@ app.use('/uber',   express.static(UBER_STATIC_PATH));
 // Serve splunk static assets
 app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
 
-// Temporarly handle ETL request from Splunk
-app.post('/etl', bodyParser.json({type: '*', limit: '128mb'}), function (req, res) {
 
-    logger.info({req: req.query}, 'etl request');
-    logger.debug({req: req}, 'etl request debug');
+// Proxy upload to task-like worker (etl, oneshot)
+// String * String -> {success: bool, msg: 'Invalid API key'}
+//   route: public route
+//   workerName: vizserver dispatcher
+function propagatePostToWorker (route, workerName) {
+    // Temporarly handle ETL request from Splunk
+    app.post(route, bodyParser.json({type: '*', limit: '128mb'}), function (req, res) {
 
-    //TODO make an error once prod ssl server is up
-    if ((config.ENVIRONMENT !== 'local') && !req.secure) {
+        logger.info({req: req.query}, route + ' request');
+        logger.debug({req: req}, route + ' request debug');
 
-        logger.warn('non-local /etl without https');
+        //TODO make an error once prod ssl server is up
+        if ((config.ENVIRONMENT !== 'local') && !req.secure) {
 
-        //logger.error('non-local /etl without https');
-        //return res.send({success: false, msg: 'requires https'});
-    }
+            logger.warn('non-local ' + route + ' without https');
 
-    if (config.ENVIRONMENT !== 'local') {
-        try {
-            var who = apiKey.decrypt(req.query.key);
-        } catch (err) {
-            logger.error(err, 'Invalid API key for ETL');
-            return res.send({success: false, msg: 'Invalid API key'});
-        }
-    }
-
-    router.pickWorker(function (err, worker) {
-        logger.debug('picked etl worker', req.ip, worker);
-
-        if (err) {
-            logger.error(err ,'Error while assiging an ETL worker');
-            return res.send({
-                success: false,
-                msg: 'Error while assigning an ETL worker:' + err.message
-            });
+            //logger.error('non-local /etl without https');
+            //return res.send({success: false, msg: 'requires https'});
         }
 
-        // Note: we specifically do not respect reverse proxy stuff, since we're presumably running
-        // inside the cluster, and direct connections are more efficient.
-        var redirect = 'http://' + worker.hostname + ':' + worker.port;
-        logger.trace('create socket', redirect);
-        var socket = io(redirect, {forceNew: true, reconnection: false, transports: ['websocket']});
-        //socket.io.engine.binaryType = 'arraybuffer';
+        if (config.ENVIRONMENT !== 'local') {
+            try {
+                var who = apiKey.decrypt(req.query.key);
+            } catch (err) {
+                logger.error(err, 'Invalid API key for POST');
+                return res.send({success: false, msg: 'Invalid API key'});
+            }
+        }
 
-        socket.on('connect_error', function (err) {
-            logger.error(err ,'Connect_error in socketio');
-        });
+        router.pickWorker(function (err, worker) {
+            logger.debug('picked worker', req.ip, worker);
 
-        socket.on('connect', function () {
-            logger.trace('connected socket, initializing app', redirect);
-            socket.emit('viz', 'etl', function (resp) {
-                logger.trace('initialized, notifying client');
-                if (!resp.success) {
-                    logger.error('Failed initializing worker');
-                    return res.json({success: false, msg: 'failed connecting to work'});
-                }
-                var newEndpoint = redirect + req.originalUrl;
-                logger.trace('telling client to redirect', newEndpoint);
+            if (err) {
+                logger.error(err ,'Error while assiging a ' + route + ' worker');
+                return res.send({
+                    success: false,
+                    msg: 'Error while assigning a ' + route + ' worker:' + err.message
+                });
+            }
 
-                req.pipe(request(newEndpoint)).pipe(res);
-                //res.redirect(307, newEndpoint);
+            // Note: we specifically do not respect reverse proxy stuff, since we're presumably running
+            // inside the cluster, and direct connections are more efficient.
+            var redirect = 'http://' + worker.hostname + ':' + worker.port;
+            logger.trace('create socket', redirect);
+            var socket = io(redirect, {forceNew: true, reconnection: false, transports: ['websocket']});
+            //socket.io.engine.binaryType = 'arraybuffer';
+
+            socket.on('connect_error', function (err) {
+                logger.error(err ,'Connect_error in socketio');
             });
-            logger.trace('waiting for worker to initialize');
+
+            socket.on('connect', function () {
+                logger.trace('connected socket, initializing app', redirect);
+                socket.emit('viz', workerName, function (resp) {
+                    logger.trace('initialized, notifying client');
+                    if (!resp.success) {
+                        logger.error('Failed initializing worker');
+                        return res.json({success: false, msg: 'failed connecting to work'});
+                    }
+                    var newEndpoint = redirect + req.originalUrl;
+                    logger.trace('telling client to redirect', newEndpoint);
+
+                    req.pipe(request(newEndpoint)).pipe(res);
+                    //res.redirect(307, newEndpoint);
+                });
+                logger.trace('waiting for worker to initialize');
+            });
+
         });
 
     });
+}
 
-});
+propagatePostToWorker('/etl', 'etl');
+propagatePostToWorker('/oneshot', 'oneshot');
+
 
 // Store client errors in a log file (indexed by Splunk)
 app.post('/error', bodyParser.json({type: '*', limit: '64mb'}), logClientError);
