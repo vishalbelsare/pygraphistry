@@ -29,6 +29,7 @@ function getDegree(simulator, i) {
 }
 
 //CL+GL+local vbos & setters will be created/exported, no need to modify anything else
+//Note: edges get numEdges and an array for every vertex on edge
 var FIELDS =     ['setterName',     'arrType',      'dims',     'defV'];
 var NAMED_CLGL_BUFFERS_SETUP = {
     pointColors: ['setColors',      Uint32Array,    'point',
@@ -84,8 +85,18 @@ var NAMED_CLGL_BUFFERS_SETUP = {
             }
         }
     ],
-    pointTags:   ['setPointTags',   Uint8Array,     'point', 0],
-    edgeTags:    ['setEdgeTags',    Uint8Array,     'edge',  0]
+    edgeHeights: ['setEdgeHeights', Float32Array,     'edge', function (simulator, outArr, numEdges) {
+
+        /*
+
+        //TODO: set multi-edges to different heights (duplicate on each involved vertex)
+
+        for (var i = 0; i < outArr.length; i++) {
+            outArr[i] = 1 + (i % 5) / 10;
+        }
+        */
+
+    }]
 };
 
 //{<str>: {setterName: str, arrType: Function, dims: string, defV: 'a'}}

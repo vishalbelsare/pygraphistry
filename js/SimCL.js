@@ -14,7 +14,7 @@ var webcl = require('node-webcl');
 var Color = require('color');
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:data:data-loader');
+var logger      = log.createLogger('graph-viz:data:simcl');
 
 
 // Do NOT enable this in prod. It destroys performance.
@@ -512,11 +512,10 @@ function setPoints(simulator, points) {
 // returns corresponding setter
 function makeSetter(simulator, name, dimName) {
 
-    return function (data, isReverse) {
+    return function (data) {
 
-        var buffName = name + (dimName === 'edge' && !!isReverse ? '_reverse' : '');
+        var buffName = name;
 
-        // simulator.buffersLocal[buffName] = data;
         simulator.dataframe.loadLocalBuffer(buffName, data);
 
         simulator.resetBuffers([simulator.dataframe.getBuffer(buffName, 'simulator')]);
@@ -1169,10 +1168,13 @@ function selectNodes(simulator, selection) {
 
 // Return the set of edge indices which are connected (either as src or dst)
 // to nodes in nodeIndices
+// Returns SORTED EDGE INDICES
+// TODO: Move into dataframe, since it has the crazy sorted/unsorted knowledge?
 function connectedEdges(simulator, nodeIndices) {
 
     var forwardsBuffers = simulator.dataframe.getHostBuffer('forwardsEdges');
     var backwardsBuffers = simulator.dataframe.getHostBuffer('backwardsEdges');
+    var forwardsPermutation = forwardsBuffers.edgePermutation;
 
     // var forwardsBuffers = simulator.bufferHostCopies.forwardsEdges;
     // var backwardsBuffers = simulator.bufferHostCopies.backwardsEdges;
@@ -1188,7 +1190,7 @@ function connectedEdges(simulator, nodeIndices) {
             var permutation = buffers.edgePermutationInverseTyped;
 
             for (var i = 0; i < numEdges; i++) {
-                var edge = permutation[firstEdgeId + i];
+                var edge = forwardsPermutation[permutation[firstEdgeId + i]];
                 if (!edgeHash[edge]) {
                     setOfEdges.push(edge);
                     edgeHash[edge] = true;

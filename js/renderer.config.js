@@ -132,6 +132,8 @@ var programs = {
 var textures = {
     'hitmap': {
         'datasource': 'CLIENT',
+        'width': {'unit': 'percent', 'value': 25},
+        'height': {'unit': 'percent', 'value': 25}
     },
     'pointTexture': {
         'datasource': 'CLIENT',
@@ -360,6 +362,17 @@ var models = {
             'normalize': false
         }
     },
+    'edgeHeights': {
+        'edgeHeight':  {
+            'datasource': 'HOST',
+            'type': 'FLOAT',
+            'hint': 'STATIC_DRAW',
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': true
+        }
+    },
     'arrowPointSizes': {
         'pointSize':  {
             'datasource': 'CLIENT',
@@ -404,6 +417,7 @@ var models = {
             'normalize': true
         }
     },
+    //GIS
     'midEdgeColors': {
         'midEdgeColor':  {
             'datasource': 'HOST',
@@ -415,7 +429,7 @@ var models = {
             'normalize': true
         }
     },
-    'midEdgeColorsClient': {
+    'midEdgesColors': {
         'midEdgeColor':  {
             'datasource': 'CLIENT',
             'type': 'UNSIGNED_BYTE',
@@ -631,12 +645,25 @@ var items = {
         'drawType': 'LINES',
         'glOptions': {}
     },
+    'dummyheights': {
+        'program': 'edgeculled',
+        'triggers': [],
+        'bindings': {
+            'curPos': ['curMidPoints', 'curPos'],
+            'edgeColor': ['edgeHeights', 'edgeHeight']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
     'midedgeculled' : {
         'program': 'midedgeculled',
         'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos': ['midSpringsPos', 'curPos'],
-            'edgeColor': ['midEdgeColorsClient', 'midEdgeColor'],
+            'edgeColor': ['midEdgesColors', 'midEdgeColor'],
             'startPos': ['midSpringsStarts', 'startPos'],
             'endPos': ['midSpringsEnds', 'endPos']
         },
@@ -909,25 +936,25 @@ var camera2D = {
     'farPlane': 10
 }
 
-var sceneUber = {
+var sceneGis = {
     'options': stdOptions,
     'camera': camera2D,
     'clientMidEdgeInterpolation': false,
     //'numRenderedSplits':7 ,
     'render': ['pointpicking',  'pointsampling', 'uberdemoedges', 'edgepicking', 'arrowculled', 'arrowhighlight',
-        'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+        'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight', 'dummyheights',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 }
 
-var sceneNetflowArcs = {
+var sceneArcs = {
     'options': stdOptions,
     'camera': camera2D,
     'numRenderedSplits': 8,
     'clientMidEdgeInterpolation': true,
     'arcHeight': 0.2,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-    'midedgeculled', 'edgepicking',
+    'midedgeculled', 'edgepicking', 'dummyheights',
     'arrowculled', 'arrowhighlight', 'edgehighlight',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
@@ -941,28 +968,14 @@ var sceneTransparent = {
     'clientMidEdgeInterpolation': true,
     'arcHeight': 0.2,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-    'midedgeculled', 'edgepicking',
+    'midedgeculled', 'edgepicking', 'dummyheights',
     'arrowculled', 'arrowhighlight', 'edgehighlight',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 };
 
-var sceneNetflowBigArcs = {
-    'options': stdOptions,
-    'camera': camera2D,
-    'numRenderedSplits': 32,
-    'clientMidEdgeInterpolation': true,
-    'arcHeight': 0.5,
-    'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-    'midedgeculled', 'edgepicking',
-    'arrowculled', 'arrowhighlight', 'edgehighlight',
-    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
-    'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
-    'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
-}
-
-var sceneNetflowStraight = {
+var sceneStraight = {
     'options': stdOptions,
     'camera': camera2D,
     'numRenderedSplits': 0,
@@ -976,12 +989,10 @@ var sceneNetflowStraight = {
 }
 
 var scenes = {
-    'default': sceneNetflowArcs,
+    'default': sceneArcs,
     'transparent': sceneTransparent,
-    'gis' : sceneUber,
-    'netflowArcs': sceneNetflowArcs,
-    'netflowBigArcs': sceneNetflowBigArcs,
-    'netflowStraight': sceneNetflowStraight
+    'gis' : sceneGis,
+    'netflowStraight': sceneStraight
 }
 
 function saneProgram(program, progName) {
