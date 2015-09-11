@@ -81,7 +81,7 @@ function HistogramBrush(socket, filtersPanel) {
         });
 
         this.histogramsPanel = new HistogramsPanel(
-            data, attributes, filtersPanel.model,
+            data, attributes, filtersPanel,
             this.filtersSubjectFromHistogram, this.dataframeAttributeChange, updateDataframeAttributeSubject);
         data.histogramPanel = this.histogramsPanel;
 

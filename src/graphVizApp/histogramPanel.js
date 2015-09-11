@@ -83,9 +83,9 @@ var HistogramCollection = Backbone.Collection.extend({
     comparator: 'position'
 });
 
-function HistogramsPanel(globalStats, attributes, filterModelFromPanel,
+function HistogramsPanel(globalStats, attributes, filtersPanel,
                          filterSubject, attrChangeSubject, updateAttributeSubject) {
-    this.FilterModel = filterModelFromPanel;
+    this.FilterModel = filtersPanel.model;
     // How the model-view communicate back to underlying Rx.
     this.histogramFilterSubject = filterSubject;
     this.dataframeAttributeChange = attrChangeSubject;
