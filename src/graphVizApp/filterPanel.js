@@ -203,22 +203,23 @@ function FiltersPanel(socket, urlParams) {
 
     this.model = FilterModel;
 
-    this.filtersSubjectFromPanel = new Rx.ReplaySubject(1);
-
-    this.collection.on('change', function (eventName, context) {
-        this.filtersSubjectFromPanel.onNext(context);
+    /** Exposes changes to the FilterCollection. */
+    this.filtersSubject = new Rx.ReplaySubject(1);
+    this.collection.on('change', function (/*model, options*/) {
+        this.filtersSubject.onNext(this.collection);
     }.bind(this));
 
-    this.filtersSubjectFromPanel.subscribe(
-        function () {
-            this.control.updateFilters(this.collection.map(function (model) {
+    this.filtersSubject.subscribe(
+        function (collection) {
+            this.control.updateFilters(collection.map(function (model) {
                 return _.omit(model.toJSON(), '$el');
             }));
-        }.bind(this)
+        }.bind(this),
+        util.makeErrorHandler('updateFilters on filters change event')
     );
 
     this.combinedSubscription = this.control.namespaceMetadataObservable().combineLatest(
-        this.filtersSubjectFromPanel,
+        this.filtersSubject,
         function (dfa, fs) {
             return {dataframeAttributes: dfa, filterSet: fs};
         }).do(function (data) {
@@ -260,7 +261,7 @@ FiltersPanel.prototype.listenToHistogramChangesFrom = function(filtersSubjectFro
 
 
 FiltersPanel.prototype.dispose = function () {
-    this.filtersSubjectFromPanel.dispose();
+    this.filtersSubject.dispose();
     this.filtersSubjectFromHistogram.dispose();
 };
 
