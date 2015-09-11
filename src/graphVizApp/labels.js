@@ -319,6 +319,13 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
 
     })
     .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
+
+    // Hide open labels while simulating
+    appState.simulateOn.do(function (val) {
+        if (val) {
+            latestHighlightedObject.onNext([{cmd: 'declick'}]);
+        }
+    }).subscribe(_.identity, util.makeErrorHandler('setuplabels (hide when simulating)'));
 }
 
 // AppState * $DOM * textureName-> Observable [ {dim: 1, idx: int} ]
