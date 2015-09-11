@@ -60,7 +60,7 @@ function histogramFiltersToFilterModelUpdates(histogramFilters, FilterModel) {
         if (!attribute) {
             attribute = histFilter.attribute;
         }
-        var query = {}
+        var query = {};
         if (histFilter.start !== undefined || histFilter.stop !== undefined) {
             query = filterer.filterRangeParameters(
                 histFilter.type,
@@ -803,7 +803,7 @@ function heightDelta(d, xScale) {
     var minimumHeight = 5;
     var height = xScale(d.y0) - xScale(d.y1);
     if (d.val > 0 && d.y0 === 0 && height < minimumHeight) {
-       return minimumHeight - height;
+        return minimumHeight - height;
     } else {
         return 0;
     }
