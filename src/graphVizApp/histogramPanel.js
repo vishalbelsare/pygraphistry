@@ -69,16 +69,26 @@ function histogramFiltersToFilterModelUpdates(histogramFilters, FilterModel) {
         if (!attribute) {
             attribute = histFilter.attribute;
         }
+        var query = {}
+        if (histFilter.start !== undefined || histFilter.stop !== undefined) {
+            query = filterer.filterRangeParameters(
+                histFilter.type,
+                attribute,
+                histFilter.start,
+                histFilter.stop);
+        } else if (histFilter.equals !== undefined) {
+            query = filterer.filterExactValueParameters(
+                histFilter.type,
+                attribute,
+                histFilter.equals
+            );
+        }
         var newModel = new FilterModel({
             title: attribute,
             attribute: attribute,
             controlType: 'histogram',
             dataType: 'float',
-            query: filterer.filterRangeParameters(
-                histFilter.type,
-                attribute,
-                histFilter.start,
-                histFilter.stop)});
+            query: query});
         filterModels.push(newModel);
     });
     return filterModels;
