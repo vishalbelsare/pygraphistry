@@ -67,14 +67,14 @@ FilterControl.prototype.queryToExpression = function(query) {
     }
     // Should quote inner brackets if we commit to this:
     // attribute = '[' + attribute + ']';
-    if (query.hasOwnProperty('start') && query.hasOwnProperty('stop')) {
+    if (query.start !== undefined && query.stop !== undefined) {
         return attribute + ' BETWEEN ' + query.start.toString(10) +
             ' AND ' + query.stop.toString(10);
-    } else if (query.hasOwnProperty('start')) {
+    } else if (query.start !== undefined) {
         return attribute + ' >= ' + query.start.toString(10);
-    } else if (query.hasOwnProperty('stop')) {
+    } else if (query.stop !== undefined) {
         return query.stop.toString(10) + ' <= ' + attribute;
-    } else if (query.hasOwnProperty('equals')) {
+    } else if (query.equals !== undefined) {
         if (Array.isArray(query.equals)) {
             return attribute + ' IN ' + query.equals.toString();
         } else {
