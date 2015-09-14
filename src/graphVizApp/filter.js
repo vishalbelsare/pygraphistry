@@ -75,8 +75,8 @@ FilterControl.prototype.queryToExpression = function(query) {
     } else if (query.stop !== undefined) {
         return query.stop.toString(10) + ' <= ' + attribute;
     } else if (query.equals !== undefined) {
-        if (Array.isArray(query.equals)) {
-            return attribute + ' IN ' + query.equals.toString();
+        if (Array.isArray(query.equals) && query.equals.length > 1) {
+            return attribute + ' IN (' + _.map(query.equals, function(x) { return x.toString(10); }).join(', ') + ')';
         } else {
             return attribute + ' = ' + query.equals.toString();
         }
