@@ -962,6 +962,7 @@ Dataframe.prototype.getBuffer = function (name, type) {
  */
 Dataframe.prototype.getRowAt = function (index, type, attributes) {
 
+    // Convert from sorted into unsorted edge indices.
     if (index && type === 'edge') {
         var forwardsEdgePermutationInverse = this.getHostBuffer('forwardsEdges').edgePermutationInverseTyped;
         index = forwardsEdgePermutationInverse[index];
@@ -991,16 +992,6 @@ Dataframe.prototype.getRows = function (indices, type) {
         that = this;
 
     indices = indices || range(that.data.numElements[type]);
-    // Convert from sorted into unsorted edge indices
-    if (indices && type === 'edge') {
-        var newIndices = [];
-        var forwardsEdgePermutationInverse = this.getHostBuffer('forwardsEdges').edgePermutationInverseTyped;
-        _.each(indices, function (v) {
-            newIndices.push(forwardsEdgePermutationInverse[v]);
-        });
-        indices = newIndices;
-    }
-
 
     return _.map(indices, function (index) {
         return that.getRowAt(index, type, attributes);
