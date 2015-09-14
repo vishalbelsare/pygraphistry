@@ -148,7 +148,7 @@ var AllFiltersView = Backbone.View.extend({
         this.listenTo(this.collection, 'remove', this.removeFilter);
         this.listenTo(this.collection, 'reset', this.refresh);
         this.listenTo(this.collection, 'all', this.render);
-        this.listenTo(this.collection, 'change:timestamp', this.refresh);
+        this.listenTo(this.collection, 'change', this.refresh);
 
         this.filtersContainer = $('#filters');
     },
@@ -164,6 +164,12 @@ var AllFiltersView = Backbone.View.extend({
         // var dataframeAttribute = filter.get('attribute');
         this.filtersContainer.append(childElement);
         filter.set('$el', $(childElement));
+    },
+    removeFilter: function (filter) {
+        var $el = filter.get('$el');
+        if ($el) {
+            $el.remove();
+        }
     },
     remove: function () {
         this.combinedSubscription.dispose();
