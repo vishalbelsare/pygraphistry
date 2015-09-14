@@ -11,7 +11,7 @@ ace.define('ace/mode/graphistry_highlight_rules',
         var GraphistryHighlightRules = function () {
 
             var keywords = (
-                'and|or|not|' +
+                'between|and|or|not|in|' +
                 'case|when|else|end|type'
             );
 
