@@ -22,6 +22,24 @@ var FilterModel = Backbone.Model.extend({
         controlType: undefined,
         enabled: true,
         query: undefined
+    },
+    placeholderQuery: function () {
+        var result = {
+            attribute: this.get('attribute'),
+            dataType: this.get('dataType')
+        };
+        if (!result.attribute) {
+            result.attribute = 'point:degree';
+        }
+        if (!result.dataType) {
+            result.dataType = 'number';
+        }
+        if (result.dataType == 'number') {
+            result.start = 0;
+        } else {
+            result.equals = 'ABC';
+        }
+        return result;
     }
 });
 
@@ -77,18 +95,20 @@ var FilterView = Backbone.View.extend({
         'click .disabledFilterButton': 'enable',
         'click .expandFilterButton': 'expand',
         'click .expendedFilterButton': 'shrink',
-        'click .deleteFilterButton': 'delete'
+        'click .deleteFilterButton': 'delete',
+        'change textarea.filterExpression': 'updateQuery'
     },
 
     initialize: function () {
         this.listenTo(this.model, 'destroy', this.remove);
         this.template = Handlebars.compile($('#filterTemplate').html());
+        this.control = new FilterControl();
     },
     render: function () {
-        var control = new FilterControl();
         var bindings = {
             model: _.extend({
-                    expression: control.queryToExpression(this.model.get('query'))
+                    expression: this.control.queryToExpression(this.model.get('query')),
+                    placeholder: this.control.queryToExpression(this.model.placeholderQuery())
                 },
                 this.model.toJSON()),
             dataTypes: _.map(DataTypes, function (dataType) {
@@ -108,6 +128,10 @@ var FilterView = Backbone.View.extend({
         this.$el.html(html);
 
         return this;
+    },
+    updateQuery: function (evt) {
+        var expressionString = $(evt.currentTarget).val();
+        var query = this.control.queryFromExpression(expressionString);
     },
     delete: function (/*event*/) {
         this.$el.remove();
@@ -176,7 +200,14 @@ var AllFiltersView = Backbone.View.extend({
     },
     addFilterFromDropdown: function (evt) {
         var attribute = $(evt.currentTarget).text().trim();
-        this.collection.addFilter({attribute: attribute});
+        var parts = attribute.match(/^(?:([-A-z_]+):)?([-A-z_]+)(?:[ ]+\(([A-z]+)\))?$/);
+        var attributes = {attribute: attribute};
+        attributes.type = parts[1] || 'point';
+        attributes.attribute = parts[2] + ':' + parts[1];
+        if (parts.length > 3) {
+            attributes.dataType = parts[3];
+        }
+        this.collection.addFilter(attributes);
     },
     remove: function () {
         this.combinedSubscription.dispose();
