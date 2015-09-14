@@ -143,6 +143,9 @@ var FilterView = Backbone.View.extend({
 });
 
 var AllFiltersView = Backbone.View.extend({
+    events: {
+        'click .addFilterDropdownField': 'addFilterFromDropdown'
+    },
     initialize: function () {
         this.listenTo(this.collection, 'add', this.addFilter);
         this.listenTo(this.collection, 'remove', this.removeFilter);
@@ -170,6 +173,10 @@ var AllFiltersView = Backbone.View.extend({
         if ($el) {
             $el.remove();
         }
+    },
+    addFilterFromDropdown: function (evt) {
+        var attribute = $(evt.currentTarget).text().trim();
+        this.collection.addFilter({attribute: attribute});
     },
     remove: function () {
         this.combinedSubscription.dispose();
