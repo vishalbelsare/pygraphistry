@@ -196,6 +196,8 @@ function FiltersPanel(socket, urlParams) {
 
     /** Exposes changes to the FilterCollection. */
     this.filtersSubject = new Rx.ReplaySubject(1);
+    // Seed with a fresh filters list. Should come from persisted state.
+    this.filtersSubject.onNext([]);
     this.collection.on('change reset add remove', function (/*model, options*/) {
         this.filtersSubject.onNext(this.collection);
     }.bind(this));
