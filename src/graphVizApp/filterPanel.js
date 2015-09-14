@@ -27,26 +27,12 @@ var FilterModel = Backbone.Model.extend({
 
 var FilterCollection = Backbone.Collection.extend({
     model: FilterModel,
-    matchElement: function (filterModel) {
-        if (filterModel.has('control')) {
-            return this.findWhere({control: filterModel.get('control'), attribute: filterModel.get('attribute')});
-        } else if (filterModel.has('title')) {
-            return this.findWhere({title: filterModel.get('title')});
-        } else if (filterModel.has('attribute')) {
-            return this.findWhere({attribute: filterModel.get('attribute')});
-        } else {
-            return undefined;
+    addFilter: function(attributes) {
+        if (!attributes.title) {
+            attributes.title = attributes.attribute;
         }
-    },
-    updateSubset: function (updatedCollection) {
-        _.each(updatedCollection, function (filterModel/*, idx*/) {
-            var match = this.matchElement(filterModel);
-            if (match !== undefined) {
-                match.set(filterModel.toJSON());
-            } else {
-                this.add(filterModel);
-            }
-        }, this);
+        var newFilter = new FilterModel(attributes);
+        this.push(newFilter);
     }
 });
 
@@ -253,7 +239,7 @@ function FiltersPanel(socket, urlParams) {
 FiltersPanel.prototype.listenToHistogramChangesFrom = function(filtersSubjectFromHistogram) {
     this.filtersSubjectFromHistogram = filtersSubjectFromHistogram;
     return this.filtersSubjectFromHistogram.do(function (histogramFilters) {
-        this.collection.updateSubset(histogramFilters);
+        this.collection.set(histogramFilters);
     }.bind(this)).subscribe(
         _.identity,
         util.makeErrorHandler('error updating filters collection from histograms'));

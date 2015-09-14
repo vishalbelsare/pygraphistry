@@ -53,38 +53,6 @@ var marginSparklines = {top: 15, right: 10, bottom: 15, left: 10};
 // Models
 //////////////////////////////////////////////////////////////////////////////
 
-function histogramFiltersToFilterModelUpdates(histogramFilters, FilterModel) {
-    var filterModels = [];
-    var filterer = new FilterControl();
-    _.each(histogramFilters, function (histFilter, attribute) {
-        if (!attribute) {
-            attribute = histFilter.attribute;
-        }
-        var query = {};
-        if (histFilter.start !== undefined || histFilter.stop !== undefined) {
-            query = filterer.filterRangeParameters(
-                histFilter.type,
-                attribute,
-                histFilter.start,
-                histFilter.stop);
-        } else if (histFilter.equals !== undefined) {
-            query = filterer.filterExactValueParameters(
-                histFilter.type,
-                attribute,
-                histFilter.equals
-            );
-        }
-        var newModel = new FilterModel({
-            title: attribute,
-            attribute: attribute,
-            controlType: 'histogram',
-            dataType: 'float',
-            query: query});
-        filterModels.push(newModel);
-    });
-    return filterModels;
-}
-
 // Setup Backbone for the brushing histogram
 var HistogramModel = Backbone.Model.extend({});
 
@@ -95,11 +63,12 @@ var HistogramCollection = Backbone.Collection.extend({
 
 function HistogramsPanel(globalStats, attributes, filtersPanel,
                          filterSubject, attrChangeSubject, updateAttributeSubject) {
-    this.FilterModel = filtersPanel.model;
+    this.filtersPanel = filtersPanel;
     // How the model-view communicate back to underlying Rx.
     this.histogramFilterSubject = filterSubject;
     this.dataframeAttributeChange = attrChangeSubject;
     this.updateAttributeSubject = updateAttributeSubject;
+    /** Histogram-specific/owned filter information, keyed/unique per attribute. */
     this.histogramFilters = {};
 
     var $histogram = $('#histogram');
@@ -212,9 +181,8 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             var attribute = this.model.get('attribute');
             var id = this.model.cid;
             $('.refreshHistogramButton-' + id).css('visibility', 'hidden');
-            delete panel.histogramFilters[attribute];
-            var filterModels = histogramFiltersToFilterModelUpdates(panel.histogramFilters, panel.FilterModel);
-            panel.histogramFilterSubject.onNext(filterModels);
+            panel.deleteHistogramFilterByAttribute(attribute);
+            panel.updateFiltersFromHistogramFilters();
             this.render();
         },
 
@@ -341,6 +309,68 @@ HistogramsPanel.prototype.updateAttribute = function (oldAttr, newAttr, type) {
     });
 };
 
+// These manage the FilterPanel's filters according to the histogram UI:
+
+/** This identifies a filter that is designated a histogram filter for the same
+ * dataframe attribute. Very strict match.
+ * @param {String} dataframeAttribute
+ * @returns {FilterModel}
+ */
+HistogramsPanel.prototype.findFilterForHistogramFilter = function (dataframeAttribute) {
+    return this.filtersPanel.collection.findWhere({
+        attribute: dataframeAttribute,
+        controlType: 'histogram'});
+};
+
+HistogramsPanel.prototype.deleteHistogramFilterByAttribute = function (dataframeAttribute) {
+    var filter = this.findFilterForHistogramFilter(dataframeAttribute);
+    if (filter !== undefined) {
+        this.filtersPanel.collection.remove(filter);
+    }
+    delete this.histogramFilters[dataframeAttribute];
+};
+
+HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
+    var filtersCollection = this.filtersPanel.collection;
+    var filterer = this.filtersPanel.control;
+    _.each(this.histogramFilters, function (histFilter, attribute) {
+        if (!attribute) {
+            attribute = histFilter.attribute;
+        }
+        var query = {};
+        // Should be histFilter.dataType:
+        var dataType = undefined;
+        if (histFilter.start !== undefined || histFilter.stop !== undefined) {
+            query = filterer.filterRangeParameters(
+                histFilter.type,
+                attribute,
+                histFilter.start,
+                histFilter.stop);
+            dataType = 'float';
+        } else if (histFilter.equals !== undefined) {
+            query = filterer.filterExactValueParameters(
+                histFilter.type,
+                attribute,
+                histFilter.equals
+            );
+            // Leave blank until/if we can determine this better?
+            dataType = 'string';
+        }
+        var matchingFilter = this.findFilterForHistogramFilter(attribute);
+        if (matchingFilter !== undefined) {
+            // Assume that only interaction has happened, only update the query for now:
+            matchingFilter.set('query', query);
+        } else {
+            filtersCollection.addFilter({
+                attribute: attribute,
+                controlType: 'histogram',
+                dataType: dataType,
+                histogramControl: histFilter,
+                query: query
+            });
+        }
+    }, this);
+};
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -420,13 +450,12 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
 
 
 HistogramsPanel.prototype.highlight = function (selection, toggle) {
-    var histogramFilters = this.histogramFilters;
     _.each(selection[0], function (sel) {
         var data = sel.__data__;
         var colorWithoutHighlight;
-        if (histogramFilters[data.attr] !== undefined) {
-            var min = histogramFilters[data.attr].firstBin;
-            var max = histogramFilters[data.attr].lastBin;
+        if (this.histogramFilters[data.attr] !== undefined) {
+            var min = this.histogramFilters[data.attr].firstBin;
+            var max = this.histogramFilters[data.attr].lastBin;
             if (data.binId >= min && data.binId <= max) {
                 colorWithoutHighlight = color;
             } else {
@@ -438,7 +467,7 @@ HistogramsPanel.prototype.highlight = function (selection, toggle) {
 
         var colorScale = (toggle) ? colorHighlighted : colorWithoutHighlight;
         $(sel).css('fill', colorScale(data.type));
-    });
+    }, this);
 };
 
 HistogramsPanel.prototype.updateHistogram = function ($el, model, attribute) {
@@ -577,16 +606,16 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     var histogramFilters = this.histogramFilters;
 
     var updateOpacity = function (d, i) {
-        var filters = histogramFilters[attribute];
-        if (filters && i >= filters.firstBin && i <= filters.lastBin) {
+        var histFilter = histogramFilters[attribute];
+        if (histFilter && i >= histFilter.firstBin && i <= histFilter.lastBin) {
             return 0.25;
         } else {
             return 0;
         }
     };
     var updateCursor = function (d, i) {
-        var filters = histogramFilters[attribute];
-        if (filters && i >= filters.firstBin && i <= filters.lastBin && filters.completed) {
+        var histFilter = histogramFilters[attribute];
+        if (histFilter && i >= histFilter.firstBin && i <= histFilter.lastBin && histFilter.completed) {
             return 'pointer';
         } else {
             return 'crosshair';
@@ -656,8 +685,7 @@ HistogramsPanel.prototype.handleHistogramDown = function (redrawCallback, id, gl
 
     var startBin = $element.attr('binnumber');
     var attr = $element.attr('attribute');
-    var histogramFilters = this.histogramFilters;
-    var lastHistogramFilter = histogramFilters[attr];
+    var lastHistogramFilter = this.histogramFilters[attr];
     this.updateHistogramFilters(attr, id, globalStats, startBin, startBin);
 
     var positionChanges = Rx.Observable.fromEvent($parent, 'mouseover')
@@ -678,16 +706,15 @@ HistogramsPanel.prototype.handleHistogramDown = function (redrawCallback, id, gl
             positionChanges.dispose();
             var $col = $(evt.target).parent();
             var binNum = $col.attr('binnumber');
-            histogramFilters[attr].completed = true;
+            this.histogramFilters[attr].completed = true;
 
             // Click on selection, so undo all filters.
             if (lastHistogramFilter && binNum === startBin &&
                     (lastHistogramFilter.firstBin <= binNum && lastHistogramFilter.lastBin >= binNum)) {
-                delete histogramFilters[attr];
+                this.deleteHistogramFilterByAttribute(attr);
             }
 
-            var filterModels = histogramFiltersToFilterModelUpdates(histogramFilters, this.FilterModel);
-            this.histogramFilterSubject.onNext(filterModels);
+            this.updateFiltersFromHistogramFilters();
             redrawCallback();
         }.bind(this))
         .subscribe(_.identity, util.makeErrorHandler('Histogram Filter Mouseup'));
@@ -1034,6 +1061,7 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
         }
         this.histogramFilters[dataframeAttribute].equals = list;
     }
+    // TODO rename type property to dataType for clarity.
     this.histogramFilters[dataframeAttribute].type = dataType;
 
     $('.refreshHistogramButton-' + id).css('visibility', 'visible');
