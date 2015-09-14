@@ -354,7 +354,7 @@ HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
                 histFilter.equals
             );
             // Leave blank until/if we can determine this better?
-            dataType = 'string';
+            dataType = histFilter.type || 'string';
         }
         var matchingFilter = this.findFilterForHistogramFilter(attribute);
         if (matchingFilter !== undefined) {
