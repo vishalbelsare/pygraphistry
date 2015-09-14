@@ -242,19 +242,8 @@ function FiltersPanel(socket, urlParams) {
     });
 }
 
-FiltersPanel.prototype.listenToHistogramChangesFrom = function(filtersSubjectFromHistogram) {
-    this.filtersSubjectFromHistogram = filtersSubjectFromHistogram;
-    return this.filtersSubjectFromHistogram.do(function (histogramFilters) {
-        this.collection.set(histogramFilters);
-    }.bind(this)).subscribe(
-        _.identity,
-        util.makeErrorHandler('error updating filters collection from histograms'));
-};
-
-
 FiltersPanel.prototype.dispose = function () {
     this.filtersSubject.dispose();
-    this.filtersSubjectFromHistogram.dispose();
 };
 
 

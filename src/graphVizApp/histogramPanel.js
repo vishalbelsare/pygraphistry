@@ -62,10 +62,9 @@ var HistogramCollection = Backbone.Collection.extend({
 });
 
 function HistogramsPanel(globalStats, attributes, filtersPanel,
-                         filterSubject, attrChangeSubject, updateAttributeSubject) {
+                         attrChangeSubject, updateAttributeSubject) {
     this.filtersPanel = filtersPanel;
     // How the model-view communicate back to underlying Rx.
-    this.histogramFilterSubject = filterSubject;
     this.dataframeAttributeChange = attrChangeSubject;
     this.updateAttributeSubject = updateAttributeSubject;
     /** Histogram-specific/owned filter information, keyed/unique per attribute. */

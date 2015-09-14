@@ -63,8 +63,6 @@ function HistogramBrush(socket, filtersPanel) {
         this.updateDataframeAttribute(data.oldAttr, data.newAttr, data.type);
     }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Update Attribute'));
 
-    this.filtersSubjectFromHistogram = new Rx.ReplaySubject(1);
-
     // Setup initial stream of global statistics.
     var globalStream = this.aggregatePointsAndEdges({
         all: true});
@@ -82,7 +80,7 @@ function HistogramBrush(socket, filtersPanel) {
 
         this.histogramsPanel = new HistogramsPanel(
             data, attributes, filtersPanel,
-            this.filtersSubjectFromHistogram, this.dataframeAttributeChange, updateDataframeAttributeSubject);
+            this.dataframeAttributeChange, updateDataframeAttributeSubject);
         data.histogramPanel = this.histogramsPanel;
 
         // On auto-populate, at most 5 histograms, or however many * 85 + 110 px = window height.
@@ -102,7 +100,6 @@ function HistogramBrush(socket, filtersPanel) {
 
 HistogramBrush.prototype.setupFiltersInteraction = function(filtersPanel, poi) {
     // Setup filtering:
-    filtersPanel.listenToHistogramChangesFrom(this.filtersSubjectFromHistogram);
     handleFiltersResponse(filtersPanel.control.filtersResponsesObservable(), poi);
 };
 
