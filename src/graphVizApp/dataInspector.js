@@ -130,8 +130,6 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
         mouseoverColor: 'lightblue',
         activeColor: '#0FA5C5',
         events: {
-            mouseover: 'rowMouseOver',
-            mouseout: 'rowMouseOut',
             click: 'rowClick'
         },
 
@@ -142,9 +140,9 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
 
         userRender: function () {
             if (this.model.get('selected')) {
-                $(this.el).css('backgroundColor', this.activeColor);
+                $(this.el).toggleClass('row-selected', true);
             } else {
-                $(this.el).css('backgroundColor', '');
+                $(this.el).toggleClass('row-selected', false);
             }
         },
 
@@ -155,16 +153,6 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
                 activeSelection.onNext([]);
             }
         },
-        rowMouseOver: function () {
-            if (!this.model.get('selected')) {
-                $(this.el).css('backgroundColor', this.mouseoverColor);
-            }
-        },
-        rowMouseOut: function () {
-            if (!this.model.get('selected')) {
-                $(this.el).css('backgroundColor', '');
-            }
-        }
     });
 
     var InspectData = Backbone.Model.extend({});
