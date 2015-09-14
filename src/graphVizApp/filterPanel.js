@@ -110,7 +110,8 @@ var FilterView = Backbone.View.extend({
         return this;
     },
     delete: function (/*event*/) {
-        this.model.destroy();
+        this.$el.remove();
+        this.collection.remove(this.model);
     },
     disable: function (event) {
         var $button = $(event.target);
@@ -147,7 +148,7 @@ var AllFiltersView = Backbone.View.extend({
         this.listenTo(this.collection, 'remove', this.removeFilter);
         this.listenTo(this.collection, 'reset', this.refresh);
         this.listenTo(this.collection, 'all', this.render);
-        this.listenTo(this.collection, 'change:timestamp', this.update);
+        this.listenTo(this.collection, 'change:timestamp', this.refresh);
 
         this.filtersContainer = $('#filters');
     },
@@ -156,7 +157,8 @@ var AllFiltersView = Backbone.View.extend({
     addFilter: function (filter) {
         var view = new FilterView({
             model: filter,
-            template: this.filterTemplate
+            panel: this.panel,
+            collection: this.collection
         });
         var childElement = view.render().el;
         // var dataframeAttribute = filter.get('attribute');
@@ -166,13 +168,10 @@ var AllFiltersView = Backbone.View.extend({
     remove: function () {
         this.combinedSubscription.dispose();
     },
-    removeFilter: function (/*filter*/) {
-    },
     refresh: function () {
         this.filtersContainer.empty();
         this.collection.each(this.addFilter, this);
-    },
-    update: undefined
+    }
 });
 
 
@@ -191,7 +190,7 @@ function FiltersPanel(socket, urlParams) {
 
     /** Exposes changes to the FilterCollection. */
     this.filtersSubject = new Rx.ReplaySubject(1);
-    this.collection.on('change', function (/*model, options*/) {
+    this.collection.on('change reset add remove', function (/*model, options*/) {
         this.filtersSubject.onNext(this.collection);
     }.bind(this));
 
@@ -232,6 +231,7 @@ function FiltersPanel(socket, urlParams) {
 
     this.view = new AllFiltersView({
         collection: this.collection,
+        panel: this,
         el: $('#filtersPanel')
     });
 }
