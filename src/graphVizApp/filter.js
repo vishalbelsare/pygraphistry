@@ -55,6 +55,22 @@ FilterControl.prototype.updateFilters = function (filterSet) {
 
 FilterControl.prototype.clearFilters = function () { return this.updateFilters([]); };
 
+FilterControl.prototype.print = function (value) {
+    if (typeof value === 'string') {
+        return JSON.stringify(value);
+    } else if (typeof value === 'number') {
+        return value.toString(10);
+    } else if (typeof value === 'undefined') {
+        return 'NULL';
+    } else if (Array.isArray(value)) {
+        return '(' + _.map(value, function (each) {
+                return this.print(each);
+            }, this).join(', ') + ')';
+    } else {
+        return '<unknown>';
+    }
+};
+
 FilterControl.prototype.queryToExpression = function(query) {
     if (!query) { return undefined; }
     var attribute = query.attribute;
@@ -68,15 +84,15 @@ FilterControl.prototype.queryToExpression = function(query) {
     // Should quote inner brackets if we commit to this:
     // attribute = '[' + attribute + ']';
     if (query.start !== undefined && query.stop !== undefined) {
-        return attribute + ' BETWEEN ' + query.start.toString(10) +
-            ' AND ' + query.stop.toString(10);
+        return attribute + ' BETWEEN ' + this.print(query.start) +
+            ' AND ' + this.print(query.stop);
     } else if (query.start !== undefined) {
-        return attribute + ' >= ' + query.start.toString(10);
+        return attribute + ' >= ' + this.print(query.start);
     } else if (query.stop !== undefined) {
-        return query.stop.toString(10) + ' <= ' + attribute;
+        return this.print(query.stop) + ' <= ' + attribute;
     } else if (query.equals !== undefined) {
         if (Array.isArray(query.equals) && query.equals.length > 1) {
-            return attribute + ' IN (' + _.map(query.equals, function(x) { return x.toString(10); }).join(', ') + ')';
+            return attribute + ' IN ' + this.print(query.equals);
         } else {
             return attribute + ' = ' + query.equals.toString();
         }
