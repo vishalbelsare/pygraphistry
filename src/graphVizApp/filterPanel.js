@@ -151,7 +151,7 @@ var FilterView = Backbone.View.extend({
             maxLines: 4,
             wrap: true,
             enableBasicAutocompletion: false,
-            enableSnippets: true,
+            enableSnippets: false,
             enableLiveAutocompletion: true
         });
         this.editor.setHighlightSelectedWord(true);
