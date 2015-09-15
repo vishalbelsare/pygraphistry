@@ -116,7 +116,6 @@ function createColumns(header, title) {
 }
 
 function updateGrid(grid) {
-    // grid.resetSelectedModels();
     grid.collection.fetch({reset: true});
 }
 
@@ -138,6 +137,7 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
             this.model.view = this;
         },
 
+        // We can't override render, because we then clobber Backgrid's own systems.
         userRender: function () {
             if (this.model.get('selected')) {
                 $(this.el).toggleClass('row-selected', true);
@@ -189,17 +189,6 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
     // Backgrid does some magic with how it assigns properties,
     // so I'm attaching these functions on the outside.
 
-    // TODO: Do we need this as an option?
-    // grid.resetSelectedModels = function () {
-    //     _.each(grid.selectedModels, function (model) {
-    //         console.log('model: ', model);
-    //         model.set('selected', false);
-    //         model.view.userRender();
-    //     });
-    //     grid.selectedModels = [];
-    //     grid.selection = [];
-    //     activeSelection.onNext([]);
-    // };
     grid.getSelectedModels = function () {
         return grid.selectedModels;
     };
@@ -277,6 +266,11 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
             name: 'search',
             placeholder: 'Search ' + columns[0].label + 's'
         });
+
+        //////////////////////////////////////////////////////////////////////
+        // Attach Autosearch Handlers
+        //////////////////////////////////////////////////////////////////////
+
         var attemptSearch = function (e) {
             // Because we clobber the handler for this.
             this.showClearButtonMaybe();
@@ -330,7 +324,9 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
         serverSideFilter.attemptSearch = attemptSearch;
         serverSideFilter.search = search;
         serverSideFilter.delegateEvents();
-        // serverSideFilter.on('keyup input[type=search]', attemptSearch, serverSideFilter);
+
+
+        // Attach element to inspector.
         var filterEl = serverSideFilter.render().el;
         $inspector.prepend(filterEl);
     }
