@@ -127,7 +127,30 @@ var FilterView = Backbone.View.extend({
         var html = this.template(bindings);
         this.$el.html(html);
 
+        this.initEditor();
         return this;
+    },
+    initEditor: function () {
+        if (this.editor !== undefined) { return; }
+
+        var $expressionArea = this.$('textarea.filterExpression');
+
+        this.editor = ace.edit($expressionArea[0]);
+        this.editor.setTheme('ace/theme/chrome');
+        this.editor.setOptions({
+            minLines: 2,
+            maxLines: 4,
+            wrap: true,
+            enableLiveAutocompletion: true
+        });
+        this.editor.setHighlightSelectedWord(true);
+        this.editor.setHighlightActiveLine(true);
+        this.editor.renderer.setShowGutter(false);
+        this.editor.setWrapBehavioursEnabled(true);
+        var session = this.editor.getSession();
+        session.setUseSoftTabs(true);
+        session.setMode('ace/mode/graphistry');
+        session.on('change', function (evt) { return this.updateQuery(evt); });
     },
     updateQuery: function (evt) {
         var expressionString = $(evt.currentTarget).val();
