@@ -83,10 +83,10 @@ value =
            { return { literal: x } } )
        / ( b: bind_parameter
            { return { bind: b } } )
-       / ( c: graph_column_name
-           { return { column: c } } )
-       / ( t: ( table_name dot graph_column_name )
+       / ( t: ( table_name dot column_name )
            { return { column: t[2], table: t[1] } } )
+       / ( c: column_name
+           { return { column: c } } )
        / ( unary_operator expr )
        / call_function
        / ( whitespace lparen expr whitespace rparen )
@@ -217,7 +217,7 @@ join_constraint =
   r: ( ( ( ON expr )
        / ( USING
            whitespace lparen
-           ( whitespace graph_column_name ( whitespace comma whitespace graph_column_name )* )
+           ( whitespace column_name ( whitespace comma whitespace column_name )* )
            whitespace rparen ) )? )
   { return { join_constraint: nonempty(r) } }
 
@@ -237,8 +237,8 @@ table_ref =
 column_ref =
   r: ( ( t: ( table_name dot )
          { return { table: t[0] } } )?
-       ( x: graph_column_name
-         { return { graph_namespace: x.graph_namespace, column: x.column } } ) )
+       ( x: column_name
+         { return { column: x } } ) )
   { return merge(r[1], r[0]) }
 
 comment_syntax =
@@ -293,7 +293,7 @@ decimal_point = dot
 equal = '='
 
 name =
-  str:[A-Za-z0-9_]+
+  str:[A-Za-z0-9_:]+
   { return str.join('') }
 
 database_name = name
@@ -305,10 +305,10 @@ index_name = name
 graph_namespace = name
 column_name = name
 graph_column_name =
-  gcn: ( ( c: column_name
-           { return { column: c } } )
-    	 / ( c: ( graph_namespace colon column_name )
-             { return { column: c[2], graph_namespace: c[1] } } ) )
+  gcn: ( ( c: ( graph_namespace colon column_name )
+           { return { column: c[2], graph_namespace: c[1] } } )
+	 / ( c: column_name
+           { return { column: c } } ) )
   { return gcn[1] }
 
 column_alias = name
