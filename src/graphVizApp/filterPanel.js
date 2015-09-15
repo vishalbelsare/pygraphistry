@@ -156,7 +156,7 @@ var FilterView = Backbone.View.extend({
         });
         this.editor.setHighlightSelectedWord(true);
         this.editor.setHighlightActiveLine(true);
-        this.editor.renderer.setShowGutter(false);
+        this.editor.renderer.setShowGutter(true);
         this.editor.setWrapBehavioursEnabled(true);
         var session = this.editor.getSession();
         session.setUseSoftTabs(true);
@@ -168,7 +168,19 @@ var FilterView = Backbone.View.extend({
     },
     updateQuery: function (/*aceEvent*/) {
         var expressionString = this.editor.getValue();
-        this.model.updateExpression(this.control, expressionString);
+        try {
+            this.model.updateExpression(this.control, expressionString);
+        } catch (syntaxError) {
+            var session = this.editor.getSession();
+            session.clearAnnotations();
+            var annotation = {
+                row: syntaxError.line - 1,
+                column: syntaxError.offset,
+                text: syntaxError.message,
+                type: 'error'
+            };
+            session.setAnnotations([annotation]);
+        }
     },
     delete: function (/*event*/) {
         this.$el.remove();
