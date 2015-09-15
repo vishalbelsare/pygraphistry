@@ -277,6 +277,60 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
             name: 'search',
             placeholder: 'Search ' + columns[0].label + 's'
         });
+        var attemptSearch = function (e) {
+            // Because we clobber the handler for this.
+            this.showClearButtonMaybe();
+            this.search(e);
+        };
+        // Copied / modified the filter extension. We're overriding here to
+        // allow it to debounce itself.
+        // TODO: Decide if we should fork, or otherwise extend cleaner.
+        var searchRequests = new Rx.ReplaySubject(1);
+        var readyForSearch = new Rx.Subject();
+
+        readyForSearch.flatMapLatest(function (lastSearch) {
+            return searchRequests.filter(function (req) {
+                return req.data.search !== lastSearch;
+            }).take(1);
+        }).do(function (req) {
+            var collection = req.collection;
+            var data = req.data;
+
+            var successCb = function () {
+                readyForSearch.onNext(req.data.search);
+            };
+
+            if (Backbone.PageableCollection &&
+                    collection instanceof Backbone.PageableCollection) {
+                collection.getFirstPage({data: data, reset: true, fetch: true, success: successCb});
+            } else {
+                collection.fetch({data: data, reset: true, success: successCb});
+            }
+        }).subscribe(_.identity, util.makeErrorHandler('search Request Subject'));
+        readyForSearch.onNext(null);
+
+        var search = function (e) {
+            if (e) {
+                e.preventDefault();
+            }
+
+            var data = {};
+            var query = this.query();
+            if (query) {
+                data[this.name] = query;
+            }
+            searchRequests.onNext({
+                data: data,
+                collection: this.collection,
+            });
+        };
+        serverSideFilter.events = _.extend(serverSideFilter.events, {
+            'keyup input[type=search]': 'attemptSearch',
+        });
+        serverSideFilter.attemptSearch = attemptSearch;
+        serverSideFilter.search = search;
+        serverSideFilter.delegateEvents();
+        // serverSideFilter.on('keyup input[type=search]', attemptSearch, serverSideFilter);
         var filterEl = serverSideFilter.render().el;
         $inspector.prepend(filterEl);
     }
