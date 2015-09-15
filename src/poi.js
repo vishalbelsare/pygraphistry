@@ -182,8 +182,13 @@ function fetchLabel (instance, idx, dim) {
     instance.state.socket.emit('get_labels', {dim: dim, indices: [idx]}, function (err, data) {
         if (err) {
             console.error('get_labels', err);
+            return;
+        }
+        var labelCache = instance.state.labelCache[cacheKey(idx, dim)];
+        if (labelCache === undefined) {
+            console.warn('label cache entry not found', cacheKey(idx, dim));
         } else {
-            instance.state.labelCache[cacheKey(idx, dim)].onNext(createLabelDom(dim, data[0]));
+            labelCache.onNext(createLabelDom(dim, data[0]));
         }
     });
 }
