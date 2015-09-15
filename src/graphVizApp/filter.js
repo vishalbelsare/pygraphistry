@@ -83,14 +83,9 @@ FilterControl.prototype.queryToExpression = function(query) {
     }
 };
 
-FilterControl.prototype.queryFromExpression = function (expressionString) {
-    if (!expressionString) { return undefined; }
+FilterControl.prototype.queryFromExpressionTokens = function (expressionTokens) {
+    if (!expressionTokens) { return undefined; }
     var query = {};
-    // Simple tokenizer:
-    var tokens = expressionString.split();
-    if (tokens.length >= 1) {
-        tokens[0]
-    }
     return query;
 };
 
