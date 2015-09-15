@@ -168,11 +168,11 @@ var FilterView = Backbone.View.extend({
     },
     updateQuery: function (/*aceEvent*/) {
         var expressionString = this.editor.getValue();
+        var session = this.editor.getSession();
+        session.clearAnnotations();
         try {
             this.model.updateExpression(this.control, expressionString);
         } catch (syntaxError) {
-            var session = this.editor.getSession();
-            session.clearAnnotations();
             var annotation = {
                 row: syntaxError.line - 1,
                 column: syntaxError.offset,
