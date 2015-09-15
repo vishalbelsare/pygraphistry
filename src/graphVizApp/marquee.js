@@ -433,6 +433,16 @@ function initBrush (appState, $cont, toggle, cfg) {
 
     var selections = bounds.map(transformAll);
 
+    var allSubject = new Rx.Subject(1);
+    selections = selections.merge(allSubject);
+    // Set up server state so initial selection is all.
+    allSubject.onNext({all: true});
+    toggle.filter(function (on) {
+        return !(on);
+    }).do(function () {
+        allSubject.onNext({all: true});
+    }).subscribe(_.identity);
+
     return {
         selections: selections,
         bounds: bounds,

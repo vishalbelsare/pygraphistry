@@ -155,7 +155,17 @@ function init(socket, urlParams, marquee, poi) {
         lastSelection = data.sel;
         return Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
             .map(function (agg) {
-                return _.extend(data, {reply: agg});
+                return {reply: agg, sel: data.sel, globalStats: data.globalStats, type: data.type};
+            }).map(function (data) {
+                // HACK to make it not display 'all' selections as brushed sections.
+                if (data.sel && data.sel.all) {
+                    var newData = {};
+                    _.each(data.reply.data, function (val, key) {
+                        newData[key] = {type: 'nodata'};
+                    });
+                    data.reply.data = newData;
+                }
+                return data;
             });
     }).do(function (data) {
         if (!data.reply) {

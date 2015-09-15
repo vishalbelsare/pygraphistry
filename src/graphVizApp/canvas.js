@@ -53,7 +53,8 @@ function setupLabelsAndCursor(appState, urlParams, $eventTarget) {
     var hitMapTextures = ['hitmap'];
     var latestHighlightedObject = labels.getLatestHighlightedObject(appState, $eventTarget, hitMapTextures);
 
-    labels.setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating, latestHighlightedObject);
+    labels.setupClickSelections(appState, $eventTarget, hitMapTextures);
+    labels.setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating, latestHighlightedObject, appState.activeSelection);
     labels.setupLabels(appState, urlParams, $eventTarget, latestHighlightedObject);
 }
 
@@ -601,6 +602,16 @@ function renderMouseoverEffects(renderingScheduler, task) {
     var edgeIndices = task.data.edgeIndices || [];
     var nodeIndices = task.data.nodeIndices || [];
 
+    // Also highlight selections.
+    // TODO: Generalize selection highlights from mouseover highlights.
+    _.each(appSnapshot.activeSelection, function (sel) {
+        if (sel.dim === 1) {
+            nodeIndices.push(sel.idx);
+        } else {
+            edgeIndices.push(sel.idx);
+        }
+    });
+
     // Cheap sets so we don't duplicate edges, but want to avoid using the slow _.uniq
     var seenEdges = {};
     var seenNodes = {};
@@ -706,7 +717,7 @@ function renderMouseoverEffects(renderingScheduler, task) {
 
 
 function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
-                                  isAnimating, simulateOn) {
+                                  isAnimating, simulateOn, activeSelection) {
     var that = this;
     this.renderState = renderState;
 
@@ -723,6 +734,7 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
         simulating: false,
         quietState: false,
         interpolateMidPoints : true,
+        activeSelection: [],
 
         //{ <activeBufferName> -> undefined}
         // Seem to be client-defined local buffers
@@ -755,6 +767,10 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
     simulateOn.subscribe(function (val) {
         that.appSnapshot.simulating = val;
     }, util.makeErrorHandler('simulate updates'));
+
+    activeSelection.subscribe(function (val) {
+        that.appSnapshot.activeSelection = val;
+    }, util.makeErrorHandler('activeSelection updates'));
 
     vboUpdates.filter(function (status) {
         return status === 'received';
