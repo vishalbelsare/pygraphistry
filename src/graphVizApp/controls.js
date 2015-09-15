@@ -46,7 +46,7 @@ var encodingPerElementParams = [
         value: 100,
         step: 1,
         max: 100,
-        min: 1
+        min: 0
     },
     {
         name: 'edgeOpacity',
@@ -55,7 +55,7 @@ var encodingPerElementParams = [
         value: 100,
         step: 1,
         max: 100,
-        min: 1
+        min: 0
     }
 ];
 
@@ -103,7 +103,7 @@ var encodingForLabelParams = [
         value: 100,
         step: 1,
         max: 100,
-        min: 1
+        min: 0
     }
 ];
 
