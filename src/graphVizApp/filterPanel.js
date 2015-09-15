@@ -34,7 +34,7 @@ var FilterModel = Backbone.Model.extend({
         if (!result.dataType) {
             result.dataType = 'number';
         }
-        if (result.dataType == 'number') {
+        if (result.dataType === 'number') {
             result.start = 0;
         } else {
             result.equals = 'ABC';

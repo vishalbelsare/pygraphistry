@@ -11,7 +11,6 @@ var Backbone = require('backbone');
 var d3 = require('d3');
 
 var util    = require('./util.js');
-var FilterControl = require('./filter.js');
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -338,7 +337,7 @@ HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
         }
         var query = {};
         // Should be histFilter.dataType:
-        var dataType = undefined;
+        var dataType;
         if (histFilter.start !== undefined || histFilter.stop !== undefined) {
             query = filterer.filterRangeParameters(
                 histFilter.type,
