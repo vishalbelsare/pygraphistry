@@ -40,6 +40,15 @@ var FilterModel = Backbone.Model.extend({
             result.equals = 'ABC';
         }
         return result;
+    },
+    getExpression: function (control) {
+        return control.queryToExpression(this.get('query'));
+    },
+    updateExpression: function (control, newExpression) {
+        var query = control.queryFromExpression(newExpression);
+        if (query !== undefined) {
+            this.set('query', query);
+        }
     }
 });
 
@@ -133,7 +142,7 @@ var FilterView = Backbone.View.extend({
     initEditor: function () {
         if (this.editor !== undefined) { return; }
 
-        var $expressionArea = this.$('textarea.filterExpression');
+        var $expressionArea = this.$('.filterExpression');
 
         this.editor = ace.edit($expressionArea[0]);
         this.editor.setTheme('ace/theme/chrome');
@@ -141,6 +150,8 @@ var FilterView = Backbone.View.extend({
             minLines: 2,
             maxLines: 4,
             wrap: true,
+            enableBasicAutocompletion: false,
+            enableSnippets: true,
             enableLiveAutocompletion: true
         });
         this.editor.setHighlightSelectedWord(true);
@@ -150,11 +161,14 @@ var FilterView = Backbone.View.extend({
         var session = this.editor.getSession();
         session.setUseSoftTabs(true);
         session.setMode('ace/mode/graphistry');
-        session.on('change', function (evt) { return this.updateQuery(evt); });
+        session.setValue(this.model.getExpression(this.control));
+        session.on('change', function (aceEvent) {
+            this.updateQuery(aceEvent);
+        }.bind(this));
     },
-    updateQuery: function (evt) {
-        var expressionString = $(evt.currentTarget).val();
-        var query = this.control.queryFromExpression(expressionString);
+    updateQuery: function (/*aceEvent*/) {
+        var expressionString = this.editor.getValue();
+        this.model.updateExpression(this.control, expressionString);
     },
     delete: function (/*event*/) {
         this.$el.remove();
