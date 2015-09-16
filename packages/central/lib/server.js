@@ -274,14 +274,16 @@ function start() {
     return Rx.Observable.return()
         .do(function () {
             if (config.ENVIRONMENT === 'local') {
-                var from = '/worker/' + config.VIZ_LISTEN_PORT + '/';
-                var to = 'http://localhost:' + config.VIZ_LISTEN_PORT;
-                logger.info('setting up proxy', from, to);
-                app.use(from, proxy(to, {
-                    forwardPath: function(req) {
-                        return url.parse(req.url).path.replace(new RegExp('worker/' + config.VIZ_LISTEN_PORT + '/'),'/');
-                    }
-                }));
+                _.each(config.VIZ_LISTEN_PORTS, function (port) {
+                    var from = '/worker/' + port + '/';
+                    var to = 'http://localhost:' + port;
+                    logger.info('setting up proxy', from, to);
+                    app.use(from, proxy(to, {
+                        forwardPath: function(req) {
+                            return url.parse(req.url).path.replace(new RegExp('worker/' + port + '/'),'/');
+                        }
+                    }));
+                });
             }
         })
         .flatMap(function () {
