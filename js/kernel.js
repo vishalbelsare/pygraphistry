@@ -175,10 +175,10 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         var queue = clContext.queue;
         logger.trace('Enqueuing kernel %s', that.name, kernel);
         var start = process.hrtime();
-        opencl.enqueueNDRangeKernel(queue, kernel, 1, null, workItems, workGroupSize || null);
+        ocl.enqueueNDRangeKernel(queue, kernel, 1, null, workItems, workGroupSize || null);
         if (synchronous) {
             logger.trace('Waiting for kernel to finish');
-            opencl.finish(queue);
+            ocl.finish(queue);
             var diff = process.hrtime(start);
             that.timings[that.totalRuns % maxTimings] = (diff[0] * 1000 + diff[1] / 1000000);
         }

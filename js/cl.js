@@ -249,14 +249,14 @@ var compile = Q.promised(function (cl, source, kernels) {
         try {
             var kernelsObjs = typeof kernels === "string" ? [ 'unknown' ] : kernels;
             var compiled = _.object(kernelsObjs.map(function (kernelName) {
-                    debug('    Compiling ', kernelName);
+                    logger.trace('    Compiling', kernelName);
                     return [kernelName, ocl.createKernel(program, kernelName)];
             }));
-            debug('  Compiled kernels');
+            logger.trace('    Compiled kernels');
 
             return typeof kernels === "string" ? compiled.unknown : compiled;
         } catch (e) {
-            eh.makeErrorHandler('Kernel creation error:', kernels)(e);
+            log.makeQErrorHandler(logger, 'Kernel creation error:')(e);
         }
     } catch (e) {
         try {
