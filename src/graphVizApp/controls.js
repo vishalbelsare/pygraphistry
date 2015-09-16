@@ -599,12 +599,13 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     }());
 
 
+    var $simulation = $('#simulation');
     var centeringDone =
         Rx.Observable.merge(
             Rx.Observable.fromEvent($('#center'), 'click'),
             Rx.Observable.fromEvent($graph, 'click'),
-            $('#simulation').onAsObservable('mousewheel'),
-            $('#simulation').onAsObservable('mousedown'),
+            $simulation.onAsObservable('mousewheel'),
+            $simulation.onAsObservable('mousedown'),
             $('#zoomin').onAsObservable('click'),
             $('#zoomout').onAsObservable('click'))
         //skip events autoplay triggers
