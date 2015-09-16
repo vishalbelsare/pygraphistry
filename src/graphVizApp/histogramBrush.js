@@ -141,7 +141,17 @@ HistogramBrush.prototype.setupMarqueeInteraction = function(marquee) {
         this.lastSelection = data.sel;
         return this.aggregationCommand.sendWithObservableResult(params, true)
             .map(function (agg) {
-                return _.extend(data, {reply: agg});
+                return {reply: agg, sel: data.sel, globalStats: data.globalStats, type: data.type};
+            }).map(function (data) {
+                // HACK to make it not display 'all' selections as brushed sections.
+                if (data.sel && data.sel.all) {
+                    var newData = {};
+                    _.each(data.reply.data, function (val, key) {
+                        newData[key] = {type: 'nodata'};
+                    });
+                    data.reply.data = newData;
+                }
+                return data;
             });
     }.bind(this)).do(function (data) {
         if (!data.reply) {

@@ -14,6 +14,7 @@ var canvas          = require('./canvas.js');
 var ui              = require('../ui.js');
 var poiLib          = require('../poi.js');
 var util            = require('./util.js');
+var selections      = require('./selections.js');
 
 
 function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
@@ -33,6 +34,8 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
 
     var settingsChanges = new Rx.ReplaySubject(1);
     settingsChanges.onNext({});
+    var activeSelection = new Rx.ReplaySubject(1);
+    activeSelection.onNext([]);
 
     // Marquee button selected
     var marqueeOn = new Rx.ReplaySubject(1);
@@ -82,7 +85,8 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
         simulateOn: simulateOn,
         isAnimatingOrSimulating: isAnimatingOrSimulating,
         brushOn: brushOn,
-        anyMarqueeOn: anyMarqueeOn
+        anyMarqueeOn: anyMarqueeOn,
+        activeSelection: activeSelection
     };
 
     //////////////////////////////////////////////////////////////////////////
@@ -102,13 +106,15 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
                                                                 appState.vboUpdates,
                                                                 appState.hitmapUpdates,
                                                                 appState.isAnimating,
-                                                                appState.simulateOn);
+                                                                appState.simulateOn,
+                                                                appState.activeSelection);
 
     canvas.setupCameraInteractions(appState, $simCont).subscribe(
         appState.cameraChanges,
         util.makeErrorHandler('cameraChanges')
     );
 
+    selections.init(appState);
     canvas.setupLabelsAndCursor(appState, urlParams, $simCont);
     canvas.setupRenderUpdates(appState.renderingScheduler, appState.cameraChanges, appState.settingsChanges);
 
