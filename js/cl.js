@@ -183,7 +183,6 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
     logger.info('OpenCL    Type:%s  Vendor:%s  Device:%s',
                 props.TYPE, props.VENDOR, props.NAME);
 
-    logger.trace('Device Sizes   WorkGroup:%d  WorkItem:%s', props.MAX_WORK_GROUP_SIZE,
     // extract supported OpenCL version
     props.MAX_CL_VERSION = props.VERSION.substring(7,10);
 
