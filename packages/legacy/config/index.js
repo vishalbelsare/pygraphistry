@@ -51,7 +51,8 @@ function defaults() {
         // FIXME: Change this to 'VIZ_BIND_ADDRESS', to clarify this is the IP the server binds to,
         // not the IP it is reachable at. Binding to 0.0.0.0 is legal, but not a real, routable IP.
         VIZ_LISTEN_ADDRESS: '127.0.0.1',
-        VIZ_LISTEN_PORT: 10000,
+        VIZ_LISTEN_PORTS: [10000],   // Fixed list of workers for central.
+        VIZ_LISTEN_PORT: 10000,      // Port for this worker.
 
         // The number of seconds old a GPU ping may be before being considered stale
         GPU_PING_TIMEOUT: 60,
