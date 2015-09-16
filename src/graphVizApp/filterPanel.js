@@ -96,6 +96,40 @@ var FilterControlTypes = [
     {value: 'text', name: 'Text'}
 ];
 
+/**
+ * @param {Array} namespaceAttribute
+ * @constructor
+ */
+function DataframeCompleter(namespaceAttribute) {
+    this.namespaceAttributes = namespaceAttribute;
+}
+
+DataframeCompleter.prototype.getCompletions = function (editor, session, pos, prefix, callback) {
+    if (prefix.length === 0 || !this.namespaceAttributes) {
+        callback(null, []);
+        return;
+    }
+    var scoredAttributes = this.namespaceAttributes.map(function (value) {
+        var lastIdx = value.lastIndexOf(prefix, 0);
+        if (lastIdx === 0) {
+            return [value, 1];
+        } else if (lastIdx === value.lastIndexOf(':', 0) + 1) {
+            return [value, 0.8];
+        }
+        return [value, 0];
+    }).filter(function (scoreAndValue) {
+        return scoreAndValue[1] > 0;
+    });
+    callback(null, scoredAttributes.map(function (scoreAndValue) {
+        return {
+            name: scoreAndValue[0],
+            value: scoreAndValue[0],
+            score: scoreAndValue[1],
+            meta: 'identifier'
+        };
+    }));
+};
+
 var FilterView = Backbone.View.extend({
     tagName: 'div',
     className: 'filterInspector',
@@ -158,6 +192,9 @@ var FilterView = Backbone.View.extend({
         this.editor.setHighlightActiveLine(true);
         this.editor.renderer.setShowGutter(true);
         this.editor.setWrapBehavioursEnabled(true);
+        this.editor.setBehavioursEnabled(true);
+        this.editor.$blockScrolling = Infinity;
+        this.editor.completers.push(new DataframeCompleter(this.namespaceMetadata));
         var session = this.editor.getSession();
         session.setUseSoftTabs(true);
         session.setMode('ace/mode/graphistry');
@@ -234,7 +271,8 @@ var AllFiltersView = Backbone.View.extend({
         var view = new FilterView({
             model: filter,
             panel: this.panel,
-            collection: this.collection
+            collection: this.collection,
+            namespaceMetadata: this.namespaceMetadata
         });
         var childElement = view.render().el;
         // var dataframeAttribute = filter.get('attribute');
@@ -298,7 +336,8 @@ function FiltersPanel(socket, urlParams) {
         util.makeErrorHandler('updateFilters on filters change event')
     );
 
-    this.combinedSubscription = this.control.namespaceMetadataObservable().combineLatest(
+    var namespaceMetadataObservable = this.control.namespaceMetadataObservable();
+    this.combinedSubscription = namespaceMetadataObservable.combineLatest(
         this.filtersSubject,
         function (dfa, fs) {
             return {dataframeAttributes: dfa, filterSet: fs};
@@ -324,11 +363,14 @@ function FiltersPanel(socket, urlParams) {
             console.log('Error updating Add Filter', err);
         });
 
-    this.view = new AllFiltersView({
-        collection: this.collection,
-        panel: this,
-        el: $('#filtersPanel')
-    });
+    namespaceMetadataObservable.subscribe(function (namespaceMetadata) {
+        this.view = new AllFiltersView({
+            collection: this.collection,
+            panel: this,
+            el: $('#filtersPanel'),
+            namespaceMetadata: namespaceMetadata
+        });
+    }.bind(this));
 }
 
 FiltersPanel.prototype.dispose = function () {
