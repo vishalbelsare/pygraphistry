@@ -37,7 +37,10 @@ var lastCompressedVBOs;
 var lastRenderConfig;
 var lastMetadata;
 var finishBufferTransfers;
-var qLastSelectionIndices;
+var qLastSelectionIndices = Q({
+    'point': [],
+    'edge': []
+});
 
 
 // ----- ANIMATION ------------------------------------
@@ -97,8 +100,31 @@ function vboSizeMB(vbos) {
     return (vboSizeBytes / (1024 * 1024)).toFixed(1);
 }
 
-// Sort and then subset the dataFrame. Used for paging selection.
-function sliceSelection(dataFrame, type, indices, start, end, sort_by, ascending) {
+// TODO: Dataframe doesn't currently support sorted/filtered views, so we just do
+// a shitty job and manage it directly out here, which is slow + error prone.
+// We need to extend dataframe to allow us to have views.
+function sliceSelection(dataFrame, type, indices, start, end, sort_by, ascending, searchFilter) {
+
+    if (searchFilter) {
+        searchFilter = searchFilter.toLowerCase();
+        var newIndices = [];
+        _.each(indices, function (idx) {
+            var row = dataFrame.getRowAt(idx, type);
+            var keep = false;
+            _.each(row, function (val, key) {
+                if (String(val).toLowerCase().indexOf(searchFilter) > -1) {
+                    keep = true;
+                }
+            });
+            if (keep) {
+                newIndices.push(idx);
+            }
+        });
+        indices = newIndices;
+    }
+
+    var count = indices.length;
+
     if (sort_by !== undefined) {
 
         // TODO: Speed this up / cache sorting. Actually, put this into dataframe itself.
@@ -106,7 +132,12 @@ function sliceSelection(dataFrame, type, indices, start, end, sort_by, ascending
         var sortCol = dataFrame.getColumnValues(sort_by, type);
         var sortToUnsortedIdx = dataFrame.getHostBuffer('forwardsEdges').edgePermutationInverseTyped;
         var taggedSortCol = _.map(indices, function (idx) {
-            return [sortCol[sortToUnsortedIdx[idx]], idx];
+            if (type === 'edge') {
+                return [sortCol[sortToUnsortedIdx[idx]], idx];
+            } else {
+                return [sortCol[idx], idx];
+            }
+
         });
 
         var sortedTags = taggedSortCol.sort(function (val1, val2) {
@@ -127,10 +158,10 @@ function sliceSelection(dataFrame, type, indices, start, end, sort_by, ascending
             return val[1];
         });
 
-        return dataFrame.getRows(slicedIndices, type);
+        return {count: count, values: dataFrame.getRows(slicedIndices, type)};
 
     } else {
-        return dataFrame.getRows(indices.slice(start, end), type);
+        return {count: count, values: dataFrame.getRows(indices.slice(start, end), type)};
     }
 }
 
@@ -151,14 +182,15 @@ function read_selection(type, query, res) {
             var start = (page - 1) * per_page;
             var end = start + per_page;
             var data = sliceSelection(graph.dataframe, type, lastSelectionIndices[type], start, end,
-                                        query.sort_by, query.order === 'asc');
-            res.send(data);
+                                        query.sort_by, query.order === 'asc', query.search);
+            res.send(_.extend(data, {
+                page: page
+            }));
         }).fail(log.makeQErrorHandler(logger, 'read_selection qLastSelectionIndices'));
 
     }).subscribe(
         _.identity,
         function (err) {
-            cb({success: false, error: 'read_selection error'});
             log.makeRxErrorHandler(logger, 'read_selection handler')(err);
         }
     );
@@ -456,6 +488,10 @@ function init(app, socket) {
                 header: {
                     nodes: graph.dataframe.getAttributeKeys('point'),
                     edges: graph.dataframe.getAttributeKeys('edge')
+                },
+                urns: {
+                    nodes: 'read_node_selection',
+                    edges: 'read_edge_selection'
                 }
             });
         }).subscribe(
