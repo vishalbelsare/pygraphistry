@@ -1,85 +1,75 @@
 {
-  // Header/utility functions for sql.pegjs grammar match bodies.
+  //var unroll = options.util.makeUnroll(line, column, offset, SyntaxError)
+  //var ast    = options.util.makeAST(line, column, offset, options)
+
+  // Header/utility functions for grammar match bodies.
   //
-  function append(arr, x) {
-    arr[arr.length] = x;
-    return arr;
+
+  function extractOptional(optional, index) {
+    return optional ? optional[index] : null;
   }
 
-  function flatten(x, rejectSpace, acc) {
-    acc = acc || [];
-    if (x == null || x == undefined) {
-      if (!rejectSpace) {
-        return append(acc, x);
-      }
-      return acc;
+  function extractList(list, index) {
+    var result = new Array(list.length), i;
+
+    for (i = 0; i < list.length; i++) {
+      result[i] = list[i][index];
     }
-    if (x.length == undefined) { // Just an object, not a string or array.
-      return append(acc, x);
-    }
-    if (rejectSpace &&
-      ((x.length == 0) ||
-       (typeof(x) == "string" &&
-        x.match(/^\s*$/)))) {
-      return acc;
-    }
-    if (typeof(x) == "string") {
-      return append(acc, x);
-    }
-    for (var i = 0; i < x.length; i++) {
-      flatten(x[i], rejectSpace, acc);
-    }
-    return acc;
+
+    return result;
   }
 
-  function flatstr(x, rejectSpace, joinChar) {
-    return flatten(x, rejectSpace, []).join(joinChar || '');
+  function buildList(first, rest, index) {
+    return [first].concat(extractList(rest, index));
   }
 
-  function filter(arr, x) {
-    var acc = [];
-    for (var i = 0; i < arr.length; i++) {
-      if (arr[i] != x) {
-        acc[acc.length] = arr[i];
-      }
+  function buildTree(first, rest, builder) {
+    var result = first, i;
+
+    for (i = 0; i < rest.length; i++) {
+      result = builder(result, rest[i]);
     }
-    return acc;
+
+    return result;
   }
 
-  function nonempty(x) {             // Ex: nonempty("") == null;
-    if (x == null || x.length > 0) { // Ex: nonempty(null) == null;
-      return x;
-    }
-    return null;
-   }
-
-  function put_if_not_null(m, key, val) {
-    if (val) {
-      m[key] = val;
-    }
-    return m;
+  function buildBinaryExpression(first, rest) {
+    return buildTree(first, rest, function(result, element) {
+      return {
+        type:     "BinaryExpression",
+        operator: element[1],
+        left:     result,
+        right:    element[3]
+      };
+    });
   }
-  function merge(src, dst) {
-    for (var k in src) {
-      dst[k] = src[k];
-    }
-    return dst;
+
+  function buildLogicalExpression(first, rest) {
+    return buildTree(first, rest, function(result, element) {
+      return {
+        type:     "LogicalExpression",
+        operator: element[1],
+        left:     result,
+        right:    element[3]
+      };
+    });
+  }
+
+  function optionalList(value) {
+    return value !== null ? value : [];
   }
 }
 
-start = expr
+start = Expression
 
 type_name =
   ( name )+
-  ( ( lparen signed_number rparen )
-  / ( lparen signed_number comma signed_number rparen ) )?
-
-signed_number =
-  ( ( plus / minus )? numeric_literal )
+  ( ( lparen SignedInteger rparen )
+  / ( lparen SignedInteger comma SignedInteger rparen ) )?
 
 value =
-  v: ( whitespace
-       ( ( x: literal_value
+  v: ( __
+       ( ( x: LiteralValue
            { return { literal: x } } )
        / ( b: bind_parameter
            { return { bind: b } } )
@@ -87,163 +77,236 @@ value =
            { return { column: t[2], table: t[1] } } )
        / ( c: column_name
            { return { column: c } } )
-       / ( unary_operator expr )
+       / ( PrefixOperator Expression )
        / call_function
-       / ( whitespace lparen expr whitespace rparen )
-       / ( CAST lparen expr AS type_name rparen )
+       / ( __ lparen Expression __ rparen )
+       / ( CAST lparen Expression AS type_name rparen )
+       // TODO: NOT-EXISTS:
        // / ( ( NOT ? EXISTS )? lparen select_stmt rparen )
-       / ( CASE expr ? ( WHEN expr THEN expr )+ ( ELSE expr )? END )
+       / ( CASE Expression ? ( WHEN Expression THEN Expression )+ ( ELSE Expression )? END )
+       // TODO: RAISE
        // / raise_function
        ) )
   { return v[1] }
 
-expr =
-  e: ( whitespace
-       ( ( value binary_operator expr )
-       / ( value COLLATE collation_name )
-       / ( value NOT ? ( LIKE / GLOB / REGEXP / MATCH ) expr ( ESCAPE expr )? )
-       / ( value ( ISNULL / NOTNULL / ( NOT NULL ) ) )
-       / ( value IS NOT ? expr )
-       / ( value NOT ? BETWEEN expr AND expr )
-       // / ( value NOT ? IN ( ( lparen ( select_stmt / ( expr comma )+ )? rparen )
-       //                   / table_ref ) )
-       / value ) )
-  { return e[1]; }
+NOTExpression
+  = NOT __ RelationalExpression
+  / RelationalExpression
+
+ANDExpression
+  = first:NOTExpression
+    rest:(__ AND __ NOTExpression)*
+    { return buildBinaryExpression(first, rest); }
+
+ORExpression
+  = first:ANDExpression
+    rest:(__ OR __ ANDExpression)*
+    { return buildBinaryExpression(first, rest); }
+
+LimitExpression
+  = LIMIT __ limit:NumericLiteral
+    { return { type: 'Limit', value: limit } }
+
+Expression
+  = LimitExpression
+  / ORExpression
 
 
 call_function =
   ( function_name
-    whitespace lparen
-               ( ( DISTINCT ? ( expr (whitespace comma expr)* )+ )
-               / whitespace star )?
-    whitespace rparen )
+    __ lparen
+               ( ( DISTINCT ? ( Expression (__ comma Expression)* )+ )
+               / __ star )?
+    __ rparen )
 
-literal_value =
-  ( numeric_literal / string_literal / blob_literal
+LiteralValue "literal" =
+  ( NumericLiteral / StringLiteral / BlobLiteral
   / NULL / CURRENT_TIME / CURRENT_DATE / CURRENT_TIMESTAMP )
 
-numeric_literal =
-  digits:( ( ( ( digit )+ ( decimal_point ( digit )+ )? )
-           / ( decimal_point ( digit )+ ) )
-           ( E ( plus / minus )? ( digit )+ )? )
-  { var x = flatstr(digits);
-    if (x.indexOf('.') >= 0) {
-      return parseFloat(x);
-    }
-    return parseInt(x);
-  }
+Elision
+  = comma commas:(__ comma)* { return filledArray(commas.length + 1, null); }
 
-select_core =
-  ( SELECT d: ( ( DISTINCT / ALL )? )
-           c: ( select_result
-                ( cx: ( whitespace comma select_result )*
-                      { var acc = [];
-                        for (var i = 0; i < cx.length; i++) {
-                          acc[i] = cx[i][2];
-                        }
-                        return acc;
-                      } ) )
-    f: ( j: ( ( FROM join_source )? )
-         { return j ? j[1] : [] } )
-    w: ( e: ( ( WHERE expr )? )
-         { return e ? e[1] : [] } )
-    // g: ( GROUP BY ( ordering_term comma )+ ( HAVING expr )? )?
+ElementList
+  = first:(
+      elision:(Elision __)? element:PrimaryExpression {
+        return optionalList(extractOptional(elision, 0)).concat(element);
+      }
     )
-  { c[1].unshift(c[0]);
-    var res = { results: c[1] };
-    res = put_if_not_null(res, "distinct", nonempty(flatstr(d)));
-    res = put_if_not_null(res, "from", nonempty(f));
-    res = put_if_not_null(res, "where", nonempty(w));
-    // res = put_if_not_null(res, "group_by", nonempty(g));
-    return res;
-  }
+    rest:(
+      __ comma __ elision:(Elision __)? element:PrimaryExpression {
+        return optionalList(extractOptional(elision, 0)).concat(element);
+      }
+    )*
+    { return Array.prototype.concat.apply(first, rest); }
 
-select_result =
-  r: ( whitespace
-       ( ( c: ( column_ref ( a: ( AS whitespace column_alias )
-                             { return { alias: a[2] } } )? )
-              { return merge(c[1], c[0]) } )
-       / ( c: ( table_name dot star )
-              { return { table: c[0],
-                         column: '*' } } )
-       / ( star
-           { return { column: '*' } } ) ) )
-  { return r[1] }
-
-join_source =
-  s: ( whitespace single_source
-       ( join_op whitespace single_source join_constraint )* )
-  { var acc = [s[1]];
-    var rest = s[2];
-    for (var i = 0; rest != null && i < rest.length; i++) {
-      acc[acc.length] = merge(merge(rest[i][0], rest[i][2]), rest[i][3]);
+ListLiteral
+  = lparen __ elision:(Elision __)? rparen {
+      return {
+        type: 'ListExpression',
+        elements: optionalList(extractOptional(elision, 0))
+      }
     }
-    return acc;
-  }
+  / lparen __ elements:ElementList __ rparen {
+      return {
+        type: 'ListExpression',
+        elements: elements
+      }
+    }
+  / lparen __ elements:ElementList __ comma __ elision:(Elision __)? rparen {
+      return {
+        type: 'ListExpression',
+        elements: elements.concat(optionalList(extractOptional(elision, 0)))
+      }
+    }
 
-single_source =
-  ( ( x: ( database_name dot table_name AS whitespace1 table_alias )
-      { return { database: x[0], table: x[2], alias: x[5] } } )
-  / ( x: ( database_name dot table_name )
-      { return { database: x[0], table: x[2] } } )
-  / ( x: ( table_name AS whitespace1 table_alias )
-      { return { table: x[0], alias: x[3] } } )
-  / ( x: table_name
-      { return { table: x } } )
-  / ( s: ( ( t: ( table_ref ( a: ( AS whitespace1 table_alias )
-                              { return { alias: a[2] } } )? )
-             { return merge(t[1], t[0]) } )
-           ( ( idx: ( INDEXED BY whitespace index_name )
-               { return { indexed_by: idx[3] } } )
-           / ( ( NOT INDEXED )
-               { return { indexed_by: null } } ) )? )
-      { return merge(s[1], s[0]) } )
-  / ( j: ( lparen join_source rparen )
-      { return j[1] } )
-  )
+PrimaryExpression
+  = Identifier
+  / LiteralValue
+  / ListLiteral
+  / lparen __ expression:Expression __ rparen { return expression; }
 
-join_op =
-  r: ( ( ( ( whitespace comma )
-           { return "JOIN" } )
-       / ( j: ( NATURAL ?
-                ( ( LEFT ( OUTER )? )
-                  / INNER
-                  / CROSS )?
-                JOIN )
-           { return flatstr(j) } ) ) )
-  { return { join_op: r } }
+DecimalDigit
+  = [0-9]
 
-join_constraint =
-  r: ( ( ( ON expr )
-       / ( USING
-           whitespace lparen
-           ( whitespace column_name ( whitespace comma whitespace column_name )* )
-           whitespace rparen ) )? )
-  { return { join_constraint: nonempty(r) } }
+NonZeroDigit
+  = [1-9]
 
-compound_operator =
-  o: ( ( UNION ALL ? )
-     / INTERSECT
-     / EXCEPT )
-  { return { compound_operator: flatstr(o) } }
+DecimalIntegerLiteral
+  = "0"
+  / NonZeroDigit DecimalDigit*
 
-table_ref =
-  r: ( ( d: ( database_name dot )
-         { return { database: d[0] } } )?
-       ( x: table_name
-         { return { table: x } } ) )
-  { return merge(r[1], r[0]) }
+ExponentIndicator
+  = "e"i
 
-column_ref =
-  r: ( ( t: ( table_name dot )
-         { return { table: t[0] } } )?
-       ( x: column_name
-         { return { column: x } } ) )
-  { return merge(r[1], r[0]) }
+SignedInteger
+  = [+-]? DecimalDigit+
 
-comment_syntax =
-  ( ( minusminus ( anything_except_newline )+ ( newline / end_of_input ) )
-  / ( comment_beg ( anything_except_comment_end )+ ( comment_end / end_of_input ) ) )
+ExponentPart
+  = ExponentIndicator SignedInteger
+
+DecimalLiteral
+  = DecimalIntegerLiteral "." DecimalDigit* ExponentPart? {
+      return { type: "Literal", value: parseFloat(text()) };
+    }
+  / "." DecimalDigit+ ExponentPart? {
+      return { type: "Literal", value: parseFloat(text()) };
+    }
+  / DecimalIntegerLiteral ExponentPart? {
+      return { type: "Literal", value: parseFloat(text()) };
+    }
+
+HexDigit
+  = [0-9a-f]i
+
+HexIntegerLiteral
+  = "0x"i digits:$HexDigit+ {
+      return { type: "Literal", value: parseInt(digits, 16) };
+     }
+
+SourceCharacter
+  = .
+
+IdentifierStart
+  = [A-Za-z_]
+
+IdentifierPart
+  = IdentifierStart
+  / [0-9]
+
+IdentifierName "identifier"
+  = first:IdentifierStart rest:IdentifierPart* {
+      return {
+        type: "Identifier",
+        name: first + rest.join("")
+      };
+    }
+
+Identifier
+  = !ReservedWord name:IdentifierName { return name; }
+
+NumericLiteral "number"
+  = literal:HexIntegerLiteral !(IdentifierStart / DecimalDigit) {
+      return literal;
+    }
+  / literal:DecimalLiteral !(IdentifierStart / DecimalDigit) {
+      return literal;
+    }
+
+StringLiteral "string"
+  = '"' chars:DoubleStringCharacter* '"' {
+      return { type: "Literal", value: chars.join("") };
+    }
+  / "'" chars:SingleStringCharacter* "'" {
+      return { type: "Literal", value: chars.join("") };
+    }
+
+EscapedEscapeCharacter = "\\"
+
+DoubleStringCharacter
+  = !('"' / EscapedEscapeCharacter / LineTerminator) SourceCharacter { return text(); }
+  / "\\" sequence:EscapeSequence { return sequence; }
+  / LineContinuation
+
+SingleStringCharacter
+  = !("'" / EscapedEscapeCharacter / LineTerminator) SourceCharacter { return text(); }
+  / EscapedEscapeCharacter sequence:EscapeSequence { return sequence; }
+  / LineContinuation
+
+LineContinuation
+  = EscapedEscapeCharacter LineTerminatorSequence { return ""; }
+
+EscapeSequence
+  = CharacterEscapeSequence
+  / "0" !DecimalDigit { return "\0"; }
+  / HexEscapeSequence
+  / UnicodeEscapeSequence
+
+CharacterEscapeSequence
+  = SingleEscapeCharacter
+  / NonEscapeCharacter
+
+SingleEscapeCharacter
+  = "'"
+  / '"'
+  / EscapedEscapeCharacter
+  / "b"  { return "\b";   }
+  / "f"  { return "\f";   }
+  / "n"  { return "\n";   }
+  / "r"  { return "\r";   }
+  / "t"  { return "\t";   }
+  / "v"  { return "\x0B"; }   // IE does not recognize "\v".
+
+NonEscapeCharacter
+  = !(EscapeCharacter / LineTerminator) SourceCharacter { return text(); }
+
+EscapeCharacter
+  = SingleEscapeCharacter
+  / DecimalDigit
+  / "x"
+  / "u"
+
+HexEscapeSequence
+  = "x" digits:$(HexDigit HexDigit) {
+      return String.fromCharCode(parseInt(digits, 16));
+    }
+
+UnicodeEscapeSequence
+  = "u" digits:$(HexDigit HexDigit HexDigit HexDigit) {
+      return String.fromCharCode(parseInt(digits, 16));
+    }
+
+Comment "comment"
+  = MultiLineComment
+  / SingleLineComment
+
+SingleLineComment
+  = minusminus (!LineTerminator SourceCharacter)*
+
+MultiLineComment
+  = CommentBegin (!CommentEnd SourceCharacter)* CommentEnd
+
+MultiLineCommentNoLineTerminator
+  = CommentBegin (!(CommentEnd / LineTerminator) SourceCharacter)* CommentEnd
 
 dot = '.'
 comma = ','
@@ -252,47 +315,229 @@ semicolon = ';'
 minusminus = '--'
 minus = '-'
 plus = '+'
+times = '*'
+divide = '/'
+modulo = '%'
+not_op = '~'
 lparen = '('
 rparen = ')'
+concat = '||'
+lessthan = '<'
+greaterthan = '>'
+lte = '<='
+gte = '>='
+equals = '='
+doubleequals = '=='
+notequals = '!='
+gtlt = '<>'
 star = '*'
 newline = '\n'
-anything_except_newline = [^\n]*
-comment_beg = '/*'
-comment_end = '*/'
-anything_except_comment_end = .* & '*/'
-string_literal = '"' (escape_char / [^"])* '"'
-escape_char = '\\' .
+AnythingExceptNewline = [^\n]*
+CommentBegin = '/*'
+CommentEnd = '*/'
+AnythingExceptCommentEnd = .* & '*/'
 nil = ''
 
-whitespace =
-  [ \t\n\r]*
-whitespace1 =
-  [ \t\n\r]+
+Keyword
+  = AND
+  / AS
+  / BEGIN
+  / CASE
+  / CAST
+  / ELSE
+  / END
+  / ESCAPE
+  / EXISTS
+  / FROM
+  / IF
+  / IN
+  / IS
+  / ISNULL
+  / LIKE
+  / NOT
+  / NOTNULL
+  / OR
+  / THEN
+  / TO
+  / WHEN
+  / WHERE
 
-unary_operator =
-  x: ( whitespace
-       ( '-' / '+' / '~' / 'NOT'i) )
-  { return x[1] }
+NullLiteral
+  = NULL { return { type: "Literal", value: null }; }
+
+BooleanLiteral
+  = TRUE  { return { type: "Literal", value: true  }; }
+  / FALSE { return { type: "Literal", value: false }; }
+
+ReservedWord "reserved word"
+  = Keyword
+  / NullLiteral
+  / BooleanLiteral
+
+AdditiveOperator
+  = plus
+  / minus
+
+AdditiveExpression
+  = first:MultiplicativeExpression
+    rest:(__ AdditiveOperator __ MultiplicativeExpression)*
+    { return buildBinaryExpression(first, rest); }
+
+ShiftOperator "shift operator"
+  = '<<'
+  / '>>'
+
+ShiftExpression
+  = first:AdditiveExpression
+    rest:(__ ShiftOperator __ AdditiveExpression)*
+    { return buildBinaryExpression(first, rest); }
+
+IsExpression
+  = first:ShiftExpression __ IS __ comparedvalue:Expression
+  / first:ShiftExpression __ rest:ISNULL
+  / first:ShiftExpression __ rest:NOTNULL
+  { return buildBinaryExpression(first, rest); }
+
+InExpression
+  = first:IsExpression __ IN __ container:Expression
+  / first:PrimaryExpression __ NOT ? __ IN __ lparen ( ( PrimaryExpression comma __ )+ )? __ rparen
+  { return buildLogicalExpression(first, [container]); }
+
+BetweenAndExpression
+  = value:InExpression __ NOT ? BETWEEN __ low:InExpression __ AND __ high:InExpression
+    {
+      // TODO: use negated
+      return {
+          type: 'BetweenAndExpression',
+          value: value,
+          start: low,
+          stop:  high
+      };
+    }
+  / InExpression
+
+LikeExpression
+  = first:BetweenAndExpression
+    rest:(__ NOT ? LIKE __ ShiftExpression)
+    { return buildBinaryExpression(first, rest); }
+
+RelationalOperator "relational operator"
+  = lte
+  / gte
+  / $(lessthan !lessthan)
+  / $(greaterthan !greaterthan)
+  / IN
+
+RelationalExpression
+  = first:ShiftExpression
+    rest:(__ RelationalOperator __ ShiftExpression)*
+    { return buildBinaryExpression(first, rest); }
+
+EqualityExpression
+  = first:RelationalExpression
+    rest:(__ EqualityOperator __ RelationalExpression)*
+    { return buildBinaryExpression(first, rest); }
+
+EqualityOperator "equality operator"
+  = "==="
+  / "!=="
+  / "=="
+  / "!="
+  / "<>"
+
+WhiteSpace "whitespace"
+  = "\t"
+  / "\v"
+  / "\f"
+  / " "
+  / "\u00A0"
+  / "\uFEFF"
+
+LineTerminator "line terminator"
+  = [\n\r\u2028\u2029]
+
+LineTerminatorSequence "end of line"
+  = "\n"
+  / "\r\n"
+  / "\r"
+  / "\u2028"
+  / "\u2029"
+
+__
+  = (WhiteSpace / LineTerminatorSequence / Comment)*
+
+_
+  = (WhiteSpace / MultiLineCommentNoLineTerminator)*
+
+PostfixOperator "postfix operator"
+  = ISNULL
+  / NOTNULL
+
+PostfixExpression
+  = argument:PrimaryExpression __ operator:PostfixOperator {
+      return {
+        type: 'UnaryExpression',
+        operator: operator,
+        argument: argument,
+        fixity: 'postfix'
+      }
+    }
+  / PrimaryExpression
+
+PrefixOperator "prefix operator"
+  = minus
+  / plus
+  / not_op
+  / NOT
+
+UnaryExpression
+  = PostfixExpression
+  / operator:PrefixOperator __ argument:UnaryExpression {
+    return {
+      type: 'UnaryExpression',
+      operator: operator,
+      argument: argument,
+      fixity: 'prefix'
+    }
+  }
+  
+
+MultiplicativeExpression
+  = first:UnaryExpression
+    rest:(__ MultiplicativeOperator __ UnaryExpression)*
+    { return buildBinaryExpression(first, rest); }
+
+MultiplicativeOperator
+  = times
+  / divide
+  / modulo
 
 binary_operator =
-  x: ( whitespace
-       ('||'
-        / '*' / '/' / '%'
-        / '+' / '-'
+  x: ( __
+       (concat
+        / times / divide / modulo
+        / plus / minus
         / '<<' / '>>' / '&' / '|'
         / '<=' / '>='
         / '<' / '>'
         / '=' / '==' / '!=' / '<>'
         / 'IS'i / 'IS NOT'i / 'IN'i / 'LIKE'i / 'GLOB'i / 'MATCH'i / 'REGEXP'i
         / 'AND'i
-        / 'OR'i) )
+        / 'OR'i ) )
   { return x[1] }
 
-digit = [0-9]
-decimal_point = dot
-equal = '='
+conjunction =
+  x: ( __
+       ('IS'i / 'IS NOT'i / 'IN'i / 'LIKE'i / 'GLOB'i / 'MATCH'i / 'REGEXP'i
+        / 'AND'i
+        / 'OR'i ) )
+  { return x[1] }
 
 name =
+  str:[A-Za-z0-9_]+
+  { return str.join('') }
+// TODO: improve this to extract point/edge etc.
+graph_scoped_name =
   str:[A-Za-z0-9_:]+
   { return str.join('') }
 
@@ -303,11 +548,11 @@ table_or_index_name = name
 new_table_name = name
 index_name = name
 graph_namespace = name
-column_name = name
+column_name = graph_scoped_name
 graph_column_name =
   gcn: ( ( c: ( graph_namespace colon column_name )
            { return { column: c[2], graph_namespace: c[1] } } )
-	 / ( c: column_name
+         / ( c: column_name
            { return { column: c } } ) )
   { return gcn[1] }
 
@@ -324,138 +569,136 @@ bind_parameter =
 function_name = name
 pragma_name = name
 
-error_message = string_literal
-
 CURRENT_TIME = 'now'
 CURRENT_DATE = 'now'
 CURRENT_TIMESTAMP = 'now'
 
-blob_literal = string_literal
+BlobLiteral = StringLiteral
 
-end_of_input = ''
-
-ABORT = whitespace1 "ABORT"i
-ACTION = whitespace1 "ACTION"i
-ADD = whitespace1 "ADD"i
-AFTER = whitespace1 "AFTER"i
-ALL = whitespace1 "ALL"i
-ALTER = whitespace1 "ALTER"i
-ANALYZE = whitespace1 "ANALYZE"i
-AND = whitespace1 "AND"i
-AS = whitespace1 "AS"i
-ASC = whitespace1 "ASC"i
-ATTACH = whitespace1 "ATTACH"i
-AUTOINCREMENT = whitespace1 "AUTOINCREMENT"i
-BEFORE = whitespace1 "BEFORE"i
-BEGIN = whitespace1 "BEGIN"i
-BETWEEN = whitespace1 "BETWEEN"i
-BY = whitespace1 "BY"i
-CASCADE = whitespace1 "CASCADE"i
-CASE = whitespace1 "CASE"i
-CAST = whitespace1 "CAST"i
-CHECK = whitespace1 "CHECK"i
-COLLATE = whitespace1 "COLLATE"i
-COLUMN = whitespace1 "COLUMN"i
-COMMIT = whitespace1 "COMMIT"i
-CONFLICT = whitespace1 "CONFLICT"i
-CONSTRAINT = whitespace1 "CONSTRAINT"i
+ABORT = "ABORT"i
+ACTION = "ACTION"i
+ADD = "ADD"i
+AFTER = "AFTER"i
+ALL = "ALL"i
+ALTER = "ALTER"i
+ANALYZE = "ANALYZE"i
+AND = "AND"i
+AS = "AS"i
+ASC = "ASC"i
+ATTACH = "ATTACH"i
+AUTOINCREMENT = "AUTOINCREMENT"i
+BEFORE = "BEFORE"i
+BEGIN = "BEGIN"i
+BETWEEN = "BETWEEN"i
+BY = "BY"i
+CASCADE = "CASCADE"i
+CASE = "CASE"i
+CAST = "CAST"i
+CHECK = "CHECK"i
+COLLATE = "COLLATE"i
+COLUMN = "COLUMN"i
+COMMIT = "COMMIT"i
+CONFLICT = "CONFLICT"i
+CONSTRAINT = "CONSTRAINT"i
 CREATE =
-  whitespace "CREATE"i
-CROSS = whitespace1 "CROSS"i
-DATABASE = whitespace1 "DATABASE"i
-DEFAULT = whitespace1 "DEFAULT"i
-DEFERRABLE = whitespace1 "DEFERRABLE"i
-DEFERRED = whitespace1 "DEFERRED"i
+  __ "CREATE"i
+CROSS = "CROSS"i
+DATABASE = "DATABASE"i
+DEFAULT = "DEFAULT"i
+DEFERRABLE = "DEFERRABLE"i
+DEFERRED = "DEFERRED"i
 DELETE =
-  whitespace "DELETE"i
-DESC = whitespace1 "DESC"i
-DETACH = whitespace1 "DETACH"i
-DISTINCT = whitespace1 "DISTINCT"i
-DROP = whitespace1 "DROP"i
+  __ "DELETE"i
+DESC = "DESC"i
+DETACH = "DETACH"i
+DISTINCT = "DISTINCT"i
+DROP = "DROP"i
 E =
   "E"i
-EACH = whitespace1 "EACH"i
-ELSE = whitespace1 "ELSE"i
-END = whitespace1 "END"i
-ESCAPE = whitespace1 "ESCAPE"i
-EXCEPT = whitespace1 "EXCEPT"i
-EXCLUSIVE = whitespace1 "EXCLUSIVE"i
-EXISTS = whitespace1 "EXISTS"i
+EACH = "EACH"i
+ELSE = "ELSE"i
+END = "END"i
+ESCAPE = "ESCAPE"i
+EXCEPT = "EXCEPT"i
+EXCLUSIVE = "EXCLUSIVE"i
+EXISTS = "EXISTS"i
 EXPLAIN =
-  whitespace "EXPLAIN"i
-FAIL = whitespace1 "FAIL"i
-FOR = whitespace1 "FOR"i
-FOREIGN = whitespace1 "FOREIGN"i
-FROM = whitespace1 "FROM"i
-GLOB = whitespace1 "GLOB"i
-GROUP = whitespace1 "GROUP"i
-HAVING = whitespace1 "HAVING"i
-IF = whitespace1 "IF"i
-IGNORE = whitespace1 "IGNORE"i
-IMMEDIATE = whitespace1 "IMMEDIATE"i
-IN = whitespace1 "IN"i
-INDEX = whitespace1 "INDEX"i
-INDEXED = whitespace1 "INDEXED"i
-INITIALLY = whitespace1 "INITIALLY"i
-INNER = whitespace1 "INNER"i
+  __ "EXPLAIN"i
+FAIL = "FAIL"i
+FALSE = "FALSE"i
+FOR = "FOR"i
+FOREIGN = "FOREIGN"i
+FROM = "FROM"i
+GLOB = "GLOB"i
+GROUP = "GROUP"i
+HAVING = "HAVING"i
+IF = "IF"i
+IGNORE = "IGNORE"i
+IMMEDIATE = "IMMEDIATE"i
+IN = "IN"i
+INDEX = "INDEX"i
+INDEXED = "INDEXED"i
+INITIALLY = "INITIALLY"i
+INNER = "INNER"i
 INSERT =
-  whitespace "INSERT"i
-INSTEAD = whitespace1 "INSTEAD"i
-INTERSECT = whitespace1 "INTERSECT"i
-INTO = whitespace1 "INTO"i
-IS = whitespace1 "IS"i
-ISNULL = whitespace1 "ISNULL"i
-JOIN = whitespace1 "JOIN"i
-KEY = whitespace1 "KEY"i
-LEFT = whitespace1 "LEFT"i
-LIKE = whitespace1 "LIKE"i
-LIMIT = whitespace1 "LIMIT"i
-MATCH = whitespace1 "MATCH"i
-NATURAL = whitespace1 "NATURAL"i
-NO = whitespace1 "NO"i
-NOT = whitespace1 "NOT"i
-NOTNULL = whitespace1 "NOTNULL"i
-NULL = whitespace1 "NULL"i
-OF = whitespace1 "OF"i
-OFFSET = whitespace1 "OFFSET"i
-ON = whitespace1 "ON"i
-OR = whitespace1 "OR"i
-ORDER = whitespace1 "ORDER"i
-OUTER = whitespace1 "OUTER"i
-PLAN = whitespace1 "PLAN"i
-PRAGMA = whitespace1 "PRAGMA"i
-PRIMARY = whitespace1 "PRIMARY"i
-QUERY = whitespace1 "QUERY"i
-RAISE = whitespace1 "RAISE"i
-REFERENCES = whitespace1 "REFERENCES"i
-REGEXP = whitespace1 "REGEXP"i
-REINDEX = whitespace1 "REINDEX"i
-RELEASE = whitespace1 "RELEASE"i
-RENAME = whitespace1 "RENAME"i
+  __ "INSERT"i
+INSTEAD = "INSTEAD"i
+INTERSECT = "INTERSECT"i
+INTO = "INTO"i
+IS = "IS"i
+ISNULL = "ISNULL"i
+JOIN = "JOIN"i
+KEY = "KEY"i
+LEFT = "LEFT"i
+LIKE = "LIKE"i
+LIMIT = "LIMIT"i
+MATCH = "MATCH"i
+NATURAL = "NATURAL"i
+NO = "NO"i
+NOT = "NOT"i
+NOTNULL = "NOTNULL"i
+NULL = "NULL"i
+OF = "OF"i
+OFFSET = "OFFSET"i
+ON = "ON"i
+OR = "OR"i
+ORDER = "ORDER"i
+OUTER = "OUTER"i
+PLAN = "PLAN"i
+PRAGMA = "PRAGMA"i
+PRIMARY = "PRIMARY"i
+QUERY = "QUERY"i
+RAISE = "RAISE"i
+REFERENCES = "REFERENCES"i
+REGEXP = "REGEXP"i
+REINDEX = "REINDEX"i
+RELEASE = "RELEASE"i
+RENAME = "RENAME"i
 REPLACE =
-  whitespace "REPLACE"i
-RESTRICT = whitespace1 "RESTRICT"i
-ROLLBACK = whitespace1 "ROLLBACK"i
-ROW = whitespace1 "ROW"i
-SAVEPOINT = whitespace1 "SAVEPOINT"i
+  __ "REPLACE"i
+RESTRICT = "RESTRICT"i
+ROLLBACK = "ROLLBACK"i
+ROW = "ROW"i
+SAVEPOINT = "SAVEPOINT"i
 SELECT =
-  whitespace "SELECT"i
-SET = whitespace1 "SET"i
-TABLE = whitespace1 "TABLE"i
-TEMP = whitespace1 "TEMP"i
-TEMPORARY = whitespace1 "TEMPORARY"i
-THEN = whitespace1 "THEN"i
-TO = whitespace1 "TO"i
-TRANSACTION = whitespace1 "TRANSACTION"i
-TRIGGER = whitespace1 "TRIGGER"i
-UNION = whitespace1 "UNION"i
-UNIQUE = whitespace1 "UNIQUE"i
+  __ "SELECT"i
+SET = "SET"i
+TABLE = "TABLE"i
+TEMP = "TEMP"i
+TEMPORARY = "TEMPORARY"i
+THEN = "THEN"i
+TO = "TO"i
+TRANSACTION = "TRANSACTION"i
+TRIGGER = "TRIGGER"i
+TRUE = "TRUE"i
+UNION = "UNION"i
+UNIQUE = "UNIQUE"i
 UPDATE =
-  whitespace "UPDATE"i
-USING = whitespace1 "USING"i
-VACUUM = whitespace1 "VACUUM"i
-VALUES = whitespace1 "VALUES"i
-VIEW = whitespace1 "VIEW"i
-VIRTUAL = whitespace1 "VIRTUAL"i
-WHEN = whitespace1 "WHEN"i
-WHERE = whitespace1 "WHERE"i
+  __ "UPDATE"i
+USING = "USING"i
+VACUUM = "VACUUM"i
+VALUES = "VALUES"i
+VIEW = "VIEW"i
+VIRTUAL = "VIRTUAL"i
+WHEN = "WHEN"i
+WHERE = "WHERE"i
