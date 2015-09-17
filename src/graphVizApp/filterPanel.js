@@ -45,7 +45,7 @@ var FilterModel = Backbone.Model.extend({
         return control.queryToExpression(this.get('query'));
     },
     updateExpression: function (control, newExpression) {
-        var query = control.queryFromExpression(newExpression);
+        var query = control.queryFromExpressionString(newExpression);
         if (query !== undefined) {
             this.set('query', query);
         }

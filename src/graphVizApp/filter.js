@@ -3,6 +3,8 @@
 var _       = require('underscore');
 var Rx      = require('rx');
 require('../rx-jquery-stub');
+var PEGUtil = require('pegjs-util');
+var ASTY    = require('asty');
 
 var util    = require('./util.js');
 var Command = require('./command.js');
@@ -103,9 +105,40 @@ FilterControl.prototype.queryToExpression = function(query) {
     }
 };
 
-FilterControl.prototype.queryFromExpression = function (inputString) {
-    var ast = parser.parse(inputString);
-    console.log(ast);
+FilterControl.prototype.queryFromExpressionString = function (inputString) {
+    var asty = new ASTY();
+    window.parser = parser;
+    var result = PEGUtil.parse(parser, inputString, {
+        startRule: 'start',
+        makeAST: function (line, column, offset, args) {
+            return asty.create.apply(asty, args).pos(line, column, offset);
+        }
+    });
+    if (result.error !== null) {
+        throw Error(PEGUtil.errorMessage(result.error, true));
+    }
+    return this.queryFromAST(result.ast);
+};
+
+FilterControl.prototype.queryFromAST = function (ast) {
+    switch (ast.type) {
+        case 'BinaryExpression':
+            // Special-case for BETWEEN/AND expansion:
+            if (ast.operator.toUpperCase() === 'AND') {
+                if (ast.left.operator === '>=' && ast.right.operator === '<=' &&
+                    ast.left.left.type === 'Identifier' &&
+                    _.isEqual(ast.left.left, ast.right.left)) {
+                    return {
+                        attribute: ast.left.left.value,
+                        start: ast.left.right.value,
+                        stop: ast.right.right.value
+                    };
+                }
+            }
+            break;
+        default:
+            break;
+    }
 };
 
 /**
