@@ -62,10 +62,20 @@
 
 start = Expression
 
-type_name =
+TypeIdentifier "type" =
   ( name )+
   ( ( lparen SignedInteger rparen )
   / ( lparen SignedInteger comma SignedInteger rparen ) )?
+
+CastExpression "cast"
+  = CAST __ lparen __ value:Expression __ AS __ type_name:TypeIdentifier __ rparen
+  {
+    return {
+      type: 'CastExpression',
+      value: value,
+      type_name: type_name
+    };
+  }
 
 value =
   v: ( __
@@ -158,6 +168,16 @@ ListLiteral
         elements: elements.concat(optionalList(extractOptional(elision, 0)))
       }
     }
+
+FunctionCallExpression "function call"
+  = callee:Identifier __ lparen __ elements:ElementList __ rparen
+  {
+    return {
+      type: 'FunctionCall',
+      callee: callee,
+      elements: elements
+    }
+  }
 
 PrimaryExpression
   = Identifier
@@ -507,7 +527,7 @@ MultiplicativeExpression
     rest:(__ MultiplicativeOperator __ UnaryExpression)*
     { return buildBinaryExpression(first, rest); }
 
-MultiplicativeOperator
+MultiplicativeOperator "multiplicative operator"
   = times
   / divide
   / modulo
