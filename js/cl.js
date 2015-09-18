@@ -306,7 +306,7 @@ var call = Q.promised(function (kernel, globalSize, buffers, localSize) {
         .then(function () {
             // wait for kernel to finish
             // TODO: isn't this also called somewhere else?
-            ocl.Finish(kernel.cl.queue);
+            ocl.finish(kernel.cl.queue);
         })
         .then(_.constant(kernel));
 });
@@ -437,16 +437,27 @@ var copyBuffer = Q.promised(function (cl, source, destination) {
 
 
 var write = Q.promised(function write(buffer, data) {
-    logger.trace('Writing to buffer', buffer.name, buffer.size, 'bytes');
+    logger.info('Writing to buffer', buffer.name, buffer.size, 'bytes');
+
+    // Attempting to write data of size 0 seems to crash intel GPU drivers, so return.
+    if (data.byteLength === 0) {
+        return Q(buffer);
+    }
+
     // TODO acquire not needed if GL is dropped
     return buffer.acquire()
         .then(function () {
+            logger.info('Finishing CL Queue');
+            ocl.finish(buffer.cl.queue);
+        })
+        .then(function () {
+            logger.info('Writing Buffer', buffer.name, ' with byteLength: ', data.byteLength);
             ocl.enqueueWriteBuffer(buffer.cl.queue, buffer.buffer, true, 0, data.byteLength, data);
             return buffer.release();
         })
         .then(function() {
             // buffer.cl.queue.finish();
-            logger.trace("Finished buffer %s write", buffer.name);
+            logger.info("Finished buffer %s write", buffer.name);
 
             return buffer;
         });
@@ -454,17 +465,22 @@ var write = Q.promised(function write(buffer, data) {
 
 
 var read = Q.promised(function (buffer, target, optStartIdx, optLen) {
+    logger.info('Reading from buffer', buffer.name);
     return buffer.acquire()
+        .then(function () {
+            logger.info('Finishing CL Queue');
+            ocl.finish(buffer.cl.queue);
+        })
         .then(function() {
-            logger.trace('Reading Buffer', buffer.name);
             var start = Math.min(optStartIdx || 0, buffer.size);
             var len = optLen !== undefined ? optLen : (buffer.size - start);
+            logger.trace('Reading Buffer', buffer.name, start, len);
             ocl.enqueueReadBuffer(buffer.cl.queue, buffer.buffer, true, start, len, target);
             // TODO acquire and release not needed if GL is dropped
             return buffer.release();
         })
         .then(function() {
-            logger.trace('Done Reading: ', buffer.name);
+            logger.info('Done Reading: ', buffer.name);
             return buffer;
         })
         .fail(log.makeQErrorHandler(logger, 'Read error for buffer', buffer.name));
