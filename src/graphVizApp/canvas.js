@@ -155,6 +155,7 @@ function expandLogicalEdges(renderState, bufferSnapshots, numRenderedSplits, edg
     var heightCounter = 0;
     var prevSrcIdx = -1;
     var prevDstIdx = -1;
+    var edgeSeqLen = 1;
     for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
 
 
@@ -170,11 +171,19 @@ function expandLogicalEdges(renderState, bufferSnapshots, numRenderedSplits, edg
             heightCounter++;
         } else {
             heightCounter = 0;
+            var i;
+            for (i = edgeIndex + 1;
+                    i < numEdges
+                    && srcPointIdx == logicalEdges[2 * i]
+                    && dstPointIdx == logicalEdges[2 * i + 1];
+                    i++) {
+            }
+            edgeSeqLen = i - edgeIndex + 1;
         }
         prevSrcIdx = srcPointIdx;
         prevDstIdx = dstPointIdx;
 
-        var moduloHeight = edgeHeight * (1.0 + ((heightCounter % 20)/5));
+        var moduloHeight = edgeHeight * (1.0 + 2 * heightCounter/edgeSeqLen);
         var unitRadius = (1 + Math.pow(moduloHeight, 2)) / (2 * moduloHeight);
         var theta = Math.asin((1 / unitRadius)) * 2;
         var thetaStep = -theta / (numRenderedSplits + 1);

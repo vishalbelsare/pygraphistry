@@ -480,7 +480,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     createLegend($('#graph-legend'), urlParams);
     toggleLogo($('.logo-container'), urlParams);
     var onElt = makeMouseSwitchboard();
-    externalLink($('#externalLinkButton'));
+    externalLink($('#externalLinkButton'), urlParams);
 
     // TODO: More general version for all toggle-able buttons?
     var marqueeIsOn = false;
