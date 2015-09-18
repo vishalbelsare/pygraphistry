@@ -100,7 +100,14 @@ value =
   { return v[1] }
 
 NOTExpression
-  = NOT __ RelationalExpression
+  = operator:NOT __ argument:NOTExpression {
+      return {
+        type: 'UnaryExpression',
+        operator: operator,
+        argument: argument,
+        fixity: 'prefix'
+      };
+    }
   / RelationalExpression
 
 ANDExpression
