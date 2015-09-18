@@ -207,10 +207,10 @@ ExponentPart
   = ExponentIndicator SignedInteger
 
 DecimalLiteral
-  = DecimalIntegerLiteral "." DecimalDigit* ExponentPart? {
+  = DecimalIntegerLiteral dot DecimalDigit* ExponentPart? {
       return { type: "Literal", value: parseFloat(text()) };
     }
-  / "." DecimalDigit+ ExponentPart? {
+  / dot DecimalDigit+ ExponentPart? {
       return { type: "Literal", value: parseFloat(text()) };
     }
   / DecimalIntegerLiteral ExponentPart? {
