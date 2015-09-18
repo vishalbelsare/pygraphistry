@@ -117,17 +117,12 @@ LimitExpression
   = LIMIT __ limit:NumericLiteral
     { return { type: 'Limit', value: limit } }
 
+ConditionExpression
+  = ORExpression
+
 Expression
   = LimitExpression
-  / ORExpression
-
-
-call_function =
-  ( function_name
-    __ lparen
-               ( ( DISTINCT ? ( Expression (__ comma Expression)* )+ )
-               / __ star )?
-    __ rparen )
+  / ConditionExpression
 
 LiteralValue "literal" =
   ( NumericLiteral / StringLiteral / BlobLiteral
