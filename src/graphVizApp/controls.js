@@ -9,7 +9,8 @@ var Color   = require('color');
 
 var util            = require('./util.js');
 var dataInspector   = require('./dataInspector.js');
-var histogramBrush  = require('./histogramBrush.js');
+var FiltersPanel    = require('./filterPanel.js');
+var HistogramBrush  = require('./histogramBrush.js');
 var marqueeFact     = require('./marquee.js');
 var runButton       = require('./runButton.js');
 var forkVgraph      = require('./fork.js');
@@ -555,9 +556,11 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     var marquee = setupMarquee(appState, turnOnMarquee);
     var brush = setupBrush(appState, turnOnBrush);
-
     dataInspector.init(appState, socket, workerParams.href, brush, histogramPanelToggle, urlParams);
-    histogramBrush.init(socket, urlParams, brush, appState.poi);
+    var filtersPanel = new FiltersPanel(socket, urlParams);
+    var histogramBrush = new HistogramBrush(socket, filtersPanel);
+    histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
+    histogramBrush.setupMarqueeInteraction(brush);
     forkVgraph(socket, urlParams);
     persistButton(appState, socket, urlParams);
     goLiveButton(socket, urlParams);

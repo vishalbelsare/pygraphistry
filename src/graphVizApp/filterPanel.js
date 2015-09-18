@@ -2,11 +2,14 @@
 
 var $       = window.$;
 var _       = require('underscore');
+var Rx      = require('rx');
+              require('../rx-jquery-stub');
 var Handlebars = require('handlebars');
 var Backbone = require('backbone');
     Backbone.$ = $;
 //var Ace     = require('brace');
 var FilterControl = require('./filter.js');
+var util          = require('./util.js');
 
 
 var COLLAPSED_FILTER_HEIGHT = 80;
@@ -24,26 +27,12 @@ var FilterModel = Backbone.Model.extend({
 
 var FilterCollection = Backbone.Collection.extend({
     model: FilterModel,
-    matchElement: function (filterModel) {
-        if (filterModel.has('control')) {
-            return this.findWhere({control: filterModel.get('control'), attribute: filterModel.get('attribute')});
-        } else if (filterModel.has('title')) {
-            return this.findWhere({title: filterModel.get('title')});
-        } else if (filterModel.has('attribute')) {
-            return this.findWhere({attribute: filterModel.get('attribute')});
-        } else {
-            return undefined;
+    addFilter: function(attributes) {
+        if (!attributes.title) {
+            attributes.title = attributes.attribute;
         }
-    },
-    updateSubset: function (updatedCollection) {
-        _.each(updatedCollection, function (filterModel/*, idx*/) {
-            var match = this.matchElement(filterModel);
-            if (match) {
-                match.set(filterModel.toJSON());
-            } else {
-                this.add(filterModel);
-            }
-        }, this);
+        var newFilter = new FilterModel(attributes);
+        this.push(newFilter);
     }
 });
 
@@ -88,7 +77,7 @@ var FilterView = Backbone.View.extend({
         'click .disabledFilterButton': 'enable',
         'click .expandFilterButton': 'expand',
         'click .expendedFilterButton': 'shrink',
-        'click .deleteFilterbutton': 'delete'
+        'click .deleteFilterButton': 'delete'
     },
 
     initialize: function () {
@@ -121,7 +110,8 @@ var FilterView = Backbone.View.extend({
         return this;
     },
     delete: function (/*event*/) {
-        this.model.destroy();
+        this.$el.remove();
+        this.collection.remove(this.model);
     },
     disable: function (event) {
         var $button = $(event.target);
@@ -158,7 +148,7 @@ var AllFiltersView = Backbone.View.extend({
         this.listenTo(this.collection, 'remove', this.removeFilter);
         this.listenTo(this.collection, 'reset', this.refresh);
         this.listenTo(this.collection, 'all', this.render);
-        this.listenTo(this.collection, 'change:timestamp', this.update);
+        this.listenTo(this.collection, 'change', this.refresh);
 
         this.filtersContainer = $('#filters');
     },
@@ -167,27 +157,31 @@ var AllFiltersView = Backbone.View.extend({
     addFilter: function (filter) {
         var view = new FilterView({
             model: filter,
-            template: this.filterTemplate
+            panel: this.panel,
+            collection: this.collection
         });
         var childElement = view.render().el;
         // var dataframeAttribute = filter.get('attribute');
         this.filtersContainer.append(childElement);
         filter.set('$el', $(childElement));
     },
+    removeFilter: function (filter) {
+        var $el = filter.get('$el');
+        if ($el) {
+            $el.remove();
+        }
+    },
     remove: function () {
         this.combinedSubscription.dispose();
-    },
-    removeFilter: function (/*filter*/) {
     },
     refresh: function () {
         this.filtersContainer.empty();
         this.collection.each(this.addFilter, this);
-    },
-    update: undefined
+    }
 });
 
 
-function FilterPanel(socket, urlParams, filtersSubjectFromPanel, filtersSubjectFromHistogram) {
+function FiltersPanel(socket, urlParams) {
     var $button = $('#filterButton');
 
     if (!urlParams.debug) {
@@ -200,26 +194,23 @@ function FilterPanel(socket, urlParams, filtersSubjectFromPanel, filtersSubjectF
 
     this.model = FilterModel;
 
-    filtersSubjectFromHistogram.do(function (histogramFilters) {
-        this.collection.updateSubset(histogramFilters);
-    }.bind(this)).subscribe(_.identity, function (err) {
-        console.error('error updating filters collection from histograms', err);
-    });
-
-    this.collection.on('change', function (eventName, context) {
-        filtersSubjectFromPanel.onNext(context);
+    /** Exposes changes to the FilterCollection. */
+    this.filtersSubject = new Rx.ReplaySubject(1);
+    this.collection.on('change reset add remove', function (/*model, options*/) {
+        this.filtersSubject.onNext(this.collection);
     }.bind(this));
 
-    filtersSubjectFromPanel.subscribe(
-        function () {
-            this.control.updateFilters(this.collection.map(function (model) {
+    this.filtersSubject.subscribe(
+        function (collection) {
+            this.control.updateFilters(collection.map(function (model) {
                 return _.omit(model.toJSON(), '$el');
             }));
-        }.bind(this)
+        }.bind(this),
+        util.makeErrorHandler('updateFilters on filters change event')
     );
 
     this.combinedSubscription = this.control.namespaceMetadataObservable().combineLatest(
-        filtersSubjectFromPanel,
+        this.filtersSubject,
         function (dfa, fs) {
             return {dataframeAttributes: dfa, filterSet: fs};
         }).do(function (data) {
@@ -246,8 +237,14 @@ function FilterPanel(socket, urlParams, filtersSubjectFromPanel, filtersSubjectF
 
     this.view = new AllFiltersView({
         collection: this.collection,
+        panel: this,
         el: $('#filtersPanel')
     });
 }
 
-module.exports = FilterPanel;
+FiltersPanel.prototype.dispose = function () {
+    this.filtersSubject.dispose();
+};
+
+
+module.exports = FiltersPanel;

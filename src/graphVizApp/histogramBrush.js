@@ -6,9 +6,9 @@ var Rx      = require('rx');
               require('../rx-jquery-stub');
 var _       = require('underscore');
 
-var histogramPanel = require('./histogramPanel');
-var FilterPanel = require('./filterPanel');
+var HistogramsPanel = require('./histogramPanel');
 var util    = require('./util.js');
+var Command = require('./command.js');
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -16,37 +16,15 @@ var util    = require('./util.js');
 //////////////////////////////////////////////////////////////////////////////
 
 var DRAG_SAMPLE_INTERVAL = 200;
-// TODO: Move these out of module global scope.
-var lastSelection;
-var activeDataframeAttributes = [];
-var dataframeAttributeChange = new Rx.Subject();
 
 
 //////////////////////////////////////////////////////////////////////////////
 // Rx/State
 //////////////////////////////////////////////////////////////////////////////
 
-function updateDataframeAttribute (oldAttributeName, newAttributeName, type) {
-    // Delete old if it exists
-    var indexOfOld = _.pluck(activeDataframeAttributes, 'name').indexOf(oldAttributeName);
-    if (indexOfOld > -1) {
-        activeDataframeAttributes.splice(indexOfOld, 1);
-    }
+var EmptySelectionMessage = '<p class="bg-danger text-center">Empty Selection.</p>';
 
-    // Add new one if it exists
-    if (newAttributeName) {
-        activeDataframeAttributes.push({name: newAttributeName, type: type});
-    }
-
-    // Only resend selections if an add/update
-    if (newAttributeName) {
-        dataframeAttributeChange.onNext(newAttributeName);
-    }
-}
-
-var EmptySelectionMessage = '<p style="color: red; text-align: center">Empty Selection.</p>';
-
-function respondToFiltersCall (filtersResponseObservable, poi) {
+function handleFiltersResponse (filtersResponseObservable, poi) {
     filtersResponseObservable
         .do(function (res) {
             // Invalidate cache now that a filter has executed and possibly changed indices.
@@ -63,36 +41,34 @@ function respondToFiltersCall (filtersResponseObservable, poi) {
 }
 
 
-function init(socket, urlParams, marquee, poi) {
+function HistogramBrush(socket, filtersPanel) {
     debug('Initializing histogram brush');
 
+    this.lastSelection = undefined;
+    this.activeDataframeAttributes = [];
+    this.dataframeAttributeChange = new Rx.Subject();
+
     // Grab global stats at initialization
-    var globalStats = new Rx.ReplaySubject(1);
+    this.globalStats = new Rx.ReplaySubject(1);
     var updateDataframeAttributeSubject = new Rx.Subject();
+
+    this.aggregationCommand = new Command('aggregate', socket);
 
     //////////////////////////////////////////////////////////////////////////
     // Setup Streams
     //////////////////////////////////////////////////////////////////////////
 
-    // Share the panel between Rx streams via scope:
-    var histogramsPanel;
-
-    // Setup filtering:
-    var filtersSubjectFromPanel = new Rx.ReplaySubject(1);
-    var filtersSubjectFromHistogram = new Rx.ReplaySubject(1);
-    var filtersPanel = new FilterPanel(socket, urlParams, filtersSubjectFromPanel, filtersSubjectFromHistogram);
-    respondToFiltersCall(filtersPanel.control.filtersResponsesObservable(), poi);
-
     // Setup update attribute subject that histogram panel can write to
     updateDataframeAttributeSubject.do(function (data) {
-        updateDataframeAttribute(data.oldAttr, data.newAttr, data.type);
-    }).subscribe(_.identity, util.makeErrorHandler('Update Attribute'));
+        this.updateDataframeAttribute(data.oldAttr, data.newAttr, data.type);
+    }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Update Attribute'));
 
     // Setup initial stream of global statistics.
-    var globalStream = aggregatePointsAndEdges(socket,
-        {all: true});
-    var globalStreamSparklines = aggregatePointsAndEdges(socket,
-        {all: true, binning: {'_goalNumberOfBins': histogramPanel.NUM_SPARKLINES}});
+    var globalStream = this.aggregatePointsAndEdges({
+        all: true});
+    var globalStreamSparklines = this.aggregatePointsAndEdges({
+        all: true,
+        binning: {'_goalNumberOfBins': HistogramsPanel.NUM_SPARKLINES}});
     Rx.Observable.zip(globalStream, globalStreamSparklines, function (histogramsReply, sparkLinesReply) {
         checkReply(histogramsReply);
         checkReply(sparkLinesReply);
@@ -102,9 +78,10 @@ function init(socket, urlParams, marquee, poi) {
             return (val !== '_title');
         });
 
-        histogramsPanel = histogramPanel.initHistograms(
-            data, attributes, filtersPanel.model, filtersSubjectFromHistogram, dataframeAttributeChange, updateDataframeAttributeSubject);
-        data.histogramPanel = histogramsPanel;
+        this.histogramsPanel = new HistogramsPanel(
+            data, attributes, filtersPanel,
+            this.dataframeAttributeChange, updateDataframeAttributeSubject);
+        data.histogramPanel = this.histogramsPanel;
 
         // On auto-populate, at most 5 histograms, or however many * 85 + 110 px = window height.
         var maxInitialItems = Math.min(Math.round((window.innerHeight - 110) / 85), 5);
@@ -113,31 +90,40 @@ function init(socket, urlParams, marquee, poi) {
         _.each(firstKeys, function (key) {
             filteredAttributes[key] = data.sparkLines[key];
             filteredAttributes[key].sparkLines = true;
-            updateDataframeAttribute(null, key, 'sparkLines');
-        });
-        updateHistogramData(data.histogramPanel.collection, filteredAttributes, data, data.histogramPanel.model, true);
+            this.updateDataframeAttribute(null, key, 'sparkLines');
+        }, this);
+        this.updateHistogramData(filteredAttributes, data, true);
 
-    }).subscribe(globalStats, util.makeErrorHandler('Global stat aggregate call'));
+    }.bind(this)).subscribe(this.globalStats, util.makeErrorHandler('Global stat aggregate call'));
+}
 
 
-    // Take stream of selections and drags and use them for histograms
+HistogramBrush.prototype.setupFiltersInteraction = function(filtersPanel, poi) {
+    // Setup filtering:
+    handleFiltersResponse(filtersPanel.control.filtersResponsesObservable(), poi);
+};
+
+
+/**
+ * Take stream of selections and drags and use them for histograms
+ */
+HistogramBrush.prototype.setupMarqueeInteraction = function(marquee) {
     marquee.selections.map(function (val) {
         return {type: 'selection', sel: val};
     }).merge(marquee.drags.sample(DRAG_SAMPLE_INTERVAL).map(function (val) {
             return {type: 'drag', sel: val};
         })
-    ).merge(dataframeAttributeChange.map(function () {
-            return {type: 'dataframeAttributeChange', sel: lastSelection};
-        })
+    ).merge(this.dataframeAttributeChange.map(function () {
+            return {type: 'dataframeAttributeChange', sel: this.lastSelection};
+        }, this)
     ).flatMapLatest(function (selContainer) {
-        return globalStats.map(function (globalVal) {
+        return this.globalStats.map(function (globalVal) {
             return {type: selContainer.type, sel: selContainer.sel, globalStats: globalVal};
         });
-
-    }).flatMapLatest(function (data) {
+    }.bind(this)).flatMapLatest(function (data) {
         var binning = {};
-        var attributeNames = _.pluck(activeDataframeAttributes, 'name');
-        _.each(activeDataframeAttributes, function (attr) {
+        var attributeNames = _.pluck(this.activeDataframeAttributes, 'name');
+        _.each(this.activeDataframeAttributes, function (attr) {
             if (attr.type === 'sparkLines') {
                 binning[attr.name] = data.globalStats.sparkLines[attr.name];
             } else {
@@ -152,8 +138,8 @@ function init(socket, urlParams, marquee, poi) {
         });
 
         var params = {sel: data.sel, attributes: attributes, binning: binning};
-        lastSelection = data.sel;
-        return Rx.Observable.fromCallback(socket.emit, socket)('aggregate', params)
+        this.lastSelection = data.sel;
+        return this.aggregationCommand.sendWithObservableResult(params, true)
             .map(function (agg) {
                 return {reply: agg, sel: data.sel, globalStats: data.globalStats, type: data.type};
             }).map(function (data) {
@@ -167,7 +153,7 @@ function init(socket, urlParams, marquee, poi) {
                 }
                 return data;
             });
-    }).do(function (data) {
+    }.bind(this)).do(function (data) {
         if (!data.reply) {
             console.error('Unexpected server error on aggregate');
         } else if (data.reply && !data.reply.success) {
@@ -176,9 +162,28 @@ function init(socket, urlParams, marquee, poi) {
     // TODO: Do we want to treat no replies in some special way?
     }).filter(function (data) { return data.reply && data.reply.success; })
     .do(function (data) {
-        updateHistogramData(histogramsPanel.collection, data.reply.data, data.globalStats, histogramsPanel.model);
-    }).subscribe(_.identity, util.makeErrorHandler('Brush selection aggregate error'));
-}
+        this.updateHistogramData(data.reply.data, data.globalStats);
+    }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Brush selection aggregate error'));
+};
+
+
+HistogramBrush.prototype.updateDataframeAttribute = function (oldAttributeName, newAttributeName, type) {
+    // Delete old if it exists
+    var indexOfOld = _.pluck(this.activeDataframeAttributes, 'name').indexOf(oldAttributeName);
+    if (indexOfOld > -1) {
+        this.activeDataframeAttributes.splice(indexOfOld, 1);
+    }
+
+    // Add new one if it exists
+    if (newAttributeName) {
+        this.activeDataframeAttributes.push({name: newAttributeName, type: type});
+    }
+
+    // Only resend selections if an add/update
+    if (newAttributeName) {
+        this.dataframeAttributeChange.onNext(newAttributeName);
+    }
+};
 
 
 function checkReply(reply) {
@@ -189,8 +194,10 @@ function checkReply(reply) {
     }
 }
 
-function updateHistogramData(collection, data, globalStats, Model, empty) {
+HistogramBrush.prototype.updateHistogramData = function (data, globalStats, empty) {
     var histograms = [];
+    var Model = this.histogramsPanel.model;
+    var collection = this.histogramsPanel.collection;
     var length = collection.length;
 
     // Update models that exist.
@@ -221,7 +228,7 @@ function updateHistogramData(collection, data, globalStats, Model, empty) {
         } else {
             // TODO: Make sure that sparkLines is always passed in, so we don't have
             // to do this check.
-            _.each(activeDataframeAttributes, function (attr) {
+            _.each(this.activeDataframeAttributes, function (attr) {
                 if (attr.name === key) {
                     params.sparkLines = (attr.type === 'sparkLines');
                 }
@@ -233,17 +240,17 @@ function updateHistogramData(collection, data, globalStats, Model, empty) {
         histogram.set('attribute', key);
         histograms.push(histogram);
 
-    });
+    }.bind(this));
 
     collection.set(histograms);
-}
+};
 
 
-//socket * ?? -> Observable ??
-function aggregatePointsAndEdges(socket, params) {
+// ?? -> Observable ??
+HistogramBrush.prototype.aggregatePointsAndEdges = function(params) {
     return Rx.Observable.zip(
-        Rx.Observable.fromCallback(socket.emit, socket)('aggregate', _.extend({}, params, {type: 'point'})),
-        Rx.Observable.fromCallback(socket.emit, socket)('aggregate', _.extend({}, params, {type: 'edge'})),
+        this.aggregationCommand.sendWithObservableResult(_.extend({}, params, {type: 'point'}), true),
+        this.aggregationCommand.sendWithObservableResult(_.extend({}, params, {type: 'edge'}), true),
         function (pointHists, edgeHists) {
 
             _.each(pointHists.data, function (val) {
@@ -256,9 +263,7 @@ function aggregatePointsAndEdges(socket, params) {
             return {success: pointHists.success && edgeHists.success,
                     data: _.extend({}, pointHists.data || {}, edgeHists.data || {})};
         });
-}
-
-
-module.exports = {
-    init: init
 };
+
+
+module.exports = HistogramBrush;
