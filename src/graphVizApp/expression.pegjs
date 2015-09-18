@@ -233,7 +233,8 @@ IdentifierStart
 
 IdentifierPart
   = IdentifierStart
-  / [0-9]
+  / colon
+  / DecimalDigit
 
 IdentifierName "identifier"
   = first:IdentifierStart rest:IdentifierPart* {
