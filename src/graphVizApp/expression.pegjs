@@ -172,7 +172,7 @@ ListLiteral
     }
 
 FunctionCallExpression "function call"
-  = callee:Identifier __ lparen __ elements:ElementList __ rparen
+  = callee:FunctionName __ lparen __ elements:ElementList __ rparen
   {
     return {
       type: 'FunctionCall',
@@ -585,7 +585,7 @@ module_name = Identifier
 module_argument = Identifier
 bind_parameter =
   '?' Identifier
-function_name = Identifier
+FunctionName = Identifier
 pragma_name = Identifier
 
 CURRENT_TIME = 'now'
