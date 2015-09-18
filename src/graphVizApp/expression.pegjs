@@ -63,7 +63,7 @@
 start = Expression
 
 TypeIdentifier "type" =
-  ( name )+
+  ( Identifier )+
   ( ( lparen SignedInteger rparen )
   / ( lparen SignedInteger comma SignedInteger rparen ) )?
 
@@ -555,21 +555,18 @@ conjunction =
         / 'OR'i ) )
   { return x[1] }
 
-name =
-  str:[A-Za-z0-9_]+
-  { return str.join('') }
 // TODO: improve this to extract point/edge etc.
 graph_scoped_name =
   str:[A-Za-z0-9_:]+
   { return str.join('') }
 
-database_name = name
-table_name = name
-table_alias = name
-table_or_index_name = name
-new_table_name = name
-index_name = name
-graph_namespace = name
+database_name = Identifier
+table_name = Identifier
+table_alias = Identifier
+table_or_index_name = Identifier
+new_table_name = Identifier
+index_name = Identifier
+graph_namespace = Identifier
 column_name = graph_scoped_name
 graph_column_name =
   gcn: ( ( c: ( graph_namespace colon column_name )
@@ -578,18 +575,18 @@ graph_column_name =
            { return { column: c } } ) )
   { return gcn[1] }
 
-column_alias = name
-foreign_table = name
-savepoint_name = name
-collation_name = name
-trigger_name = name
-view_name = name
-module_name = name
-module_argument = name
+column_alias = Identifier
+foreign_table = Identifier
+savepoint_name = Identifier
+collation_name = Identifier
+trigger_name = Identifier
+view_name = Identifier
+module_name = Identifier
+module_argument = Identifier
 bind_parameter =
-  '?' name
-function_name = name
-pragma_name = name
+  '?' Identifier
+function_name = Identifier
+pragma_name = Identifier
 
 CURRENT_TIME = 'now'
 CURRENT_DATE = 'now'
