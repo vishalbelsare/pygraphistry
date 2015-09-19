@@ -129,7 +129,7 @@ AST2JavaScript.prototype.expressionForFunctionCall = function (inputFunctionName
         case 'CONCATENATE':
         case 'CONCAT':
             return this.wrapSubExpressionPerPrecedences(
-                args.join(' + '), this.precedenceOf('+', 'infix'), outerPrecedence);
+                args.join(' + '), this.precedenceOf('+'), outerPrecedence);
         case 'LOWER':
             return methodCall(args[0], 'toLowerCase');
         case 'UPPER':
@@ -154,7 +154,7 @@ AST2JavaScript.prototype.expressionForFunctionCall = function (inputFunctionName
         case 'ISEMPTY':
             return this.wrapSubExpressionPerPrecedences(
                 args[0] + ' === undefined || ' + args[0] + '.length === 0',
-                this.precedenceOf('||', 'infix'), outerPrecedence);
+                this.precedenceOf('||'), outerPrecedence);
         case 'STARTSWITH':
             return methodCall(args[0], 'startsWith', [args[1]]);
         case 'ENDSWITH':
