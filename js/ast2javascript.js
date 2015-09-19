@@ -5,12 +5,13 @@ var _ = require('underscore');
 
 
 function AST2JavaScript() {
-};
+    this.outputLanguage = 'JavaScript';
+}
 
 /**
  * Ref. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
  * @param {String} operatorName
- * @param {String} fixity - optional: prefix, suffix, infix
+ * @param {String} [fixity] - prefix, suffix, infix
  * @returns {Number}
  */
 AST2JavaScript.prototype.precedenceOf = function (operatorName, fixity) {
@@ -189,8 +190,8 @@ AST2JavaScript.prototype.expressionForFunctionCall = function (inputFunctionName
 /**
  * Printed source form of the expression in JavaScript that executes the AST.
  * @param {Object} ast - From expression parser.
- * @param {Number} depth - Optional, specifies depth.
- * @param {Number} outerPrecedence - Optional, specifies outer precedence, determines whether return value needs ().
+ * @param {Number} [depth] - Specifies depth, to use for pretty-printing/indents.
+ * @param {Number} [outerPrecedence] - Surrounding expression precedence, determines whether result needs ().
  * @returns {String}
  */
 AST2JavaScript.prototype.singleValueFunctionForAST = function (ast, depth, outerPrecedence) {
