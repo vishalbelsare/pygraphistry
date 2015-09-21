@@ -225,37 +225,43 @@ AST2JavaScript.prototype.singleValueFunctionForAST = function (ast, depth, outer
             subExprString = '(new RegExp(' + args[1] + ')).test(' + args[0] + ')';
             return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
         case 'LikeExpression':
-            precedence = this.precedenceOf('.');
             if (args.right.type !== 'StringLiteral') {
                 throw new Error('Computed text comparison patterns not yet implemented.');
             }
-            var likePattern = args.right.value;
-            arg = this.singleValueFunctionForAST(args.left, depth + 1, precedence);
-            var prefix, suffix;
-            if (likePattern.startsWith('%') && likePattern.endsWith('%')) {
-                var substring = likePattern.slice(0, likePattern.length - 1);
-                // ES6 could replace with String.includes():
-                precedence = this.precedenceOf('!==');
-                subExprString = arg + '.indexOf(' + substring + ') !== -1';
-            } else if (likePattern.indexOf('%') !== likePattern.lastIndexOf('%')) {
-                // Multiple placeholders require index comparison coupled with matching
-                // the expressions could be supported but would be more complicated.
-                throw new Error('Glob patterns with more than one placeholder not yet implemented.');
-            } else if (likePattern.startsWith('%')) {
-                suffix = likePattern.slice(-(likePattern - 1));
-                subExprString = arg + '.endsWith(' + suffix + ')';
-            } else if (likePattern.endsWith('%')) {
-                prefix = likePattern.slice(0, likePattern - 1);
-                subExprString = arg + '.startsWith(' + prefix + ')';
+            var pattern = args.right.value;
+            if (args.operator === 'LIKE') {
+                precedence = this.precedenceOf('.');
+                arg = this.singleValueFunctionForAST(args.left, depth + 1, precedence);
+                var prefix, suffix;
+                var lastPatternIndex = pattern.length - 1;
+                if (pattern.startsWith('%') && pattern.endsWith('%')) {
+                    var substring = pattern.slice(0, lastPatternIndex);
+                    // ES6 could replace with String.includes():
+                    precedence = this.precedenceOf('!==');
+                    subExprString = arg + '.indexOf(' + substring + ') !== -1';
+                } else if (pattern.indexOf('%') !== pattern.lastIndexOf('%')) {
+                    // Multiple placeholders require index comparison coupled with matching
+                    // the expressions could be supported but would be more complicated.
+                    throw new Error('Glob patterns with more than one placeholder not yet implemented.');
+                } else if (pattern.startsWith('%')) {
+                    suffix = pattern.slice(-lastPatternIndex);
+                    subExprString = arg + '.endsWith(' + suffix + ')';
+                } else if (pattern.endsWith('%')) {
+                    prefix = pattern.slice(0, lastPatternIndex);
+                    subExprString = arg + '.startsWith(' + prefix + ')';
+                } else {
+                    var index = pattern.indexOf('%');
+                    prefix = pattern.slice(0, index);
+                    suffix = pattern.slice(-(lastPatternIndex - index));
+                    precedence = this.precedenceOf('&&');
+                    subExprString = arg + '.endsWith(' + suffix + ') && ' +
+                        arg + '.startsWith(' + prefix + ')';
+                }
+                return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
             } else {
-                var index = likePattern.indexOf('%');
-                prefix = likePattern.slice(0, index);
-                suffix = likePattern.slice(-(likePattern.length - index - 1));
-                precedence = this.precedenceOf('&&');
-                subExprString = arg + '.endsWith(' + suffix + ') && ' +
-                    arg + '.startsWith(' + prefix + ')';
+                throw new Error('Operator not yet implemented: ' + args.operator);
             }
-            return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
+            break;
         case 'LogicalExpression':
         case 'BinaryExpression':
             operator = this.translateOperator(ast.operator);
