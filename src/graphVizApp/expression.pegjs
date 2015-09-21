@@ -87,15 +87,9 @@ value =
            { return { column: t[2], table: t[1] } } )
        / ( c: column_name
            { return { column: c } } )
-       / ( PrefixOperator Expression )
-       / call_function
-       / ( __ lparen Expression __ rparen )
-       / ( CAST lparen Expression AS type_name rparen )
        // TODO: NOT-EXISTS:
        // / ( ( NOT ? EXISTS )? lparen select_stmt rparen )
        / ( CASE Expression ? ( WHEN Expression THEN Expression )+ ( ELSE Expression )? END )
-       // TODO: RAISE
-       // / raise_function
        ) )
   { return v[1] }
 
@@ -131,9 +125,16 @@ Expression
   = LimitExpression
   / ConditionExpression
 
-LiteralValue "literal" =
-  ( NumericLiteral / StringLiteral / BlobLiteral
-  / NULL / CURRENT_TIME / CURRENT_DATE / CURRENT_TIMESTAMP )
+TimePseudoLiteral "now"
+  = CURRENT_TIME / CURRENT_DATE / CURRENT_TIMESTAMP
+
+LiteralValue "literal"
+  = NumericLiteral
+  / StringLiteral
+  / BlobLiteral
+  / NullLiteral
+  / BooleanLiteral
+  / TimePseudoLiteral
 
 Elision
   = comma commas:(__ comma)* { return filledArray(commas.length + 1, null); }
@@ -182,7 +183,8 @@ FunctionCallExpression "function call"
   }
 
 PrimaryExpression
-  = Identifier
+  = FunctionCallExpression
+  / Identifier
   / LiteralValue
   / ListLiteral
   / lparen __ expression:Expression __ rparen { return expression; }
@@ -365,6 +367,7 @@ Keyword
   = AND
   / AS
   / BEGIN
+  / BETWEEN
   / CASE
   / CAST
   / ELSE
@@ -385,10 +388,10 @@ Keyword
   / WHEN
   / WHERE
 
-NullLiteral
+NullLiteral "null"
   = NULL { return { type: "Literal", value: null }; }
 
-BooleanLiteral
+BooleanLiteral "boolean"
   = TRUE  { return { type: "Literal", value: true  }; }
   / FALSE { return { type: "Literal", value: false }; }
 
@@ -415,46 +418,17 @@ ShiftExpression
     rest:(__ ShiftOperator __ AdditiveExpression)*
     { return buildBinaryExpression(first, rest); }
 
-IsExpression
-  = first:ShiftExpression __ IS __ comparedvalue:Expression
-  / first:ShiftExpression __ rest:ISNULL
-  / first:ShiftExpression __ rest:NOTNULL
-  { return buildBinaryExpression(first, rest); }
-
-InExpression
-  = first:IsExpression __ IN __ container:Expression
-  / first:PrimaryExpression __ NOT ? __ IN __ lparen ( ( PrimaryExpression comma __ )+ )? __ rparen
-  { return buildLogicalExpression(first, [container]); }
-
-BetweenAndExpression
-  = value:InExpression __ NOT ? BETWEEN __ low:InExpression __ AND __ high:InExpression
-    {
-      // TODO: use negated
-      return {
-          type: 'BetweenAndExpression',
-          value: value,
-          start: low,
-          stop:  high
-      };
-    }
-  / InExpression
-
-LikeExpression
-  = first:BetweenAndExpression
-    rest:(__ NOT ? LIKE __ ShiftExpression)
-    { return buildBinaryExpression(first, rest); }
-
-RelationalOperator "relational operator"
+RelationalOperator "comparison"
   = lte
   / gte
   / $(lessthan !lessthan)
   / $(greaterthan !greaterthan)
-  / IN
 
 RelationalExpression
   = first:ShiftExpression
     rest:(__ RelationalOperator __ ShiftExpression)*
     { return buildBinaryExpression(first, rest); }
+  / LikeExpression
 
 EqualityExpression
   = first:RelationalExpression
@@ -492,12 +466,12 @@ __
 _
   = (WhiteSpace / MultiLineCommentNoLineTerminator)*
 
-PostfixOperator "postfix operator"
+PostfixKeyword "postfix keyword"
   = ISNULL
   / NOTNULL
 
 PostfixExpression
-  = argument:PrimaryExpression __ operator:PostfixOperator {
+  = argument:PrimaryExpression __ operator:PostfixKeyword {
       return {
         type: 'UnaryExpression',
         operator: operator,
@@ -507,6 +481,83 @@ PostfixExpression
     }
   / PrimaryExpression
 
+IsExpression
+  = left:PrimaryExpression __ operator:IS __ right:PrimaryExpression
+  { return {
+      type: 'LogicalExpression',
+      operator: operator,
+      left: left,
+      right: right
+    };
+  }
+
+InExpression
+  = left:PrimaryExpression __ operator:IN __ right:Expression
+    { return {
+         type: 'LogicalExpression',
+         operator: operator,
+         left: left,
+         right: right
+      };
+    }
+  / left:PrimaryExpression __ operator:IN __ lparen ( ( PrimaryExpression comma __ )+ )? __ rparen
+    { return buildLogicalExpression(first, rest); }
+
+BetweenAndExpression
+  = value:PrimaryExpression __ BETWEEN __ low:PrimaryExpression __ AND __ high:PrimaryExpression
+    {
+      // TODO: use negated
+      return {
+          type: 'BetweenAndExpression',
+          value: value,
+          start: low,
+          stop:  high
+      };
+    }
+
+LikeOperator "text comparison"
+  = LIKE / ILIKE / SIMILAR
+
+LikeExpression "text comparison"
+  = value:PrimaryExpression
+    __ operator: ( LIKE / ILIKE / SIMILAR ) __ like:PrimaryExpression
+    { return {
+        type: 'LikeExpression',
+        operator: operator,
+        left: value,
+        right: like
+      };
+    }
+
+RegexExpression "regex expression"
+  = value:PrimaryExpression
+    __ operator:REGEXP __ matcher:PrimaryExpression
+    {
+      return {
+        type: 'RegexExpression',
+        operator: operator,
+        left: value,
+        right: matcher
+      };
+    }
+
+NOTKeywordExpression "not"
+  = __ operator:NOT __ argument:KeywordExpression {
+      return {
+        type: 'NotExpression',
+        operator: operator,
+        value: argument
+      }
+    }
+
+KeywordExpression
+  = NOTKeywordExpression
+  / LikeExpression
+  / BetweenAndExpression
+  / InExpression
+  / PostfixExpression
+  / IsExpression
+
 PrefixOperator "prefix operator"
   = minus
   / plus
@@ -514,7 +565,7 @@ PrefixOperator "prefix operator"
   / NOT
 
 UnaryExpression
-  = PostfixExpression
+  = KeywordExpression
   / operator:PrefixOperator __ argument:UnaryExpression {
     return {
       type: 'UnaryExpression',
@@ -654,6 +705,7 @@ GROUP = "GROUP"i
 HAVING = "HAVING"i
 IF = "IF"i
 IGNORE = "IGNORE"i
+ILIKE = "ILIKE"i
 IMMEDIATE = "IMMEDIATE"i
 IN = "IN"i
 INDEX = "INDEX"i
@@ -703,6 +755,7 @@ SAVEPOINT = "SAVEPOINT"i
 SELECT =
   __ "SELECT"i
 SET = "SET"i
+SIMILAR = "SIMILAR"i
 TABLE = "TABLE"i
 TEMP = "TEMP"i
 TEMPORARY = "TEMPORARY"i
