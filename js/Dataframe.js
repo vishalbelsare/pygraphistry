@@ -134,35 +134,38 @@ Dataframe.prototype.fullMaskSet = function() {
     return {
         point: this.fullPointMask(),
         edge: this.fullEdgeMask()
-    }
+    };
 };
 
 
 /**
  * @param {Mask} edgeMask
+ * @param {Boolean?} edgeMaskFiltersPoints
  * @returns MaskSet
  */
-Dataframe.prototype.masksFromEdges = function (edgeMask) {
-    var pointMask = [];
+Dataframe.prototype.masksFromEdges = function (edgeMask, edgeMaskFiltersPoints) {
     var numPoints = this.numPoints();
+    var pointMask;
+    if (edgeMaskFiltersPoints === true) {
+        pointMask = [];
+        var pointLookup = {};
+        var edges = this.rawdata.hostBuffers.forwardsEdges.edgesTyped;
 
-    pointMask = _.range(numPoints);
+        _.each(edgeMask, function (edgeIdx) {
+            var src = edges[2 * edgeIdx];
+            var dst = edges[2 * edgeIdx + 1];
+            pointLookup[src] = 1;
+            pointLookup[dst] = 1;
+        });
 
-    // var pointLookup = {};
-    // var edges = this.rawdata.hostBuffers.forwardsEdges.edgesTyped;
-
-    // _.each(edgeMask, function (edgeIdx) {
-    //     var src = edges[2*edgeIdx];
-    //     var dst = edges[2*edgeIdx + 1];
-    //     pointLookup[src] = 1;
-    //     pointLookup[dst] = 1;
-    // });
-
-    // for (var i = 0; i < numPoints; i++) {
-    //     if (pointLookup[i]) {
-    //         pointMask.push(i);
-    //     }
-    // }
+        for (var i = 0; i < numPoints; i++) {
+            if (pointLookup[i]) {
+                pointMask.push(i);
+            }
+        }
+    } else {
+        pointMask = _.range(numPoints);
+    }
 
     return {
         edge: edgeMask,
