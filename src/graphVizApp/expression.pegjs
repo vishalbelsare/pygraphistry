@@ -325,7 +325,7 @@ Comment "comment"
   / SingleLineComment
 
 SingleLineComment
-  = minusminus (!LineTerminator SourceCharacter)*
+  = SingleLineCommentBegin (!LineTerminator SourceCharacter)*
 
 MultiLineComment
   = CommentBegin (!CommentEnd SourceCharacter)* CommentEnd
@@ -358,6 +358,7 @@ gtlt = '<>'
 star = '*'
 newline = '\n'
 AnythingExceptNewline = [^\n]*
+SingleLineCommentBegin = '//' / minusminus
 CommentBegin = '/*'
 CommentEnd = '*/'
 AnythingExceptCommentEnd = .* & '*/'
@@ -516,11 +517,11 @@ BetweenAndExpression
     }
 
 LikeOperator "text comparison"
-  = LIKE / ILIKE / SIMILAR
+  = LIKE / ILIKE
 
 LikeExpression "text comparison"
   = value:PrimaryExpression
-    __ operator: ( LIKE / ILIKE / SIMILAR ) __ like:PrimaryExpression
+    __ operator:LikeOperator __ like:PrimaryExpression
     { return {
         type: 'LikeExpression',
         operator: operator,
@@ -529,9 +530,12 @@ LikeExpression "text comparison"
       };
     }
 
+RegexOperator
+  = REGEXP / SIMILAR __ TO
+
 RegexExpression "regex expression"
   = value:PrimaryExpression
-    __ operator:REGEXP __ matcher:PrimaryExpression
+    __ operator:RegexOperator __ matcher:PrimaryExpression
     {
       return {
         type: 'RegexExpression',
@@ -553,6 +557,7 @@ NOTKeywordExpression "not"
 KeywordExpression
   = NOTKeywordExpression
   / LikeExpression
+  / RegexExpression
   / BetweenAndExpression
   / InExpression
   / PostfixExpression
