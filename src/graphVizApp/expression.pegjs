@@ -44,17 +44,6 @@
     });
   }
 
-  function buildLogicalExpression(first, rest) {
-    return buildTree(first, rest, function(result, element) {
-      return {
-        type:     "LogicalExpression",
-        operator: element[1],
-        left:     result,
-        right:    element[3]
-      };
-    });
-  }
-
   function optionalList(value) {
     return value !== null ? value : [];
   }
@@ -502,7 +491,7 @@ InExpression
       };
     }
   / left:PrimaryExpression __ operator:IN __ lparen ( ( PrimaryExpression comma __ )+ )? __ rparen
-    { return buildLogicalExpression(first, rest); }
+    { return buildBinaryExpression(first, rest); }
 
 BetweenAndExpression
   = value:PrimaryExpression __ BETWEEN __ low:PrimaryExpression __ AND __ high:PrimaryExpression

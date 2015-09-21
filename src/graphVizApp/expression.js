@@ -290,7 +290,7 @@ module.exports = (function() {
                    right: right
                 };
               },
-          function(left, operator) { return buildLogicalExpression(first, rest); },
+          function(left, operator) { return buildBinaryExpression(first, rest); },
           function(value, low, high) {
                 // TODO: use negated
                 return {
@@ -1310,17 +1310,6 @@ module.exports = (function() {
         return buildTree(first, rest, function(result, element) {
           return {
             type:     "BinaryExpression",
-            operator: element[1],
-            left:     result,
-            right:    element[3]
-          };
-        });
-      }
-
-      function buildLogicalExpression(first, rest) {
-        return buildTree(first, rest, function(result, element) {
-          return {
-            type:     "LogicalExpression",
             operator: element[1],
             left:     result,
             right:    element[3]
