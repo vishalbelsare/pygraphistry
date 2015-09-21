@@ -173,9 +173,9 @@ function expandLogicalEdges(renderState, bufferSnapshots, numRenderedSplits, edg
             heightCounter = 0;
             var i;
             for (i = edgeIndex + 1;
-                    i < numEdges
-                    && srcPointIdx == logicalEdges[2 * i]
-                    && dstPointIdx == logicalEdges[2 * i + 1];
+                    i < numEdges &&
+                    srcPointIdx === logicalEdges[2 * i] &&
+                    dstPointIdx === logicalEdges[2 * i + 1];
                     i++) {
             }
             edgeSeqLen = i - edgeIndex + 1;
