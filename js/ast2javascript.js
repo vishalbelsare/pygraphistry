@@ -205,6 +205,51 @@ AST2JavaScript.prototype.singleValueFunctionForAST = function (ast, depth, outer
     }
     var subExprString, operator, precedence, args;
     switch (ast.type) {
+        case 'NotExpression':
+            precedence = this.precedenceOf('!');
+            arg = this.singleValueFunctionForAST(ast.value, depth + 1, precedence);
+            return this.wrapSubExpressionPerPrecedences('!' + arg, precedence, outerPrecedence);
+        case 'BetweenAndExpression':
+            precedence = this.precedenceOf('&&');
+            args = _.map([ast.value, ast.low, ast.high], function (arg) {
+                return this.singleValueFunctionForAST(arg, depth + 1, this.precedenceOf('<='));
+            }, this);
+            subExprString = args[0] + ' >= ' + args[1] +
+                ' && ' + args[0] + ' <= ' + args[2];
+            return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
+        case 'RegexExpression':
+            precedence = this.precedenceOf('.');
+            args = _.map([ast.left, ast.right], function (arg) {
+                return this.singleValueFunctionForAST(arg, depth + 1, this.precedenceOf('<='));
+            }, this);
+            subExprString = '(new RegExp(' + args[1] + ')).test(' + args[0] + ')';
+            return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
+        case 'LikeExpression':
+            precedence = this.precedenceOf('.');
+            if (args.right.type !== 'StringLiteral') {
+                throw new Error('Computed text comparison patterns not yet implemented.');
+            }
+            var likePattern = args.right.value;
+            arg = this.singleValueFunctionForAST(args.left, depth + 1, precedence);
+            if (likePattern.indexOf(likePattern) !== likePattern.lastIndexOf(likePattern)) {
+                throw new Error('Text comparison patterns with more than one placeholder not yet implemented.');
+            }
+            var subStringLeft, subStringRight;
+            if (likePattern.startsWith('%')) {
+                subStringRight = likePattern.slice(-(likePattern - 1));
+                subExprString = arg + '.endsWith(' + subStringRight + ')';
+            } else if (likePattern.endsWith('%')) {
+                subStringLeft = likePattern.slice(0, likePattern - 1);
+                subExprString = arg + '.startsWith(' + subStringLeft + ')';
+            } else {
+                var index = likePattern.indexOf('%');
+                subStringLeft = likePattern.slice(0, index);
+                subStringRight = likePattern.slice(-(likePattern.length - index - 1));
+                precedence = this.precedenceOf('&&');
+                subExprString = arg + '.endsWith(' + subStringRight + ') && ' +
+                    arg + '.startsWith(' + subStringLeft + ')';
+            }
+            return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
         case 'LogicalExpression':
         case 'BinaryExpression':
             operator = this.translateOperator(ast.operator);
