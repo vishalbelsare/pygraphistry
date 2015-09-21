@@ -87,11 +87,8 @@ FilterControl.prototype.queryToExpression = function(query) {
     // Should quote inner brackets if we commit to this:
     // attribute = '[' + attribute + ']';
     if (query.start !== undefined && query.stop !== undefined) {
-        // BETWEEN/AND deprecated for now:
-        //return attribute + ' BETWEEN ' + this.printedExpressionOf(query.start) +
-        //    ' AND ' + this.printedExpressionOf(query.stop);
-        return '(' + attribute + ' >= ' + this.printedExpressionOf(query.start) +
-                ') AND (' + attribute + ' <= ' + this.printedExpressionOf(query.stop) + ')';
+        return attribute + ' BETWEEN ' + this.printedExpressionOf(query.start) +
+            ' AND ' + this.printedExpressionOf(query.stop);
     } else if (query.start !== undefined) {
         return attribute + ' >= ' + this.printedExpressionOf(query.start);
     } else if (query.stop !== undefined) {
