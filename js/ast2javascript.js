@@ -231,23 +231,25 @@ AST2JavaScript.prototype.singleValueFunctionForAST = function (ast, depth, outer
             }
             var likePattern = args.right.value;
             arg = this.singleValueFunctionForAST(args.left, depth + 1, precedence);
-            if (likePattern.indexOf(likePattern) !== likePattern.lastIndexOf(likePattern)) {
+            if (likePattern.indexOf('%') !== likePattern.lastIndexOf('%')) {
+                // Multiple placeholders require index comparison coupled with matching
+                // the expressions could be supported but would be more complicated.
                 throw new Error('Text comparison patterns with more than one placeholder not yet implemented.');
             }
-            var subStringLeft, subStringRight;
+            var prefix, suffix;
             if (likePattern.startsWith('%')) {
-                subStringRight = likePattern.slice(-(likePattern - 1));
-                subExprString = arg + '.endsWith(' + subStringRight + ')';
+                suffix = likePattern.slice(-(likePattern - 1));
+                subExprString = arg + '.endsWith(' + suffix + ')';
             } else if (likePattern.endsWith('%')) {
-                subStringLeft = likePattern.slice(0, likePattern - 1);
-                subExprString = arg + '.startsWith(' + subStringLeft + ')';
+                prefix = likePattern.slice(0, likePattern - 1);
+                subExprString = arg + '.startsWith(' + prefix + ')';
             } else {
                 var index = likePattern.indexOf('%');
-                subStringLeft = likePattern.slice(0, index);
-                subStringRight = likePattern.slice(-(likePattern.length - index - 1));
+                prefix = likePattern.slice(0, index);
+                suffix = likePattern.slice(-(likePattern.length - index - 1));
                 precedence = this.precedenceOf('&&');
-                subExprString = arg + '.endsWith(' + subStringRight + ') && ' +
-                    arg + '.startsWith(' + subStringLeft + ')';
+                subExprString = arg + '.endsWith(' + suffix + ') && ' +
+                    arg + '.startsWith(' + prefix + ')';
             }
             return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
         case 'LogicalExpression':
