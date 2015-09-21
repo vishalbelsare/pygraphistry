@@ -167,7 +167,7 @@ FunctionCallExpression "function call"
     return {
       type: 'FunctionCall',
       callee: callee,
-      elements: elements
+      arguments: elements
     }
   }
 
@@ -469,17 +469,16 @@ PostfixExpression
         fixity: 'postfix'
       }
     }
-  / PrimaryExpression
 
 IsExpression
-  = left:PrimaryExpression __ operator:IS __ right:PrimaryExpression
-  { return {
-      type: 'LogicalExpression',
-      operator: operator,
-      left: left,
-      right: right
-    };
-  }
+  = left:PrimaryExpression __ operator:IS __ right:PrimaryExpression {
+      return {
+        type: 'LogicalExpression',
+        operator: operator,
+        left: left,
+        right: right
+      };
+    }
 
 InExpression
   = left:PrimaryExpression __ operator:IN __ right:Expression
@@ -535,7 +534,7 @@ RegexExpression "regex expression"
     }
 
 NOTKeywordExpression "not"
-  = __ operator:NOT __ argument:KeywordExpression {
+  = operator:NOT __ argument:KeywordExpression {
       return {
         type: 'NotExpression',
         operator: operator,
@@ -551,6 +550,7 @@ KeywordExpression
   / InExpression
   / PostfixExpression
   / IsExpression
+  / PrimaryExpression
 
 PrefixOperator "prefix operator"
   = minus

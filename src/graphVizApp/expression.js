@@ -90,7 +90,7 @@ module.exports = (function() {
               return {
                 type: 'FunctionCall',
                 callee: callee,
-                elements: elements
+                arguments: elements
               }
             },
           function(expression) { return expression; },
@@ -276,13 +276,14 @@ module.exports = (function() {
                   fixity: 'postfix'
                 }
               },
-          function(left, operator, right) { return {
-                type: 'LogicalExpression',
-                operator: operator,
-                left: left,
-                right: right
-              };
-            },
+          function(left, operator, right) {
+                return {
+                  type: 'LogicalExpression',
+                  operator: operator,
+                  left: left,
+                  right: right
+                };
+              },
           function(left, operator, right) { return {
                    type: 'LogicalExpression',
                    operator: operator,
@@ -690,7 +691,7 @@ module.exports = (function() {
           peg$decode(" \"7y*) \"7{*# \"7K,/&7y*) \"7{*# \"7K\""),
           peg$decode(" \"7y*# \"7N,)&7y*# \"7N\""),
           peg$decode("87\xD8*# \"7\xE29*\" 3\xD7"),
-          peg$decode("!7/+=$7|+3%7~+)%4#6\xD8#\"\" %$## !$\"# !\"# !*# \"7/"),
+          peg$decode("!7/+=$7|+3%7~+)%4#6\xD8#\"\" %$## !$\"# !\"# !"),
           peg$decode("!7/+R$7|+H%7\xD7+>%7|+4%7/+*%4%6\xD9%#$\" %$%# !$$# !$## !$\"# !\"# !"),
           peg$decode("!7/+R$7|+H%7\xCE+>%7|+4%7(+*%4%6\xDA%#$\" %$%# !$$# !$## !$\"# !\"# !*\xCD \"!7/+\xC2$7|+\xB8%7\xCE+\xAE%7|+\xA4%7Z+\x9A% \"!7/+7$7P+-%7|+#%'#%$## !$\"# !\"# !+E$,B&!7/+7$7P+-%7|+#%'#%$## !$\"# !\"# !\"\"\" !*# \" #+=%7|+3%7[+)%4(6\xDB(\"'%%$(# !$'# !$&# !$%# !$$# !$## !$\"# !\"# !"),
           peg$decode("!7/+z$7|+p%7\xA3+f%7|+\\%7/+R%7|+H%7\x9C+>%7|+4%7/+*%4)6\xDC)#($ %$)# !$(# !$'# !$&# !$%# !$$# !$## !$\"# !\"# !"),
@@ -698,8 +699,8 @@ module.exports = (function() {
           peg$decode("8!7/+R$7|+H%7\x83+>%7|+4%7/+*%4%6\xDE%#$\" %$%# !$$# !$## !$\"# !\"# !9*\" 3\xDD"),
           peg$decode("7\xF0*B \"!7\xFB+7$7|+-%7\u0100+#%'#%$## !$\"# !\"# !"),
           peg$decode("8!7/+R$7|+H%7\x85+>%7|+4%7/+*%4%6\xE0%#$\" %$%# !$$# !$## !$\"# !\"# !9*\" 3\xDF"),
-          peg$decode("8!7|+G$7\xE1+=%7|+3%7\x88+)%4$6\xE2$\"\" %$$# !$## !$\"# !\"# !9*\" 3\xE1"),
-          peg$decode("7\x87*A \"7\x84*; \"7\x86*5 \"7\x82*/ \"7\x81*) \"7*# \"7\x80"),
+          peg$decode("8!7\xE1+=$7|+3%7\x88+)%4#6\xE2#\"\" %$## !$\"# !\"# !9*\" 3\xE1"),
+          peg$decode("7\x87*G \"7\x84*A \"7\x86*; \"7\x82*5 \"7\x81*/ \"7*) \"7\x80*# \"7/"),
           peg$decode("87T*/ \"7U*) \"7Y*# \"7\xE19*\" 3\xE3"),
           peg$decode("7\x88*H \"!7\x89+=$7|+3%7\x8A+)%4#6\xE4#\"\" %$## !$\"# !\"# !"),
           peg$decode("!7\x8A+\x8D$ \"!7|+A$7\x8C+7%7|+-%7\x8A+#%'$%$$# !$## !$\"# !\"# !,L&!7|+A$7\x8C+7%7|+-%7\x8A+#%'$%$$# !$## !$\"# !\"# !\"+)%4\"6,\"\"! %$\"# !\"# !"),
