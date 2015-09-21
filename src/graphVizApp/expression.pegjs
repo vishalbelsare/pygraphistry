@@ -130,12 +130,12 @@ Elision
 
 ElementList
   = first:(
-      elision:(Elision __)? element:PrimaryExpression {
+      elision:(Elision __)? element:ConditionExpression {
         return optionalList(extractOptional(elision, 0)).concat(element);
       }
     )
     rest:(
-      __ comma __ elision:(Elision __)? element:PrimaryExpression {
+      __ comma __ elision:(Elision __)? element:ConditionExpression {
         return optionalList(extractOptional(elision, 0)).concat(element);
       }
     )*
@@ -162,7 +162,7 @@ ListLiteral
     }
 
 FunctionCallExpression "function call"
-  = callee:FunctionName __ lparen __ elements:ElementList __ rparen
+  = callee:FunctionName __ lparen elements:ElementList rparen
   {
     return {
       type: 'FunctionCall',
@@ -175,8 +175,8 @@ PrimaryExpression
   = FunctionCallExpression
   / Identifier
   / LiteralValue
-  / ListLiteral
   / lparen __ expression:Expression __ rparen { return expression; }
+  / ListLiteral
 
 DecimalDigit
   = [0-9]
@@ -556,11 +556,9 @@ PrefixOperator "prefix operator"
   = minus
   / plus
   / not_op
-  / NOT
 
 UnaryExpression
-  = KeywordExpression
-  / operator:PrefixOperator __ argument:KeywordExpression {
+  = operator:PrefixOperator __ argument:KeywordExpression {
     return {
       type: 'UnaryExpression',
       operator: operator,
@@ -568,6 +566,7 @@ UnaryExpression
       fixity: 'prefix'
     }
   }
+  / KeywordExpression
 
 MultiplicativeExpression
   = first:UnaryExpression
