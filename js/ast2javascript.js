@@ -231,13 +231,17 @@ AST2JavaScript.prototype.singleValueFunctionForAST = function (ast, depth, outer
             }
             var likePattern = args.right.value;
             arg = this.singleValueFunctionForAST(args.left, depth + 1, precedence);
-            if (likePattern.indexOf('%') !== likePattern.lastIndexOf('%')) {
+            var prefix, suffix;
+            if (likePattern.startsWith('%') && likePattern.endsWith('%')) {
+                var substring = likePattern.slice(0, likePattern.length - 1);
+                // ES6 could replace with String.includes():
+                precedence = this.precedenceOf('!==');
+                subExprString = arg + '.indexOf(' + substring + ') !== -1';
+            } else if (likePattern.indexOf('%') !== likePattern.lastIndexOf('%')) {
                 // Multiple placeholders require index comparison coupled with matching
                 // the expressions could be supported but would be more complicated.
-                throw new Error('Text comparison patterns with more than one placeholder not yet implemented.');
-            }
-            var prefix, suffix;
-            if (likePattern.startsWith('%')) {
+                throw new Error('Glob patterns with more than one placeholder not yet implemented.');
+            } else if (likePattern.startsWith('%')) {
                 suffix = likePattern.slice(-(likePattern - 1));
                 subExprString = arg + '.endsWith(' + suffix + ')';
             } else if (likePattern.endsWith('%')) {
