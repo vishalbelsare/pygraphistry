@@ -66,21 +66,42 @@ CastExpression "cast"
     };
   }
 
-value =
-  v: ( __
-       ( ( x: LiteralValue
-           { return { literal: x } } )
-       / ( b: bind_parameter
-           { return { bind: b } } )
-       / ( t: ( table_name dot column_name )
-           { return { column: t[2], table: t[1] } } )
-       / ( c: column_name
-           { return { column: c } } )
-       // TODO: NOT-EXISTS:
-       // / ( ( NOT ? EXISTS )? lparen select_stmt rparen )
-       / ( CASE Expression ? ( WHEN Expression THEN Expression )+ ( ELSE Expression )? END )
-       ) )
-  { return v[1] }
+/*
+CASEListExpression
+  = first:WHEN __ SearchCondition
+  = first:(
+      WHEN __ condition:SearchCondition __ THEN __ result:SearchCondition {
+        return [{
+          type: 'CaseBranch',
+          condition: condition,
+          result: result
+        }];
+      }
+    )
+    rest:(
+      __ WHEN __ condition:SearchCondition __ THEN __ result:SearchCondition {
+        return {
+          type: 'CaseBranch',
+          condition: condition,
+          result: result
+        };
+      }
+    )*
+    { return [first].concat(rest); }
+
+CASEExpression
+  = CASE __ value:SearchCondition ?
+    __ cases:CASEListExpression
+    ( __ ELSE __ elseClause:SearchCondition )? __ END
+    {
+      return {
+        type: 'CaseExpression',
+        value: value,
+        cases: cases,
+        elseClause: elseClause
+      };
+    }
+*/
 
 NOTExpression
   = operator:NOT __ argument:NOTExpression {
@@ -91,7 +112,7 @@ NOTExpression
         fixity: 'prefix'
       };
     }
-  / RelationalExpression
+  / EqualityPredicate
 
 ANDExpression
   = first:NOTExpression
@@ -103,16 +124,19 @@ ORExpression
     rest:(__ OR __ ANDExpression)*
     { return buildBinaryExpression(first, rest); }
 
-LimitExpression
+LimitClause "limit"
   = LIMIT __ limit:NumericLiteral
     { return { type: 'Limit', value: limit } }
 
-ConditionExpression
+RowValueExpression
   = ORExpression
 
+SearchCondition "WHERE clause"
+  = RowValueExpression
+
 Expression
-  = LimitExpression
-  / ConditionExpression
+  = LimitClause
+  / SearchCondition
 
 TimePseudoLiteral "now"
   = CURRENT_TIME / CURRENT_DATE / CURRENT_TIMESTAMP
@@ -130,12 +154,12 @@ Elision
 
 ElementList
   = first:(
-      elision:(Elision __)? element:ConditionExpression {
+      elision:(Elision __)? element:SearchCondition {
         return optionalList(extractOptional(elision, 0)).concat(element);
       }
     )
     rest:(
-      __ comma __ elision:(Elision __)? element:ConditionExpression {
+      __ comma __ elision:(Elision __)? element:SearchCondition {
         return optionalList(extractOptional(elision, 0)).concat(element);
       }
     )*
@@ -161,21 +185,21 @@ ListLiteral
       }
     }
 
-FunctionCallExpression "function call"
-  = callee:FunctionName __ lparen elements:ElementList rparen
+FunctionInvocation "function call"
+  = callee:FunctionName __ lparen __ elements:ElementList __ rparen
   {
     return {
       type: 'FunctionCall',
       callee: callee,
       arguments: elements
-    }
+    };
   }
 
 PrimaryExpression
-  = FunctionCallExpression
+  = FunctionInvocation
   / Identifier
   / LiteralValue
-  / lparen __ expression:Expression __ rparen { return expression; }
+  / lparen __ expression:SearchCondition __ rparen { return expression; }
   / ListLiteral
 
 DecimalDigit
@@ -408,21 +432,21 @@ ShiftExpression
     rest:(__ ShiftOperator __ AdditiveExpression)*
     { return buildBinaryExpression(first, rest); }
 
-RelationalOperator "comparison"
+ComparisonOperator "comparison"
   = lte
   / gte
   / $(lessthan !lessthan)
   / $(greaterthan !greaterthan)
 
-RelationalExpression
+ComparisonPredicate
   = first:ShiftExpression
-    rest:(__ RelationalOperator __ ShiftExpression)*
+    rest:(__ ComparisonOperator __ ShiftExpression)*
     { return buildBinaryExpression(first, rest); }
-  / LikeExpression
+  / LikePredicate
 
-EqualityExpression
-  = first:RelationalExpression
-    rest:(__ EqualityOperator __ RelationalExpression)*
+EqualityPredicate
+  = first:ComparisonPredicate
+    rest:(__ EqualityOperator __ ComparisonPredicate)*
     { return buildBinaryExpression(first, rest); }
 
 EqualityOperator "equality operator"
@@ -467,10 +491,10 @@ PostfixExpression
         operator: operator,
         argument: argument,
         fixity: 'postfix'
-      }
+      };
     }
 
-IsExpression
+IsPredicate
   = left:PrimaryExpression __ operator:IS __ right:UnaryExpression {
       return {
         type: 'LogicalExpression',
@@ -480,7 +504,7 @@ IsExpression
       };
     }
 
-InExpression
+InPredicate
   = left:PrimaryExpression __ operator:IN __ right:Expression
     { return {
          type: 'LogicalExpression',
@@ -492,12 +516,12 @@ InExpression
   / left:PrimaryExpression __ operator:IN __ lparen ( ( PrimaryExpression comma __ )+ )? __ rparen
     { return buildBinaryExpression(first, rest); }
 
-BetweenAndExpression
+BetweenPredicate
   = value:PrimaryExpression __ BETWEEN __ low:PrimaryExpression __ AND __ high:PrimaryExpression
     {
       // TODO: use negated
       return {
-          type: 'BetweenAndExpression',
+          type: 'BetweenPredicate',
           value: value,
           start: low,
           stop:  high
@@ -507,11 +531,11 @@ BetweenAndExpression
 LikeOperator "text comparison"
   = LIKE / ILIKE
 
-LikeExpression "text comparison"
+LikePredicate "text comparison"
   = value:PrimaryExpression
     __ operator:LikeOperator __ like:PrimaryExpression
     { return {
-        type: 'LikeExpression',
+        type: 'LikePredicate',
         operator: operator,
         left: value,
         right: like
@@ -521,35 +545,35 @@ LikeExpression "text comparison"
 RegexOperator
   = REGEXP / SIMILAR __ TO
 
-RegexExpression "regex expression"
+RegexPredicate "regex expression"
   = value:PrimaryExpression
     __ operator:RegexOperator __ matcher:PrimaryExpression
     {
       return {
-        type: 'RegexExpression',
+        type: 'RegexPredicate',
         operator: operator,
         left: value,
         right: matcher
       };
     }
 
-NOTKeywordExpression "not"
-  = operator:NOT __ argument:KeywordExpression {
+NOTKeywordPredicate "not"
+  = operator:NOT __ argument:KeywordPredicate {
       return {
         type: 'NotExpression',
         operator: operator,
         value: argument
-      }
+      };
     }
 
-KeywordExpression
-  = NOTKeywordExpression
-  / LikeExpression
-  / RegexExpression
-  / BetweenAndExpression
-  / InExpression
+KeywordPredicate
+  = NOTKeywordPredicate
+  / LikePredicate
+  / RegexPredicate
+  / BetweenPredicate
+  / InPredicate
   / PostfixExpression
-  / IsExpression
+  / IsPredicate
   / PrimaryExpression
 
 PrefixOperator "prefix operator"
@@ -558,15 +582,15 @@ PrefixOperator "prefix operator"
   / not_op
 
 UnaryExpression
-  = operator:PrefixOperator __ argument:KeywordExpression {
+  = operator:PrefixOperator __ argument:KeywordPredicate {
     return {
       type: 'UnaryExpression',
       operator: operator,
       argument: argument,
       fixity: 'prefix'
-    }
+    };
   }
-  / KeywordExpression
+  / KeywordPredicate
 
 MultiplicativeExpression
   = first:UnaryExpression
@@ -578,31 +602,10 @@ MultiplicativeOperator "multiplicative operator"
   / divide
   / modulo
 
-binary_operator =
-  x: ( __
-       (concat
-        / times / divide / modulo
-        / plus / minus
-        / '<<' / '>>' / '&' / '|'
-        / '<=' / '>='
-        / '<' / '>'
-        / '=' / '==' / '!=' / '<>'
-        / 'IS'i / 'IS NOT'i / 'IN'i / 'LIKE'i / 'GLOB'i / 'MATCH'i / 'REGEXP'i
-        / 'AND'i
-        / 'OR'i ) )
-  { return x[1] }
-
-conjunction =
-  x: ( __
-       ('IS'i / 'IS NOT'i / 'IN'i / 'LIKE'i / 'GLOB'i / 'MATCH'i / 'REGEXP'i
-        / 'AND'i
-        / 'OR'i ) )
-  { return x[1] }
-
 // TODO: improve this to extract point/edge etc.
 graph_scoped_name =
   str:[A-Za-z0-9_:]+
-  { return str.join('') }
+  { return str.join(''); }
 
 database_name = Identifier
 table_name = Identifier
@@ -614,10 +617,10 @@ graph_namespace = Identifier
 column_name = graph_scoped_name
 graph_column_name =
   gcn: ( ( c: ( graph_namespace colon column_name )
-           { return { column: c[2], graph_namespace: c[1] } } )
+           { return { column: c[2], graph_namespace: c[1] }; } )
          / ( c: column_name
-           { return { column: c } } ) )
-  { return gcn[1] }
+           { return { column: c }; } ) )
+  { return gcn[1]; }
 
 column_alias = Identifier
 foreign_table = Identifier
