@@ -51,10 +51,10 @@
 
 start = Expression
 
-TypeIdentifier "type" =
-  ( Identifier )+
-  ( ( lparen SignedInteger rparen )
-  / ( lparen SignedInteger comma SignedInteger rparen ) )?
+TypeIdentifier "type"
+  = ( Identifier )+
+    ( ( lparen SignedInteger rparen )
+      / ( lparen SignedInteger comma SignedInteger rparen ) )?
 
 CastExpression "cast"
   = CAST __ lparen __ value:Expression __ AS __ type_name:TypeIdentifier __ rparen
@@ -471,7 +471,7 @@ PostfixExpression
     }
 
 IsExpression
-  = left:PrimaryExpression __ operator:IS __ right:PrimaryExpression {
+  = left:PrimaryExpression __ operator:IS __ right:UnaryExpression {
       return {
         type: 'LogicalExpression',
         operator: operator,
@@ -560,7 +560,7 @@ PrefixOperator "prefix operator"
 
 UnaryExpression
   = KeywordExpression
-  / operator:PrefixOperator __ argument:UnaryExpression {
+  / operator:PrefixOperator __ argument:KeywordExpression {
     return {
       type: 'UnaryExpression',
       operator: operator,
@@ -568,7 +568,6 @@ UnaryExpression
       fixity: 'prefix'
     }
   }
-  
 
 MultiplicativeExpression
   = first:UnaryExpression
