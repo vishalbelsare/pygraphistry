@@ -174,12 +174,20 @@ Dataframe.prototype.masksFromEdges = function (edgeMask, edgeMaskFiltersPoints) 
 };
 
 /**
- * @param {MaskList} maskList
- * @returns MaskSet
+ * @param {?MaskList} maskList
+ * @param {Number=Infinity} pointLimit
+ * @returns ?MaskSet
  */
-Dataframe.prototype.composeMasks = function (maskList) {
+Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
+    if (!pointLimit) {
+        pointLimit = Infinity;
+    }
     if (maskList === undefined || !maskList.length || maskList.length === 0) {
-        return this.fullMaskSet();
+        var universe = this.fullMaskSet();
+        if (pointLimit && universe.point.limit > pointLimit) {
+            universe.point.length = pointLimit;
+        }
+        return universe;
     }
     // TODO: Make this faster.
 
@@ -190,30 +198,37 @@ Dataframe.prototype.composeMasks = function (maskList) {
         return;
     }
 
+    // The overall masks per type, made by mask intersection:
     var edgeMask = [];
     var pointMask = [];
 
     // Assumes Uint8Array() constructor initializes to zero, which it should.
-    var pointLookup = new Uint8Array(this.numPoints());
-    var edgeLookup = new Uint8Array(this.numEdges());
+    var numMasksSatisfiedByPointID = new Uint8Array(this.numPoints());
+    var numMasksSatisfiedByEdgeID = new Uint8Array(this.numEdges());
 
     _.each(maskList, function (mask) {
         _.each(mask.edge, function (idx) {
-            edgeLookup[idx]++;
+            numMasksSatisfiedByEdgeID[idx]++;
         });
 
         _.each(mask.point, function (idx) {
-            pointLookup[idx]++;
+            numMasksSatisfiedByPointID[idx]++;
         });
     });
 
-    _.each(edgeLookup, function (count, i) {
+    _.each(numMasksSatisfiedByEdgeID, function (count, i) {
+        // Shorthand for "if we've passed all masks":
         if (count === numMasks) {
             edgeMask.push(i);
         }
     });
 
-    _.each(pointLookup, function (count, i) {
+    _.each(numMasksSatisfiedByPointID, function (count, i) {
+        // This is how we implement the limit, just to stop pushing once reached:
+        if (pointMask.length >= pointLimit) {
+            return;
+        }
+        // Shorthand for "if we've passed all masks":
         if (count === numMasks) {
             pointMask.push(i);
         }
@@ -236,15 +251,6 @@ Dataframe.prototype.composeMasks = function (maskList) {
 Dataframe.prototype.filterFuncForQueryObject = function (query) {
     var filterFunc;
     var limit = 8.0e5;
-
-    if (query.ast !== undefined) {
-        if (query.ast.limit !== undefined && Number.isSafeInteger(query.ast.value)) {
-            limit = Number.parseInt(query.ast.value, 10);
-        }
-        var filterFuncSource = this.sourceForQueryAST(query.ast);
-        // We're calling eval here with a string-constructed expression!
-        filterFunc = new Function('value', 'return ' + filterFuncSource); // jshint ignore:line
-    }
 
     // Maintained only for earlier range queries from histograms, may drop soon:
     if (query.start !== undefined && query.stop !== undefined) {
