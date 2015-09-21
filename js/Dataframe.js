@@ -184,7 +184,7 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
     }
     if (maskList === undefined || !maskList.length || maskList.length === 0) {
         var universe = this.fullMaskSet();
-        if (pointLimit && universe.point.limit > pointLimit) {
+        if (pointLimit && universe.point.length > pointLimit) {
             universe.point.length = pointLimit;
         }
         return universe;
