@@ -1,4 +1,5 @@
 'use strict';
+/* globals ace */
 
 var $       = window.$;
 var _       = require('underscore');
