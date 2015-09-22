@@ -16,6 +16,11 @@ function AST2JavaScript() {
  */
 AST2JavaScript.prototype.precedenceOf = function (operatorName, fixity) {
     switch (operatorName) {
+        case '(':
+        case ')':
+            return 19;
+        case '[':
+        case ']':
         case '.':
             return 18;
         case '+':
@@ -287,13 +292,13 @@ AST2JavaScript.prototype.singleValueFunctionForAST = function (ast, depth, outer
         case 'CastExpression':
             return ast.value;
         case 'ListExpression':
-            args = _.map(ast.arguments, function (arg) {
-                return this.singleValueFunctionForAST(arg, depth + 1, 19);
+            args = _.map(ast.elements, function (arg) {
+                return this.singleValueFunctionForAST(arg, depth + 1, this.precedenceOf('('));
             }, this);
             return '[' + args.join(', ') + ']';
         case 'FunctionCall':
             args = _.map(ast.arguments, function (arg) {
-                return this.singleValueFunctionForAST(arg, depth + 1, 19);
+                return this.singleValueFunctionForAST(arg, depth + 1, this.precedenceOf('('));
             }, this);
             return this.expressionForFunctionCall(this.singleValueFunctionForAST(ast.callee), args, outerPrecedence);
         case 'Identifier':
