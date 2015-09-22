@@ -359,6 +359,8 @@ modulo = '%'
 not_op = '~'
 lparen = '('
 rparen = ')'
+lbracket = '['
+rbracket = ']'
 concat = '||'
 lessthan = '<'
 greaterthan = '>'
@@ -485,7 +487,7 @@ PostfixKeyword "postfix keyword"
   / NOTNULL
 
 PostfixExpression
-  = argument:PrimaryExpression __ operator:PostfixKeyword {
+  = argument:MemberAccess __ operator:PostfixKeyword {
       return {
         type: 'UnaryExpression',
         operator: operator,
@@ -495,7 +497,7 @@ PostfixExpression
     }
 
 IsPredicate
-  = left:PrimaryExpression __ operator:IS __ right:UnaryExpression {
+  = left:MemberAccess __ operator:IS __ right:UnaryExpression {
       return {
         type: 'LogicalExpression',
         operator: operator,
@@ -505,7 +507,7 @@ IsPredicate
     }
 
 InPredicate
-  = left:PrimaryExpression __ operator:IN __ right:Expression
+  = left:MemberAccess __ operator:IN __ right:Expression
     { return {
          type: 'LogicalExpression',
          operator: operator,
@@ -513,11 +515,11 @@ InPredicate
          right: right
       };
     }
-  / left:PrimaryExpression __ operator:IN __ lparen ( ( PrimaryExpression comma __ )+ )? __ rparen
+  / left:MemberAccess __ operator:IN __ lparen ( ( MemberAccess comma __ )+ )? __ rparen
     { return buildBinaryExpression(first, rest); }
 
 BetweenPredicate
-  = value:PrimaryExpression __ BETWEEN __ low:PrimaryExpression __ AND __ high:PrimaryExpression
+  = value:MemberAccess __ BETWEEN __ low:MemberAccess __ AND __ high:MemberAccess
     {
       // TODO: use negated
       return {
@@ -532,8 +534,8 @@ LikeOperator "text comparison"
   = LIKE / ILIKE
 
 LikePredicate "text comparison"
-  = value:PrimaryExpression
-    __ operator:LikeOperator __ like:PrimaryExpression
+  = value:MemberAccess
+    __ operator:LikeOperator __ like:MemberAccess
     { return {
         type: 'LikePredicate',
         operator: operator,
@@ -546,8 +548,8 @@ RegexOperator
   = REGEXP / SIMILAR __ TO
 
 RegexPredicate "regex expression"
-  = value:PrimaryExpression
-    __ operator:RegexOperator __ matcher:PrimaryExpression
+  = value:MemberAccess
+    __ operator:RegexOperator __ matcher:MemberAccess
     {
       return {
         type: 'RegexPredicate',
@@ -566,6 +568,19 @@ NOTKeywordPredicate "not"
       };
     }
 
+MemberAccess
+  = first: ( PrimaryExpression / FunctionInvocation )
+    rest: ( __ lbracket __ property:Expression __ rbracket { return { name: property }; } )*
+    {
+      return buildTree(first, rest, function(result, element) {
+        return {
+          type:     'MemberAccess',
+          object:   result,
+          name:     element.name
+        };
+      });
+    }
+
 KeywordPredicate
   = NOTKeywordPredicate
   / LikePredicate
@@ -574,7 +589,7 @@ KeywordPredicate
   / InPredicate
   / PostfixExpression
   / IsPredicate
-  / PrimaryExpression
+  / MemberAccess
 
 PrefixOperator "prefix operator"
   = minus
