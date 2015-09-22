@@ -12,7 +12,10 @@ ace.define('ace/mode/graphistry_highlight_rules',
 
             var keywords = (
                 'between|and|or|not|in|' +
-                'case|when|else|end|type'
+                'isnull|notnull|' +
+                'like|ilike|' +
+                'limit'
+                //'case|when|else|end|type'
             );
 
             var builtinConstants = (
@@ -20,7 +23,9 @@ ace.define('ace/mode/graphistry_highlight_rules',
             );
 
             var builtinFunctions = (
-                'count|min|max|avg|sum|rank|now|coalesce|date'
+                'DATE|NOW|CONCAT|SUBSTR|SUBSTRING|LOWER|UPPER|LEN|LENGTH|INT|NUMBER|FIRST|LEFT|LAST|RIGHT|MID|' +
+                'ISBLANK|ISEMPTY|STARTSWITH|ENDSWITH|FIND|CONTAINS|REPLACE|SPLIT|TRIM|LTRIM|RTRIM|MAX|MIN|COALESCE'
+                //'count|min|max|avg|sum|rank'
             );
 
             var keywordMapper = this.createKeywordMapper({
