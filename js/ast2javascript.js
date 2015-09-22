@@ -175,6 +175,9 @@ AST2JavaScript.prototype.expressionForFunctionCall = function (inputFunctionName
             return methodCall(args[0], 'replace', args.slice(-(args.length - 1)));
         case 'SPLIT':
             return methodCall(args[0], 'split', args.slice(-(args.length - 1)));
+        case 'SUBSTR':
+        case 'SUBSTRING':
+            return methodCall(args[0], 'substring', args.slice(-(args.length - 1)));
         case 'TRIM':
             return methodCall(args[0], 'trim');
         case 'LTRIM':
@@ -185,6 +188,8 @@ AST2JavaScript.prototype.expressionForFunctionCall = function (inputFunctionName
             return methodCall('Math', 'max', args);
         case 'MIN':
             return methodCall('Math', 'min', args);
+        case 'COALESCE':
+            return this.wrapSubExpressionPerPrecedences(args.join(' || '), this.precedenceOf('||'), outerPrecedence);
         default:
             throw new Error('Unrecognized function', inputFunctionName);
     }
