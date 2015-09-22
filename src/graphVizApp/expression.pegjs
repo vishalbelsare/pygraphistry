@@ -186,7 +186,15 @@ ListLiteral
     }
 
 FunctionInvocation "function call"
-  = callee:Identifier __ lparen __ elements:ElementList __ rparen
+  = callee:Identifier __ lparen __ rparen
+  {
+    return {
+      type: 'FunctionCall',
+      callee: callee,
+      arguments: []
+    };
+  }
+  / callee:Identifier __ lparen __ elements:ElementList __ rparen
   {
     return {
       type: 'FunctionCall',
