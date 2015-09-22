@@ -114,7 +114,9 @@ FilterControl.prototype.queryFromExpressionString = function (inputString) {
     if (result.error !== null) {
         throw Error(PEGUtil.errorMessage(result.error, true));
     }
-    return this.queryFromAST(result.ast);
+    // TODO set result.attribute by walking the AST for Identifiers, requires asty.
+    result.inputString = inputString;
+    return result;
 };
 
 FilterControl.prototype.queryFromAST = function (ast) {

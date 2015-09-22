@@ -47,9 +47,14 @@ var FilterModel = Backbone.Model.extend({
     },
     updateExpression: function (control, newExpression) {
         var query = control.queryFromExpressionString(newExpression);
-        if (query !== undefined) {
-            this.set('query', query);
+        if (query === undefined) {
+            // Clear the query? No-op for now.
+            return;
         }
+        if (!query.attribute) {
+            query.attribute = this.get('attribute');
+        }
+        this.set('query', query);
     }
 });
 
