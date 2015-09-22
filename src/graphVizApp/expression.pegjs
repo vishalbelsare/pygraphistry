@@ -154,12 +154,12 @@ Elision
 
 ElementList
   = first:(
-      elision:(Elision __)? element:SearchCondition {
+      elision:(Elision __)? element:MemberAccess {
         return optionalList(extractOptional(elision, 0)).concat(element);
       }
     )
     rest:(
-      __ comma __ elision:(Elision __)? element:SearchCondition {
+      __ comma __ elision:(Elision __)? element:MemberAccess {
         return optionalList(extractOptional(elision, 0)).concat(element);
       }
     )*
@@ -186,7 +186,7 @@ ListLiteral
     }
 
 FunctionInvocation "function call"
-  = callee:FunctionName __ lparen __ elements:ElementList __ rparen
+  = callee:Identifier __ lparen __ elements:ElementList __ rparen
   {
     return {
       type: 'FunctionCall',
@@ -569,7 +569,7 @@ NOTKeywordPredicate "not"
     }
 
 MemberAccess
-  = first: ( PrimaryExpression / FunctionInvocation )
+  = first: PrimaryExpression
     rest: ( __ lbracket __ property:Expression __ rbracket { return { name: property }; } )*
     {
       return buildTree(first, rest, function(result, element) {
