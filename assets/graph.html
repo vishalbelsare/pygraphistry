@@ -453,8 +453,8 @@
     <form class="filterEditor form-horizontal">
         <div class="form-group-sm" title="Data Type">
             <label class="control-label" for="filterDataType{{id}}">Data Type</label>
-            <p class="form-control-static hidden">{{model.dataType}}</p>
-            <select class="filterDataTypeSelector form-control" id="filterDataType{{id}}" title="Data Type">
+            <span class="form-control-static">{{model.dataType}}</span>
+            <select class="filterDataTypeSelector form-control hidden" id="filterDataType{{id}}" title="Data Type">
                 <option value="">(Unknown)</option>
                 {{#each dataTypes}}
                 {{#if selected}}
@@ -467,8 +467,8 @@
         </div>
         <div class="form-group-sm" title="Control Type">
             <label class="control-label" for="filterControlType{{id}}">Control Type</label>
-            <p class="form-control-static hidden">{{model.controlType}}</p>
-            <select class="filterControlTypeSelector form-control" id="filterControlType{{id}}" title="Control Type">
+            <span class="form-control-static">{{model.controlType}}</span>
+            <select class="filterControlTypeSelector form-control hidden" id="filterControlType{{id}}" title="Control Type">
                 <option value="">(Unknown)</option>
                 {{#each controlTypes}}
                 {{#if selected}}
