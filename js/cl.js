@@ -437,7 +437,7 @@ var copyBuffer = Q.promised(function (cl, source, destination) {
 
 
 var write = Q.promised(function write(buffer, data) {
-    logger.info('Writing to buffer', buffer.name, buffer.size, 'bytes');
+    logger.trace('Writing to buffer', buffer.name, buffer.size, 'bytes');
 
     // Attempting to write data of size 0 seems to crash intel GPU drivers, so return.
     if (data.byteLength === 0) {
@@ -447,17 +447,13 @@ var write = Q.promised(function write(buffer, data) {
     // TODO acquire not needed if GL is dropped
     return buffer.acquire()
         .then(function () {
-            logger.info('Finishing CL Queue');
-            ocl.finish(buffer.cl.queue);
-        })
-        .then(function () {
-            logger.info('Writing Buffer', buffer.name, ' with byteLength: ', data.byteLength);
+            logger.trace('Writing Buffer', buffer.name, ' with byteLength: ', data.byteLength);
             ocl.enqueueWriteBuffer(buffer.cl.queue, buffer.buffer, true, 0, data.byteLength, data);
             return buffer.release();
         })
         .then(function() {
             // buffer.cl.queue.finish();
-            logger.info("Finished buffer %s write", buffer.name);
+            logger.trace("Finished buffer %s write", buffer.name);
 
             return buffer;
         });
@@ -465,12 +461,8 @@ var write = Q.promised(function write(buffer, data) {
 
 
 var read = Q.promised(function (buffer, target, optStartIdx, optLen) {
-    logger.info('Reading from buffer', buffer.name);
+    logger.trace('Reading from buffer', buffer.name);
     return buffer.acquire()
-        .then(function () {
-            logger.info('Finishing CL Queue');
-            ocl.finish(buffer.cl.queue);
-        })
         .then(function() {
             var start = Math.min(optStartIdx || 0, buffer.size);
             var len = optLen !== undefined ? optLen : (buffer.size - start);
@@ -480,7 +472,7 @@ var read = Q.promised(function (buffer, target, optStartIdx, optLen) {
             return buffer.release();
         })
         .then(function() {
-            logger.info('Done Reading: ', buffer.name);
+            logger.trace('Done Reading: ', buffer.name);
             return buffer;
         })
         .fail(log.makeQErrorHandler(logger, 'Read error for buffer', buffer.name));
