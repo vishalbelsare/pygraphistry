@@ -111,9 +111,6 @@ FilterControl.prototype.queryFromExpressionString = function (inputString) {
             return asty.create.apply(asty, args).pos(line, column, offset);
         }
     });
-    if (result.error !== undefined) {
-        throw Error(PEGUtil.errorMessage(result.error, true));
-    }
     // TODO set result.attribute by walking the AST for Identifiers, requires asty.
     result.inputString = inputString;
     return result;
