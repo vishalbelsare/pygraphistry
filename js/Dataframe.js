@@ -250,10 +250,13 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
  */
 Dataframe.prototype.filterFuncForQueryObject = function (query) {
     var filterFunc;
-    var limit = 8.0e5;
 
-    // Maintained only for earlier range queries from histograms, may drop soon:
-    if (query.start !== undefined && query.stop !== undefined) {
+    if (query.ast !== undefined) {
+        var bodyString = (new AST2JavaScript()).singleValueFunctionForAST(query.ast);
+        filterFunc = eval('function (value) { return ' + bodyString + '; }'); // jshint ignore:line
+        logger.debug('Generated Filter Source', bodyString);
+        // Maintained only for earlier range queries from histograms, may drop soon:
+    } else if (query.start !== undefined && query.stop !== undefined) {
         // Range:
         filterFunc = function (val) {
             return val >= query.start && val < query.stop;
@@ -291,6 +294,26 @@ Dataframe.prototype.getMaskForFilterOnAttributes = function (attributes, filterF
         });
     }
     return mask;
+};
+
+
+Dataframe.prototype.normalizeName = function (dataframeAttribute) {
+    var idx = dataframeAttribute.lastIndexOf(':');
+    var name = dataframeAttribute;
+    var type;
+    if (idx !== -1) {
+        type = dataframeAttribute.substring(0, idx);
+        name = dataframeAttribute.substring(idx + 1);
+    }
+    if (type !== undefined) {
+        if (!(this.rawdata.attributes[type]).hasOwnProperty(name)) {
+            return undefined;
+        }
+    } else if (!this.rawdata.attributes.edge.hasOwnProperty(name) &&
+        !this.rawdata.attributes.point.hasOwnProperty(name)) {
+        return undefined;
+    }
+    return name;
 };
 
 
