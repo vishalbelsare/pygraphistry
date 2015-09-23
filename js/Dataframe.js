@@ -1546,7 +1546,8 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
     var mapped = new Uint32Array(edges.length / 2);
 
     // If we're filtering and have information on unfiltered data.
-    if (oldEncapsulated && masks) {
+    // TODO: Undisable once this is fixed with multiedge / self edge.
+    if (false && oldEncapsulated && masks) {
         var oldEdges = oldEncapsulated.edgesTyped;
         var oldPermutation = oldEncapsulated.edgePermutationInverseTyped;
         var lastOldIdx = 0;
