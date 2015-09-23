@@ -254,7 +254,7 @@ Dataframe.prototype.filterFuncForQueryObject = function (query) {
     if (query.ast !== undefined) {
         try {
             var bodyString = (new AST2JavaScript()).singleValueFunctionForAST(query.ast);
-            filterFunc = eval('function (value) { return ' + bodyString + '; }'); // jshint ignore:line
+            filterFunc = eval('(function (value) { return ' + bodyString + '; })'); // jshint ignore:line
             logger.debug('Generated Filter Source', bodyString);
         } catch (e) {
             logger.debug('Error Generating Source For Filter', e);
