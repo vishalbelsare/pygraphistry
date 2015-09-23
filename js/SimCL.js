@@ -9,13 +9,14 @@ var cljs = require('./cl.js');
 var MoveNodes = require('./moveNodes.js');
 var SelectNodes = require('./selectNodes.js');
 var SpringsGather = require('./springsGather.js');
+
 var HistogramKernel = require('./histogramKernel.js');
-var webcl = require('node-webcl');
 var Color = require('color');
 
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:data:simcl');
 
+//var webcl = require('node-webcl');
 
 // Do NOT enable this in prod. It destroys performance.
 // Seriously.
@@ -1309,7 +1310,7 @@ function tick(simulator, stepNumber, cfg) {
         // called, but node-webcl is out-of-date and doesn't support WebCL 1.0's optional callback
         // argument to finish().
 
-        simulator.cl.queue.finish();
+        simulator.cl.finish(simulator.cl.queue);
         logger.trace('Tick Finished.');
         simulator.renderer.finish();
     }).fail(log.makeQErrorHandler(logger, 'SimCl tick failed'));

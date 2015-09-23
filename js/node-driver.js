@@ -14,7 +14,7 @@ var Q = require("q"),
     RenderNull = require('./RenderNull.js'),
     rConf = require('./renderer.config.js'),
     lConf = require('./layout.config.js'),
-    webcl = require('node-webcl'),
+//    webcl = require('node-webcl'),
     metrics = require("./metrics.js"),
     loader = require("./data-loader.js");
 

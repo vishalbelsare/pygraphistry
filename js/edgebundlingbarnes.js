@@ -2,7 +2,6 @@
 var _          = require('underscore'),
     Q          = require('q'),
     cljs       = require('./cl.js'),
-    webcl      = require('node-webcl'),
     Kernel     = require('./kernel.js'),
     LayoutAlgo = require('./layoutAlgo.js'),
     FaSwingsKernel = require('./javascript_kernels/faSwingsKernel.js'),
