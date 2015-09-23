@@ -249,12 +249,16 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
  * @returns Function<Object>
  */
 Dataframe.prototype.filterFuncForQueryObject = function (query) {
-    var filterFunc;
+    var filterFunc = _.identity;
 
     if (query.ast !== undefined) {
-        var bodyString = (new AST2JavaScript()).singleValueFunctionForAST(query.ast);
-        filterFunc = eval('function (value) { return ' + bodyString + '; }'); // jshint ignore:line
-        logger.debug('Generated Filter Source', bodyString);
+        try {
+            var bodyString = (new AST2JavaScript()).singleValueFunctionForAST(query.ast);
+            filterFunc = eval('function (value) { return ' + bodyString + '; }'); // jshint ignore:line
+            logger.debug('Generated Filter Source', bodyString);
+        } catch (e) {
+            logger.debug('Error Generating Source For Filter', e);
+        }
         // Maintained only for earlier range queries from histograms, may drop soon:
     } else if (query.start !== undefined && query.stop !== undefined) {
         // Range:
