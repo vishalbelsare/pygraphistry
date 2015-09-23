@@ -112,7 +112,7 @@ var FilterCollection = Backbone.Collection.extend({
 
 /**
  * This is not the underlying data type but the logical type for the query.
- * @type {{name: String, value: String}}[]
+ * @type {Array.<{name: String, value: String}>}
  */
 var DataTypes = [
     {value: 'string', name: 'String'},
@@ -127,7 +127,7 @@ var DataTypes = [
 /**
  * What kinds of controls can be selected at top-level (then configured/styled).
  * TODO make these parametric or hierarchical.
- * @type {{name: String, value: String}}[]
+ * @type {Array.<{name: String, value: String}>}
  */
 var FilterControlTypes = [
     {value: 'select', name: 'Select'},
@@ -151,6 +151,15 @@ function DataframeCompleter(namespaceAttribute) {
     this.namespaceAttributes = namespaceAttribute;
 }
 
+
+/**
+ * Ace autocompletion framework API
+ * @param {Ace.Editor} editor
+ * @param {Ace.EditSession} session
+ * @param {Number} pos
+ * @param {String} prefix
+ * @param {Function} callback
+ */
 DataframeCompleter.prototype.getCompletions = function (editor, session, pos, prefix, callback) {
     if (prefix.length === 0 || !this.namespaceAttributes) {
         callback(null, []);
@@ -240,6 +249,7 @@ var FilterView = Backbone.View.extend({
         this.editor.renderer.setShowGutter(true);
         this.editor.setWrapBehavioursEnabled(true);
         this.editor.setBehavioursEnabled(true);
+        // Silences a deprecation warning we don't care about:
         this.editor.$blockScrolling = Infinity;
         this.editor.completers.push(new DataframeCompleter(this.namespaceMetadata));
         var session = this.editor.getSession();
