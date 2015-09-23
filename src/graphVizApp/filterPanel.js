@@ -102,12 +102,16 @@ var FilterModel = Backbone.Model.extend({
         if (!query.attribute) {
             query.attribute = this.get('attribute');
         }
-        this.set('query', query);
+        if (!_.isEqual(query, this.get('query'))) {
+            this.set('query', query);
+        }
     }
 });
 
 var FilterCollection = Backbone.Collection.extend({
     model: FilterModel,
+    control: undefined,
+    namespaceMetadata: undefined,
     addFilter: function(attributes) {
         if (!attributes.title) {
             attributes.title = attributes.attribute;
@@ -228,10 +232,10 @@ var FilterView = Backbone.View.extend({
         'change textarea.filterExpression': 'updateQuery'
     },
 
-    initialize: function () {
+    initialize: function (options) {
+        this.control = options.control;
         this.listenTo(this.model, 'destroy', this.remove);
         this.template = Handlebars.compile($('#filterTemplate').html());
-        this.control = new FilterControl();
     },
     render: function () {
         var bindings = {
@@ -281,11 +285,20 @@ var FilterView = Backbone.View.extend({
         this.editor.setBehavioursEnabled(true);
         // Silences a deprecation warning we don't care about:
         this.editor.$blockScrolling = Infinity;
-        this.editor.completers.push(new DataframeCompleter(this.namespaceMetadata));
+        var dataframeCompleter = new DataframeCompleter([]);
+        this.editor.completers.push(dataframeCompleter);
+        this.control.namespaceMetadataObservable().filter(function (namespaceMetadata) {
+            return namespaceMetadata !== undefined;
+        }).subscribe(function (namespaceMetadata) {
+            dataframeCompleter.setNamespaceMetadata(namespaceMetadata);
+        }.bind(this));
         var session = this.editor.getSession();
         session.setUseSoftTabs(true);
         session.setMode('ace/mode/graphistry');
-        session.setValue(this.model.getExpression(this.control));
+        var expression = this.model.getExpression(this.control);
+        if (expression) {
+            session.setValue(expression);
+        }
         session.on('change', function (aceEvent) {
             this.updateQuery(aceEvent);
         }.bind(this));
@@ -348,7 +361,8 @@ var AllFiltersView = Backbone.View.extend({
     events: {
         'click .addFilterDropdownField': 'addFilterFromDropdown'
     },
-    initialize: function () {
+    initialize: function (options) {
+        this.control = options.control;
         this.listenTo(this.collection, 'add', this.addFilter);
         this.listenTo(this.collection, 'remove', this.removeFilter);
         this.listenTo(this.collection, 'reset', this.refresh);
@@ -368,9 +382,8 @@ var AllFiltersView = Backbone.View.extend({
     addFilter: function (filter) {
         var view = new FilterView({
             model: filter,
-            panel: this.panel,
             collection: this.collection,
-            namespaceMetadata: this.namespaceMetadata
+            control: this.control
         });
         var childElement = view.render().el;
         // var dataframeAttribute = filter.get('attribute');
@@ -414,14 +427,15 @@ function FiltersPanel(socket, urlParams) {
 
     this.control = new FilterControl(socket);
 
-    this.collection = new FilterCollection();
+    this.collection = new FilterCollection([], {
+        control: this.control
+    });
 
     this.model = FilterModel;
 
     /** Exposes changes to the FilterCollection. */
     this.filtersSubject = new Rx.ReplaySubject(1);
     // Seed with a fresh filters list. Should come from persisted state.
-    this.filtersSubject.onNext([]);
     this.collection.on('change reset add remove', function (/*model, options*/) {
         this.filtersSubject.onNext(this.collection);
     }.bind(this));
@@ -462,14 +476,11 @@ function FiltersPanel(socket, urlParams) {
             console.log('Error updating Add Filter', err);
         });
 
-    namespaceMetadataObservable.subscribe(function (namespaceMetadata) {
-        this.view = new AllFiltersView({
-            collection: this.collection,
-            panel: this,
-            el: $('#filtersPanel'),
-            namespaceMetadata: namespaceMetadata
-        });
-    }.bind(this));
+    this.view = new AllFiltersView({
+        collection: this.collection,
+        control: this.control,
+        el: $('#filtersPanel')
+    });
 }
 
 FiltersPanel.prototype.dispose = function () {
