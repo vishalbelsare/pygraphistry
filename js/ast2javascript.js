@@ -296,6 +296,8 @@ AST2JavaScript.prototype.singleValueFunctionForAST = function (ast, depth, outer
             return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
         case 'CastExpression':
             return ast.value;
+        case 'Literal':
+            return JSON.stringify(ast.value);
         case 'ListExpression':
             args = _.map(ast.elements, function (arg) {
                 return this.singleValueFunctionForAST(arg, depth + 1, this.precedenceOf('('));
