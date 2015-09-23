@@ -84,10 +84,17 @@ var FilterModel = Backbone.Model.extend({
         return result;
     },
     getExpression: function (control) {
-        return control.queryToExpression(this.get('query'));
+        var query = this.get('query');
+        if (query === undefined) {
+            return '';
+        }
+        return control.queryToExpression(query);
     },
     updateExpression: function (control, newExpression) {
         var query = control.queryFromExpressionString(newExpression);
+        if (query.error) {
+            throw query.error;
+        }
         if (query === undefined) {
             // Clear the query? No-op for now.
             return;
@@ -291,11 +298,16 @@ var FilterView = Backbone.View.extend({
             this.model.updateExpression(this.control, expressionString);
         } catch (syntaxError) {
             var annotation = {
-                row: syntaxError.line - 1,
-                column: syntaxError.offset,
-                text: syntaxError.message,
-                type: 'error'
+                type: 'warning'
             };
+            if (syntaxError) {
+                annotation = {
+                    row: syntaxError.line && syntaxError.line - 1,
+                    column: syntaxError.offset,
+                    text: syntaxError.message,
+                    type: 'error'
+                };
+            }
             session.setAnnotations([annotation]);
         }
     },
