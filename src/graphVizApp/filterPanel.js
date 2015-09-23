@@ -267,7 +267,6 @@ var AllFiltersView = Backbone.View.extend({
         this.listenTo(this.collection, 'remove', this.removeFilter);
         this.listenTo(this.collection, 'reset', this.refresh);
         this.listenTo(this.collection, 'all', this.render);
-        this.listenTo(this.collection, 'change', this.refresh);
 
         this.filtersContainer = $('#filters');
     },
@@ -305,6 +304,7 @@ var AllFiltersView = Backbone.View.extend({
     remove: function () {
         this.combinedSubscription.dispose();
     },
+    /** Recreates the UI; do not call during interactions. */
     refresh: function () {
         this.filtersContainer.empty();
         this.collection.each(this.addFilter, this);
