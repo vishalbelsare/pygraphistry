@@ -184,15 +184,17 @@ app.use('/uber',   express.static(UBER_STATIC_PATH));
 app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
 
 // Temporarly handle ETL request from Splunk
-app.post('/etl', bodyParser.json({type: '*', limit: '128mb'}), function (req, res) {
+app.post('/etl', bodyParser.json({type: '*', limit: '128mb'}), forwardETL);
+app.post('/etlvgraph', bodyParser.json({type: '*', limit: '128mb'}), forwardETL);
 
-    logger.info({req: req.query}, 'etl request');
-    logger.debug({req: req}, 'etl request debug');
+function forwardETL(req, res) {
+    logger.info({req: req.query}, 'ETL request');
+    logger.debug({req: req}, ' ETL request debug');
 
     //TODO make an error once prod ssl server is up
     if ((config.ENVIRONMENT !== 'local') && !req.secure) {
 
-        logger.warn('non-local /etl without https');
+        logger.warn('non-local ETL without https');
 
         //logger.error('non-local /etl without https');
         //return res.send({success: false, msg: 'requires https'});
@@ -247,8 +249,7 @@ app.post('/etl', bodyParser.json({type: '*', limit: '128mb'}), function (req, re
         });
 
     });
-
-});
+}
 
 // Store client errors in a log file (indexed by Splunk)
 app.post('/error', bodyParser.json({type: '*', limit: '64mb'}), logClientError);
