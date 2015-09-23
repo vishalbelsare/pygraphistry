@@ -274,6 +274,14 @@ AST2JavaScript.prototype.singleValueFunctionForAST = function (ast, depth, outer
             break;
         case 'LogicalExpression':
         case 'BinaryExpression':
+            // Maybe InExpression would be a better logic branch:
+            if (ast.operator.toLowerCase() === 'in') {
+                args = _.map([ast.left, ast.right], function (arg) {
+                    return this.singleValueFunctionForAST(arg, depth + 1, precedence);
+                }, this);
+                subExprString = args[1] + '.indexOf(' + args[0] + ') !== -1';
+                return this.wrapSubExpressionPerPrecedences(subExprString, this.precedenceOf('!=='), outerPrecedence);
+            }
             operator = this.translateOperator(ast.operator);
             precedence = this.precedenceOf(operator);
             args = _.map([ast.left, ast.right], function (arg) {
