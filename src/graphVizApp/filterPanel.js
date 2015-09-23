@@ -35,10 +35,51 @@ var FilterModel = Backbone.Model.extend({
         if (!result.dataType) {
             result.dataType = 'number';
         }
-        if (result.dataType === 'number') {
-            result.start = 0;
-        } else {
-            result.equals = 'ABC';
+        switch (result.dataType) {
+            case 'number':
+            case 'float':
+            case 'integer':
+                result.start = 0;
+                result.ast = {
+                    type: 'BinaryExpression',
+                    operator: '>=',
+                    left: {type: 'Identifier', name: result.attribute},
+                    right: {type: 'Literal', value: result.start}
+                };
+                break;
+            case 'string':
+            case 'categorical':
+                result.equals = 'ABC';
+                result.ast = {
+                    type: 'BinaryExpression',
+                    operator: '=',
+                    left: {type: 'Identifier', name: result.attribute},
+                    right: {type: 'Literal', value: result.equals}
+                };
+                break;
+            case 'boolean':
+                result.equals = true;
+                result.ast = {
+                    type: 'LogicalExpression',
+                    operator: 'IS',
+                    left: {type: 'Identifier', name: result.attribute},
+                    right: {type: 'Literal', value: result.equals}
+                };
+                break;
+            case 'date':
+            case 'datetime':
+                result.ast = {
+                    type: 'BinaryExpression',
+                    operator: '>=',
+                    left: {type: 'Identifier', name: result.attribute},
+                    right: {type: 'Literal', value: 'now'}
+                };
+                break;
+            default:
+                result.ast = {
+                    type: 'Literal',
+                    value: true
+                };
         }
         return result;
     },
