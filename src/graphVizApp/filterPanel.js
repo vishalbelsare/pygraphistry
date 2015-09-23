@@ -336,7 +336,7 @@ var AllFiltersView = Backbone.View.extend({
         var parts = attribute.match(/^(?:([-A-z_]+):)?([-A-z_]+)(?:[ ]+\(([A-z]+)\))?$/);
         var attributes = {attribute: attribute};
         attributes.type = parts[1] || 'point';
-        attributes.attribute = parts[2] + ':' + parts[1];
+        attributes.attribute = parts[1] + ':' + parts[2];
         if (parts.length > 3) {
             attributes.dataType = parts[3];
         }
