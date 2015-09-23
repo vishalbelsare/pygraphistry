@@ -18,7 +18,10 @@ rl.on('line', function (line) {
         }
 
         if (log.level === 50) {
-            console.log(line);
+            console.log(log.msg);
+            console.log(log.err);
+            // console.log(line);
+            // console.log(JSON.parse(line));
             return;
         }
 
