@@ -144,13 +144,32 @@ var FilterControlTypes = [
 ];
 
 /**
- * @param {Array} namespaceAttribute
+ * @param {Object} namespaceMetadata
  * @constructor
  */
-function DataframeCompleter(namespaceAttribute) {
-    this.namespaceAttributes = namespaceAttribute;
+function DataframeCompleter(namespaceMetadata) {
+    this.setNamespaceMetadata(namespaceMetadata);
+    this.caseSensitive = false;
 }
 
+DataframeCompleter.prototype.insertMatchX = function (editor, data) {
+
+};
+
+DataframeCompleter.prototype.setNamespaceMetadata = function (namespaceMetadata) {
+    this.namespaceMetadata = namespaceMetadata;
+    var newNamespaceAttributes = {};
+    _.each(namespaceMetadata, function (columnsByName, type) {
+        _.each(columnsByName, function (column, attributeName) {
+            newNamespaceAttributes[type + ':' + attributeName] = column;
+            if (newNamespaceAttributes[attributeName] === undefined) {
+                newNamespaceAttributes[attributeName] = column;
+            }
+        });
+    });
+    /** @type {Array.<String>} */
+    this.namespaceAttributes = _.keys(newNamespaceAttributes);
+};
 
 /**
  * Ace autocompletion framework API
