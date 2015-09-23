@@ -184,15 +184,19 @@ DataframeCompleter.prototype.getCompletions = function (editor, session, pos, pr
         callback(null, []);
         return;
     }
-    var scoredAttributes = this.namespaceAttributes.map(function (value) {
-        var lastIdx = value.lastIndexOf(prefix, 0);
+    if (!this.caseSensitive) {
+        prefix = prefix.toLowerCase();
+    }
+    var scoredAttributes = _.map(this.namespaceAttributes, function (value) {
+        var matchValue = this.caseSensitive ? value : value.toLowerCase();
+        var lastIdx = matchValue.lastIndexOf(prefix, 0);
         if (lastIdx === 0) {
             return [value, 1];
         } else if (lastIdx === value.lastIndexOf(':', 0) + 1) {
             return [value, 0.8];
         }
         return [value, 0];
-    }).filter(function (scoreAndValue) {
+    }, this).filter(function (scoreAndValue) {
         return scoreAndValue[1] > 0;
     });
     callback(null, scoredAttributes.map(function (scoreAndValue) {
