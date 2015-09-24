@@ -111,12 +111,12 @@ var encodingForLabelParams = [
 
 
 
-function sendLayoutSetting(socket, algo, param, value) {
+function sendLayoutSetting(socket, algorithm, param, value) {
     var update = {};
     var controls = {};
 
     update[param] = value;
-    controls[algo] = update;
+    controls[algorithm] = update;
 
     var payload = {
         play: true,
@@ -280,7 +280,7 @@ function controlMaker (urlParams, $anchor, param, type) {
     var $col = $('<div>').addClass('col-xs-8').append($input);
     var $label = $('<label>').attr({
         for: param.name,
-        class: 'control-label col-xs-4',
+        class: 'control-label col-xs-4'
     }).text(param.prettyName);
 
     var $entry = $('<div>')
@@ -309,7 +309,7 @@ function createControls(socket, appState, trigger, urlParams) {
                 debug('Received layout controls from server', res.controls);
                 return res.controls;
             } else {
-                throw new Error((res||{}).error || 'Cannot get layout_controls');
+                throw Error((res||{}).error || 'Cannot get layout_controls');
             }
         });
 
@@ -527,7 +527,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     // histogram brush:
     var brushIsOn = false;
-    // Use separate subejct so downstream subscribers don't trigger control changes twice.
+    // Use separate subject so downstream subscribers don't trigger control changes twice.
     // TODO: Figure out the correct pattern for this.
     var turnOnBrush = new Rx.Subject(1);
     onElt
@@ -535,13 +535,14 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
             Rx.Observable.fromEvent($graph, 'click')
             .map(_.constant($graph[0])))
         .map(function (elt) {
-            if (elt === $('#brushButton')[0]) {
+            var $brushButton = $('#brushButton');
+            if (elt === $brushButton[0]) {
                 $(elt).children('i').toggleClass('toggle-on');
                 brushIsOn = !brushIsOn;
             } else if (brushIsOn &&
                     (elt === $('#marqueerectangle')[0] || elt === $graph[0])) {
                 brushIsOn = false;
-                $('#brushButton').children('i').toggleClass('toggle-on', false);
+                $brushButton.children('i').toggleClass('toggle-on', false);
             }
             if (brushIsOn) {
                 appState.brushOn.onNext('toggled');
@@ -585,8 +586,9 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     }, util.makeErrorHandler('marquee error'));
 
     var $tooltips = $('[data-toggle="tooltip"]');
-    var $bolt = $('#simulate .fa');
-    var $shrinkToFit = $('#center .fa');
+    var $bolt = $graph.find('.fa');
+    var $center = $('#center');
+    var $shrinkToFit = $center.find('.fa');
     var numTicks = urlParams.play !== undefined ? urlParams.play : 5000;
 
 
@@ -602,7 +604,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var $simulation = $('#simulation');
     var centeringDone =
         Rx.Observable.merge(
-            Rx.Observable.fromEvent($('#center'), 'click'),
+            Rx.Observable.fromEvent($center, 'click'),
             Rx.Observable.fromEvent($graph, 'click'),
             $simulation.onAsObservable('mousewheel'),
             $simulation.onAsObservable('mousedown'),
@@ -623,7 +625,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         });
 
     var isAutoCentering = new Rx.ReplaySubject(1);
-    autoCentering.subscribe(isAutoCentering, util.makeErrorHandler('bad autocenter'));
+    autoCentering.subscribe(isAutoCentering, util.makeErrorHandler('bad auto-center'));
 
     autoCentering.subscribe(
         function (count) {
