@@ -3,9 +3,12 @@
 var _       = require('underscore');
 var Rx      = require('rx');
 require('../rx-jquery-stub');
+var PEGUtil = require('pegjs-util');
+var ASTY    = require('asty');
 
 var util    = require('./util.js');
 var Command = require('./command.js');
+var parser  = require('./expression.js');
 
 
 function filterParametersCore(type, attribute) {
@@ -55,6 +58,22 @@ FilterControl.prototype.updateFilters = function (filterSet) {
 
 FilterControl.prototype.clearFilters = function () { return this.updateFilters([]); };
 
+FilterControl.prototype.printedExpressionOf = function (value) {
+    if (typeof value === 'string') {
+        return JSON.stringify(value);
+    } else if (typeof value === 'number') {
+        return value.toString(10);
+    } else if (typeof value === 'undefined' || value === null) {
+        return 'NULL';
+    } else if (Array.isArray(value)) {
+        return '(' + _.map(value, function (each) {
+                return this.printedExpressionOf(each);
+            }, this).join(', ') + ')';
+    } else {
+        return '<unknown>';
+    }
+};
+
 FilterControl.prototype.queryToExpression = function(query) {
     if (!query) { return undefined; }
     var attribute = query.attribute;
@@ -68,19 +87,93 @@ FilterControl.prototype.queryToExpression = function(query) {
     // Should quote inner brackets if we commit to this:
     // attribute = '[' + attribute + ']';
     if (query.start !== undefined && query.stop !== undefined) {
-        return attribute + ' BETWEEN ' + query.start.toString(10) +
-            ' AND ' + query.stop.toString(10);
+        return attribute + ' BETWEEN ' + this.printedExpressionOf(query.start) +
+            ' AND ' + this.printedExpressionOf(query.stop);
     } else if (query.start !== undefined) {
-        return attribute + ' >= ' + query.start.toString(10);
+        return attribute + ' >= ' + this.printedExpressionOf(query.start);
     } else if (query.stop !== undefined) {
-        return query.stop.toString(10) + ' <= ' + attribute;
+        return this.printedExpressionOf(query.stop) + ' <= ' + attribute;
     } else if (query.equals !== undefined) {
         if (Array.isArray(query.equals) && query.equals.length > 1) {
-            return attribute + ' IN (' + _.map(query.equals, function(x) { return x.toString(10); }).join(', ') + ')';
+            return attribute + ' IN ' + this.printedExpressionOf(query.equals);
         } else {
-            return attribute + ' = ' + query.equals.toString();
+            return attribute + ' = ' + this.printedExpressionOf(query.equals);
         }
     }
+};
+
+FilterControl.prototype.queryFromExpressionString = function (inputString) {
+    var asty = new ASTY();
+    var result = PEGUtil.parse(parser, inputString, {
+        startRule: 'start',
+        makeAST: function (line, column, offset, args) {
+            return asty.create.apply(asty, args).pos(line, column, offset);
+        }
+    });
+    // TODO set result.attribute by walking the AST for Identifiers, requires asty.
+    result.inputString = inputString;
+    return result;
+};
+
+FilterControl.prototype.queryFromAST = function (ast) {
+    switch (ast.type) {
+        case 'BinaryExpression':
+            // Special-case for BETWEEN/AND expansion:
+            if (ast.operator.toUpperCase() === 'AND') {
+                if (ast.left.operator === '>=' && ast.right.operator === '<=' &&
+                    ast.left.left.type === 'Identifier' &&
+                    _.isEqual(ast.left.left, ast.right.left)) {
+                    return {
+                        attribute: ast.left.left.value,
+                        start: ast.left.right.value,
+                        stop: ast.right.right.value
+                    };
+                }
+            }
+            break;
+        default:
+            break;
+    }
+};
+
+/**
+ * @typedef {{type: String, value: String}} Token
+ */
+
+/**
+ *
+ * @param {Token[]} tokens
+ * @returns {Object}
+ */
+FilterControl.prototype.queryFromExpressionTokens = function (tokens) {
+    if (!tokens) { return undefined; }
+    var query = {};
+    if (tokens[0].type === 'identifier') {
+        query.attribute = tokens[0].value;
+        var idx = query.attribute.indexOf(':');
+        if (idx > 1) {
+            query.type = query.attribute.slice(0, idx - 1);
+        }
+    }
+    if (tokens[1].type === 'operator') {
+        var op = tokens[1].value;
+        if (op === '=' || op === '==') {
+            query.equals = tokens[2].value;
+        } else {
+            console.warn('Unhandled operator', tokens[1].value);
+        }
+    } else if (tokens[1].type === 'keyword') {
+        var keyword = tokens[1].value.toLowerCase();
+        if (keyword === 'between') {
+            var startValue = tokens[2].value;
+            if (tokens[3].value.toLowerCase() === 'and') {
+                var stopValue = tokens[4].value;
+                query.start = startValue;
+                query.stop = stopValue;
+            }
+        }
+    }
+    return query;
 };
 
 FilterControl.prototype.filterRangeParameters = function (type, attribute, start, stop) {
