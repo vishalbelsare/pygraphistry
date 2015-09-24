@@ -303,7 +303,29 @@ AST2JavaScript.prototype.singleValueFunctionForAST = function (ast, depth, outer
             }
             return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
         case 'CastExpression':
-            return ast.value;
+            var value = ast.value;
+            var castValue = value;
+            switch (ast.type_name) {
+                case 'string':
+                    castValue = value.toString();
+                    break;
+                case 'number':
+                    castValue = Number(value);
+                    break;
+                case 'array':
+                    if (value.length !== undefined) {
+                        castValue = new Array(value.length);
+                        for (var i=0; i<value.length; i++) {
+                            castValue[i] = value[i];
+                        }
+                    } else {
+                        castValue = [value];
+                    }
+                    break;
+                default:
+                    throw Error('Unrecognized type', ast.type_name);
+            }
+            return JSON.stringify(castValue);
         case 'Literal':
             return JSON.stringify(ast.value);
         case 'ListExpression':
