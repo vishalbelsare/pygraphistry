@@ -4,8 +4,8 @@ var _ = require('underscore');
 
 
 
-function AST2JavaScript() {
-    this.outputLanguage = 'JavaScript';
+function ExpressionCodeGenerator() {
+    //this.outputLanguage = 'JavaScript';
 }
 
 /**
@@ -14,7 +14,7 @@ function AST2JavaScript() {
  * @param {String} [fixity] - prefix, suffix, infix
  * @returns {Number}
  */
-AST2JavaScript.prototype.precedenceOf = function (operatorName, fixity) {
+ExpressionCodeGenerator.prototype.precedenceOf = function (operatorName, fixity) {
     switch (operatorName) {
         case '(':
         case ')':
@@ -89,7 +89,7 @@ AST2JavaScript.prototype.precedenceOf = function (operatorName, fixity) {
 /**
  * Insert parentheses to disambiguate expression composition in the text.
  */
-AST2JavaScript.prototype.wrapSubExpressionPerPrecedences = function (subExprString, precedence, outerPrecedence) {
+ExpressionCodeGenerator.prototype.wrapSubExpressionPerPrecedences = function (subExprString, precedence, outerPrecedence) {
     if (subExprString === undefined || subExprString.length === 0) {
         return subExprString;
     }
@@ -104,7 +104,7 @@ AST2JavaScript.prototype.wrapSubExpressionPerPrecedences = function (subExprStri
  * @param {String} operatorString
  * @returns {String}
  */
-AST2JavaScript.prototype.translateOperator = function (operatorString) {
+ExpressionCodeGenerator.prototype.translateOperator = function (operatorString) {
     switch (operatorString.toLowerCase()) {
         case 'and':
             return '&&';
@@ -120,13 +120,13 @@ AST2JavaScript.prototype.translateOperator = function (operatorString) {
 };
 
 
-AST2JavaScript.prototype.expressionForFunctionCall = function (inputFunctionName, args, outerPrecedence) {
+ExpressionCodeGenerator.prototype.expressionForFunctionCall = function (inputFunctionName, args, outerPrecedence) {
     var safeFunctionName;
-    var funcallPrecedence = this.precedenceOf('.');
+    var precedence = this.precedenceOf('.');
     var methodCall = function (firstArg, outputFunctionName, restArgs) {
         return this.wrapSubExpressionPerPrecedences(
             firstArg + '.' + outputFunctionName + '(' + restArgs ? restArgs.join(', ') : '' + ')',
-            funcallPrecedence, outerPrecedence);
+            precedence, outerPrecedence);
     }.bind(this);
     switch (inputFunctionName.toUpperCase()) {
         case 'DATE':
@@ -143,7 +143,7 @@ AST2JavaScript.prototype.expressionForFunctionCall = function (inputFunctionName
         case 'LEN':
         case 'LENGTH':
             return this.wrapSubExpressionPerPrecedences(
-                args[0] + '.length', funcallPrecedence, outerPrecedence);
+                args[0] + '.length', precedence, outerPrecedence);
         case 'INT':
             return methodCall('Number', 'parseInt', args);
         case 'NUMBER':
@@ -191,7 +191,7 @@ AST2JavaScript.prototype.expressionForFunctionCall = function (inputFunctionName
         case 'COALESCE':
             return this.wrapSubExpressionPerPrecedences(args.join(' || '), this.precedenceOf('||'), outerPrecedence);
         default:
-            throw new Error('Unrecognized function', inputFunctionName);
+            throw Error('Unrecognized function', inputFunctionName);
     }
     return safeFunctionName + '(' + args.join(', ') + ')';
 };
@@ -204,7 +204,7 @@ AST2JavaScript.prototype.expressionForFunctionCall = function (inputFunctionName
  * @param {Number} [outerPrecedence] - Surrounding expression precedence, determines whether result needs ().
  * @returns {String}
  */
-AST2JavaScript.prototype.singleValueFunctionForAST = function (ast, depth, outerPrecedence) {
+ExpressionCodeGenerator.prototype.singleValueFunctionForAST = function (ast, depth, outerPrecedence) {
     if (typeof ast === 'string') {
         return ast;
     }
@@ -236,7 +236,7 @@ AST2JavaScript.prototype.singleValueFunctionForAST = function (ast, depth, outer
             return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
         case 'LikeExpression':
             if (args.right.type !== 'StringLiteral') {
-                throw new Error('Computed text comparison patterns not yet implemented.');
+                throw Error('Computed text comparison patterns not yet implemented.');
             }
             var pattern = args.right.value;
             if (args.operator === 'LIKE') {
@@ -252,7 +252,7 @@ AST2JavaScript.prototype.singleValueFunctionForAST = function (ast, depth, outer
                 } else if (pattern.indexOf('%') !== pattern.lastIndexOf('%')) {
                     // Multiple placeholders require index comparison coupled with matching
                     // the expressions could be supported but would be more complicated.
-                    throw new Error('Glob patterns with more than one placeholder not yet implemented.');
+                    throw Error('Glob patterns with more than one placeholder not yet implemented.');
                 } else if (pattern.startsWith('%')) {
                     suffix = pattern.slice(-lastPatternIndex);
                     subExprString = arg + '.endsWith(' + suffix + ')';
@@ -269,7 +269,7 @@ AST2JavaScript.prototype.singleValueFunctionForAST = function (ast, depth, outer
                 }
                 return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
             } else {
-                throw new Error('Operator not yet implemented: ' + args.operator);
+                throw Error('Operator not yet implemented: ' + args.operator);
             }
             break;
         case 'LogicalExpression':
@@ -365,8 +365,8 @@ AST2JavaScript.prototype.singleValueFunctionForAST = function (ast, depth, outer
             }
             return 'value';
         default:
-            throw new Error('Unrecognized type on AST node', ast);
+            throw Error('Unrecognized type on AST node', ast);
     }
 };
 
-module.exports = AST2JavaScript;
+module.exports = ExpressionCodeGenerator;
