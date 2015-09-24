@@ -104,7 +104,6 @@ FilterControl.prototype.queryToExpression = function(query) {
 
 FilterControl.prototype.queryFromExpressionString = function (inputString) {
     var asty = new ASTY();
-    window.parser = parser;
     var result = PEGUtil.parse(parser, inputString, {
         startRule: 'start',
         makeAST: function (line, column, offset, args) {
