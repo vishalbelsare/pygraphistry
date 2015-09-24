@@ -8,6 +8,8 @@ var fs = require('fs');
 var log = require('common/logger.js');
 var logger = log.createLogger('graph-viz:dataframe');
 
+var AST2JavaScript = require('./ast2javascript');
+
 var baseDirPath = __dirname + '/../assets/dataframe/';
 var TYPES = ['point', 'edge', 'simulator'];
 
@@ -132,35 +134,38 @@ Dataframe.prototype.fullMaskSet = function() {
     return {
         point: this.fullPointMask(),
         edge: this.fullEdgeMask()
-    }
+    };
 };
 
 
 /**
  * @param {Mask} edgeMask
+ * @param {Boolean?} edgeMaskFiltersPoints
  * @returns MaskSet
  */
-Dataframe.prototype.masksFromEdges = function (edgeMask) {
-    var pointMask = [];
+Dataframe.prototype.masksFromEdges = function (edgeMask, edgeMaskFiltersPoints) {
     var numPoints = this.numPoints();
+    var pointMask;
+    if (edgeMaskFiltersPoints === true) {
+        pointMask = [];
+        var pointLookup = {};
+        var edges = this.rawdata.hostBuffers.forwardsEdges.edgesTyped;
 
-    pointMask = _.range(numPoints);
+        _.each(edgeMask, function (edgeIdx) {
+            var src = edges[2 * edgeIdx];
+            var dst = edges[2 * edgeIdx + 1];
+            pointLookup[src] = 1;
+            pointLookup[dst] = 1;
+        });
 
-    // var pointLookup = {};
-    // var edges = this.rawdata.hostBuffers.forwardsEdges.edgesTyped;
-
-    // _.each(edgeMask, function (edgeIdx) {
-    //     var src = edges[2*edgeIdx];
-    //     var dst = edges[2*edgeIdx + 1];
-    //     pointLookup[src] = 1;
-    //     pointLookup[dst] = 1;
-    // });
-
-    // for (var i = 0; i < numPoints; i++) {
-    //     if (pointLookup[i]) {
-    //         pointMask.push(i);
-    //     }
-    // }
+        for (var i = 0; i < numPoints; i++) {
+            if (pointLookup[i]) {
+                pointMask.push(i);
+            }
+        }
+    } else {
+        pointMask = _.range(numPoints);
+    }
 
     return {
         edge: edgeMask,
@@ -169,12 +174,20 @@ Dataframe.prototype.masksFromEdges = function (edgeMask) {
 };
 
 /**
- * @param {MaskList} maskList
- * @returns MaskSet
+ * @param {?MaskList} maskList
+ * @param {Number=Infinity} pointLimit
+ * @returns ?MaskSet
  */
-Dataframe.prototype.composeMasks = function (maskList) {
+Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
+    if (!pointLimit) {
+        pointLimit = Infinity;
+    }
     if (maskList === undefined || !maskList.length || maskList.length === 0) {
-        return this.fullMaskSet();
+        var universe = this.fullMaskSet();
+        if (pointLimit && universe.point.length > pointLimit) {
+            universe.point.length = pointLimit;
+        }
+        return universe;
     }
     // TODO: Make this faster.
 
@@ -185,30 +198,37 @@ Dataframe.prototype.composeMasks = function (maskList) {
         return;
     }
 
+    // The overall masks per type, made by mask intersection:
     var edgeMask = [];
     var pointMask = [];
 
     // Assumes Uint8Array() constructor initializes to zero, which it should.
-    var pointLookup = new Uint8Array(this.numPoints());
-    var edgeLookup = new Uint8Array(this.numEdges());
+    var numMasksSatisfiedByPointID = new Uint8Array(this.numPoints());
+    var numMasksSatisfiedByEdgeID = new Uint8Array(this.numEdges());
 
     _.each(maskList, function (mask) {
         _.each(mask.edge, function (idx) {
-            edgeLookup[idx]++;
+            numMasksSatisfiedByEdgeID[idx]++;
         });
 
         _.each(mask.point, function (idx) {
-            pointLookup[idx]++;
+            numMasksSatisfiedByPointID[idx]++;
         });
     });
 
-    _.each(edgeLookup, function (count, i) {
+    _.each(numMasksSatisfiedByEdgeID, function (count, i) {
+        // Shorthand for "if we've passed all masks":
         if (count === numMasks) {
             edgeMask.push(i);
         }
     });
 
-    _.each(pointLookup, function (count, i) {
+    _.each(numMasksSatisfiedByPointID, function (count, i) {
+        // This is how we implement the limit, just to stop pushing once reached:
+        if (pointMask.length >= pointLimit) {
+            return;
+        }
+        // Shorthand for "if we've passed all masks":
         if (count === numMasks) {
             pointMask.push(i);
         }
@@ -225,21 +245,30 @@ Dataframe.prototype.composeMasks = function (maskList) {
  */
 
 /**
- * @param {ClientQuery} params
+ * @param {ClientQuery} query
  * @returns Function<Object>
  */
-Dataframe.prototype.filterFuncForQueryObject = function (params) {
-    var filterFunc;
+Dataframe.prototype.filterFuncForQueryObject = function (query) {
+    var filterFunc = _.identity;
 
-    if (params.start !== undefined && params.stop !== undefined) {
+    if (query.ast !== undefined) {
+        try {
+            var bodyString = (new AST2JavaScript()).singleValueFunctionForAST(query.ast);
+            filterFunc = eval('(function (value) { return ' + bodyString + '; })'); // jshint ignore:line
+            logger.debug('Generated Filter Source', bodyString);
+        } catch (e) {
+            logger.debug('Error Generating Source For Filter', e);
+        }
+        // Maintained only for earlier range queries from histograms, may drop soon:
+    } else if (query.start !== undefined && query.stop !== undefined) {
         // Range:
         filterFunc = function (val) {
-            return val >= params.start && val < params.stop;
+            return val >= query.start && val < query.stop;
         };
 
-    } else if (params.equals !== undefined) {
+    } else if (query.equals !== undefined) {
         // Exact match or list-contains:
-        var compareValue = params.equals;
+        var compareValue = query.equals;
         if (_.isArray(compareValue)) {
             filterFunc = function (val) {
                 return _.contains(compareValue, val);
@@ -269,6 +298,26 @@ Dataframe.prototype.getMaskForFilterOnAttributes = function (attributes, filterF
         });
     }
     return mask;
+};
+
+
+Dataframe.prototype.normalizeName = function (dataframeAttribute) {
+    var idx = dataframeAttribute.lastIndexOf(':');
+    var name = dataframeAttribute;
+    var type;
+    if (idx !== -1) {
+        type = dataframeAttribute.substring(0, idx);
+        name = dataframeAttribute.substring(idx + 1);
+    }
+    if (type !== undefined) {
+        if (!(this.rawdata.attributes[type]).hasOwnProperty(name)) {
+            return undefined;
+        }
+    } else if (!this.rawdata.attributes.edge.hasOwnProperty(name) &&
+        !this.rawdata.attributes.point.hasOwnProperty(name)) {
+        return undefined;
+    }
+    return name;
 };
 
 

@@ -23,7 +23,9 @@
     <script type="text/javascript" src="libs/bootstrap-slider/js/bootstrap-slider.js"></script>
     <script type="text/javascript" src="libs/bootstrap-switch.min.js"></script>
 
-    <script type="text/javascript" src="libs/ace/src-min-noconflict/ace.js" async></script>
+    <!-- Ace editor, ideally delayed until used. -->
+    <script type="text/javascript" src="libs/ace/src-noconflict/ace.js"></script>
+    <script type="text/javascript" src="libs/ace/src-noconflict/ext-language_tools.js"></script>
 
     <link rel="stylesheet" href="libs/bootstrap-slider/css/bootstrap-slider.css">
     <link rel="stylesheet" href="libs/bootstrap-switch.min.css">
@@ -429,7 +431,7 @@
 </script>
 
 <script type="text/template" id="filterTemplate">
-    <div class="topMenu row">
+    <div class="topMenu row bg-info">
         <!--<div class="col-md-1 expandButton">
             <a href="#">
                 <i class="fa fa-caret-right expandFilterButton" id="expandFilterButton{{id}}" cid="{{id}}"></i>
@@ -439,7 +441,7 @@
         <div class="col-md-2"></div>
         <div class="col-md-1 disableButton">
             <a href="#">
-                <i class="fa fa-toggle-off disableFilterButton" id="disableFilterButton{{id}}" cid="{{id}}"></i>
+                <i class="fa fa-toggle-on disableFilterButton" title="Enabled" id="disableFilterButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
         <div class="col-md-1 deleteButton">
@@ -451,8 +453,8 @@
     <form class="filterEditor form-horizontal">
         <div class="form-group-sm" title="Data Type">
             <label class="control-label" for="filterDataType{{id}}">Data Type</label>
-            <p class="form-control-static hidden">{{model.dataType}}</p>
-            <select class="filterDataTypeSelector form-control" id="filterDataType{{id}}" title="Data Type">
+            <span class="form-control-static">{{model.dataType}}</span>
+            <select class="filterDataTypeSelector form-control hidden" id="filterDataType{{id}}" title="Data Type">
                 <option value="">(Unknown)</option>
                 {{#each dataTypes}}
                 {{#if selected}}
@@ -465,8 +467,8 @@
         </div>
         <div class="form-group-sm" title="Control Type">
             <label class="control-label" for="filterControlType{{id}}">Control Type</label>
-            <p class="form-control-static hidden">{{model.controlType}}</p>
-            <select class="filterControlTypeSelector form-control" id="filterControlType{{id}}" title="Control Type">
+            <span class="form-control-static">{{model.controlType}}</span>
+            <select class="filterControlTypeSelector form-control hidden" id="filterControlType{{id}}" title="Control Type">
                 <option value="">(Unknown)</option>
                 {{#each controlTypes}}
                 {{#if selected}}
@@ -479,8 +481,11 @@
         </div>
         <div class="row form-group" title="Expression">
             <label class="control-label" for="filterExpression{{id}}">Expression</label>
+            <!--
             <textarea class="form-control filterExpression" id="filterExpression{{id}}" name="expression" title="Filter expression"
-                      rows="2" cols="40" placeholder="{{model.placeholder}}">{{model.expression}}</textarea>
+                      rows="2" cols="40" placeholder="{{model.placeholder}}">{{model.expression}}</textarea>-->
+            <div class="form-control filterExpression" id="filterExpression{{id}}" title="Filter expression"
+                    ></div>
         </div>
     </form>
 </script>

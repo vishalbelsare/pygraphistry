@@ -196,7 +196,7 @@ function read_selection(type, query, res) {
     );
 }
 
-function tickGraph () {
+function tickGraph (cb) {
     graph.take(1).do(function (graphContent) {
         updateVboSubject.onNext(graphContent);
     }).subscribe(
@@ -209,8 +209,8 @@ function tickGraph () {
 }
 
 // Should this be a graph method?
-function filterGraphByMaskList(graph, maskList, errors, filters, cb) {
-    var masks = graph.dataframe.composeMasks(maskList);
+function filterGraphByMaskList(graph, maskList, errors, filters, pointLimit, cb) {
+    var masks = graph.dataframe.composeMasks(maskList, pointLimit);
 
     logger.debug('mask lengths: ', masks.edge.length, masks.point.length);
 
@@ -228,7 +228,7 @@ function filterGraphByMaskList(graph, maskList, errors, filters, cb) {
                 'edgeColors', 'logicalEdges', 'springsPos'
             ]);
 
-            tickGraph();
+            tickGraph(cb);
             var response = {success: true, filters: filters};
             if (errors) {
                 response.errors = errors;
@@ -261,8 +261,10 @@ function init(app, socket) {
         _.find(workbookConfig.views);
 
     if (!viewConfig.filters) {
-        // TODO: initialize filters with nodes/edges limited per client render.
-        viewConfig.filters = [];
+        viewConfig.filters = [
+            // nodes/edges limited per client render estimate:
+            {query: {type: 'point', ast: {limit: 800000}}}
+        ];
     }
 
     // Apply approved URL parameters to that view concretely since we're creating it now:
@@ -421,6 +423,7 @@ function init(app, socket) {
             var dataframe = graph.dataframe;
             var maskList = [];
             var errors = [];
+            var pointLimit = Infinity;
 
             _.each(viewConfig.filters, function (filter) {
                 if (filter.enabled === false) {
@@ -429,20 +432,45 @@ function init(app, socket) {
                 /** @type ClientQuery */
                 var filterQuery = filter.query;
                 var masks;
-                if (filterQuery.type === 'point') {
-                    var pointMask = dataframe.getPointAttributeMask(filterQuery.attribute, filterQuery);
+                if (filterQuery === undefined) {
+                    return;
+                }
+                var ast = filterQuery.ast;
+                if (ast !== undefined &&
+                    ast.limit !== undefined &&
+                    ast.limit.value !== undefined) {
+                    pointLimit = parseInt(ast.limit.value, 10);
+                }
+                var attribute = dataframe.normalizeName(filterQuery.attribute);
+                if (attribute === undefined) {
+                    errors.push('Unknown frame element');
+                    return;
+                }
+                // Auto-correct:
+                if (filterQuery.type === undefined) {
+                    var attributes = dataframe.rawdata.attributes;
+                    if (attributes.point.hasOwnProperty(attribute)) {
+                        filterQuery.type = 'point';
+                    } else if (attributes.edge.hasOwnProperty(attribute)) {
+                        filterQuery.type = 'edge';
+                    }
+                }
+                if (filterQuery.type === undefined || filterQuery.type === 'point') {
+                    var pointMask = dataframe.getPointAttributeMask(attribute, filterQuery);
                     masks = dataframe.masksFromPoints(pointMask);
                 } else if (filterQuery.type === 'edge') {
-                    var edgeMask = dataframe.getEdgeAttributeMask(filterQuery.attribute, filterQuery);
+                    var edgeMask = dataframe.getEdgeAttributeMask(attribute, filterQuery);
                     masks = dataframe.masksFromEdges(edgeMask);
                 } else {
                     errors.push('Unknown frame element type');
                     return;
                 }
+                // Record the size of the filtered set for UI feedback:
+                filter.maskSizes = {point: masks.point.length, edge: masks.edge.length};
                 maskList.push(masks);
             });
 
-            filterGraphByMaskList(graph, maskList, errors, viewConfig.filters, cb);
+            filterGraphByMaskList(graph, maskList, errors, viewConfig.filters, pointLimit, cb);
         }).subscribe(
             _.identity,
             function (err) {
@@ -544,22 +572,25 @@ function init(app, socket) {
         graph.take(1).do(function (graph) {
 
             var maskList = [];
+            var errors = [];
 
+            var dataframe = graph.dataframe;
             _.each(query, function (data, attribute) {
                 var masks;
+                var normalizedAttribute = dataframe.normalizeName(attribute);
                 if (data.type === 'point') {
-                    var pointMask = graph.dataframe.getPointAttributeMask(attribute, data);
-                    masks = graph.dataframe.masksFromPoints(pointMask);
+                    var pointMask = dataframe.getPointAttributeMask(normalizedAttribute, data);
+                    masks = dataframe.masksFromPoints(pointMask);
                 } else if (data.type === 'edge') {
-                    var edgeMask = graph.dataframe.getEdgeAttributeMask(attribute, data);
-                    masks = graph.dataframe.masksFromEdges(edgeMask);
+                    var edgeMask = dataframe.getEdgeAttributeMask(normalizedAttribute, data);
+                    masks = dataframe.masksFromEdges(edgeMask);
                 } else {
                     cb({success: false});
                     return;
                 }
                 maskList.push(masks);
             });
-            filterGraphByMaskList(graph, maskList, errors, viewConfig.filters, cb);
+            filterGraphByMaskList(graph, maskList, errors, viewConfig.filters, Infinity, cb);
         }).subscribe(
             _.identity,
             function (err) {
