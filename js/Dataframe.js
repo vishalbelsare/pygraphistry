@@ -8,7 +8,7 @@ var fs = require('fs');
 var log = require('common/logger.js');
 var logger = log.createLogger('graph-viz:dataframe');
 
-var AST2JavaScript = require('./ast2javascript');
+var ExpressionCodeGenerator = require('./expressionCodeGenerator');
 
 var baseDirPath = __dirname + '/../assets/dataframe/';
 var TYPES = ['point', 'edge', 'simulator'];
@@ -253,7 +253,7 @@ Dataframe.prototype.filterFuncForQueryObject = function (query) {
 
     if (query.ast !== undefined) {
         try {
-            var bodyString = (new AST2JavaScript()).singleValueFunctionForAST(query.ast);
+            var bodyString = (new ExpressionCodeGenerator()).singleValueFunctionForAST(query.ast);
             filterFunc = eval('(function (value) { return ' + bodyString + '; })'); // jshint ignore:line
             logger.debug('Generated Filter Source', bodyString);
         } catch (e) {
