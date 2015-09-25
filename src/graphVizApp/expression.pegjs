@@ -460,11 +460,11 @@ EqualityPredicate
     { return buildBinaryExpression(first, rest); }
 
 EqualityOperator "equality operator"
-  = "==="
-  / "!=="
-  / "=="
-  / "!="
-  / "<>"
+  = notequals
+  / equals
+  / doubleequals
+  / notequals
+  / gtlt
 
 WhiteSpace "whitespace"
   = "\t"
