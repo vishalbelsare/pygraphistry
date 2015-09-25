@@ -252,13 +252,8 @@ Dataframe.prototype.filterFuncForQueryObject = function (query) {
     var filterFunc = _.identity;
 
     if (query.ast !== undefined) {
-        try {
-            var bodyString = (new ExpressionCodeGenerator()).expressionStringForAST(query.ast);
-            filterFunc = eval('(function (value) { return ' + bodyString + '; })'); // jshint ignore:line
-            logger.debug('Generated Filter Source', bodyString);
-        } catch (e) {
-            logger.debug('Error Generating Source For Filter', e);
-        }
+        var generator = new ExpressionCodeGenerator('javascript', 'SingleValue');
+        filterFunc = generator.functionForAST(query.ast);
         // Maintained only for earlier range queries from histograms, may drop soon:
     } else if (query.start !== undefined && query.stop !== undefined) {
         // Range:

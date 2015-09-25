@@ -204,6 +204,17 @@ ExpressionCodeGenerator.prototype.expressionForFunctionCall = function (inputFun
     return safeFunctionName + '(' + args.join(', ') + ')';
 };
 
+ExpressionCodeGenerator.prototype.functionForAST = function (ast) {
+    var source;
+    var body = this.expressionStringForAST(ast);
+    if (this.handleMultipleColumns) {
+        source = '(function (context) { return ' + body + '; })';
+    } else {
+        source = '(function (value) { return ' + body + '; })';
+    }
+    return eval(source); // jshint ignore:line
+};
+
 
 /**
  * Printed source form of the expression in JavaScript that executes the AST.
