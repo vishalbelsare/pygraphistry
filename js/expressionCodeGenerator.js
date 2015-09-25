@@ -219,7 +219,7 @@ ExpressionCodeGenerator.prototype.singleValueFunctionForAST = function (ast, dep
             precedence = this.precedenceOf('!');
             arg = this.singleValueFunctionForAST(ast.value, depth + 1, precedence);
             return this.wrapSubExpressionPerPrecedences('!' + arg, precedence, outerPrecedence);
-        case 'BetweenAndExpression':
+        case 'BetweenPredicate':
             precedence = this.precedenceOf('&&');
             args = _.map([ast.value, ast.low, ast.high], function (arg) {
                 return this.singleValueFunctionForAST(arg, depth + 1, this.precedenceOf('<='));
@@ -227,14 +227,14 @@ ExpressionCodeGenerator.prototype.singleValueFunctionForAST = function (ast, dep
             subExprString = args[0] + ' >= ' + args[1] +
                 ' && ' + args[0] + ' <= ' + args[2];
             return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
-        case 'RegexExpression':
+        case 'RegexPredicate':
             precedence = this.precedenceOf('.');
             args = _.map([ast.left, ast.right], function (arg) {
                 return this.singleValueFunctionForAST(arg, depth + 1, this.precedenceOf('<='));
             }, this);
             subExprString = '(new RegExp(' + args[1] + ')).test(' + args[0] + ')';
             return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
-        case 'LikeExpression':
+        case 'LikePredicate':
             if (args.right.type !== 'StringLiteral') {
                 throw Error('Computed text comparison patterns not yet implemented.');
             }
@@ -365,7 +365,7 @@ ExpressionCodeGenerator.prototype.singleValueFunctionForAST = function (ast, dep
             }
             return 'value';
         default:
-            throw Error('Unrecognized type on AST node', ast);
+            throw Error('Unrecognized type on AST node: ' + ast.type);
     }
 };
 
