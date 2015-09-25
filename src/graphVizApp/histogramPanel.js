@@ -328,6 +328,91 @@ HistogramsPanel.prototype.deleteHistogramFilterByAttribute = function (dataframe
     delete this.histogramFilters[dataframeAttribute];
 };
 
+/**
+ * This updates histogram filter structures from ASTs.
+ * We should maintain only expression objects instead.
+ * We should also use structural pattern matching...
+ */
+function updateHistogramFilterFromExpression(histFilter, ast) {
+    var op;
+    histFilter.equals = undefined;
+    histFilter.start = undefined;
+    histFilter.stop = undefined;
+    if (ast.type === 'BetweenPredicate') {
+        if (ast.start.type === 'Literal') {
+            histFilter.start = ast.start.value;
+        }
+        if (ast.stop.type === 'Literal') {
+            histFilter.stop = ast.stop.value;
+        }
+    } else if (ast.type === 'LogicalExpression') {
+        op = ast.operator.toUpperCase();
+        if (op === 'IN') {
+            var containerExpr = ast.right;
+            if (containerExpr.type === 'ListExpression') {
+                histFilter.equals = _.map(containerExpr.elements, function (element) {
+                    return element.type === 'Literal' ? element.value : undefined;
+                });
+            }
+        }
+    } else if (ast.type === 'BinaryExpression') {
+        op = ast.operator.toUpperCase();
+        switch (op) {
+            case '=':
+            case '==':
+                if (ast.right.type === 'Literal') {
+                    histFilter.equals = ast.right.value;
+                } else if (ast.left.type === 'Literal') {
+                    histFilter.equals = ast.left.value;
+                }
+                break;
+            case '>':
+            case '>=':
+                if (ast.right.type === 'Literal') {
+                    histFilter.start = ast.right.value;
+                } else if (ast.left.type === 'Literal') {
+                    histFilter.stop = ast.left.value;
+                }
+                break;
+            case '<':
+            case '<=':
+                if (ast.right.type === 'Literal') {
+                    histFilter.stop = ast.right.value;
+                } else if (ast.left.type === 'Literal') {
+                    histFilter.start = ast.left.value;
+                }
+                break;
+        }
+    }
+}
+
+HistogramsPanel.prototype.updateHistogramFiltersFromFiltersSubject = function () {
+    var histogramFiltersToRemove = {};
+    _.each(this.histogramFilters, function (histFilter, attribute) {
+        if (!attribute) {
+            attribute = histFilter.attribute;
+        }
+        var matchingFilter = this.findFilterForHistogramFilter(attribute);
+        if (matchingFilter !== undefined) {
+            // Update histogram filter from filter:
+            var query = matchingFilter.query;
+            if (query.start !== undefined || query.stop !== undefined) {
+                histFilter.start = query.start;
+                histFilter.stop = query.stop;
+            } else if (query.equals !== undefined) {
+                histFilter.equals = query.equals;
+            } else if (query.ast !== undefined) {
+                updateHistogramFilterFromExpression(histFilter, query.ast);
+            }
+        } else {
+            histogramFiltersToRemove[attribute] = histFilter;
+        }
+    }, this);
+    _.each(histogramFiltersToRemove, function (histFilter, attribute) {
+        delete this.histogramFilters[attribute];
+    }, this);
+};
+
 HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
     var filtersCollection = this.filtersPanel.collection;
     var filterer = this.filtersPanel.control;
