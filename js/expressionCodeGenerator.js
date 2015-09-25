@@ -227,7 +227,7 @@ ExpressionCodeGenerator.prototype.expressionStringForAST = function (ast, depth,
             return this.wrapSubExpressionPerPrecedences('!' + arg, precedence, outerPrecedence);
         case 'BetweenPredicate':
             precedence = this.precedenceOf('&&');
-            args = _.map([ast.value, ast.low, ast.high], function (arg) {
+            args = _.map([ast.value, ast.start, ast.stop], function (arg) {
                 return this.expressionStringForAST(arg, depth + 1, this.precedenceOf('<='));
             }, this);
             subExprString = args[0] + ' >= ' + args[1] +
