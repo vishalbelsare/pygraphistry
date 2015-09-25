@@ -163,9 +163,9 @@ function DataframeCompleter(namespaceMetadata) {
     this.caseSensitive = false;
 }
 
-DataframeCompleter.prototype.insertMatchX = function (editor, data) {
-
-};
+//DataframeCompleter.prototype.insertMatch = function (editor, data) {
+//
+//};
 
 DataframeCompleter.prototype.setNamespaceMetadata = function (namespaceMetadata) {
     this.namespaceMetadata = namespaceMetadata;
