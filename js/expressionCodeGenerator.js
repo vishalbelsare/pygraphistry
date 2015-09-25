@@ -4,8 +4,16 @@ var _ = require('underscore');
 
 
 
-function ExpressionCodeGenerator() {
-    //this.outputLanguage = 'JavaScript';
+function ExpressionCodeGenerator(language, context) {
+    if (language === undefined) {
+        language = 'JavaScript';
+    }
+    this.language = language;
+    if (context === undefined) {
+        context = 'SingleValue';
+    }
+    // This enables identifier-parsing.
+    this.handleMultipleColumns = context !== 'SingleValue';
 }
 
 /**
@@ -204,12 +212,10 @@ ExpressionCodeGenerator.prototype.expressionForFunctionCall = function (inputFun
  * @param {Number} [outerPrecedence] - Surrounding expression precedence, determines whether result needs ().
  * @returns {String}
  */
-ExpressionCodeGenerator.prototype.singleValueFunctionForAST = function (ast, depth, outerPrecedence) {
+ExpressionCodeGenerator.prototype.expressionStringForAST = function (ast, depth, outerPrecedence) {
     if (typeof ast === 'string') {
         return ast;
     }
-    // This enables identifier-parsing.
-    var handleMultipleColumns = false;
     if (depth === undefined) {
         depth = 0;
     }
@@ -217,12 +223,12 @@ ExpressionCodeGenerator.prototype.singleValueFunctionForAST = function (ast, dep
     switch (ast.type) {
         case 'NotExpression':
             precedence = this.precedenceOf('!');
-            arg = this.singleValueFunctionForAST(ast.value, depth + 1, precedence);
+            arg = this.expressionStringForAST(ast.value, depth + 1, precedence);
             return this.wrapSubExpressionPerPrecedences('!' + arg, precedence, outerPrecedence);
         case 'BetweenPredicate':
             precedence = this.precedenceOf('&&');
             args = _.map([ast.value, ast.low, ast.high], function (arg) {
-                return this.singleValueFunctionForAST(arg, depth + 1, this.precedenceOf('<='));
+                return this.expressionStringForAST(arg, depth + 1, this.precedenceOf('<='));
             }, this);
             subExprString = args[0] + ' >= ' + args[1] +
                 ' && ' + args[0] + ' <= ' + args[2];
@@ -230,7 +236,7 @@ ExpressionCodeGenerator.prototype.singleValueFunctionForAST = function (ast, dep
         case 'RegexPredicate':
             precedence = this.precedenceOf('.');
             args = _.map([ast.left, ast.right], function (arg) {
-                return this.singleValueFunctionForAST(arg, depth + 1, this.precedenceOf('<='));
+                return this.expressionStringForAST(arg, depth + 1, this.precedenceOf('<='));
             }, this);
             subExprString = '(new RegExp(' + args[1] + ')).test(' + args[0] + ')';
             return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
@@ -241,7 +247,7 @@ ExpressionCodeGenerator.prototype.singleValueFunctionForAST = function (ast, dep
             var pattern = args.right.value;
             if (args.operator === 'LIKE') {
                 precedence = this.precedenceOf('.');
-                arg = this.singleValueFunctionForAST(args.left, depth + 1, precedence);
+                arg = this.expressionStringForAST(args.left, depth + 1, precedence);
                 var prefix, suffix;
                 var lastPatternIndex = pattern.length - 1;
                 if (pattern.startsWith('%') && pattern.endsWith('%')) {
@@ -277,7 +283,7 @@ ExpressionCodeGenerator.prototype.singleValueFunctionForAST = function (ast, dep
             // Maybe InExpression would be a better logic branch:
             if (ast.operator.toLowerCase() === 'in') {
                 args = _.map([ast.left, ast.right], function (arg) {
-                    return this.singleValueFunctionForAST(arg, depth + 1, precedence);
+                    return this.expressionStringForAST(arg, depth + 1, precedence);
                 }, this);
                 subExprString = args[1] + '.indexOf(' + args[0] + ') !== -1';
                 return this.wrapSubExpressionPerPrecedences(subExprString, this.precedenceOf('!=='), outerPrecedence);
@@ -285,14 +291,14 @@ ExpressionCodeGenerator.prototype.singleValueFunctionForAST = function (ast, dep
             operator = this.translateOperator(ast.operator);
             precedence = this.precedenceOf(operator);
             args = _.map([ast.left, ast.right], function (arg) {
-                return this.singleValueFunctionForAST(arg, depth + 1, precedence);
+                return this.expressionStringForAST(arg, depth + 1, precedence);
             }, this);
             subExprString = [args[0], operator, args[1]].join(' ');
             return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
         case 'UnaryExpression':
             operator = this.translateOperator(ast.operator);
             precedence = this.precedenceOf(operator, ast.fixity);
-            var arg = this.singleValueFunctionForAST(ast.argument, depth + 1, precedence);
+            var arg = this.expressionStringForAST(ast.argument, depth + 1, precedence);
             switch (ast.fixity) {
                 case 'prefix':
                     subExprString = operator + ' ' + arg;
@@ -330,16 +336,16 @@ ExpressionCodeGenerator.prototype.singleValueFunctionForAST = function (ast, dep
             return JSON.stringify(ast.value);
         case 'ListExpression':
             args = _.map(ast.elements, function (arg) {
-                return this.singleValueFunctionForAST(arg, depth + 1, this.precedenceOf('('));
+                return this.expressionStringForAST(arg, depth + 1, this.precedenceOf('('));
             }, this);
             return '[' + args.join(', ') + ']';
         case 'FunctionCall':
             args = _.map(ast.arguments, function (arg) {
-                return this.singleValueFunctionForAST(arg, depth + 1, this.precedenceOf('('));
+                return this.expressionStringForAST(arg, depth + 1, this.precedenceOf('('));
             }, this);
-            return this.expressionForFunctionCall(this.singleValueFunctionForAST(ast.callee), args, outerPrecedence);
+            return this.expressionForFunctionCall(this.expressionStringForAST(ast.callee), args, outerPrecedence);
         case 'Identifier':
-            if (handleMultipleColumns) {
+            if (this.handleMultipleColumns) {
                 var unsafeInputName = ast.name;
                 // Delete all non-word characters, but keep colons and dots.
                 var unsafeInputNameWord = unsafeInputName.replace(/[^\W:.]/, '');
@@ -364,6 +370,7 @@ ExpressionCodeGenerator.prototype.singleValueFunctionForAST = function (ast, dep
                 return unsafeInputParts[unsafeInputParts.length - 1];
             }
             return 'value';
+            break;
         default:
             throw Error('Unrecognized type on AST node: ' + ast.type);
     }

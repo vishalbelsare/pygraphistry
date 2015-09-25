@@ -253,7 +253,7 @@ Dataframe.prototype.filterFuncForQueryObject = function (query) {
 
     if (query.ast !== undefined) {
         try {
-            var bodyString = (new ExpressionCodeGenerator()).singleValueFunctionForAST(query.ast);
+            var bodyString = (new ExpressionCodeGenerator()).expressionStringForAST(query.ast);
             filterFunc = eval('(function (value) { return ' + bodyString + '; })'); // jshint ignore:line
             logger.debug('Generated Filter Source', bodyString);
         } catch (e) {
