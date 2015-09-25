@@ -252,7 +252,7 @@ ExpressionCodeGenerator.prototype.expressionStringForAST = function (ast, depth,
             subExprString = '(new RegExp(' + args[1] + ')).test(' + args[0] + ')';
             return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
         case 'LikePredicate':
-            if (args.right.type !== 'StringLiteral') {
+            if (args.right.type !== 'Literal') {
                 throw Error('Computed text comparison patterns not yet implemented.');
             }
             var pattern = args.right.value;
