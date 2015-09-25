@@ -216,6 +216,45 @@ ExpressionCodeGenerator.prototype.functionForAST = function (ast) {
 };
 
 
+ExpressionCodeGenerator.prototype.regexExpressionForLikeOperator = function (ast, depth, outerPrecedence) {
+    var caseInsensitive = ast.operator === 'ILIKE';
+    if (ast.right.type !== 'Literal') {
+        throw Error('Computed text comparison patterns not yet implemented.');
+    }
+    /** @type {String} */
+    var pattern = ast.right.value;
+    var placeholderIndexes = [];
+    var idx = 0;
+    while ((idx = pattern.indexOf('%', idx)) !== -1) {
+        placeholderIndexes.push(idx);
+    }
+    var regularExpression = '/';
+    var lastPlaceholderIndex = -1;
+    for (var i = 0; i < placeholderIndexes.length - 1; i++) {
+        var placeholderIndex = placeholderIndexes[i];
+        var patternSegment = pattern.substring(lastPlaceholderIndex + 1, placeholderIndex);
+        patternSegment = patternSegment.replace('.', '[.]');
+        regularExpression = regularExpression.concat(patternSegment);
+        // %% quotes %, does not represent a placeholder.
+        if (placeholderIndexes[i + 1] === placeholderIndex + 1) {
+            // Replace quoted % with one:
+            regularExpression += '%';
+        } else {
+            // Equivalent of % is .*:
+            regularExpression += '.*';
+        }
+    }
+    regularExpression += '/';
+    if (caseInsensitive) {
+        regularExpression += 'i';
+    }
+    var precedence = this.precedenceOf('.');
+    var arg = this.expressionStringForAST(ast.left, depth + 1, precedence);
+    var subExprString = arg + '.match(' + regularExpression + ')';
+    return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
+};
+
+
 /**
  * Printed source form of the expression in JavaScript that executes the AST.
  * @param {Object} ast - From expression parser.
@@ -267,9 +306,7 @@ ExpressionCodeGenerator.prototype.expressionStringForAST = function (ast, depth,
                     precedence = this.precedenceOf('!==');
                     subExprString = arg + '.indexOf(' + substring + ') !== -1';
                 } else if (pattern.indexOf('%') !== pattern.lastIndexOf('%')) {
-                    // Multiple placeholders require index comparison coupled with matching
-                    // the expressions could be supported but would be more complicated.
-                    throw Error('Glob patterns with more than one placeholder not yet implemented.');
+                    return this.regexExpressionForLikeOperator(args, depth, outerPrecedence);
                 } else if (pattern.startsWith('%')) {
                     suffix = pattern.slice(-lastPatternIndex);
                     subExprString = arg + '.endsWith(' + suffix + ')';
@@ -285,6 +322,8 @@ ExpressionCodeGenerator.prototype.expressionStringForAST = function (ast, depth,
                         arg + '.startsWith(' + prefix + ')';
                 }
                 return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
+            } else if (args.operator === 'ILIKE') {
+                return this.regexExpressionForLikeOperator(args, depth, outerPrecedence);
             } else {
                 throw Error('Operator not yet implemented: ' + args.operator);
             }
