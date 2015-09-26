@@ -254,6 +254,28 @@ ExpressionCodeGenerator.prototype.regexExpressionForLikeOperator = function (ast
     return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
 };
 
+if (!String.prototype.startsWith) {
+    String.prototype.startsWith = function(searchString, position) {
+        position = position || 0;
+        return this.indexOf(searchString, position) === position;
+    };
+}
+
+if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+        var subjectString = this.toString();
+        if (position === undefined || position > subjectString.length) {
+            position = subjectString.length;
+        }
+        position -= searchString.length;
+        var lastIndex = subjectString.lastIndexOf(searchString, position);
+        return lastIndex !== -1 && lastIndex === position;
+    };
+}
+
+function literalExpressionFor(value) {
+    return JSON.stringify(value);
+}
 
 /**
  * Printed source form of the expression in JavaScript that executes the AST.
@@ -291,41 +313,42 @@ ExpressionCodeGenerator.prototype.expressionStringForAST = function (ast, depth,
             subExprString = '(new RegExp(' + args[1] + ')).test(' + args[0] + ')';
             return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
         case 'LikePredicate':
-            if (args.right.type !== 'Literal') {
+            if (ast.right.type !== 'Literal') {
                 throw Error('Computed text comparison patterns not yet implemented.');
             }
-            var pattern = args.right.value;
-            if (args.operator === 'LIKE') {
-                precedence = this.precedenceOf('.');
-                arg = this.expressionStringForAST(args.left, depth + 1, precedence);
-                var prefix, suffix;
-                var lastPatternIndex = pattern.length - 1;
-                if (pattern.startsWith('%') && pattern.endsWith('%')) {
-                    var substring = pattern.slice(0, lastPatternIndex);
-                    // ES6 could replace with String.includes():
-                    precedence = this.precedenceOf('!==');
-                    subExprString = arg + '.indexOf(' + substring + ') !== -1';
-                } else if (pattern.indexOf('%') !== pattern.lastIndexOf('%')) {
-                    return this.regexExpressionForLikeOperator(args, depth, outerPrecedence);
-                } else if (pattern.startsWith('%')) {
-                    suffix = pattern.slice(-lastPatternIndex);
-                    subExprString = arg + '.endsWith(' + suffix + ')';
-                } else if (pattern.endsWith('%')) {
-                    prefix = pattern.slice(0, lastPatternIndex);
-                    subExprString = arg + '.startsWith(' + prefix + ')';
-                } else {
-                    var index = pattern.indexOf('%');
-                    prefix = pattern.slice(0, index);
-                    suffix = pattern.slice(-(lastPatternIndex - index));
-                    precedence = this.precedenceOf('&&');
-                    subExprString = arg + '.endsWith(' + suffix + ') && ' +
-                        arg + '.startsWith(' + prefix + ')';
-                }
-                return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
-            } else if (args.operator === 'ILIKE') {
-                return this.regexExpressionForLikeOperator(args, depth, outerPrecedence);
-            } else {
-                throw Error('Operator not yet implemented: ' + args.operator);
+            var pattern = ast.right.value;
+            switch (ast.operator.toUpperCase()) {
+                case 'LIKE':
+                    precedence = this.precedenceOf('.');
+                    arg = this.expressionStringForAST(ast.left, depth + 1, precedence);
+                    var prefix, suffix;
+                    var lastPatternIndex = pattern.length - 1;
+                    if (pattern.startsWith('%') && pattern.endsWith('%')) {
+                        var substring = pattern.slice(0, lastPatternIndex);
+                        // ES6 could replace with String.includes():
+                        precedence = this.precedenceOf('!==');
+                        subExprString = arg + '.indexOf(' + literalExpressionFor(substring) + ') !== -1';
+                    } else if (pattern.indexOf('%') !== pattern.lastIndexOf('%')) {
+                        return this.regexExpressionForLikeOperator(args, depth, outerPrecedence);
+                    } else if (pattern.startsWith('%')) {
+                        suffix = pattern.slice(-lastPatternIndex);
+                        subExprString = arg + '.endsWith(' + literalExpressionFor(suffix) + ')';
+                    } else if (pattern.endsWith('%')) {
+                        prefix = pattern.slice(0, lastPatternIndex);
+                        subExprString = arg + '.startsWith(' + literalExpressionFor(prefix) + ')';
+                    } else {
+                        var index = pattern.indexOf('%');
+                        prefix = pattern.slice(0, index);
+                        suffix = pattern.slice(-(lastPatternIndex - index));
+                        precedence = this.precedenceOf('&&');
+                        subExprString = arg + '.endsWith(' + literalExpressionFor(suffix) + ') && ' +
+                            arg + '.startsWith(' + literalExpressionFor(prefix) + ')';
+                    }
+                    return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
+                case 'ILIKE':
+                    return this.regexExpressionForLikeOperator(ast, depth, outerPrecedence);
+                default:
+                    throw Error('Operator not yet implemented: ' + ast.operator);
             }
             break;
         case 'LogicalExpression':
@@ -383,7 +406,7 @@ ExpressionCodeGenerator.prototype.expressionStringForAST = function (ast, depth,
             }
             return JSON.stringify(castValue);
         case 'Literal':
-            return JSON.stringify(ast.value);
+            return literalExpressionFor(ast.value);
         case 'ListExpression':
             args = _.map(ast.elements, function (arg) {
                 return this.expressionStringForAST(arg, depth + 1, this.precedenceOf('('));
