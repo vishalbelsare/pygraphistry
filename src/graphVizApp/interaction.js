@@ -90,7 +90,7 @@ function setupMousemove($eventTarget) {
 
     return $eventTarget.mousemoveAsObservable()
         .filter(function (v) {
-            return ! $(v.target).parents('.graph-label').length;
+            return ! $(v.target).parents('.graph-label.clicked').length;
         })
         .sample(1)
         .map(function (evt) {

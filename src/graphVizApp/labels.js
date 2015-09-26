@@ -265,7 +265,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
             } else if (!poi.state.inactiveLabels.length) {
                 // no label and no pre-allocated elements, create new
                 var freshLabel = poi.genLabel($labelCont, idx, hits[poi.cacheKey(idx, dim)]);
-                freshLabel.elt.on('mouseover', function () {
+                freshLabel.elt.on('click', function () {
                     appState.labelHover.onNext(this);
                 });
                 if (dim === 2) {
