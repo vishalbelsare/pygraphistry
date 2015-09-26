@@ -440,6 +440,15 @@ function FiltersPanel(socket, urlParams) {
         this.filtersSubject.onNext(this.collection);
     }.bind(this));
 
+    this.collection.addFilter({
+        title: 'Point Limit',
+        attribute: undefined,
+        query: {
+            ast: {limit: {point: 8e5}},
+            inputString: 'LIMIT 800000'
+        }
+    });
+
     this.filtersSubject.subscribe(
         function (collection) {
             this.control.updateFilters(collection.map(function (model) {
