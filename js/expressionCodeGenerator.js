@@ -217,44 +217,70 @@ ExpressionCodeGenerator.prototype.functionForAST = function (ast) {
     return eval(source); // jshint ignore:line
 };
 
+function escapeRegexNonPattern(lastPatternSegment) {
+    return lastPatternSegment.replace('.', '[.]');
+}
+
+ExpressionCodeGenerator.prototype.regularExpressionLiteralFromLikePattern = function (pattern, escapeChar) {
+    if (!escapeChar) { escapeChar = '%'; }
+    var re = new RegExp(escapeChar + '%|' + escapeChar + '_|' + '%|_', 'g');
+    var match;
+    var matches = [];
+    var outputLiteralString = '';
+    var lastMatchIndex = 0;
+    while ((match = re.exec(pattern)) !== null) {
+        matches.push(match);
+    }
+    if (matches.length === 0) {
+        return escapeRegexNonPattern(pattern);
+    }
+    for (var i = 0; i < matches.length; i++) {
+        match = matches[i];
+        var patternSegment = pattern.substring(lastMatchIndex, match.index);
+        // Avoid adding regex chars unquoted or numbers!
+        outputLiteralString = outputLiteralString.concat(escapeRegexNonPattern(patternSegment));
+        var matchString = match[0][0];
+        lastMatchIndex = match.index + matchString.length;
+        if (matchString.length === 2) {
+            // Inline quoted pattern character:
+            outputLiteralString += matchString[1];
+        } else if (matchString === '%') {
+            // Equivalent of % is .*:
+            outputLiteralString += '.*';
+        } else if (matchString === '_') {
+            // Equivalent of _ is .:
+            outputLiteralString += '.';
+        } else {
+            throw Error('Unrecognized match for LIKE placeholders: ' + matchString + ' at: ' + match.index);
+        }
+    }
+    if (lastMatchIndex < pattern.length) {
+        var lastPatternSegment = pattern.substring(lastMatchIndex);
+        outputLiteralString = outputLiteralString.concat(escapeRegexNonPattern(lastPatternSegment));
+    }
+    return outputLiteralString;
+};
 
 ExpressionCodeGenerator.prototype.regexExpressionForLikeOperator = function (ast, depth, outerPrecedence) {
     var caseInsensitive = ast.operator === 'ILIKE';
+    var escapeChar = '%'; // Could override in AST via "LIKE pattern ESCAPE char"
     if (ast.right.type !== 'Literal') {
         throw Error('Computed text comparison patterns not yet implemented.');
     }
     /** @type {String} */
     var pattern = ast.right.value;
-    var placeholderIndexes = [];
-    var idx = 0;
-    while ((idx = pattern.indexOf('%', idx)) !== -1) {
-        placeholderIndexes.push(idx);
-    }
-    var regularExpression = '/';
-    var lastPlaceholderIndex = -1;
-    for (var i = 0; i < placeholderIndexes.length - 1; i++) {
-        var placeholderIndex = placeholderIndexes[i];
-        var patternSegment = pattern.substring(lastPlaceholderIndex + 1, placeholderIndex);
-        patternSegment = patternSegment.replace('.', '[.]');
-        regularExpression = regularExpression.concat(patternSegment);
-        // %% quotes %, does not represent a placeholder.
-        if (placeholderIndexes[i + 1] === placeholderIndex + 1) {
-            // Replace quoted % with one:
-            regularExpression += '%';
-        } else {
-            // Equivalent of % is .*:
-            regularExpression += '.*';
-        }
-    }
-    regularExpression += '/';
+    var outputLiteralString = this.regularExpressionLiteralFromLikePattern(pattern, escapeChar);
+    outputLiteralString = '/' + outputLiteralString + '/';
     if (caseInsensitive) {
-        regularExpression += 'i';
+        outputLiteralString += 'i';
     }
     var precedence = this.precedenceOf('.');
     var arg = this.expressionStringForAST(ast.left, depth + 1, precedence);
-    var subExprString = arg + '.match(' + regularExpression + ')';
+    var subExprString = arg + '.match(' + outputLiteralString + ')';
     return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
 };
+
+/// Polyfills:
 
 if (!String.prototype.startsWith) {
     String.prototype.startsWith = function(searchString, position) {
