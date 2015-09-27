@@ -23,8 +23,13 @@ ace.define('ace/mode/graphistry_highlight_rules',
             );
 
             var builtinFunctions = (
-                'DATE|NOW|CONCAT|SUBSTR|SUBSTRING|LOWER|UPPER|LEN|LENGTH|INT|NUMBER|FIRST|LEFT|LAST|RIGHT|MID|' +
-                'ISBLANK|ISEMPTY|STARTSWITH|ENDSWITH|FIND|CONTAINS|REPLACE|SPLIT|TRIM|LTRIM|RTRIM|MAX|MIN|COALESCE'
+                'DATE|NOW|' +
+                'STRING|SUBSTR|SUBSTRING|FIRST|LEFT|LAST|RIGHT|MID|FIND|' +
+                'ISBLANK|ISEMPTY|STARTSWITH|ENDSWITH|CONTAINS|' +
+                'CONCAT|SPLIT|LOWER|UPPER|LEN|LENGTH|' +
+                'REPLACE|TRIM|LTRIM|RTRIM|' +
+                'INT|NUMBER|MAX|MIN|' +
+                'COALESCE'
                 //'count|min|max|avg|sum|rank'
             );
 
