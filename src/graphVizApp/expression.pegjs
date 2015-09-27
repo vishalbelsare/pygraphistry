@@ -217,8 +217,12 @@ NonZeroDigit
   = [1-9]
 
 DecimalIntegerLiteral
-  = "0"
-  / NonZeroDigit DecimalDigit*
+  = "0" {
+    return { type: "Literal", dataType: 'integer', value: 0 };
+  }
+  / NonZeroDigit DecimalDigit* {
+    return { type: "Literal", dataType: 'integer', value: parseInt(text()) };
+  }
 
 ExponentIndicator
   = "e"i
@@ -231,13 +235,13 @@ ExponentPart
 
 DecimalLiteral
   = DecimalIntegerLiteral dot DecimalDigit* ExponentPart? {
-      return { type: "Literal", value: parseFloat(text()) };
+      return { type: "Literal", dataType: 'float', value: parseFloat(text()) };
     }
   / dot DecimalDigit+ ExponentPart? {
-      return { type: "Literal", value: parseFloat(text()) };
+      return { type: "Literal", dataType: 'float', value: parseFloat(text()) };
     }
   / DecimalIntegerLiteral ExponentPart? {
-      return { type: "Literal", value: parseFloat(text()) };
+      return { type: "Literal", dataType: 'integer', value: parseFloat(text()) };
     }
 
 HexDigit
@@ -245,7 +249,7 @@ HexDigit
 
 HexIntegerLiteral
   = "0x"i digits:$HexDigit+ {
-      return { type: "Literal", value: parseInt(digits, 16) };
+      return { type: "Literal", dataType: 'integer', value: parseInt(digits, 16) };
      }
 
 SourceCharacter
@@ -280,10 +284,10 @@ NumericLiteral "number"
 
 StringLiteral "string"
   = '"' chars:DoubleStringCharacter* '"' {
-      return { type: "Literal", value: chars.join("") };
+      return { type: "Literal", dataType: 'string', value: chars.join("") };
     }
   / "'" chars:SingleStringCharacter* "'" {
-      return { type: "Literal", value: chars.join("") };
+      return { type: "Literal", dataType: 'string', value: chars.join("") };
     }
 
 EscapedEscapeCharacter = "\\"
@@ -413,11 +417,11 @@ Keyword
   / WHERE
 
 NullLiteral "null"
-  = NULL { return { type: "Literal", value: null }; }
+  = NULL { return { type: "Literal", dataType: 'null', value: null }; }
 
 BooleanLiteral "boolean"
-  = TRUE  { return { type: "Literal", value: true  }; }
-  / FALSE { return { type: "Literal", value: false }; }
+  = TRUE  { return { type: "Literal", dataType: 'boolean', value: true  }; }
+  / FALSE { return { type: "Literal", dataType: 'boolean', value: false }; }
 
 ReservedWord "reserved word"
   = Keyword
