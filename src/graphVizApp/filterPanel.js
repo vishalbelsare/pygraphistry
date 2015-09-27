@@ -84,10 +84,7 @@ var FilterModel = Backbone.Model.extend({
         return result;
     },
     getExpression: function (control) {
-        var query = this.get('query');
-        if (query === undefined) {
-            return '';
-        }
+        var query = this.get('query') || this.placeholderQuery();
         return control.queryToExpression(query);
     },
     updateExpression: function (control, newExpression) {
@@ -240,7 +237,6 @@ var FilterView = Backbone.View.extend({
     render: function () {
         var bindings = {
             model: _.extend({
-                    expression: this.control.queryToExpression(this.model.get('query')),
                     placeholder: this.control.queryToExpression(this.model.placeholderQuery())
                 },
                 this.model.toJSON()),

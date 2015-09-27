@@ -76,6 +76,9 @@ FilterControl.prototype.printedExpressionOf = function (value) {
 
 FilterControl.prototype.queryToExpression = function(query) {
     if (!query) { return undefined; }
+    if (query.inputString) {
+        return query.inputString;
+    }
     var attribute = query.attribute;
     if (!attribute) {
         attribute = '<unknown>';
