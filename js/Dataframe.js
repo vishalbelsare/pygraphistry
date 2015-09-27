@@ -297,7 +297,7 @@ Dataframe.prototype.getMaskForFilterOnAttributes = function (attributes, filterF
 
 
 Dataframe.prototype.normalizeName = function (dataframeAttribute) {
-    var idx = dataframeAttribute.lastIndexOf(':');
+    var idx = dataframeAttribute ? dataframeAttribute.lastIndexOf(':') : -1;
     var name = dataframeAttribute;
     var type;
     if (idx !== -1) {
