@@ -418,7 +418,7 @@ ExpressionCodeGenerator.prototype.expressionStringForAST = function (ast, depth,
             args = _.map(ast.arguments, function (arg) {
                 return this.expressionStringForAST(arg, depth + 1, this.precedenceOf('('));
             }, this);
-            return this.expressionForFunctionCall(this.expressionStringForAST(ast.callee), args, outerPrecedence);
+            return this.expressionForFunctionCall(ast.callee.name, args, outerPrecedence);
         case 'Identifier':
             if (this.handleMultipleColumns) {
                 var unsafeInputName = ast.name;
