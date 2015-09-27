@@ -340,11 +340,16 @@ ExpressionCodeGenerator.prototype.expressionStringForAST = function (ast, depth,
                         subExprString = arg + '.startsWith(' + literalExpressionFor(prefix) + ')';
                     } else {
                         var index = pattern.indexOf('%');
-                        prefix = pattern.slice(0, index);
-                        suffix = pattern.slice(-(lastPatternIndex - index));
-                        precedence = this.precedenceOf('&&');
-                        subExprString = arg + '.endsWith(' + literalExpressionFor(suffix) + ') && ' +
-                            arg + '.startsWith(' + literalExpressionFor(prefix) + ')';
+                        if (index === -1) {
+                            precedence = this.precedenceOf('===');
+                            subExprString = arg + ' === ' + literalExpressionFor(pattern);
+                        } else {
+                            prefix = pattern.slice(0, index);
+                            suffix = pattern.slice(-(lastPatternIndex - index));
+                            precedence = this.precedenceOf('&&');
+                            subExprString = arg + '.endsWith(' + literalExpressionFor(suffix) + ') && ' +
+                                arg + '.startsWith(' + literalExpressionFor(prefix) + ')';
+                        }
                     }
                     return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
                 case 'ILIKE':
