@@ -57,7 +57,7 @@ var self = module.exports = {
     exception: function(err) {
         var otherArgs = Array.prototype.slice.call(arguments, 1);
         var msg = nodeutil.format.apply(this, otherArgs);
-        self.makeHandler('ERROR', msg, 'error', false, chalk.bold.red)(err)
+        self.makeHandler('ERROR', msg, 'error', false, chalk.bold.red)(err);
     },
 
     die: function() {
@@ -107,9 +107,9 @@ var self = module.exports = {
             if (rethrow) {
                 throw new Error(msg);
             }
-        }
+        };
     }
-}
+};
 
 
 function error2JSON(self, type, msg, error) {
@@ -120,7 +120,7 @@ function error2JSON(self, type, msg, error) {
         module: self.moduleName,
         tag: self.usertag,
         msg: msg
-    }
+    };
 
     if (error && error.stack) {
         payload.stack = error.stack;
