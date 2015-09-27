@@ -121,6 +121,7 @@ ExpressionCodeGenerator.prototype.translateOperator = function (operatorString) 
         case 'not':
             return '!';
         case 'is':
+        case '=':
             return '===';
         default:
             return operatorString;
