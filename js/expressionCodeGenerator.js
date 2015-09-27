@@ -156,6 +156,8 @@ ExpressionCodeGenerator.prototype.expressionForFunctionCall = function (inputFun
             return methodCall('Number', 'parseInt', args);
         case 'NUMBER':
             return 'Number(' + args[0] + ')';
+        case 'STRING':
+            return methodCall(args[0], 'toString', [10]);
         case 'FIRST':
         case 'LEFT':
             return methodCall(args[0], 'slice', [0, args[1]]);
@@ -443,7 +445,6 @@ ExpressionCodeGenerator.prototype.expressionStringForAST = function (ast, depth,
                 return unsafeInputParts[unsafeInputParts.length - 1];
             }
             return 'value';
-            break;
         default:
             throw Error('Unrecognized type on AST node: ' + ast.type);
     }
