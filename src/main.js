@@ -350,7 +350,7 @@ function setupErrorReporters(urlParams) {
         return {
             module: 'streamgl',
             time: (new Date()).toUTCString(),
-            useragent: window.navigator.userAgent,
+            userAgent: window.navigator.userAgent,
             params: urlParams,
             origin: document.location.origin
         };
