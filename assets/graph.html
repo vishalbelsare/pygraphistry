@@ -431,13 +431,13 @@
 </script>
 
 <script type="text/template" id="filterTemplate">
-    <div class="topMenu row bg-info">
+    <div class="topMenu row">
         <!--<div class="col-md-1 expandButton">
             <a href="#">
                 <i class="fa fa-caret-right expandFilterButton" id="expandFilterButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>-->
-        <div class="col-md-8 filterName control-title">{{model.title}}</div>
+        <div class="col-md-8 filterName control-title attributeName">{{model.title}}</div>
         <div class="col-md-2"></div>
         <div class="col-md-1 disableButton">
             <a href="#">
@@ -498,23 +498,26 @@
         </a>
     </div>
     -->
-    <div class="col-xs-9 attributeName">
-        <button class="btn btn-primary dropdown-toggle" type="button" id="addFilterButton" data-toggle="dropdown" aria-expanded="true">
-            Add Filter
-            <span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
-            {{#each fields}}
-            <li role="presentation"><a class="addFilterDropdownField" role="menuitem" tabindex="-1" href="#">
-                {{#if dataType}}
-                {{type}}:{{name}} ({{dataType}})
-                {{else}}
-                {{type}}:{{name}}
-                {{/if}}
-            </a></li>
-            {{/each}}
-        </ul>
+    <div class="col-xs-9">
+        <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="addFilterButton" data-toggle="dropdown" aria-expanded="true">
+                Add Filter
+                <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
+                {{#each fields}}
+                <li role="presentation"><a class="addFilterDropdownField" role="menuitem" tabindex="-1" href="#">
+                    {{#if dataType}}
+                    {{type}}:{{name}} ({{dataType}})
+                    {{else}}
+                    {{type}}:{{name}}
+                    {{/if}}
+                </a></li>
+                {{/each}}
+            </ul>
+        </div>
     </div>
+    <!-- <a class="filter-about" href="where.html"><i class="fa fa-question-circle" /></a> -->
     <!--
     <div class="col-xs-1 filterButton closeButton">
         <a href="#">
