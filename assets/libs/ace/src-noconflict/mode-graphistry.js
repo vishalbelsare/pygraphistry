@@ -12,7 +12,7 @@ ace.define('ace/mode/graphistry_highlight_rules',
 
             var keywords = (
                 'between|and|or|not|in|' +
-                'isnull|notnull|' +
+                'is|isnull|notnull|' +
                 'like|ilike|' +
                 'limit'
                 //'case|when|else|end|type'
@@ -28,7 +28,7 @@ ace.define('ace/mode/graphistry_highlight_rules',
                 'ISBLANK|ISEMPTY|STARTSWITH|ENDSWITH|CONTAINS|' +
                 'CONCAT|SPLIT|LOWER|UPPER|LEN|LENGTH|' +
                 'REPLACE|TRIM|LTRIM|RTRIM|' +
-                'INT|NUMBER|MAX|MIN|' +
+                'INT|NUMBER|MAX|MIN|' + //SIGN|TRUNC|FLOOR|CEIL|ROUND|LOG|LN|LOG2|LOG10|EXP|
                 'COALESCE'
                 //'count|min|max|avg|sum|rank'
             );
