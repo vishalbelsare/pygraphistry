@@ -2,6 +2,8 @@
 
 var _ = require('underscore');
 
+var log = require('common/logger.js');
+var logger = log.createLogger('graph-viz:expressionCodeGenerator');
 
 
 function ExpressionCodeGenerator(language, context) {
@@ -122,6 +124,7 @@ ExpressionCodeGenerator.prototype.translateOperator = function (operatorString) 
             return '!';
         case 'is':
         case '=':
+        case '==':
             return '===';
         default:
             return operatorString;
@@ -158,7 +161,7 @@ ExpressionCodeGenerator.prototype.expressionForFunctionCall = function (inputFun
         case 'NUMBER':
             return 'Number(' + args[0] + ')';
         case 'STRING':
-            return methodCall(args[0], 'toString', [10]);
+            return methodCall(args[0], 'toString', []);
         case 'FIRST':
         case 'LEFT':
             return methodCall(args[0], 'slice', [0, args[1]]);
@@ -202,7 +205,7 @@ ExpressionCodeGenerator.prototype.expressionForFunctionCall = function (inputFun
         case 'COALESCE':
             return this.wrapSubExpressionPerPrecedences(args.join(' || '), this.precedenceOf('||'), outerPrecedence);
         default:
-            throw Error('Unrecognized function', inputFunctionName);
+            throw Error('Unrecognized function: ' + inputFunctionName);
     }
     return safeFunctionName + '(' + args.join(', ') + ')';
 };
@@ -215,6 +218,7 @@ ExpressionCodeGenerator.prototype.functionForAST = function (ast) {
     } else {
         source = '(function (value) { return ' + body + '; })';
     }
+    logger.warn(source);
     return eval(source); // jshint ignore:line
 };
 
