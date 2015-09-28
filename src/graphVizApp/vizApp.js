@@ -8,7 +8,7 @@ var Rx      = require('rx');
               require('../rx-jquery-stub');
 
 var shortestpaths   = require('./shortestpaths.js');
-var colorpicker     = require('./colorpicker.js');
+var colorPicker     = require('./colorpicker.js');
 var controls        = require('./controls.js');
 var canvas          = require('./canvas.js');
 var ui              = require('../ui.js');
@@ -118,9 +118,9 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     canvas.setupLabelsAndCursor(appState, urlParams, $simCont);
     canvas.setupRenderUpdates(appState.renderingScheduler, appState.cameraChanges, appState.settingsChanges);
 
-    var backgroundColorObservable = colorpicker.backgroundColorObservable(initialRenderState, urlParams);
-    var foregroundColorObservable = colorpicker.foregroundColorObservable();
-    colorpicker.init($fgPicker, $bgPicker, foregroundColorObservable, backgroundColorObservable, socket, initialRenderState);
+    var backgroundColorObservable = colorPicker.backgroundColorObservable(initialRenderState, urlParams);
+    var foregroundColorObservable = colorPicker.foregroundColorObservable();
+    colorPicker.init($fgPicker, $bgPicker, foregroundColorObservable, backgroundColorObservable, socket, initialRenderState);
     // TODO use colors.foregroundColor for the renderer/canvas!
     canvas.setupBackgroundColor(appState.renderingScheduler, backgroundColorObservable);
     //TODO expose through cascade and provide to export
