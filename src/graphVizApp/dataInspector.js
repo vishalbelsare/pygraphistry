@@ -17,7 +17,7 @@ var util        = require('./util.js');
 var ROWS_PER_PAGE = 8;
 
 
-function init(appState, socket, workerUrl, marquee, histogramPanelToggle, urlParams) {
+function init(appState, socket, workerUrl, marquee, histogramPanelToggle, filtersSubject, urlParams) {
     var $nodesInspector = $('#inspector-nodes').find('.inspector');
     var $edgesInspector = $('#inspector-edges').find('.inspector');
 
@@ -56,6 +56,7 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle, urlPar
     // Setup Inspector
     //////////////////////////////////////////////////////////////////////////
 
+
     // Grab header.
     Rx.Observable.fromCallback(socket.emit, socket)('inspect_header', null)
     .do(function (reply) {
@@ -83,16 +84,11 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle, urlPar
 
         // Now that we have grids, we need to process updates.
         // TODO: This triggers on simulate, when it shouldn't have to (should it?)
-        marqueeTriggers.flatMap(function (sel) {
-            return Rx.Observable.fromCallback(socket.emit, socket)('set_selection', sel);
-        }).do(function (reply) {
-            if (!reply || !reply.success) {
-                console.error('Server error on set_selection', (reply||{}).error);
-            }
-        }).filter(function (reply) { return reply && reply.success; })
-        .do(function () {
-            updateGrid(grids.nodes);
-            updateGrid(grids.edges);
+        marqueeTriggers.combineLatest(filtersSubject, function (sel, filters) {
+            return {sel: sel, filters: filters};
+        }).do(function (data) {
+            updateGrid(grids.nodes, data.sel);
+            updateGrid(grids.edges, data.sel);
         }).subscribe(_.identity, util.makeErrorHandler('fetch data for inspector'));
     }).subscribe(_.identity, util.makeErrorHandler('fetch inspectHeader'));
 }
@@ -115,7 +111,8 @@ function createColumns(header, title) {
     }));
 }
 
-function updateGrid(grid) {
+function updateGrid(grid, sel) {
+    grid.collection.queryParams.sel = sel;
     grid.collection.fetch({reset: true});
 }
 
@@ -225,7 +222,7 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
         collection: dataFrame
     });
 
-    dataFrame.fetch({reset: true});
+    // dataFrame.fetch({reset: true});
 
     // Propagate active selection changes to views
     activeSelection.do(function (selection) {
