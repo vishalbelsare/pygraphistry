@@ -62,10 +62,10 @@ function getUrlParameters() {
             var ps = param.split('=');
 
             var key = decodeURIComponent(ps.shift());
-            var val = decodeURIComponent(ps.join('='));
+            var value = decodeURIComponent(ps.join('='));
 
             // var valNorm = valRaw.toLowerCase();
-            switch (val.toLowerCase()) {
+            switch (value.toLowerCase()) {
                 case 'true':
                 case 'yes':
                 case '':
@@ -77,11 +77,11 @@ function getUrlParameters() {
                     return [key, null];
             }
 
-            if (!isNaN(val)) {
-                return [key, Number(val)];
+            if (!isNaN(value)) {
+                return [key, Number(value)];
             }
 
-            return [key, val];
+            return [key, value];
         })
         .filter(function filterEmptyParams(paramKV) { return paramKV.length !== 0; })
         .object()
