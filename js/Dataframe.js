@@ -1005,6 +1005,7 @@ Dataframe.prototype.getBuffer = function (name, type) {
  * @param {Object?} attributes - which attributes to extract from the row.
  */
 Dataframe.prototype.getRowAt = function (index, type, attributes) {
+    var origIndex = index; // For clientside metadata.
 
     // Convert from sorted into unsorted edge indices.
     if (index && type === 'edge') {
@@ -1022,7 +1023,8 @@ Dataframe.prototype.getRowAt = function (index, type, attributes) {
     _.each(_.keys(attributes), function (key) {
         row[key] = attributes[key].values[index];
     });
-    row._index = index;
+
+    row._index = origIndex;
     return row;
 };
 
