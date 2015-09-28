@@ -12,7 +12,7 @@ ace.define('ace/mode/graphistry_highlight_rules',
 
             var keywords = (
                 'between|and|or|not|in|' +
-                'isnull|notnull|' +
+                'is|isnull|notnull|' +
                 'like|ilike|' +
                 'limit'
                 //'case|when|else|end|type'
