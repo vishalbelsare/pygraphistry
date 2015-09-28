@@ -557,11 +557,11 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     var marquee = setupMarquee(appState, turnOnMarquee);
     var brush = setupBrush(appState, turnOnBrush);
-    dataInspector.init(appState, socket, workerParams.href, brush, histogramPanelToggle, urlParams);
     var filtersPanel = new FiltersPanel(socket, urlParams);
     var histogramBrush = new HistogramBrush(socket, filtersPanel);
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
     histogramBrush.setupMarqueeInteraction(brush);
+    dataInspector.init(appState, socket, workerParams.href, brush, histogramPanelToggle, filtersPanel.filtersSubject, urlParams);
     forkVgraph(socket, urlParams);
     persistButton(appState, socket, urlParams);
     goLiveButton(socket, urlParams);
