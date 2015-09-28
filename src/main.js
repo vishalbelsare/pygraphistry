@@ -36,16 +36,19 @@ console.warn('%cWarning: having the console open can slow down execution signifi
 
 /**
  * @typedef {Object} GraphistryURLParams
- * @type {string} usertag
- * @type {string} basePath
- * @type {string} debug - defaults to false.
- * @type {string} info - defaults to false.
- * @type {string} logo - bool, defaults to true, can override to disable Graphistry brand/logo.
- * @type {string} menu - bool, defaults to true, can override to disable menu.
- * @type {string} static - bool, defaults to false, indicates whether to load static content instead of connect live.
- * @type {string} bg - hex color, URI-encoded, indicates the DOM background color to use instead of default.
- * @type {string} contentKey - specifies where static content resides.
- * @type {string} camera - defaults to '2d', can also be '3d'
+ * @property {String} usertag
+ * @property {String} basePath
+ * @property {Boolean} beta - defaults to false, enables loading features in beta.
+ * @property {Boolean} debug - defaults to false, implies beta but also ensures JavaScript debuggability.
+ * @property {Boolean} info - defaults to false.
+ * @property {Boolean} logo - bool, defaults to true, can override to disable Graphistry brand/logo.
+ * @property {Boolean} menu - bool, defaults to true, can override to disable menu.
+ * @property {Boolean} offline - bool, defaults to false, indicates whether to use localClient to load from local files.
+ * @property {Number} splashAfter - double, number of seconds to wait while loading.
+ * @property {Boolean} static - bool, defaults to false, indicates whether to load static content instead of connect live.
+ * @property {String} bg - hex color, URI-encoded, indicates the DOM background color to use instead of default.
+ * @property {String} contentKey - specifies where static content resides.
+ * @property {String} camera - defaults to '2d', can also be '3d'
  */
 
 
