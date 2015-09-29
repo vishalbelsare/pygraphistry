@@ -6,16 +6,11 @@ var log = require('common/logger.js');
 var logger = log.createLogger('graph-viz:expressionCodeGenerator');
 
 
-function ExpressionCodeGenerator(language, context) {
+function ExpressionCodeGenerator(language) {
     if (language === undefined) {
         language = 'JavaScript';
     }
     this.language = language;
-    if (context === undefined) {
-        context = 'SingleValue';
-    }
-    // This enables identifier-parsing.
-    this.handleMultipleColumns = context !== 'SingleValue';
 }
 
 /**
@@ -210,10 +205,12 @@ ExpressionCodeGenerator.prototype.expressionForFunctionCall = function (inputFun
     return safeFunctionName + '(' + args.join(', ') + ')';
 };
 
-ExpressionCodeGenerator.prototype.functionForAST = function (ast) {
+ExpressionCodeGenerator.prototype.functionForAST = function (ast, bindings) {
     var source;
+    this.multipleBindings = Object.keys(bindings).length >= 1;
+    this.bindings = bindings;
     var body = this.expressionStringForAST(ast);
-    if (this.handleMultipleColumns) {
+    if (this.multipleBindings) {
         source = '(function (context) { return ' + body + '; })';
     } else {
         source = '(function (value) { return ' + body + '; })';
@@ -456,29 +453,30 @@ ExpressionCodeGenerator.prototype.expressionStringForAST = function (ast, depth,
             }, this);
             return this.expressionForFunctionCall(ast.callee.name, args, outerPrecedence);
         case 'Identifier':
-            if (this.handleMultipleColumns) {
+            if (this.multipleBindings) {
                 var unsafeInputName = ast.name;
                 // Delete all non-word characters, but keep colons and dots.
                 var unsafeInputNameWord = unsafeInputName.replace(/[^\W:.]/, '');
                 var unsafeInputParts = unsafeInputNameWord.split(/:/);
-                var scope;
+                var scope = this.bindings;
                 if (unsafeInputParts.length === 0) {
                     return 'undefined';
                 }
                 if (unsafeInputParts.length > 1) {
                     switch (unsafeInputParts[0]) {
                         case 'point':
-                            scope = 'point';
+                            scope = scope.point;
                             break;
                         case 'edge':
-                            scope = 'edge';
-                            break;
-                        default:
-                            scope = undefined;
+                            scope = scope.edge;
                             break;
                     }
                 }
-                return unsafeInputParts[unsafeInputParts.length - 1];
+                var lastInputPart = unsafeInputParts[unsafeInputParts.length - 1];
+                var contextProperty = scope[lastInputPart];
+                return this.wrapSubExpressionPerPrecedences(
+                    'context[' + literalExpressionFor(contextProperty) + ']',
+                    this.precedenceOf('['), outerPrecedence);
             }
             return 'value';
         default:
