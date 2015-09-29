@@ -465,8 +465,8 @@ EqualityPredicate
 
 EqualityOperator "equality operator"
   = notequals
-  / equals
   / doubleequals
+  / equals
   / notequals
   / gtlt
 
