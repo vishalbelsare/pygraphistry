@@ -14,6 +14,7 @@ var Q           = require('q');
 var express     = require('express');
 var io          = require('socket.io-client'); //for etl setup
 var proxy       = require('express-http-proxy');
+var rewrite     = require('express-urlrewrite');
 var compression = require('compression');
 var request     = require('request');
 var bodyParser  = require('body-parser');
@@ -178,6 +179,12 @@ app.get('*/StreamGL.map', function(req, res) {
 app.use('/graph', function (req, res, next) {
     return express.static(GRAPH_STATIC_PATH)(req, res, next);
 });
+app.use(rewrite('/dataset/:datasetName', '/graph/graph.html?dataset=:datasetName'));
+app.use(rewrite('/dataset/:datasetName\\?*', '/graph/graph.html?dataset=:datasetName?$1'));
+app.use(rewrite('/workbook/:workbookName', '/graph/graph.html?workbook=:workbookName'));
+app.use(rewrite('/workbook/:workbookName\\?*', '/graph/graph.html?workbook=:workbookName?$1'));
+app.use(rewrite('/workbook/:workbookName/view/:viewName', '/graph/graph.html?workbook=:workbookName&view=:viewName'));
+app.use(rewrite('/workbook/:workbookName/view/:viewName\\?*', '/graph/graph.html?workbook=:workbookName&view=:viewName?$1'));
 // Serve uber static assets
 app.use('/uber',   express.static(UBER_STATIC_PATH));
 // Serve splunk static assets
