@@ -13,7 +13,7 @@ snippet cast\n\
 snippet in\n\
 	IN (${1:first}, ${2:next})\n\
 # BETWEEN\n\
-snippet betw\n\
+snippet between\n\
 	BETWEEN ${1:low} AND ${2:high}\n\
 # STRING\n\
 snippet string\n\
