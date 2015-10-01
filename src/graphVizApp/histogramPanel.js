@@ -805,6 +805,7 @@ HistogramsPanel.prototype.handleHistogramDown = function (redrawCallback, id, gl
             }
 
             this.updateHistogramFilters(attr, id, globalStats, firstBin, lastBin);
+            this.updateFiltersFromHistogramFilters();
             redrawCallback();
         }, this).subscribe(_.identity, util.makeErrorHandler('Histogram Filter Dragging'));
 
