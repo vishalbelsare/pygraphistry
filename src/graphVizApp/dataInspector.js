@@ -130,6 +130,7 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
         },
 
         // Give pointer back to view from model.
+        // TODO: This doesn't appear to ever fire? What does backgrid do?
         initalize: function () {
             this.model.view = this;
         },
@@ -183,7 +184,7 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
         selection: []
     });
 
-    // Backgrid does some magic with how it assigns properties,
+    // Backgrid does some magic with how it assigns properties and initializes,
     // so I'm attaching these functions on the outside.
 
     grid.getSelectedModels = function () {
@@ -222,9 +223,31 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
         collection: dataFrame
     });
 
-    // dataFrame.fetch({reset: true});
+    // TODO: Use templates for this stuff instead of making in jquery.
+    var divider = $('<div>').addClass('divide-line');
+    var paginatorEl = paginator.render().el;
 
-    // Propagate active selection changes to views
+    $inspector.prepend(divider);
+    $inspector.append(paginatorEl);
+
+    setupSelectionRerender(activeSelection, grid, dim);
+    setupSearchBar(columns[0].label, dataFrame, $inspector);
+
+    var $colHeaders = $inspector.find('.backgrid').find('thead').find('tr').children();
+    $colHeaders.each(function () {
+        var $colHeader = $(this);
+        $colHeader.click(function () {
+            $colHeaders.not($colHeader).each(function () {
+                $(this).removeClass('ascending').removeClass('descending');
+            });
+        });
+    });
+
+    return grid;
+}
+
+
+function setupSelectionRerender(activeSelection, grid, dim) {
     activeSelection.do(function (selection) {
         grid.selectedModels = [];
         grid.selection = selection;
@@ -245,101 +268,89 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
             row.userRender();
         });
     }).subscribe(_.identity, util.makeErrorHandler('Render active selection in data inspector'));
+}
 
 
+function setupSearchStreams(searchRequests, readyForSearch) {
+    readyForSearch.flatMapLatest(function (lastSearch) {
+        return searchRequests.filter(function (req) {
+            return req.data.search !== lastSearch;
+        }).take(1);
+    }).do(function (req) {
+        var collection = req.collection;
+        var data = req.data;
 
-    // TODO: Use templates for this stuff instead of making in jquery.
-    var divider = $('<div>').addClass('divide-line');
-    var paginatorEl = paginator.render().el;
-
-    $inspector.prepend(divider);
-    $inspector.append(paginatorEl);
-
-
-    // TODO: Ungate this feature when it's tested.
-    if (urlParams.debug) {
-        var serverSideFilter = new Backgrid.Extension.ServerSideFilter({
-            collection: dataFrame,
-            name: 'search',
-            placeholder: 'Search ' + columns[0].label + 's'
-        });
-
-        //////////////////////////////////////////////////////////////////////
-        // Attach Autosearch Handlers
-        //////////////////////////////////////////////////////////////////////
-
-        var attemptSearch = function (e) {
-            // Because we clobber the handler for this.
-            this.showClearButtonMaybe();
-            this.search(e);
+        var successCb = function () {
+            readyForSearch.onNext(req.data.search);
         };
-        // Copied / modified the filter extension. We're overriding here to
-        // allow it to debounce itself.
-        // TODO: Decide if we should fork, or otherwise extend cleaner.
-        var searchRequests = new Rx.ReplaySubject(1);
-        var readyForSearch = new Rx.Subject();
 
-        readyForSearch.flatMapLatest(function (lastSearch) {
-            return searchRequests.filter(function (req) {
-                return req.data.search !== lastSearch;
-            }).take(1);
-        }).do(function (req) {
-            var collection = req.collection;
-            var data = req.data;
+        if (Backbone.PageableCollection &&
+                collection instanceof Backbone.PageableCollection) {
+            collection.getFirstPage({data: data, reset: true, fetch: true, success: successCb});
+        } else {
+            collection.fetch({data: data, reset: true, success: successCb});
+        }
+    }).subscribe(_.identity, util.makeErrorHandler('search Request Subject'));
 
-            var successCb = function () {
-                readyForSearch.onNext(req.data.search);
-            };
-
-            if (Backbone.PageableCollection &&
-                    collection instanceof Backbone.PageableCollection) {
-                collection.getFirstPage({data: data, reset: true, fetch: true, success: successCb});
-            } else {
-                collection.fetch({data: data, reset: true, success: successCb});
-            }
-        }).subscribe(_.identity, util.makeErrorHandler('search Request Subject'));
-        readyForSearch.onNext(null);
-
-        var search = function (e) {
-            if (e) {
-                e.preventDefault();
-            }
-
-            var data = {};
-            var query = this.query();
-            if (query) {
-                data[this.name] = query;
-            }
-            searchRequests.onNext({
-                data: data,
-                collection: this.collection,
-            });
-        };
-        serverSideFilter.events = _.extend(serverSideFilter.events, {
-            'keyup input[type=search]': 'attemptSearch',
-        });
-        serverSideFilter.attemptSearch = attemptSearch;
-        serverSideFilter.search = search;
-        serverSideFilter.delegateEvents();
+    readyForSearch.onNext(null);
+}
 
 
-        // Attach element to inspector.
-        var filterEl = serverSideFilter.render().el;
-        $inspector.prepend(filterEl);
-    }
+function setupSearchBar(searchField, dataFrame, $inspector) {
 
-    var $colHeaders = $inspector.find('.backgrid').find('thead').find('tr').children();
-    $colHeaders.each(function () {
-        var $colHeader = $(this);
-        $colHeader.click(function () {
-            $colHeaders.not($colHeader).each(function () {
-                $(this).removeClass('ascending').removeClass('descending');
-            });
-        });
+    var serverSideFilter = new Backgrid.Extension.ServerSideFilter({
+        collection: dataFrame,
+        name: 'search',
+        placeholder: 'Search ' + searchField + 's'
     });
 
-    return grid;
+    //////////////////////////////////////////////////////////////////////
+    // Attach Autosearch Handlers
+    //////////////////////////////////////////////////////////////////////
+
+    var searchRequests = new Rx.ReplaySubject(1);
+    var readyForSearch = new Rx.Subject();
+
+    var attemptSearch = function (e) {
+        // Because we clobber the handler for this.
+        this.showClearButtonMaybe();
+        this.search(e);
+    };
+
+    // Copied / modified the filter extension. We're overriding here to
+    // allow it to debounce itself.
+    // TODO: Decide if we should fork, or otherwise extend cleaner.
+    var search = function (e) {
+        if (e) {
+            e.preventDefault();
+        }
+
+        var data = {};
+        var query = this.query();
+        if (query) {
+            data[this.name] = query;
+        }
+        searchRequests.onNext({
+            data: data,
+            collection: this.collection,
+        });
+    };
+
+    setupSearchStreams(searchRequests, readyForSearch);
+
+    // Hook up new event handlers
+    serverSideFilter.events = _.extend(serverSideFilter.events, {
+        'keyup input[type=search]': 'attemptSearch',
+    });
+    serverSideFilter.attemptSearch = attemptSearch;
+    serverSideFilter.search = search;
+    serverSideFilter.delegateEvents();
+
+    // Attach element to inspector.
+    var filterEl = serverSideFilter.render().el;
+    $inspector.prepend(filterEl);
 }
+
 
 
 module.exports = {
