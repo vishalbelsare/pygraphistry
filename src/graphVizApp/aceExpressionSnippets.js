@@ -16,16 +16,16 @@ snippet in\n\
 snippet betw\n\
 	BETWEEN ${1:low} AND ${2:high}\n\
 # STRING\n\
-snippet str\n\
+snippet string\n\
 	STRING(${1:expression})\n\
 # DATE\n\
 snippet date\n\
 	DATE(${1:string})\n\
 # CONCAT\n\
-snippet conc\n\
+snippet concat\n\
 	CONCAT(${1:first}, ${2:next})\n\
 # NUMBER\n\
-snippet num\n\
+snippet number\n\
 	NUMBER(${1:expression)\n\
 # INT\n\
 snippet int\n\
@@ -40,22 +40,22 @@ snippet last\n\
 snippet mid\n\
 	MID(${1:body}, ${2:start_index}, ${3:number_of_elements})\n\
 # SUBSTRING\n\
-snippet sub\n\
+snippet substring\n\
 	SUBSTRING(${1:body}, ${2:start_index}, ${3:end_index})\n\
 # CONTAINS\n\
 snippet contains\n\
 	CONTAINS(${1:body}, ${2:substring})\n\
 # STARTSWITH\n\
-snippet starts\n\
+snippet startswith\n\
 	STARTSWITH(${1:body}, ${2:substring})\n\
 # ENDSWITH\n\
-snippet ends\n\
+snippet endswith\n\
 	ENDSWITH(${1:body}, ${2:substring})\n\
 # FIND\n\
 snippet find\n\
 	FIND(${1:body}, ${2:substring})\n\
 # REPLACE\n\
-snippet repl\n\
+snippet replace\n\
 	REPLACE(${1:body}, ${2:substring}, ${3:replacement})\n\
 # MAX\n\
 snippet max\n\
@@ -64,7 +64,7 @@ snippet max\n\
 snippet min\n\
 	MIN(${1:first}, ${2:next})\n\
 # COALESCE\n\
-snippet coal\n\
+snippet coalesce\n\
 	COALESCE(${1:first}, ${2:next})\n\
 ';
         exports.scope = 'graphistry';
