@@ -10,17 +10,25 @@ ace.define('ace/mode/graphistry_highlight_rules',
 
         var GraphistryHighlightRules = function () {
 
-            var keywords = (
+            var operatorKeywords = (
                 'between|and|or|not|in|' +
                 'is|isnull|notnull|' +
-                'like|ilike|' +
+                'like|ilike'
+            );
+            var controlKeywords = (
                 'limit'
                 //'case|when|else|end|type'
             );
 
-            var builtinConstants = (
-                'true|false|null'
-            );
+            var identifierRe = '[a-zA-Z\\$_\u00a1-\uffff][a-zA-Z\\d\\$_\u00a1-\uffff]*\\b';
+
+            var escapedRe = '\\\\(?:x[0-9a-fA-F]{2}|' + // hex
+                'u[0-9a-fA-F]{4}|' + // unicode
+                '[0-2][0-7]{0,2}|' + // oct
+                '3[0-6][0-7]?|' + // oct
+                '37[0-7]?|' + // oct
+                '[4-7][0-7]?|' + //oct
+                '.)';
 
             var builtinFunctions = (
                 'DATE|NOW|' +
@@ -34,50 +42,91 @@ ace.define('ace/mode/graphistry_highlight_rules',
             );
 
             var keywordMapper = this.createKeywordMapper({
-                'support.function': builtinFunctions,
-                'keyword': keywords,
-                'constant.language': builtinConstants
+                'variable.language': 'now', // it?
+                'keyword.control': controlKeywords,
+                'keyword.operator': operatorKeywords,
+                'constant.language.boolean': 'true|false',
+                'constant.language': 'null|Infinity|NaN',
+                'support.function': builtinFunctions
             }, 'identifier', true);
 
             this.$rules = {
-                'start' : [ {
-                    token : 'comment',
-                    regex : '--.*$'
-                },  {
-                    token : 'comment',
-                    start : '/\\*',
-                    end : '\\*/'
+                'start': [{
+                    token: 'comment',
+                    regex: '--.*$'
                 }, {
-                    token : 'string',           // " string
-                    regex : '".*?"'
+                    token : 'comment', // multi line comment
+                    regex : /\/\*/
                 }, {
-                    token : 'string',           // ' string
-                    regex : '\'.*?\''
+                    token : 'string',
+                    regex : '\'(?=.)',
+                    next  : 'qstring'
+                }, {
+                    token : 'string',
+                    regex : '"(?=.)',
+                    next  : 'qqstring'
+                }, {
+                    token : 'constant.numeric', // hex
+                    regex : /0[xX][0-9a-fA-F]+\b/
                 }, {
                     token : 'constant.numeric', // float
-                    regex : '[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b'
+                    regex : /[+-]?\d+(?:(?:\.\d*)?(?:[eE][+-]?\d+)?)?\b/
                 }, {
-                    token : keywordMapper,
-                    regex : '[a-zA-Z_$][a-zA-Z0-9_$]*\\b'
+                    token: keywordMapper,
+                    regex: identifierRe
                 }, {
-                    token : 'keyword.operator',
-                    regex : '\\+|\\-|\\/|\\/\\/|%|<@>|@>|<@|&|\\^|~|<|>|<=|=>|==|!=|<>|='
+                    token: 'keyword.operator',
+                    regex: '\\+|\\-|\\/|\\/\\/|%|<@>|@>|<@|&|\\^|~|<|>|<=|=>|==|!=|<>|='
                 }, {
-                    token : 'paren.lparen',
-                    regex : '[\\(]'
+                    token: 'paren.lparen',
+                    regex: /[\[({]/,
+                    next: 'start'
                 }, {
-                    token : 'paren.rparen',
-                    regex : '[\\)]'
+                    token: 'paren.rparen',
+                    regex: /[\])}]/
                 }, {
-                    token : 'paren.lbracket',
-                    regex : '[\\[]'
+                    token: 'paren.lbracket',
+                    regex: '[\\[]',
+                    next: 'start'
                 }, {
-                    token : 'paren.rbracket',
-                    regex : '[\\]]'
+                    token: 'paren.rbracket',
+                    regex: '[\\]]'
                 }, {
-                    token : 'text',
-                    regex : '\\s+'
-                } ]
+                    token: 'text',
+                    regex: '\\s+'
+                }],
+                'qqstring': [
+                    {
+                        token: 'constant.language.escape',
+                        regex: escapedRe
+                    }, {
+                        token: 'string',
+                        regex: '\\\\$',
+                        next: 'qqstring'
+                    }, {
+                        token: 'string',
+                        regex: '"|$',
+                        next: 'start'
+                    }, {
+                        defaultToken: 'string'
+                    }
+                ],
+                'qstring': [
+                    {
+                        token: 'constant.language.escape',
+                        regex: escapedRe
+                    }, {
+                        token: 'string',
+                        regex: '\\\\$',
+                        next: 'qstring'
+                    }, {
+                        token: 'string',
+                        regex: '\'|$',
+                        next: 'start'
+                    }, {
+                        defaultToken: 'string'
+                    }
+                ]
             };
             this.normalizeRules();
         };
