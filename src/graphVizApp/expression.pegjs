@@ -143,6 +143,7 @@ TimePseudoLiteral "now"
 
 LiteralValue "literal"
   = NumericLiteral
+  / NumericConstant
   / StringLiteral
   / BlobLiteral
   / NullLiteral
@@ -281,6 +282,9 @@ NumericLiteral "number"
   / literal:DecimalLiteral !(IdentifierStart / DecimalDigit) {
       return literal;
     }
+
+NumericConstant "numeric constant"
+  = INFINITY / NAN
 
 StringLiteral "string"
   = '"' chars:DoubleStringCharacter* '"' {
@@ -467,7 +471,6 @@ EqualityOperator "equality operator"
   = notequals
   / doubleequals
   / equals
-  / notequals
   / gtlt
 
 WhiteSpace "whitespace"
@@ -547,6 +550,16 @@ LikeOperator "text comparison"
 
 LikePredicate "text comparison"
   = value:MemberAccess
+    __ operator:LikeOperator __ like:MemberAccess __ ESCAPE escapeChar:StringLiteral
+    { return {
+        type: 'LikePredicate',
+        operator: operator,
+        left: value,
+        right: like,
+        escapeChar: escapeChar
+      };
+    }
+  / value:MemberAccess
     __ operator:LikeOperator __ like:MemberAccess
     { return {
         type: 'LikePredicate',
@@ -732,6 +745,7 @@ IMMEDIATE = "IMMEDIATE"i
 IN = "IN"i
 INDEX = "INDEX"i
 INDEXED = "INDEXED"i
+INFINITY = "INFINITY"i
 INITIALLY = "INITIALLY"i
 INNER = "INNER"i
 INSERT =
@@ -747,6 +761,7 @@ LEFT = "LEFT"i
 LIKE = "LIKE"i
 LIMIT = "LIMIT"i
 MATCH = "MATCH"i
+NAN = "NaN"i
 NATURAL = "NATURAL"i
 NO = "NO"i
 NOT = "NOT"i
