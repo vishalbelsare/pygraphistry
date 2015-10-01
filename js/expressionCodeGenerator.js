@@ -207,7 +207,7 @@ ExpressionCodeGenerator.prototype.expressionForFunctionCall = function (inputFun
 
 ExpressionCodeGenerator.prototype.functionForAST = function (ast, bindings) {
     var source;
-    this.multipleBindings = Object.keys(bindings).length >= 1;
+    this.multipleBindings = Object.keys(bindings).length > 1;
     this.bindings = bindings;
     var body = this.expressionStringForAST(ast);
     if (this.multipleBindings) {
