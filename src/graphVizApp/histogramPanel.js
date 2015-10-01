@@ -761,6 +761,11 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
 
 };
 
+function binInLastFilter(lastHistogramFilter, binNum) {
+    return (lastHistogramFilter &&
+        (lastHistogramFilter.firstBin <= binNum && lastHistogramFilter.lastBin >= binNum));
+}
+
 HistogramsPanel.prototype.handleHistogramDown = function (redrawCallback, id, globalStats) {
     var col = d3.select(d3.event.target.parentNode);
     var $element = $(col[0][0]);
@@ -768,17 +773,37 @@ HistogramsPanel.prototype.handleHistogramDown = function (redrawCallback, id, gl
 
     var startBin = $element.attr('binnumber');
     var attr = $element.attr('attribute');
+    var numBins = globalStats.sparkLines[attr].numBins;
     var lastHistogramFilter = this.histogramFilters[attr];
     this.updateHistogramFilters(attr, id, globalStats, startBin, startBin);
+
+    var startedInLastFilter = binInLastFilter(lastHistogramFilter, startBin);
 
     var positionChanges = Rx.Observable.fromEvent($parent, 'mouseover')
         .map(function (evt) {
             var $col = $(evt.target).parent();
             var binNum = $col.attr('binnumber');
 
-            var ends = [+startBin, +binNum];
-            var firstBin = _.min(ends);
-            var lastBin = _.max(ends);
+            var firstBin, lastBin;
+            if (startedInLastFilter) {
+                // User is dragging an existing window
+                var delta = binNum - startBin;
+                // Guard delta so that window doesn't go off the edge.
+                if (lastHistogramFilter.firstBin + delta < 0) {
+                    delta = 0 - lastHistogramFilter.firstBin;
+                } else if (lastHistogramFilter.lastBin + delta >= numBins) {
+                    delta = numBins - 1 - lastHistogramFilter.lastBin;
+                }
+
+                firstBin = lastHistogramFilter.firstBin + delta;
+                lastBin = lastHistogramFilter.lastBin + delta;
+            } else {
+                // User is drawing a new window
+                var ends = [+startBin, +binNum];
+                firstBin = _.min(ends);
+                lastBin = _.max(ends);
+            }
+
             this.updateHistogramFilters(attr, id, globalStats, firstBin, lastBin);
             redrawCallback();
         }, this).subscribe(_.identity, util.makeErrorHandler('Histogram Filter Dragging'));
@@ -792,8 +817,7 @@ HistogramsPanel.prototype.handleHistogramDown = function (redrawCallback, id, gl
             this.histogramFilters[attr].completed = true;
 
             // Click on selection, so undo all filters.
-            if (lastHistogramFilter && binNum === startBin &&
-                    (lastHistogramFilter.firstBin <= binNum && lastHistogramFilter.lastBin >= binNum)) {
+            if (startedInLastFilter &&  binNum === startBin) {
                 this.deleteHistogramFilterByAttribute(attr);
             }
 
