@@ -462,10 +462,15 @@ var write = Q.promised(function write(buffer, data) {
 
 var read = Q.promised(function (buffer, target, optStartIdx, optLen) {
     logger.trace('Reading from buffer', buffer.name);
+    var start = Math.min(optStartIdx || 0, buffer.size);
+    var len = optLen !== undefined ? optLen : (buffer.size - start);
+
+    if (len === 0) {
+        return Q(buffer);
+    }
+
     return buffer.acquire()
         .then(function() {
-            var start = Math.min(optStartIdx || 0, buffer.size);
-            var len = optLen !== undefined ? optLen : (buffer.size - start);
             logger.trace('Reading Buffer', buffer.name, start, len);
             ocl.enqueueReadBuffer(buffer.cl.queue, buffer.buffer, true, start, len, target);
             // TODO acquire and release not needed if GL is dropped
