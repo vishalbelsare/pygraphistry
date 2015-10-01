@@ -4,7 +4,7 @@ var _       = require('underscore');
 var Rx      = require('rx');
 require('../rx-jquery-stub');
 var PEGUtil = require('pegjs-util');
-var ASTY    = require('asty');
+//var ASTY    = require('asty');
 
 var util    = require('./util.js');
 var Command = require('./command.js');
@@ -106,12 +106,12 @@ FilterControl.prototype.queryToExpression = function(query) {
 };
 
 FilterControl.prototype.queryFromExpressionString = function (inputString) {
-    var asty = new ASTY();
+    //var asty = new ASTY();
     var result = PEGUtil.parse(parser, inputString, {
-        startRule: 'start',
+        startRule: 'start'/*,
         makeAST: function (line, column, offset, args) {
             return asty.create.apply(asty, args).pos(line, column, offset);
-        }
+        }*/
     });
     // TODO set result.attribute by walking the AST for Identifiers, requires asty.
     result.inputString = inputString;
