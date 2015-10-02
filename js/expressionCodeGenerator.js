@@ -429,9 +429,13 @@ ExpressionCodeGenerator.prototype.expressionStringForAST = function (ast, depth,
         case 'CastExpression':
             var value = ast.value;
             var castValue = value;
-            switch (ast.type_name) {
+            var type_name = typeof ast.type_name === 'string' ? ast.type_name : ast.type_name.name;
+            switch (type_name) {
                 case 'string':
                     castValue = value.toString();
+                    break;
+                case 'integer':
+                    castValue = parseInt(value);
                     break;
                 case 'number':
                     castValue = Number(value);
@@ -447,7 +451,7 @@ ExpressionCodeGenerator.prototype.expressionStringForAST = function (ast, depth,
                     }
                     break;
                 default:
-                    throw Error('Unrecognized type', ast.type_name);
+                    throw Error('Unrecognized type: ' + type_name);
             }
             return JSON.stringify(castValue);
         case 'Literal':
