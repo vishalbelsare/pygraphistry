@@ -134,7 +134,7 @@ function atlasControls(algo) {
     }
 
     var params = {
-        tau: new ContinuousParam('Precision vs. Speed', 10.0, 1.0, 25.0),
+        tau: new DiscreteParam('Precision vs. Speed', 0, -5, 5),
         gravity: new ContinuousParam('Center Magnet', 1.0, 0.01, 100),
         scalingRatio: new ContinuousParam('Expansion Ratio', 1.0, 0.01, 100),
         edgeInfluence: new DiscreteParam('Edge Influence', 0, 0, 5, 1),
