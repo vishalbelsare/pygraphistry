@@ -38,10 +38,8 @@ function FilterControl(socket) {
 FilterControl.prototype.setupFilterRequestHandler = function(requests, responses, command) {
     var that = this;
     util.bufferUntilReady(requests).do(function (hash) {
-        console.log('SENDING');
         command.sendWithObservableResult(hash.data, true)
             .do(function (reply) {
-                console.log('DONE');
                 responses.onNext(reply);
                 hash.ready();
             }.bind(that)).subscribe(
