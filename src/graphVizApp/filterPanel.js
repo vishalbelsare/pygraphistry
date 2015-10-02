@@ -443,7 +443,15 @@ function FiltersPanel(socket, urlParams) {
         title: 'Point Limit',
         attribute: undefined,
         query: {
-            ast: {limit: {point: 8e5}},
+            type: 'point',
+            ast: {
+                type: 'Limit',
+                value: {
+                    type: 'Literal',
+                    dataType: 'integer',
+                    value: 8e5
+                }
+            },
             inputString: 'LIMIT 800000'
         }
     });
