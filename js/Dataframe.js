@@ -411,7 +411,7 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
  * @param {MaskSet} masks
  * @returns {Promise.<Array<Buffer>>}
  */
-Dataframe.prototype.filter = function (masks, simulator) {
+Dataframe.prototype.applyMaskSetToFilterInPlace = function (masks, simulator) {
     logger.debug('Starting Filter');
 
     var start = Date.now();
