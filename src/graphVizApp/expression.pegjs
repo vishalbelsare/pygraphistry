@@ -206,6 +206,7 @@ FunctionInvocation "function call"
 
 PrimaryExpression
   = FunctionInvocation
+  / CastExpression
   / Identifier
   / LiteralValue
   / lparen __ expression:SearchCondition __ rparen { return expression; }
