@@ -125,7 +125,7 @@ ORExpression
     { return buildBinaryExpression(first, rest); }
 
 LimitClause "limit"
-  = LIMIT __ limit:NumericLiteral
+  = LIMIT __ limit:Expression
     { return { type: 'Limit', value: limit } }
 
 RowValueExpression
