@@ -778,6 +778,7 @@ HistogramsPanel.prototype.handleHistogramDown = function (redrawCallback, id, gl
     this.updateHistogramFilters(attr, id, globalStats, startBin, startBin);
 
     var startedInLastFilter = binInLastFilter(lastHistogramFilter, startBin);
+    var mouseMoved = false;
 
     var positionChanges = Rx.Observable.fromEvent($parent, 'mouseover')
         .map(function (evt) {
@@ -804,6 +805,7 @@ HistogramsPanel.prototype.handleHistogramDown = function (redrawCallback, id, gl
                 lastBin = _.max(ends);
             }
 
+            mouseMoved = true;
             this.updateHistogramFilters(attr, id, globalStats, firstBin, lastBin);
             this.updateFiltersFromHistogramFilters();
             redrawCallback();
@@ -811,14 +813,12 @@ HistogramsPanel.prototype.handleHistogramDown = function (redrawCallback, id, gl
 
     Rx.Observable.fromEvent($(document.body), 'mouseup')
         .take(1)
-        .do(function (evt) {
+        .do(function () {
             positionChanges.dispose();
-            var $col = $(evt.target).parent();
-            var binNum = $col.attr('binnumber');
             this.histogramFilters[attr].completed = true;
 
             // Click on selection, so undo all filters.
-            if (startedInLastFilter &&  binNum === startBin) {
+            if (startedInLastFilter &&  !mouseMoved) {
                 this.deleteHistogramFilterByAttribute(attr);
             }
 
