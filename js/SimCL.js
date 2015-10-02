@@ -1013,12 +1013,13 @@ function setMidEdgeColors(simulator, midEdgeColors) {
 }
 
 function setEdgeWeight(simulator, edgeWeights) {
+    var i;
     if (!edgeWeights) {
         logger.trace('Using default edge weights');
         var forwardsEdges = simulator.dataframe.getHostBuffer('forwardsEdges');
 
         edgeWeights = new Float32Array(forwardsEdges.edgesTyped.length / 2);
-        for (var i = 0; i < edgeWeights.length; i++) {
+        for (i = 0; i < edgeWeights.length; i++) {
             edgeWeights[i] = 1.0;
         }
     }
@@ -1027,7 +1028,7 @@ function setEdgeWeight(simulator, edgeWeights) {
     var backwardsEdgeWeights = new Float32Array(edgeWeights.length);
     var forwardsPermutation = simulator.dataframe.rawdata.hostBuffers.forwardsEdges.edgePermutationInverseTyped;
     var backwardsPermutation = simulator.dataframe.rawdata.hostBuffers.backwardsEdges.edgePermutationInverseTyped;
-    for (var i = 0; i < edgeWeights.length; i++) {
+    for (i = 0; i < edgeWeights.length; i++) {
         forwardsEdgeWeights[i] = edgeWeights[forwardsPermutation[i]];
         backwardsEdgeWeights[i] = edgeWeights[backwardsPermutation[i]];
     }
@@ -1057,7 +1058,7 @@ function setLocks(simulator, cfg) {
 
 
 function setPhysics(simulator, cfg) {
-    logger.debug('Simcl set physics', cfg)
+    logger.debug('SimCL set physics', cfg)
     _.each(simulator.layoutAlgorithms, function (algo) {
         if (algo.name in cfg) {
             algo.setPhysics(cfg[algo.name]);
