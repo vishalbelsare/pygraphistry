@@ -271,28 +271,18 @@ function setupSelectionRerender(activeSelection, grid, dim) {
 }
 
 
-function setupSearchStreams(searchRequests, readyForSearch) {
-    readyForSearch.flatMapLatest(function (lastSearch) {
-        return searchRequests.filter(function (req) {
-            return req.data.search !== lastSearch;
-        }).take(1);
-    }).do(function (req) {
-        var collection = req.collection;
-        var data = req.data;
+function setupSearchStreams(searchRequests) {
 
-        var successCb = function () {
-            readyForSearch.onNext(req.data.search);
-        };
+    util.bufferUntilReady(searchRequests).do(function (hash) {
+        var req = hash.data;
 
         if (Backbone.PageableCollection &&
-                collection instanceof Backbone.PageableCollection) {
-            collection.getFirstPage({data: data, reset: true, fetch: true, success: successCb});
+                req.collection instanceof Backbone.PageableCollection) {
+            req.collection.getFirstPage({data: req.data, reset: true, fetch: true, success: hash.ready});
         } else {
-            collection.fetch({data: data, reset: true, success: successCb});
+            req.collection.fetch({data: req.data, reset: true, success: hash.ready});
         }
-    }).subscribe(_.identity, util.makeErrorHandler('search Request Subject'));
-
-    readyForSearch.onNext(null);
+    }).subscribe(_.identity, util.makeErrorHandler('dataInspector search stream'));
 }
 
 
@@ -309,7 +299,6 @@ function setupSearchBar(searchField, dataFrame, $inspector) {
     //////////////////////////////////////////////////////////////////////
 
     var searchRequests = new Rx.ReplaySubject(1);
-    var readyForSearch = new Rx.Subject();
 
     var attemptSearch = function (e) {
         // Because we clobber the handler for this.
@@ -336,7 +325,7 @@ function setupSearchBar(searchField, dataFrame, $inspector) {
         });
     };
 
-    setupSearchStreams(searchRequests, readyForSearch);
+    setupSearchStreams(searchRequests);
 
     // Hook up new event handlers
     serverSideFilter.events = _.extend(serverSideFilter.events, {
