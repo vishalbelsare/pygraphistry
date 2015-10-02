@@ -73,15 +73,24 @@ function makeEmptyData () {
 /**
  * Takes in a mask of points, and returns an object
  * containing masks for both the points and edges.
+ * The result's edges must begin and end in the set of points.
  * Relative to forwardsEdges (so sorted)
- * @param {Mask} pointMask
+ * @param {Mask} pointMask - The set of points that the edges must connect.
+ * @param {?Mask} edgeMaskOriginal - An optional set of edges to also filter on.
  * @returns MaskSet
  */
-Dataframe.prototype.masksFromPoints = function (pointMask) {
+Dataframe.prototype.masksFromPoints = function (pointMask, edgeMaskOriginal) {
     var pointMaskOriginalLookup = {};
     _.each(pointMask, function (newIdx, i) {
         pointMaskOriginalLookup[newIdx] = 1;
     });
+    var edgeMaskOriginalLookup;
+    if (edgeMaskOriginal !== undefined) {
+        edgeMaskOriginalLookup = {};
+        _.each(edgeMaskOriginal, function (newIdx) {
+            edgeMaskOriginalLookup[newIdx] = 1;
+        });
+    }
 
     var edgeMask = [];
     var edges = this.rawdata.hostBuffers.forwardsEdges.edgesTyped;
@@ -90,7 +99,8 @@ Dataframe.prototype.masksFromPoints = function (pointMask) {
         var dst = edges[2*i + 1];
         var newSrc = pointMaskOriginalLookup[src];
         var newDst = pointMaskOriginalLookup[dst];
-        if (newSrc && newDst) {
+        var newEdge = edgeMaskOriginalLookup ? edgeMaskOriginalLookup[i] : 1;
+        if (newSrc && newDst && newEdge) {
             edgeMask.push(i);
         }
     }
@@ -184,8 +194,10 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
     }
     if (maskList === undefined || !maskList.length || maskList.length === 0) {
         var universe = this.fullMaskSet();
+        // Limit the universe first just to avoid computation scaling problems:
         if (pointLimit && universe.point.length > pointLimit) {
             universe.point.length = pointLimit;
+            return this.masksFromPoints(universe.point, universe.edge);
         }
         return universe;
     }
@@ -223,17 +235,19 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
         }
     });
 
-    _.each(numMasksSatisfiedByPointID, function (count, i) {
-        // This is how we implement the limit, just to stop pushing once reached:
-        if (pointMask.length >= pointLimit) {
-            return;
-        }
+    var pointLimitReached = false;
+    _.every(numMasksSatisfiedByPointID, function (count, i) {
         // Shorthand for "if we've passed all masks":
         if (count === numMasks) {
             pointMask.push(i);
         }
+        // This is how we implement the limit, just to stop pushing once reached:
+        return !(pointLimitReached = pointMask.length >= pointLimit);
     });
 
+    if (pointLimitReached) {
+        return this.masksFromPoints(pointMask, edgeMask);
+    }
     return {
         point: pointMask,
         edge: edgeMask
