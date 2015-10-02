@@ -429,27 +429,33 @@ ExpressionCodeGenerator.prototype.expressionStringForAST = function (ast, depth,
         case 'CastExpression':
             var value = ast.value;
             var castValue = value;
-            switch (ast.type_name) {
+            // This is a load of silly guards because the PEG production for TypeIdentifier needs cleanup:
+            var type_name = ast.type_name;
+            while (typeof type_name !== 'string') {
+                if (type_name.length) {
+                    type_name = type_name[0];
+                } else if (type_name.name) {
+                    type_name = type_name.name;
+                }
+            }
+            switch (type_name.toLowerCase()) {
                 case 'string':
-                    castValue = value.toString();
+                    castValue = this.expressionStringForAST(value, depth + 1, this.precedenceOf('.')) + '.toString()';
+                    break;
+                case 'integer':
+                    castValue = 'parseInt(' + this.expressionStringForAST(value, depth + 1, this.precedenceOf('(')) + ')';
                     break;
                 case 'number':
-                    castValue = Number(value);
+                    castValue = 'Number(' + this.expressionStringForAST(value, depth + 1, this.precedenceOf('(')) + ')';
                     break;
                 case 'array':
-                    if (value.length !== undefined) {
-                        castValue = new Array(value.length);
-                        for (var i=0; i<value.length; i++) {
-                            castValue[i] = value[i];
-                        }
-                    } else {
-                        castValue = [value];
-                    }
+                    // Wraps the object in a single-slot Array. This is the simplest interpretation but workable:
+                    castValue = '[' + this.expressionStringForAST(value, depth + 1, this.precedenceOf('[')) + ']';
                     break;
                 default:
-                    throw Error('Unrecognized type', ast.type_name);
+                    throw Error('Unrecognized type: ' + type_name);
             }
-            return JSON.stringify(castValue);
+            return castValue;
         case 'Literal':
             return literalExpressionFor(ast.value);
         case 'ListExpression':
