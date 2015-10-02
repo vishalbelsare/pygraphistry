@@ -64,7 +64,6 @@ FilterControl.prototype.filtersResponsesObservable = function () {
 };
 
 FilterControl.prototype.updateFilters = function (filterSet) {
-    console.log('REQUESTING: ', filterSet);
     this.updateFiltersRequests.onNext(filterSet);
     return this.filtersResponsesSubject;
 };
