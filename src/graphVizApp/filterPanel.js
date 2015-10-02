@@ -366,6 +366,8 @@ var AllFiltersView = Backbone.View.extend({
         this.listenTo(this.collection, 'all', this.render);
 
         this.filtersContainer = $('#filters');
+
+        this.collection.each(this.addFilter, this);
     },
     render: function () {
         var $filterButton = $('filterButton');
