@@ -377,6 +377,7 @@ var AllFiltersView = Backbone.View.extend({
         } else {
             $filterButton.addClass('iconBadge');
         }
+        return this;
     },
     addFilter: function (filter) {
         var view = new FilterView({
