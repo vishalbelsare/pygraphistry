@@ -51,8 +51,14 @@
 
 start = Expression
 
+TypeName "type name"
+  = STRING
+  / INTEGER
+  / NUMBER
+  / ARRAY
+
 TypeIdentifier "type"
-  = ( Identifier )+
+  = ( TypeName )+
     ( ( lparen SignedInteger rparen )
       / ( lparen SignedInteger comma SignedInteger rparen ) )?
 
@@ -690,6 +696,7 @@ ALL = "ALL"i
 ALTER = "ALTER"i
 ANALYZE = "ANALYZE"i
 AND = "AND"i
+ARRAY = "ARRAY"i
 AS = "AS"i
 ASC = "ASC"i
 ATTACH = "ATTACH"i
@@ -752,6 +759,7 @@ INNER = "INNER"i
 INSERT =
   __ "INSERT"i
 INSTEAD = "INSTEAD"i
+INTEGER = "INTEGER"i
 INTERSECT = "INTERSECT"i
 INTO = "INTO"i
 IS = "IS"i
@@ -768,6 +776,7 @@ NO = "NO"i
 NOT = "NOT"i
 NOTNULL = "NOTNULL"i
 NULL = "NULL"i
+NUMBER = "NUMBER"i
 OF = "OF"i
 OFFSET = "OFFSET"i
 ON = "ON"i
@@ -794,6 +803,7 @@ SELECT =
   __ "SELECT"i
 SET = "SET"i
 SIMILAR = "SIMILAR"i
+STRING = "STRING"i
 TABLE = "TABLE"i
 TEMP = "TEMP"i
 TEMPORARY = "TEMPORARY"i
