@@ -24,13 +24,30 @@ function FilterControl(socket) {
 
     this.namespaceCommand = new Command('get_namespace_metadata', socket);
     this.updateFiltersCommand = new Command('update_filters', socket);
+    this.updateFiltersRequests = new Rx.Subject();
     // this.getFiltersCommand = new Command('get_filters', socket);
     this.runFilterCommand = new Command('filter', socket);
 
     /** @type Rx.ReplaySubject */
     this.filtersResponsesSubject = new Rx.ReplaySubject(1);
+
+    this.setupFilterRequestHandler(this.updateFiltersRequests,
+            this.filtersResponsesSubject, this.updateFiltersCommand);
 }
 
+FilterControl.prototype.setupFilterRequestHandler = function(requests, responses, command) {
+    var that = this;
+    util.bufferUntilReady(requests).do(function (hash) {
+        command.sendWithObservableResult(hash.data, true)
+            .do(function (reply) {
+                responses.onNext(reply);
+                hash.ready();
+            }.bind(that)).subscribe(
+            _.identity,
+            util.makeErrorHandler('handle update_filters response'));
+
+    }).subscribe(_.identity, util.makeErrorHandler('handle filter requests'));
+};
 
 FilterControl.prototype.namespaceMetadataObservable = function () {
     if (this.namespaceSubscription === undefined) {
@@ -47,12 +64,7 @@ FilterControl.prototype.filtersResponsesObservable = function () {
 };
 
 FilterControl.prototype.updateFilters = function (filterSet) {
-    this.updateFiltersCommand.sendWithObservableResult(filterSet, true)
-        .do(function (reply) {
-            this.filtersResponsesSubject.onNext(reply);
-        }.bind(this)).subscribe(
-        _.identity,
-        util.makeErrorHandler('handle update_filters response'));
+    this.updateFiltersRequests.onNext(filterSet);
     return this.filtersResponsesSubject;
 };
 
