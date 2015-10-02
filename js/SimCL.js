@@ -490,10 +490,18 @@ function setPoints(simulator, points) {
             zeros[i] = 0;
         }
 
+        var swingZeros = new Float32Array(numPoints);
+        for (var i = 0; i < zeros.length; i++) {
+            swingZeros[i] = 0;
+        }
+
         return Q.all([
             simulator.cl.createBufferGL(pointsVBO, 'curPoints'),
             simulator.dataframe.writeBuffer('randValues', 'simulator', rands, simulator),
-            simulator.dataframe.writeBuffer('prevForces', 'simulator', zeros, simulator)]);
+            simulator.dataframe.writeBuffer('prevForces', 'simulator', zeros, simulator),
+            simulator.dataframe.writeBuffer('swings', 'simulator', swingZeros, simulator),
+            simulator.dataframe.writeBuffer('tractions', 'simulator', swingZeros, simulator)
+        ]);
     })
     .spread(function(pointsBuf) {
         simulator.dataframe.loadBuffer('curPoints', 'simulator', pointsBuf);
