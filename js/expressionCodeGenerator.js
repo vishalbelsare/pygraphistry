@@ -429,8 +429,16 @@ ExpressionCodeGenerator.prototype.expressionStringForAST = function (ast, depth,
         case 'CastExpression':
             var value = ast.value;
             var castValue = value;
-            var type_name = typeof ast.type_name === 'string' ? ast.type_name : ast.type_name.name;
-            switch (type_name) {
+            // This is a load of silly guards because the PEG production for TypeIdentifier needs cleanup:
+            var type_name = ast.type_name;
+            while (typeof type_name !== 'string') {
+                if (type_name.length) {
+                    type_name = type_name[0];
+                } else if (type_name.name) {
+                    type_name = type_name.name;
+                }
+            }
+            switch (type_name.toLowerCase()) {
                 case 'string':
                     castValue = value.toString();
                     break;
