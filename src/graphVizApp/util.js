@@ -1,10 +1,42 @@
 'use strict';
 
+var Rx      = require('rx');
+var _       = require('underscore');
+
 function makeErrorHandler(name) {
     return function (err) {
         console.error(name, err, (err || {}).stack);
     };
 }
+
+// Takes a stream and a function to run on the contents of that stream.
+// It will buffer itself according to a callback.
+// It includes the subscribe. TODO: Should it subscribe?
+//
+// First arg:   Stream
+//
+// Returns a stream that has hashes {data: data, ready: Rx.Subject}
+// When ready for a new element, put data into ready, e.g.,
+// hash.ready.onNext(hash.data)
+function bufferUntilReady(stream) {
+    var lastElem = new Rx.Subject();
+    var newStream = new Rx.Subject();
+
+    lastElem.flatMapLatest(function (last) {
+        return stream.filter(function (data) {
+            return data !== last;
+        }).take(1);
+    }).do(function (data) {
+        var ready = function () {
+            lastElem.onNext(data);
+        };
+        newStream.onNext({data: data, ready: ready});
+    }).subscribe(_.identity, makeErrorHandler('buffer with callback'));
+
+    lastElem.onNext(undefined);
+    return newStream;
+}
+
 
 function OR (a, b) {
     return a || b;
@@ -75,5 +107,6 @@ module.exports = {
     createAlphaNumericUID: createAlphaNumericUID,
     notIdentity: notIdentity,
     OR: OR,
-    AND: AND
+    AND: AND,
+    bufferUntilReady: bufferUntilReady
 };
