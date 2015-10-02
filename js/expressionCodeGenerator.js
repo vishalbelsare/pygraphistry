@@ -205,18 +205,28 @@ ExpressionCodeGenerator.prototype.expressionForFunctionCall = function (inputFun
     return safeFunctionName + '(' + args.join(', ') + ')';
 };
 
+ExpressionCodeGenerator.prototype.hasMultipleBindings = function () {
+    return Object.keys(this.bindings).length > 1;
+};
+
 ExpressionCodeGenerator.prototype.functionForAST = function (ast, bindings) {
     var source;
-    this.multipleBindings = Object.keys(bindings).length > 1;
     this.bindings = bindings;
     var body = this.expressionStringForAST(ast);
-    if (this.multipleBindings) {
+    if (this.hasMultipleBindings()) {
         source = '(function (context) { return ' + body + '; })';
     } else {
         source = '(function (value) { return ' + body + '; })';
     }
     logger.warn(source);
     return eval(source); // jshint ignore:line
+};
+
+/** Evaluate an expression immediately, with no access to any bindings. */
+ExpressionCodeGenerator.prototype.evaluateExpressionFree = function (ast) {
+    this.bindings = {};
+    var body = this.expressionStringForAST(ast);
+    return eval(body); // jshint ignore:line
 };
 
 function escapeRegexNonPattern(lastPatternSegment) {
@@ -453,7 +463,7 @@ ExpressionCodeGenerator.prototype.expressionStringForAST = function (ast, depth,
             }, this);
             return this.expressionForFunctionCall(ast.callee.name, args, outerPrecedence);
         case 'Identifier':
-            if (this.multipleBindings) {
+            if (this.hasMultipleBindings()) {
                 var unsafeInputName = ast.name;
                 // Delete all non-word characters, but keep colons and dots.
                 var unsafeInputNameWord = unsafeInputName.replace(/[^\W:.]/, '');
