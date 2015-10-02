@@ -454,7 +454,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
     var unsortedEdgeMask = new Uint32Array(that.typedArrayCache.unsortedEdgeMask.buffer, 0, masks.edge.length);
 
     var map = rawdata.hostBuffers.forwardsEdges.edgePermutationInverseTyped;
-    for (var i = 0; i < masks.edge.length; i++) {
+    var i;
+    for (i = 0; i < masks.edge.length; i++) {
         unsortedEdgeMask[i] = map[masks.edge[i]];
     }
 
@@ -470,11 +471,11 @@ Dataframe.prototype.filter = function (masks, simulator) {
     };
 
     var pointOriginalLookup = [];
-    for (var i = 0; i < masks.point.length; i++) {
+    for (i = 0; i < masks.point.length; i++) {
         pointOriginalLookup[masks.point[i]] = i;
     }
 
-    for (var i = 0; i < unsortedEdgeMask.length; i++) {
+    for (i = 0; i < unsortedEdgeMask.length; i++) {
         var oldIdx = unsortedEdgeMask[i];
         filteredEdges[i*2] = pointOriginalLookup[originalEdges[oldIdx*2]];
         filteredEdges[i*2 + 1] = pointOriginalLookup[originalEdges[oldIdx*2 + 1]];
@@ -482,7 +483,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
 
     var edgesFlipped = new Uint32Array(that.typedArrayCache.edgesFlipped.buffer, 0, filteredEdges.length);
 
-    for (var i = 0; i < filteredEdges.length/2; i++) {
+    for (i = 0; i < filteredEdges.length/2; i++) {
         edgesFlipped[2 * i] = filteredEdges[2 * i + 1];
         edgesFlipped[2 * i + 1] = filteredEdges[2 * i];
     }
@@ -508,7 +509,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
     var newPointSizes = new Uint8Array(that.typedArrayCache.newPointSizes.buffer, 0, numPoints);
     var newPointColors = new Uint32Array(that.typedArrayCache.newPointColors.buffer, 0, numPoints);
 
-    for (var i = 0; i < masks.point.length; i++) {
+    for (i = 0; i < masks.point.length; i++) {
         newPointSizes[i] = rawdata.localBuffers.pointSizes[masks.point[i]];
         newPointColors[i] = rawdata.localBuffers.pointColors[masks.point[i]];
     }
@@ -522,7 +523,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
     var newEdgeHeights = new Uint32Array(that.typedArrayCache.newEdgeHeights.buffer, 0, masks.edge.length * 2);
     var newMidEdgeColors = new Uint32Array(that.typedArrayCache.newMidEdgeColors.buffer, 0, numMidEdgeColors);
 
-    for (var i = 0; i < masks.edge.length; i++) {
+    for (i = 0; i < masks.edge.length; i++) {
         var idx = masks.edge[i];
 
         newEdgeColors[i*2] = rawdata.localBuffers.edgeColors[idx*2];
