@@ -47,7 +47,8 @@ ace.define('ace/mode/graphistry_highlight_rules',
                 'keyword.operator': operatorKeywords,
                 'constant.language.boolean': 'true|false',
                 'constant.language': 'null|Infinity|NaN',
-                'support.function': builtinFunctions
+                'support.function': builtinFunctions,
+                'support.type': 'string|integer|array|number'
             }, 'identifier', true);
 
             this.$rules = {
