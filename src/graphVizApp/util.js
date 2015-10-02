@@ -21,9 +21,14 @@ function makeErrorHandler(name) {
 function bufferUntilReady(stream) {
     var lastElem = new Rx.Subject();
     var newStream = new Rx.Subject();
+    var replayStream = new Rx.ReplaySubject(1);
+
+    // Feed stream into replayStream so we can
+    // always handle the last request.
+    stream.subscribe(replayStream, makeErrorHandler('Copying stream for util.bufferUntilReady'));
 
     lastElem.flatMapLatest(function (last) {
-        return stream.filter(function (data) {
+        return replayStream.filter(function (data) {
             return data !== last;
         }).take(1);
     }).do(function (data) {
