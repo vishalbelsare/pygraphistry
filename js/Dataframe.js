@@ -81,7 +81,7 @@ function makeEmptyData () {
  */
 Dataframe.prototype.masksFromPoints = function (pointMask, edgeMaskOriginal) {
     var pointMaskOriginalLookup = {};
-    _.each(pointMask, function (newIdx, i) {
+    _.each(pointMask, function (newIdx/*, i*/) {
         pointMaskOriginalLookup[newIdx] = 1;
     });
     var edgeMaskOriginalLookup;
@@ -205,9 +205,10 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
 
     // Assumes we will never have more than 255 separate masks.
     var numMasks = maskList.length;
-    if (numMasks > 255) {
-        console.error('TOO MANY MASKS');
-        return;
+    var MASK_LIMIT = 255;
+    if (numMasks > MASK_LIMIT) {
+        console.error('TOO MANY MASKS; truncating to: ' + MASK_LIMIT);
+        maskList.length = 255;
     }
 
     // The overall masks per type, made by mask intersection:
@@ -449,7 +450,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
     // Filter out to new edges/points arrays.
     var filteredEdges = new Uint32Array(that.typedArrayCache.filteredEdges.buffer, 0, masks.edge.length * 2);
     var originalEdges = rawdata.hostBuffers.unsortedEdges;
-    var originalForwardsEdges = rawdata.hostBuffers.forwardsEdges.edgesTyped;
+    //var originalForwardsEdges = rawdata.hostBuffers.forwardsEdges.edgesTyped;
 
     var unsortedEdgeMask = new Uint32Array(that.typedArrayCache.unsortedEdgeMask.buffer, 0, masks.edge.length);
 
@@ -614,9 +615,9 @@ Dataframe.prototype.filter = function (masks, simulator) {
         return promise;
 
     }).then(function () {
-
-        for (var i = 0; i < masks.point.length; i++) {
-            var oldIdx = masks.point[i];
+        var oldIdx;
+        for (i = 0; i < masks.point.length; i++) {
+            oldIdx = masks.point[i];
             newPrevForces[i*2] = tempPrevForces[oldIdx*2];
             newPrevForces[i*2 + 1] = tempPrevForces[oldIdx*2 + 1];
 
@@ -626,8 +627,8 @@ Dataframe.prototype.filter = function (masks, simulator) {
             newCurPoints[i*2 + 1] = that.lastPointPositions[oldIdx*2 + 1];
         }
 
-        for (var i = 0; i < masks.edge.length; i++) {
-            var oldIdx = masks.edge[i];
+        for (i = 0; i < masks.edge.length; i++) {
+            oldIdx = masks.edge[i];
             newSpringsPos[i*4] = tempSpringsPos[oldIdx*4];
             newSpringsPos[i*4 + 1] = tempSpringsPos[oldIdx*4 + 1];
             newSpringsPos[i*4 + 2] = tempSpringsPos[oldIdx*4 + 2];
@@ -672,7 +673,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
         _.each(['point', 'edge'], function (type) {
             var buffers = that.data.buffers[type];
             _.each(_.keys(buffers), function (name) {
-                var buf = buffers[name];
+                //var buf = buffers[name];
                 promises.push(buffers.delete);
                 delete buffers[name];
             });
@@ -783,13 +784,13 @@ Dataframe.prototype.load = function (attributes, type, numElements) {
 };
 
 
-/** Load in degrees as a universal (independent of datasource) value
- * @param {Typed Array} outDegrees - degrees going out of nodes
- * @param {Typed Array} inDegrees - degrees going into nodes
+/** Load in degrees as a universal (independent of data source) value
+ * @param {Uint32Array} outDegrees - degrees going out of nodes
+ * @param {Uint32Array} inDegrees - degrees going into nodes
  */
 Dataframe.prototype.loadDegrees = function (outDegrees, inDegrees) {
-    var numElements = this.rawdata.numElements['point'];
-    var attributes = this.rawdata.attributes['point'];
+    var numElements = this.rawdata.numElements.point;
+    var attributes = this.rawdata.attributes.point;
 
     // TODO: Error handling
     if (numElements !== outDegrees.length || numElements !== inDegrees.length) {
@@ -812,8 +813,8 @@ Dataframe.prototype.loadDegrees = function (outDegrees, inDegrees) {
 };
 
 
-/** Load in edge source/dsts as a universal (independent of datasource) value
- * @param {Typed Array} unsortedEdges - usorted list of edges.
+/** Load in edge source/destinations as a universal (independent of data source) value
+ * @param {Uint32Array} unsortedEdges - unsorted list of edges.
  */
 Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
     var numElements = this.rawdata.numElements['edge'] || unsortedEdges.length / 2;
@@ -1011,7 +1012,7 @@ Dataframe.prototype.getBuffer = function (name, type) {
                 return newBuffer.write(typedData);
             });
     }
-}
+};
 
 
 /** Returns one row object.
@@ -1020,7 +1021,7 @@ Dataframe.prototype.getBuffer = function (name, type) {
  * @param {Object?} attributes - which attributes to extract from the row.
  */
 Dataframe.prototype.getRowAt = function (index, type, attributes) {
-    var origIndex = index; // For clientside metadata.
+    var origIndex = index; // For client-side metadata.
 
     // Convert from sorted into unsorted edge indices.
     if (index && type === 'edge') {
@@ -1071,7 +1072,7 @@ Dataframe.prototype.getRowsCompact = function (indices, type) {
     var attributes = this.rawdata.attributes[type],
         keys = this.getAttributeKeys(type);
 
-    indices = indices || range(that.data.numElements[type]);
+    indices = indices || range(this.data.numElements[type]);
 
     var lastMask = this.lastMasks[type];
 
@@ -1103,22 +1104,22 @@ Dataframe.prototype.getColumn = function (column, type) {
 };
 
 // TODO: Have this return edge attributes in sorted order, unless
-// explicitly requested to be unsorted (for internal perf reasons)
+// explicitly requested to be unsorted (for internal performance reasons)
 Dataframe.prototype.getColumnValues = function (column, type) {
 
     // A filter has been done, and we need to apply the
     // mask and compact.
     if (!this.data.attributes[type][column]) {
         var lastMask = this.lastMasks[type];
-        var rawAttrs = this.rawdata.attributes[type];
+        var rawAttributes = this.rawdata.attributes[type];
         var newValues = [];
         _.each(lastMask, function (idx) {
-            newValues.push(rawAttrs[column].values[idx]);
+            newValues.push(rawAttributes[column].values[idx]);
         });
         this.data.attributes[type][column] = {
             values: newValues,
-            type: rawAttrs[column].type,
-            target: rawAttrs[column].target
+            type: rawAttributes[column].type,
+            target: rawAttributes[column].target
         };
     }
 
@@ -1231,7 +1232,7 @@ Dataframe.prototype.aggregate = function (simulator, indices, attributes, binnin
         } else {
             return that.countBy(simulator, attribute, binningHint, indices, type);
         }
-    }
+    };
 
     var validAttributes = this.getAttributeKeys(type);
     var keysToAggregate = attributes ? attributes : validAttributes;
@@ -1302,7 +1303,7 @@ Dataframe.prototype.countBy = function (simulator, attribute, binning, indices, 
     // Take the rest and bucket them into '_other'
     var bins = {};
     _.each(sortedKeys.slice(0, numBinsWithoutOther), function (key) {
-        bins[key] = rawBins[key]
+        bins[key] = rawBins[key];
     });
 
     var otherKeys = sortedKeys.slice(numBinsWithoutOther);
@@ -1323,9 +1324,9 @@ Dataframe.prototype.countBy = function (simulator, attribute, binning, indices, 
         type: 'countBy',
         numValues: numValues,
         numBins: _.keys(bins).length,
-        bins: bins,
+        bins: bins
     });
-}
+};
 
 // Returns a binning object with properties numBins, binWidth, minValue,
 // maxValue
@@ -1347,18 +1348,22 @@ function calculateBinning(numValues, values, indices, goalNumberOfBins) {
         maxValue: Infinity
     };
 
+    var numBins;
+    var bottomVal;
+    var topVal;
+    var binWidth;
     if (goalNumberOfBins) {
-        var numBins = goalNumberOfBins;
-        var bottomVal = min;
-        var topVal = max;
-        var binWidth = (max - min) / (goalNumberOfBins - 1);
+        numBins = goalNumberOfBins;
+        bottomVal = min;
+        topVal = max;
+        binWidth = (max - min) / (goalNumberOfBins - 1);
 
     // Try to find a good division.
     } else {
         var goalWidth = (max - min) / goalBins;
 
-        var binWidth = 10;
-        var numBins = (max - min) / binWidth;
+        binWidth = 10;
+        numBins = (max - min) / binWidth;
 
         // Edge case for invalid values
         // Should capture general case of NaNs and other invalid
@@ -1387,8 +1392,8 @@ function calculateBinning(numValues, values, indices, goalNumberOfBins) {
             numBins = (max - min) / binWidth;
         }
 
-        var bottomVal = round_down(min, binWidth);
-        var topVal = round_up(max, binWidth);
+        bottomVal = round_down(min, binWidth);
+        topVal = round_up(max, binWidth);
         numBins = Math.floor((topVal - bottomVal) / binWidth) + 1;
     }
 
@@ -1399,7 +1404,7 @@ function calculateBinning(numValues, values, indices, goalNumberOfBins) {
         numBins: numBins,
         binWidth: binWidth,
         minValue: bottomVal,
-        maxValue: topVal,
+        maxValue: topVal
     };
 }
 
@@ -1437,11 +1442,12 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
 
     //var qDataBuffer = this.getBuffer(attribute, type);
     var binStart = new Float32Array(numBins);
-    for (var i = 0; i < numBins; i++) {
+    var i;
+    for (i = 0; i < numBins; i++) {
         binStart[i] = bottomVal + (binWidth * i);
     }
 
-    var dataSize = indices.length;
+    //var dataSize = indices.length;
 
     var retObj = {
         type: 'histogram',
@@ -1470,7 +1476,7 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
     var bins = Array.apply(null, new Array(numBins)).map(function () { return 0; });
 
     var binId;
-    for (var i = 0; i < indices.length; i++) {
+    for (i = 0; i < indices.length; i++) {
         // Here we use an optimized "Floor" because we know it's a smallish, positive number.
         // TODO: Have to be careful because floating point error.
         // In particular, we need to math math as closely as possible on filters.
@@ -1515,10 +1521,10 @@ function decodeDates (attributes) {
 }
 
 
-function pickTitleField (attribs, prioritized) {
+function pickTitleField (attributes, prioritized) {
     for (var i = 0; i < prioritized.length; i++) {
         var field = prioritized[i];
-        if (attribs.hasOwnProperty(field)) {
+        if (attributes.hasOwnProperty(field)) {
             return field;
         }
     }
@@ -1526,15 +1532,15 @@ function pickTitleField (attribs, prioritized) {
 }
 
 
-function getNodeTitleField (attribs) {
+function getNodeTitleField (attributes) {
     var prioritized = ['pointTitle', 'node', 'label', 'ip'];
-    return pickTitleField(attribs, prioritized);
+    return pickTitleField(attributes, prioritized);
 }
 
 
-function getEdgeTitleField (attribs) {
+function getEdgeTitleField (attributes) {
     var prioritized = ['edgeTitle', 'edge'];
-    return pickTitleField(attribs, prioritized);
+    return pickTitleField(attributes, prioritized);
 }
 
 function range (n) {
@@ -1547,7 +1553,7 @@ function range (n) {
 
 
 function round_down(num, multiple) {
-    if (multiple == 0) {
+    if (multiple === 0) {
         return num;
     }
 
@@ -1556,7 +1562,7 @@ function round_down(num, multiple) {
 }
 
 function round_up(num, multiple) {
-    if (multiple == 0) {
+    if (multiple === 0) {
         return num;
     }
 
@@ -1605,9 +1611,10 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
 
     var edgeListTyped = new Uint32Array(edges.length);
     var mapped = new Uint32Array(edges.length / 2);
+    var i, src, dst, idx;
 
     // If we're filtering and have information on unfiltered data.
-    // TODO: Undisable once this is fixed with multiedge / self edge.
+    // TODO: Undisable once this is fixed with multi-edge / self edge.
     if (false && oldEncapsulated && masks) {
         var oldEdges = oldEncapsulated.edgesTyped;
         var oldPermutation = oldEncapsulated.edgePermutationInverseTyped;
@@ -1615,9 +1622,9 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
 
         // Lookup to see if an edge is included.
         var edgeLookup = {};
-        for (var i = 0; i < edges.length/2; i++) {
-            var src = edges[i*2];
-            var dst = edges[i*2 + 1];
+        for (i = 0; i < edges.length/2; i++) {
+            src = edges[i*2];
+            dst = edges[i*2 + 1];
             if (!edgeLookup[src]) {
                 edgeLookup[src] = [];
             }
@@ -1626,15 +1633,15 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
 
 
         var mappedMaskInverse = new Uint32Array(oldPermutation.length);
-        for (var i = 0; i < mappedMaskInverse.length; i++) {
+        for (i = 0; i < mappedMaskInverse.length; i++) {
             mappedMaskInverse[i] = 1;
         }
 
-        for (var i = 0; i < edges.length/2; i++) {
+        for (i = 0; i < edges.length/2; i++) {
             while (lastOldIdx < oldEdges.length/2) {
 
-                var src = pointOriginalLookup[oldEdges[lastOldIdx*2]];
-                var dst = pointOriginalLookup[oldEdges[lastOldIdx*2 + 1]];
+                src = pointOriginalLookup[oldEdges[lastOldIdx*2]];
+                dst = pointOriginalLookup[oldEdges[lastOldIdx*2 + 1]];
 
                 if ( edgeLookup[src] && edgeLookup[src].indexOf(dst) > -1 ) {
                     edgeListTyped[i*2] = src;
@@ -1651,12 +1658,12 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
         // Compute Scan of mappedMask:
         var mappedScan = new Uint32Array(mappedMaskInverse.length);
         mappedScan[0] = mappedMaskInverse[0];
-        for (var i = 1; i < mappedMaskInverse.length; i++) {
+        for (i = 1; i < mappedMaskInverse.length; i++) {
             mappedScan[i] = mappedMaskInverse[i] + mappedScan[i-1];
         }
 
-        for (var i = 0; i < mapped.length; i++) {
-            var idx = mapped[i];
+        for (i = 0; i < mapped.length; i++) {
+            idx = mapped[i];
             mapped[i] = idx - mappedScan[idx];
         }
 
@@ -1665,7 +1672,7 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
         var maskedEdgeList = new Float64Array(edgeListTyped.buffer);
         var maskedEdges = new Float64Array(edges.buffer);
 
-        for (var i = 0; i < mapped.length; i++) {
+        for (i = 0; i < mapped.length; i++) {
             mapped[i] = i;
         }
 
@@ -1675,8 +1682,8 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
                     : edges[a*2 + 1] - edges[b*2 + 1];
         });
 
-        for (var i = 0; i < edges.length/2; i++) {
-            var idx = mapped[i];
+        for (i = 0; i < edges.length/2; i++) {
+            idx = mapped[i];
             // I believe it's slightly faster to copy it in using a 64 bit "cast"
             // than to do it directly. However, it should be tested more before being enabled.
 
@@ -1689,7 +1696,7 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
     return {
         edgeListTyped: edgeListTyped,
         originals: mapped
-    }
+    };
 }
 
 function computeWorkItemsTyped(edgesTyped, originals, numPoints) {
@@ -1724,11 +1731,11 @@ function computeWorkItemsTyped(edgesTyped, originals, numPoints) {
 }
 
 function computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals, numPoints) {
-    var index = 0;
+    //var index = 0;
     var edgeStartEndIdxsTyped = new Uint32Array(numPoints * 2);
     for(var i = 0; i < (workItemsTyped.length/4) - 1; i++) {
       var start = workItemsTyped[i*4];
-      if (start == -1) {
+      if (start === -1) {
         edgeStartEndIdxsTyped[i*2] = -1;
         edgeStartEndIdxsTyped[i*2 + 1] = -1;
       } else {
@@ -1740,7 +1747,7 @@ function computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals, numPoint
         }
 
         if (end === -1) {
-            end = edgesTyped.length / 2; // Special case for last workitem
+            end = edgesTyped.length / 2; // Special case for last work item
         }
         edgeStartEndIdxsTyped[i*2] = start;
         edgeStartEndIdxsTyped[i*2 + 1] = end;
@@ -1807,12 +1814,12 @@ Dataframe.prototype.encapsulateEdges = function (edges, numPoints, oldEncapsulat
         //Int32Array [(first edge number, number of sibling edges)]
         workItemsTyped: workItemsTyped,
 
-        //Uint32Array [workitem number node belongs to]
+        //Uint32Array [work item number node belongs to]
         srcToWorkItem: srcToWorkItem,
 
         edgeStartEndIdxsTyped: edgeStartEndIdxsTyped
     };
-}
+};
 
 
 module.exports = Dataframe;
