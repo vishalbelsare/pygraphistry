@@ -282,7 +282,7 @@ ExpressionCodeGenerator.prototype.regexExpressionForLikeOperator = function (ast
     /** @type {String} */
     var pattern = ast.right.value;
     var outputLiteralString = this.regularExpressionLiteralFromLikePattern(pattern, escapeChar);
-    outputLiteralString = '/' + outputLiteralString + '/';
+    outputLiteralString = '/^' + outputLiteralString + '$/';
     if (caseInsensitive) {
         outputLiteralString += 'i';
     }
