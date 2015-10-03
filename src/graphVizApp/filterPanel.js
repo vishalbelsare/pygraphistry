@@ -397,11 +397,12 @@ var AllFiltersView = Backbone.View.extend({
         }
     },
     addFilterFromDropdown: function (evt) {
+        // TODO: just attach the original attributes object and avoid all this parsing nonsense.
         var attribute = $(evt.currentTarget).text().trim();
         var parts = attribute.match(/^(?:([-A-z_]+):)?([^()]+)(?:[ ]+\(.+\))?$/);
         var attributes = {attribute: attribute};
         attributes.type = parts[1] || 'point';
-        attributes.attribute = parts[2];
+        attributes.attribute = attributes.type + ':' + parts[2];
         if (parts.length > 3) {
             attributes.dataType = parts[3];
         }
