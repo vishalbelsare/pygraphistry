@@ -418,6 +418,11 @@ var AllFiltersView = Backbone.View.extend({
     }
 });
 
+// Used to attach attributes to Add Filter dropdown:
+Handlebars.registerHelper('json', function(context) {
+    return JSON.stringify(context);
+});
+
 
 function FiltersPanel(socket, urlParams) {
     var $button = $('#filterButton');
