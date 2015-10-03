@@ -17,7 +17,7 @@ var util        = require('./util.js');
 var ROWS_PER_PAGE = 8;
 
 
-function init(appState, socket, workerUrl, marquee, histogramPanelToggle, filtersSubject, urlParams) {
+function init(appState, socket, workerUrl, marquee, histogramPanelToggle, filtersResponses, isOnSubject) {
     var $nodesInspector = $('#inspector-nodes').find('.inspector');
     var $edgesInspector = $('#inspector-edges').find('.inspector');
 
@@ -77,15 +77,18 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle, filter
         };
     }).map(function (data) {
         return {
-            nodes: initPageableGrid(workerUrl, data.nodes.columns, data.nodes.urn, $nodesInspector, appState.activeSelection, urlParams, 1),
-            edges: initPageableGrid(workerUrl, data.edges.columns, data.edges.urn, $edgesInspector, appState.activeSelection, urlParams, 2)
+            nodes: initPageableGrid(workerUrl, data.nodes.columns, data.nodes.urn, $nodesInspector, appState.activeSelection, 1),
+            edges: initPageableGrid(workerUrl, data.edges.columns, data.edges.urn, $edgesInspector, appState.activeSelection, 2)
         };
     }).do(function (grids) {
 
         // Now that we have grids, we need to process updates.
         // TODO: This triggers on simulate, when it shouldn't have to (should it?)
-        marqueeTriggers.combineLatest(filtersSubject, function (sel, filters) {
-            return {sel: sel, filters: filters};
+        Rx.Observable.combineLatest(marqueeTriggers, filtersResponses, isOnSubject, function (sel, filters, isOn) {
+            return {sel: sel, filters: filters, isOn: isOn};
+        }).filter(function (data) {
+            // Filter so it only triggers a fetch when inspector is visible.
+            return data.isOn;
         }).do(function (data) {
             updateGrid(grids.nodes, data.sel);
             updateGrid(grids.edges, data.sel);
@@ -116,7 +119,7 @@ function updateGrid(grid, sel) {
     grid.collection.fetch({reset: true});
 }
 
-function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, urlParams, dim) {
+function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, dim) {
 
     //////////////////////////////////////////////////////////////////////////
     // Setup Backbone Views and Models

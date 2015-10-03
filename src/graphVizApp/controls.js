@@ -516,10 +516,13 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
 
     var dataInspectorIsVisible = false;
+    var dataInspectorOnSubject = new Rx.Subject();
+    dataInspectorOnSubject.onNext(false);
     onElt.filter(function (elt) {
         return elt === $('#dataInspectorButton')[0];
     }).do(function () {
         dataInspectorIsVisible = !dataInspectorIsVisible;
+        dataInspectorOnSubject.onNext(dataInspectorIsVisible);
         $('#dataInspectorButton').children('i').toggleClass('toggle-on', dataInspectorIsVisible);
         $('#inspector').css('visibility', dataInspectorIsVisible ? 'visible' : 'hidden');
     }).subscribe(_.identity, util.makeErrorHandler('dataInspector visibility toggle'));
@@ -558,10 +561,11 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var marquee = setupMarquee(appState, turnOnMarquee);
     var brush = setupBrush(appState, turnOnBrush);
     var filtersPanel = new FiltersPanel(socket, urlParams);
+    var filtersResponses = filtersPanel.control.filtersResponsesObservable();
     var histogramBrush = new HistogramBrush(socket, filtersPanel);
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
     histogramBrush.setupMarqueeInteraction(brush);
-    dataInspector.init(appState, socket, workerParams.href, brush, histogramPanelToggle, filtersPanel.filtersSubject, urlParams);
+    dataInspector.init(appState, socket, workerParams.href, brush, histogramPanelToggle, filtersResponses, dataInspectorOnSubject);
     forkVgraph(socket, urlParams);
     persistButton(appState, socket, urlParams);
     goLiveButton(socket, urlParams);
