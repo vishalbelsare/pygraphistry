@@ -70,11 +70,18 @@ ace.define('ace/mode/graphistry_highlight_rules',
                     token : 'constant.numeric', // hex
                     regex : /0[xX][0-9a-fA-F]+\b/
                 }, {
-                    token : 'constant.numeric', // float
-                    regex : /[+-]?\d+(?:(?:\.\d*)?(?:[eE][+-]?\d+)?)?\b/
+                    token: 'constant.numeric', // float
+                    regex: /[+-]?\d+(?:(?:\.\d*)?(?:[eE][+-]?\d+)?)?\b/
                 }, {
                     token: keywordMapper,
                     regex: identifierRe
+                }, {
+                    token: 'variable.other',
+                    regex: identifierRe
+                }, {
+                    token: 'paren.lbracket',
+                    regex: '[(?=.)',
+                    next:  'quotedIdentifier'
                 }, {
                     token: 'keyword.operator',
                     regex: '\\+|\\-|\\/|\\/\\/|%|<@>|@>|<@|&|\\^|~|<|>|<=|=>|==|!=|<>|='
@@ -96,6 +103,22 @@ ace.define('ace/mode/graphistry_highlight_rules',
                     token: 'text',
                     regex: '\\s+'
                 }],
+                'quotedIdentifier': [
+                    {
+                        token: 'constant.language.escape',
+                        regex: escapedRe
+                    }, {
+                        token: 'variable.other',
+                        regex: '\\\\$',
+                        next: 'quotedIdentifier'
+                    }, {
+                        token: 'variable.other',
+                        regex: ']|$',
+                        next: 'start'
+                    }, {
+                        defaultToken: 'quotedIdentifier'
+                    }
+                ],
                 'qqstring': [
                     {
                         token: 'constant.language.escape',
