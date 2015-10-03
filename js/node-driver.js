@@ -289,7 +289,7 @@ function create(dataset) {
 
     var graph = init(device, vendor, controls).then(function (graph) {
         logger.trace('LOADING DATASET');
-        return loader.loadDatasetIntoSim(graph, dataset)
+        return loader.loadDatasetIntoSim(graph, dataset);
 
     }).then(function (graph) {
         // Load into dataframe data attributes that rely on the simulator existing.

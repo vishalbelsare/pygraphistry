@@ -185,8 +185,8 @@ function create(dataframe, renderer, device, vendor, cfg) {
             Object.seal(simObj);
 
             logger.trace('Simulator created');
-            return simObj
-        })
+            return simObj;
+        });
     }).fail(log.makeQErrorHandler(logger, 'Cannot create SimCL'));
 }
 
@@ -1035,7 +1035,7 @@ function setEdgeWeight(simulator, edgeWeights) {
 
     return Q.all([
             simulator.cl.createBuffer(forwardsEdgeWeights.byteLength, 'forwardsEdgeWeights'),
-            simulator.cl.createBuffer(backwardsEdgeWeights.byteLength, 'backwardsEdgeWeights'),
+            simulator.cl.createBuffer(backwardsEdgeWeights.byteLength, 'backwardsEdgeWeights')
         ]).spread(function(fwBuffer, bwBuffer) {
             return Q.all([
                 simulator.dataframe.loadBuffer('forwardsEdgeWeights', 'simulator', fwBuffer),
