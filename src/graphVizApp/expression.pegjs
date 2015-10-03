@@ -213,6 +213,7 @@ FunctionInvocation "function call"
 PrimaryExpression
   = FunctionInvocation
   / CastExpression
+  / BracketedIdentifier
   / Identifier
   / LiteralValue
   / lparen __ expression:SearchCondition __ rparen { return expression; }
@@ -293,23 +294,39 @@ NumericLiteral "number"
 NumericConstant "numeric constant"
   = INFINITY / NAN
 
-StringLiteral "string"
-  = '"' chars:DoubleStringCharacter* '"' {
-      return { type: "Literal", dataType: 'string', value: chars.join("") };
-    }
-  / "'" chars:SingleStringCharacter* "'" {
-      return { type: "Literal", dataType: 'string', value: chars.join("") };
-    }
-
 EscapedEscapeCharacter = "\\"
 
+BracketedIdentifier "identifier with brackets"
+  = lbracket chars:BracketedIdentifierCharacter* rbracket {
+      return {
+        type: "Identifier",
+        name: chars.join("")
+      };
+    }
+
+BracketedIdentifierCharacter
+  = !(rbracket / EscapedEscapeCharacter / LineTerminator) SourceCharacter { return text(); }
+  / EscapedEscapeCharacter sequence:EscapeSequence { return sequence; }
+  / LineContinuation
+
+doublequote = '"'
+singlequote = "'"
+
+StringLiteral "string"
+  = doublequote chars:DoubleStringCharacter* doublequote {
+      return { type: "Literal", dataType: 'string', value: chars.join("") };
+    }
+  / singlequote chars:SingleStringCharacter* singlequote {
+      return { type: "Literal", dataType: 'string', value: chars.join("") };
+    }
+
 DoubleStringCharacter
-  = !('"' / EscapedEscapeCharacter / LineTerminator) SourceCharacter { return text(); }
-  / "\\" sequence:EscapeSequence { return sequence; }
+  = !(doublequote / EscapedEscapeCharacter / LineTerminator) SourceCharacter { return text(); }
+  / EscapedEscapeCharacter sequence:EscapeSequence { return sequence; }
   / LineContinuation
 
 SingleStringCharacter
-  = !("'" / EscapedEscapeCharacter / LineTerminator) SourceCharacter { return text(); }
+  = !(singlequote / EscapedEscapeCharacter / LineTerminator) SourceCharacter { return text(); }
   / EscapedEscapeCharacter sequence:EscapeSequence { return sequence; }
   / LineContinuation
 
@@ -327,8 +344,8 @@ CharacterEscapeSequence
   / NonEscapeCharacter
 
 SingleEscapeCharacter
-  = "'"
-  / '"'
+  = singlequote
+  / doublequote
   / EscapedEscapeCharacter
   / "b"  { return "\b";   }
   / "f"  { return "\f";   }
