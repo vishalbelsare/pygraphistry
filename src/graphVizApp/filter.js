@@ -86,6 +86,18 @@ FilterControl.prototype.printedExpressionOf = function (value) {
     }
 };
 
+/**
+ * @param {String} attributeName
+ * @returns {String}
+ */
+FilterControl.prototype.identifierToExpression = function (attributeName) {
+    if (attributeName.match(/[^A-Za-z0-9:_]/)) {
+        return '[' + attributeName.replace(']', '\\]') + ']';
+    } else {
+        return attributeName;
+    }
+};
+
 FilterControl.prototype.queryToExpression = function(query) {
     if (!query) { return undefined; }
     if (query.inputString) {
@@ -99,20 +111,21 @@ FilterControl.prototype.queryToExpression = function(query) {
     if (query.type) {
         attribute = query.type + ':' + attribute;
     }
+    var printedAttribute = this.identifierToExpression(attribute);
     // Should quote inner brackets if we commit to this:
     // attribute = '[' + attribute + ']';
     if (query.start !== undefined && query.stop !== undefined) {
-        return attribute + ' BETWEEN ' + this.printedExpressionOf(query.start) +
+        return printedAttribute + ' BETWEEN ' + this.printedExpressionOf(query.start) +
             ' AND ' + this.printedExpressionOf(query.stop);
     } else if (query.start !== undefined) {
-        return attribute + ' >= ' + this.printedExpressionOf(query.start);
+        return printedAttribute + ' >= ' + this.printedExpressionOf(query.start);
     } else if (query.stop !== undefined) {
-        return this.printedExpressionOf(query.stop) + ' <= ' + attribute;
+        return this.printedExpressionOf(query.stop) + ' <= ' + printedAttribute;
     } else if (query.equals !== undefined) {
         if (Array.isArray(query.equals) && query.equals.length > 1) {
-            return attribute + ' IN ' + this.printedExpressionOf(query.equals);
+            return printedAttribute + ' IN ' + this.printedExpressionOf(query.equals);
         } else {
-            return attribute + ' = ' + this.printedExpressionOf(query.equals);
+            return printedAttribute + ' = ' + this.printedExpressionOf(query.equals);
         }
     }
 };
