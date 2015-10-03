@@ -211,9 +211,9 @@ FunctionInvocation "function call"
   }
 
 PrimaryExpression
-  = FunctionInvocation
+  = BracketedIdentifier
   / CastExpression
-  / BracketedIdentifier
+  / FunctionInvocation
   / Identifier
   / LiteralValue
   / lparen __ expression:SearchCondition __ rparen { return expression; }
