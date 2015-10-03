@@ -80,7 +80,7 @@ ace.define('ace/mode/graphistry_highlight_rules',
                     regex: identifierRe
                 }, {
                     token: 'paren.lbracket',
-                    regex: '[(?=.)',
+                    regex: '[\\[](?=.)',
                     next:  'quotedIdentifier'
                 }, {
                     token: 'keyword.operator',
