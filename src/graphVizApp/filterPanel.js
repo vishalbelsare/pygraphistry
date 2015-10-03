@@ -276,7 +276,9 @@ var FilterView = Backbone.View.extend({
         });
         this.editor.setHighlightSelectedWord(true);
         this.editor.setHighlightActiveLine(true);
-        this.editor.setReadOnly(this.model.get('controlType') !== undefined);
+        var readOnly = this.model.get('controlType') !== undefined;
+        this.editor.setReadOnly(readOnly);
+        $expressionArea.toggleClass('disabled', readOnly);
         this.editor.renderer.setShowGutter(true);
         this.editor.setWrapBehavioursEnabled(true);
         this.editor.setBehavioursEnabled(true);
