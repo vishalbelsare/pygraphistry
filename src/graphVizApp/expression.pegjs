@@ -5,10 +5,6 @@
   // Header/utility functions for grammar match bodies.
   //
 
-  function extractOptional(optional, index) {
-    return optional ? optional[index] : null;
-  }
-
   function extractList(list, index) {
     var result = new Array(list.length), i;
 
