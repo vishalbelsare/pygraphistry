@@ -132,7 +132,7 @@ ExpressionCodeGenerator.prototype.expressionForFunctionCall = function (inputFun
     var precedence = this.precedenceOf('.');
     var methodCall = function (firstArg, outputFunctionName, restArgs) {
         return this.wrapSubExpressionPerPrecedences(
-            firstArg + '.' + outputFunctionName + '(' + restArgs ? restArgs.join(', ') : '' + ')',
+            firstArg + '.' + outputFunctionName + '(' + (restArgs !== undefined ? restArgs.join(', ') : '') + ')',
             precedence, outerPrecedence);
     }.bind(this);
     inputFunctionName = inputFunctionName.toUpperCase();
