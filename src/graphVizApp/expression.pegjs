@@ -413,29 +413,29 @@ AnythingExceptCommentEnd = .* & '*/'
 nil = ''
 
 Keyword
-  = AND
-  / AS
-  / BEGIN
-  / BETWEEN
-  / CASE
-  / CAST
-  / ELSE
-  / END
-  / ESCAPE
-  / EXISTS
-  / FROM
-  / IF
-  / IN
-  / IS
-  / ISNULL
-  / LIKE
-  / NOT
-  / NOTNULL
-  / OR
-  / THEN
-  / TO
-  / WHEN
-  / WHERE
+  = AND          !IdentifierPart
+  / AS           !IdentifierPart
+  / BEGIN        !IdentifierPart
+  / BETWEEN      !IdentifierPart
+  / CASE         !IdentifierPart
+  / CAST         !IdentifierPart
+  / ELSE         !IdentifierPart
+  / END          !IdentifierPart
+  / ESCAPE       !IdentifierPart
+  / EXISTS       !IdentifierPart
+  / FROM         !IdentifierPart
+  / IF           !IdentifierPart
+  / IN           !IdentifierPart
+  / IS           !IdentifierPart
+  / ISNULL       !IdentifierPart
+  / LIKE         !IdentifierPart
+  / NOT          !IdentifierPart
+  / NOTNULL      !IdentifierPart
+  / OR           !IdentifierPart
+  / THEN         !IdentifierPart
+  / TO           !IdentifierPart
+  / WHEN         !IdentifierPart
+  / WHERE        !IdentifierPart
 
 NullLiteral "null"
   = NULL { return { type: "Literal", dataType: 'null', value: null }; }
