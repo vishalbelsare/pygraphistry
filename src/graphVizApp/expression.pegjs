@@ -158,12 +158,12 @@ LiteralValue "literal"
 
 ElementList
   = first:(
-      element:MemberAccess {
+      element:RowValueExpression {
         return optionalList(element);
       }
     )
     rest:(
-      __ comma __ element:MemberAccess {
+      __ comma __ element:RowValueExpression {
         return optionalList(element);
       }
     )*
