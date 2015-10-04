@@ -438,10 +438,6 @@ Handlebars.registerHelper('json', function(context) {
 function FiltersPanel(socket, urlParams) {
     var $button = $('#filterButton');
 
-    if (!urlParams.debug) {
-        $button.css({display: 'none'});
-    }
-
     this.control = new FilterControl(socket);
 
     this.collection = new FilterCollection([], {
