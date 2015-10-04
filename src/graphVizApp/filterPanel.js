@@ -279,6 +279,7 @@ var FilterView = Backbone.View.extend({
         var readOnly = this.model.get('controlType') !== undefined;
         this.editor.setReadOnly(readOnly);
         $expressionArea.toggleClass('disabled', readOnly);
+        this.$el.toggleClass('disabled', readOnly);
         this.editor.renderer.setShowGutter(true);
         this.editor.setWrapBehavioursEnabled(true);
         this.editor.setBehavioursEnabled(true);
