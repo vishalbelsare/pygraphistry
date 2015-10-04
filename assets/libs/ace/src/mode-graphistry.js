@@ -20,7 +20,7 @@ ace.define('ace/mode/graphistry_highlight_rules',
                 //'case|when|else|end|type'
             );
 
-            var identifierRe = '[a-zA-Z\\$_\u00a1-\uffff][a-zA-Z\\d\\$_\u00a1-\uffff]*\\b';
+            var identifierRe = '[a-zA-Z\\$_\u00a1-\uffff][a-zA-Z:\\d\\$_\u00a1-\uffff]*\\b';
 
             var escapedRe = '\\\\(?:x[0-9a-fA-F]{2}|' + // hex
                 'u[0-9a-fA-F]{4}|' + // unicode
