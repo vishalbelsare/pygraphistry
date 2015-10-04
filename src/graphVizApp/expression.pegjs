@@ -156,27 +156,24 @@ LiteralValue "literal"
   / BooleanLiteral
   / TimePseudoLiteral
 
-Elision
-  = comma commas:(__ comma)* { return filledArray(commas.length + 1, null); }
-
 ElementList
   = first:(
-      elision:(Elision __)? element:MemberAccess {
-        return optionalList(extractOptional(elision, 0)).concat(element);
+      element:MemberAccess {
+        return optionalList(element);
       }
     )
     rest:(
-      __ comma __ elision:(Elision __)? element:MemberAccess {
-        return optionalList(extractOptional(elision, 0)).concat(element);
+      __ comma __ element:MemberAccess {
+        return optionalList(element);
       }
     )*
     { return Array.prototype.concat.apply(first, rest); }
 
 ListLiteral
-  = lparen __ elision:(Elision __)? rparen {
+  = lparen __ rparen {
       return {
         type: 'ListExpression',
-        elements: optionalList(extractOptional(elision, 0))
+        elements: []
       }
     }
   / lparen __ elements:ElementList __ rparen {
@@ -185,10 +182,10 @@ ListLiteral
         elements: elements
       }
     }
-  / lparen __ elements:ElementList __ comma __ elision:(Elision __)? rparen {
+  / lparen __ elements:ElementList __ comma __ rparen {
       return {
         type: 'ListExpression',
-        elements: elements.concat(optionalList(extractOptional(elision, 0)))
+        elements: elements
       }
     }
 
