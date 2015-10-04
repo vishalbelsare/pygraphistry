@@ -135,7 +135,8 @@ ExpressionCodeGenerator.prototype.expressionForFunctionCall = function (inputFun
             firstArg + '.' + outputFunctionName + '(' + restArgs ? restArgs.join(', ') : '' + ')',
             precedence, outerPrecedence);
     }.bind(this);
-    switch (inputFunctionName.toUpperCase()) {
+    inputFunctionName = inputFunctionName.toUpperCase();
+    switch (inputFunctionName) {
         case 'DATE':
             safeFunctionName = 'new Date';
             break;
