@@ -987,11 +987,12 @@ Dataframe.prototype.setNumElements = function (type, num) {
 // If it doesn't exist as key, return false.
 Dataframe.prototype.getKeyFromName = function (type, maybeName) {
     // TODO: Maintain an actual lookup instead of iterating through.
-    var matches = _.filter(this.data.attributes[type], function (hash) {
-        return (hash.name === maybeName);
+
+    var attrs = this.rawdata.attributes[type];
+    var matchKeys = _.filter(_.keys(attrs), function (key) {
+        return (attrs[key].name === maybeName);
     });
 
-    var matchKeys = _.keys(matches);
     if (matchKeys.length > 1) {
         logger.info('The name ' + type + ':' + maybeName + ' is ambiguous, the following matches: ' + matchKeys.length);
     }
