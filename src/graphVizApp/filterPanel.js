@@ -308,9 +308,9 @@ var FilterView = Backbone.View.extend({
     initEditor: function () {
         if (this.editor !== undefined) { return; }
 
-        var $expressionArea = this.$('.filterExpression');
+        this.$expressionArea = this.$('.filterExpression');
 
-        this.editor = ace.edit($expressionArea[0]);
+        this.editor = ace.edit(this.$expressionArea[0]);
         this.editor.setTheme('ace/theme/chrome');
         this.editor.setOptions({
             minLines: 2,
@@ -325,7 +325,7 @@ var FilterView = Backbone.View.extend({
         this.editor.setHighlightActiveLine(true);
         var readOnly = this.model.get('controlType') !== undefined;
         this.editor.setReadOnly(readOnly);
-        $expressionArea.toggleClass('disabled', readOnly);
+        this.$expressionArea.toggleClass('disabled', readOnly);
         this.$el.toggleClass('disabled', readOnly);
         this.editor.renderer.setShowGutter(false);
         this.editor.setWrapBehavioursEnabled(true);
@@ -358,6 +358,7 @@ var FilterView = Backbone.View.extend({
             }
         });
         this.session.clearAnnotations();
+        this.$expressionArea.attr('title', 'Filter expression');
         try {
             this.model.updateExpression(this.control, expressionString);
         } catch (syntaxError) {
@@ -372,6 +373,7 @@ var FilterView = Backbone.View.extend({
                     text: syntaxError.message,
                     type: 'error'
                 });
+                this.$expressionArea.attr('title', syntaxError.message);
             }
             this.session.setAnnotations([annotation]);
         }
