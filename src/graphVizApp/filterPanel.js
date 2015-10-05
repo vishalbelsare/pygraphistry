@@ -488,8 +488,8 @@ Handlebars.registerHelper('json', function(context) {
 });
 
 
-function FiltersPanel(socket, urlParams) {
-    var $button = $('#filterButton');
+function FiltersPanel(socket/*, urlParams*/) {
+    //var $button = $('#filterButton');
 
     this.control = new FilterControl(socket);
 
