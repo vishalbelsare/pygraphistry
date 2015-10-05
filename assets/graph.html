@@ -498,27 +498,37 @@
         </a>
     </div>
     -->
-    <div class="col-xs-9">
-        <div class="dropdown">
-            <button class="btn btn-primary dropdown-toggle" type="button" id="addFilterButton" data-toggle="dropdown" aria-expanded="true">
-                Add Filter
-                <span class="caret"></span>
-            </button>
-            <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
-                {{#each fields}}
-                <li role="presentation"><a class="addFilterDropdownField" role="menuitem" tabindex="-1" href="#"
-                        data-attributes="{{json .}}">
-                    {{#if dataType}}
-                    {{type}}:{{name}} ({{dataType}})
-                    {{else}}
-                    {{type}}:{{name}}
-                    {{/if}}
-                </a></li>
-                {{/each}}
-            </ul>
+    <div class="row">
+        <div class="col-md-1"></div>
+        <div class="col-md-4">
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="addFilterButton" data-toggle="dropdown" aria-expanded="true">
+                    Add Filter
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
+                    {{#each fields}}
+                    <li role="presentation"><a class="addFilterDropdownField" role="menuitem" tabindex="-1" href="#"
+                            data-attributes="{{json .}}">
+                        {{#if dataType}}
+                        {{type}}:{{name}} ({{dataType}})
+                        {{else}}
+                        {{type}}:{{name}}
+                        {{/if}}
+                    </a></li>
+                    {{/each}}
+                </ul>
+            </div>
         </div>
+        <div class="col-md-6">
+            <a class="filter-about" href="#" title="To use,
+1. Pick field to filter on from dropdown.
+2. Enter an ANSI SQL expression over that field (but no other).
+Note: this release does not support expressions with multiple fields nor changing which field a filter acts over."
+                ><i class="fa fa-question-circle" /></a>
+        </div>
+        <div class="col-md-1"></div>
     </div>
-    <!-- <a class="filter-about" href="where.html"><i class="fa fa-question-circle" /></a> -->
     <!--
     <div class="col-xs-1 filterButton closeButton">
         <a href="#">
