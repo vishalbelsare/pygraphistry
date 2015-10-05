@@ -821,7 +821,7 @@ Dataframe.prototype.load = function (attributes, type, numElements) {
     } else if (edgeTitleField) {
         filteredAttributes._title = attributes[edgeTitleField];
     } else {
-        filteredAttributes._title = {type: 'number', values: range(numElements)};
+        filteredAttributes._title = {type: 'number', name: 'label', values: range(numElements)};
     }
 
     _.extend(this.rawdata.attributes[type], filteredAttributes);
@@ -852,9 +852,9 @@ Dataframe.prototype.loadDegrees = function (outDegrees, inDegrees) {
         degree[i] = inDegrees[i] + outDegrees[i];
     }
 
-    attributes.degree = {values: degree, type: 'number'};
-    attributes.degree_in = {values: degree_in, type: 'number'};
-    attributes.degree_out = {values: degree_out, type: 'number'};
+    attributes.degree = {values: degree, name: 'degree', type: 'number'};
+    attributes.degree_in = {values: degree_in, name: 'degree_in', type: 'number'};
+    attributes.degree_out = {values: degree_out, name: 'degree_out', type: 'number'};
 };
 
 
@@ -874,13 +874,13 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
         destination[i] = nodeTitles[unsortedEdges[2*i + 1]];
     }
 
-    attributes.Source = {values: source, type: 'string'};
-    attributes.Destination = {values: destination, type: 'string'};
+    attributes.Source = {values: source, name: 'Source', type: 'string'};
+    attributes.Destination = {values: destination, name: 'Destination', type: 'string'};
 
     // If no title has been set, just make title the index.
     // TODO: Is there a more appropriate place to put this?
     if (!attributes._title) {
-        attributes._title = {type: 'string', values: range(numElements)};
+        attributes._title = {type: 'string', name: 'label', values: range(numElements)};
     }
 
 };
