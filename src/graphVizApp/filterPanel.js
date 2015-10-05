@@ -368,7 +368,7 @@ var FilterView = Backbone.View.extend({
             if (syntaxError) {
                 annotation = new InlineAnnotation(this.session, {
                     row: syntaxError.line && syntaxError.line - 1,
-                    column: syntaxError.column - 1,
+                    column: syntaxError.column,
                     endColumn: syntaxError.column + 1,
                     text: syntaxError.message,
                     type: 'error'
