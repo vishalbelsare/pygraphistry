@@ -15,6 +15,52 @@ var util          = require('./util.js');
 
 var COLLAPSED_FILTER_HEIGHT = 80;
 
+function InlineAnnotation(session, info) {
+    this.session = session;
+    this.info = info;
+    var Anchor = ace.require('ace/anchor').Anchor;
+    this.startAnchor = new Anchor(session.getDocument(), info.row, info.column);
+    this.endAnchor = new Anchor(session.getDocument(), info.row, info.endColumn);
+    this.startAnchor.on('change', this.update.bind(this));
+    this.endAnchor.on('change', this.update.bind(this));
+    this.marker = null;
+    this.update();
+}
+
+InlineAnnotation.prototype = {
+    update: function() {
+        var AceRange = ace.require('ace/range').Range;
+        var anchorRange = AceRange.fromPoints(this.startAnchor.getPosition(), this.endAnchor.getPosition());
+        if (this.marker) {
+            this.session.removeMarker(this.marker);
+        }
+        var clazz = this.info.class || ('marker-highlight-' + this.info.type);
+        if (this.info.text) {
+            this.marker = this.session.addMarker(anchorRange, clazz, function(stringBuilder, range, left, top, config) {
+                var height = config.lineHeight;
+                var width = (range.end.column - range.start.column) * config.characterWidth;
+
+                stringBuilder.push(
+                    '<div class=\'', clazz, '\' title=', JSON.stringify(this.info.text) , ' style=\'',
+                    'height:', height, 'px;',
+                    'width:', width, 'px;',
+                    'top:', top, 'px;',
+                    'left:', left, 'px;', '\'></div>'
+                );
+            }.bind(this), true);
+        } else {
+            this.marker = this.session.addMarker(anchorRange, clazz, this.info.type);
+        }
+    },
+    remove: function() {
+        this.startAnchor.detach();
+        this.endAnchor.detach();
+        if (this.marker) {
+            this.session.removeMarker(this.marker);
+        }
+    }
+};
+
 var FilterModel = Backbone.Model.extend({
     defaults: {
         title: undefined,
@@ -272,7 +318,8 @@ var FilterView = Backbone.View.extend({
             wrap: true,
             enableBasicAutocompletion: true,
             enableSnippets: true,
-            enableLiveAutocompletion: true
+            enableLiveAutocompletion: true,
+            autoScrollEditorIntoView: true
         });
         this.editor.setHighlightSelectedWord(true);
         this.editor.setHighlightActiveLine(true);
@@ -280,7 +327,7 @@ var FilterView = Backbone.View.extend({
         this.editor.setReadOnly(readOnly);
         $expressionArea.toggleClass('disabled', readOnly);
         this.$el.toggleClass('disabled', readOnly);
-        this.editor.renderer.setShowGutter(true);
+        this.editor.renderer.setShowGutter(false);
         this.editor.setWrapBehavioursEnabled(true);
         this.editor.setBehavioursEnabled(true);
         // Silences a deprecation warning we don't care about:
@@ -292,21 +339,25 @@ var FilterView = Backbone.View.extend({
         }).subscribe(function (namespaceMetadata) {
             dataframeCompleter.setNamespaceMetadata(namespaceMetadata);
         }.bind(this));
-        var session = this.editor.getSession();
-        session.setUseSoftTabs(true);
-        session.setMode('ace/mode/graphistry');
+        this.session = this.editor.getSession();
+        this.session.setUseSoftTabs(true);
+        this.session.setMode('ace/mode/graphistry');
         var expression = this.model.getExpression(this.control);
         if (expression) {
-            session.setValue(expression);
+            this.session.setValue(expression);
         }
-        session.on('change', function (aceEvent) {
+        this.session.on('change', function (aceEvent) {
             this.updateQuery(aceEvent);
         }.bind(this));
     },
     updateQuery: function (/*aceEvent*/) {
         var expressionString = this.editor.getValue();
-        var session = this.editor.getSession();
-        session.clearAnnotations();
+        _.each(this.session.getAnnotations(), function (annotation) {
+            if (typeof annotation.remove === 'function') {
+                annotation.remove();
+            }
+        });
+        this.session.clearAnnotations();
         try {
             this.model.updateExpression(this.control, expressionString);
         } catch (syntaxError) {
@@ -314,14 +365,15 @@ var FilterView = Backbone.View.extend({
                 type: 'warning'
             };
             if (syntaxError) {
-                annotation = {
+                annotation = new InlineAnnotation(this.session, {
                     row: syntaxError.line && syntaxError.line - 1,
-                    column: syntaxError.offset,
+                    column: syntaxError.column - 1,
+                    endColumn: syntaxError.column + 1,
                     text: syntaxError.message,
                     type: 'error'
-                };
+                });
             }
-            session.setAnnotations([annotation]);
+            this.session.setAnnotations([annotation]);
         }
     },
     delete: function (/*event*/) {
