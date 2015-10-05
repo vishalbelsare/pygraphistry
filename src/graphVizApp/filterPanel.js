@@ -352,10 +352,10 @@ var FilterView = Backbone.View.extend({
     },
     updateQuery: function (/*aceEvent*/) {
         var expressionString = this.editor.getValue();
+        // TODO: Highly fiddly way to ensure markers are cleared:
+        $('.ace_marker-layer', this.$expressionArea).empty();
         _.each(this.session.getAnnotations(), function (annotation) {
-            if (typeof annotation.remove === 'function') {
-                annotation.remove();
-            }
+            annotation.remove();
         });
         this.session.clearAnnotations();
         this.$expressionArea.attr('title', 'Filter expression');
