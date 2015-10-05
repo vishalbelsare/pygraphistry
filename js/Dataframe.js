@@ -316,26 +316,6 @@ Dataframe.prototype.getMaskForFilterOnAttributes = function (attributes, filterF
 };
 
 
-Dataframe.prototype.normalizeName = function (dataframeAttribute) {
-    var idx = dataframeAttribute ? dataframeAttribute.lastIndexOf(':') : -1;
-    var name = dataframeAttribute;
-    var type;
-    if (idx !== -1) {
-        type = dataframeAttribute.substring(0, idx);
-        name = dataframeAttribute.substring(idx + 1);
-    }
-    if (type !== undefined) {
-        if (!(this.rawdata.attributes[type]).hasOwnProperty(name)) {
-            return undefined;
-        }
-    } else if (!this.rawdata.attributes.edge.hasOwnProperty(name) &&
-        !this.rawdata.attributes.point.hasOwnProperty(name)) {
-        return undefined;
-    }
-    return name;
-};
-
-
 /**
  * Returns sorted edge mask
  * @param {String} dataframeAttribute
@@ -929,15 +909,33 @@ Dataframe.prototype.setNumElements = function (type, num) {
 // Data Access
 //////////////////////////////////////////////////////////////////////////////
 
-// Given a name, return the key that corresponds to that name.
-// If no match exists, check to see if name is just a key.
-// If it doesn't exist as key, return false.
-Dataframe.prototype.getKeyFromName = function (type, maybeName) {
+
+Dataframe.prototype.normalizeAttributeName = function (dataframeAttribute, type) {
+    var idx = dataframeAttribute ? dataframeAttribute.lastIndexOf(':') : -1;
+    var name = dataframeAttribute;
+    if (idx !== -1) {
+        type = dataframeAttribute.substring(0, idx);
+        name = dataframeAttribute.substring(idx + 1);
+    }
+    return this.getKeyFromName(name, type);
+};
+
+
+/** Given a name, return the key that corresponds to that name.
+ * If no match exists, check to see if name is just a key.
+ * If it doesn't exist as key, return false.
+ * @returns {{attribute: String, type: String}}
+ */
+Dataframe.prototype.getKeyFromName = function (maybeName, type) {
     // TODO: Maintain an actual lookup instead of iterating through.
 
-    var attrs = this.rawdata.attributes[type];
-    var matchKeys = _.filter(_.keys(attrs), function (key) {
-        return (attrs[key].name === maybeName);
+    if (type === undefined) {
+        return this.getKeyFromName(maybeName, 'point') || this.getKeyFromName(maybeName, 'edge');
+    }
+
+    var attributes = this.rawdata.attributes[type];
+    var matchKeys = _.filter(_.keys(attributes), function (key) {
+        return (attributes[key].name === maybeName);
     });
 
     if (matchKeys.length > 1) {
@@ -945,14 +943,14 @@ Dataframe.prototype.getKeyFromName = function (type, maybeName) {
     }
 
     if (matchKeys.length > 0) {
-        return matchKeys[0];
+        return {attribute: matchKeys[0], type: type};
     }
 
     if (this.data.attributes[type][maybeName] !== undefined) {
-        return maybeName;
+        return {attribute: maybeName, type: type};
     }
 
-    return false;
+    return undefined;
 };
 
 Dataframe.prototype.getBufferKeys = function (type) {
