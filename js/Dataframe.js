@@ -9,6 +9,7 @@ var log = require('common/logger.js');
 var logger = log.createLogger('graph-viz:dataframe');
 
 var ExpressionCodeGenerator = require('./expressionCodeGenerator');
+var MaskSet = require('./MaskSet');
 
 var baseDirPath = __dirname + '/../assets/dataframe/';
 var TYPES = ['point', 'edge', 'simulator'];
@@ -394,60 +395,6 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
     this.typedArrayCache.newDegrees = new Uint32Array(oldNumPoints);
     this.typedArrayCache.newSpringsPos = new Float32Array(oldNumEdges * 4);
     this.typedArrayCache.newCurPoints = new Float32Array(oldNumPoints * 2);
-};
-
-/**
- * Mask is implemented as a list of valid indices (in sorted order).
- * @typedef Array<Number> Mask
- */
-
-/**
- * @typedef Array<Mask> MaskList
- */
-
-/**
- * @param {Dataframe} dataframe
- * @param {Mask} pointIndexes
- * @param {Mask} edgeIndexes
- * @constructor
- */
-function MaskSet(dataframe, pointIndexes, edgeIndexes) {
-    this.dataframe = dataframe;
-    this.point = pointIndexes;
-    this.edge = edgeIndexes;
-}
-
-MaskSet.prototype.numPoints = function () {
-    return this.point !== undefined ? this.point.length : this.dataframe.numPoints();
-};
-
-MaskSet.prototype.numEdges = function () {
-    return this.edge !== undefined ? this.edge.length : this.dataframe.numEdges();
-};
-
-/**
- * This callback applies to iterating across point and edge index arrays.
- * @callback IndexIteratorCallback
- * @param {Number} indexAsElement
- * @param {Number} index
- * */
-
-/**
- * @param {IndexIteratorCallback} iterator
- */
-MaskSet.prototype.mapPointIndexes = function (iterator) {
-    for (var i = 0; i < this.point.length; i++) {
-        iterator.call(this, this.point[i], i);
-    }
-};
-
-/**
- * @param {IndexIteratorCallback} iterator
- */
-MaskSet.prototype.mapEdgeIndexes = function (iterator) {
-    for (var i = 0; i < this.edge.length; i++) {
-        iterator.call(this, this.edge[i], i);
-    }
 };
 
 /**
