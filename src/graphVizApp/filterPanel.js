@@ -322,7 +322,7 @@ var FilterView = Backbone.View.extend({
             autoScrollEditorIntoView: true
         });
         this.editor.setHighlightSelectedWord(true);
-        this.editor.setHighlightActiveLine(true);
+        this.editor.setHighlightActiveLine(false);
         var readOnly = this.model.get('controlType') !== undefined;
         this.editor.setReadOnly(readOnly);
         this.$expressionArea.toggleClass('disabled', readOnly);
