@@ -982,6 +982,31 @@ Dataframe.prototype.setNumElements = function (type, num) {
 // Data Access
 //////////////////////////////////////////////////////////////////////////////
 
+// Given a name, return the key that corresponds to that name.
+// If no match exists, check to see if name is just a key.
+// If it doesn't exist as key, return false.
+Dataframe.prototype.getKeyFromName = function (type, maybeName) {
+    // TODO: Maintain an actual lookup instead of iterating through.
+    var matches = _.filter(this.data.attributes[type], function (hash) {
+        return (hash.name === maybeName);
+    });
+
+    var matchKeys = _.keys(matches);
+    if (matchKeys.length > 1) {
+        logger.info('The name ' + type + ':' + maybeName + ' is ambiguous, the following matches: ' + matchKeys.length);
+    }
+
+    if (matchKeys.length > 0) {
+        return matchKeys[0];
+    }
+
+    if (this.data.attributes[type][maybeName] !== undefined) {
+        return maybeName;
+    }
+
+    return false;
+};
+
 Dataframe.prototype.getBufferKeys = function (type) {
     return _.sortBy(
         _.keys(this.data.buffers[type]),
