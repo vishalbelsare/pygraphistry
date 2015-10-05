@@ -22,11 +22,13 @@ var BarnesKernelSeq = function (clContext) {
         'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
     ];
 
-    this.argsBarnes2 = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
-    'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
-    'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
-    'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
-        'width', 'height', 'numBodies', 'numNodes', 'nextMidPoints', 'tau', 'WARPSIZE'];
+    this.argsBoundBox = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
+        'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
+        'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'globalSwings', 'globalTractions', 'swings', 'tractions',
+        'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
+        'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau', 'WARPSIZE',
+        'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+    ];
 
     this.argsType = {
         scalingRatio: cljs.types.float_t,
@@ -71,6 +73,8 @@ var BarnesKernelSeq = function (clContext) {
         globalXMax: null,
         globalYMin: null,
         globalYMax: null,
+        globalSwings: null,
+        globalTractions: null,
         count: null,
         blocked: null,
         step: null,
@@ -91,7 +95,7 @@ var BarnesKernelSeq = function (clContext) {
     this.toBarnesLayout = new Kernel('to_barnes_layout', this.argsToBarnesLayout,
             this.argsType, 'barnesHut/toBarnesLayout.cl', clContext);
 
-    this.boundBox = new Kernel('bound_box', this.argsBarnes,
+    this.boundBox = new Kernel('bound_box', this.argsBoundBox,
             this.argsType, 'barnesHut/boundBox.cl', clContext);
 
     this.buildTree = new Kernel('build_tree', this.argsBarnes,
@@ -133,6 +137,8 @@ var BarnesKernelSeq = function (clContext) {
         global_y_mins: null,
         global_x_maxs: null,
         global_y_maxs: null,
+        globalSwings: null,
+        globalTractions: null,
         count: null,
         blocked: null,
         step: null,
@@ -187,6 +193,8 @@ var BarnesKernelSeq = function (clContext) {
                 simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_maxs'),
                 simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_y_mins'),
                 simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_y_maxs'),
+                simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'globalSwings'),
+                simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'globalTractions'),
                 simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'count'),
                 simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'blocked'),
                 simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'step'),
@@ -195,7 +203,8 @@ var BarnesKernelSeq = function (clContext) {
                 simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'radius'),
                     simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed')
                         ])
-                        .spread(function (x_cords, y_cords, accx, accy, children, mass, start, sort, xmin, xmax, ymin, ymax, count,
+                        .spread(function (x_cords, y_cords, accx, accy, children, mass, start, sort,
+                                          xmin, xmax, ymin, ymax, globalSwings, globalTractions, count,
                                     blocked, step, bottom, maxdepth, radius) {
                             tempBuffers.x_cords = x_cords;
                             tempBuffers.y_cords = y_cords;
@@ -209,6 +218,8 @@ var BarnesKernelSeq = function (clContext) {
                             tempBuffers.xmax = xmax;
                             tempBuffers.ymin = ymin;
                             tempBuffers.ymax = ymax;
+                            tempBuffers.globalSwings = globalSwings;
+                            tempBuffers.globalTractions = globalTractions;
                             tempBuffers.count = count;
                             tempBuffers.blocked = blocked;
                             tempBuffers.step = step;
@@ -270,7 +281,41 @@ var BarnesKernelSeq = function (clContext) {
               kernel.set(setArgs);
             };
 
-            setBarnesKernelArgs(that.boundBox, tempBuffers);
+            var buffers = tempBuffers;
+            that.boundBox.set({
+                xCoords:buffers.x_cords.buffer,
+                yCoords:buffers.y_cords.buffer,
+                accX:buffers.accx.buffer,
+                accY:buffers.accy.buffer,
+                children:buffers.children.buffer,
+                mass:buffers.mass.buffer,
+                start:buffers.start.buffer,
+                sort:buffers.sort.buffer,
+                globalXMin:buffers.xmin.buffer,
+                globalXMax:buffers.xmax.buffer,
+                globalYMin:buffers.ymin.buffer,
+                globalYMax:buffers.ymax.buffer,
+                globalSwings: buffers.globalSwings.buffer,
+                globalTractions: buffers.globalTractions.buffer,
+                swings:simulator.dataframe.getBuffer('swings', 'simulator').buffer,
+                tractions: simulator.dataframe.getBuffer('tractions', 'simulator').buffer,
+                count:buffers.count.buffer,
+                blocked:buffers.blocked.buffer,
+                bottom:buffers.bottom.buffer,
+                step:buffers.step.buffer,
+                maxDepth:buffers.maxdepth.buffer,
+                radius:buffers.radius.buffer,
+                globalSpeed: layoutBuffers.globalSpeed.buffer,
+                width:simulator.controls.global.dimensions[0],
+                height:simulator.controls.global.dimensions[1],
+                numBodies:buffers.numBodies,
+                numNodes:buffers.numNodes,
+                pointForces: simulator.dataframe.getBuffer('partialForces1', 'simulator').buffer,
+                WARPSIZE:warpsize,
+                THREADS_SUMS: workItems.computeSums[1],
+                THREADS_FORCES: workItems.calculateForces[1],
+                THREADS_BOUND: workItems.boundBox[1]});
+
             setBarnesKernelArgs(that.buildTree, tempBuffers);
             setBarnesKernelArgs(that.computeSums, tempBuffers);
             setBarnesKernelArgs(that.sort, tempBuffers);
@@ -302,7 +347,14 @@ var BarnesKernelSeq = function (clContext) {
             pointDegrees: simulator.dataframe.getBuffer('degrees', 'simulator').buffer
         });
 
-        updateBarnesArgs(that.boundBox);
+        that.boundBox.set({
+                swings:simulator.dataframe.getBuffer('swings', 'simulator').buffer,
+                tractions: simulator.dataframe.getBuffer('tractions', 'simulator').buffer,
+                pointForces: simulator.dataframe.getBuffer('partialForces1', 'simulator').buffer,
+                numBodies: numBodies,
+                numNodes: numNodes
+        });
+
         updateBarnesArgs(that.buildTree);
         updateBarnesArgs(that.computeSums);
         updateBarnesArgs(that.sort);
