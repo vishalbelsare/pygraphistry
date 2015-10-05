@@ -211,6 +211,7 @@ PrimaryExpression
   / LiteralValue
   / lparen __ expression:SearchCondition __ rparen { return expression; }
   / ListLiteral
+  / !. { return {type: "Literal", dataType: 'boolean', value: true }; }
 
 DecimalDigit
   = [0-9]
