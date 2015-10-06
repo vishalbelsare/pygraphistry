@@ -303,7 +303,7 @@ Dataframe.prototype.filterFuncForQueryObject = function (query) {
  * @param {Function<Object>} filterFunc
  * @returns Mask
  */
-Dataframe.prototype.getMaskForFilterOnAttributes = function (attributes, filterFunc) {
+Dataframe.prototype.getMaskForFilterOnAttributeValues = function (attributes, filterFunc) {
     var mask = [];
     if (filterFunc) {
         _.each(attributes, function (val, idx) {
@@ -325,7 +325,7 @@ Dataframe.prototype.getMaskForFilterOnAttributes = function (attributes, filterF
 Dataframe.prototype.getEdgeAttributeMask = function (dataframeAttribute, params) {
     var attr = this.rawdata.attributes.edge[dataframeAttribute];
     var filterFunc = this.filterFuncForQueryObject(params);
-    var edgeMask = this.getMaskForFilterOnAttributes(attr.values, filterFunc);
+    var edgeMask = this.getMaskForFilterOnAttributeValues(attr.values, filterFunc);
     // Convert to sorted order
     var map = this.rawdata.hostBuffers.forwardsEdges.edgePermutation;
     for (var i = 0; i < edgeMask.length; i++) {
@@ -344,7 +344,7 @@ Dataframe.prototype.getEdgeAttributeMask = function (dataframeAttribute, params)
 Dataframe.prototype.getPointAttributeMask = function (dataframeAttribute, params) {
     var attr = this.rawdata.attributes.point[dataframeAttribute];
     var filterFunc = this.filterFuncForQueryObject(params);
-    return this.getMaskForFilterOnAttributes(attr.values, filterFunc);
+    return this.getMaskForFilterOnAttributeValues(attr.values, filterFunc);
 };
 
 
