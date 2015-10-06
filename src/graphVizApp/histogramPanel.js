@@ -432,11 +432,19 @@ HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
             dataType = 'float';
         } else if (histFilter.equals !== undefined) {
             if (histFilter.equals.hasOwnProperty('length')) {
-                query = filterer.filterExactValuesParameters(
-                    histFilter.type,
-                    attribute,
-                    histFilter.equals
-                );
+                if (histFilter.equals.length > 1) {
+                    query = filterer.filterExactValuesParameters(
+                        histFilter.type,
+                        attribute,
+                        histFilter.equals
+                    );
+                } else {
+                    query = filterer.filterExactValueParameters(
+                        histFilter.type,
+                        attribute,
+                        histFilter.equals[0]
+                    );
+                }
             } else {
                 query = filterer.filterExactValueParameters(
                     histFilter.type,
