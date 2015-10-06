@@ -205,22 +205,28 @@ FilterControl.prototype.queryFromExpressionTokens = function (tokens) {
 };
 
 FilterControl.prototype.filterRangeParameters = function (type, attribute, start, stop) {
-    return _.extend(filterParametersCore(type, attribute), {
+    var result = _.extend(filterParametersCore(type, attribute), {
         start: start,
         stop: stop
     });
+    result.inputString = this.queryToExpression(result);
+    return result;
 };
 
 FilterControl.prototype.filterExactValueParameters = function (type, attribute, value) {
-    return _.extend(filterParametersCore(type, attribute), {
+    var result = _.extend(filterParametersCore(type, attribute), {
         equals: value
     });
+    result.inputString = this.queryToExpression(result);
+    return result;
 };
 
 FilterControl.prototype.filterExactValuesParameters = function (type, attribute, values) {
-    return _.extend(filterParametersCore(type, attribute), {
+    var result = _.extend(filterParametersCore(type, attribute), {
         equals: values
     });
+    result.inputString = this.queryToExpression(result);
+    return result;
 };
 
 FilterControl.prototype.filterObservable = function (params) {
