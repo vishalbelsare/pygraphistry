@@ -327,6 +327,14 @@ var FilterView = Backbone.View.extend({
         this.editor.setReadOnly(readOnly);
         this.$expressionArea.toggleClass('disabled', readOnly);
         this.$el.toggleClass('disabled', readOnly);
+        if (readOnly) {
+            this.listenTo(this.model, 'change', function () {
+                var inputString = this.model.get('query').inputString;
+                if (inputString !== undefined) {
+                    this.session.setValue(inputString);
+                }
+            });
+        }
         this.editor.renderer.setShowGutter(false);
         this.editor.setWrapBehavioursEnabled(true);
         this.editor.setBehavioursEnabled(true);
@@ -347,34 +355,46 @@ var FilterView = Backbone.View.extend({
             this.session.setValue(expression);
         }
         this.session.on('change', function (aceEvent) {
-            this.updateQuery(aceEvent);
+            this.updateQuery(this.editor.getValue(), aceEvent);
         }.bind(this));
     },
-    updateQuery: function (/*aceEvent*/) {
-        var expressionString = this.editor.getValue();
-        // TODO: Highly fiddly way to ensure markers are cleared:
-        $('.ace_marker-layer', this.$expressionArea).empty();
+    updateQuery: function (expressionString, aceEvent) {
+        var annotation;
+        try {
+            this.model.updateExpression(this.control, expressionString);
+        } catch (syntaxError) {
+            if (syntaxError) {
+                var row = syntaxError.line && syntaxError.line - 1;
+                var startColumn = syntaxError.column;
+                if (aceEvent && aceEvent.lines[row].length <= startColumn) {
+                    startColumn--;
+                }
+                annotation = new InlineAnnotation(this.session, {
+                    row: row,
+                    column: startColumn,
+                    endColumn: startColumn + 1,
+                    text: syntaxError.message,
+                    type: 'error'
+                });
+            } else {
+                annotation = new InlineAnnotation(this.session, {
+                    text: 'Unknown',
+                    type: 'warning'
+                });
+            }
+        }
+        // Fiddly way to ensure markers are cleared, because lifecycle management is hard:
         _.each(this.session.getAnnotations(), function (annotation) {
             annotation.remove();
         });
         this.session.clearAnnotations();
-        this.$expressionArea.attr('title', 'Filter expression');
-        try {
-            this.model.updateExpression(this.control, expressionString);
-        } catch (syntaxError) {
-            var annotation = {
-                type: 'warning'
-            };
-            if (syntaxError) {
-                annotation = new InlineAnnotation(this.session, {
-                    row: syntaxError.line && syntaxError.line - 1,
-                    column: syntaxError.column,
-                    endColumn: syntaxError.column + 1,
-                    text: syntaxError.message,
-                    type: 'error'
-                });
-                this.$expressionArea.attr('title', syntaxError.message);
-            }
+        _.each(this.session.getMarkers(true), function (marker, markerID) {
+            this.session.removeMarker(markerID);
+        }, this);
+        if (annotation === undefined) {
+            this.$expressionArea.attr('title', 'Filter expression');
+        } else {
+            this.$expressionArea.attr('title', annotation.text);
             this.session.setAnnotations([annotation]);
         }
     },

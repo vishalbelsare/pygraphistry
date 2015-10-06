@@ -185,8 +185,11 @@ ListLiteral
       }
     }
 
+FunctionIdentifier
+  = !ReservedWord name:IdentifierName { return { type: 'FunctionIdentifier', name: name.name }; }
+
 FunctionInvocation "function call"
-  = callee:Identifier __ lparen __ rparen
+  = callee:FunctionIdentifier __ lparen __ rparen
   {
     return {
       type: 'FunctionCall',
@@ -194,7 +197,7 @@ FunctionInvocation "function call"
       arguments: []
     };
   }
-  / callee:Identifier __ lparen __ elements:ElementList __ rparen
+  / callee:FunctionIdentifier __ lparen __ elements:ElementList __ rparen
   {
     return {
       type: 'FunctionCall',

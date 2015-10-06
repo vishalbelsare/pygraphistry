@@ -431,11 +431,19 @@ HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
                 histFilter.stop);
             dataType = 'float';
         } else if (histFilter.equals !== undefined) {
-            query = filterer.filterExactValueParameters(
-                histFilter.type,
-                attribute,
-                histFilter.equals
-            );
+            if (histFilter.equals.hasOwnProperty('length')) {
+                query = filterer.filterExactValuesParameters(
+                    histFilter.type,
+                    attribute,
+                    histFilter.equals
+                );
+            } else {
+                query = filterer.filterExactValueParameters(
+                    histFilter.type,
+                    attribute,
+                    histFilter.equals
+                );
+            }
             // Leave blank until/if we can determine this better?
             dataType = histFilter.type || 'string';
         }
