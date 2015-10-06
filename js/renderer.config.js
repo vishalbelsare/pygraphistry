@@ -103,7 +103,7 @@ var programs = {
         },
         'attributes': ['curPos', 'pointSize', 'pointColor'],
         'camera': 'mvp',
-        'uniforms': ['zoomScalingFactor', 'maxPointSize']
+        'uniforms': ['zoomScalingFactor', 'textureScalingFactor','maxPointSize']
     },
     'midpoints': {
         'sources': {
@@ -167,7 +167,9 @@ var textures = {
         'path': 'test-colormap2.png'
     }
 };
-
+var hitmapScale = Math.min(textures.hitmap.height, textures.hitmap.width) / 100.0;
+var hitmapDownScale = Math.min(textures.pointHitmapDownsampled.height,
+                               textures.pointHitmapDownsampled.width) / 100.0;
 
 /**
  * These represent different kinds/roles of VBOs.
@@ -860,6 +862,7 @@ var items = {
         },
         'uniforms': {
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'textureScalingFactor': { 'uniformType': '1f', 'defaultValues': [hitmapScale]},
             'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
         },
         'drawType': 'POINTS',
@@ -877,6 +880,7 @@ var items = {
         },
         'uniforms': {
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'textureScalingFactor': { 'uniformType': '1f', 'defaultValues': [hitmapDownScale]},
             'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] }
         },
         'drawType': 'POINTS',
