@@ -327,6 +327,14 @@ var FilterView = Backbone.View.extend({
         this.editor.setReadOnly(readOnly);
         this.$expressionArea.toggleClass('disabled', readOnly);
         this.$el.toggleClass('disabled', readOnly);
+        if (readOnly) {
+            this.listenTo(this.model, 'change', function () {
+                var inputString = this.model.get('query').inputString;
+                if (inputString !== undefined) {
+                    this.session.setValue(inputString);
+                }
+            });
+        }
         this.editor.renderer.setShowGutter(false);
         this.editor.setWrapBehavioursEnabled(true);
         this.editor.setBehavioursEnabled(true);
@@ -358,7 +366,7 @@ var FilterView = Backbone.View.extend({
             if (syntaxError) {
                 var row = syntaxError.line && syntaxError.line - 1;
                 var startColumn = syntaxError.column;
-                if (aceEvent.lines[row].length <= startColumn) {
+                if (aceEvent && aceEvent.lines[row].length <= startColumn) {
                     startColumn--;
                 }
                 annotation = new InlineAnnotation(this.session, {
