@@ -4,6 +4,7 @@ var _           = require('underscore');
 // TODO: Upgrade to immutable v3 (from v2) -- breaking changes; our usage must be updated to match
 var Immutable   = require('immutable');
 var Rx          = require('rx');
+var util        = require('./graphVizApp/util.js');
 var debug       = require('debug')('graphistry:StreamGL:renderer');
 
 var cameras             = require('./camera.js');
@@ -259,15 +260,20 @@ function init(config, canvas, urlParams) {
         rendered: renderPipeline.pluck('rendered').filter(_.identity)
     });
 
-    resizeCanvas(state, urlParams);
-    window.addEventListener('resize', function () {
-        resizeCanvas(state, urlParams);
-    });
+    resizeCanvas(state);
+
+    Rx.Observable.fromEvent(window, 'resize')
+        .debounce(100).delay(50)
+        .subscribe(function() {
+            resizeCanvas(state);
+        }, util.makeErrorHandler('resize handler'));
+
     canvas.addEventListener('webglcontextlost', function() {
         console.error('WebGL Context Loss');
     }, false);
 
-    var gl = createContext(state);
+    var pixelRatio = urlParams.pixelRatio || window.devicePixelRatio || 1;
+    var gl = createContext(state, pixelRatio);
     state = state.set('gl', gl);
     setGlOptions(gl, state.get('options'));
 
@@ -276,7 +282,7 @@ function init(config, canvas, urlParams) {
     state = createUniforms(state);
 
     debug('precreated', state.toJS());
-    var camera = createCamera(state, urlParams);
+    var camera = createCamera(state, pixelRatio, urlParams);
     state = state.set('camera', camera);
     setCamera(state);
 
@@ -296,10 +302,9 @@ function setFlags(state, name, bool) {
 }
 
 
-function createContext(state) {
-
+function createContext(state, pixelRatio) {
     var canvas = state.get('canvas');
-    var aa = (window.devicePixelRatio || 1) <= 1; // Disable AA on retina display
+    var aa = pixelRatio <= 1; // Disable AA on retina display
     var glOptions = {antialias: aa, premultipliedAlpha: false};
     var gl = canvas.getContext('webgl', glOptions);
     if (gl === null) {
@@ -329,9 +334,8 @@ function enableExtensions(gl, extensions) {
 */
 
 
-function createCamera(state, urlParams) {
+function createCamera(state, pixelRatio, urlParams) {
     var canvas = state.get('canvas');
-    var pixelRatio = urlParams.pixelRatio || window.devicePixelRatio || 1;
     var camConfig = state.get('config').get('camera');
 
     var bounds = camConfig.get('bounds');
@@ -385,7 +389,7 @@ function getItemsForTrigger(state, trigger) {
 /*
  * Update the size of the canvas to match what is visible
  */
-function resizeCanvas(state/*, urlParams*/) {
+function resizeCanvas(state) {
     var canvas = state.get('canvas');
     var camera = state.get('camera');
 
@@ -406,6 +410,8 @@ function resizeCanvas(state/*, urlParams*/) {
             camera.resize(width, height, pixelRatio);
             setCamera(state);
             render(state, 'resizeCanvas', 'renderSceneFull');
+            render(state, 'resizeCanvas', 'picking');
+            copyCanvasToTexture(state, 'steadyStateTexture');
         }
     }
 }
