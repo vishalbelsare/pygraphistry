@@ -9,7 +9,7 @@ var Color   = require('color');
 
 var util            = require('./util.js');
 var dataInspector   = require('./dataInspector.js');
-var FiltersPanel    = require('./filterPanel.js');
+var FiltersPanel    = require('./filtersPanel.js');
 var HistogramBrush  = require('./histogramBrush.js');
 var marqueeFact     = require('./marquee.js');
 var runButton       = require('./runButton.js');
