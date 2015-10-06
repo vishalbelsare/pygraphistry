@@ -87,6 +87,7 @@ MaskSet.intersectionOfTwoMasks = function(x, y) {
  * Returns the complement of a sorted array in a universe/range.
  * @param {Mask} x
  * @param {Number} sizeOfUniverse
+ * @returns {Mask}
  */
 MaskSet.complementOfMask = function(x, sizeOfUniverse) {
     var xLength = x.length;
@@ -99,6 +100,7 @@ MaskSet.complementOfMask = function(x, sizeOfUniverse) {
         if (xIndex === xLength || x[xIndex] > complementIndex) {
             result[resultIndex++] = complementIndex++;
         } else { // Skip this X value which is <= the current complement.
+            complementIndex++;
             xIndex++;
         }
     }
