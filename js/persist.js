@@ -125,8 +125,13 @@ ContentSchema.prototype.uploadPublic = function (subPath, buffer, params) {
     return this.upload(subPath, buffer, uploadParams);
 };
 
-ContentSchema.prototype.upload = function (subPath, buffer, uploadParams) {
+ContentSchema.prototype.uploadToS3 = function (subPath, buffer, uploadParams) {
     return s3.upload(this.options.S3, this.options.BUCKET, {name: this.pathFor(subPath)}, buffer, uploadParams);
+};
+
+
+ContentSchema.prototype.download = function (subPath) {
+    return s3.download(this.options.S3, this.options.BUCKET, this.pathFor(subPath));
 };
 
 
