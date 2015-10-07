@@ -11,7 +11,7 @@ var vgraph   = require('./vgraph.js');
 var Cache    = require('common/cache.js');
 var s3       = require('common/s3.js');
 var Log      = require('common/logger.js');
-var logger   = Log.createLogger('etlworker:etl');
+var logger   = Log.createLogger('etlworker:etl1');
 
 var tmpCache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);
 
