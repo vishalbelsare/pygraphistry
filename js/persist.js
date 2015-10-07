@@ -34,22 +34,23 @@ function ensurePath(path) {
 
 
 function checkWrite (snapshotName, vboPath, raw, buff) {
-    var readback = fs.readFileSync(vboPath);
-    logger.trace('readback', readback.length);
-    for (var j = 0; j < raw.byteLength; j++) {
+    var readBack = fs.readFileSync(vboPath);
+    logger.trace('readBack', readBack.length);
+    var j;
+    for (j = 0; j < raw.byteLength; j++) {
         if (buff[j] !== raw[j]) {
             logger.error('bad write', j, buff[j], raw[j]);
-            throw 'exn';
+            throw Error('Bad Write: data length mismatch');
         }
     }
-    for (var j = 0; j < raw.byteLength; j++) {
-        if (buff[j] !== readback[j]) {
-            logger.error('mismatch', j, buff[j], readback[j]);
-            throw 'exn';
+    for (j = 0; j < raw.byteLength; j++) {
+        if (buff[j] !== readBack[j]) {
+            logger.error('mismatch', j, buff[j], readBack[j]);
+            throw Error('Bad Write: data content mismatch');
         }
     }
     var read = fs.readFileSync(baseDirPath + snapshotName + '.metadata.json', {encoding: 'utf8'});
-    logger.trace('readback metadata', read);
+    logger.trace('readBack metadata', read);
 }
 
 function uploadPublic (path, buffer, params) {
