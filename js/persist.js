@@ -1,6 +1,7 @@
 'use strict';
 
 var fs          = require('fs');
+var path        = require('path');
 
 var _           = require('underscore');
 
@@ -10,7 +11,7 @@ var config      = require('config')();
 
 var CHECK_AT_EACH_SAVE = true;
 
-var baseDirPath = __dirname + '/../assets/viz/';
+var baseDirPath = path.join(__dirname, '/../assets/viz/');
 
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:persist');
@@ -49,7 +50,7 @@ function checkWrite (snapshotName, vboPath, raw, buff) {
             throw Error('Bad Write: data content mismatch');
         }
     }
-    var read = fs.readFileSync(baseDirPath + snapshotName + '.metadata.json', {encoding: 'utf8'});
+    var read = fs.readFileSync(path.join(baseDirPath, snapshotName + '.metadata.json'), {encoding: 'utf8'});
     logger.trace('readBack metadata', read);
 }
 
@@ -96,7 +97,7 @@ module.exports =
 
             logger.debug('saving config', renderConfig);
             ensurePath(baseDirPath);
-            fs.writeFileSync(baseDirPath + snapshotName + '.renderconfig.json', JSON.stringify(renderConfig));
+            fs.writeFileSync(path.join(baseDirPath, snapshotName + '.renderconfig.json'), JSON.stringify(renderConfig));
 
         },
 
@@ -108,11 +109,11 @@ module.exports =
                 bufferByteLengths: _.extend(prevHeader.bufferByteLengths, VBOs.bufferByteLengths)
             };
             ensurePath(baseDirPath);
-            fs.writeFileSync(baseDirPath + snapshotName + '.metadata.json', JSON.stringify(prevHeader));
+            fs.writeFileSync(path.join(baseDirPath, snapshotName + '.metadata.json'), JSON.stringify(prevHeader));
             var buffers = VBOs.uncompressed;
             var bufferKeys = _.keys(buffers);
             _.each(bufferKeys, function (bufferKey) {
-                var vboPath = baseDirPath + snapshotName + '.' + bufferKey + '.vbo';
+                var vboPath = path.join(baseDirPath, snapshotName + '.' + bufferKey + '.vbo');
                 var raw = buffers[bufferKey];
                 var buff = new Buffer(raw.byteLength);
                 for (var j = 0; j < raw.byteLength; j++) {
@@ -130,8 +131,12 @@ module.exports =
             logger.debug('wrote/read', prevHeader, bufferKeys);
         },
 
+        pathForWorkbookSpecifier: function (workbookName) {
+            return path.join('Workbooks', workbookName, '/');
+        },
+
         pathForContentKey: function (snapshotName) {
-            return 'Static/' + snapshotName + '/';
+            return path.join('Static', snapshotName, '/');
         },
 
         publishStaticContents: function (snapshotName, compressedVBOs, metadata, dataframe, renderConfig) {
@@ -139,9 +144,9 @@ module.exports =
             var snapshotPath = this.pathForContentKey(snapshotName),
                 edgeExport = staticContentForDataframe(dataframe, 'edge'),
                 pointExport = staticContentForDataframe(dataframe, 'point');
-            uploadPublic(snapshotPath + 'renderconfig.json', JSON.stringify(renderConfig),
+            uploadPublic(path.join(snapshotPath, 'renderconfig.json'), JSON.stringify(renderConfig),
                 {ContentType: 'application/json', ContentEncoding: 'gzip'});
-            uploadPublic(snapshotPath + 'metadata.json', JSON.stringify(metadata),
+            uploadPublic(path.join(snapshotPath, 'metadata.json'), JSON.stringify(metadata),
                 {ContentType: 'application/json', ContentEncoding: 'gzip'});
             var vboAttributes = [
                 'curPoints',
@@ -159,18 +164,18 @@ module.exports =
             // compressedVBOs attributes are already gzipped:
             _.each(vboAttributes, function(attributeName) {
                 if (compressedVBOs.hasOwnProperty(attributeName) && !_.isUndefined(compressedVBOs[attributeName])) {
-                    uploadPublic(snapshotPath + attributeName + '.vbo', compressedVBOs[attributeName],
+                    uploadPublic(path.join(snapshotPath, attributeName + '.vbo'), compressedVBOs[attributeName],
                         {should_compress: false, ContentEncoding: 'gzip'});
                 }
             });
             // These are ArrayBuffers, so ask for compression:
-            uploadPublic(snapshotPath + 'pointLabels.offsets', pointExport.indexes,
+            uploadPublic(path.join(snapshotPath, 'pointLabels.offsets'), pointExport.indexes,
                 {should_compress: false});
-            uploadPublic(snapshotPath + 'pointLabels.buffer', pointExport.contents,
+            uploadPublic(path.join(snapshotPath, 'pointLabels.buffer'), pointExport.contents,
                 {should_compress: false});
-            uploadPublic(snapshotPath + 'edgeLabels.offsets', edgeExport.indexes,
+            uploadPublic(path.join(snapshotPath, 'edgeLabels.offsets'), edgeExport.indexes,
                 {should_compress: false});
-            return uploadPublic(snapshotPath + 'edgeLabels.buffer', edgeExport.contents,
+            return uploadPublic(path.join(snapshotPath, 'edgeLabels.buffer'), edgeExport.contents,
                 {should_compress: false});
         },
 
