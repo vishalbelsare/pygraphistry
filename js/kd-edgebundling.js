@@ -8,7 +8,6 @@ var _          = require('underscore'),
     IntegrateMidpointsKernel = require('./javascript_kernels/integrateMidpoints.js'),
     InterpolateMidpoints = require('./javascript_kernels/interpolateMidpoints.js'),
     MidpointForces = require('./javascript_kernels/kd-MidpointForces.js'),
-    MidEdgeGather = require('./javascript_kernels/midEdgeGather.js');
 
 
 var log         = require('common/logger.js');
@@ -29,8 +28,6 @@ function EdgeBundling(clContext) {
     this.integrateMidpoints = new IntegrateMidpointsKernel(clContext);
 
     this.interpolateMidpoints = new InterpolateMidpoints(clContext);
-
-    this.midEdgeGather = new MidEdgeGather(clContext);
 
     this.kernels = this.midpointForces.kernels.concat([this.ebMidsprings,
                                                       this.integrateMidpoints.faIntegrate,
@@ -359,7 +356,6 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
         });
     }
     return calculateMidpoints.then(function () {
-        //return that.midEdgeGather.execKernels(simulator);
     }).then(function () {
         return Q.all([
             //tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
