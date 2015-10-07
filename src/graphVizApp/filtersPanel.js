@@ -301,18 +301,15 @@ var AllFiltersView = Backbone.View.extend({
         this.listenTo(this.collection, 'reset', this.refresh);
         this.listenTo(this.collection, 'all', this.render);
 
+        this.el = options.el;
         this.filtersContainer = $('#filters');
 
         this.collection.each(this.addFilter, this);
     },
     render: function () {
-        var $filterButton = $('filterButton');
+        var $filterButton = $('#filterButton');
         $filterButton.attr('data-count', this.collection.length);
-        if (this.collection.isEmpty()) {
-            $filterButton.removeClass('iconBadge');
-        } else {
-            $filterButton.addClass('iconBadge');
-        }
+        $filterButton.toggleClass('iconBadge', !this.collection.isEmpty());
         return this;
     },
     addFilter: function (filter) {

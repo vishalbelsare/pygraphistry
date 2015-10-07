@@ -557,11 +557,11 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         }).subscribe(_.identity, util.makeErrorHandler('brush toggle'));
 
     menuToggler(onElt, $('#layoutSettingsButton'),  $('#renderingItems'), 'Turning on/off settings');
-    menuToggler(onElt, $('#filterButton'),  $('#filtersPanel'), 'Turning on/off the filter panel');
 
     var marquee = setupMarquee(appState, turnOnMarquee);
     var brush = setupBrush(appState, turnOnBrush);
     var filtersPanel = new FiltersPanel(socket, urlParams);
+    menuToggler(onElt, $('#filterButton'), filtersPanel.view.el, 'Turning on/off the filter panel');
     var filtersResponses = filtersPanel.control.filtersResponsesObservable();
     var histogramBrush = new HistogramBrush(socket, filtersPanel);
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
