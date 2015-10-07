@@ -177,7 +177,7 @@ module.exports =
                 {should_compress: false});
             return uploadPublic(path.join(snapshotPath, 'edgeLabels.buffer'), edgeExport.contents,
                 {should_compress: false});
-        },
+        }.bind(module.exports),
 
         publishPNGToStaticContents: function (snapshotName, imageName, binaryData) {
             logger.trace('publishing a PNG preview for content already in S3');
