@@ -100,21 +100,21 @@ module.exports =
 
         },
 
-        saveVBOs: function (snapshotName, vbos, step) {
+        saveVBOs: function (snapshotName, VBOs, step) {
 
             logger.trace('serializing vbo');
             prevHeader = {
-                elements: _.extend(prevHeader.elements, vbos.elements),
-                bufferByteLengths: _.extend(prevHeader.bufferByteLengths, vbos.bufferByteLengths)
+                elements: _.extend(prevHeader.elements, VBOs.elements),
+                bufferByteLengths: _.extend(prevHeader.bufferByteLengths, VBOs.bufferByteLengths)
             };
             ensurePath(baseDirPath);
             fs.writeFileSync(baseDirPath + snapshotName + '.metadata.json', JSON.stringify(prevHeader));
-            var buffers = vbos.uncompressed;
-            for (var i in buffers) {
-                var vboPath = baseDirPath + snapshotName + '.' + i + '.vbo';
-                var raw = buffers[i];
+            var buffers = VBOs.uncompressed;
+            var bufferKeys = _.keys(buffers);
+            _.each(bufferKeys, function (bufferKey) {
+                var vboPath = baseDirPath + snapshotName + '.' + bufferKey + '.vbo';
+                var raw = buffers[bufferKey];
                 var buff = new Buffer(raw.byteLength);
-                var arr = new Uint8Array(raw);
                 for (var j = 0; j < raw.byteLength; j++) {
                     buff[j] = raw[j];
                 }
@@ -126,8 +126,8 @@ module.exports =
                 if (CHECK_AT_EACH_SAVE) {
                     checkWrite(snapshotName, vboPath, raw, buff);
                 }
-            }
-            logger.debug('wrote/read', prevHeader, _.keys(buffers));
+            });
+            logger.debug('wrote/read', prevHeader, bufferKeys);
         },
 
         pathForContentKey: function (snapshotName) {
