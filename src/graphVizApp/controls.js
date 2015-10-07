@@ -10,6 +10,7 @@ var Color   = require('color');
 var util            = require('./util.js');
 var dataInspector   = require('./dataInspector.js');
 var FiltersPanel    = require('./filtersPanel.js');
+var SetsPanel       = require('./setsPanel.js');
 var HistogramBrush  = require('./histogramBrush.js');
 var marqueeFact     = require('./marquee.js');
 var runButton       = require('./runButton.js');
@@ -569,6 +570,8 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     forkVgraph(socket, urlParams);
     persistButton(appState, socket, urlParams);
     goLiveButton(socket, urlParams);
+    var setsPanel = new SetsPanel(socket, urlParams);
+    menuToggler(onElt, $('#setsPanelButton'), setsPanel.view.el);
 
     createControls(
         socket,
