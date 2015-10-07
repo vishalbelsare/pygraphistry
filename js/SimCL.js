@@ -8,7 +8,6 @@ var util = require('./util.js');
 var cljs = require('./cl.js');
 var MoveNodes = require('./moveNodes.js');
 var SelectNodes = require('./selectNodes.js');
-var SpringsGather = require('./springsGather.js');
 
 var HistogramKernel = require('./histogramKernel.js');
 var Color = require('color');
@@ -79,7 +78,6 @@ function create(dataframe, renderer, device, vendor, cfg) {
                 moveNodes: new MoveNodes(cl),
                 selectNodes: new SelectNodes(cl),
                 //histogramKernel: new HistogramKernel(cl),
-                springsGather: new SpringsGather(cl)
             };
             simObj.tilesPerIteration = 1;
             simObj.buffersLocal = {};
@@ -1155,12 +1153,9 @@ function moveNodes(simulator, marqueeEvent) {
     };
 
     var moveNodes = simulator.otherKernels.moveNodes;
-    var springsGather = simulator.otherKernels.springsGather;
 
     return moveNodes.run(simulator, marqueeEvent.selection, delta)
-        .then(function () {
-            return springsGather.tick(simulator);
-        }).fail(log.makeQErrorHandler(logger, 'Failure trying to move nodes'));
+        .fail(log.makeQErrorHandler(logger, 'Failure trying to move nodes'));
 }
 
 function selectNodes(simulator, selection) {
@@ -1280,8 +1275,6 @@ function tick(simulator, stepNumber, cfg) {
             })
             .then(function () {
                 return tickAllHelper(remainingAlgorithms);
-            }).then(function () {
-                //return simulator.otherKernels.springsGather.tick(simulator);
             });
     };
 
@@ -1292,28 +1285,16 @@ function tick(simulator, stepNumber, cfg) {
             //TODO: move to perflogging
             logger.trace('Layout Perf Report (step: %d)', stepNumber);
 
-            var extraKernels = [simulator.otherKernels.springsGather.gather];
             var totals = {};
             var runs = {}
             // Compute sum of means so we can print percentage of runtime
             _.each(simulator.layoutAlgorithms, function (la) {
                totals[la.name] = 0;
                runs[la.name] = 0;
-                _.each(la.runtimeStats(extraKernels), function (stats) {
-                    if (!isNaN(stats.mean)) {
-                        totals[la.name] += stats.mean * stats.runs;
-                        runs[la.name] += stats.runs;
-                    }
-                });
             });
-
             _.each(simulator.layoutAlgorithms, function (la) {
                 var total = totals[la.name] / stepNumber;
                 logger.trace(sprintf('  %s (Total:%f) [ms]', la.name, total.toFixed(0)));
-                _.each(la.runtimeStats(extraKernels), function (stats) {
-                    var percentage = (stats.mean * stats.runs / totals[la.name] * 100);
-                    logger.trace(sprintf('\t%s        pct:%4.1f%%', stats.pretty, percentage));
-                });
            });
         }
         // This cl.queue.finish() needs to be here because, without it, the queue appears to outside
