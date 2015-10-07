@@ -1,5 +1,4 @@
 'use strict';
-/* globals ace */
 
 var $       = window.$;
 var _       = require('underscore');
@@ -10,56 +9,11 @@ var Backbone = require('backbone');
     Backbone.$ = $;
 //var Ace     = require('brace');
 var FilterControl = require('./filter.js');
+var ExpressionEditor = require('./expressionEditor.js');
 var util          = require('./util.js');
 
 
 var COLLAPSED_FILTER_HEIGHT = 80;
-
-function InlineAnnotation(session, info) {
-    this.session = session;
-    this.info = info;
-    var Anchor = ace.require('ace/anchor').Anchor;
-    this.startAnchor = new Anchor(session.getDocument(), info.row, info.column);
-    this.endAnchor = new Anchor(session.getDocument(), info.row, info.endColumn);
-    this.startAnchor.on('change', this.update.bind(this));
-    this.endAnchor.on('change', this.update.bind(this));
-    this.marker = null;
-    this.update();
-}
-
-InlineAnnotation.prototype = {
-    update: function() {
-        var AceRange = ace.require('ace/range').Range;
-        var anchorRange = AceRange.fromPoints(this.startAnchor.getPosition(), this.endAnchor.getPosition());
-        if (this.marker) {
-            this.session.removeMarker(this.marker);
-        }
-        var clazz = this.info.class || ('marker-highlight-' + this.info.type);
-        if (this.info.text) {
-            this.marker = this.session.addMarker(anchorRange, clazz, function(stringBuilder, range, left, top, config) {
-                var height = config.lineHeight;
-                var width = (range.end.column - range.start.column) * config.characterWidth;
-
-                stringBuilder.push(
-                    '<div class=\'', clazz, '\' title=', JSON.stringify(this.info.text) , ' style=\'',
-                    'height:', height, 'px;',
-                    'width:', width, 'px;',
-                    'top:', top, 'px;',
-                    'left:', left, 'px;', '\'></div>'
-                );
-            }.bind(this), true);
-        } else {
-            this.marker = this.session.addMarker(anchorRange, clazz, this.info.type);
-        }
-    },
-    remove: function() {
-        this.startAnchor.detach();
-        this.endAnchor.detach();
-        if (this.marker) {
-            this.session.removeMarker(this.marker);
-        }
-    }
-};
 
 var FilterModel = Backbone.Model.extend({
     defaults: {
@@ -197,72 +151,6 @@ var FilterControlTypes = [
     {value: 'text', name: 'Text'}
 ];
 
-/**
- * @param {Object} namespaceMetadata
- * @constructor
- */
-function DataframeCompleter(namespaceMetadata) {
-    this.setNamespaceMetadata(namespaceMetadata);
-    this.caseSensitive = false;
-}
-
-//DataframeCompleter.prototype.insertMatch = function (editor, data) {
-//
-//};
-
-DataframeCompleter.prototype.setNamespaceMetadata = function (namespaceMetadata) {
-    this.namespaceMetadata = namespaceMetadata;
-    var newNamespaceAttributes = {};
-    _.each(namespaceMetadata, function (columnsByName, type) {
-        _.each(columnsByName, function (column, attributeName) {
-            newNamespaceAttributes[type + ':' + attributeName] = column;
-            if (newNamespaceAttributes[attributeName] === undefined) {
-                newNamespaceAttributes[attributeName] = column;
-            }
-        });
-    });
-    /** @type {Array.<String>} */
-    this.namespaceAttributes = _.keys(newNamespaceAttributes);
-};
-
-/**
- * Ace autocompletion framework API
- * @param {Ace.Editor} editor
- * @param {Ace.EditSession} session
- * @param {Number} pos
- * @param {String} prefix
- * @param {Function} callback
- */
-DataframeCompleter.prototype.getCompletions = function (editor, session, pos, prefix, callback) {
-    if (prefix.length === 0 || !this.namespaceAttributes) {
-        callback(null, []);
-        return;
-    }
-    if (!this.caseSensitive) {
-        prefix = prefix.toLowerCase();
-    }
-    var scoredAttributes = _.map(this.namespaceAttributes, function (value) {
-        var matchValue = this.caseSensitive ? value : value.toLowerCase();
-        var lastIdx = matchValue.lastIndexOf(prefix, 0);
-        if (lastIdx === 0) {
-            return [value, 1];
-        } else if (lastIdx === value.lastIndexOf(':', 0) + 1) {
-            return [value, 0.8];
-        }
-        return [value, 0];
-    }, this).filter(function (scoreAndValue) {
-        return scoreAndValue[1] > 0;
-    });
-    callback(null, scoredAttributes.map(function (scoreAndValue) {
-        return {
-            name: scoreAndValue[0],
-            value: scoreAndValue[0],
-            score: scoreAndValue[1],
-            meta: 'identifier'
-        };
-    }));
-};
-
 var FilterView = Backbone.View.extend({
     tagName: 'div',
     className: 'filterInspector',
@@ -310,19 +198,7 @@ var FilterView = Backbone.View.extend({
 
         this.$expressionArea = this.$('.filterExpression');
 
-        this.editor = ace.edit(this.$expressionArea[0]);
-        this.editor.setTheme('ace/theme/chrome');
-        this.editor.setOptions({
-            minLines: 2,
-            maxLines: 4,
-            wrap: true,
-            enableBasicAutocompletion: true,
-            enableSnippets: true,
-            enableLiveAutocompletion: true,
-            autoScrollEditorIntoView: true
-        });
-        this.editor.setHighlightSelectedWord(true);
-        this.editor.setHighlightActiveLine(false);
+        this.editor = new ExpressionEditor(this.$expressionArea[0]);
         var readOnly = this.model.get('controlType') !== undefined;
         this.editor.setReadOnly(readOnly);
         this.$expressionArea.toggleClass('disabled', readOnly);
@@ -331,31 +207,21 @@ var FilterView = Backbone.View.extend({
             this.listenTo(this.model, 'change', function () {
                 var inputString = this.model.get('query').inputString;
                 if (inputString !== undefined) {
-                    this.session.setValue(inputString);
+                    this.editor.session.setValue(inputString);
                 }
             });
         }
-        this.editor.renderer.setShowGutter(false);
-        this.editor.setWrapBehavioursEnabled(true);
-        this.editor.setBehavioursEnabled(true);
-        // Silences a deprecation warning we don't care about:
-        this.editor.$blockScrolling = Infinity;
-        var dataframeCompleter = new DataframeCompleter([]);
-        this.editor.completers.push(dataframeCompleter);
         this.control.namespaceMetadataObservable().filter(function (namespaceMetadata) {
             return namespaceMetadata !== undefined;
         }).subscribe(function (namespaceMetadata) {
-            dataframeCompleter.setNamespaceMetadata(namespaceMetadata);
+            this.editor.dataframeCompleter.setNamespaceMetadata(namespaceMetadata);
         }.bind(this));
-        this.session = this.editor.getSession();
-        this.session.setUseSoftTabs(true);
-        this.session.setMode('ace/mode/graphistry');
         var expression = this.model.getExpression(this.control);
         if (expression) {
-            this.session.setValue(expression);
+            this.editor.session.setValue(expression);
         }
-        this.session.on('change', function (aceEvent) {
-            this.updateQuery(this.editor.getValue(), aceEvent);
+        this.editor.session.on('change', function (aceEvent) {
+            this.updateQuery(this.editor.editor.getValue(), aceEvent);
         }.bind(this));
     },
     updateQuery: function (expressionString, aceEvent) {
@@ -369,7 +235,7 @@ var FilterView = Backbone.View.extend({
                 if (aceEvent && aceEvent.lines[row].length <= startColumn) {
                     startColumn--;
                 }
-                annotation = new InlineAnnotation(this.session, {
+                annotation = this.editor.newInlineAnnotation({
                     row: row,
                     column: startColumn,
                     endColumn: startColumn + 1,
@@ -377,25 +243,18 @@ var FilterView = Backbone.View.extend({
                     type: 'error'
                 });
             } else {
-                annotation = new InlineAnnotation(this.session, {
+                annotation = this.editor.newInlineAnnotation({
                     text: 'Unknown',
                     type: 'warning'
                 });
             }
         }
-        // Fiddly way to ensure markers are cleared, because lifecycle management is hard:
-        _.each(this.session.getAnnotations(), function (annotation) {
-            annotation.remove();
-        });
-        this.session.clearAnnotations();
-        _.each(this.session.getMarkers(true), function (marker, markerID) {
-            this.session.removeMarker(markerID);
-        }, this);
+        this.editor.clearAnnotationsAndMarkers();
         if (annotation === undefined) {
             this.$expressionArea.attr('title', 'Filter expression');
         } else {
             this.$expressionArea.attr('title', annotation.text);
-            this.session.setAnnotations([annotation]);
+            this.editor.session.setAnnotations([annotation]);
         }
     },
     delete: function (/*event*/) {
