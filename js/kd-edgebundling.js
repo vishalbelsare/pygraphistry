@@ -7,7 +7,7 @@ var _          = require('underscore'),
     FaSwingsKernel = require('./javascript_kernels/faSwingsKernel.js'),
     IntegrateMidpointsKernel = require('./javascript_kernels/integrateMidpoints.js'),
     InterpolateMidpoints = require('./javascript_kernels/interpolateMidpoints.js'),
-    MidpointForces = require('./javascript_kernels/kd-MidpointForces.js'),
+    MidpointForces = require('./javascript_kernels/kd-MidpointForces.js')
 
 
 var log         = require('common/logger.js');
