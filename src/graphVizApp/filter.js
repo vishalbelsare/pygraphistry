@@ -8,7 +8,7 @@ var PEGUtil = require('pegjs-util');
 
 var util    = require('./util.js');
 var Command = require('./command.js');
-var parser  = require('./expression.js');
+var parser  = require('./expressionParser.js');
 
 
 function filterParametersCore(type, attribute) {
