@@ -55,12 +55,6 @@ function checkWrite (snapshotName, vboPath, raw, buff) {
     logger.trace('readBack metadata', read);
 }
 
-function uploadPublic (path, buffer, params) {
-    var uploadParams = _.extend(params || {}, {acl: 'public-read'});
-    return s3.upload(config.S3, config.BUCKET, {name: path}, buffer, uploadParams);
-}
-
-
 function staticContentForDataframe (dataframe, type) {
     var rows = dataframe.getRows(undefined, type),
         rowContents = new Array(rows.length),
@@ -91,9 +85,55 @@ function staticContentForDataframe (dataframe, type) {
     return {contents: Buffer.concat(rowContents), indexes: idx};
 }
 
+/**
+ * This just encapsulates the URL/directory structure of persisted content.
+ * @param {String?} [prefixPath='']
+ * @param {{S3: {String}, BUCKET: {String}}} options
+ * @constructor
+ */
+function ContentSchema(prefixPath, options) {
+    this.options = options || _.pick(config, ['S3', 'BUCKET']);
+    this.prefixPath = prefixPath || '';
+}
+
+ContentSchema.prototype.pathForWorkbookSpecifier = function (workbookName) {
+    return path.join(this.prefixPath, 'Workbooks', workbookName, '/');
+};
+
+ContentSchema.prototype.subSchemaForWorkbook = function (workbookName) {
+    return new ContentSchema(this.pathForWorkbookSpecifier(workbookName), this.options);
+};
+
+ContentSchema.prototype.pathForStaticContentKey = function (snapshotName) {
+    return path.join(this.prefixPath, 'Static', snapshotName, '/');
+};
+
+ContentSchema.prototype.subSchemaForStaticContentKey = function (snapshotName) {
+    return new ContentSchema(this.pathForStaticContentKey(snapshotName), this.options);
+};
+
+ContentSchema.prototype.pathFor = function (subPath) {
+    return path.join(this.prefixPath, subPath || '');
+};
+
+ContentSchema.prototype.getURL = function (subPath) {
+    return new S3URLEncoder(this.pathFor(subPath));
+};
+
+ContentSchema.prototype.uploadPublic = function (subPath, buffer, params) {
+    var uploadParams = _.extend(params || {}, {acl: 'public-read'});
+    return this.upload(subPath, buffer, uploadParams);
+};
+
+ContentSchema.prototype.upload = function (subPath, buffer, uploadParams) {
+    return s3.upload(this.options.S3, this.options.BUCKET, {name: this.pathFor(subPath)}, buffer, uploadParams);
+};
+
 
 module.exports =
     {
+        // Save-methods are all about the local file system:
+
         saveConfig: function (snapshotName, renderConfig) {
 
             logger.debug('saving config', renderConfig);
@@ -132,24 +172,28 @@ module.exports =
             logger.debug('wrote/read', prevHeader, bufferKeys);
         },
 
-        encodeS3PathAsURL: S3URLEncoder,
+        // The following all deal with S3 or cluster file systems:
 
-        pathForWorkbookSpecifier: function (workbookName) {
-            return path.join('Workbooks', workbookName, '/');
-        },
+        ContentSchema: ContentSchema,
 
-        pathForContentKey: function (snapshotName) {
-            return path.join('Static', snapshotName, '/');
-        },
-
+        /**
+         * Publishes the layout data required to render the visualization as currently seen in the viewport.
+         * Publishes publicly since we are using HTTP[S] to view.
+         * @param {String} snapshotName
+         * @param {Object} compressedVBOs
+         * @param {Object} metadata
+         * @param {Dataframe} dataframe
+         * @param {Object} renderConfig
+         * @returns {Promise}
+         */
         publishStaticContents: function (snapshotName, compressedVBOs, metadata, dataframe, renderConfig) {
             logger.trace('publishing current content to S3');
-            var snapshotPath = this.pathForContentKey(snapshotName),
+            var snapshotSchema = (new ContentSchema()).subSchemaForStaticContentKey(snapshotName),
                 edgeExport = staticContentForDataframe(dataframe, 'edge'),
                 pointExport = staticContentForDataframe(dataframe, 'point');
-            uploadPublic(path.join(snapshotPath, 'renderconfig.json'), JSON.stringify(renderConfig),
+            snapshotSchema.uploadPublic('renderconfig.json', JSON.stringify(renderConfig),
                 {ContentType: 'application/json', ContentEncoding: 'gzip'});
-            uploadPublic(path.join(snapshotPath, 'metadata.json'), JSON.stringify(metadata),
+            snapshotSchema.uploadPublic('metadata.json', JSON.stringify(metadata),
                 {ContentType: 'application/json', ContentEncoding: 'gzip'});
             var vboAttributes = [
                 'curPoints',
@@ -167,25 +211,32 @@ module.exports =
             // compressedVBOs attributes are already gzipped:
             _.each(vboAttributes, function(attributeName) {
                 if (compressedVBOs.hasOwnProperty(attributeName) && !_.isUndefined(compressedVBOs[attributeName])) {
-                    uploadPublic(path.join(snapshotPath, attributeName + '.vbo'), compressedVBOs[attributeName],
+                    snapshotSchema.uploadPublic(attributeName + '.vbo', compressedVBOs[attributeName],
                         {should_compress: false, ContentEncoding: 'gzip'});
                 }
             });
             // These are ArrayBuffers, so ask for compression:
-            uploadPublic(path.join(snapshotPath, 'pointLabels.offsets'), pointExport.indexes,
+            snapshotSchema.uploadPublic('pointLabels.offsets', pointExport.indexes,
                 {should_compress: false});
-            uploadPublic(path.join(snapshotPath, 'pointLabels.buffer'), pointExport.contents,
+            snapshotSchema.uploadPublic('pointLabels.buffer', pointExport.contents,
                 {should_compress: false});
-            uploadPublic(path.join(snapshotPath, 'edgeLabels.offsets'), edgeExport.indexes,
+            snapshotSchema.uploadPublic('edgeLabels.offsets', edgeExport.indexes,
                 {should_compress: false});
-            return uploadPublic(path.join(snapshotPath, 'edgeLabels.buffer'), edgeExport.contents,
+            return snapshotSchema.uploadPublic('edgeLabels.buffer', edgeExport.contents,
                 {should_compress: false});
-        }.bind(module.exports),
+        },
 
+        /**
+         * Publishes a PNG thumbnail of the current layout as seen by the viewport for embedding.
+         * @param {String} snapshotName
+         * @param {String} [imageName="preview.png"]
+         * @param {Buffer} binaryData
+         * @returns {Promise}
+         */
         publishPNGToStaticContents: function (snapshotName, imageName, binaryData) {
             logger.trace('publishing a PNG preview for content already in S3');
-            var snapshotPath = this.pathForContentKey(snapshotName);
+            var snapshotSchema = (new ContentSchema()).subSchemaForStaticContentKey(snapshotName);
             imageName = imageName || 'preview.png';
-            return uploadPublic(snapshotPath + imageName, binaryData, {should_compress: true, ContentEncoding: 'gzip'});
+            return snapshotSchema.uploadPublic(imageName, binaryData, {should_compress: true, ContentEncoding: 'gzip'});
         }
     };
