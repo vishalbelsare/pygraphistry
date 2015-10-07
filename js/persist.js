@@ -64,7 +64,7 @@ function staticContentForDataframe (dataframe, type) {
         currentContentOffset = 0,
         lastContentOffset = currentContentOffset;
     _.each(rows, function (row, rowIndex) {
-        var content = new Buffer(JSON.stringify(row), 'utf8')
+        var content = new Buffer(JSON.stringify(row), 'utf8');
         var contentLength = content.length;
         //offsets[rowIndex] = currentContentOffset;
         offsetsView[rowIndex] = currentContentOffset;
