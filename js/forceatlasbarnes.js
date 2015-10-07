@@ -9,7 +9,6 @@ var _     = require('underscore'),
     BarnesKernelSeq = require('./javascript_kernels/barnesKernelSeq.js'),
     EdgeKernelSeqFast = require('./javascript_kernels/edgeKernelSeqFast.js'),
     faSwingsKernel = require('./javascript_kernels/faSwingsKernel.js'),
-    integrateApproxKernel = require('./javascript_kernels/integrateApproxKernel.js'),
     integrateKernel = require('./javascript_kernels/integrateKernel.js'),
 
     log        = require('common/logger.js'),
@@ -97,13 +96,11 @@ function ForceAtlas2Barnes(clContext) {
 
     this.integrateKernel = new integrateKernel(clContext);
 
-    this.integrateApproxKernel = new integrateApproxKernel(clContext);
-
     this.kernels = this.kernels.concat([this.barnesKernelSeq.toBarnesLayout, this.barnesKernelSeq.boundBox,
                                         this.barnesKernelSeq.buildTree, this.barnesKernelSeq.computeSums,
                                         this.barnesKernelSeq.sort, this.barnesKernelSeq.calculatePointForces,
                                         this.edgeKernelSeq.mapEdges, this.edgeKernelSeq.segReduce, this.faSwingsKernel.faSwings,
-                                        this.integrateKernel.faIntegrate, this.integrateApproxKernel.faIntegrateApprox]);
+                                        this.integrateKernel.faIntegrate]);
 }
 
 ForceAtlas2Barnes.prototype = Object.create(LayoutAlgo.prototype);
@@ -232,7 +229,6 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     }).then(function () {
         return that.faSwingsKernel.execKernels(simulator, workItems);
     }).then(function () {
-        // return integrateApproxKernel(simulator, tempLayoutBuffers);
         return that.integrateKernel.execKernels(simulator, tempLayoutBuffers, workItems);
     }).then(function () {
         var buffers = simulator.buffers;
