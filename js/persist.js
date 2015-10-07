@@ -2,6 +2,7 @@
 
 var fs          = require('fs');
 var path        = require('path');
+var S3URLEncoder = require('node-s3-url-encode');
 
 var _           = require('underscore');
 
@@ -130,6 +131,8 @@ module.exports =
             });
             logger.debug('wrote/read', prevHeader, bufferKeys);
         },
+
+        encodeS3PathAsURL: S3URLEncoder,
 
         pathForWorkbookSpecifier: function (workbookName) {
             return path.join('Workbooks', workbookName, '/');
