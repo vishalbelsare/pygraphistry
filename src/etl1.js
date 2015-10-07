@@ -1,7 +1,6 @@
 'use strict';
 
 var urllib   = require('url');
-var zlib     = require('zlib');
 var crypto   = require('crypto');
 var _        = require('underscore');
 var Q        = require('q');
@@ -84,39 +83,6 @@ function s3Upload(binaryBuffer, metadata) {
 }
 
 
-function req2data(req, params) {
-    var encoding = params.apiVersion === 0 ? 'identity'
-                                           : req.headers['content-encoding'] || 'identity';
-
-    logger.info('ETL request submitted', params);
-
-    var chunks = [];
-    var result = Q.defer();
-
-    req.on('data', function (chunk) {
-        chunks.push(chunk);
-    });
-
-    req.on('end', function () {
-        var data = Buffer.concat(chunks)
-
-        logger.debug('Request bytes:%d, encoding:%s', data.length, encoding);
-
-        if (encoding == 'identity') {
-            result.resolve(data.toString());
-        } else if (encoding === 'gzip') {
-            result.resolve(Q.denodeify(zlib.gunzip)(data))
-        } else if (encoding === 'deflate') {
-            result.resolve(Q.denodeify(zlib.inflate)(data))
-        } else {
-            result.reject('Unknown encoding: ' + encoding)
-        }
-    });
-
-    return result.promise;
-}
-
-
 function makeVizToken(key, datasetName) {
     var sha1 = crypto.createHash('sha1');
     sha1.update(key);
@@ -124,48 +90,15 @@ function makeVizToken(key, datasetName) {
     return sha1.digest('hex');
 }
 
-/*
-function parseQueryParams(req) {
-    var res = [];
-
-    res.usertag = req.query.usertag || 'unknown';
-    res.agent = req.query.agent || 'unknown';
-    res.agentVersion = req.query.agentversion || '0.0.0';
-    res.apiVersion = parseInt(req.query.apiversion) || 0;
-    res.key = req.query.key;
-
-    return res;
-}
-
-
-function vgraphEtl(k, req, res) {
-    var params = parseQueryParams(req);
-    req2data(req, params).then(function (data) {
-        try {
-            var buffer = new Buffer(data);
-            var vg = vgraph.decodeVGraph(buffer);
-
-            Q.all([
-                publish(vg, vg.name),
-                slackNotify(vg.name, params, vg.nvertices, vg.nedges)
-            ]).spread(function () {
-                res.send({
-                    success: true, dataset: vg.name,
-                    viztoken: makeVizToken(params.key, vg.name)
-                });
-                k(0);
-            }).fail(makeFailHandler(res, k));
-        } catch (err) {
-            makeFailHandler(res, k)(err)
-        }
-    }).fail(makeFailHandler(res, k));
-}
-*/
 
 // (Int -> ()) * Request * Response * Object -> Promise()
 function process(req, res, params) {
-    return req2data(req, params).then(function (data) {
-        return etl(JSON.parse(data))
+    logger.info('ETL request submitted', params);
+    var data = req.body
+    logger.debug('Request bytes:%d (deflated)', data.length);
+
+    return Q(data).then(function (msg) {
+        return etl(msg)
             .then(function (info) {
                 logger.info('ETL successful, dataset name is', info.name);
 
@@ -178,6 +111,7 @@ function process(req, res, params) {
             });
     });
 }
+
 
 module.exports = {
     process: process
