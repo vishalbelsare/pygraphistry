@@ -7,7 +7,6 @@ var logger      = log.createLogger('graph-viz:cl:layoutconfig');
 var ForceAtlas2         = require('./forceatlas2.js'),
     ForceAtlas2Fast     = require('./forceatlas2fast.js'),
     forceAtlasBarnes    = require('./forceatlasbarnes.js'),
-    GaussSeidel         = require('./gaussseidel.js'),
     EdgeBundling       = require('./edgebundlingGPU.js');
 
 var SIMULATION_TIME = 100;
@@ -95,35 +94,6 @@ var uberControls = {
     devices: ['CPU', 'GPU']
 }
 
-var gsControls = {
-    simulator: SimCL,
-    layoutAlgorithms: [
-        {
-            algo: GaussSeidel,
-            params: {
-                charge: new ContinuousParam('Charge', -0.000029360001841802474, -0.0001, 0),
-                gravity: new ContinuousParam('Gravity', 0.020083175556898723, 0, 0.1),
-                edgeStrength0: new ContinuousParam('Edge Strength A', 5, 0, 10),
-                edgeDistance0: new ContinuousParam('Edge Distance A', 0.0001, 0, 0.1),
-                edgeStrength1: new ContinuousParam('Edge Strength B', 1, 0, 10),
-                edgeDistance1: new ContinuousParam('Edge Distance B', 0.01, 0, 0.1),
-            }
-        }
-    ],
-    locks: {
-        lockPoints: false,
-        lockEdges: false,
-        lockMidpoints: true,
-        lockMidedges: true
-    },
-    global: {
-        simulationTime: SIMULATION_TIME, //milliseconds
-        dimensions: [1, 1],
-        numSplits: 0
-    },
-    devices: ['CPU', 'GPU']
-}
-
 function atlasControls(algo) {
 
     var devices;
@@ -171,7 +141,6 @@ function atlasControls(algo) {
 var controls = {
     'default':      [atlasControls(forceAtlasBarnes), atlasControls(ForceAtlas2Fast)],
     'gis':         [uberControls],
-    'gauss':        [gsControls],
     'atlas':        [atlasControls(forceAtlasBarnes), atlasControls(ForceAtlas2Fast)],
     'atlas2':       [atlasControls(ForceAtlas2)],
     'atlas2fast':   [atlasControls(ForceAtlas2Fast)],
