@@ -7,7 +7,7 @@ var _     = require('underscore'),
     LayoutAlgo = require('./layoutAlgo.js'),
     Kernel = require('./kernel.js'),
     BarnesKernelSeq = require('./javascript_kernels/barnesKernelSeq.js'),
-    EdgeKernelSeqFast = require('./javascript_kernels/edgeKernelSeqFast.js'),
+    EdgeKernelSeqFast = require('./javascript_kernels/edgeKernelSeq.js'),
     faSwingsKernel = require('./javascript_kernels/faSwingsKernel.js'),
     integrateKernel = require('./javascript_kernels/integrateKernel.js'),
 
