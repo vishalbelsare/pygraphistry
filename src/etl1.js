@@ -5,79 +5,20 @@ var zlib     = require('zlib');
 var crypto   = require('crypto');
 var _        = require('underscore');
 var Q        = require('q');
-var bodyParser  = require('body-parser');
-var sprintf  = require('sprintf-js').sprintf;
 
 var config   = require('config')();
 var vgraph   = require('./vgraph.js');
 var Cache    = require('common/cache.js');
 var s3       = require('common/s3.js');
-var apiKey   = require('common/api.js');
-var slack    = require('common/slack.js');
 var Log      = require('common/logger.js');
 var logger   = Log.createLogger('etlworker:etl');
 
 var tmpCache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);
 
-// String * String -> ()
-function slackNotify(name, params, nnodes, nedges) {
-    function makeUrl(server) {
-        return '<http://proxy-' + server + '.graphistry.com' +
-               '/graph/graph.html?info=true&dataset=' + name +
-               '|' + server + '>';
-    }
-    function isInternal(key) {
-        var suffix = 'graphistry.com';
-        return key.slice(-suffix.length) === suffix
-    }
-
-    var key = '';
-    if (params.key) {
-        try {
-            key += apiKey.decrypt(params.key);
-        } catch (err) {
-            logger.error('Could not decrypt key', err);
-            key += ' COULD NOT DECRYPT';
-        }
-    } else {
-        key = 'n/a';
-    }
-
-
-    var links = sprintf('View on %s or %s', makeUrl('labs'), makeUrl('staging'));
-    var title = sprintf('*New dataset:* `%s`', name);
-    var tag = sprintf('`%s`', params.usertag.split('-')[0]);
-
-    var msg = {
-        channel: '#datasets',
-        username: key,
-        text: '',
-        attachments: JSON.stringify([{
-            fallback: 'New dataset: ' + name,
-            text: title + '\n' + links,
-            color: isInternal(key) ? 'good' : 'bad',
-            fields: [
-                { title: 'Nodes', value: nnodes, short: true },
-                { title: 'Edges', value: nedges, short: true },
-                { title: 'API', value: params.apiVersion, short: true },
-                { title: 'Machine Tag', value: tag, short: true },
-                { title: 'Agent', value: params.agent, short: true },
-                { title: 'Version', value: params.agentVersion, short: true },
-            ],
-            mrkdwn_in: ['text', 'pretext', 'fields']
-        }])
-    };
-
-    return Q.denodeify(slack.post)(msg)
-        .fail(function (err) {
-            logger.error('Error posting on slack', err);
-        });
-}
-
 
 // Convert JSON edgelist to VGraph then upload VGraph to S3 and local /tmp
 // JSON
-function etl(msg, params) {
+function etl(msg) {
     var name = decodeURIComponent(msg.name);
     logger.debug('ETL for', msg.name);
 
@@ -95,10 +36,10 @@ function etl(msg, params) {
     }
 
     logger.info('VGraph created with', vg.nvertices, 'nodes and', vg.nedges, 'edges');
-    return Q.all([
-        publish(vg, name),
-        slackNotify(name, params, vg.nvertices, vg.nedges)
-    ]).spread(_.identity);
+
+    return publish(vg, name).then(function () {
+        return {name: name, nnodes: vg.nvertices, nedges: vg.nedges};
+    });
 }
 
 
@@ -143,19 +84,6 @@ function s3Upload(binaryBuffer, metadata) {
 }
 
 
-function parseQueryParams(req) {
-    var res = [];
-
-    res.usertag = req.query.usertag || 'unknown';
-    res.agent = req.query.agent || 'unknown';
-    res.agentVersion = req.query.agentversion || '0.0.0';
-    res.apiVersion = parseInt(req.query.apiversion) || 0;
-    res.key = req.query.key;
-
-    return res;
-}
-
-
 function req2data(req, params) {
     var encoding = params.apiVersion === 0 ? 'identity'
                                            : req.headers['content-encoding'] || 'identity';
@@ -189,19 +117,6 @@ function req2data(req, params) {
 }
 
 
-function makeFailHandler(res) {
-    return function (err) {
-        logger.error(err, 'ETL post fail');
-        res.send({
-            success: false,
-            msg: err.message
-        });
-        logger.debug('Failed worker, exiting');
-        process.exit(1);
-    };
-}
-
-
 function makeVizToken(key, datasetName) {
     var sha1 = crypto.createHash('sha1');
     sha1.update(key);
@@ -209,25 +124,17 @@ function makeVizToken(key, datasetName) {
     return sha1.digest('hex');
 }
 
+/*
+function parseQueryParams(req) {
+    var res = [];
 
-// Handler for ETL requests on central/etl
-function jsonEtl(k, req, res) {
-    var params = parseQueryParams(req);
-    req2data(req, params).then(function (data) {
-        try {
-            etl(JSON.parse(data), params)
-                .then(function (name) {
-                    logger.info('ETL successful, dataset name is', name);
-                    res.send({
-                        success: true, dataset: name,
-                        viztoken: makeVizToken(params.key, name)
-                    });
-                    k();
-                }, makeFailHandler(res));
-        } catch (err) {
-            makeFailHandler(res)(err);
-        }
-    }).fail(makeFailHandler(res));
+    res.usertag = req.query.usertag || 'unknown';
+    res.agent = req.query.agent || 'unknown';
+    res.agentVersion = req.query.agentversion || '0.0.0';
+    res.apiVersion = parseInt(req.query.apiversion) || 0;
+    res.key = req.query.key;
+
+    return res;
 }
 
 
@@ -246,31 +153,32 @@ function vgraphEtl(k, req, res) {
                     success: true, dataset: vg.name,
                     viztoken: makeVizToken(params.key, vg.name)
                 });
-                k();
-            });
+                k(0);
+            }).fail(makeFailHandler(res, k));
         } catch (err) {
-            makeFailHandler(res)(err)
+            makeFailHandler(res, k)(err)
         }
-    }).fail(makeFailHandler(res));
+    }).fail(makeFailHandler(res, k));
 }
+*/
 
+// (Int -> ()) * Request * Response * Object -> Promise()
+function process(req, res, params) {
+    return req2data(req, params).then(function (data) {
+        return etl(JSON.parse(data))
+            .then(function (info) {
+                logger.info('ETL successful, dataset name is', info.name);
 
-function route (app, socket) {
-    var done = function () {
-        logger.debug('Worker finished, exiting');
-        if (config.ENVIRONMENT === 'production' || config.ENVIRONMENT === 'staging') {
-            process.exit(0);
-        } else {
-            logger.warn('not actually exiting, only disconnect socket');
-            socket.disconnect();
-        }
-    };
+                res.send({
+                    success: true, dataset: info.name,
+                    viztoken: makeVizToken(params.key, info.name)
+                });
 
-    app.post('/etl', bodyParser.json({type: '*', limit: '128mb'}), jsonEtl.bind('', done));
-    app.post('/etlvgraph', bodyParser.raw({type: '*', limit: '64mb'}), vgraphEtl.bind('', done))
+                return info;
+            });
+    });
 }
-
 
 module.exports = {
-    route: route
+    process: process
 };

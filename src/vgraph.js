@@ -1,8 +1,7 @@
-var fs = require('fs');
-var zlib = require('zlib');
+'use strict';
+
 var path = require('path');
 
-var Q = require('q');
 var _ = require('underscore');
 var pb = require('protobufjs');
 var sprintf = require('sprintf-js').sprintf;
@@ -12,7 +11,7 @@ var logger      = Log.createLogger('etlworker:vgraph');
 
 //TODO: Lines 60-261 instances of console should be changed to pipe output to client
 
-var protoFile = path.resolve(__dirname, '../graph-viz/js/libs/graph_vector.proto');
+var protoFile = path.resolve(__dirname, '../../graph-viz/js/libs/graph_vector.proto');
 var builder = pb.loadProtoFile(protoFile);
 if (builder === null) {
     logger.die(new Error(), 'error: could not build proto');
@@ -76,7 +75,7 @@ function defined(value) {
 }
 
 function inferType(samples) {
-    if (samples.length == 0)
+    if (samples.length === 0)
         return 'empty';
     if (_.all(samples, function (val) { return !isNaN(val); })) {
         if (_.all(samples, function (val) { return val === +val && val === (val|0); })) {
@@ -154,7 +153,7 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
 
     //return whether added
     // -> bool
-    function addEdge(node0, node1, entry) {
+    function addEdge(node0, node1) {
 
         var e = new pb_root.VectorGraph.Edge();
         e.src = node2Idx[node0];
