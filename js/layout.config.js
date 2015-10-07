@@ -8,7 +8,7 @@ var ForceAtlas2         = require('./forceatlas2.js'),
     ForceAtlas2Fast     = require('./forceatlas2fast.js'),
     forceAtlasBarnes    = require('./forceatlasbarnes.js'),
     GaussSeidel         = require('./gaussseidel.js'),
-    EdgeBundling       = require('./kd-edgebundling.js');
+    EdgeBundling       = require('./edgebundlingGPU.js');
 
 var SIMULATION_TIME = 100;
 
