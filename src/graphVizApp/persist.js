@@ -47,9 +47,7 @@ function generateContentKey(urlParams) {
 
 
 module.exports = {
-    persistLayoutButton: function (appState, socket, urlParams) {
-        var $btn = $('#persistButton');
-
+    setupPersistLayoutButton: function ($btn, appState, socket, urlParams) {
         if (urlParams.static === 'true') {
             $btn.remove();
             return;

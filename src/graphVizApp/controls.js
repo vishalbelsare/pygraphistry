@@ -567,7 +567,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     histogramBrush.setupMarqueeInteraction(brush);
     dataInspector.init(appState, socket, workerParams.href, brush, histogramPanelToggle, filtersResponses, dataInspectorOnSubject);
     forkVgraph(socket, urlParams);
-    persist.persistLayoutButton(appState, socket, urlParams);
+    persist.setupPersistLayoutButton($('#persistButton'), appState, socket, urlParams);
     goLiveButton(socket, urlParams);
 
     createControls(
