@@ -20,8 +20,8 @@ function EdgeBundling(clContext) {
     logger.debug('Creating edge bundling kernels');
     this.midpointForces= new MidpointForces(clContext);
 
-    this.ebMidsprings = new Kernel('gaussSeidelMidsprings', EdgeBundling.argsMidsprings,
-                                   EdgeBundling.argsType, 'edgeBundling.cl', clContext);
+    this.ebMidsprings = new Kernel('midspringForces', EdgeBundling.argsMidsprings,
+                                   EdgeBundling.argsType, 'gpu/edgeBundling/midspringForces.cl', clContext);
 
     this.faSwingsKernel = new FaSwingsKernel(clContext);
 
