@@ -44,6 +44,8 @@ console.warn('%cWarning: having the console open can slow down execution signifi
  * @property {Boolean?} menu - bool, defaults to true, can override to disable menu.
  * @property {Boolean?} offline - bool, defaults to false, indicates whether to use localClient to load from local files.
  * @property {String?} basePath - related to offline, specifies the path prefix to find the local files.
+ * @property {String?} workbook - name of the workbook to load
+ * @property {String?} view - name of the view in the workbook to load
  * @property {Number?} splashAfter - double, number of seconds to wait while loading.
  * @property {Boolean?} static - bool, defaults to false, indicates whether to load static content instead of connect live.
  * @property {String?} contentKey - specific to static, specifies prefix to find the static content.
