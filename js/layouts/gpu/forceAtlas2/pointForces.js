@@ -380,7 +380,6 @@ var BarnesKernelSeq = function (clContext) {
         simulator.tickBuffers(['partialForces1']);
 
         logger.trace("Running Force Atlas2 with BarnesHut Kernels");
-        console.log("HERE");
 
         // For all calls, we must have the # work items be a multiple of the workgroup size.
         var that = this;
