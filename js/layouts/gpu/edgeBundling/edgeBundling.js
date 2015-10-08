@@ -21,7 +21,7 @@ function EdgeBundling(clContext) {
     this.midpointForces= new MidpointForces(clContext);
 
     this.ebMidsprings = new Kernel('midspringForces', EdgeBundling.argsMidsprings,
-                                   EdgeBundling.argsType, 'gpu/edgeBundling/midspringForces.cl', clContext);
+                                   EdgeBundling.argsType, 'layouts/gpu/edgeBundling/midspringForces.cl', clContext);
 
     this.faSwingsKernel = new FaSwingsKernel(clContext);
 
