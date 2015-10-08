@@ -14,7 +14,7 @@ var HistogramBrush  = require('./histogramBrush.js');
 var marqueeFact     = require('./marquee.js');
 var runButton       = require('./runButton.js');
 var forkVgraph      = require('./fork.js');
-var persistButton   = require('./persist.js');
+var persist         = require('./persist.js');
 var goLiveButton    = require('./goLiveButton.js');
 var colorPicker     = require('./colorpicker.js');
 var externalLink    = require('./externalLink.js');
@@ -567,7 +567,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     histogramBrush.setupMarqueeInteraction(brush);
     dataInspector.init(appState, socket, workerParams.href, brush, histogramPanelToggle, filtersResponses, dataInspectorOnSubject);
     forkVgraph(socket, urlParams);
-    persistButton(appState, socket, urlParams);
+    persist.persistLayoutButton(appState, socket, urlParams);
     goLiveButton(socket, urlParams);
 
     createControls(
