@@ -314,6 +314,11 @@ function launch(streamClient, urlParams) {
         $('html').addClass('debug');
     }
 
+    // Removes beta class from elements:
+    if (urlParams.beta) {
+        $('.beta').removeClass('beta');
+    }
+
     // URL logo parameter can disable the logo via CSS:
     if (urlParams.logo === false) {
         $('html').addClass('nologo');
