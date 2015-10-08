@@ -20,7 +20,7 @@ var edgeKernelSeqFast = function (clContext) {
     ];
 
 
-    this.mapEdges = new Kernel('faEdgeMap', this.argsMapEdges, ArgsType, 'forceAtlas2/faEdgeMap.cl', clContext);
+    this.mapEdges = new Kernel('faEdgeMap', this.argsMapEdges, ArgsType, 'layouts/gpu/forceAtlas2/faEdgeMap.cl', clContext);
 
     this.segReduce = new Kernel("segReduce", this.argsSegReduce,
                                 ArgsType, 'segReduce.cl', clContext);

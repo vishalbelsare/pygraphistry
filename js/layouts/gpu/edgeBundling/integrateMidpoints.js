@@ -15,7 +15,7 @@ var integrateKernel = function (clContext) {
   ];
 
   this.faIntegrate = new Kernel('faIntegrate', this.argsIntegrate,
-      ArgsType, 'forceAtlas2/faIntegrateMidPoints.cl', clContext);
+      ArgsType, 'layouts/gpu/edgeBundling/faIntegrateMidPoints.cl', clContext);
 
 
   this.kernels = [this.faIntegrate];
