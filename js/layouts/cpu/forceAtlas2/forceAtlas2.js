@@ -16,7 +16,7 @@ function ForceAtlas2(clContext) {
     this.faPoints = new Kernel('faPointForces', ForceAtlas2.argsPoints,
                                ForceAtlas2.argsType, 'layouts/cpu/forceAtlas2/faPointForces.cl', clContext);
     this.faEdges = new Kernel('faEdgeForces', ForceAtlas2.argsEdges,
-                               ForceAtlas2.argsType, 'layouts/cpu/forceAtlas2/faEdgesForces.cl', clContext);
+                               ForceAtlas2.argsType, 'layouts/cpu/forceAtlas2/faEdgeForces.cl', clContext);
 
     this.faSwings = new Kernel('faSwingsTractions', ForceAtlas2.argsSwings,
                                ForceAtlas2.argsType, 'layouts/cpu/forceAtlas2/faSwingsTractions.cl', clContext);
