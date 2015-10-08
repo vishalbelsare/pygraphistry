@@ -1,13 +1,13 @@
 'use strict';
 var _          = require('underscore'),
     Q          = require('q'),
-    cljs       = require('./cl.js'),
-    Kernel     = require('./kernel.js'),
-    LayoutAlgo = require('./layoutAlgo.js'),
-    FaSwingsKernel = require('./javascript_kernels/faSwingsKernel.js'),
-    IntegrateMidpointsKernel = require('./javascript_kernels/integrateMidpoints.js'),
-    InterpolateMidpoints = require('./javascript_kernels/interpolateMidpoints.js'),
-    MidpointForces = require('./javascript_kernels/kd-MidpointForces.js')
+    cljs       = require('../../../cl.js'),
+    Kernel     = require('../../../kernel.js'),
+    LayoutAlgo = require('../../../layoutAlgo.js'),
+    FaSwingsKernel = require('./faSwingsKernel.js'),
+    IntegrateMidpointsKernel = require('./integrateMidpoints.js'),
+    InterpolateMidpoints = require('./interpolateMidpoints.js'),
+    MidpointForces = require('./midpointForces.js')
 
 
 var log         = require('common/logger.js');

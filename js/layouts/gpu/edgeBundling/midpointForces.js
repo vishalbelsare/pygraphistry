@@ -1,7 +1,7 @@
-var Kernel = require('../kernel.js'),
+var Kernel = require('../../../kernel.js'),
     Q = require('q'),
     _     = require('underscore'),
-    cljs  = require('../cl.js');
+    cljs  = require('../../../cl.js');
 
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:cl:kd-MidpointForces');

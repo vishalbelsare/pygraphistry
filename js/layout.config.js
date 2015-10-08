@@ -4,10 +4,10 @@ var _ = require('underscore');
 var SimCL = require('./SimCL.js');
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:cl:layoutconfig');
-var ForceAtlas2         = require('./forceatlas2.js'),
-    ForceAtlas2Fast     = require('./forceatlas2fast.js'),
-    forceAtlasBarnes    = require('./forceatlasbarnes.js'),
-    EdgeBundling       = require('./edgebundlingGPU.js');
+var ForceAtlas2         = require('./layouts/cpu/forceAtlas2/forceAtlas2.js'),
+    ForceAtlas2Fast     = require('./layouts/cpu/forceAtlas2Fast/forceAtlas2.js'),
+    forceAtlasBarnes    = require('./layouts/gpu/forceAtlas2/forceAtlas2.js'),
+    EdgeBundling       = require('./layouts/gpu/edgeBundling/edgeBundling.js');
 
 var SIMULATION_TIME = 100;
 

@@ -1,7 +1,7 @@
-var Kernel = require('../kernel.js'),
+var Kernel = require('../../../kernel.js'),
     Q = require('q'),
     _     = require('underscore'),
-    cljs  = require('../cl.js');
+    cljs  = require('../../../cl.js');
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:cl:barnesKernels');
 
@@ -380,6 +380,7 @@ var BarnesKernelSeq = function (clContext) {
         simulator.tickBuffers(['partialForces1']);
 
         logger.trace("Running Force Atlas2 with BarnesHut Kernels");
+        console.log("HERE");
 
         // For all calls, we must have the # work items be a multiple of the workgroup size.
         var that = this;

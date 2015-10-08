@@ -1,15 +1,15 @@
 'use strict';
 
 var _     = require('underscore'),
-    cljs  = require('./cl.js'),
+    cljs  = require('../../../cl.js'),
     Q     = require('q'),
 
-    LayoutAlgo = require('./layoutAlgo.js'),
-    Kernel = require('./kernel.js'),
-    BarnesKernelSeq = require('./javascript_kernels/barnesKernelSeq.js'),
-    EdgeKernelSeqFast = require('./javascript_kernels/edgeKernelSeq.js'),
-    faSwingsKernel = require('./javascript_kernels/faSwingsKernel.js'),
-    integrateKernel = require('./javascript_kernels/integrateKernel.js'),
+    LayoutAlgo = require('../../../layoutAlgo.js'),
+    Kernel = require('../../../kernel.js'),
+    BarnesKernelSeq = require('./pointForces.js'),
+    EdgeKernelSeqFast = require('./edgeForces'),
+    faSwingsKernel = require('./faSwingsKernel.js'),
+    integrateKernel = require('./integrateKernel.js'),
 
     log        = require('common/logger.js'),
     logger     = log.createLogger('graph-viz:cl:forceatlas2barnes');

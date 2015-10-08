@@ -1,10 +1,10 @@
 'use strict';
 
-var       _ = require('underscore'),
-       cljs = require('./cl.js'),
+var          _ = require('underscore'),
+       cljs = require('../../../cl.js'),
           Q = require('q'),
- LayoutAlgo = require('./layoutAlgo.js'),
-     Kernel = require('./kernel.js'),
+ LayoutAlgo = require('../../../layoutAlgo.js'),
+     Kernel = require('../../../kernel.js'),
     log        = require('common/logger.js'),
     logger     = log.createLogger('graph-viz:cl:forceatlas2');
 
@@ -14,18 +14,18 @@ function ForceAtlas2(clContext) {
 
     logger.trace('Creating ForceAtlas2 kernels');
     this.faPoints = new Kernel('faPointForces', ForceAtlas2.argsPoints,
-                               ForceAtlas2.argsType, 'forceAtlas2/faPointForces.cl', clContext);
+                               ForceAtlas2.argsType, 'forceAtlas2Fast/faPointForces.cl', clContext);
     this.faEdges = new Kernel('faEdgeForces', ForceAtlas2.argsEdges,
-                               ForceAtlas2.argsType, 'forceAtlas2/faEdges.cl', clContext);
+                               ForceAtlas2.argsType, 'forceAtlas2Fast/faEdgeForces.cl', clContext);
 
     this.faSwings = new Kernel('faSwingsTractions', ForceAtlas2.argsSwings,
-                               ForceAtlas2.argsType, 'forceAtlas2/faSwingsTractions.cl', clContext);
+                               ForceAtlas2.argsType, 'forceAtlas2Fast/faSwingsTractions.cl', clContext);
 
     this.faIntegrate = new Kernel('faIntegrateLegacy', ForceAtlas2.argsIntegrate,
-                               ForceAtlas2.argsType, 'forceAtlas2/faIntegrateLegacy.cl', clContext);
+                               ForceAtlas2.argsType, 'forceAtlas2Fast/faIntegrateLegacy.cl', clContext);
 
     this.faIntegrateApprox = new Kernel('faIntegrateApprox', ForceAtlas2.argsIntegrateApprox,
-                               ForceAtlas2.argsType, 'forceAtlas2/faIntegrateApprox.cl', clContext);
+                               ForceAtlas2.argsType, 'forceAtlas2Fast/faIntegrateApprox.cl', clContext);
 
     this.kernels = this.kernels.concat([this.faPoints, this.faEdges, this.faSwings,
                                        this.faIntegrate, this.faIntegrateApprox]);
@@ -33,16 +33,17 @@ function ForceAtlas2(clContext) {
 ForceAtlas2.prototype = Object.create(LayoutAlgo.prototype);
 ForceAtlas2.prototype.constructor = ForceAtlas2;
 
-ForceAtlas2.name = 'ForceAtlas2';
+ForceAtlas2.name = 'ForceAtlas2Fast';
 ForceAtlas2.argsPoints = [
-    'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'tilePointsParam',
+    'preventOverlap', 'strongGravity', 'scalingRatio', 'gravity',
+    'edgeInfluence', 'tilePointsParam',
     'tilePointsParam2', 'numPoints', 'tilesPerIteration', 'inputPositions',
     'width', 'height', 'stepNumber', 'pointDegrees', 'pointForces'
 ];
 
 ForceAtlas2.argsEdges = [
     'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges',
-    'workList', 'inputPoints', 'partialForces', 'stepNumber', 'numWorkItems', 'outputForces'
+    'workList', 'inputPoints', 'partialForces', 'stepNumber', 'outputForces'
 ];
 
 ForceAtlas2.argsSwings = ['prevForces', 'curForces', 'swings' , 'tractions'];
@@ -61,6 +62,8 @@ ForceAtlas2.argsType = {
     gravity: cljs.types.float_t,
     edgeInfluence: cljs.types.uint_t,
     flags: cljs.types.uint_t,
+    preventOverlap: cljs.types.define,
+    strongGravity: cljs.types.define,
     numPoints: cljs.types.uint_t,
     tilesPerIteration: cljs.types.uint_t,
     tilePointsParam: cljs.types.local_t,
@@ -83,8 +86,7 @@ ForceAtlas2.argsType = {
     swings: null,
     tractions: null,
     tau: cljs.types.float_t,
-    gSpeed: cljs.types.float_t,
-    numWorkItems: cljs.types.uint_t
+    gSpeed: cljs.types.float_t
 }
 
 
@@ -92,7 +94,7 @@ ForceAtlas2.prototype.setPhysics = function(cfg) {
     LayoutAlgo.prototype.setPhysics.call(this, cfg)
 
     var flags = this.faEdges.get('flags');
-    var flagNames = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'];
+    var flagNames = ['dissuadeHubs', 'linLog'];
     _.each(cfg, function (val, flag) {
         var idx = flagNames.indexOf(flag);
         if (idx >= 0) {
@@ -158,7 +160,6 @@ function edgeForcesOneWay(simulator, faEdges, edges, workItems, numWorkItems,
         workList: workItems.buffer,
         inputPoints: points.buffer,
         stepNumber: stepNumber,
-        numWorkItems: numWorkItems,
         partialForces: partialForces.buffer,
         outputForces: outputForces.buffer
     });
@@ -274,6 +275,7 @@ function integrateApprox(simulator, faIntegrateApprox) {
         .fail(log.makeQErrorHandler(logger, 'Kernel faIntegrateApprox failed'));
 }
 
+
 ForceAtlas2.prototype.tick = function(simulator, stepNumber) {
     var that = this;
     var tickTime = Date.now();
@@ -284,7 +286,7 @@ ForceAtlas2.prototype.tick = function(simulator, stepNumber) {
         return swingsTractions(simulator, that.faSwings);
     }).then(function () {
         return integrate(simulator, that.faIntegrate);
-        // return integrateApprox(simulator, that.faIntegrateApprox);
+        //return integrateApprox(simulator, that.faIntegrateApprox);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);

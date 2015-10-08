@@ -1,9 +1,9 @@
 'use strict';
-var Kernel = require('../kernel.js'),
+var Kernel = require('../../../kernel.js'),
     Q = require('q'),
     _     = require('underscore'),
-    cljs  = require('../cl.js'),
-    ArgsType = require('./ArgsType.js');
+    cljs  = require('../../../cl.js'),
+    ArgsType = require('../../ArgsType.js');
 
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:cl:barnesKernels');
