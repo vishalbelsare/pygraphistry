@@ -15,7 +15,7 @@ var integrateKernel = function (clContext) {
   ];
 
   this.faIntegrate = new Kernel('faIntegrate', this.argsIntegrate,
-      ArgsType, 'forceAtlas2/faIntegrate.cl', clContext);
+      ArgsType, 'layouts/gpu/forceAtlas2/faIntegrate.cl', clContext);
 
 
   this.kernels = [this.faIntegrate];

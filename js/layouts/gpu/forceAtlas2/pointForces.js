@@ -93,22 +93,22 @@ var BarnesKernelSeq = function (clContext) {
     }
 
     this.toBarnesLayout = new Kernel('to_barnes_layout', this.argsToBarnesLayout,
-            this.argsType, 'barnesHut/toBarnesLayout.cl', clContext);
+            this.argsType, 'layouts/gpu/ForceAtlas2/barnesHut/toBarnesLayout.cl', clContext);
 
     this.boundBox = new Kernel('bound_box', this.argsBoundBox,
-            this.argsType, 'barnesHut/boundBox.cl', clContext);
+            this.argsType, 'layouts/gpu/ForceAtlas2/barnesHut/boundBox.cl', clContext);
 
     this.buildTree = new Kernel('build_tree', this.argsBarnes,
-            this.argsType, 'barnesHut/buildTree.cl', clContext);
+            this.argsType, 'layouts/gpu/ForceAtlas2/barnesHut/buildTree.cl', clContext);
 
     this.computeSums = new Kernel('compute_sums', this.argsBarnes,
-            this.argsType, 'barnesHut/computeSums.cl', clContext);
+            this.argsType, 'layouts/gpu/ForceAtlas2/barnesHut/computeSums.cl', clContext);
 
     this.sort = new Kernel('sort', this.argsBarnes,
-            this.argsType, 'barnesHut/sort.cl', clContext);
+            this.argsType, 'layouts/gpu/ForceAtlas2/barnesHut/sort.cl', clContext);
 
     this.calculatePointForces = new Kernel('calculate_forces', this.argsBarnes,
-            this.argsType, 'barnesHut/calculatePointForces.cl', clContext);
+            this.argsType, 'layouts/gpu/ForceAtlas2/barnesHut/calculatePointForces.cl', clContext);
 
     this.kernels = [this.toBarnesLayout, this.boundBox, this.buildTree, this.computeSums,
                     this.sort, this.calculatePointsForces, this.move];

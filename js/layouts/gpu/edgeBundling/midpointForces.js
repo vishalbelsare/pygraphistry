@@ -27,7 +27,7 @@ var MidpointForces = function (clContext) {
                 'edgeLengths', 'mass', 'blocked', 'maxDepth', 'stepNumber', 'midpoint_stride',
                 'midpoints_per_edge', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
             ],
-            fileName: 'kdTree/kd-ToKDLayout.cl'
+            fileName: 'layouts/gpu/edgeBundling/kdTree/toKDLayout.cl'
         },
         boundBox: {
             name : 'boundBox',
@@ -36,7 +36,7 @@ var MidpointForces = function (clContext) {
                 'ymins', 'ymaxs', 'edgeMins', 'edgeMaxs', 'swings', 'tractions',
                 'blocked', 'step', 'bottom', 'radius', 'globalSpeed', 'stepNumber',
                 'numBodies', 'numNodes', 'tau', 'THREADS_BOUND'],
-                fileName: 'kdTree/kd-BoundBox.cl'
+                fileName: 'layouts/gpu/edgeBundling/kdTree/boundBox.cl'
         },
         buildTree: {
             name: 'buildTree',
@@ -47,7 +47,7 @@ var MidpointForces = function (clContext) {
                 'step', 'bottom', 'maxDepth', 'radius',
                 'stepNumber', 'numBodies', 'numNodes'
             ],
-            fileName: 'kdTree/kd-BuildTree.cl'
+            fileName: 'layouts/gpu/edgeBundling/kdTree/buildTree.cl'
         },
         computeSums: {
             name: 'computeSums',
@@ -55,14 +55,14 @@ var MidpointForces = function (clContext) {
             args: [ 'xCoords', 'yCoords', 'children', 'mass', 'count', 'step', 'bottom',
                 'stepNumber', 'numBodies', 'numNodes', 'WARPSIZE', 'THREADS_SUMS'
             ],
-            fileName: 'kdTree/kd-ComputeSums.cl'
+            fileName: 'layouts/gpu/edgeBundling/kdTree/computeSums.cl'
         },
         sort: {
             name: 'sort',
             kernelName: 'sort',
             args: [ 'xCoords', 'yCoords', 'children', 'start', 'sort', 'count', 'step', 'bottom',
                 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',  'numBodies', 'numNodes', ],
-                fileName: 'kdTree/kd-Sort.cl'
+                fileName: 'layouts/gpu/edgeBundling/kdTree/sort.cl'
         },
         calculateMidPoints: {
             name: 'calculateMidPoints',
@@ -72,7 +72,7 @@ var MidpointForces = function (clContext) {
                 'blocked', 'maxDepth', 'radius', 'stepNumber', 'numBodies', 'numNodes', 'nextMidPoints',
                 'charge', 'midpoint_stride', 'midpoints_per_edge', 'WARPSIZE', 'THREADS_FORCES'
             ],
-            fileName: 'kdTree/kd-CalculateForces.cl'
+            fileName: 'layouts/gpu/edgeBundling/kdTree/calculateForces.cl'
         }
     }
 

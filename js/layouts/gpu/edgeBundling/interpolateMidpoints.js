@@ -19,7 +19,7 @@ var interpolateMidpointsKernel = function (clContext) {
         };
 
     this.interpolate = new Kernel('interpolateMidpoints', args, argsType,
-            'interpolateMidpoints.cl', clContext);
+            'layouts/gpu/edgeBundling/interpolateMidpoints.cl', clContext);
 
     this.kernels = [this.interpolate];
 
