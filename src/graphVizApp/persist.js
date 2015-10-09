@@ -38,6 +38,14 @@ function getExportURL (camera, urlParams, contentKey, backgroundColor) {
 }
 
 
+function getWorkbookURL(urlParams, workbookName) {
+    var override = {workbook: workbookName},
+        params = _.extend({}, urlParams, override),
+        paramStr  = _.map(params, function (v, k) { return k + '=' + v; }).join('&');
+    return window.location.origin + window.location.pathname + '?' + paramStr;
+}
+
+
 function generateContentKey(urlParams) {
     var uid = util.createAlphaNumericUID(),
         parts = urlParams.dataset.split('/'),
@@ -47,6 +55,62 @@ function generateContentKey(urlParams) {
 
 
 module.exports = {
+    setupPersistWorkbookButton: function ($btn, appState, socket, urlParams) {
+        var workbookName = urlParams.workbook;
+
+        Rx.Observable.fromEvent($btn, 'click')
+            .map(function () {
+                return $(Handlebars.compile($('#persistWorkbookTemplate').html())(
+                    {defName: workbookName}));
+            })
+            .do(function ($modal) {
+                $('body').append($modal);
+                $('.status', $modal).css('display', 'none');
+                $modal.modal('show');
+            })
+            .flatMap(function ($modal) {
+                return Rx.Observable.fromEvent($('.modal-footer button', $modal), 'click')
+                    .map(_.constant($modal));
+            })
+            // notify server and wait
+            .do(function ($modal) {
+                $('.persist-status-text', $modal).text('Saving workbook');
+                $('.status', $modal).css('display', 'inline');
+                $('.modal-footer button', $modal).css('display', 'none');
+            })
+            .flatMap(function ($modal) {
+                workbookName = $('.modal-body input', $modal).val();
+                return Rx.Observable.fromCallback(socket.emit, socket)('persist_current_workbook', workbookName)
+                    .map(function (reply) {
+                        return {reply: reply, $modal: $modal, workbookName: workbookName};
+                    });
+            })
+            .do(function (response) {
+                var reply = response.reply,
+                    $modal = response.$modal;
+                if (!(reply && reply.success)) {
+                    throw new Error({msg: 'Server error on inspectHeader', v: (reply || {error: 'unknown'}).error});
+                }
+                var targetURL = getWorkbookURL(urlParams, response.workbookName),
+                    previewElement = $('<a>')
+                        .attr('target', '_blank')
+                        .text(workbookName)
+                        .attr('href', targetURL);
+                $('.persist-workbook-form-area', $modal)
+                    .hide();
+                $('.status, .persist-status-text', $modal).css('display', 'none');
+                $('.workbook-preview', $modal)
+                    .empty()
+                    .append($('<p>')
+                        .append(previewElement));
+            })
+            .subscribe(_.identity,
+            function (err) {
+                console.error('err', err);
+                try { $('.persistWorkbook').remove(); } catch (ignore) { }
+                util.makeErrorHandler('Exception while persisting workbook', err);
+            });
+    },
     setupPersistLayoutButton: function ($btn, appState, socket, urlParams) {
         if (urlParams.static === 'true') {
             $btn.remove();

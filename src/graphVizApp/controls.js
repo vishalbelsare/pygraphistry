@@ -568,6 +568,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     dataInspector.init(appState, socket, workerParams.href, brush, histogramPanelToggle, filtersResponses, dataInspectorOnSubject);
     forkVgraph(socket, urlParams);
     persist.setupPersistLayoutButton($('#persistButton'), appState, socket, urlParams);
+    persist.setupPersistWorkbookButton($('#persistWorkbookButton'), appState, socket, urlParams);
     goLiveButton(socket, urlParams);
 
     createControls(
