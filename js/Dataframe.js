@@ -77,7 +77,7 @@ function makeEmptyData () {
  * The result's edges must begin and end in the set of points.
  * Relative to forwardsEdges (so sorted)
  * @param {Mask} pointMask - The set of points that the edges must connect.
- * @param {?Mask} edgeMaskOriginal - An optional set of edges to also filter on.
+ * @param {Mask?} edgeMaskOriginal - An optional set of edges to also filter on.
  * @returns MaskSet
  */
 Dataframe.prototype.masksFromPoints = function (pointMask, edgeMaskOriginal) {
