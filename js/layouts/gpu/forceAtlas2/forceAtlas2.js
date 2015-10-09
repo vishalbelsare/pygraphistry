@@ -9,78 +9,12 @@ var _     = require('underscore'),
     BarnesKernelSeq = require('./pointForces.js'),
     EdgeKernelSeqFast = require('./edgeForces'),
     integrateKernel = require('./integrateKernel.js'),
+    ArgsType = require('../../ArgsType.js'),
 
     log        = require('common/logger.js'),
     logger     = log.createLogger('graph-viz:cl:forceatlas2barnes');
 
 
-function getNumWorkitemsByHardware(deviceProps) {
-
-    var numWorkGroups = {
-        toBarnesLayout: [30, 256],
-        boundBox: [30, 256],
-        buildTree: [30, 256],
-        computeSums: [10, 256],
-        sort: [16, 256],
-        edgeForces: [100, 256],
-        segReduce: [1000, 256],
-        calculateForces: [60, 256]
-    };
-
-    if (deviceProps.NAME.indexOf('GeForce GT 650M') != -1 ||
-        deviceProps.NAME.indexOf('GeForce GT 750M') != -1) {
-        numWorkGroups.buildTree[0] = 1;
-        numWorkGroups.computeSums[0] = 1;
-    } else if (deviceProps.NAME.indexOf('Iris Pro') != -1) {
-        numWorkGroups.computeSums[0] = 6;
-        numWorkGroups.sort[0] = 8;
-    } else if (deviceProps.NAME.indexOf('Iris') != -1) {
-        numWorkGroups.computeSums[0] = 6;
-        numWorkGroups.sort[0] = 8;
-    } else if (deviceProps.NAME.indexOf('M290X') != -1) {
-        numWorkGroups.buildTree[0] = 1;
-        numWorkGroups.computeSums[0] = 1;
-        numWorkGroups.computeSums[0] = 1; //6;
-        numWorkGroups.sort[0] = 1; //8;
-    } else if (deviceProps.NAME.indexOf('K520') != -1) {
-        // 1024
-        // 30:14.1, 36:14.3, 40:13.6, 46:14.5, 50:14.1, 60:14.1, 100:14.7,
-        //
-        // base 14.6% @ 200
-
-        numWorkGroups.segReduce = [40, 1024];
-        numWorkGroups.edgeForces = [200, 1024];
-
-        // 1024
-        // 6:35, 7:31, 8:27, 9:54, 10:50, 16:38, 20:52, 26:44
-        // 30:41, 36:46
-        //
-        // 512
-        // 2:92, 6:34, 7:29, 8:26, 9:44, 10:40, 14:31, 18:41, 24:35, 30:48
-        numWorkGroups.buildTree = [8, 512];
-
-        // 1024
-        // 10:36, 14:27, 15:26, 16:24, 17:39, 18:38, 20:35, 26:28, 30:25, 36:30, 40:28, 46:25, 50:28, 60:25,
-        // 70:26, 80:25, 100:26, 140:26, 200:26
-        //
-        // 512
-        // 10:65, 20:35, 26:29, 28:27, 30:26, 34:39, 40:34
-        numWorkGroups.calculateForces = [16, 1024];
-
-        // 1024
-        // 6:4, 8:4, 10:5,
-        numWorkGroups.computeSums = [8, 1024];
-
-
-    } else if (deviceProps.NAME.indexOf('HD Graphics 4000') != -1) {
-        logger.debug('Expected slow kernels: sort, calculate_forces');
-    }
-
-    return _.mapObject(numWorkGroups, function(val, key) {
-        val[0] = val[0] * val[1];
-        return val;
-    });
-}
 
 function ForceAtlas2Barnes(clContext) {
     LayoutAlgo.call(this, ForceAtlas2Barnes.name);
@@ -189,9 +123,20 @@ function ForceAtlas2Barnes(clContext) {
     this.calculatePointForces = new Kernel('calculate_forces', this.argsBarnes,
             this.argsType, 'layouts/gpu/ForceAtlas2/barnesHut/calculatePointForces.cl', clContext);
 
-    this.barnesKernelSeq = new BarnesKernelSeq(clContext);
+    this.argsMapEdges = [
+        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'isForward', 'edges', 'numEdges',
+        'pointDegrees', 'inputPoints', 'edgeWeights', 'outputForcesMap'
+    ];
 
-    this.edgeKernelSeq = new EdgeKernelSeqFast(clContext);
+    this.argsSegReduce = [
+        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numInput', 'input',
+        'edgeStartEndIdxs', 'segStart', 'workList', 'numOutput', 'carryOutGlobal', 'output', 'partialForces'
+    ];
+
+    this.mapEdges = new Kernel('faEdgeMap', this.argsMapEdges, ArgsType, 'layouts/gpu/forceAtlas2/faEdgeMap.cl', clContext);
+
+    this.segReduce = new Kernel("segReduce", this.argsSegReduce,
+                                ArgsType, 'segReduce.cl', clContext);
 
     var faSwingsArgs = { prevForces : null, curForces : null, swings : null, tractions : null }
     this.faSwings = new Kernel('faSwingsTractions', Object.keys(faSwingsArgs), faSwingsArgs,
@@ -207,16 +152,12 @@ function ForceAtlas2Barnes(clContext) {
 
     this.kernels = this.kernels.concat([this.toBarnesLayout, this.boundBox, this.buildTree, this.computeSums,
                                         this.sort, this.calculatePointForces,
-                                        this.edgeKernelSeq.mapEdges, this.edgeKernelSeq.segReduce, this.faSwings,
-                                        this.faIntegrate,
-                                        this.barnesKernelSeq.toBarnesLayout, this.barnesKernelSeq.boundBox,
-    this.barnesKernelSeq.buildTree, this.barnesKernelSeq.computeSums, this.barnesKernelSeq.sort,
-    this.barnesKernelSeq.calculatePointForces]);
+                                        this.faSwings,
+                                        this.faIntegrate, this.mapEdges, this.segReduce]);
 }
 
 ForceAtlas2Barnes.prototype = Object.create(LayoutAlgo.prototype);
 ForceAtlas2Barnes.prototype.constructor = ForceAtlas2Barnes;
-
 ForceAtlas2Barnes.name = 'ForceAtlas2Barnes';
 
 ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
@@ -243,8 +184,8 @@ ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
     this.computeSums.set({flags: flags});
     this.sort.set({flags: flags});
     this.calculatePointForces.set({flags: flags});
-    this.barnesKernelSeq.setPhysics(flags);
-    this.edgeKernelSeq.setPhysics(flags);
+    this.mapEdges.set({flags:flags});
+    this.segReduce.set({flags:flags});
 }
 
 // Contains any temporary buffers needed for layout
@@ -268,29 +209,6 @@ var layoutBuffers  = {
     step: null,
     bottom: null,
     maxdepth: null,
-};
-
-var computeSizes = function (simulator, warpsize, numPoints) {
-    var blocks = 8; //TODO (paden) should be set to multiprocecessor count
-
-    if (numPoints === undefined) {
-        numPoints = simulator.dataframe.getNumElements('point');
-    }
-    var num_nodes = numPoints * 5;
-    if (num_nodes < 1024*blocks) num_nodes = 1024*blocks;
-    while ((num_nodes & (warpsize - 1)) != 0) num_nodes++;
-    num_nodes--;
-    var num_bodies = numPoints;
-    var numNodes = num_nodes;
-    var numBodies = num_bodies;
-    // Set this to the number of workgroups in boundBox kernel
-    var numWorkGroups = 30;
-
-    return {
-        numWorkGroups: numWorkGroups,
-        numNodes: numNodes,
-        numBodies: numBodies
-    };
 };
 
 ForceAtlas2Barnes.prototype.setArgsPointForces = function(simulator, warpsize, workItems) {
@@ -388,7 +306,7 @@ ForceAtlas2Barnes.prototype.setArgsPointForces = function(simulator, warpsize, w
     setBarnesKernelArgs(that.calculatePointForces, layoutBuffers);
 }
 
-ForceAtlas2Barnes.prototype.initializeBuffers = function(simulator, warpsize, numPoints) {
+ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator, warpsize, numPoints) {
     simulator.resetBuffers(layoutBuffers);
     var sizes = computeSizes(simulator, warpsize, numPoints);
     var numNodes = sizes.numNodes;
@@ -397,6 +315,10 @@ ForceAtlas2Barnes.prototype.initializeBuffers = function(simulator, warpsize, nu
     var num_bodies = sizes.numBodies;
     var num_work_groups = sizes.numWorkGroups;
 
+    var forwardsEdges = simulator.dataframe.getHostBuffer('forwardsEdges');
+    var backwardsEdges = simulator.dataframe.getHostBuffer('backwardsEdges');
+    var numEdges = simulator.dataframe.getNumElements('edge');
+    var numPoints = simulator.dataframe.getNumElements('point');
     return Q.all( [
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT,  'x_cords'),
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'y_cords'),
@@ -419,10 +341,17 @@ ForceAtlas2Barnes.prototype.initializeBuffers = function(simulator, warpsize, nu
         simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'bottom'),
         simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'maxdepth'),
         simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'radius'),
-        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed')
+        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed'),
+        simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'outputEdgeForcesMap'),
+        simulator.cl.createBuffer(1 + Math.ceil(numEdges / 256), 'globalCarryIn'),
+        simulator.cl.createBuffer(forwardsEdges.edgeStartEndIdxsTyped.byteLength, 'forwardsEdgeStartEndIdxs'),
+        simulator.cl.createBuffer(backwardsEdges.edgeStartEndIdxsTyped.byteLength, 'backwardsEdgeStartEndIdxs'),
+        simulator.cl.createBuffer((numPoints * Float32Array.BYTES_PER_ELEMENT) / 2, 'segStart')
      ]).spread(function (x_cords, y_cords, accx, accy, children, mass, start, sort,
                          xmin, xmax, ymin, ymax, globalSwings, globalTractions, count,
-                         blocked, step, bottom, maxdepth, radius, globalSpeed) {
+                         blocked, step, bottom, maxdepth, radius, globalSpeed,
+                        outputEdgeForcesMap, globalCarryOut, forwardsEdgeStartEndIdxs,
+                        backwardsEdgeStartEndIdxs, segStart) {
          layoutBuffers.x_cords = x_cords;
          layoutBuffers.y_cords = y_cords;
          layoutBuffers.accx = accx;
@@ -446,22 +375,19 @@ ForceAtlas2Barnes.prototype.initializeBuffers = function(simulator, warpsize, nu
          layoutBuffers.numNodes = numNodes;
          layoutBuffers.numBodies = numBodies;
          layoutBuffers.globalSpeed = globalSpeed;
-         return layoutBuffers;
+         layoutBuffers.outputEdgeForcesMap = outputEdgeForcesMap;
+         layoutBuffers.globalCarryOut = globalCarryOut;
+         layoutBuffers.forwardsEdgeStartEndIdxs = forwardsEdgeStartEndIdxs;
+         layoutBuffers.backwardsEdgeStartEndIdxs = backwardsEdgeStartEndIdxs;
+         layoutBuffers.segStart = segStart;
+         return Q.all([
+            layoutBuffers.forwardsEdgeStartEndIdxs.write(forwardsEdges.edgeStartEndIdxsTyped),
+            layoutBuffers.backwardsEdgeStartEndIdxs.write(backwardsEdges.edgeStartEndIdxsTyped)
+        ]).then(function () {
+            return layoutBuffers;
+        })
      }).fail(log.makeQErrorHandler(logger, "Setting temporary buffers for barnesHutKernelSequence failed"));
 };
-
-var getWarpsize = function (vendor) {
-    var warpsize = 1; // Always correct
-    if (vendor.indexOf('intel') != -1) {
-        warpsize = 16;
-    } else if (vendor.indexOf('nvidia') != -1) {
-        warpsize = 32;
-    } else if (vendor.indexOf('amd') != -1) {
-        warpsize = 64;
-    }
-    return warpsize;
-
-}
 
 ForceAtlas2Barnes.prototype.calculateSwings = function(simulator, workItems) {
     var buffers = simulator.buffers;
@@ -548,8 +474,6 @@ ForceAtlas2Barnes.prototype.updateDataframeBuffers = function(simulator) {
     updateBarnesArgs(that.computeSums);
     updateBarnesArgs(that.sort);
     updateBarnesArgs(that.calculatePointForces);
-    this.barnesKernelSeq.updateDataframeBuffers(simulator, warpsize);
-     //this.edgeKernelSeq.updateDataframeBuffers(simulator);
 };
 
 ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
@@ -568,11 +492,7 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
     var that = this;
     console.log("HERE layout", layoutBuffers);
-    return this.initializeBuffers(simulator).then(function (layoutBuffers) {
-        that.edgeKernelSeq.setEdges(simulator, layoutBuffers);
-        //that.barnesKernelSeq.setEdges(simulator, layoutBuff, warpsize, workItems);
-
-    });
+    return this.initializeLayoutBuffers(simulator);
 }
 
 ForceAtlas2Barnes.prototype.pointForces = function(simulator, stepNumber, workItems) {
@@ -624,6 +544,70 @@ ForceAtlas2Barnes.prototype.pointForces = function(simulator, stepNumber, workIt
     .fail(log.makeQErrorHandler(logger, "Executing BarnesKernelSeq failed"));
 }
 
+ForceAtlas2Barnes.prototype.edgeForces2 = function(simulator, stepNumber, workItemsSize) {
+
+    var dataframe = simulator.dataframe;
+    var forwardsEdges = dataframe.getBuffer('forwardsEdges', 'simulator');
+    var forwardsWorkItems = dataframe.getBuffer('forwardsWorkItems', 'simulator')
+    var backwardsEdges = dataframe.getBuffer('backwardsEdges', 'simulator');
+    var backwardsWorkItems = dataframe.getBuffer('backwardsWorkItems', 'simulator')
+    var points = dataframe.getBuffer('curPoints', 'simulator');
+    var pointDegrees = dataframe.getBuffer('degrees', 'simulator');
+    var mapEdges = this.mapEdges;
+    var segReduce = this.segReduce;
+
+    function edgeForcesOneWay(simulator, edges, workItems, points, pointDegrees, edgeWeights, partialForces, outputForces, startEnd, workItemsSize, isForward) {
+        var numEdges = simulator.dataframe.getNumElements('edge');
+        var numPoints = simulator.dataframe.getNumElements('point');
+        mapEdges.set({
+            numEdges: numEdges,
+            edges: edges.buffer,
+            pointDegrees: pointDegrees.buffer,
+            inputPoints: points.buffer,
+            edgeWeights: edgeWeights.buffer,
+            outputForcesMap: simulator.dataframe.getBuffer('outputEdgeForcesMap', 'simulator').buffer,
+            isForward: isForward
+        });
+        segReduce.set({
+            edgeStartEndIdxs: startEnd.buffer,
+            input: simulator.dataframe.getBuffer('outputEdgeForcesMap', 'simulator').buffer,
+            segStart: simulator.dataframe.getBuffer('segStart', 'simulator').buffer,
+            numInput: numEdges,
+            numOutput: numPoints,
+            workList: workItems.buffer,
+            output: outputForces.buffer,
+            partialForces:partialForces.buffer,
+            carryOutGlobal: simulator.dataframe.getBuffer('globalCarryOut', 'simulator').buffer
+        })
+        var resources = [edges, workItems, points, partialForces, outputForces];
+        simulator.tickBuffers(
+            simulator.dataframe.getBufferKeys('simulator').filter(function (name) {
+                return simulator.dataframe.getBuffer(name, 'simulator') == outputForces;
+            })
+        );
+        logger.trace("Running kernel faEdgeForces");
+        var that = this;
+        return mapEdges.exec([workItemsSize.edgeForces[0]], resources, [workItemsSize.edgeForces[1]]).then(function () {
+            return segReduce.exec([workItemsSize.segReduce[0]], resources, [workItemsSize.segReduce[1]]);
+        })
+    }
+
+    return edgeForcesOneWay(simulator, forwardsEdges, forwardsWorkItems, points, pointDegrees,
+                                 simulator.dataframe.getBuffer('forwardsEdgeWeights', 'simulator'),
+                                 simulator.dataframe.getBuffer('partialForces1', 'simulator'),
+                                 simulator.dataframe.getBuffer('partialForces2', 'simulator'),
+                                 simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator'),
+                                 workItemsSize, 1)
+    .then(function () {
+        return edgeForcesOneWay(simulator, backwardsEdges, backwardsWorkItems, points,
+                                     pointDegrees, simulator.dataframe.getBuffer('backwardsEdgeWeights', 'simulator'),
+                                     simulator.dataframe.getBuffer('partialForces2', 'simulator'),
+                                     simulator.dataframe.getBuffer('curForces', 'simulator'),
+                                     simulator.dataframe.getBuffer('backwardsEdgeStartEndIdxs', 'simulator'),
+                                     workItemsSize, 0);
+        });
+} 
+
 function edgeForces(simulator, edgeKernelSeq, stepNumber, workItems) {
     var buffers = simulator.buffers;
     var dataframe = simulator.dataframe;
@@ -651,9 +635,8 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var tickTime = Date.now();
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
     return that.pointForces(simulator, stepNumber, workItems)
-    //return this.barnesKernelSeq.execKernels(simulator, stepNumber, workItems)
     .then(function () {
-        return edgeForces(simulator, that.edgeKernelSeq, stepNumber, workItems);
+        return that.edgeForces2(simulator,stepNumber, workItems);
     }).then(function () {
         return that.calculateSwings(simulator, workItems);
     }).then(function () {
@@ -675,5 +658,108 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     });
 }
 
+function getNumWorkitemsByHardware(deviceProps) {
+
+    var numWorkGroups = {
+        toBarnesLayout: [30, 256],
+        boundBox: [30, 256],
+        buildTree: [30, 256],
+        computeSums: [10, 256],
+        sort: [16, 256],
+        edgeForces: [100, 256],
+        segReduce: [1000, 256],
+        calculateForces: [60, 256]
+    };
+
+    if (deviceProps.NAME.indexOf('GeForce GT 650M') != -1 ||
+        deviceProps.NAME.indexOf('GeForce GT 750M') != -1) {
+        numWorkGroups.buildTree[0] = 1;
+        numWorkGroups.computeSums[0] = 1;
+    } else if (deviceProps.NAME.indexOf('Iris Pro') != -1) {
+        numWorkGroups.computeSums[0] = 6;
+        numWorkGroups.sort[0] = 8;
+    } else if (deviceProps.NAME.indexOf('Iris') != -1) {
+        numWorkGroups.computeSums[0] = 6;
+        numWorkGroups.sort[0] = 8;
+    } else if (deviceProps.NAME.indexOf('M290X') != -1) {
+        numWorkGroups.buildTree[0] = 1;
+        numWorkGroups.computeSums[0] = 1;
+        numWorkGroups.computeSums[0] = 1; //6;
+        numWorkGroups.sort[0] = 1; //8;
+    } else if (deviceProps.NAME.indexOf('K520') != -1) {
+        // 1024
+        // 30:14.1, 36:14.3, 40:13.6, 46:14.5, 50:14.1, 60:14.1, 100:14.7,
+        //
+        // base 14.6% @ 200
+
+        numWorkGroups.segReduce = [40, 1024];
+        numWorkGroups.edgeForces = [200, 1024];
+
+        // 1024
+        // 6:35, 7:31, 8:27, 9:54, 10:50, 16:38, 20:52, 26:44
+        // 30:41, 36:46
+        //
+        // 512
+        // 2:92, 6:34, 7:29, 8:26, 9:44, 10:40, 14:31, 18:41, 24:35, 30:48
+        numWorkGroups.buildTree = [8, 512];
+
+        // 1024
+        // 10:36, 14:27, 15:26, 16:24, 17:39, 18:38, 20:35, 26:28, 30:25, 36:30, 40:28, 46:25, 50:28, 60:25,
+        // 70:26, 80:25, 100:26, 140:26, 200:26
+        //
+        // 512
+        // 10:65, 20:35, 26:29, 28:27, 30:26, 34:39, 40:34
+        numWorkGroups.calculateForces = [16, 1024];
+
+        // 1024
+        // 6:4, 8:4, 10:5,
+        numWorkGroups.computeSums = [8, 1024];
+
+
+    } else if (deviceProps.NAME.indexOf('HD Graphics 4000') != -1) {
+        logger.debug('Expected slow kernels: sort, calculate_forces');
+    }
+
+    return _.mapObject(numWorkGroups, function(val, key) {
+        val[0] = val[0] * val[1];
+        return val;
+    });
+}
+
+var computeSizes = function (simulator, warpsize, numPoints) {
+    var blocks = 8; //TODO (paden) should be set to multiprocecessor count
+
+    if (numPoints === undefined) {
+        numPoints = simulator.dataframe.getNumElements('point');
+    }
+    var num_nodes = numPoints * 5;
+    if (num_nodes < 1024*blocks) num_nodes = 1024*blocks;
+    while ((num_nodes & (warpsize - 1)) != 0) num_nodes++;
+    num_nodes--;
+    var num_bodies = numPoints;
+    var numNodes = num_nodes;
+    var numBodies = num_bodies;
+    // Set this to the number of workgroups in boundBox kernel
+    var numWorkGroups = 30;
+
+    return {
+        numWorkGroups: numWorkGroups,
+        numNodes: numNodes,
+        numBodies: numBodies
+    };
+};
+
+var getWarpsize = function (vendor) {
+    var warpsize = 1; // Always correct
+    if (vendor.indexOf('intel') != -1) {
+        warpsize = 16;
+    } else if (vendor.indexOf('nvidia') != -1) {
+        warpsize = 32;
+    } else if (vendor.indexOf('amd') != -1) {
+        warpsize = 64;
+    }
+    return warpsize;
+
+}
 
 module.exports = ForceAtlas2Barnes;
