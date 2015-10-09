@@ -121,7 +121,7 @@ module.exports = {
             // show
             .map(function () {
                 var contentKey = urlParams.contentKey || generateContentKey(urlParams);
-                return $(Handlebars.compile($('#persistTemplate').html())(
+                return $(Handlebars.compile($('#persistLayoutTemplate').html())(
                     {defName: contentKey}));
             })
             .do(function ($modal) {
@@ -225,7 +225,7 @@ module.exports = {
             .subscribe(_.identity,
             function (err) {
                 console.error('err', err);
-                try { $('.persistor').remove(); } catch (ignore) { }
+                try { $('.persistLayout').remove(); } catch (ignore) { }
                 util.makeErrorHandler('Exception while persisting VBOs', err);
             });
 
