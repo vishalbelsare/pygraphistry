@@ -17,6 +17,7 @@ var logger   = Log.createLogger('etlworker:etl2');
 var supportedAgents = ['pygraphistry'];
 
 
+// Request.files -> Object
 function parseParts(parts) {
     return _.object(_.map(parts, function (content, key) {
         var buf = content[0].buffer;
@@ -29,6 +30,7 @@ function parseParts(parts) {
 }
 
 
+// Object * Object -> Q(Object)
 function etl(msg, params) {
     var folder = params.agent + '/' + crypto.randomBytes(16).toString('hex');
     var desc = {
@@ -62,7 +64,7 @@ function etl(msg, params) {
 
     return Q.all(qDatasources).then(function (datasources) {
         desc.datasources = datasources;
-        logger.info('Dataset', desc);
+        logger.debug('Dataset', desc);
         return uploadJSON(desc, sprintf('%s/dataset.json', folder)).then(function (url) {
             return {name: url, nnodes: '?', nedges: '?'};
         });
@@ -70,6 +72,7 @@ function etl(msg, params) {
 }
 
 
+// Buffer * String -> Q(String)
 function uploadBuffer(buf, key) {
     var opts = {
         ContentType: 'application/octet-stream',
@@ -82,6 +85,7 @@ function uploadBuffer(buf, key) {
 }
 
 
+// Object * String -> Q(String)
 function uploadJSON(obj, key) {
     var opts = {
         ContentType: 'application/json',
@@ -94,6 +98,7 @@ function uploadJSON(obj, key) {
 }
 
 
+// Request * Response * Object -> Q(Object)
 function process(req, res, params) {
     if (!_.contains(supportedAgents, params.agent)) {
         throw new Error('Unsupported agent: ' + params.agent);
