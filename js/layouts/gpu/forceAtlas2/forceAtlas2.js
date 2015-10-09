@@ -82,7 +82,6 @@ function getNumWorkitemsByHardware(deviceProps) {
     });
 }
 
-
 function ForceAtlas2Barnes(clContext) {
     LayoutAlgo.call(this, ForceAtlas2Barnes.name);
 
@@ -244,18 +243,14 @@ ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
     this.computeSums.set({flags: flags});
     this.sort.set({flags: flags});
     this.calculatePointForces.set({flags: flags});
-
     this.barnesKernelSeq.setPhysics(flags);
     this.edgeKernelSeq.setPhysics(flags);
 }
 
 // Contains any temporary buffers needed for layout
-var tempLayoutBuffers  = {
-  globalSpeed: null
-};
-
-var pointForcesBuffers = {
-    x_cords: null, //cl.createBuffer(cl, 0, "x_cords"),
+var layoutBuffers  = {
+    globalSpeed: null,
+    x_cords: null,
     y_cords: null,
     velx: null,
     vely: null,
@@ -298,14 +293,15 @@ var computeSizes = function (simulator, warpsize, numPoints) {
     };
 };
 
-ForceAtlas2Barnes.prototype.setArgsPointForces = function(simulator, layoutBuffers, tempBuffers, warpsize, workItems) {
+ForceAtlas2Barnes.prototype.setArgsPointForces = function(simulator, warpsize, workItems) {
+    var tempBuffers = layoutBuffers;
     var that = this;
     that.toBarnesLayout.set({
-        xCoords: tempBuffers.x_cords.buffer,
-        yCoords:tempBuffers.y_cords.buffer,
-        mass:tempBuffers.mass.buffer,
-        blocked:tempBuffers.blocked.buffer,
-        maxDepth:tempBuffers.maxdepth.buffer,
+        xCoords: layoutBuffers.x_cords.buffer,
+        yCoords:layoutBuffers.y_cords.buffer,
+        mass:layoutBuffers.mass.buffer,
+        blocked:layoutBuffers.blocked.buffer,
+        maxDepth:layoutBuffers.maxdepth.buffer,
         numPoints:simulator.dataframe.getNumElements('point'),
         inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
         pointDegrees: simulator.dataframe.getBuffer('degrees', 'simulator').buffer,
@@ -350,7 +346,7 @@ ForceAtlas2Barnes.prototype.setArgsPointForces = function(simulator, layoutBuffe
         kernel.set(setArgs);
     };
 
-    var buffers = tempBuffers;
+    var buffers = layoutBuffers;
     that.boundBox.set({
         xCoords:buffers.x_cords.buffer,
         yCoords:buffers.y_cords.buffer,
@@ -386,22 +382,14 @@ ForceAtlas2Barnes.prototype.setArgsPointForces = function(simulator, layoutBuffe
         THREADS_BOUND: workItems.boundBox[1]
     });
 
-    setBarnesKernelArgs(that.buildTree, tempBuffers);
-    setBarnesKernelArgs(that.computeSums, tempBuffers);
-    setBarnesKernelArgs(that.sort, tempBuffers);
-    setBarnesKernelArgs(that.calculatePointForces, tempBuffers);
+    setBarnesKernelArgs(that.buildTree, layoutBuffers);
+    setBarnesKernelArgs(that.computeSums, layoutBuffers);
+    setBarnesKernelArgs(that.sort, layoutBuffers);
+    setBarnesKernelArgs(that.calculatePointForces, layoutBuffers);
 }
 
-ForceAtlas2Barnes.prototype.setEdgesPointForces = function(simulator, layoutBuffers, warpsize, workItems) {
-        var that = this;
-        return this.setupPointForcesBuffers(simulator, warpsize).then(function (tempBuffers) {
-            that.setArgsPointForces(simulator, layoutBuffers, tempBuffers, warpsize, workItems);
-        }).fail(log.makeQErrorHandler(logger, 'setupTempBuffers'));
-    };
-
-
-ForceAtlas2Barnes.prototype.setupPointForcesBuffers = function(simulator, warpsize, numPoints) {
-    simulator.resetBuffers(pointForcesBuffers);
+ForceAtlas2Barnes.prototype.initializeBuffers = function(simulator, warpsize, numPoints) {
+    simulator.resetBuffers(layoutBuffers);
     var sizes = computeSizes(simulator, warpsize, numPoints);
     var numNodes = sizes.numNodes;
     var num_nodes = sizes.numNodes;
@@ -432,47 +420,34 @@ ForceAtlas2Barnes.prototype.setupPointForcesBuffers = function(simulator, warpsi
         simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'maxdepth'),
         simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'radius'),
         simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed')
-    ]) .spread(function (x_cords, y_cords, accx, accy, children, mass, start, sort,
+     ]).spread(function (x_cords, y_cords, accx, accy, children, mass, start, sort,
                          xmin, xmax, ymin, ymax, globalSwings, globalTractions, count,
-                         blocked, step, bottom, maxdepth, radius) {
-                             pointForcesBuffers.x_cords = x_cords;
-                              pointForcesBuffers.y_cords = y_cords;
-                              pointForcesBuffers.accx = accx;
-                              pointForcesBuffers.accy = accy;
-                              pointForcesBuffers.children = children;
-                              pointForcesBuffers.mass = mass;
-                              pointForcesBuffers.start = start;
-                              pointForcesBuffers.sort = sort;
-                              pointForcesBuffers.xmin = xmin;
-                              pointForcesBuffers.xmax = xmax;
-                              pointForcesBuffers.ymin = ymin;
-                              pointForcesBuffers.ymax = ymax;
-                              pointForcesBuffers.globalSwings = globalSwings;
-                              pointForcesBuffers.globalTractions = globalTractions;
-                              pointForcesBuffers.count = count;
-                              pointForcesBuffers.blocked = blocked;
-                              pointForcesBuffers.step = step;
-                              pointForcesBuffers.bottom = bottom;
-                              pointForcesBuffers.maxdepth = maxdepth;
-                              pointForcesBuffers.radius = radius;
-                              pointForcesBuffers.numNodes = numNodes;
-                              pointForcesBuffers.numBodies = numBodies;
-                              return pointForcesBuffers;
-                          })
-                          .fail(log.makeQErrorHandler(logger, "Setting temporary buffers for barnesHutKernelSequence failed"));
-};
-
-// Create temporary buffers needed for layout
-var setupTempLayoutBuffers = function(simulator) {
-    return Q.all(
-        [
-            simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed')
-        ])
-        .spread(function (globalSpeed) {
-            tempLayoutBuffers.globalSpeed = globalSpeed;
-            return tempLayoutBuffers;
-        })
-        .catch(log.makeQErrorHandler(logger, 'setupTempBuffers'));
+                         blocked, step, bottom, maxdepth, radius, globalSpeed) {
+         layoutBuffers.x_cords = x_cords;
+         layoutBuffers.y_cords = y_cords;
+         layoutBuffers.accx = accx;
+         layoutBuffers.accy = accy;
+         layoutBuffers.children = children;
+         layoutBuffers.mass = mass;
+         layoutBuffers.start = start;
+         layoutBuffers.sort = sort;
+         layoutBuffers.xmin = xmin;
+         layoutBuffers.xmax = xmax;
+         layoutBuffers.ymin = ymin;
+         layoutBuffers.ymax = ymax;
+         layoutBuffers.globalSwings = globalSwings;
+         layoutBuffers.globalTractions = globalTractions;
+         layoutBuffers.count = count;
+         layoutBuffers.blocked = blocked;
+         layoutBuffers.step = step;
+         layoutBuffers.bottom = bottom;
+         layoutBuffers.maxdepth = maxdepth;
+         layoutBuffers.radius = radius;
+         layoutBuffers.numNodes = numNodes;
+         layoutBuffers.numBodies = numBodies;
+         layoutBuffers.globalSpeed = globalSpeed;
+         return layoutBuffers;
+     }).fail(log.makeQErrorHandler(logger, "Setting temporary buffers for barnesHutKernelSequence failed"));
 };
 
 var getWarpsize = function (vendor) {
@@ -504,7 +479,6 @@ ForceAtlas2Barnes.prototype.calculateSwings = function(simulator, workItems) {
     ];
 
     simulator.tickBuffers(['swings', 'tractions']);
-
     logger.trace("Running kernel faSwingsTractions");
     return this.faSwings.exec([simulator.dataframe.getNumElements('point')], resources)
     .fail(log.makeQErrorHandler(logger, 'Executing FaSwing failed'));
@@ -515,7 +489,7 @@ ForceAtlas2Barnes.prototype.integrate = function(simulator) {
     var numPoints = simulator.dataframe.getNumElements('point');
 
     this.faIntegrate.set({
-        globalSpeed: tempLayoutBuffers.globalSpeed.buffer,
+        globalSpeed: layoutBuffers.globalSpeed.buffer,
         inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
         curForces: simulator.dataframe.getBuffer('curForces', 'simulator').buffer,
         swings: simulator.dataframe.getBuffer('swings', 'simulator').buffer,
@@ -535,7 +509,6 @@ ForceAtlas2Barnes.prototype.integrate = function(simulator) {
     return this.faIntegrate.exec([numPoints], resources)
     .fail(log.makeQErrorHandler(logger, 'Executing Integrate failed'));
 }
-
 
 ForceAtlas2Barnes.prototype.updateDataframeBuffers = function(simulator) {
     var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
@@ -579,7 +552,6 @@ ForceAtlas2Barnes.prototype.updateDataframeBuffers = function(simulator) {
      //this.edgeKernelSeq.updateDataframeBuffers(simulator);
 };
 
-
 ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
     var numMidPoints = simulator.dataframe.getNumElements('midPoints');
     var localPosSize =
@@ -595,10 +567,10 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
 
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
     var that = this;
-    return setupTempLayoutBuffers(simulator).then(function (tempBuffers) {
-        that.edgeKernelSeq.setEdges(simulator, tempBuffers);
-        that.barnesKernelSeq.setEdges(simulator, tempBuffers, warpsize, workItems);
-        that.setEdgesPointForces(simulator, tempBuffers, warpsize, workItems);
+    console.log("HERE layout", layoutBuffers);
+    return this.initializeBuffers(simulator).then(function (layoutBuffers) {
+        that.edgeKernelSeq.setEdges(simulator, layoutBuffers);
+        //that.barnesKernelSeq.setEdges(simulator, layoutBuff, warpsize, workItems);
 
     });
 }
@@ -610,6 +582,10 @@ ForceAtlas2Barnes.prototype.pointForces = function(simulator, stepNumber, workIt
         simulator.dataframe.getBuffer('backwardsDegrees', 'simulator'),
         simulator.dataframe.getBuffer('partialForces1', 'simulator')
     ];
+    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
+    var warpsize = getWarpsize(vendor);
+    console.log("POintForces", layoutBuffers);
+    this.setArgsPointForces(simulator, warpsize, workItems);
 
     this.toBarnesLayout.set({stepNumber: stepNumber});
     this.boundBox.set({stepNumber: stepNumber});
@@ -663,6 +639,7 @@ function edgeForces(simulator, edgeKernelSeq, stepNumber, workItems) {
 }
 
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
+    console.log("TICK layout", layoutBuffers);
     var locks = simulator.controls.locks;
     if (locks.lockPoints) {
         var buffers = simulator.buffers;
@@ -680,7 +657,7 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     }).then(function () {
         return that.calculateSwings(simulator, workItems);
     }).then(function () {
-        return that.integrate(simulator, tempLayoutBuffers, workItems);
+        return that.integrate(simulator, layoutBuffers, workItems);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);
