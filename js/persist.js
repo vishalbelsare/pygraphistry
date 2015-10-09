@@ -131,7 +131,7 @@ ContentSchema.prototype.uploadToS3 = function (subPath, buffer, uploadParams) {
 
 
 ContentSchema.prototype.download = function (subPath) {
-    return s3.download(this.options.S3, this.options.BUCKET, this.pathFor(subPath));
+    return s3.download(this.options.S3, this.options.BUCKET, this.pathFor(subPath), {expectCompressed: true});
 };
 
 
@@ -217,18 +217,18 @@ module.exports =
             _.each(vboAttributes, function(attributeName) {
                 if (compressedVBOs.hasOwnProperty(attributeName) && !_.isUndefined(compressedVBOs[attributeName])) {
                     snapshotSchema.uploadPublic(attributeName + '.vbo', compressedVBOs[attributeName],
-                        {should_compress: false, ContentEncoding: 'gzip'});
+                        {shouldCompress: false, ContentEncoding: 'gzip'});
                 }
             });
             // These are ArrayBuffers, so ask for compression:
             snapshotSchema.uploadPublic('pointLabels.offsets', pointExport.indexes,
-                {should_compress: false});
+                {shouldCompress: false});
             snapshotSchema.uploadPublic('pointLabels.buffer', pointExport.contents,
-                {should_compress: false});
+                {shouldCompress: false});
             snapshotSchema.uploadPublic('edgeLabels.offsets', edgeExport.indexes,
-                {should_compress: false});
+                {shouldCompress: false});
             return snapshotSchema.uploadPublic('edgeLabels.buffer', edgeExport.contents,
-                {should_compress: false});
+                {shouldCompress: false});
         },
 
         /**
@@ -242,6 +242,6 @@ module.exports =
             logger.trace('publishing a PNG preview for content already in S3');
             var snapshotSchema = (new ContentSchema()).subSchemaForStaticContentKey(snapshotName);
             imageName = imageName || 'preview.png';
-            return snapshotSchema.uploadPublic(imageName, binaryData, {should_compress: true, ContentEncoding: 'gzip'});
+            return snapshotSchema.uploadPublic(imageName, binaryData, {shouldCompress: true, ContentEncoding: 'gzip'});
         }
     };
