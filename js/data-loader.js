@@ -35,7 +35,7 @@ var downloader = {
 
 var tmpCache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);
 
-function datasetMetadataFromURLQuery(query) {
+function datasetConfigFromQuery(query) {
     function hasParam(param) { return param !== undefined && param !== 'undefined'; }
     var config = {};
 
@@ -48,11 +48,11 @@ function datasetMetadataFromURLQuery(query) {
     return config;
 }
 
-function downloadDataset(query) {
-    var url = urllib.parse(decodeURIComponent(query.dataset));
+function datasetURLFromQuery(query) {
+    return urllib.parse(decodeURIComponent(query.dataset));
+}
 
-    var config = datasetMetadataFromURLQuery(query);
-
+function downloadDataset(url, config) {
     logger.info('scene:%s  controls:%s  mapper:%s  device:%s',
                   config.scene, config.controls, config.mapper, config.device);
 
@@ -310,7 +310,9 @@ module.exports = {
     createPoints: createPoints,
     createEdges: createEdges,
     loadDatasetIntoSim: loadDatasetIntoSim,
-    downloadDataset: downloadDataset,
+    datasetURLFromQuery: datasetURLFromQuery,
+    datasetConfigFromQuery: datasetConfigFromQuery,
+    downloadDataset: downloadDataset
 };
 
 // vim: set et ff=unix ts=8 sw=4 fdm=syntax:
