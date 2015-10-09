@@ -35,32 +35,6 @@ var downloader = {
 
 var tmpCache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);
 
-function datasetConfigFromQuery(query) {
-    function hasParam(param) { return param !== undefined && param !== 'undefined'; }
-    var config = {};
-
-    config.scene    = hasParam(query.scene)    ? query.scene    : 'default';
-    config.controls = hasParam(query.controls) ? query.controls : 'default';
-    config.mapper   = hasParam(query.mapper)   ? query.mapper   : 'default';
-    config.device   = hasParam(query.device)   ? query.device   : 'default';
-    config.vendor   = hasParam(query.vendor)   ? query.vendor   : 'default';
-    config.type     = hasParam(query.type)     ? query.type     : 'default';
-    return config;
-}
-
-function datasetURLFromQuery(query) {
-    return urllib.parse(decodeURIComponent(query.dataset));
-}
-
-function downloadDataset(url, config) {
-    logger.info('scene:%s  controls:%s  mapper:%s  device:%s',
-                  config.scene, config.controls, config.mapper, config.device);
-
-    return downloader[url.protocol](url).then(function (data) {
-        return {body: data, metadata: config};
-    }).fail(log.makeQErrorHandler(logger, 'Failure while retrieving dataset'));
-}
-
 function httpDownloader(http, url) {
     logger.trace('Attempting to download dataset using HTTP');
     var result = Q.defer();
@@ -68,14 +42,14 @@ function httpDownloader(http, url) {
     // Q.denodeify fails http.get because it does not follow
     // the usual nodejs conventions
     http.request(_.extend(url, {method: 'HEAD'}), function (res) {
-        var mtime = new Date(res.headers['last-modified']);
+        var lastModifiedTime = new Date(res.headers['last-modified']);
         // Try to read from cache otherwise download the dataset
-        tmpCache.get(url, mtime).then(function (data) {
+        tmpCache.get(url, lastModifiedTime).then(function (data) {
             result.resolve(data);
         }).fail(function () {
             http.get(url.href, function (res) {
                 res.setEncoding('binary');
-                var mtime = new Date(res.headers['last-modified']);
+                //var lastModifiedTime = new Date(res.headers['last-modified']);
 
                 var data = '';
                 res.on('data', function (chunk) {
@@ -289,7 +263,7 @@ function loadMatrix(graph, dataset) {
 
     var v = MatrixLoader.loadBinary(dataset.body);
     var graphFile = v;
-    if (typeof($) != 'undefined') {
+    if (typeof($) !== 'undefined') {
         $('#filenodes').text('Nodes: ' + v.numNodes);
         $('#fileedges').text('Edges: ' + v.numEdges);
     }
@@ -310,9 +284,30 @@ module.exports = {
     createPoints: createPoints,
     createEdges: createEdges,
     loadDatasetIntoSim: loadDatasetIntoSim,
-    datasetURLFromQuery: datasetURLFromQuery,
-    datasetConfigFromQuery: datasetConfigFromQuery,
-    downloadDataset: downloadDataset
+    datasetURLFromQuery: function datasetURLFromQuery(query) {
+        return query.dataset ? urllib.parse(decodeURIComponent(query.dataset)) : undefined;
+    },
+    datasetConfigFromQuery: function datasetConfigFromQuery(query) {
+        function hasParam(param) { return param !== undefined && param !== 'undefined'; }
+        var config = {};
+
+        config.scene    = hasParam(query.scene)    ? query.scene    : 'default';
+        config.controls = hasParam(query.controls) ? query.controls : 'default';
+        config.mapper   = hasParam(query.mapper)   ? query.mapper   : 'default';
+        config.device   = hasParam(query.device)   ? query.device   : 'default';
+        config.vendor   = hasParam(query.vendor)   ? query.vendor   : 'default';
+        config.type     = hasParam(query.type)     ? query.type     : 'default';
+        return config;
+    },
+    downloadDataset: function downloadDataset(config) {
+        logger.info('scene:%s  controls:%s  mapper:%s  device:%s',
+            config.scene, config.controls, config.mapper, config.device);
+        var url = urllib.parse(config.url);
+
+        return downloader[url.protocol](url).then(function (data) {
+            return {body: data, metadata: config};
+        }).fail(log.makeQErrorHandler(logger, 'Failure while retrieving dataset'));
+    }
 };
 
 // vim: set et ff=unix ts=8 sw=4 fdm=syntax:
