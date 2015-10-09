@@ -7,7 +7,7 @@ var persist     = require('./persist.js');
 
 var WorkbookDocName = 'workbook.json';
 
-exports = {
+module.exports = {
     loadDocument: function (workbookSpecifier) {
         var workbookRoot = new persist.ContentSchema().subSchemaForWorkbook(workbookSpecifier);
         return Rx.Observable.fromPromise(workbookRoot.download(WorkbookDocName)).map(function (data) {
