@@ -100,14 +100,23 @@ function uploadJSON(obj, key) {
 
 // Request * Response * Object -> Q(Object)
 function process(req, res, params) {
+    logger.info('ETL2: Got request, params:', params);
+
     if (!_.contains(supportedAgents, params.agent)) {
         throw new Error('Unsupported agent: ' + params.agent);
     }
 
-
     var msg = parseParts(req.files);
-    logger.info('ETL2: got metadata', msg.metadata);
-    return etl(msg, params);
+
+    logger.debug('Message parts', _.keys(msg));
+    logger.debug('Message metadata', msg.metadata);
+    return etl(msg, params).then(function(info) {
+        res.send({
+            success: false, msg: 'API 2 is not yet live', dataset: info.name,
+            viztoken: apiKey.makeVizToken(params.key, info.name)
+        });
+        return info;
+    });
 }
 
 

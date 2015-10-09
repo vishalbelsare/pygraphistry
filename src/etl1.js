@@ -7,6 +7,7 @@ var Q        = require('q');
 
 var config   = require('config')();
 var vgraph   = require('./vgraph.js');
+var apiKey   = require('common/api.js');
 var Cache    = require('common/cache.js');
 var s3       = require('common/s3.js');
 var Log      = require('common/logger.js');
@@ -83,28 +84,18 @@ function s3Upload(binaryBuffer, metadata) {
 }
 
 
-function makeVizToken(key, datasetName) {
-    var sha1 = crypto.createHash('sha1');
-    sha1.update(key);
-    sha1.update(datasetName);
-    return sha1.digest('hex');
-}
-
-
 // (Int -> ()) * Request * Response * Object -> Promise()
 function process(req, res, params) {
-    logger.info('ETL request submitted', params);
-    var data = req.body
-    logger.debug('Request bytes:%d (deflated)', data.length);
+    logger.info('ETL1 request submitted', params);
 
-    return Q(data).then(function (msg) {
+    return Q(req.body).then(function (msg) {
         return etl(msg)
             .then(function (info) {
-                logger.info('ETL successful, dataset name is', info.name);
+                logger.info('ETL1 successful, dataset name is', info.name);
 
                 res.send({
                     success: true, dataset: info.name,
-                    viztoken: makeVizToken(params.key, info.name)
+                    viztoken: apiKey.makeVizToken(params.key, info.name)
                 });
 
                 return info;
