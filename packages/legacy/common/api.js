@@ -39,6 +39,16 @@ function decrypt (ciphertext) {
     return cleartext.slice(0, canaryOffset);
 }
 
+
+// Key (ciphertext) * String -> String
+function makeVizToken(key, datasetName) {
+    var sha1 = crypto.createHash('sha1');
+    sha1.update(decrypt(key));
+    sha1.update(datasetName);
+    return sha1.digest('hex');
+}
+
+
 function checkSSL(req) {
     //TODO make an error once prod ssl server enabled
     if (!req.secure && (config.ENVIRONMENT !== 'local')) {
@@ -106,5 +116,6 @@ function init (app) {
 module.exports = {
     init: init,
     encrypt: encrypt,
-    decrypt: decrypt
+    decrypt: decrypt,
+    makeVizToken: makeVizToken
 };
