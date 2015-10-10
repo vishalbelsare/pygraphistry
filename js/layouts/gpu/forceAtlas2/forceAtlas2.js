@@ -9,151 +9,117 @@ var _     = require('underscore'),
     BarnesKernelSeq = require('./pointForces.js'),
     EdgeKernelSeqFast = require('./edgeForces'),
     integrateKernel = require('./integrateKernel.js'),
-    ArgsType = require('../../ArgsType.js'),
+    argsType = require('../../ArgsType.js'),
 
     log        = require('common/logger.js'),
     logger     = log.createLogger('graph-viz:cl:forceatlas2barnes');
 
 
+// Many BarnesHut kernels have same arguements
+var barnesHutCommonArgs = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
+    'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
+    'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
+    'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
+    'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau', 'WARPSIZE',
+    'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+];
 
-function ForceAtlas2Barnes(clContext) {
-    LayoutAlgo.call(this, ForceAtlas2Barnes.name);
-
-    logger.trace('Creating ForceAtlasBarnes kernels');
-    this.argsToBarnesLayout = [
-        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints',
+// Kernel Specifications used in this layout.
+// key & name: the javascript variable names of of the kernel wrappers
+// kernelName: the name kernel in the .cl file.
+// args: a list of the buffer names used by this kernel. They must be ordered according
+// to their respective parameters in the .cl file.
+// fileName: location of the .cl file.
+var kernelSpecs = {
+    // BarnesHut kernels used to calculate point forces
+    toBarnesLayout: {
+        name: 'toBarnesLayout',
+        kernelName: 'to_barnes_layout',
+        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints',
         'inputPositions', 'xCoords', 'yCoords', 'mass', 'blocked', 'maxDepth',
         'pointDegrees', 'stepNumber', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
-    ];
-
-    // All Barnes kernels have same arguements
-    this.argsBarnes = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
-        'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
-        'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
-        'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
-        'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau', 'WARPSIZE',
-        'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
-    ];
-
-    this.argsBoundBox = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
+        ],
+        fileName: 'layouts/gpu/forceAtlas2/barnesHut/toBarnesLayout.cl'
+    },
+    boundBox: {
+        name: 'boundBox',
+        kernelName: 'bound_box',
+        args: ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
         'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
         'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'globalSwings', 'globalTractions', 'swings', 'tractions',
         'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
         'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau', 'WARPSIZE',
         'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
-    ];
-
-    this.argsType = {
-        scalingRatio: cljs.types.float_t,
-        gravity: cljs.types.float_t,
-        edgeInfluence: cljs.types.uint_t,
-        flags: cljs.types.uint_t,
-        numPoints: cljs.types.uint_t,
-        tilesPerIteration: cljs.types.uint_t,
-        tilePointsParam: cljs.types.local_t,
-        tilePointsParam2: cljs.types.local_t,
-        inputPositions: null,
-        pointForces: null,
-        partialForces: null,
-        outputForces: null,
-        outputPositions: null,
-        width: cljs.types.float_t,
-        height: cljs.types.float_t,
-        stepNumber: cljs.types.uint_t,
-        pointDegrees: null,
-        edges: null,
-        workList: null,
-        inputPoints: null,
-        outputPoints: null,
-        curForces: null,
-        prevForces: null,
-        swings: null,
-        tractions: null,
-        gSpeeds: null,
-        tau: cljs.types.float_t,
-        charge: cljs.types.float_t,
-        gSpeed: cljs.types.float_t,
-        springs: null,
-        xCoords: null,
-        yCoords: null,
-        accX: null,
-        accY: null,
-        children: null,
-        mass: null,
-        start: null,
-        sort: null,
-        globalXMin: null,
-        globalXMax: null,
-        globalYMin: null,
-        globalYMax: null,
-        globalSwings: null,
-        globalTractions: null,
-        count: null,
-        blocked: null,
-        step: null,
-        bottom: null,
-        maxDepth: null,
-        radius: null,
-        numBodies: cljs.types.uint_t,
-        numNodes: cljs.types.uint_t,
-        numWorkItems: cljs.types.uint_t,
-        globalSpeed: null,
-        nextMidPoints: null,
-        WARPSIZE: cljs.types.define,
-        THREADS_BOUND: cljs.types.define,
-        THREADS_FORCES: cljs.types.define,
-        THREADS_SUMS: cljs.types.define
-    }
-
-    this.toBarnesLayout = new Kernel('to_barnes_layout', this.argsToBarnesLayout,
-            this.argsType, 'layouts/gpu/ForceAtlas2/barnesHut/toBarnesLayout.cl', clContext);
-
-    this.boundBox = new Kernel('bound_box', this.argsBoundBox,
-            this.argsType, 'layouts/gpu/ForceAtlas2/barnesHut/boundBox.cl', clContext);
-
-    this.buildTree = new Kernel('build_tree', this.argsBarnes,
-            this.argsType, 'layouts/gpu/ForceAtlas2/barnesHut/buildTree.cl', clContext);
-
-    this.computeSums = new Kernel('compute_sums', this.argsBarnes,
-            this.argsType, 'layouts/gpu/ForceAtlas2/barnesHut/computeSums.cl', clContext);
-
-    this.sort = new Kernel('sort', this.argsBarnes,
-            this.argsType, 'layouts/gpu/ForceAtlas2/barnesHut/sort.cl', clContext);
-
-    this.calculatePointForces = new Kernel('calculate_forces', this.argsBarnes,
-            this.argsType, 'layouts/gpu/ForceAtlas2/barnesHut/calculatePointForces.cl', clContext);
-
-    this.argsMapEdges = [
-        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'isForward', 'edges', 'numEdges',
-        'pointDegrees', 'inputPoints', 'edgeWeights', 'outputForcesMap'
-    ];
-
-    this.argsSegReduce = [
-        'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numInput', 'input',
+        ],
+        fileName: 'layouts/gpu/forceAtlas2/barnesHut/boundBox.cl'
+    },
+    buildTree: {
+        name: 'buildTree',
+        kernelName: 'build_tree', 
+        args: barnesHutCommonArgs,
+        fileName: 'layouts/gpu/forceAtlas2/barnesHut/buildTree.cl'
+    },
+    computeSums: {
+        name: 'computeSums',
+        kernelName: 'compute_sums',
+        args: barnesHutCommonArgs,
+        fileName: 'layouts/gpu/forceAtlas2/barnesHut/computeSums.cl'
+    },
+    sort: {
+        name: 'sort',
+        kernelName: 'sort',
+        args: barnesHutCommonArgs,
+        fileName: 'layouts/gpu/forceAtlas2/barnesHut/sort.cl'
+    },
+    calculatePointForces: {
+        name: 'calculatePointForces',
+        kernelName: 'calculate_forces',
+        args: barnesHutCommonArgs,
+        fileName: 'layouts/gpu/forceAtlas2/barnesHut/calculatePointForces.cl'
+    },
+    // Edge force mapper and segmented reduce kernels used to calculate edge forces
+    mapEdges : {
+        name: 'mapEdges',
+        kernelName: 'faEdgeMap',
+        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'isForward', 'edges', 'numEdges',
+        'pointDegrees', 'inputPoints', 'edgeWeights', 'outputForcesMap' 
+        ],
+        fileName: 'layouts/gpu/forceAtlas2/faEdgeMap.cl'
+    },
+    segReduce: {
+        name: 'segReduce',
+        kernelName: 'segReduce',
+        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numInput', 'input',
         'edgeStartEndIdxs', 'segStart', 'workList', 'numOutput', 'carryOutGlobal', 'output', 'partialForces'
-    ];
+        ],
+        fileName: 'segReduce.cl'
+    },
+    // ForceAtlas2 specific kernels
+    faSwings: {
+        name: 'faSwings',
+        kernelName: 'faSwingsTractions',
+        args: ['prevForces', 'curForces', 'swings', 'tractions'],
+        fileName: 'layouts/gpu/forceAtlas2/faSwingsTractions.cl'
+    },
+    faIntegrate: {
+        name: 'faIntegrate',
+        kernelName: 'faIntegrate',
+        args: ['globalSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'],
+        fileName: 'layouts/gpu/forceAtlas2/faIntegrate.cl'
+    }
+}
 
-    this.mapEdges = new Kernel('faEdgeMap', this.argsMapEdges, ArgsType, 'layouts/gpu/forceAtlas2/faEdgeMap.cl', clContext);
-
-    this.segReduce = new Kernel("segReduce", this.argsSegReduce,
-                                ArgsType, 'segReduce.cl', clContext);
-
-    var faSwingsArgs = { prevForces : null, curForces : null, swings : null, tractions : null }
-    this.faSwings = new Kernel('faSwingsTractions', Object.keys(faSwingsArgs), faSwingsArgs,
-                               'layouts/gpu/forceAtlas2/faSwingsTractions.cl', clContext);
-
-    var integrateArgs = { globalSpeed : null, inputPositions: null, curForces: null, swings: null,
-        outputPositions: null }
-
-    this.faIntegrate = new Kernel('faIntegrate', Object.keys(integrateArgs), integrateArgs,
-                                  'layouts/gpu/forceAtlas2/faIntegrate.cl', clContext);
-
-    this.integrateKernel = new integrateKernel(clContext);
-
-    this.kernels = this.kernels.concat([this.toBarnesLayout, this.boundBox, this.buildTree, this.computeSums,
-                                        this.sort, this.calculatePointForces,
-                                        this.faSwings,
-                                        this.faIntegrate, this.mapEdges, this.segReduce]);
+function ForceAtlas2Barnes(clContext) {
+    LayoutAlgo.call(this, ForceAtlas2Barnes.name);
+    logger.trace('Creating ForceAtlasBarnes kernels');
+    var that = this;
+    _.each( kernelSpecs, function (kernel) {
+        console.log("Creating kernel", kernel.name);
+        var newKernel =
+            new Kernel(kernel.kernelName, kernel.args, argsType, kernel.fileName, clContext)
+        that[kernel.name] = newKernel;
+        that.kernels.push(newKernel);
+    });
 }
 
 ForceAtlas2Barnes.prototype = Object.create(LayoutAlgo.prototype);
@@ -164,6 +130,7 @@ ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
     LayoutAlgo.prototype.setPhysics.call(this, cfg)
 
     // get the flags from previous iteration
+    console.log(this);
     var flags = this.toBarnesLayout.get('flags');
     var flagNames = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'];
     _.each(cfg, function (val, flag) {

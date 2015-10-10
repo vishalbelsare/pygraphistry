@@ -43,6 +43,8 @@ module.exports = {
         globalXMax: null,
         globalYMin: null,
         globalYMax: null,
+        globalSwings: null,
+        globalTractions: null,
         count: null,
         blocked: null,
         step: null,
@@ -63,6 +65,10 @@ module.exports = {
         carryOutGlobal: null,
         edgeStartEndIdxs: null,
         edgeWeights: null,
-        isForward: cljs.types.uint_t
+        isForward: cljs.types.uint_t,
+        WARPSIZE: cljs.types.define,
+        THREADS_BOUND: cljs.types.define,
+        THREADS_FORCES: cljs.types.define,
+        THREADS_SUMS: cljs.types.define
     }
 
