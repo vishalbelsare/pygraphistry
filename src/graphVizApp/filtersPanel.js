@@ -371,6 +371,12 @@ function FiltersPanel(socket/*, urlParams*/) {
 
     this.control = new FilterControl(socket);
 
+    var that = this;
+    this.control.filtersResponsesSubject.take(1).do(function (filters) {
+        _.each(filters, function (filter) {
+            that.collection.add(new FilterModel(filter));
+        });
+    }).subscribe(_.identity, util.makeErrorHandler('Reading filters from workbook'));
     this.collection = new FilterCollection([], {
         control: this.control
     });
@@ -381,32 +387,15 @@ function FiltersPanel(socket/*, urlParams*/) {
     this.filtersSubject = new Rx.ReplaySubject(1);
     // Seed with a fresh filters list. Should come from persisted state.
     this.collection.on('change reset add remove', function (/*model, options*/) {
-        this.filtersSubject.onNext(this.collection);
-    }.bind(this));
-
-    this.collection.addFilter({
-        title: 'Point Limit',
-        attribute: undefined,
-        query: {
-            type: 'point',
-            ast: {
-                type: 'Limit',
-                value: {
-                    type: 'Literal',
-                    dataType: 'integer',
-                    value: 8e5
-                }
-            },
-            inputString: 'LIMIT 800000'
-        }
+        that.filtersSubject.onNext(that.collection);
     });
 
     this.filtersSubject.subscribe(
         function (collection) {
-            this.control.updateFilters(collection.map(function (model) {
+            that.control.updateFilters(collection.map(function (model) {
                 return _.omit(model.toJSON(), '$el');
             }));
-        }.bind(this),
+        },
         util.makeErrorHandler('updateFilters on filters change event')
     );
 
