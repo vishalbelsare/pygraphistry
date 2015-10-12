@@ -115,32 +115,32 @@ ForceAtlas2Barnes.prototype = Object.create(LayoutAlgo.prototype);
 ForceAtlas2Barnes.prototype.constructor = ForceAtlas2Barnes;
 ForceAtlas2Barnes.name = 'ForceAtlas2Barnes';
 
+var layoutFlags = null;
+
 ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
     LayoutAlgo.prototype.setPhysics.call(this, cfg)
 
-    // get the flags from previous iteration
-    var flags = this.toBarnesLayout.get('flags');
     var flagNames = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'];
     _.each(cfg, function (val, flag) {
         var idx = flagNames.indexOf(flag);
         if (idx >= 0) {
             var mask = 0 | (1 << idx)
             if (val) {
-                flags |= mask;
+                layoutFlags |= mask;
             } else {
-                flags &= ~mask;
+                layoutFlags &= ~mask;
             }
         }
     });
 
-    this.toBarnesLayout.set({flags: flags});
-    this.boundBox.set({flags: flags});
-    this.buildTree.set({flags: flags});
-    this.computeSums.set({flags: flags});
-    this.sort.set({flags: flags});
-    this.calculatePointForces.set({flags: flags});
-    this.mapEdges.set({flags:flags});
-    this.segReduce.set({flags:flags});
+    this.toBarnesLayout.set({flags: layoutFlags});
+    this.boundBox.set({flags: layoutFlags});
+    this.buildTree.set({flags: layoutFlags});
+    this.computeSums.set({flags: layoutFlags});
+    this.sort.set({flags: layoutFlags});
+    this.calculatePointForces.set({flags: layoutFlags});
+    this.mapEdges.set({flags: layoutFlags});
+    this.segReduce.set({flags: layoutFlags});
 }
 
 // Contains any temporary buffers needed for layout
