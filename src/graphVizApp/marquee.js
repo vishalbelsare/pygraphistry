@@ -48,15 +48,16 @@ function maintainContainerStyle($cont, isOn) {
 
 
 function effectCanvas(effect) {
+    var $simulation = $('#simulation');
     if (effect === 'blur') {
-        $('#simulation').css({
+        $simulation.css({
             'filter': 'grayscale(50%) blur(2px)',
-            '-webkit-filter': 'grayscale(50%) blur(2px)',
+            '-webkit-filter': 'grayscale(50%) blur(2px)'
         });
     } else if (effect === 'clear') {
-        $('#simulation').css({
+        $simulation.css({
             'filter': '',
-            '-webkit-filter': '',
+            '-webkit-filter': ''
         });
     } else {
         console.error('effectCanvas: unknown effect', effect);
