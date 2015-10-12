@@ -487,12 +487,14 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     // TODO: More general version for all toggle-able buttons?
     var marqueeIsOn = false;
     var $viewSelectionButton = $('#viewSelectionButton');
+    var $histogramBrush = $('#histogramBrush');
     var turnOnMarquee =
         Rx.Observable.merge(
             onElt.filter(function (elt) {
                 return elt === $viewSelectionButton[0]; })
                 .map(function () { return !marqueeIsOn; }),
-            onElt.filter(function (elt) { return elt === $('#histogramBrush')[0]; })
+            onElt.filter(function (elt) {
+                return elt === $histogramBrush[0]; })
                 .map(_.constant(false)),
             Rx.Observable.fromEvent($graph, 'click')
                 .map(_.constant(false)))
@@ -503,30 +505,33 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         });
 
     var histogramPanelIsOpen = false;
+    var $histogramPanelControl = $('#histogramPanelControl');
     var histogramPanelToggle = Rx.Observable.merge(
-            onElt.filter(function (elt) { return elt === $('#histogramPanelControl')[0]; })
+            onElt.filter(function (elt) {
+                return elt === $histogramPanelControl[0]; })
                 .map(function () { return !histogramPanelIsOpen; }),
                 // TODO: Clean this up because that button no longer exists.
-            onElt.filter(function (elt) { return elt === $('#histogramBrush')[0]; })
+            onElt.filter(function (elt) { return elt === $histogramBrush[0]; })
                 .map(_.constant(true)));
 
     histogramPanelToggle
         .do(function (isTurnOn) {
             histogramPanelIsOpen = isTurnOn;
-            $('#histogramPanelControl').children('i').toggleClass('toggle-on', histogramPanelIsOpen);
+            $histogramPanelControl.children('i').toggleClass('toggle-on', histogramPanelIsOpen);
             $('#histogram.panel').css('visibility', isTurnOn ? 'visible' : 'hidden');
         }).subscribe(_.identity, util.makeErrorHandler('histogram visibility toggle'));
 
 
     var dataInspectorIsVisible = false;
     var dataInspectorOnSubject = new Rx.Subject();
+    var $dataInspectorButton = $('#dataInspectorButton');
     dataInspectorOnSubject.onNext(false);
     onElt.filter(function (elt) {
-        return elt === $('#dataInspectorButton')[0];
+        return elt === $dataInspectorButton[0];
     }).do(function () {
         dataInspectorIsVisible = !dataInspectorIsVisible;
         dataInspectorOnSubject.onNext(dataInspectorIsVisible);
-        $('#dataInspectorButton').children('i').toggleClass('toggle-on', dataInspectorIsVisible);
+        $dataInspectorButton.children('i').toggleClass('toggle-on', dataInspectorIsVisible);
         $('#inspector').css('visibility', dataInspectorIsVisible ? 'visible' : 'hidden');
     }).subscribe(_.identity, util.makeErrorHandler('dataInspector visibility toggle'));
 
