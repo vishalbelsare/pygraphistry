@@ -483,12 +483,14 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var onElt = makeMouseSwitchboard();
     externalLink($('#externalLinkButton'), urlParams);
 
+    var $graph = $('#simulate');
     // TODO: More general version for all toggle-able buttons?
     var marqueeIsOn = false;
-    var $graph = $('#simulate');
+    var $viewSelectionButton = $('#viewSelectionButton');
     var turnOnMarquee =
         Rx.Observable.merge(
-            onElt.filter(function (elt) { return elt === $('#viewSelectionButton')[0]; })
+            onElt.filter(function (elt) {
+                return elt === $viewSelectionButton[0]; })
                 .map(function () { return !marqueeIsOn; }),
             onElt.filter(function (elt) { return elt === $('#histogramBrush')[0]; })
                 .map(_.constant(false)),
@@ -496,7 +498,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
                 .map(_.constant(false)))
         .do(function (isTurnOn) {
             marqueeIsOn = isTurnOn;
-            $('#viewSelectionButton').find('i').toggleClass('toggle-on', marqueeIsOn);
+            $viewSelectionButton.find('i').toggleClass('toggle-on', marqueeIsOn);
             appState.marqueeOn.onNext(marqueeIsOn ? 'toggled' : false);
         });
 
@@ -544,7 +546,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
                 $(elt).children('i').toggleClass('toggle-on');
                 brushIsOn = !brushIsOn;
             } else if (brushIsOn &&
-                    (elt === $('#viewSelectionButton')[0] || elt === $graph[0])) {
+                    (elt === $viewSelectionButton[0] || elt === $graph[0])) {
                 brushIsOn = false;
                 $brushButton.children('i').toggleClass('toggle-on', false);
             }
