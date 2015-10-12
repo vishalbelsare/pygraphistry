@@ -105,6 +105,26 @@ function expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPo
 
 }
 
+
+//Find label position (unadjusted and in model space)
+//  Currently just picks a midedge vertex near the ~middle
+//  (In contrast, mouseover effects should use the ~voronoi position)
+//  To convert to canvas coords, use Camera (ex: see labels::renderCursor)
+//  TODO use camera if edge goes offscreen
+//RenderState * int -> {x: float,  y: float}
+function getEdgeLabelPos (renderState, edgeIndex) {
+    var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
+    var split = Math.floor(numRenderedSplits/2);
+    var midSpringsPos = renderState.get('hostBuffers').midSpringsPos.buffer;
+
+    var midEdgesPerEdge = numRenderedSplits + 1;
+    var midEdgeStride = 4 * midEdgesPerEdge;
+    var idx = midEdgeStride * edgeIndex + 4 * split;
+
+    return {x: midSpringsPos[idx], y: midSpringsPos[idx + 1]};
+}
+
+
 // RenderState
 // {logicalEdges: Uint32Array, curPoints: Float32Array, edgeHeights: Float32Array, ?midSpringsPos: Float32Array}
 //  * int * float
@@ -910,5 +930,6 @@ module.exports = {
     setupCameraInteractions: setupCameraInteractions,
     setupLabelsAndCursor: setupLabelsAndCursor,
     setupRenderUpdates: setupRenderUpdates,
-    RenderingScheduler: RenderingScheduler
+    RenderingScheduler: RenderingScheduler,
+    getEdgeLabelPos: getEdgeLabelPos
 };
