@@ -64,7 +64,8 @@ function effectCanvas(effect) {
     }
 }
 
-function eventPageCoordsInRect (evt, offset, $elt) {
+function eventPageCoordsInElement (evt, $elt) {
+    var offset = $elt.offset();
     return evt.pageX > offset.left &&
         evt.pageX < offset.left + $elt.width() &&
         evt.pageY > offset.top &&
@@ -93,8 +94,7 @@ function marqueeSelections (appState, $cont, $elt, isOn, marqueeState, doAfterSe
             .merge(
             Rx.Observable.fromEvent($('#highlighted-point-cont'), 'mousedown')
                 .filter(function (evt) {
-                    var offset = $elt.offset();
-                    return !eventPageCoordsInRect(evt, offset, $elt);
+                    return !eventPageCoordsInElement(evt, $elt);
                 }))
             .do(function (evt) {
                 debug('stopPropagation: marquee down');
@@ -191,9 +191,7 @@ function marqueeDrags(selections, $cont, $elt, marqueeState, takeLast, doAfterDr
             .merge(
                 Rx.Observable.fromEvent($('#highlighted-point-cont'), 'mousedown')
                 .filter(function (evt) {
-                    var offset = $elt.offset();
-                    return ((evt.pageX > offset.left) && (evt.pageX < offset.left + $elt.width()) &&
-                        (evt.pageY > offset.top) && (evt.pageY < offset.top + $elt.height()));
+                    return eventPageCoordsInElement(evt, $elt);
                 }))
             .do(function (evt) {
                 debug('stopPropagation: marquee down 2');
