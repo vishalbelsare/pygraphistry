@@ -131,7 +131,7 @@ function expandLogicalEdges(renderState, bufferSnapshots, numRenderedSplits, edg
     var midEdgeStride = 4 * midEdgesPerEdge;
 
     var setMidEdge = function (edgeIdx, midEdgeIdx, srcMidPointX, srcMidPointY, dstMidPointX, dstMidPointY) {
-        var midEdgeStartIdx = edgeIndex * midEdgeStride;
+        var midEdgeStartIdx = edgeIdx * midEdgeStride;
         var index = midEdgeStartIdx + (midEdgeIdx * 4);
         midSpringsPos[index] = srcMidPointX;
         midSpringsPos[index + 1] = srcMidPointY;
