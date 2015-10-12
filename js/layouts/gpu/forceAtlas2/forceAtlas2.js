@@ -33,7 +33,6 @@ var barnesHutCommonArgs = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 
 var kernelSpecs = {
     // BarnesHut kernels used to calculate point forces
     toBarnesLayout: {
-        name: 'toBarnesLayout',
         kernelName: 'to_barnes_layout',
         args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints',
         'inputPositions', 'xCoords', 'yCoords', 'mass', 'blocked', 'maxDepth',
@@ -42,7 +41,6 @@ var kernelSpecs = {
         fileName: 'layouts/gpu/forceAtlas2/barnesHut/toBarnesLayout.cl'
     },
     boundBox: {
-        name: 'boundBox',
         kernelName: 'bound_box',
         args: ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
         'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
@@ -54,32 +52,27 @@ var kernelSpecs = {
         fileName: 'layouts/gpu/forceAtlas2/barnesHut/boundBox.cl'
     },
     buildTree: {
-        name: 'buildTree',
         kernelName: 'build_tree', 
         args: barnesHutCommonArgs,
         fileName: 'layouts/gpu/forceAtlas2/barnesHut/buildTree.cl'
     },
     computeSums: {
-        name: 'computeSums',
         kernelName: 'compute_sums',
         args: barnesHutCommonArgs,
         fileName: 'layouts/gpu/forceAtlas2/barnesHut/computeSums.cl'
     },
     sort: {
-        name: 'sort',
         kernelName: 'sort',
         args: barnesHutCommonArgs,
         fileName: 'layouts/gpu/forceAtlas2/barnesHut/sort.cl'
     },
     calculatePointForces: {
-        name: 'calculatePointForces',
         kernelName: 'calculate_forces',
         args: barnesHutCommonArgs,
         fileName: 'layouts/gpu/forceAtlas2/barnesHut/calculatePointForces.cl'
     },
     // Edge force mapper and segmented reduce kernels used to calculate edge forces
     mapEdges : {
-        name: 'mapEdges',
         kernelName: 'faEdgeMap',
         args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'isForward', 'edges', 'numEdges',
         'pointDegrees', 'inputPoints', 'edgeWeights', 'outputForcesMap' 
@@ -87,7 +80,6 @@ var kernelSpecs = {
         fileName: 'layouts/gpu/forceAtlas2/faEdgeMap.cl'
     },
     segReduce: {
-        name: 'segReduce',
         kernelName: 'segReduce',
         args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numInput', 'input',
         'edgeStartEndIdxs', 'segStart', 'workList', 'numOutput', 'carryOutGlobal', 'output', 'partialForces'
@@ -96,13 +88,11 @@ var kernelSpecs = {
     },
     // ForceAtlas2 specific kernels
     faSwings: {
-        name: 'faSwings',
         kernelName: 'faSwingsTractions',
         args: ['prevForces', 'curForces', 'swings', 'tractions'],
         fileName: 'layouts/gpu/forceAtlas2/faSwingsTractions.cl'
     },
     faIntegrate: {
-        name: 'faIntegrate',
         kernelName: 'faIntegrate',
         args: ['globalSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'],
         fileName: 'layouts/gpu/forceAtlas2/faIntegrate.cl'
@@ -113,11 +103,10 @@ function ForceAtlas2Barnes(clContext) {
     LayoutAlgo.call(this, ForceAtlas2Barnes.name);
     logger.trace('Creating ForceAtlasBarnes kernels');
     var that = this;
-    _.each( kernelSpecs, function (kernel) {
-        console.log("Creating kernel", kernel.name);
+    _.each(kernelSpecs, function (kernel, name) {
         var newKernel =
             new Kernel(kernel.kernelName, kernel.args, argsType, kernel.fileName, clContext)
-        that[kernel.name] = newKernel;
+        that[name] = newKernel;
         that.kernels.push(newKernel);
     });
 }
@@ -130,7 +119,6 @@ ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
     LayoutAlgo.prototype.setPhysics.call(this, cfg)
 
     // get the flags from previous iteration
-    console.log(this);
     var flags = this.toBarnesLayout.get('flags');
     var flagNames = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'];
     _.each(cfg, function (val, flag) {
@@ -458,7 +446,6 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
 
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
     var that = this;
-    console.log("HERE layout", layoutBuffers);
     return this.initializeLayoutBuffers(simulator);
 }
 
@@ -471,7 +458,6 @@ ForceAtlas2Barnes.prototype.pointForces = function(simulator, stepNumber, workIt
     ];
     var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
     var warpsize = getWarpsize(vendor);
-    console.log("POintForces", layoutBuffers);
     this.setArgsPointForces(simulator, warpsize, workItems);
 
     this.toBarnesLayout.set({stepNumber: stepNumber});
@@ -590,7 +576,6 @@ function edgeForces(simulator, edgeKernelSeq, stepNumber, workItems) {
 }
 
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
-    console.log("TICK layout", layoutBuffers);
     var locks = simulator.controls.locks;
     if (locks.lockPoints) {
         var buffers = simulator.buffers;
