@@ -178,7 +178,7 @@ function clearMarquee($cont, $elt) {
 }
 
 
-function marqueeDrags(selections, $cont, $elt, appState, marqueeState, takeLast, doAfterDrags) {
+function marqueeDrags(selections, $cont, $elt, marqueeState, takeLast, doAfterDrags) {
     var drags = selections.flatMapLatest(function (selection) {
         var firstRunSinceMousedown = true;
         var dragDelta = {x: 0, y: 0};
@@ -426,7 +426,7 @@ function initBrush (appState, $cont, toggle, cfg) {
 
     var bounds = marqueeSelections(appState, $cont, $elt, isOn, appState.brushOn, _.identity);
 
-    var drags = marqueeDrags(bounds, $cont, $elt, appState, appState.brushOn, false, doAfterDragsBrush.bind(null, doneDraggingRaw))
+    var drags = marqueeDrags(bounds, $cont, $elt, appState.brushOn, false, doAfterDragsBrush.bind(null, doneDraggingRaw))
             .map(function (data) {
                 return data.coords;
             }).map(transformAll);
@@ -469,7 +469,7 @@ function initMarquee (appState, $cont, toggle, cfg) {
     var boundsA = new Rx.ReplaySubject(1);
     bounds.subscribe(boundsA, util.makeErrorHandler('boundsA'));
 
-    var rawDrags = marqueeDrags(boundsA, $cont, $elt, appState, appState.marqueeOn, true, doAfterDragsMarquee);
+    var rawDrags = marqueeDrags(boundsA, $cont, $elt, appState.marqueeOn, true, doAfterDragsMarquee);
     var dragsA = new Rx.ReplaySubject(1);
     rawDrags.subscribe(dragsA, util.makeErrorHandler('dragsA'));
     var drags = dragsA

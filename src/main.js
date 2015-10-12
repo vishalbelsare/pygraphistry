@@ -333,11 +333,18 @@ function launch(streamClient, urlParams) {
 }
 
 function initAnalytics(urlParams) {
-    var datasetName = urlParams.dataset;
-    if (urlParams.static) {
-        datasetName += ' (exported)';
+    var title = '';
+    if (urlParams.dataset) {
+        title = urlParams.dataset;
+        if (urlParams.static) {
+            title += ' (exported)';
+        }
+    } else if (urlParams.workbook) {
+        title = urlParams.workbook;
     }
-    document.title = datasetName + ' -- Graphistry\'s Graph Explorer';
+    var joiner = ' — ';
+    var companyProductLabel = 'Graphistry\'s Graph Explorer';
+    document.title = title ? (title + joiner + companyProductLabel) : companyProductLabel;
 
     var ga = window.ga;
     if (ga) {
