@@ -176,7 +176,7 @@ function setupBrush(appState, isOn) {
 //Side effect: highlight that element
 function makeMouseSwitchboard() {
 
-    var mouseElts = $('#marqueerectangle, #brushButton, #layoutSettingsButton, #filterButton, #histogramPanelControl, #dataInspectorButton');
+    var mouseElts = $('#viewSelectionButton, #brushButton, #layoutSettingsButton, #filterButton, #histogramPanelControl, #dataInspectorButton');
 
     var onElt = Rx.Observable.merge.apply(Rx.Observable,
             mouseElts.get().map(function (elt) {
@@ -488,7 +488,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var $graph = $('#simulate');
     var turnOnMarquee =
         Rx.Observable.merge(
-            onElt.filter(function (elt) { return elt === $('#marqueerectangle')[0]; })
+            onElt.filter(function (elt) { return elt === $('#viewSelectionButton')[0]; })
                 .map(function () { return !marqueeIsOn; }),
             onElt.filter(function (elt) { return elt === $('#histogramBrush')[0]; })
                 .map(_.constant(false)),
@@ -496,7 +496,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
                 .map(_.constant(false)))
         .do(function (isTurnOn) {
             marqueeIsOn = isTurnOn;
-            $('#marqueerectangle').find('i').toggleClass('toggle-on', marqueeIsOn);
+            $('#viewSelectionButton').find('i').toggleClass('toggle-on', marqueeIsOn);
             appState.marqueeOn.onNext(marqueeIsOn ? 'toggled' : false);
         });
 
@@ -544,7 +544,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
                 $(elt).children('i').toggleClass('toggle-on');
                 brushIsOn = !brushIsOn;
             } else if (brushIsOn &&
-                    (elt === $('#marqueerectangle')[0] || elt === $graph[0])) {
+                    (elt === $('#viewSelectionButton')[0] || elt === $graph[0])) {
                 brushIsOn = false;
                 $brushButton.children('i').toggleClass('toggle-on', false);
             }
