@@ -156,7 +156,7 @@ var kernelSpecs = {
     // Edge force mapper and segmented reduce kernels used to calculate edge forces
     forwardsEdgeForceMapper : {
         kernelName: 'faEdgeMap',
-        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'ONE', 'forwardsEdges', 
+        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'isForward', 'forwardsEdges', 
             'numEdges', 'pointDegrees', 'inputPositions', 'forwardsEdgeWeights', 'outputForcesMap' 
         ],
         fileName: 'layouts/gpu/forceAtlas2/faEdgeMap.cl'
@@ -171,7 +171,7 @@ var kernelSpecs = {
     },
     backwardsEdgeForceMapper : {
         kernelName: 'faEdgeMap',
-        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'ZERO', 'backwardsEdges', 
+        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'isForward', 'backwardsEdges', 
             'numEdges', 'pointDegrees', 'inputPositions', 'backwardsEdgeWeights', 'outputForcesMap' 
         ],
         fileName: 'layouts/gpu/forceAtlas2/faEdgeMap.cl'
@@ -207,6 +207,8 @@ function ForceAtlas2Barnes(clContext) {
         that[name] = newKernel;
         that.kernels.push(newKernel);
     });
+    this.forwardsEdgeForceMapper.set({isForward: 1});
+    this.backwardsEdgeForceMapper.set({isForward:0});
 }
 
 ForceAtlas2Barnes.prototype = Object.create(LayoutAlgo.prototype);
@@ -255,10 +257,6 @@ function getBufferBindings(simulator, stepNumber) {
         THREADS_BOUND: workItems.boundBox[1],
         THREADS_FORCES: workItems.calculateForces[1],
         THREADS_SUMS: workItems.computeSums[1],
-        // TODO These should be defines and are only used to determine point degree for forwards 
-        // / backwards edges.
-        ONE: 1,
-        ZERO: 0,
         WARPSIZE:warpsize,
         accX:layoutBuffers.accx.buffer,
         accY:layoutBuffers.accy.buffer,
@@ -514,11 +512,16 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
         return Q.all([]);
 
     }
+
+    // Set the step number for the kernels that have it as an arguement
+    _.each(_.filter(this.kernels, function(x) { return x.argNames.indexOf('stepNumber') > 0}), function(kernel) {
+        kernel.set({stepNumber: stepNumber});
+    });
+
+
     var that = this;
     var tickTime = Date.now();
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
-    var bufferBindings = getBufferBindings(simulator, stepNumber);
-    this.updateBufferBindings(bufferBindings);
     return that.pointForces(simulator, workItems)
     .then(function () {
         return that.edgeForces(simulator, workItems);
