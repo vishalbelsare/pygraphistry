@@ -4,7 +4,6 @@ var _          = require('underscore'),
     cljs       = require('../../../cl.js'),
     Kernel     = require('../../../kernel.js'),
     LayoutAlgo = require('../../../layoutAlgo.js'),
-    IntegrateMidpointsKernel = require('./integrateMidpoints.js'),
     InterpolateMidpoints = require('./interpolateMidpoints.js'),
     MidpointForces = require('./midpointForces.js')
 
@@ -13,54 +12,55 @@ var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:cl:edgebundling');
 
 var argsType = {
-    numPoints: cljs.types.uint_t,
-    inputPositions: null,
-    inputMidPositions: null,
-    stepNumber: cljs.types.uint_t,
-    inputPoints: null,
-    curForces: null,
-    prevForces: null,
-    mass: null,
-    swings: null,
-    tractions: null,
-    gSpeeds: null,
-    tau: cljs.types.float_t,
+    THREADS_BOUND: cljs.types.define,
+    THREADS_FORCES: cljs.types.define,
+    THREADS_SUMS: cljs.types.define,
+    WARPSIZE: cljs.types.define,
+    accX: null,
+    accY: null,
+    blocked: null,
+    bottom: null,
     charge: cljs.types.float_t,
-    gSpeed: cljs.types.float_t,
-    springs: null,
-    xCoords: null,
-    yCoords: null,
+    children: null,
+    count: null,
+    curForces: null,
     edgeDirectionX: null,
     edgeDirectionY: null,
     edgeLengths: null,
-    accX: null,
-    accY: null,
-    children: null,
-    start: null,
-    sort: null,
-    xmins: null,
-    xmaxs: null,
-    ymins: null,
-    ymaxs: null,
-    edgeMins: null,
     edgeMaxs: null,
-    count: null,
-    blocked: null,
-    step: null,
-    bottom: null,
-    maxDepth: null,
-    radius: null,
-    numBodies: cljs.types.uint_t,
-    numNodes: cljs.types.uint_t,
-    numWorkItems: cljs.types.uint_t,
+    edgeMins: null,
+    gSpeed: cljs.types.float_t,
+    gSpeeds: null,
     globalSpeed: null,
-    nextMidPoints: null,
+    inputMidPositions: null,
+    inputPoints: null,
+    inputPositions: null,
+    mass: null,
+    maxDepth: null,
     midpoint_stride: cljs.types.uint_t,
     midpoints_per_edge: cljs.types.uint_t,
-    WARPSIZE: cljs.types.define,
-    THREADS_BOUND: cljs.types.define,
-    THREADS_FORCES: cljs.types.define,
-    THREADS_SUMS: cljs.types.define
+    nextMidPoints: null,
+    numBodies: cljs.types.uint_t,
+    numNodes: cljs.types.uint_t,
+    numPoints: cljs.types.uint_t,
+    numWorkItems: cljs.types.uint_t,
+    outputPositions: null,
+    prevForces: null,
+    radius: null,
+    sort: null,
+    springs: null,
+    start: null,
+    step: null,
+    stepNumber: cljs.types.uint_t,
+    swings: null,
+    tau: cljs.types.float_t,
+    tractions: null,
+    xCoords: null,
+    xmaxs: null,
+    xmins: null,
+    yCoords: null,
+    ymaxs: null,
+    ymins: null
 }
 
 var kernelSpecs = {
@@ -124,8 +124,13 @@ var kernelSpecs = {
         kernelName: 'faSwingsTractions',
         args: ['prevForces', 'curForces', 'swings', 'tractions'],
         fileName: 'layouts/gpu/edgeBundling/faSwingsTractions.cl'
+    },
+    integrateMidpoints: {
+        name: 'integrateMidpoints',
+        kernelName: 'faIntegrate',
+        args: ['globalSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'],
+        fileName: 'layouts/gpu/edgeBundling/faIntegrateMidPoints.cl'
     }
-
 }
 
 
@@ -138,8 +143,6 @@ function EdgeBundling(clContext) {
     this.ebMidsprings = new Kernel('midspringForces', EdgeBundling.argsMidsprings,
                                    EdgeBundling.argsType, 'layouts/gpu/edgeBundling/midspringForces.cl', clContext);
 
-    this.integrateMidpoints = new IntegrateMidpointsKernel(clContext);
-
     this.interpolateMidpoints = new InterpolateMidpoints(clContext);
 
     var that = this;
@@ -151,8 +154,8 @@ function EdgeBundling(clContext) {
         that.kernels.push(newKernel);
     });
 
-    this.kernels = this.midpointForces.kernels.concat([this.ebMidsprings,
-                                                      this.integrateMidpoints.faIntegrate,
+    console.log("KERNELS", this.kernels);
+    this.kernels = this.midpointForces.kernels.concat([this.ebMidsprings, this.integrateMidpoints,
                                                       this.interpolateMidpoints.interpolate]);
 }
 
@@ -382,6 +385,33 @@ function promiseWhile(condition, body) {
     return done.promise;
 }
 
+EdgeBundling.prototype.integrate = function(simulator, tempLayoutBuffers) {
+    var buffers = simulator.buffers;
+    var numMidPoints = simulator.dataframe.getNumElements('midPoints');
+
+    this.integrateMidpoints.set({
+        globalSpeed: tempLayoutBuffers.globalSpeed.buffer,
+        inputPositions: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
+        curForces: tempLayoutBuffers.curForces.buffer,
+        swings: tempLayoutBuffers.swings.buffer,
+        outputPositions: simulator.dataframe.getBuffer('nextMidPoints', 'simulator').buffer
+    });
+
+    var resources = [
+        simulator.dataframe.getBuffer('curMidPoints', 'simulator'),
+        simulator.dataframe.getBuffer('curForces', 'simulator'),
+        simulator.dataframe.getBuffer('swings', 'simulator'),
+        simulator.dataframe.getBuffer('nextMidPoints', 'simulator')
+    ];
+
+    simulator.tickBuffers(['nextPoints']);
+
+    logger.trace("Running kernel faIntegrate");
+    return this.integrateMidpoints.exec([numMidPoints], resources)
+    .fail(log.makeQErrorHandler(logger, 'Executing Integrate failed'));
+}
+
+
 EdgeBundling.prototype.tick = function (simulator, stepNumber) {
 
     var workGroupSize,
@@ -451,7 +481,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
         }).then(function () {
             return that.calculateSwings(simulator, workItems);
         }).then(function () {
-            return that.integrateMidpoints.execKernels(simulator, tempLayoutBuffers, workItems);
+            return that.integrate(simulator, tempLayoutBuffers, workItems);
         }).then(function () {
             var nextMidPoints = simulator.dataframe.getBuffer('nextMidPoints', 'simulator');
             var curMidPoints = simulator.dataframe.getBuffer('curMidPoints', 'simulator');
