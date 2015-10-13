@@ -313,7 +313,12 @@ function getBufferBindings(simulator, stepNumber) {
 // Contains any temporary buffers needed for layout. These are set in initialize layout Buffers
 var layoutBuffers  = {};
 
-ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator, warpsize, numPoints) {
+ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
+    var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
+    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
+    var warpsize = getWarpsize(vendor);
+    var numPoints = simulator.dataframe.getNumElements('point');
+
     simulator.resetBuffers(layoutBuffers);
     var sizes = computeSizes(simulator, warpsize, numPoints);
     var numNodes = sizes.numNodes;
@@ -325,7 +330,6 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator, warpsi
     var forwardsEdges = simulator.dataframe.getHostBuffer('forwardsEdges');
     var backwardsEdges = simulator.dataframe.getHostBuffer('backwardsEdges');
     var numEdges = simulator.dataframe.getNumElements('edge');
-    var numPoints = simulator.dataframe.getNumElements('point');
     return Q.all( [
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT,  'x_cords'),
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'y_cords'),
@@ -399,7 +403,7 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator, warpsi
      }).fail(log.makeQErrorHandler(logger, "Setting temporary buffers for barnesHutKernelSequence failed"));
 };
 
-ForceAtlas2Barnes.prototype.calculateSwings = function(simulator, bufferBindings, workItems) {
+ForceAtlas2Barnes.prototype.calculateSwings = function(simulator,  workItems) {
 
     var resources = [
         simulator.dataframe.getBuffer('prevForces', 'simulator'),
@@ -414,7 +418,7 @@ ForceAtlas2Barnes.prototype.calculateSwings = function(simulator, bufferBindings
     .fail(log.makeQErrorHandler(logger, 'Executing FaSwing failed'));
 };
 
-ForceAtlas2Barnes.prototype.integrate = function(simulator, bufferBindings, workItems) {
+ForceAtlas2Barnes.prototype.integrate = function(simulator, workItems) {
 
     var resources = [
         simulator.dataframe.getBuffer('curPoints', 'simulator'),
@@ -441,7 +445,7 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
     return this.initializeLayoutBuffers(simulator)
 }
 
-ForceAtlas2Barnes.prototype.pointForces = function(simulator, bufferBindings, workItems) {
+ForceAtlas2Barnes.prototype.pointForces = function(simulator, workItems) {
 
     var resources = [
         simulator.dataframe.getBuffer('curPoints', 'simulator'),
@@ -480,7 +484,7 @@ ForceAtlas2Barnes.prototype.pointForces = function(simulator, bufferBindings, wo
     .fail(log.makeQErrorHandler(logger, "Executing BarnesKernelSeq failed"));
 }
 
-ForceAtlas2Barnes.prototype.edgeForces = function(simulator, stepNumber, workItemsSize, bufferBindings) {
+ForceAtlas2Barnes.prototype.edgeForces = function(simulator, workItemsSize) {
         logger.trace("Running kernel faEdgeForces");
         var that = this;
         var resources = [];
@@ -513,13 +517,13 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
     var bufferBindings = getBufferBindings(simulator, stepNumber);
     this.updateBufferBindings(bufferBindings);
-    return that.pointForces(simulator, bufferBindings, workItems)
+    return that.pointForces(simulator, workItems)
     .then(function () {
-        return that.edgeForces(simulator,stepNumber, workItems, bufferBindings);
+        return that.edgeForces(simulator, workItems);
     }).then(function () {
-        return that.calculateSwings(simulator, bufferBindings, workItems);
+        return that.calculateSwings(simulator, workItems);
     }).then(function () {
-        return that.integrate(simulator, bufferBindings, workItems);
+        return that.integrate(simulator, workItems);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);
