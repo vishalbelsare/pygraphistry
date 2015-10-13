@@ -420,12 +420,10 @@ ForceAtlas2Barnes.prototype.edgeForces = function(simulator, stepNumber, workIte
     var forwardsWorkItems = dataframe.getBuffer('forwardsWorkItems', 'simulator')
     var backwardsEdges = dataframe.getBuffer('backwardsEdges', 'simulator');
     var backwardsWorkItems = dataframe.getBuffer('backwardsWorkItems', 'simulator')
-    var points = dataframe.getBuffer('curPoints', 'simulator');
-    var pointDegrees = dataframe.getBuffer('degrees', 'simulator');
     var mapEdges = this.mapEdges;
     var segReduce = this.segReduce;
 
-    function edgeForcesOneWay(simulator, edges, workItems, points, pointDegrees, edgeWeights, partialForces, outputForces, startEnd, workItemsSize, isForward) {
+    function edgeForcesOneWay(simulator, edges, workItems, edgeWeights, partialForces, outputForces, startEnd, workItemsSize, isForward) {
         mapEdges.set(_.pick(bufferBindings, mapEdges.argNames));
         mapEdges.set({
             edges: edges.buffer,
@@ -439,7 +437,7 @@ ForceAtlas2Barnes.prototype.edgeForces = function(simulator, stepNumber, workIte
             output: outputForces.buffer,
             partialForces:partialForces.buffer,
         })
-        var resources = [edges, workItems, points, partialForces, outputForces];
+        var resources = [];
         simulator.tickBuffers(
             simulator.dataframe.getBufferKeys('simulator').filter(function (name) {
                 return simulator.dataframe.getBuffer(name, 'simulator') == outputForces;
@@ -452,15 +450,15 @@ ForceAtlas2Barnes.prototype.edgeForces = function(simulator, stepNumber, workIte
         })
     }
 
-    return edgeForcesOneWay(simulator, forwardsEdges, forwardsWorkItems, points, pointDegrees,
+    return edgeForcesOneWay(simulator, forwardsEdges, forwardsWorkItems, 
                                  simulator.dataframe.getBuffer('forwardsEdgeWeights', 'simulator'),
                                  layoutBuffers.pointForces,
                                  simulator.dataframe.getBuffer('partialForces2', 'simulator'),
                                  simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator'),
                                  workItemsSize, 1)
     .then(function () {
-        return edgeForcesOneWay(simulator, backwardsEdges, backwardsWorkItems, points,
-                                     pointDegrees, simulator.dataframe.getBuffer('backwardsEdgeWeights', 'simulator'),
+        return edgeForcesOneWay(simulator, backwardsEdges, backwardsWorkItems, 
+                                     simulator.dataframe.getBuffer('backwardsEdgeWeights', 'simulator'),
                                      simulator.dataframe.getBuffer('partialForces2', 'simulator'),
                                      simulator.dataframe.getBuffer('curForces', 'simulator'),
                                      simulator.dataframe.getBuffer('backwardsEdgeStartEndIdxs', 'simulator'),
