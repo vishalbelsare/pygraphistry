@@ -101,10 +101,12 @@ function expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPo
 //  To convert to canvas coords, use Camera (ex: see labels::renderCursor)
 //  TODO use camera if edge goes offscreen
 //RenderState * int -> {x: float,  y: float}
-function getEdgeLabelPos (renderState, edgeIndex) {
-    var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
+function getEdgeLabelPos (appState, edgeIndex) {
+    var numRenderedSplits = appState.renderState.get('config').get('numRenderedSplits');
     var split = Math.floor(numRenderedSplits/2);
-    var midSpringsPos = renderState.get('hostBuffers').midSpringsPos.buffer;
+
+    var appSnapshot = appState.renderingScheduler.appSnapshot;
+    var midSpringsPos = appSnapshot.buffers.midSpringsPos;
 
     var midEdgesPerEdge = numRenderedSplits + 1;
     var midEdgeStride = 4 * midEdgesPerEdge;
