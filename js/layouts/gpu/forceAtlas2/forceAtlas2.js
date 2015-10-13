@@ -15,12 +15,17 @@ var _     = require('underscore'),
 
 var argsType = { 
         ONE: cljs.types.uint_t,
+        ZERO: cljs.types.uint_t,
         THREADS_BOUND: cljs.types.define,
         THREADS_FORCES: cljs.types.define,
         THREADS_SUMS: cljs.types.define,
         WARPSIZE: cljs.types.define,
         accX: null,
         accY: null,
+        backwardsEdges: null,
+        backwardsEdgeWeights: null,
+        backwardsEdgeStartEndIdxs: null,
+        backwardsWorkItems: null,
         blocked: null,
         bottom: null,
         carryOutGlobal: null,
@@ -163,6 +168,20 @@ var kernelSpecs = {
         ],
         fileName: 'segReduce.cl'
     },
+    backwardsEdgeForceMapper : {
+        kernelName: 'faEdgeMap',
+        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'ZERO', 'backwardsEdges', 'numEdges',
+        'pointDegrees', 'inputPositions', 'backwardsEdgeWeights', 'outputForcesMap' 
+        ],
+        fileName: 'layouts/gpu/forceAtlas2/faEdgeMap.cl'
+    },
+    reduceBackwardsEdgeForces : {
+        kernelName: 'segReduce',
+        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numEdges', 'outputForcesMap',
+        'backwardsEdgeStartEndIdxs', 'segStart', 'backwardsWorkItems', 'numPoints', 'carryOutGlobal', 'curForces', 'partialForces'
+        ],
+        fileName: 'segReduce.cl'
+    },
     mapEdges : {
         kernelName: 'faEdgeMap',
         args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'isForward', 'edges', 'numEdges',
@@ -248,13 +267,17 @@ function getBufferBindings(simulator, stepNumber) {
         THREADS_BOUND: workItems.boundBox[1],
         THREADS_FORCES: workItems.calculateForces[1],
         THREADS_SUMS: workItems.computeSums[1],
+        // TODO These should be defines and are only used to determine point degree for forwards 
+        // / backwards edges.
         ONE: 1,
+        ZERO: 0,
         WARPSIZE:warpsize,
         accX:layoutBuffers.accx.buffer,
         accY:layoutBuffers.accy.buffer,
         backwardsEdges: simulator.dataframe.getBuffer('backwardsEdges', 'simulator').buffer,
         backwardsEdgeWeights: simulator.dataframe.getBuffer('backwardsEdgeWeights', 'simulator').buffer,
         backwardsWorkItems: simulator.dataframe.getBuffer('backwardsWorkItems', 'simulator').buffer,
+        backwardsEdgeStartEndIdxs: simulator.dataframe.getBuffer('backwardsEdgeStartEndIdxs', 'simulator').buffer,
         blocked:layoutBuffers.blocked.buffer,
         bottom:layoutBuffers.bottom.buffer,
         carryOutGlobal: simulator.dataframe.getBuffer('globalCarryOut', 'simulator').buffer,
@@ -516,77 +539,26 @@ ForceAtlas2Barnes.prototype.pointForces = function(simulator, bufferBindings, wo
 }
 
 ForceAtlas2Barnes.prototype.edgeForces = function(simulator, stepNumber, workItemsSize, bufferBindings) {
-
-    var dataframe = simulator.dataframe;
-    var forwardsEdges = dataframe.getBuffer('forwardsEdges', 'simulator');
-    var forwardsWorkItems = dataframe.getBuffer('forwardsWorkItems', 'simulator')
-    var backwardsEdges = dataframe.getBuffer('backwardsEdges', 'simulator');
-    var backwardsWorkItems = dataframe.getBuffer('backwardsWorkItems', 'simulator')
-    var mapEdges = this.mapEdges;
-    var segReduce = this.segReduce;
-
-    function edgeForcesOneWay(simulator, edges, workItems, edgeWeights, partialForces, outputForces, startEnd, workItemsSize, isForward) {
-        mapEdges.set(_.pick(bufferBindings, mapEdges.argNames));
-        mapEdges.set({
-            edges: edges.buffer,
-            edgeWeights: edgeWeights.buffer,
-            isForward: isForward
-        });
-        segReduce.set(_.pick(bufferBindings, segReduce.argNames));
-        segReduce.set({
-            edgeStartEndIdxs: startEnd.buffer,
-            workList: workItems.buffer,
-            output: outputForces.buffer,
-            partialForces:partialForces.buffer,
-        })
-        var resources = [];
-        simulator.tickBuffers(
-            simulator.dataframe.getBufferKeys('simulator').filter(function (name) {
-                return simulator.dataframe.getBuffer(name, 'simulator') == outputForces;
-            })
-        );
-        logger.trace("Running kernel faEdgeForces");
-        var that = this;
-        return mapEdges.exec([workItemsSize.edgeForces[0]], resources, [workItemsSize.edgeForces[1]]).then(function () {
-            return segReduce.exec([workItemsSize.segReduce[0]], resources, [workItemsSize.segReduce[1]]);
-        })
-    }
-
-    var forwardsEdgeForceMapper = this.forwardsEdgeForceMapper;
-    var reduceForwardsEdgeForces = this.reduceForwardsEdgeForces;
-    console.log("MATCH", _.pick(bufferBindings, reduceForwardsEdgeForces.argNames));
-    function edgeForcesOneWay2(simulator, edges, workItems, edgeWeights, partialForces, outputForces, startEnd, workItemsSize, isForward) {
+        var forwardsEdgeForceMapper = this.forwardsEdgeForceMapper;
+        var reduceForwardsEdgeForces = this.reduceForwardsEdgeForces;
+        var backwardsEdgeForceMapper = this.backwardsEdgeForceMapper;
+        var reduceBackwardsEdgeForces = this.reduceBackwardsEdgeForces;
         forwardsEdgeForceMapper.set(_.pick(bufferBindings, forwardsEdgeForceMapper.argNames));
         reduceForwardsEdgeForces.set(_.pick(bufferBindings, reduceForwardsEdgeForces.argNames));
+        backwardsEdgeForceMapper.set(_.pick(bufferBindings, backwardsEdgeForceMapper.argNames));
+        reduceBackwardsEdgeForces.set(_.pick(bufferBindings, reduceBackwardsEdgeForces.argNames));
 
         var resources = [];
-        simulator.tickBuffers(
-            simulator.dataframe.getBufferKeys('simulator').filter(function (name) {
-                return simulator.dataframe.getBuffer(name, 'simulator') == outputForces;
-            })
-        );
 
         logger.trace("Running kernel faEdgeForces");
-        var that = this;
-        return forwardsEdgeForceMapper.exec([workItemsSize.edgeForces[0]], resources, [workItemsSize.edgeForces[1]]).then(function () {
-            return reduceForwardsEdgeForces.exec([workItemsSize.segReduce[0]], resources, [workItemsSize.segReduce[1]]);
+        return forwardsEdgeForceMapper.exec([workItemsSize.edgeForces[0]], resources, [workItemsSize.edgeForces[1]])
+        .then(function () {
+            return reduceForwardsEdgeForces.exec([workItemsSize.segReduce[0]], resources, [workItemsSize.segReduce[1]])
+        }).then(function () {
+        return backwardsEdgeForceMapper.exec([workItemsSize.edgeForces[0]], resources, [workItemsSize.edgeForces[1]]).then(function () {
+            return reduceBackwardsEdgeForces.exec([workItemsSize.segReduce[0]], resources, [workItemsSize.segReduce[1]])
         })
-    }
-
-    return edgeForcesOneWay2(simulator, forwardsEdges, forwardsWorkItems, 
-                                 simulator.dataframe.getBuffer('forwardsEdgeWeights', 'simulator'),
-                                 layoutBuffers.pointForces,
-                                 simulator.dataframe.getBuffer('partialForces2', 'simulator'),
-                                 simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator'),
-                                 workItemsSize, 1)
-    .then(function () {
-        return edgeForcesOneWay(simulator, backwardsEdges, backwardsWorkItems, 
-                                     simulator.dataframe.getBuffer('backwardsEdgeWeights', 'simulator'),
-                                     layoutBuffers.partialForces,
-                                     simulator.dataframe.getBuffer('curForces', 'simulator'),
-                                     simulator.dataframe.getBuffer('backwardsEdgeStartEndIdxs', 'simulator'),
-                                     workItemsSize, 0);
-        });
+     });
 } 
 
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
