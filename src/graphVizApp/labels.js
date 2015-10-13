@@ -11,6 +11,8 @@ var interaction     = require('./interaction.js');
 var picking         = require('../picking.js');
 var canvas          = require('./canvas.js');
 
+var EDGE_LABEL_OFFSET = 0;
+
 // HACK because we can't know what the mouse position is without watching events
 var mousePosition = {x: 0, y: 0};
 
@@ -21,17 +23,20 @@ document.addEventListener('mousemove', function(e) {
 
 // AppState * $DOM * {dim:int, idx:int} * {dim:int, idx:int} -> ()
 // Immediately reposition each label based on camera and curPoints buffer
-function renderPointLabels(appState, $labelCont, labels, clicked) {
+function renderLabels(appState, $labelCont, highlighted, selected) {
     debug('rendering labels');
 
+    // TODO: Simplify this so we don't have to have this separate call for getting
+    // points.
     var curPoints = appState.renderState.get('hostBuffers').curPoints;
     if (!curPoints) {
         console.warn('renderLabels called before curPoints available');
         return;
     }
+
     curPoints.take(1)
         .do(function (curPoints) {
-            renderLabelsImmediate(appState, $labelCont, curPoints, labels, clicked);
+            renderLabelsImmediate(appState, $labelCont, curPoints, highlighted, selected);
         })
         .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
 }
@@ -179,7 +184,7 @@ function newLabelPositions(renderState, labels, points) {
     return newPos;
 }
 
-function effectLabels(toClear, toShow, labels, newPos, highlighted, clicked, poi) {
+function effectLabels(toClear, labels, newPos, highlighted, clicked, poi) {
 
     // DOM effects: disable old, then move->enable new
     toClear.forEach(function (lbl) {
@@ -202,11 +207,12 @@ function effectLabels(toClear, toShow, labels, newPos, highlighted, clicked, poi
     clicked.forEach(function (clickObj) {
         var cacheKey = poi.cacheKey(clickObj.idx, clickObj.dim);
         if (clickObj.idx > -1) {
+            poi.state.activeLabels[cacheKey].elt.toggleClass('on', true);
             poi.state.activeLabels[cacheKey].elt.toggleClass('clicked', true);
         }
     });
 
-    toShow.forEach(function (lbl) {
+    labels.forEach(function (lbl) {
         lbl.elt.css('display', 'block');
     });
 
@@ -220,62 +226,60 @@ function toWorldCoords(renderState, x, y) {
     return camera.canvas2WorldCoords(x, y, cnv, mtx);
 }
 
+function extendEdgeLabelWithCoords (label, hit, appState) {
+    if (hit.dim === 2) {
+        if (hit.source && hit.source !== 'canvas') {
+            _.extend(label, canvas.getEdgeLabelPos(appState, hit.idx));
+        } else {
+            _.extend(label,
+                toWorldCoords(appState.renderState,
+                    mousePosition.x + EDGE_LABEL_OFFSET,
+                    mousePosition.y + EDGE_LABEL_OFFSET));
+        }
+    }
+}
 
 function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, clicked) {
 
     var poi = appState.poi;
     var points = new Float32Array(curPoints.buffer);
 
-    var t0 = Date.now();
-
+    // Get hits from POI and add highlighted/selected
     var hits = poi.getActiveApprox(appState.renderState, 'pointHitmapDownsampled');
-    highlighted.forEach(function (labelObj) {
-        var labelIdx = labelObj.idx;
-        if (labelIdx > -1) {
-            hits[poi.cacheKey(labelIdx, labelObj.dim)] = {
-                dim: labelObj.dim,
-                idx: labelIdx
-            };
-        }
+    _.each([highlighted, clicked], function (set) {
+        _.each(set, function (labelObj) {
+            if (labelObj.idx > -1) {
+                hits[poi.cacheKey(labelObj.idx, labelObj.dim)] = labelObj;
+            }
+        });
     });
-    var t1 = Date.now();
 
+    // Initial values for clearing/showing
     var toClear = poi.finishApprox(poi.state.activeLabels, poi.state.inactiveLabels,
                                    hits, appState.renderState, points);
 
     // select label elements (and make active if needed)
-    var toShow = [];
-    var labels = _.values(hits)
+    var labelsToShow = _.values(hits)
         .map(function (hit) {
-
             var idx = parseInt(hit.idx);
             var dim = hit.dim;
-
-            var EDGE_LABEL_OFFSET = 0;
+            var key = poi.cacheKey(idx, dim);
 
             if (idx === -1) {
                 return null;
-            } else if (poi.state.activeLabels[poi.cacheKey(idx, dim)]) {
+            } else if (poi.state.activeLabels[key]) {
                 // label already on, re-use
-                var alreadyActiveLabel = poi.state.activeLabels[poi.cacheKey(idx, dim)];
-                toShow.push(alreadyActiveLabel);
-                return alreadyActiveLabel;
+                return poi.state.activeLabels[key];
             } else if ((_.keys(poi.state.activeLabels).length > poi.MAX_LABELS) && (_.pluck(highlighted, 'idx').indexOf(idx) === -1)) {
                 // no label but too many on screen, don't create new
                 return null;
             } else if (!poi.state.inactiveLabels.length) {
                 // no label and no pre-allocated elements, create new
-                var freshLabel = poi.genLabel($labelCont, idx, hits[poi.cacheKey(idx, dim)]);
+                var freshLabel = poi.genLabel($labelCont, idx, hits[key]);
                 freshLabel.elt.on('click', function () {
                     appState.labelHover.onNext(this);
                 });
-                if (dim === 2) {
-                    _.extend(freshLabel,
-                        toWorldCoords(appState.renderState,
-                            mousePosition.x + EDGE_LABEL_OFFSET,
-                            mousePosition.y + EDGE_LABEL_OFFSET));
-                }
-                toShow.push(freshLabel);
+                extendEdgeLabelWithCoords(freshLabel, hit, appState);
                 return freshLabel;
             } else {
                 // no label and available inactive preallocated, reuse
@@ -283,30 +287,17 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
                 lbl.idx = idx;
                 lbl.dim = dim;
                 lbl.setIdx({idx: idx, dim: lbl.dim});
-                if (dim === 2) {
-                    _.extend(lbl,
-                        toWorldCoords(appState.renderState,
-                            mousePosition.x + EDGE_LABEL_OFFSET,
-                            mousePosition.y + EDGE_LABEL_OFFSET));
-                }
-                toShow.push(lbl);
+                extendEdgeLabelWithCoords(lbl, hit, appState);
                 return lbl;
             }
         })
         .filter(_.identity);
 
-    poi.resetActiveLabels(_.object(labels.map(function (lbl) { return [poi.cacheKey(lbl.idx, lbl.dim), lbl]; })));
+    poi.resetActiveLabels(_.object(labelsToShow.map(function (lbl) { return [poi.cacheKey(lbl.idx, lbl.dim), lbl]; })));
 
-    var t2 = Date.now();
+    var newPos = newLabelPositions(appState.renderState, labelsToShow, points);
 
-    var newPos = newLabelPositions(appState.renderState, labels, points, toClear, toShow);
-
-    var t3 = Date.now();
-
-    effectLabels(toClear, toShow, labels, newPos, highlighted, clicked, poi);
-
-    debug('sampling timing', t1 - t0, t2 - t1, t3 - t2, Date.now() - t3,
-        'labels:', labels.length, '/', _.keys(hits).length, poi.state.inactiveLabels.length);
+    effectLabels(toClear, labelsToShow, newPos, highlighted, clicked, poi);
 }
 
 
@@ -346,17 +337,7 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
             };
         }
     ).do(function (toShow) {
-
-        // TODO: Rework how labels system takes in selections vs highlights.
-        // E.g., selections do not need to be a subset of highlight.
-        var clicked = _.map(toShow.selection, function (sel) {
-            return _.extend(sel, {click: true});
-        });
-        var highlighted = toShow.highlighted;
-        highlighted = highlighted.concat(clicked);
-
-        renderPointLabels(appState, $labelCont, highlighted, clicked);
-
+        renderLabels(appState, $labelCont, toShow.highlighted, toShow.selection);
     })
     .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
 }
