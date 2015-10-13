@@ -75,14 +75,14 @@ var kernelSpecs = {
     mapEdges : {
         kernelName: 'faEdgeMap',
         args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'isForward', 'edges', 'numEdges',
-        'pointDegrees', 'inputPoints', 'edgeWeights', 'outputForcesMap' 
+        'pointDegrees', 'inputPositions', 'edgeWeights', 'outputForcesMap' 
         ],
         fileName: 'layouts/gpu/forceAtlas2/faEdgeMap.cl'
     },
     segReduce: {
         kernelName: 'segReduce',
-        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numInput', 'input',
-        'edgeStartEndIdxs', 'segStart', 'workList', 'numOutput', 'carryOutGlobal', 'output', 'partialForces'
+        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numEdges', 'outputForcesMap',
+        'edgeStartEndIdxs', 'segStart', 'workList', 'numPoints', 'carryOutGlobal', 'output', 'partialForces'
         ],
         fileName: 'segReduce.cl'
     },
@@ -162,6 +162,7 @@ function getBufferBindings(simulator, stepNumber) {
         accY:layoutBuffers.accy.buffer,
         blocked:layoutBuffers.blocked.buffer,
         bottom:layoutBuffers.bottom.buffer,
+        carryOutGlobal: simulator.dataframe.getBuffer('globalCarryOut', 'simulator').buffer,
         children:layoutBuffers.children.buffer,
         count:layoutBuffers.count.buffer,
         curForces: simulator.dataframe.getBuffer('curForces', 'simulator').buffer,
@@ -177,13 +178,17 @@ function getBufferBindings(simulator, stepNumber) {
         mass:layoutBuffers.mass.buffer,
         maxDepth:layoutBuffers.maxdepth.buffer,
         numBodies:layoutBuffers.numBodies,
+        numEdges: simulator.dataframe.getNumElements('edge'),
         numNodes:layoutBuffers.numNodes,
         numPoints:simulator.dataframe.getNumElements('point'),
         pointDegrees: simulator.dataframe.getBuffer('degrees', 'simulator').buffer,
         pointForces: layoutBuffers.pointForces.buffer,
         prevForces: simulator.dataframe.getBuffer('prevForces', 'simulator').buffer,
         outputPositions: simulator.dataframe.getBuffer('nextPoints', 'simulator').buffer,
+        // TODO This should not be in simulator... 
+        outputForcesMap: simulator.dataframe.getBuffer('outputEdgeForcesMap', 'simulator').buffer,
         radius:layoutBuffers.radius.buffer,
+        segStart: simulator.dataframe.getBuffer('segStart', 'simulator').buffer,
         sort:layoutBuffers.sort.buffer,
         start:layoutBuffers.start.buffer,
         step:layoutBuffers.step.buffer,
@@ -420,29 +425,19 @@ ForceAtlas2Barnes.prototype.edgeForces = function(simulator, stepNumber, workIte
     var mapEdges = this.mapEdges;
     var segReduce = this.segReduce;
 
-    console.log(bufferBindings.pointForces);
     function edgeForcesOneWay(simulator, edges, workItems, points, pointDegrees, edgeWeights, partialForces, outputForces, startEnd, workItemsSize, isForward) {
-        var numEdges = simulator.dataframe.getNumElements('edge');
-        var numPoints = simulator.dataframe.getNumElements('point');
+        mapEdges.set(_.pick(bufferBindings, mapEdges.argNames));
         mapEdges.set({
-            numEdges: numEdges,
             edges: edges.buffer,
-            pointDegrees: pointDegrees.buffer,
-            inputPoints: points.buffer,
             edgeWeights: edgeWeights.buffer,
-            outputForcesMap: simulator.dataframe.getBuffer('outputEdgeForcesMap', 'simulator').buffer,
             isForward: isForward
         });
+        segReduce.set(_.pick(bufferBindings, segReduce.argNames));
         segReduce.set({
             edgeStartEndIdxs: startEnd.buffer,
-            input: simulator.dataframe.getBuffer('outputEdgeForcesMap', 'simulator').buffer,
-            segStart: simulator.dataframe.getBuffer('segStart', 'simulator').buffer,
-            numInput: numEdges,
-            numOutput: numPoints,
             workList: workItems.buffer,
             output: outputForces.buffer,
             partialForces:partialForces.buffer,
-            carryOutGlobal: simulator.dataframe.getBuffer('globalCarryOut', 'simulator').buffer
         })
         var resources = [edges, workItems, points, partialForces, outputForces];
         simulator.tickBuffers(
