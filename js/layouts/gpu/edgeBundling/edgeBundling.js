@@ -32,6 +32,8 @@ var argsType = {
     gSpeed: cljs.types.float_t,
     gSpeeds: null,
     globalSpeed: null,
+    inputForces: null,
+    inputMidpoints: null,
     inputMidPositions: null,
     inputPoints: null,
     inputPositions: null,
@@ -39,6 +41,7 @@ var argsType = {
     maxDepth: null,
     midpoint_stride: cljs.types.uint_t,
     midpoints_per_edge: cljs.types.uint_t,
+    midSpringsColorCoords: null,
     nextMidPoints: null,
     numBodies: cljs.types.uint_t,
     numEdges: cljs.types.uint_t,
@@ -48,11 +51,15 @@ var argsType = {
     numWorkItems: cljs.types.uint_t,
     outputPositions: null,
     outputMidPoints: null,
+    outputMidpoints: null,
     points: null,
     prevForces: null,
     radius: null,
     sort: null,
     springs: null,
+    springMidPositions: null,
+    springStrength: cljs.types.float_t,
+    springDistance: cljs.types.float_t,
     start: null,
     step: null,
     stepNumber: cljs.types.uint_t,
@@ -63,6 +70,7 @@ var argsType = {
     xmaxs: null,
     xmins: null,
     yCoords: null,
+    workList: null,
     ymaxs: null,
     ymins: null
 }
@@ -140,7 +148,16 @@ var kernelSpecs = {
         kernelName: 'interpolateMidpoints',
         args: ['edges', 'points', 'numEdges', 'numSplits', 'outputMidPoints'],
         fileName: 'layouts/gpu/edgeBundling/interpolateMidpoints.cl',
+    },
+    midspringForces: {
+        name: 'midspringForces',
+        kernelName: 'midspringForces',
+        args: ['numSplits', 'springs', 'workList', 'inputPoints', 'inputForces', 'inputMidpoints', 
+            'outputMidpoints', 'springMidPositions', 'midSpringsColorCoords', 'springStrength', 
+            'springDistance', 'stepNumber'],
+        fileName: 'layouts/gpu/edgeBundling/midspringForces.cl'
     }
+
 }
 
 
@@ -150,8 +167,6 @@ function EdgeBundling(clContext) {
     logger.debug('Creating edge bundling kernels');
     this.midpointForces= new MidpointForces(clContext);
 
-    this.ebMidsprings = new Kernel('midspringForces', EdgeBundling.argsMidsprings,
-                                   EdgeBundling.argsType, 'layouts/gpu/edgeBundling/midspringForces.cl', clContext);
 
     var that = this;
     // Create the kernels described by kernel specifications
@@ -162,7 +177,7 @@ function EdgeBundling(clContext) {
         that.kernels.push(newKernel);
     });
 
-    this.kernels = this.midpointForces.kernels.concat([this.ebMidsprings, this.integrateMidpoints,
+    this.kernels = this.midpointForces.kernels.concat([this.midspringForces, this.integrateMidpoints,
                                                       this.interpolateMidpoints]);
 }
 
@@ -170,35 +185,6 @@ EdgeBundling.prototype = Object.create(LayoutAlgo.prototype);
 EdgeBundling.prototype.constructor = EdgeBundling;
 
 EdgeBundling.name = 'EdgeBundling';
-
-EdgeBundling.argsMidsprings = ['numSplits', 'springs', 'workList', 'inputPoints', 'inputForces',
-                               'inputMidpoints', 'outputMidpoints', 'springMidPositions',
-                               'midSpringsColorCoords', 'springStrength', 'springDistance',
-                               'stepNumber'];
-
-EdgeBundling.argsType = {
-    numPoints: cljs.types.uint_t,
-    numSplits: cljs.types.uint_t,
-    inputMidPositions: null,
-    outputMidPositions: null,
-    tilePointsParam: cljs.types.local_t,
-    width: cljs.types.float_t,
-    height: cljs.types.float_t,
-    charge: cljs.types.float_t,
-    gravity: cljs.types.float_t,
-    randValues: null,
-    stepNumber: cljs.types.uint_t,
-    springs: null,
-    workList: null,
-    inputPoints: null,
-    inputMidpoints: null,
-    outputMidpoints: null,
-    springMidPositions: null,
-    midSpringsColorCoords: null,
-    inputForces: null,
-    springStrength: cljs.types.float_t,
-    springDistance: cljs.types.float_t,
-};
 
 // Contains any temporary buffers needed for layout
 var tempLayoutBuffers  = {
@@ -266,7 +252,7 @@ EdgeBundling.prototype.setEdges = function (simulator) {
             tractions: tempLayoutBuffers.tractions.buffer
           })
 
-        that.ebMidsprings.set({
+        that.midspringForces.set({
             numSplits: global.numSplits,
             springs: simulator.dataframe.getBuffer('forwardsEdges', 'simulator').buffer,
             workList: simulator.dataframe.getBuffer('forwardsWorkItems', 'simulator').buffer,
@@ -435,7 +421,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
 
         }).then(function () { //TODO do both forwards and backwards?
             if (simulator.dataframe.getNumElements('edge') > 0 && !locks.lockMidedges) {
-                return midEdges(simulator, that.ebMidsprings, stepNumber);
+                return midEdges(simulator, that.midspringForces, stepNumber);
             }
 
             //simulator.tickBuffers(['curMidpoints']);
