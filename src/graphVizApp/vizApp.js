@@ -70,6 +70,8 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
                 });
         });
 
+    var latestHighlightedObject = new Rx.ReplaySubject(1);
+
     var appState = {
         renderState: initialRenderState,
         vboUpdates: vboUpdates,
@@ -86,7 +88,8 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
         isAnimatingOrSimulating: isAnimatingOrSimulating,
         brushOn: brushOn,
         anyMarqueeOn: anyMarqueeOn,
-        activeSelection: activeSelection
+        activeSelection: activeSelection,
+        latestHighlightedObject: latestHighlightedObject
     };
 
     //////////////////////////////////////////////////////////////////////////

@@ -358,10 +358,14 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
 }
 
 
+function distance(x1, y1, x2, y2) {
+    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+}
+
 // AppState * $DOM * textureName -> Nothing
 // Sets up clicking to set active selections in the appState.
-function setupClickSelections (appState, $eventTarget, textures) {
-    var $cont = $('#highlighted-point-cont');
+// Will handle clicking on labels as well as the canvas.
+function setupClickSelections (appState, $eventTarget) {
     var activeSelection = appState.activeSelection;
 
     $eventTarget.mousedownAsObservable()
@@ -372,114 +376,62 @@ function setupClickSelections (appState, $eventTarget, textures) {
             });
         })
         .filter(function (downUp) {
-            var dist =
-                Math.abs(downUp[0].clientX - downUp[1].clientX) +
-                Math.abs(downUp[0].clientY - downUp[1].clientY);
+            var dist = distance(downUp[0].clientX, downUp[0].clientY, downUp[1].clientX, downUp[1].clientY);
             return dist < 5;
         })
-        .map(function (downUp) {
-            var evt = downUp[1];
-            // Clicked on CSS highlight over node
-            if ($(evt.target).hasClass('highlighted-point') ||
-                    $(evt.target).hasClass('highlighted-point-center')) {
-                return {
-                    cmd: 'click',
-                    pt: {dim: 1, idx: parseInt($cont.attr('pointidx'))}
-                };
-            // Clicked on existing POI label
-            } else if ($(evt.target).hasClass('graph-label') ||
-                    $(evt.target).parents('.graph-label').length) {
+        .flatMapLatest(function (downUp) {
+            var $target = $(downUp[1].target);
+            // Clicked on existing POI label, return point corresponding to label
+            if ($target.hasClass('graph-label') ||
+                    $target.parents('.graph-label').length) {
 
-                var elt = $(evt.target).hasClass('graph-label') ? evt.target
-                    : ($(evt.target).parents('.graph-label')[0]);
+                var elt = $target.hasClass('graph-label') ? downUp[1].target
+                    : ($target.parents('.graph-label')[0]);
                 var pt = _.values(appState.poi.state.activeLabels)
                     .filter(function (lbl) { return lbl.elt.get(0) === elt; })[0];
-                return {
-                    cmd: 'click',
-                    pt: {dim: pt.dim, idx: pt.idx}
-                };
-            // Clicked on canvas
+                return Rx.Observable.return([pt]);
+
+            // Clicked on canvas, return latest highlighted object
             } else {
-                var clickedObject = picking.hitTestN(appState.renderState, textures, downUp[1].clientX, downUp[1].clientY, 10);
-                return {cmd: 'click', pt: clickedObject};
+                return appState.latestHighlightedObject.take(1);
             }
-        }).do(function (clickData) {
-            if (clickData.pt.idx > -1) {
-                activeSelection.onNext([{idx: clickData.pt.idx, dim: clickData.pt.dim}]);
+        }).do(function (clickPoints) {
+            if (clickPoints[0].idx > -1) {
+                activeSelection.onNext(clickPoints);
             } else {
                 activeSelection.onNext([]);
             }
         }).subscribe(_.identity, util.makeErrorHandler('setupClickSelections'));
 }
 
+
 // AppState * $DOM * textureName-> Observable [ {dim: 1, idx: int} ]
-// Changes either from point mouseover or a label mouseover
+// Changes either from point/edge mouseover or a label mouseover
 // Clicking (coexists with hovering) will open at most 1 label
 // Most recent interaction goes at the end
 function getLatestHighlightedObject (appState, $eventTarget, textures) {
     var OFF = [{idx: -1, dim: 0}];
-    var res = new Rx.ReplaySubject(1);
-    res.onNext(OFF);
-
-    // TODO: Avoid this global and deal with the mousedown merge better.
-    var lastHoverHighlighted;
+    appState.latestHighlightedObject.onNext(OFF);
 
     interaction.setupMousemove($eventTarget).combineLatest(
             appState.hitmapUpdates,
             _.identity
         )
-        .map(function (pos) {
-            return picking.hitTestN(appState.renderState, textures, pos.x, pos.y, 10);
-        })
-        // TODO: Make sure this also catches $('#marquee').hasClass('done') and 'beingdragged'
-        // As a non-marquee-active state.
-        // .flatMapLatest(util.observableFilter(appState.marqueeActive, util.notIdentity))
         .flatMapLatest(util.observableFilter([appState.marqueeOn, appState.brushOn],
                 function (v) {
                     return (v !== 'selecting') && (v !== 'dragging');
                 },
                 util.AND
         ))
-        .map(function (v) {
-            lastHoverHighlighted = {cmd: 'hover', pt: v};
-            return lastHoverHighlighted;
-        })
-        .merge(
-            appState.labelHover
-                .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
-                .map(function (elt) {
-                    return _.values(appState.poi.state.activeLabels)
-                        .filter(function (lbl) { return lbl.elt.get(0) === elt; });
-                })
-                .filter(function (highlightedLabels) { return highlightedLabels.length; })
-                .map(function (highlightedLabels) {
-                    return {cmd: 'hover', pt: {dim: highlightedLabels[0].dim, idx: highlightedLabels[0].idx}};
-                }))
-        .scan(function (acc, cmd) {
-            switch (cmd.cmd) {
-                case 'hover':
-                    return acc
-                        .filter(function (pt) { return !pt.hover; })
-                        .concat(_.extend({hover: true}, cmd.pt));
-                case 'click':
-                    return acc
-                        .filter(function (pt) { return !pt.click; })
-                        .concat(_.extend({click: true}, cmd.pt));
-                case 'declick':
-                    return [];
-            }
-        }, [])
         .flatMapLatest(util.observableFilter(appState.isAnimatingOrSimulating, util.notIdentity))
-        .map(function (arr) {
-            return arr.filter(function (v) { return v.idx !== -1; });
+        .map(function (pos) {
+            return [picking.hitTestN(appState.renderState, textures, pos.x, pos.y, 10)];
         })
-        .map(function (arr) {
-            return arr.length ? arr : OFF;
-        })
-        .subscribe(res, util.makeErrorHandler('getLatestHighlightedObject'));
+        .subscribe(appState.latestHighlightedObject, util.makeErrorHandler('getLatestHighlightedObject'));
 
-    return res;
+    return appState.latestHighlightedObject;
 }
+
 
 
 module.exports = {
