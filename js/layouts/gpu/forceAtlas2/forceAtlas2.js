@@ -115,12 +115,21 @@ ForceAtlas2Barnes.prototype = Object.create(LayoutAlgo.prototype);
 ForceAtlas2Barnes.prototype.constructor = ForceAtlas2Barnes;
 ForceAtlas2Barnes.name = 'ForceAtlas2Barnes';
 
-var layoutFlags = null;
+// ForceAtlas2 uses a bitmask flag in order to set settings preventOverlap, strongGravity,
+// dissuadeHubs, and linLog. layoutFlags keeps track of the current state of these settings. 
+var layoutFlags = 0;
 
+// The LayoutAlgo class will set all the configuration settings from the client that have
+// the corresponding arguement name. For some settings, we use a boolean flag, which we must
+// extract and set manually here. 
 ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
     LayoutAlgo.prototype.setPhysics.call(this, cfg)
 
+    // These should correspond to the flags defined in forceAtlas2Common.h
     var flagNames = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'];
+
+    // Adjusts the bit vector for flags used in ForceAtlas2. See flag definitions in
+    // ForceAtlas2Common.h
     _.each(cfg, function (val, flag) {
         var idx = flagNames.indexOf(flag);
         if (idx >= 0) {
@@ -132,15 +141,11 @@ ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
             }
         }
     });
-
-    this.toBarnesLayout.set({flags: layoutFlags});
-    this.boundBox.set({flags: layoutFlags});
-    this.buildTree.set({flags: layoutFlags});
-    this.computeSums.set({flags: layoutFlags});
-    this.sort.set({flags: layoutFlags});
-    this.calculatePointForces.set({flags: layoutFlags});
-    this.mapEdges.set({flags: layoutFlags});
-    this.segReduce.set({flags: layoutFlags});
+    
+    // Set the flags arguement for those kernels that have it.
+    _.each(_.filter(this.kernels, function(k) {return k.argNames.indexOf('flags') > 0}), function(k) {
+        k.set({flags: layoutFlags});
+    })
 }
 
 // Contains any temporary buffers needed for layout
@@ -166,99 +171,51 @@ var layoutBuffers  = {
     maxdepth: null,
 };
 
-ForceAtlas2Barnes.prototype.setArgsPointForces = function(simulator, warpsize, workItems) {
-    var tempBuffers = layoutBuffers;
-    var that = this;
-    that.toBarnesLayout.set({
+// Returns a map from the name of the buffer used in this layout to the actual buffer
+function getBufferBindings(simulator, stepNumber) {
+    var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
+    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
+    var warpsize = getWarpsize(vendor);
+    return {
+        THREADS_BOUND: workItems.boundBox[1],
+        THREADS_FORCES: workItems.calculateForces[1],
+        THREADS_SUMS: workItems.computeSums[1],
+        WARPSIZE:warpsize,
+        accX:layoutBuffers.accx.buffer,
+        accY:layoutBuffers.accy.buffer,
+        blocked:layoutBuffers.blocked.buffer,
+        bottom:layoutBuffers.bottom.buffer,
+        children:layoutBuffers.children.buffer,
+        count:layoutBuffers.count.buffer,
+        curForces: simulator.dataframe.getBuffer('curForces', 'simulator').buffer,
+        globalSpeed: layoutBuffers.globalSpeed.buffer,
+        globalSwings: layoutBuffers.globalSwings.buffer,
+        globalTractions: layoutBuffers.globalTractions.buffer,
+        globalXMax:layoutBuffers.xmax.buffer,
+        globalXMin:layoutBuffers.xmin.buffer,
+        globalYMax:layoutBuffers.ymax.buffer,
+        globalYMin:layoutBuffers.ymin.buffer,
+        height:simulator.controls.global.dimensions[1],
+        inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
+        mass:layoutBuffers.mass.buffer,
+        maxDepth:layoutBuffers.maxdepth.buffer,
+        numBodies:layoutBuffers.numBodies,
+        numNodes:layoutBuffers.numNodes,
+        numPoints:simulator.dataframe.getNumElements('point'),
+        pointDegrees: simulator.dataframe.getBuffer('degrees', 'simulator').buffer,
+        pointForces: simulator.dataframe.getBuffer('partialForces1', 'simulator').buffer,
+        prevForces: simulator.dataframe.getBuffer('prevForces', 'simulator').buffer,
+        radius:layoutBuffers.radius.buffer,
+        sort:layoutBuffers.sort.buffer,
+        start:layoutBuffers.start.buffer,
+        step:layoutBuffers.step.buffer,
+        stepNumber: stepNumber,
+        swings: simulator.dataframe.getBuffer('swings', 'simulator').buffer,
+        tractions: simulator.dataframe.getBuffer('tractions', 'simulator').buffer,
+        width:simulator.controls.global.dimensions[0],
         xCoords: layoutBuffers.x_cords.buffer,
         yCoords:layoutBuffers.y_cords.buffer,
-        mass:layoutBuffers.mass.buffer,
-        blocked:layoutBuffers.blocked.buffer,
-        maxDepth:layoutBuffers.maxdepth.buffer,
-        numPoints:simulator.dataframe.getNumElements('point'),
-        inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
-        pointDegrees: simulator.dataframe.getBuffer('degrees', 'simulator').buffer,
-        WARPSIZE: warpsize,
-        THREADS_SUMS: workItems.computeSums[1],
-        THREADS_FORCES: workItems.calculateForces[1],
-        THREADS_BOUND: workItems.boundBox[1]
-    });
-
-    var setBarnesKernelArgs = function(kernel, buffers) {
-        var setArgs = {
-        xCoords:buffers.x_cords.buffer,
-        yCoords:buffers.y_cords.buffer,
-        accX:buffers.accx.buffer,
-        accY:buffers.accy.buffer,
-        children:buffers.children.buffer,
-        mass:buffers.mass.buffer,
-        start:buffers.start.buffer,
-        sort:buffers.sort.buffer,
-        globalXMin:buffers.xmin.buffer,
-        globalXMax:buffers.xmax.buffer,
-        globalYMin:buffers.ymin.buffer,
-        globalYMax:buffers.ymax.buffer,
-        swings:simulator.dataframe.getBuffer('swings', 'simulator').buffer,
-        tractions: simulator.dataframe.getBuffer('tractions', 'simulator').buffer,
-        count:buffers.count.buffer,
-        blocked:buffers.blocked.buffer,
-        bottom:buffers.bottom.buffer,
-        step:buffers.step.buffer,
-        maxDepth:buffers.maxdepth.buffer,
-        radius:buffers.radius.buffer,
-        globalSpeed: layoutBuffers.globalSpeed.buffer,
-        width:simulator.controls.global.dimensions[0],
-        height:simulator.controls.global.dimensions[1],
-        numBodies:buffers.numBodies,
-        numNodes:buffers.numNodes,
-        pointForces: simulator.dataframe.getBuffer('partialForces1', 'simulator').buffer,
-        WARPSIZE:warpsize,
-        THREADS_SUMS: workItems.computeSums[1],
-        THREADS_FORCES: workItems.calculateForces[1],
-        THREADS_BOUND: workItems.boundBox[1]};
-        kernel.set(setArgs);
-    };
-
-    var buffers = layoutBuffers;
-    that.boundBox.set({
-        xCoords:buffers.x_cords.buffer,
-        yCoords:buffers.y_cords.buffer,
-        accX:buffers.accx.buffer,
-        accY:buffers.accy.buffer,
-        children:buffers.children.buffer,
-        mass:buffers.mass.buffer,
-        start:buffers.start.buffer,
-        sort:buffers.sort.buffer,
-        globalXMin:buffers.xmin.buffer,
-        globalXMax:buffers.xmax.buffer,
-        globalYMin:buffers.ymin.buffer,
-        globalYMax:buffers.ymax.buffer,
-        globalSwings: buffers.globalSwings.buffer,
-        globalTractions: buffers.globalTractions.buffer,
-        swings:simulator.dataframe.getBuffer('swings', 'simulator').buffer,
-        tractions: simulator.dataframe.getBuffer('tractions', 'simulator').buffer,
-        count:buffers.count.buffer,
-        blocked:buffers.blocked.buffer,
-        bottom:buffers.bottom.buffer,
-        step:buffers.step.buffer,
-        maxDepth:buffers.maxdepth.buffer,
-        radius:buffers.radius.buffer,
-        globalSpeed: layoutBuffers.globalSpeed.buffer,
-        width:simulator.controls.global.dimensions[0],
-        height:simulator.controls.global.dimensions[1],
-        numBodies:buffers.numBodies,
-        numNodes:buffers.numNodes,
-        pointForces: simulator.dataframe.getBuffer('partialForces1', 'simulator').buffer,
-        WARPSIZE:warpsize,
-        THREADS_SUMS: workItems.computeSums[1],
-        THREADS_FORCES: workItems.calculateForces[1],
-        THREADS_BOUND: workItems.boundBox[1]
-    });
-
-    setBarnesKernelArgs(that.buildTree, layoutBuffers);
-    setBarnesKernelArgs(that.computeSums, layoutBuffers);
-    setBarnesKernelArgs(that.sort, layoutBuffers);
-    setBarnesKernelArgs(that.calculatePointForces, layoutBuffers);
+    }
 }
 
 ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator, warpsize, numPoints) {
@@ -345,10 +302,12 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator, warpsi
 };
 
 ForceAtlas2Barnes.prototype.calculateSwings = function(simulator, workItems) {
-    var buffers = simulator.buffers;
+    //var buffers = simulator.buffers;
+    //var bufferBindings = getBufferBindings(simulator, warpsize, workItems);
+    //this.faSwings.set(_.pick(bufferBindings, this.faSwings.argNames));
     this.faSwings.set({
-        prevForces: simulator.dataframe.getBuffer('prevForces', 'simulator').buffer,
         curForces: simulator.dataframe.getBuffer('curForces', 'simulator').buffer,
+        prevForces: simulator.dataframe.getBuffer('prevForces', 'simulator').buffer,
         swings: simulator.dataframe.getBuffer('swings', 'simulator').buffer,
         tractions: simulator.dataframe.getBuffer('tractions', 'simulator').buffer
     });
@@ -449,25 +408,24 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
     return this.initializeLayoutBuffers(simulator);
 }
 
-ForceAtlas2Barnes.prototype.pointForces = function(simulator, stepNumber, workItems) {
+ForceAtlas2Barnes.prototype.pointForces = function(simulator, bufferBindings) {
+
     var resources = [
         simulator.dataframe.getBuffer('curPoints', 'simulator'),
         simulator.dataframe.getBuffer('forwardsDegrees', 'simulator'),
         simulator.dataframe.getBuffer('backwardsDegrees', 'simulator'),
         simulator.dataframe.getBuffer('partialForces1', 'simulator')
     ];
-    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
-    var warpsize = getWarpsize(vendor);
-    this.setArgsPointForces(simulator, warpsize, workItems);
 
-    this.toBarnesLayout.set({stepNumber: stepNumber});
-    this.boundBox.set({stepNumber: stepNumber});
-    this.buildTree.set({stepNumber: stepNumber});
-    this.computeSums.set({stepNumber: stepNumber});
-    this.sort.set({stepNumber: stepNumber});
-    this.calculatePointForces.set({stepNumber: stepNumber});
+    this.toBarnesLayout.set(_.pick(bufferBindings, this.toBarnesLayout.argNames));
+    this.boundBox.set(_.pick(bufferBindings, this.boundBox.argNames));
+    this.buildTree.set(_.pick(bufferBindings, this.buildTree.argNames));
+    this.computeSums.set(_.pick(bufferBindings, this.computeSums.argNames));
+    this.sort.set(_.pick(bufferBindings, this.sort.argNames));
+    this.calculatePointForces.set(_.pick(bufferBindings, this.sort.argNames));
 
     simulator.tickBuffers(['partialForces1']);
+    var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
 
     logger.trace("Running Force Atlas2 with BarnesHut Kernels");
 
@@ -586,7 +544,8 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var that = this;
     var tickTime = Date.now();
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
-    return that.pointForces(simulator, stepNumber, workItems)
+    var bufferBindings = getBufferBindings(simulator, stepNumber);
+    return that.pointForces(simulator, bufferBindings)
     .then(function () {
         return that.edgeForces2(simulator,stepNumber, workItems);
     }).then(function () {
