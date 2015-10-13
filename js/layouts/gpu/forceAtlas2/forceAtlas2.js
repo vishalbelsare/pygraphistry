@@ -182,20 +182,6 @@ var kernelSpecs = {
         ],
         fileName: 'segReduce.cl'
     },
-    mapEdges : {
-        kernelName: 'faEdgeMap',
-        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'isForward', 'edges', 'numEdges',
-        'pointDegrees', 'inputPositions', 'edgeWeights', 'outputForcesMap' 
-        ],
-        fileName: 'layouts/gpu/forceAtlas2/faEdgeMap.cl'
-    },
-    segReduce: {
-        kernelName: 'segReduce',
-        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numEdges', 'outputForcesMap',
-        'edgeStartEndIdxs', 'segStart', 'workList', 'numPoints', 'carryOutGlobal', 'output', 'partialForces'
-        ],
-        fileName: 'segReduce.cl'
-    },
     // ForceAtlas2 specific kernels
     faSwings: {
         kernelName: 'faSwingsTractions',
