@@ -4,7 +4,6 @@ var _          = require('underscore'),
     cljs       = require('../../../cl.js'),
     Kernel     = require('../../../kernel.js'),
     LayoutAlgo = require('../../../layoutAlgo.js'),
-    FaSwingsKernel = require('./faSwingsKernel.js'),
     IntegrateMidpointsKernel = require('./integrateMidpoints.js'),
     InterpolateMidpoints = require('./interpolateMidpoints.js'),
     MidpointForces = require('./midpointForces.js')
@@ -12,6 +11,122 @@ var _          = require('underscore'),
 
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:cl:edgebundling');
+
+var argsType = {
+    numPoints: cljs.types.uint_t,
+    inputPositions: null,
+    inputMidPositions: null,
+    stepNumber: cljs.types.uint_t,
+    inputPoints: null,
+    curForces: null,
+    prevForces: null,
+    mass: null,
+    swings: null,
+    tractions: null,
+    gSpeeds: null,
+    tau: cljs.types.float_t,
+    charge: cljs.types.float_t,
+    gSpeed: cljs.types.float_t,
+    springs: null,
+    xCoords: null,
+    yCoords: null,
+    edgeDirectionX: null,
+    edgeDirectionY: null,
+    edgeLengths: null,
+    accX: null,
+    accY: null,
+    children: null,
+    start: null,
+    sort: null,
+    xmins: null,
+    xmaxs: null,
+    ymins: null,
+    ymaxs: null,
+    edgeMins: null,
+    edgeMaxs: null,
+    count: null,
+    blocked: null,
+    step: null,
+    bottom: null,
+    maxDepth: null,
+    radius: null,
+    numBodies: cljs.types.uint_t,
+    numNodes: cljs.types.uint_t,
+    numWorkItems: cljs.types.uint_t,
+    globalSpeed: null,
+    nextMidPoints: null,
+    midpoint_stride: cljs.types.uint_t,
+    midpoints_per_edge: cljs.types.uint_t,
+    WARPSIZE: cljs.types.define,
+    THREADS_BOUND: cljs.types.define,
+    THREADS_FORCES: cljs.types.define,
+    THREADS_SUMS: cljs.types.define
+}
+
+var kernelSpecs = {
+    toKDLayout : {
+        name: 'toKDLayout',
+        kernelName:'to_kd_layout',
+        args: ['numPoints', 'inputMidPositions',
+            'inputPositions', 'xCoords', 'yCoords', 'springs', 'edgeDirectionX', 'edgeDirectionY',
+            'edgeLengths', 'mass', 'blocked', 'maxDepth', 'stepNumber', 'midpoint_stride',
+            'midpoints_per_edge', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+        ],
+        fileName: 'layouts/gpu/edgeBundling/kdTree/toKDLayout.cl'
+    },
+    boundBox: {
+        name : 'boundBox',
+        kernelName: 'bound_box',
+        args : ['xCoords', 'yCoords', 'children', 'mass', 'start', 'xmins', 'xmaxs',
+            'ymins', 'ymaxs', 'edgeMins', 'edgeMaxs', 'swings', 'tractions',
+            'blocked', 'step', 'bottom', 'radius', 'globalSpeed', 'stepNumber',
+            'numBodies', 'numNodes', 'tau', 'THREADS_BOUND'],
+            fileName: 'layouts/gpu/edgeBundling/kdTree/boundBox.cl'
+    },
+    buildTree: {
+        name: 'buildTree',
+        kernelName: 'build_tree',
+        args: [
+            'xCoords', 'yCoords',
+            'children', 'mass', 'start',
+            'step', 'bottom', 'maxDepth', 'radius',
+            'stepNumber', 'numBodies', 'numNodes'
+        ],
+        fileName: 'layouts/gpu/edgeBundling/kdTree/buildTree.cl'
+    },
+    computeSums: {
+        name: 'computeSums',
+        kernelName: 'compute_sums',
+        args: [ 'xCoords', 'yCoords', 'children', 'mass', 'count', 'step', 'bottom',
+            'stepNumber', 'numBodies', 'numNodes', 'WARPSIZE', 'THREADS_SUMS'
+        ],
+        fileName: 'layouts/gpu/edgeBundling/kdTree/computeSums.cl'
+    },
+    sort: {
+        name: 'sort',
+        kernelName: 'sort',
+        args: [ 'xCoords', 'yCoords', 'children', 'start', 'sort', 'count', 'step', 'bottom',
+            'maxDepth', 'radius', 'globalSpeed', 'stepNumber',  'numBodies', 'numNodes', ],
+            fileName: 'layouts/gpu/edgeBundling/kdTree/sort.cl'
+    },
+    calculateMidPoints: {
+        name: 'calculateMidPoints',
+        kernelName: 'calculate_forces',
+        args:[
+            'xCoords', 'yCoords', 'edgeDirectionX', 'edgeDirectionY', 'edgeLengths', 'children', 'sort',
+            'blocked', 'maxDepth', 'radius', 'stepNumber', 'numBodies', 'numNodes', 'nextMidPoints',
+            'charge', 'midpoint_stride', 'midpoints_per_edge', 'WARPSIZE', 'THREADS_FORCES'
+        ],
+        fileName: 'layouts/gpu/edgeBundling/kdTree/calculateForces.cl'
+    },
+    faSwingsKernel : {
+        name: 'faSwingsKernel',
+        kernelName: 'faSwingsTractions',
+        args: ['prevForces', 'curForces', 'swings', 'tractions'],
+        fileName: 'layouts/gpu/edgeBundling/faSwingsTractions.cl'
+    }
+
+}
 
 
 function EdgeBundling(clContext) {
@@ -23,11 +138,18 @@ function EdgeBundling(clContext) {
     this.ebMidsprings = new Kernel('midspringForces', EdgeBundling.argsMidsprings,
                                    EdgeBundling.argsType, 'layouts/gpu/edgeBundling/midspringForces.cl', clContext);
 
-    this.faSwingsKernel = new FaSwingsKernel(clContext);
-
     this.integrateMidpoints = new IntegrateMidpointsKernel(clContext);
 
     this.interpolateMidpoints = new InterpolateMidpoints(clContext);
+
+    var that = this;
+    // Create the kernels described by kernel specifications
+    _.each( kernelSpecs, function (kernel) {
+        var newKernel =
+            new Kernel(kernel.kernelName, kernel.args, argsType, kernel.fileName, clContext)
+        that[kernel.name] = newKernel;
+        that.kernels.push(newKernel);
+    });
 
     this.kernels = this.midpointForces.kernels.concat([this.ebMidsprings,
                                                       this.integrateMidpoints.faIntegrate,
@@ -195,7 +317,12 @@ EdgeBundling.prototype.setEdges = function (simulator) {
 
     return setupTempLayoutBuffers(simulator).then(function (tempLayoutBuffers) {
         that.midpointForces.setMidPoints(simulator, tempLayoutBuffers, warpsize, workItems);
-        that.faSwingsKernel.setMidPoints(simulator, tempLayoutBuffers);
+        that.faSwingsKernel.set({
+            prevForces: tempLayoutBuffers.prevForces.buffer,
+            curForces: tempLayoutBuffers.curForces.buffer,
+            swings: tempLayoutBuffers.swings.buffer,
+            tractions: tempLayoutBuffers.tractions.buffer
+          })
 
         that.ebMidsprings.set({
             numSplits: global.numSplits,
@@ -230,6 +357,13 @@ function midEdges(simulator, ebMidsprings, stepNumber) {
     logger.debug('Running kernel gaussSeidelMidsprings');
     return ebMidsprings.exec([numForwardsWorkItems], resources);
 }
+
+EdgeBundling.prototype.calculateSwings = function(simulator, workItems) {
+    var numMidpoints = simulator.dataframe.getNumElements('midPoints');
+    var resources = [];
+    return this.faSwingsKernel.exec([numMidpoints], resources)
+    .fail(log.makeQErrorHandler(logger, 'Executing FaSwing failed'));
+};
 
 
 // Helper function in order to create a chain of promises. It is needed in order to
@@ -315,7 +449,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
             //simulator.tickBuffers(['curMidpoints']);
             //return simulator.buffers.nextMidpoints.copyInto(simulator.buffers.curMidpoints);
         }).then(function () {
-            return that.faSwingsKernel.execMidPointsKernels(simulator, workItems);
+            return that.calculateSwings(simulator, workItems);
         }).then(function () {
             return that.integrateMidpoints.execKernels(simulator, tempLayoutBuffers, workItems);
         }).then(function () {
