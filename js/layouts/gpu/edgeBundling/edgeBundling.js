@@ -4,7 +4,6 @@ var _          = require('underscore'),
     cljs       = require('../../../cl.js'),
     Kernel     = require('../../../kernel.js'),
     LayoutAlgo = require('../../../layoutAlgo.js'),
-    InterpolateMidpoints = require('./interpolateMidpoints.js'),
     MidpointForces = require('./midpointForces.js')
 
 
@@ -24,6 +23,7 @@ var argsType = {
     children: null,
     count: null,
     curForces: null,
+    edges: null,
     edgeDirectionX: null,
     edgeDirectionY: null,
     edgeLengths: null,
@@ -41,10 +41,14 @@ var argsType = {
     midpoints_per_edge: cljs.types.uint_t,
     nextMidPoints: null,
     numBodies: cljs.types.uint_t,
+    numEdges: cljs.types.uint_t,
+    numSplits: cljs.types.uint_t,
     numNodes: cljs.types.uint_t,
     numPoints: cljs.types.uint_t,
     numWorkItems: cljs.types.uint_t,
     outputPositions: null,
+    outputMidPoints: null,
+    points: null,
     prevForces: null,
     radius: null,
     sort: null,
@@ -130,6 +134,12 @@ var kernelSpecs = {
         kernelName: 'faIntegrate',
         args: ['globalSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'],
         fileName: 'layouts/gpu/edgeBundling/faIntegrateMidPoints.cl'
+    },
+    interpolateMidpoints: {
+        name: 'interpolateMidpoints',
+        kernelName: 'interpolateMidpoints',
+        args: ['edges', 'points', 'numEdges', 'numSplits', 'outputMidPoints'],
+        fileName: 'layouts/gpu/edgeBundling/interpolateMidpoints.cl',
     }
 }
 
@@ -156,7 +166,7 @@ function EdgeBundling(clContext) {
 
     console.log("KERNELS", this.kernels);
     this.kernels = this.midpointForces.kernels.concat([this.ebMidsprings, this.integrateMidpoints,
-                                                      this.interpolateMidpoints.interpolate]);
+                                                      this.interpolateMidpoints]);
 }
 
 EdgeBundling.prototype = Object.create(LayoutAlgo.prototype);
@@ -385,6 +395,29 @@ function promiseWhile(condition, body) {
     return done.promise;
 }
 
+EdgeBundling.prototype.interpolate = function(simulator) {
+    var buffers = simulator.buffers,
+        numSprings = simulator.dataframe.getNumElements('edge'),
+        numSplits = simulator.dataframe.getNumElements('splits'),
+        resources = [
+        simulator.dataframe.getBuffer('forwardsEdges', 'simulator')
+    ];
+
+    this.interpolateMidpoints.set({
+        edges: simulator.dataframe.getBuffer('forwardsEdges', 'simulator').buffer,
+        points: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
+        numEdges: numSprings,
+        numSplits: numSplits,
+        outputMidPoints: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer
+    });
+
+    simulator.tickBuffers(['nextMidPoints']);
+
+    logger.trace('Running interpolateMidpoints kernel');
+    return this.interpolateMidpoints.exec([numSprings], resources)
+    .fail(log.makeQErrorHandler(logger, 'Kernel interpolateMidPoints failed'));
+};
+
 EdgeBundling.prototype.integrate = function(simulator, tempLayoutBuffers) {
     var buffers = simulator.buffers;
     var numMidPoints = simulator.dataframe.getNumElements('midPoints');
@@ -445,7 +478,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
         // interpolating between corresponding edge points.
         simulator.tickBuffers(['curMidPoints']);
         calculateMidpoints = new Q().then(function () {
-            return that.interpolateMidpoints.execKernels(simulator)
+            return that.interpolate(simulator)
         });
     } else {
       // If interpolateMidpoints is not true, calculate midpoints
