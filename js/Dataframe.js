@@ -381,7 +381,7 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
  * Filters this.data in-place given masks. Does not modify this.rawdata.
  * TODO: Take in Set objects, not just Mask.
  * @param {MaskSet} masks
- * @param {Object} simulator
+ * @param {SimCL} simulator
  * @returns {Promise.<Array<Buffer>>}
  */
 Dataframe.prototype.applyMaskSetToFilterInPlace = function (masks, simulator) {
