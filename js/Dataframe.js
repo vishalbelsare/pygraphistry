@@ -261,7 +261,17 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
 };
 
 /**
+ * @typedef {Object} ClientQueryAST
+ * @property {String} type - AST node type (from expressionParser.js)
+ */
+
+/**
  * @typedef {Object} ClientQuery
+ * @property {String} title User-defined title attribute.
+ * @property {String} attribute Dataframe-defined attribute (column) name.
+ * @property {String} type 'point' or 'edge'
+ * @property {ClientQueryAST} ast - AST returned by expressionParser.js
+ * @property {String} inputString - The expression text as entered, not corrected.
  */
 
 /**
