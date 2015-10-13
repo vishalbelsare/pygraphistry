@@ -52,6 +52,7 @@ var argsType = {
     outputPositions: null,
     outputMidPoints: null,
     outputMidpoints: null,
+    outputMidPositions: null,
     points: null,
     prevForces: null,
     radius: null,
@@ -140,7 +141,7 @@ var kernelSpecs = {
     integrateMidpoints: {
         name: 'integrateMidpoints',
         kernelName: 'faIntegrate',
-        args: ['globalSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'],
+        args: ['globalSpeed', 'inputMidPositions', 'curForces', 'swings', 'outputMidPositions'],
         fileName: 'layouts/gpu/edgeBundling/faIntegrateMidPoints.cl'
     },
     interpolateMidpoints: {
@@ -187,49 +188,64 @@ EdgeBundling.prototype.constructor = EdgeBundling;
 EdgeBundling.name = 'EdgeBundling';
 
 // Contains any temporary buffers needed for layout
-var tempLayoutBuffers  = {
-    globalSpeed: null,
-    tempMidPoints: null,
-    prevForces: null,
-    curForces: null,
-    swings: null,
-    tractions: null
-};
-Object.seal(tempLayoutBuffers);
+var layoutBuffers  = {};
 
 // Create temporary buffers needed for layout
 var setupTempLayoutBuffers = function (simulator) {
-    var numMidPoints = simulator.dataframe.getNumElements('midPoints');
-    simulator.resetBuffers(tempLayoutBuffers);
-    return Q.all([
-        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed'),
-        simulator.cl.createBuffer(2 * numMidPoints * Float32Array.BYTES_PER_ELEMENT, 'prevForces'),
-        simulator.cl.createBuffer(2 * numMidPoints * Float32Array.BYTES_PER_ELEMENT, 'curForces'),
-        simulator.cl.createBuffer(2 * numMidPoints * Float32Array.BYTES_PER_ELEMENT, 'tempMidPoints'),
-        simulator.cl.createBuffer(1 * numMidPoints * Float32Array.BYTES_PER_ELEMENT, 'swings'),
-        simulator.cl.createBuffer(1 * numMidPoints * Float32Array.BYTES_PER_ELEMENT, 'tractions')
-    ]).spread(function (globalSpeed, prevForces, curForces, tempMidPoints, swings, tractions) {
-        tempLayoutBuffers.globalSpeed = globalSpeed;
-        tempLayoutBuffers.prevForces = prevForces;
-        tempLayoutBuffers.curForces = curForces;
-        tempLayoutBuffers.tempMidPoints = tempMidPoints;
-        tempLayoutBuffers.swings = swings;
-        tempLayoutBuffers.tractions = tractions;
-        return tempLayoutBuffers;
-    }).catch(log.makeQErrorHandler(logger, 'setupTempBuffers'));
+
+    var bufferSizes = getBufferSizes(simulator);
+
+    var memoryAllocationPromises = _.map(bufferSizes, function (value, key) {
+        return simulator.cl.createBuffer(value, key);
+    })
+
+    return Q.all(
+        memoryAllocationPromises
+    )
+    .then(function (buffers) {
+        _.each(_.keys(bufferSizes), function (value, index) {
+            layoutBuffers[value] = buffers[index];
+        });
+        return layoutBuffers;
+    })
+    .fail(log.makeQErrorHandler(logger, "Setting temporary buffers for barnesHutKernelSequence failed"));
+};
+
+EdgeBundling.prototype.setMidPointsMidpointForces = function(simulator, tempLayoutBuffers, warpsize, workItems) {
+
+}
+
+var getNumNodes = function(numBodies, warpsize) {
+    // Adjust sizes for optimized memory
+    var blocks = 8; //TODO (paden) should be set to multiprocecessor count
+    var numNodes = numBodies * 5;
+    if (numNodes < 1024*blocks) {
+        numNodes = 1024*blocks;
+    }
+    while ((numNodes & (warpsize - 1)) != 0) {
+        numNodes++;
+    }
+    return numNodes;
 };
 
 
-EdgeBundling.prototype.setEdges = function (simulator) {
-    var vendor,
-        warpsize,
-        global,
-        that,
-        workGroupSize,
-        workItems;
+var getBufferSizes = function(simulator) {
 
-    vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
-    warpsize = 1; // Always correct
+    var getNumNodes = function(numBodies, warpsize) {
+        // Adjust sizes for optimized memory
+        var blocks = 8; //TODO (paden) should be set to multiprocecessor count
+        numNodes = numBodies * 5;
+        if (numNodes < 1024*blocks) {
+            numNodes = 1024*blocks;
+        }
+        while ((numNodes & (warpsize - 1)) != 0) {
+            numNodes++;
+        }
+        return numNodes;
+    };
+
+    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
+    var warpsize = 1; // Always correct
     if (vendor.indexOf('intel') !== -1) {
         warpsize = 16;
     } else if (vendor.indexOf('nvidia') !== -1) {
@@ -238,31 +254,143 @@ EdgeBundling.prototype.setEdges = function (simulator) {
         warpsize = 64;
     }
 
+    // TODO Set this to the number of workgroups in boundBox kernel
+    var numMidPoints = simulator.dataframe.getNumElements('midPoints');
+    var numNodes = getNumNodes(numMidPoints, warpsize); 
+    var numWorkGroups = 30;
+    var numDimensions = 2;
+    return {
+        blocked : Int32Array.BYTES_PER_ELEMENT,
+        bottom : Int32Array.BYTES_PER_ELEMENT,
+        children : 4*(numNodes + 1)*Int32Array.BYTES_PER_ELEMENT,
+        count : (numNodes + 1)*Int32Array.BYTES_PER_ELEMENT,
+        curForces: 2 * numMidPoints * Float32Array.BYTES_PER_ELEMENT,
+        edgeDirectionX : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
+        edgeDirectionY : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
+        edgeLengths : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
+        edgeMaxs : (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
+        edgeMins : (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
+        globalSpeed : Float32Array.BYTES_PER_ELEMENT,
+        mass : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
+        maxDepth : Int32Array.BYTES_PER_ELEMENT,
+        prevForces: 2 * numMidPoints * Float32Array.BYTES_PER_ELEMENT,
+        radius : numDimensions * Float32Array.BYTES_PER_ELEMENT,
+        sort : (numNodes + 1)*Int32Array.BYTES_PER_ELEMENT,
+        start: (numNodes + 1)*Int32Array.BYTES_PER_ELEMENT,
+        step : Int32Array.BYTES_PER_ELEMENT,
+        swings: numMidPoints * Float32Array.BYTES_PER_ELEMENT,
+        tempMidPoints: 2 * numMidPoints * Float32Array.BYTES_PER_ELEMENT,
+        tractions: numMidPoints * Float32Array.BYTES_PER_ELEMENT,
+        xCoords : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
+        xmaxs : (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
+        xmins : (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
+        yCoords : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
+        ymaxs :  (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
+        ymins : (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
+    }
+}
+
+var getBufferBindings = function (simulator, layoutBuffers) {
+    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
+    var warpsize = 1; // Always correct
+    if (vendor.indexOf('intel') !== -1) {
+        warpsize = 16;
+    } else if (vendor.indexOf('nvidia') !== -1) {
+        warpsize = 32;
+    } else if (vendor.indexOf('amd') !== -1) {
+        warpsize = 64;
+    }
+    var workGroupSize = 256;
+    var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps, workGroupSize);
+    var numBodies = simulator.dataframe.getNumElements('edge');
+    var numNodes = getNumNodes(numBodies, warpsize);
+    return {
+        THREADS_BOUND: workItems.boundBox[1],
+        THREADS_FORCES: workItems.calculateForces[1],
+        THREADS_SUMS: workItems.computeSums[1],
+        WARPSIZE:warpsize,
+        blocked:layoutBuffers.blocked.buffer,
+        bottom:layoutBuffers.bottom.buffer,
+        children:layoutBuffers.children.buffer,
+        count:layoutBuffers.count.buffer,
+        curForces: layoutBuffers.curForces.buffer,
+        edges: simulator.dataframe.getBuffer('forwardsEdges', 'simulator').buffer,
+        edgeDirectionX: layoutBuffers.edgeDirectionX.buffer,
+        edgeDirectionY: layoutBuffers.edgeDirectionY.buffer,
+        edgeLengths: layoutBuffers.edgeLengths.buffer,
+        edgeMaxs:layoutBuffers.edgeMaxs.buffer,
+        edgeMins:layoutBuffers.edgeMins.buffer,
+        globalSpeed: layoutBuffers.globalSpeed.buffer,
+        inputForces: layoutBuffers.tempMidPoints.buffer,
+        inputPoints: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
+        inputMidpoints: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
+        inputMidPositions: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
+        inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
+        mass: layoutBuffers.mass.buffer,
+        maxDepth:layoutBuffers.maxDepth.buffer,
+        nextMidPoints:layoutBuffers.tempMidPoints.buffer,
+        numBodies:numBodies,
+        numEdges: simulator.dataframe.getNumElements('edge'),
+        numNodes:numNodes,
+        numPoints: simulator.dataframe.getNumElements('edge'),
+        numSplits: simulator.controls.global.numSplits,
+        radius:layoutBuffers.radius.buffer,
+        outputMidPositions: simulator.dataframe.getBuffer('nextMidPoints', 'simulator').buffer,
+        outputMidpoints: layoutBuffers.curForces.buffer,
+        outputMidPoints: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
+        points: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
+        prevForces: layoutBuffers.prevForces.buffer,
+        sort:layoutBuffers.sort.buffer,
+        springs: simulator.dataframe.getBuffer('forwardsEdges', 'simulator').buffer,
+        springMidPositions: simulator.dataframe.getBuffer('midSpringsPos', 'simulator').buffer,
+        start:layoutBuffers.start.buffer,
+        step:layoutBuffers.step.buffer,
+        swings:layoutBuffers.swings.buffer,
+        tractions:layoutBuffers.tractions.buffer,
+        xCoords: layoutBuffers.xCoords.buffer,
+        xmaxs:layoutBuffers.xmaxs.buffer,
+        xmins:layoutBuffers.xmins.buffer,
+        yCoords:layoutBuffers.yCoords.buffer,
+        ymaxs:layoutBuffers.ymaxs.buffer,
+        ymins:layoutBuffers.ymins.buffer,
+        workList: simulator.dataframe.getBuffer('forwardsWorkItems', 'simulator').buffer,
+        midSpringsColorCoords: simulator.dataframe.getBuffer('midSpringsColorCoord', 'simulator').buffer
+    }
+};
+EdgeBundling.prototype.setEdges = function (simulator) {
+    var vendor,
+        warpsize,
+        global,
+        that,
+        workGroupSize,
+        workItems;
+
+    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
+    var warpsize = 1; // Always correct
+    if (vendor.indexOf('intel') !== -1) {
+        warpsize = 16;
+    } else if (vendor.indexOf('nvidia') !== -1) {
+        warpsize = 32;
+    } else if (vendor.indexOf('amd') !== -1) {
+        warpsize = 64;
+    }
+
+
     global = simulator.controls.global;
     that = this;
     workGroupSize = 256;
     workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps, workGroupSize);
 
     return setupTempLayoutBuffers(simulator).then(function (tempLayoutBuffers) {
-        that.midpointForces.setMidPoints(simulator, tempLayoutBuffers, warpsize, workItems);
-        that.faSwingsKernel.set({
-            prevForces: tempLayoutBuffers.prevForces.buffer,
-            curForces: tempLayoutBuffers.curForces.buffer,
-            swings: tempLayoutBuffers.swings.buffer,
-            tractions: tempLayoutBuffers.tractions.buffer
-          })
+        var bufferBindings = getBufferBindings(simulator, tempLayoutBuffers);
 
-        that.midspringForces.set({
-            numSplits: global.numSplits,
-            springs: simulator.dataframe.getBuffer('forwardsEdges', 'simulator').buffer,
-            workList: simulator.dataframe.getBuffer('forwardsWorkItems', 'simulator').buffer,
-            inputPoints: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
-            inputForces: tempLayoutBuffers.tempMidPoints.buffer,
-            inputMidpoints: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
-            outputMidpoints: tempLayoutBuffers.curForces.buffer,
-            springMidPositions: simulator.dataframe.getBuffer('midSpringsPos', 'simulator').buffer,
-            midSpringsColorCoords: simulator.dataframe.getBuffer('midSpringsColorCoord', 'simulator').buffer
+        _.each(that.midpointForces.kernels, function(kernel) {
+            kernel.set(_.pick(bufferBindings, kernel.argNames))
         });
+        that.faSwingsKernel.set(_.pick(bufferBindings, that.faSwingsKernel.argNames));
+        that.midspringForces.set(_.pick(bufferBindings, that.midspringForces.argNames));
+        that.interpolateMidpoints.set(_.pick(bufferBindings, that.interpolateMidpoints.argNames));
+        that.integrateMidpoints.set(_.pick(bufferBindings, that.integrateMidpoints.argNames));
     })
     .fail( log.makeQErrorHandler(logger, 'Failure in kd-edgebundling.js setEdges') )
 };
@@ -318,14 +446,6 @@ EdgeBundling.prototype.interpolate = function(simulator) {
         simulator.dataframe.getBuffer('forwardsEdges', 'simulator')
     ];
 
-    this.interpolateMidpoints.set({
-        edges: simulator.dataframe.getBuffer('forwardsEdges', 'simulator').buffer,
-        points: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
-        numEdges: numSprings,
-        numSplits: numSplits,
-        outputMidPoints: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer
-    });
-
     simulator.tickBuffers(['nextMidPoints']);
 
     logger.trace('Running interpolateMidpoints kernel');
@@ -336,14 +456,6 @@ EdgeBundling.prototype.interpolate = function(simulator) {
 EdgeBundling.prototype.integrate = function(simulator, tempLayoutBuffers) {
     var buffers = simulator.buffers;
     var numMidPoints = simulator.dataframe.getNumElements('midPoints');
-
-    this.integrateMidpoints.set({
-        globalSpeed: tempLayoutBuffers.globalSpeed.buffer,
-        inputPositions: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
-        curForces: tempLayoutBuffers.curForces.buffer,
-        swings: tempLayoutBuffers.swings.buffer,
-        outputPositions: simulator.dataframe.getBuffer('nextMidPoints', 'simulator').buffer
-    });
 
     var resources = [
         simulator.dataframe.getBuffer('curMidPoints', 'simulator'),
@@ -429,7 +541,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
         }).then(function () {
             return that.calculateSwings(simulator, workItems);
         }).then(function () {
-            return that.integrate(simulator, tempLayoutBuffers, workItems);
+            return that.integrate(simulator, layoutBuffers, workItems);
         }).then(function () {
             var nextMidPoints = simulator.dataframe.getBuffer('nextMidPoints', 'simulator');
             var curMidPoints = simulator.dataframe.getBuffer('curMidPoints', 'simulator');
@@ -441,7 +553,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
     }).then(function () {
         return Q.all([
             //tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
-            tempLayoutBuffers.curForces.copyInto(tempLayoutBuffers.prevForces)
+            layoutBuffers.curForces.copyInto(layoutBuffers.prevForces)
         ]);
     }).fail(log.makeQErrorHandler(logger, 'Failure in edgebundling tick'));
 };
