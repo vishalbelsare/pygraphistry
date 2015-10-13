@@ -205,6 +205,7 @@ function getBufferBindings(simulator, stepNumber) {
         pointDegrees: simulator.dataframe.getBuffer('degrees', 'simulator').buffer,
         pointForces: simulator.dataframe.getBuffer('partialForces1', 'simulator').buffer,
         prevForces: simulator.dataframe.getBuffer('prevForces', 'simulator').buffer,
+        outputPositions: simulator.dataframe.getBuffer('nextPoints', 'simulator').buffer,
         radius:layoutBuffers.radius.buffer,
         sort:layoutBuffers.sort.buffer,
         start:layoutBuffers.start.buffer,
@@ -301,16 +302,10 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator, warpsi
      }).fail(log.makeQErrorHandler(logger, "Setting temporary buffers for barnesHutKernelSequence failed"));
 };
 
-ForceAtlas2Barnes.prototype.calculateSwings = function(simulator, workItems) {
-    //var buffers = simulator.buffers;
-    //var bufferBindings = getBufferBindings(simulator, warpsize, workItems);
-    //this.faSwings.set(_.pick(bufferBindings, this.faSwings.argNames));
-    this.faSwings.set({
-        curForces: simulator.dataframe.getBuffer('curForces', 'simulator').buffer,
-        prevForces: simulator.dataframe.getBuffer('prevForces', 'simulator').buffer,
-        swings: simulator.dataframe.getBuffer('swings', 'simulator').buffer,
-        tractions: simulator.dataframe.getBuffer('tractions', 'simulator').buffer
-    });
+ForceAtlas2Barnes.prototype.calculateSwings = function(simulator, bufferBindings, workItems) {
+
+    this.faSwings.set(_.pick(bufferBindings, this.faSwings.argNames));
+
     var resources = [
         simulator.dataframe.getBuffer('prevForces', 'simulator'),
         simulator.dataframe.getBuffer('curForces', 'simulator'),
@@ -324,17 +319,8 @@ ForceAtlas2Barnes.prototype.calculateSwings = function(simulator, workItems) {
     .fail(log.makeQErrorHandler(logger, 'Executing FaSwing failed'));
 };
 
-ForceAtlas2Barnes.prototype.integrate = function(simulator) {
-    var buffers = simulator.buffers;
-    var numPoints = simulator.dataframe.getNumElements('point');
-
-    this.faIntegrate.set({
-        globalSpeed: layoutBuffers.globalSpeed.buffer,
-        inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
-        curForces: simulator.dataframe.getBuffer('curForces', 'simulator').buffer,
-        swings: simulator.dataframe.getBuffer('swings', 'simulator').buffer,
-        outputPositions: simulator.dataframe.getBuffer('nextPoints', 'simulator').buffer
-    });
+ForceAtlas2Barnes.prototype.integrate = function(simulator, bufferBindings, workItems) {
+    this.faIntegrate.set(_.pick(bufferBindings, this.faIntegrate.argNames));
 
     var resources = [
         simulator.dataframe.getBuffer('curPoints', 'simulator'),
@@ -346,6 +332,7 @@ ForceAtlas2Barnes.prototype.integrate = function(simulator) {
     simulator.tickBuffers(['nextPoints']);
 
     logger.trace("Running kernel faIntegrate");
+    var numPoints = simulator.dataframe.getNumElements('point');
     return this.faIntegrate.exec([numPoints], resources)
     .fail(log.makeQErrorHandler(logger, 'Executing Integrate failed'));
 }
@@ -394,7 +381,7 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
     return this.initializeLayoutBuffers(simulator);
 }
 
-ForceAtlas2Barnes.prototype.pointForces = function(simulator, bufferBindings) {
+ForceAtlas2Barnes.prototype.pointForces = function(simulator, bufferBindings, workItems) {
 
     var resources = [
         simulator.dataframe.getBuffer('curPoints', 'simulator'),
@@ -411,7 +398,6 @@ ForceAtlas2Barnes.prototype.pointForces = function(simulator, bufferBindings) {
     this.calculatePointForces.set(_.pick(bufferBindings, this.sort.argNames));
 
     simulator.tickBuffers(['partialForces1']);
-    var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
 
     logger.trace("Running Force Atlas2 with BarnesHut Kernels");
 
@@ -517,13 +503,13 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var tickTime = Date.now();
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
     var bufferBindings = getBufferBindings(simulator, stepNumber);
-    return that.pointForces(simulator, bufferBindings)
+    return that.pointForces(simulator, bufferBindings, workItems)
     .then(function () {
         return that.edgeForces(simulator,stepNumber, workItems);
     }).then(function () {
-        return that.calculateSwings(simulator, workItems);
+        return that.calculateSwings(simulator, bufferBindings, workItems);
     }).then(function () {
-        return that.integrate(simulator, layoutBuffers, workItems);
+        return that.integrate(simulator, bufferBindings, workItems);
     }).then(function () {
         var buffers = simulator.buffers;
         simulator.tickBuffers(['curPoints']);
