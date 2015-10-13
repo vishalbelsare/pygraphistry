@@ -156,29 +156,31 @@ var kernelSpecs = {
     // Edge force mapper and segmented reduce kernels used to calculate edge forces
     forwardsEdgeForceMapper : {
         kernelName: 'faEdgeMap',
-        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'ONE', 'forwardsEdges', 'numEdges',
-        'pointDegrees', 'inputPositions', 'forwardsEdgeWeights', 'outputForcesMap' 
+        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'ONE', 'forwardsEdges', 
+            'numEdges', 'pointDegrees', 'inputPositions', 'forwardsEdgeWeights', 'outputForcesMap' 
         ],
         fileName: 'layouts/gpu/forceAtlas2/faEdgeMap.cl'
     },
     reduceForwardsEdgeForces : {
         kernelName: 'segReduce',
         args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numEdges', 'outputForcesMap',
-        'forwardsEdgeStartEndIdxs', 'segStart', 'forwardsWorkItems', 'numPoints', 'carryOutGlobal', 'partialForces', 'pointForces'
+        'forwardsEdgeStartEndIdxs', 'segStart', 'forwardsWorkItems', 'numPoints', 'carryOutGlobal', 
+        'partialForces', 'pointForces'
         ],
         fileName: 'segReduce.cl'
     },
     backwardsEdgeForceMapper : {
         kernelName: 'faEdgeMap',
-        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'ZERO', 'backwardsEdges', 'numEdges',
-        'pointDegrees', 'inputPositions', 'backwardsEdgeWeights', 'outputForcesMap' 
+        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'ZERO', 'backwardsEdges', 
+            'numEdges', 'pointDegrees', 'inputPositions', 'backwardsEdgeWeights', 'outputForcesMap' 
         ],
         fileName: 'layouts/gpu/forceAtlas2/faEdgeMap.cl'
     },
     reduceBackwardsEdgeForces : {
         kernelName: 'segReduce',
         args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numEdges', 'outputForcesMap',
-        'backwardsEdgeStartEndIdxs', 'segStart', 'backwardsWorkItems', 'numPoints', 'carryOutGlobal', 'curForces', 'partialForces'
+        'backwardsEdgeStartEndIdxs', 'segStart', 'backwardsWorkItems', 'numPoints', 
+        'carryOutGlobal', 'curForces', 'partialForces'
         ],
         fileName: 'segReduce.cl'
     },
