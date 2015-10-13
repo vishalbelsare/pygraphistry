@@ -441,7 +441,7 @@ ForceAtlas2Barnes.prototype.pointForces = function(simulator, bufferBindings) {
     .fail(log.makeQErrorHandler(logger, "Executing BarnesKernelSeq failed"));
 }
 
-ForceAtlas2Barnes.prototype.edgeForces2 = function(simulator, stepNumber, workItemsSize) {
+ForceAtlas2Barnes.prototype.edgeForces = function(simulator, stepNumber, workItemsSize) {
 
     var dataframe = simulator.dataframe;
     var forwardsEdges = dataframe.getBuffer('forwardsEdges', 'simulator');
@@ -505,20 +505,6 @@ ForceAtlas2Barnes.prototype.edgeForces2 = function(simulator, stepNumber, workIt
         });
 } 
 
-function edgeForces(simulator, edgeKernelSeq, stepNumber, workItems) {
-    var buffers = simulator.buffers;
-    var dataframe = simulator.dataframe;
-
-    return edgeKernelSeq.execKernels(simulator,
-                                     dataframe.getBuffer('forwardsEdges', 'simulator'),
-                                     dataframe.getBuffer('forwardsWorkItems', 'simulator'),
-                                     dataframe.getBuffer('backwardsEdges', 'simulator'),
-                                     dataframe.getBuffer('backwardsWorkItems', 'simulator'),
-                                     dataframe.getBuffer('curPoints', 'simulator'),
-                                     dataframe.getBuffer('degrees', 'simulator'),
-                                     workItems);
-}
-
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var locks = simulator.controls.locks;
     if (locks.lockPoints) {
@@ -533,7 +519,7 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var bufferBindings = getBufferBindings(simulator, stepNumber);
     return that.pointForces(simulator, bufferBindings)
     .then(function () {
-        return that.edgeForces2(simulator,stepNumber, workItems);
+        return that.edgeForces(simulator,stepNumber, workItems);
     }).then(function () {
         return that.calculateSwings(simulator, workItems);
     }).then(function () {
