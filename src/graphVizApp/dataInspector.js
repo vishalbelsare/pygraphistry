@@ -149,7 +149,7 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
 
         rowClick: function () {
             if (!this.model.get('selected')) {
-                activeSelection.onNext([{idx: this.model.attributes._index, dim: dim}]);
+                activeSelection.onNext([{idx: this.model.attributes._index, dim: dim, source: 'dataInspector'}]);
             } else {
                 activeSelection.onNext([]);
             }

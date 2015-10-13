@@ -9,6 +9,7 @@ var _       = require('underscore');
 var util            = require('./util.js');
 var interaction     = require('./interaction.js');
 var picking         = require('../picking.js');
+var canvas          = require('./canvas.js');
 
 // HACK because we can't know what the mouse position is without watching events
 var mousePosition = {x: 0, y: 0};
@@ -308,6 +309,16 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
         'labels:', labels.length, '/', _.keys(hits).length, poi.state.inactiveLabels.length);
 }
 
+
+function deselectWhenSimulating(appState) {
+    appState.simulateOn.do(function (val) {
+        if (val) {
+            appState.activeSelection.onNext([]);
+        }
+    }).subscribe(_.identity, util.makeErrorHandler('setuplabels (hide when simulating)'));
+}
+
+
 // move labels when new highlight or finish noisy rendering section
 // (or hide if off)
 // AppState * UrlParams * $DOM * Observable [ {dim: int, idx: int} ] * Observable DOM -> ()
@@ -321,20 +332,20 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
         return;
     }
 
+    // TODO: Is this the actual behavior we want?
+    deselectWhenSimulating(appState);
 
     appState.cameraChanges.combineLatest(
         appState.vboUpdates,
-        _.identity
-    ).flatMapLatest(function () {
-        return latestHighlightedObject;
-    }).flatMapLatest(function (highlighted) {
-        return appState.activeSelection.map(function (selection) {
+        latestHighlightedObject,
+        appState.activeSelection,
+        function (camera, vboUpdates, highlighted, selection) {
             return {
                 highlighted: highlighted,
                 selection: selection
             };
-        });
-    }).do(function (toShow) {
+        }
+    ).do(function (toShow) {
 
         // TODO: Rework how labels system takes in selections vs highlights.
         // E.g., selections do not need to be a subset of highlight.
@@ -348,13 +359,6 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
 
     })
     .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
-
-    // Hide open labels while simulating
-    appState.simulateOn.do(function (val) {
-        if (val) {
-            latestHighlightedObject.onNext([{cmd: 'declick'}]);
-        }
-    }).subscribe(_.identity, util.makeErrorHandler('setuplabels (hide when simulating)'));
 }
 
 
@@ -396,6 +400,11 @@ function setupClickSelections (appState, $eventTarget) {
                 return appState.latestHighlightedObject.take(1);
             }
         }).do(function (clickPoints) {
+            // Tag source
+            _.each(clickPoints, function (click) {
+                _.extend(click, {source: 'canvas'});
+            });
+
             if (clickPoints[0].idx > -1) {
                 activeSelection.onNext(clickPoints);
             } else {
@@ -409,7 +418,7 @@ function setupClickSelections (appState, $eventTarget) {
 // Changes either from point/edge mouseover or a label mouseover
 // Clicking (coexists with hovering) will open at most 1 label
 // Most recent interaction goes at the end
-function getLatestHighlightedObject (appState, $eventTarget, textures) {
+function setupLatestHighlightedObject (appState, $eventTarget, textures) {
     var OFF = [{idx: -1, dim: 0}];
     appState.latestHighlightedObject.onNext(OFF);
 
@@ -432,11 +441,20 @@ function getLatestHighlightedObject (appState, $eventTarget, textures) {
     return appState.latestHighlightedObject;
 }
 
+function setupLabelsAndCursor(appState, urlParams, $eventTarget) {
+    // Picks objects in priority based on order.
+    var hitMapTextures = ['hitmap'];
+    var latestHighlightedObject = setupLatestHighlightedObject(appState, $eventTarget, hitMapTextures);
+
+    setupClickSelections(appState, $eventTarget);
+    setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating, latestHighlightedObject, appState.activeSelection);
+    setupLabels(appState, urlParams, $eventTarget, latestHighlightedObject);
+}
 
 
 module.exports = {
     setupLabels: setupLabels,
     setupCursor: setupCursor,
-    getLatestHighlightedObject: getLatestHighlightedObject,
-    setupClickSelections: setupClickSelections
+    setupClickSelections: setupClickSelections,
+    setupLabelsAndCursor: setupLabelsAndCursor
 };

@@ -8,7 +8,6 @@ var _       = require('underscore');
 
 var interaction     = require('./interaction.js');
 var util            = require('./util.js');
-var labels          = require('./labels.js');
 var renderer        = require('../renderer');
 var colorPicker     = require('./colorpicker.js');
 
@@ -47,16 +46,6 @@ function setupCameraInteractions(appState, $eventTarget) {
     );
 }
 
-
-function setupLabelsAndCursor(appState, urlParams, $eventTarget) {
-    // Picks objects in priority based on order.
-    var hitMapTextures = ['hitmap'];
-    var latestHighlightedObject = labels.getLatestHighlightedObject(appState, $eventTarget, hitMapTextures);
-
-    labels.setupClickSelections(appState, $eventTarget);
-    labels.setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating, latestHighlightedObject, appState.activeSelection);
-    labels.setupLabels(appState, urlParams, $eventTarget, latestHighlightedObject);
-}
 
 function setupRenderUpdates(renderingScheduler, cameraStream, settingsChanges) {
     settingsChanges
@@ -928,7 +917,6 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
 module.exports = {
     setupBackgroundColor: setupBackgroundColor,
     setupCameraInteractions: setupCameraInteractions,
-    setupLabelsAndCursor: setupLabelsAndCursor,
     setupRenderUpdates: setupRenderUpdates,
     RenderingScheduler: RenderingScheduler,
     getEdgeLabelPos: getEdgeLabelPos
