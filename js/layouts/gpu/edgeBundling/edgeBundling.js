@@ -68,36 +68,6 @@ EdgeBundling.argsType = {
     springDistance: cljs.types.float_t,
 };
 
-EdgeBundling.prototype.setPhysics = function (cfg) {
-    var flags,
-        flagNames;
-    LayoutAlgo.prototype.setPhysics.call(this, cfg);
-
-    // get the flags from previous iteration
-    flags = this.midpointForces.getFlags('flags');
-    flagNames = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'];
-
-    _.each(cfg, function (val, flag) {
-        var idx,
-            mask;
-
-        idx = flagNames.indexOf(flag);
-        if (idx >= 0) {
-            mask = 0 | (1 << idx);
-            if (val) {
-                flags |= mask;
-            } else {
-                flags &= ~mask;
-            }
-        }
-    });
-
-    this.midpointForces.setPhysics(flags);
-    this.integrateMidpoints.setPhysics(flags);
-    //this.edgeKernelSeq.setPhysics(flags);
-};
-
-
 // TODO (paden) This should be combined into barnesKernelsSeq
 function getNumWorkitemsByHardware(deviceProps) {
 
