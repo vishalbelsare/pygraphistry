@@ -7,7 +7,30 @@ var persist     = require('./persist.js');
 
 var WorkbookDocName = 'workbook.json';
 
+var blankLegendTemplate = {
+    title: undefined,
+    subtitle: undefined,
+    nodes: undefined,
+    edges: undefined
+};
+
+var blankViewTemplate = {
+    title: undefined,
+    filters: [],
+    sets: [],
+    legend: blankLegendTemplate
+};
+
+var blankWorkbookTemplate = {
+    title: undefined,
+    contentName: undefined,
+    datasetReferences: {},
+    views: {default: blankViewTemplate},
+    currentView: 'default'
+};
+
 module.exports = {
+    blankWorkbookTemplate: blankWorkbookTemplate,
     loadDocument: function (workbookSpecifier) {
         var workbookRoot = new persist.ContentSchema().subSchemaForWorkbook(workbookSpecifier);
         return Rx.Observable.fromPromise(workbookRoot.download(WorkbookDocName)).map(function (data) {
