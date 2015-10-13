@@ -391,20 +391,6 @@ ForceAtlas2Barnes.prototype.updateDataframeBuffers = function(simulator) {
 };
 
 ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
-    var numMidPoints = simulator.dataframe.getNumElements('midPoints');
-    var localPosSize =
-        Math.min(simulator.cl.maxThreads, numMidPoints)
-    * simulator.elementsPerPoint
-    * Float32Array.BYTES_PER_ELEMENT;
-
-    var global = simulator.controls.global;
-    var that = this;
-
-    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
-    var warpsize = getWarpsize(vendor);
-
-    var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
-    var that = this;
     return this.initializeLayoutBuffers(simulator);
 }
 
