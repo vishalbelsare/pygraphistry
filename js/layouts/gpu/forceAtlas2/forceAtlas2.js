@@ -200,7 +200,7 @@ function ForceAtlas2Barnes(clContext) {
     logger.trace('Creating ForceAtlasBarnes kernels');
     var that = this;
     _.each(kernelSpecs, function (kernel, name) {
-        var newKernel =
+        var newKernel = 
             new Kernel(kernel.kernelName, kernel.args, argsType, kernel.fileName, clContext)
         that[name] = newKernel;
         that.kernels.push(newKernel);
@@ -401,8 +401,6 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator, warpsi
 
 ForceAtlas2Barnes.prototype.calculateSwings = function(simulator, bufferBindings, workItems) {
 
-    this.faSwings.set(_.pick(bufferBindings, this.faSwings.argNames));
-
     var resources = [
         simulator.dataframe.getBuffer('prevForces', 'simulator'),
         simulator.dataframe.getBuffer('curForces', 'simulator'),
@@ -417,7 +415,6 @@ ForceAtlas2Barnes.prototype.calculateSwings = function(simulator, bufferBindings
 };
 
 ForceAtlas2Barnes.prototype.integrate = function(simulator, bufferBindings, workItems) {
-    this.faIntegrate.set(_.pick(bufferBindings, this.faIntegrate.argNames));
 
     var resources = [
         simulator.dataframe.getBuffer('curPoints', 'simulator'),
@@ -435,47 +432,13 @@ ForceAtlas2Barnes.prototype.integrate = function(simulator, bufferBindings, work
 }
 
 ForceAtlas2Barnes.prototype.updateDataframeBuffers = function(simulator) {
-    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
-    var warpsize = getWarpsize(vendor);
-
-    var that = this;
-    var sizes = computeSizes(simulator, warpsize, simulator.dataframe.getNumElements('point'));
-    var numNodes = sizes.numNodes;
-    var numBodies = sizes.numBodies;
-
-    that.toBarnesLayout.set({
-        numPoints: simulator.dataframe.getNumElements('point'),
-        inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
-        pointDegrees: simulator.dataframe.getBuffer('degrees', 'simulator').buffer
-    });
-
-    that.boundBox.set({
-            swings:simulator.dataframe.getBuffer('swings', 'simulator').buffer,
-            tractions: simulator.dataframe.getBuffer('tractions', 'simulator').buffer,
-            pointForces: simulator.dataframe.getBuffer('partialForces1', 'simulator').buffer,
-            numBodies: numBodies,
-            numNodes: numNodes
-    });
-
-    var updateBarnesArgs = function (kernel) {
-        var args = {
-            swings: simulator.dataframe.getBuffer('swings', 'simulator').buffer,
-            tractions: simulator.dataframe.getBuffer('tractions', 'simulator').buffer,
-            pointForces: simulator.dataframe.getBuffer('partialForces1', 'simulator').buffer,
-            numBodies: numBodies,
-            numNodes: numNodes
-        };
-        kernel.set(args);
-    };
-
-    updateBarnesArgs(that.buildTree);
-    updateBarnesArgs(that.computeSums);
-    updateBarnesArgs(that.sort);
-    updateBarnesArgs(that.calculatePointForces);
+    var bufferBindings = getBufferBindings(simulator, 0);
+    return this.updateBufferBindings(bufferBindings);
 };
 
 ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
-    return this.initializeLayoutBuffers(simulator);
+    var that = this;
+    return this.initializeLayoutBuffers(simulator)
 }
 
 ForceAtlas2Barnes.prototype.pointForces = function(simulator, bufferBindings, workItems) {
@@ -486,13 +449,6 @@ ForceAtlas2Barnes.prototype.pointForces = function(simulator, bufferBindings, wo
         simulator.dataframe.getBuffer('backwardsDegrees', 'simulator'),
         simulator.dataframe.getBuffer('partialForces1', 'simulator')
     ];
-
-    this.toBarnesLayout.set(_.pick(bufferBindings, this.toBarnesLayout.argNames));
-    this.boundBox.set(_.pick(bufferBindings, this.boundBox.argNames));
-    this.buildTree.set(_.pick(bufferBindings, this.buildTree.argNames));
-    this.computeSums.set(_.pick(bufferBindings, this.computeSums.argNames));
-    this.sort.set(_.pick(bufferBindings, this.sort.argNames));
-    this.calculatePointForces.set(_.pick(bufferBindings, this.sort.argNames));
 
     simulator.tickBuffers(['partialForces1']);
 
@@ -525,27 +481,24 @@ ForceAtlas2Barnes.prototype.pointForces = function(simulator, bufferBindings, wo
 }
 
 ForceAtlas2Barnes.prototype.edgeForces = function(simulator, stepNumber, workItemsSize, bufferBindings) {
-        var forwardsEdgeForceMapper = this.forwardsEdgeForceMapper;
-        var reduceForwardsEdgeForces = this.reduceForwardsEdgeForces;
-        var backwardsEdgeForceMapper = this.backwardsEdgeForceMapper;
-        var reduceBackwardsEdgeForces = this.reduceBackwardsEdgeForces;
-        forwardsEdgeForceMapper.set(_.pick(bufferBindings, forwardsEdgeForceMapper.argNames));
-        reduceForwardsEdgeForces.set(_.pick(bufferBindings, reduceForwardsEdgeForces.argNames));
-        backwardsEdgeForceMapper.set(_.pick(bufferBindings, backwardsEdgeForceMapper.argNames));
-        reduceBackwardsEdgeForces.set(_.pick(bufferBindings, reduceBackwardsEdgeForces.argNames));
-
-        var resources = [];
-
         logger.trace("Running kernel faEdgeForces");
-        return forwardsEdgeForceMapper.exec([workItemsSize.edgeForces[0]], resources, [workItemsSize.edgeForces[1]])
+        var that = this;
+        var resources = [];
+        return that.forwardsEdgeForceMapper.exec([workItemsSize.edgeForces[0]], resources, [workItemsSize.edgeForces[1]])
         .then(function () {
-            return reduceForwardsEdgeForces.exec([workItemsSize.segReduce[0]], resources, [workItemsSize.segReduce[1]])
+            return that.reduceForwardsEdgeForces.exec([workItemsSize.segReduce[0]], resources, [workItemsSize.segReduce[1]])
         }).then(function () {
-        return backwardsEdgeForceMapper.exec([workItemsSize.edgeForces[0]], resources, [workItemsSize.edgeForces[1]]).then(function () {
-            return reduceBackwardsEdgeForces.exec([workItemsSize.segReduce[0]], resources, [workItemsSize.segReduce[1]])
-        })
-     });
+            return that.backwardsEdgeForceMapper.exec([workItemsSize.edgeForces[0]], resources, [workItemsSize.edgeForces[1]])
+        }).then(function () {
+            return that.reduceBackwardsEdgeForces.exec([workItemsSize.segReduce[0]], resources, [workItemsSize.segReduce[1]])
+        });
 } 
+
+ForceAtlas2Barnes.prototype.updateBufferBindings = function(bufferBindings) {
+    _.each(this.kernels, function(kernel) {
+        kernel.set(_.pick(bufferBindings, kernel.argNames));
+    })
+}
 
 ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var locks = simulator.controls.locks;
@@ -559,6 +512,7 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var tickTime = Date.now();
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
     var bufferBindings = getBufferBindings(simulator, stepNumber);
+    this.updateBufferBindings(bufferBindings);
     return that.pointForces(simulator, bufferBindings, workItems)
     .then(function () {
         return that.edgeForces(simulator,stepNumber, workItems, bufferBindings);
