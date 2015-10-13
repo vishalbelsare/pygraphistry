@@ -148,29 +148,6 @@ ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
     })
 }
 
-// Contains any temporary buffers needed for layout
-var layoutBuffers  = {
-    globalSpeed: null,
-    x_cords: null,
-    y_cords: null,
-    velx: null,
-    vely: null,
-    accx: null,
-    accy: null,
-    children: null,
-    global_x_mins: null,
-    global_y_mins: null,
-    global_x_maxs: null,
-    global_y_maxs: null,
-    globalSwings: null,
-    globalTractions: null,
-    count: null,
-    blocked: null,
-    step: null,
-    bottom: null,
-    maxdepth: null,
-};
-
 // Returns a map from the name of the buffer used in this layout to the actual buffer
 function getBufferBindings(simulator, stepNumber) {
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
@@ -203,7 +180,7 @@ function getBufferBindings(simulator, stepNumber) {
         numNodes:layoutBuffers.numNodes,
         numPoints:simulator.dataframe.getNumElements('point'),
         pointDegrees: simulator.dataframe.getBuffer('degrees', 'simulator').buffer,
-        pointForces: simulator.dataframe.getBuffer('partialForces1', 'simulator').buffer,
+        pointForces: layoutBuffers.pointForces.buffer,
         prevForces: simulator.dataframe.getBuffer('prevForces', 'simulator').buffer,
         outputPositions: simulator.dataframe.getBuffer('nextPoints', 'simulator').buffer,
         radius:layoutBuffers.radius.buffer,
@@ -218,6 +195,9 @@ function getBufferBindings(simulator, stepNumber) {
         yCoords:layoutBuffers.y_cords.buffer,
     }
 }
+
+// Contains any temporary buffers needed for layout. These are set in initialize layout Buffers
+var layoutBuffers  = {};
 
 ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator, warpsize, numPoints) {
     simulator.resetBuffers(layoutBuffers);
@@ -240,7 +220,6 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator, warpsi
         simulator.cl.createBuffer(4*(num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'children'),
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'mass'),
         simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'start'),
-        //TODO (paden) Create subBuffers
         simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'sort'),
         simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_mins'),
         simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_maxs'),
@@ -255,6 +234,7 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator, warpsi
         simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'maxdepth'),
         simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'radius'),
         simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed'),
+        simulator.cl.createBuffer(2 * numPoints * Float32Array.BYTES_PER_ELEMENT, 'pointForces'),
         simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'outputEdgeForcesMap'),
         simulator.cl.createBuffer(1 + Math.ceil(numEdges / 256), 'globalCarryIn'),
         simulator.cl.createBuffer(forwardsEdges.edgeStartEndIdxsTyped.byteLength, 'forwardsEdgeStartEndIdxs'),
@@ -262,7 +242,7 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator, warpsi
         simulator.cl.createBuffer((numPoints * Float32Array.BYTES_PER_ELEMENT) / 2, 'segStart')
      ]).spread(function (x_cords, y_cords, accx, accy, children, mass, start, sort,
                          xmin, xmax, ymin, ymax, globalSwings, globalTractions, count,
-                         blocked, step, bottom, maxdepth, radius, globalSpeed,
+                         blocked, step, bottom, maxdepth, radius, globalSpeed, pointForces,
                         outputEdgeForcesMap, globalCarryOut, forwardsEdgeStartEndIdxs,
                         backwardsEdgeStartEndIdxs, segStart) {
          layoutBuffers.x_cords = x_cords;
@@ -288,6 +268,7 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator, warpsi
          layoutBuffers.numNodes = numNodes;
          layoutBuffers.numBodies = numBodies;
          layoutBuffers.globalSpeed = globalSpeed;
+         layoutBuffers.pointForces = pointForces,
          layoutBuffers.outputEdgeForcesMap = outputEdgeForcesMap;
          layoutBuffers.globalCarryOut = globalCarryOut;
          layoutBuffers.forwardsEdgeStartEndIdxs = forwardsEdgeStartEndIdxs;
@@ -427,7 +408,7 @@ ForceAtlas2Barnes.prototype.pointForces = function(simulator, bufferBindings, wo
     .fail(log.makeQErrorHandler(logger, "Executing BarnesKernelSeq failed"));
 }
 
-ForceAtlas2Barnes.prototype.edgeForces = function(simulator, stepNumber, workItemsSize) {
+ForceAtlas2Barnes.prototype.edgeForces = function(simulator, stepNumber, workItemsSize, bufferBindings) {
 
     var dataframe = simulator.dataframe;
     var forwardsEdges = dataframe.getBuffer('forwardsEdges', 'simulator');
@@ -439,6 +420,7 @@ ForceAtlas2Barnes.prototype.edgeForces = function(simulator, stepNumber, workIte
     var mapEdges = this.mapEdges;
     var segReduce = this.segReduce;
 
+    console.log(bufferBindings.pointForces);
     function edgeForcesOneWay(simulator, edges, workItems, points, pointDegrees, edgeWeights, partialForces, outputForces, startEnd, workItemsSize, isForward) {
         var numEdges = simulator.dataframe.getNumElements('edge');
         var numPoints = simulator.dataframe.getNumElements('point');
@@ -477,7 +459,7 @@ ForceAtlas2Barnes.prototype.edgeForces = function(simulator, stepNumber, workIte
 
     return edgeForcesOneWay(simulator, forwardsEdges, forwardsWorkItems, points, pointDegrees,
                                  simulator.dataframe.getBuffer('forwardsEdgeWeights', 'simulator'),
-                                 simulator.dataframe.getBuffer('partialForces1', 'simulator'),
+                                 layoutBuffers.pointForces,
                                  simulator.dataframe.getBuffer('partialForces2', 'simulator'),
                                  simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator'),
                                  workItemsSize, 1)
@@ -505,7 +487,7 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     var bufferBindings = getBufferBindings(simulator, stepNumber);
     return that.pointForces(simulator, bufferBindings, workItems)
     .then(function () {
-        return that.edgeForces(simulator,stepNumber, workItems);
+        return that.edgeForces(simulator,stepNumber, workItems, bufferBindings);
     }).then(function () {
         return that.calculateSwings(simulator, bufferBindings, workItems);
     }).then(function () {
