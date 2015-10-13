@@ -6,10 +6,6 @@ var _     = require('underscore'),
 
     LayoutAlgo = require('../../../layoutAlgo.js'),
     Kernel = require('../../../kernel.js'),
-    BarnesKernelSeq = require('./pointForces.js'),
-    EdgeKernelSeqFast = require('./edgeForces'),
-    integrateKernel = require('./integrateKernel.js'),
-
     log        = require('common/logger.js'),
     logger     = log.createLogger('graph-viz:cl:forceatlas2barnes');
 
@@ -441,7 +437,6 @@ ForceAtlas2Barnes.prototype.updateDataframeBuffers = function(simulator) {
 };
 
 ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
-    var that = this;
     return this.initializeLayoutBuffers(simulator)
 }
 
