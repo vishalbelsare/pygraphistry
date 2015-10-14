@@ -14,18 +14,18 @@ function ForceAtlas2(clContext) {
 
     logger.trace('Creating ForceAtlas2 kernels');
     this.faPoints = new Kernel('faPointForces', ForceAtlas2.argsPoints,
-                               ForceAtlas2.argsType, 'layouts/cpu/forceAtlas2Fast/faPointForces.cl', clContext);
+                               ForceAtlas2.argsType, 'layouts/forceAtlas2Naive/faPointForces.cl', clContext);
     this.faEdges = new Kernel('faEdgeForces', ForceAtlas2.argsEdges,
-                               ForceAtlas2.argsType, 'layouts/cpu/forceAtlas2Fast/faEdgeForces.cl', clContext);
+                               ForceAtlas2.argsType, 'layouts/forceAtlas2Naive/faEdgeForces.cl', clContext);
 
     this.faSwings = new Kernel('faSwingsTractions', ForceAtlas2.argsSwings,
-                               ForceAtlas2.argsType, 'layouts/cpu/forceAtlas2Fast/faSwingsTractions.cl', clContext);
+                               ForceAtlas2.argsType, 'layouts/forceAtlas2Naive/faSwingsTractions.cl', clContext);
 
     this.faIntegrate = new Kernel('faIntegrateLegacy', ForceAtlas2.argsIntegrate,
-                               ForceAtlas2.argsType, 'layouts/cpu/forceAtlas2Fast/faIntegrateLegacy.cl', clContext);
+                               ForceAtlas2.argsType, 'layouts/forceAtlas2Naive/faIntegrateLegacy.cl', clContext);
 
     this.faIntegrateApprox = new Kernel('faIntegrateApprox', ForceAtlas2.argsIntegrateApprox,
-                               ForceAtlas2.argsType, 'layouts/cpu/forceAtlas2Fast/faIntegrateApprox.cl', clContext);
+                               ForceAtlas2.argsType, 'layouts/forceAtlas2Naive/faIntegrateApprox.cl', clContext);
 
     this.kernels = this.kernels.concat([this.faPoints, this.faEdges, this.faSwings,
                                        this.faIntegrate, this.faIntegrateApprox]);
