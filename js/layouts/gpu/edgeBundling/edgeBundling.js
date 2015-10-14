@@ -33,7 +33,6 @@ var argsType = {
     maxDepth: null,
     midpoint_stride: cljs.types.uint_t,
     midpoints_per_edge: cljs.types.uint_t,
-    midSpringsColorCoords: null,
     nextMidPoints: null,
     midPointForces: null,
     numBodies: cljs.types.uint_t,
@@ -51,7 +50,6 @@ var argsType = {
     radius: null,
     sort: null,
     springs: null,
-    springMidPositions: null,
     springStrength: cljs.types.float_t,
     springDistance: cljs.types.float_t,
     start: null,
@@ -129,8 +127,7 @@ var kernelSpecs = {
         name: 'midspringForces',
         kernelName: 'midspringForces',
         args: ['numSplits', 'springs', 'workList', 'inputPoints', 'midPointForces', 'inputMidpoints', 
-            'outputMidpoints', 'springMidPositions', 'midSpringsColorCoords', 'springStrength', 
-            'springDistance', 'stepNumber'],
+            'outputMidpoints', 'springStrength', 'springDistance', 'stepNumber'],
         fileName: 'layouts/gpu/edgeBundling/midspringForces.cl'
     },
     faSwingsKernel : {
@@ -305,7 +302,6 @@ var getBufferBindings = function (simulator, layoutBuffers) {
         prevForces: layoutBuffers.prevForces.buffer,
         sort:layoutBuffers.sort.buffer,
         springs: simulator.dataframe.getBuffer('forwardsEdges', 'simulator').buffer,
-        springMidPositions: simulator.dataframe.getBuffer('midSpringsPos', 'simulator').buffer,
         start:layoutBuffers.start.buffer,
         step:layoutBuffers.step.buffer,
         swings:layoutBuffers.swings.buffer,
@@ -317,7 +313,6 @@ var getBufferBindings = function (simulator, layoutBuffers) {
         ymaxs:layoutBuffers.ymaxs.buffer,
         ymins:layoutBuffers.ymins.buffer,
         workList: simulator.dataframe.getBuffer('forwardsWorkItems', 'simulator').buffer,
-        midSpringsColorCoords: simulator.dataframe.getBuffer('midSpringsColorCoord', 'simulator').buffer
     }
 };
 EdgeBundling.prototype.setEdges = function (simulator) {
@@ -340,8 +335,6 @@ function midEdges(simulator, ebMidsprings, stepNumber) {
         simulator.dataframe.getBuffer('curPoints', 'simulator'),
         simulator.dataframe.getBuffer('nextMidPoints', 'simulator'),
         simulator.dataframe.getBuffer('curMidPoints', 'simulator'),
-        simulator.dataframe.getBuffer('midSpringsPos', 'simulator'),
-        simulator.dataframe.getBuffer('midSpringsColorCoord', 'simulator')
     ];
 
     ebMidsprings.set({stepNumber: stepNumber});
