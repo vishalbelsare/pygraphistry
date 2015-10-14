@@ -2,7 +2,8 @@
 
 var Rx = require('rx');
 
-function Command(commandName, socket) {
+function Command(description, commandName, socket) {
+    this.description = description;
     this.commandName = commandName;
     this.socket = socket;
 }

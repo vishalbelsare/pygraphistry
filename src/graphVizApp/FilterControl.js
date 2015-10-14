@@ -22,12 +22,11 @@ function filterParametersCore(type, attribute) {
 function FilterControl(socket) {
     this.namespaceMetadataSubject = new Rx.ReplaySubject(1);
 
-    this.namespaceCommand = new Command('get_namespace_metadata', socket);
-    this.getFiltersCommand = new Command('get_filters', socket);
-    this.updateFiltersCommand = new Command('update_filters', socket);
+    this.namespaceCommand = new Command('getting column descriptions', 'get_namespace_metadata', socket);
+    this.getFiltersCommand = new Command('getting filters', 'get_filters', socket);
+    this.updateFiltersCommand = new Command('updating filters', 'update_filters', socket);
     this.updateFiltersRequests = new Rx.Subject();
-    // this.getFiltersCommand = new Command('get_filters', socket);
-    this.runFilterCommand = new Command('filter', socket);
+    this.runFilterCommand = new Command('filtering the view', 'filter', socket);
 
     /** @type Rx.ReplaySubject */
     this.filtersResponsesSubject = new Rx.ReplaySubject(1);

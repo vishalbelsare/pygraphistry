@@ -52,7 +52,7 @@ function HistogramBrush(socket, filtersPanel) {
     this.globalStats = new Rx.ReplaySubject(1);
     var updateDataframeAttributeSubject = new Rx.Subject();
 
-    this.aggregationCommand = new Command('aggregate', socket);
+    this.aggregationCommand = new Command('aggregating data', 'aggregate', socket);
 
     //////////////////////////////////////////////////////////////////////////
     // Setup Streams
