@@ -43,7 +43,6 @@ var argsType = {
     numWorkItems: cljs.types.uint_t,
     outputPositions: null,
     outputMidPoints: null,
-    outputMidpoints: null,
     outputMidPositions: null,
     points: null,
     prevForces: null,
@@ -127,7 +126,7 @@ var kernelSpecs = {
         name: 'midspringForces',
         kernelName: 'midspringForces',
         args: ['numSplits', 'springs', 'workList', 'inputPoints', 'midPointForces', 'inputMidpoints', 
-            'outputMidpoints', 'springStrength', 'springDistance', 'stepNumber'],
+            'curForces', 'springStrength', 'springDistance', 'stepNumber'],
         fileName: 'layouts/gpu/edgeBundling/midspringForces.cl'
     },
     faSwingsKernel : {
@@ -296,7 +295,6 @@ var getBufferBindings = function (simulator, layoutBuffers) {
         numSplits: simulator.controls.global.numSplits,
         radius:layoutBuffers.radius.buffer,
         outputMidPositions: simulator.dataframe.getBuffer('nextMidPoints', 'simulator').buffer,
-        outputMidpoints: layoutBuffers.curForces.buffer,
         outputMidPoints: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
         points: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
         prevForces: layoutBuffers.prevForces.buffer,
