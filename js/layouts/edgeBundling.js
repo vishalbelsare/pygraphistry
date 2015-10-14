@@ -69,7 +69,7 @@ var kernelSpecs = {
             'edgeLengths', 'mass', 'blocked', 'maxDepth', 'stepNumber', 'midpoint_stride',
             'midpoints_per_edge', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
         ],
-        fileName: 'layouts/gpu/edgeBundling/kdTree/toKDLayout.cl'
+        fileName: 'layouts/edgeBundling/kdTree/toKDLayout.cl'
     },
     boundBox: {
         name : 'boundBox',
@@ -78,14 +78,14 @@ var kernelSpecs = {
             'ymins', 'ymaxs', 'edgeMins', 'edgeMaxs', 'swings', 'tractions',
             'blocked', 'step', 'bottom', 'radius', 'globalSpeed', 'stepNumber',
             'numEdges', 'numNodes', 'tau', 'THREADS_BOUND'],
-            fileName: 'layouts/gpu/edgeBundling/kdTree/boundBox.cl'
+            fileName: 'layouts/edgeBundling/kdTree/boundBox.cl'
     },
     buildTree: {
         name: 'buildTree',
         kernelName: 'build_tree',
         args: [ 'xCoords', 'yCoords', 'children', 'mass', 'start', 'step', 'bottom', 'maxDepth', 
             'radius', 'stepNumber', 'numEdges', 'numNodes' ],
-        fileName: 'layouts/gpu/edgeBundling/kdTree/buildTree.cl'
+        fileName: 'layouts/edgeBundling/kdTree/buildTree.cl'
     },
     computeSums: {
         name: 'computeSums',
@@ -93,14 +93,14 @@ var kernelSpecs = {
         args: [ 'xCoords', 'yCoords', 'children', 'mass', 'count', 'step', 'bottom',
             'stepNumber', 'numEdges', 'numNodes', 'WARPSIZE', 'THREADS_SUMS'
         ],
-        fileName: 'layouts/gpu/edgeBundling/kdTree/computeSums.cl'
+        fileName: 'layouts/edgeBundling/kdTree/computeSums.cl'
     },
     sort: {
         name: 'sort',
         kernelName: 'sort',
         args: [ 'xCoords', 'yCoords', 'children', 'start', 'sort', 'count', 'step', 'bottom',
             'maxDepth', 'radius', 'globalSpeed', 'stepNumber',  'numEdges', 'numNodes', ],
-            fileName: 'layouts/gpu/edgeBundling/kdTree/sort.cl'
+            fileName: 'layouts/edgeBundling/kdTree/sort.cl'
     },
     calculateMidPoints: {
         name: 'calculateMidPoints',
@@ -110,32 +110,32 @@ var kernelSpecs = {
             'blocked', 'maxDepth', 'radius', 'stepNumber', 'numEdges', 'numNodes', 'midPointForces',
             'charge', 'midpoint_stride', 'midpoints_per_edge', 'WARPSIZE', 'THREADS_FORCES'
         ],
-        fileName: 'layouts/gpu/edgeBundling/kdTree/calculateForces.cl'
+        fileName: 'layouts/edgeBundling/kdTree/calculateForces.cl'
     },
     midspringForces: {
         name: 'midspringForces',
         kernelName: 'midspringForces',
         args: ['numSplits', 'springs', 'workList', 'curPoints', 'midPointForces', 'curMidPoints', 
             'curForces', 'springStrength', 'springDistance', 'stepNumber'],
-        fileName: 'layouts/gpu/edgeBundling/midspringForces.cl'
+        fileName: 'layouts/edgeBundling/midspringForces.cl'
     },
     faSwingsKernel : {
         name: 'faSwingsKernel',
         kernelName: 'faSwingsTractions',
         args: ['prevForces', 'curForces', 'swings', 'tractions'],
-        fileName: 'layouts/gpu/edgeBundling/faSwingsTractions.cl'
+        fileName: 'layouts/edgeBundling/faSwingsTractions.cl'
     },
     integrateMidpoints: {
         name: 'integrateMidpoints',
         kernelName: 'faIntegrate',
         args: ['globalSpeed', 'curMidPoints', 'curForces', 'swings', 'nextMidPoints'],
-        fileName: 'layouts/gpu/edgeBundling/faIntegrateMidPoints.cl'
+        fileName: 'layouts/edgeBundling/faIntegrateMidPoints.cl'
     },
     interpolateMidpoints: {
         name: 'interpolateMidpoints',
         kernelName: 'interpolateMidpoints',
         args: ['edges', 'points', 'numEdges', 'numSplits', 'curMidPoints'],
-        fileName: 'layouts/gpu/edgeBundling/interpolateMidpoints.cl',
+        fileName: 'layouts/edgeBundling/interpolateMidpoints.cl',
     }
 }
 
