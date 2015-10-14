@@ -4,10 +4,9 @@ var _ = require('underscore');
 var SimCL = require('./SimCL.js');
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:cl:layoutconfig');
-var ForceAtlas2         = require('./layouts/cpu/forceAtlas2/forceAtlas2.js'),
-    ForceAtlas2Fast     = require('./layouts/cpu/forceAtlas2Fast/forceAtlas2.js'),
-    forceAtlasBarnes    = require('./layouts/gpu/forceAtlas2/forceAtlas2.js'),
-    EdgeBundling       = require('./layouts/gpu/edgeBundling/edgeBundling.js');
+var ForceAtlas2Naive     = require('./layouts/forceAtlas2Naive.js'),
+    ForceAtlas2    = require('./layouts/ForceAtlas2.js'),
+    EdgeBundling       = require('./layouts/edgeBundling.js');
 
 var SIMULATION_TIME = 100;
 
@@ -97,7 +96,7 @@ var uberControls = {
 function atlasControls(algo) {
 
     var devices;
-    if (algo == forceAtlasBarnes) {
+    if (algo == ForceAtlas2) {
         devices = ['GPU'];
     } else {
         devices = ['CPU', 'GPU'];
@@ -139,12 +138,12 @@ function atlasControls(algo) {
 
 
 var controls = {
-    'default':      [atlasControls(forceAtlasBarnes), atlasControls(ForceAtlas2Fast)],
+    'default':      [atlasControls(ForceAtlas2), atlasControls(ForceAtlas2Naive)],
     'gis':         [uberControls],
-    'atlas':        [atlasControls(forceAtlasBarnes), atlasControls(ForceAtlas2Fast)],
-    'atlas2':       [atlasControls(ForceAtlas2)],
-    'atlas2fast':   [atlasControls(ForceAtlas2Fast)],
-    'atlasbarnes':  [atlasControls(forceAtlasBarnes)]
+    'atlas':        [atlasControls(ForceAtlas2), atlasControls(ForceAtlas2Naive)],
+    'atlas2':       [atlasControls(ForceAtlas2Naive)],
+    'atlas2fast':   [atlasControls(ForceAtlas2Naive)],
+    'atlasbarnes':  [atlasControls(ForceAtlas2)]
 }
 
 function saneControl(control, name) {

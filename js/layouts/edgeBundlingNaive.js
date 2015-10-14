@@ -2,9 +2,9 @@
 
 var _          = require('underscore'),
     Q          = require('q'),
-    cljs       = require('../../../cl.js'),
-    Kernel     = require('../../../kernel.js'),
-    LayoutAlgo = require('../../../layoutAlgo.js'),
+    cljs       = require('../cl.js'),
+    Kernel     = require('../kernel.js'),
+    LayoutAlgo = require('../layoutAlgo.js'),
     log        = require('common/logger.js'),
     logger     = log.createLogger('graph-viz:cl:edgebundling');
 

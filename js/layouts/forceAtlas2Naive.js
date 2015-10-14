@@ -1,10 +1,10 @@
 'use strict';
 
 var          _ = require('underscore'),
-       cljs = require('../../../cl.js'),
+       cljs = require('../cl.js'),
           Q = require('q'),
- LayoutAlgo = require('../../../layoutAlgo.js'),
-     Kernel = require('../../../kernel.js'),
+ LayoutAlgo = require('../layoutAlgo.js'),
+     Kernel = require('../kernel.js'),
     log        = require('common/logger.js'),
     logger     = log.createLogger('graph-viz:cl:forceatlas2');
 
