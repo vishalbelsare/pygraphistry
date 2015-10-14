@@ -31,7 +31,7 @@ function FilterControl(socket) {
     /** @type Rx.ReplaySubject */
     this.filtersResponsesSubject = new Rx.ReplaySubject(1);
     // Get initial filters values:
-    this.getFiltersCommand.sendWithObservableResult(undefined)
+    this.getFiltersCommand.sendWithObservableResult()
         .do(function (reply) {
             this.filtersResponsesSubject.onNext(reply.filters);
         }.bind(this)).subscribe(_.identity, util.makeErrorHandler(this.getFiltersCommand.description));
@@ -55,7 +55,7 @@ FilterControl.prototype.setupFilterRequestHandler = function(requests, responses
 
 FilterControl.prototype.namespaceMetadataObservable = function () {
     if (this.namespaceSubscription === undefined) {
-        this.namespaceSubscription = this.namespaceCommand.sendWithObservableResult(null)
+        this.namespaceSubscription = this.namespaceCommand.sendWithObservableResult()
             .do(function (reply) {
                 this.namespaceMetadataSubject.onNext(reply.metadata);
             }.bind(this)).subscribe(_.identity, util.makeErrorHandler(this.namespaceCommand.description));
