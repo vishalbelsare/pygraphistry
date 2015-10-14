@@ -100,7 +100,7 @@ function HistogramBrush(socket, filtersPanel) {
 
 HistogramBrush.prototype.setupFiltersInteraction = function(filtersPanel, poi) {
     // Setup filtering:
-    handleFiltersResponse(filtersPanel.control.filtersResponsesObservable(), poi);
+    handleFiltersResponse(filtersPanel.control.filtersResponsesSubject, poi);
 };
 
 

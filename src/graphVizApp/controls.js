@@ -569,7 +569,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var brush = setupBrush(appState, turnOnBrush);
     var filtersPanel = new FiltersPanel(socket, urlParams);
     menuToggler(onElt, $('#filterButton'), filtersPanel.view.el, 'Turning on/off the filter panel');
-    var filtersResponses = filtersPanel.control.filtersResponsesObservable();
+    var filtersResponses = filtersPanel.control.filtersResponsesSubject;
     var histogramBrush = new HistogramBrush(socket, filtersPanel);
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
     histogramBrush.setupMarqueeInteraction(brush);

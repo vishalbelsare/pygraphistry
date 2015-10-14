@@ -64,10 +64,6 @@ FilterControl.prototype.namespaceMetadataObservable = function () {
     return this.namespaceMetadataSubject;
 };
 
-FilterControl.prototype.filtersResponsesObservable = function () {
-    return this.filtersResponsesSubject;
-};
-
 FilterControl.prototype.updateFilters = function (filterSet) {
     this.updateFiltersRequests.onNext(filterSet);
     return this.filtersResponsesSubject;
