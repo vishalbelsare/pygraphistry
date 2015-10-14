@@ -17,6 +17,7 @@ var TYPES = ['point', 'edge', 'simulator'];
 /**
  * @property {DataframeData} rawdata The original data, immutable by this object.
  * @property {DataframeData} data The potentially-filtered data, starts as a reference to original.
+ * @property {Object.<DataframeMask>} masksForVizSets Masks stored by VizSet id.
  * @constructor
  */
 var Dataframe = function () {
@@ -40,6 +41,7 @@ var Dataframe = function () {
         [],
         []
     );
+    this.masksForVizSets = {};
     this.data = this.rawdata;
 };
 
