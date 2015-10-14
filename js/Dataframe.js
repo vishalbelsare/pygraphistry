@@ -14,6 +14,11 @@ var DataframeMask = require('./DataframeMask.js');
 var baseDirPath = __dirname + '/../assets/dataframe/';
 var TYPES = ['point', 'edge', 'simulator'];
 
+/**
+ * @property {DataframeData} rawdata The original data, immutable by this object.
+ * @property {DataframeData} data The potentially-filtered data, starts as a reference to original.
+ * @constructor
+ */
 var Dataframe = function () {
     // We keep a copy of the original data, plus a filtered view
     // that defaults to the new raw data.
@@ -29,6 +34,7 @@ var Dataframe = function () {
     };
     this.typedArrayCache = {};
     this.lastPointPositions = null;
+    /** The last mask applied as a result of in-place filtering. */
     this.lastMasks = new DataframeMask(
         this,
         [],
@@ -37,6 +43,20 @@ var Dataframe = function () {
     this.data = this.rawdata;
 };
 
+/**
+ * @typedef {Object} DataframeData
+ * @property {{point: Object, edge: Object, simulator: Object}} attributes
+ * @property {{point: Object, edge: Object, simulator: Object}} buffers
+ * @property {Object} labels
+ * @property {Object} hostBuffers
+ * @property {Object} localBuffers
+ * @property {Object} renderedBuffers
+ * @property {Object} numElements
+ */
+
+/**
+ * @returns {DataframeData}
+ */
 function makeEmptyData () {
     return {
         attributes: {
@@ -406,6 +426,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     if (rawSimBuffers.forwardsEdgeWeights === undefined || rawSimBuffers.backwardsEdgeWeights === undefined) {
         return Q({});
     }
+    /** @type {DataframeData} */
     var newData = makeEmptyData();
     var numPoints = masks.numPoints();
     var numEdges = masks.numEdges();
