@@ -58,6 +58,10 @@ function setupLatestHighlightedObject (appState, $eventTarget, textures) {
                 return hit.idx > -1;
             });
         })
+        // Only update when changes.
+        .distinctUntilChanged(function (hits) {
+            return hits.length ? hits[0].idx : -1;
+        })
         .subscribe(appState.latestHighlightedObject, util.makeErrorHandler('getLatestHighlightedObject'));
 
     return appState.latestHighlightedObject;
