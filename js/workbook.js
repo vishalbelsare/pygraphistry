@@ -16,21 +16,40 @@ var blankLegendTemplate = {
 
 var blankViewTemplate = {
     title: undefined,
-    filters: [],
+    filters: [
+        // nodes/edges limited per client render estimate:
+        {
+            title: 'Point Limit',
+            attribute: undefined,
+            level: 'system',
+            query: {
+                type: 'point',
+                ast: {
+                    type: 'Limit',
+                    value: {
+                        type: 'Literal',
+                        dataType: 'integer',
+                        value: 8e5
+                    }
+                },
+                inputString: 'LIMIT 800000'
+            }
+        }
+    ],
     sets: [
         {
             id: 'dataframe',
-            type: 'system',
+            level: 'system',
             title: 'Loaded Data'
         },
         {
             id: 'filtered',
-            type: 'system',
+            level: 'system',
             title: 'Visible Data'
         },
         {
             id: 'selection',
-            type: 'system',
+            level: 'system',
             title: 'Selected Data'
         }
     ],
