@@ -14,10 +14,10 @@ function EdgeBundling(clContext) {
 
     logger.trace('Creating GaussSeidel kernels');
     this.ebMidpoints = new Kernel('gaussSeidelMidpoints', EdgeBundling.argsMidpoints,
-                                   EdgeBundling.argsType, 'layouts/cpu/edgeBundling/edgeBundling.cl', clContext);
+                                   EdgeBundling.argsType, 'layouts/edgeBundlingNaive/edgeBundling.cl', clContext);
 
     this.ebMidsprings = new Kernel('gaussSeidelMidsprings', EdgeBundling.argsMidsprings,
-                                   EdgeBundling.argsType, 'layouts/cpu/edgeBundling/edgeBundling.cl', clContext);
+                                   EdgeBundling.argsType, 'layouts/edgeBundlingNaive/edgeBundling.cl', clContext);
 
     this.kernels = this.kernels.concat([this.ebMidpoints, this.ebMidsprings]);
 }
