@@ -8,7 +8,7 @@ var Handlebars = require('handlebars');
 var Backbone = require('backbone');
     Backbone.$ = $;
 //var Ace     = require('brace');
-var FilterControl = require('./filter.js');
+var FilterControl = require('./FilterControl.js');
 var ExpressionEditor = require('./expressionEditor.js');
 var util          = require('./util.js');
 
