@@ -18,6 +18,7 @@ var argsType = {
     children: null,
     count: null,
     curForces: null,
+    curMidPoints: null,
     edges: null,
     edgeDirectionX: null,
     edgeDirectionY: null,
@@ -25,25 +26,18 @@ var argsType = {
     edgeMaxs: null,
     edgeMins: null,
     globalSpeed: null,
-    inputMidpoints: null,
-    inputMidPositions: null,
-    inputPoints: null,
-    inputPositions: null,
+    curPoints: null,
     mass: null,
     maxDepth: null,
     midpoint_stride: cljs.types.uint_t,
     midpoints_per_edge: cljs.types.uint_t,
     nextMidPoints: null,
     midPointForces: null,
-    numBodies: cljs.types.uint_t,
     numEdges: cljs.types.uint_t,
     numSplits: cljs.types.uint_t,
     numNodes: cljs.types.uint_t,
-    numPoints: cljs.types.uint_t,
     numWorkItems: cljs.types.uint_t,
     outputPositions: null,
-    outputMidPoints: null,
-    outputMidPositions: null,
     points: null,
     prevForces: null,
     radius: null,
@@ -70,8 +64,8 @@ var kernelSpecs = {
     toKDLayout : {
         name: 'toKDLayout',
         kernelName:'to_kd_layout',
-        args: ['numPoints', 'inputMidPositions',
-            'inputPositions', 'xCoords', 'yCoords', 'springs', 'edgeDirectionX', 'edgeDirectionY',
+        args: ['numEdges', 'curMidPoints',
+            'curPoints', 'xCoords', 'yCoords', 'springs', 'edgeDirectionX', 'edgeDirectionY',
             'edgeLengths', 'mass', 'blocked', 'maxDepth', 'stepNumber', 'midpoint_stride',
             'midpoints_per_edge', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
         ],
@@ -83,25 +77,21 @@ var kernelSpecs = {
         args : ['xCoords', 'yCoords', 'children', 'mass', 'start', 'xmins', 'xmaxs',
             'ymins', 'ymaxs', 'edgeMins', 'edgeMaxs', 'swings', 'tractions',
             'blocked', 'step', 'bottom', 'radius', 'globalSpeed', 'stepNumber',
-            'numBodies', 'numNodes', 'tau', 'THREADS_BOUND'],
+            'numEdges', 'numNodes', 'tau', 'THREADS_BOUND'],
             fileName: 'layouts/gpu/edgeBundling/kdTree/boundBox.cl'
     },
     buildTree: {
         name: 'buildTree',
         kernelName: 'build_tree',
-        args: [
-            'xCoords', 'yCoords',
-            'children', 'mass', 'start',
-            'step', 'bottom', 'maxDepth', 'radius',
-            'stepNumber', 'numBodies', 'numNodes'
-        ],
+        args: [ 'xCoords', 'yCoords', 'children', 'mass', 'start', 'step', 'bottom', 'maxDepth', 
+            'radius', 'stepNumber', 'numEdges', 'numNodes' ],
         fileName: 'layouts/gpu/edgeBundling/kdTree/buildTree.cl'
     },
     computeSums: {
         name: 'computeSums',
         kernelName: 'compute_sums',
         args: [ 'xCoords', 'yCoords', 'children', 'mass', 'count', 'step', 'bottom',
-            'stepNumber', 'numBodies', 'numNodes', 'WARPSIZE', 'THREADS_SUMS'
+            'stepNumber', 'numEdges', 'numNodes', 'WARPSIZE', 'THREADS_SUMS'
         ],
         fileName: 'layouts/gpu/edgeBundling/kdTree/computeSums.cl'
     },
@@ -109,7 +99,7 @@ var kernelSpecs = {
         name: 'sort',
         kernelName: 'sort',
         args: [ 'xCoords', 'yCoords', 'children', 'start', 'sort', 'count', 'step', 'bottom',
-            'maxDepth', 'radius', 'globalSpeed', 'stepNumber',  'numBodies', 'numNodes', ],
+            'maxDepth', 'radius', 'globalSpeed', 'stepNumber',  'numEdges', 'numNodes', ],
             fileName: 'layouts/gpu/edgeBundling/kdTree/sort.cl'
     },
     calculateMidPoints: {
@@ -117,7 +107,7 @@ var kernelSpecs = {
         kernelName: 'calculate_forces',
         args:[
             'xCoords', 'yCoords', 'edgeDirectionX', 'edgeDirectionY', 'edgeLengths', 'children', 'sort',
-            'blocked', 'maxDepth', 'radius', 'stepNumber', 'numBodies', 'numNodes', 'midPointForces',
+            'blocked', 'maxDepth', 'radius', 'stepNumber', 'numEdges', 'numNodes', 'midPointForces',
             'charge', 'midpoint_stride', 'midpoints_per_edge', 'WARPSIZE', 'THREADS_FORCES'
         ],
         fileName: 'layouts/gpu/edgeBundling/kdTree/calculateForces.cl'
@@ -125,7 +115,7 @@ var kernelSpecs = {
     midspringForces: {
         name: 'midspringForces',
         kernelName: 'midspringForces',
-        args: ['numSplits', 'springs', 'workList', 'inputPoints', 'midPointForces', 'inputMidpoints', 
+        args: ['numSplits', 'springs', 'workList', 'curPoints', 'midPointForces', 'curMidPoints', 
             'curForces', 'springStrength', 'springDistance', 'stepNumber'],
         fileName: 'layouts/gpu/edgeBundling/midspringForces.cl'
     },
@@ -138,13 +128,13 @@ var kernelSpecs = {
     integrateMidpoints: {
         name: 'integrateMidpoints',
         kernelName: 'faIntegrate',
-        args: ['globalSpeed', 'inputMidPositions', 'curForces', 'swings', 'outputMidPositions'],
+        args: ['globalSpeed', 'curMidPoints', 'curForces', 'swings', 'nextMidPoints'],
         fileName: 'layouts/gpu/edgeBundling/faIntegrateMidPoints.cl'
     },
     interpolateMidpoints: {
         name: 'interpolateMidpoints',
         kernelName: 'interpolateMidpoints',
-        args: ['edges', 'points', 'numEdges', 'numSplits', 'outputMidPoints'],
+        args: ['edges', 'points', 'numEdges', 'numSplits', 'curMidPoints'],
         fileName: 'layouts/gpu/edgeBundling/interpolateMidpoints.cl',
     }
 }
@@ -281,21 +271,16 @@ var getBufferBindings = function (simulator, layoutBuffers) {
         edgeMaxs:layoutBuffers.edgeMaxs.buffer,
         edgeMins:layoutBuffers.edgeMins.buffer,
         globalSpeed: layoutBuffers.globalSpeed.buffer,
-        inputPoints: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
-        inputMidpoints: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
-        inputMidPositions: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
-        inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
+        curPoints: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
         mass: layoutBuffers.mass.buffer,
         maxDepth:layoutBuffers.maxDepth.buffer,
         midPointForces:layoutBuffers.midPointForces.buffer,
-        numBodies:numBodies,
         numEdges: simulator.dataframe.getNumElements('edge'),
         numNodes:numNodes,
-        numPoints: simulator.dataframe.getNumElements('edge'),
         numSplits: simulator.controls.global.numSplits,
         radius:layoutBuffers.radius.buffer,
-        outputMidPositions: simulator.dataframe.getBuffer('nextMidPoints', 'simulator').buffer,
-        outputMidPoints: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
+        nextMidPoints: simulator.dataframe.getBuffer('nextMidPoints', 'simulator').buffer,
+        curMidPoints: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
         points: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
         prevForces: layoutBuffers.prevForces.buffer,
         sort:layoutBuffers.sort.buffer,
