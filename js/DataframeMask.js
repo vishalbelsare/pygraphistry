@@ -1,5 +1,7 @@
 'use strict';
 
+var _ = require('underscore');
+
 /**
  * Mask is implemented as a list of valid indices (in sorted order).
  * @typedef Array<Number> Mask
@@ -11,8 +13,8 @@
 
 /**
  * @param {Dataframe} dataframe
- * @param {Mask} pointIndexes
- * @param {Mask} edgeIndexes
+ * @param {Mask} pointIndexes Sorted list of indexes into the raw points data. If undefined, means all indexes.
+ * @param {Mask} edgeIndexes Sorted list of indexes into the raw edges data. If undefined, means all indexes.
  * @constructor
  */
 function DataframeMask(dataframe, pointIndexes, edgeIndexes) {
@@ -25,8 +27,26 @@ DataframeMask.prototype.numPoints = function () {
     return this.point !== undefined ? this.point.length : this.dataframe.numPoints();
 };
 
+DataframeMask.prototype.limitNumPointsTo = function (limit) {
+    if (limit >= this.numPoints()) { return; }
+    if (this.point === undefined) {
+        this.point = _.range(limit);
+    } else {
+        this.point.length = limit;
+    }
+};
+
 DataframeMask.prototype.numEdges = function () {
     return this.edge !== undefined ? this.edge.length : this.dataframe.numEdges();
+};
+
+DataframeMask.prototype.limitNumEdgesTo = function (limit) {
+    if (limit >= this.numEdges()) { return; }
+    if (this.edge === undefined) {
+        this.edge = _.range(limit);
+    } else {
+        this.edge.length = limit;
+    }
 };
 
 /**
@@ -147,8 +167,15 @@ DataframeMask.prototype.complement = function () {
  * @param {IndexIteratorCallback} iterator
  */
 DataframeMask.prototype.mapPointIndexes = function (iterator) {
-    for (var i = 0; i < this.point.length; i++) {
-        iterator.call(this, this.point[i], i);
+    var numPoints = this.numPoints(), i = 0;
+    if (this.point === undefined) {
+        for (i = 0; i < numPoints; i++) {
+            iterator.call(this, i, i);
+        }
+    } else {
+        for (i = 0; i < numPoints; i++) {
+            iterator.call(this, this.point[i], i);
+        }
     }
 };
 
@@ -156,8 +183,15 @@ DataframeMask.prototype.mapPointIndexes = function (iterator) {
  * @param {IndexIteratorCallback} iterator
  */
 DataframeMask.prototype.mapEdgeIndexes = function (iterator) {
-    for (var i = 0; i < this.edge.length; i++) {
-        iterator.call(this, this.edge[i], i);
+    var numEdges = this.numEdges(), i = 0;
+    if (this.edge === undefined) {
+        for (i = 0; i < numEdges; i++) {
+            iterator.call(this, i, i);
+        }
+    } else {
+        for (i = 0; i < numEdges; i++) {
+            iterator.call(this, this.edge[i], i);
+        }
     }
 };
 

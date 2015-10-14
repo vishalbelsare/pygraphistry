@@ -167,8 +167,8 @@ Dataframe.prototype.fullEdgeMask = function() {
 Dataframe.prototype.fullDataframeMask = function() {
     return new DataframeMask(
         this,
-        this.fullPointMask(),
-        this.fullEdgeMask()
+        undefined,
+        undefined
     );
 };
 
@@ -221,8 +221,8 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
     if (maskList === undefined || !maskList.length || maskList.length === 0) {
         var universe = this.fullDataframeMask();
         // Limit the universe first just to avoid computation scaling problems:
-        if (pointLimit && universe.point.length > pointLimit) {
-            universe.point.length = pointLimit;
+        if (pointLimit && universe.numPoints() > pointLimit) {
+            universe.limitNumPointsTo(pointLimit);
             return this.masksFromPoints(universe.point, universe.edge);
         }
         return universe;
