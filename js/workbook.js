@@ -17,7 +17,23 @@ var blankLegendTemplate = {
 var blankViewTemplate = {
     title: undefined,
     filters: [],
-    sets: [],
+    sets: [
+        {
+            id: 'dataframe',
+            type: 'system',
+            title: 'Loaded Data'
+        },
+        {
+            id: 'filtered',
+            type: 'system',
+            title: 'Visible Data'
+        },
+        {
+            id: 'selection',
+            type: 'system',
+            title: 'Selected Data'
+        }
+    ],
     legend: blankLegendTemplate
 };
 
