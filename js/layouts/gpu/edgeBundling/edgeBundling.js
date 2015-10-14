@@ -139,7 +139,6 @@ var kernelSpecs = {
     }
 }
 
-
 function EdgeBundling(clContext) {
     LayoutAlgo.call(this, EdgeBundling.name);
 
@@ -164,14 +163,50 @@ EdgeBundling.name = 'EdgeBundling';
 var layoutBuffers  = {};
 
 // Create temporary buffers needed for layout
-var setupTempLayoutBuffers = function (simulator) {
+var initializeLayoutBuffers = function (simulator) {
+
+    var getBufferSizes = function(simulator) {
+        var warpsize = getWarpsize(simulator);
+        // TODO Set this to the number of workgroups in boundBox kernel
+        var numMidPoints = simulator.dataframe.getNumElements('midPoints');
+        var numNodes = getNumNodes(numMidPoints, warpsize); 
+        var numWorkGroups = 30;
+        var numDimensions = 2;
+        return {
+            blocked : Int32Array.BYTES_PER_ELEMENT,
+            bottom : Int32Array.BYTES_PER_ELEMENT,
+            children : 4*(numNodes + 1)*Int32Array.BYTES_PER_ELEMENT,
+            count : (numNodes + 1)*Int32Array.BYTES_PER_ELEMENT,
+            curForces: 2 * numMidPoints * Float32Array.BYTES_PER_ELEMENT,
+            edgeDirectionX : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
+            edgeDirectionY : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
+            edgeLengths : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
+            edgeMaxs : (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
+            edgeMins : (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
+            globalSpeed : Float32Array.BYTES_PER_ELEMENT,
+            mass : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
+            maxDepth : Int32Array.BYTES_PER_ELEMENT,
+            prevForces: 2 * numMidPoints * Float32Array.BYTES_PER_ELEMENT,
+            radius : numDimensions * Float32Array.BYTES_PER_ELEMENT,
+            sort : (numNodes + 1)*Int32Array.BYTES_PER_ELEMENT,
+            start: (numNodes + 1)*Int32Array.BYTES_PER_ELEMENT,
+            step : Int32Array.BYTES_PER_ELEMENT,
+            swings: numMidPoints * Float32Array.BYTES_PER_ELEMENT,
+            midPointForces: 2 * numMidPoints * Float32Array.BYTES_PER_ELEMENT,
+            tractions: numMidPoints * Float32Array.BYTES_PER_ELEMENT,
+            xCoords : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
+            xmaxs : (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
+            xmins : (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
+            yCoords : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
+            ymaxs :  (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
+            ymins : (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
+        }
+    }
 
     var bufferSizes = getBufferSizes(simulator);
-
     var memoryAllocationPromises = _.map(bufferSizes, function (value, key) {
         return simulator.cl.createBuffer(value, key);
     })
-
     return Q.all(memoryAllocationPromises)
 
     .then(function (buffers) {
@@ -183,70 +218,6 @@ var setupTempLayoutBuffers = function (simulator) {
 
     .fail(log.makeQErrorHandler(logger, "Initializing layout buffers need for edge bundling failed"));
 };
-
-var getNumNodes = function(numBodies, warpsize) {
-    // Adjust sizes for optimized memory
-    var blocks = 8; //TODO (paden) should be set to multiprocecessor count
-    var numNodes = numBodies * 5;
-    if (numNodes < 1024*blocks) {
-        numNodes = 1024*blocks;
-    }
-    while ((numNodes & (warpsize - 1)) != 0) {
-        numNodes++;
-    }
-    return numNodes;
-};
-
-var getWarpsize = function(simulator) {
-    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
-    var warpsize = 1; // Always correct
-    if (vendor.indexOf('intel') !== -1) {
-        warpsize = 16;
-    } else if (vendor.indexOf('nvidia') !== -1) {
-        warpsize = 32;
-    } else if (vendor.indexOf('amd') !== -1) {
-        warpsize = 64;
-    }
-    return warpsize;
-}
-
-var getBufferSizes = function(simulator) {
-    var warpsize = getWarpsize(simulator);
-    // TODO Set this to the number of workgroups in boundBox kernel
-    var numMidPoints = simulator.dataframe.getNumElements('midPoints');
-    var numNodes = getNumNodes(numMidPoints, warpsize); 
-    var numWorkGroups = 30;
-    var numDimensions = 2;
-    return {
-        blocked : Int32Array.BYTES_PER_ELEMENT,
-        bottom : Int32Array.BYTES_PER_ELEMENT,
-        children : 4*(numNodes + 1)*Int32Array.BYTES_PER_ELEMENT,
-        count : (numNodes + 1)*Int32Array.BYTES_PER_ELEMENT,
-        curForces: 2 * numMidPoints * Float32Array.BYTES_PER_ELEMENT,
-        edgeDirectionX : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
-        edgeDirectionY : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
-        edgeLengths : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
-        edgeMaxs : (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
-        edgeMins : (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
-        globalSpeed : Float32Array.BYTES_PER_ELEMENT,
-        mass : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
-        maxDepth : Int32Array.BYTES_PER_ELEMENT,
-        prevForces: 2 * numMidPoints * Float32Array.BYTES_PER_ELEMENT,
-        radius : numDimensions * Float32Array.BYTES_PER_ELEMENT,
-        sort : (numNodes + 1)*Int32Array.BYTES_PER_ELEMENT,
-        start: (numNodes + 1)*Int32Array.BYTES_PER_ELEMENT,
-        step : Int32Array.BYTES_PER_ELEMENT,
-        swings: numMidPoints * Float32Array.BYTES_PER_ELEMENT,
-        midPointForces: 2 * numMidPoints * Float32Array.BYTES_PER_ELEMENT,
-        tractions: numMidPoints * Float32Array.BYTES_PER_ELEMENT,
-        xCoords : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
-        xmaxs : (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
-        xmins : (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
-        yCoords : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
-        ymaxs :  (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
-        ymins : (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
-    }
-}
 
 var getBufferBindings = function (simulator, layoutBuffers) {
     var warpsize = getWarpsize(simulator);
@@ -298,9 +269,10 @@ var getBufferBindings = function (simulator, layoutBuffers) {
         workList: simulator.dataframe.getBuffer('forwardsWorkItems', 'simulator').buffer,
     }
 };
+
 EdgeBundling.prototype.setEdges = function (simulator) {
     var that = this;
-    return setupTempLayoutBuffers(simulator).then(function (tempLayoutBuffers) {
+    return initializeLayoutBuffers(simulator).then(function (tempLayoutBuffers) {
         var bufferBindings = getBufferBindings(simulator, tempLayoutBuffers);
         _.each(that.kernels, function(kernel) {
             kernel.set(_.pick(bufferBindings, kernel.argNames))
@@ -309,8 +281,7 @@ EdgeBundling.prototype.setEdges = function (simulator) {
     .fail( log.makeQErrorHandler(logger, 'Failure in kd-edgebundling.js setEdges') )
 };
 
-// TODO Should we do forwards and backwards edges?
-function midEdges(simulator, ebMidsprings, stepNumber) {
+EdgeBundling.prototype.midEdgeForces =  function(simulator, workItems) {
     var numForwardsWorkItems = simulator.dataframe.getNumElements('forwardsWorkItems');
     var resources = [
         simulator.dataframe.getBuffer('forwardsEdges', 'simulator'),
@@ -320,10 +291,8 @@ function midEdges(simulator, ebMidsprings, stepNumber) {
         simulator.dataframe.getBuffer('curMidPoints', 'simulator'),
     ];
 
-    ebMidsprings.set({stepNumber: stepNumber});
-
     logger.debug('Running kernel gaussSeidelMidsprings');
-    return ebMidsprings.exec([numForwardsWorkItems], resources);
+    return this.midspringForces.exec([numForwardsWorkItems], resources);
 }
 
 EdgeBundling.prototype.calculateSwings = function(simulator, workItems) {
@@ -333,22 +302,6 @@ EdgeBundling.prototype.calculateSwings = function(simulator, workItems) {
     .fail(log.makeQErrorHandler(logger, 'Executing FaSwing failed'));
 };
 
-
-// Helper function in order to create a chain of promises. It is needed in order to
-// dynamically create a promise chain for a variable number of midpoints.
-function promiseWhile(condition, body) {
-    var done = Q.defer();
-
-    function loop() {
-        if (!condition()) {
-            return done.resolve();
-        }
-        Q.when(body(), loop, done.reject);
-    }
-
-    Q.nextTick(loop);
-    return done.promise;
-}
 
 EdgeBundling.prototype.interpolate = function(simulator) {
     var numSprings = simulator.dataframe.getNumElements('edge');
@@ -361,7 +314,7 @@ EdgeBundling.prototype.interpolate = function(simulator) {
     .fail(log.makeQErrorHandler(logger, 'Kernel interpolateMidPoints failed'));
 };
 
-EdgeBundling.prototype.integrate = function(simulator, tempLayoutBuffers) {
+EdgeBundling.prototype.integrate = function(simulator, workItems) {
     var numMidPoints = simulator.dataframe.getNumElements('midPoints');
 
     var resources = [
@@ -376,7 +329,48 @@ EdgeBundling.prototype.integrate = function(simulator, tempLayoutBuffers) {
     .fail(log.makeQErrorHandler(logger, 'Executing Integrate failed'));
 }
 
-EdgeBundling.prototype.calculateMidpointForces = function(simulator, stepNumber, workItems, midpointIndex) { 
+// Calculate the attractive point forces on all midpoints
+EdgeBundling.prototype.calculateMidPointForces = function(simulator, workItems) {
+    // Helper function in order to create a chain of promises. It is needed in order to
+    // dynamically create a promise chain for a variable number of midpoints.
+    function promiseWhile(condition, body) {
+        var done = Q.defer();
+
+        function loop() {
+            if (!condition()) {
+                return done.resolve();
+            }
+            Q.when(body(), loop, done.reject);
+        }
+
+        Q.nextTick(loop);
+        return done.promise;
+    }
+
+    var that = this;
+    simulator.tickBuffers(['curMidPoints']);
+    var calculateMidPointForces =  new Q().then(function () {
+        // Promise while loop to calculate each set of midpoints seperately.
+        var midpointIndex = 0;
+        var condition = function () {
+            return midpointIndex < simulator.dataframe.getNumElements('splits');
+        };
+
+        var body = function () {
+            return that.calculateMidPointForcesOnIndex(simulator, workItems, midpointIndex)
+                .then(function () {
+                    midpointIndex = midpointIndex + 1;
+                });
+        };
+
+        return promiseWhile(condition, body);
+
+    })
+    return calculateMidPointForces;
+}
+
+// Calculate the point forces on midpoints with index equal to midpointIndex 
+EdgeBundling.prototype.calculateMidPointForcesOnIndex = function(simulator, workItems, midpointIndex) { 
     var numSplits = simulator.dataframe.getNumElements('splits');
 
     var resources = [
@@ -386,12 +380,8 @@ EdgeBundling.prototype.calculateMidpointForces = function(simulator, stepNumber,
         simulator.dataframe.getBuffer('nextMidPoints', 'simulator')
     ];
 
-    this.toKDLayout.set({stepNumber: stepNumber, midpoint_stride: midpointIndex, midpoints_per_edge: numSplits});
-    this.boundBox.set({stepNumber: stepNumber});
-    this.buildTree.set({stepNumber: stepNumber});
-    this.computeSums.set({stepNumber: stepNumber});
-    this.sort.set({stepNumber: stepNumber});
-    this.calculateMidPoints.set({stepNumber: stepNumber, midpoint_stride: midpointIndex, midpoints_per_edge: numSplits});
+    this.toKDLayout.set({midpoint_stride: midpointIndex, midpoints_per_edge: numSplits});
+    this.calculateMidPoints.set({midpoint_stride: midpointIndex, midpoints_per_edge: numSplits});
 
     simulator.tickBuffers(['nextMidPoints']);
 
@@ -423,12 +413,17 @@ EdgeBundling.prototype.calculateMidpointForces = function(simulator, stepNumber,
     .fail(log.makeQErrorHandler(logger, "Executing kd-tree edge bundling failed"));
 };
 
-
 EdgeBundling.prototype.tick = function (simulator, stepNumber) {
     var workGroupSize = 256;
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps, workGroupSize);
     var that = this;
     var locks = simulator.controls.locks;
+    var calculateMidPoints;
+
+    // Set the step number for the kernels that have it as an arguement
+    _.each(_.filter(this.kernels, function(x) { return x.argNames.indexOf('stepNumber') > 0}), function(kernel) {
+        kernel.set({stepNumber: stepNumber});
+    });
 
     if (locks.lockMidpoints && locks.lockMidedges) {
         logger.debug('LOCKED, EARLY EXIT');
@@ -447,55 +442,72 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
             logger.debug("Force interpolation of midpoints");
         }
         locks.interpolateMidPointsOnce = false;
-        // If interpolateMidpoints is true, midpoints are calculate by
-        // interpolating between corresponding edge points.
+        // If interpolateMidpoints is true, midpoints are calculate by interpolating between 
+        // corresponding edge points.
         simulator.tickBuffers(['curMidPoints']);
-        calculateMidpoints = new Q().then(function () {
-            return that.interpolate(simulator)
+        calculateMidPoints = Q().then(function () {
+            return that.interpolate(simulator);
         });
     } else {
-      // If interpolateMidpoints is not true, calculate midpoints
-      // by edge bundling algorithm.
+      // If interpolateMidpoints is not true, calculate midpoints by edge bundling algorithm.
         simulator.tickBuffers(['curMidPoints']);
-        var calculateMidpoints =  new Q().then(function () {
-            // Promise while loop to calculate each set of midpoints seperately.
-            var midpointIndex = 0;
-            var condition = function () {
-                return midpointIndex < simulator.dataframe.getNumElements('splits');
-            };
 
-            var body = function () {
-                return that.calculateMidpointForces(simulator, stepNumber, workItems, midpointIndex)
-                    .then(function () {
-                        midpointIndex = midpointIndex + 1;
-                    });
-            };
-
-            return promiseWhile(condition, body);
-
+        return calculateMidPoints = Q().then(function () {
+            that.calculateMidPointForces(simulator, workItems)
         })
         .then(function () { //TODO do both forwards and backwards?
             if (simulator.dataframe.getNumElements('edge') > 0 && !locks.lockMidedges) {
-                return midEdges(simulator, that.midspringForces, stepNumber);
+                return that.midEdgeForces(simulator, workItems);
             }
-        }).then(function () {
+        })
+        
+        .then(function () {
             return that.calculateSwings(simulator, workItems);
-        }).then(function () {
-            return that.integrate(simulator, layoutBuffers, workItems);
-        }).then(function () {
+        })
+
+        .then(function () {
+            return that.integrate(simulator, workItems);
+        })
+        
+        .then(function () {
             var nextMidPoints = simulator.dataframe.getBuffer('nextMidPoints', 'simulator');
             var curMidPoints = simulator.dataframe.getBuffer('curMidPoints', 'simulator');
-
             return nextMidPoints.copyInto(curMidPoints);
         });
     }
-    return calculateMidpoints.then(function () {
+    return calculateMidPoints.then(function () {
     }).then(function () {
         return Q.all([
             layoutBuffers.curForces.copyInto(layoutBuffers.prevForces)
         ]);
     }).fail(log.makeQErrorHandler(logger, 'Failure in edgebundling tick'));
 };
+
+var getNumNodes = function(numBodies, warpsize) {
+    // Adjust sizes for optimized memory
+    var blocks = 8; //TODO (paden) should be set to multiprocecessor count
+    var numNodes = numBodies * 5;
+    if (numNodes < 1024*blocks) {
+        numNodes = 1024*blocks;
+    }
+    while ((numNodes & (warpsize - 1)) != 0) {
+        numNodes++;
+    }
+    return numNodes;
+};
+
+var getWarpsize = function(simulator) {
+    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
+    var warpsize = 1; // Always correct
+    if (vendor.indexOf('intel') !== -1) {
+        warpsize = 16;
+    } else if (vendor.indexOf('nvidia') !== -1) {
+        warpsize = 32;
+    } else if (vendor.indexOf('amd') !== -1) {
+        warpsize = 64;
+    }
+    return warpsize;
+}
 
 function getNumWorkitemsByHardware(deviceProps) {
 
