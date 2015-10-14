@@ -12,7 +12,12 @@ function Command(description, commandName, socket, disableErrorFiltering) {
 
 Command.prototype.sendWithObservableResult = function() {
     console.debug('Sent command ' + this.commandName, arguments);
-    var src = Rx.Observable.fromCallback(this.socket.emit, this.socket)(this.commandName, arguments);
+    var args = new Array(arguments.length + 1);
+    args[0] = this.commandName;
+    for (var i=0; i<arguments.length; i++) {
+        args[i+1] = arguments[i];
+    }
+    var src = Rx.Observable.fromCallback(this.socket.emit, this.socket).apply(null, args);
     if (this.disableErrorFiltering === true) {
         return src;
     }
