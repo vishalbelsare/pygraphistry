@@ -5,9 +5,11 @@ var $       = window.$;
 //var Rx      = require('rx');
 require('../rx-jquery-stub');
 var Handlebars = require('handlebars');
-var Backbone = require('backbone');
-Backbone.$ = $;
-//var util          = require('./util.js');
+var Backbone   = require('backbone');
+    Backbone.$ = $;
+var _          = require('underscore');
+var util       = require('./util.js');
+var Command    = require('./command.js');
 
 
 var SetModel = Backbone.Model.extend({
@@ -82,8 +84,14 @@ var AllSetsView = Backbone.View.extend({
     }
 });
 
-function SetsPanel(/*socket, urlParams*/) {
+function SetsPanel(socket/*, urlParams*/) {
     this.collection = new SetCollection([]);
+
+    this.commands = {
+        getAll: new Command('getting sets', 'get_sets', socket),
+        create: new Command('creating a set', 'create_set_from_special', socket),
+        update: new Command('updating a set', 'update_set', socket)
+    };
 
     this.model = SetModel;
 
@@ -91,6 +99,20 @@ function SetsPanel(/*socket, urlParams*/) {
         collection: this.collection,
         el: $('#setsPanel')
     });
+
+    this.commands.getAll.sendWithObservableResult().do(
+        function (response) {
+            var sets = response.sets;
+            _.each(sets, function (vizSet) {
+                this.collection.add(new SetModel(vizSet));
+            }.bind(this));
+        }.bind(this)).subscribe(
+            _.identity,
+            util.makeErrorHandler(this.commands.getAll.description));
 }
+
+SetsPanel.prototype.updateSet = function (vizSetModel) {
+    this.commands.update.sendWithObservableResult(vizSetModel.id, vizSetModel);
+};
 
 module.exports = SetsPanel;
