@@ -22,7 +22,7 @@ function filterParametersCore(type, attribute) {
 function FilterControl(socket) {
     this.namespaceMetadataSubject = new Rx.ReplaySubject(1);
 
-    this.namespaceCommand = new Command('getting column descriptions', 'get_namespace_metadata', socket);
+    this.namespaceCommand = new Command('getting column descriptions', 'get_namespace_metadata', socket, false);
     this.getFiltersCommand = new Command('getting filters', 'get_filters', socket);
     this.updateFiltersCommand = new Command('updating filters', 'update_filters', socket);
     this.updateFiltersRequests = new Rx.Subject();
@@ -31,7 +31,7 @@ function FilterControl(socket) {
     /** @type Rx.ReplaySubject */
     this.filtersResponsesSubject = new Rx.ReplaySubject(1);
     // Get initial filters values:
-    this.getFiltersCommand.sendWithObservableResult(undefined, true)
+    this.getFiltersCommand.sendWithObservableResult(undefined)
         .do(function (reply) {
             this.filtersResponsesSubject.onNext(reply.filters);
         }.bind(this)).subscribe(_.identity, util.makeErrorHandler(this.getFiltersCommand.description));
@@ -44,7 +44,7 @@ function FilterControl(socket) {
 
 FilterControl.prototype.setupFilterRequestHandler = function(requests, responses, command) {
     util.bufferUntilReady(requests).do(function (hash) {
-        command.sendWithObservableResult(hash.data, true)
+        command.sendWithObservableResult(hash.data)
             .do(function (reply) {
                 responses.onNext(reply);
                 hash.ready();
@@ -230,7 +230,7 @@ FilterControl.prototype.filterExactValuesParameters = function (type, attribute,
 };
 
 FilterControl.prototype.filterObservable = function (params) {
-    return this.runFilterCommand.sendWithObservableResult(params, true)
+    return this.runFilterCommand.sendWithObservableResult(params)
         .do(function (reply) {
             this.filtersResponsesSubject.onNext(reply);
         }).subscribe(_.identity);
