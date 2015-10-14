@@ -25,7 +25,6 @@ var argsType = {
     edgeMaxs: null,
     edgeMins: null,
     globalSpeed: null,
-    inputForces: null,
     inputMidpoints: null,
     inputMidPositions: null,
     inputPoints: null,
@@ -36,6 +35,7 @@ var argsType = {
     midpoints_per_edge: cljs.types.uint_t,
     midSpringsColorCoords: null,
     nextMidPoints: null,
+    midPointForces: null,
     numBodies: cljs.types.uint_t,
     numEdges: cljs.types.uint_t,
     numSplits: cljs.types.uint_t,
@@ -120,10 +120,18 @@ var kernelSpecs = {
         kernelName: 'calculate_forces',
         args:[
             'xCoords', 'yCoords', 'edgeDirectionX', 'edgeDirectionY', 'edgeLengths', 'children', 'sort',
-            'blocked', 'maxDepth', 'radius', 'stepNumber', 'numBodies', 'numNodes', 'nextMidPoints',
+            'blocked', 'maxDepth', 'radius', 'stepNumber', 'numBodies', 'numNodes', 'midPointForces',
             'charge', 'midpoint_stride', 'midpoints_per_edge', 'WARPSIZE', 'THREADS_FORCES'
         ],
         fileName: 'layouts/gpu/edgeBundling/kdTree/calculateForces.cl'
+    },
+    midspringForces: {
+        name: 'midspringForces',
+        kernelName: 'midspringForces',
+        args: ['numSplits', 'springs', 'workList', 'inputPoints', 'midPointForces', 'inputMidpoints', 
+            'outputMidpoints', 'springMidPositions', 'midSpringsColorCoords', 'springStrength', 
+            'springDistance', 'stepNumber'],
+        fileName: 'layouts/gpu/edgeBundling/midspringForces.cl'
     },
     faSwingsKernel : {
         name: 'faSwingsKernel',
@@ -142,16 +150,7 @@ var kernelSpecs = {
         kernelName: 'interpolateMidpoints',
         args: ['edges', 'points', 'numEdges', 'numSplits', 'outputMidPoints'],
         fileName: 'layouts/gpu/edgeBundling/interpolateMidpoints.cl',
-    },
-    midspringForces: {
-        name: 'midspringForces',
-        kernelName: 'midspringForces',
-        args: ['numSplits', 'springs', 'workList', 'inputPoints', 'inputForces', 'inputMidpoints', 
-            'outputMidpoints', 'springMidPositions', 'midSpringsColorCoords', 'springStrength', 
-            'springDistance', 'stepNumber'],
-        fileName: 'layouts/gpu/edgeBundling/midspringForces.cl'
     }
-
 }
 
 
@@ -252,7 +251,7 @@ var getBufferSizes = function(simulator) {
         start: (numNodes + 1)*Int32Array.BYTES_PER_ELEMENT,
         step : Int32Array.BYTES_PER_ELEMENT,
         swings: numMidPoints * Float32Array.BYTES_PER_ELEMENT,
-        tempMidPoints: 2 * numMidPoints * Float32Array.BYTES_PER_ELEMENT,
+        midPointForces: 2 * numMidPoints * Float32Array.BYTES_PER_ELEMENT,
         tractions: numMidPoints * Float32Array.BYTES_PER_ELEMENT,
         xCoords : (numNodes + 1) * Float32Array.BYTES_PER_ELEMENT,
         xmaxs : (numWorkGroups)*Float32Array.BYTES_PER_ELEMENT,
@@ -286,14 +285,13 @@ var getBufferBindings = function (simulator, layoutBuffers) {
         edgeMaxs:layoutBuffers.edgeMaxs.buffer,
         edgeMins:layoutBuffers.edgeMins.buffer,
         globalSpeed: layoutBuffers.globalSpeed.buffer,
-        inputForces: layoutBuffers.tempMidPoints.buffer,
         inputPoints: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
         inputMidpoints: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
         inputMidPositions: simulator.dataframe.getBuffer('curMidPoints', 'simulator').buffer,
         inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
         mass: layoutBuffers.mass.buffer,
         maxDepth:layoutBuffers.maxDepth.buffer,
-        nextMidPoints:layoutBuffers.tempMidPoints.buffer,
+        midPointForces:layoutBuffers.midPointForces.buffer,
         numBodies:numBodies,
         numEdges: simulator.dataframe.getNumElements('edge'),
         numNodes:numNodes,
