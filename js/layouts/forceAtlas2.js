@@ -116,7 +116,7 @@ var kernelSpecs = {
         'inputPositions', 'xCoords', 'yCoords', 'mass', 'blocked', 'maxDepth',
         'pointDegrees', 'stepNumber', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
         ],
-        fileName: 'layouts/gpu/forceAtlas2/barnesHut/toBarnesLayout.cl'
+        fileName: 'layouts/forceAtlas2/barnesHut/toBarnesLayout.cl'
     },
     boundBox: {
         kernelName: 'bound_box',
@@ -127,27 +127,27 @@ var kernelSpecs = {
         'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau', 'WARPSIZE',
         'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
         ],
-        fileName: 'layouts/gpu/forceAtlas2/barnesHut/boundBox.cl'
+        fileName: 'layouts/forceAtlas2/barnesHut/boundBox.cl'
     },
     buildTree: {
         kernelName: 'build_tree', 
         args: barnesHutCommonArgs,
-        fileName: 'layouts/gpu/forceAtlas2/barnesHut/buildTree.cl'
+        fileName: 'layouts/forceAtlas2/barnesHut/buildTree.cl'
     },
     computeSums: {
         kernelName: 'compute_sums',
         args: barnesHutCommonArgs,
-        fileName: 'layouts/gpu/forceAtlas2/barnesHut/computeSums.cl'
+        fileName: 'layouts/forceAtlas2/barnesHut/computeSums.cl'
     },
     sort: {
         kernelName: 'sort',
         args: barnesHutCommonArgs,
-        fileName: 'layouts/gpu/forceAtlas2/barnesHut/sort.cl'
+        fileName: 'layouts/forceAtlas2/barnesHut/sort.cl'
     },
     calculatePointForces: {
         kernelName: 'calculate_forces',
         args: barnesHutCommonArgs,
-        fileName: 'layouts/gpu/forceAtlas2/barnesHut/calculatePointForces.cl'
+        fileName: 'layouts/forceAtlas2/barnesHut/calculatePointForces.cl'
     },
     // Edge force mapper and segmented reduce kernels used to calculate edge forces
     forwardsEdgeForceMapper : {
@@ -155,7 +155,7 @@ var kernelSpecs = {
         args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'isForward', 'forwardsEdges', 
             'numEdges', 'pointDegrees', 'inputPositions', 'forwardsEdgeWeights', 'outputForcesMap' 
         ],
-        fileName: 'layouts/gpu/forceAtlas2/faEdgeMap.cl'
+        fileName: 'layouts/forceAtlas2/faEdgeMap.cl'
     },
     reduceForwardsEdgeForces : {
         kernelName: 'segReduce',
@@ -170,7 +170,7 @@ var kernelSpecs = {
         args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'isForward', 'backwardsEdges', 
             'numEdges', 'pointDegrees', 'inputPositions', 'backwardsEdgeWeights', 'outputForcesMap' 
         ],
-        fileName: 'layouts/gpu/forceAtlas2/faEdgeMap.cl'
+        fileName: 'layouts/forceAtlas2/faEdgeMap.cl'
     },
     reduceBackwardsEdgeForces : {
         kernelName: 'segReduce',
@@ -184,12 +184,12 @@ var kernelSpecs = {
     faSwings: {
         kernelName: 'faSwingsTractions',
         args: ['prevForces', 'curForces', 'swings', 'tractions'],
-        fileName: 'layouts/gpu/forceAtlas2/faSwingsTractions.cl'
+        fileName: 'layouts/forceAtlas2/faSwingsTractions.cl'
     },
     faIntegrate: {
         kernelName: 'faIntegrate',
         args: ['globalSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'],
-        fileName: 'layouts/gpu/forceAtlas2/faIntegrate.cl'
+        fileName: 'layouts/forceAtlas2/faIntegrate.cl'
     }
 }
 
