@@ -34,7 +34,7 @@ function FilterControl(socket) {
     this.getFiltersCommand.sendWithObservableResult(undefined, true)
         .do(function (reply) {
             this.filtersResponsesSubject.onNext(reply.filters);
-        }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Getting filters'));
+        }.bind(this)).subscribe(_.identity, util.makeErrorHandler(this.getFiltersCommand.description));
 
     this.setupFilterRequestHandler(
         this.updateFiltersRequests,
@@ -48,9 +48,9 @@ FilterControl.prototype.setupFilterRequestHandler = function(requests, responses
             .do(function (reply) {
                 responses.onNext(reply);
                 hash.ready();
-            }).subscribe(_.identity, util.makeErrorHandler('handle update_filters response'));
+            }).subscribe(_.identity, util.makeErrorHandler(command.description));
 
-    }).subscribe(_.identity, util.makeErrorHandler('handle filter requests'));
+    }).subscribe(_.identity, util.makeErrorHandler(command.description));
 };
 
 FilterControl.prototype.namespaceMetadataObservable = function () {
@@ -58,7 +58,7 @@ FilterControl.prototype.namespaceMetadataObservable = function () {
         this.namespaceSubscription = this.namespaceCommand.sendWithObservableResult(null)
             .do(function (reply) {
                 this.namespaceMetadataSubject.onNext(reply.metadata);
-            }.bind(this)).subscribe(_.identity, util.makeErrorHandler('fetch get_namespace_metadata'));
+            }.bind(this)).subscribe(_.identity, util.makeErrorHandler(this.namespaceCommand.description));
     }
     return this.namespaceMetadataSubject;
 };
