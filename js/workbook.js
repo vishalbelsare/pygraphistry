@@ -65,6 +65,7 @@ var blankWorkbookTemplate = {
 };
 
 module.exports = {
+    blankViewTemplate: blankViewTemplate,
     blankWorkbookTemplate: blankWorkbookTemplate,
     loadDocument: function (workbookSpecifier) {
         var workbookRoot = new persist.ContentSchema().subSchemaForWorkbook(workbookSpecifier);
