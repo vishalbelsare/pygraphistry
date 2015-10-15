@@ -557,9 +557,8 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     });
     // Update point/edge counts, since those were filtered,
     // along with forwardsWorkItems/backwardsWorkItems.
-    _.each(['point', 'edge'], function (key) {
-        newData.numElements[key] = masks[key].length;
-    });
+    newData.numElements.point = masks.numPoints();
+    newData.numElements.edge = masks.numEdges();
     newData.numElements.forwardsWorkItems = newData.hostBuffers.forwardsEdges.workItemsTyped.length / 4;
     newData.numElements.backwardsWorkItems = newData.hostBuffers.backwardsEdges.workItemsTyped.length / 4;
     // TODO: NumMidPoints and MidEdges
