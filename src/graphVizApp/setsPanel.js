@@ -89,7 +89,7 @@ function SetsPanel(socket/*, urlParams*/) {
 
     this.commands = {
         getAll: new Command('getting sets', 'get_sets', socket),
-        create: new Command('creating a set', 'create_set_from_special', socket),
+        create: new Command('creating a set', 'create_set', socket),
         update: new Command('updating a set', 'update_set', socket)
     };
 
