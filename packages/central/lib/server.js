@@ -14,6 +14,7 @@ var Q           = require('q');
 var express     = require('express');
 var io          = require('socket.io-client'); //for etl setup
 var proxy       = require('express-http-proxy');
+var rewrite     = require('express-urlrewrite');
 var compression = require('compression');
 var request     = require('request');
 var bodyParser  = require('body-parser');
@@ -178,6 +179,12 @@ app.get('*/StreamGL.map', function(req, res) {
 app.use('/graph', function (req, res, next) {
     return express.static(GRAPH_STATIC_PATH)(req, res, next);
 });
+app.use(rewrite('/dataset/:datasetName', '/graph/graph.html?dataset=:datasetName'));
+app.use(rewrite('/dataset/:datasetName\\?*', '/graph/graph.html?dataset=:datasetName?$1'));
+app.use(rewrite('/workbook/:workbookName', '/graph/graph.html?workbook=:workbookName'));
+app.use(rewrite('/workbook/:workbookName\\?*', '/graph/graph.html?workbook=:workbookName?$1'));
+app.use(rewrite('/workbook/:workbookName/view/:viewName', '/graph/graph.html?workbook=:workbookName&view=:viewName'));
+app.use(rewrite('/workbook/:workbookName/view/:viewName\\?*', '/graph/graph.html?workbook=:workbookName&view=:viewName?$1'));
 // Serve uber static assets
 app.use('/uber',   express.static(UBER_STATIC_PATH));
 // Serve splunk static assets
@@ -192,17 +199,8 @@ function propagatePostToWorker (route, workerName) {
     // Temporarly handle ETL request from Splunk
     app.post(route, bodyParser.json({type: '*', limit: '128mb'}), function (req, res) {
 
-        logger.info({req: req.query}, route + ' request');
-        logger.debug({req: req}, route + ' request debug');
-
-        //TODO make an error once prod ssl server is up
-        if ((config.ENVIRONMENT !== 'local') && !req.secure) {
-
-            logger.warn('non-local ' + route + ' without https');
-
-            //logger.error('non-local /etl without https');
-            //return res.send({success: false, msg: 'requires https'});
-        }
+        logger.info({req: req.query}, 'ETL request');
+        logger.debug({req: req}, ' ETL request debug');
 
         if (config.ENVIRONMENT !== 'local') {
             try {
@@ -258,6 +256,7 @@ function propagatePostToWorker (route, workerName) {
 }
 
 propagatePostToWorker('/etl', 'etl');
+propagatePostToWorker('/etlvgraph', 'etl');
 propagatePostToWorker('/oneshot', 'oneshot');
 
 
@@ -285,14 +284,16 @@ function start() {
     return Rx.Observable.return()
         .do(function () {
             if (config.ENVIRONMENT === 'local') {
-                var from = '/worker/' + config.VIZ_LISTEN_PORT + '/';
-                var to = 'http://localhost:' + config.VIZ_LISTEN_PORT;
-                logger.info('setting up proxy', from, to);
-                app.use(from, proxy(to, {
-                    forwardPath: function(req) {
-                        return url.parse(req.url).path.replace(new RegExp('worker/' + config.VIZ_LISTEN_PORT + '/'),'/');
-                    }
-                }));
+                _.each(config.VIZ_LISTEN_PORTS, function (port) {
+                    var from = '/worker/' + port + '/';
+                    var to = 'http://localhost:' + port;
+                    logger.info('setting up proxy', from, to);
+                    app.use(from, proxy(to, {
+                        forwardPath: function(req) {
+                            return url.parse(req.url).path.replace(new RegExp('worker/' + port + '/'),'/');
+                        }
+                    }));
+                });
             }
         })
         .flatMap(function () {

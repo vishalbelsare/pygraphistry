@@ -47,8 +47,7 @@ function get_likely_local_ip() {
 
 // FIXME: Get real viz server IP:port from DB
 var VIZ_SERVER_HOST = get_likely_local_ip();
-var VIZ_SERVER_PORT = config.VIZ_LISTEN_PORT;
-
+var nextLocalWorker = 0;
 
 /**
  * Gets all the currently registered viz worker servers, and all currently registered viz worker
@@ -167,8 +166,11 @@ function pickWorker (cb) {
                 return Rx.Observable.fromArray(combineWorkerInfo(o.servers, o.workers));
             });
     } else {
-        logger.debug('Using local hostname/port', VIZ_SERVER_HOST, VIZ_SERVER_PORT);
-        ips = Rx.Observable.return({hostname: VIZ_SERVER_HOST, port: VIZ_SERVER_PORT});
+        var numWorkers = config.VIZ_LISTEN_PORTS.length;
+        var port = config.VIZ_LISTEN_PORTS[nextLocalWorker];
+        nextLocalWorker = (nextLocalWorker + 1) % numWorkers;
+        logger.debug('Using local hostname/port', VIZ_SERVER_HOST, port);
+        ips = Rx.Observable.return({hostname: VIZ_SERVER_HOST, port: port});
     }
 
 
