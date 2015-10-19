@@ -293,9 +293,30 @@
 
         <div id="setsPanel" class="setsPanel container">
             <p id="setsPanelHeader" class="text-center bg-primary">Sets</p>
-            <div id="dynamicSets"></div>
-            <div id="rememberedSets"></div>
-        </div>
+            <div class="btn-toolbar" role="toolbar" aria-label="sets toolbar">
+                <div class="btn-group btn-group-xs">
+                    <button type="button" class="btn btn-default btn-xs" title="New Set">
+                        <span title="New Set" class="fa fa-plus"></span>
+                    </button>
+                    <button type="button" class="btn btn-default btn-xs dropdown-toggle" title="New Set"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span>Selected Rows</span>
+                        <span class="caret"></span>
+                        <span class="sr-only">Toggle Dropdown</span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>Selected Rows</li>
+                        <li>Visible Rows</li>
+                        <li>Loaded Rows</li>
+                    </ul>
+                </div>
+            </div>
+            <div id="sets">
+                <p id="setsEmptyMessage" class="text-muted text-center hidden">
+                    <i>Sets appear here</i>
+                </p>
+            </div>
+        </div> <!-- /setsPanel -->
 
     </div> <!-- /section -->
 
@@ -470,6 +491,16 @@
                 </div>
             </div>
         </div>
+    </div>
+</script>
+
+<script type="text/x-handlebars-template" id="setTemplate">
+    <div class="topMenu row">
+        {{#if isSystem}}
+            <i>{{title}}</i>
+        {{else}}
+            {{title}}
+        {{/if}}
     </div>
 </script>
 
