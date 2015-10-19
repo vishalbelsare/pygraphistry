@@ -52,7 +52,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
 
     function isDefine(arg) {
         return argTypes[arg] === cljs.types.define;
-    };
+    }
     var args = _.reject(argNames, isDefine);
     var defines = _.filter(argNames, isDefine).concat(['NODECL']);
 
@@ -76,7 +76,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         var mustRecompile = false;
         _.each(args, function (val, arg) {
             if (arg in argValues) {
-                if (val === undefined || typeof val === 'null') {
+                if (val === undefined || val === null) {
                     logger.trace('Setting argument %s to %s', arg, val);
                 }
 
@@ -143,10 +143,10 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                     return kernels[name];
                 });
         });
-    };
+    }
 
     function setAllArgs(kernel) {
-        logger.trace('Setting arguments for kernel', name)
+        logger.trace('Setting arguments for kernel', name);
         var i;
         try {
             for (i = 0; i < args.length; i++) {
@@ -154,8 +154,9 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 var val = argValues[arg].val;
                 var dirty = argValues[arg].dirty;
                 var type = argTypes[arg] || "cl_mem";
-                if (val === null)
+                if (val === null) {
                     logger.trace('In kernel %s, argument %s is null', name, arg);
+                }
 
                 if (dirty) {
                     logger.trace('Setting arg %d of kernel %s to value %s', i, name, val);
@@ -167,7 +168,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         } catch (e) {
             log.makeQErrorHandler(logger, 'Error setting argument %s of kernel %s', args[i], name)(e);
         }
-    };
+    }
 
     function call(kernel, workItems, buffers, workGroupSize) {
         // TODO: Consider acquires and releases of buffers.
@@ -197,8 +198,8 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 return call(kernel, numWorkItems, resources, workGroupSize);
             }
         });
-    }
-}
+    };
+};
 
 // () -> Stats
 Kernel.prototype.runtimeStats = function () {
@@ -217,7 +218,7 @@ Kernel.prototype.runtimeStats = function () {
         mean: mean,
         stdDev: stdDev,
         pretty: pretty
-    }
-}
+    };
+};
 
 module.exports = Kernel;
