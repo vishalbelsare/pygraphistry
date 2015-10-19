@@ -197,9 +197,10 @@ app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
 //   workerName: vizserver dispatcher
 function propagatePostToWorker (route, workerName) {
     // Temporarly handle ETL request from Splunk
-    app.post(route, bodyParser.json({type: '*', limit: '128mb'}), function (req, res) {
 
-        logger.info({req: req.query}, 'ETL request');
+    app.post(route, function (req, res) {
+
+        logger.info({req: req.body}, 'ETL request', route);
         logger.debug({req: req}, ' ETL request debug');
 
         if (config.ENVIRONMENT !== 'local') {
@@ -242,10 +243,8 @@ function propagatePostToWorker (route, workerName) {
                         return res.json({success: false, msg: 'failed connecting to work'});
                     }
                     var newEndpoint = redirect + req.originalUrl;
-                    logger.trace('telling client to redirect', newEndpoint);
-
+                    logger.trace('piping to new endpoint', newEndpoint);
                     req.pipe(request(newEndpoint)).pipe(res);
-                    //res.redirect(307, newEndpoint);
                 });
                 logger.trace('waiting for worker to initialize');
             });
