@@ -4,11 +4,9 @@ var _ = require('underscore');
 var SimCL = require('./SimCL.js');
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:cl:layoutconfig');
-var ForceAtlas2         = require('./forceatlas2.js'),
-    ForceAtlas2Fast     = require('./forceatlas2fast.js'),
-    forceAtlasBarnes    = require('./forceatlasbarnes.js'),
-    GaussSeidel         = require('./gaussseidel.js'),
-    EdgeBundling       = require('./kd-edgebundling.js');
+var ForceAtlas2Naive     = require('./layouts/forceAtlas2Naive.js'),
+    ForceAtlas2    = require('./layouts/forceAtlas2.js'),
+    EdgeBundling       = require('./layouts/edgeBundling.js');
 
 var SIMULATION_TIME = 100;
 
@@ -95,46 +93,17 @@ var uberControls = {
     devices: ['CPU', 'GPU']
 }
 
-var gsControls = {
-    simulator: SimCL,
-    layoutAlgorithms: [
-        {
-            algo: GaussSeidel,
-            params: {
-                charge: new ContinuousParam('Charge', -0.000029360001841802474, -0.0001, 0),
-                gravity: new ContinuousParam('Gravity', 0.020083175556898723, 0, 0.1),
-                edgeStrength0: new ContinuousParam('Edge Strength A', 5, 0, 10),
-                edgeDistance0: new ContinuousParam('Edge Distance A', 0.0001, 0, 0.1),
-                edgeStrength1: new ContinuousParam('Edge Strength B', 1, 0, 10),
-                edgeDistance1: new ContinuousParam('Edge Distance B', 0.01, 0, 0.1),
-            }
-        }
-    ],
-    locks: {
-        lockPoints: false,
-        lockEdges: false,
-        lockMidpoints: true,
-        lockMidedges: true
-    },
-    global: {
-        simulationTime: SIMULATION_TIME, //milliseconds
-        dimensions: [1, 1],
-        numSplits: 0
-    },
-    devices: ['CPU', 'GPU']
-}
-
 function atlasControls(algo) {
 
     var devices;
-    if (algo == forceAtlasBarnes) {
+    if (algo == ForceAtlas2) {
         devices = ['GPU'];
     } else {
         devices = ['CPU', 'GPU'];
     }
 
     var params = {
-        tau: new ContinuousParam('Precision vs. Speed', 10.0, 1.0, 25.0),
+        tau: new DiscreteParam('Precision vs. Speed', 0, -5, 5),
         gravity: new ContinuousParam('Center Magnet', 1.0, 0.01, 100),
         scalingRatio: new ContinuousParam('Expansion Ratio', 1.0, 0.01, 100),
         edgeInfluence: new DiscreteParam('Edge Influence', 0, 0, 5, 1),
@@ -169,13 +138,12 @@ function atlasControls(algo) {
 
 
 var controls = {
-    'default':      [atlasControls(forceAtlasBarnes), atlasControls(ForceAtlas2Fast)],
+    'default':      [atlasControls(ForceAtlas2), atlasControls(ForceAtlas2Naive)],
     'gis':         [uberControls],
-    'gauss':        [gsControls],
-    'atlas':        [atlasControls(forceAtlasBarnes), atlasControls(ForceAtlas2Fast)],
-    'atlas2':       [atlasControls(ForceAtlas2)],
-    'atlas2fast':   [atlasControls(ForceAtlas2Fast)],
-    'atlasbarnes':  [atlasControls(forceAtlasBarnes)]
+    'atlas':        [atlasControls(ForceAtlas2), atlasControls(ForceAtlas2Naive)],
+    'atlas2':       [atlasControls(ForceAtlas2Naive)],
+    'atlas2fast':   [atlasControls(ForceAtlas2Naive)],
+    'atlasbarnes':  [atlasControls(ForceAtlas2)]
 }
 
 function saneControl(control, name) {

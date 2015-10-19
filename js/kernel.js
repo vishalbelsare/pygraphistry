@@ -8,11 +8,16 @@ var fs = require('fs');
 var util = require('./util');
 
 var cljs = require('./cl.js');
+var ocl = require('node-opencl');
 var config = require('config')();
 
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:cl:kernel');
 
+// Disable debug logging since this file is responsible for 90% of log output.
+// Comment me for local debugging.
+//debug = function () {}
+//Q.longStackSupport = true;
 
 
 // String * [String] * {String: Type} * String * clCtx
@@ -28,20 +33,21 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     //TODO: Alternative way of doing this, since we aren't using debug module anymore
     // Set synchronous based on debug value
     var synchronous = false;
-    if (process.env.DEBUG && process.env.DEBUG.indexOf('perf') != -1) {
-         logger.trace('Kernel ' + name + ' is synchronous because DEBUG=perf');
-         synchronous = true;
+    if (process.env.DEBUG && process.env.DEBUG.indexOf('perf') !== -1) {
+        logger.trace('Kernel ' + name + ' is synchronous because DEBUG=perf');
+        synchronous = true;
     }
 
     // For gathering performance data
     this.timings = [];
     this.totalRuns = 0;
-    var maxTimings = 100
+    var maxTimings = 100;
 
     // Sanity Checks
     _.each(argNames, function (arg) {
-        if (!(arg in argTypes))
+        if (!(arg in argTypes)) {
             logger.die('In Kernel %s, argument %s has no type', name, arg);
+        }
     });
 
     function isDefine(arg) {
@@ -70,7 +76,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         var mustRecompile = false;
         _.each(args, function (val, arg) {
             if (arg in argValues) {
-                if (typeof val === 'undefined' || typeof val === 'null') {
+                if (val === undefined || typeof val === 'null') {
                     logger.trace('Setting argument %s to %s', arg, val);
                 }
 
@@ -96,19 +102,21 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         if (_.contains(defines, arg)) {
             return defValues[arg];
         } else if (_.contains(args, arg)) {
-            return argValues[arg].val
+            return argValues[arg].val;
         } else {
             logger.warn('Kernel %s has no parameter %s', name, arg);
             return undefined;
         }
-    }
+    };
 
     function compile () {
         logger.trace('Compiling kernel', that.name);
 
         _.each(defValues, function (arg, val) {
-            if (val === null)
+            if (val === null) {
                 logger.die('Define %s of kernel %s was never set', arg, name);
+            }
+
         });
 
         var prefix = _.flatten(_.map(defValues, function (val, key) {
@@ -145,13 +153,13 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
                 var arg = args[i];
                 var val = argValues[arg].val;
                 var dirty = argValues[arg].dirty;
-                var type = argTypes[arg];
+                var type = argTypes[arg] || "cl_mem";
                 if (val === null)
                     logger.trace('In kernel %s, argument %s is null', name, arg);
 
                 if (dirty) {
-                    logger.trace('Setting arg %d with value', i, val);
-                    kernel.setArg(i, val, type || undefined);
+                    logger.trace('Setting arg %d of kernel %s to value %s', i, name, val);
+                    ocl.setKernelArg(kernel, i, val, type);
                     argValues[arg].dirty = false;
                 }
             }
@@ -167,16 +175,15 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         var queue = clContext.queue;
         logger.trace('Enqueuing kernel %s', that.name, kernel);
         var start = process.hrtime();
-        queue.enqueueNDRangeKernel(kernel, null, workItems, workGroupSize || null);
+        ocl.enqueueNDRangeKernel(queue, kernel, 1, null, workItems, workGroupSize || null);
         if (synchronous) {
             logger.trace('Waiting for kernel to finish');
-            clContext.queue.finish();
+            ocl.finish(queue);
             var diff = process.hrtime(start);
             that.timings[that.totalRuns % maxTimings] = (diff[0] * 1000 + diff[1] / 1000000);
         }
         that.totalRuns++;
         return Q(that);
-
     }
 
     // [Int] * [String] -> Promise[Kernel]

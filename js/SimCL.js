@@ -8,14 +8,14 @@ var util = require('./util.js');
 var cljs = require('./cl.js');
 var MoveNodes = require('./moveNodes.js');
 var SelectNodes = require('./selectNodes.js');
-var SpringsGather = require('./springsGather.js');
+
 var HistogramKernel = require('./histogramKernel.js');
-var webcl = require('node-webcl');
 var Color = require('color');
 
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:data:simcl');
 
+//var webcl = require('node-webcl');
 
 // Do NOT enable this in prod. It destroys performance.
 // Seriously.
@@ -78,7 +78,6 @@ function create(dataframe, renderer, device, vendor, cfg) {
                 moveNodes: new MoveNodes(cl),
                 selectNodes: new SelectNodes(cl),
                 //histogramKernel: new HistogramKernel(cl),
-                springsGather: new SpringsGather(cl)
             };
             simObj.tilesPerIteration = 1;
             simObj.buffersLocal = {};
@@ -184,8 +183,8 @@ function create(dataframe, renderer, device, vendor, cfg) {
             Object.seal(simObj);
 
             logger.trace('Simulator created');
-            return simObj
-        })
+            return simObj;
+        });
     }).fail(log.makeQErrorHandler(logger, 'Cannot create SimCL'));
 }
 
@@ -489,10 +488,22 @@ function setPoints(simulator, points) {
             zeros[i] = 0;
         }
 
+        var swingZeros = new Float32Array(numPoints);
+        var tractionOnes = new Float32Array(numPoints);
+        for (var i = 0; i < swingZeros.length; i++) {
+            swingZeros[i] = 0;
+            tractionOnes[i] = 1;
+        }
+
+        swingsBuf.write(swingZeros);
+        tractionsBuf.write(tractionOnes);
         return Q.all([
             simulator.cl.createBufferGL(pointsVBO, 'curPoints'),
             simulator.dataframe.writeBuffer('randValues', 'simulator', rands, simulator),
-            simulator.dataframe.writeBuffer('prevForces', 'simulator', zeros, simulator)]);
+            simulator.dataframe.writeBuffer('prevForces', 'simulator', zeros, simulator),
+            simulator.dataframe.writeBuffer('swings', 'simulator', swingZeros, simulator),
+            simulator.dataframe.writeBuffer('tractions', 'simulator', tractionOnes, simulator)
+        ]);
     })
     .spread(function(pointsBuf) {
         simulator.dataframe.loadBuffer('curPoints', 'simulator', pointsBuf);
@@ -1004,12 +1015,13 @@ function setMidEdgeColors(simulator, midEdgeColors) {
 }
 
 function setEdgeWeight(simulator, edgeWeights) {
+    var i;
     if (!edgeWeights) {
         logger.trace('Using default edge weights');
         var forwardsEdges = simulator.dataframe.getHostBuffer('forwardsEdges');
 
         edgeWeights = new Float32Array(forwardsEdges.edgesTyped.length / 2);
-        for (var i = 0; i < edgeWeights.length; i++) {
+        for (i = 0; i < edgeWeights.length; i++) {
             edgeWeights[i] = 1.0;
         }
     }
@@ -1018,14 +1030,14 @@ function setEdgeWeight(simulator, edgeWeights) {
     var backwardsEdgeWeights = new Float32Array(edgeWeights.length);
     var forwardsPermutation = simulator.dataframe.rawdata.hostBuffers.forwardsEdges.edgePermutationInverseTyped;
     var backwardsPermutation = simulator.dataframe.rawdata.hostBuffers.backwardsEdges.edgePermutationInverseTyped;
-    for (var i = 0; i < edgeWeights.length; i++) {
+    for (i = 0; i < edgeWeights.length; i++) {
         forwardsEdgeWeights[i] = edgeWeights[forwardsPermutation[i]];
         backwardsEdgeWeights[i] = edgeWeights[backwardsPermutation[i]];
     }
 
     return Q.all([
             simulator.cl.createBuffer(forwardsEdgeWeights.byteLength, 'forwardsEdgeWeights'),
-            simulator.cl.createBuffer(backwardsEdgeWeights.byteLength, 'backwardsEdgeWeights'),
+            simulator.cl.createBuffer(backwardsEdgeWeights.byteLength, 'backwardsEdgeWeights')
         ]).spread(function(fwBuffer, bwBuffer) {
             return Q.all([
                 simulator.dataframe.loadBuffer('forwardsEdgeWeights', 'simulator', fwBuffer),
@@ -1048,7 +1060,7 @@ function setLocks(simulator, cfg) {
 
 
 function setPhysics(simulator, cfg) {
-    logger.debug('Simcl set physics', cfg)
+    logger.debug('SimCL set physics', cfg)
     _.each(simulator.layoutAlgorithms, function (algo) {
         if (algo.name in cfg) {
             algo.setPhysics(cfg[algo.name]);
@@ -1141,18 +1153,19 @@ function moveNodes(simulator, marqueeEvent) {
     };
 
     var moveNodes = simulator.otherKernels.moveNodes;
-    var springsGather = simulator.otherKernels.springsGather;
 
     return moveNodes.run(simulator, marqueeEvent.selection, delta)
-        .then(function () {
-            return springsGather.tick(simulator);
-        }).fail(log.makeQErrorHandler(logger, 'Failure trying to move nodes'));
+        .fail(log.makeQErrorHandler(logger, 'Failure trying to move nodes'));
 }
 
 function selectNodes(simulator, selection) {
     logger.debug('selectNodes', selection);
 
     var selectNodes = simulator.otherKernels.selectNodes;
+
+    if (selection.all) {
+        return Q(_.range(simulator.dataframe.getNumElements('point')));
+    }
 
     return selectNodes.run(simulator, selection)
         .then(function (mask) {
@@ -1262,8 +1275,6 @@ function tick(simulator, stepNumber, cfg) {
             })
             .then(function () {
                 return tickAllHelper(remainingAlgorithms);
-            }).then(function () {
-                //return simulator.otherKernels.springsGather.tick(simulator);
             });
     };
 
@@ -1274,28 +1285,16 @@ function tick(simulator, stepNumber, cfg) {
             //TODO: move to perflogging
             logger.trace('Layout Perf Report (step: %d)', stepNumber);
 
-            var extraKernels = [simulator.otherKernels.springsGather.gather];
             var totals = {};
             var runs = {}
             // Compute sum of means so we can print percentage of runtime
             _.each(simulator.layoutAlgorithms, function (la) {
                totals[la.name] = 0;
                runs[la.name] = 0;
-                _.each(la.runtimeStats(extraKernels), function (stats) {
-                    if (!isNaN(stats.mean)) {
-                        totals[la.name] += stats.mean * stats.runs;
-                        runs[la.name] += stats.runs;
-                    }
-                });
             });
-
             _.each(simulator.layoutAlgorithms, function (la) {
                 var total = totals[la.name] / stepNumber;
                 logger.trace(sprintf('  %s (Total:%f) [ms]', la.name, total.toFixed(0)));
-                _.each(la.runtimeStats(extraKernels), function (stats) {
-                    var percentage = (stats.mean * stats.runs / totals[la.name] * 100);
-                    logger.trace(sprintf('\t%s        pct:%4.1f%%', stats.pretty, percentage));
-                });
            });
         }
         // This cl.queue.finish() needs to be here because, without it, the queue appears to outside
@@ -1305,7 +1304,7 @@ function tick(simulator, stepNumber, cfg) {
         // called, but node-webcl is out-of-date and doesn't support WebCL 1.0's optional callback
         // argument to finish().
 
-        simulator.cl.queue.finish();
+        simulator.cl.finish(simulator.cl.queue);
         logger.trace('Tick Finished.');
         simulator.renderer.finish();
     }).fail(log.makeQErrorHandler(logger, 'SimCl tick failed'));

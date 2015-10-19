@@ -23,6 +23,10 @@
     <script type="text/javascript" src="libs/bootstrap-slider/js/bootstrap-slider.js"></script>
     <script type="text/javascript" src="libs/bootstrap-switch.min.js"></script>
 
+    <!-- Ace editor, ideally delayed until used. -->
+    <script type="text/javascript" src="libs/ace/src-noconflict/ace.js"></script>
+    <script type="text/javascript" src="libs/ace/src-noconflict/ext-language_tools.js"></script>
+
     <link rel="stylesheet" href="libs/bootstrap-slider/css/bootstrap-slider.css">
     <link rel="stylesheet" href="libs/bootstrap-switch.min.css">
     <link rel="stylesheet" href="libs/bootstrap.vertical-tabs.min.css">
@@ -37,7 +41,7 @@
     <link rel="stylesheet" href="css/gpustreaming.css" type="text/css" media="screen" charset="utf-8">
     <link rel="stylesheet" href="css/graph.css" type="text/css" media="screen" charset="utf-8">
 
-    <link rel="shortcut icon" "/favicon.ico" />
+    <link rel="shortcut icon" href="/favicon.ico" />
 
 </head>
 <body class="graphistry-body">
@@ -141,6 +145,12 @@
 
                       <div class="divide-line"></div>
 
+                      <a href="#" id="brushButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Data Brush">
+                            <i class="fa" style="height: 0.9em; width: 0.9em; border-style: dashed; border-width: 0.1em"></i>
+                      </a>
+
+                      <div class="divide-line"></div>
+
                       <a href="#" id="layoutSettingsButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Layout Settings">
                         <i class="fa fa-cogs fa-2x"></i>
                       </a>
@@ -153,7 +163,7 @@
 
                       <div class="divide-line"></div>
 
-                      <a href="#" id="histogramBrush" data-container="body" data-toggle="tooltip" data-placement="right" title="Data Inspector">
+                      <a href="#" id="dataInspectorButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Data Inspector">
                           <i class="fa fa-table fa-2x"></i>
                       </a>
 
@@ -180,6 +190,10 @@
                       </a>
 
                       <div class="divide-line"></div>
+
+                      <a href="#" id="persistWorkbookButton" class="beta" data-container="body" data-toggle="tooltip" data-placement="right" title="Save Workbook">
+                          <i class="fa fa-floppy-o fa-2x"></i>
+                      </a>
 
                       <a href="#" id="persistButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Share/Embed Snapshot">
                             <i class="fa fa-share-alt fa-2x"></i>
@@ -268,11 +282,11 @@
             </div>  <!-- /form-horizontal -->
         </div> <!-- /renderingItems -->
 
-        <div id="filteringItems" class="settingsPanel">
-            <div class="form-horizontal">
-            <!-- Placeholder -->
-            </div>  <!-- /form-horizontal -->
-        </div> <!-- /filteringItems -->
+        <div id="filtersPanel" class="filtersPanel container">
+            <p id="filtersPanelHeader" class="text-center bg-primary">Filters</p>
+            <div id="filters"></div>
+            <div id="addFilter"></div>
+        </div> <!-- /filtersPanel -->
 
 
     </div> <!-- /section -->
@@ -387,8 +401,39 @@
     </div>
 </script>
 
-<script type="text/template" id="persistTemplate">
-    <div class="modal fade persistor" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
+<script type="text/x-handlebars-template" id="persistWorkbookTemplate">
+    <div class="modal fade persistWorkbook" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h3 class="modal-title">Save / Overwrite Workbook</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="persist-workbook-form-area">
+                        <p>For publication, avoid sharing a live view with your API keys and GPU cluster access. Instead, name a location below to save the current working state.</p>
+                        <form class="form-horizontal">
+                            <div class="form-group">
+                                <label for="workbookName" class="col-sm-2 control-label">Save As</label>
+                                <div class="col-sm-10">
+                                    <input type="text" class="form-control" id="workbookName" value="{{defName}}" />
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="workbook-preview"></div>
+                </div>
+                <div class="modal-footer">
+                    <span class="persist-status-text"> </span> <i class="fa fa-spinner fa-spin status"></i>
+                    <button type="button" class="btn btn-primary">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+
+<script type="text/template" id="persistLayoutTemplate">
+    <div class="modal fade persistLayout" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -420,11 +465,119 @@
     </div>
 </script>
 
+<script type="text/template" id="filterTemplate">
+    <div class="topMenu row">
+        <!--<div class="col-md-1 expandButton">
+            <a href="#">
+                <i class="fa fa-caret-right expandFilterButton" id="expandFilterButton{{id}}" cid="{{id}}"></i>
+            </a>
+        </div>-->
+        <div class="col-md-8 filterName control-title attributeName">{{model.title}}</div>
+        <div class="col-md-2"></div>
+        <div class="col-md-1 disableButton">
+            <a href="#">
+                <i class="fa fa-toggle-on disableFilterButton" title="Enabled" id="disableFilterButton{{id}}" cid="{{id}}"></i>
+            </a>
+        </div>
+        <div class="col-md-1 deleteButton">
+            <a href="#">
+                <i class="fa fa-close deleteFilterButton" id="deleteFilterButton{{id}}" cid="{{id}}"></i>
+            </a>
+        </div>
+    </div>
+    <form class="filterEditor form-horizontal">
+        <div class="form-group-sm" title="Data Type">
+            <label class="control-label" for="filterDataType{{id}}">Data Type</label>
+            <span class="form-control-static">{{model.dataType}}</span>
+            <select class="filterDataTypeSelector form-control hidden" id="filterDataType{{id}}" title="Data Type">
+                <option value="">(Unknown)</option>
+                {{#each dataTypes}}
+                {{#if selected}}
+                    <option value="{{name}}" selected="selected">{{name}}</option>
+                {{else}}
+                    <option value="{{name}}">{{name}}</option>
+                {{/if}}
+                {{/each}}
+            </select>
+        </div>
+        <div class="form-group-sm" title="Control Type">
+            <label class="control-label" for="filterControlType{{id}}">Control Type</label>
+            <span class="form-control-static">{{model.controlType}}</span>
+            <select class="filterControlTypeSelector form-control hidden" id="filterControlType{{id}}" title="Control Type">
+                <option value="">(Unknown)</option>
+                {{#each controlTypes}}
+                {{#if selected}}
+                    <option value="{{value}}" selected="selected">{{name}}</option>
+                {{else}}
+                    <option value="{{value}}">{{name}}</option>
+                {{/if}}
+                {{/each}}
+            </select>
+        </div>
+        <div class="row form-group" title="Expression">
+            <label class="control-label" for="filterExpression{{id}}">Expression</label>
+            <!--
+            <textarea class="form-control filterExpression" id="filterExpression{{id}}" name="expression" title="Filter expression"
+                      rows="2" cols="40" placeholder="{{model.placeholder}}">{{model.expression}}</textarea>-->
+            <div class="form-control filterExpression" id="filterExpression{{id}}" title="Filter expression"
+                    ></div>
+        </div>
+    </form>
+</script>
+
+<script type="text/template" id="addFilterTemplate">
+    <!--
+    <div class="topMenu grab-cursor" draggable="true">
+        <a href="#">
+            <i class="fa fa-caret-right filterButton expandFilterButton" id="expandFilterButton{{id}}" cid="{{id}}"></i>
+        </a>
+    </div>
+    -->
+    <div class="row">
+        <div class="col-md-1"></div>
+        <div class="col-md-4">
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="addFilterButton" data-toggle="dropdown" aria-expanded="true">
+                    Add Filter
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
+                    {{#each fields}}
+                    <li role="presentation"><a class="addFilterDropdownField" role="menuitem" tabindex="-1" href="#"
+                            data-attributes="{{json .}}">
+                        {{#if dataType}}
+                        {{type}}:{{name}} ({{dataType}})
+                        {{else}}
+                        {{type}}:{{name}}
+                        {{/if}}
+                    </a></li>
+                    {{/each}}
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <a class="filter-about" href="#" title="To use,
+1. Pick field to filter on from dropdown.
+2. Enter an ANSI SQL expression over that field (but no other).
+Note: this release does not support expressions with multiple fields nor changing which field a filter acts over."
+                ><i class="fa fa-question-circle" /></a>
+        </div>
+        <div class="col-md-1"></div>
+    </div>
+    <!--
+    <div class="col-xs-1 filterButton closeButton">
+        <a href="#">
+            <i class="fa fa-times filterButton closeFilterButton" id="closeFilterbutton{{id}}" cid="{{id}}"></i>
+        </a>
+    </div>
+    -->
+</script>
+
 <script type="text/template" id="histogramTemplate">
     <div class="topMenu">
         <div class="col-xs-1 expandButton">
             <a href="#">
-                <i class="fa fa-play expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
+                <i class="fa fa-caret-right expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
         <div class="col-xs-9">
@@ -456,7 +609,7 @@
     <div class="topMenu grab-cursor" draggable="true">
         <div class="col-xs-1 histogramButton expandButton">
             <a href="#">
-                <i class="fa fa-play histogramButton expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
+                <i class="fa fa-caret-right histogramButton expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
         <div class="col-xs-9 attributeName">

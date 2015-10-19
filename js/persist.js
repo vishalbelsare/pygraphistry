@@ -1,6 +1,8 @@
 'use strict';
 
 var fs          = require('fs');
+var path        = require('path');
+var S3URLEncoder = require('node-s3-url-encode');
 
 var _           = require('underscore');
 
@@ -10,7 +12,7 @@ var config      = require('config')();
 
 var CHECK_AT_EACH_SAVE = true;
 
-var baseDirPath = __dirname + '/../assets/viz/';
+var baseDirPath = path.join(__dirname, '/../assets/viz/');
 
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:persist');
@@ -34,29 +36,24 @@ function ensurePath(path) {
 
 
 function checkWrite (snapshotName, vboPath, raw, buff) {
-    var readback = fs.readFileSync(vboPath);
-    logger.trace('readback', readback.length);
-    for (var j = 0; j < raw.byteLength; j++) {
+    var readBack = fs.readFileSync(vboPath);
+    logger.trace('readBack', readBack.length);
+    var j;
+    for (j = 0; j < raw.byteLength; j++) {
         if (buff[j] !== raw[j]) {
             logger.error('bad write', j, buff[j], raw[j]);
-            throw 'exn';
+            throw Error('Bad Write: data length mismatch');
         }
     }
-    for (var j = 0; j < raw.byteLength; j++) {
-        if (buff[j] !== readback[j]) {
-            logger.error('mismatch', j, buff[j], readback[j]);
-            throw 'exn';
+    for (j = 0; j < raw.byteLength; j++) {
+        if (buff[j] !== readBack[j]) {
+            logger.error('mismatch', j, buff[j], readBack[j]);
+            throw Error('Bad Write: data content mismatch');
         }
     }
-    var read = fs.readFileSync(baseDirPath + snapshotName + '.metadata.json', {encoding: 'utf8'});
-    logger.trace('readback metadata', read);
+    var read = fs.readFileSync(path.join(baseDirPath, snapshotName + '.metadata.json'), {encoding: 'utf8'});
+    logger.trace('readBack metadata', read);
 }
-
-function uploadPublic (path, buffer, params) {
-    var uploadParams = _.extend(params || {}, {acl: 'public-read'});
-    return s3.upload(config.S3, config.BUCKET, {name: path}, buffer, uploadParams);
-}
-
 
 function staticContentForDataframe (dataframe, type) {
     var rows = dataframe.getRows(undefined, type),
@@ -67,7 +64,7 @@ function staticContentForDataframe (dataframe, type) {
         currentContentOffset = 0,
         lastContentOffset = currentContentOffset;
     _.each(rows, function (row, rowIndex) {
-        var content = new Buffer(JSON.stringify(row), 'utf8')
+        var content = new Buffer(JSON.stringify(row), 'utf8');
         var contentLength = content.length;
         //offsets[rowIndex] = currentContentOffset;
         offsetsView[rowIndex] = currentContentOffset;
@@ -88,32 +85,83 @@ function staticContentForDataframe (dataframe, type) {
     return {contents: Buffer.concat(rowContents), indexes: idx};
 }
 
+/**
+ * This just encapsulates the URL/directory structure of persisted content.
+ * @param {String?} [prefixPath='']
+ * @param {{S3: {String}, BUCKET: {String}}} options
+ * @constructor
+ */
+function ContentSchema(prefixPath, options) {
+    this.options = options || _.pick(config, ['S3', 'BUCKET']);
+    this.prefixPath = prefixPath || '';
+}
+
+ContentSchema.prototype.pathForWorkbookSpecifier = function (workbookName) {
+    return path.join(this.prefixPath, 'Workbooks', workbookName, '/');
+};
+
+ContentSchema.prototype.subSchemaForWorkbook = function (workbookName) {
+    return new ContentSchema(this.pathForWorkbookSpecifier(workbookName), this.options);
+};
+
+ContentSchema.prototype.pathForStaticContentKey = function (snapshotName) {
+    return path.join(this.prefixPath, 'Static', snapshotName, '/');
+};
+
+ContentSchema.prototype.subSchemaForStaticContentKey = function (snapshotName) {
+    return new ContentSchema(this.pathForStaticContentKey(snapshotName), this.options);
+};
+
+ContentSchema.prototype.pathFor = function (subPath) {
+    return path.join(this.prefixPath, subPath || '');
+};
+
+ContentSchema.prototype.getURL = function (subPath) {
+    return new S3URLEncoder(this.pathFor(subPath));
+};
+
+ContentSchema.prototype.uploadPublic = function (subPath, buffer, params) {
+    var uploadParams = _.extend(params || {}, {acl: 'public-read'});
+    return this.upload(subPath, buffer, uploadParams);
+};
+
+ContentSchema.prototype.uploadToS3 = function (subPath, buffer, uploadParams) {
+    return s3.upload(this.options.S3, this.options.BUCKET, {name: this.pathFor(subPath)}, buffer, uploadParams);
+};
+
+
+ContentSchema.prototype.download = function (subPath) {
+    return s3.download(this.options.S3, this.options.BUCKET, this.pathFor(subPath), {expectCompressed: true});
+};
+
 
 module.exports =
     {
+        // Save-methods are all about the local file system:
+
         saveConfig: function (snapshotName, renderConfig) {
 
             logger.debug('saving config', renderConfig);
             ensurePath(baseDirPath);
-            fs.writeFileSync(baseDirPath + snapshotName + '.renderconfig.json', JSON.stringify(renderConfig));
+            fs.writeFileSync(path.join(baseDirPath, snapshotName + '.renderconfig.json'), JSON.stringify(renderConfig));
 
         },
 
-        saveVBOs: function (snapshotName, vbos, step) {
+        saveVBOs: function (snapshotName, VBOs, step) {
 
             logger.trace('serializing vbo');
             prevHeader = {
-                elements: _.extend(prevHeader.elements, vbos.elements),
-                bufferByteLengths: _.extend(prevHeader.bufferByteLengths, vbos.bufferByteLengths)
+                elements: _.extend(prevHeader.elements, VBOs.elements),
+                bufferByteLengths: _.extend(prevHeader.bufferByteLengths, VBOs.bufferByteLengths)
             };
             ensurePath(baseDirPath);
-            fs.writeFileSync(baseDirPath + snapshotName + '.metadata.json', JSON.stringify(prevHeader));
-            var buffers = vbos.uncompressed;
-            for (var i in buffers) {
-                var vboPath = baseDirPath + snapshotName + '.' + i + '.vbo';
-                var raw = buffers[i];
+            fs.writeFileSync(path.join(baseDirPath, snapshotName + '.metadata.json'), JSON.stringify(prevHeader));
+            var buffers = VBOs.uncompressed;
+            var bufferKeys = _.keys(buffers);
+            _.each(bufferKeys, function (bufferKey) {
+                var vboPath = path.join(baseDirPath, snapshotName + '.' + bufferKey + '.vbo');
+                var raw = buffers[bufferKey];
                 var buff = new Buffer(raw.byteLength);
-                var arr = new Uint8Array(raw);
                 for (var j = 0; j < raw.byteLength; j++) {
                     buff[j] = raw[j];
                 }
@@ -125,22 +173,32 @@ module.exports =
                 if (CHECK_AT_EACH_SAVE) {
                     checkWrite(snapshotName, vboPath, raw, buff);
                 }
-            }
-            logger.debug('wrote/read', prevHeader, _.keys(buffers));
+            });
+            logger.debug('wrote/read', prevHeader, bufferKeys);
         },
 
-        pathForContentKey: function (snapshotName) {
-            return 'Static/' + snapshotName + '/';
-        },
+        // The following all deal with S3 or cluster file systems:
 
+        ContentSchema: ContentSchema,
+
+        /**
+         * Publishes the layout data required to render the visualization as currently seen in the viewport.
+         * Publishes publicly since we are using HTTP[S] to view.
+         * @param {String} snapshotName
+         * @param {Object} compressedVBOs
+         * @param {Object} metadata
+         * @param {Dataframe} dataframe
+         * @param {Object} renderConfig
+         * @returns {Promise}
+         */
         publishStaticContents: function (snapshotName, compressedVBOs, metadata, dataframe, renderConfig) {
             logger.trace('publishing current content to S3');
-            var snapshotPath = this.pathForContentKey(snapshotName),
+            var snapshotSchema = (new ContentSchema()).subSchemaForStaticContentKey(snapshotName),
                 edgeExport = staticContentForDataframe(dataframe, 'edge'),
                 pointExport = staticContentForDataframe(dataframe, 'point');
-            uploadPublic(snapshotPath + 'renderconfig.json', JSON.stringify(renderConfig),
+            snapshotSchema.uploadPublic('renderconfig.json', JSON.stringify(renderConfig),
                 {ContentType: 'application/json', ContentEncoding: 'gzip'});
-            uploadPublic(snapshotPath + 'metadata.json', JSON.stringify(metadata),
+            snapshotSchema.uploadPublic('metadata.json', JSON.stringify(metadata),
                 {ContentType: 'application/json', ContentEncoding: 'gzip'});
             var vboAttributes = [
                 'curPoints',
@@ -158,25 +216,32 @@ module.exports =
             // compressedVBOs attributes are already gzipped:
             _.each(vboAttributes, function(attributeName) {
                 if (compressedVBOs.hasOwnProperty(attributeName) && !_.isUndefined(compressedVBOs[attributeName])) {
-                    uploadPublic(snapshotPath + attributeName + '.vbo', compressedVBOs[attributeName],
-                        {should_compress: false, ContentEncoding: 'gzip'});
+                    snapshotSchema.uploadPublic(attributeName + '.vbo', compressedVBOs[attributeName],
+                        {shouldCompress: false, ContentEncoding: 'gzip'});
                 }
             });
             // These are ArrayBuffers, so ask for compression:
-            uploadPublic(snapshotPath + 'pointLabels.offsets', pointExport.indexes,
-                {should_compress: false});
-            uploadPublic(snapshotPath + 'pointLabels.buffer', pointExport.contents,
-                {should_compress: false});
-            uploadPublic(snapshotPath + 'edgeLabels.offsets', edgeExport.indexes,
-                {should_compress: false});
-            return uploadPublic(snapshotPath + 'edgeLabels.buffer', edgeExport.contents,
-                {should_compress: false});
+            snapshotSchema.uploadPublic('pointLabels.offsets', pointExport.indexes,
+                {shouldCompress: false});
+            snapshotSchema.uploadPublic('pointLabels.buffer', pointExport.contents,
+                {shouldCompress: false});
+            snapshotSchema.uploadPublic('edgeLabels.offsets', edgeExport.indexes,
+                {shouldCompress: false});
+            return snapshotSchema.uploadPublic('edgeLabels.buffer', edgeExport.contents,
+                {shouldCompress: false});
         },
 
+        /**
+         * Publishes a PNG thumbnail of the current layout as seen by the viewport for embedding.
+         * @param {String} snapshotName
+         * @param {String} [imageName="preview.png"]
+         * @param {Buffer} binaryData
+         * @returns {Promise}
+         */
         publishPNGToStaticContents: function (snapshotName, imageName, binaryData) {
             logger.trace('publishing a PNG preview for content already in S3');
-            var snapshotPath = this.pathForContentKey(snapshotName);
+            var snapshotSchema = (new ContentSchema()).subSchemaForStaticContentKey(snapshotName);
             imageName = imageName || 'preview.png';
-            return uploadPublic(snapshotPath + imageName, binaryData, {should_compress: true, ContentEncoding: 'gzip'});
+            return snapshotSchema.uploadPublic(imageName, binaryData, {shouldCompress: true, ContentEncoding: 'gzip'});
         }
     };

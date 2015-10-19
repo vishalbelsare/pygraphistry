@@ -14,7 +14,7 @@ var Q = require("q"),
     RenderNull = require('./RenderNull.js'),
     rConf = require('./renderer.config.js'),
     lConf = require('./layout.config.js'),
-    webcl = require('node-webcl'),
+//    webcl = require('node-webcl'),
     metrics = require("./metrics.js"),
     loader = require("./data-loader.js");
 
@@ -116,10 +116,10 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
 
     }));
     var hostBufs = _.omit(layouts, function (layout) {
-        return layout.datasource !== 'HOST';
+        return layout.datasource !== rConf.VBODataSources.HOST;
     });
     var devBufs = _.omit(layouts, function (layout) {
-        return layout.datasource !== 'DEVICE';
+        return layout.datasource !== rConf.VBODataSources.DEVICE;
     });
 
     // TODO: Instead of doing blocking CL reads, use CL events and wait on those.
@@ -289,7 +289,7 @@ function create(dataset) {
 
     var graph = init(device, vendor, controls).then(function (graph) {
         logger.trace('LOADING DATASET');
-        return loader.loadDatasetIntoSim(graph, dataset)
+        return loader.loadDatasetIntoSim(graph, dataset);
 
     }).then(function (graph) {
         // Load into dataframe data attributes that rely on the simulator existing.

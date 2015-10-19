@@ -8,6 +8,9 @@ var fs = require('fs');
 var log = require('common/logger.js');
 var logger = log.createLogger('graph-viz:dataframe');
 
+var ExpressionCodeGenerator = require('./expressionCodeGenerator');
+var MaskSet = require('./MaskSet');
+
 var baseDirPath = __dirname + '/../assets/dataframe/';
 var TYPES = ['point', 'edge', 'simulator'];
 
@@ -26,10 +29,11 @@ var Dataframe = function () {
     };
     this.typedArrayCache = {};
     this.lastPointPositions = null;
-    this.lastMasks = {
-        point: [],
-        edge: []
-    };
+    this.lastMasks = new MaskSet(
+        this,
+        [],
+        []
+    );
     this.data = this.rawdata;
 };
 
@@ -67,14 +71,27 @@ function makeEmptyData () {
 // Data Filtering
 //////////////////////////////////////////////////////////////////////////////
 
-// Takes in a mask of points, and returns an object
-// containing masks for both the points and edges.
-// Relative to forwardsEdges (so sorted)
-Dataframe.prototype.masksFromPoints = function (pointMask) {
+/**
+ * Takes in a mask of points, and returns an object
+ * containing masks for both the points and edges.
+ * The result's edges must begin and end in the set of points.
+ * Relative to forwardsEdges (so sorted)
+ * @param {Mask} pointMask - The set of points that the edges must connect.
+ * @param {Mask?} edgeMaskOriginal - An optional set of edges to also filter on.
+ * @returns MaskSet
+ */
+Dataframe.prototype.masksFromPoints = function (pointMask, edgeMaskOriginal) {
     var pointMaskOriginalLookup = {};
-    _.each(pointMask, function (newIdx, i) {
+    _.each(pointMask, function (newIdx/*, i*/) {
         pointMaskOriginalLookup[newIdx] = 1;
     });
+    var edgeMaskOriginalLookup;
+    if (edgeMaskOriginal !== undefined) {
+        edgeMaskOriginalLookup = {};
+        _.each(edgeMaskOriginal, function (newIdx) {
+            edgeMaskOriginalLookup[newIdx] = 1;
+        });
+    }
 
     var edgeMask = [];
     var edges = this.rawdata.hostBuffers.forwardsEdges.edgesTyped;
@@ -83,15 +100,17 @@ Dataframe.prototype.masksFromPoints = function (pointMask) {
         var dst = edges[2*i + 1];
         var newSrc = pointMaskOriginalLookup[src];
         var newDst = pointMaskOriginalLookup[dst];
-        if (newSrc && newDst) {
+        var newEdge = edgeMaskOriginalLookup ? edgeMaskOriginalLookup[i] : 1;
+        if (newSrc && newDst && newEdge) {
             edgeMask.push(i);
         }
     }
 
-    return {
-        edge: edgeMask,
-        point: pointMask
-    };
+    return new MaskSet(
+        this,
+        pointMask,
+        edgeMask
+    );
 };
 
 
@@ -105,92 +124,166 @@ Dataframe.prototype.numEdges = function numEdges() {
 };
 
 
-Dataframe.prototype.masksFromEdges = function (edgeMask) {
-    var pointMask = [];
-    var numPoints = this.numPoints();
-
-    pointMask = _.range(numPoints);
-
-    // var pointLookup = {};
-    // var edges = this.rawdata.hostBuffers.forwardsEdges.edgesTyped;
-
-    // _.each(edgeMask, function (edgeIdx) {
-    //     var src = edges[2*edgeIdx];
-    //     var dst = edges[2*edgeIdx + 1];
-    //     pointLookup[src] = 1;
-    //     pointLookup[dst] = 1;
-    // });
-
-    // for (var i = 0; i < numPoints; i++) {
-    //     if (pointLookup[i]) {
-    //         pointMask.push(i);
-    //     }
-    // }
-
-    return {
-        edge: edgeMask,
-        point: pointMask
-    };
+/**
+ * @returns Mask
+ */
+Dataframe.prototype.fullPointMask = function() {
+    return _.range(this.numPoints());
 };
 
-Dataframe.prototype.composeMasks = function (maskList) {
+/**
+ * @returns Mask
+ */
+Dataframe.prototype.fullEdgeMask = function() {
+    return _.range(this.numEdges());
+};
+
+
+/**
+ * @returns MaskSet
+ */
+Dataframe.prototype.fullMaskSet = function() {
+    return new MaskSet(
+        this,
+        this.fullPointMask(),
+        this.fullEdgeMask()
+    );
+};
+
+
+/**
+ * @param {Mask} edgeMask
+ * @param {Boolean?} edgeMaskFiltersPoints
+ * @returns MaskSet
+ */
+Dataframe.prototype.masksFromEdges = function (edgeMask, edgeMaskFiltersPoints) {
+    var numPoints = this.numPoints();
+    var pointMask;
+    if (edgeMaskFiltersPoints === true) {
+        pointMask = [];
+        var pointLookup = {};
+        var edges = this.rawdata.hostBuffers.forwardsEdges.edgesTyped;
+
+        _.each(edgeMask, function (edgeIdx) {
+            var src = edges[2 * edgeIdx];
+            var dst = edges[2 * edgeIdx + 1];
+            pointLookup[src] = 1;
+            pointLookup[dst] = 1;
+        });
+
+        for (var i = 0; i < numPoints; i++) {
+            if (pointLookup[i]) {
+                pointMask.push(i);
+            }
+        }
+    } else {
+        pointMask = _.range(numPoints);
+    }
+
+    return new MaskSet(
+        this,
+        pointMask,
+        edgeMask
+    );
+};
+
+/**
+ * @param {?MaskList} maskList
+ * @param {Number=Infinity} pointLimit
+ * @returns ?MaskSet
+ */
+Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
+    if (!pointLimit) {
+        pointLimit = Infinity;
+    }
+    if (maskList === undefined || !maskList.length || maskList.length === 0) {
+        var universe = this.fullMaskSet();
+        // Limit the universe first just to avoid computation scaling problems:
+        if (pointLimit && universe.point.length > pointLimit) {
+            universe.point.length = pointLimit;
+            return this.masksFromPoints(universe.point, universe.edge);
+        }
+        return universe;
+    }
     // TODO: Make this faster.
 
     // Assumes we will never have more than 255 separate masks.
     var numMasks = maskList.length;
-    if (numMasks > 255) {
-        console.error('TOO MANY MASKS');
-        return;
+    var MASK_LIMIT = 255;
+    if (numMasks > MASK_LIMIT) {
+        console.error('TOO MANY MASKS; truncating to: ' + MASK_LIMIT);
+        maskList.length = 255;
     }
 
+    // The overall masks per type, made by mask intersection:
     var edgeMask = [];
     var pointMask = [];
 
     // Assumes Uint8Array() constructor initializes to zero, which it should.
-    var pointLookup = new Uint8Array(this.numPoints());
-    var edgeLookup = new Uint8Array(this.numEdges());
+    var numMasksSatisfiedByPointID = new Uint8Array(this.numPoints());
+    var numMasksSatisfiedByEdgeID = new Uint8Array(this.numEdges());
 
     _.each(maskList, function (mask) {
         _.each(mask.edge, function (idx) {
-            edgeLookup[idx]++;
+            numMasksSatisfiedByEdgeID[idx]++;
         });
 
         _.each(mask.point, function (idx) {
-            pointLookup[idx]++;
+            numMasksSatisfiedByPointID[idx]++;
         });
     });
 
-    _.each(edgeLookup, function (count, i) {
+    _.each(numMasksSatisfiedByEdgeID, function (count, i) {
+        // Shorthand for "if we've passed all masks":
         if (count === numMasks) {
             edgeMask.push(i);
         }
     });
 
-    _.each(pointLookup, function (count, i) {
+    var pointLimitReached = false;
+    _.every(numMasksSatisfiedByPointID, function (count, i) {
+        // Shorthand for "if we've passed all masks":
         if (count === numMasks) {
             pointMask.push(i);
         }
+        // This is how we implement the limit, just to stop pushing once reached:
+        return !(pointLimitReached = pointMask.length >= pointLimit);
     });
 
-    return {
-        point: pointMask,
-        edge: edgeMask
-    };
+    if (pointLimitReached) {
+        return this.masksFromPoints(pointMask, edgeMask);
+    }
+    return new MaskSet(
+        this,
+        pointMask,
+        edgeMask
+    );
 };
 
+/**
+ * @typedef {Object} ClientQuery
+ */
 
-Dataframe.prototype.filterFuncForQueryObject = function (params) {
-    var filterFunc;
+/**
+ * @param {ClientQuery} query
+ * @returns Function<Object>
+ */
+Dataframe.prototype.filterFuncForQueryObject = function (query) {
+    var filterFunc = _.identity;
 
-    if (params.start !== undefined && params.stop !== undefined) {
+    if (query.ast !== undefined) {
+        var generator = new ExpressionCodeGenerator('javascript');
+        filterFunc = generator.functionForAST(query.ast, {'*': 'value'});
+        // Maintained only for earlier range queries from histograms, may drop soon:
+    } else if (query.start !== undefined && query.stop !== undefined) {
         // Range:
         filterFunc = function (val) {
-            return val >= params.start && val < params.stop;
+            return val >= query.start && val < query.stop;
         };
 
-    } else if (params.equals !== undefined) {
+    } else if (query.equals !== undefined) {
         // Exact match or list-contains:
-        var compareValue = params.equals;
+        var compareValue = query.equals;
         if (_.isArray(compareValue)) {
             filterFunc = function (val) {
                 return _.contains(compareValue, val);
@@ -207,10 +300,10 @@ Dataframe.prototype.filterFuncForQueryObject = function (params) {
 
 /**
  * @param {Array} attributes
- * @param {Function} filterFunc
- * @returns {Array<Number>}
+ * @param {Function<Object>} filterFunc
+ * @returns Mask
  */
-Dataframe.prototype.getMaskForFilterOnAttributes = function (attributes, filterFunc) {
+Dataframe.prototype.getMaskForFilterOnAttributeValues = function (attributes, filterFunc) {
     var mask = [];
     if (filterFunc) {
         _.each(attributes, function (val, idx) {
@@ -223,11 +316,16 @@ Dataframe.prototype.getMaskForFilterOnAttributes = function (attributes, filterF
 };
 
 
-// Returns sorted edge mask
-Dataframe.prototype.getEdgeAttributeMask = function (attribute, params) {
-    var attr = this.rawdata.attributes.edge[attribute];
+/**
+ * Returns sorted edge mask
+ * @param {String} dataframeAttribute
+ * @param {ClientQuery} params
+ * @returns {Mask}
+ */
+Dataframe.prototype.getEdgeAttributeMask = function (dataframeAttribute, params) {
+    var attr = this.rawdata.attributes.edge[dataframeAttribute];
     var filterFunc = this.filterFuncForQueryObject(params);
-    var edgeMask = this.getMaskForFilterOnAttributes(attr.values, filterFunc);
+    var edgeMask = this.getMaskForFilterOnAttributeValues(attr.values, filterFunc);
     // Convert to sorted order
     var map = this.rawdata.hostBuffers.forwardsEdges.edgePermutation;
     for (var i = 0; i < edgeMask.length; i++) {
@@ -237,10 +335,16 @@ Dataframe.prototype.getEdgeAttributeMask = function (attribute, params) {
 };
 
 
-Dataframe.prototype.getPointAttributeMask = function (attribute, params) {
-    var attr = this.rawdata.attributes.point[attribute];
+/**
+ * Returns sorted point mask
+ * @param {String} dataframeAttribute
+ * @param {ClientQuery} params
+ * @returns {Mask}
+ */
+Dataframe.prototype.getPointAttributeMask = function (dataframeAttribute, params) {
+    var attr = this.rawdata.attributes.point[dataframeAttribute];
     var filterFunc = this.filterFuncForQueryObject(params);
-    return this.getMaskForFilterOnAttributes(attr.values, filterFunc);
+    return this.getMaskForFilterOnAttributeValues(attr.values, filterFunc);
 };
 
 
@@ -273,26 +377,34 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
     this.typedArrayCache.newCurPoints = new Float32Array(oldNumPoints * 2);
 };
 
-
-// This does an inplace filter on this.data given masks.
-// Mask is implemented as a list of valid indices (in sorted order).
-// TODO: Take in Set objects, not just masks.
-Dataframe.prototype.filter = function (masks, simulator) {
-    logger.debug('Starting Filter');
+/**
+ * Filters this.data in-place given masks. Does not modify this.rawdata.
+ * TODO: Take in Set objects, not just Mask.
+ * @param {MaskSet} masks
+ * @param {Object} simulator
+ * @returns {Promise.<Array<Buffer>>}
+ */
+Dataframe.prototype.applyMaskSetToFilterInPlace = function (masks, simulator) {
+    logger.debug('Starting Filtering Data In-Place by MaskSet');
 
     var start = Date.now();
 
-    var that = this;
-    var rawdata = that.rawdata;
+    var rawdata = this.rawdata;
+
+    // TODO: These buffers are initialized in a different event loop and we want to no-op before they're ready.
+    var rawSimBuffers = rawdata.buffers.simulator;
+    if (rawSimBuffers.forwardsEdgeWeights === undefined || rawSimBuffers.backwardsEdgeWeights === undefined) {
+        return Q({});
+    }
     var newData = makeEmptyData();
-    var numPoints = (masks.point) ? masks.point.length : rawdata.numElements.point;
-    var numEdges = (masks.edge) ? masks.edge.length : rawdata.numElements.edge;
-    var oldNumPoints = rawdata.numElements.point;
-    var oldNumEdges = rawdata.numElements.edge;
+    var numPoints = masks.numPoints();
+    var numEdges = masks.numEdges();
+    var oldNumPoints = this.numPoints();
+    var oldNumEdges = this.numEdges();
 
     // TODO: Should this be lazy, or done at startup?
-    if (_.keys(that.typedArrayCache).length === 0) {
-        that.initializeTypedArrayCache(oldNumPoints, oldNumEdges);
+    if (_.keys(this.typedArrayCache).length === 0) {
+        this.initializeTypedArrayCache(oldNumPoints, oldNumEdges);
     }
 
     // labels;
@@ -314,16 +426,16 @@ Dataframe.prototype.filter = function (masks, simulator) {
     ///////////////////////////////////////////////////////////////////////////
 
     // Filter out to new edges/points arrays.
-    var filteredEdges = new Uint32Array(that.typedArrayCache.filteredEdges.buffer, 0, masks.edge.length * 2);
+    var filteredEdges = new Uint32Array(this.typedArrayCache.filteredEdges.buffer, 0, numEdges * 2);
     var originalEdges = rawdata.hostBuffers.unsortedEdges;
-    var originalForwardsEdges = rawdata.hostBuffers.forwardsEdges.edgesTyped;
+    //var originalForwardsEdges = rawdata.hostBuffers.forwardsEdges.edgesTyped;
 
-    var unsortedEdgeMask = new Uint32Array(that.typedArrayCache.unsortedEdgeMask.buffer, 0, masks.edge.length);
+    var unsortedEdgeMask = new Uint32Array(this.typedArrayCache.unsortedEdgeMask.buffer, 0, numEdges);
 
     var map = rawdata.hostBuffers.forwardsEdges.edgePermutationInverseTyped;
-    for (var i = 0; i < masks.edge.length; i++) {
-        unsortedEdgeMask[i] = map[masks.edge[i]];
-    }
+    masks.mapEdgeIndexes(function(edgeIndex, i) {
+        unsortedEdgeMask[i] = map[edgeIndex];
+    });
 
     // TODO: See if there's a way to do this without sorting.
     // Sorting is slow as all hell.
@@ -331,23 +443,23 @@ Dataframe.prototype.filter = function (masks, simulator) {
         return a - b;
     });
 
-    var unsortedMasks = {
-        point: masks.point,
-        edge: unsortedEdgeMask
-    };
+    var unsortedMasks = new MaskSet(
+        this,
+        masks.point,
+        unsortedEdgeMask
+    );
 
     var pointOriginalLookup = [];
-    for (var i = 0; i < masks.point.length; i++) {
-        pointOriginalLookup[masks.point[i]] = i;
-    }
+    masks.mapPointIndexes(function (pointIndex, i) {
+        pointOriginalLookup[pointIndex] = i;
+    });
 
-    for (var i = 0; i < unsortedEdgeMask.length; i++) {
-        var oldIdx = unsortedEdgeMask[i];
+    _.each(unsortedEdgeMask, function (oldIdx, i) {
         filteredEdges[i*2] = pointOriginalLookup[originalEdges[oldIdx*2]];
         filteredEdges[i*2 + 1] = pointOriginalLookup[originalEdges[oldIdx*2 + 1]];
-    }
+    });
 
-    var edgesFlipped = new Uint32Array(that.typedArrayCache.edgesFlipped.buffer, 0, filteredEdges.length);
+    var edgesFlipped = new Uint32Array(this.typedArrayCache.edgesFlipped.buffer, 0, filteredEdges.length);
 
     for (var i = 0; i < filteredEdges.length/2; i++) {
         edgesFlipped[2 * i] = filteredEdges[2 * i + 1];
@@ -372,37 +484,35 @@ Dataframe.prototype.filter = function (masks, simulator) {
     // TODO: Figured out what pointTags is used for
     // TODO: Figure out what edgeTags are used for.
 
-    var newPointSizes = new Uint8Array(that.typedArrayCache.newPointSizes.buffer, 0, numPoints);
-    var newPointColors = new Uint32Array(that.typedArrayCache.newPointColors.buffer, 0, numPoints);
+    var newPointSizes = new Uint8Array(this.typedArrayCache.newPointSizes.buffer, 0, numPoints);
+    var newPointColors = new Uint32Array(this.typedArrayCache.newPointColors.buffer, 0, numPoints);
 
-    for (var i = 0; i < masks.point.length; i++) {
-        newPointSizes[i] = rawdata.localBuffers.pointSizes[masks.point[i]];
-        newPointColors[i] = rawdata.localBuffers.pointColors[masks.point[i]];
-    }
+    masks.mapPointIndexes(function (pointIndex, i) {
+        newPointSizes[i] = rawdata.localBuffers.pointSizes[pointIndex];
+        newPointColors[i] = rawdata.localBuffers.pointColors[pointIndex];
+    });
     newData.localBuffers.pointSizes = newPointSizes;
     newData.localBuffers.pointColors = newPointColors;
 
     var numRenderedSplits = rawdata.numElements.renderedSplits;
     var numMidEdgeColorsPerEdge = 2 * (numRenderedSplits + 1);
-    var numMidEdgeColors = numMidEdgeColorsPerEdge * masks.edge.length;
-    var newEdgeColors = new Uint32Array(that.typedArrayCache.newEdgeColors.buffer, 0, masks.edge.length * 2);
-    var newEdgeHeights = new Uint32Array(that.typedArrayCache.newEdgeHeights.buffer, 0, masks.edge.length * 2);
-    var newMidEdgeColors = new Uint32Array(that.typedArrayCache.newMidEdgeColors.buffer, 0, numMidEdgeColors);
+    var numMidEdgeColors = numMidEdgeColorsPerEdge * numEdges;
+    var newEdgeColors = new Uint32Array(this.typedArrayCache.newEdgeColors.buffer, 0, numEdges * 2);
+    var newEdgeHeights = new Uint32Array(this.typedArrayCache.newEdgeHeights.buffer, 0, numEdges * 2);
+    var newMidEdgeColors = new Uint32Array(this.typedArrayCache.newMidEdgeColors.buffer, 0, numMidEdgeColors);
 
-    for (var i = 0; i < masks.edge.length; i++) {
-        var idx = masks.edge[i];
+    masks.mapEdgeIndexes(function (edgeIndex, i) {
+        newEdgeColors[i * 2] = rawdata.localBuffers.edgeColors[edgeIndex * 2];
+        newEdgeColors[i * 2 + 1] = rawdata.localBuffers.edgeColors[edgeIndex * 2 + 1];
 
-        newEdgeColors[i*2] = rawdata.localBuffers.edgeColors[idx*2];
-        newEdgeColors[i*2 + 1] = rawdata.localBuffers.edgeColors[idx*2 + 1];
-
-        newEdgeHeights[i*2] = rawdata.localBuffers.edgeHeights[idx*2];
-        newEdgeHeights[i*2 + 1] = rawdata.localBuffers.edgeHeights[idx*2 + 1];
+        newEdgeHeights[i * 2] = rawdata.localBuffers.edgeHeights[edgeIndex * 2];
+        newEdgeHeights[i * 2 + 1] = rawdata.localBuffers.edgeHeights[edgeIndex * 2 + 1];
 
         for (var j = 0; j < numMidEdgeColorsPerEdge; j++) {
-            newMidEdgeColors[i*numMidEdgeColorsPerEdge + j] =
-                    rawdata.localBuffers.midEdgeColors[idx*numMidEdgeColorsPerEdge + j];
+            newMidEdgeColors[i * numMidEdgeColorsPerEdge + j] =
+                rawdata.localBuffers.midEdgeColors[edgeIndex * numMidEdgeColorsPerEdge + j];
         }
-    }
+    });
     newData.localBuffers.edgeColors = newEdgeColors;
     newData.localBuffers.edgeHeights = newEdgeHeights;
     newData.localBuffers.midEdgeColors = newMidEdgeColors;
@@ -425,21 +535,22 @@ Dataframe.prototype.filter = function (masks, simulator) {
     // SIMULATOR BUFFERS.
     //////////////////////////////////
 
-    var tempPrevForces = new Float32Array(that.typedArrayCache.tempPrevForces.buffer, 0, oldNumPoints * 2);
-    var tempSpringsPos = new Float32Array(that.typedArrayCache.tempSpringsPos.buffer, 0, oldNumEdges * 4);
-    var tempForwardsEdgeWeights = new Float32Array(that.typedArrayCache.tempForwardsEdgeWeights.buffer, 0, oldNumEdges);
-    var tempBackwardsEdgeWeights = new Float32Array(that.typedArrayCache.tempBackwardsEdgeWeights.buffer, 0, oldNumEdges);
-    var tempCurPoints = new Float32Array(that.typedArrayCache.tempCurPoints.buffer, 0, oldNumPoints * 2);
+    var tempPrevForces = new Float32Array(this.typedArrayCache.tempPrevForces.buffer, 0, oldNumPoints * 2);
+    var tempSpringsPos = new Float32Array(this.typedArrayCache.tempSpringsPos.buffer, 0, oldNumEdges * 4);
+    var tempForwardsEdgeWeights = new Float32Array(this.typedArrayCache.tempForwardsEdgeWeights.buffer, 0, oldNumEdges);
+    var tempBackwardsEdgeWeights = new Float32Array(this.typedArrayCache.tempBackwardsEdgeWeights.buffer, 0, oldNumEdges);
+    var tempCurPoints = new Float32Array(this.typedArrayCache.tempCurPoints.buffer, 0, oldNumPoints * 2);
 
-    var newPrevForces = new Float32Array(that.typedArrayCache.newPrevForces.buffer, 0, numPoints * 2);
-    var newDegrees = new Uint32Array(that.typedArrayCache.newDegrees.buffer, 0, numPoints);
-    var newSpringsPos = new Float32Array(that.typedArrayCache.newSpringsPos.buffer, 0, numEdges * 4);
-    var newForwardsEdgeWeights = new Float32Array(that.typedArrayCache.newForwardsEdgeWeights.buffer, 0, numEdges);
-    var newBackwardsEdgeWeights = new Float32Array(that.typedArrayCache.newBackwardsEdgeWeights.buffer, 0, numEdges);
-    var newCurPoints = new Float32Array(that.typedArrayCache.newCurPoints.buffer, 0, numPoints * 2);
+    var newPrevForces = new Float32Array(this.typedArrayCache.newPrevForces.buffer, 0, numPoints * 2);
+    var newDegrees = new Uint32Array(this.typedArrayCache.newDegrees.buffer, 0, numPoints);
+    var newSpringsPos = new Float32Array(this.typedArrayCache.newSpringsPos.buffer, 0, numEdges * 4);
+    var newForwardsEdgeWeights = new Float32Array(this.typedArrayCache.newForwardsEdgeWeights.buffer, 0, numEdges);
+    var newBackwardsEdgeWeights = new Float32Array(this.typedArrayCache.newBackwardsEdgeWeights.buffer, 0, numEdges);
+    var newCurPoints = new Float32Array(this.typedArrayCache.newCurPoints.buffer, 0, numPoints * 2);
 
-    var rawSimBuffers = rawdata.buffers.simulator;
-    var filteredSimBuffers = that.data.buffers.simulator;
+    var filteredSimBuffers = this.data.buffers.simulator;
+
+    var that = this;
 
     return Q.all([
         rawSimBuffers.prevForces.read(tempPrevForces),
@@ -456,22 +567,22 @@ Dataframe.prototype.filter = function (masks, simulator) {
         var promise;
         // TODO: Move this into general initialization
         if (!that.lastPointPositions) {
-            that.lastPointPositions = new Float32Array(rawdata.numElements.point * 2);
+            that.lastPointPositions = new Float32Array(oldNumPoints * 2);
             _.each(tempCurPoints, function (point, i) {
                 that.lastPointPositions[i] = point;
             });
 
             promise = simulator.renderer.createBuffer(that.lastPointPositions, 'curPointsFiltered')
-                    .then(function (pointVBO) {
-                        return simulator.cl.createBufferGL(pointVBO, 'curPointsFiltered');
-                    }).then(function (pointBuf) {
-                        that.filteredBufferCache.simulator.curPoints = pointBuf;
-                    });
+                .then(function (pointVBO) {
+                    return simulator.cl.createBufferGL(pointVBO, 'curPointsFiltered');
+                }).then(function (pointBuf) {
+                    that.filteredBufferCache.simulator.curPoints = pointBuf;
+                });
 
         } else {
-            _.each(that.lastMasks.point, function (idx, i) {
-                that.lastPointPositions[idx*2] = tempCurPoints[i*2];
-                that.lastPointPositions[idx*2 + 1] = tempCurPoints[i*2 + 1];
+            that.lastMasks.mapPointIndexes(function (pointIndex, i) {
+                that.lastPointPositions[pointIndex*2] = tempCurPoints[i*2];
+                that.lastPointPositions[pointIndex*2 + 1] = tempCurPoints[i*2 + 1];
             });
 
             promise = Q({});
@@ -480,28 +591,25 @@ Dataframe.prototype.filter = function (masks, simulator) {
         return promise;
 
     }).then(function () {
-
-        for (var i = 0; i < masks.point.length; i++) {
-            var oldIdx = masks.point[i];
-            newPrevForces[i*2] = tempPrevForces[oldIdx*2];
-            newPrevForces[i*2 + 1] = tempPrevForces[oldIdx*2 + 1];
+        masks.mapPointIndexes(function (oldPointIndex, i) {
+            newPrevForces[i*2] = tempPrevForces[oldPointIndex*2];
+            newPrevForces[i*2 + 1] = tempPrevForces[oldPointIndex*2 + 1];
 
             newDegrees[i] = forwardsEdges.degreesTyped[i] + backwardsEdges.degreesTyped[i];
 
-            newCurPoints[i*2] = that.lastPointPositions[oldIdx*2];
-            newCurPoints[i*2 + 1] = that.lastPointPositions[oldIdx*2 + 1];
-        }
+            newCurPoints[i*2] = that.lastPointPositions[oldPointIndex*2];
+            newCurPoints[i*2 + 1] = that.lastPointPositions[oldPointIndex*2 + 1];
+        });
 
-        for (var i = 0; i < masks.edge.length; i++) {
-            var oldIdx = masks.edge[i];
-            newSpringsPos[i*4] = tempSpringsPos[oldIdx*4];
-            newSpringsPos[i*4 + 1] = tempSpringsPos[oldIdx*4 + 1];
-            newSpringsPos[i*4 + 2] = tempSpringsPos[oldIdx*4 + 2];
-            newSpringsPos[i*4 + 3] = tempSpringsPos[oldIdx*4 + 3];
+        masks.mapEdgeIndexes(function (oldEdgeIdx, i) {
+            newSpringsPos[i*4] = tempSpringsPos[oldEdgeIdx*4];
+            newSpringsPos[i*4 + 1] = tempSpringsPos[oldEdgeIdx*4 + 1];
+            newSpringsPos[i*4 + 2] = tempSpringsPos[oldEdgeIdx*4 + 2];
+            newSpringsPos[i*4 + 3] = tempSpringsPos[oldEdgeIdx*4 + 3];
 
-            newForwardsEdgeWeights[i] = tempForwardsEdgeWeights[oldIdx];
-            newBackwardsEdgeWeights[i] = tempBackwardsEdgeWeights[oldIdx];
-        }
+            newForwardsEdgeWeights[i] = tempForwardsEdgeWeights[oldEdgeIdx];
+            newBackwardsEdgeWeights[i] = tempBackwardsEdgeWeights[oldEdgeIdx];
+        });
 
         var someBufferPropertyNames = ['curPoints', 'prevForces', 'degrees', 'forwardsEdges', 'forwardsDegrees',
             'forwardsWorkItems', 'forwardsEdgeStartEndIdxs', 'backwardsEdges',
@@ -509,7 +617,6 @@ Dataframe.prototype.filter = function (masks, simulator) {
             'springsPos', 'forwardsEdgeWeights', 'backwardsEdgeWeights'
         ];
         _.each(someBufferPropertyNames, function (key) {
-
             newData.buffers.simulator[key] = that.filteredBufferCache.simulator[key];
         });
 
@@ -538,7 +645,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
         _.each(['point', 'edge'], function (type) {
             var buffers = that.data.buffers[type];
             _.each(_.keys(buffers), function (name) {
-                var buf = buffers[name];
+                //var buf = buffers[name];
                 promises.push(buffers.delete);
                 delete buffers[name];
             });
@@ -606,6 +713,7 @@ Dataframe.prototype.filter = function (masks, simulator) {
  * TODO: Implicit degrees for points and src/dst for edges.
  * @param {Object} attributes
  * @param {string} type - any of [TYPES]{@link TYPES}
+ * @param {Number} numElements - prescribe or describe? number present
  */
 Dataframe.prototype.load = function (attributes, type, numElements) {
 
@@ -640,7 +748,7 @@ Dataframe.prototype.load = function (attributes, type, numElements) {
     } else if (edgeTitleField) {
         filteredAttributes._title = attributes[edgeTitleField];
     } else {
-        filteredAttributes._title = {type: 'number', values: range(numElements)};
+        filteredAttributes._title = {type: 'number', name: 'label', values: range(numElements)};
     }
 
     _.extend(this.rawdata.attributes[type], filteredAttributes);
@@ -648,13 +756,13 @@ Dataframe.prototype.load = function (attributes, type, numElements) {
 };
 
 
-/** Load in degrees as a universal (independent of datasource) value
- * @param {Typed Array} outDegrees - degrees going out of nodes
- * @param {Typed Array} inDegrees - degrees going into nodes
+/** Load in degrees as a universal (independent of data source) value
+ * @param {Uint32Array} outDegrees - degrees going out of nodes
+ * @param {Uint32Array} inDegrees - degrees going into nodes
  */
 Dataframe.prototype.loadDegrees = function (outDegrees, inDegrees) {
-    var numElements = this.rawdata.numElements['point'];
-    var attributes = this.rawdata.attributes['point'];
+    var numElements = this.numPoints();
+    var attributes = this.rawdata.attributes.point;
 
     // TODO: Error handling
     if (numElements !== outDegrees.length || numElements !== inDegrees.length) {
@@ -671,19 +779,19 @@ Dataframe.prototype.loadDegrees = function (outDegrees, inDegrees) {
         degree[i] = inDegrees[i] + outDegrees[i];
     }
 
-    attributes.degree = {values: degree, type: 'number'};
-    attributes.degree_in = {values: degree_in, type: 'number'};
-    attributes.degree_out = {values: degree_out, type: 'number'};
+    attributes.degree = {values: degree, name: 'degree', type: 'number'};
+    attributes.degree_in = {values: degree_in, name: 'degree_in', type: 'number'};
+    attributes.degree_out = {values: degree_out, name: 'degree_out', type: 'number'};
 };
 
 
-/** Load in edge source/dsts as a universal (independent of datasource) value
- * @param {Typed Array} unsortedEdges - usorted list of edges.
+/** Load in edge source/destinations as a universal (independent of data source) value
+ * @param {Uint32Array} unsortedEdges - unsorted list of edges.
  */
 Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
-    var numElements = this.rawdata.numElements['edge'] || unsortedEdges.length / 2;
-    var attributes = this.rawdata.attributes['edge'];
-    var nodeTitles = this.rawdata.attributes['point']._title.values;
+    var numElements = this.numEdges() || unsortedEdges.length / 2;
+    var attributes = this.rawdata.attributes.edge;
+    var nodeTitles = this.rawdata.attributes.point._title.values;
 
     var source = new Array(numElements);
     var destination = new Array(numElements);
@@ -693,13 +801,13 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
         destination[i] = nodeTitles[unsortedEdges[2*i + 1]];
     }
 
-    attributes.Source = {values: source, type: 'string'};
-    attributes.Destination = {values: destination, type: 'string'};
+    attributes.Source = {values: source, name: 'Source', type: 'string'};
+    attributes.Destination = {values: destination, name: 'Destination', type: 'string'};
 
     // If no title has been set, just make title the index.
     // TODO: Is there a more appropriate place to put this?
     if (!attributes._title) {
-        attributes._title = {type: 'string', values: range(numElements)};
+        attributes._title = {type: 'string', name: 'label', values: range(numElements)};
     }
 
 };
@@ -801,6 +909,50 @@ Dataframe.prototype.setNumElements = function (type, num) {
 // Data Access
 //////////////////////////////////////////////////////////////////////////////
 
+
+Dataframe.prototype.normalizeAttributeName = function (dataframeAttribute, type) {
+    var idx = dataframeAttribute ? dataframeAttribute.lastIndexOf(':') : -1;
+    var name = dataframeAttribute;
+    if (idx !== -1) {
+        type = dataframeAttribute.substring(0, idx);
+        name = dataframeAttribute.substring(idx + 1);
+    }
+    return this.getKeyFromName(name, type);
+};
+
+
+/** Given a name, return the key that corresponds to that name.
+ * If no match exists, check to see if name is just a key.
+ * If it doesn't exist as key, return false.
+ * @returns {{attribute: String, type: String}}
+ */
+Dataframe.prototype.getKeyFromName = function (maybeName, type) {
+    // TODO: Maintain an actual lookup instead of iterating through.
+
+    if (type === undefined) {
+        return this.getKeyFromName(maybeName, 'point') || this.getKeyFromName(maybeName, 'edge');
+    }
+
+    var attributes = this.rawdata.attributes[type];
+    var matchKeys = _.filter(_.keys(attributes), function (key) {
+        return (attributes[key].name === maybeName);
+    });
+
+    if (matchKeys.length > 1) {
+        logger.info('The name ' + type + ':' + maybeName + ' is ambiguous, the following matches: ' + matchKeys.length);
+    }
+
+    if (matchKeys.length > 0) {
+        return {attribute: matchKeys[0], type: type};
+    }
+
+    if (this.data.attributes[type][maybeName] !== undefined) {
+        return {attribute: maybeName, type: type};
+    }
+
+    return undefined;
+};
+
 Dataframe.prototype.getBufferKeys = function (type) {
     return _.sortBy(
         _.keys(this.data.buffers[type]),
@@ -876,7 +1028,7 @@ Dataframe.prototype.getBuffer = function (name, type) {
                 return newBuffer.write(typedData);
             });
     }
-}
+};
 
 
 /** Returns one row object.
@@ -885,6 +1037,13 @@ Dataframe.prototype.getBuffer = function (name, type) {
  * @param {Object?} attributes - which attributes to extract from the row.
  */
 Dataframe.prototype.getRowAt = function (index, type, attributes) {
+    var origIndex = index; // For client-side metadata.
+
+    // Convert from sorted into unsorted edge indices.
+    if (index && type === 'edge') {
+        var forwardsEdgePermutationInverse = this.getHostBuffer('forwardsEdges').edgePermutationInverseTyped;
+        index = forwardsEdgePermutationInverse[index];
+    }
 
     var lastMask = this.lastMasks[type];
     if (lastMask.length > 0) {
@@ -896,6 +1055,8 @@ Dataframe.prototype.getRowAt = function (index, type, attributes) {
     _.each(_.keys(attributes), function (key) {
         row[key] = attributes[key].values[index];
     });
+
+    row._index = origIndex;
     return row;
 };
 
@@ -909,16 +1070,6 @@ Dataframe.prototype.getRows = function (indices, type) {
         that = this;
 
     indices = indices || range(that.data.numElements[type]);
-    // Convert from sorted into unsorted edge indices
-    if (indices && type === 'edge') {
-        var newIndices = [];
-        var forwardsEdgePermutationInverse = this.getHostBuffer('forwardsEdges').edgePermutationInverseTyped;
-        _.each(indices, function (v) {
-            newIndices.push(forwardsEdgePermutationInverse[v]);
-        });
-        indices = newIndices;
-    }
-
 
     return _.map(indices, function (index) {
         return that.getRowAt(index, type, attributes);
@@ -927,6 +1078,8 @@ Dataframe.prototype.getRows = function (indices, type) {
 
 
 /** Returns a descriptor of a set of rows.
+ * This works relative to UNSORTED edge orders, since it's meant
+ * for serializing raw data.
  * @param {Array.<number>} indices - which elements to extract.
  * @param {string} type - any of [TYPES]{@link TYPES}.
  * @returns {{header, values}}
@@ -935,7 +1088,7 @@ Dataframe.prototype.getRowsCompact = function (indices, type) {
     var attributes = this.rawdata.attributes[type],
         keys = this.getAttributeKeys(type);
 
-    indices = indices || range(that.data.numElements[type]);
+    indices = indices || range(this.data.numElements[type]);
 
     var lastMask = this.lastMasks[type];
 
@@ -962,23 +1115,27 @@ Dataframe.prototype.getDataType = function (column, type) {
     return this.rawdata.attributes[type][column].type;
 };
 
-// TODO: Have this return edge attributes in sorted order, unless
-// explicitly requested to be unsorted (for internal perf reasons)
 Dataframe.prototype.getColumn = function (column, type) {
+    return _.omit(this.rawdata.attributes[type][column], 'values');
+};
+
+// TODO: Have this return edge attributes in sorted order, unless
+// explicitly requested to be unsorted (for internal performance reasons)
+Dataframe.prototype.getColumnValues = function (column, type) {
 
     // A filter has been done, and we need to apply the
     // mask and compact.
     if (!this.data.attributes[type][column]) {
         var lastMask = this.lastMasks[type];
-        var rawAttrs = this.rawdata.attributes[type];
+        var rawAttributes = this.rawdata.attributes[type];
         var newValues = [];
         _.each(lastMask, function (idx) {
-            newValues.push(rawAttrs[column].values[idx]);
+            newValues.push(rawAttributes[column].values[idx]);
         });
         this.data.attributes[type][column] = {
             values: newValues,
-            type: rawAttrs[column].type,
-            target: rawAttrs[column].target
+            type: rawAttributes[column].type,
+            target: rawAttributes[column].target
         };
     }
 
@@ -1000,11 +1157,12 @@ Dataframe.prototype.getAttributeKeys = function (type) {
 Dataframe.prototype.getColumnsByType = function () {
     var types = ['point', 'edge'];
     var result = {};
+    var that = this;
     _.each(types, function (typeName) {
         var typeResult = {};
-        var columnNamesPerType = this.getAttributeKeys(typeName);
+        var columnNamesPerType = that.getAttributeKeys(typeName);
         _.each(columnNamesPerType, function (columnName) {
-            typeResult[columnNamesPerType] = this.getColumn(columnName, typeName);
+            typeResult[columnName] = that.getColumn(columnName, typeName);
         });
         result[typeName] = typeResult;
     });
@@ -1050,7 +1208,7 @@ Dataframe.prototype.serializeColumns = function (target, options) {
         toSerialize[type] = {};
         var keys = that.getAttributeKeys(type);
         _.each(keys, function (key) {
-            toSerialize[type][key] = that.getColumn(key, type);
+            toSerialize[type][key] = that.getColumnValues(key, type);
         });
     });
 
@@ -1090,7 +1248,7 @@ Dataframe.prototype.aggregate = function (simulator, indices, attributes, binnin
         } else {
             return that.countBy(simulator, attribute, binningHint, indices, type);
         }
-    }
+    };
 
     var validAttributes = this.getAttributeKeys(type);
     var keysToAggregate = attributes ? attributes : validAttributes;
@@ -1138,7 +1296,7 @@ Dataframe.prototype.aggregate = function (simulator, indices, attributes, binnin
 
 
 Dataframe.prototype.countBy = function (simulator, attribute, binning, indices, type) {
-    var values = this.getColumn(attribute, type);
+    var values = this.getColumnValues(attribute, type);
 
     // TODO: Get this value from a proper source, instead of hard coding.
     var maxNumBins = 29;
@@ -1161,7 +1319,7 @@ Dataframe.prototype.countBy = function (simulator, attribute, binning, indices, 
     // Take the rest and bucket them into '_other'
     var bins = {};
     _.each(sortedKeys.slice(0, numBinsWithoutOther), function (key) {
-        bins[key] = rawBins[key]
+        bins[key] = rawBins[key];
     });
 
     var otherKeys = sortedKeys.slice(numBinsWithoutOther);
@@ -1182,9 +1340,9 @@ Dataframe.prototype.countBy = function (simulator, attribute, binning, indices, 
         type: 'countBy',
         numValues: numValues,
         numBins: _.keys(bins).length,
-        bins: bins,
+        bins: bins
     });
-}
+};
 
 // Returns a binning object with properties numBins, binWidth, minValue,
 // maxValue
@@ -1206,18 +1364,22 @@ function calculateBinning(numValues, values, indices, goalNumberOfBins) {
         maxValue: Infinity
     };
 
+    var numBins;
+    var bottomVal;
+    var topVal;
+    var binWidth;
     if (goalNumberOfBins) {
-        var numBins = goalNumberOfBins;
-        var bottomVal = min;
-        var topVal = max;
-        var binWidth = (max - min) / (goalNumberOfBins - 1);
+        numBins = goalNumberOfBins;
+        bottomVal = min;
+        topVal = max;
+        binWidth = (max - min) / (goalNumberOfBins - 1);
 
     // Try to find a good division.
     } else {
         var goalWidth = (max - min) / goalBins;
 
-        var binWidth = 10;
-        var numBins = (max - min) / binWidth;
+        binWidth = 10;
+        numBins = (max - min) / binWidth;
 
         // Edge case for invalid values
         // Should capture general case of NaNs and other invalid
@@ -1246,8 +1408,8 @@ function calculateBinning(numValues, values, indices, goalNumberOfBins) {
             numBins = (max - min) / binWidth;
         }
 
-        var bottomVal = round_down(min, binWidth);
-        var topVal = round_up(max, binWidth);
+        bottomVal = round_down(min, binWidth);
+        topVal = round_up(max, binWidth);
         numBins = Math.floor((topVal - bottomVal) / binWidth) + 1;
     }
 
@@ -1258,7 +1420,7 @@ function calculateBinning(numValues, values, indices, goalNumberOfBins) {
         numBins: numBins,
         binWidth: binWidth,
         minValue: bottomVal,
-        maxValue: topVal,
+        maxValue: topVal
     };
 }
 
@@ -1270,7 +1432,7 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
     // VGraph types.
     // values = _.filter(values, function (x) { return !isNaN(x)});
 
-    var values = this.getColumn(attribute, type);
+    var values = this.getColumnValues(attribute, type);
 
     var numValues = indices.length;
     if (numValues === 0) {
@@ -1296,11 +1458,12 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
 
     //var qDataBuffer = this.getBuffer(attribute, type);
     var binStart = new Float32Array(numBins);
-    for (var i = 0; i < numBins; i++) {
+    var i;
+    for (i = 0; i < numBins; i++) {
         binStart[i] = bottomVal + (binWidth * i);
     }
 
-    var dataSize = indices.length;
+    //var dataSize = indices.length;
 
     var retObj = {
         type: 'histogram',
@@ -1329,7 +1492,7 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
     var bins = Array.apply(null, new Array(numBins)).map(function () { return 0; });
 
     var binId;
-    for (var i = 0; i < indices.length; i++) {
+    for (i = 0; i < indices.length; i++) {
         // Here we use an optimized "Floor" because we know it's a smallish, positive number.
         // TODO: Have to be careful because floating point error.
         // In particular, we need to math math as closely as possible on filters.
@@ -1374,10 +1537,10 @@ function decodeDates (attributes) {
 }
 
 
-function pickTitleField (attribs, prioritized) {
+function pickTitleField (attributes, prioritized) {
     for (var i = 0; i < prioritized.length; i++) {
         var field = prioritized[i];
-        if (attribs.hasOwnProperty(field)) {
+        if (attributes.hasOwnProperty(field)) {
             return field;
         }
     }
@@ -1385,15 +1548,15 @@ function pickTitleField (attribs, prioritized) {
 }
 
 
-function getNodeTitleField (attribs) {
+function getNodeTitleField (attributes) {
     var prioritized = ['pointTitle', 'node', 'label', 'ip'];
-    return pickTitleField(attribs, prioritized);
+    return pickTitleField(attributes, prioritized);
 }
 
 
-function getEdgeTitleField (attribs) {
+function getEdgeTitleField (attributes) {
     var prioritized = ['edgeTitle', 'edge'];
-    return pickTitleField(attribs, prioritized);
+    return pickTitleField(attributes, prioritized);
 }
 
 function range (n) {
@@ -1406,7 +1569,7 @@ function range (n) {
 
 
 function round_down(num, multiple) {
-    if (multiple == 0) {
+    if (multiple === 0) {
         return num;
     }
 
@@ -1415,7 +1578,7 @@ function round_down(num, multiple) {
 }
 
 function round_up(num, multiple) {
-    if (multiple == 0) {
+    if (multiple === 0) {
         return num;
     }
 
@@ -1423,6 +1586,11 @@ function round_up(num, multiple) {
     return multiple * Math.ceil(div);
 }
 
+/**
+ * @param {Array<Number>} values
+ * @param {Mask} indices
+ * @returns {{max: number, min: Number}}
+ */
 function minMaxMasked(values, indices) {
     var min = Infinity;
     var max = -Infinity;
@@ -1459,18 +1627,20 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
 
     var edgeListTyped = new Uint32Array(edges.length);
     var mapped = new Uint32Array(edges.length / 2);
+    var i, src, dst, idx;
 
     // If we're filtering and have information on unfiltered data.
-    if (oldEncapsulated && masks) {
+    // TODO: Undisable once this is fixed with multi-edge / self edge.
+    if (false && oldEncapsulated && masks) {
         var oldEdges = oldEncapsulated.edgesTyped;
         var oldPermutation = oldEncapsulated.edgePermutationInverseTyped;
         var lastOldIdx = 0;
 
         // Lookup to see if an edge is included.
         var edgeLookup = {};
-        for (var i = 0; i < edges.length/2; i++) {
-            var src = edges[i*2];
-            var dst = edges[i*2 + 1];
+        for (i = 0; i < edges.length/2; i++) {
+            src = edges[i*2];
+            dst = edges[i*2 + 1];
             if (!edgeLookup[src]) {
                 edgeLookup[src] = [];
             }
@@ -1479,15 +1649,15 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
 
 
         var mappedMaskInverse = new Uint32Array(oldPermutation.length);
-        for (var i = 0; i < mappedMaskInverse.length; i++) {
+        for (i = 0; i < mappedMaskInverse.length; i++) {
             mappedMaskInverse[i] = 1;
         }
 
-        for (var i = 0; i < edges.length/2; i++) {
+        for (i = 0; i < edges.length/2; i++) {
             while (lastOldIdx < oldEdges.length/2) {
 
-                var src = pointOriginalLookup[oldEdges[lastOldIdx*2]];
-                var dst = pointOriginalLookup[oldEdges[lastOldIdx*2 + 1]];
+                src = pointOriginalLookup[oldEdges[lastOldIdx*2]];
+                dst = pointOriginalLookup[oldEdges[lastOldIdx*2 + 1]];
 
                 if ( edgeLookup[src] && edgeLookup[src].indexOf(dst) > -1 ) {
                     edgeListTyped[i*2] = src;
@@ -1504,12 +1674,12 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
         // Compute Scan of mappedMask:
         var mappedScan = new Uint32Array(mappedMaskInverse.length);
         mappedScan[0] = mappedMaskInverse[0];
-        for (var i = 1; i < mappedMaskInverse.length; i++) {
+        for (i = 1; i < mappedMaskInverse.length; i++) {
             mappedScan[i] = mappedMaskInverse[i] + mappedScan[i-1];
         }
 
-        for (var i = 0; i < mapped.length; i++) {
-            var idx = mapped[i];
+        for (i = 0; i < mapped.length; i++) {
+            idx = mapped[i];
             mapped[i] = idx - mappedScan[idx];
         }
 
@@ -1518,7 +1688,7 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
         var maskedEdgeList = new Float64Array(edgeListTyped.buffer);
         var maskedEdges = new Float64Array(edges.buffer);
 
-        for (var i = 0; i < mapped.length; i++) {
+        for (i = 0; i < mapped.length; i++) {
             mapped[i] = i;
         }
 
@@ -1528,8 +1698,8 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
                     : edges[a*2 + 1] - edges[b*2 + 1];
         });
 
-        for (var i = 0; i < edges.length/2; i++) {
-            var idx = mapped[i];
+        for (i = 0; i < edges.length/2; i++) {
+            idx = mapped[i];
             // I believe it's slightly faster to copy it in using a 64 bit "cast"
             // than to do it directly. However, it should be tested more before being enabled.
 
@@ -1542,7 +1712,7 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
     return {
         edgeListTyped: edgeListTyped,
         originals: mapped
-    }
+    };
 }
 
 function computeWorkItemsTyped(edgesTyped, originals, numPoints) {
@@ -1577,11 +1747,11 @@ function computeWorkItemsTyped(edgesTyped, originals, numPoints) {
 }
 
 function computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals, numPoints) {
-    var index = 0;
+    //var index = 0;
     var edgeStartEndIdxsTyped = new Uint32Array(numPoints * 2);
     for(var i = 0; i < (workItemsTyped.length/4) - 1; i++) {
       var start = workItemsTyped[i*4];
-      if (start == -1) {
+      if (start === -1) {
         edgeStartEndIdxsTyped[i*2] = -1;
         edgeStartEndIdxsTyped[i*2 + 1] = -1;
       } else {
@@ -1593,7 +1763,7 @@ function computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals, numPoint
         }
 
         if (end === -1) {
-            end = edgesTyped.length / 2; // Special case for last workitem
+            end = edgesTyped.length / 2; // Special case for last work item
         }
         edgeStartEndIdxsTyped[i*2] = start;
         edgeStartEndIdxsTyped[i*2 + 1] = end;
@@ -1660,12 +1830,12 @@ Dataframe.prototype.encapsulateEdges = function (edges, numPoints, oldEncapsulat
         //Int32Array [(first edge number, number of sibling edges)]
         workItemsTyped: workItemsTyped,
 
-        //Uint32Array [workitem number node belongs to]
+        //Uint32Array [work item number node belongs to]
         srcToWorkItem: srcToWorkItem,
 
         edgeStartEndIdxsTyped: edgeStartEndIdxsTyped
     };
-}
+};
 
 
 module.exports = Dataframe;
