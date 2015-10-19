@@ -11,6 +11,7 @@ var shortestpaths   = require('./shortestpaths.js');
 var colorPicker     = require('./colorpicker.js');
 var controls        = require('./controls.js');
 var canvas          = require('./canvas.js');
+var labels          = require('./labels.js');
 var ui              = require('../ui.js');
 var poiLib          = require('../poi.js');
 var util            = require('./util.js');
@@ -70,6 +71,8 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
                 });
         });
 
+    var latestHighlightedObject = new Rx.ReplaySubject(1);
+
     var appState = {
         renderState: initialRenderState,
         vboUpdates: vboUpdates,
@@ -86,7 +89,8 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
         isAnimatingOrSimulating: isAnimatingOrSimulating,
         brushOn: brushOn,
         anyMarqueeOn: anyMarqueeOn,
-        activeSelection: activeSelection
+        activeSelection: activeSelection,
+        latestHighlightedObject: latestHighlightedObject
     };
 
     //////////////////////////////////////////////////////////////////////////
@@ -115,7 +119,7 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     );
 
     selections.init(appState);
-    canvas.setupLabelsAndCursor(appState, urlParams, $simCont);
+    labels.setupLabelsAndCursor(appState, urlParams, $simCont);
     canvas.setupRenderUpdates(appState.renderingScheduler, appState.cameraChanges, appState.settingsChanges);
 
     var backgroundColorObservable = colorPicker.backgroundColorObservable(initialRenderState, urlParams);

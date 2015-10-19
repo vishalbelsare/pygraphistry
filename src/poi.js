@@ -57,14 +57,11 @@ function getActiveApprox(renderState, textureName) {
 
     var res = {};
     vals.forEach(function (v) {
-        var key = cacheKey(v, 1);
-        res[key] = {idx: v, dim: 1};
+        if (v > -1) {
+            var key = cacheKey(v, 1);
+            res[key] = {idx: v, dim: 1};
+        }
     });
-
-    //remove null
-    if (res['-1']) {
-        delete res['-1'];
-    }
 
     return res;
 }
