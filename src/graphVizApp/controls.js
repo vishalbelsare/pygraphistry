@@ -444,45 +444,22 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
 
 
 //Observable DOM * $DOM * $DOM * String -> Observable Bool
-//When onElt is $a, toggle $a and potentially show $menu, else toggle off $a and hide $menu
+//When toolbarClicks is $panelButton,
+// toggle $panelButton and potentially show $panel,
+// else toggle off $panelButton and hide $panel
 //Return toggle status stream
-function menuToggler (onElt, $a, $menu, errLbl) {
-
-    var isOn = false;
-
-    var turnOn = onElt.map(function (elt) {
-        if (elt === $a[0]) {
-            $(elt).children('i').toggleClass('toggle-on');
-            isOn = !isOn;
-        } else {
-            isOn = false;
-            $a.children('i').removeClass('toggle-on');
-        }
-        return isOn;
-    });
-
-    turnOn.distinctUntilChanged().do(function (state) {
-        if (state) {
-            $menu.css('display', 'block');
-        } else {
-            $menu.css('display', 'none');
-        }
-    }).subscribe(_.identity, util.makeErrorHandler(errLbl));
-
-    return turnOn;
-}
-
-
-function setupPanelControl (toolbarClicks, $panelButton, $panel) {
+function setupPanelControl (toolbarClicks, $panelButton, $panel, errorLogLabel) {
     var panelToggles = toolbarClicks.filter(function (elt) {
         return elt === $panelButton[0];
     }).map(function () {
+        // return the target state (boolean negate)
         return !$panel.is(':visible');
     });
     panelToggles.do(function (newVisibility) {
-        $panelButton.children('i').toggleClass('toggle-on', $panel.is(':visible'));
-        $panel.css('visibility', newVisibility ? 'visible' : 'hidden');
-    }).subscribe(_.identity, util.makeErrorHandler('panel visibility toggle'));
+        $panelButton.children('i').toggleClass('toggle-on', newVisibility);
+        $panel.toggle(newVisibility);
+        $panel.css('visibility', newVisibility ? 'visible': 'hidden');
+    }).subscribe(_.identity, util.makeErrorHandler(errorLogLabel));
     return panelToggles;
 }
 
@@ -509,7 +486,8 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
             $viewSelectionButton.find('i').toggleClass('toggle-on', marqueeIsOn);
             appState.marqueeOn.onNext(marqueeIsOn ? 'toggled' : false);
         });
-    var histogramPanelToggle = setupPanelControl(popoutClicks, $('#histogramPanelControl'), $('$histogram.panel'));
+    var histogramPanelToggle = setupPanelControl(popoutClicks, $('#histogramPanelControl'), $('#histogram.panel'),
+        'Turning on/off the histogram panel');
     var dataInspectorIsVisible = false;
     var dataInspectorOnSubject = new Rx.Subject();
     var $dataInspectorButton = $('#dataInspectorButton');
@@ -551,12 +529,12 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
             turnOnBrush.onNext(brushIsOn);
         }).subscribe(_.identity, util.makeErrorHandler('brush toggle'));
 
-    menuToggler(popoutClicks, $('#layoutSettingsButton'),  $('#renderingItems'), 'Turning on/off settings');
+    setupPanelControl(popoutClicks, $('#layoutSettingsButton'),  $('#renderingItems'), 'Turning on/off settings');
 
     var marquee = setupMarquee(appState, turnOnMarquee);
     var brush = setupBrush(appState, turnOnBrush);
     var filtersPanel = new FiltersPanel(socket, urlParams);
-    menuToggler(popoutClicks, $('#filterButton'), filtersPanel.view.el, 'Turning on/off the filter panel');
+    setupPanelControl(popoutClicks, $('#filterButton'), filtersPanel.view.el, 'Turning on/off the filter panel');
     var filtersResponses = filtersPanel.control.filtersResponsesSubject;
     var histogramBrush = new HistogramBrush(socket, filtersPanel);
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
@@ -567,7 +545,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     persist.setupPersistWorkbookButton($('#persistWorkbookButton'), appState, socket, urlParams);
     goLiveButton(socket, urlParams);
     var setsPanel = new SetsPanel(socket, urlParams);
-    menuToggler(popoutClicks, $('#setsPanelButton'), setsPanel.view.el, 'Turning on/off the sets panel');
+    setupPanelControl(popoutClicks, $('#setsPanelButton'), setsPanel.view.el, 'Turning on/off the sets panel');
     setsPanel.setupSelectionInteraction(appState.activeSelection);
 
     createControls(
