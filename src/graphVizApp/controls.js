@@ -174,13 +174,12 @@ function setupBrush(appState, isOn) {
 // -> Observable DOM
 //Return which mouse group element selected
 //Side effect: highlight that element
-function makeMouseSwitchboard() {
+function makeMouseSwitchboard($elt) {
+    var mouseElements = $('.panel-button, .modal-button', $elt);
 
-    var mouseElts = $('#viewSelectionButton, #brushButton, #layoutSettingsButton, #filterButton, #setsPanelButton, #histogramPanelControl, #dataInspectorButton');
-
-    var onElt = Rx.Observable.merge.apply(Rx.Observable,
-            mouseElts.get().map(function (elt) {
-                return Rx.Observable.fromEvent(elt, 'mousedown')
+    return Rx.Observable.merge.apply(Rx.Observable,
+        mouseElements.get().map(function (elt) {
+            return Rx.Observable.fromEvent(elt, 'mousedown')
                 .do(function (evt) {
                     // Stop from propagating to canvas
                     evt.stopPropagation();
@@ -189,9 +188,7 @@ function makeMouseSwitchboard() {
                     return Rx.Observable.fromEvent(elt, 'mouseup');
                 })
                 .map(_.constant(elt));
-            }));
-
-    return onElt;
+        }));
 }
 
 function toggleLogo($cont, urlParams) {
@@ -480,7 +477,7 @@ function menuToggler (onElt, $a, $menu, errLbl) {
 function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     createLegend($('#graph-legend'), urlParams);
     toggleLogo($('.logo-container'), urlParams);
-    var onElt = makeMouseSwitchboard();
+    var onElt = makeMouseSwitchboard($elt);
     externalLink($('#externalLinkButton'), urlParams);
 
     var $graph = $('#simulate');
