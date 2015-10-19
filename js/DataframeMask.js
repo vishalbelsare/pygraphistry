@@ -50,6 +50,17 @@ DataframeMask.prototype.limitNumEdgesTo = function (limit) {
 };
 
 /**
+ * Override to avoid serializing the dataframe.
+ */
+DataframeMask.prototype.toJSON = function () {
+    if (this.dataframe === undefined) {
+        return this;
+    } else {
+        return _.omit(this, 'dataframe');
+    }
+};
+
+/**
  * Returns the union of two sorted arrays of integers.
  * @param {Mask} x
  * @param {Mask} y
