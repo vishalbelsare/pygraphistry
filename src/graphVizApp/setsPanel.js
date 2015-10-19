@@ -33,6 +33,7 @@ var SetView = Backbone.View.extend({
     },
     render: function () {
         var bindings = this.model.toJSON();
+        bindings.isSystem = bindings.level === 'system';
         var html = this.template(bindings);
         this.$el.html(html);
         return this;
@@ -51,7 +52,10 @@ var AllSetsView = Backbone.View.extend({
 
         this.el = options.el;
         this.setsContainer = $('#sets');
+        this.emptyMessage = $('#setsEmptyMessage');
 
+        // Show if we get no initial collection elements:
+        this.updateEmptyMessage();
         this.collection.each(this.addSet, this);
     },
     render: function () {
@@ -65,15 +69,20 @@ var AllSetsView = Backbone.View.extend({
             model: set,
             collection: this.collection
         });
-        var childElement =view.render().el;
+        var childElement = view.render().el;
         this.setsContainer.append(childElement);
         set.set('$el', $(childElement));
+        this.updateEmptyMessage();
+    },
+    updateEmptyMessage: function () {
+        this.emptyMessage.toggleClass('hidden', this.collection.length !== 0);
     },
     removeSet: function (set) {
         var $el = set.get('$el');
         if ($el) {
             $el.remove();
         }
+        this.updateEmptyMessage();
     },
     remove: function () {
     },
@@ -113,6 +122,20 @@ function SetsPanel(socket/*, urlParams*/) {
 
 SetsPanel.prototype.updateSet = function (vizSetModel) {
     this.commands.update.sendWithObservableResult(vizSetModel.id, vizSetModel);
+};
+
+/**
+ * @param {Rx.ReplaySubject} activeSelection
+ */
+SetsPanel.prototype.setupSelectionInteraction = function (activeSelection) {
+    this.activeSelection = activeSelection;
+};
+
+/**
+ * @param {SetModel} setModel
+ */
+SetsPanel.prototype.updateActiveSelectionFrom = function (setModel) {
+
 };
 
 module.exports = SetsPanel;
