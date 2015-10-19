@@ -122,7 +122,7 @@ ContentSchema.prototype.getURL = function (subPath) {
 
 ContentSchema.prototype.uploadPublic = function (subPath, buffer, params) {
     var uploadParams = _.extend(params || {}, {acl: 'public-read'});
-    return this.upload(subPath, buffer, uploadParams);
+    return this.uploadToS3(subPath, buffer, uploadParams);
 };
 
 ContentSchema.prototype.uploadToS3 = function (subPath, buffer, uploadParams) {
