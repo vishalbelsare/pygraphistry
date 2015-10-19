@@ -176,7 +176,7 @@ function setupBrush(appState, isOn) {
 //Side effect: highlight that element
 function makeMouseSwitchboard() {
 
-    var mouseElts = $('#viewSelectionButton, #brushButton, #layoutSettingsButton, #filterButton, #histogramPanelControl, #dataInspectorButton');
+    var mouseElts = $('#viewSelectionButton, #brushButton, #layoutSettingsButton, #filterButton, #setsPanelButton, #histogramPanelControl, #dataInspectorButton');
 
     var onElt = Rx.Observable.merge.apply(Rx.Observable,
             mouseElts.get().map(function (elt) {
@@ -579,7 +579,8 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     persist.setupPersistWorkbookButton($('#persistWorkbookButton'), appState, socket, urlParams);
     goLiveButton(socket, urlParams);
     var setsPanel = new SetsPanel(socket, urlParams);
-    menuToggler(onElt, $('#setsPanelButton'), setsPanel.view.el);
+    menuToggler(onElt, $('#setsPanelButton'), setsPanel.view.el, 'Turning on/off the sets panel');
+    setsPanel.setupSelectionInteraction(appState.activeSelection);
 
     createControls(
         socket,
