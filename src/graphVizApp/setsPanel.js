@@ -72,6 +72,9 @@ var SetModel = Backbone.Model.extend({
      */
     fromSelection: function (selections) {
         var mask = this.get('mask');
+        if (this.get('setSource') === undefined) {
+            this.set('setSource', 'selection');
+        }
         if (mask === undefined) {
             mask = {point: [], edge: []};
             this.set('mask', mask);
@@ -97,6 +100,45 @@ var SetModel = Backbone.Model.extend({
         resultMask.point = unionOfTwoMasks(thisMask.point, otherMask.point);
         resultMask.edge = unionOfTwoMasks(thisMask.edge, otherMask.edge);
         return result;
+    },
+    autoTitle: function () {
+        var setSource = this.get('setSource');
+        var result;
+        switch (setSource) {
+            case 'selection':
+                var mask = this.get('mask');
+                if (mask === undefined) {
+                    result = 'A selection';
+                } else {
+                    result = 'Selected ';
+                    var numPoints = mask.point.length;
+                    var hasPoints = numPoints > 0;
+                    if (hasPoints) {
+                        result += numPoints.toString(10) + ' point';
+                        if (numPoints > 1) { result += 's'; }
+                    }
+                    var numEdges = mask.edge.length;
+                    var hasEdges = numEdges > 0;
+                    if (hasPoints && hasEdges) {
+                        result += ' and ';
+                    }
+                    if (hasEdges) {
+                        result += numEdges.toString(10) + ' edge';
+                        if (numEdges > 1) { result += 's'; }
+                    }
+                }
+                break;
+        }
+        return result;
+    },
+    // Only for handlebars => move to view?
+    toBindings: function () {
+        var bindings = this.toJSON();
+        bindings.isSystem = bindings.level === 'system';
+        if (!bindings.title) {
+            bindings.title = this.autoTitle();
+        }
+        return bindings;
     }
 });
 
@@ -117,8 +159,7 @@ var SetView = Backbone.View.extend({
         this.panel = options.panel;
     },
     render: function () {
-        var bindings = this.model.toJSON();
-        bindings.isSystem = bindings.level === 'system';
+        var bindings = this.model.toBindings();
         var html = this.template(bindings);
         this.$el.html(html);
         return this;
@@ -187,7 +228,7 @@ var AllSetsView = Backbone.View.extend({
     },
     addSetFromSelection: function (/*evt*/) {
         //var $target = $(evt.currentTarget);
-        var vizSet = new SetModel({title: 'A selection'});
+        var vizSet = new SetModel({});
         this.panel.activeSelection.take(1).do(function (activeSelection) {
             vizSet.fromSelection(activeSelection);
         }.bind(this)).subscribe(
