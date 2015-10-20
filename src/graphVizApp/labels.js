@@ -202,14 +202,16 @@ function renderLabels(appState, $labelCont, highlighted, selected) {
         .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
 }
 
-function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, clicked) {
+function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, selected) {
+
+    var indicesToExpand = selected.length > 0 ? [selected[selected.length - 1]] : selected;
 
     var poi = appState.poi;
     var points = new Float32Array(curPoints.buffer);
 
     // Get hits from POI and add highlighted/selected
     var hits = poi.getActiveApprox(appState.renderState, 'pointHitmapDownsampled');
-    _.each([highlighted, clicked], function (set) {
+    _.each([highlighted, indicesToExpand], function (set) {
         _.each(set, function (labelObj) {
             hits[poi.cacheKey(labelObj.idx, labelObj.dim)] = labelObj;
         });
@@ -256,7 +258,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
 
     var newPos = newLabelPositions(appState.renderState, labelsToShow, points);
 
-    effectLabels(toClear, labelsToShow, newPos, highlighted, clicked, poi);
+    effectLabels(toClear, labelsToShow, newPos, highlighted, indicesToExpand, poi);
 }
 
 function newLabelPositions(renderState, labels, points) {
