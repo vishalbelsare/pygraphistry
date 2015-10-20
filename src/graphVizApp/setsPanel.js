@@ -2,7 +2,7 @@
 
 var $       = window.$;
 //var _       = require('underscore');
-//var Rx      = require('rx');
+var Rx      = require('rx');
 require('../rx-jquery-stub');
 var Handlebars = require('handlebars');
 var Backbone   = require('backbone');
@@ -15,6 +15,7 @@ var Command    = require('./command.js');
  * @typedef {Object} SelectionElement
  * @property {Number} dim - Enum: 1 for point, 2 for edge.
  * @property {Number} idx - Index into the filtered dataframe.
+ * @property {String} source - whether from canvas click, etc.
  */
 
 
@@ -44,14 +45,15 @@ function unionOfTwoMasks (x, y) {
 }
 
 
-var SetModel = Backbone.Model.extend({
+var VizSetModel = Backbone.Model.extend({
     default: {
-        title: undefined
+        title: undefined,
+        description: undefined
     },
     /**
      * @returns {SelectionElement[]}
      */
-    asSelection: function () {
+    asVizSelection: function () {
         var mask = this.get('mask');
         if (mask === undefined) { return undefined; }
         var result = []; // new Array(mask.point.length + mask.edge.length);
@@ -70,7 +72,7 @@ var SetModel = Backbone.Model.extend({
     /**
      * @param {SelectionElement[]} selections
      */
-    fromSelection: function (selections) {
+    fromVizSelection: function (selections) {
         var mask = this.get('mask');
         if (this.get('setSource') === undefined) {
             this.set('setSource', 'selection');
@@ -94,14 +96,34 @@ var SetModel = Backbone.Model.extend({
         mask.point = _.uniq(mask.point.sort(), true);
         mask.edge = _.uniq(mask.edge.sort(), true);
     },
+    /**
+     * @param {VizSetModel} otherSet
+     * @returns {VizSetModel}
+     */
     union: function (otherSet) {
-        var result = new SetModel();
-        var resultMask = result.get('mask'), thisMask = this.get('mask'), otherMask = otherSet.get('mask');
+        var result = new VizSetModel();
+        if (!this.isConcrete() || !otherSet.isConcrete()) {
+            throw Error('Cannot perform union on abstract set');
+        }
+        var resultMask = {}, thisMask = this.get('mask'), otherMask = otherSet.get('mask');
         resultMask.point = unionOfTwoMasks(thisMask.point, otherMask.point);
         resultMask.edge = unionOfTwoMasks(thisMask.edge, otherMask.edge);
+        result.set('mask', resultMask);
         return result;
     },
-    autoTitle: function () {
+    isSystem: function () {
+        return this.get('level') === 'system';
+    },
+    isSelected: function (newValue) {
+        if (newValue !== undefined) {
+            this.set('selected', newValue);
+        }
+        return this.get('selected');
+    },
+    isConcrete: function () {
+        return this.get('mask') !== undefined;
+    },
+    getGeneratedDescription: function () {
         var setSource = this.get('setSource');
         var result;
         switch (setSource) {
@@ -130,50 +152,69 @@ var SetModel = Backbone.Model.extend({
                 break;
         }
         return result;
-    },
-    // Only for handlebars => move to view?
-    toBindings: function () {
-        var bindings = this.toJSON();
-        bindings.isSystem = bindings.level === 'system';
-        if (!bindings.title) {
-            bindings.title = this.autoTitle();
-        }
-        return bindings;
     }
 });
 
-var SetCollection = Backbone.Collection.extend({
-    model: SetModel
+var VizSetCollection = Backbone.Collection.extend({
+    model: VizSetModel
 });
 
-var SetView = Backbone.View.extend({
+var VizSetView = Backbone.View.extend({
     tagName: 'div',
     className: 'setEntry',
     events: {
         'click': 'toggleSelected',
-        'click .deleteButton': 'delete'
+        'click .deleteButton': 'delete',
+        'click .tagButton': 'rename'
     },
     initialize: function (options) {
         this.listenTo(this.model, 'destroy', this.remove);
+        this.listenTo(this.model, 'change', this.save);
         this.template = Handlebars.compile($('#setTemplate').html());
         this.panel = options.panel;
     },
+    bindingsFor: function (vizSet) {
+        var bindings = vizSet.toJSON();
+        bindings.isSystem = vizSet.isSystem();
+        if (!bindings.description) {
+            bindings.description = vizSet.getGeneratedDescription();
+        }
+        bindings.selectionClass = bindings.selected ? 'bg-info' : '';
+        return bindings;
+    },
     render: function () {
-        var bindings = this.model.toBindings();
+        var bindings = this.bindingsFor(this.model);
         var html = this.template(bindings);
         this.$el.html(html);
         return this;
+    },
+    save: function () {
+
     },
     delete: function (/*event*/) {
         this.$el.remove();
         this.collection.remove(this.model);
     },
+    rename: function (/*event*/) {
+        var $modal = $(Handlebars.compile($('#setTagTemplate').html()));
+        $('body').append($modal);
+        $('.status', $modal).css('display', 'none');
+        $modal.modal('show');
+        Rx.Observable.fromEvent($('.modal-footer button', $modal), 'click')
+            .map(_.constant($modal)).do(function ($modal) {
+                var setTag = $('.modal-body input', $modal).val();
+                this.model.set('title', setTag);
+            }).subscribe(
+            function () {
+                $modal.remove();
+            }, util.makeErrorHandler('Exception while setting set tag'));
+    },
     toggleSelected: function () {
-        this.panel.activeSelection.onNext(this.model.asSelection());
+        this.model.isSelected(!this.model.isSelected());
     }
 });
 
-var AllSetsView = Backbone.View.extend({
+var AllVizSetsView = Backbone.View.extend({
     events: {
         'click .addSetButton': 'addSetFromSelection'
     },
@@ -182,6 +223,7 @@ var AllSetsView = Backbone.View.extend({
         this.listenTo(this.collection, 'remove', this.removeSet);
         this.listenTo(this.collection, 'reset', this.refresh);
         this.listenTo(this.collection, 'all', this.render);
+        this.listenTo(this.collection, 'change', this.updateVizSelectionFromSelectedSets);
 
         this.el = options.el;
         this.panel = options.panel;
@@ -191,15 +233,40 @@ var AllSetsView = Backbone.View.extend({
         // Show if we get no initial collection elements:
         this.updateEmptyMessage();
         this.collection.each(this.addSet, this);
+        // Deep compare to determine whether to update the viz selection:
+        this.lastSetSelection = [];
+    },
+    shouldShow: function (vizSet) {
+        return !vizSet.isSystem();
+    },
+    visibleSets: function () {
+        return this.collection.select(function (vizSet) {
+            return this.shouldShow(vizSet);
+        }.bind(this));
+    },
+    selectedSets: function () {
+        return this.collection.select(function (vizSet) {
+            return vizSet.isSelected();
+        });
+    },
+    updateVizSelectionFromSelectedSets: function () {
+        var currentlySelectedSets = this.selectedSets();
+        if (!_.isEqual(currentlySelectedSets, this.lastSetSelection)) {
+            this.panel.updateVizSelectionFrom(currentlySelectedSets);
+            this.lastSetSelection = currentlySelectedSets;
+        }
     },
     render: function () {
-        var $setsControlButton = $('#setsButton');
-        $setsControlButton.attr('data-count', this.collection.length);
-        $setsControlButton.toggleClass('iconBadge', !this.collection.isEmpty());
+        var $setsControlButton = $('#setsPanelButton');
+        var visibleModels = this.visibleSets();
+        $('.badge', $setsControlButton).text(visibleModels.length > 0 ? visibleModels.length : '');
         return this;
     },
     addSet: function (set) {
-        var view = new SetView({
+        if (!this.shouldShow(set)) {
+            return;
+        }
+        var view = new VizSetView({
             model: set,
             collection: this.collection,
             panel: this.panel
@@ -210,7 +277,7 @@ var AllSetsView = Backbone.View.extend({
         this.updateEmptyMessage();
     },
     updateEmptyMessage: function () {
-        this.emptyMessage.toggleClass('hidden', this.collection.length !== 0);
+        this.emptyMessage.toggleClass('hidden', this.visibleSets().length > 0);
     },
     removeSet: function (set) {
         var $el = set.get('$el');
@@ -228,9 +295,9 @@ var AllSetsView = Backbone.View.extend({
     },
     addSetFromSelection: function (/*evt*/) {
         //var $target = $(evt.currentTarget);
-        var vizSet = new SetModel({});
+        var vizSet = new VizSetModel({});
         this.panel.activeSelection.take(1).do(function (activeSelection) {
-            vizSet.fromSelection(activeSelection);
+            vizSet.fromVizSelection(activeSelection);
         }.bind(this)).subscribe(
             _.identity, util.makeErrorHandler('Getting the selection as a Set'));
         this.collection.push(vizSet);
@@ -238,7 +305,7 @@ var AllSetsView = Backbone.View.extend({
 });
 
 function SetsPanel(socket/*, urlParams*/) {
-    this.collection = new SetCollection([]);
+    this.collection = new VizSetCollection([]);
 
     this.commands = {
         getAll: new Command('getting sets', 'get_sets', socket),
@@ -246,9 +313,9 @@ function SetsPanel(socket/*, urlParams*/) {
         update: new Command('updating a set', 'update_set', socket)
     };
 
-    this.model = SetModel;
+    this.model = VizSetModel;
 
-    this.view = new AllSetsView({
+    this.view = new AllVizSetsView({
         collection: this.collection,
         el: $('#setsPanel'),
         panel: this
@@ -258,7 +325,7 @@ function SetsPanel(socket/*, urlParams*/) {
         function (response) {
             var sets = response.sets;
             _.each(sets, function (vizSet) {
-                this.collection.add(new SetModel(vizSet));
+                this.collection.add(new VizSetModel(vizSet));
             }.bind(this));
         }.bind(this)).subscribe(
             _.identity,
@@ -277,13 +344,19 @@ SetsPanel.prototype.setupSelectionInteraction = function (activeSelection) {
 };
 
 /**
- * @param {SetModel[]} setModels
+ * @param {VizSetModel[]} setModels
  */
-SetsPanel.prototype.updateActiveSelectionFrom = function (setModels) {
-    var union = _.reduce(setModels, function (firstSet, secondSet) {
-        return firstSet.union(secondSet);
-    });
-    this.activeSelection.onNext(union.asSelection());
+SetsPanel.prototype.updateVizSelectionFrom = function (setModels) {
+    var resultSetModel;
+    if (setModels.length > 1) {
+        resultSetModel = _.reduce(setModels, function (firstSet, secondSet) {
+            return firstSet.union(secondSet);
+        });
+    } else if (setModels.length === 1) {
+        resultSetModel = setModels[0];
+    }
+    var newSelection = resultSetModel === undefined ? [] : resultSetModel.asVizSelection();
+    this.activeSelection.onNext(newSelection);
 };
 
 module.exports = SetsPanel;
