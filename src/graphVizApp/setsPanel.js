@@ -11,10 +11,92 @@ var _          = require('underscore');
 var util       = require('./util.js');
 var Command    = require('./command.js');
 
+/**
+ * @typedef {Object} SelectionElement
+ * @property {Number} dim - Enum: 1 for point, 2 for edge.
+ * @property {Number} idx - Index into the filtered dataframe.
+ */
+
+
+function unionOfTwoMasks (x, y) {
+    // TODO: this is a copy of DataframeMask.unionOfTwoMasks. de-duplicate through common code-share.
+    var xLength = x.length, yLength = y.length;
+    // Smallest result: one is a subset of the other.
+    var result = new Array(Math.max(xLength, yLength));
+    var xIndex = 0, yIndex = 0, resultIndex = 0;
+    while (xIndex < xLength && yIndex < yLength) {
+        if (x[xIndex] < y[yIndex]) {
+            result[resultIndex++] = x[xIndex++];
+        } else if (y[yIndex] < x[xIndex]) {
+            result[resultIndex++] = y[yIndex++];
+        } else /* x[xIndex] === y[yIndex] */ {
+            result[resultIndex++] = y[yIndex++];
+            xIndex++;
+        }
+    }
+    while (xIndex < xLength) {
+        result[resultIndex++] = x[xIndex++];
+    }
+    while (yIndex < yLength) {
+        result[resultIndex++] = y[yIndex++];
+    }
+    return result;
+}
+
 
 var SetModel = Backbone.Model.extend({
     default: {
         title: undefined
+    },
+    /**
+     * @returns {SelectionElement[]}
+     */
+    asSelection: function () {
+        var mask = this.get('mask');
+        if (mask === undefined) { return undefined; }
+        var result = []; // new Array(mask.point.length + mask.edge.length);
+        if (mask.point) {
+            _.each(mask.point, function (pointIndex) {
+                result.push({dim: 1, idx: pointIndex});
+            });
+        }
+        if (mask.edge) {
+            _.each(mask.edge, function (edgeIndex) {
+                result.push({dim: 2, idx: edgeIndex});
+            });
+        }
+        return result;
+    },
+    /**
+     * @param {SelectionElement[]} selections
+     */
+    fromSelection: function (selections) {
+        var mask = this.get('mask');
+        if (mask === undefined) {
+            mask = {point: [], edge: []};
+            this.set('mask', mask);
+        }
+        _.each(selections, function (selection) {
+            switch (selection.dim) {
+                case 1:
+                    mask.point.push(selection.idx);
+                    break;
+                case 2:
+                    mask.edge.push(selection.idx);
+                    break;
+                default:
+                    throw Error('Unrecognized dimension in selection: ' + selection.dim);
+            }
+        });
+        mask.point = _.uniq(mask.point.sort(), true);
+        mask.edge = _.uniq(mask.edge.sort(), true);
+    },
+    union: function (otherSet) {
+        var result = new SetModel();
+        var resultMask = result.get('mask'), thisMask = this.get('mask'), otherMask = otherSet.get('mask');
+        resultMask.point = unionOfTwoMasks(thisMask.point, otherMask.point);
+        resultMask.edge = unionOfTwoMasks(thisMask.edge, otherMask.edge);
+        return result;
     }
 });
 
@@ -132,10 +214,13 @@ SetsPanel.prototype.setupSelectionInteraction = function (activeSelection) {
 };
 
 /**
- * @param {SetModel} setModel
+ * @param {SetModel[]} setModels
  */
-SetsPanel.prototype.updateActiveSelectionFrom = function (setModel) {
-
+SetsPanel.prototype.updateActiveSelectionFrom = function (setModels) {
+    var union = _.reduce(setModels, function (firstSet, secondSet) {
+        return firstSet.union(secondSet);
+    });
+    this.activeSelection.onNext(union.asSelection());
 };
 
 module.exports = SetsPanel;
