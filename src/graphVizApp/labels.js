@@ -128,22 +128,11 @@ function setupClickSelections (appState, $eventTarget) {
             if (!ctrl) {
                 activeSelection.onNext(clickPoints);
             } else {
-                var lengthBefore = sel.length;
-                var clicked = clickPoints[0];
-
-                // Remove clicked points if they exist.
-                sel = _.map(sel, function (selectedElement) {
-                    if (selectedElement.idx === clicked.idx && selectedElement.dim === clicked.dim) {
-                        return null;
-                    }
-                    return selectedElement;
+                sel = util.removeOrAdd(sel, clickPoints[0], function (a, b) {
+                    // TODO: Should be some sort of "element" object with
+                    // equality function.
+                    return (a.idx === b.idx && a.dim === b.dim);
                 });
-                sel = sel.filter(_.identity);
-
-                // Add clicked point if it didn't exist;
-                if (lengthBefore === sel.length) {
-                    sel.push(clicked);
-                }
                 activeSelection.onNext(sel);
             }
 
