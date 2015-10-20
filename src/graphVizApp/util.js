@@ -106,6 +106,29 @@ function notIdentity (val) {
     return !val;
 }
 
+function removeOrAdd(data, newElem, equalityFunc) {
+    var lengthBefore = data.length;
+
+    // Remove elements if they exist.
+    data = _.map(data, function (elem) {
+        if (equalityFunc(elem, newElem)) {
+            return null;
+        }
+        return elem;
+    });
+
+    data = data.filter(function (val) {
+        return (val !== null);
+    });
+
+    // Add new elements if it didn't exist;
+    if (lengthBefore === data.length) {
+        data.push(newElem);
+    }
+
+    return data;
+}
+
 module.exports = {
     makeErrorHandler: makeErrorHandler,
     observableFilter: observableFilter,
@@ -113,5 +136,6 @@ module.exports = {
     notIdentity: notIdentity,
     OR: OR,
     AND: AND,
-    bufferUntilReady: bufferUntilReady
+    bufferUntilReady: bufferUntilReady,
+    removeOrAdd: removeOrAdd
 };

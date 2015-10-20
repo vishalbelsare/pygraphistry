@@ -78,7 +78,9 @@ function setupClickSelections (appState, $eventTarget) {
         .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
         .flatMapLatest(function (down) {
             return $eventTarget.mouseupAsObservable().take(1).map(function (up) {
-                return [down, up];
+                var downUp = [down, up];
+                downUp.ctrl = down.ctrlKey || down.metaKey;
+                return downUp;
             });
         })
         .filter(function (downUp) {
@@ -87,6 +89,7 @@ function setupClickSelections (appState, $eventTarget) {
         })
         .flatMapLatest(function (downUp) {
             var $target = $(downUp[1].target);
+            var targetElementStream;
             // Clicked on existing POI label, return point corresponding to label
             if ($target.hasClass('graph-label') ||
                     $target.parents('.graph-label').length) {
@@ -95,18 +98,44 @@ function setupClickSelections (appState, $eventTarget) {
                     : ($target.parents('.graph-label')[0]);
                 var pt = _.values(appState.poi.state.activeLabels)
                     .filter(function (lbl) { return lbl.elt.get(0) === elt; })[0];
-                return Rx.Observable.return([pt]);
+                targetElementStream = Rx.Observable.return([pt]);
 
             // Clicked on canvas, return latest highlighted object
             } else {
-                return appState.latestHighlightedObject.take(1);
+                targetElementStream = appState.latestHighlightedObject.take(1);
             }
-        }).do(function (clickPoints) {
+
+            return targetElementStream.map(function (clickPoints) {
+                return {
+                    clickPoints: clickPoints,
+                    ctrl: downUp.ctrl
+                };
+            });
+        }).flatMapLatest(function (data) {
+            return activeSelection.take(1).map(function (sel) {
+                return {sel: sel, clickPoints: data.clickPoints, ctrl: data.ctrl};
+            });
+        }).do(function (data) {
+            var clickPoints = data.clickPoints;
+            var sel = data.sel;
+            var ctrl = data.ctrl;
+
+            // Tag source
             _.each(clickPoints, function (click) {
                 _.extend(click, {source: 'canvas'});
             });
 
-            activeSelection.onNext(clickPoints);
+            if (!ctrl) {
+                activeSelection.onNext(clickPoints);
+            } else {
+                sel = util.removeOrAdd(sel, clickPoints[0], function (a, b) {
+                    // TODO: Should be some sort of "element" object with
+                    // equality function.
+                    return (a.idx === b.idx && a.dim === b.dim);
+                });
+                activeSelection.onNext(sel);
+            }
+
         }).subscribe(_.identity, util.makeErrorHandler('setupClickSelections'));
 }
 
@@ -162,14 +191,16 @@ function renderLabels(appState, $labelCont, highlighted, selected) {
         .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
 }
 
-function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, clicked) {
+function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, selected) {
+
+    var indicesToExpand = selected.length > 0 ? [selected[selected.length - 1]] : selected;
 
     var poi = appState.poi;
     var points = new Float32Array(curPoints.buffer);
 
     // Get hits from POI and add highlighted/selected
     var hits = poi.getActiveApprox(appState.renderState, 'pointHitmapDownsampled');
-    _.each([highlighted, clicked], function (set) {
+    _.each([highlighted, indicesToExpand], function (set) {
         _.each(set, function (labelObj) {
             hits[poi.cacheKey(labelObj.idx, labelObj.dim)] = labelObj;
         });
@@ -216,7 +247,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, cl
 
     var newPos = newLabelPositions(appState.renderState, labelsToShow, points);
 
-    effectLabels(toClear, labelsToShow, newPos, highlighted, clicked, poi);
+    effectLabels(toClear, labelsToShow, newPos, highlighted, indicesToExpand, poi);
 }
 
 function newLabelPositions(renderState, labels, points) {
