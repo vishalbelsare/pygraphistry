@@ -308,8 +308,7 @@ var AllFiltersView = Backbone.View.extend({
     },
     render: function () {
         var $filterButton = $('#filterButton');
-        $filterButton.attr('data-count', this.collection.length);
-        $filterButton.toggleClass('iconBadge', !this.collection.isEmpty());
+        $('.badge', $filterButton).text(this.collection.length);
         return this;
     },
     addFilter: function (filter) {
