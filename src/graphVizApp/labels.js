@@ -78,7 +78,9 @@ function setupClickSelections (appState, $eventTarget) {
         .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
         .flatMapLatest(function (down) {
             return $eventTarget.mouseupAsObservable().take(1).map(function (up) {
-                return [down, up];
+                var downUp = [down, up];
+                downUp.ctrl = down.ctrlKey || down.metaKey;
+                return downUp;
             });
         })
         .filter(function (downUp) {
@@ -87,6 +89,7 @@ function setupClickSelections (appState, $eventTarget) {
         })
         .flatMapLatest(function (downUp) {
             var $target = $(downUp[1].target);
+            var targetElementStream;
             // Clicked on existing POI label, return point corresponding to label
             if ($target.hasClass('graph-label') ||
                     $target.parents('.graph-label').length) {
@@ -95,18 +98,55 @@ function setupClickSelections (appState, $eventTarget) {
                     : ($target.parents('.graph-label')[0]);
                 var pt = _.values(appState.poi.state.activeLabels)
                     .filter(function (lbl) { return lbl.elt.get(0) === elt; })[0];
-                return Rx.Observable.return([pt]);
+                targetElementStream = Rx.Observable.return([pt]);
 
             // Clicked on canvas, return latest highlighted object
             } else {
-                return appState.latestHighlightedObject.take(1);
+                targetElementStream = appState.latestHighlightedObject.take(1);
             }
-        }).do(function (clickPoints) {
+
+            return targetElementStream.map(function (clickPoints) {
+                return {
+                    clickPoints: clickPoints,
+                    ctrl: downUp.ctrl
+                };
+            });
+        }).flatMapLatest(function (data) {
+            return activeSelection.take(1).map(function (sel) {
+                return {sel: sel, clickPoints: data.clickPoints, ctrl: data.ctrl};
+            });
+        }).do(function (data) {
+            var clickPoints = data.clickPoints;
+            var sel = data.sel;
+            var ctrl = data.ctrl;
+
+            // Tag source
             _.each(clickPoints, function (click) {
                 _.extend(click, {source: 'canvas'});
             });
 
-            activeSelection.onNext(clickPoints);
+            if (!ctrl) {
+                activeSelection.onNext(clickPoints);
+            } else {
+                var lengthBefore = sel.length;
+                var clicked = clickPoints[0];
+
+                // Remove clicked points if they exist.
+                sel = _.map(sel, function (selectedElement) {
+                    if (selectedElement.idx === clicked.idx && selectedElement.dim === clicked.dim) {
+                        return null;
+                    }
+                    return selectedElement;
+                });
+                sel = sel.filter(_.identity);
+
+                // Add clicked point if it didn't exist;
+                if (lengthBefore === sel.length) {
+                    sel.push(clicked);
+                }
+                activeSelection.onNext(sel);
+            }
+
         }).subscribe(_.identity, util.makeErrorHandler('setupClickSelections'));
 }
 
