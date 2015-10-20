@@ -147,11 +147,27 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
             }
         },
 
-        rowClick: function () {
-            if (!this.model.get('selected')) {
-                activeSelection.onNext([{idx: this.model.attributes._index, dim: dim, source: 'dataInspector'}]);
+        rowClick: function (evt) {
+            var ctrl = evt.ctrlKey || evt.metaKey;
+            var selection = {idx: this.model.attributes._index, dim: dim, source: 'dataInspector'};
+            if (!ctrl) {
+                if (!this.model.get('selected')) {
+                    activeSelection.onNext([selection]);
+                } else {
+                    activeSelection.onNext([]);
+                }
+
             } else {
-                activeSelection.onNext([]);
+                // TODO: Is there a cleaner way to do this sort of "in place"
+                // operation on a replay subject?
+                activeSelection.take(1).do(function (sel) {
+                    sel = util.removeOrAdd(sel, selection, function (a, b) {
+                        // TODO: Should be some sort of "element" object with
+                        // equality function.
+                        return (a.idx === b.idx && a.dim === b.dim);
+                    });
+                    activeSelection.onNext(sel);
+                }).subscribe(_.identity, util.makeErrorHandler('Multiselect in dataInspector'));
             }
         },
     });
