@@ -108,10 +108,13 @@ var SetView = Backbone.View.extend({
     tagName: 'div',
     className: 'setEntry',
     events: {
+        'click': 'toggleSelected',
+        'click .deleteButton': 'delete'
     },
-    initialize: function (/*options*/) {
+    initialize: function (options) {
         this.listenTo(this.model, 'destroy', this.remove);
         this.template = Handlebars.compile($('#setTemplate').html());
+        this.panel = options.panel;
     },
     render: function () {
         var bindings = this.model.toJSON();
@@ -119,12 +122,19 @@ var SetView = Backbone.View.extend({
         var html = this.template(bindings);
         this.$el.html(html);
         return this;
+    },
+    delete: function (/*event*/) {
+        this.$el.remove();
+        this.collection.remove(this.model);
+    },
+    toggleSelected: function () {
+        this.panel.activeSelection.onNext(this.model.asSelection());
     }
 });
 
 var AllSetsView = Backbone.View.extend({
     events: {
-
+        'click .addSetButton': 'addSetFromSelection'
     },
     initialize: function (options) {
         this.listenTo(this.collection, 'add', this.addSet);
@@ -133,6 +143,7 @@ var AllSetsView = Backbone.View.extend({
         this.listenTo(this.collection, 'all', this.render);
 
         this.el = options.el;
+        this.panel = options.panel;
         this.setsContainer = $('#sets');
         this.emptyMessage = $('#setsEmptyMessage');
 
@@ -149,7 +160,8 @@ var AllSetsView = Backbone.View.extend({
     addSet: function (set) {
         var view = new SetView({
             model: set,
-            collection: this.collection
+            collection: this.collection,
+            panel: this.panel
         });
         var childElement = view.render().el;
         this.setsContainer.append(childElement);
@@ -172,6 +184,15 @@ var AllSetsView = Backbone.View.extend({
     refresh: function () {
         this.setsContainer.empty();
         this.collection.each(this.addSet, this);
+    },
+    addSetFromSelection: function (/*evt*/) {
+        //var $target = $(evt.currentTarget);
+        var vizSet = new SetModel({title: 'A selection'});
+        this.panel.activeSelection.take(1).do(function (activeSelection) {
+            vizSet.fromSelection(activeSelection);
+        }.bind(this)).subscribe(
+            _.identity, util.makeErrorHandler('Getting the selection as a Set'));
+        this.collection.push(vizSet);
     }
 });
 
@@ -188,7 +209,8 @@ function SetsPanel(socket/*, urlParams*/) {
 
     this.view = new AllSetsView({
         collection: this.collection,
-        el: $('#setsPanel')
+        el: $('#setsPanel'),
+        panel: this
     });
 
     this.commands.getAll.sendWithObservableResult().do(
