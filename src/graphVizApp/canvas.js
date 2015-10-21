@@ -719,57 +719,57 @@ function renderMouseoverEffects(renderingScheduler, task) {
     // TODO: Start with a small buffer and increase if necessary, masking underlying
     // data so we don't have to clear out later values. This way we won't have to constantly allocate
 
-    // buffers.selectedEdges = new Float32Array(selectedEdgeIndices.length * 4 * numMidEdges);
-    // buffers.selectedNodePositions = new Float32Array(selectedNodeIndices.length * 2);
-    // buffers.selectedNodeSizes = new Uint8Array(selectedNodeIndices.length);
-    // buffers.selectedNodeColors = new Uint32Array(selectedNodeIndices.length);
-    // buffers.selectedArrowStartPos = new Float32Array(selectedEdgeIndices.length * 2 * 3);
-    // buffers.selectedArrowEndPos = new Float32Array(selectedEdgeIndices.length * 2 * 3);
-    // buffers.selectedArrowNormalDir = new Float32Array(selectedEdgeIndices.length * 3);
-    // buffers.selectedArrowPointColors = new Uint32Array(selectedEdgeIndices.length * 3);
-    // buffers.selectedArrowPointSizes = new Uint8Array(selectedEdgeIndices.length * 3);
+    buffers.selectedEdges = new Float32Array(selectedEdgeIndices.length * 4 * numMidEdges);
+    buffers.selectedNodePositions = new Float32Array(selectedNodeIndices.length * 2);
+    buffers.selectedNodeSizes = new Uint8Array(selectedNodeIndices.length);
+    buffers.selectedNodeColors = new Uint32Array(selectedNodeIndices.length);
+    buffers.selectedArrowStartPos = new Float32Array(selectedEdgeIndices.length * 2 * 3);
+    buffers.selectedArrowEndPos = new Float32Array(selectedEdgeIndices.length * 2 * 3);
+    buffers.selectedArrowNormalDir = new Float32Array(selectedEdgeIndices.length * 3);
+    buffers.selectedArrowPointColors = new Uint32Array(selectedEdgeIndices.length * 3);
+    buffers.selectedArrowPointSizes = new Uint8Array(selectedEdgeIndices.length * 3);
 
-    // renderer.setNumElements(renderState, 'edgehighlight', highlightedEdgeIndices.length * 2 * numMidEdges);
-    // renderer.setNumElements(renderState, 'pointhighlight', highlightedNodeIndices.length);
-    // renderer.setNumElements(renderState, 'arrowhighlight', highlightedEdgeIndices.length * 3);
+    renderer.setNumElements(renderState, 'edgeselected', selectedEdgeIndices.length * 2 * numMidEdges);
+    renderer.setNumElements(renderState, 'pointselected', selectedNodeIndices.length);
+    renderer.setNumElements(renderState, 'arrowselected', selectedEdgeIndices.length * 3);
 
-    // // Copy in data
-    // _.each(highlightedEdgeIndices, function (val, idx) {
-    //     // The start at the first midedge corresponding to hovered edge
-    //     var edgeStartIdx = (val * 4 * numMidEdges);
-    //     var highlightStartIdx = (idx * 4 * numMidEdges);
-    //     for (var midEdgeIdx = 0; midEdgeIdx < numMidEdges; midEdgeIdx = midEdgeIdx + 1) {
-    //         var midEdgeStride = midEdgeIdx * 4;
-    //         buffers.highlightedEdges[highlightStartIdx + midEdgeStride] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride)];
-    //         buffers.highlightedEdges[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 1];
-    //         buffers.highlightedEdges[highlightStartIdx + midEdgeStride + 2] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 2];
-    //         buffers.highlightedEdges[highlightStartIdx + midEdgeStride + 3] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 3];
-    //     }
-    // });
+    // Copy in data
+    _.each(selectedEdgeIndices, function (val, idx) {
+        // The start at the first midedge corresponding to hovered edge
+        var edgeStartIdx = (val * 4 * numMidEdges);
+        var highlightStartIdx = (idx * 4 * numMidEdges);
+        for (var midEdgeIdx = 0; midEdgeIdx < numMidEdges; midEdgeIdx = midEdgeIdx + 1) {
+            var midEdgeStride = midEdgeIdx * 4;
+            buffers.selectedEdges[highlightStartIdx + midEdgeStride] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride)];
+            buffers.selectedEdges[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 1];
+            buffers.selectedEdges[highlightStartIdx + midEdgeStride + 2] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 2];
+            buffers.selectedEdges[highlightStartIdx + midEdgeStride + 3] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 3];
+        }
+    });
 
-    // _.each(highlightedNodeIndices, function (val, idx) {
-    //     buffers.highlightedNodePositions[idx*2] = hostNodePositions[val*2];
-    //     buffers.highlightedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
-    //     buffers.highlightedNodeSizes[idx] = hostNodeSizes[val];
-    //     buffers.highlightedNodeColors[idx] = hostNodeColors[val];
-    // });
+    _.each(selectedNodeIndices, function (val, idx) {
+        buffers.selectedNodePositions[idx*2] = hostNodePositions[val*2];
+        buffers.selectedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
+        buffers.selectedNodeSizes[idx] = hostNodeSizes[val];
+        buffers.selectedNodeColors[idx] = hostNodeColors[val];
+    });
 
-    // populateArrowBuffers(highlightedEdgeIndices, buffers.midSpringsPos, buffers.highlightedArrowStartPos,
-    //         buffers.highlightedArrowEndPos, buffers.highlightedArrowNormalDir, hostNodeSizes,
-    //         logicalEdges, buffers.highlightedArrowPointSizes, buffers.highlightedArrowPointColors,
-    //         buffers.edgeColors, numRenderedSplits);
+    populateArrowBuffers(selectedEdgeIndices, buffers.midSpringsPos, buffers.selectedArrowStartPos,
+            buffers.selectedArrowEndPos, buffers.selectedArrowNormalDir, hostNodeSizes,
+            logicalEdges, buffers.selectedArrowPointSizes, buffers.selectedArrowPointColors,
+            buffers.edgeColors, numRenderedSplits);
 
-    // renderer.loadBuffers(renderState, {
-    //     'highlightedEdgesPos': buffers.highlightedEdges,
-    //     'highlightedPointsPos': buffers.highlightedNodePositions,
-    //     'highlightedPointsSizes': buffers.highlightedNodeSizes,
-    //     'highlightedPointsColors': buffers.highlightedNodeColors,
-    //     'highlightedArrowStartPos': buffers.highlightedArrowStartPos,
-    //     'highlightedArrowEndPos': buffers.highlightedArrowEndPos,
-    //     'highlightedArrowNormalDir': buffers.highlightedArrowNormalDir,
-    //     'highlightedArrowPointColors': buffers.highlightedArrowPointColors,
-    //     'highlightedArrowPointSizes': buffers.highlightedArrowPointSizes
-    // });
+    renderer.loadBuffers(renderState, {
+        'selectedMidSpringsPos': buffers.selectedEdges,
+        'selectedCurPoints': buffers.selectedNodePositions,
+        'selectedPointSizes': buffers.selectedNodeSizes,
+        'selectedPointColors': buffers.selectedNodeColors,
+        'selectedArrowStartPos': buffers.selectedArrowStartPos,
+        'selectedArrowEndPos': buffers.selectedArrowEndPos,
+        'selectedArrowNormalDir': buffers.selectedArrowNormalDir,
+        'selectedArrowColors': buffers.selectedArrowPointColors,
+        'selectedArrowPointSizes': buffers.selectedArrowPointSizes
+    });
 
     //////////////////////////////////////////////////////////////////////////
     // Handle Rendering + Texture backdrop.
@@ -815,7 +815,9 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
                     //TODO move client-only into render.config dummys when more sane
                     ['highlightedEdges', 'highlightedNodePositions', 'highlightedNodeSizes', 'highlightedNodeColors',
                      'highlightedArrowStartPos', 'highlightedArrowEndPos', 'highlightedArrowNormalDir',
-                     'highlightedArrowPointColors', 'highlightedArrowPointSizes'])
+                     'highlightedArrowPointColors', 'highlightedArrowPointSizes', 'selectedEdges', 'selectedNodePositions', 'selectedNodeSizes', 'selectedNodeColors',
+                     'selectedArrowStartPos', 'selectedArrowEndPos', 'selectedArrowNormalDir',
+                     'selectedArrowPointColors', 'selectedArrowPointSizes'])
                 .map(function (v) { return [v, undefined]; })),
 
         hitmapUpdates: hitmapUpdates
