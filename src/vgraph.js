@@ -129,7 +129,7 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
     var edgeMap = {}
 
     var addNode = function (node) {
-        if (!(node in node2Idx)) {
+        if (!node2Idx.hasOwnProperty(node)) {
             idx2Node[nodeCount] = node;
             node2Idx[node] = nodeCount;
             nodeCount++;
