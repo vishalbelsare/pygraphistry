@@ -152,6 +152,35 @@ var VizSetModel = Backbone.Model.extend({
                 break;
         }
         return result;
+    },
+    sync: function (method, model, options) {
+        if (options === undefined) { options = {}; }
+        var success = options.success;
+        switch (method) {
+            case "read":
+                break;
+            case "delete":
+                if (model.id === undefined) {
+                    break;
+                }
+                this.panel.deleteSet(model.toJSON()).do(function (response) {
+                    if (typeof success === 'function') {
+                        success.call(options.context, model, response, options);
+                    }
+                }).subscribe(_.identity, util.makeErrorHandler('Deleting a Set'));
+                break;
+            case "update":
+                // TODO handle options.patch
+                this.panel.updateSet(model.toJSON()).do(function (response) {
+                    if (response.success === true && response.set !== undefined) {
+                        model.set(response.set);
+                    }
+                    if (typeof success === 'function') {
+                        success.call(model, response, options);
+                    }
+                }).subscribe(_.identity, util.makeErrorHandler('Updating a Set'));
+                break;
+        }
     }
 });
 
