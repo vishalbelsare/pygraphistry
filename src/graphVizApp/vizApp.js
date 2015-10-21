@@ -15,7 +15,7 @@ var labels          = require('./labels.js');
 var ui              = require('../ui.js');
 var poiLib          = require('../poi.js');
 var util            = require('./util.js');
-var selections      = require('./selections.js');
+var highlight       = require('./highlight.js');
 
 
 function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
@@ -118,9 +118,9 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
         util.makeErrorHandler('cameraChanges')
     );
 
-    selections.init(appState);
     labels.setupLabelsAndCursor(appState, urlParams, $simCont);
     canvas.setupRenderUpdates(appState.renderingScheduler, appState.cameraChanges, appState.settingsChanges);
+    highlight.setupHighlight(appState);
 
     var backgroundColorObservable = colorPicker.backgroundColorObservable(initialRenderState, urlParams);
     var foregroundColorObservable = colorPicker.foregroundColorObservable();

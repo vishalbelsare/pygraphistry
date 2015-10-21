@@ -28,7 +28,7 @@ function setupLabelsAndCursor(appState, urlParams, $eventTarget) {
 
     setupClickSelections(appState, $eventTarget);
     setupLabels(appState, urlParams, $eventTarget, latestHighlightedObject);
-    setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating, latestHighlightedObject, appState.activeSelection);
+    // setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating, latestHighlightedObject, appState.activeSelection);
 
     // TODO: Is this the actual behavior we want?
     deselectWhenSimulating(appState);
