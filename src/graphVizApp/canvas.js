@@ -529,6 +529,8 @@ function renderSlowEffects(renderingScheduler) {
         expanded = expandLogicalEdges(renderState, appSnapshot.buffers, numRenderedSplits, edgeHeight);
         midSpringsPos = expanded.midSpringsPos;
         appSnapshot.buffers.midSpringsPos = midSpringsPos;
+        appSnapshot.buffers.midSpringsStarts = expanded.midSpringsStarts;
+        appSnapshot.buffers.midSpringsEnds = expanded.midSpringsEnds;
 
         // Only setup midedge colors once, or when filtered.
         // Approximates filtering when number of logicalEdges changes.
@@ -720,6 +722,9 @@ function renderMouseoverEffects(renderingScheduler, task) {
     // data so we don't have to clear out later values. This way we won't have to constantly allocate
 
     buffers.selectedEdges = new Float32Array(selectedEdgeIndices.length * 4 * numMidEdges);
+    buffers.selectedEdgeStarts = new Float32Array(selectedEdgeIndices.length * 4 * numMidEdges);
+    buffers.selectedEdgeEnds = new Float32Array(selectedEdgeIndices.length * 4 * numMidEdges);
+    buffers.selectedEdgeColors = new Uint32Array(selectedEdgeIndices.length * 2 * numMidEdges);
     buffers.selectedNodePositions = new Float32Array(selectedNodeIndices.length * 2);
     buffers.selectedNodeSizes = new Uint8Array(selectedNodeIndices.length);
     buffers.selectedNodeColors = new Uint32Array(selectedNodeIndices.length);
@@ -738,12 +743,28 @@ function renderMouseoverEffects(renderingScheduler, task) {
         // The start at the first midedge corresponding to hovered edge
         var edgeStartIdx = (val * 4 * numMidEdges);
         var highlightStartIdx = (idx * 4 * numMidEdges);
+        var edgeColorStartIdx = (val * 2 * numMidEdges);
+        var highlightColorStartIdx = (idx * 2 * numMidEdges);
         for (var midEdgeIdx = 0; midEdgeIdx < numMidEdges; midEdgeIdx = midEdgeIdx + 1) {
             var midEdgeStride = midEdgeIdx * 4;
             buffers.selectedEdges[highlightStartIdx + midEdgeStride] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride)];
             buffers.selectedEdges[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 1];
             buffers.selectedEdges[highlightStartIdx + midEdgeStride + 2] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 2];
             buffers.selectedEdges[highlightStartIdx + midEdgeStride + 3] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 3];
+
+            buffers.selectedEdgeStarts[highlightStartIdx + midEdgeStride] = buffers.midSpringsStarts[edgeStartIdx + (midEdgeStride)];
+            buffers.selectedEdgeStarts[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsStarts[edgeStartIdx + (midEdgeStride) + 1];
+            buffers.selectedEdgeStarts[highlightStartIdx + midEdgeStride + 2] = buffers.midSpringsStarts[edgeStartIdx + (midEdgeStride) + 2];
+            buffers.selectedEdgeStarts[highlightStartIdx + midEdgeStride + 3] = buffers.midSpringsStarts[edgeStartIdx + (midEdgeStride) + 3];
+
+            buffers.selectedEdgeEnds[highlightStartIdx + midEdgeStride] = buffers.midSpringsEnds[edgeStartIdx + (midEdgeStride)];
+            buffers.selectedEdgeEnds[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsEnds[edgeStartIdx + (midEdgeStride) + 1];
+            buffers.selectedEdgeEnds[highlightStartIdx + midEdgeStride + 2] = buffers.midSpringsEnds[edgeStartIdx + (midEdgeStride) + 2];
+            buffers.selectedEdgeEnds[highlightStartIdx + midEdgeStride + 3] = buffers.midSpringsEnds[edgeStartIdx + (midEdgeStride) + 3];
+
+            var midEdgeColorStride = midEdgeIdx * 2;
+            buffers.selectedEdgeColors[highlightColorStartIdx + midEdgeColorStride] = buffers.midEdgesColors[edgeColorStartIdx + midEdgeColorStride];
+            buffers.selectedEdgeColors[highlightColorStartIdx + midEdgeColorStride + 1] = buffers.midEdgesColors[edgeColorStartIdx + midEdgeColorStride + 1];
         }
     });
 
@@ -761,6 +782,9 @@ function renderMouseoverEffects(renderingScheduler, task) {
 
     renderer.loadBuffers(renderState, {
         'selectedMidSpringsPos': buffers.selectedEdges,
+        'selectedMidEdgesColors': buffers.selectedEdgeColors,
+        'selectedMidSpringsStarts': buffers.selectedEdgeStarts,
+        'selectedMidSpringsEnds': buffers.selectedEdgeEnds,
         'selectedCurPoints': buffers.selectedNodePositions,
         'selectedPointSizes': buffers.selectedNodeSizes,
         'selectedPointColors': buffers.selectedNodeColors,
@@ -817,7 +841,7 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
                      'highlightedArrowStartPos', 'highlightedArrowEndPos', 'highlightedArrowNormalDir',
                      'highlightedArrowPointColors', 'highlightedArrowPointSizes', 'selectedEdges', 'selectedNodePositions', 'selectedNodeSizes', 'selectedNodeColors',
                      'selectedArrowStartPos', 'selectedArrowEndPos', 'selectedArrowNormalDir',
-                     'selectedArrowPointColors', 'selectedArrowPointSizes'])
+                     'selectedArrowPointColors', 'selectedArrowPointSizes', 'selectedEdgeColors', 'selectedEdgeEnds', 'selectedEdgeStarts'])
                 .map(function (v) { return [v, undefined]; })),
 
         hitmapUpdates: hitmapUpdates
