@@ -1201,8 +1201,8 @@ var sceneGis = {
     'camera': camera2D,
     'clientMidEdgeInterpolation': false,
     //'numRenderedSplits':7 ,
-    'render': ['pointpicking',  'pointsampling', 'uberdemoedges', 'edgepicking', 'arrowculled', 'arrowhighlight', 'arrowselected', 'pointselected',
-        'uberpointculled', 'edgehighlight', 'edgeselected', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'fullscreenDarkDummy', 'pointhighlight', 'dummyheights',
+    'render': ['pointpicking',  'pointsampling', 'uberdemoedges', 'edgepicking', 'arrowculled', 'arrowhighlight', 'arrowselected',
+        'uberpointculled', 'edgehighlight', 'edgeselected', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'fullscreenDarkDummy', 'pointhighlight', 'pointselected', 'dummyheights',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 }
@@ -1214,10 +1214,9 @@ var sceneArcs = {
     'clientMidEdgeInterpolation': true,
     'arcHeight': 0.2,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-    'edgeselected', 'pointselected', 'arrowselected',
     'midedgeculled', 'edgepicking', 'dummyheights',
-    'arrowculled', 'arrowhighlight', 'edgehighlight',
-    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'fullscreenDarkDummy', 'pointhighlight',
+    'arrowculled', 'arrowhighlight', 'edgehighlight', 'arrowselected', 'edgeselected',
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'fullscreenDarkDummy', 'pointhighlight', 'pointselected',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 };
@@ -1229,10 +1228,9 @@ var sceneTransparent = {
     'clientMidEdgeInterpolation': true,
     'arcHeight': 0.2,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-    'edgeselected', 'pointselected', 'arrowselected',
     'midedgeculled', 'edgepicking', 'dummyheights',
-    'arrowculled', 'arrowhighlight', 'edgehighlight',
-    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'fullscreenDarkDummy', 'pointhighlight',
+    'arrowculled', 'arrowhighlight', 'edgehighlight', 'arrowselected', 'edgeselected',
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'fullscreenDarkDummy', 'pointhighlight', 'pointselected',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 };
@@ -1244,9 +1242,8 @@ var sceneStraight = {
     'clientMidEdgeInterpolation': true,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
     'midedgeculled', 'edgepicking',
-    'edgeselected', 'pointselected', 'arrowselected',
-    'arrowculled', 'arrowhighlight', 'edgehighlight',
-    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'fullscreenDarkDummy', 'pointhighlight',
+    'arrowculled', 'arrowhighlight', 'edgehighlight', 'arrowselected', 'edgeselected',
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'fullscreenDarkDummy', 'pointhighlight', 'pointselected',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 }
