@@ -28,7 +28,7 @@ function setupLabelsAndCursor(appState, urlParams, $eventTarget) {
 
     setupClickSelections(appState, $eventTarget);
     setupLabels(appState, urlParams, $eventTarget, latestHighlightedObject);
-    setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating, latestHighlightedObject, appState.activeSelection);
+    setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating, latestHighlightedObject);
 
     // TODO: Is this the actual behavior we want?
     deselectWhenSimulating(appState);
@@ -334,7 +334,7 @@ function toWorldCoords(renderState, x, y) {
 }
 
 // RenderState * Observable * Observable
-function setupCursor(renderState, renderingScheduler, isAnimating, latestHighlightedObject, activeSelection) {
+function setupCursor(renderState, renderingScheduler, isAnimating, latestHighlightedObject) {
     var rxPoints = renderState.get('hostBuffers').curPoints;
     var rxSizes = renderState.get('hostBuffers').pointSizes;
 
@@ -352,19 +352,16 @@ function setupCursor(renderState, renderingScheduler, isAnimating, latestHighlig
         return rxPoints.combineLatest(
             rxSizes,
             latestHighlightedObject,
-            activeSelection,
-            function (p, s, i, sel) {
+            function (p, s, i) {
                 return {
                     points: new Float32Array(p.buffer),
                     sizes: new Uint8Array(s.buffer),
-                    indices: i,
-                    selection: sel
+                    indices: i
                 };
             }
         ).takeUntil(animating);
     }).do(function (data) {
-        var combinedIndices = data.indices.concat(data.selection);
-        renderCursor(renderState, renderingScheduler, $cont, $point, $center, data.points, data.sizes, combinedIndices);
+        renderCursor(renderState, renderingScheduler, $cont, $point, $center, data.points, data.sizes, data.indices);
     }).subscribe(_.identity, util.makeErrorHandler('setupCursor'));
 }
 
@@ -373,47 +370,13 @@ function setupCursor(renderState, renderingScheduler, isAnimating, latestHighlig
 // DOM element, not a fixed one that we embed in our graph.html
 function renderCursor(renderState, renderingScheduler, $cont, $point, $center, points, sizes, indices) {
 
-    var validIndices = _.filter(indices, function (val) {
-        return (val.idx !== undefined && val.idx >= 0);
-    });
-    var pointIndices = _.pluck(_.filter(validIndices, function (val) {
-        return (val.dim === 1);
-    }), 'idx');
-    var edgeIndices = _.pluck(_.filter(validIndices, function (val) {
-        return (val.dim === 2);
-    }), 'idx');
-
-
-    // Renderer Highlights
-    if (validIndices.length > 0) {
+    // Don't render cursor unless latest highlighted is a single node
+    if (indices.length !== 1 || indices[0].dim !== 1) {
         $cont.css({display: 'none'});
-        renderingScheduler.renderScene('mouseOver', {
-            trigger: 'mouseOverEdgeHighlight',
-            data: {
-                edgeIndices: edgeIndices,
-                nodeIndices: pointIndices
-            }
-        });
-        if (pointIndices.length === 0) {
-            return;
-        }
-    } else {
-    // if (idx === undefined || idx < 0) {
-        $cont.css({display: 'none'});
-        renderingScheduler.renderScene('mouseOver', {
-            trigger: 'mouseOverEdgeHighlight',
-            data: {
-                edgeIndices: [],
-                nodeIndices: []
-            }
-        });
         return;
     }
 
-    // Handle CSS element on points.
-    // Currently only shows for first. Will be fixed when the css cont is made generic.
-
-    var idx = pointIndices[0];
+    var idx = indices[0].idx;
 
     $cont.css({display: 'block'});
 

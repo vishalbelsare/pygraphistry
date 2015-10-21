@@ -862,7 +862,6 @@ function updateRenderTarget (state, renderTarget) {
     }
 }
 
-
 function copyCanvasToTexture(state, textureName) {
     var gl = state.get('gl');
     var textures = state.get('textures').toJS();
@@ -891,6 +890,7 @@ function setupFullscreenBuffer(state) {
     var numFullscreenElements = 6;
 
     setNumElements(state, 'fullscreen', numFullscreenElements);
+    setNumElements(state, 'fullscreenDark', numFullscreenElements);
     loadBuffers(state, {'fullscreenCoordinates': fullscreenBuffer});
 }
 
@@ -948,9 +948,9 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
 
     sortedItems.forEach(function(item) {
         var numElements = state.get('numElements')[item];
-        if(typeof numElements === 'undefined' || numElements < 0) {
-            // console.warn('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
-                // item);
+        if(typeof numElements === 'undefined') {
+            console.warn('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
+                item);
             return false;
         }
         var texture = renderItem(state, config, camera, gl, options, ext,
