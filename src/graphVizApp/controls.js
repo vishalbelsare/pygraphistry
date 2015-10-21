@@ -534,7 +534,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var marquee = setupMarquee(appState, turnOnMarquee);
     var brush = setupBrush(appState, turnOnBrush);
     var filtersPanel = new FiltersPanel(socket, urlParams);
-    setupPanelControl(popoutClicks, $('#filterButton'), filtersPanel.view.el, 'Turning on/off the filter panel');
+    filtersPanel.setupToggleControl(popoutClicks, $('#filterButton'));
     var filtersResponses = filtersPanel.control.filtersResponsesSubject;
     var histogramBrush = new HistogramBrush(socket, filtersPanel);
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
@@ -545,7 +545,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     persist.setupPersistWorkbookButton($('#persistWorkbookButton'), appState, socket, urlParams);
     goLiveButton(socket, urlParams);
     var setsPanel = new SetsPanel(socket, urlParams);
-    setupPanelControl(popoutClicks, $('#setsPanelButton'), setsPanel.view.el, 'Turning on/off the sets panel');
+    setsPanel.setupToggleControl(popoutClicks, $('#setsPanelButton'));
     setsPanel.setupSelectionInteraction(appState.activeSelection, appState.latestHighlightedObject);
 
     createControls(

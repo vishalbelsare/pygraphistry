@@ -368,6 +368,31 @@ function SetsPanel(socket/*, urlParams*/) {
             util.makeErrorHandler(this.commands.getAll.description));
 }
 
+SetsPanel.prototype.isVisible = function() { return this.view.$el.is(':visible'); };
+
+SetsPanel.prototype.toggleVisibility = function (newVisibility) {
+    var $panel = this.view.el;
+    $panel.toggle(newVisibility);
+    $panel.css('visibility', newVisibility ? 'visible': 'hidden');
+};
+
+SetsPanel.prototype.setupToggleControl = function (toolbarClicks, $panelButton) {
+    var panelToggles = toolbarClicks.filter(function (elt) {
+        return elt === $panelButton[0];
+    }).map(function () {
+        // return the target state (boolean negate)
+        return !this.isVisible();
+    }.bind(this));
+    this.togglesSubscription = panelToggles.do(function (newVisibility) {
+        $panelButton.children('i').toggleClass('toggle-on', newVisibility);
+        this.toggleVisibility(newVisibility);
+    }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Turning on/off the sets panel'));
+};
+
+SetsPanel.prototype.dispose = function () {
+    this.togglesSubscription.dispose();
+};
+
 SetsPanel.prototype.deleteSet = function (vizSetModel) {
     return this.commands.update.sendWithObservableResult(vizSetModel.id, undefined);
 };

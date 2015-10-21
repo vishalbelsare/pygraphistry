@@ -433,8 +433,30 @@ function FiltersPanel(socket/*, urlParams*/) {
     });
 }
 
+FiltersPanel.prototype.isVisible = function () { return this.view.$el.is(':visible'); };
+
+FiltersPanel.prototype.toggleVisibility = function (newVisibility) {
+    var $panel = this.view.el;
+    $panel.toggle(newVisibility);
+    $panel.css('visibility', newVisibility ? 'visible': 'hidden');
+};
+
+FiltersPanel.prototype.setupToggleControl = function (toolbarClicks, $panelButton) {
+    var panelToggles = toolbarClicks.filter(function (elt) {
+        return elt === $panelButton[0];
+    }).map(function () {
+        // return the target state (boolean negate)
+        return !this.isVisible();
+    }.bind(this));
+    this.togglesSubscription = panelToggles.do(function (newVisibility) {
+        $panelButton.children('i').toggleClass('toggle-on', newVisibility);
+        this.toggleVisibility(newVisibility);
+    }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Turning on/off the filter panel'));
+};
+
 FiltersPanel.prototype.dispose = function () {
     this.filtersSubject.dispose();
+    this.togglesSubscription.dispose();
 };
 
 
