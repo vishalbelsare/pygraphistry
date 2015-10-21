@@ -123,6 +123,16 @@ var programs = {
         'camera': 'mvp',
         'uniforms': ['flipTexture'],
         'textures': ['uSampler']
+    },
+    'fullscreenDark': {
+        'sources': {
+            'vertex': fs.readFileSync(__dirname + '/../shaders/fullscreendark.vertex.glsl', 'utf8').toString('ascii'),
+            'fragment': fs.readFileSync(__dirname + '/../shaders/fullscreendark.fragment.glsl', 'utf8').toString('ascii')
+        },
+        'attributes': ['vertexPosition'],
+        'camera': 'mvp',
+        'uniforms': ['flipTexture'],
+        'textures': ['uSampler']
     }
 
 }
@@ -154,6 +164,10 @@ var textures = {
         'retina': true
     },
     'steadyStateTexture': {
+        'datasource': VBODataSources.CLIENT,
+        'retina': true
+    },
+    'steadyStateTextureDark': {
         'datasource': VBODataSources.CLIENT,
         'retina': true
     },
@@ -695,7 +709,7 @@ var items = {
     },
     'edgehighlight': {
         'program': 'edgehighlight',
-        'triggers': ['highlight'],
+        'triggers': ['highlight', 'highlightDark'],
         'bindings': {
             'curPos': ['highlightedEdgesPos', 'curPos']
         },
@@ -728,7 +742,7 @@ var items = {
     },
     'arrowhighlight' : {
         'program': 'arrowhighlight',
-        'triggers': ['highlight'],
+        'triggers': ['highlight', 'highlightDark'],
         'bindings': {
             'startPos': ['highlightedArrowStartPos', 'curPos'],
             'endPos': ['highlightedArrowEndPos', 'curPos'],
@@ -779,7 +793,7 @@ var items = {
     },
     'pointhighlight': {
         'program': 'pointhighlight',
-        'triggers': ['highlight'],
+        'triggers': ['highlight', 'highlightDark'],
         'bindings': {
             'curPos':       ['highlightedPointsPos', 'curPos'],
             'pointSize':    ['highlightedPointsSizes', 'pointSize'],
@@ -912,6 +926,21 @@ var items = {
         'drawType': 'TRIANGLES',
         'glOptions': {}
     },
+    'fullscreenDark': {
+        'program': 'fullscreenDark',
+        'triggers': ['highlightDark'],
+        'bindings': {
+            'vertexPosition': ['fullscreenCoordinates', 'vertexPosition']
+        },
+        'textureBindings': {
+            'uSampler': 'steadyStateTextureDark'
+        },
+        'uniforms': {
+            'flipTexture': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'drawType': 'TRIANGLES',
+        'glOptions': {}
+    },
     // Because we can't tell renderer to make a texture unless we write to it in an item
     // TODO: Add this functionality and kill fullscreenDummy
     'fullscreenDummy': {
@@ -929,6 +958,23 @@ var items = {
         'drawType': 'TRIANGLES',
         'glOptions': {},
         'renderTarget': 'steadyStateTexture',
+        'readTarget': true
+    },
+    'fullscreenDarkDummy': {
+        'program': 'fullscreenDark',
+        'triggers': [],
+        'bindings': {
+            'vertexPosition': ['fullscreenCoordinates', 'vertexPosition']
+        },
+        'textureBindings': {
+            'uSampler': 'steadyStateTextureDark'
+        },
+        'uniforms': {
+            'flipTexture': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'drawType': 'TRIANGLES',
+        'glOptions': {},
+        'renderTarget': 'steadyStateTextureDark',
         'readTarget': true
     }
 }
@@ -963,7 +1009,7 @@ var sceneGis = {
     'clientMidEdgeInterpolation': false,
     //'numRenderedSplits':7 ,
     'render': ['pointpicking',  'pointsampling', 'uberdemoedges', 'edgepicking', 'arrowculled', 'arrowhighlight',
-        'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight', 'dummyheights',
+        'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'fullscreenDarkDummy', 'pointhighlight', 'dummyheights',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 }
@@ -977,7 +1023,7 @@ var sceneArcs = {
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
     'midedgeculled', 'edgepicking', 'dummyheights',
     'arrowculled', 'arrowhighlight', 'edgehighlight',
-    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'fullscreenDarkDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 };
@@ -991,7 +1037,7 @@ var sceneTransparent = {
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
     'midedgeculled', 'edgepicking', 'dummyheights',
     'arrowculled', 'arrowhighlight', 'edgehighlight',
-    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'fullscreenDarkDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 };
@@ -1004,7 +1050,7 @@ var sceneStraight = {
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
     'midedgeculled', 'edgepicking',
     'arrowculled', 'arrowhighlight', 'edgehighlight',
-    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'fullscreenDarkDummy', 'pointhighlight',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 }
