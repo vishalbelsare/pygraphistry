@@ -163,6 +163,8 @@ var VizSetView = Backbone.View.extend({
     tagName: 'div',
     className: 'setEntry',
     events: {
+        'mouseover': 'highlight',
+        'mouseout': 'unhighlight',
         'click': 'toggleSelected',
         'click .deleteButton': 'delete',
         'click .tagButton': 'rename'
@@ -216,6 +218,12 @@ var VizSetView = Backbone.View.extend({
     },
     toggleSelected: function () {
         this.model.isSelected(!this.model.isSelected());
+    },
+    highlight: function (/*event*/) {
+        this.panel.updateVizSelectionFrom([this.model], 'highlight');
+    },
+    unhighlight: function (/*event*/) {
+        this.panel.updateVizSelectionFrom([], 'highlight');
     }
 });
 
@@ -344,14 +352,20 @@ SetsPanel.prototype.updateSet = function (vizSetModel) {
 /**
  * @param {Rx.ReplaySubject} activeSelection
  */
-SetsPanel.prototype.setupSelectionInteraction = function (activeSelection) {
+SetsPanel.prototype.setupSelectionInteraction = function (activeSelection, latestHighlightedObject) {
     this.activeSelection = activeSelection;
+    this.latestHighlightedObject = latestHighlightedObject;
+    this.activeSelection.do(function (activeSelection) {
+        if (activeSelection.length === 0) {
+            this.collection.each(function (vizSet) { vizSet.isSelected(false); });
+        }
+    }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Clearing selection from canvas'));
 };
 
 /**
  * @param {VizSetModel[]} setModels
  */
-SetsPanel.prototype.updateVizSelectionFrom = function (setModels) {
+SetsPanel.prototype.updateVizSelectionFrom = function (setModels, action) {
     var resultSetModel;
     if (setModels.length > 1) {
         resultSetModel = _.reduce(setModels, function (firstSet, secondSet) {
@@ -361,7 +375,15 @@ SetsPanel.prototype.updateVizSelectionFrom = function (setModels) {
         resultSetModel = setModels[0];
     }
     var newSelection = resultSetModel === undefined ? [] : resultSetModel.asVizSelection();
-    this.activeSelection.onNext(newSelection);
+    switch (action) {
+        case 'highlight':
+            this.latestHighlightedObject.onNext(newSelection);
+            break;
+        case 'select':
+        default:
+            this.activeSelection.onNext(newSelection);
+            break;
+    }
 };
 
 module.exports = SetsPanel;

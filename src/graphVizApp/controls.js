@@ -546,7 +546,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     goLiveButton(socket, urlParams);
     var setsPanel = new SetsPanel(socket, urlParams);
     setupPanelControl(popoutClicks, $('#setsPanelButton'), setsPanel.view.el, 'Turning on/off the sets panel');
-    setsPanel.setupSelectionInteraction(appState.activeSelection);
+    setsPanel.setupSelectionInteraction(appState.activeSelection, appState.latestHighlightedObject);
 
     createControls(
         socket,
