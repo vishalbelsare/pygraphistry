@@ -123,6 +123,16 @@ var programs = {
         'camera': 'mvp',
         'uniforms': ['flipTexture'],
         'textures': ['uSampler']
+    },
+    'fullscreenDark': {
+        'sources': {
+            'vertex': fs.readFileSync(__dirname + '/../shaders/fullscreendark.vertex.glsl', 'utf8').toString('ascii'),
+            'fragment': fs.readFileSync(__dirname + '/../shaders/fullscreendark.fragment.glsl', 'utf8').toString('ascii')
+        },
+        'attributes': ['vertexPosition'],
+        'camera': 'mvp',
+        'uniforms': ['flipTexture'],
+        'textures': ['uSampler']
     }
 
 }
@@ -154,6 +164,10 @@ var textures = {
         'retina': true
     },
     'steadyStateTexture': {
+        'datasource': VBODataSources.CLIENT,
+        'retina': true
+    },
+    'steadyStateTextureDark': {
         'datasource': VBODataSources.CLIENT,
         'retina': true
     },
@@ -249,7 +263,51 @@ var models = {
             'normalize': false
         }
     },
+    'selectedMidSpringsPos': {
+        'curPos': {
+            'datasource': VBODataSources.CLIENT,
+            'type': 'FLOAT',
+            'hint': DrawOptions.DYNAMIC_DRAW,
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
+    'selectedMidSpringsStarts': {
+        'startPos': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
+    'selectedMidSpringsEnds': {
+        'endPos': {
+            'datasource': 'CLIENT',
+            'type': 'FLOAT',
+            'hint': 'DYNAMIC_DRAW',
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
     'highlightedEdgesPos': {
+        'curPos': {
+            'datasource': VBODataSources.CLIENT,
+            'type': 'FLOAT',
+            'hint': DrawOptions.DYNAMIC_DRAW,
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
+    'selectedEdgesPos': {
         'curPos': {
             'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
@@ -326,6 +384,39 @@ var models = {
             'normalize': false
         }
     },
+    'selectedArrowStartPos': {
+        'curPos': {
+            'datasource': VBODataSources.CLIENT,
+            'type': 'FLOAT',
+            'hint': DrawOptions.DYNAMIC_DRAW,
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
+    'selectedArrowEndPos': {
+        'curPos': {
+            'datasource': VBODataSources.CLIENT,
+            'type': 'FLOAT',
+            'hint': DrawOptions.DYNAMIC_DRAW,
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
+    'selectedArrowNormalDir': {
+        'normalDir': {
+            'datasource': VBODataSources.CLIENT,
+            'type': 'FLOAT',
+            'hint': DrawOptions.DYNAMIC_DRAW,
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': false
+        }
+    },
     'curPoints': {
         'curPos': {
             'datasource': VBODataSources.DEVICE,
@@ -370,6 +461,39 @@ var models = {
             'normalize': true
         }
     },
+    'selectedCurPoints': {
+        'curPos': {
+            'datasource': VBODataSources.CLIENT,
+            'type': 'FLOAT',
+            'hint': DrawOptions.DYNAMIC_DRAW,
+            'count': 2,
+            'offset': 0,
+            'stride': 8,
+            'normalize': false
+        }
+    },
+    'selectedPointSizes': {
+        'pointSize': {
+            'datasource': VBODataSources.CLIENT,
+            'type': 'UNSIGNED_BYTE',
+            'hint': DrawOptions.DYNAMIC_DRAW,
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': false
+        }
+    },
+    'selectedPointColors': {
+        'pointColor': {
+            'datasource': VBODataSources.CLIENT,
+            'type': 'UNSIGNED_BYTE',
+            'hint': DrawOptions.DYNAMIC_DRAW,
+            'count': 4,
+            'offset': 0,
+            'stride': 0,
+            'normalize': true
+        }
+    },
     'pointSizes': {
         'pointSize':  {
             'datasource': VBODataSources.HOST,
@@ -401,6 +525,28 @@ var models = {
             'offset': 0,
             'stride': 0,
             'normalize': false
+        }
+    },
+    'selectedArrowPointSizes': {
+        'pointSize':  {
+            'datasource': VBODataSources.CLIENT,
+            'type': 'UNSIGNED_BYTE',
+            'hint': DrawOptions.DYNAMIC_DRAW,
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': false
+        }
+    },
+    'selectedArrowColors': {
+        'arrowColor':  {
+            'datasource': VBODataSources.CLIENT,
+            'type': 'UNSIGNED_BYTE',
+            'hint': DrawOptions.DYNAMIC_DRAW,
+            'count': 4,
+            'offset': 0,
+            'stride': 0,
+            'normalize': true
         }
     },
     'highlightedArrowPointSizes': {
@@ -440,6 +586,17 @@ var models = {
     'midEdgeColors': {
         'midEdgeColor':  {
             'datasource': VBODataSources.HOST,
+            'type': 'UNSIGNED_BYTE',
+            'hint': DrawOptions.STATIC_DRAW,
+            'count': 4,
+            'offset': 0,
+            'stride': 0,
+            'normalize': true
+        }
+    },
+    'selectedMidEdgesColors': {
+        'midEdgeColor':  {
+            'datasource': VBODataSources.CLIENT,
             'type': 'UNSIGNED_BYTE',
             'hint': DrawOptions.STATIC_DRAW,
             'count': 4,
@@ -693,9 +850,25 @@ var items = {
         'drawType': 'LINES',
         'glOptions': {}
     },
+    'edgeselected' : {
+        'program': 'midedgeculled',
+        'triggers': ['highlightDark'],
+        'bindings': {
+            'curPos': ['selectedMidSpringsPos', 'curPos'],
+            'edgeColor': ['selectedMidEdgesColors', 'midEdgeColor'],
+            'startPos': ['selectedMidSpringsStarts', 'startPos'],
+            'endPos': ['selectedMidSpringsEnds', 'endPos']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
+        },
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
     'edgehighlight': {
         'program': 'edgehighlight',
-        'triggers': ['highlight'],
+        'triggers': ['highlight', 'highlightDark'],
         'bindings': {
             'curPos': ['highlightedEdgesPos', 'curPos']
         },
@@ -726,9 +899,31 @@ var items = {
             //'depthFunc': [['LESS']]
         }
     },
+    'arrowselected' : {
+        'program': 'arrow',
+        'triggers': ['highlightDark'],
+        'bindings': {
+            'startPos': ['selectedArrowStartPos', 'curPos'],
+            'endPos': ['selectedArrowEndPos', 'curPos'],
+            'normalDir': ['selectedArrowNormalDir', 'normalDir'],
+            'arrowColor': ['selectedArrowColors', 'arrowColor'],
+            'pointSize': ['selectedArrowPointSizes', 'pointSize'],
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] },
+            'maxScreenSize': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxCanvasSize': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'drawType': 'TRIANGLES',
+        'glOptions': {
+            //'depthFunc': [['LESS']]
+        }
+    },
     'arrowhighlight' : {
         'program': 'arrowhighlight',
-        'triggers': ['highlight'],
+        'triggers': ['highlight', 'highlightDark'],
         'bindings': {
             'startPos': ['highlightedArrowStartPos', 'curPos'],
             'endPos': ['highlightedArrowEndPos', 'curPos'],
@@ -777,9 +972,21 @@ var items = {
         'drawType': 'POINTS',
         'glOptions': {},
     },
+    'pointselected': {
+        'program': 'pointculled',
+        'triggers': ['highlightDark'],
+        'bindings': {
+            'curPos':       ['selectedCurPoints', 'curPos'],
+            'pointSize':    ['selectedPointSizes', 'pointSize'],
+            'pointColor':   ['selectedPointColors', 'pointColor'],
+        },
+        'uniforms': pointCulledUniforms,
+        'drawType': 'POINTS',
+        'glOptions': {},
+    },
     'pointhighlight': {
         'program': 'pointhighlight',
-        'triggers': ['highlight'],
+        'triggers': ['highlight', 'highlightDark'],
         'bindings': {
             'curPos':       ['highlightedPointsPos', 'curPos'],
             'pointSize':    ['highlightedPointsSizes', 'pointSize'],
@@ -912,6 +1119,21 @@ var items = {
         'drawType': 'TRIANGLES',
         'glOptions': {}
     },
+    'fullscreenDark': {
+        'program': 'fullscreenDark',
+        'triggers': ['highlightDark'],
+        'bindings': {
+            'vertexPosition': ['fullscreenCoordinates', 'vertexPosition']
+        },
+        'textureBindings': {
+            'uSampler': 'steadyStateTextureDark'
+        },
+        'uniforms': {
+            'flipTexture': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'drawType': 'TRIANGLES',
+        'glOptions': {}
+    },
     // Because we can't tell renderer to make a texture unless we write to it in an item
     // TODO: Add this functionality and kill fullscreenDummy
     'fullscreenDummy': {
@@ -929,6 +1151,23 @@ var items = {
         'drawType': 'TRIANGLES',
         'glOptions': {},
         'renderTarget': 'steadyStateTexture',
+        'readTarget': true
+    },
+    'fullscreenDarkDummy': {
+        'program': 'fullscreenDark',
+        'triggers': [],
+        'bindings': {
+            'vertexPosition': ['fullscreenCoordinates', 'vertexPosition']
+        },
+        'textureBindings': {
+            'uSampler': 'steadyStateTextureDark'
+        },
+        'uniforms': {
+            'flipTexture': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'drawType': 'TRIANGLES',
+        'glOptions': {},
+        'renderTarget': 'steadyStateTextureDark',
         'readTarget': true
     }
 }
@@ -962,8 +1201,8 @@ var sceneGis = {
     'camera': camera2D,
     'clientMidEdgeInterpolation': false,
     //'numRenderedSplits':7 ,
-    'render': ['pointpicking',  'pointsampling', 'uberdemoedges', 'edgepicking', 'arrowculled', 'arrowhighlight',
-        'uberpointculled', 'edgehighlight', 'fullscreen', 'fullscreenDummy', 'pointhighlight', 'dummyheights',
+    'render': ['pointpicking',  'pointsampling', 'uberdemoedges', 'edgepicking', 'arrowculled', 'arrowhighlight', 'arrowselected',
+        'uberpointculled', 'edgehighlight', 'edgeselected', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'fullscreenDarkDummy', 'pointhighlight', 'pointselected', 'dummyheights',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 }
@@ -976,8 +1215,8 @@ var sceneArcs = {
     'arcHeight': 0.2,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
     'midedgeculled', 'edgepicking', 'dummyheights',
-    'arrowculled', 'arrowhighlight', 'edgehighlight',
-    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    'arrowculled', 'arrowhighlight', 'edgehighlight', 'arrowselected', 'edgeselected',
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'fullscreenDarkDummy', 'pointhighlight', 'pointselected',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 };
@@ -990,8 +1229,8 @@ var sceneTransparent = {
     'arcHeight': 0.2,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
     'midedgeculled', 'edgepicking', 'dummyheights',
-    'arrowculled', 'arrowhighlight', 'edgehighlight',
-    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    'arrowculled', 'arrowhighlight', 'edgehighlight', 'arrowselected', 'edgeselected',
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'fullscreenDarkDummy', 'pointhighlight', 'pointselected',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 };
@@ -1003,8 +1242,8 @@ var sceneStraight = {
     'clientMidEdgeInterpolation': true,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
     'midedgeculled', 'edgepicking',
-    'arrowculled', 'arrowhighlight', 'edgehighlight',
-    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'pointhighlight',
+    'arrowculled', 'arrowhighlight', 'edgehighlight', 'arrowselected', 'edgeselected',
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'fullscreenDarkDummy', 'pointhighlight', 'pointselected',
     'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 }
