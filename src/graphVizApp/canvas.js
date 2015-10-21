@@ -590,6 +590,7 @@ function renderSlowEffects(renderingScheduler) {
         renderingScheduler.appSnapshot.hitmapUpdates.onNext();
     });
     renderer.copyCanvasToTexture(renderState, 'steadyStateTexture');
+    // TODO: Make steadyStateTextureDark instead of just doing it in the shader.
     renderer.copyCanvasToTexture(renderState, 'steadyStateTextureDark');
     renderMouseoverEffects(renderingScheduler);
 }
