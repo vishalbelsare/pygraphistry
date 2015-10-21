@@ -341,7 +341,6 @@ var AllVizSetsView = Backbone.View.extend({
 });
 
 function SetsPanel(socket/*, urlParams*/) {
-    this.collection = new VizSetCollection([]);
 
     this.commands = {
         getAll: new Command('getting sets', 'get_sets', socket),
@@ -351,26 +350,33 @@ function SetsPanel(socket/*, urlParams*/) {
 
     this.model = VizSetModel;
 
+    this.collection = new VizSetCollection([]);
+
     this.view = new AllVizSetsView({
         collection: this.collection,
         el: $('#setsPanel'),
         panel: this
     });
+}
 
+SetsPanel.prototype.refreshCollection = function () {
     this.commands.getAll.sendWithObservableResult().do(
         function (response) {
             var sets = response.sets;
-            _.each(sets, function (vizSet) {
-                this.collection.add(new VizSetModel(vizSet));
-            }.bind(this));
+            this.collection.reset(_.map(sets, function (vizSet) {
+                return new VizSetModel(vizSet);
+            }));
         }.bind(this)).subscribe(
-            _.identity,
-            util.makeErrorHandler(this.commands.getAll.description));
-}
+        _.identity,
+        util.makeErrorHandler(this.commands.getAll.description));
+};
 
 SetsPanel.prototype.isVisible = function() { return this.view.$el.is(':visible'); };
 
 SetsPanel.prototype.toggleVisibility = function (newVisibility) {
+    if (newVisibility) {
+        this.refreshCollection();
+    }
     var $panel = this.view.el;
     $panel.toggle(newVisibility);
     $panel.css('visibility', newVisibility ? 'visible': 'hidden');
