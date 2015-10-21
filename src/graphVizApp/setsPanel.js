@@ -189,7 +189,12 @@ var VizSetView = Backbone.View.extend({
         return this;
     },
     save: function () {
-
+        this.panel.updateSet(this.model.toJSON()).subscribe(function (response) {
+            if (response.success === true && response.set !== undefined) {
+                this.model.set(response.set);
+            }
+        }.bind(this),
+        util.makeErrorHandler('Updating a Set'));
     },
     delete: function (/*event*/) {
         this.$el.remove();
@@ -333,7 +338,7 @@ function SetsPanel(socket/*, urlParams*/) {
 }
 
 SetsPanel.prototype.updateSet = function (vizSetModel) {
-    this.commands.update.sendWithObservableResult(vizSetModel.id, vizSetModel);
+    return this.commands.update.sendWithObservableResult(vizSetModel.id, vizSetModel);
 };
 
 /**
