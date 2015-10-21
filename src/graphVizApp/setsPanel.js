@@ -200,7 +200,7 @@ var VizSetView = Backbone.View.extend({
     },
     initialize: function (options) {
         this.listenTo(this.model, 'destroy', this.remove);
-        this.listenTo(this.model, 'change', this.save);
+        this.listenTo(this.model, 'change', this.render);
         this.template = Handlebars.compile($('#setTemplate').html());
         this.panel = options.panel;
         this.renameTemplate = Handlebars.compile($('#setTagTemplate').html());
@@ -219,14 +219,6 @@ var VizSetView = Backbone.View.extend({
         var html = this.template(bindings);
         this.$el.html(html);
         return this;
-    },
-    save: function () {
-        this.panel.updateSet(this.model.toJSON()).subscribe(function (response) {
-            if (response.success === true && response.set !== undefined) {
-                this.model.set(response.set);
-            }
-        }.bind(this),
-        util.makeErrorHandler('Updating a Set'));
     },
     delete: function (/*event*/) {
         this.$el.remove();
@@ -375,6 +367,10 @@ function SetsPanel(socket/*, urlParams*/) {
             _.identity,
             util.makeErrorHandler(this.commands.getAll.description));
 }
+
+SetsPanel.prototype.deleteSet = function (vizSetModel) {
+    return this.commands.update.sendWithObservableResult(vizSetModel.id, undefined);
+};
 
 SetsPanel.prototype.updateSet = function (vizSetModel) {
     return this.commands.update.sendWithObservableResult(vizSetModel.id, vizSetModel);
