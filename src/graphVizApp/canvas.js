@@ -812,12 +812,10 @@ function renderMouseoverEffects(renderingScheduler, task) {
 
     var shouldDarken = selectedEdgeIndices.length > 0 || selectedNodeIndices.length > 0;
     var renderTrigger = shouldDarken ? 'highlightDark' : 'highlight';
-    console.log('RENDER TRIGGER: ', renderTrigger);
 
     renderer.setupFullscreenBuffer(renderState);
     renderer.setCamera(renderState);
     renderer.render(renderState, renderTrigger, renderTrigger);
-    // renderer.render(renderState, 'highlight', 'highlight');
 }
 
 
