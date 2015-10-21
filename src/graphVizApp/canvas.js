@@ -591,6 +591,7 @@ function renderSlowEffects(renderingScheduler) {
     });
     renderer.copyCanvasToTexture(renderState, 'steadyStateTexture');
     renderer.copyCanvasToTexture(renderState, 'steadyStateTextureDark');
+    renderMouseoverEffects(renderingScheduler);
 }
 
 /*
@@ -598,7 +599,10 @@ function renderSlowEffects(renderingScheduler) {
  *
  */
 
-// TODO: Make this work on safari.
+// Remember last task in case you need to rerender mouseovers without an update.
+// TODO: Structure this so there's no global
+var lastTask;
+
 function renderMouseoverEffects(renderingScheduler, task) {
     var appSnapshot = renderingScheduler.appSnapshot;
     var renderState = renderingScheduler.renderState;
@@ -616,6 +620,12 @@ function renderMouseoverEffects(renderingScheduler, task) {
     if (!buffers.logicalEdges) {
         return;
     }
+
+    task = task || lastTask;
+    if (!task) {
+        return;
+    }
+    lastTask = task;
 
     var logicalEdges = new Uint32Array(buffers.logicalEdges.buffer);
     var hostBuffers = renderState.get('hostBuffersCache');
