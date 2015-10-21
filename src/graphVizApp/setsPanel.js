@@ -203,6 +203,7 @@ var VizSetView = Backbone.View.extend({
         this.listenTo(this.model, 'change', this.save);
         this.template = Handlebars.compile($('#setTemplate').html());
         this.panel = options.panel;
+        this.renameTemplate = Handlebars.compile($('#setTagTemplate').html());
     },
     bindingsFor: function (vizSet) {
         var bindings = vizSet.toJSON();
@@ -232,7 +233,8 @@ var VizSetView = Backbone.View.extend({
         this.collection.remove(this.model);
     },
     rename: function (/*event*/) {
-        var $modal = $(Handlebars.compile($('#setTagTemplate').html()));
+        var bindings = this.model.toJSON();
+        var $modal = $(this.renameTemplate(bindings));
         $('body').append($modal);
         $('.status', $modal).css('display', 'none');
         $modal.modal('show');
@@ -240,7 +242,7 @@ var VizSetView = Backbone.View.extend({
             .map(_.constant($modal)).do(function ($modal) {
                 var setTag = $('.modal-body input', $modal).val();
                 this.model.set('title', setTag);
-            }).subscribe(
+            }.bind(this)).subscribe(
             function () {
                 $modal.remove();
             }, util.makeErrorHandler('Exception while setting set tag'));
