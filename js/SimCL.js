@@ -208,6 +208,7 @@ function setColor (renderer, simulator, colorObj) {
         // simulator.buffersLocal.edgeColors[2*e+1] = rgb;
     }
     simulator.tickBuffers(['pointColors', 'edgeColors']);
+    return Q();
 }
 
 
@@ -557,11 +558,13 @@ function createSetters (simulator) {
 //Simulator * ?[HtmlString] -> ()
 function setPointLabels(simulator, labels) {
     simulator.dataframe.loadLabels('point', (labels || []));
+    return Q();
 }
 
 //Simulator * ?[HtmlString] -> ()
 function setEdgeLabels(simulator, labels) {
     simulator.dataframe.loadLabels('edge', (labels || []));
+    return Q();
 }
 
 function setMidEdges( simulator ) {
@@ -907,7 +910,7 @@ function setEdgeColors(simulator, edgeColors) {
     simulator.dataframe.loadLocalBuffer('edgeColors', edgeColors);
     simulator.tickBuffers(['edgeColors']);
 
-    return simulator;
+    return Q(simulator);
 }
 
 // TODO Write kernel for this.
@@ -1011,7 +1014,7 @@ function setMidEdgeColors(simulator, midEdgeColors) {
     // simulator.buffersLocal.midEdgeColors = midEdgeColors;
     simulator.dataframe.loadLocalBuffer('midEdgeColors', midEdgeColors);
     simulator.tickBuffers(['midEdgeColors']);
-    return simulator;
+    return Q(simulator);
 }
 
 function setEdgeWeight(simulator, edgeWeights) {
@@ -1055,6 +1058,7 @@ function setEdgeWeight(simulator, edgeWeights) {
 
 function setLocks(simulator, cfg) {
     _.extend(simulator.controls.locks, cfg || {});
+    return Q();
 }
 
 
@@ -1066,6 +1070,7 @@ function setPhysics(simulator, cfg) {
             algo.setPhysics(cfg[algo.name]);
         }
     });
+    return Q();
 }
 
 //renderer * simulator * {min: 0--100, max: 0--100}
@@ -1140,6 +1145,8 @@ function setTimeSubset(renderer, simulator, range) {
         'curMidPoints', 'nextMidPoints', 'curMidPoints', 'midSpringsPos', 'midSpringsColorCoord'
 
         ].concat(_.keys(NAMED_CLGL_BUFFERS)));
+
+    return Q();
 
 }
 
