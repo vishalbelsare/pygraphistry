@@ -284,7 +284,8 @@ function decode0(graph, vg, metadata)  {
     .then(function () {
         return graph.setEdges(edges);
     }).then(function () {
-        runLoaders(loaders);
+        return runLoaders(loaders);
+    }).then(function () {
         return graph;
     }).fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
 }
@@ -310,14 +311,19 @@ function createAttributeTypeMap (pairs) {
 
 
 function runLoaders(loaders) {
-    _.each(loaders, function (loaderArray, aname) {
-        _.each(loaderArray, function (loader) {
-            if (loader.values)
-                loader.load(loader.values);
-            else if (loader.default)
-                loader.default();
+    var promises = _.map(loaders, function (loaderArray, aname) {
+        return _.map(loaderArray, function (loader) {
+            if (loader.values) {
+                return loader.load(loader.values);
+            } else if (loader.default) {
+                return loader.default();
+            } else {
+                return Q();
+            }
         });
     });
+    var flatPromises = _.flatten(promises, true);
+    return Q.all(flatPromises);
 }
 
 var testMapper = {
