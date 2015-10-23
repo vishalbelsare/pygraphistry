@@ -40,17 +40,17 @@ var blankViewTemplate = {
         {
             id: 'dataframe',
             level: 'system',
-            title: 'Loaded Data'
+            title: 'Loaded'
         },
         {
             id: 'filtered',
             level: 'system',
-            title: 'Visible Data'
+            title: 'Filtered'
         },
         {
             id: 'selection',
             level: 'system',
-            title: 'Selected Data'
+            title: 'Selected'
         }
     ],
     legend: blankLegendTemplate
