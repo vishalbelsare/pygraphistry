@@ -507,9 +507,14 @@
 
 <script type="text/x-handlebars-template" id="setCreateTemplate">
     <div class="btn-group btn-group-xs createSetDropdown">
-        <button type="button" class="btn btn-default btn-xs addSetButton" title="New Set">
+        <button type="button" class="btn btn-primary btn-xs addSetButton" title="New Set" {{disabled}}>
             <span title="New Set" class="fa fa-plus"></span>
         </button>
+        {{#with selectedOption}}
+            {{#if isEmpty}}
+                <small><em>Make a selection to create a Set</em></small>
+            {{/if}}
+        {{/with}}
         <button type="button" class="btn btn-default btn-xs dropdown-toggle" title="New Set"
                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             {{#with selectedOption}}
@@ -523,16 +528,16 @@
             <span class="caret"></span>
             <span class="sr-only">Toggle Dropdown</span>
         </button>
-    <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu">
-    {{#each options}}
-        <li class="createSetDropdownOption" data-attributes="{{json this}}" data-id="{{id}}">
-            <a tabindex="-1" href="#">{{~title~}}
-            {{#if description}}
-                <small> ({{description}})</small>
-            {{/if}}</a>
-        </li>
-    {{/each}}
-    </ul>
+        <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu">
+        {{#each options}}
+            <li class="createSetDropdownOption" data-attributes="{{json this}}" data-id="{{id}}">
+                <a tabindex="-1" href="#">{{~title~}}
+                {{#if description}}
+                    <small> ({{description}})</small>
+                {{/if}}</a>
+            </li>
+        {{/each}}
+        </ul>
     </div>
 </script>
 
