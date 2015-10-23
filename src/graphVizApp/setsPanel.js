@@ -55,7 +55,7 @@ var VizSetModel = Backbone.Model.extend({
      */
     asVizSelection: function () {
         var mask = this.get('mask');
-        if (mask === undefined) { return undefined; }
+        if (mask === undefined) { return []; }
         var result = []; // new Array(mask.point.length + mask.edge.length);
         if (mask.point) {
             _.each(mask.point, function (pointIndex) {
@@ -243,10 +243,10 @@ var VizSetView = Backbone.View.extend({
         this.model.isSelected(!this.model.isSelected());
     },
     highlight: function (/*event*/) {
-        this.panel.updateVizSelectionFrom([this.model], 'highlight');
+        this.panel.highlightSetModels([this.model]);
     },
     unhighlight: function (/*event*/) {
-        this.panel.updateVizSelectionFrom([], 'highlight');
+        this.panel.highlightSetModels([]);
     }
 });
 
@@ -293,7 +293,7 @@ var AllVizSetsView = Backbone.View.extend({
     updateVizSelectionFromSelectedSets: function () {
         var currentlySelectedSets = this.selectedSets();
         if (!_.isEqual(currentlySelectedSets, this.lastSetSelection)) {
-            this.panel.updateVizSelectionFrom(currentlySelectedSets);
+            this.panel.selectSetModels(currentlySelectedSets);
             this.lastSetSelection = currentlySelectedSets;
         }
     },
@@ -446,21 +446,22 @@ SetsPanel.prototype.updateSet = function (vizSetModel) {
 
 /**
  * @param {Rx.ReplaySubject} activeSelection
+ * @param {Rx.ReplaySubject} latestHighlightedObject
  */
 SetsPanel.prototype.setupSelectionInteraction = function (activeSelection, latestHighlightedObject) {
     this.activeSelection = activeSelection;
     this.latestHighlightedObject = latestHighlightedObject;
-    this.activeSelection.do(function (activeSelection) {
-        if (activeSelection.length === 0) {
+    this.selectionIsEmpty = this.activeSelection.map(function (activeSelection) {
+        return (activeSelection.length === 0);
+    });
+    this.selectionIsEmpty.do(function (isEmpty) {
+        if (isEmpty) {
             this.collection.each(function (vizSet) { vizSet.isSelected(false); });
         }
     }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Clearing selection from canvas'));
 };
 
-/**
- * @param {VizSetModel[]} setModels
- */
-SetsPanel.prototype.updateVizSelectionFrom = function (setModels, action) {
+SetsPanel.prototype.vizSelectionFromSetModels = function (setModels) {
     var resultSetModel;
     if (setModels.length > 1) {
         resultSetModel = _.reduce(setModels, function (firstSet, secondSet) {
@@ -469,16 +470,15 @@ SetsPanel.prototype.updateVizSelectionFrom = function (setModels, action) {
     } else if (setModels.length === 1) {
         resultSetModel = setModels[0];
     }
-    var newSelection = resultSetModel === undefined ? [] : resultSetModel.asVizSelection();
-    switch (action) {
-        case 'highlight':
-            this.latestHighlightedObject.onNext(newSelection);
-            break;
-        case 'select':
-        default:
-            this.activeSelection.onNext(newSelection);
-            break;
-    }
+    return resultSetModel === undefined ? [] : resultSetModel.asVizSelection();
+};
+
+SetsPanel.prototype.highlightSetModels = function (setModels) {
+    this.latestHighlightedObject.onNext(this.vizSelectionFromSetModels(setModels));
+};
+
+SetsPanel.prototype.selectSetModels = function (setModels) {
+    this.activeSelection.onNext(this.vizSelectionFromSetModels(setModels));
 };
 
 module.exports = SetsPanel;
