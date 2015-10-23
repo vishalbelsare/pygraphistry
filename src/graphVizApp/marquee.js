@@ -48,19 +48,28 @@ function maintainContainerStyle($cont, isOn) {
 
 
 function effectCanvas(effect) {
+    var $simulation = $('#simulation');
     if (effect === 'blur') {
-        $('#simulation').css({
+        $simulation.css({
             'filter': 'grayscale(50%) blur(2px)',
-            '-webkit-filter': 'grayscale(50%) blur(2px)',
+            '-webkit-filter': 'grayscale(50%) blur(2px)'
         });
     } else if (effect === 'clear') {
-        $('#simulation').css({
+        $simulation.css({
             'filter': '',
-            '-webkit-filter': '',
+            '-webkit-filter': ''
         });
     } else {
         console.error('effectCanvas: unknown effect', effect);
     }
+}
+
+function eventPageCoordsInElement (evt, $elt) {
+    var offset = $elt.offset();
+    return evt.pageX > offset.left &&
+        evt.pageX < offset.left + $elt.width() &&
+        evt.pageY > offset.top &&
+        evt.pageY < offset.top + $elt.height();
 }
 
 //$DOM * $DOM * Observable bool * bool * Function -> Observable_1 {top, left, width, height}
@@ -70,91 +79,87 @@ function effectCanvas(effect) {
 //
 function marqueeSelections (appState, $cont, $elt, isOn, marqueeState, doAfterSelection) {
     var bounds = isOn.flatMapLatest(function (isOn) {
-            if (!isOn) {
-                debug('stop listening for marquee selections');
-                $('#simulation').css({
-                    'filter': '',
-                    '-webkit-filter': '',
-                });
+        if (!isOn) {
+            debug('stop listening for marquee selections');
+            $('#simulation').css({
+                'filter': '',
+                '-webkit-filter': ''
+            });
+            effectCanvas('clear');
+            return Rx.Observable.empty();
+        }
+        debug('start listening for marquee selections');
+        var firstRunSinceMousedown;
+        return Rx.Observable.fromEvent($cont, 'mousedown')
+            .merge(
+            Rx.Observable.fromEvent($('#highlighted-point-cont'), 'mousedown')
+                .filter(function (evt) {
+                    return !eventPageCoordsInElement(evt, $elt);
+                }))
+            .do(function (evt) {
+                debug('stopPropagation: marquee down');
+                marqueeState.onNext('selecting');
+                evt.stopPropagation();
+                $('body').addClass('noselect');
                 effectCanvas('clear');
-                return Rx.Observable.empty();
-            } else {
-                debug('start listening for marquee selections');
-                var firstRunSinceMousedown;
-                return Rx.Observable.fromEvent($cont, 'mousedown')
-                    .merge(
-                        Rx.Observable.fromEvent($('#highlighted-point-cont'), 'mousedown')
-                        .filter(function (evt) {
-                            var offset = $elt.offset();
-                            return !((evt.pageX > offset.left) && (evt.pageX < offset.left + $elt.width()) &&
-                                (evt.pageY > offset.top) && (evt.pageY < offset.top + $elt.height()));
-                        }))
+                $elt.empty();
+                $elt.css({width: 0, height: 0});
+                $elt.removeClass('draggable').removeClass('dragging');
+                $cont.removeClass('done');
+            }).map(toPoint.bind('', $cont))
+            .do(function () {
+                debug('marquee instance started, listening');
+                firstRunSinceMousedown = true;
+            }).flatMapLatest(function (startPoint) {
+                return Rx.Observable.fromEvent($(window.document), 'mousemove')
                     .do(function (evt) {
-                        debug('stopPropagation: marquee down');
-                        marqueeState.onNext('selecting');
+                        debug('stopPropagation: marquee move');
                         evt.stopPropagation();
-                        $('body').addClass('noselect');
-                        effectCanvas('clear');
-                        $elt.empty();
-                        $elt.css({width: 0, height: 0});
-                        $elt.removeClass('draggable').removeClass('dragging');
-                        $cont.removeClass('done');
-                    }).map(toPoint.bind('', $cont))
-                    .do(function () {
-                        debug('marquee instance started, listening');
-                        firstRunSinceMousedown = true;
-                    }).flatMapLatest(function (startPoint) {
-                        return Rx.Observable.fromEvent($(window.document), 'mousemove')
-                            .do(function (evt) {
-                                debug('stopPropagation: marquee move');
-                                evt.stopPropagation();
-                            })
-                            .sample(1)
-                            .map(function (moveEvt) {
-                                return toRect(startPoint, toPoint($cont, moveEvt));
-                            }).do(function (rect) {
-                                if (firstRunSinceMousedown) {
-                                    debug('show marquee instance on first bound calc');
-                                    $elt.removeClass('off').addClass('on');
-                                    firstRunSinceMousedown = false;
-                                }
-                                $elt.css({
-                                    left: rect.tl.x,
-                                    top: rect.tl.y,
-                                    width: rect.br.x - rect.tl.x,
-                                    height: rect.br.y - rect.tl.y
-                                });
-                            }).takeUntil(Rx.Observable.fromEvent($(window.document), 'mouseup')
-                                .do(function (evt) {
-                                    debug('stopPropagation: marquee up');
-                                    evt.stopPropagation();
-                                    debug('drag marquee finished');
-                                })
-                            ).takeLast(1)
-                            .do(function (rect) {
-                                $('body').removeClass('noselect');
-                                $elt.addClass('draggable').removeClass('on');
-                                $cont.addClass('done');
-                                marqueeState.onNext('done');
+                    })
+                    .sample(1)
+                    .map(function (moveEvt) {
+                        return toRect(startPoint, toPoint($cont, moveEvt));
+                    }).do(function (rect) {
+                        if (firstRunSinceMousedown) {
+                            debug('show marquee instance on first bound calc');
+                            $elt.removeClass('off').addClass('on');
+                            firstRunSinceMousedown = false;
+                        }
+                        $elt.css({
+                            left: rect.tl.x,
+                            top: rect.tl.y,
+                            width: rect.br.x - rect.tl.x,
+                            height: rect.br.y - rect.tl.y
+                        });
+                    }).takeUntil(Rx.Observable.fromEvent($(window.document), 'mouseup')
+                        .do(function (evt) {
+                            debug('stopPropagation: marquee up');
+                            evt.stopPropagation();
+                            debug('drag marquee finished');
+                        })
+                ).takeLast(1)
+                    .do(function (rect) {
+                        $('body').removeClass('noselect');
+                        $elt.addClass('draggable').removeClass('on');
+                        $cont.addClass('done');
+                        marqueeState.onNext('done');
 
-                                var width = rect.br.x - rect.tl.x;
-                                var height = rect.br.y - rect.tl.y;
-                                var bw = parseInt($elt.css('border-width'));
+                        var width = rect.br.x - rect.tl.x;
+                        var height = rect.br.y - rect.tl.y;
+                        var bw = parseInt($elt.css('border-width'));
 
-                                $elt.css({ // Take border sizes into account when aligning ghost image
-                                    left: rect.tl.x - bw,
-                                    top: rect.tl.y - bw,
-                                    width: width + 2 * bw,
-                                    height: height + 2 * bw
-                                });
+                        $elt.css({ // Take border sizes into account when aligning ghost image
+                            left: rect.tl.x - bw,
+                            top: rect.tl.y - bw,
+                            width: width + 2 * bw,
+                            height: height + 2 * bw
+                        });
 
-                                doAfterSelection(appState, rect, $elt, width, height);
+                        doAfterSelection(appState, rect, $elt, width, height);
 
-                            });
                     });
-
-            }
-        });
+            });
+    });
 
     return bounds;
 }
@@ -186,9 +191,7 @@ function marqueeDrags(selections, $cont, $elt, marqueeState, takeLast, doAfterDr
             .merge(
                 Rx.Observable.fromEvent($('#highlighted-point-cont'), 'mousedown')
                 .filter(function (evt) {
-                    var offset = $elt.offset();
-                    return ((evt.pageX > offset.left) && (evt.pageX < offset.left + $elt.width()) &&
-                        (evt.pageY > offset.top) && (evt.pageY < offset.top + $elt.height()));
+                    return eventPageCoordsInElement(evt, $elt);
                 }))
             .do(function (evt) {
                 debug('stopPropagation: marquee down 2');

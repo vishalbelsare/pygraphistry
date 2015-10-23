@@ -2,15 +2,23 @@
 
 var Rx = require('rx');
 
-function Command(commandName, socket) {
+function Command(description, commandName, socket, disableErrorFiltering) {
+    this.description = description;
     this.commandName = commandName;
     this.socket = socket;
+    this.disableErrorFiltering = (disableErrorFiltering !== undefined) ?
+        disableErrorFiltering : true;
 }
 
-Command.prototype.sendWithObservableResult = function(argument, disableErrorFiltering) {
-    console.debug('Sent command ' + this.commandName, argument);
-    var src = Rx.Observable.fromCallback(this.socket.emit, this.socket)(this.commandName, argument);
-    if (disableErrorFiltering === true) {
+Command.prototype.sendWithObservableResult = function() {
+    console.debug('Sent command ' + this.commandName, arguments);
+    var args = new Array(arguments.length + 1);
+    args[0] = this.commandName;
+    for (var i=0; i<arguments.length; i++) {
+        args[i+1] = arguments[i];
+    }
+    var src = Rx.Observable.fromCallback(this.socket.emit, this.socket).apply(null, args);
+    if (this.disableErrorFiltering === true) {
         return src;
     }
     return src

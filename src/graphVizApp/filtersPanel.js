@@ -8,7 +8,7 @@ var Handlebars = require('handlebars');
 var Backbone = require('backbone');
     Backbone.$ = $;
 //var Ace     = require('brace');
-var FilterControl = require('./filter.js');
+var FilterControl = require('./FilterControl.js');
 var ExpressionEditor = require('./expressionEditor.js');
 var util          = require('./util.js');
 
@@ -301,18 +301,15 @@ var AllFiltersView = Backbone.View.extend({
         this.listenTo(this.collection, 'reset', this.refresh);
         this.listenTo(this.collection, 'all', this.render);
 
+        this.el = options.el;
         this.filtersContainer = $('#filters');
 
         this.collection.each(this.addFilter, this);
     },
     render: function () {
-        var $filterButton = $('filterButton');
-        $filterButton.attr('data-count', this.collection.length);
-        if (this.collection.isEmpty()) {
-            $filterButton.removeClass('iconBadge');
-        } else {
-            $filterButton.addClass('iconBadge');
-        }
+        var $filterButton = $('#filterButton');
+        var numElements = this.collection.length;
+        $('.badge', $filterButton).text(numElements > 0 ? numElements : '');
         return this;
     },
     addFilter: function (filter) {
@@ -436,8 +433,30 @@ function FiltersPanel(socket/*, urlParams*/) {
     });
 }
 
+FiltersPanel.prototype.isVisible = function () { return this.view.$el.is(':visible'); };
+
+FiltersPanel.prototype.toggleVisibility = function (newVisibility) {
+    var $panel = this.view.el;
+    $panel.toggle(newVisibility);
+    $panel.css('visibility', newVisibility ? 'visible': 'hidden');
+};
+
+FiltersPanel.prototype.setupToggleControl = function (toolbarClicks, $panelButton) {
+    var panelToggles = toolbarClicks.filter(function (elt) {
+        return elt === $panelButton[0];
+    }).map(function () {
+        // return the target state (boolean negate)
+        return !this.isVisible();
+    }.bind(this));
+    this.togglesSubscription = panelToggles.do(function (newVisibility) {
+        $panelButton.children('i').toggleClass('toggle-on', newVisibility);
+        this.toggleVisibility(newVisibility);
+    }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Turning on/off the filter panel'));
+};
+
 FiltersPanel.prototype.dispose = function () {
     this.filtersSubject.dispose();
+    this.togglesSubscription.dispose();
 };
 
 

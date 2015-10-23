@@ -10,6 +10,7 @@ var Color   = require('color');
 var util            = require('./util.js');
 var dataInspector   = require('./dataInspector.js');
 var FiltersPanel    = require('./filtersPanel.js');
+var SetsPanel       = require('./setsPanel.js');
 var HistogramBrush  = require('./histogramBrush.js');
 var marqueeFact     = require('./marquee.js');
 var runButton       = require('./runButton.js');
@@ -173,13 +174,12 @@ function setupBrush(appState, isOn) {
 // -> Observable DOM
 //Return which mouse group element selected
 //Side effect: highlight that element
-function makeMouseSwitchboard() {
+function clicksFromPopoutControls($elt) {
+    var mouseElements = $('.panel-button, .modal-button', $elt);
 
-    var mouseElts = $('#marqueerectangle, #brushButton, #layoutSettingsButton, #filterButton, #histogramPanelControl, #dataInspectorButton');
-
-    var onElt = Rx.Observable.merge.apply(Rx.Observable,
-            mouseElts.get().map(function (elt) {
-                return Rx.Observable.fromEvent(elt, 'mousedown')
+    return Rx.Observable.merge.apply(Rx.Observable,
+        mouseElements.get().map(function (elt) {
+            return Rx.Observable.fromEvent(elt, 'mousedown')
                 .do(function (evt) {
                     // Stop from propagating to canvas
                     evt.stopPropagation();
@@ -188,9 +188,7 @@ function makeMouseSwitchboard() {
                     return Rx.Observable.fromEvent(elt, 'mouseup');
                 })
                 .map(_.constant(elt));
-            }));
-
-    return onElt;
+        }));
 }
 
 function toggleLogo($cont, urlParams) {
@@ -446,84 +444,60 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
 
 
 //Observable DOM * $DOM * $DOM * String -> Observable Bool
-//When onElt is $a, toggle $a and potentially show $menu, else toggle off $a and hide $menu
+//When toolbarClicks is $panelButton,
+// toggle $panelButton and potentially show $panel,
+// else toggle off $panelButton and hide $panel
 //Return toggle status stream
-function menuToggler (onElt, $a, $menu, errLbl) {
-
-    var isOn = false;
-
-    var turnOn = onElt.map(function (elt) {
-        if (elt === $a[0]) {
-            $(elt).children('i').toggleClass('toggle-on');
-            isOn = !isOn;
-        } else {
-            isOn = false;
-            $a.children('i').removeClass('toggle-on');
-        }
-        return isOn;
+function setupPanelControl (toolbarClicks, $panelButton, $panel, errorLogLabel) {
+    var panelToggles = toolbarClicks.filter(function (elt) {
+        return elt === $panelButton[0];
+    }).map(function () {
+        // return the target state (boolean negate)
+        return !$panel.is(':visible');
     });
-
-    turnOn.distinctUntilChanged().do(function (state) {
-        if (state) {
-            $menu.css('display', 'block');
-        } else {
-            $menu.css('display', 'none');
-        }
-    }).subscribe(_.identity, util.makeErrorHandler(errLbl));
-
-    return turnOn;
+    panelToggles.do(function (newVisibility) {
+        $panelButton.children('i').toggleClass('toggle-on', newVisibility);
+        $panel.toggle(newVisibility);
+        $panel.css('visibility', newVisibility ? 'visible': 'hidden');
+    }).subscribe(_.identity, util.makeErrorHandler(errorLogLabel));
+    return panelToggles;
 }
-
 
 
 function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     createLegend($('#graph-legend'), urlParams);
     toggleLogo($('.logo-container'), urlParams);
-    var onElt = makeMouseSwitchboard();
+    var popoutClicks = clicksFromPopoutControls($elt);
     externalLink($('#externalLinkButton'), urlParams);
 
+    var $graph = $('#simulate');
     // TODO: More general version for all toggle-able buttons?
     var marqueeIsOn = false;
-    var $graph = $('#simulate');
+    var $viewSelectionButton = $('#viewSelectionButton');
     var turnOnMarquee =
         Rx.Observable.merge(
-            onElt.filter(function (elt) { return elt === $('#marqueerectangle')[0]; })
+            popoutClicks.filter(function (elt) {
+                return elt === $viewSelectionButton[0]; })
                 .map(function () { return !marqueeIsOn; }),
-            onElt.filter(function (elt) { return elt === $('#histogramBrush')[0]; })
-                .map(_.constant(false)),
             Rx.Observable.fromEvent($graph, 'click')
                 .map(_.constant(false)))
         .do(function (isTurnOn) {
             marqueeIsOn = isTurnOn;
-            $('#marqueerectangle').find('i').toggleClass('toggle-on', marqueeIsOn);
+            $viewSelectionButton.find('i').toggleClass('toggle-on', marqueeIsOn);
             appState.marqueeOn.onNext(marqueeIsOn ? 'toggled' : false);
         });
-
-    var histogramPanelIsOpen = false;
-    var histogramPanelToggle = Rx.Observable.merge(
-            onElt.filter(function (elt) { return elt === $('#histogramPanelControl')[0]; })
-                .map(function () { return !histogramPanelIsOpen; }),
-                // TODO: Clean this up because that button no longer exists.
-            onElt.filter(function (elt) { return elt === $('#histogramBrush')[0]; })
-                .map(_.constant(true)));
-
-    histogramPanelToggle
-        .do(function (isTurnOn) {
-            histogramPanelIsOpen = isTurnOn;
-            $('#histogramPanelControl').children('i').toggleClass('toggle-on', histogramPanelIsOpen);
-            $('#histogram.panel').css('visibility', isTurnOn ? 'visible' : 'hidden');
-        }).subscribe(_.identity, util.makeErrorHandler('histogram visibility toggle'));
-
-
+    var histogramPanelToggle = setupPanelControl(popoutClicks, $('#histogramPanelControl'), $('#histogram.panel'),
+        'Turning on/off the histogram panel');
     var dataInspectorIsVisible = false;
     var dataInspectorOnSubject = new Rx.Subject();
+    var $dataInspectorButton = $('#dataInspectorButton');
     dataInspectorOnSubject.onNext(false);
-    onElt.filter(function (elt) {
-        return elt === $('#dataInspectorButton')[0];
+    popoutClicks.filter(function (elt) {
+        return elt === $dataInspectorButton[0];
     }).do(function () {
         dataInspectorIsVisible = !dataInspectorIsVisible;
         dataInspectorOnSubject.onNext(dataInspectorIsVisible);
-        $('#dataInspectorButton').children('i').toggleClass('toggle-on', dataInspectorIsVisible);
+        $dataInspectorButton.children('i').toggleClass('toggle-on', dataInspectorIsVisible);
         $('#inspector').css('visibility', dataInspectorIsVisible ? 'visible' : 'hidden');
     }).subscribe(_.identity, util.makeErrorHandler('dataInspector visibility toggle'));
 
@@ -533,7 +507,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     // Use separate subject so downstream subscribers don't trigger control changes twice.
     // TODO: Figure out the correct pattern for this.
     var turnOnBrush = new Rx.Subject(1);
-    onElt
+    popoutClicks
         .merge(
             Rx.Observable.fromEvent($graph, 'click')
             .map(_.constant($graph[0])))
@@ -543,7 +517,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
                 $(elt).children('i').toggleClass('toggle-on');
                 brushIsOn = !brushIsOn;
             } else if (brushIsOn &&
-                    (elt === $('#marqueerectangle')[0] || elt === $graph[0])) {
+                    (elt === $viewSelectionButton[0] || elt === $graph[0])) {
                 brushIsOn = false;
                 $brushButton.children('i').toggleClass('toggle-on', false);
             }
@@ -555,13 +529,13 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
             turnOnBrush.onNext(brushIsOn);
         }).subscribe(_.identity, util.makeErrorHandler('brush toggle'));
 
-    menuToggler(onElt, $('#layoutSettingsButton'),  $('#renderingItems'), 'Turning on/off settings');
-    menuToggler(onElt, $('#filterButton'),  $('#filtersPanel'), 'Turning on/off the filter panel');
+    setupPanelControl(popoutClicks, $('#layoutSettingsButton'),  $('#renderingItems'), 'Turning on/off settings');
 
     var marquee = setupMarquee(appState, turnOnMarquee);
     var brush = setupBrush(appState, turnOnBrush);
     var filtersPanel = new FiltersPanel(socket, urlParams);
-    var filtersResponses = filtersPanel.control.filtersResponsesObservable();
+    filtersPanel.setupToggleControl(popoutClicks, $('#filterButton'));
+    var filtersResponses = filtersPanel.control.filtersResponsesSubject;
     var histogramBrush = new HistogramBrush(socket, filtersPanel);
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
     histogramBrush.setupMarqueeInteraction(brush);
@@ -570,11 +544,14 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     persist.setupPersistLayoutButton($('#persistButton'), appState, socket, urlParams);
     persist.setupPersistWorkbookButton($('#persistWorkbookButton'), appState, socket, urlParams);
     goLiveButton(socket, urlParams);
+    var setsPanel = new SetsPanel(socket, urlParams);
+    setsPanel.setupToggleControl(popoutClicks, $('#setsPanelButton'));
+    setsPanel.setupSelectionInteraction(appState.activeSelection, appState.latestHighlightedObject);
 
     createControls(
         socket,
         appState,
-        onElt
+        popoutClicks
             .filter(function (elt) { return elt === $('#layoutSettingsButton')[0]; })
             .take(1),
         urlParams);

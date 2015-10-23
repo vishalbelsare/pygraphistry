@@ -52,7 +52,7 @@ function HistogramBrush(socket, filtersPanel) {
     this.globalStats = new Rx.ReplaySubject(1);
     var updateDataframeAttributeSubject = new Rx.Subject();
 
-    this.aggregationCommand = new Command('aggregate', socket);
+    this.aggregationCommand = new Command('aggregating data', 'aggregate', socket);
 
     //////////////////////////////////////////////////////////////////////////
     // Setup Streams
@@ -100,7 +100,7 @@ function HistogramBrush(socket, filtersPanel) {
 
 HistogramBrush.prototype.setupFiltersInteraction = function(filtersPanel, poi) {
     // Setup filtering:
-    handleFiltersResponse(filtersPanel.control.filtersResponsesObservable(), poi);
+    handleFiltersResponse(filtersPanel.control.filtersResponsesSubject, poi);
 };
 
 
@@ -139,7 +139,7 @@ HistogramBrush.prototype.setupMarqueeInteraction = function(marquee) {
 
         var params = {sel: data.sel, attributes: attributes, binning: binning};
         this.lastSelection = data.sel;
-        return this.aggregationCommand.sendWithObservableResult(params, true)
+        return this.aggregationCommand.sendWithObservableResult(params)
             .map(function (agg) {
                 return {reply: agg, sel: data.sel, globalStats: data.globalStats, type: data.type};
             }).map(function (data) {
@@ -249,8 +249,8 @@ HistogramBrush.prototype.updateHistogramData = function (data, globalStats, empt
 // ?? -> Observable ??
 HistogramBrush.prototype.aggregatePointsAndEdges = function(params) {
     return Rx.Observable.zip(
-        this.aggregationCommand.sendWithObservableResult(_.extend({}, params, {type: 'point'}), true),
-        this.aggregationCommand.sendWithObservableResult(_.extend({}, params, {type: 'edge'}), true),
+        this.aggregationCommand.sendWithObservableResult(_.extend({}, params, {type: 'point'})),
+        this.aggregationCommand.sendWithObservableResult(_.extend({}, params, {type: 'edge'})),
         function (pointHists, edgeHists) {
 
             _.each(pointHists.data, function (val) {

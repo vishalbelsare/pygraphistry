@@ -101,6 +101,7 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     var $fgPicker  = $('#foregroundColor');
     var $bgPicker  = $('#backgroundColor');
     var $spButton  = $('#shortestpath');
+    var $toolbar   = $('#controlState');
 
     //////////////////////////////////////////////////////////////////////////
     // Setup
@@ -145,7 +146,7 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
     }).take(1).do(ui.hideSpinnerShowBody).delay(700);
 
 
-    controls.init(appState, socket, $simCont, doneLoading, workerParams, urlParams);
+    controls.init(appState, socket, $toolbar, doneLoading, workerParams, urlParams);
 
 }
 

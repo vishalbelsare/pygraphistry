@@ -23,7 +23,7 @@ module.exports = function (appState, socket, urlParams, isAutoCentering) {
     var numTicks = urlParams.play !== undefined ? urlParams.play : 5000;
 
     var disable = Rx.Observable.merge(
-        $('#marqueerectangle').onAsObservable('click'),
+        $('#viewSelectionButton').onAsObservable('click'),
         $('#histogramBrush').onAsObservable('click'));
 
     // Tick stream until canceled/timed out (end with 'false'), starts after first vbo update.

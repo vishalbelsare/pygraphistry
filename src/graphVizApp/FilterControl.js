@@ -22,20 +22,19 @@ function filterParametersCore(type, attribute) {
 function FilterControl(socket) {
     this.namespaceMetadataSubject = new Rx.ReplaySubject(1);
 
-    this.namespaceCommand = new Command('get_namespace_metadata', socket);
-    this.getFiltersCommand = new Command('get_filters', socket);
-    this.updateFiltersCommand = new Command('update_filters', socket);
+    this.namespaceCommand = new Command('getting column descriptions', 'get_namespace_metadata', socket, false);
+    this.getFiltersCommand = new Command('getting filters', 'get_filters', socket);
+    this.updateFiltersCommand = new Command('updating filters', 'update_filters', socket);
     this.updateFiltersRequests = new Rx.Subject();
-    // this.getFiltersCommand = new Command('get_filters', socket);
-    this.runFilterCommand = new Command('filter', socket);
+    this.runFilterCommand = new Command('filtering the view', 'filter', socket);
 
     /** @type Rx.ReplaySubject */
     this.filtersResponsesSubject = new Rx.ReplaySubject(1);
     // Get initial filters values:
-    this.getFiltersCommand.sendWithObservableResult(undefined, true)
+    this.getFiltersCommand.sendWithObservableResult()
         .do(function (reply) {
             this.filtersResponsesSubject.onNext(reply.filters);
-        }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Getting filters'));
+        }.bind(this)).subscribe(_.identity, util.makeErrorHandler(this.getFiltersCommand.description));
 
     this.setupFilterRequestHandler(
         this.updateFiltersRequests,
@@ -45,27 +44,23 @@ function FilterControl(socket) {
 
 FilterControl.prototype.setupFilterRequestHandler = function(requests, responses, command) {
     util.bufferUntilReady(requests).do(function (hash) {
-        command.sendWithObservableResult(hash.data, true)
+        command.sendWithObservableResult(hash.data)
             .do(function (reply) {
                 responses.onNext(reply);
                 hash.ready();
-            }).subscribe(_.identity, util.makeErrorHandler('handle update_filters response'));
+            }).subscribe(_.identity, util.makeErrorHandler(command.description));
 
-    }).subscribe(_.identity, util.makeErrorHandler('handle filter requests'));
+    }).subscribe(_.identity, util.makeErrorHandler(command.description));
 };
 
 FilterControl.prototype.namespaceMetadataObservable = function () {
     if (this.namespaceSubscription === undefined) {
-        this.namespaceSubscription = this.namespaceCommand.sendWithObservableResult(null)
+        this.namespaceSubscription = this.namespaceCommand.sendWithObservableResult()
             .do(function (reply) {
                 this.namespaceMetadataSubject.onNext(reply.metadata);
-            }.bind(this)).subscribe(_.identity, util.makeErrorHandler('fetch get_namespace_metadata'));
+            }.bind(this)).subscribe(_.identity, util.makeErrorHandler(this.namespaceCommand.description));
     }
     return this.namespaceMetadataSubject;
-};
-
-FilterControl.prototype.filtersResponsesObservable = function () {
-    return this.filtersResponsesSubject;
 };
 
 FilterControl.prototype.updateFilters = function (filterSet) {
@@ -235,7 +230,7 @@ FilterControl.prototype.filterExactValuesParameters = function (type, attribute,
 };
 
 FilterControl.prototype.filterObservable = function (params) {
-    return this.runFilterCommand.sendWithObservableResult(params, true)
+    return this.runFilterCommand.sendWithObservableResult(params)
         .do(function (reply) {
             this.filtersResponsesSubject.onNext(reply);
         }).subscribe(_.identity);

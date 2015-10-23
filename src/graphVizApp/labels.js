@@ -192,7 +192,8 @@ function renderLabels(appState, $labelCont, highlighted, selected) {
 }
 
 function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, selected) {
-
+    // Trying to handle set highlight/selection, but badly:
+    if (highlighted.length + selected.length > 1) { return; }
     var indicesToExpand = selected.length > 0 ? [selected[selected.length - 1]] : selected;
 
     var poi = appState.poi;

@@ -4,7 +4,7 @@ var debug   = require('debug')('graphistry:StreamGL:graphVizApp:timeslider');
 var $       = window.$;
 var Rx      = require('rx');
               require('../rx-jquery-stub');
-var FilterControl = require('./filter.js');
+var FilterControl = require('./FilterControl.js');
 
 module.exports = {
     init: function (appState, socket/*, urlParams*/) {
