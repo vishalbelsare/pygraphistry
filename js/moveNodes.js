@@ -20,7 +20,7 @@ function MoveNodes(clContext) {
         deltaY: cljs.types.float_t,
         inputPositions: null,
         outputPositions: null
-    }
+    };
     this.moveNodes = new Kernel('moveNodes', args, argsType, 'moveNodes.cl', clContext);
 }
 
@@ -53,6 +53,6 @@ MoveNodes.prototype.run = function (simulator, selection, delta) {
             var curPoints = simulator.dataframe.getBuffer('curPoints', 'simulator');
             return nextPoints.copyInto(curPoints);
         }).fail(log.makeQErrorHandler(logger, 'Kernel moveNodes failed'));
-}
+};
 
 module.exports = MoveNodes;

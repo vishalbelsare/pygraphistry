@@ -105,19 +105,19 @@
 
                     <div class="options-group">
 
-                      <a href="#" id="zoomin" data-container="body" data-toggle="tooltip" data-placement="right" title="Zoom in">
+                      <a href="#" id="zoomin" class="button" data-container="body" data-toggle="tooltip" data-placement="right" title="Zoom in">
                         <i class="fa fa-search-plus fa-2x"></i>
                       </a>
 
                       <div class="divide-line"></div>
 
-                      <a href="#" id="zoomout" data-container="body" data-toggle="tooltip" data-placement="right" title="Zoom out">
+                      <a href="#" id="zoomout" class="button" data-container="body" data-toggle="tooltip" data-placement="right" title="Zoom out">
                         <i class="fa fa-search-minus fa-2x"></i>
                       </a>
 
                       <div class="divide-line"></div>
 
-                      <a href="#" id="center" data-container="body" data-toggle="tooltip" data-placement="right" title="Center View">
+                      <a href="#" id="center" class="button" data-container="body" data-toggle="tooltip" data-placement="right" title="Center View">
                           <i class="fa fa-compress fa-2x"></i>
                       </a>
 
@@ -126,17 +126,17 @@
 
                     <div class="options-group">
 
-                      <a href="#" id="mouser">
+                      <a href="#" id="mouser" class="button">
                         <i class="fa fa-arrows fa-2x"></i>
                       </a>
 
-                      <a href="#" id="simulate" data-container="body" data-toggle="tooltip" data-placement="right" title="Start/Stop Visual Clustering">
+                      <a href="#" id="simulate" class="button" data-container="body" data-toggle="tooltip" data-placement="right" title="Start/Stop Visual Clustering">
                         <i class="fa fa-play-circle fa-2x"></i>
                       </a>
 
                       <div class="divide-line"></div>
 
-                      <a href="#" id="marqueerectangle" data-container="body" data-toggle="tooltip" data-placement="right" title="Move Nodes">
+                      <a href="#" id="viewSelectionButton" class="button modal-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Select Nodes">
                         <span class="fa-stack">
                           <i class="fa fa-square-o fa-stack-2x" style="font-size: 2em"></i>
                           <i class="fa fa-arrows fa-stack-1x" style="font-size: 15px"></i>
@@ -145,34 +145,39 @@
 
                       <div class="divide-line"></div>
 
-                      <a href="#" id="brushButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Data Brush">
+                      <a href="#" id="brushButton" class="button modal-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Data Brush">
                             <i class="fa" style="height: 0.9em; width: 0.9em; border-style: dashed; border-width: 0.1em"></i>
                       </a>
 
                       <div class="divide-line"></div>
 
-                      <a href="#" id="layoutSettingsButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Layout Settings">
+                      <a href="#" id="layoutSettingsButton" class="button panel-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Layout Settings">
                         <i class="fa fa-cogs fa-2x"></i>
                       </a>
 
                       <div class="divide-line"></div>
 
-                      <a href="#" id="histogramPanelControl" data-container="body" data-toggle="tooltip" data-placement="right" title="Expand/Shrink Histogram Panel">
+                      <a href="#" id="histogramPanelControl" class="button panel-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Expand/Shrink Histogram Panel">
                         <i class="fa fa-bar-chart fa-2x"></i>
                       </a>
 
                       <div class="divide-line"></div>
 
-                      <a href="#" id="dataInspectorButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Data Inspector">
+                      <a href="#" id="dataInspectorButton" class="button panel-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Data Inspector">
                           <i class="fa fa-table fa-2x"></i>
                       </a>
 
                       <div class="divide-line"></div>
 
-                      <a href="#" id="filterButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Filter">
+                      <a href="#" id="filterButton" class="button panel-button badged" data-container="body" data-toggle="tooltip" data-placement="right" title="Filter">
                           <i class="fa fa-filter fa-2x"></i>
+                          <small><span class="badge badge-info"></span></small>
                       </a>
 
+                        <a href="#" id="setsPanelButton" class="button panel-button badged" data-container="body" data-toggle="tooltip" data-placement="right" title="Sets">
+                            <i class="fa fa-object-group"></i>
+                            <small><span class="badge badge-info"></span></small>
+                        </a>
                       <!--
                       <a href="#" id="shortestpath" data-container="body" data-toggle="tooltip" data-placement="right" title="Find routes between two points" style="display:none">
                           <i class="fa fa-road fa-2x"></i>
@@ -185,27 +190,27 @@
 
                     <div class="options-group">
 
-                      <a href="#" id="forkButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Save A Copy">
+                      <a href="#" id="forkButton" class="button dialog-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Save A Copy">
                           <i class="fa fa-code-fork fa-2x"></i>
                       </a>
 
                       <div class="divide-line"></div>
 
-                      <a href="#" id="persistWorkbookButton" class="beta" data-container="body" data-toggle="tooltip" data-placement="right" title="Save Workbook">
+                      <a href="#" id="persistWorkbookButton" class="beta button dialog-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Save Workbook">
                           <i class="fa fa-floppy-o fa-2x"></i>
                       </a>
 
-                      <a href="#" id="persistButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Share/Embed Snapshot">
+                      <a href="#" id="persistButton" class="button dialog-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Share/Embed Snapshot">
                             <i class="fa fa-share-alt fa-2x"></i>
                         </a>
-                        <a href="#" id="goLiveButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Go Live">
+                        <a href="#" id="goLiveButton" class="button nav-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Go Live">
                             <i class="fa fa-share-square fa-2x"></i>
                         </a>
                     </div>
 
                     <div class="options-group">
                       <!-- only show if in iframe -->
-                      <a href="#" id="externalLinkButton" data-container="body" data-toggle="tooltip" data-placement="right" title="Open in New Tab">
+                      <a href="#" id="externalLinkButton" class="button nav-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Open in New Tab">
                           <i class="fa fa-external-link fa-2x"></i>
                       </a>
                     </div>
@@ -216,6 +221,7 @@
         </div>
 
         <div id="renderingItems" class="settingsPanel">
+            <p class="panelHeader text-center bg-primary">Rendering</p>
             <div class="form-horizontal">
 
 
@@ -283,11 +289,20 @@
         </div> <!-- /renderingItems -->
 
         <div id="filtersPanel" class="filtersPanel container">
-            <p id="filtersPanelHeader" class="text-center bg-primary">Filters</p>
+            <p class="panelHeader text-center bg-primary">Filters</p>
             <div id="filters"></div>
             <div id="addFilter"></div>
         </div> <!-- /filtersPanel -->
 
+        <div id="setsPanel" class="setsPanel container">
+            <p class="panelHeader text-center bg-primary">Sets</p>
+            <div class="btn-toolbar setsPanelToolbar" role="toolbar" aria-label="sets toolbar"></div>
+            <div id="sets">
+                <p id="setsEmptyMessage" class="text-muted text-center hidden">
+                    <i>Sets appear here</i>
+                </p>
+            </div>
+        </div> <!-- /setsPanel -->
 
     </div> <!-- /section -->
 
@@ -465,23 +480,94 @@
     </div>
 </script>
 
+<script type="text/x-handlebars-template" id="setTemplate">
+    <div class="topMenu row {{selectionClass}}">
+        <div class="col-md-10">
+            {{#if title}}
+                <span class="label label-info">{{title}}</span>
+            {{else}}
+                <i class="label-info"><small>(untagged)</small></i>
+            {{/if}}
+            {{#if description}}
+                <small class="setDescription muted"><i>{{description}}</i></small>
+            {{/if}}
+        </div>
+        <div class="col-md-1 tagButton">
+            <a href="#">
+                <i class="fa fa-tag tagSetButton" title="Tag"></i>
+            </a>
+        </div>
+        <div class="col-md-1 deleteButton">
+            <a href="#">
+                <i class="fa fa-close deleteSetButton" title="Delete Set"></i>
+            </a>
+        </div>
+    </div>
+</script>
+
+<script type="text/x-handlebars-template" id="setCreateTemplate">
+    <div class="btn-group btn-group-xs createSetDropdown">
+        <button type="button" class="btn btn-default btn-xs addSetButton" title="New Set">
+            <span title="New Set" class="fa fa-plus"></span>
+        </button>
+        <button type="button" class="btn btn-default btn-xs dropdown-toggle" title="New Set"
+                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <span class="createSetSelectionTitle">{{selectedOption}}</span>
+            <span class="caret"></span>
+            <span class="sr-only">Toggle Dropdown</span>
+        </button>
+    <ul class="dropdown-menu">
+    {{#each options}}
+        <li class="createSetDropdownOption" data-attributes="{{json this}}" data-id="{{id}}">{{title}}</li>
+    {{/each}}
+    </ul>
+    </div>
+</script>
+
+<script type="text/x-handlebars-template" id="setTagTemplate">
+    <div class="modal fade tagSet" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h3 class="modal-title">Tag / Rename Set</h3>
+                </div>
+                <div class="modal-body">
+                    <form class="form-horizontal">
+                        <div class="form-group">
+                            <label for="setTag" class="col-sm-2 control-label">Tag</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" id="setTag" value="" />
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+
 <script type="text/template" id="filterTemplate">
     <div class="topMenu row">
         <!--<div class="col-md-1 expandButton">
             <a href="#">
-                <i class="fa fa-caret-right expandFilterButton" id="expandFilterButton{{id}}" cid="{{id}}"></i>
+                <i class="fa fa-caret-right expandFilterButton" cid="{{id}}"></i>
             </a>
         </div>-->
         <div class="col-md-8 filterName control-title attributeName">{{model.title}}</div>
         <div class="col-md-2"></div>
         <div class="col-md-1 disableButton">
             <a href="#">
-                <i class="fa fa-toggle-on disableFilterButton" title="Enabled" id="disableFilterButton{{id}}" cid="{{id}}"></i>
+                <i class="fa fa-toggle-on disableFilterButton" title="Enabled" cid="{{id}}"></i>
             </a>
         </div>
         <div class="col-md-1 deleteButton">
             <a href="#">
-                <i class="fa fa-close deleteFilterButton" id="deleteFilterButton{{id}}" cid="{{id}}"></i>
+                <i class="fa fa-close deleteFilterButton" cid="{{id}}"
+                    title="Delete Filter"></i>
             </a>
         </div>
     </div>
@@ -544,7 +630,7 @@
                 <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
                     {{#each fields}}
                     <li role="presentation"><a class="addFilterDropdownField" role="menuitem" tabindex="-1" href="#"
-                            data-attributes="{{json .}}">
+                            data-attributes="{{json this}}">
                         {{#if dataType}}
                         {{type}}:{{name}} ({{dataType}})
                         {{else}}

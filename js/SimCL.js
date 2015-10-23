@@ -189,7 +189,7 @@ function create(dataframe, renderer, device, vendor, cfg) {
 }
 
 
-var setColor = function (renderer, simulator, colorObj) {
+function setColor (renderer, simulator, colorObj) {
 
     //TODO why are these reversed?
     var rgb =
@@ -209,11 +209,11 @@ var setColor = function (renderer, simulator, colorObj) {
     }
     simulator.tickBuffers(['pointColors', 'edgeColors']);
     return Q();
-};
+}
 
 
 //Simulator * int * int -> int U exn
-var findEdgeDirected = function (simulator, src, dst) {
+function findEdgeDirected (simulator, src, dst) {
     var buffers = simulator.dataframe.getHostBuffer('forwardsEdges');
 
     var workItem = buffers.srcToWorkItem[ src ];
@@ -233,10 +233,10 @@ var findEdgeDirected = function (simulator, src, dst) {
     }
 
     throw new Error('not found');
-};
+}
 
 //Simulator * int * int -> int U exn
-var findEdgeUndirected = function (simulator, src, dst) {
+function findEdgeUndirected (simulator, src, dst) {
     try {
         return findEdgeDirected(simulator, src, dst);
     } catch (e) {
@@ -244,7 +244,7 @@ var findEdgeUndirected = function (simulator, src, dst) {
     }
 }
 
-var highlightPath = function (renderer, simulator, path, i) {
+function highlightPath (renderer, simulator, path, i) {
     if (path.length < 2) {
         return;
     }
@@ -260,7 +260,7 @@ var highlightPath = function (renderer, simulator, path, i) {
     });
 
     var edges = _.zip(path.slice(0, -1), path.slice(1));
-    edges.forEach(function (pair, i) {
+    edges.forEach(function (pair/*, i*/) {
         var edge = findEdgeUndirected(simulator, pair[0], pair[1]);
         simulator.dataframe.setLocalBufferValue('edgeColors', 2 * edge, COLOR);
         simulator.dataframe.setLocalBufferValue('edgeColors', 2 * edge + 1, COLOR);
@@ -269,7 +269,7 @@ var highlightPath = function (renderer, simulator, path, i) {
     });
 }
 
-var highlightShortestPaths = function (renderer, simulator, pair) {
+function highlightShortestPaths (renderer, simulator, pair) {
     var MAX_PATHS = util.palettes.qual_palette1.length * 2;
 
     var graph = new dijkstra.Graph();
@@ -287,15 +287,17 @@ var highlightShortestPaths = function (renderer, simulator, pair) {
 
     var paths = [];
     var t0 = Date.now();
-    var ok = pair[0] != pair[1];
+    var ok = pair[0] !== pair[1];
     while (ok && (Date.now() - t0 < 20 * 1000) && paths.length < MAX_PATHS) {
 
         var path = dijkstra.dijkstra(graph, pair[0]);
 
-        if (path[pair[1]] != -1) {
+        if (path[pair[1]] === -1) {
+            ok = false;
+        } else {
             var steps = [];
             var step = pair[1];
-            while (step != pair[0]) {
+            while (step !== pair[0]) {
                 steps.push(step);
                 step = path[step];
             }
@@ -304,11 +306,9 @@ var highlightShortestPaths = function (renderer, simulator, pair) {
             paths.push(steps);
 
             for (var i = 0; i < steps.length - 1; i++) {
-                graph.removeEdge(steps[i], steps[i+1]);
+                graph.removeEdge(steps[i], steps[i + 1]);
             }
 
-        } else {
-            ok = false;
         }
     }
 
@@ -327,7 +327,7 @@ var highlightShortestPaths = function (renderer, simulator, pair) {
     // simulator.buffersLocal.pointSizes[pair[1]] = biggestPoint;
 
     simulator.tickBuffers(['pointSizes', 'pointColors', 'edgeColors']);
-};
+}
 
 /**
  * Simulator * ?[ String ] * ?int -> ()
@@ -336,7 +336,7 @@ var highlightShortestPaths = function (renderer, simulator, pair) {
  * If not tick provided, increment global and use that
  **/
 
-var tickBuffers = function (simulator, bufferNames, tick) {
+function tickBuffers (simulator, bufferNames, tick) {
 
     if (tick === undefined) {
         simulator.versions.tick++;
@@ -354,7 +354,7 @@ var tickBuffers = function (simulator, bufferNames, tick) {
         });
     }
 
-};
+}
 
 
 /**
@@ -363,7 +363,7 @@ var tickBuffers = function (simulator, bufferNames, tick) {
  * NOTE: erase from host immediately, though device may take longer (unobservable)
  */
  // TODO: Rewrite this to be cleaner (e.g., take name list)
-var resetBuffers = function(simulator, buffers) {
+function resetBuffers (simulator, buffers) {
 
     if (!buffers.length) {
         return;
@@ -390,7 +390,7 @@ var resetBuffers = function(simulator, buffers) {
         // simulator.buffers[buffName].delete();
         // simulator.buffers[buffName] = null;
     });
-};
+}
 
 
 /**
@@ -522,7 +522,7 @@ function setPoints(simulator, points) {
 //string -> simulator * typedarray -> Q simulator
 // Create and store buffer on host and device with passed in defaults
 // returns corresponding setter
-function makeSetter(simulator, name, dimName) {
+function makeSetter(simulator, name/*, dimName*/) {
 
     return function (data) {
 
@@ -915,7 +915,7 @@ function setEdgeColors(simulator, edgeColors) {
 
 // TODO Write kernel for this.
 function setMidEdgeColors(simulator, midEdgeColors) {
-    var midEdgeColors, forwardsEdges, srcNodeIdx, dstNodeIdx, srcColorInt, srcColor,
+    var /*midEdgeColors, */forwardsEdges, srcNodeIdx, dstNodeIdx, srcColorInt, srcColor,
         dstColorInt, dstColor, edgeIndex, midEdgeIndex, numSegments, lambda,
         colorHSVInterpolator, convertRGBInt2Color, convertColor2RGBInt, interpolatedColorInt;
 
@@ -957,7 +957,7 @@ function setMidEdgeColors(simulator, midEdgeColors) {
             s = color1HSV.s * (1 - lambda) + color2HSV.s * (lambda);
             v = color1HSV.v * (1 - lambda) + color2HSV.v * (lambda);
             return interpolatedColor.hsv([h, s, v]);
-        }
+        };
 
         var colorRGBInterpolator = function (color1, color2, lambda) {
             var r, g, b;
@@ -968,13 +968,13 @@ function setMidEdgeColors(simulator, midEdgeColors) {
                 r: r,
                 g: g,
                 b: b
-            }
-        }
+            };
+        };
 
         // Convert from HSV to RGB Int
         convertColor2RGBInt = function (color) {
             return (color.r << 0) + (color.g << 8) + (color.b << 16);
-        }
+        };
 
         // Convert from RGB Int to HSV
         convertRGBInt2Color= function (rgbInt) {
@@ -982,8 +982,8 @@ function setMidEdgeColors(simulator, midEdgeColors) {
                 r:rgbInt & 0xFF,
                 g:(rgbInt >> 8) & 0xFF,
                 b:(rgbInt >> 16) & 0xFF
-            }
-        }
+            };
+        };
 
         for (edgeIndex = 0; edgeIndex < numEdges; edgeIndex++) {
             srcNodeIdx = forwardsEdges.edgesTyped[2 * edgeIndex];
@@ -1100,7 +1100,7 @@ function setTimeSubset(renderer, simulator, range) {
 
         logger.debug('pointToEdgeIdx', {ptIdx: ptIdx, workItem: workItem, idx: idx, firstEdge: firstEdge, isBeginning: isBeginning});
 
-        if (idx == 0 && firstEdge == -1) {
+        if (idx === 0 && firstEdge === -1) {
             return 0;
         } else {
             if (!isBeginning) {
@@ -1156,7 +1156,7 @@ function moveNodes(simulator, marqueeEvent) {
     var drag = marqueeEvent.drag;
     var delta = {
         x: drag.end.x - drag.start.x,
-        y: drag.end.y - drag.start.y,
+        y: drag.end.y - drag.start.y
     };
 
     var moveNodes = simulator.otherKernels.moveNodes;
@@ -1217,7 +1217,7 @@ function connectedEdges(simulator, nodeIndices) {
                 }
             }
         });
-    }
+    };
 
     addOutgoingEdgesToSet(forwardsBuffers, nodeIndices);
     addOutgoingEdgesToSet(backwardsBuffers, nodeIndices);
@@ -1274,7 +1274,7 @@ function tick(simulator, stepNumber, cfg) {
 
     //run each algorithm to completion before calling next
     var tickAllHelper = function (remainingAlgorithms) {
-        if (!remainingAlgorithms.length) return;
+        if (!remainingAlgorithms.length) { return; }
         var algorithm = remainingAlgorithms.shift();
         return Q()
             .then(function () {

@@ -1,5 +1,7 @@
 'use strict';
 
+var _ = require('underscore');
+
 /**
  * Mask is implemented as a list of valid indices (in sorted order).
  * @typedef Array<Number> Mask
@@ -11,22 +13,51 @@
 
 /**
  * @param {Dataframe} dataframe
- * @param {Mask} pointIndexes
- * @param {Mask} edgeIndexes
+ * @param {Mask} pointIndexes Sorted list of indexes into the raw points data. If undefined, means all indexes.
+ * @param {Mask} edgeIndexes Sorted list of indexes into the raw edges data. If undefined, means all indexes.
  * @constructor
  */
-function MaskSet(dataframe, pointIndexes, edgeIndexes) {
+function DataframeMask(dataframe, pointIndexes, edgeIndexes) {
     this.dataframe = dataframe;
     this.point = pointIndexes;
     this.edge = edgeIndexes;
 }
 
-MaskSet.prototype.numPoints = function () {
+DataframeMask.prototype.numPoints = function () {
     return this.point !== undefined ? this.point.length : this.dataframe.numPoints();
 };
 
-MaskSet.prototype.numEdges = function () {
+DataframeMask.prototype.limitNumPointsTo = function (limit) {
+    if (limit >= this.numPoints()) { return; }
+    if (this.point === undefined) {
+        this.point = _.range(limit);
+    } else {
+        this.point.length = limit;
+    }
+};
+
+DataframeMask.prototype.numEdges = function () {
     return this.edge !== undefined ? this.edge.length : this.dataframe.numEdges();
+};
+
+DataframeMask.prototype.limitNumEdgesTo = function (limit) {
+    if (limit >= this.numEdges()) { return; }
+    if (this.edge === undefined) {
+        this.edge = _.range(limit);
+    } else {
+        this.edge.length = limit;
+    }
+};
+
+/**
+ * Override to avoid serializing the dataframe.
+ */
+DataframeMask.prototype.toJSON = function () {
+    if (this.dataframe === undefined) {
+        return this;
+    } else {
+        return _.omit(this, 'dataframe');
+    }
 };
 
 /**
@@ -35,7 +66,7 @@ MaskSet.prototype.numEdges = function () {
  * @param {Mask} y
  * @returns {Mask}
  */
-MaskSet.unionOfTwoMasks = function(x, y) {
+DataframeMask.unionOfTwoMasks = function(x, y) {
     var xLength = x.length, yLength = y.length;
     // Smallest result: one is a subset of the other.
     var result = new Array(Math.max(xLength, yLength));
@@ -65,7 +96,7 @@ MaskSet.unionOfTwoMasks = function(x, y) {
  * @param {Mask} y
  * @returns {Mask}
  */
-MaskSet.intersectionOfTwoMasks = function(x, y) {
+DataframeMask.intersectionOfTwoMasks = function(x, y) {
     var xLength = x.length, yLength = y.length;
     // Smallest result: no intersection and no output.
     var result = [];
@@ -89,7 +120,7 @@ MaskSet.intersectionOfTwoMasks = function(x, y) {
  * @param {Number} sizeOfUniverse
  * @returns {Mask}
  */
-MaskSet.complementOfMask = function(x, sizeOfUniverse) {
+DataframeMask.complementOfMask = function(x, sizeOfUniverse) {
     var xLength = x.length;
     // We know the exact length.
     var result = new Array(sizeOfUniverse - xLength);
@@ -108,32 +139,32 @@ MaskSet.complementOfMask = function(x, sizeOfUniverse) {
 };
 
 /**
- * @param {MaskSet} other
- * @returns {MaskSet}
+ * @param {DataframeMask} other
+ * @returns {DataframeMask}
  */
-MaskSet.prototype.union = function (other) {
-    return new MaskSet(this.dataframe,
-        MaskSet.unionOfTwoMasks(this.point, other.point),
-        MaskSet.unionOfTwoMasks(this.edge, other.edge));
+DataframeMask.prototype.union = function (other) {
+    return new DataframeMask(this.dataframe,
+        DataframeMask.unionOfTwoMasks(this.point, other.point),
+        DataframeMask.unionOfTwoMasks(this.edge, other.edge));
 };
 
 /**
- * @param {MaskSet} other
- * @returns {MaskSet}
+ * @param {DataframeMask} other
+ * @returns {DataframeMask}
  */
-MaskSet.prototype.intersection = function (other) {
-    return new MaskSet(this.dataframe,
-        MaskSet.intersectionOfTwoMasks(this.point, other.point),
-        MaskSet.intersectionOfTwoMasks(this.edge, other.edge));
+DataframeMask.prototype.intersection = function (other) {
+    return new DataframeMask(this.dataframe,
+        DataframeMask.intersectionOfTwoMasks(this.point, other.point),
+        DataframeMask.intersectionOfTwoMasks(this.edge, other.edge));
 };
 
 /**
- * @returns {MaskSet}
+ * @returns {DataframeMask}
  */
-MaskSet.prototype.complement = function () {
-    return new MaskSet(this.dataframe,
-        MaskSet.complementOfMask(this.point, this.dataframe.numPoints()),
-        MaskSet.complementOfMask(this.edge, this.dataframe.numEdges()));
+DataframeMask.prototype.complement = function () {
+    return new DataframeMask(this.dataframe,
+        DataframeMask.complementOfMask(this.point, this.dataframe.numPoints()),
+        DataframeMask.complementOfMask(this.edge, this.dataframe.numEdges()));
 };
 
 /**
@@ -146,19 +177,33 @@ MaskSet.prototype.complement = function () {
 /**
  * @param {IndexIteratorCallback} iterator
  */
-MaskSet.prototype.mapPointIndexes = function (iterator) {
-    for (var i = 0; i < this.point.length; i++) {
-        iterator.call(this, this.point[i], i);
+DataframeMask.prototype.mapPointIndexes = function (iterator) {
+    var numPoints = this.numPoints(), i = 0;
+    if (this.point === undefined) {
+        for (i = 0; i < numPoints; i++) {
+            iterator.call(this, i, i);
+        }
+    } else {
+        for (i = 0; i < numPoints; i++) {
+            iterator.call(this, this.point[i], i);
+        }
     }
 };
 
 /**
  * @param {IndexIteratorCallback} iterator
  */
-MaskSet.prototype.mapEdgeIndexes = function (iterator) {
-    for (var i = 0; i < this.edge.length; i++) {
-        iterator.call(this, this.edge[i], i);
+DataframeMask.prototype.mapEdgeIndexes = function (iterator) {
+    var numEdges = this.numEdges(), i = 0;
+    if (this.edge === undefined) {
+        for (i = 0; i < numEdges; i++) {
+            iterator.call(this, i, i);
+        }
+    } else {
+        for (i = 0; i < numEdges; i++) {
+            iterator.call(this, this.edge[i], i);
+        }
     }
 };
 
-module.exports = MaskSet;
+module.exports = DataframeMask;

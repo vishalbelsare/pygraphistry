@@ -18,7 +18,7 @@ function SelectNodes(clContext) {
         right: cljs.types.float_t,
         positions: null,
         mask:null
-    }
+    };
     this.selectNodes = new Kernel('selectNodes', args, argsType, 'selectNodes.cl', clContext);
 }
 
@@ -57,6 +57,6 @@ SelectNodes.prototype.run = function (simulator, selection, delta) {
             }).fail(log.makeQErrorHandler(logger, 'Kernel selectNodes failed'));
     }).fail(log.makeQErrorHandler(logger, 'Node selection failed'));
 
-}
+};
 
 module.exports = SelectNodes;

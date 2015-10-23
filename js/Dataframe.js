@@ -9,11 +9,17 @@ var log = require('common/logger.js');
 var logger = log.createLogger('graph-viz:dataframe');
 
 var ExpressionCodeGenerator = require('./expressionCodeGenerator');
-var MaskSet = require('./MaskSet');
+var DataframeMask = require('./DataframeMask.js');
 
 var baseDirPath = __dirname + '/../assets/dataframe/';
 var TYPES = ['point', 'edge', 'simulator'];
 
+/**
+ * @property {DataframeData} rawdata The original data, immutable by this object.
+ * @property {DataframeData} data The potentially-filtered data, starts as a reference to original.
+ * @property {Object.<DataframeMask>} masksForVizSets Masks stored by VizSet id.
+ * @constructor
+ */
 var Dataframe = function () {
     // We keep a copy of the original data, plus a filtered view
     // that defaults to the new raw data.
@@ -29,14 +35,30 @@ var Dataframe = function () {
     };
     this.typedArrayCache = {};
     this.lastPointPositions = null;
-    this.lastMasks = new MaskSet(
+    /** The last mask applied as a result of in-place filtering. */
+    this.lastMasks = new DataframeMask(
         this,
         [],
         []
     );
+    this.masksForVizSets = {};
     this.data = this.rawdata;
 };
 
+/**
+ * @typedef {Object} DataframeData
+ * @property {{point: Object, edge: Object, simulator: Object}} attributes
+ * @property {{point: Object, edge: Object, simulator: Object}} buffers
+ * @property {Object} labels
+ * @property {Object} hostBuffers
+ * @property {Object} localBuffers
+ * @property {Object} renderedBuffers
+ * @property {Object} numElements
+ */
+
+/**
+ * @returns {DataframeData}
+ */
 function makeEmptyData () {
     return {
         attributes: {
@@ -78,7 +100,7 @@ function makeEmptyData () {
  * Relative to forwardsEdges (so sorted)
  * @param {Mask} pointMask - The set of points that the edges must connect.
  * @param {Mask?} edgeMaskOriginal - An optional set of edges to also filter on.
- * @returns MaskSet
+ * @returns DataframeMask
  */
 Dataframe.prototype.masksFromPoints = function (pointMask, edgeMaskOriginal) {
     var pointMaskOriginalLookup = {};
@@ -106,7 +128,7 @@ Dataframe.prototype.masksFromPoints = function (pointMask, edgeMaskOriginal) {
         }
     }
 
-    return new MaskSet(
+    return new DataframeMask(
         this,
         pointMask,
         edgeMask
@@ -140,13 +162,13 @@ Dataframe.prototype.fullEdgeMask = function() {
 
 
 /**
- * @returns MaskSet
+ * @returns DataframeMask
  */
-Dataframe.prototype.fullMaskSet = function() {
-    return new MaskSet(
+Dataframe.prototype.fullDataframeMask = function() {
+    return new DataframeMask(
         this,
-        this.fullPointMask(),
-        this.fullEdgeMask()
+        undefined,
+        undefined
     );
 };
 
@@ -154,7 +176,7 @@ Dataframe.prototype.fullMaskSet = function() {
 /**
  * @param {Mask} edgeMask
  * @param {Boolean?} edgeMaskFiltersPoints
- * @returns MaskSet
+ * @returns DataframeMask
  */
 Dataframe.prototype.masksFromEdges = function (edgeMask, edgeMaskFiltersPoints) {
     var numPoints = this.numPoints();
@@ -180,7 +202,7 @@ Dataframe.prototype.masksFromEdges = function (edgeMask, edgeMaskFiltersPoints) 
         pointMask = _.range(numPoints);
     }
 
-    return new MaskSet(
+    return new DataframeMask(
         this,
         pointMask,
         edgeMask
@@ -190,17 +212,17 @@ Dataframe.prototype.masksFromEdges = function (edgeMask, edgeMaskFiltersPoints) 
 /**
  * @param {?MaskList} maskList
  * @param {Number=Infinity} pointLimit
- * @returns ?MaskSet
+ * @returns ?DataframeMask
  */
 Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
     if (!pointLimit) {
         pointLimit = Infinity;
     }
     if (maskList === undefined || !maskList.length || maskList.length === 0) {
-        var universe = this.fullMaskSet();
+        var universe = this.fullDataframeMask();
         // Limit the universe first just to avoid computation scaling problems:
-        if (pointLimit && universe.point.length > pointLimit) {
-            universe.point.length = pointLimit;
+        if (pointLimit && universe.numPoints() > pointLimit) {
+            universe.limitNumPointsTo(pointLimit);
             return this.masksFromPoints(universe.point, universe.edge);
         }
         return universe;
@@ -253,7 +275,7 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
     if (pointLimitReached) {
         return this.masksFromPoints(pointMask, edgeMask);
     }
-    return new MaskSet(
+    return new DataframeMask(
         this,
         pointMask,
         edgeMask
@@ -261,7 +283,17 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
 };
 
 /**
+ * @typedef {Object} ClientQueryAST
+ * @property {String} type - AST node type (from expressionParser.js)
+ */
+
+/**
  * @typedef {Object} ClientQuery
+ * @property {String} title User-defined title attribute.
+ * @property {String} attribute Dataframe-defined attribute (column) name.
+ * @property {String} type 'point' or 'edge'
+ * @property {ClientQueryAST} ast - AST returned by expressionParser.js
+ * @property {String} inputString - The expression text as entered, not corrected.
  */
 
 /**
@@ -380,12 +412,12 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
 /**
  * Filters this.data in-place given masks. Does not modify this.rawdata.
  * TODO: Take in Set objects, not just Mask.
- * @param {MaskSet} masks
- * @param {Object} simulator
+ * @param {DataframeMask} masks
+ * @param {SimCL} simulator
  * @returns {Promise.<Array<Buffer>>}
  */
-Dataframe.prototype.applyMaskSetToFilterInPlace = function (masks, simulator) {
-    logger.debug('Starting Filtering Data In-Place by MaskSet');
+Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulator) {
+    logger.debug('Starting Filtering Data In-Place by DataframeMask');
 
     var start = Date.now();
 
@@ -396,6 +428,7 @@ Dataframe.prototype.applyMaskSetToFilterInPlace = function (masks, simulator) {
     if (rawSimBuffers.forwardsEdgeWeights === undefined || rawSimBuffers.backwardsEdgeWeights === undefined) {
         return Q({});
     }
+    /** @type {DataframeData} */
     var newData = makeEmptyData();
     var numPoints = masks.numPoints();
     var numEdges = masks.numEdges();
@@ -443,7 +476,7 @@ Dataframe.prototype.applyMaskSetToFilterInPlace = function (masks, simulator) {
         return a - b;
     });
 
-    var unsortedMasks = new MaskSet(
+    var unsortedMasks = new DataframeMask(
         this,
         masks.point,
         unsortedEdgeMask
@@ -524,9 +557,8 @@ Dataframe.prototype.applyMaskSetToFilterInPlace = function (masks, simulator) {
     });
     // Update point/edge counts, since those were filtered,
     // along with forwardsWorkItems/backwardsWorkItems.
-    _.each(['point', 'edge'], function (key) {
-        newData.numElements[key] = masks[key].length;
-    });
+    newData.numElements.point = masks.numPoints();
+    newData.numElements.edge = masks.numEdges();
     newData.numElements.forwardsWorkItems = newData.hostBuffers.forwardsEdges.workItemsTyped.length / 4;
     newData.numElements.backwardsWorkItems = newData.hostBuffers.backwardsEdges.workItemsTyped.length / 4;
     // TODO: NumMidPoints and MidEdges
