@@ -296,24 +296,7 @@
 
         <div id="setsPanel" class="setsPanel container">
             <p class="panelHeader text-center bg-primary">Sets</p>
-            <div class="btn-toolbar" role="toolbar" aria-label="sets toolbar">
-                <div class="btn-group btn-group-xs addSetButton">
-                    <button type="button" class="btn btn-default btn-xs" title="New Set">
-                        <span title="New Set" class="fa fa-plus"></span>
-                    </button>
-                    <button type="button" class="btn btn-default btn-xs dropdown-toggle" title="New Set"
-                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <span>Selected</span>
-                        <span class="caret"></span>
-                        <span class="sr-only">Toggle Dropdown</span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li>Selected</li>
-                        <li>Visible</li>
-                        <li>Loaded</li>
-                    </ul>
-                </div>
-            </div>
+            <div class="btn-toolbar setsPanelToolbar" role="toolbar" aria-label="sets toolbar"></div>
             <div id="sets">
                 <p id="setsEmptyMessage" class="text-muted text-center hidden">
                     <i>Sets appear here</i>
@@ -522,6 +505,25 @@
     </div>
 </script>
 
+<script type="text/x-handlebars-template" id="setCreateTemplate">
+    <div class="btn-group btn-group-xs createSetDropdown">
+        <button type="button" class="btn btn-default btn-xs addSetButton" title="New Set">
+            <span title="New Set" class="fa fa-plus"></span>
+        </button>
+        <button type="button" class="btn btn-default btn-xs dropdown-toggle" title="New Set"
+                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <span class="createSetSelectionTitle">{{selectedOption}}</span>
+            <span class="caret"></span>
+            <span class="sr-only">Toggle Dropdown</span>
+        </button>
+    <ul class="dropdown-menu">
+    {{#each options}}
+        <li class="createSetDropdownOption" data-attributes="{{json this}}" data-id="{{id}}">{{title}}</li>
+    {{/each}}
+    </ul>
+    </div>
+</script>
+
 <script type="text/x-handlebars-template" id="setTagTemplate">
     <div class="modal fade tagSet" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
         <div class="modal-dialog">
@@ -628,7 +630,7 @@
                 <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
                     {{#each fields}}
                     <li role="presentation"><a class="addFilterDropdownField" role="menuitem" tabindex="-1" href="#"
-                            data-attributes="{{json .}}">
+                            data-attributes="{{json this}}">
                         {{#if dataType}}
                         {{type}}:{{name}} ({{dataType}})
                         {{else}}
