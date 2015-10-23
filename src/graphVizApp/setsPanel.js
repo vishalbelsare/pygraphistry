@@ -123,33 +123,55 @@ var VizSetModel = Backbone.Model.extend({
     isConcrete: function () {
         return this.get('mask') !== undefined;
     },
-    getGeneratedDescription: function () {
+    getDescriptionForCounts: function (numPoints, numEdges) {
+        var result = '';
+        var hasPoints = numPoints > 0;
+        if (hasPoints) {
+            result += numPoints.toString(10) + ' point';
+            if (numPoints > 1) { result += 's'; }
+        }
+        var hasEdges = numEdges > 0;
+        if (hasPoints && hasEdges) {
+            result += ' and ';
+        }
+        if (hasEdges) {
+            result += numEdges.toString(10) + ' edge';
+            if (numEdges > 1) { result += 's'; }
+        }
+        return result;
+    },
+    getGeneratedDescription: function (fullPhrase) {
         var setSource = this.get('setSource');
-        var result;
-        switch (setSource) {
-            case 'selection':
-                var mask = this.get('mask');
-                if (mask === undefined) {
-                    result = 'A selection';
-                } else {
+        var mask = this.get('mask');
+        var result = '';
+        if (setSource === 'selection') {
+            if (mask === undefined) {
+                result = 'A selection';
+            } else {
+                result = 'Selected ';
+            }
+        } else if (this.isSystem()) {
+            switch (fullPhrase && this.id) {
+                case 'dataframe':
+                    result = 'Loaded ';
+                    break;
+                case 'filtered':
+                    result = 'Filtered to ';
+                    break;
+                case 'selection':
                     result = 'Selected ';
-                    var numPoints = mask.point.length;
-                    var hasPoints = numPoints > 0;
-                    if (hasPoints) {
-                        result += numPoints.toString(10) + ' point';
-                        if (numPoints > 1) { result += 's'; }
-                    }
-                    var numEdges = mask.edge.length;
-                    var hasEdges = numEdges > 0;
-                    if (hasPoints && hasEdges) {
-                        result += ' and ';
-                    }
-                    if (hasEdges) {
-                        result += numEdges.toString(10) + ' edge';
-                        if (numEdges > 1) { result += 's'; }
-                    }
-                }
-                break;
+                    break;
+            }
+        }
+        if (mask === undefined) {
+            var sizes = this.get('sizes');
+            if (sizes === undefined) {
+                result += 'unknown';
+            } else {
+                result += this.getDescriptionForCounts(sizes.point, sizes.edge);
+            }
+        } else {
+            result += this.getDescriptionForCounts(mask.point.length, mask.edge.length);
         }
         return result;
     },
@@ -335,7 +357,7 @@ var AllVizSetsView = Backbone.View.extend({
         var $createSet = $(this.createSetTemplate({
             selectedOption: initialSelection.get('title'),
             options: this.collection.select(function (vizSet) { return vizSet.isSystem(); }).map(function (vizSet) {
-                return vizSet.toJSON();
+                return VizSetView.prototype.bindingsFor(vizSet);
             })
         }));
         $('.createSetDropdown', this.$createSetContainer).remove();
