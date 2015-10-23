@@ -114,6 +114,9 @@ var VizSetModel = Backbone.Model.extend({
     isSystem: function () {
         return this.get('level') === 'system';
     },
+    representsActiveSelection: function () {
+        return this.isSystem() && this.id === 'selection';
+    },
     isSelected: function (newValue) {
         if (newValue !== undefined) {
             this.set('selected', newValue);
@@ -144,13 +147,7 @@ var VizSetModel = Backbone.Model.extend({
         var setSource = this.get('setSource');
         var mask = this.get('mask');
         var result = '';
-        if (setSource === 'selection') {
-            if (mask === undefined) {
-                result = 'A selection';
-            } else {
-                result = 'Selected ';
-            }
-        } else if (this.isSystem()) {
+        if (this.isSystem()) {
             switch (fullPhrase && this.id) {
                 case 'dataframe':
                     result = 'Loaded ';
@@ -162,11 +159,17 @@ var VizSetModel = Backbone.Model.extend({
                     result = 'Selected ';
                     break;
             }
+        } else if (setSource === 'selection') {
+            if (mask === undefined) {
+                result = 'A selection';
+            } else {
+                result = 'Selected ';
+            }
         }
         if (mask === undefined) {
             var sizes = this.get('sizes');
             if (sizes === undefined) {
-                result += 'unknown';
+                result += 'empty';
             } else {
                 result += this.getDescriptionForCounts(sizes.point, sizes.edge);
             }
@@ -355,7 +358,7 @@ var AllVizSetsView = Backbone.View.extend({
                 return vizSet.id === this.createSetSelection;
             }.bind(this)) || new VizSetModel({title: 'Selected', id: this.createSetSelection});
         var $createSet = $(this.createSetTemplate({
-            selectedOption: initialSelection.get('title'),
+            selectedOption: VizSetView.prototype.bindingsFor(initialSelection),
             options: this.collection.select(function (vizSet) { return vizSet.isSystem(); }).map(function (vizSet) {
                 return VizSetView.prototype.bindingsFor(vizSet);
             })
@@ -417,15 +420,20 @@ function SetsPanel(socket/*, urlParams*/) {
 }
 
 SetsPanel.prototype.refreshCollection = function () {
-    this.commands.getAll.sendWithObservableResult().do(
-        function (response) {
+    Rx.Observable.combineLatest(
+        this.commands.getAll.sendWithObservableResult(),
+        this.activeSelection,
+        function (response, activeSelection) {
             var sets = response.sets;
             this.collection.reset(_.map(sets, function (vizSet) {
-                return new VizSetModel(vizSet);
+                var setModel = new VizSetModel(vizSet);
+                if (setModel.representsActiveSelection()) {
+                    setModel.fromVizSelection(activeSelection);
+                }
+                return setModel;
             }));
-            console.dir(sets);
             this.view.refreshCreateSet();
-        }.bind(this)).subscribe(
+        }.bind(this)).take(1).subscribe(
         _.identity,
         util.makeErrorHandler(this.commands.getAll.description));
 };
