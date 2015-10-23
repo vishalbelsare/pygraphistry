@@ -512,7 +512,14 @@
         </button>
         <button type="button" class="btn btn-default btn-xs dropdown-toggle" title="New Set"
                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <span class="createSetSelectionTitle">{{selectedOption}}</span>
+            {{#with selectedOption}}
+            <span class="createSetSelectionTitle">
+                {{~title~}}
+                {{#if description}}
+                    <small> ({{description}})</small>
+                {{/if}}
+            </span>
+            {{/with}}
             <span class="caret"></span>
             <span class="sr-only">Toggle Dropdown</span>
         </button>
