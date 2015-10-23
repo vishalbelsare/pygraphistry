@@ -252,7 +252,8 @@ var VizSetView = Backbone.View.extend({
 
 var AllVizSetsView = Backbone.View.extend({
     events: {
-        'click .addSetButton': 'addSetFromSelection'
+        'click .addSetButton': 'createSet',
+        'click .createSetDropdownOption': 'updateCreateSetSelection'
     },
     initialize: function (options) {
         this.listenTo(this.collection, 'add', this.addSet);
@@ -263,8 +264,12 @@ var AllVizSetsView = Backbone.View.extend({
 
         this.el = options.el;
         this.panel = options.panel;
-        this.setsContainer = $('#sets');
-        this.emptyMessage = $('#setsEmptyMessage');
+        this.$setsContainer = $('#sets');
+        this.$emptyMessage = $('#setsEmptyMessage');
+        this.$setsControlButton = $('#setsPanelButton');
+        this.$createSetContainer = $('.setsPanelToolbar', this.el);
+        this.createSetTemplate = Handlebars.compile($('#setCreateTemplate').html());
+        this.createSetSelection = 'selected';
 
         // Show if we get no initial collection elements:
         this.updateEmptyMessage();
@@ -293,9 +298,8 @@ var AllVizSetsView = Backbone.View.extend({
         }
     },
     render: function () {
-        var $setsControlButton = $('#setsPanelButton');
         var visibleModels = this.visibleSets();
-        $('.badge', $setsControlButton).text(visibleModels.length > 0 ? visibleModels.length : '');
+        $('.badge', this.$setsControlButton).text(visibleModels.length > 0 ? visibleModels.length : '');
         return this;
     },
     addSet: function (set) {
@@ -308,12 +312,12 @@ var AllVizSetsView = Backbone.View.extend({
             panel: this.panel
         });
         var childElement = view.render().el;
-        this.setsContainer.append(childElement);
+        this.$setsContainer.append(childElement);
         set.set('$el', $(childElement));
         this.updateEmptyMessage();
     },
     updateEmptyMessage: function () {
-        this.emptyMessage.toggleClass('hidden', this.visibleSets().length > 0);
+        this.$emptyMessage.toggleClass('hidden', this.visibleSets().length > 0);
     },
     removeSet: function (set) {
         var $el = set.get('$el');
@@ -324,18 +328,49 @@ var AllVizSetsView = Backbone.View.extend({
     },
     remove: function () {
     },
+    refreshCreateSet: function () {
+        var initialSelection = this.collection.find(function (vizSet) {
+                return vizSet.id === this.createSetSelection;
+            }.bind(this)) || new VizSetModel({title: 'Selected', id: this.createSetSelection});
+        var $createSet = $(this.createSetTemplate({
+            selectedOption: initialSelection.get('title'),
+            options: this.collection.select(function (vizSet) { return vizSet.isSystem(); }).map(function (vizSet) {
+                return vizSet.toJSON();
+            })
+        }));
+        $('.createSetDropdown', this.$createSetContainer).remove();
+        this.$createSetContainer.append($createSet);
+    },
     /** Recreates the UI; do not call during interactions. */
     refresh: function () {
-        this.setsContainer.empty();
+        this.$setsContainer.empty();
         this.collection.each(this.addSet, this);
     },
-    addSetFromSelection: function (/*evt*/) {
+    updateCreateSetSelection: function (evt) {
+        var $target = $(evt.currentTarget);
+        var vizSetID = $target.data('id');
+        var vizSet = this.collection.find(function (vizSet) { return vizSet.id === vizSetID; });
+        if (vizSet !== undefined) {
+            this.createSetSelection = vizSet.id;
+            $('.createSetSelectionTitle', this.$createSetContainer).text(vizSet.title);
+            this.refreshCreateSet();
+        }
+    },
+    createSet: function (/*evt*/) {
         //var $target = $(evt.currentTarget);
         var vizSet = new VizSetModel({});
-        this.panel.activeSelection.take(1).do(function (activeSelection) {
-            vizSet.fromVizSelection(activeSelection);
-        }.bind(this)).subscribe(
-            _.identity, util.makeErrorHandler('Getting the selection as a Set'));
+        switch (this.createSetSelection) {
+            case 'selection':
+                this.panel.activeSelection.take(1).do(function (activeSelection) {
+                    vizSet.fromVizSelection(activeSelection);
+                }.bind(this)).subscribe(
+                    _.identity, util.makeErrorHandler('Getting the selection as a Set'));
+                break;
+            case 'filtered':
+                break;
+            case 'dataframe':
+                break;
+        }
         this.collection.push(vizSet);
     }
 });
@@ -366,6 +401,8 @@ SetsPanel.prototype.refreshCollection = function () {
             this.collection.reset(_.map(sets, function (vizSet) {
                 return new VizSetModel(vizSet);
             }));
+            console.dir(sets);
+            this.view.refreshCreateSet();
         }.bind(this)).subscribe(
         _.identity,
         util.makeErrorHandler(this.commands.getAll.description));
