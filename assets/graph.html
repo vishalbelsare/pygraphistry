@@ -175,7 +175,7 @@
                       </a>
 
                         <a href="#" id="setsPanelButton" class="button panel-button badged" data-container="body" data-toggle="tooltip" data-placement="right" title="Sets">
-                            <i class="fa fa-object-group"></i>
+                            <i class="fa fa-tag"></i>
                             <small><span class="badge badge-info"></span></small>
                         </a>
                       <!--
@@ -481,21 +481,26 @@
 </script>
 
 <script type="text/x-handlebars-template" id="setTemplate">
-    <div class="topMenu row {{selectionClass}}">
-        <div class="col-md-10">
+    <div class="topMenu row">
+        <div class="col-md-1 typeIndicator">
+            <i class="setSelectedIndicator fa {{selectionClass}}" title="{{selectedMessage}}"></i>
+            <!-- TODO place an icon here for selection, filter, etc. -->
+            <!-- <i class="setTypeIndicator fa {{setTypeClass}}"></i> -->
+        </div>
+        <div class="col-md-10 labelArea">
+            <a href="#" class="tagButton">&nbsp;
+                {{#unless title}}
+                    <i class="label label-info fa fa-tag tagButton" title="Tag">(untagged)</i>
+                {{/unless}}
+            </a>
             {{#if title}}
-                <span class="label label-info">{{title}}</span>
-            {{else}}
-                <i class="label-info"><small>(untagged)</small></i>
+                <span class="label label-info">
+                    <i class="fa fa-tag tagButton" title="Tag"></i>{{~title~}}
+                </span>
             {{/if}}
             {{#if description}}
-                <small class="setDescription muted"><i>{{description}}</i></small>
+                <span class="setDescription muted"><i>{{description}}</i></span>
             {{/if}}
-        </div>
-        <div class="col-md-1 tagButton">
-            <a href="#">
-                <i class="fa fa-tag tagSetButton" title="Tag"></i>
-            </a>
         </div>
         <div class="col-md-1 deleteButton">
             <a href="#">
