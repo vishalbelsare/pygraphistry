@@ -250,7 +250,9 @@ var VizSetView = Backbone.View.extend({
         if (!bindings.description) {
             bindings.description = vizSet.getGeneratedDescription();
         }
-        bindings.selectionClass = bindings.selected ? 'bg-info' : '';
+        bindings.selectionClass = bindings.selected ? 'fa-check-square-o' : 'fa-square-o';
+        bindings.selectedMessage = bindings.selected ? 'Selected' : 'Unselected';
+        bindings.setTypeClass = vizSet.get('setSource') === 'selection' ? 'fa-mouse-pointer' : '';
         return bindings;
     },
     render: function () {
@@ -263,22 +265,28 @@ var VizSetView = Backbone.View.extend({
         this.$el.remove();
         this.collection.remove(this.model);
     },
-    rename: function (/*event*/) {
+    rename: function (event) {
+        event.preventDefault();
         var bindings = this.model.toJSON();
         var $modal = $(this.renameTemplate(bindings));
         $('body').append($modal);
-        $('.status', $modal).css('display', 'none');
+        var $status = $('.status', $modal);
+        $status.css('display', 'none');
+        var $input = $('.modal-body input', $modal);
+        $input.val(this.model.get('title'));
         $modal.modal('show');
         Rx.Observable.fromEvent($('.modal-footer button', $modal), 'click')
             .map(_.constant($modal)).do(function ($modal) {
-                var setTag = $('.modal-body input', $modal).val();
+                var setTag = $input.val();
                 this.model.set('title', setTag);
+                $modal.modal('hide');
             }.bind(this)).subscribe(
-            function () {
-                $modal.remove();
-            }, util.makeErrorHandler('Exception while setting set tag'));
+            _.identity, function (err) {
+                try { $modal.remove(); } catch (ignore) { }
+                util.makeErrorHandler('Exception while setting set tag', err);
+            });
     },
-    toggleSelected: function () {
+    toggleSelected: function (/*event*/) {
         this.model.isSelected(!this.model.isSelected());
     },
     highlight: function (/*event*/) {
