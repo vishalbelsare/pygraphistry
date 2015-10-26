@@ -30,10 +30,15 @@ function FilterControl(socket) {
 
     /** @type Rx.ReplaySubject */
     this.filtersResponsesSubject = new Rx.ReplaySubject(1);
+    /** @type Rx.ReplaySubject */
+    this.setsResponsesSubject = new Rx.ReplaySubject(1);
     // Get initial filters values:
     this.getFiltersCommand.sendWithObservableResult()
         .do(function (reply) {
             this.filtersResponsesSubject.onNext(reply.filters);
+            if (reply.sets !== undefined) {
+                this.setsResponsesSubject.onNext(reply.sets);
+            }
         }.bind(this)).subscribe(_.identity, util.makeErrorHandler(this.getFiltersCommand.description));
 
     this.setupFilterRequestHandler(

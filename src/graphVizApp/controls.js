@@ -545,6 +545,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     persist.setupPersistWorkbookButton($('#persistWorkbookButton'), appState, socket, urlParams);
     goLiveButton(socket, urlParams);
     var setsPanel = new SetsPanel(socket, urlParams);
+    setsPanel.setupFiltersPanelInteraction(filtersPanel);
     setsPanel.setupToggleControl(popoutClicks, $('#setsPanelButton'));
     setsPanel.setupSelectionInteraction(appState.activeSelection, appState.latestHighlightedObject);
 

@@ -521,6 +521,13 @@ SetsPanel.prototype.setupSelectionInteraction = function (activeSelection, lates
     }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Clearing selection from canvas'));
 };
 
+SetsPanel.prototype.setupFiltersPanelInteraction = function (filtersPanel) {
+    this.filtersSubject = filtersPanel.filtersSubject;
+    filtersPanel.control.setsResponsesSubject.do(function (setsResponse) {
+        console.log(setsResponse);
+    }).subscribe(_.identity, util.makeErrorHandler('Updating Sets from filter updates'));
+};
+
 SetsPanel.prototype.vizSelectionFromSetModels = function (setModels) {
     var resultSetModel;
     if (setModels.length > 1) {
