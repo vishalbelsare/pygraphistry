@@ -27,6 +27,10 @@ DataframeMask.prototype.numPoints = function () {
     return this.point !== undefined ? this.point.length : this.dataframe.numPoints();
 };
 
+DataframeMask.prototype.numByType = function (type) {
+    return this[type] !== undefined ? this[type].length : this.dataframe.getNumElements(type);
+};
+
 DataframeMask.prototype.limitNumPointsTo = function (limit) {
     if (limit >= this.numPoints()) { return; }
     if (this.point === undefined) {
@@ -177,6 +181,23 @@ DataframeMask.prototype.complement = function () {
 /**
  * @param {IndexIteratorCallback} iterator
  */
+DataframeMask.prototype.mapIndexes = function (type, iterator) {
+    var numElements = this.numByType(type), i = 0;
+    var mask = this[type];
+    if (mask === undefined) {
+        for (i = 0; i < numElements; i++) {
+            iterator.call(this, i, i);
+        }
+    } else {
+        for (i = 0; i < numElements; i++) {
+            iterator.call(this, mask[i], i);
+        }
+    }
+};
+
+/**
+ * @param {IndexIteratorCallback} iterator
+ */
 DataframeMask.prototype.mapPointIndexes = function (iterator) {
     var numPoints = this.numPoints(), i = 0;
     if (this.point === undefined) {
@@ -203,6 +224,14 @@ DataframeMask.prototype.mapEdgeIndexes = function (iterator) {
         for (i = 0; i < numEdges; i++) {
             iterator.call(this, this.edge[i], i);
         }
+    }
+};
+
+DataframeMask.prototype.getIndexByType = function (type, index) {
+    if (this[type] === undefined) {
+        return index;
+    } else {
+        return this[type][index];
     }
 };
 

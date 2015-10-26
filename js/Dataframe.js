@@ -726,8 +726,8 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
             simulator.versions.buffers[key] += 1;
         });
 
-        that.lastMasks.point = unsortedMasks.point || [];
-        that.lastMasks.edge = unsortedMasks.edge || [];
+        that.lastMasks.point = unsortedMasks.point;
+        that.lastMasks.edge = unsortedMasks.edge;
 
     }).then(function () {
         logger.debug('Filter Completed in ' + (Date.now() - start) + ' ms.');
@@ -1077,10 +1077,7 @@ Dataframe.prototype.getRowAt = function (index, type, attributes) {
         index = forwardsEdgePermutationInverse[index];
     }
 
-    var lastMask = this.lastMasks[type];
-    if (lastMask.length > 0) {
-        index = lastMask[index];
-    }
+    index = this.lastMasks.getIndexByType(type, index);
 
     attributes = attributes || this.rawdata.attributes[type];
     var row = {};
@@ -1122,12 +1119,10 @@ Dataframe.prototype.getRowsCompact = function (indices, type) {
 
     indices = indices || range(this.data.numElements[type]);
 
-    var lastMask = this.lastMasks[type];
+    var lastMasks = this.lastMasks;
 
     var values = _.map(indices, function (index) {
-        if (lastMask.length > 0) {
-            index = lastMask[index];
-        }
+        index = lastMasks.getIndexByType(type, index);
         var row = [];
         _.each(keys, function (key) {
             row.push(attributes[key].values[index]);
@@ -1158,17 +1153,9 @@ Dataframe.prototype.getColumnValues = function (column, type) {
     // A filter has been done, and we need to apply the
     // mask and compact.
     if (!this.data.attributes[type][column]) {
-
-        // TODO: Do this (and other data operations) directly through the DataframeMask interface.
-        // This also doesn't deal with empty masks correctly.
-        var lastMask = this.lastMasks[type];
-        if (lastMask.length < 1) {
-            lastMask = _.range(this.getNumElements(type));
-        }
-
         var rawAttributes = this.rawdata.attributes[type];
         var newValues = [];
-        _.each(lastMask, function (idx) {
+        this.lastMasks.mapIndexes(type, function (idx) {
             newValues.push(rawAttributes[column].values[idx]);
         });
         this.data.attributes[type][column] = {
