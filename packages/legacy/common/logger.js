@@ -161,8 +161,11 @@ module.exports = {
 
     makeQErrorHandler: function(childLogger, msg) {
         //This should return a function that takes an error as an argument and logs a formatted version of it, and rethrows the error.
+        var args = Array.prototype.slice.call(arguments)
+        var shifted = args.shift();
         return function(err) {
-            childLogger.error(err, msg);
+            args.unshift(err);
+            childLogger.error.apply(childLogger, args);
             throw err;
         };
     }
