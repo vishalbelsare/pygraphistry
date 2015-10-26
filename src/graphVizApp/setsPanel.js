@@ -45,6 +45,9 @@ function unionOfTwoMasks (x, y) {
 }
 
 
+var MasksProperty = 'masks';
+
+
 var VizSetModel = Backbone.Model.extend({
     default: {
         title: undefined,
@@ -54,7 +57,7 @@ var VizSetModel = Backbone.Model.extend({
      * @returns {SelectionElement[]}
      */
     asVizSelection: function () {
-        var mask = this.get('mask');
+        var mask = this.get(MasksProperty);
         if (mask === undefined) { return []; }
         var result = []; // new Array(mask.point.length + mask.edge.length);
         if (mask.point) {
@@ -69,17 +72,26 @@ var VizSetModel = Backbone.Model.extend({
         }
         return result;
     },
+    initializeSource: function (sourceType) {
+        if (this.get('setSource') === undefined) {
+            this.set('setSource', sourceType);
+        }
+    },
+    /**
+     * @param {VizSetModel} srcSet
+     */
+    fromSystemSet: function (srcSet) {
+        this.initializeSource(srcSet.id);
+        this.set(MasksProperty, srcSet.get(MasksProperty));
+    },
     /**
      * @param {SelectionElement[]} selections
      */
     fromVizSelection: function (selections) {
-        var mask = this.get('mask');
-        if (this.get('setSource') === undefined) {
-            this.set('setSource', 'selection');
-        }
+        var mask = this.get(MasksProperty);
         if (mask === undefined) {
             mask = {point: [], edge: []};
-            this.set('mask', mask);
+            this.set(MasksProperty, mask);
         } else {
             mask.point.length = 0;
             mask.edge.length = 0;
@@ -99,6 +111,9 @@ var VizSetModel = Backbone.Model.extend({
         mask.point = _.uniq(mask.point.sort(), true);
         mask.edge = _.uniq(mask.edge.sort(), true);
     },
+    fromFilters: function (filters) {
+        this.set('filters', filters);
+    },
     /**
      * @param {VizSetModel} otherSet
      * @returns {VizSetModel}
@@ -108,10 +123,10 @@ var VizSetModel = Backbone.Model.extend({
         if (!this.isConcrete() || !otherSet.isConcrete()) {
             throw Error('Cannot perform union on abstract set');
         }
-        var resultMask = {}, thisMask = this.get('mask'), otherMask = otherSet.get('mask');
+        var resultMask = {}, thisMask = this.get(MasksProperty), otherMask = otherSet.get(MasksProperty);
         resultMask.point = unionOfTwoMasks(thisMask.point, otherMask.point);
         resultMask.edge = unionOfTwoMasks(thisMask.edge, otherMask.edge);
-        result.set('mask', resultMask);
+        result.set(MasksProperty, resultMask);
         return result;
     },
     isSystem: function () {
@@ -127,14 +142,16 @@ var VizSetModel = Backbone.Model.extend({
         return this.get('selected');
     },
     isConcrete: function () {
-        return this.get('mask') !== undefined;
+        var mask = this.get(MasksProperty);
+        return mask !== undefined && mask.point !== undefined && mask.edge !== undefined;
     },
     isEmpty: function () {
+        var sizes = this.get('sizes');
         if (this.isConcrete()) {
-            var mask = this.get('mask');
+            var mask = this.get(MasksProperty);
             return mask.point.length === 0 && mask.edge.length === 0;
-        } else if (this.sizes !== undefined) {
-            return this.sizes.point === 0 && this.sizes.edge.length === 0;
+        } else if (sizes !== undefined) {
+            return sizes.point === 0 && sizes.edge.length === 0;
         } else {
             return !this.isSystem();
         }
@@ -158,7 +175,7 @@ var VizSetModel = Backbone.Model.extend({
     },
     getGeneratedDescription: function (fullPhrase) {
         var setSource = this.get('setSource');
-        var mask = this.get('mask');
+        var mask = this.get(MasksProperty);
         var result = '';
         if (this.isSystem()) {
             switch (fullPhrase && this.id) {
@@ -179,15 +196,17 @@ var VizSetModel = Backbone.Model.extend({
                 result = 'Selected ';
             }
         }
+        var sizes = this.get('sizes');
         if (mask === undefined) {
-            var sizes = this.get('sizes');
             if (sizes === undefined) {
                 result += 'empty';
             } else {
                 result += this.getDescriptionForCounts(sizes.point, sizes.edge);
             }
         } else {
-            result += this.getDescriptionForCounts(mask.point.length, mask.edge.length);
+            var numPoints = sizes !== undefined ? sizes.point : (mask.point && mask.point.length);
+            var numEdges = sizes !== undefined ? sizes.edge : (mask.edge && mask.edge.length);
+            result += this.getDescriptionForCounts(numPoints, numEdges);
         }
         return result;
     },
@@ -410,22 +429,32 @@ var AllVizSetsView = Backbone.View.extend({
             $('.createSetSelectionTitle', this.$createSetContainer).text(vizSet.title);
             this.panel.activeSelection.take(1).do(function (activeSelection) {
                 this.refreshCreateSet(activeSelection);
-            }).subscribe(_.identity, util.makeErrorHandler('Refreshing Create Set'));
+            }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Refreshing Create Set'));
         }
     },
     createSet: function (/*evt*/) {
         //var $target = $(evt.currentTarget);
         var vizSet = new VizSetModel({});
+        var srcSystemSet = this.collection.find(function (vizSet) {
+            return vizSet.id === this.createSetSelectionID;
+        }.bind(this));
         switch (this.createSetSelectionID) {
             case 'selection':
+                vizSet.fromSystemSet(srcSystemSet);
                 this.panel.activeSelection.take(1).do(function (activeSelection) {
                     vizSet.fromVizSelection(activeSelection);
-                }.bind(this)).subscribe(
+                }).subscribe(
                     _.identity, util.makeErrorHandler('Getting the selection as a Set'));
                 break;
             case 'filtered':
+                vizSet.fromSystemSet(srcSystemSet);
+                this.panel.filtersSubject.take(1).do(function (filters) {
+                    vizSet.fromFilters(filters);
+                }.bind(this)).subscribe(
+                    _.identity, util.makeErrorHandler('Getting the filtered data as a Set'));
                 break;
             case 'dataframe':
+                vizSet.fromSystemSet(srcSystemSet);
                 break;
         }
         this.collection.push(vizSet);
