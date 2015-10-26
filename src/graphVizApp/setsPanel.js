@@ -214,9 +214,9 @@ var VizSetModel = Backbone.Model.extend({
         if (options === undefined) { options = {}; }
         var success = options.success;
         switch (method) {
-            case "read":
+            case 'read':
                 break;
-            case "delete":
+            case 'delete':
                 if (model.id === undefined) {
                     break;
                 }
@@ -226,7 +226,7 @@ var VizSetModel = Backbone.Model.extend({
                     }
                 }).subscribe(_.identity, util.makeErrorHandler('Deleting a Set'));
                 break;
-            case "update":
+            case 'update':
                 // TODO handle options.patch
                 this.panel.updateSet(model.toJSON()).do(function (response) {
                     if (response.success === true && response.set !== undefined) {
