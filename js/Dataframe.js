@@ -38,8 +38,8 @@ var Dataframe = function () {
     /** The last mask applied as a result of in-place filtering. */
     this.lastMasks = new DataframeMask(
         this,
-        [],
-        []
+        undefined,
+        undefined
     );
     this.masksForVizSets = {};
     this.data = this.rawdata;

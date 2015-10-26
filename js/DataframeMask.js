@@ -206,4 +206,20 @@ DataframeMask.prototype.mapEdgeIndexes = function (iterator) {
     }
 };
 
+DataframeMask.prototype.getEdgeIndex = function (index) {
+    if (this.edge === undefined) {
+        return index;
+    } else {
+        return this.edge[index];
+    }
+};
+
+DataframeMask.prototype.getPointIndex = function (index) {
+    if (this.point === undefined) {
+        return index;
+    } else {
+        return this.point[index];
+    }
+};
+
 module.exports = DataframeMask;
