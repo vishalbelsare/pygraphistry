@@ -182,7 +182,7 @@ module.exports = {
             .do(function (response) {
                 var reply = response.reply;
                 if (!(reply && reply.success)) {
-                    throw new Error({msg: 'Server error on inspectHeader', v: (reply || {error: 'unknown'}).error});
+                    throw new Error({msg: 'Server error on uploading screenshot', v: (reply || {error: 'unknown'}).error});
                 }
                 var renderState = appState.renderState,
                     camera = renderState.get('camera'),
