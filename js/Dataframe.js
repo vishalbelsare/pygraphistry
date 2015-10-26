@@ -1158,7 +1158,14 @@ Dataframe.prototype.getColumnValues = function (column, type) {
     // A filter has been done, and we need to apply the
     // mask and compact.
     if (!this.data.attributes[type][column]) {
+
+        // TODO: Do this (and other data operations) directly through the DataframeMask interface.
+        // This also doesn't deal with empty masks correctly.
         var lastMask = this.lastMasks[type];
+        if (lastMask.length < 1) {
+            lastMask = _.range(this.getNumElements(type));
+        }
+
         var rawAttributes = this.rawdata.attributes[type];
         var newValues = [];
         _.each(lastMask, function (idx) {
@@ -1308,8 +1315,6 @@ Dataframe.prototype.aggregate = function (simulator, indices, attributes, binnin
     return chain.then(function() {
         return aggregated;
     });
-
-
 
 
     // Array of promises
