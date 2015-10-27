@@ -443,8 +443,13 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
 }
 
 
+function toggleButton ($panelButton, newEnableValue) {
+    $panelButton.find('i').toggleClass('toggle-on', newEnableValue);
+}
+
+
 function togglePanel ($panelButton, $panel, newVisibility) {
-    $panelButton.children('i').toggleClass('toggle-on', newVisibility);
+    toggleButton($panelButton, newVisibility);
     $panel.toggle(newVisibility);
     $panel.css('visibility', newVisibility ? 'visible': 'hidden');
 }
@@ -488,7 +493,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
                 .map(_.constant(false)))
         .do(function (isTurnOn) {
             marqueeIsOn = isTurnOn;
-            $viewSelectionButton.find('i').toggleClass('toggle-on', marqueeIsOn);
+            toggleButton($viewSelectionButton, marqueeIsOn);
             appState.marqueeOn.onNext(marqueeIsOn ? 'toggled' : false);
         });
     var histogramPanelToggle = setupPanelControl(popoutClicks, $('#histogramPanelControl'), $('#histogram.panel'),
@@ -502,7 +507,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     }).do(function () {
         dataInspectorIsVisible = !dataInspectorIsVisible;
         dataInspectorOnSubject.onNext(dataInspectorIsVisible);
-        $dataInspectorButton.children('i').toggleClass('toggle-on', dataInspectorIsVisible);
+        toggleButton($dataInspectorButton, dataInspectorIsVisible);
         $('#inspector').css('visibility', dataInspectorIsVisible ? 'visible' : 'hidden');
     }).subscribe(_.identity, util.makeErrorHandler('dataInspector visibility toggle'));
 
@@ -519,12 +524,12 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         .map(function (elt) {
             var $brushButton = $('#brushButton');
             if (elt === $brushButton[0]) {
-                $(elt).children('i').toggleClass('toggle-on');
+                toggleButton($(elt));
                 brushIsOn = !brushIsOn;
             } else if (brushIsOn &&
                     (elt === $viewSelectionButton[0] || elt === $graph[0])) {
                 brushIsOn = false;
-                $brushButton.children('i').toggleClass('toggle-on', false);
+                toggleButton($brushButton, false);
             }
             if (brushIsOn) {
                 appState.brushOn.onNext('toggled');
