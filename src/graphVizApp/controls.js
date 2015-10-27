@@ -443,6 +443,13 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
 }
 
 
+function togglePanel ($panelButton, $panel, newVisibility) {
+    $panelButton.children('i').toggleClass('toggle-on', newVisibility);
+    $panel.toggle(newVisibility);
+    $panel.css('visibility', newVisibility ? 'visible': 'hidden');
+}
+
+
 //Observable DOM * $DOM * $DOM * String -> Observable Bool
 //When toolbarClicks is $panelButton,
 // toggle $panelButton and potentially show $panel,
@@ -456,9 +463,7 @@ function setupPanelControl (toolbarClicks, $panelButton, $panel, errorLogLabel) 
         return !$panel.is(':visible');
     });
     panelToggles.do(function (newVisibility) {
-        $panelButton.children('i').toggleClass('toggle-on', newVisibility);
-        $panel.toggle(newVisibility);
-        $panel.css('visibility', newVisibility ? 'visible': 'hidden');
+        togglePanel($panelButton, $panel, newVisibility);
     }).subscribe(_.identity, util.makeErrorHandler(errorLogLabel));
     return panelToggles;
 }
@@ -539,6 +544,9 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var histogramBrush = new HistogramBrush(socket, filtersPanel);
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
     histogramBrush.setupMarqueeInteraction(brush);
+    turnOnBrush.first(function (value) { return value === true; }).do(function () {
+        togglePanel($('#histogramPanelControl'), $('#histogram.panel'), true);
+    }).subscribe(_.identity, util.makeErrorHandler('Enabling the histogram on first brush use.'));
     dataInspector.init(appState, socket, workerParams.href, brush, histogramPanelToggle, filtersResponses, dataInspectorOnSubject);
     forkVgraph(socket, urlParams);
     persist.setupPersistLayoutButton($('#persistButton'), appState, socket, urlParams);
