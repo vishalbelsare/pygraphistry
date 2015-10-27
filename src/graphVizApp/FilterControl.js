@@ -41,22 +41,17 @@ function FilterControl(socket) {
             }
         }.bind(this)).subscribe(_.identity, util.makeErrorHandler(this.getFiltersCommand.description));
 
-    this.setupFilterRequestHandler(
-        this.updateFiltersRequests,
-        this.filtersResponsesSubject,
-        this.updateFiltersCommand);
-}
-
-FilterControl.prototype.setupFilterRequestHandler = function(requests, responses, command) {
-    util.bufferUntilReady(requests).do(function (hash) {
-        command.sendWithObservableResult(hash.data)
+    util.bufferUntilReady(this.updateFiltersRequests).do(function (hash) {
+        this.updateFiltersCommand.sendWithObservableResult(hash.data)
             .do(function (reply) {
-                responses.onNext(reply);
+                this.filtersResponsesSubject.onNext(reply);
+                if (reply.sets !== undefined) {
+                    this.setsResponsesSubject.onNext(reply.sets);
+                }
                 hash.ready();
-            }).subscribe(_.identity, util.makeErrorHandler(command.description));
-
-    }).subscribe(_.identity, util.makeErrorHandler(command.description));
-};
+            }.bind(this)).subscribe(_.identity, util.makeErrorHandler(this.updateFiltersCommand.description));
+    }.bind(this)).subscribe(_.identity, util.makeErrorHandler(this.updateFiltersCommand.description));
+}
 
 FilterControl.prototype.namespaceMetadataObservable = function () {
     if (this.namespaceSubscription === undefined) {
@@ -237,8 +232,11 @@ FilterControl.prototype.filterExactValuesParameters = function (type, attribute,
 FilterControl.prototype.filterObservable = function (params) {
     return this.runFilterCommand.sendWithObservableResult(params)
         .do(function (reply) {
-            this.filtersResponsesSubject.onNext(reply);
-        }).subscribe(_.identity);
+            this.filtersResponsesSubject.onNext(reply.filters);
+            if (reply.sets !== undefined) {
+                this.setsResponsesSubject.onNext(reply.sets);
+            }
+        }.bind(this)).subscribe(_.identity);
 };
 
 FilterControl.prototype.dispose = function () {
