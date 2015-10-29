@@ -53,7 +53,7 @@ var Dataframe = function () {
  * @property {Object} hostBuffers
  * @property {Object} localBuffers
  * @property {Object} renderedBuffers
- * @property {Object} numElements
+ * @property {{point: Number, edge: Number}} numElements
  */
 
 /**

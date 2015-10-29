@@ -1159,22 +1159,22 @@ function moveNodes(simulator, marqueeEvent) {
         y: drag.end.y - drag.start.y
     };
 
-    var moveNodes = simulator.otherKernels.moveNodes;
+    var moveNodesKernel = simulator.otherKernels.moveNodes;
 
-    return moveNodes.run(simulator, marqueeEvent.selection, delta)
+    return moveNodesKernel.run(simulator, marqueeEvent.selection, delta)
         .fail(log.makeQErrorHandler(logger, 'Failure trying to move nodes'));
 }
 
 function selectNodes(simulator, selection) {
     logger.debug('selectNodes', selection);
 
-    var selectNodes = simulator.otherKernels.selectNodes;
+    var selectNodesKernel = simulator.otherKernels.selectNodes;
 
     if (selection.all) {
         return Q(_.range(simulator.dataframe.getNumElements('point')));
     }
 
-    return selectNodes.run(simulator, selection)
+    return selectNodesKernel.run(simulator, selection)
         .then(function (mask) {
             var res = [];
             for(var i = 0; i < mask.length; i++) {
@@ -1293,7 +1293,7 @@ function tick(simulator, stepNumber, cfg) {
             logger.trace('Layout Perf Report (step: %d)', stepNumber);
 
             var totals = {};
-            var runs = {}
+            var runs = {};
             // Compute sum of means so we can print percentage of runtime
             _.each(simulator.layoutAlgorithms, function (la) {
                totals[la.name] = 0;
