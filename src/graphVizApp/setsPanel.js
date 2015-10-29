@@ -82,7 +82,7 @@ var VizSetModel = Backbone.Model.extend({
      */
     fromSystemSet: function (srcSet) {
         this.initializeSource(srcSet.id);
-        this.set(MasksProperty, srcSet.get(MasksProperty));
+        this.set(MasksProperty, _.clone(srcSet.get(MasksProperty)));
     },
     /**
      * @param {SelectionElement[]} selections
@@ -93,8 +93,9 @@ var VizSetModel = Backbone.Model.extend({
             mask = {point: [], edge: []};
             this.set(MasksProperty, mask);
         } else {
-            mask.point.length = 0;
-            mask.edge.length = 0;
+            // Avoid in-place mutation because we copy masks via cloning:
+            mask.point = [];
+            mask.edge = [];
         }
         _.each(selections, function (selection) {
             switch (selection.dim) {
