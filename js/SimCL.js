@@ -239,7 +239,7 @@ function findEdgeDirected (simulator, src, dst) {
 function findEdgeUndirected (simulator, src, dst) {
     try {
         return findEdgeDirected(simulator, src, dst);
-    } catch (e) {
+    } catch (ignore) {
         return findEdgeDirected(simulator, dst, src);
     }
 }
@@ -288,6 +288,7 @@ function highlightShortestPaths (renderer, simulator, pair) {
     var paths = [];
     var t0 = Date.now();
     var ok = pair[0] !== pair[1];
+    var i;
     while (ok && (Date.now() - t0 < 20 * 1000) && paths.length < MAX_PATHS) {
 
         var path = dijkstra.dijkstra(graph, pair[0]);
@@ -305,7 +306,7 @@ function highlightShortestPaths (renderer, simulator, pair) {
             steps.reverse();
             paths.push(steps);
 
-            for (var i = 0; i < steps.length - 1; i++) {
+            for (i = 0; i < steps.length - 1; i++) {
                 graph.removeEdge(steps[i], steps[i + 1]);
             }
 
@@ -317,8 +318,8 @@ function highlightShortestPaths (renderer, simulator, pair) {
     var biggestPoint = Math.max(
         simulator.dataframe.getLocalBuffer('pointSizes')[pair[0]],
         simulator.dataframe.getLocalBuffer('pointSizes')[pair[1]]);
-    for (var i = 0; i < Math.min(10000, renderer.numPoints); i++) {
-        biggestPoint = Math.max(biggestPoint, simulator.dataframe.getLocalBuffer(pointSizes)[i]);
+    for (i = 0; i < Math.min(10000, renderer.numPoints); i++) {
+        biggestPoint = Math.max(biggestPoint, simulator.dataframe.getLocalBuffer('pointSizes')[i]);
     }
     simulator.dataframe.setLocalBufferValue('pointSizes', pair[0], biggestPoint);
     simulator.dataframe.setLocalBufferValue('pointSizes', pair[1], biggestPoint);
@@ -1234,7 +1235,7 @@ function recolor(simulator, marquee) {
     var selectedIdx = [];
     var bounds = marquee.selection;
     var curPointsBuffer = simulator.dataframe.getBuffer('curPoints', 'simulator');
-    curPoints.read(new Float32Array(positions), 0).then(function () {
+    curPointsBuffer.read(new Float32Array(positions), 0).then(function () {
         var pos = new Float32Array(positions);
         for (var i = 0; i < numPoints; i++) {
             var x = pos[2*i];
@@ -1274,7 +1275,7 @@ function tick(simulator, stepNumber, cfg) {
 
     //run each algorithm to completion before calling next
     var tickAllHelper = function (remainingAlgorithms) {
-        if (!remainingAlgorithms.length) { return; }
+        if (!remainingAlgorithms.length) { return Q(undefined); }
         var algorithm = remainingAlgorithms.shift();
         return Q()
             .then(function () {
