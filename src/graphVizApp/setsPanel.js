@@ -475,7 +475,8 @@ SetsPanel.prototype.createSetObservable = function (sourceType) {
                     this.handleCreateSetResult(createSetResult);
                     // Reset selection now that we've captured them in a Set:
                     this.activeSelection.onNext([]);
-                }.bind(this));
+                }.bind(this)).subscribe(
+                    _.identity, util.makeErrorHandler('Creating a Set from Selection'));
             }.bind(this)).subscribe(
                 _.identity, util.makeErrorHandler('Creating a Set from Selection'));
             break;
@@ -484,9 +485,8 @@ SetsPanel.prototype.createSetObservable = function (sourceType) {
                 var specification = {filters: filters};
                 this.commands.create.sendWithObservableResult(sourceType, specification).do(function (createSetResult) {
                     this.handleCreateSetResult(createSetResult);
-                    // Reset filters now that we've captured them in a Set:
-                    this.filtersSubject.onNext([]);
-                }.bind(this));
+                }.bind(this)).subscribe(
+                    _.identity, util.makeErrorHandler('Creating a Set from Selection'));
             }.bind(this)).subscribe(
                 _.identity, util.makeErrorHandler('Creating a Set from Filters'));
             break;
