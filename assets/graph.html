@@ -577,7 +577,7 @@
     </div>
 </script>
 
-<script type="text/template" id="filterTemplate">
+<script type="text/x-handlebars-template" id="filterTemplate">
     <div class="topMenu row">
         <!--<div class="col-md-1 expandButton">
             <a href="#">
@@ -587,15 +587,19 @@
         <div class="col-md-8 filterName control-title attributeName">{{model.title}}</div>
         <div class="col-md-2"></div>
         <div class="col-md-1 disableButton">
+            {{#unless model.isSystem}}
             <a href="#">
                 <i class="fa fa-toggle-on disableFilterButton" title="Enabled" cid="{{id}}"></i>
             </a>
+            {{/unless}}
         </div>
         <div class="col-md-1 deleteButton">
+            {{#unless model.isSystem}}
             <a href="#">
                 <i class="fa fa-close deleteFilterButton" cid="{{id}}"
                     title="Delete Filter"></i>
             </a>
+            {{/unless}}
         </div>
     </div>
     <form class="filterEditor form-horizontal">
