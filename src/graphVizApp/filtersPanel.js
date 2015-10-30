@@ -24,6 +24,9 @@ var FilterModel = Backbone.Model.extend({
         enabled: true,
         query: undefined
     },
+    isSystem: function () {
+        return this.get('level') === 'system';
+    },
     placeholderQuery: function () {
         var result = {
             attribute: this.get('attribute'),
@@ -171,7 +174,8 @@ var FilterView = Backbone.View.extend({
     render: function () {
         var bindings = {
             model: _.extend({
-                    placeholder: this.control.queryToExpression(this.model.placeholderQuery())
+                    placeholder: this.control.queryToExpression(this.model.placeholderQuery()),
+                    isSystem: this.model.isSystem() || undefined
                 },
                 this.model.toJSON()),
             dataTypes: _.map(DataTypes, function (dataType) {
