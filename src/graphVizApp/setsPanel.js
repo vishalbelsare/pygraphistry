@@ -471,7 +471,7 @@ SetsPanel.prototype.createSetViaCommand = function (srcSystemSet) {
     switch (sourceType) {
         case 'selection':
             this.activeSelection.take(1).flatMapLatest(function (activeSelection) {
-                var specification = {mask: VizSetModel.prototype.maskFromVizSelection(activeSelection)};
+                var specification = {masks: VizSetModel.prototype.maskFromVizSelection(activeSelection)};
                 return this.commands.create.sendWithObservableResult(sourceType, specification).do(function (createSetResult) {
                     this.handleCreateSetResult(createSetResult);
                     // Reset selection now that we've captured them in a Set:
@@ -481,8 +481,13 @@ SetsPanel.prototype.createSetViaCommand = function (srcSystemSet) {
                 _.identity, util.makeErrorHandler('Creating a Set from Selection'));
             break;
         case 'filtered':
-            this.filtersSubject.take(1).flatMapLatest(function (filters) {
-                var specification = {filters: filters, mask: srcSystemSet.get(MasksProperty)};
+            this.filtersSubject.take(1).flatMapLatest(function (filtersCollection) {
+                var userFilters = filtersCollection.select(function (filter) { return !filter.isSystem(); });
+                var specification = {
+                    title: _.map(userFilters, function (filter) { return filter.get('query').inputString; }).join(' and '),
+                    filters: userFilters,
+                    masks: _.clone(srcSystemSet.get(MasksProperty))
+                };
                 return this.commands.create.sendWithObservableResult(sourceType, specification).do(function (createSetResult) {
                     this.handleCreateSetResult(createSetResult);
                 }.bind(this));
