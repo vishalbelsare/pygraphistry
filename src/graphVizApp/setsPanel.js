@@ -443,7 +443,7 @@ var AllVizSetsView = Backbone.View.extend({
         if (srcSystemSet === undefined) {
             throw Error('Set creation failed; unknown source: ' + this.createSetSelectionID);
         }
-        this.panel.createSetObservable(this.createSetSelectionID);
+        this.panel.createSetViaCommand(this.createSetSelectionID);
     }
 });
 
@@ -466,7 +466,7 @@ function SetsPanel(socket/*, urlParams*/) {
     });
 }
 
-SetsPanel.prototype.createSetObservable = function (sourceType) {
+SetsPanel.prototype.createSetViaCommand = function (sourceType) {
     switch (sourceType) {
         case 'selection':
             this.activeSelection.take(1).do(function (activeSelection) {
