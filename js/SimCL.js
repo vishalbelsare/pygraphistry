@@ -8,6 +8,7 @@ var util = require('./util.js');
 var cljs = require('./cl.js');
 var MoveNodes = require('./moveNodes.js');
 var SelectNodesInRect = require('./SelectNodesInRect.js');
+var SelectNodesInCircle = require('./SelectNodesInCircle.js');
 
 var HistogramKernel = require('./histogramKernel.js');
 var Color = require('color');
@@ -77,6 +78,7 @@ function create(dataframe, renderer, device, vendor, cfg) {
             simObj.otherKernels = {
                 moveNodes: new MoveNodes(cl),
                 selectNodesInRect: new SelectNodesInRect(cl),
+                selectNodesInCircle: new SelectNodesInCircle(cl)
                 //histogramKernel: new HistogramKernel(cl),
             };
             simObj.tilesPerIteration = 1;
@@ -97,6 +99,7 @@ function create(dataframe, renderer, device, vendor, cfg) {
             simObj.recolor = recolor.bind(this, simObj);
             simObj.moveNodes = moveNodes.bind(this, simObj);
             simObj.selectNodesInRect = selectNodesInRect.bind(this, simObj);
+            simObj.selectNodesInCircle = selectNodesInCircle.bind(this, simObj);
             simObj.connectedEdges = connectedEdges.bind(this, simObj);
             simObj.resetBuffers = resetBuffers.bind(this, simObj);
             simObj.tickBuffers = tickBuffers.bind(this, simObj);
@@ -1176,6 +1179,27 @@ function selectNodesInRect(simulator, selection) {
     }
 
     return selectNodesInRectKernel.run(simulator, selection)
+        .then(function (mask) {
+            var res = [];
+            for(var i = 0; i < mask.length; i++) {
+                if (mask[i] === 1) {
+                    res.push(i);
+                }
+            }
+            return new Uint32Array(res);
+        }).fail(log.makeQErrorHandler(logger, 'Failure trying to compute selection'));
+}
+
+function selectNodesInCircle(simulator, selection) {
+    logger.debug('selectNodesInCircle', selection);
+
+    var selectNodesInCircleKernel = simulator.otherKernels.selectNodesInCircle;
+
+    if (selection.all) {
+        return Q(_.range(simulator.dataframe.getNumElements('point')));
+    }
+
+    return selectNodesInCircleKernel.run(simulator, selection)
         .then(function (mask) {
             var res = [];
             for(var i = 0; i < mask.length; i++) {
