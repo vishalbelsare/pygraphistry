@@ -17,9 +17,9 @@ function SelectNodes(clContext) {
         bottom: cljs.types.float_t,
         right: cljs.types.float_t,
         positions: null,
-        mask:null
+        mask: null
     };
-    this.selectNodes = new Kernel('selectNodes', args, argsType, 'selectNodes.cl', clContext);
+    this.kernel = new Kernel('selectNodes', args, argsType, 'selectNodes.cl', clContext);
 }
 
 
@@ -36,7 +36,7 @@ SelectNodes.prototype.run = function (simulator, selection, delta) {
         logger.trace('Computing selection mask');
         var resources = [simulator.dataframe.getBuffer('curPoints', 'simulator')];
 
-        that.selectNodes.set({
+        that.kernel.set({
             top: selection.tl.y,
             left: selection.tl.x,
             bottom: selection.br.y,
@@ -48,7 +48,7 @@ SelectNodes.prototype.run = function (simulator, selection, delta) {
         simulator.tickBuffers(['nextPoints', 'curPoints']);
 
         logger.trace('Running selectNodes');
-        return that.selectNodes.exec([numPoints], resources)
+        return that.kernel.exec([numPoints], resources)
             .then(function () {
                 var result = new Uint8Array(that.bytes);
                 return mask.read(result).then(function () {
