@@ -72,17 +72,23 @@ var VizSetModel = Backbone.Model.extend({
         }
         return result;
     },
-    initializeSource: function (sourceType) {
-        if (this.get('setSource') === undefined) {
-            this.set('setSource', sourceType);
-        }
-    },
-    /**
-     * @param {VizSetModel} srcSet
-     */
-    fromSystemSet: function (srcSet) {
-        this.initializeSource(srcSet.id);
-        this.set(MasksProperty, _.clone(srcSet.get(MasksProperty)));
+    maskFromVizSelection: function (selections) {
+        var mask = {point: [], edge: []};
+        _.each(selections, function (selection) {
+            switch (selection.dim) {
+                case 1:
+                    mask.point.push(selection.idx);
+                    break;
+                case 2:
+                    mask.edge.push(selection.idx);
+                    break;
+                default:
+                    throw Error('Unrecognized dimension in selection: ' + selection.dim);
+            }
+        });
+        mask.point = _.uniq(mask.point.sort(), true);
+        mask.edge = _.uniq(mask.edge.sort(), true);
+        return mask;
     },
     /**
      * @param {SelectionElement[]} selections
@@ -111,9 +117,6 @@ var VizSetModel = Backbone.Model.extend({
         });
         mask.point = _.uniq(mask.point.sort(), true);
         mask.edge = _.uniq(mask.edge.sort(), true);
-    },
-    fromFilters: function (filters) {
-        this.set('filters', filters);
     },
     /**
      * @param {VizSetModel} otherSet
@@ -434,31 +437,13 @@ var AllVizSetsView = Backbone.View.extend({
         }
     },
     createSet: function (/*evt*/) {
-        //var $target = $(evt.currentTarget);
-        var vizSet = new VizSetModel({});
         var srcSystemSet = this.collection.find(function (vizSet) {
             return vizSet.id === this.createSetSelectionID;
         }.bind(this));
-        switch (this.createSetSelectionID) {
-            case 'selection':
-                vizSet.fromSystemSet(srcSystemSet);
-                this.panel.activeSelection.take(1).do(function (activeSelection) {
-                    vizSet.fromVizSelection(activeSelection);
-                }).subscribe(
-                    _.identity, util.makeErrorHandler('Getting the selection as a Set'));
-                break;
-            case 'filtered':
-                vizSet.fromSystemSet(srcSystemSet);
-                this.panel.filtersSubject.take(1).do(function (filters) {
-                    vizSet.fromFilters(filters);
-                }.bind(this)).subscribe(
-                    _.identity, util.makeErrorHandler('Getting the filtered data as a Set'));
-                break;
-            case 'dataframe':
-                vizSet.fromSystemSet(srcSystemSet);
-                break;
+        if (srcSystemSet === undefined) {
+            throw Error('Set creation failed; unknown source: ' + this.createSetSelectionID);
         }
-        this.collection.push(vizSet);
+        this.panel.createSetObservable(this.createSetSelectionID);
     }
 });
 
@@ -480,6 +465,43 @@ function SetsPanel(socket/*, urlParams*/) {
         panel: this
     });
 }
+
+SetsPanel.prototype.createSetObservable = function (sourceType) {
+    switch (sourceType) {
+        case 'selection':
+            this.activeSelection.take(1).do(function (activeSelection) {
+                var specification = {mask: VizSetModel.prototype.maskFromVizSelection(activeSelection)};
+                this.commands.create.sendWithObservableResult(sourceType, specification).do(function (createSetResult) {
+                    this.handleCreateSetResult(createSetResult);
+                    // Reset selection now that we've captured them in a Set:
+                    this.activeSelection.onNext([]);
+                }.bind(this));
+            }.bind(this)).subscribe(
+                _.identity, util.makeErrorHandler('Creating a Set from Selection'));
+            break;
+        case 'filtered':
+            this.filtersSubject.take(1).do(function (filters) {
+                var specification = {filters: filters};
+                this.commands.create.sendWithObservableResult(sourceType, specification).do(function (createSetResult) {
+                    this.handleCreateSetResult(createSetResult);
+                    // Reset filters now that we've captured them in a Set:
+                    this.filtersSubject.onNext([]);
+                }.bind(this));
+            }.bind(this)).subscribe(
+                _.identity, util.makeErrorHandler('Creating a Set from Filters'));
+            break;
+        case 'dataframe':
+            break;
+    }
+};
+
+SetsPanel.prototype.handleCreateSetResult = function (createSetResult) {
+    if (createSetResult.success === false) {
+        throw Error('Set creation failed.');
+    }
+    var createdSet = new VizSetModel(createSetResult.set);
+    this.collection.push(createdSet);
+};
 
 SetsPanel.prototype.refreshCollection = function () {
     Rx.Observable.combineLatest(
