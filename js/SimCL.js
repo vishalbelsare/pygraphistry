@@ -88,6 +88,8 @@ function create(dataframe, renderer, device, vendor, cfg) {
             simObj.tick = tick.bind(this, simObj);
             simObj.setPoints = setPoints.bind(this, simObj);
             simObj.setEdges = setEdges.bind(this, renderer, simObj);
+            simObj.setSelectedPointIndexes = setSelectedPointIndexes.bind(this, simObj);
+            simObj.setSelectedEdgeIndexes = setSelectedEdgeIndexes.bind(this, simObj);
             simObj.setEdgeColors = setEdgeColors.bind(this, simObj);
             simObj.setEdgeWeight = setEdgeWeight.bind(this, simObj);
             simObj.setMidEdgeColors = setMidEdgeColors.bind(this, simObj);
@@ -888,6 +890,20 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
         return simulator;
     })
     .fail(log.makeQErrorHandler(logger, 'Failure in SimCL.setEdges'));
+}
+
+
+function setSelectedEdgeIndexes(simulator, selectedEdgeIndexes) {
+    // TODO call in same promise chain as other set calls.
+    simulator.dataframe.loadLocalBuffer('selectedEdgeIndexes', selectedEdgeIndexes);
+    simulator.tickBuffers(['selectedEdgeIndexes']);
+}
+
+
+function setSelectedPointIndexes(simulator, selectedPointIndexes) {
+    // TODO call in same promise chain as other set calls.
+    simulator.dataframe.loadLocalBuffer('selectedPointIndexes', selectedPointIndexes);
+    simulator.tickBuffers(['selectedPointIndexes']);
 }
 
 

@@ -314,6 +314,12 @@ var setEdges = Q.promised(function(graph, edges) {
 
     return graph.simulator.setEdges(edges, forwardEdges, backwardsEdges,
                                     degrees, midPoints, endPoints, graph.__pointsHostBuffer)
+        .then(function () {
+            return graph.simulator.setSelectedPointIndexes(new Uint32Array());
+        })
+        .then(function () {
+            return graph.simulator.setSelectedEdgeIndexes(new Uint32Array());
+        })
         .then(function() {
             return graph;
         }).fail(log.makeQErrorHandler(logger, 'Failure in setEdges'));

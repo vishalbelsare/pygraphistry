@@ -24,44 +24,32 @@ function DataframeMask(dataframe, pointIndexes, edgeIndexes) {
 }
 
 DataframeMask.prototype.numPoints = function () {
-    return this.point !== undefined ? this.point.length : this.dataframe.numPoints();
+    return this.numByType('point');
 };
 
 DataframeMask.prototype.numByType = function (type) {
     return this[type] !== undefined ? this[type].length : this.dataframe.getNumElements(type);
 };
 
-DataframeMask.prototype.limitNumPointsTo = function (limit) {
-    if (limit >= this.numPoints()) { return; }
-    if (this.point === undefined) {
-        this.point = _.range(limit);
+DataframeMask.prototype.limitNumByTypeTo = function (type, limit) {
+    if (limit >= this.numByType(type)) { return; }
+    if (this[type] === undefined) {
+        this[type] = _.range(limit);
     } else {
-        this.point.length = limit;
+        this[type].length = limit;
     }
+};
+
+DataframeMask.prototype.limitNumPointsTo = function (limit) {
+    this.limitNumByTypeTo('point', limit);
 };
 
 DataframeMask.prototype.numEdges = function () {
-    return this.edge !== undefined ? this.edge.length : this.dataframe.numEdges();
+    return this.numByType('edge');
 };
 
 DataframeMask.prototype.limitNumEdgesTo = function (limit) {
-    if (limit >= this.numEdges()) { return; }
-    if (this.edge === undefined) {
-        this.edge = _.range(limit);
-    } else {
-        this.edge.length = limit;
-    }
-};
-
-/**
- * Override to avoid serializing the dataframe.
- */
-DataframeMask.prototype.toJSON = function () {
-    if (this.dataframe === undefined) {
-        return this;
-    } else {
-        return _.omit(this, 'dataframe');
-    }
+    this.limitNumByTypeTo('edge', limit);
 };
 
 /**
@@ -237,32 +225,14 @@ DataframeMask.prototype.mapIndexes = function (type, iterator) {
  * @param {IndexIteratorCallback} iterator
  */
 DataframeMask.prototype.mapPointIndexes = function (iterator) {
-    var numPoints = this.numPoints(), i = 0;
-    if (this.point === undefined) {
-        for (i = 0; i < numPoints; i++) {
-            iterator.call(this, i, i);
-        }
-    } else {
-        for (i = 0; i < numPoints; i++) {
-            iterator.call(this, this.point[i], i);
-        }
-    }
+    this.mapIndexes('point', iterator);
 };
 
 /**
  * @param {IndexIteratorCallback} iterator
  */
 DataframeMask.prototype.mapEdgeIndexes = function (iterator) {
-    var numEdges = this.numEdges(), i = 0;
-    if (this.edge === undefined) {
-        for (i = 0; i < numEdges; i++) {
-            iterator.call(this, i, i);
-        }
-    } else {
-        for (i = 0; i < numEdges; i++) {
-            iterator.call(this, this.edge[i], i);
-        }
-    }
+    this.mapIndexes('edge', iterator);
 };
 
 DataframeMask.prototype.getIndexByType = function (type, index) {
@@ -273,24 +243,44 @@ DataframeMask.prototype.getIndexByType = function (type, index) {
     }
 };
 
-DataframeMask.prototype.getEdgeIndex = function (index) {
-    if (this.edge === undefined) {
-        return index;
+DataframeMask.prototype.typedIndexesForType = function (type) {
+    var numElements = this.numByType(type),
+        result = new Uint32Array(numElements),
+        i = 0,
+        mask = this[type];
+    if (mask === undefined) {
+        for (i=0; i<numElements; i++) {
+            result[i] = i;
+        }
     } else {
-        return this.edge[index];
+        for (i=0; i<numElements; i++) {
+            result[i] = mask[i];
+        }
     }
+    return result;
+};
+
+DataframeMask.prototype.typedEdgeIndexes = function () {
+    return this.typedIndexesForType('edge');
+};
+
+DataframeMask.prototype.typedPointIndexes = function () {
+    return this.typedIndexesForType('point');
+};
+
+DataframeMask.prototype.getEdgeIndex = function (index) {
+    return this.getIndexByType('edge', index);
 };
 
 DataframeMask.prototype.getPointIndex = function (index) {
-    if (this.point === undefined) {
-        return index;
-    } else {
-        return this.point[index];
-    }
+    return this.getIndexByType('point', index);
 };
 
 var OmittedProperties = ['dataframe'];
 
+/**
+ * Override to avoid serializing the dataframe or a typed array.
+ */
 DataframeMask.prototype.toJSON = function () {
     var result = _.omit(this, OmittedProperties);
     var i;

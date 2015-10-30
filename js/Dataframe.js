@@ -46,7 +46,7 @@ var Dataframe = function () {
         this,
         [],
         []
-    )
+    );
     this.masksForVizSets = {};
     this.data = this.rawdata;
 };
@@ -515,6 +515,9 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     newData.localBuffers.logicalEdges = forwardsEdges.edgesTyped;
     newData.localBuffers.forwardsEdgeStartEndIdxs = forwardsEdges.edgeStartEndIdxsTyped;
     newData.localBuffers.backwardsEdgeStartEndIdxs = backwardsEdges.edgeStartEndIdxsTyped;
+    // TODO index translation (filter scope)
+    newData.localBuffers.selectedEdgeIndexes = this.lastSelectionMasks.typedEdgeIndexes();
+    newData.localBuffers.selectedPointIndexes = this.lastSelectionMasks.typedPointIndexes();
 
     ///////////////////////////////////////////////////////////////////////////
     // Copy non-GPU buffers
