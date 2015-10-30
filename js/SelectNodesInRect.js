@@ -5,10 +5,10 @@ var    cljs = require('./cl.js'),
      Kernel = require('./kernel.js');
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:cl:selectnodes');
+var logger      = log.createLogger('graph-viz:cl:selectNodesInRect');
 
-function SelectNodes(clContext) {
-    logger.trace('Creating selectNodes kernel');
+function SelectNodesInRect(clContext) {
+    logger.trace('Creating selectNodesInRect kernel');
 
     var args = ['top', 'left', 'bottom', 'right', 'positions', 'mask'];
     var argsType = {
@@ -19,11 +19,11 @@ function SelectNodes(clContext) {
         positions: null,
         mask: null
     };
-    this.kernel = new Kernel('selectNodes', args, argsType, 'selectNodes.cl', clContext);
+    this.kernel = new Kernel('selectNodesInRect', args, argsType, 'selectNodesInRect.cl', clContext);
 }
 
 
-SelectNodes.prototype.run = function (simulator, selection, delta) {
+SelectNodesInRect.prototype.run = function (simulator, selection, delta) {
     var that = this;
     var numPoints = simulator.dataframe.getNumElements('point');
 
@@ -47,16 +47,16 @@ SelectNodes.prototype.run = function (simulator, selection, delta) {
 
         simulator.tickBuffers(['nextPoints', 'curPoints']);
 
-        logger.trace('Running selectNodes');
+        logger.trace('Running selectNodesInRect');
         return that.kernel.exec([numPoints], resources)
             .then(function () {
                 var result = new Uint8Array(that.bytes);
                 return mask.read(result).then(function () {
                     return result;
                 });
-            }).fail(log.makeQErrorHandler(logger, 'Kernel selectNodes failed'));
+            }).fail(log.makeQErrorHandler(logger, 'Kernel selectNodesInRect failed'));
     }).fail(log.makeQErrorHandler(logger, 'Node selection failed'));
 
 };
 
-module.exports = SelectNodes;
+module.exports = SelectNodesInRect;
