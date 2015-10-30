@@ -143,6 +143,33 @@ DataframeMask.complementOfMask = function(x, sizeOfUniverse) {
 };
 
 /**
+ * Returns the intersection of the first mask and the complement of the second mask.
+ * @param {Mask} x
+ * @param {Mask} y
+ * @returns {Mask}
+ */
+DataframeMask.minusMask = function (x, y) {
+    var xLength = x.length, yLength = y.length;
+    // Smallest result: full intersection and no output.
+    var result = [];
+    var xIndex = 0, yIndex = 0;
+    while (xIndex < xLength && yIndex < yLength) {
+        if (x[xIndex] < y[yIndex]) {
+            result.push(x[xIndex++]);
+        } else if (y[yIndex] < x[xIndex]) {
+            yIndex++;
+        } else /* x[xIndex] === y[yIndex] */ {
+            yIndex++;
+            xIndex++;
+        }
+    }
+    while (xIndex < xLength) {
+        result.push(x[xIndex++]);
+    }
+    return result;
+};
+
+/**
  * @param {DataframeMask} other
  * @returns {DataframeMask}
  */
@@ -172,6 +199,16 @@ DataframeMask.prototype.complement = function () {
 };
 
 /**
+ * @param {DataframeMask} other
+ * @returns {DataframeMask}
+ */
+DataframeMask.prototype.minus = function (other) {
+    return new DataframeMask(this.dataframe,
+        DataframeMask.minusMask(this.point, other.point),
+        DataframeMask.minusMask(this.edge, other.edge));
+};
+
+/**
  * This callback applies to iterating across point and edge index arrays.
  * @callback IndexIteratorCallback
  * @param {Number} indexAsElement
@@ -179,6 +216,7 @@ DataframeMask.prototype.complement = function () {
  * */
 
 /**
+ * @param {String} type point/edge
  * @param {IndexIteratorCallback} iterator
  */
 DataframeMask.prototype.mapIndexes = function (type, iterator) {
