@@ -27,7 +27,7 @@ SelectNodesInRect.prototype.run = function (simulator, selection, delta) {
     var that = this;
     var numPoints = simulator.dataframe.getNumElements('point');
 
-    if (!that.qMask) {
+    if (!that.qMask || that.bytes < numPoints * Uint8Array.BYTES_PER_ELEMENT) {
         that.bytes = numPoints * Uint8Array.BYTES_PER_ELEMENT;
         that.qMask = simulator.cl.createBuffer(that.bytes, 'mask');
     }
@@ -50,8 +50,8 @@ SelectNodesInRect.prototype.run = function (simulator, selection, delta) {
         logger.trace('Running selectNodesInRect');
         return that.kernel.exec([numPoints], resources)
             .then(function () {
-                var result = new Uint8Array(that.bytes);
-                return mask.read(result).then(function () {
+                var result = new Uint8Array(numPoints);
+                return mask.read(result, 0, result.byteLength).then(function () {
                     return result;
                 });
             }).fail(log.makeQErrorHandler(logger, 'Kernel selectNodesInRect failed'));
