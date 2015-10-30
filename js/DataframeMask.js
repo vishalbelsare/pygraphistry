@@ -19,8 +19,8 @@ var _ = require('underscore');
  */
 function DataframeMask(dataframe, pointIndexes, edgeIndexes) {
     this.dataframe = dataframe;
-    this.point = pointIndexes;
-    this.edge = edgeIndexes;
+    this.point = (pointIndexes instanceof ArrayBuffer) ? new Uint32Array(pointIndexes) : pointIndexes;
+    this.edge = (edgeIndexes instanceof ArrayBuffer) ? new Uint32Array(edgeIndexes) : edgeIndexes;
 }
 
 DataframeMask.prototype.numPoints = function () {
@@ -249,6 +249,28 @@ DataframeMask.prototype.getPointIndex = function (index) {
     } else {
         return this.point[index];
     }
+};
+
+var OmittedProperties = ['dataframe'];
+
+DataframeMask.prototype.toJSON = function () {
+    var result = _.omit(this, OmittedProperties);
+    var i;
+    if (result.edge !== undefined && !(result.edge instanceof Array)) {
+        var edgeMask = result.edge;
+        result.edge = new Array(edgeMask.length);
+        for (i=0; i<edgeMask.length; i++) {
+            result.edge[i] = edgeMask[i];
+        }
+    }
+    if (result.point !== undefined && !(result.point instanceof Array)) {
+        var pointMask = result.point;
+        result.point = new Array(pointMask.length);
+        for (i=0; i<pointMask.length; i++) {
+            result.point[i] = pointMask[i];
+        }
+    }
+    return result;
 };
 
 module.exports = DataframeMask;
