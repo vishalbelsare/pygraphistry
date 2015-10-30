@@ -35,12 +35,18 @@ var Dataframe = function () {
     };
     this.typedArrayCache = {};
     this.lastPointPositions = null;
-    /** The last mask applied as a result of in-place filtering. */
+    /** The last mask applied as a result of in-place filtering. Full by default. */
     this.lastMasks = new DataframeMask(
         this,
         undefined,
         undefined
     );
+    /** The last mask applied as a result of selections. Empty by default. */
+    this.lastSelectionMasks = new DataframeMask(
+        this,
+        [],
+        []
+    )
     this.masksForVizSets = {};
     this.data = this.rawdata;
 };
