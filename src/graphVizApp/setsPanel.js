@@ -443,7 +443,7 @@ var AllVizSetsView = Backbone.View.extend({
         if (srcSystemSet === undefined) {
             throw Error('Set creation failed; unknown source: ' + this.createSetSelectionID);
         }
-        this.panel.createSetViaCommand(this.createSetSelectionID);
+        this.panel.createSetViaCommand(srcSystemSet);
     }
 });
 
@@ -466,27 +466,26 @@ function SetsPanel(socket/*, urlParams*/) {
     });
 }
 
-SetsPanel.prototype.createSetViaCommand = function (sourceType) {
+SetsPanel.prototype.createSetViaCommand = function (srcSystemSet) {
+    var sourceType = srcSystemSet.id;
     switch (sourceType) {
         case 'selection':
-            this.activeSelection.take(1).do(function (activeSelection) {
+            this.activeSelection.take(1).flatMapLatest(function (activeSelection) {
                 var specification = {mask: VizSetModel.prototype.maskFromVizSelection(activeSelection)};
-                this.commands.create.sendWithObservableResult(sourceType, specification).do(function (createSetResult) {
+                return this.commands.create.sendWithObservableResult(sourceType, specification).do(function (createSetResult) {
                     this.handleCreateSetResult(createSetResult);
                     // Reset selection now that we've captured them in a Set:
                     this.activeSelection.onNext([]);
-                }.bind(this)).subscribe(
-                    _.identity, util.makeErrorHandler('Creating a Set from Selection'));
+                }.bind(this));
             }.bind(this)).subscribe(
                 _.identity, util.makeErrorHandler('Creating a Set from Selection'));
             break;
         case 'filtered':
-            this.filtersSubject.take(1).do(function (filters) {
-                var specification = {filters: filters};
-                this.commands.create.sendWithObservableResult(sourceType, specification).do(function (createSetResult) {
+            this.filtersSubject.take(1).flatMapLatest(function (filters) {
+                var specification = {filters: filters, mask: srcSystemSet.get(MasksProperty)};
+                return this.commands.create.sendWithObservableResult(sourceType, specification).do(function (createSetResult) {
                     this.handleCreateSetResult(createSetResult);
-                }.bind(this)).subscribe(
-                    _.identity, util.makeErrorHandler('Creating a Set from Selection'));
+                }.bind(this));
             }.bind(this)).subscribe(
                 _.identity, util.makeErrorHandler('Creating a Set from Filters'));
             break;
