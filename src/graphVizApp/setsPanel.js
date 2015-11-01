@@ -286,6 +286,7 @@ var VizSetView = Backbone.View.extend({
     },
     delete: function (/*event*/) {
         this.$el.remove();
+        this.panel.deleteSet(this.model);
         this.collection.remove(this.model);
     },
     rename: function (event) {
