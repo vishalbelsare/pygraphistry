@@ -292,23 +292,32 @@ var VizSetView = Backbone.View.extend({
     rename: function (event) {
         event.preventDefault();
         var bindings = this.model.toJSON();
-        var $modal = $(this.renameTemplate(bindings));
-        $('body').append($modal);
-        var $status = $('.status', $modal);
+        if (!this.$renameDialog) {
+            this.$renameDialog = $(this.renameTemplate(bindings));
+            $('body').append(this.$renameDialog);
+        }
+        var $status = $('.status', this.$renameDialog);
         $status.css('display', 'none');
-        var $input = $('.modal-body input', $modal);
+        var $input = $('.modal-body input', this.$renameDialog);
         $input.val(this.model.get('title'));
-        $modal.modal('show');
-        Rx.Observable.fromEvent($('.modal-footer button', $modal), 'click')
-            .map(_.constant($modal)).do(function ($modal) {
+        this.$renameDialog.modal('show');
+        this.renameDialogSubscription = Rx.Observable.fromEvent($('.modal-footer button', this.$renameDialog), 'click')
+            .map(_.constant(this.$renameDialog)).do(function ($modal) {
                 var setTag = $input.val();
                 this.model.set('title', setTag);
-                $modal.modal('hide');
+                this.closeRenameDialog();
             }.bind(this)).subscribe(
-            _.identity, function (err) {
-                try { $modal.remove(); } catch (ignore) { }
-                util.makeErrorHandler('Exception while setting set tag', err);
-            });
+                _.identity, function (err) {
+                    util.makeErrorHandler('Exception while naming Set', err);
+                    this.closeRenameDialog();
+                }.bind(this));
+    },
+    closeRenameDialog: function () {
+        this.$renameDialog.modal('hide');
+        this.renameDialogSubscription.dispose();
+        this.renameDialogSubscription = undefined;
+        this.$renameDialog.remove();
+        this.$renameDialog = undefined;
     },
     toggleSelected: function (/*event*/) {
         this.model.isSelected(!this.model.isSelected());
