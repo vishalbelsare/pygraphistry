@@ -206,17 +206,21 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, se
     if (poiIsEnabled) {
         hits = poi.getActiveApprox(appState.renderState, 'pointHitmapDownsampled');
     }
+
     _.each([highlighted, indicesToExpand], function (set) {
         _.each(set, function (labelObj) {
             hits[poi.cacheKey(labelObj.idx, labelObj.dim)] = labelObj;
         });
     });
 
-    console.log('hits: ', hits);
-
     // Initial values for clearing/showing
-    var toClear = poi.finishApprox(poi.state.activeLabels, poi.state.inactiveLabels,
-                                   hits, appState.renderState, points);
+    var toClear;
+    if (poiIsEnabled) {
+        toClear = poi.finishApprox(poi.state.activeLabels, poi.state.inactiveLabels,
+                            hits, appState.renderState, points);
+    } else {
+        toClear = poi.finishAll(poi.state.activeLabels, poi.state.inactiveLabels, hits);
+    }
 
     // select label elements (and make active if needed)
     var labelsToShow = _.values(hits)

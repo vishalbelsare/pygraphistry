@@ -106,6 +106,20 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
     return toClear;
 }
 
+function finishAll(activeLabels, inactiveLabels, hits, renderState, points) {
+    var toClear = [];
+
+    _.values(activeLabels).forEach(function (lbl) {
+        if (!hits[cacheKey(lbl.idx, lbl.dim)]) {
+            inactiveLabels.push(lbl);
+            delete activeLabels[cacheKey(lbl.idx, lbl.dim)];
+            toClear.push(lbl);
+        }
+    });
+
+    return toClear;
+}
+
 //DOM =======================
 
 /**
@@ -340,6 +354,7 @@ function init(socket) {
 
         getActiveApprox: getActiveApprox,
         finishApprox: finishApprox,
+        finishAll: finishAll,
 
         //$DOM * idx -> {elt: $DOM, idx: int, setIdx: Subject int}
         genLabel: genLabel.bind('', instance),
