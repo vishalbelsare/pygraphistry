@@ -517,9 +517,13 @@ SetsPanel.prototype = {
         this.collection.push(createdSet);
     },
 
+    getAllSets: function () {
+        return this.commands.getAll.sendWithObservableResult();
+    },
+
     refreshCollection: function () {
         Rx.Observable.combineLatest(
-            this.commands.getAll.sendWithObservableResult(),
+            this.getAllSets(),
             this.activeSelection,
             function (response, activeSelection) {
                 var sets = response.sets;
