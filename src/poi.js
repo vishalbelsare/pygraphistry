@@ -106,7 +106,7 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
     return toClear;
 }
 
-function finishAll(activeLabels, inactiveLabels, hits, renderState, points) {
+function finishAll(activeLabels, inactiveLabels, hits) {
     var toClear = [];
 
     _.values(activeLabels).forEach(function (lbl) {
