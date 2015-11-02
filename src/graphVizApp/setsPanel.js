@@ -58,22 +58,22 @@ var VizSetModel = Backbone.Model.extend({
      */
     asVizSelection: function () {
         var mask = this.get(MasksProperty);
-        if (mask === undefined) { return []; }
         var result = []; // new Array(mask.point.length + mask.edge.length);
-        if (mask.point) {
-            _.each(mask.point, function (pointIndex) {
-                result.push({dim: 1, idx: pointIndex});
-            });
-        }
-        if (mask.edge) {
-            _.each(mask.edge, function (edgeIndex) {
-                result.push({dim: 2, idx: edgeIndex});
-            });
+        if (mask !== undefined) {
+            if (mask.point) {
+                _.each(mask.point, function (pointIndex) {
+                    result.push({dim: 1, idx: pointIndex});
+                });
+            }
+            if (mask.edge) {
+                _.each(mask.edge, function (edgeIndex) {
+                    result.push({dim: 2, idx: edgeIndex});
+                });
+            }
         }
         return result;
     },
-    maskFromVizSelection: function (selections) {
-        var mask = {point: [], edge: []};
+    updateMaskFromVizSelections: function (mask, selections) {
         _.each(selections, function (selection) {
             switch (selection.dim) {
                 case 1:
@@ -88,6 +88,10 @@ var VizSetModel = Backbone.Model.extend({
         });
         mask.point = _.uniq(mask.point.sort(), true);
         mask.edge = _.uniq(mask.edge.sort(), true);
+    },
+    maskFromVizSelection: function (selections) {
+        var mask = {point: [], edge: []};
+        this.updateMaskFromVizSelections(mask, selections);
         return mask;
     },
     /**
@@ -103,20 +107,7 @@ var VizSetModel = Backbone.Model.extend({
             mask.point = [];
             mask.edge = [];
         }
-        _.each(selections, function (selection) {
-            switch (selection.dim) {
-                case 1:
-                    mask.point.push(selection.idx);
-                    break;
-                case 2:
-                    mask.edge.push(selection.idx);
-                    break;
-                default:
-                    throw Error('Unrecognized dimension in selection: ' + selection.dim);
-            }
-        });
-        mask.point = _.uniq(mask.point.sort(), true);
-        mask.edge = _.uniq(mask.edge.sort(), true);
+        this.updateMaskFromVizSelections(mask, selections);
     },
     /**
      * @param {VizSetModel} otherSet
