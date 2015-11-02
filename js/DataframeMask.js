@@ -301,4 +301,24 @@ DataframeMask.prototype.toJSON = function () {
     return result;
 };
 
+/**
+ * No-op which might accept updated masks from a client specification.
+ * @param clientMask
+ */
+DataframeMask.prototype.fromJSON = function (clientMask) {
+    if (clientMask === undefined) { return; }
+    if (clientMask.point !== undefined) {
+        var numPoints = this.dataframe.numPoints();
+        var pointMask = _.filter(clientMask.point, function (idx) { return idx < numPoints; });
+        // TODO translate to filter-independent offsets
+        this.point = pointMask.sort();
+    }
+    if (clientMask.edge !== undefined) {
+        var numEdges = this.dataframe.numPoints();
+        var edgeMask = _.filter(clientMask.point, function (idx) { return idx < numEdges; });
+        // TODO translate to filter-independent offsets
+        this.edge = edgeMask.sort();
+    }
+};
+
 module.exports = DataframeMask;
