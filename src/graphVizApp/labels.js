@@ -157,14 +157,16 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
         appState.vboUpdates,
         latestHighlightedObject,
         appState.activeSelection,
-        function (camera, vboUpdates, highlighted, selection) {
+        appState.poiIsEnabled,
+        function (camera, vboUpdates, highlighted, selection, poiIsEnabled) {
             return {
                 highlighted: highlighted,
-                selection: selection
+                selection: selection,
+                poiIsEnabled: poiIsEnabled
             };
         }
     ).do(function (toShow) {
-        renderLabels(appState, $labelCont, toShow.highlighted, toShow.selection);
+        renderLabels(appState, $labelCont, toShow.highlighted, toShow.selection, toShow.poiIsEnabled);
     })
     .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
 }
@@ -173,7 +175,7 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
 
 // AppState * $DOM * {dim:int, idx:int} * {dim:int, idx:int} -> ()
 // Immediately reposition each label based on camera and curPoints buffer
-function renderLabels(appState, $labelCont, highlighted, selected) {
+function renderLabels(appState, $labelCont, highlighted, selected, poiIsEnabled) {
     debug('rendering labels');
 
     // TODO: Simplify this so we don't have to have this separate call for getting
@@ -186,21 +188,27 @@ function renderLabels(appState, $labelCont, highlighted, selected) {
 
     curPoints.take(1)
         .do(function (curPoints) {
-            renderLabelsImmediate(appState, $labelCont, curPoints, highlighted, selected);
+            renderLabelsImmediate(appState, $labelCont, curPoints, highlighted, selected, poiIsEnabled);
         })
         .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
 }
 
-function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, selected) {
+function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, selected, poiIsEnabled) {
+
     // Trying to handle set highlight/selection, but badly:
-    if (highlighted.length + selected.length > 1) { return; }
-    var indicesToExpand = selected.length > 0 ? [selected[selected.length - 1]] : selected;
+    var indicesToExpand = selected.length > 1 ? [] : selected;
+    highlighted = highlighted.length > 1 ? [] : highlighted;
+
 
     var poi = appState.poi;
     var points = new Float32Array(curPoints.buffer);
 
-    // Get hits from POI and add highlighted/selected
-    var hits = poi.getActiveApprox(appState.renderState, 'pointHitmapDownsampled');
+    // Get hits from POI if it's enabled, and add highlighted/selected after
+    var hits = {};
+    if (poiIsEnabled) {
+        hits = poi.getActiveApprox(appState.renderState, 'pointHitmapDownsampled');
+    }
+
     _.each([highlighted, indicesToExpand], function (set) {
         _.each(set, function (labelObj) {
             hits[poi.cacheKey(labelObj.idx, labelObj.dim)] = labelObj;
@@ -208,8 +216,13 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, se
     });
 
     // Initial values for clearing/showing
-    var toClear = poi.finishApprox(poi.state.activeLabels, poi.state.inactiveLabels,
-                                   hits, appState.renderState, points);
+    var toClear;
+    if (poiIsEnabled) {
+        toClear = poi.finishApprox(poi.state.activeLabels, poi.state.inactiveLabels,
+                            hits, appState.renderState, points);
+    } else {
+        toClear = poi.finishAll(poi.state.activeLabels, poi.state.inactiveLabels, hits);
+    }
 
     // select label elements (and make active if needed)
     var labelsToShow = _.values(hits)
