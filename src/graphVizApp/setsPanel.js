@@ -294,28 +294,29 @@ var VizSetView = Backbone.View.extend({
         if (!this.$renameDialog) {
             this.$renameDialog = $(this.renameTemplate(bindings));
             $('body').append(this.$renameDialog);
-        }
-        var $status = $('.status', this.$renameDialog);
-        $status.css('display', 'none');
-        var $input = $('.modal-body input', this.$renameDialog);
-        $input.val(this.model.get('title'));
-        this.$renameDialog.on('shown.bs.modal', function () {
-            $('input', this.$renameDialog).first().focus();
-        }.bind(this));
-        this.$renameDialog.modal('show');
-        this.renameDialogSubscription = Rx.Observable.fromEvent($('.modal-footer button', this.$renameDialog), 'click')
-            .map(_.constant(this.$renameDialog)).subscribe(function (/*$modal*/) {
-                var setTag = $input.val();
-                this.model.save('title', setTag, {panel: this.panel});
-                this.closeRenameDialog();
-            }.bind(this),
-            function (err) {
-                util.makeErrorHandler('Exception while naming Set', err);
-                this.closeRenameDialog();
+            var $status = $('.status', this.$renameDialog);
+            $status.css('display', 'none');
+            var $input = $('.modal-body input', this.$renameDialog);
+            $input.val(this.model.get('title'));
+            this.$renameDialog.on('shown.bs.modal', function () {
+                $('input', this.$renameDialog).first().focus();
             }.bind(this));
+            this.$renameDialog.modal('show');
+            this.renameDialogSubscription = Rx.Observable.fromEvent($('.modal-footer button', this.$renameDialog), 'click')
+                .map(_.constant(this.$renameDialog)).subscribe(function (/*$modal*/) {
+                    var setTag = $input.val();
+                    this.model.save('title', setTag, {panel: this.panel});
+                    this.closeRenameDialog();
+                }.bind(this),
+                function (err) {
+                    util.makeErrorHandler('Exception while naming Set', err);
+                    this.closeRenameDialog();
+                }.bind(this));
+        }
     },
     closeRenameDialog: function () {
         this.$renameDialog.modal('hide');
+        $('.modal-backdrop').remove();
         this.renameDialogSubscription.dispose();
         this.renameDialogSubscription = undefined;
         this.$renameDialog.remove();
