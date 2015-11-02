@@ -207,30 +207,39 @@ var VizSetModel = Backbone.Model.extend({
     },
     sync: function (method, model, options) {
         if (options === undefined) { options = {}; }
-        var success = options.success;
+        var success = options.success,
+            panel = options.panel;
         switch (method) {
             case 'read':
+                panel.getAllSets().take(1).subscribe(
+                    function (latestSets) {
+                        if (model.isNew()) { return; }
+                        var match = _.find(latestSets, function (vizSet) {
+                            return vizSet.id === model.id;
+                        });
+                        if (match !== undefined) {
+                            model.set(match);
+                        }
+                    },
+                    util.makeErrorHandler('Getting latest Sets'));
                 break;
             case 'delete':
-                if (model.id === undefined) {
-                    break;
-                }
-                this.panel.deleteSet(model.toJSON()).do(function (response) {
+                panel.deleteSet(model.toJSON()).subscribe(function (response) {
                     if (typeof success === 'function') {
                         success.call(options.context, model, response, options);
                     }
-                }).subscribe(_.identity, util.makeErrorHandler('Deleting a Set'));
+                }, util.makeErrorHandler('Deleting a Set'));
                 break;
             case 'update':
                 // TODO handle options.patch
-                this.panel.updateSet(model.toJSON()).do(function (response) {
+                panel.updateSet(model.toJSON()).subscribe(function (response) {
                     if (response.success === true && response.set !== undefined) {
                         model.set(response.set);
                     }
                     if (typeof success === 'function') {
                         success.call(model, response, options);
                     }
-                }).subscribe(_.identity, util.makeErrorHandler('Updating a Set'));
+                }, util.makeErrorHandler('Updating a Set'));
                 break;
         }
     }
@@ -277,8 +286,7 @@ var VizSetView = Backbone.View.extend({
     },
     delete: function (/*event*/) {
         this.$el.remove();
-        this.panel.deleteSet(this.model);
-        this.collection.remove(this.model);
+        this.model.destroy({panel: this.panel});
     },
     rename: function (event) {
         event.preventDefault();
@@ -293,15 +301,15 @@ var VizSetView = Backbone.View.extend({
         $input.val(this.model.get('title'));
         this.$renameDialog.modal('show');
         this.renameDialogSubscription = Rx.Observable.fromEvent($('.modal-footer button', this.$renameDialog), 'click')
-            .map(_.constant(this.$renameDialog)).do(function ($modal) {
+            .map(_.constant(this.$renameDialog)).subscribe(function (/*$modal*/) {
                 var setTag = $input.val();
-                this.model.set('title', setTag);
+                this.model.save('title', setTag, {panel: this.panel});
                 this.closeRenameDialog();
-            }.bind(this)).subscribe(
-                _.identity, function (err) {
-                    util.makeErrorHandler('Exception while naming Set', err);
-                    this.closeRenameDialog();
-                }.bind(this));
+            }.bind(this),
+            function (err) {
+                util.makeErrorHandler('Exception while naming Set', err);
+                this.closeRenameDialog();
+            }.bind(this));
     },
     closeRenameDialog: function () {
         this.$renameDialog.modal('hide');
@@ -572,7 +580,9 @@ SetsPanel.prototype = {
      * @param {Rx.ReplaySubject} latestHighlightedObject
      */
     setupSelectionInteraction: function (activeSelection, latestHighlightedObject) {
+        /** @type {Rx.ReplaySubject} */
         this.activeSelection = activeSelection;
+        /** @type {Rx.ReplaySubject} */
         this.latestHighlightedObject = latestHighlightedObject;
         this.activeSelection.do(function (activeSelection) {
             if (activeSelection.length === 0) {
