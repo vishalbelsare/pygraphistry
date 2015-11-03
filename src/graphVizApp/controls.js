@@ -106,6 +106,12 @@ var encodingForLabelParams = [
         step: 1,
         max: 100,
         min: 0
+    },
+    {
+        name: 'poi',
+        prettyName: 'Points of Interest',
+        type: 'bool',
+        value: true,
     }
 ];
 
@@ -235,7 +241,7 @@ function createLegend($elt, urlParams) {
 //  + {type: 'color', name: string, def: CSSColor, cb: (Stream {r,g,b,a}) -> () }
 //  * string -> DOM
 // (Will append at anchor position)
-function controlMaker (urlParams, $anchor, param, type) {
+function controlMaker (urlParams, $anchor, appState, param, type) {
     var $input;
     if (param.type === 'continuous') {
         $input = $('<input>').attr({
@@ -261,9 +267,10 @@ function controlMaker (urlParams, $anchor, param, type) {
         }).data('param', param);
     } else if (param.type === 'bool') {
         $input = $('<input>').attr({
+            class: type + '-checkbox',
             id: param.name,
             type: 'checkbox',
-            checked: urlParams[param.name] ? urlParams[param.name] === 'true' : param.value
+            checked: urlParams.hasOwnProperty(param.name) ? urlParams[param.name] === 'true' : param.value
         }).data('param', param);
     } else if (param.type === 'color') {
         $input = $('<div>').css({display: 'inline-block'})
@@ -314,7 +321,7 @@ function createControls(socket, appState, trigger, urlParams) {
     var $renderingItems = $('#renderingItems');
     var $anchor = $renderingItems.children('.form-horizontal');
 
-    var makeControl = controlMaker.bind('', urlParams, $anchor);
+    var makeControl = controlMaker.bind('', urlParams, $anchor, appState);
 
 
     $renderingItems.css({'display': 'block', 'left': '100%'});
@@ -346,16 +353,22 @@ function createControls(socket, appState, trigger, urlParams) {
         });
 
         $('#renderingItems').find('[type=checkbox]').each(function () {
+            var $that = $(this);
             var input = this;
             $(input).bootstrapSwitch();
             var param = $(input).data('param');
             $(input).onAsObservable('switchChange.bootstrapSwitch').subscribe(
                 function () {
-                    sendLayoutSetting(socket, param.algoName, param.name, input.checked);
+                    if ($that.hasClass('layout-checkbox')) {
+                        sendLayoutSetting(socket, param.algoName, param.name, input.checked);
+                    } else if ($that.hasClass('local-checkbox')) {
+                        setLocalSetting(param.name, input.checked, appState.renderState, appState.settingsChanges, appState);
+                    }
                 },
                 util.makeErrorHandler('menu checkbox')
             );
         });
+
 
         $('.menu-slider').each(function () {
             var $that = $(this);
@@ -374,7 +387,7 @@ function createControls(socket, appState, trigger, urlParams) {
                                     param.name, Number($slider.val()));
                     } else if ($that.hasClass('local-menu-slider')) {
                         setLocalSetting(param.name, Number($slider.val()),
-                                        appState.renderState, appState.settingsChanges);
+                                        appState.renderState, appState.settingsChanges, appState);
                     }
                 },
                 util.makeErrorHandler('menu slider')
@@ -398,7 +411,7 @@ function toPercent(pos) {
 }
 
 
-function setLocalSetting(name, pos, renderState, settingsChanges) {
+function setLocalSetting(name, pos, renderState, settingsChanges, appState) {
     var camera = renderState.get('camera');
     var val = 0;
 
@@ -435,6 +448,10 @@ function setLocalSetting(name, pos, renderState, settingsChanges) {
             }
             opControl.text('.graph-label { opacity: ' + toPercent(pos) + '; }');
             return;
+        case 'poi':
+            val = pos;
+            appState.poiIsEnabled.onNext(val);
+            break;
         default:
             break;
     }

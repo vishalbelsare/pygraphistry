@@ -21,6 +21,7 @@ var highlight       = require('./highlight.js');
 
 function init(socket, initialRenderState, vboUpdates, apiEvents, workerParams, urlParams) {
     debug('Initializing vizApp.');
+    console.log('URL PARAMS: ', urlParams);
 
     //////////////////////////////////////////////////////////////////////////
     // App State
@@ -74,6 +75,9 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, workerParams, u
 
     var latestHighlightedObject = new Rx.ReplaySubject(1);
 
+    var poiIsEnabled = new Rx.ReplaySubject(1);
+    poiIsEnabled.onNext(urlParams.hasOwnProperty('poi') ? urlParams.poi : true);
+
     var appState = {
         renderState: initialRenderState,
         vboUpdates: vboUpdates,
@@ -92,7 +96,8 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, workerParams, u
         anyMarqueeOn: anyMarqueeOn,
         activeSelection: activeSelection,
         latestHighlightedObject: latestHighlightedObject,
-        apiEvents: apiEvents
+        apiEvents: apiEvents,
+        poiIsEnabled: poiIsEnabled
     };
 
     //////////////////////////////////////////////////////////////////////////
