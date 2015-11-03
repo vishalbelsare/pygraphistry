@@ -15,12 +15,35 @@ var _ = require('underscore');
  * @param {Dataframe} dataframe
  * @param {Mask} pointIndexes Sorted list of indexes into the raw points data. If undefined, means all indexes.
  * @param {Mask} edgeIndexes Sorted list of indexes into the raw edges data. If undefined, means all indexes.
+ * @param {Bool?} indexesInFilteredFrame Whether the indexes are supplied from a client-centric indexing (data vs rawdata).
  * @constructor
  */
-function DataframeMask(dataframe, pointIndexes, edgeIndexes) {
+function DataframeMask(dataframe, pointIndexes, edgeIndexes, indexesInFilteredFrame) {
     this.dataframe = dataframe;
-    this.point = (pointIndexes instanceof ArrayBuffer) ? new Uint32Array(pointIndexes) : pointIndexes;
-    this.edge = (edgeIndexes instanceof ArrayBuffer) ? new Uint32Array(edgeIndexes) : edgeIndexes;
+    var pointMask = pointIndexes;
+    var edgeMask = edgeIndexes;
+    if (indexesInFilteredFrame) {
+        var lastMasks = dataframe.lastMasks;
+        var i = 0;
+        if (pointMask !== undefined && lastMasks.point !== undefined) {
+            var translatedPointMask = new Uint32Array(pointMask.length);
+            for (i=0; i<pointMask.length; i++) {
+                translatedPointMask[i] = lastMasks.point[pointMask[i]];
+            }
+            pointMask = translatedPointMask;
+        }
+        if (edgeMask !== undefined && lastMasks.edge !== undefined) {
+            var translatedEdgeMask = new Uint32Array(edgeMask.length);
+            for (i=0; i<pointMask.length; i++) {
+                translatedEdgeMask[i] = lastMasks.edge[edgeMask[i]];
+            }
+            edgeMask = translatedEdgeMask;
+        }
+    }
+    if (pointMask instanceof ArrayBuffer) { pointMask = new Uint32Array(pointMask); }
+    if (edgeMask instanceof ArrayBuffer) { edgeMask = new Uint32Array(edgeMask); }
+    this.point = pointMask;
+    this.edge = edgeMask;
 }
 
 DataframeMask.prototype.numPoints = function () {
@@ -280,6 +303,7 @@ var OmittedProperties = ['dataframe'];
 
 /**
  * Override to avoid serializing the dataframe or a typed array.
+ * Also translates mask indexes from rawdata to data framing.
  */
 DataframeMask.prototype.toJSON = function () {
     var result = _.omit(this, OmittedProperties);
