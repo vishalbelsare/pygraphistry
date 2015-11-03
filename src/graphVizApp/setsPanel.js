@@ -291,7 +291,10 @@ var VizSetView = Backbone.View.extend({
     rename: function (event) {
         event.preventDefault();
         var bindings = this.model.toJSON();
-        if (!this.$renameDialog) {
+        if (this.$renameDialog !== undefined && !this.$renameDialog.is(':visible')) {
+            this.closeRenameDialog();
+        }
+        if (this.$renameDialog === undefined) {
             this.$renameDialog = $(this.renameTemplate(bindings));
             $('body').append(this.$renameDialog);
             var $status = $('.status', this.$renameDialog);
