@@ -6,6 +6,7 @@ var debug   = require('debug')('graphistry:StreamGL:graphVizApp:vizApp');
 var $       = window.$;
 var Rx      = require('rx');
               require('../rx-jquery-stub');
+var _       = require('underscore');
 
 var shortestpaths   = require('./shortestpaths.js');
 var colorPicker     = require('./colorpicker.js');
@@ -18,7 +19,7 @@ var util            = require('./util.js');
 var highlight       = require('./highlight.js');
 
 
-function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
+function init(socket, initialRenderState, vboUpdates, apiEvents, workerParams, urlParams) {
     debug('Initializing vizApp.');
     console.log('URL PARAMS: ', urlParams);
 
@@ -95,6 +96,7 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
         anyMarqueeOn: anyMarqueeOn,
         activeSelection: activeSelection,
         latestHighlightedObject: latestHighlightedObject,
+        apiEvents: apiEvents,
         poiIsEnabled: poiIsEnabled
     };
 
@@ -150,9 +152,11 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
         return update === 'received';
     }).take(1).do(ui.hideSpinnerShowBody).delay(700);
 
+    doneLoading.do(function () {
+        appState.apiEvents.onNext({event: 'loaded'});
+    }).subscribe(_.identity, util.makeErrorHandler('Post doneLoading to apiEvents'));
 
     controls.init(appState, socket, $toolbar, doneLoading, workerParams, urlParams);
-
 }
 
 
