@@ -9,11 +9,12 @@
  */
 
 
-var $               = window.$,
-    _               = require('underscore'),
-    Rx              = require('rx'),
-    nodeutil        = require('util'),
-    debug           = require('debug')('graphistry:StreamGL:main');
+var $               = window.$;
+var _               = require('underscore');
+var Rx              = require('rx');
+var nodeutil        = require('util');
+var util            = require('./graphVizApp/util.js');
+var debug           = require('debug')('graphistry:StreamGL:main');
 
 require('./rx-jquery-stub');
 
@@ -138,6 +139,12 @@ function init(streamClient, canvasElement, vizType) {
 
     var initialized = new Rx.ReplaySubject(1);
 
+    var apiEvents = new Rx.Subject();
+    apiEvents.do(function (e) {
+        parent.postMessage(e, '*');
+    }).subscribe(_.identity, util.makeErrorHandler('postMessage apiEvents'));
+    apiEvents.onNext({event: 'init'});
+
     /** @typedef {Object} RenderInfo
      * @property {socket} socket
      * @property {string} uri
@@ -162,35 +169,19 @@ function init(streamClient, canvasElement, vizType) {
                 });
         }).do(/** @param {RenderInfo} nfo */ function (nfo) {
             var vboUpdates = streamClient.handleVboUpdates(nfo.socket, nfo.uri, nfo.initialRenderState);
-            vizApp(nfo.socket, nfo.initialRenderState, vboUpdates, nfo.uri, urlParams);
+            vizApp(nfo.socket, nfo.initialRenderState, vboUpdates, apiEvents, nfo.uri, urlParams);
 
             initialized.onNext({
                 vboUpdates: vboUpdates,
                 initialRenderState: nfo.initialRenderState
             });
-
-            vboUpdates
-                .filter(function (v) { return v === 'start'; })
-                .do(function () {
-                    parent.postMessage('start', '*');
-                })
-                .flatMap(function () {
-                    return vboUpdates
-                        .filter(function (v) { return v === 'received'; })
-                        .take(1);
-                })
-                .do(function () {
-                    parent.postMessage('received', '*');
-                })
-                .subscribe(_.identity, function (err) { console.error('bad vboUpdate', err); });
-
         }).subscribe(
             _.identity,
             function (err) {
                 var msg = (err || {}).message || 'Error when connecting to visualization server. Try refreshing the page...';
                 ui.error('Oops, something went wrong: ', msg);
                 ui.hideSpinnerShowBody();
-                console.error('General init error', err, (err || {}).stack);
+                util.makeErrorHandler('General init error')(err);
             }
         );
 
