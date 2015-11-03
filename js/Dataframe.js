@@ -12,7 +12,16 @@ var ExpressionCodeGenerator = require('./expressionCodeGenerator');
 var DataframeMask = require('./DataframeMask.js');
 
 var baseDirPath = __dirname + '/../assets/dataframe/';
-var TYPES = ['point', 'edge', 'simulator'];
+/**
+ * @readonly
+ * @type {string[]}
+ */
+var GraphComponentTypes = ['point', 'edge'];
+/**
+ * @readonly
+ * @type {string[]}
+ */
+var BufferTypeKeys = GraphComponentTypes.concat('simulator');
 
 /**
  * @property {DataframeData} rawdata The original data, immutable by this object.
@@ -53,8 +62,8 @@ var Dataframe = function () {
 
 /**
  * @typedef {Object} DataframeData
- * @property {{point: Object, edge: Object, simulator: Object}} attributes
- * @property {{point: Object, edge: Object, simulator: Object}} buffers
+ * @property {{point: Object, edge: Object, simulator: SimCL}} attributes
+ * @property {{point: Object, edge: Object, simulator: SimCL}} buffers
  * @property {Object} labels
  * @property {Object} hostBuffers
  * @property {Object} localBuffers
@@ -447,7 +456,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     }
 
     // labels;
-    _.each(['point', 'edge'], function (type) {
+    _.each(GraphComponentTypes, function (type) {
         if (rawdata.labels[type]) {
             var newLabels = [];
             _.each(masks[type], function (idx) {
@@ -683,7 +692,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     }).then(function () {
         // Delete all GPU buffers for values.
         var promises = [];
-        _.each(['point', 'edge'], function (type) {
+        _.each(GraphComponentTypes, function (type) {
             var buffers = that.data.buffers[type];
             _.each(_.keys(buffers), function (name) {
                 //var buf = buffers[name];
@@ -753,7 +762,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
 /**
  * TODO: Implicit degrees for points and src/dst for edges.
  * @param {Object} attributes
- * @param {string} type - any of [TYPES]{@link TYPES}
+ * @param {string} type - any of [TYPES]{@link BufferTypeKeys}
  * @param {Number} numElements - prescribe or describe? number present
  */
 Dataframe.prototype.load = function (attributes, type, numElements) {
@@ -856,7 +865,7 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
 
 /** Load in a raw OpenCL buffer object.
  *  @param {string} name - name of the buffer
- *  @param {string} type - any of [TYPES]{@link TYPES}.
+ *  @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
  *  @param {Object} buffer - a raw OpenCL buffer object
  */
 Dataframe.prototype.loadBuffer = function (name, type, buffer) {
@@ -931,7 +940,7 @@ Dataframe.prototype.loadLabels = function (type, labels) {
 
 Dataframe.prototype.deleteBuffer = function (name) {
     var that = this;
-    _.each(TYPES, function (type) {
+    _.each(BufferTypeKeys, function (type) {
         _.each(_.keys(that.rawdata.buffers[type]), function (key) {
             if (key === name) {
                 that.rawdata.buffers[type][key].delete();
@@ -1037,7 +1046,7 @@ Dataframe.prototype.getLabels = function (type) {
 
 /** Returns an OpenCL buffer object.
  *  @param {string} name - name of the buffer
- *  @param {string} type - any of [TYPES]{@link TYPES}.
+ *  @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
  */
 Dataframe.prototype.getBuffer = function (name, type) {
     // TODO: Specialize the 'simulator' type case into its own function.
@@ -1074,7 +1083,7 @@ Dataframe.prototype.getBuffer = function (name, type) {
 
 /** Returns one row object.
  * @param {double} index - which element to extract.
- * @param {string} type - any of [TYPES]{@link TYPES}.
+ * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
  * @param {Object?} attributes - which attributes to extract from the row.
  */
 Dataframe.prototype.getRowAt = function (index, type, attributes) {
@@ -1101,7 +1110,7 @@ Dataframe.prototype.getRowAt = function (index, type, attributes) {
 
 /** Returns array of row (fat json) objects.
  * @param {Array.<number>} indices - which elements to extract.
- * @param {string} type - any of [TYPES]{@link TYPES}.
+ * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
  */
 Dataframe.prototype.getRows = function (indices, type) {
     var attributes = this.rawdata.attributes[type],
@@ -1119,7 +1128,7 @@ Dataframe.prototype.getRows = function (indices, type) {
  * This works relative to UNSORTED edge orders, since it's meant
  * for serializing raw data.
  * @param {Array.<number>} indices - which elements to extract.
- * @param {string} type - any of [TYPES]{@link TYPES}.
+ * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
  * @returns {{header, values}}
  */
 Dataframe.prototype.getRowsCompact = function (indices, type) {
@@ -1190,10 +1199,9 @@ Dataframe.prototype.getAttributeKeys = function (type) {
 
 
 Dataframe.prototype.getColumnsByType = function () {
-    var types = ['point', 'edge'];
     var result = {};
     var that = this;
-    _.each(types, function (typeName) {
+    _.each(GraphComponentTypes, function (typeName) {
         var typeResult = {};
         var columnNamesPerType = that.getAttributeKeys(typeName);
         _.each(columnNamesPerType, function (columnName) {
@@ -1219,7 +1227,7 @@ Dataframe.prototype.serializeRows = function (target, options) {
     var that = this;
     var toSerialize = {};
 
-    _.each(TYPES, function (type) {
+    _.each(BufferTypeKeys, function (type) {
         if (options.compact) {
             toSerialize[type] = that.getRowsCompact(undefined, type);
         } else {
@@ -1239,7 +1247,7 @@ Dataframe.prototype.serializeColumns = function (target, options) {
     var that = this;
     var toSerialize = {};
 
-    _.each(TYPES, function (type) {
+    _.each(BufferTypeKeys, function (type) {
         toSerialize[type] = {};
         var keys = that.getAttributeKeys(type);
         _.each(keys, function (key) {
