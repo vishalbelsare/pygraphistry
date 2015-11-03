@@ -137,8 +137,6 @@ function init(streamClient, canvasElement, vizType) {
         textNum++;
     });
 
-    var initialized = new Rx.ReplaySubject(1);
-
     var apiEvents = new Rx.Subject();
     apiEvents.do(function (e) {
         parent.postMessage(e, '*');
@@ -170,11 +168,9 @@ function init(streamClient, canvasElement, vizType) {
         }).do(/** @param {RenderInfo} nfo */ function (nfo) {
             var vboUpdates = streamClient.handleVboUpdates(nfo.socket, nfo.uri, nfo.initialRenderState);
             vizApp(nfo.socket, nfo.initialRenderState, vboUpdates, apiEvents, nfo.uri, urlParams);
-
-            initialized.onNext({
-                vboUpdates: vboUpdates,
-                initialRenderState: nfo.initialRenderState
-            });
+            if (urlParams.debug) {
+                createInfoOverlay(nfo.initialRenderState, vboUpdates);
+            }
         }).subscribe(
             _.identity,
             function (err) {
@@ -184,16 +180,9 @@ function init(streamClient, canvasElement, vizType) {
                 util.makeErrorHandler('General init error')(err);
             }
         );
-
-    return initialized;
 }
 
-function createInfoOverlay(app) {
-
-    if (!urlParams[1]) {
-        return;
-    }
-
+function createInfoOverlay(initialRenderState, vboUpdates) {
     var renderMeterD =
         $('<div>')
             .addClass('meter').addClass('meter-fps')
@@ -214,15 +203,11 @@ function createInfoOverlay(app) {
 
         theme: 'transparent'
     });
-    app.subscribe(function (subApp) {
-        subApp.initialRenderState.get('renderPipeline').subscribe(function (evt) {
-            if (evt.rendered) {
-                renderMeter.tick();
-            }
-        },
-        function (err) { console.error('renderPipeline error', err, (err || {}).stack); });
-    }, function (err) { console.error('app error', err, (err || {}).stack); });
-
+    initialRenderState.get('renderPipeline').do(function (evt) {
+        if (evt.rendered) {
+            renderMeter.tick();
+        }
+    }).subscribe(_.identity, util.makeErrorHandler('renderPipeline error'));
 
     var networkMeterD =
         $('<div>')
@@ -243,19 +228,18 @@ function createInfoOverlay(app) {
 
         theme: 'transparent'
     });
-    app.pluck('vboUpdates').subscribe(function (evt) {
-            switch (evt) {
-                case 'start':
-                    networkMeter.resume();
-                    networkMeter.tickStart();
-                    break;
-                case 'received':
-                    networkMeter.tick();
-                    networkMeter.pause();
-                    break;
-            }
-        },
-        function (err) { console.error('app vboUpdates error', err, (err || {}).stack); });
+    vboUpdates.do(function (evt) {
+        switch (evt) {
+            case 'start':
+                networkMeter.resume();
+                networkMeter.tickStart();
+                break;
+            case 'received':
+                networkMeter.tick();
+                networkMeter.pause();
+                break;
+        }
+    }).subscribe(_.identity, util.makeErrorHandler('app vboUpdates error'));
 }
 
 function createSpinner() {
@@ -319,8 +303,7 @@ function launch(streamClient, urlParams) {
         $('html').addClass('nomenu');
     }
 
-   var app = init(streamClient, $('#simulation')[0], 'graph', urlParams);
-   createInfoOverlay(app);
+   init(streamClient, $('#simulation')[0], 'graph', urlParams);
 }
 
 function initAnalytics(urlParams) {
