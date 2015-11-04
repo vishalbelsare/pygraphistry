@@ -589,9 +589,12 @@ function renderSlowEffects(renderingScheduler) {
     renderer.render(renderState, 'picking', 'picking', undefined, undefined, function () {
         renderingScheduler.appSnapshot.hitmapUpdates.onNext();
     });
+
+
     renderer.copyCanvasToTexture(renderState, 'steadyStateTexture');
     // TODO: Make steadyStateTextureDark instead of just doing it in the shader.
     renderer.copyCanvasToTexture(renderState, 'steadyStateTextureDark');
+
     renderMouseoverEffects(renderingScheduler);
 }
 
@@ -626,7 +629,27 @@ function renderMouseoverEffects(renderingScheduler, task) {
     if (!task) {
         return;
     }
-    lastTask = task;
+
+    // Cache a copy of the task in case we need to execute again with our last task.
+    // TODO: Consider restructuring it so that this isn't a stateful function.
+    //
+    // We need to be careful not to accidentally modify the internals of this cached task.
+    // To be safe, we always cache it as a separate copy. Sucks because we need to know its full structure
+    // here too, but whatever.
+    lastTask = {
+        trigger: 'mouseOverEdgeHighlight',
+        data: {
+            highlight: {
+                nodeIndices: task.data.highlight.nodeIndices.slice(), // Slice copies the array.
+                edgeIndices: task.data.highlight.edgeIndices.slice(),
+            },
+            selected: {
+                nodeIndices: task.data.selected.nodeIndices.slice(),
+                edgeIndices: task.data.selected.edgeIndices.slice()
+            }
+        }
+    };
+
 
     var logicalEdges = new Uint32Array(buffers.logicalEdges.buffer);
     var hostBuffers = renderState.get('hostBuffersCache');
@@ -643,9 +666,13 @@ function renderMouseoverEffects(renderingScheduler, task) {
     var highlightedEdgeIndices = task.data.highlight.edgeIndices || [];
     var highlightedNodeIndices = task.data.highlight.nodeIndices || [];
 
+    var selectedEdgeIndices = task.data.selected.edgeIndices || [];
+    var selectedNodeIndices = task.data.selected.nodeIndices || [];
+
     // TODO: Decide if we need to dedupe these arrays.
 
     // Extend edges with neighbors of nodes
+    // BAD because uses pushes.
     _.each(highlightedNodeIndices, function (val) {
         var stride = 2 * val;
         var start = forwardsEdgeStartEndIdxs[stride];
@@ -663,6 +690,7 @@ function renderMouseoverEffects(renderingScheduler, task) {
         highlightedNodeIndices.push(logicalEdges[stride]);
         highlightedNodeIndices.push(logicalEdges[stride + 1]);
     });
+
 
     //////////////////////////////////////////////////////////////////////////
     // Setup highlight buffers
@@ -722,12 +750,10 @@ function renderMouseoverEffects(renderingScheduler, task) {
         'highlightedArrowPointSizes': buffers.highlightedArrowPointSizes
     });
 
+
     //////////////////////////////////////////////////////////////////////////
     // Setup selected buffers
     //////////////////////////////////////////////////////////////////////////
-
-    var selectedEdgeIndices = task.data.selected.edgeIndices || [];
-    var selectedNodeIndices = task.data.selected.nodeIndices || [];
 
     // TODO: Start with a small buffer and increase if necessary, masking underlying
     // data so we don't have to clear out later values. This way we won't have to constantly allocate
