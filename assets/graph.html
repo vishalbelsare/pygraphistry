@@ -486,12 +486,7 @@
 </script>
 
 <script type="text/x-handlebars-template" id="setTemplate">
-    <div class="topMenu row">
-        <div class="col-md-1 typeIndicator">
-            <i class="setSelectedIndicator fa {{selectionClass}}" title="{{selectedMessage}}"></i>
-            <!-- TODO place an icon here for selection, filter, etc. -->
-            <!-- <i class="setTypeIndicator fa {{setTypeClass}}"></i> -->
-        </div>
+    <div class="topMenu setEntry row {{selectionClass}}">
         <div class="col-md-10 labelArea">
             <a href="#"><i class="label label-info fa fa-tag tagButton" title="Tag">
                 {{#if title~}}
@@ -503,6 +498,10 @@
             {{#if description}}
                 <span class="setDescription muted"><i>{{description}}</i></span>
             {{/if}}
+        </div>
+        <div class="col-md-1 typeIndicator">
+            <!-- TODO place an icon here for selection, filter, etc. -->
+            <!-- <i class="setTypeIndicator fa {{setTypeClass}}"></i> -->
         </div>
         <div class="col-md-1 deleteButton">
             <a href="#">
