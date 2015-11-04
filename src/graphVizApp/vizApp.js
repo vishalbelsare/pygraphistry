@@ -157,25 +157,40 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, workerParams, u
 }
 
 function setupAPIHooks(appState, doneLoading) {
+    var apiEvents = appState.apiEvents;
+
     doneLoading.do(function () {
-        appState.apiEvents.onNext({event: 'loaded'});
+        apiEvents.onNext({event: 'loaded'});
     }).subscribe(_.identity, util.makeErrorHandler('API hook for doneLoading'));
 
     appState.latestHighlightedObject.do(function (sel) {
-        appState.apiEvents.onNext({event: 'highlighted', sel: sel});
+        apiEvents.onNext({
+            event: 'highlighted',
+            sel: sel
+        });
     }).subscribe(_.identity, util.makeErrorHandler('API hook for latestHighlightedObject'));
 
     appState.activeSelection.do(function (sel) {
-        appState.apiEvents.onNext({event: 'selected', sel: sel});
+        apiEvents.onNext({
+            event: 'selected',
+            sel: sel
+        });
     }).subscribe(_.identity, util.makeErrorHandler('API hook for activeSelection'));
 
     appState.settingsChanges.do(function (setting) {
-        appState.apiEvents.onNext({
+        apiEvents.onNext({
             event: 'settingChanged',
             setting: setting.name,
             value: setting.value
         });
     }).subscribe(_.identity, util.makeErrorHandler('API hook for settingsChanges'));
+
+    appState.simulateOn.do(function (bool) {
+        apiEvents.onNext({
+            event: 'simulating',
+            value: bool
+        });
+    }).subscribe(_.identity, util.makeErrorHandler('API hook for simulateOn'));
 }
 
 
