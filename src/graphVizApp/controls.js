@@ -458,7 +458,8 @@ function setLocalSetting(name, pos, renderState, settingsChanges, appState) {
             appState.poiIsEnabled.onNext(val);
             break;
         default:
-            break;
+            console.error('Unknown local setting', name);
+            return;
     }
 
     settingsChanges.onNext({name: name, val: val});
