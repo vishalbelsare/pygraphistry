@@ -152,11 +152,30 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, workerParams, u
         return update === 'received';
     }).take(1).do(ui.hideSpinnerShowBody).delay(700);
 
+    controls.init(appState, socket, $toolbar, doneLoading, workerParams, urlParams);
+    setupAPIHooks(appState, doneLoading);
+}
+
+function setupAPIHooks(appState, doneLoading) {
     doneLoading.do(function () {
         appState.apiEvents.onNext({event: 'loaded'});
-    }).subscribe(_.identity, util.makeErrorHandler('Post doneLoading to apiEvents'));
+    }).subscribe(_.identity, util.makeErrorHandler('API hook for doneLoading'));
 
-    controls.init(appState, socket, $toolbar, doneLoading, workerParams, urlParams);
+    appState.latestHighlightedObject.do(function (sel) {
+        appState.apiEvents.onNext({event: 'highlighted', sel: sel});
+    }).subscribe(_.identity, util.makeErrorHandler('API hook for latestHighlightedObject'));
+
+    appState.activeSelection.do(function (sel) {
+        appState.apiEvents.onNext({event: 'selected', sel: sel});
+    }).subscribe(_.identity, util.makeErrorHandler('API hook for activeSelection'));
+
+    appState.settingsChanges.do(function (setting) {
+        appState.apiEvents.onNext({
+            event: 'settingChanged',
+            setting: setting.name,
+            value: setting.value
+        });
+    }).subscribe(_.identity, util.makeErrorHandler('API hook for settingsChanges'));
 }
 
 

@@ -118,7 +118,7 @@ var encodingForLabelParams = [
 
 
 
-function sendLayoutSetting(socket, algorithm, param, value, apiEvents) {
+function sendLayoutSetting(socket, algorithm, param, value, settingsChanges) {
     var update = {};
     var controls = {};
 
@@ -133,10 +133,9 @@ function sendLayoutSetting(socket, algorithm, param, value, apiEvents) {
 
     debug('Sending layout settings', payload);
     socket.emit('interaction', payload);
-    apiEvents.onNext({
-        event: 'settingsChanged',
-        setting: algorithm + '.' + param,
-        value: value
+    settingsChanges.onNext({
+        name: algorithm + '.' + param,
+        value: value,
     });
 }
 
@@ -365,7 +364,7 @@ function createControls(socket, appState, trigger, urlParams) {
             $(input).onAsObservable('switchChange.bootstrapSwitch').subscribe(
                 function () {
                     if ($that.hasClass('layout-checkbox')) {
-                        sendLayoutSetting(socket, param.algoName, param.name, input.checked, appState.apiEvents);
+                        sendLayoutSetting(socket, param.algoName, param.name, input.checked, appState.settingsChanges);
                     } else if ($that.hasClass('local-checkbox')) {
                         setLocalSetting(param.name, input.checked, appState.renderState, appState.settingsChanges, appState);
                     }
@@ -389,7 +388,7 @@ function createControls(socket, appState, trigger, urlParams) {
                 function () {
                     if ($that.hasClass('layout-menu-slider')) {
                         sendLayoutSetting(socket, param.algoName,
-                                    param.name, Number($slider.val()), appState.apiEvents);
+                                    param.name, Number($slider.val()), appState.settingsChanges);
                     } else if ($that.hasClass('local-menu-slider')) {
                         setLocalSetting(param.name, Number($slider.val()),
                                         appState.renderState, appState.settingsChanges, appState);
@@ -452,7 +451,7 @@ function setLocalSetting(name, pos, renderState, settingsChanges, appState) {
                 opControl = $('<style>').appendTo($('body'));
             }
             opControl.text('.graph-label { opacity: ' + toPercent(pos) + '; }');
-            return;
+            break;
         case 'poi':
             val = pos;
             appState.poiIsEnabled.onNext(val);
@@ -462,12 +461,7 @@ function setLocalSetting(name, pos, renderState, settingsChanges, appState) {
             return;
     }
 
-    settingsChanges.onNext({name: name, val: val});
-    appState.apiEvents.onNext({
-        event: 'settingsChanged',
-        setting: name,
-        value: pos
-    });
+    settingsChanges.onNext({name: name, value: pos});
 }
 
 
