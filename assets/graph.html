@@ -493,16 +493,13 @@
             <!-- <i class="setTypeIndicator fa {{setTypeClass}}"></i> -->
         </div>
         <div class="col-md-10 labelArea">
-            <a href="#" class="tagButton">&nbsp;
-                {{#unless title}}
-                    <i class="label label-info fa fa-tag tagButton" title="Tag">(untagged)</i>
-                {{/unless}}
-            </a>
-            {{#if title}}
-                <span class="label label-info">
-                    <i class="fa fa-tag tagButton" title="Tag"></i>{{~title~}}
-                </span>
-            {{/if}}
+            <a href="#"><i class="label label-info fa fa-tag tagButton" title="Tag">
+                {{#if title~}}
+                    {{~title~}}
+                {{~else~}}
+                    (unnamed)
+                {{/if~}}
+            </i></a>
             {{#if description}}
                 <span class="setDescription muted"><i>{{description}}</i></span>
             {{/if}}
