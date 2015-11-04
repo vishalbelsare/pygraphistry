@@ -18,27 +18,26 @@ var GraphComponentTypes = ['point', 'edge'];
  * @param {Dataframe} dataframe
  * @param {Mask} pointIndexes Sorted list of indexes into the raw points data. If undefined, means all indexes.
  * @param {Mask} edgeIndexes Sorted list of indexes into the raw edges data. If undefined, means all indexes.
- * @param {Boolean?} indexesInFilteredFrame Whether the indexes are supplied from a client-centric indexing (data vs rawdata).
+ * @param {DataframeMask?} basis Another DataframeMask which the input indexes refer to.
  * @constructor
  */
-function DataframeMask(dataframe, pointIndexes, edgeIndexes, indexesInFilteredFrame) {
+function DataframeMask(dataframe, pointIndexes, edgeIndexes, basis) {
     this.dataframe = dataframe;
     var pointMask = pointIndexes;
     var edgeMask = edgeIndexes;
-    if (indexesInFilteredFrame) {
-        var lastMasks = dataframe.lastMasks;
+    if (basis) {
         var i = 0;
-        if (pointMask !== undefined && lastMasks.point !== undefined) {
+        if (pointMask !== undefined && basis.point !== undefined) {
             var translatedPointMask = new Uint32Array(pointMask.length);
             for (i=0; i<pointMask.length; i++) {
-                translatedPointMask[i] = lastMasks.point[pointMask[i]];
+                translatedPointMask[i] = basis.point[pointMask[i]];
             }
             pointMask = translatedPointMask;
         }
-        if (edgeMask !== undefined && lastMasks.edge !== undefined) {
+        if (edgeMask !== undefined && basis.edge !== undefined) {
             var translatedEdgeMask = new Uint32Array(edgeMask.length);
             for (i=0; i<edgeMask.length; i++) {
-                translatedEdgeMask[i] = lastMasks.edge[edgeMask[i]];
+                translatedEdgeMask[i] = basis.edge[edgeMask[i]];
             }
             edgeMask = translatedEdgeMask;
         }
