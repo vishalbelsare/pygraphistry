@@ -6,6 +6,7 @@ var debug   = require('debug')('graphistry:StreamGL:graphVizApp:vizApp');
 var $       = window.$;
 var Rx      = require('rx');
               require('../rx-jquery-stub');
+var _       = require('underscore');
 
 var shortestpaths   = require('./shortestpaths.js');
 var colorPicker     = require('./colorpicker.js');
@@ -18,7 +19,7 @@ var util            = require('./util.js');
 var highlight       = require('./highlight.js');
 
 
-function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
+function init(socket, initialRenderState, vboUpdates, apiEvents, workerParams, urlParams) {
     debug('Initializing vizApp.');
     console.log('URL PARAMS: ', urlParams);
 
@@ -95,6 +96,7 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
         anyMarqueeOn: anyMarqueeOn,
         activeSelection: activeSelection,
         latestHighlightedObject: latestHighlightedObject,
+        apiEvents: apiEvents,
         poiIsEnabled: poiIsEnabled
     };
 
@@ -150,9 +152,45 @@ function init(socket, initialRenderState, vboUpdates, workerParams, urlParams) {
         return update === 'received';
     }).take(1).do(ui.hideSpinnerShowBody).delay(700);
 
-
     controls.init(appState, socket, $toolbar, doneLoading, workerParams, urlParams);
+    setupAPIHooks(appState, doneLoading);
+}
 
+function setupAPIHooks(appState, doneLoading) {
+    var apiEvents = appState.apiEvents;
+
+    doneLoading.do(function () {
+        apiEvents.onNext({event: 'loaded'});
+    }).subscribe(_.identity, util.makeErrorHandler('API hook for doneLoading'));
+
+    appState.latestHighlightedObject.do(function (sel) {
+        apiEvents.onNext({
+            event: 'highlighted',
+            sel: sel
+        });
+    }).subscribe(_.identity, util.makeErrorHandler('API hook for latestHighlightedObject'));
+
+    appState.activeSelection.do(function (sel) {
+        apiEvents.onNext({
+            event: 'selected',
+            sel: sel
+        });
+    }).subscribe(_.identity, util.makeErrorHandler('API hook for activeSelection'));
+
+    appState.settingsChanges.do(function (setting) {
+        apiEvents.onNext({
+            event: 'settingChanged',
+            setting: setting.name,
+            value: setting.value
+        });
+    }).subscribe(_.identity, util.makeErrorHandler('API hook for settingsChanges'));
+
+    appState.simulateOn.do(function (bool) {
+        apiEvents.onNext({
+            event: 'simulating',
+            value: bool
+        });
+    }).subscribe(_.identity, util.makeErrorHandler('API hook for simulateOn'));
 }
 
 

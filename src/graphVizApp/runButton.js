@@ -34,9 +34,8 @@ module.exports = function (appState, socket, urlParams, isAutoCentering) {
                 $graph.onAsObservable('click')
                     .filter(function (evt) { return evt.originalEvent !== undefined; }),
                 disable,
-                Rx.Observable.timer(numTicks))
-                .take(1)
-                .map(_.constant(Rx.Observable.return(false))))
+                Rx.Observable.timer(numTicks)
+            ).take(1).map(_.constant(Rx.Observable.return(false))))
         .flatMapLatest(_.identity);
 
     var runLayout =
@@ -64,6 +63,8 @@ module.exports = function (appState, socket, urlParams, isAutoCentering) {
             if (evt !== false) {
                 var payload = {play: true, layout: true};
                 socket.emit('interaction', payload);
+            } else {
+                appState.apiEvents.onNext({event: 'ready'});
             }
         },
         util.makeErrorHandler('autoLayingOut error'),
