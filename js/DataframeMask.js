@@ -2,6 +2,9 @@
 
 var _ = require('underscore');
 
+// Duplicated from Dataframe.js
+var GraphComponentTypes = ['point', 'edge'];
+
 /**
  * Mask is implemented as a list of valid indices (in sorted order).
  * @typedef Array<Number> Mask
@@ -307,21 +310,15 @@ var OmittedProperties = ['dataframe'];
  */
 DataframeMask.prototype.toJSON = function () {
     var result = _.omit(this, OmittedProperties);
-    var i;
-    if (result.edge !== undefined && !(result.edge instanceof Array)) {
-        var edgeMask = result.edge;
-        result.edge = new Array(edgeMask.length);
-        for (i=0; i<edgeMask.length; i++) {
-            result.edge[i] = edgeMask[i];
+    _.each(GraphComponentTypes, function (componentType) {
+        if (result[componentType] !== undefined && !(result[componentType] instanceof Array)) {
+            var componentMask = result[componentType];
+            result[componentType] = new Array(componentMask.length);
+            for (var i = 0; i < componentMask.length; i++) {
+                result[componentType][i] = componentMask[i];
+            }
         }
-    }
-    if (result.point !== undefined && !(result.point instanceof Array)) {
-        var pointMask = result.point;
-        result.point = new Array(pointMask.length);
-        for (i=0; i<pointMask.length; i++) {
-            result.point[i] = pointMask[i];
-        }
-    }
+    });
     return result;
 };
 
@@ -331,18 +328,14 @@ DataframeMask.prototype.toJSON = function () {
  */
 DataframeMask.prototype.fromJSON = function (clientMask) {
     if (clientMask === undefined) { return; }
-    if (clientMask.point !== undefined) {
-        var numPoints = this.dataframe.numPoints();
-        var pointMask = _.filter(clientMask.point, function (idx) { return idx < numPoints; });
-        // TODO translate to filter-independent offsets
-        this.point = pointMask.sort();
-    }
-    if (clientMask.edge !== undefined) {
-        var numEdges = this.dataframe.numEdges();
-        var edgeMask = _.filter(clientMask.edge, function (idx) { return idx < numEdges; });
-        // TODO translate to filter-independent offsets
-        this.edge = edgeMask.sort();
-    }
+    _.each(GraphComponentTypes, function (componentType) {
+        if (clientMask[componentType] !== undefined) {
+            var numComponents = this.dataframe.numByType(componentType);
+            var componentMask = _.filter(clientMask[componentType], function (idx) { return idx < numComponents; });
+            // TODO translate to filter-independent offsets
+            this[componentType] = componentMask.sort();
+        }
+    }.bind(this));
 };
 
 module.exports = DataframeMask;
