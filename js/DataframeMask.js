@@ -49,12 +49,16 @@ function DataframeMask(dataframe, pointIndexes, edgeIndexes, indexesInFilteredFr
     this.edge = edgeMask;
 }
 
+DataframeMask.prototype.numByType = function (type) {
+    return this[type] !== undefined ? this[type].length : this.dataframe.getNumElements(type);
+};
+
 DataframeMask.prototype.numPoints = function () {
     return this.numByType('point');
 };
 
-DataframeMask.prototype.numByType = function (type) {
-    return this[type] !== undefined ? this[type].length : this.dataframe.getNumElements(type);
+DataframeMask.prototype.numEdges = function () {
+    return this.numByType('edge');
 };
 
 DataframeMask.prototype.limitNumByTypeTo = function (type, limit) {
@@ -64,18 +68,6 @@ DataframeMask.prototype.limitNumByTypeTo = function (type, limit) {
     } else {
         this[type].length = limit;
     }
-};
-
-DataframeMask.prototype.limitNumPointsTo = function (limit) {
-    this.limitNumByTypeTo('point', limit);
-};
-
-DataframeMask.prototype.numEdges = function () {
-    return this.numByType('edge');
-};
-
-DataframeMask.prototype.limitNumEdgesTo = function (limit) {
-    this.limitNumByTypeTo('edge', limit);
 };
 
 /**

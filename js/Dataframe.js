@@ -29,7 +29,7 @@ var BufferTypeKeys = GraphComponentTypes.concat('simulator');
  * @property {Object.<DataframeMask>} masksForVizSets Masks stored by VizSet id.
  * @constructor
  */
-var Dataframe = function () {
+function Dataframe () {
     // We keep a copy of the original data, plus a filtered view
     // that defaults to the new raw data.
     //
@@ -161,6 +161,11 @@ Dataframe.prototype.numEdges = function numEdges() {
 };
 
 
+Dataframe.prototype.numByType = function (componentType) {
+    return this.rawdata.numElements[componentType];
+};
+
+
 /**
  * @returns Mask
  */
@@ -236,8 +241,8 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
     if (maskList === undefined || !maskList.length || maskList.length === 0) {
         var universe = this.fullDataframeMask();
         // Limit the universe first just to avoid computation scaling problems:
-        if (pointLimit && universe.numPoints() > pointLimit) {
-            universe.limitNumPointsTo(pointLimit);
+        if (pointLimit && universe.numByType('point') > pointLimit) {
+            universe.limitNumByTypeTo('point', pointLimit);
             return this.masksFromPoints(universe.point, universe.edge);
         }
         return universe;
