@@ -15,7 +15,7 @@ var _ = require('underscore');
  * @param {Dataframe} dataframe
  * @param {Mask} pointIndexes Sorted list of indexes into the raw points data. If undefined, means all indexes.
  * @param {Mask} edgeIndexes Sorted list of indexes into the raw edges data. If undefined, means all indexes.
- * @param {Bool?} indexesInFilteredFrame Whether the indexes are supplied from a client-centric indexing (data vs rawdata).
+ * @param {Boolean?} indexesInFilteredFrame Whether the indexes are supplied from a client-centric indexing (data vs rawdata).
  * @constructor
  */
 function DataframeMask(dataframe, pointIndexes, edgeIndexes, indexesInFilteredFrame) {
@@ -34,7 +34,7 @@ function DataframeMask(dataframe, pointIndexes, edgeIndexes, indexesInFilteredFr
         }
         if (edgeMask !== undefined && lastMasks.edge !== undefined) {
             var translatedEdgeMask = new Uint32Array(edgeMask.length);
-            for (i=0; i<pointMask.length; i++) {
+            for (i=0; i<edgeMask.length; i++) {
                 translatedEdgeMask[i] = lastMasks.edge[edgeMask[i]];
             }
             edgeMask = translatedEdgeMask;
@@ -338,8 +338,8 @@ DataframeMask.prototype.fromJSON = function (clientMask) {
         this.point = pointMask.sort();
     }
     if (clientMask.edge !== undefined) {
-        var numEdges = this.dataframe.numPoints();
-        var edgeMask = _.filter(clientMask.point, function (idx) { return idx < numEdges; });
+        var numEdges = this.dataframe.numEdges();
+        var edgeMask = _.filter(clientMask.edge, function (idx) { return idx < numEdges; });
         // TODO translate to filter-independent offsets
         this.edge = edgeMask.sort();
     }
