@@ -118,7 +118,7 @@ var encodingForLabelParams = [
 
 
 
-function sendLayoutSetting(socket, algorithm, param, value) {
+function sendLayoutSetting(socket, algorithm, param, value, apiEvents) {
     var update = {};
     var controls = {};
 
@@ -133,6 +133,11 @@ function sendLayoutSetting(socket, algorithm, param, value) {
 
     debug('Sending layout settings', payload);
     socket.emit('interaction', payload);
+    apiEvents.onNext({
+        event: 'settingsChanged',
+        setting: algorithm + '.' + param,
+        value: value
+    });
 }
 
 //Observable bool -> { ... }
@@ -360,7 +365,7 @@ function createControls(socket, appState, trigger, urlParams) {
             $(input).onAsObservable('switchChange.bootstrapSwitch').subscribe(
                 function () {
                     if ($that.hasClass('layout-checkbox')) {
-                        sendLayoutSetting(socket, param.algoName, param.name, input.checked);
+                        sendLayoutSetting(socket, param.algoName, param.name, input.checked, appState.apiEvents);
                     } else if ($that.hasClass('local-checkbox')) {
                         setLocalSetting(param.name, input.checked, appState.renderState, appState.settingsChanges, appState);
                     }
@@ -384,7 +389,7 @@ function createControls(socket, appState, trigger, urlParams) {
                 function () {
                     if ($that.hasClass('layout-menu-slider')) {
                         sendLayoutSetting(socket, param.algoName,
-                                    param.name, Number($slider.val()));
+                                    param.name, Number($slider.val()), appState.apiEvents);
                     } else if ($that.hasClass('local-menu-slider')) {
                         setLocalSetting(param.name, Number($slider.val()),
                                         appState.renderState, appState.settingsChanges, appState);
@@ -457,6 +462,11 @@ function setLocalSetting(name, pos, renderState, settingsChanges, appState) {
     }
 
     settingsChanges.onNext({name: name, val: val});
+    appState.apiEvents.onNext({
+        event: 'settingsChanged',
+        setting: name,
+        value: pos
+    });
 }
 
 
