@@ -58,7 +58,7 @@ function Dataframe () {
     );
     this.masksForVizSets = {};
     this.data = this.rawdata;
-};
+}
 
 /**
  * @typedef {Object} DataframeData
