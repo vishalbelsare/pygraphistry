@@ -251,7 +251,6 @@ var VizSetCollection = Backbone.Collection.extend({
 
 var VizSetView = Backbone.View.extend({
     tagName: 'div',
-    className: 'setEntry',
     events: {
         'mouseover': 'highlight',
         'mouseout': 'unhighlight',
@@ -273,9 +272,7 @@ var VizSetView = Backbone.View.extend({
         if (!bindings.description) {
             bindings.description = vizSet.getGeneratedDescription();
         }
-        bindings.selectionClass = bindings.selected ? 'fa-check-square-o' : 'fa-square-o';
-        bindings.selectedMessage = bindings.selected ? 'Selected' : 'Unselected';
-        bindings.setTypeClass = vizSet.get('setSource') === 'selection' ? 'fa-mouse-pointer' : '';
+        bindings.selectionClass = bindings.selected ? 'bg-primary' : '';
         return bindings;
     },
     render: function () {
