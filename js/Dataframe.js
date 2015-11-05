@@ -193,6 +193,21 @@ Dataframe.prototype.fullDataframeMask = function() {
 };
 
 
+Dataframe.prototype.presentVizSet = function (vizSet) {
+    if (!vizSet || vizSet.masks === undefined) { return vizSet; }
+    var maskResponseLimit = 3e4;
+    var masksTooLarge = vizSet.masks.numPoints() > maskResponseLimit ||
+        vizSet.masks.numEdges() > maskResponseLimit;
+    var response = masksTooLarge ? _.omit(vizSet, ['masks']) : _.clone(vizSet);
+    response.sizes = {point: vizSet.masks.numPoints(), edge: vizSet.masks.numEdges()};
+    // Do NOT serialize the dataframe.
+    if (response.masks) {
+        response.masks = response.masks.toJSON(this.lastMasks);
+    }
+    return response;
+};
+
+
 /**
  * @param {Mask} edgeMask
  * @param {Boolean?} edgeMaskFiltersPoints

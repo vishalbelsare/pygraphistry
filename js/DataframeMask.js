@@ -26,27 +26,63 @@ function DataframeMask(dataframe, pointIndexes, edgeIndexes, basis) {
     var pointMask = pointIndexes;
     var edgeMask = edgeIndexes;
     if (basis) {
-        var i = 0;
-        if (pointMask !== undefined && basis.point !== undefined) {
-            var translatedPointMask = new Uint32Array(pointMask.length);
-            for (i=0; i<pointMask.length; i++) {
-                translatedPointMask[i] = basis.point[pointMask[i]];
-            }
-            pointMask = translatedPointMask;
-        }
-        if (edgeMask !== undefined && basis.edge !== undefined) {
-            var translatedEdgeMask = new Uint32Array(edgeMask.length);
-            for (i=0; i<edgeMask.length; i++) {
-                translatedEdgeMask[i] = basis.edge[edgeMask[i]];
-            }
-            edgeMask = translatedEdgeMask;
-        }
+        pointMask = unbaseMaskFrom(pointMask, basis.point);
+        edgeMask = unbaseMaskFrom(edgeMask, basis.edge);
     }
     if (pointMask instanceof ArrayBuffer) { pointMask = new Uint32Array(pointMask); }
     if (edgeMask instanceof ArrayBuffer) { edgeMask = new Uint32Array(edgeMask); }
     this.point = pointMask;
     this.edge = edgeMask;
 }
+
+
+/**
+ * This translates the input mask from a basis-coordinate system to a global coordinate system.
+ * @param {Mask} mask The mask to translate.
+ * @param {Mask} basisMask The existing mask that the input mask indexes refer to.
+ * @returns {Mask}
+ */
+function unbaseMaskFrom (mask, basisMask) {
+    if (mask !== undefined && basisMask !== undefined) {
+        var globalizedMask = new Uint32Array(mask.length);
+        for (var i=0; i<mask.length; i++) {
+            globalizedMask[i] = basisMask[mask[i]];
+        }
+        return globalizedMask;
+    } else {
+        return mask;
+    }
+}
+
+/**
+ * This translates and filters the input mask from a global-coordinate system to a basis-coordinate system.
+ * This is like intersection, but the result mask values indicate the index of the found value in the basis.
+ * @param {Mask} mask The mask to translate.
+ * @param {Mask} basisMask The mask in which the input should be re-rendered.
+ * @returns {Mask}
+ */
+function baseMaskOn (mask, basisMask) {
+    if (mask !== undefined && basisMask !== undefined) {
+        var maskLength = mask.length, basisLength = basisMask.length;
+        // Smallest result: no intersection and no output.
+        var localizedMask = [];
+        var maskIndex = 0, basisIndex = 0;
+        while (maskIndex < maskLength && basisIndex < basisLength) {
+            if (mask[maskIndex] < basisMask[basisIndex]) {
+                maskIndex++;
+            } else if (basisMask[basisIndex] < mask[maskIndex]) {
+                basisIndex++;
+            } else /* mask[maskIndex] === basisMask[basisIndex] */ {
+                localizedMask.push(basisIndex++);
+                maskIndex++;
+            }
+        }
+        return localizedMask;
+    } else {
+        return mask;
+    }
+}
+
 
 DataframeMask.prototype.numByType = function (type) {
     return this[type] !== undefined ? this[type].length : this.dataframe.getNumElements(type);
@@ -298,12 +334,16 @@ var OmittedProperties = ['dataframe'];
 /**
  * Override to avoid serializing the dataframe or a typed array.
  * Also translates mask indexes from rawdata to data framing.
+ * @param {DataframeMask} basisMask
  */
-DataframeMask.prototype.toJSON = function () {
+DataframeMask.prototype.toJSON = function (basisMask) {
     var result = _.omit(this, OmittedProperties);
     _.each(GraphComponentTypes, function (componentType) {
-        if (result[componentType] !== undefined && !(result[componentType] instanceof Array)) {
-            var componentMask = result[componentType];
+        var componentMask = result[componentType];
+        if (basisMask) {
+            componentMask = baseMaskOn(componentMask, basisMask[componentType]);
+        }
+        if (componentMask !== undefined && !(componentMask instanceof Array)) {
             result[componentType] = new Array(componentMask.length);
             for (var i = 0; i < componentMask.length; i++) {
                 result[componentType][i] = componentMask[i];
