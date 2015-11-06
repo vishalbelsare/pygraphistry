@@ -19,7 +19,8 @@ var util            = require('./util.js');
 var highlight       = require('./highlight.js');
 
 
-function init(socket, initialRenderState, vboUpdates, apiEvents, workerParams, urlParams) {
+function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
+              workerParams, urlParams) {
     debug('Initializing vizApp.');
     console.log('URL PARAMS: ', urlParams);
 
@@ -97,6 +98,7 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, workerParams, u
         activeSelection: activeSelection,
         latestHighlightedObject: latestHighlightedObject,
         apiEvents: apiEvents,
+        apiActions: apiActions,
         poiIsEnabled: poiIsEnabled
     };
 
@@ -153,27 +155,46 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, workerParams, u
     }).take(1).do(ui.hideSpinnerShowBody).delay(700);
 
     controls.init(appState, socket, $toolbar, doneLoading, workerParams, urlParams);
-    setupAPIHooks(appState, doneLoading);
+    setupAPIHooks(socket, appState, doneLoading);
 }
 
-function setupAPIHooks(appState, doneLoading) {
+
+function encodeEntities(socket, sel) {
+    return Rx.Observable.fromCallback(socket.emit, socket)('get_global_ids', sel)
+        .do(function (reply) {
+            if (!reply || !reply.success) {
+                console.error('Server error on get_global_ids', (reply||{}).error);
+            }
+        }).filter(function (reply) {
+            return reply && reply.success;
+        }).map(function (reply) {
+            return reply.ids;
+        });
+}
+
+
+function setupAPIHooks(socket, appState, doneLoading) {
     var apiEvents = appState.apiEvents;
 
     doneLoading.do(function () {
         apiEvents.onNext({event: 'loaded'});
     }).subscribe(_.identity, util.makeErrorHandler('API hook for doneLoading'));
 
-    appState.latestHighlightedObject.do(function (sel) {
+    appState.latestHighlightedObject.flatMapLatest(function (sel) {
+        return encodeEntities(socket, sel);
+    }).do(function (ids) {
         apiEvents.onNext({
             event: 'highlighted',
-            sel: sel
+            ids: ids
         });
     }).subscribe(_.identity, util.makeErrorHandler('API hook for latestHighlightedObject'));
 
-    appState.activeSelection.do(function (sel) {
+    appState.activeSelection.flatMapLatest(function (sel) {
+        return encodeEntities(socket, sel);
+    }).do(function (ids) {
         apiEvents.onNext({
             event: 'selected',
-            sel: sel
+            ids: ids
         });
     }).subscribe(_.identity, util.makeErrorHandler('API hook for activeSelection'));
 

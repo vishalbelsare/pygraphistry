@@ -38,10 +38,16 @@ module.exports = function (appState, socket, urlParams, isAutoCentering) {
             ).take(1).map(_.constant(Rx.Observable.return(false))))
         .flatMapLatest(_.identity);
 
+    var runActions =
+        appState.apiActions
+            .filter(function (e) { return e.event === 'toggleLayout'; })
+            .map(function (e) { return e.play || false; });
+
     var runLayout =
         Rx.Observable.fromEvent($graph, 'click')
             .map(function () { return $bolt.hasClass('toggle-on'); })
             .merge(disable.map(_.constant(true)))
+            .merge(runActions.map(function (play) { return !play; }))
             .do(function (wasOn) {
                 $bolt.toggleClass('toggle-on', !wasOn);
             })
