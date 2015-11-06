@@ -165,10 +165,10 @@ var layoutBuffers  = {};
 // Create temporary buffers needed for layout
 var initializeLayoutBuffers = function (simulator) {
 
+    var numMidPoints = simulator.dataframe.getNumElements('midPoints');
     var getBufferSizes = function(simulator) {
         var warpsize = getWarpsize(simulator);
         // TODO Set this to the number of workgroups in boundBox kernel
-        var numMidPoints = simulator.dataframe.getNumElements('midPoints');
         var numNodes = getNumNodes(numMidPoints, warpsize); 
         var numWorkGroups = 30;
         var numDimensions = 2;
@@ -213,7 +213,27 @@ var initializeLayoutBuffers = function (simulator) {
         _.each(_.keys(bufferSizes), function (value, index) {
             layoutBuffers[value] = buffers[index];
         });
+        return layoutBuffers
+    })
+    .then(function (layoutBuffers) {
+        var swingZeros = new Float32Array(numMidPoints);
+        var tractionOnes = new Float32Array(numMidPoints);
+        for (var i = 0; i < swingZeros.length; i++) {
+            swingZeros[i] = 0;
+            tractionOnes[i] = 1;
+        }
+        var prevForcesZeros = new Float32Array(numMidPoints * 2);
+        for (var i = 0; i < prevForcesZeros.length; i++) {
+            prevForcesZeros[i] = 0;
+        }
+        return Q.all([
+            layoutBuffers.swings.write(swingZeros),
+            layoutBuffers.tractions.write(tractionOnes),
+            layoutBuffers.prevForces.write(prevForcesZeros)
+        ])
+        .then(function (){
         return layoutBuffers;
+        })
     })
 
     .fail(log.makeQErrorHandler(logger, "Initializing layout buffers need for edge bundling failed"));
@@ -453,7 +473,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
         simulator.tickBuffers(['curMidPoints']);
 
         return calculateMidPoints = Q().then(function () {
-            that.calculateMidPointForces(simulator, workItems)
+            return that.calculateMidPointForces(simulator, workItems)
         })
         .then(function () { //TODO do both forwards and backwards?
             if (simulator.dataframe.getNumElements('edge') > 0 && !locks.lockMidedges) {
