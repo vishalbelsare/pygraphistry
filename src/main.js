@@ -138,10 +138,24 @@ function init(streamClient, canvasElement, vizType) {
     });
 
     var apiEvents = new Rx.Subject();
-    apiEvents.do(function (e) {
-        parent.postMessage(e, '*');
-    }).subscribe(_.identity, util.makeErrorHandler('postMessage apiEvents'));
-    apiEvents.onNext({event: 'init'});
+    var apiActions = new Rx.Subject();
+
+    if (urlParams.embedded) {
+        apiEvents.do(function (e) {
+            parent.postMessage(e, '*');
+        }).subscribe(_.identity, util.makeErrorHandler('postMessage apiEvents'));
+        apiEvents.onNext({event: 'init'});
+
+        apiActions = Rx.Observable.fromEvent(window, 'message').filter(function (msg) {
+            return msg && msg.data && msg.data.event;
+        }).map(function (msg) {
+            return msg.data;
+        });
+    }
+
+    apiActions.do(function (msg) {
+        console.log('apiActions', msg);
+    }).subscribe(_.identity, util.makeErrorHandler('apiActions'));
 
     /** @typedef {Object} RenderInfo
      * @property {socket} socket
@@ -154,6 +168,7 @@ function init(streamClient, canvasElement, vizType) {
             /** @param {RenderInfo} nfo */
             var socket  = nfo.socket;
             displayErrors(socket, $(canvasElement));
+            apiEvents.onNext({event: 'workerConnected', uri: nfo.uri});
 
             debug('Creating renderer');
             return streamClient.createRenderer(socket, canvasElement, urlParams)
@@ -167,7 +182,7 @@ function init(streamClient, canvasElement, vizType) {
                 });
         }).do(/** @param {RenderInfo} nfo */ function (nfo) {
             var vboUpdates = streamClient.handleVboUpdates(nfo.socket, nfo.uri, nfo.initialRenderState);
-            vizApp(nfo.socket, nfo.initialRenderState, vboUpdates, apiEvents, nfo.uri, urlParams);
+            vizApp(nfo.socket, nfo.initialRenderState, vboUpdates, apiEvents, apiActions, nfo.uri, urlParams);
             if (urlParams.debug) {
                 createInfoOverlay(nfo.initialRenderState, vboUpdates);
             }
