@@ -818,7 +818,7 @@ Dataframe.prototype.load = function (attributes, type, numElements) {
     } else if (edgeTitleField) {
         filteredAttributes._title = attributes[edgeTitleField];
     } else {
-        filteredAttributes._title = {type: 'number', name: 'label', values: range(numElements)};
+        filteredAttributes._title = {type: 'number', name: 'label', values: _.range(numElements)};
     }
 
     _.extend(this.rawdata.attributes[type], filteredAttributes);
@@ -877,7 +877,7 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
     // If no title has been set, just make title the index.
     // TODO: Is there a more appropriate place to put this?
     if (!attributes._title) {
-        attributes._title = {type: 'string', name: 'label', values: range(numElements)};
+        attributes._title = {type: 'string', name: 'label', values: _.range(numElements)};
     }
 
 };
@@ -1136,7 +1136,7 @@ Dataframe.prototype.getRows = function (indices, type) {
     var attributes = this.rawdata.attributes[type],
         that = this;
 
-    indices = indices || range(that.data.numElements[type]);
+    indices = indices || _.range(that.data.numElements[type]);
 
     return _.map(indices, function (index) {
         return that.getRowAt(index, type, attributes);
@@ -1155,7 +1155,7 @@ Dataframe.prototype.getRowsCompact = function (indices, type) {
     var attributes = this.rawdata.attributes[type],
         keys = this.getAttributeKeys(type);
 
-    indices = indices || range(this.data.numElements[type]);
+    indices = indices || _.range(this.data.numElements[type]);
 
     var lastMasks = this.lastMasks;
 
@@ -1619,15 +1619,6 @@ function getEdgeTitleField (attributes) {
     var prioritized = ['edgeTitle', 'edge'];
     return pickTitleField(attributes, prioritized);
 }
-
-function range (n) {
-    var arr = [];
-    for (var i = 0; i < n; i++) {
-        arr.push(i);
-    }
-    return arr;
-}
-
 
 function round_down(num, multiple) {
     if (multiple === 0) {
