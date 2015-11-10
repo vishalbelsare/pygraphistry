@@ -1,6 +1,8 @@
 'use strict';
 
-var Rx = require('rx');
+var Rx      = require('rx');
+var debug   = require('debug')('graphistry:StreamGL:graphVizApp:command');
+
 
 function Command(description, commandName, socket, disableErrorFiltering) {
     this.description = description;
@@ -12,7 +14,7 @@ function Command(description, commandName, socket, disableErrorFiltering) {
 
 Command.prototype = {
     sendWithObservableResult: function () {
-        console.debug('Sent command ' + this.commandName, arguments);
+        debug('Sent command ' + this.commandName, arguments);
         var args = new Array(arguments.length + 1);
         args[0] = this.commandName;
         for (var i = 0; i < arguments.length; i++) {
@@ -28,9 +30,9 @@ Command.prototype = {
     },
 
     logErrorFromResponse: function (reply) {
-        console.debug('Server responded to ' + this.commandName, reply);
+        debug('Server responded to ' + this.commandName, reply);
         if (!reply || !reply.success) {
-            console.error('Server error on ' + this.commandName, (reply || {}).error);
+            debug('Server error on ' + this.commandName, (reply || {}).error);
         }
     },
 
