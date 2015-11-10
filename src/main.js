@@ -144,7 +144,7 @@ function init(streamClient, canvasElement, vizType) {
         apiEvents.do(function (e) {
             parent.postMessage(e, '*');
         }).subscribe(_.identity, util.makeErrorHandler('postMessage apiEvents'));
-        apiEvents.onNext({event: 'init'});
+        apiEvents.onNext({subscriberID: '*', body: {event: 'init'}});
 
         apiActions = Rx.Observable.fromEvent(window, 'message').filter(function (msg) {
             return msg && msg.data && msg.data.event;

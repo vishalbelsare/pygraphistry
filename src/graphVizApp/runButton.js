@@ -7,6 +7,7 @@ var Rx      = require('rx');
 var _       = require('underscore');
 
 var util            = require('./util.js');
+var api             = require('./api.js');
 
 
 
@@ -70,7 +71,7 @@ module.exports = function (appState, socket, urlParams, isAutoCentering) {
                 var payload = {play: true, layout: true};
                 socket.emit('interaction', payload);
             } else {
-                appState.apiEvents.onNext({event: 'ready'});
+                api.postEvent(appState.apiEvents, undefined, {event: 'ready'});
             }
         },
         util.makeErrorHandler('autoLayingOut error'),
