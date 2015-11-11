@@ -64,7 +64,7 @@ function setupBackgroundColor(renderingScheduler, bgColor) {
 }
 
 //int * int * Int32Array * Float32Array -> {starts: Float32Array, ends: Float32Array}
-//Scatter: label each midedge with containing edge's start/end pos (used for dynamic culling)
+//Scatter: label each midEdge with containing edge's start/end pos (used for dynamic culling)
 function expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPoints) {
 
     var starts = new Float32Array(numEdges * (numRenderedSplits + 1) * 4);
@@ -97,10 +97,10 @@ function expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPo
 
 
 //Find label position (unadjusted and in model space)
-//  Currently just picks a midedge vertex near the ~middle
-//  (In contrast, mouseover effects should use the ~voronoi position)
+//  Currently just picks a midEdge vertex near the ~middle
+//  (In contrast, mouseover effects should use the ~Voronoi position)
 //  To convert to canvas coords, use Camera (ex: see labels::renderCursor)
-//  TODO use camera if edge goes offscreen
+//  TODO use camera if edge goes off-screen
 //RenderState * int -> {x: float,  y: float}
 function getEdgeLabelPos (appState, edgeIndex) {
     var numRenderedSplits = appState.renderState.get('config').get('numRenderedSplits');
@@ -151,10 +151,10 @@ function expandLogicalEdges(renderState, bufferSnapshots, numRenderedSplits, edg
         midSpringsPos[index + 3] = dstMidPointY;
     };
 
-    //for each midedge, start x/y & end x/y
+    //for each midEdge, start x/y & end x/y
     var midSpringsEndpoints = expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPoints);
 
-    //TODO have server precompute real heights, and use them here
+    //TODO have server pre-compute real heights, and use them here
     //var edgeHeights = renderState.get('hostBuffersCache').edgeHeights;
     var srcPointIdx;
     var dstPointIdx;
@@ -260,7 +260,7 @@ function expandLogicalMidEdges(bufferSnapshots) {
     var numVertices = (2 * numEdges) * (numSplits + 1);
 
 
-    //for each midedge, start x/y & end x/y
+    //for each midEdge, start x/y & end x/y
     var midSpringsEndpoints = expandMidEdgeEndpoints(numEdges, numSplits, logicalEdges, curPoints);
 
 
@@ -506,7 +506,7 @@ function makeArrows(bufferSnapshots, edgeMode, numRenderedSplits) {
 
 /*
  * Render expensive items (eg, edges) when a quiet state is detected. This function is called
- * from within an animation frame and must execture all its work inside it. Callbacks(rx, etc)
+ * from within an animation frame and must execute all its work inside it. Callbacks(rx, etc)
  * are not allowed as they would schedule work outside the animation frame.
  */
 function renderSlowEffects(renderingScheduler) {
@@ -533,7 +533,7 @@ function renderSlowEffects(renderingScheduler) {
         appSnapshot.buffers.midSpringsStarts = expanded.midSpringsStarts;
         appSnapshot.buffers.midSpringsEnds = expanded.midSpringsEnds;
 
-        // Only setup midedge colors once, or when filtered.
+        // Only setup midEdge colors once, or when filtered.
         // Approximates filtering when number of logicalEdges changes.
         var numEdges = midSpringsPos.length / 2 / (numRenderedSplits + 1);
         var expectedNumMidEdgeColors = numEdges * (numRenderedSplits + 1);
@@ -604,7 +604,7 @@ function renderSlowEffects(renderingScheduler) {
  *
  */
 
-// Remember last task in case you need to rerender mouseovers without an update.
+// Remember last task in case you need to re-render mouseovers without an update.
 // TODO: Structure this so there's no global
 var lastTask;
 
@@ -642,7 +642,7 @@ function renderMouseoverEffects(renderingScheduler, task) {
         data: {
             highlight: {
                 nodeIndices: _.clone(task.data.highlight.nodeIndices),
-                edgeIndices: _.clone(task.data.highlight.edgeIndices),
+                edgeIndices: _.clone(task.data.highlight.edgeIndices)
             },
             selected: {
                 nodeIndices: _.clone(task.data.selected.nodeIndices),
@@ -670,7 +670,7 @@ function renderMouseoverEffects(renderingScheduler, task) {
     var selectedEdgeIndices = task.data.selected.edgeIndices || [];
     var selectedNodeIndices = task.data.selected.nodeIndices || [];
 
-    // TODO: Decide if we need to dedupe these arrays.
+    // TODO: Decide if we need to de-duplicate these arrays.
     // TODO: Decide a threshold or such to show neighborhoods for large selections.
     if (selectedEdgeIndices.length + selectedNodeIndices.length <= 1) {
         // Extend edges with neighbors of nodes
@@ -717,10 +717,10 @@ function renderMouseoverEffects(renderingScheduler, task) {
 
     // Copy in data
     _.each(highlightedEdgeIndices, function (val, idx) {
-        // The start at the first midedge corresponding to hovered edge
+        // The start at the first midEdge corresponding to hovered edge
         var edgeStartIdx = (val * 4 * numMidEdges);
         var highlightStartIdx = (idx * 4 * numMidEdges);
-        for (var midEdgeIdx = 0; midEdgeIdx < numMidEdges; midEdgeIdx = midEdgeIdx + 1) {
+        for (var midEdgeIdx = 0; midEdgeIdx < numMidEdges; midEdgeIdx++) {
             var midEdgeStride = midEdgeIdx * 4;
             buffers.highlightedEdges[highlightStartIdx + midEdgeStride] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride)];
             buffers.highlightedEdges[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 1];
@@ -780,12 +780,12 @@ function renderMouseoverEffects(renderingScheduler, task) {
 
     // Copy in data
     _.each(selectedEdgeIndices, function (val, idx) {
-        // The start at the first midedge corresponding to hovered edge
+        // The start at the first midEdge corresponding to hovered edge
         var edgeStartIdx = (val * 4 * numMidEdges);
         var highlightStartIdx = (idx * 4 * numMidEdges);
         var edgeColorStartIdx = (val * 2 * numMidEdges);
         var highlightColorStartIdx = (idx * 2 * numMidEdges);
-        for (var midEdgeIdx = 0; midEdgeIdx < numMidEdges; midEdgeIdx = midEdgeIdx + 1) {
+        for (var midEdgeIdx = 0; midEdgeIdx < numMidEdges; midEdgeIdx++) {
             var midEdgeStride = midEdgeIdx * 4;
             buffers.selectedEdges[highlightStartIdx + midEdgeStride] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride)];
             buffers.selectedEdges[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 1];
@@ -873,7 +873,7 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
             _.object(
                 renderer.getBufferNames(renderState.get('config').toJS())
                 .concat(
-                    //TODO move client-only into render.config dummys when more sane
+                    //TODO move client-only into render.config dummies when more sane
                     ['highlightedEdges', 'highlightedNodePositions', 'highlightedNodeSizes', 'highlightedNodeColors',
                      'highlightedArrowStartPos', 'highlightedArrowEndPos', 'highlightedArrowNormalDir',
                      'highlightedArrowPointColors', 'highlightedArrowPointSizes', 'selectedEdges', 'selectedNodePositions', 'selectedNodeSizes', 'selectedNodeColors',
@@ -895,7 +895,7 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
 
 
     /*
-     * Rx hooks to maintain the appSnaphot up-to-date
+     * Rx hooks to maintain the appSnapshot up-to-date
      */
     simulateOn.subscribe(function (val) {
         that.appSnapshot.simulating = val;
@@ -906,7 +906,7 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
     }).flatMapLatest(function () {
         var hostBuffers = renderState.get('hostBuffers');
         // FIXME handle selection update buffers here.
-        Rx.Observable.combineLatest(hostBuffers['selectedPointIndexes'], hostBuffers['selectedEdgeIndexes'],
+        Rx.Observable.combineLatest(hostBuffers.selectedPointIndexes, hostBuffers.selectedEdgeIndexes,
             function (pointIndexes, edgeIndexes) {
                 activeSelection.onNext(new VizSlice({point: pointIndexes, edge: edgeIndexes}));
             }).take(1).subscribe(_.identity);
@@ -944,7 +944,7 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
     };
 
     /* Move render tasks into a tagged dictionary. For each tag, only the latest task
-     * is rendered; others are skipepd. */
+     * is rendered; others are skipped. */
     renderTasks.subscribe(function (task) {
         debug('Queueing frame on behalf of', task.tag);
         renderQueue[task.tag] = task;
