@@ -641,12 +641,12 @@ function renderMouseoverEffects(renderingScheduler, task) {
         trigger: 'mouseOverEdgeHighlight',
         data: {
             highlight: {
-                nodeIndices: task.data.highlight.nodeIndices.slice(), // Slice copies the array.
-                edgeIndices: task.data.highlight.edgeIndices.slice(),
+                nodeIndices: _.clone(task.data.highlight.nodeIndices),
+                edgeIndices: _.clone(task.data.highlight.edgeIndices),
             },
             selected: {
-                nodeIndices: task.data.selected.nodeIndices.slice(),
-                edgeIndices: task.data.selected.edgeIndices.slice()
+                nodeIndices: _.clone(task.data.selected.nodeIndices),
+                edgeIndices: _.clone(task.data.selected.edgeIndices)
             }
         }
     };
