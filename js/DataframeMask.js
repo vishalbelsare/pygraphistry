@@ -112,9 +112,11 @@ DataframeMask.prototype.limitNumByTypeTo = function (type, limit) {
  * @returns {Mask}
  */
 DataframeMask.unionOfTwoMasks = function(x, y) {
+    // Undefined means pass-through:
+    if (x === undefined || y === undefined) { return undefined; }
     var xLength = x.length, yLength = y.length;
     // Smallest result: one is a subset of the other.
-    var result = new Array(Math.max(xLength, yLength));
+    var result = new Array(Math.floor(Math.max(xLength, yLength)));
     var xIndex = 0, yIndex = 0, resultIndex = 0;
     while (xIndex < xLength && yIndex < yLength) {
         if (x[xIndex] < y[yIndex]) {
@@ -142,6 +144,9 @@ DataframeMask.unionOfTwoMasks = function(x, y) {
  * @returns {Mask}
  */
 DataframeMask.intersectionOfTwoMasks = function(x, y) {
+    // Undefined means pass-through:
+    if (x === undefined) { return y; }
+    if (y === undefined) { return x; }
     var xLength = x.length, yLength = y.length;
     // Smallest result: no intersection and no output.
     var result = [];
