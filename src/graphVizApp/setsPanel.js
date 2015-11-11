@@ -451,7 +451,9 @@ function SetsPanel(socket/*, urlParams*/) {
     this.commands = {
         getAll: new Command('getting sets', 'get_sets', socket),
         create: new Command('creating a set', 'create_set', socket),
-        update: new Command('updating a set', 'update_set', socket)
+        update: new Command('updating a set', 'update_set', socket),
+        select: new Command('selecting sets', 'select', socket),
+        highlight: new Command('highlighting sets', 'highlight', socket)
     };
 
     this.model = VizSetModel;
@@ -596,23 +598,34 @@ SetsPanel.prototype = {
     },
 
     vizSliceFromSetModels: function (setModels) {
-        var resultSetModel;
         if (setModels.length > 1) {
-            resultSetModel = _.reduce(setModels, function (firstSet, secondSet) {
+            var resultSetModel = _.reduce(setModels, function (firstSet, secondSet) {
                 return firstSet.union(secondSet);
             });
+            return resultSetModel.asVizSlice();
         } else if (setModels.length === 1) {
-            resultSetModel = setModels[0];
+            return setModels[0].asVizSlice();
+        } else {
+            return new VizSlice();
         }
-        return resultSetModel === undefined ? new VizSlice() : resultSetModel.asVizSlice();
     },
 
     highlightSetModels: function (setModels) {
-        this.latestHighlightedObject.onNext(this.vizSliceFromSetModels(setModels));
+        if (_.every(setModels, function (vizSet) { return vizSet.masks !== undefined; })) {
+            this.latestHighlightedObject.onNext(this.vizSliceFromSetModels(setModels));
+        } else {
+            var set_ids = _.map(setModels, function (setModel) { return setModel.id; });
+            this.commands.highlight.sendWithObservableResult({gesture: 'sets', action: 'replace', set_ids: set_ids});
+        }
     },
 
     selectSetModels: function (setModels) {
-        this.activeSelection.onNext(this.vizSliceFromSetModels(setModels));
+        if (_.every(setModels, function (vizSet) { return vizSet.masks !== undefined; })) {
+            this.activeSelection.onNext(this.vizSliceFromSetModels(setModels));
+        } else {
+            var set_ids = _.map(setModels, function (setModel) { return setModel.id; });
+            this.commands.select.sendWithObservableResult({gesture: 'sets', action: 'replace', set_ids: set_ids});
+        }
     }
 };
 
