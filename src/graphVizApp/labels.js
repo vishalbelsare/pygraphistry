@@ -10,6 +10,7 @@ var util            = require('./util.js');
 var interaction     = require('./interaction.js');
 var picking         = require('../picking.js');
 var canvas          = require('./canvas.js');
+var VizSlice        = require('./VizSlice.js');
 
 var EDGE_LABEL_OFFSET = 0;
 
@@ -38,7 +39,7 @@ function setupLabelsAndCursor(appState, urlParams, $eventTarget) {
 // Changes from point/edge mouseover
 // Most recent interaction goes at the end
 function setupLatestHighlightedObject (appState, $eventTarget, textures) {
-    appState.latestHighlightedObject.onNext([]);
+    appState.latestHighlightedObject.onNext(new VizSlice());
 
     interaction.setupMousemove($eventTarget).combineLatest(
             appState.hitmapUpdates,
@@ -52,15 +53,14 @@ function setupLatestHighlightedObject (appState, $eventTarget, textures) {
         ))
         .flatMapLatest(util.observableFilter(appState.isAnimatingOrSimulating, util.notIdentity))
         .map(function (pos) {
-            var hits = [picking.hitTestN(appState.renderState, textures, pos.x, pos.y, 10)];
-            // Make sure we only return valid hits.
-            return hits.filter(function (hit) {
-                return hit.idx > -1;
-            });
+            return picking.hitTestN(appState.renderState, textures, pos.x, pos.y, 10);
         })
         // Only update when changes.
-        .distinctUntilChanged(function (hits) {
-            return hits.length ? hits[0].idx : -1;
+        .distinctUntilChanged(function (hit) {
+            return hit.idx;
+        }).map(function (hit) {
+            var elements = hit.idx === -1 ? [] : [hit];
+            return new VizSlice(elements);
         })
         .subscribe(appState.latestHighlightedObject, util.makeErrorHandler('getLatestHighlightedObject'));
 
@@ -98,16 +98,16 @@ function setupClickSelections (appState, $eventTarget) {
                     : ($target.parents('.graph-label')[0]);
                 var pt = _.values(appState.poi.state.activeLabels)
                     .filter(function (lbl) { return lbl.elt.get(0) === elt; })[0];
-                targetElementStream = Rx.Observable.return([pt]);
+                targetElementStream = Rx.Observable.return(new VizSlice([pt]));
 
             // Clicked on canvas, return latest highlighted object
             } else {
                 targetElementStream = appState.latestHighlightedObject.take(1);
             }
 
-            return targetElementStream.map(function (clickPoints) {
+            return targetElementStream.map(function (slice) {
                 return {
-                    clickPoints: clickPoints,
+                    clickPoints: slice.getVizSliceElements(),
                     ctrl: downUp.ctrl
                 };
             });
@@ -125,15 +125,10 @@ function setupClickSelections (appState, $eventTarget) {
                 _.extend(click, {source: 'canvas'});
             });
 
-            if (!ctrl) {
-                activeSelection.onNext(clickPoints);
+            if (ctrl) {
+                activeSelection.onNext(sel.removeOrAdd(clickPoints[0]));
             } else {
-                sel = util.removeOrAdd(sel, clickPoints[0], function (a, b) {
-                    // TODO: Should be some sort of "element" object with
-                    // equality function.
-                    return (a.idx === b.idx && a.dim === b.dim);
-                });
-                activeSelection.onNext(sel);
+                activeSelection.onNext(sel.newFrom(clickPoints));
             }
 
         }).subscribe(_.identity, util.makeErrorHandler('setupClickSelections'));
@@ -196,8 +191,8 @@ function renderLabels(appState, $labelCont, highlighted, selected, poiIsEnabled)
 function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, selected, poiIsEnabled) {
 
     // Trying to handle set highlight/selection, but badly:
-    var indicesToExpand = selected.length > 1 ? [] : selected;
-    highlighted = highlighted.length > 1 ? [] : highlighted;
+    var elementsToExpand = selected.size() > 1 ? [] : selected.getVizSliceElements();
+    var elementsToHighlight = highlighted.size() > 1 ? [] : highlighted.getVizSliceElements();
 
 
     var poi = appState.poi;
@@ -209,7 +204,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, se
         hits = poi.getActiveApprox(appState.renderState, 'pointHitmapDownsampled');
     }
 
-    _.each([highlighted, indicesToExpand], function (set) {
+    _.each([elementsToHighlight, elementsToExpand], function (set) {
         _.each(set, function (labelObj) {
             hits[poi.cacheKey(labelObj.idx, labelObj.dim)] = labelObj;
         });
@@ -234,7 +229,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, se
             if (poi.state.activeLabels[key]) {
                 // label already on, re-use
                 return poi.state.activeLabels[key];
-            } else if ((_.keys(poi.state.activeLabels).length > poi.MAX_LABELS) && (_.pluck(highlighted, 'idx').indexOf(idx) === -1)) {
+            } else if ((_.keys(poi.state.activeLabels).length > poi.MAX_LABELS) && (_.pluck(elementsToHighlight, 'idx').indexOf(idx) === -1)) {
                 // no label but too many on screen, don't create new
                 return null;
             } else if (!poi.state.inactiveLabels.length) {
@@ -246,7 +241,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, se
                 extendEdgeLabelWithCoords(freshLabel, hit, appState);
                 return freshLabel;
             } else {
-                // no label and available inactive preallocated, reuse
+                // no label and available inactive pre-allocated, reuse
                 var lbl = poi.state.inactiveLabels.pop();
                 lbl.idx = idx;
                 lbl.dim = dim;
@@ -261,7 +256,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, se
 
     var newPos = newLabelPositions(appState.renderState, labelsToShow, points);
 
-    effectLabels(toClear, labelsToShow, newPos, highlighted, indicesToExpand, poi);
+    effectLabels(toClear, labelsToShow, newPos, elementsToHighlight, elementsToExpand, poi);
 }
 
 function newLabelPositions(renderState, labels, points) {
@@ -366,11 +361,11 @@ function setupCursor(renderState, renderingScheduler, isAnimating, latestHighlig
         return rxPoints.combineLatest(
             rxSizes,
             latestHighlightedObject,
-            function (p, s, i) {
+            function (p, s, highlights) {
                 return {
                     points: new Float32Array(p.buffer),
                     sizes: new Uint8Array(s.buffer),
-                    indices: i
+                    indices: highlights.getVizSliceElements()
                 };
             }
         ).takeUntil(animating);
@@ -431,7 +426,7 @@ function renderCursor(renderState, renderingScheduler, $cont, $point, $center, p
 function deselectWhenSimulating(appState) {
     appState.simulateOn.do(function (val) {
         if (val) {
-            appState.activeSelection.onNext([]);
+            appState.activeSelection.onNext(new VizSlice());
         }
     }).subscribe(_.identity, util.makeErrorHandler('setuplabels (hide when simulating)'));
 }

@@ -7,9 +7,13 @@ var _       = require('underscore');
 var util            = require('./util.js');
 
 
-
-function encodeEntities(socket, sel) {
-    return Rx.Observable.fromCallback(socket.emit, socket)('get_global_ids', sel)
+/**
+ * @param {Socket} socket
+ * @param {VizSlice} slice
+ * @returns {Rx.Observable}
+ */
+function encodeEntities(socket, slice) {
+    return Rx.Observable.fromCallback(socket.emit, socket)('get_global_ids', slice.getVizSliceElements())
         .do(function (reply) {
             if (!reply || !reply.success) {
                 console.error('Server error on get_global_ids', (reply||{}).error);
@@ -29,8 +33,8 @@ function setupAPIHooks(socket, appState, doneLoading) {
         apiEvents.onNext({event: 'loaded'});
     }).subscribe(_.identity, util.makeErrorHandler('API hook for doneLoading'));
 
-    appState.latestHighlightedObject.flatMapLatest(function (sel) {
-        return encodeEntities(socket, sel);
+    appState.latestHighlightedObject.flatMapLatest(function (slice) {
+        return encodeEntities(socket, slice);
     }).do(function (ids) {
         apiEvents.onNext({
             event: 'highlighted',
@@ -38,8 +42,8 @@ function setupAPIHooks(socket, appState, doneLoading) {
         });
     }).subscribe(_.identity, util.makeErrorHandler('API hook for latestHighlightedObject'));
 
-    appState.activeSelection.flatMapLatest(function (sel) {
-        return encodeEntities(socket, sel);
+    appState.activeSelection.flatMapLatest(function (slice) {
+        return encodeEntities(socket, slice);
     }).do(function (ids) {
         apiEvents.onNext({
             event: 'selected',

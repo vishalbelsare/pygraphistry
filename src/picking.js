@@ -6,7 +6,7 @@ var _       = require('underscore');
 
 /**
  * @param {Number} raw
- * @returns {SelectionElement}
+ * @returns {VizSliceElement}
  */
 function decodeGpuIndex (raw) {
     // Sit down and grab a drink. This might take a while.
@@ -60,7 +60,7 @@ function decodeGpuIndex (raw) {
 
 /**
  * returns idx or -1
- * @returns {SelectionElement}
+ * @returns {VizSliceElement}
  */
 function hitTest(maps, width, height, x, y, numRenderedSplits) {
     // debug('hit testing', texture);
@@ -84,7 +84,7 @@ function hitTest(maps, width, height, x, y, numRenderedSplits) {
 /**
  * hit test by sampling for a hit on circle's perimeter
  * returns idx or -1
- * @returns {SelectionElement}
+ * @returns {VizSliceElement}
  */
 function hitTestCircumference(maps, width, height, x, y, r, numRenderedSplits) {
     for (var attempt = 0; attempt < r * 2 * Math.PI; attempt++) {
@@ -106,7 +106,7 @@ function hitTestCircumference(maps, width, height, x, y, r, numRenderedSplits) {
  * where dim: 0 = none, 1 = point, 2 = edge
  * @param {RenderState} state
  * @param {String[]} textures Textures are retina-expanded, x/y are still in CSS-space
- * @returns {SelectionElement}
+ * @returns {VizSliceElement}
  */
 function hitTestN(state, textures, x, y, r) {
     var numRenderedSplits = state.get('config').get('numRenderedSplits');

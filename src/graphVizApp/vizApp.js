@@ -17,6 +17,7 @@ var poiLib          = require('../poi.js');
 var util            = require('./util.js');
 var highlight       = require('./highlight.js');
 var api             = require('./api.js');
+var VizSlice        = require('./VizSlice.js');
 
 
 function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
@@ -39,7 +40,7 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
     var settingsChanges = new Rx.ReplaySubject(1);
     settingsChanges.onNext({});
     var activeSelection = new Rx.ReplaySubject(1);
-    activeSelection.onNext([]);
+    activeSelection.onNext(new VizSlice([]));
 
     // Marquee button selected
     var marqueeOn = new Rx.ReplaySubject(1);

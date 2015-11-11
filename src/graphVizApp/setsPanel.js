@@ -10,13 +10,7 @@ var Backbone   = require('backbone');
 var _          = require('underscore');
 var util       = require('./util.js');
 var Command    = require('./command.js');
-
-/**
- * @typedef {Object} SelectionElement
- * @property {Number} dim - Enum: 1 for point, 2 for edge.
- * @property {Number} idx - Index into the filtered dataframe.
- * @property {String} source - whether from canvas click, etc.
- */
+var VizSlice   = require('./VizSlice.js');
 
 
 function unionOfTwoMasks (x, y) {
@@ -54,50 +48,41 @@ var VizSetModel = Backbone.Model.extend({
         description: undefined
     },
     /**
-     * @returns {SelectionElement[]}
+     * @returns {VizSliceElement[]}
      */
-    asVizSelection: function () {
+    asVizSlice: function () {
         var mask = this.get(MasksProperty);
-        var result = []; // new Array(mask.point.length + mask.edge.length);
-        if (mask !== undefined) {
-            if (mask.point) {
-                _.each(mask.point, function (pointIndex) {
-                    result.push({dim: 1, idx: pointIndex});
-                });
-            }
-            if (mask.edge) {
-                _.each(mask.edge, function (edgeIndex) {
-                    result.push({dim: 2, idx: edgeIndex});
-                });
-            }
-        }
-        return result;
+        return new VizSlice({point: mask.point, edge: mask.edge});
     },
-    updateMaskFromVizSelections: function (mask, selections) {
-        _.each(selections, function (selection) {
-            switch (selection.dim) {
+    updateMaskFromVizSlice: function (mask, slice) {
+        slice.forEachIndexAndDim(function (idx, dim) {
+            switch (dim) {
                 case 1:
-                    mask.point.push(selection.idx);
+                    mask.point.push(idx);
                     break;
                 case 2:
-                    mask.edge.push(selection.idx);
+                    mask.edge.push(idx);
                     break;
                 default:
-                    throw Error('Unrecognized dimension in selection: ' + selection.dim);
+                    throw Error('Unrecognized dimension in selection: ' + dim);
             }
         });
         mask.point = _.uniq(mask.point.sort(), true);
         mask.edge = _.uniq(mask.edge.sort(), true);
     },
-    maskFromVizSelection: function (selections) {
-        var mask = {point: [], edge: []};
-        this.updateMaskFromVizSelections(mask, selections);
-        return mask;
+    maskFromVizSlice: function (slice) {
+        if (slice._isMaskShaped()) {
+            return _.pick(slice, ['point', 'edge']);
+        } else {
+            var mask = {point: [], edge: []};
+            this.updateMaskFromVizSlice(mask, slice);
+            return mask;
+        }
     },
     /**
-     * @param {SelectionElement[]} selections
+     * @param {VizSlice} slice
      */
-    fromVizSelection: function (selections) {
+    fromVizSlice: function (slice) {
         var mask = this.get(MasksProperty);
         if (mask === undefined) {
             mask = {point: [], edge: []};
@@ -107,7 +92,7 @@ var VizSetModel = Backbone.Model.extend({
             mask.point = [];
             mask.edge = [];
         }
-        this.updateMaskFromVizSelections(mask, selections);
+        this.updateMaskFromVizSlice(mask, slice);
     },
     /**
      * @param {VizSetModel} otherSet
@@ -316,6 +301,7 @@ var VizSetView = Backbone.View.extend({
     },
     closeRenameDialog: function () {
         this.$renameDialog.modal('hide');
+        // FIXME this should not be necessary:
         $('.modal-backdrop').remove();
         this.renameDialogSubscription.dispose();
         this.renameDialogSubscription = undefined;
@@ -415,7 +401,7 @@ var AllVizSetsView = Backbone.View.extend({
         if (activeSelection !== undefined) {
             this.collection.each(function (vizSet) {
                 if (vizSet.representsActiveSelection()) {
-                    vizSet.fromVizSelection(activeSelection);
+                    vizSet.fromVizSlice(activeSelection);
                 }
             });
         }
@@ -485,11 +471,11 @@ SetsPanel.prototype = {
         switch (sourceType) {
             case 'selection':
                 this.activeSelection.take(1).flatMapLatest(function (activeSelection) {
-                    var specification = {masks: VizSetModel.prototype.maskFromVizSelection(activeSelection)};
+                    var specification = {masks: VizSetModel.prototype.maskFromVizSlice(activeSelection)};
                     return this.commands.create.sendWithObservableResult(sourceType, specification).do(function (createSetResult) {
                         this.handleCreateSetResult(createSetResult);
                         // Reset selection now that we've captured them in a Set:
-                        this.activeSelection.onNext([]);
+                        this.activeSelection.onNext(activeSelection.newEmpty());
                     }.bind(this));
                 }.bind(this)).subscribe(
                     _.identity, util.makeErrorHandler('Creating a Set from Selection'));
@@ -533,7 +519,7 @@ SetsPanel.prototype = {
                 this.collection.reset(_.map(sets, function (vizSet) {
                     var setModel = new VizSetModel(vizSet);
                     if (setModel.representsActiveSelection()) {
-                        setModel.fromVizSelection(activeSelection);
+                        setModel.fromVizSlice(activeSelection);
                     }
                     return setModel;
                 }));
@@ -589,7 +575,7 @@ SetsPanel.prototype = {
         /** @type {Rx.ReplaySubject} */
         this.latestHighlightedObject = latestHighlightedObject;
         this.activeSelection.do(function (activeSelection) {
-            if (activeSelection.length === 0) {
+            if (activeSelection.isEmpty()) {
                 this.collection.each(function (vizSet) { vizSet.isSelected(false); });
             }
             this.view.refreshCreateSet(activeSelection);
@@ -609,7 +595,7 @@ SetsPanel.prototype = {
         }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Updating Sets from filter updates'));
     },
 
-    vizSelectionFromSetModels: function (setModels) {
+    vizSliceFromSetModels: function (setModels) {
         var resultSetModel;
         if (setModels.length > 1) {
             resultSetModel = _.reduce(setModels, function (firstSet, secondSet) {
@@ -618,15 +604,15 @@ SetsPanel.prototype = {
         } else if (setModels.length === 1) {
             resultSetModel = setModels[0];
         }
-        return resultSetModel === undefined ? [] : resultSetModel.asVizSelection();
+        return resultSetModel === undefined ? new VizSlice() : resultSetModel.asVizSlice();
     },
 
     highlightSetModels: function (setModels) {
-        this.latestHighlightedObject.onNext(this.vizSelectionFromSetModels(setModels));
+        this.latestHighlightedObject.onNext(this.vizSliceFromSetModels(setModels));
     },
 
     selectSetModels: function (setModels) {
-        this.activeSelection.onNext(this.vizSelectionFromSetModels(setModels));
+        this.activeSelection.onNext(this.vizSliceFromSetModels(setModels));
     }
 };
 

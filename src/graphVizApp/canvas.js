@@ -10,6 +10,7 @@ var interaction     = require('./interaction.js');
 var util            = require('./util.js');
 var renderer        = require('../renderer');
 var colorPicker     = require('./colorpicker.js');
+var VizSlice        = require('./VizSlice.js');
 
 
 function setupCameraInteractions(appState, $eventTarget) {
@@ -670,26 +671,28 @@ function renderMouseoverEffects(renderingScheduler, task) {
     var selectedNodeIndices = task.data.selected.nodeIndices || [];
 
     // TODO: Decide if we need to dedupe these arrays.
+    // TODO: Decide a threshold or such to show neighborhoods for large selections.
+    if (selectedEdgeIndices.length + selectedNodeIndices.length <= 1) {
+        // Extend edges with neighbors of nodes
+        // BAD because uses pushes.
+        _.each(highlightedNodeIndices, function (val) {
+            var stride = 2 * val;
+            var start = forwardsEdgeStartEndIdxs[stride];
+            var end = forwardsEdgeStartEndIdxs[stride + 1];
+            while (start < end) {
+                var edgeIdx = start;
+                highlightedEdgeIndices.push(edgeIdx);
+                start++;
+            }
+        });
 
-    // Extend edges with neighbors of nodes
-    // BAD because uses pushes.
-    _.each(highlightedNodeIndices, function (val) {
-        var stride = 2 * val;
-        var start = forwardsEdgeStartEndIdxs[stride];
-        var end = forwardsEdgeStartEndIdxs[stride + 1];
-        while (start < end) {
-            var edgeIdx = start;
-            highlightedEdgeIndices.push(edgeIdx);
-            start++;
-        }
-    });
-
-    // Extend node indices with edge endpoints
-    _.each(highlightedEdgeIndices, function (val) {
-        var stride = 2 * val;
-        highlightedNodeIndices.push(logicalEdges[stride]);
-        highlightedNodeIndices.push(logicalEdges[stride + 1]);
-    });
+        // Extend node indices with edge endpoints
+        _.each(highlightedEdgeIndices, function (val) {
+            var stride = 2 * val;
+            highlightedNodeIndices.push(logicalEdges[stride]);
+            highlightedNodeIndices.push(logicalEdges[stride + 1]);
+        });
+    }
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -863,7 +866,6 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
         simulating: false,
         quietState: false,
         interpolateMidPoints : true,
-        activeSelection: [],
 
         //{ <activeBufferName> -> undefined}
         // Seem to be client-defined local buffers
@@ -899,14 +901,15 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
         that.appSnapshot.simulating = val;
     }, util.makeErrorHandler('simulate updates'));
 
-    activeSelection.subscribe(function (val) {
-        that.appSnapshot.activeSelection = val;
-    }, util.makeErrorHandler('activeSelection updates'));
-
     vboUpdates.filter(function (status) {
         return status === 'received';
     }).flatMapLatest(function () {
         var hostBuffers = renderState.get('hostBuffers');
+        // FIXME handle selection update buffers here.
+        Rx.Observable.combineLatest(hostBuffers['selectedPointIndexes'], hostBuffers['selectedEdgeIndexes'],
+            function (pointIndexes, edgeIndexes) {
+                activeSelection.onNext(new VizSlice({point: pointIndexes, edge: edgeIndexes}));
+            }).take(1).subscribe(_.identity);
         var bufUpdates = ['curPoints', 'logicalEdges', 'edgeColors', 'pointSizes', 'curMidPoints'].map(function (bufName) {
             var bufUpdate = hostBuffers[bufName] || Rx.Observable.return();
             return bufUpdate.do(function (data) {

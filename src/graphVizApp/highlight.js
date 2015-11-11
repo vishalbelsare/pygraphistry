@@ -25,30 +25,16 @@ function setupHighlight(appState) {
                 selected: selected
             };
         }).do(function (data) {
-
-            var getIndicesForDim = function (array, dim) {
-                return _.chain(array)
-                    .filter(function (el) {
-                        return el.dim === dim;
-                    }).pluck('idx').value();
-            };
-
-            var selectedNodeIndices = getIndicesForDim(data.selected, 1);
-            var selectedEdgeIndices = getIndicesForDim(data.selected, 2);
-
-            var highlightedNodeIndices = getIndicesForDim(data.highlighted, 1);
-            var highlightedEdgeIndices = getIndicesForDim(data.highlighted, 2);
-
             var task = {
                 trigger: 'mouseOverEdgeHighlight',
                 data: {
                     highlight: {
-                        nodeIndices: highlightedNodeIndices,
-                        edgeIndices: highlightedEdgeIndices
+                        nodeIndices: data.highlighted.getPointIndexValues(),
+                        edgeIndices: data.highlighted.getEdgeIndexValues()
                     },
                     selected: {
-                        nodeIndices: selectedNodeIndices,
-                        edgeIndices: selectedEdgeIndices
+                        nodeIndices: data.selected.getPointIndexValues(),
+                        edgeIndices: data.selected.getEdgeIndexValues()
                     }
                 }
             };
