@@ -1185,6 +1185,16 @@ function moveNodes(simulator, marqueeEvent) {
         .fail(log.makeQErrorHandler(logger, 'Failure trying to move nodes'));
 }
 
+function selectionKernelResultToMask(arrayOfBits) {
+    var selectedIndexes = [];
+    for(var i = 0; i < arrayOfBits.length; i++) {
+        if (arrayOfBits[i] === 1) {
+            selectedIndexes.push(i);
+        }
+    }
+    return new Uint32Array(selectedIndexes);
+}
+
 function selectNodesInRect(simulator, selection) {
     logger.debug('selectNodesInRect', selection);
 
@@ -1195,14 +1205,8 @@ function selectNodesInRect(simulator, selection) {
     }
 
     return selectNodesInRectKernel.run(simulator, selection)
-        .then(function (mask) {
-            var res = [];
-            for(var i = 0; i < mask.length; i++) {
-                if (mask[i] === 1) {
-                    res.push(i);
-                }
-            }
-            return new Uint32Array(res);
+        .then(function (arrayOfBits) {
+            return selectionKernelResultToMask(arrayOfBits);
         }).fail(log.makeQErrorHandler(logger, 'Failure trying to compute selection'));
 }
 
@@ -1216,14 +1220,8 @@ function selectNodesInCircle(simulator, selection) {
     }
 
     return selectNodesInCircleKernel.run(simulator, selection)
-        .then(function (mask) {
-            var res = [];
-            for(var i = 0; i < mask.length; i++) {
-                if (mask[i] === 1) {
-                    res.push(i);
-                }
-            }
-            return new Uint32Array(res);
+        .then(function (arrayOfBits) {
+            return selectionKernelResultToMask(arrayOfBits);
         }).fail(log.makeQErrorHandler(logger, 'Failure trying to compute selection'));
 }
 
