@@ -154,7 +154,7 @@ function init(streamClient, canvasElement, vizType) {
     }
 
     apiActions.do(function (msg) {
-        console.log('apiActions', msg);
+        debug('apiActions', msg);
     }).subscribe(_.identity, util.makeErrorHandler('apiActions'));
 
     /** @typedef {Object} RenderInfo
