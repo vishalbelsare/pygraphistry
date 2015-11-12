@@ -88,6 +88,10 @@ DataframeMask.prototype.numByType = function (type) {
     return this[type] !== undefined ? this[type].length : this.dataframe.getOriginalNumElements(type);
 };
 
+DataframeMask.prototype.isEmpty = function () {
+    return this.numPoints() === 0 && this.numEdges() === 0;
+};
+
 DataframeMask.prototype.numPoints = function () {
     return this.numByType('point');
 };

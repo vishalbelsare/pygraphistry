@@ -58,6 +58,7 @@ function Dataframe () {
     );
     this.masksForVizSets = {};
     this.data = this.rawdata;
+    this.resetData = makeEmptyData();
 }
 
 /**
@@ -1051,6 +1052,22 @@ Dataframe.prototype.getAllBuffers = function (type) {
     return this.data.buffers[type];
 };
 
+/// Buffer reset capability, specific to local buffers for now to make highlight work:
+
+Dataframe.prototype.snapshotLocalBuffer = function (name) {
+    this.resetData.localBuffers[name] = this.data.localBuffers[name];
+};
+
+Dataframe.prototype.canResetLocalBuffer = function (name) {
+    return this.resetData.localBuffers[name] !== undefined;
+};
+
+Dataframe.prototype.resetLocalBuffer = function (name) {
+    if (this.canResetLocalBuffer(name)) {
+        this.data.localBuffers[name] = this.resetData.localBuffers[name];
+        delete this.resetData.localBuffers[name];
+    }
+};
 
 Dataframe.prototype.getLocalBuffer = function (name) {
     var res = this.data.localBuffers[name];
