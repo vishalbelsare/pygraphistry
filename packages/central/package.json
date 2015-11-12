@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "StreamGL": "graphistry/StreamGL",
-    "body-parser": "~1.10.0",
+    "body-parser": "~1.14.0",
     "common": "graphistry/common",
     "compression": "~1.4.0",
     "config": "graphistry/config",
