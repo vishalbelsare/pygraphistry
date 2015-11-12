@@ -22,7 +22,7 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle, filter
     var $nodesInspector = $('#inspector-nodes').find('.inspector');
     var $edgesInspector = $('#inspector-edges').find('.inspector');
 
-    var marqueeTriggers = marquee.separateItems.merge(marquee.doneDragging);
+    var marqueeTriggers = marquee.selections.merge(marquee.doneDragging);
 
     //////////////////////////////////////////////////////////////////////////
     // Interactions with other tools.
