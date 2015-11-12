@@ -99,7 +99,8 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
         latestHighlightedObject: latestHighlightedObject,
         apiEvents: apiEvents,
         apiActions: apiActions,
-        poiIsEnabled: poiIsEnabled
+        poiIsEnabled: poiIsEnabled,
+        clickEvents: new Rx.ReplaySubject(0)
     };
 
     //////////////////////////////////////////////////////////////////////////

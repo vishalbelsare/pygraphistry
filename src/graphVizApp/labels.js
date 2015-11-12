@@ -115,7 +115,9 @@ function setupClickSelections (appState, $eventTarget) {
             return activeSelection.take(1).map(function (sel) {
                 return {sel: sel, clickPoints: data.clickPoints, ctrl: data.ctrl};
             });
-        }).do(function (data) {
+        }).subscribe(appState.clickEvents);
+
+        appState.clickEvents.do(function (data) {
             var clickPoints = data.clickPoints;
             var sel = data.sel;
             var ctrl = data.ctrl;

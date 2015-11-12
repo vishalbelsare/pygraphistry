@@ -51,6 +51,7 @@ function setupAPIHooks(socket, appState, doneLoading) {
                 return subscriber.guid !== guid;
             });
 
+            // Triggers onComplete on the API side.
             postEvent(apiEvents, action.subscriber, {
                 event: '__unsubscribe__'
             });
@@ -103,6 +104,21 @@ function setupAPIHooks(socket, appState, doneLoading) {
         });
     }).subscribe(_.identity, util.makeErrorHandler('API hook for sceneChanges'));
 
+    appState.clickEvents.do(function (e){
+        var clickedNodes = _.pluck(_.where(e.clickPoints, {dim: 1}), 'idx');
+        _.chain(event2subscribers['node.click']).filter(function (subscriber) {
+            return _.contains(clickedNodes, subscriber.node.viewIdx);
+        }).each(function (subscriber) {
+            nodeClick(appState.apiEvents, subscriber, e);
+        });
+    }).flatMapLatest(function (e) {
+        return encodeEntities(socket, e.clickPoints);
+    }).do(function (sel) {
+        _.each(event2subscribers.clicked, function (subscriber) {
+            postEvent(apiEvents, subscriber, {event: 'clicked', items: sel});
+        });
+    }).subscribe(_.identity, util.makeErrorHandler('API hook for clickEvents'));
+
     postEvent(apiEvents, undefined, {event: 'apiReady'});
 }
 
@@ -115,25 +131,38 @@ function postEvent(apiEvents, subscriber, body) {
 }
 
 
-function nodeMove(appState, subscriber) {
+function getPointPosition(appState, indices) {
     var renderState = appState.renderState;
     var curPoints = renderState.get('hostBuffers').curPoints;
 
-    curPoints.take(1).map(function (curPoints) {
+    return curPoints.take(1).map(function (curPoints) {
         var camera = renderState.get('camera');
         var cnv = renderState.get('canvas');
 
         var points = new Float32Array(curPoints.buffer);
-        var idx = subscriber.node.viewIdx;
+        return _.map(indices, function (idx) {
+            return camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv);
+        });
+    });
+}
 
-        return camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv);
-    }).do(function (pos) {
+function nodeMove(appState, subscriber) {
+    getPointPosition(appState, [subscriber.node.viewIdx]).do(function (posList) {
         postEvent(appState.apiEvents, subscriber, {
             event: 'node.move',
             node: subscriber.node,
-            pos: pos
+            pos: posList[0]
         });
     }).subscribe(_.identity, util.makeErrorHandler('nodeMove'));
+}
+
+
+function nodeClick(apiEvents, subscriber, event) {
+    postEvent(apiEvents, subscriber, {
+        event: 'node.click',
+        node: subscriber.node,
+        ctrl: event.ctrl
+    });
 }
 
 
