@@ -366,7 +366,7 @@ function createControls(socket, appState, trigger, urlParams) {
                     if ($that.hasClass('layout-checkbox')) {
                         sendLayoutSetting(socket, param.algoName, param.name, input.checked, appState.settingsChanges);
                     } else if ($that.hasClass('local-checkbox')) {
-                        setLocalSetting(param.name, input.checked, appState.renderState, appState.settingsChanges, appState);
+                        setLocalSetting(param.name, input.checked, appState);
                     }
                 },
                 util.makeErrorHandler('menu checkbox')
@@ -390,8 +390,7 @@ function createControls(socket, appState, trigger, urlParams) {
                         sendLayoutSetting(socket, param.algoName,
                                     param.name, Number($slider.val()), appState.settingsChanges);
                     } else if ($that.hasClass('local-menu-slider')) {
-                        setLocalSetting(param.name, Number($slider.val()),
-                                        appState.renderState, appState.settingsChanges, appState);
+                        setLocalSetting(param.name, Number($slider.val()), appState);
                     }
                 },
                 util.makeErrorHandler('menu slider')
@@ -415,12 +414,12 @@ function toPercent(pos) {
 }
 
 
-function setLocalSetting(name, pos, renderState, settingsChanges, appState) {
-    var camera = renderState.get('camera');
+function setLocalSetting(name, pos, appState) {
+    var camera = appState.renderState.get('camera');
     var val = 0;
 
     function setUniform(name, value) {
-        var uniforms = renderState.get('uniforms');
+        var uniforms = appState.renderState.get('uniforms');
         _.each(uniforms, function (map) {
             if (name in map) {
                 map[name] = value;
@@ -461,7 +460,7 @@ function setLocalSetting(name, pos, renderState, settingsChanges, appState) {
             return;
     }
 
-    settingsChanges.onNext({name: name, value: pos});
+    appState.settingsChanges.onNext({name: name, value: pos});
 }
 
 
@@ -674,10 +673,14 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         .do(runButton.bind('', appState, socket, urlParams, isAutoCentering))
         .subscribe(_.identity, util.makeErrorHandler('layout button'));
 
-
+    appState.apiActions
+        .filter(function (e) { console.log(e); return e.event === 'updateSetting'; })
+        .do(function (e) {
+            setLocalSetting(e.setting, e.value, appState);
+        }).subscribe(_.identity, util.makeErrorHandler('updateSetting'));
 }
 
 
 module.exports = {
-    init: init
+    init: init,
 };
