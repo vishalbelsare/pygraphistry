@@ -85,7 +85,7 @@ function baseMaskOn (mask, basisMask) {
 
 
 DataframeMask.prototype.numByType = function (type) {
-    return this[type] !== undefined ? this[type].length : this.dataframe.getNumElements(type);
+    return this[type] !== undefined ? this[type].length : this.dataframe.getOriginalNumElements(type);
 };
 
 DataframeMask.prototype.numPoints = function () {

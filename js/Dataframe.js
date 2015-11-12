@@ -541,6 +541,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     newData.hostBuffers.backwardsEdges = backwardsEdges;
     newData.hostBuffers.points = rawdata.hostBuffers.points;
 
+
     newData.localBuffers.logicalEdges = forwardsEdges.edgesTyped;
     newData.localBuffers.forwardsEdgeStartEndIdxs = forwardsEdges.edgeStartEndIdxsTyped;
     newData.localBuffers.backwardsEdgeStartEndIdxs = backwardsEdges.edgeStartEndIdxsTyped;
@@ -1028,6 +1029,14 @@ Dataframe.prototype.getBufferKeys = function (type) {
         _.keys(this.data.buffers[type]),
         _.identity
     );
+};
+
+Dataframe.prototype.getOriginalNumElements = function (type) {
+    var res = this.rawdata.numElements[type];
+    if (!res && res !== 0) {
+        throw new Error("Invalid Num Elements: " + type);
+    }
+    return res;
 };
 
 Dataframe.prototype.getNumElements = function (type) {
