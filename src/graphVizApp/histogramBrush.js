@@ -108,7 +108,7 @@ HistogramBrush.prototype.setupFiltersInteraction = function(filtersPanel, poi) {
  * Take stream of selections and drags and use them for histograms
  */
 HistogramBrush.prototype.setupMarqueeInteraction = function(marquee) {
-    marquee.selections.map(function (val) {
+    marquee.separateItems.map(function (val) {
         return {type: 'selection', sel: val};
     }).merge(marquee.drags.sample(DRAG_SAMPLE_INTERVAL).map(function (val) {
             return {type: 'drag', sel: val};

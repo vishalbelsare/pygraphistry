@@ -20,10 +20,10 @@ function VizSlice (specification) {
     /** @type {ArrayBuffer|Number[]} */
     this.edge = specification.edge;
     if (_.isArray(specification)) {
-        this.selections = specification;
-    } else if (_.isArray(specification.selections)) {
+        this.separateItems = specification;
+    } else if (_.isArray(specification.separateItems)) {
         /** @type {ArrayBuffer|Number[]} */
-        this.selections = specification.selections;
+        this.separateItems = specification.separateItems;
     }
 }
 
@@ -93,7 +93,7 @@ VizSlice.prototype = {
         var result = 0;
         if (this.point !== undefined) { result += this.point.length; }
         if (this.edge !== undefined) { result += this.edge.length; }
-        if (this.selections !== undefined) { result += this.selections.length; }
+        if (this.separateItems !== undefined) { result += this.separateItems.length; }
         return result;
     },
 
@@ -106,12 +106,12 @@ VizSlice.prototype = {
     },
 
     newAdding: function (newElements) {
-        var existingSelections = this.selections,
-            resultSelections = existingSelections;
-        if (_.isArray(existingSelections)) {
-            resultSelections = existingSelections.concat(newElements);
+        var existingItems = this.separateItems,
+            resultItems = existingItems;
+        if (_.isArray(existingItems)) {
+            resultItems = existingItems.concat(newElements);
         }
-        return new VizSlice({edge: this.edge, point: this.point, selections: resultSelections});
+        return new VizSlice({edge: this.edge, point: this.point, separateItems: resultItems});
     },
 
     copy: function () {
@@ -119,14 +119,14 @@ VizSlice.prototype = {
     },
 
     _isMaskShaped: function () {
-        return !_.isArray(this.selections);
+        return !_.isArray(this.separateItems);
     },
 
     getPointIndexValues: function () {
         if (this._isMaskShaped()) {
             return this.point || [];
         } else {
-            return _.pluck(_.filter(this.selections, function (sel) { return sel.dim === 1; }), 'idx');
+            return _.pluck(_.where(this.separateItems, {dim: 1}), 'idx');
         }
     },
 
@@ -134,7 +134,7 @@ VizSlice.prototype = {
         if (this._isMaskShaped()) {
             return this.edge || [];
         } else {
-            return _.pluck(_.filter(this.selections, function (sel) { return sel.dim === 2; }), 'idx');
+            return _.pluck(_.filter(this.separateItems, {dim: 2}), 'idx');
         }
     },
 
@@ -142,7 +142,7 @@ VizSlice.prototype = {
      * @returns {VizSliceElement[]}
      */
     getVizSliceElements: function () {
-        return this._isMaskShaped() ? [] : this.selections;
+        return this._isMaskShaped() ? [] : this.separateItems;
     },
 
     /**
@@ -161,9 +161,9 @@ VizSlice.prototype = {
                 iterator(this.edge[i], 2);
             }
         }
-        if (this.selections && _.isArray(this.selections)) {
-            for (i=0; i<this.selections.length; i++) {
-                iterator(this.selections[i].idx, this.selections[i].dim);
+        if (this.separateItems && _.isArray(this.separateItems)) {
+            for (i=0; i<this.separateItems.length; i++) {
+                iterator(this.separateItems[i].idx, this.separateItems[i].dim);
             }
         }
     },
@@ -184,7 +184,7 @@ VizSlice.prototype = {
                     break;
             }
         } else {
-            result.selections = removeOrAddFromUnsortedArray(result.selections, selection, function (a, b) {
+            result.separateItems = removeOrAddFromUnsortedArray(result.separateItems, selection, function (a, b) {
                 return a.dim === b.dim && a.idx === b.idx;
             });
         }

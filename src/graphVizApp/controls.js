@@ -149,7 +149,7 @@ function setupMarquee(appState, isOn) {
 
     var marquee = marqueeFact.initMarquee(appState, $('#marquee'), isOn, {transform: transform});
 
-    marquee.selections.subscribe(function (sel) {
+    marquee.separateItems.subscribe(function (sel) {
         debug('marquee selected bounds', sel);
     }, util.makeErrorHandler('bad marquee selections'));
 
@@ -170,7 +170,7 @@ function setupBrush(appState, isOn) {
 
     var brush = marqueeFact.initBrush(appState, $('#brush'), isOn, {transform: transform});
 
-    brush.selections.subscribe(function (sel) {
+    brush.separateItems.subscribe(function (sel) {
         debug('brush selected bounds', sel);
     }, util.makeErrorHandler('bad brush selections'));
 
@@ -594,7 +594,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     Rx.Observable.zip(
         marquee.drags,
         marquee.drags.flatMapLatest(function () {
-            return marquee.selections.take(1);
+            return marquee.separateItems.take(1);
         }),
         function(a, b) { return {drag: a, selection: b}; }
     ).subscribe(function (move) {
