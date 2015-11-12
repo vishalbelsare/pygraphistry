@@ -107,30 +107,27 @@ function setupClickSelections (appState, $eventTarget) {
 
             return targetElementStream.map(function (slice) {
                 return {
-                    clickPoints: slice.getVizSliceElements(),
+                    clickSlice: slice,
                     ctrl: downUp.ctrl
                 };
             });
         }).flatMapLatest(function (data) {
             return activeSelection.take(1).map(function (sel) {
-                return {sel: sel, clickPoints: data.clickPoints, ctrl: data.ctrl};
+                return {sel: sel, clickSlice: data.clickSlice, ctrl: data.ctrl};
             });
         }).subscribe(appState.clickEvents);
 
         appState.clickEvents.do(function (data) {
-            var clickPoints = data.clickPoints;
+            var clickSlice = data.clickSlice;
             var sel = data.sel;
             var ctrl = data.ctrl;
 
-            // Tag source
-            _.each(clickPoints, function (click) {
-                _.extend(click, {source: 'canvas'});
-            });
+            clickSlice.tagSourceAs('canvas');
 
             if (ctrl) {
-                activeSelection.onNext(sel.removeOrAdd(clickPoints[0]));
+                activeSelection.onNext(sel.removeOrAdd(clickSlice.getPrimaryManualElement()));
             } else {
-                activeSelection.onNext(sel.newFrom(clickPoints));
+                activeSelection.onNext(sel.newFrom(clickSlice.separateItems));
             }
 
         }).subscribe(_.identity, util.makeErrorHandler('setupClickSelections'));

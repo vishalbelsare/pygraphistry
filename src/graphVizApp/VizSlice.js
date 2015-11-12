@@ -53,6 +53,23 @@ function removeOrAddFromSortedArray(arrayData, newValue) {
     return arrayData.length - 1;
 }
 
+function indexOfInSorted(sortedArray, value) {
+    var low = 0,
+        high = sortedArray.length - 1,
+        mid;
+    while (low < high) {
+        mid = Math.floor((low + high) / 2);
+        if (sortedArray[mid] > value) {
+            high = mid - 1;
+        } else if (sortedArray[mid] < value) {
+            low = mid + 1;
+        } else {
+            return mid;
+        }
+    }
+    return -1;
+}
+
 function removeOrAddFromUnsortedArray(arrayData, newElem, equalityFunc) {
     if (arrayData === undefined) { return [newElem]; }
     var lengthBefore = arrayData.length,
@@ -122,6 +139,27 @@ VizSlice.prototype = {
         return !_.isArray(this.separateItems);
     },
 
+    containsIndexByDim: function (idx, dim) {
+        switch (dim) {
+            case 1:
+                if (indexOfInSorted(this.point, idx) > -1) {
+                    return true;
+                }
+                break;
+            case 2:
+                if (indexOfInSorted(this.edge, idx) > -1) {
+                    return true;
+                }
+                break;
+        }
+        for (var i=0; i< this.separateItems.length; i++) {
+            if (this.separateItems[i].dim === dim && this.separateItems[i].idx === idx) {
+                return true;
+            }
+        }
+        return false;
+    },
+
     getPointIndexValues: function () {
         if (this._isMaskShaped()) {
             return this.point || [];
@@ -136,6 +174,15 @@ VizSlice.prototype = {
         } else {
             return _.pluck(_.filter(this.separateItems, {dim: 2}), 'idx');
         }
+    },
+
+    tagSourceAs: function (source) {
+        this.source = source;
+        _.each(this.separateItems, function (sliceElement) { sliceElement.source = source; });
+    },
+
+    getPrimaryManualElement: function () {
+        return this.separateItems.length > 0 ? this.separateItems[0] : undefined;
     },
 
     /**

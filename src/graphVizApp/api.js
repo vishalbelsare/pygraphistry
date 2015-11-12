@@ -109,14 +109,14 @@ function setupAPIHooks(socket, appState, doneLoading) {
     }).subscribe(_.identity, util.makeErrorHandler('API hook for sceneChanges'));
 
     appState.clickEvents.do(function (e){
-        var clickedNodes = _.pluck(_.where(e.clickPoints, {dim: 1}), 'idx');
+        var slice = e.clickSlice;
         _.chain(event2subscribers['node.click']).filter(function (subscriber) {
-            return _.contains(clickedNodes, subscriber.node.viewIdx);
+            return slice.containsIndexByDim(subscriber.node.viewIdx, 1);
         }).each(function (subscriber) {
             nodeClick(appState.apiEvents, subscriber, e);
         });
     }).flatMapLatest(function (e) {
-        return encodeEntities(socket, e.clickPoints);
+        return encodeEntities(socket, e.clickSlice);
     }).do(function (sel) {
         _.each(event2subscribers.clicked, function (subscriber) {
             postEvent(apiEvents, subscriber, {event: 'clicked', items: sel});
