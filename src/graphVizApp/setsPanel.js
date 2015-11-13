@@ -619,6 +619,7 @@ SetsPanel.prototype = {
         this.latestHighlightedObject.onNext(this.vizSliceFromSetModels(setModels));
         if (setModels.length === 0 || _.any(setModels, function (vizSet) { return !vizSet.isConcrete(); })) {
             var set_ids = _.map(setModels, function (setModel) { return setModel.id; });
+            if (true) { return; }
             this.commands.highlight.sendWithObservableResult({gesture: 'sets', action: 'replace', set_ids: set_ids});
         }
     },
