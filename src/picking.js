@@ -4,6 +4,10 @@
 var debug   = require('debug')('graphistry:StreamGL:picking');
 var _       = require('underscore');
 
+/**
+ * @param {Number} raw
+ * @returns {VizSliceElement}
+ */
 function decodeGpuIndex (raw) {
     // Sit down and grab a drink. This might take a while.
     //
@@ -54,7 +58,10 @@ function decodeGpuIndex (raw) {
 }
 
 
-//returns idx or -1
+/**
+ * returns idx or -1
+ * @returns {VizSliceElement}
+ */
 function hitTest(maps, width, height, x, y, numRenderedSplits) {
     // debug('hit testing', texture);
     var retObj = {idx: -1, dim: 0};
@@ -74,8 +81,11 @@ function hitTest(maps, width, height, x, y, numRenderedSplits) {
 }
 
 
-//hit test by sampling for a hit on circle's perimeter
-//returns idx or -1
+/**
+ * hit test by sampling for a hit on circle's perimeter
+ * returns idx or -1
+ * @returns {VizSliceElement}
+ */
 function hitTestCircumference(maps, width, height, x, y, r, numRenderedSplits) {
     for (var attempt = 0; attempt < r * 2 * Math.PI; attempt++) {
         var attemptX = x + r * Math.round(Math.cos(attempt / r));
@@ -88,11 +98,16 @@ function hitTestCircumference(maps, width, height, x, y, r, numRenderedSplits) {
     return {idx: -1, dim: 0};
 }
 
-//hit test by sampling for closest hit in area radius r (default to 0)
-//returns idx or -1
-//RenderState * [ String ] * float * float * uint -> {idx: -1 + int, dim: 0 + 1 + 2}
-//  where dim: 0 = none, 1 = point, 2 = edge
-//Textures are retina-expanded, x/y are still in CSS-space
+/**
+ * hit test by sampling for closest hit in area radius r (default to 0)
+ * returns idx or -1
+ *
+ * RenderState * [ String ] * float * float * uint -> {idx: -1 + int, dim: 0 + 1 + 2}
+ * where dim: 0 = none, 1 = point, 2 = edge
+ * @param {RenderState} state
+ * @param {String[]} textures Textures are retina-expanded, x/y are still in CSS-space
+ * @returns {VizSliceElement}
+ */
 function hitTestN(state, textures, x, y, r) {
     var numRenderedSplits = state.get('config').get('numRenderedSplits');
 

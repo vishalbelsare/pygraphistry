@@ -10,13 +10,7 @@ var Backbone   = require('backbone');
 var _          = require('underscore');
 var util       = require('./util.js');
 var Command    = require('./command.js');
-
-/**
- * @typedef {Object} SelectionElement
- * @property {Number} dim - Enum: 1 for point, 2 for edge.
- * @property {Number} idx - Index into the filtered dataframe.
- * @property {String} source - whether from canvas click, etc.
- */
+var VizSlice   = require('./VizSlice.js');
 
 
 function unionOfTwoMasks (x, y) {
@@ -54,40 +48,41 @@ var VizSetModel = Backbone.Model.extend({
         description: undefined
     },
     /**
-     * @returns {SelectionElement[]}
+     * @returns {VizSliceElement[]}
      */
-    asVizSelection: function () {
+    asVizSlice: function () {
         var mask = this.get(MasksProperty);
-        if (mask === undefined) { return []; }
-        var result = []; // new Array(mask.point.length + mask.edge.length);
-        if (mask.point) {
-            _.each(mask.point, function (pointIndex) {
-                result.push({dim: 1, idx: pointIndex});
-            });
-        }
-        if (mask.edge) {
-            _.each(mask.edge, function (edgeIndex) {
-                result.push({dim: 2, idx: edgeIndex});
-            });
-        }
-        return result;
+        return new VizSlice({point: mask.point, edge: mask.edge});
     },
-    initializeSource: function (sourceType) {
-        if (this.get('setSource') === undefined) {
-            this.set('setSource', sourceType);
+    updateMaskFromVizSlice: function (mask, slice) {
+        slice.forEachIndexAndDim(function (idx, dim) {
+            switch (dim) {
+                case 1:
+                    mask.point.push(idx);
+                    break;
+                case 2:
+                    mask.edge.push(idx);
+                    break;
+                default:
+                    throw Error('Unrecognized dimension in selection: ' + dim);
+            }
+        });
+        mask.point = _.uniq(mask.point.sort(), true);
+        mask.edge = _.uniq(mask.edge.sort(), true);
+    },
+    maskFromVizSlice: function (slice) {
+        if (slice._isMaskShaped()) {
+            return _.pick(slice, ['point', 'edge']);
+        } else {
+            var mask = {point: [], edge: []};
+            this.updateMaskFromVizSlice(mask, slice);
+            return mask;
         }
     },
     /**
-     * @param {VizSetModel} srcSet
+     * @param {VizSlice} slice
      */
-    fromSystemSet: function (srcSet) {
-        this.initializeSource(srcSet.id);
-        this.set(MasksProperty, _.clone(srcSet.get(MasksProperty)));
-    },
-    /**
-     * @param {SelectionElement[]} selections
-     */
-    fromVizSelection: function (selections) {
+    fromVizSlice: function (slice) {
         var mask = this.get(MasksProperty);
         if (mask === undefined) {
             mask = {point: [], edge: []};
@@ -97,23 +92,7 @@ var VizSetModel = Backbone.Model.extend({
             mask.point = [];
             mask.edge = [];
         }
-        _.each(selections, function (selection) {
-            switch (selection.dim) {
-                case 1:
-                    mask.point.push(selection.idx);
-                    break;
-                case 2:
-                    mask.edge.push(selection.idx);
-                    break;
-                default:
-                    throw Error('Unrecognized dimension in selection: ' + selection.dim);
-            }
-        });
-        mask.point = _.uniq(mask.point.sort(), true);
-        mask.edge = _.uniq(mask.edge.sort(), true);
-    },
-    fromFilters: function (filters) {
-        this.set('filters', filters);
+        this.updateMaskFromVizSlice(mask, slice);
     },
     /**
      * @param {VizSetModel} otherSet
@@ -205,38 +184,47 @@ var VizSetModel = Backbone.Model.extend({
                 result += this.getDescriptionForCounts(sizes.point, sizes.edge);
             }
         } else {
-            var numPoints = sizes !== undefined ? sizes.point : (mask.point && mask.point.length);
-            var numEdges = sizes !== undefined ? sizes.edge : (mask.edge && mask.edge.length);
+            var numPoints = mask.point !== undefined ? mask.point.length : sizes && sizes.point;
+            var numEdges = mask.edge !== undefined ? mask.edge.length : sizes && sizes.edge;
             result += this.getDescriptionForCounts(numPoints, numEdges);
         }
         return result;
     },
     sync: function (method, model, options) {
         if (options === undefined) { options = {}; }
-        var success = options.success;
+        var success = options.success,
+            panel = options.panel;
         switch (method) {
             case 'read':
+                panel.getAllSets().take(1).subscribe(
+                    function (latestSets) {
+                        if (model.isNew()) { return; }
+                        var match = _.find(latestSets, function (vizSet) {
+                            return vizSet.id === model.id;
+                        });
+                        if (match !== undefined) {
+                            model.set(match);
+                        }
+                    },
+                    util.makeErrorHandler('Getting latest Sets'));
                 break;
             case 'delete':
-                if (model.id === undefined) {
-                    break;
-                }
-                this.panel.deleteSet(model.toJSON()).do(function (response) {
+                panel.deleteSet(model.toJSON()).subscribe(function (response) {
                     if (typeof success === 'function') {
                         success.call(options.context, model, response, options);
                     }
-                }).subscribe(_.identity, util.makeErrorHandler('Deleting a Set'));
+                }, util.makeErrorHandler('Deleting a Set'));
                 break;
             case 'update':
                 // TODO handle options.patch
-                this.panel.updateSet(model.toJSON()).do(function (response) {
+                panel.updateSet(model.toJSON()).subscribe(function (response) {
                     if (response.success === true && response.set !== undefined) {
                         model.set(response.set);
                     }
                     if (typeof success === 'function') {
                         success.call(model, response, options);
                     }
-                }).subscribe(_.identity, util.makeErrorHandler('Updating a Set'));
+                }, util.makeErrorHandler('Updating a Set'));
                 break;
         }
     }
@@ -248,7 +236,6 @@ var VizSetCollection = Backbone.Collection.extend({
 
 var VizSetView = Backbone.View.extend({
     tagName: 'div',
-    className: 'setEntry',
     events: {
         'mouseover': 'highlight',
         'mouseout': 'unhighlight',
@@ -270,9 +257,7 @@ var VizSetView = Backbone.View.extend({
         if (!bindings.description) {
             bindings.description = vizSet.getGeneratedDescription();
         }
-        bindings.selectionClass = bindings.selected ? 'fa-check-square-o' : 'fa-square-o';
-        bindings.selectedMessage = bindings.selected ? 'Selected' : 'Unselected';
-        bindings.setTypeClass = vizSet.get('setSource') === 'selection' ? 'fa-mouse-pointer' : '';
+        bindings.selectionClass = bindings.selected ? 'bg-primary' : '';
         return bindings;
     },
     render: function () {
@@ -283,36 +268,58 @@ var VizSetView = Backbone.View.extend({
     },
     delete: function (/*event*/) {
         this.$el.remove();
-        this.collection.remove(this.model);
+        this.model.destroy({panel: this.panel});
     },
     rename: function (event) {
         event.preventDefault();
         var bindings = this.model.toJSON();
-        var $modal = $(this.renameTemplate(bindings));
-        $('body').append($modal);
-        var $status = $('.status', $modal);
-        $status.css('display', 'none');
-        var $input = $('.modal-body input', $modal);
-        $input.val(this.model.get('title'));
-        $modal.modal('show');
-        Rx.Observable.fromEvent($('.modal-footer button', $modal), 'click')
-            .map(_.constant($modal)).do(function ($modal) {
-                var setTag = $input.val();
-                this.model.set('title', setTag);
-                $modal.modal('hide');
-            }.bind(this)).subscribe(
-            _.identity, function (err) {
-                try { $modal.remove(); } catch (ignore) { }
-                util.makeErrorHandler('Exception while setting set tag', err);
-            });
+        if (this.$renameDialog !== undefined && !this.$renameDialog.is(':visible')) {
+            this.closeRenameDialog();
+        }
+        if (this.$renameDialog === undefined) {
+            this.$renameDialog = $(this.renameTemplate(bindings));
+            $('body').append(this.$renameDialog);
+            var $status = $('.status', this.$renameDialog);
+            $status.css('display', 'none');
+            var $input = $('.modal-body input', this.$renameDialog);
+            $input.val(this.model.get('title'));
+            this.$renameDialog.on('shown.bs.modal', function () {
+                $('input', this.$renameDialog).first().focus();
+            }.bind(this));
+            this.$renameDialog.modal('show');
+            this.renameDialogSubscription = Rx.Observable.fromEvent($('.modal-footer button', this.$renameDialog), 'click')
+                .map(_.constant(this.$renameDialog)).subscribe(function (/*$modal*/) {
+                    var setTag = $input.val();
+                    this.model.save('title', setTag, {panel: this.panel});
+                    this.closeRenameDialog();
+                }.bind(this),
+                function (err) {
+                    util.makeErrorHandler('Exception while naming Set', err);
+                    this.closeRenameDialog();
+                }.bind(this));
+        }
+    },
+    closeRenameDialog: function () {
+        this.$renameDialog.modal('hide');
+        // FIXME this should not be necessary:
+        $('.modal-backdrop').remove();
+        this.renameDialogSubscription.dispose();
+        this.renameDialogSubscription = undefined;
+        this.$renameDialog.remove();
+        this.$renameDialog = undefined;
     },
     toggleSelected: function (/*event*/) {
         this.model.isSelected(!this.model.isSelected());
     },
+    renderHover: function (hoverOn) {
+        this.$el.toggleClass('bg-info', hoverOn);
+    },
     highlight: function (/*event*/) {
+        this.renderHover(true);
         this.panel.highlightSetModels([this.model]);
     },
     unhighlight: function (/*event*/) {
+        this.renderHover(false);
         this.panel.highlightSetModels([]);
     }
 });
@@ -399,13 +406,12 @@ var AllVizSetsView = Backbone.View.extend({
         if (activeSelection !== undefined) {
             this.collection.each(function (vizSet) {
                 if (vizSet.representsActiveSelection()) {
-                    vizSet.fromVizSelection(activeSelection);
+                    vizSet.fromVizSlice(activeSelection);
                 }
             });
         }
-        var initialSelection = this.collection.find(function (vizSet) {
-                return vizSet.id === this.createSetSelectionID;
-            }.bind(this)) || new VizSetModel({title: 'Selected', id: this.createSetSelectionID});
+        var initialSelection = this.collection.findWhere({id: this.createSetSelectionID}) ||
+            new VizSetModel({title: 'Selected', id: this.createSetSelectionID});
         var $createSet = $(this.createSetTemplate({
             disabled: initialSelection.isEmpty() && 'disabled',
             selectedOption: VizSetView.prototype.bindingsFor(initialSelection),
@@ -434,31 +440,13 @@ var AllVizSetsView = Backbone.View.extend({
         }
     },
     createSet: function (/*evt*/) {
-        //var $target = $(evt.currentTarget);
-        var vizSet = new VizSetModel({});
         var srcSystemSet = this.collection.find(function (vizSet) {
             return vizSet.id === this.createSetSelectionID;
         }.bind(this));
-        switch (this.createSetSelectionID) {
-            case 'selection':
-                vizSet.fromSystemSet(srcSystemSet);
-                this.panel.activeSelection.take(1).do(function (activeSelection) {
-                    vizSet.fromVizSelection(activeSelection);
-                }).subscribe(
-                    _.identity, util.makeErrorHandler('Getting the selection as a Set'));
-                break;
-            case 'filtered':
-                vizSet.fromSystemSet(srcSystemSet);
-                this.panel.filtersSubject.take(1).do(function (filters) {
-                    vizSet.fromFilters(filters);
-                }.bind(this)).subscribe(
-                    _.identity, util.makeErrorHandler('Getting the filtered data as a Set'));
-                break;
-            case 'dataframe':
-                vizSet.fromSystemSet(srcSystemSet);
-                break;
+        if (srcSystemSet === undefined) {
+            throw Error('Set creation failed; unknown source: ' + this.createSetSelectionID);
         }
-        this.collection.push(vizSet);
+        this.panel.createSetViaCommand(srcSystemSet);
     }
 });
 
@@ -467,7 +455,9 @@ function SetsPanel(socket/*, urlParams*/) {
     this.commands = {
         getAll: new Command('getting sets', 'get_sets', socket),
         create: new Command('creating a set', 'create_set', socket),
-        update: new Command('updating a set', 'update_set', socket)
+        update: new Command('updating a set', 'update_set', socket),
+        select: new Command('selecting sets', 'select', socket),
+        highlight: new Command('highlighting sets', 'highlight', socket)
     };
 
     this.model = VizSetModel;
@@ -481,107 +471,165 @@ function SetsPanel(socket/*, urlParams*/) {
     });
 }
 
-SetsPanel.prototype.refreshCollection = function () {
-    Rx.Observable.combineLatest(
-        this.commands.getAll.sendWithObservableResult(),
-        this.activeSelection,
-        function (response, activeSelection) {
-            var sets = response.sets;
-            this.collection.reset(_.map(sets, function (vizSet) {
-                var setModel = new VizSetModel(vizSet);
-                if (setModel.representsActiveSelection()) {
-                    setModel.fromVizSelection(activeSelection);
-                }
-                return setModel;
-            }));
-            this.view.refreshCreateSet(activeSelection);
-        }.bind(this)).take(1).subscribe(
-        _.identity,
-        util.makeErrorHandler(this.commands.getAll.description));
-};
-
-SetsPanel.prototype.isVisible = function() { return this.view.$el.is(':visible'); };
-
-SetsPanel.prototype.toggleVisibility = function (newVisibility) {
-    if (newVisibility) {
-        this.refreshCollection();
-    }
-    var $panel = this.view.el;
-    $panel.toggle(newVisibility);
-    $panel.css('visibility', newVisibility ? 'visible': 'hidden');
-};
-
-SetsPanel.prototype.setupToggleControl = function (toolbarClicks, $panelButton) {
-    var panelToggles = toolbarClicks.filter(function (elt) {
-        return elt === $panelButton[0];
-    }).map(function () {
-        // return the target state (boolean negate)
-        return !this.isVisible();
-    }.bind(this));
-    this.togglesSubscription = panelToggles.do(function (newVisibility) {
-        $panelButton.children('i').toggleClass('toggle-on', newVisibility);
-        this.toggleVisibility(newVisibility);
-    }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Turning on/off the sets panel'));
-};
-
-SetsPanel.prototype.dispose = function () {
-    this.togglesSubscription.dispose();
-};
-
-SetsPanel.prototype.deleteSet = function (vizSetModel) {
-    return this.commands.update.sendWithObservableResult(vizSetModel.id, undefined);
-};
-
-SetsPanel.prototype.updateSet = function (vizSetModel) {
-    return this.commands.update.sendWithObservableResult(vizSetModel.id, vizSetModel);
-};
-
-/**
- * @param {Rx.ReplaySubject} activeSelection
- * @param {Rx.ReplaySubject} latestHighlightedObject
- */
-SetsPanel.prototype.setupSelectionInteraction = function (activeSelection, latestHighlightedObject) {
-    this.activeSelection = activeSelection;
-    this.latestHighlightedObject = latestHighlightedObject;
-    this.activeSelection.do(function (activeSelection) {
-        if (activeSelection.length === 0) {
-            this.collection.each(function (vizSet) { vizSet.isSelected(false); });
+SetsPanel.prototype = {
+    createSetViaCommand: function (srcSystemSet) {
+        var sourceType = srcSystemSet.id;
+        switch (sourceType) {
+            case 'selection':
+                this.activeSelection.take(1).flatMapLatest(function (activeSelection) {
+                    var specification = {masks: VizSetModel.prototype.maskFromVizSlice(activeSelection)};
+                    return this.commands.create.sendWithObservableResult(sourceType, specification).do(function (createSetResult) {
+                        this.handleCreateSetResult(createSetResult);
+                        // Reset selection now that we've captured them in a Set:
+                        this.activeSelection.onNext(activeSelection.newEmpty());
+                    }.bind(this));
+                }.bind(this)).subscribe(
+                    _.identity, util.makeErrorHandler('Creating a Set from Selection'));
+                break;
+            case 'filtered':
+                this.filtersSubject.take(1).flatMapLatest(function (filtersCollection) {
+                    var userFilters = filtersCollection.select(function (filter) { return !filter.isSystem(); });
+                    var specification = {
+                        title: _.map(userFilters, function (filter) { return filter.get('query').inputString; }).join(' and '),
+                        filters: userFilters,
+                        masks: _.clone(srcSystemSet.get(MasksProperty))
+                    };
+                    return this.commands.create.sendWithObservableResult(sourceType, specification).do(function (createSetResult) {
+                        this.handleCreateSetResult(createSetResult);
+                    }.bind(this));
+                }.bind(this)).subscribe(
+                    _.identity, util.makeErrorHandler('Creating a Set from Filters'));
+                break;
+            case 'dataframe':
+                break;
         }
-        this.view.refreshCreateSet(activeSelection);
-    }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Clearing selection from canvas'));
-};
+    },
+    handleCreateSetResult: function (createSetResult) {
+        if (createSetResult.success === false) {
+            throw Error('Set creation failed.');
+        }
+        var createdSet = new VizSetModel(createSetResult.set);
+        this.collection.push(createdSet);
+    },
 
-SetsPanel.prototype.setupFiltersPanelInteraction = function (filtersPanel) {
-    this.filtersSubject = filtersPanel.filtersSubject;
-    filtersPanel.control.setsResponsesSubject.do(function (setsResponse) {
-        _.each(setsResponse, function (updatedSet) {
-            var match = this.collection.find(function (existingSet) {return existingSet.id === updatedSet.id; });
-            if (match !== undefined) {
-                match.set(updatedSet);
-            }
+    getAllSets: function () {
+        return this.commands.getAll.sendWithObservableResult();
+    },
+
+    refreshCollection: function () {
+        Rx.Observable.combineLatest(
+            this.getAllSets(),
+            this.activeSelection,
+            function (response, activeSelection) {
+                var sets = response.sets;
+                this.collection.reset(_.map(sets, function (vizSet) {
+                    var setModel = new VizSetModel(vizSet);
+                    if (setModel.representsActiveSelection()) {
+                        setModel.fromVizSlice(activeSelection);
+                    }
+                    return setModel;
+                }));
+                this.view.refreshCreateSet(activeSelection);
+            }.bind(this)).take(1).subscribe(
+            _.identity,
+            util.makeErrorHandler(this.commands.getAll.description));
+    },
+
+    isVisible: function () { return this.view.$el.is(':visible'); },
+
+    toggleVisibility: function (newVisibility) {
+        if (newVisibility) {
+            this.refreshCollection();
+        }
+        var $panel = this.view.el;
+        $panel.toggle(newVisibility);
+        $panel.css('visibility', newVisibility ? 'visible' : 'hidden');
+    },
+
+    setupToggleControl: function (toolbarClicks, $panelButton) {
+        var panelToggles = toolbarClicks.filter(function (elt) {
+            return elt === $panelButton[0];
+        }).map(function () {
+            // return the target state (boolean negate)
+            return !this.isVisible();
         }.bind(this));
-        this.view.refreshCreateSet();
-    }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Updating Sets from filter updates'));
-};
+        this.togglesSubscription = panelToggles.do(function (newVisibility) {
+            $panelButton.children('i').toggleClass('toggle-on', newVisibility);
+            this.toggleVisibility(newVisibility);
+        }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Turning on/off the sets panel'));
+    },
 
-SetsPanel.prototype.vizSelectionFromSetModels = function (setModels) {
-    var resultSetModel;
-    if (setModels.length > 1) {
-        resultSetModel = _.reduce(setModels, function (firstSet, secondSet) {
-            return firstSet.union(secondSet);
-        });
-    } else if (setModels.length === 1) {
-        resultSetModel = setModels[0];
+    dispose: function () {
+        this.togglesSubscription.dispose();
+    },
+
+    deleteSet: function (vizSetModel) {
+        return this.commands.update.sendWithObservableResult(vizSetModel.id, undefined);
+    },
+
+    updateSet: function (vizSetModel) {
+        return this.commands.update.sendWithObservableResult(vizSetModel.id, vizSetModel);
+    },
+
+    /**
+     * @param {Rx.ReplaySubject} activeSelection
+     * @param {Rx.ReplaySubject} latestHighlightedObject
+     */
+    setupSelectionInteraction: function (activeSelection, latestHighlightedObject) {
+        /** @type {Rx.ReplaySubject} */
+        this.activeSelection = activeSelection;
+        /** @type {Rx.ReplaySubject} */
+        this.latestHighlightedObject = latestHighlightedObject;
+        this.activeSelection.do(function (activeSelection) {
+            if (activeSelection.isEmpty()) {
+                this.collection.each(function (vizSet) { vizSet.isSelected(false); });
+            }
+            this.view.refreshCreateSet(activeSelection);
+        }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Clearing selection from canvas'));
+    },
+
+    setupFiltersPanelInteraction: function (filtersPanel) {
+        this.filtersSubject = filtersPanel.filtersSubject;
+        filtersPanel.control.setsResponsesSubject.do(function (setsResponse) {
+            _.each(setsResponse, function (updatedSet) {
+                var match = this.collection.find(function (existingSet) {return existingSet.id === updatedSet.id; });
+                if (match !== undefined) {
+                    match.set(updatedSet);
+                }
+            }.bind(this));
+            this.view.refreshCreateSet();
+        }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Updating Sets from filter updates'));
+    },
+
+    vizSliceFromSetModels: function (setModels) {
+        if (setModels.length > 1) {
+            var resultSetModel = _.reduce(setModels, function (firstSet, secondSet) {
+                return firstSet.union(secondSet);
+            });
+            return resultSetModel.asVizSlice();
+        } else if (setModels.length === 1) {
+            return setModels[0].asVizSlice();
+        } else {
+            return new VizSlice();
+        }
+    },
+
+    highlightSetModels: function (setModels) {
+        this.latestHighlightedObject.onNext(this.vizSliceFromSetModels(setModels));
+        if (setModels.length === 0 || _.any(setModels, function (vizSet) { return !vizSet.isConcrete(); })) {
+            var set_ids = _.map(setModels, function (setModel) { return setModel.id; });
+            if (true) { return; }
+            this.commands.highlight.sendWithObservableResult({gesture: 'sets', action: 'replace', set_ids: set_ids});
+        }
+    },
+
+    selectSetModels: function (setModels) {
+        this.activeSelection.onNext(this.vizSliceFromSetModels(setModels));
+        if (setModels.length === 0 || _.any(setModels, function (vizSet) { return !vizSet.isConcrete(); })) {
+            var set_ids = _.map(setModels, function (setModel) { return setModel.id; });
+            this.commands.select.sendWithObservableResult({gesture: 'sets', action: 'replace', set_ids: set_ids});
+        }
     }
-    return resultSetModel === undefined ? [] : resultSetModel.asVizSelection();
-};
-
-SetsPanel.prototype.highlightSetModels = function (setModels) {
-    this.latestHighlightedObject.onNext(this.vizSelectionFromSetModels(setModels));
-};
-
-SetsPanel.prototype.selectSetModels = function (setModels) {
-    this.activeSelection.onNext(this.vizSelectionFromSetModels(setModels));
 };
 
 module.exports = SetsPanel;

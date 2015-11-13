@@ -7,9 +7,13 @@ var _       = require('underscore');
 var util            = require('./util.js');
 
 
-
-function encodeEntities(socket, sel) {
-    return Rx.Observable.fromCallback(socket.emit, socket)('get_global_ids', sel)
+/**
+ * @param {Socket} socket
+ * @param {VizSlice} slice
+ * @returns {Rx.Observable}
+ */
+function encodeEntities(socket, slice) {
+    return Rx.Observable.fromCallback(socket.emit, socket)('get_global_ids', slice.getVizSliceElements())
         .do(function (reply) {
             if (!reply || !reply.success) {
                 console.error('Server error on get_global_ids', (reply||{}).error);
@@ -68,16 +72,16 @@ function setupAPIHooks(socket, appState, doneLoading) {
         postEvent(apiEvents, undefined, {event: 'loaded'});
     }).subscribe(_.identity, util.makeErrorHandler('API hook for doneLoading'));
 
-    appState.latestHighlightedObject.flatMapLatest(function (sel) {
-        return encodeEntities(socket, sel);
+    appState.latestHighlightedObject.flatMapLatest(function (slice) {
+        return encodeEntities(socket, slice);
     }).do(function (ids) {
         _.each(event2subscribers.highlighted, function (subscriber) {
             postEvent(apiEvents, subscriber, {event: 'highlighted', items: ids});
         });
     }).subscribe(_.identity, util.makeErrorHandler('API hook for latestHighlightedObject'));
 
-    appState.activeSelection.flatMapLatest(function (sel) {
-        return encodeEntities(socket, sel);
+    appState.activeSelection.flatMapLatest(function (slice) {
+        return encodeEntities(socket, slice);
     }).do(function (ids) {
         _.each(event2subscribers.selected, function (subscriber) {
             postEvent(apiEvents, subscriber, {event: 'selected', items: ids});
@@ -109,14 +113,14 @@ function setupAPIHooks(socket, appState, doneLoading) {
     }).subscribe(_.identity, util.makeErrorHandler('API hook for sceneChanges'));
 
     appState.clickEvents.do(function (e){
-        var clickedNodes = _.pluck(_.where(e.clickPoints, {dim: 1}), 'idx');
+        var slice = e.clickSlice;
         _.chain(event2subscribers['node.click']).filter(function (subscriber) {
-            return _.contains(clickedNodes, subscriber.node.viewIdx);
+            return slice.containsIndexByDim(subscriber.node.viewIdx, 1);
         }).each(function (subscriber) {
             nodeClick(appState, subscriber, e);
         });
     }).flatMapLatest(function (e) {
-        return encodeEntities(socket, e.clickPoints);
+        return encodeEntities(socket, e.clickSlice);
     }).do(function (sel) {
         _.each(event2subscribers.clicked, function (subscriber) {
             postEvent(apiEvents, subscriber, {event: 'clicked', items: sel});

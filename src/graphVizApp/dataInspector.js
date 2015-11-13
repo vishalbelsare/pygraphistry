@@ -13,6 +13,7 @@ var Backgrid = require('backgrid');
     require('backgrid-filter');
 
 var util        = require('./util.js');
+var VizSlice    = require('./VizSlice.js');
 
 var ROWS_PER_PAGE = 8;
 
@@ -149,27 +150,35 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
 
         rowClick: function (evt) {
             var ctrl = evt.ctrlKey || evt.metaKey;
+            var shift = evt.shiftKey;
             var selection = {idx: this.model.attributes._index, dim: dim, source: 'dataInspector'};
-            if (!ctrl) {
-                if (!this.model.get('selected')) {
-                    activeSelection.onNext([selection]);
-                } else {
-                    activeSelection.onNext([]);
-                }
-
-            } else {
+            if (ctrl) {
                 // TODO: Is there a cleaner way to do this sort of "in place"
                 // operation on a replay subject?
                 activeSelection.take(1).do(function (sel) {
-                    sel = util.removeOrAdd(sel, selection, function (a, b) {
-                        // TODO: Should be some sort of "element" object with
-                        // equality function.
-                        return (a.idx === b.idx && a.dim === b.dim);
-                    });
-                    activeSelection.onNext(sel);
+                    activeSelection.onNext(sel.removeOrAdd(selection));
                 }).subscribe(_.identity, util.makeErrorHandler('Multiselect in dataInspector'));
+            } else if (shift) {
+                activeSelection.take(1).do(function (sel) {
+                    if (sel.isEmpty()) {
+                        sel = sel.newFrom([selection]);
+                    } else {
+                        var newRangeStart = sel[sel.length - 1];
+                        var newRange = [];
+                        sel = sel.newAdding(newRange);
+                    }
+                    activeSelection.onNext(sel);
+                }).subscribe(_.identity, util.makeErrorHandler('Multiselect range in dataInspector'));
+            } else {
+                var newSelection;
+                if (this.model.get('selected')) {
+                    newSelection = new VizSlice();
+                } else {
+                    newSelection = new VizSlice([selection]);
+                }
+                activeSelection.onNext(newSelection);
             }
-        },
+        }
     });
 
     var InspectData = Backbone.Model.extend({});
@@ -266,7 +275,7 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
 }
 
 
-function setupSelectionRerender(activeSelection, grid, dim) {
+function setupSelectionRerender(activeSelection, grid, whichDim) {
     activeSelection.do(function (selection) {
         grid.selectedModels = [];
         grid.selection = selection;
@@ -278,8 +287,8 @@ function setupSelectionRerender(activeSelection, grid, dim) {
                 return;
             }
             row.model.set('selected', false);
-            _.each(selection, function (sel) {
-                if (row.model.attributes._index === sel.idx && dim === sel.dim) {
+            selection.forEachIndexAndDim(function (idx, dim) {
+                if (row.model.attributes._index === idx && whichDim === dim) {
                     grid.selectedModels.push(row.model);
                     row.model.set('selected', true);
                 }
