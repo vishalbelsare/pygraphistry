@@ -250,12 +250,16 @@ function createLabelDom(dim, labelObj) {
         $content = $('<div>').addClass('graph-label-contents').append($table);
     }
 
-    return $cont.append($title).append($content);
+    return {
+        labelObj: labelObj,
+        labelDOM: $cont.append($title).append($content)
+    };
 }
 
-//instance * int -> ReplaySubject_1 ?HtmlString
+
 //TODO batch fetches
-function getLabelDom (instance, data) {
+//instance * int -> ReplaySubject_1 {labelObj, labelDOM}
+function getLabel(instance, data) {
     // TODO: Make cache aware of both idx and dim
     var idx = data.idx;
     var dim = data.dim;
@@ -267,6 +271,22 @@ function getLabelDom (instance, data) {
     return instance.state.labelCache[cacheKey(idx, dim)];
 }
 
+
+//instance * int -> ReplaySubject_1 ?DOM
+function getLabelDom (instance, data) {
+   return getLabel(instance, data).map(function (l) {
+       return l.labelDOM;
+   });
+}
+
+
+//instance * int -> ReplaySubject_1 LabelObject
+function getLabelObject (instance, data) {
+   return getLabel(instance, data).map(function (l) {
+       return l.labelObj;
+   });
+}
+
 // instance ->
 // Invalidates Cache but does not attempt to refill.
 function emptyCache (instance) {
@@ -275,20 +295,6 @@ function emptyCache (instance) {
         instance.state.inactiveLabels.push(val);
         val.elt.css('display', 'none');
         delete instance.state.activeLabels[key];
-    });
-}
-
-// ?[ idx ] -> bool
-function invalidateCache (instance) {
-    var cacheKeys = _.keys(instance.state.labelCache);
-    cacheKeys.forEach(function (cacheKey) {
-        var cachedLabel = instance.state.labelCache[cacheKey];
-
-        //TODO to be correct, we should mark existing remapping ones as inprogress
-        //however, chances are, it won't move, so this avoids *some* flickr, though we still see some
-        //instance.state.labelCache[idx].onNext('(fetching)');
-
-        fetchLabel(instance, cachedLabel.idx, cachedLabel.dim);
     });
 }
 
@@ -351,6 +357,7 @@ function init(socket) {
 
         //int -> Subject ?HtmlString
         getLabelDom: getLabelDom.bind('', instance),
+        getLabelObject: getLabelObject.bind('', instance),
 
         getActiveApprox: getActiveApprox,
         finishApprox: finishApprox,
@@ -358,9 +365,6 @@ function init(socket) {
 
         //$DOM * idx -> {elt: $DOM, idx: int, setIdx: Subject int}
         genLabel: genLabel.bind('', instance),
-
-        // ?[ idx ] -> bool
-        invalidateCache: invalidateCache.bind('', instance),
 
         emptyCache: emptyCache.bind('', instance),
 

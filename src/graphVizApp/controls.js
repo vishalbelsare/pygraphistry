@@ -71,6 +71,12 @@ function createStyleElement() {
 
 var encodingForLabelParams = [
     {
+        name: 'labels',
+        prettyName: 'Show Labels',
+        type: 'bool',
+        value: true,
+    },
+    {
         name: 'labelFgColor',
         prettyName: 'Text Color',
         type: 'color',
@@ -455,6 +461,13 @@ function setLocalSetting(name, pos, appState) {
             val = pos;
             appState.poiIsEnabled.onNext(val);
             break;
+        case 'labels':
+            if (pos) {
+                $('.graph-label-container').show();
+            } else {
+                $('.graph-label-container').hide();
+            }
+            break;
         default:
             console.error('Unknown local setting', name);
             return;
@@ -674,7 +687,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         .subscribe(_.identity, util.makeErrorHandler('layout button'));
 
     appState.apiActions
-        .filter(function (e) { console.log(e); return e.event === 'updateSetting'; })
+        .filter(function (e) { return e.event === 'updateSetting'; })
         .do(function (e) {
             setLocalSetting(e.setting, e.value, appState);
         }).subscribe(_.identity, util.makeErrorHandler('updateSetting'));
