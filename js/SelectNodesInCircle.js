@@ -10,11 +10,11 @@ var logger      = log.createLogger('graph-viz:cl:selectNodesInCircle');
 function SelectNodesInCircle(clContext) {
     logger.trace('Creating selectNodesInCircle kernel');
 
-    var args = ['center_x', 'center_y', 'radius', 'positions', 'mask'];
+    var args = ['center_x', 'center_y', 'radius_squared', 'positions', 'mask'];
     var argsType = {
         center_x: cljs.types.float_t,
         center_y: cljs.types.float_t,
-        radius: cljs.types.float_t,
+        radius_squared: cljs.types.float_t,
         positions: null,
         mask: null
     };
@@ -38,7 +38,7 @@ SelectNodesInCircle.prototype.run = function (simulator, selection, delta) {
         that.kernel.set({
             center_x: selection.center.x,
             center_y: selection.center.y,
-            radius: selection.radius,
+            radius_squared: selection.radius * selection.radius,
             positions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
             mask: mask.buffer
         });
