@@ -1129,11 +1129,11 @@ Dataframe.prototype.getBuffer = function (name, type) {
 
 /** Return the global (ie, unfiltered) index of a node/edge
  * @param{number} index - filtered/local index
- * @param{string} type - any of [TYPES]{@link TYPES}.
+ * @param{string} type - any of [TYPES]{@link GraphComponentTypes}.
  */
 Dataframe.prototype.globalize = function(index, type) {
     return this.lastMasks.getIndexByType(type, index);
-}
+};
 
 
 /** Returns one row object.
