@@ -184,8 +184,8 @@ var VizSetModel = Backbone.Model.extend({
                 result += this.getDescriptionForCounts(sizes.point, sizes.edge);
             }
         } else {
-            var numPoints = sizes !== undefined ? sizes.point : (mask.point && mask.point.length);
-            var numEdges = sizes !== undefined ? sizes.edge : (mask.edge && mask.edge.length);
+            var numPoints = mask.point !== undefined ? mask.point.length : sizes && sizes.point;
+            var numEdges = mask.edge !== undefined ? mask.edge.length : sizes && sizes.edge;
             result += this.getDescriptionForCounts(numPoints, numEdges);
         }
         return result;
@@ -410,9 +410,8 @@ var AllVizSetsView = Backbone.View.extend({
                 }
             });
         }
-        var initialSelection = this.collection.find(function (vizSet) {
-                return vizSet.id === this.createSetSelectionID;
-            }.bind(this)) || new VizSetModel({title: 'Selected', id: this.createSetSelectionID});
+        var initialSelection = this.collection.findWhere({id: this.createSetSelectionID}) ||
+            new VizSetModel({title: 'Selected', id: this.createSetSelectionID});
         var $createSet = $(this.createSetTemplate({
             disabled: initialSelection.isEmpty() && 'disabled',
             selectedOption: VizSetView.prototype.bindingsFor(initialSelection),
