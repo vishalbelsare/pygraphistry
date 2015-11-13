@@ -1055,7 +1055,7 @@ Dataframe.prototype.getAllBuffers = function (type) {
 /// Buffer reset capability, specific to local buffers for now to make highlight work:
 
 Dataframe.prototype.snapshotLocalBuffer = function (name) {
-    this.resetData.localBuffers[name] = this.data.localBuffers[name];
+    this.resetData.localBuffers[name] = _.clone(this.data.localBuffers[name]);
 };
 
 Dataframe.prototype.canResetLocalBuffer = function (name) {
