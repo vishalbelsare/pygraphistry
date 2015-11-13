@@ -80,13 +80,6 @@ var attributeLoaders = function(graph) {
             target: EDGE,
             values: undefined
         },
-        edgeColor2: {
-            load: graph.setEdgeColors,
-            type: 'number',
-            default: graph.setEdgeColors,
-            target: EDGE,
-            values: undefined
-        },
         pointLabel: {
             load: graph.setPointLabels,
             type: 'string',
@@ -421,18 +414,12 @@ var defaultMapper = {
                 });
             }
         },
-        edgeColor2: {
-            name: 'edgeColor2',
-            transform: function (v) {
-                var palette = util.palettes.qual_palette2;
-                return int2color(groupRoundAndClamp(v, 0, palette.length - 1), palette);
-            }
-        },
         edgeColor: {
             name: 'edgeColor',
             transform: function (v) {
-                var palette = util.palettes.green2red_palette;
-                return int2color(normalize(v, 0, palette.length - 1), palette);
+                return _.map(v, function (cat) {
+                    return palettes.bindings[cat];
+                });
             }
         },
         edgeHeight: {
