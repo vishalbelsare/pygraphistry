@@ -25,6 +25,7 @@ function encodeEntities(socket, sel) {
 function setupAPIHooks(socket, appState, doneLoading) {
     var apiEvents = appState.apiEvents;
     var apiActions = appState.apiActions;
+    var apiRequests = new Rx.Subject();
 
     var event2subscribers = {};
     var subscriber2event = {};
@@ -35,20 +36,23 @@ function setupAPIHooks(socket, appState, doneLoading) {
         var targetEvent = action.subscriber.target;
         var subscribers = event2subscribers[targetEvent] || [];
         event2subscribers[targetEvent] = subscribers.concat([action.subscriber]);
-        subscriber2event[action.subscriber.guid] = targetEvent;
+        subscriber2event[action.subscriber._guid] = targetEvent;
+        if (action.subscriber._isReq) {
+            apiRequests.onNext(action.subscriber);
+        }
     }).subscribe(_.identity, util.makeErrorHandler('Subscribe API hook'));
 
     apiActions.filter(function (action) {
         return action.event === '__unsubscribe__';
     }).do(function (action) {
-        var guid = action.subscriber.guid;
+        var guid = action.subscriber._guid;
         if (guid in subscriber2event) {
             var targetEvent = subscriber2event[guid];
             delete subscriber2event[guid];
 
             var subscribers = event2subscribers[targetEvent] || [];
             event2subscribers[targetEvent] = _.filter(subscribers, function (subscriber) {
-                return subscriber.guid !== guid;
+                return subscriber._guid !== guid;
             });
 
             // Triggers onComplete on the API side.
@@ -109,7 +113,7 @@ function setupAPIHooks(socket, appState, doneLoading) {
         _.chain(event2subscribers['node.click']).filter(function (subscriber) {
             return _.contains(clickedNodes, subscriber.node.viewIdx);
         }).each(function (subscriber) {
-            nodeClick(appState.apiEvents, subscriber, e);
+            nodeClick(appState, subscriber, e);
         });
     }).flatMapLatest(function (e) {
         return encodeEntities(socket, e.clickPoints);
@@ -119,32 +123,52 @@ function setupAPIHooks(socket, appState, doneLoading) {
         });
     }).subscribe(_.identity, util.makeErrorHandler('API hook for clickEvents'));
 
+
+    var reqHandlers = {
+        'node.getScreenPosition': nodePosition.bind('', appState),
+        'node.getLabel': nodeLabel.bind('', appState)
+    };
+
+    apiRequests.do(function (subscriber) {
+        var reqName = subscriber.target;
+        if (reqName in reqHandlers) {
+            reqHandlers[reqName](subscriber);
+        } else {
+            console.error('Unknown request', reqName);
+        }
+    }).subscribe(_.identity, util.makeErrorHandler('API hook for requests'));
+
     postEvent(apiEvents, undefined, {event: 'apiReady'});
 }
 
 
 function postEvent(apiEvents, subscriber, body) {
     apiEvents.onNext({
-        subscriberID: subscriber !== undefined ? subscriber.guid : '*',
+        subscriberID: subscriber !== undefined ? subscriber._guid : '*',
         body: body
     });
 }
 
 
 function getPointPosition(appState, indices) {
-    var renderState = appState.renderState;
-    var curPoints = renderState.get('hostBuffers').curPoints;
+    var curPoints = appState.renderState.get('hostBuffers').curPoints;
 
     return curPoints.take(1).map(function (curPoints) {
-        var camera = renderState.get('camera');
-        var cnv = renderState.get('canvas');
-
-        var points = new Float32Array(curPoints.buffer);
-        return _.map(indices, function (idx) {
-            return camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv);
-        });
+        return curPoints2Position(curPoints, appState.renderState, indices);
     });
 }
+
+
+function curPoints2Position(curPoints, renderState, indices) {
+    var camera = renderState.get('camera');
+    var cnv = renderState.get('canvas');
+    var points = new Float32Array(curPoints.buffer);
+
+    return _.map(indices, function (idx) {
+        return camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv);
+    });
+}
+
 
 function nodeMove(appState, subscriber) {
     getPointPosition(appState, [subscriber.node.viewIdx]).do(function (posList) {
@@ -157,14 +181,39 @@ function nodeMove(appState, subscriber) {
 }
 
 
-function nodeClick(apiEvents, subscriber, event) {
-    postEvent(apiEvents, subscriber, {
-        event: 'node.click',
-        node: subscriber.node,
-        ctrl: event.ctrl
+function nodeClick(appState, subscriber, event) {
+    getPointPosition(appState, [subscriber.node.viewIdx]).do(function (posList) {
+        postEvent(appState.apiEvents, subscriber, {
+            event: 'node.click',
+            node: subscriber.node,
+            ctrl: event.ctrl,
+            pos: posList[0]
+        });
     });
 }
 
+
+function nodePosition(appState, subscriber) {
+    getPointPosition(appState, [subscriber.node.viewIdx]).do(function (posList) {
+        postEvent(appState.apiEvents, subscriber, {
+            event: 'node.getScreenPosition',
+            node: subscriber.node,
+            pos: posList[0]
+        });
+    }).subscribe(_.identity, util.makeErrorHandler('nodePosition'));
+}
+
+
+function nodeLabel(appState, subscriber) {
+    appState.poi.getLabelObject({dim: 1, idx: subscriber.node.viewIdx}).do(function (label) {
+        console.log('LABLE',label);
+        postEvent(appState.apiEvents, subscriber, {
+            event: 'node.getLabel',
+            node: subscriber.node,
+            label: label
+        });
+    }).subscribe(_.identity, util.makeErrorHandler('nodeLabel'));
+}
 
 module.exports = {
     setupAPIHooks: setupAPIHooks,
