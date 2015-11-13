@@ -516,11 +516,6 @@
         <button type="button" class="btn btn-primary btn-xs addSetButton" title="New Set" {{disabled}}>
             <span title="New Set" class="fa fa-plus"></span>
         </button>
-        {{#with selectedOption}}
-            {{#if isEmpty}}
-                <small><em>Make a selection to create a Set</em></small>
-            {{/if}}
-        {{/with}}
         <button type="button" class="btn btn-default btn-xs dropdown-toggle" title="New Set"
                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             {{#with selectedOption}}
