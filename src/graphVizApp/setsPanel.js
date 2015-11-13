@@ -311,10 +311,15 @@ var VizSetView = Backbone.View.extend({
     toggleSelected: function (/*event*/) {
         this.model.isSelected(!this.model.isSelected());
     },
+    renderHover: function (hoverOn) {
+        this.$el.toggleClass('bg-info', hoverOn);
+    },
     highlight: function (/*event*/) {
+        this.renderHover(true);
         this.panel.highlightSetModels([this.model]);
     },
     unhighlight: function (/*event*/) {
+        this.renderHover(false);
         this.panel.highlightSetModels([]);
     }
 });
@@ -611,18 +616,16 @@ SetsPanel.prototype = {
     },
 
     highlightSetModels: function (setModels) {
-        if (_.every(setModels, function (vizSet) { return vizSet.masks !== undefined; })) {
-            this.latestHighlightedObject.onNext(this.vizSliceFromSetModels(setModels));
-        } else {
+        this.latestHighlightedObject.onNext(this.vizSliceFromSetModels(setModels));
+        if (setModels.length === 0 || _.any(setModels, function (vizSet) { return !vizSet.isConcrete(); })) {
             var set_ids = _.map(setModels, function (setModel) { return setModel.id; });
             this.commands.highlight.sendWithObservableResult({gesture: 'sets', action: 'replace', set_ids: set_ids});
         }
     },
 
     selectSetModels: function (setModels) {
-        if (_.every(setModels, function (vizSet) { return vizSet.masks !== undefined; })) {
-            this.activeSelection.onNext(this.vizSliceFromSetModels(setModels));
-        } else {
+        this.activeSelection.onNext(this.vizSliceFromSetModels(setModels));
+        if (setModels.length === 0 || _.any(setModels, function (vizSet) { return !vizSet.isConcrete(); })) {
             var set_ids = _.map(setModels, function (setModel) { return setModel.id; });
             this.commands.select.sendWithObservableResult({gesture: 'sets', action: 'replace', set_ids: set_ids});
         }
