@@ -88,6 +88,8 @@ function create(dataframe, renderer, device, vendor, cfg) {
             simObj.tick = tick.bind(this, simObj);
             simObj.setPoints = setPoints.bind(this, simObj);
             simObj.setEdges = setEdges.bind(this, renderer, simObj);
+            simObj.setSelectedPointIndexes = setSelectedPointIndexes.bind(this, simObj);
+            simObj.setSelectedEdgeIndexes = setSelectedEdgeIndexes.bind(this, simObj);
             simObj.setEdgeColors = setEdgeColors.bind(this, simObj);
             simObj.setEdgeWeight = setEdgeWeight.bind(this, simObj);
             simObj.setMidEdgeColors = setMidEdgeColors.bind(this, simObj);
@@ -891,6 +893,20 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
 }
 
 
+function setSelectedEdgeIndexes(simulator, selectedEdgeIndexes) {
+    // TODO call in same promise chain as other set calls.
+    simulator.dataframe.loadLocalBuffer('selectedEdgeIndexes', selectedEdgeIndexes);
+    simulator.tickBuffers(['selectedEdgeIndexes']);
+}
+
+
+function setSelectedPointIndexes(simulator, selectedPointIndexes) {
+    // TODO call in same promise chain as other set calls.
+    simulator.dataframe.loadLocalBuffer('selectedPointIndexes', selectedPointIndexes);
+    simulator.tickBuffers(['selectedPointIndexes']);
+}
+
+
 /**
  * Sets the edge colors for the graph. With logical edges, edge colors are defined indirectly,
  * by giving a color for the source point and destination point.
@@ -1169,6 +1185,16 @@ function moveNodes(simulator, marqueeEvent) {
         .fail(log.makeQErrorHandler(logger, 'Failure trying to move nodes'));
 }
 
+function selectionKernelResultToMask(arrayOfBits) {
+    var selectedIndexes = [];
+    for(var i = 0; i < arrayOfBits.length; i++) {
+        if (arrayOfBits[i] === 1) {
+            selectedIndexes.push(i);
+        }
+    }
+    return new Uint32Array(selectedIndexes);
+}
+
 function selectNodesInRect(simulator, selection) {
     logger.debug('selectNodesInRect', selection);
 
@@ -1179,14 +1205,8 @@ function selectNodesInRect(simulator, selection) {
     }
 
     return selectNodesInRectKernel.run(simulator, selection)
-        .then(function (mask) {
-            var res = [];
-            for(var i = 0; i < mask.length; i++) {
-                if (mask[i] === 1) {
-                    res.push(i);
-                }
-            }
-            return new Uint32Array(res);
+        .then(function (arrayOfBits) {
+            return selectionKernelResultToMask(arrayOfBits);
         }).fail(log.makeQErrorHandler(logger, 'Failure trying to compute selection'));
 }
 
@@ -1200,14 +1220,8 @@ function selectNodesInCircle(simulator, selection) {
     }
 
     return selectNodesInCircleKernel.run(simulator, selection)
-        .then(function (mask) {
-            var res = [];
-            for(var i = 0; i < mask.length; i++) {
-                if (mask[i] === 1) {
-                    res.push(i);
-                }
-            }
-            return new Uint32Array(res);
+        .then(function (arrayOfBits) {
+            return selectionKernelResultToMask(arrayOfBits);
         }).fail(log.makeQErrorHandler(logger, 'Failure trying to compute selection'));
 }
 

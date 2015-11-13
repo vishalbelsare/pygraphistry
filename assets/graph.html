@@ -486,26 +486,22 @@
 </script>
 
 <script type="text/x-handlebars-template" id="setTemplate">
-    <div class="topMenu row">
-        <div class="col-md-1 typeIndicator">
-            <i class="setSelectedIndicator fa {{selectionClass}}" title="{{selectedMessage}}"></i>
-            <!-- TODO place an icon here for selection, filter, etc. -->
-            <!-- <i class="setTypeIndicator fa {{setTypeClass}}"></i> -->
-        </div>
+    <div class="topMenu setEntry row {{selectionClass}}">
         <div class="col-md-10 labelArea">
-            <a href="#" class="tagButton">&nbsp;
-                {{#unless title}}
-                    <i class="label label-info fa fa-tag tagButton" title="Tag">(untagged)</i>
-                {{/unless}}
-            </a>
-            {{#if title}}
-                <span class="label label-info">
-                    <i class="fa fa-tag tagButton" title="Tag"></i>{{~title~}}
-                </span>
-            {{/if}}
+            <a href="#"><i class="label label-info fa fa-tag tagButton" title="Tag">
+                {{#if title~}}
+                    {{~title~}}
+                {{~else~}}
+                    (unnamed)
+                {{/if~}}
+            </i></a>
             {{#if description}}
                 <span class="setDescription muted"><i>{{description}}</i></span>
             {{/if}}
+        </div>
+        <div class="col-md-1 typeIndicator">
+            <!-- TODO place an icon here for selection, filter, etc. -->
+            <!-- <i class="setTypeIndicator fa {{setTypeClass}}"></i> -->
         </div>
         <div class="col-md-1 deleteButton">
             <a href="#">
@@ -520,11 +516,6 @@
         <button type="button" class="btn btn-primary btn-xs addSetButton" title="New Set" {{disabled}}>
             <span title="New Set" class="fa fa-plus"></span>
         </button>
-        {{#with selectedOption}}
-            {{#if isEmpty}}
-                <small><em>Make a selection to create a Set</em></small>
-            {{/if}}
-        {{/with}}
         <button type="button" class="btn btn-default btn-xs dropdown-toggle" title="New Set"
                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             {{#with selectedOption}}
@@ -577,7 +568,7 @@
     </div>
 </script>
 
-<script type="text/template" id="filterTemplate">
+<script type="text/x-handlebars-template" id="filterTemplate">
     <div class="topMenu row">
         <!--<div class="col-md-1 expandButton">
             <a href="#">
@@ -587,15 +578,19 @@
         <div class="col-md-8 filterName control-title attributeName">{{model.title}}</div>
         <div class="col-md-2"></div>
         <div class="col-md-1 disableButton">
+            {{#unless model.isSystem}}
             <a href="#">
                 <i class="fa fa-toggle-on disableFilterButton" title="Enabled" cid="{{id}}"></i>
             </a>
+            {{/unless}}
         </div>
         <div class="col-md-1 deleteButton">
+            {{#unless model.isSystem}}
             <a href="#">
                 <i class="fa fa-close deleteFilterButton" cid="{{id}}"
                     title="Delete Filter"></i>
             </a>
+            {{/unless}}
         </div>
     </div>
     <form class="filterEditor form-horizontal">

@@ -12,7 +12,16 @@ var ExpressionCodeGenerator = require('./expressionCodeGenerator');
 var DataframeMask = require('./DataframeMask.js');
 
 var baseDirPath = __dirname + '/../assets/dataframe/';
-var TYPES = ['point', 'edge', 'simulator'];
+/**
+ * @readonly
+ * @type {string[]}
+ */
+var GraphComponentTypes = ['point', 'edge'];
+/**
+ * @readonly
+ * @type {string[]}
+ */
+var BufferTypeKeys = GraphComponentTypes.concat('simulator');
 
 /**
  * @property {DataframeData} rawdata The original data, immutable by this object.
@@ -20,7 +29,7 @@ var TYPES = ['point', 'edge', 'simulator'];
  * @property {Object.<DataframeMask>} masksForVizSets Masks stored by VizSet id.
  * @constructor
  */
-var Dataframe = function () {
+function Dataframe () {
     // We keep a copy of the original data, plus a filtered view
     // that defaults to the new raw data.
     //
@@ -35,20 +44,27 @@ var Dataframe = function () {
     };
     this.typedArrayCache = {};
     this.lastPointPositions = null;
-    /** The last mask applied as a result of in-place filtering. */
+    /** The last mask applied as a result of in-place filtering. Full by default. */
     this.lastMasks = new DataframeMask(
         this,
         undefined,
         undefined
     );
+    /** The last mask applied as a result of selections. Empty by default. */
+    this.lastSelectionMasks = new DataframeMask(
+        this,
+        [],
+        []
+    );
     this.masksForVizSets = {};
     this.data = this.rawdata;
-};
+    this.resetData = makeEmptyData();
+}
 
 /**
  * @typedef {Object} DataframeData
- * @property {{point: Object, edge: Object, simulator: Object}} attributes
- * @property {{point: Object, edge: Object, simulator: Object}} buffers
+ * @property {{point: Object, edge: Object, simulator: SimCL}} attributes
+ * @property {{point: Object, edge: Object, simulator: SimCL}} buffers
  * @property {Object} labels
  * @property {Object} hostBuffers
  * @property {Object} localBuffers
@@ -146,6 +162,11 @@ Dataframe.prototype.numEdges = function numEdges() {
 };
 
 
+Dataframe.prototype.numByType = function (componentType) {
+    return this.rawdata.numElements[componentType];
+};
+
+
 /**
  * @returns Mask
  */
@@ -170,6 +191,21 @@ Dataframe.prototype.fullDataframeMask = function() {
         undefined,
         undefined
     );
+};
+
+
+Dataframe.prototype.presentVizSet = function (vizSet) {
+    if (!vizSet || vizSet.masks === undefined) { return vizSet; }
+    var maskResponseLimit = 3e4;
+    var masksTooLarge = vizSet.masks.numPoints() > maskResponseLimit ||
+        vizSet.masks.numEdges() > maskResponseLimit;
+    var response = masksTooLarge ? _.omit(vizSet, ['masks']) : _.clone(vizSet);
+    response.sizes = {point: vizSet.masks.numPoints(), edge: vizSet.masks.numEdges()};
+    // Do NOT serialize the dataframe.
+    if (response.masks) {
+        response.masks = response.masks.toJSON(this.lastMasks);
+    }
+    return response;
 };
 
 
@@ -221,8 +257,8 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
     if (maskList === undefined || !maskList.length || maskList.length === 0) {
         var universe = this.fullDataframeMask();
         // Limit the universe first just to avoid computation scaling problems:
-        if (pointLimit && universe.numPoints() > pointLimit) {
-            universe.limitNumPointsTo(pointLimit);
+        if (pointLimit && universe.numByType('point') > pointLimit) {
+            universe.limitNumByTypeTo('point', pointLimit);
             return this.masksFromPoints(universe.point, universe.edge);
         }
         return universe;
@@ -441,7 +477,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     }
 
     // labels;
-    _.each(['point', 'edge'], function (type) {
+    _.each(GraphComponentTypes, function (type) {
         if (rawdata.labels[type]) {
             var newLabels = [];
             _.each(masks[type], function (idx) {
@@ -506,9 +542,13 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     newData.hostBuffers.backwardsEdges = backwardsEdges;
     newData.hostBuffers.points = rawdata.hostBuffers.points;
 
+
     newData.localBuffers.logicalEdges = forwardsEdges.edgesTyped;
     newData.localBuffers.forwardsEdgeStartEndIdxs = forwardsEdges.edgeStartEndIdxsTyped;
     newData.localBuffers.backwardsEdgeStartEndIdxs = backwardsEdges.edgeStartEndIdxsTyped;
+    // TODO index translation (filter scope)
+    newData.localBuffers.selectedEdgeIndexes = this.lastSelectionMasks.typedEdgeIndexes();
+    newData.localBuffers.selectedPointIndexes = this.lastSelectionMasks.typedPointIndexes();
 
     ///////////////////////////////////////////////////////////////////////////
     // Copy non-GPU buffers
@@ -674,7 +714,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     }).then(function () {
         // Delete all GPU buffers for values.
         var promises = [];
-        _.each(['point', 'edge'], function (type) {
+        _.each(GraphComponentTypes, function (type) {
             var buffers = that.data.buffers[type];
             _.each(_.keys(buffers), function (name) {
                 //var buf = buffers[name];
@@ -744,7 +784,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
 /**
  * TODO: Implicit degrees for points and src/dst for edges.
  * @param {Object} attributes
- * @param {string} type - any of [TYPES]{@link TYPES}
+ * @param {string} type - any of [TYPES]{@link BufferTypeKeys}
  * @param {Number} numElements - prescribe or describe? number present
  */
 Dataframe.prototype.load = function (attributes, type, numElements) {
@@ -780,7 +820,7 @@ Dataframe.prototype.load = function (attributes, type, numElements) {
     } else if (edgeTitleField) {
         filteredAttributes._title = attributes[edgeTitleField];
     } else {
-        filteredAttributes._title = {type: 'number', name: 'label', values: range(numElements)};
+        filteredAttributes._title = {type: 'number', name: 'label', values: _.range(numElements)};
     }
 
     _.extend(this.rawdata.attributes[type], filteredAttributes);
@@ -839,7 +879,7 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
     // If no title has been set, just make title the index.
     // TODO: Is there a more appropriate place to put this?
     if (!attributes._title) {
-        attributes._title = {type: 'string', name: 'label', values: range(numElements)};
+        attributes._title = {type: 'string', name: 'label', values: _.range(numElements)};
     }
 
 };
@@ -847,7 +887,7 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
 
 /** Load in a raw OpenCL buffer object.
  *  @param {string} name - name of the buffer
- *  @param {string} type - any of [TYPES]{@link TYPES}.
+ *  @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
  *  @param {Object} buffer - a raw OpenCL buffer object
  */
 Dataframe.prototype.loadBuffer = function (name, type, buffer) {
@@ -922,7 +962,7 @@ Dataframe.prototype.loadLabels = function (type, labels) {
 
 Dataframe.prototype.deleteBuffer = function (name) {
     var that = this;
-    _.each(TYPES, function (type) {
+    _.each(BufferTypeKeys, function (type) {
         _.each(_.keys(that.rawdata.buffers[type]), function (key) {
             if (key === name) {
                 that.rawdata.buffers[type][key].delete();
@@ -992,6 +1032,14 @@ Dataframe.prototype.getBufferKeys = function (type) {
     );
 };
 
+Dataframe.prototype.getOriginalNumElements = function (type) {
+    var res = this.rawdata.numElements[type];
+    if (!res && res !== 0) {
+        throw new Error("Invalid Num Elements: " + type);
+    }
+    return res;
+};
+
 Dataframe.prototype.getNumElements = function (type) {
     var res = this.data.numElements[type];
     if (!res && res !== 0) {
@@ -1004,6 +1052,22 @@ Dataframe.prototype.getAllBuffers = function (type) {
     return this.data.buffers[type];
 };
 
+/// Buffer reset capability, specific to local buffers for now to make highlight work:
+
+Dataframe.prototype.snapshotLocalBuffer = function (name) {
+    this.resetData.localBuffers[name] = _.clone(this.data.localBuffers[name]);
+};
+
+Dataframe.prototype.canResetLocalBuffer = function (name) {
+    return this.resetData.localBuffers[name] !== undefined;
+};
+
+Dataframe.prototype.resetLocalBuffer = function (name) {
+    if (this.canResetLocalBuffer(name)) {
+        this.data.localBuffers[name] = this.resetData.localBuffers[name];
+        delete this.resetData.localBuffers[name];
+    }
+};
 
 Dataframe.prototype.getLocalBuffer = function (name) {
     var res = this.data.localBuffers[name];
@@ -1028,7 +1092,7 @@ Dataframe.prototype.getLabels = function (type) {
 
 /** Returns an OpenCL buffer object.
  *  @param {string} name - name of the buffer
- *  @param {string} type - any of [TYPES]{@link TYPES}.
+ *  @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
  */
 Dataframe.prototype.getBuffer = function (name, type) {
     // TODO: Specialize the 'simulator' type case into its own function.
@@ -1065,16 +1129,16 @@ Dataframe.prototype.getBuffer = function (name, type) {
 
 /** Return the global (ie, unfiltered) index of a node/edge
  * @param{number} index - filtered/local index
- * @param{string} type - any of [TYPES]{@link TYPES}.
+ * @param{string} type - any of [TYPES]{@link GraphComponentTypes}.
  */
 Dataframe.prototype.globalize = function(index, type) {
     return this.lastMasks.getIndexByType(type, index);
-}
+};
 
 
 /** Returns one row object.
  * @param {double} index - which element to extract.
- * @param {string} type - any of [TYPES]{@link TYPES}.
+ * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
  * @param {Object?} attributes - which attributes to extract from the row.
  */
 Dataframe.prototype.getRowAt = function (index, type, attributes) {
@@ -1101,13 +1165,13 @@ Dataframe.prototype.getRowAt = function (index, type, attributes) {
 
 /** Returns array of row (fat json) objects.
  * @param {Array.<number>} indices - which elements to extract.
- * @param {string} type - any of [TYPES]{@link TYPES}.
+ * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
  */
 Dataframe.prototype.getRows = function (indices, type) {
     var attributes = this.rawdata.attributes[type],
         that = this;
 
-    indices = indices || range(that.data.numElements[type]);
+    indices = indices || _.range(that.data.numElements[type]);
 
     return _.map(indices, function (index) {
         return that.getRowAt(index, type, attributes);
@@ -1119,14 +1183,14 @@ Dataframe.prototype.getRows = function (indices, type) {
  * This works relative to UNSORTED edge orders, since it's meant
  * for serializing raw data.
  * @param {Array.<number>} indices - which elements to extract.
- * @param {string} type - any of [TYPES]{@link TYPES}.
+ * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
  * @returns {{header, values}}
  */
 Dataframe.prototype.getRowsCompact = function (indices, type) {
     var attributes = this.rawdata.attributes[type],
         keys = this.getAttributeKeys(type);
 
-    indices = indices || range(this.data.numElements[type]);
+    indices = indices || _.range(this.data.numElements[type]);
 
     var lastMasks = this.lastMasks;
 
@@ -1190,10 +1254,9 @@ Dataframe.prototype.getAttributeKeys = function (type) {
 
 
 Dataframe.prototype.getColumnsByType = function () {
-    var types = ['point', 'edge'];
     var result = {};
     var that = this;
-    _.each(types, function (typeName) {
+    _.each(GraphComponentTypes, function (typeName) {
         var typeResult = {};
         var columnNamesPerType = that.getAttributeKeys(typeName);
         _.each(columnNamesPerType, function (columnName) {
@@ -1219,7 +1282,7 @@ Dataframe.prototype.serializeRows = function (target, options) {
     var that = this;
     var toSerialize = {};
 
-    _.each(TYPES, function (type) {
+    _.each(BufferTypeKeys, function (type) {
         if (options.compact) {
             toSerialize[type] = that.getRowsCompact(undefined, type);
         } else {
@@ -1239,7 +1302,7 @@ Dataframe.prototype.serializeColumns = function (target, options) {
     var that = this;
     var toSerialize = {};
 
-    _.each(TYPES, function (type) {
+    _.each(BufferTypeKeys, function (type) {
         toSerialize[type] = {};
         var keys = that.getAttributeKeys(type);
         _.each(keys, function (key) {
@@ -1591,15 +1654,6 @@ function getEdgeTitleField (attributes) {
     var prioritized = ['edgeTitle', 'edge'];
     return pickTitleField(attributes, prioritized);
 }
-
-function range (n) {
-    var arr = [];
-    for (var i = 0; i < n; i++) {
-        arr.push(i);
-    }
-    return arr;
-}
-
 
 function round_down(num, multiple) {
     if (multiple === 0) {

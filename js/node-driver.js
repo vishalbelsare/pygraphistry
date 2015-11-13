@@ -51,12 +51,18 @@ function graphCounts(graph) {
     var numForwardsEdgeStartEndIdxs = graph.dataframe.getNumElements('point')*2;
     var numBackwardsEdgeStartEndIdxs = graph.dataframe.getNumElements('point')*2;
     var offsetEdgeStartEndIdxs = 0;
+    var numSelectedEdgeIndexes = graph.dataframe.lastSelectionMasks.numEdges();
+    var numSelectedPointIndexes = graph.dataframe.lastSelectionMasks.numPoints();
+    var offsetSelectedEdgeIndexes = 0;
+    var offsetSelectedPointIndexes = 0;
 
     var point       = {num: numPoints,    offset: offsetPoint};
     var edge        = {num: numEdges,     offset: offsetEdge};
     var midPoint    = {num: numMidPoints, offset: offsetMidPoints};
     var midEdge     = {num: numMidEdges,  offset: offsetMidEdges};
     var midEdgeColor ={num: numEdges * (numRenderedSplits + 1), offset:offsetMidEdges};
+    var selectedEdgeIndexes = {num: numSelectedEdgeIndexes, offset: offsetSelectedEdgeIndexes};
+    var selectedPointIndexes = {num: numSelectedPointIndexes, offset: offsetSelectedPointIndexes};
     var forwardsEdgeStartEndIdxs = {num: numForwardsEdgeStartEndIdxs, offset: offsetEdgeStartEndIdxs};
     var backwardsEdgeStartEndIdxs = {num: numBackwardsEdgeStartEndIdxs, offset: offsetEdgeStartEndIdxs};
 
@@ -72,6 +78,8 @@ function graphCounts(graph) {
         midSpringsPos: midEdge,
         midSpringsColorCoord: midEdge,
         midEdgeColors: midEdgeColor,
+        selectedEdgeIndexes: selectedEdgeIndexes,
+        selectedPointIndexes: selectedPointIndexes,
         forwardsEdgeStartEndIdxs: forwardsEdgeStartEndIdxs,
         backwardsEdgeStartEndIdxs: backwardsEdgeStartEndIdxs
     };
