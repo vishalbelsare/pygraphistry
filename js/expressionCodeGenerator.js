@@ -275,7 +275,7 @@ ExpressionCodeGenerator.prototype.regularExpressionLiteralFromLikePattern = func
 };
 
 ExpressionCodeGenerator.prototype.regexExpressionForLikeOperator = function (ast, depth, outerPrecedence) {
-    var caseInsensitive = ast.operator === 'ILIKE';
+    var caseInsensitive = ast.operator.toLowerCase() === 'ilike';
     var escapeChar = '%'; // Could override in AST via "LIKE pattern ESCAPE char"
     if (ast.right.type !== 'Literal') {
         throw Error('Computed text comparison patterns not yet implemented.');
