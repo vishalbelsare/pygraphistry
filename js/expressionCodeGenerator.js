@@ -332,7 +332,7 @@ ExpressionCodeGenerator.prototype.expressionStringForAST = function (ast, depth,
     if (depth === undefined) {
         depth = 0;
     }
-    var subExprString, operator, precedence, args;
+    var subExprString, operator, precedence, args, arg;
     switch (ast.type) {
         case 'NotExpression':
             precedence = this.precedenceOf('!');
@@ -417,7 +417,7 @@ ExpressionCodeGenerator.prototype.expressionStringForAST = function (ast, depth,
         case 'UnaryExpression':
             operator = this.translateOperator(ast.operator);
             precedence = this.precedenceOf(operator, ast.fixity);
-            var arg = this.expressionStringForAST(ast.argument, depth + 1, precedence);
+            arg = this.expressionStringForAST(ast.argument, depth + 1, precedence);
             switch (ast.fixity) {
                 case 'prefix':
                     subExprString = operator + ' ' + arg;
