@@ -6,7 +6,6 @@ var Q = require('q');
 var _ = require('underscore');
 var config  = require('config')();
 var zlib = require('zlib');
-var Rx = require('rx');
 var urllib = require('url');
 var util = require('./util.js');
 var Cache = require('common/cache.js');
@@ -14,18 +13,12 @@ var Cache = require('common/cache.js');
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:data:data-loader');
 
-var MatrixLoader = require('./libs/MatrixLoader.js');
 var VGraphLoader = require('./libs/VGraphLoader.js');
-var kmeans = require('./libs/kmeans.js');
 
 var loaders = {
     'default': VGraphLoader.load,
     'vgraph': VGraphLoader.load,
-    'jsonMeta': loadJSONMeta,
-    'matrix': loadMatrix,
-    'random': loadRandom,
-    'OBSOLETE_geo': loadGeo,
-    'OBSOLETE_rectangle': loadRectangle
+    'jsonMeta': loadJSONMeta
 };
 
 var downloader = {
@@ -187,154 +180,7 @@ function downloadDatasources(dataset) {
 }
 
 
-// Generates `amount` number of random points
-function createPoints(amount, dim) {
-    // Allocate 2 elements for each point (x, y)
-    var points = [];
-
-    for (var i = 0; i < amount; i++) {
-        points.push([Math.random() * dim[0], Math.random() * dim[1]]);
-    }
-
-    return points;
-}
-
-
-function createEdges(amount, numNodes) {
-    var edges = [];
-    // This may create duplicate edges. Oh well, for now.
-    for (var i = 0; i < amount; i++) {
-        var source = (i % numNodes),
-            target = (i + 1) % numNodes;
-
-        edges.push([source, target]);
-    }
-
-    return edges;
-}
-
-
-function loadRandom(graph, dataset) {
-    var cfg = dataset.Metadata.config;
-    var points = createPoints(cfg.npoints, cfg.dimensions);
-    var edges = createEdges(cfg.nedges, cfg.npoints);
-
-    return graph.setPoints(points).then(function() {
-        graph.setColorMap('test-colormap2.png');
-        return graph.setEdges(edges);
-    });
-}
-
-
-function loadRectangle(graph, dataset) {
-    var cfg = dataset.Metadata.config;
-    logger.trace('Loading rectangle', cfg.rows, cfg.columns);
-
-    var points =
-        _.flatten(
-            _.range(0, cfg.rows)
-                .map(function (row) {
-                    return _.range(0, cfg.columns)
-                        .map(function (column) {
-                            return [column, row];
-                        });
-                }),
-            true);
-    return graph.setPoints(new Float32Array(_.flatten(points)))
-        .then(function () {
-            return graph.setEdges(new Uint32Array([0,1]));
-        });
-}
-
-
-
-
-function loadGeo(graph, dataset) {
-    logger.trace('Loading Geo');
-
-    return Q(MatrixLoader.loadGeo(dataset.body))
-     .then(function(geoData) {
-        var processedData = MatrixLoader.processGeo(geoData, 0.3);
-
-        logger.debug('Processed %d/%d nodes/edges', processedData.points.length, processedData.edges.length);
-
-        return graph.setPoints(processedData.points)
-            .then(function () {
-                return graph.setPointLabels(processedData.points.map(function (v, i) {
-                    return '<b>' + i + '</b><hr/>' + v[0].toFixed(4) + ', ' + v[1].toFixed(4);
-                }));
-            })
-            .then(_.constant(processedData));
-    })
-    .then(function (processedData) {
-
-        var position = function (points, edges) {
-            return edges.map(function (pair){
-                var start = points[pair[0]];
-                var end = points[pair[1]];
-                return [start[0], start[1], end[0], end[1]];
-            });
-        };
-        var k = 6; // need to be <= # supported colors, currently 9
-        var steps =  50;
-        var positions = position(processedData.points, processedData.edges);
-        var clusters = kmeans(positions, k, steps); //[ [0--1]_4 ]_k
-
-        return graph
-                .setColorMap("test-colormap2.png", {clusters: clusters, points: processedData.points, edges: processedData.edges})
-                .then(function () { return graph.setEdges(processedData.edges); })
-                .then(function () {
-                    var sizes = [];
-                    for (var i = 0; i < processedData.edges.length; i++) {
-                        sizes.push(3);
-                    }
-                    return graph.setSizes(sizes); })
-                .then(function () {
-                    var colors = [];
-                    var yellow = util.palettes.qual_palette1[1];
-                    var red = util.palettes.qual_palette1[3];
-                    for (var i = 0; i < processedData.edges.length; i++) {
-                        colors.push(yellow);
-                        colors.push(red);
-                    }
-                    return graph.setColors(colors);
-                });
-    })
-    .then(function() {
-        logger.trace('Done setting geo points, edges');
-        return graph;
-    });
-}
-
-
-/**
- * Loads the matrix data at the given URI into the NBody graph.
- */
-function loadMatrix(graph, dataset) {
-    logger.debug('Loading dataset %s', dataset.body);
-
-    var v = MatrixLoader.loadBinary(dataset.body);
-    var graphFile = v;
-    if (typeof($) !== 'undefined') {
-        $('#filenodes').text('Nodes: ' + v.numNodes);
-        $('#fileedges').text('Edges: ' + v.numEdges);
-    }
-
-    var points = createPoints(graphFile.numNodes, graph.dimensions);
-
-    return graph.setPoints(points)
-    .then(function () {
-        return graph.setEdges(graphFile.edges);
-    })
-    .then(function () {
-        return graph;
-    });
-}
-
-
 module.exports = {
-    createPoints: createPoints,
-    createEdges: createEdges,
     loadDatasetIntoSim: loadDatasetIntoSim,
     datasetURLFromQuery: function datasetURLFromQuery(query) {
         return query.dataset ? urllib.parse(decodeURIComponent(query.dataset)) : undefined;
