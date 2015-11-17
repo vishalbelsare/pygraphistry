@@ -14,13 +14,14 @@ var Cache = require('common/cache.js');
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:data:data-loader');
 
-var MatrixLoader = require('./libs/MatrixLoader.js'),
-    VGraphLoader = require('./libs/VGraphLoader.js'),
-    kmeans = require('./libs/kmeans.js');
+var MatrixLoader = require('./libs/MatrixLoader.js');
+var VGraphLoader = require('./libs/VGraphLoader.js');
+var kmeans = require('./libs/kmeans.js');
 
 var loaders = {
     'default': VGraphLoader.load,
     'vgraph': VGraphLoader.load,
+    'jsonMeta': loadJSONMeta,
     'matrix': loadMatrix,
     'random': loadRandom,
     'OBSOLETE_geo': loadGeo,
@@ -75,14 +76,14 @@ function httpDownloader(http, url) {
 }
 
 /*
- * Kick off the download process. This checks the
+* Kick off the download process. This checks the
  * modified time and fetches from S3 accordingly.
 **/
 function graphistryS3Downloader(url) {
-    logger.trace('Attempting to download from S3 ' + url.href);
+    console.error('Attempting to download from S3 ' + url.pathname);
     var params = {
         Bucket: config.BUCKET,
-        Key: url.href
+        Key: url.pathname.replace(/^\//,'') // Strip leading slash if there is one
     };
     var res = Q.defer();
 
@@ -117,21 +118,72 @@ function graphistryS3Downloader(url) {
 }
 
 
+// If body is gzipped, decompress transparently
+function unzipBufferIfCompressed(buffer, twice) {
+    if (buffer.readUInt16BE(0) === 0x1f8b) { // Do we care about big endian? ARM?
+        logger.trace('Data body is gzipped, decompressing');
+        if (twice) {
+            console.warn('Data blob is zipped at least twice!');
+        }
+
+        return Q.denodeify(zlib.gunzip)(buffer).then(function (gunzipped) {
+            return unzipBufferIfCompressed(gunzipped, true);
+        });
+    } else {
+        return Q(buffer);
+    }
+}
+
+
+// Run appropriate loader based on dataset type
 function loadDatasetIntoSim(graph, dataset) {
     logger.debug('Loading dataset: %o', dataset);
 
     var loader = loaders[dataset.metadata.type];
-
-    // If body is gzipped, decompress transparently
-    if (dataset.body.readUInt16BE(0) === 0x1f8b) { // Do we care about big endian? ARM?
-        logger.trace('Dataset body is gzipped, decompressing');
-        return Q.denodeify(zlib.gunzip)(dataset.body).then(function (gunzipped) {
-            dataset.body = gunzipped;
-            return loader(graph, dataset);
-        });
-    } else {
+    return unzipBufferIfCompressed(dataset.body).then(function (body) {
+        dataset.body = body;
         return loader(graph, dataset);
-    }
+    });
+}
+
+
+// Parse the json dataset decription, download then load data.
+function loadJSONMeta(graph, rawDataset) {
+    var dataset = JSON.parse(rawDataset.body.toString('utf8'));
+    return downloadDatasources(dataset).then(function (dataset) {
+        if (dataset.datasources.length !== 1) {
+            throw new Error('For now only datasets with one single datasource are supported');
+        }
+        if (dataset.datasources[0].type !== 'vgraph') {
+            throw new Error('For now only datasources of type "vgraph" are supported');
+        }
+
+        var data = dataset.datasources[0].data
+        return VGraphLoader.load(graph, {body: data, metadata: dataset});
+    });
+}
+
+
+// Download all datasources in dataset
+function downloadDatasources(dataset) {
+    var qBlobs = _.map(dataset.datasources, function (datasource) {
+        var url = urllib.parse(datasource.url);
+        if (url.protocol === 's3:' && url.host === config.BUCKET) {
+            return graphistryS3Downloader(url).then(function (blob) {
+                return unzipBufferIfCompressed(blob);
+            });
+        } else {
+            throw new Error('Fetching datasouces: protocol not yet supported' + url.href);
+        }
+    });
+
+    return Q.all(qBlobs).then(function (blobs) {
+        _.each(blobs, function (blob, i) {
+            dataset.datasources[i].data = blob;
+        });
+
+        return dataset;
+    });
 }
 
 
