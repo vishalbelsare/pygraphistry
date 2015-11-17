@@ -29,6 +29,17 @@
     return result;
   }
 
+  function buildBinaryPredicate(first, rest) {
+    return buildTree(first, rest, function(result, element) {
+      return {
+        type:     "BinaryPredicate",
+        operator: element[1],
+        left:     result,
+        right:    element[3]
+      };
+    });
+  }
+
   function buildBinaryExpression(first, rest) {
     return buildTree(first, rest, function(result, element) {
       return {
@@ -119,12 +130,12 @@ NOTExpression
 ANDExpression
   = first:NOTExpression
     rest:(__ AND __ NOTExpression)*
-    { return buildBinaryExpression(first, rest); }
+    { return buildBinaryPredicate(first, rest); }
 
 ORExpression
   = first:ANDExpression
     rest:(__ OR __ ANDExpression)*
-    { return buildBinaryExpression(first, rest); }
+    { return buildBinaryPredicate(first, rest); }
 
 LimitClause "limit"
   = LIMIT __ limit:Expression
@@ -479,13 +490,13 @@ ComparisonOperator "comparison"
 ComparisonPredicate
   = first:ShiftExpression
     rest:(__ ComparisonOperator __ ShiftExpression)*
-    { return buildBinaryExpression(first, rest); }
+    { return buildBinaryPredicate(first, rest); }
   / LikePredicate
 
 EqualityPredicate
   = first:ComparisonPredicate
     rest:(__ EqualityOperator __ ComparisonPredicate)*
-    { return buildBinaryExpression(first, rest); }
+    { return buildBinaryPredicate(first, rest); }
 
 EqualityOperator "equality operator"
   = notequals
@@ -534,7 +545,7 @@ PostfixExpression
 IsPredicate
   = left:MemberAccess __ operator:IS __ right:UnaryExpression {
       return {
-        type: 'LogicalExpression',
+        type: 'BinaryPredicate',
         operator: operator,
         left: left,
         right: right
@@ -544,14 +555,14 @@ IsPredicate
 InPredicate
   = left:MemberAccess __ operator:IN __ right:Expression
     { return {
-         type: 'LogicalExpression',
+         type: 'BinaryPredicate',
          operator: operator,
          left: left,
          right: right
       };
     }
   / left:MemberAccess __ operator:IN __ lparen ( ( MemberAccess comma __ )+ )? __ rparen
-    { return buildBinaryExpression(first, rest); }
+    { return buildBinaryPredicate(first, rest); }
 
 BetweenPredicate
   = value:MemberAccess __ BETWEEN __ low:MemberAccess __ AND __ high:MemberAccess

@@ -63,7 +63,7 @@ var FilterModel = Backbone.Model.extend({
             case 'boolean':
                 result.equals = true;
                 result.ast = {
-                    type: 'LogicalExpression',
+                    type: 'BinaryPredicate',
                     operator: 'IS',
                     left: {type: 'Identifier', name: result.attribute},
                     right: {type: 'Literal', value: result.equals}

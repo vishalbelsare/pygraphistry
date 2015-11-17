@@ -345,7 +345,7 @@ function updateHistogramFilterFromExpression(histFilter, ast) {
         if (ast.stop.type === 'Literal') {
             histFilter.stop = ast.stop.value;
         }
-    } else if (ast.type === 'LogicalExpression') {
+    } else if (ast.type === 'BinaryPredicate') {
         op = ast.operator.toUpperCase();
         if (op === 'IN') {
             var containerExpr = ast.right;
