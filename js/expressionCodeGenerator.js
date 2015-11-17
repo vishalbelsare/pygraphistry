@@ -17,7 +17,7 @@ function escapeRegexNonPattern (lastPatternSegment) {
     return lastPatternSegment.replace('.', '[.]');
 }
 
-/// Polyfills:
+//<editor-fold desc="Poly-Fills">
 
 if (!String.prototype.startsWith) {
     String.prototype.startsWith = function (searchString, position) {
@@ -37,6 +37,24 @@ if (!String.prototype.endsWith) {
         return lastIndex !== -1 && lastIndex === position;
     };
 }
+
+if (!Math.sign) {
+    Math.sign = function (x) {
+        x = +x; // convert to a number
+        if (x === 0 || isNaN(x)) {
+            return x;
+        }
+        return x > 0 ? 1 : -1;
+    };
+}
+
+if (!Math.trunc) {
+    Math.trunc = function (x) {
+        return x < 0 ? Math.ceil(x) : Math.floor(x);
+    };
+}
+
+//</editor-fold>
 
 function literalExpressionFor (value) {
     return JSON.stringify(value);
@@ -164,8 +182,7 @@ ExpressionCodeGenerator.prototype = {
                 firstArg + '.' + outputFunctionName + '(' + (restArgs !== undefined ? restArgs.join(', ') : '') + ')',
                 precedence, outerPrecedence);
         }.bind(this);
-        inputFunctionName = inputFunctionName.toUpperCase();
-        switch (inputFunctionName) {
+        switch (inputFunctionName.toUpperCase()) {
             case 'DATE':
                 safeFunctionName = 'new Date';
                 break;
@@ -227,6 +244,29 @@ ExpressionCodeGenerator.prototype = {
                 return methodCall('Math', 'max', args);
             case 'MIN':
                 return methodCall('Math', 'min', args);
+            case 'RAND':
+                return methodCall('Math', 'random', args);
+            case 'SIGN':
+            case 'ABS':
+            case 'SQRT':
+            case 'EXP':
+            case 'POW':
+            case 'LOG':
+            case 'LOG2':
+            case 'LOG10':
+            case 'CEIL':
+            case 'FLOOR':
+            case 'ROUND':
+            case 'TRUNC':
+            case 'SIN':
+            case 'COS':
+            case 'TAN':
+            case 'ASIN':
+            case 'ACOS':
+            case 'ATAN':
+                return methodCall('Math', inputFunctionName.toLowerCase(), args);
+            case 'LN':
+                return methodCall('Math', 'log', args);
             case 'COALESCE':
                 return this.wrapSubExpressionPerPrecedences(args.join(' || '), this.precedenceOf('||'), outerPrecedence);
             default:
