@@ -367,14 +367,14 @@ Dataframe.prototype.filterFuncForQueryObject = function (query) {
 
 
 /**
- * @param {Array} attributes
+ * @param {Array} attributeValues
  * @param {Function<Object>} filterFunc
  * @returns Mask
  */
-Dataframe.prototype.getMaskForFilterOnAttributeValues = function (attributes, filterFunc) {
+Dataframe.prototype.getMaskForPredicateOnAttributeValues = function (attributeValues, filterFunc) {
     var mask = [];
     if (filterFunc) {
-        _.each(attributes, function (val, idx) {
+        _.each(attributeValues, function (val, idx) {
             if (filterFunc(val)) {
                 mask.push(idx);
             }
@@ -387,13 +387,13 @@ Dataframe.prototype.getMaskForFilterOnAttributeValues = function (attributes, fi
 /**
  * @returns {DataframeMask}
  */
-Dataframe.prototype.getAttributeMask = function (type, dataframeAttribute, query) {
+Dataframe.prototype.getAttributeMask = function (type, dataframeAttribute, filterFunc) {
     switch (type) {
         case 'point':
-            var pointMask = this.getPointAttributeMask(dataframeAttribute, query);
+            var pointMask = this.getPointAttributeMask(dataframeAttribute, filterFunc);
             return this.masksFromPoints(pointMask);
         case 'edge':
-            var edgeMask = this.getEdgeAttributeMask(dataframeAttribute, query);
+            var edgeMask = this.getEdgeAttributeMask(dataframeAttribute, filterFunc);
             return this.masksFromEdges(edgeMask);
         default:
             throw new Error('Unknown graph component type');
@@ -404,13 +404,12 @@ Dataframe.prototype.getAttributeMask = function (type, dataframeAttribute, query
 /**
  * Returns sorted edge mask
  * @param {String} dataframeAttribute
- * @param {ClientQuery} query
+ * @param {Function<Object>} filterFunc
  * @returns {Mask}
  */
-Dataframe.prototype.getEdgeAttributeMask = function (dataframeAttribute, query) {
+Dataframe.prototype.getEdgeAttributeMask = function (dataframeAttribute, filterFunc) {
     var attr = this.rawdata.attributes.edge[dataframeAttribute];
-    var filterFunc = this.filterFuncForQueryObject(query);
-    var edgeMask = this.getMaskForFilterOnAttributeValues(attr.values, filterFunc);
+    var edgeMask = this.getMaskForPredicateOnAttributeValues(attr.values, filterFunc);
     // Convert to sorted order
     var map = this.rawdata.hostBuffers.forwardsEdges.edgePermutation;
     for (var i = 0; i < edgeMask.length; i++) {
@@ -423,13 +422,12 @@ Dataframe.prototype.getEdgeAttributeMask = function (dataframeAttribute, query) 
 /**
  * Returns sorted point mask
  * @param {String} dataframeAttribute
- * @param {ClientQuery} query
+ * @param {Function<Object>} filterFunc
  * @returns {Mask}
  */
-Dataframe.prototype.getPointAttributeMask = function (dataframeAttribute, query) {
+Dataframe.prototype.getPointAttributeMask = function (dataframeAttribute, filterFunc) {
     var attr = this.rawdata.attributes.point[dataframeAttribute];
-    var filterFunc = this.filterFuncForQueryObject(query);
-    return this.getMaskForFilterOnAttributeValues(attr.values, filterFunc);
+    return this.getMaskForPredicateOnAttributeValues(attr.values, filterFunc);
 };
 
 
