@@ -133,7 +133,9 @@ function loadDataframe(graph, attrs, numPoints, numEdges) {
 }
 
 function getAttributes(vg, attributes) {
-    var vectors = vg.string_vectors.concat(vg.int32_vectors, vg.double_vectors);
+    var vectors = vg.string_vectors.concat(vg.uint32_vectors,
+                                           vg.int32_vectors,
+                                           vg.double_vectors);
     var attrs = [];
     for (var i = 0; i < vectors.length; i++) {
         var v = vectors[i];
