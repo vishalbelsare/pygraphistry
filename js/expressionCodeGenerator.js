@@ -397,7 +397,7 @@ ExpressionCodeGenerator.prototype = {
                         throw Error('Operator not yet implemented: ' + ast.operator);
                 }
                 break;
-            case 'LogicalExpression':
+            case 'BinaryPredicate':
             case 'BinaryExpression':
                 // Maybe InExpression would be a better logic branch:
                 if (ast.operator.toLowerCase() === 'in') {
