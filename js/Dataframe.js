@@ -385,14 +385,31 @@ Dataframe.prototype.getMaskForFilterOnAttributeValues = function (attributes, fi
 
 
 /**
+ * @returns {DataframeMask}
+ */
+Dataframe.prototype.getAttributeMask = function (type, dataframeAttribute, query) {
+    switch (type) {
+        case 'point':
+            var pointMask = this.getPointAttributeMask(dataframeAttribute, query);
+            return this.masksFromPoints(pointMask);
+        case 'edge':
+            var edgeMask = this.getEdgeAttributeMask(dataframeAttribute, query);
+            return this.masksFromEdges(edgeMask);
+        default:
+            throw new Error('Unknown graph component type');
+    }
+};
+
+
+/**
  * Returns sorted edge mask
  * @param {String} dataframeAttribute
- * @param {ClientQuery} params
+ * @param {ClientQuery} query
  * @returns {Mask}
  */
-Dataframe.prototype.getEdgeAttributeMask = function (dataframeAttribute, params) {
+Dataframe.prototype.getEdgeAttributeMask = function (dataframeAttribute, query) {
     var attr = this.rawdata.attributes.edge[dataframeAttribute];
-    var filterFunc = this.filterFuncForQueryObject(params);
+    var filterFunc = this.filterFuncForQueryObject(query);
     var edgeMask = this.getMaskForFilterOnAttributeValues(attr.values, filterFunc);
     // Convert to sorted order
     var map = this.rawdata.hostBuffers.forwardsEdges.edgePermutation;
@@ -406,12 +423,12 @@ Dataframe.prototype.getEdgeAttributeMask = function (dataframeAttribute, params)
 /**
  * Returns sorted point mask
  * @param {String} dataframeAttribute
- * @param {ClientQuery} params
+ * @param {ClientQuery} query
  * @returns {Mask}
  */
-Dataframe.prototype.getPointAttributeMask = function (dataframeAttribute, params) {
+Dataframe.prototype.getPointAttributeMask = function (dataframeAttribute, query) {
     var attr = this.rawdata.attributes.point[dataframeAttribute];
-    var filterFunc = this.filterFuncForQueryObject(params);
+    var filterFunc = this.filterFuncForQueryObject(query);
     return this.getMaskForFilterOnAttributeValues(attr.values, filterFunc);
 };
 
@@ -982,6 +999,9 @@ Dataframe.prototype.setNumElements = function (type, num) {
 //////////////////////////////////////////////////////////////////////////////
 
 
+/**
+ * @returns {{attribute: String, type: String}}
+ */
 Dataframe.prototype.normalizeAttributeName = function (dataframeAttribute, type) {
     var idx = dataframeAttribute ? dataframeAttribute.lastIndexOf(':') : -1;
     var name = dataframeAttribute;
