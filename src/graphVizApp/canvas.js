@@ -503,6 +503,10 @@ function makeArrows(bufferSnapshots, edgeMode, numRenderedSplits) {
             arrowPointSizes, arrowColors, edgeColors, numRenderedSplits);
 }
 
+// Remember last task in case you need to rerender mouseovers without an update.
+// TODO: Structure this so there's no global
+var lastMouseoverTask;
+
 /*
  * Render expensive items (eg, edges) when a quiet state is detected. This function is called
  * from within an animation frame and must execture all its work inside it. Callbacks(rx, etc)
@@ -584,17 +588,15 @@ function renderSlowEffects(renderingScheduler) {
         console.debug('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
     }
 
+
     renderer.setCamera(renderState);
     renderer.render(renderState, 'fullscene', 'renderSceneFull');
     renderer.render(renderState, 'picking', 'picking', undefined, undefined, function () {
         renderingScheduler.appSnapshot.hitmapUpdates.onNext();
     });
 
-
-    renderer.copyCanvasToTexture(renderState, 'steadyStateTexture');
     // TODO: Make steadyStateTextureDark instead of just doing it in the shader.
-    renderer.copyCanvasToTexture(renderState, 'steadyStateTextureDark');
-
+    renderer.copyCanvasToTexture(renderState, 'steadyStateTexture');
     renderMouseoverEffects(renderingScheduler);
 }
 
@@ -602,10 +604,6 @@ function renderSlowEffects(renderingScheduler) {
  * Render mouseover effects. These should only occur during a quiet state.
  *
  */
-
-// Remember last task in case you need to rerender mouseovers without an update.
-// TODO: Structure this so there's no global
-var lastTask;
 
 function renderMouseoverEffects(renderingScheduler, task) {
     var appSnapshot = renderingScheduler.appSnapshot;
@@ -625,7 +623,7 @@ function renderMouseoverEffects(renderingScheduler, task) {
         return;
     }
 
-    task = task || lastTask;
+    task = task || lastMouseoverTask;
     if (!task) {
         return;
     }
@@ -636,7 +634,7 @@ function renderMouseoverEffects(renderingScheduler, task) {
     // We need to be careful not to accidentally modify the internals of this cached task.
     // To be safe, we always cache it as a separate copy. Sucks because we need to know its full structure
     // here too, but whatever.
-    lastTask = {
+    lastMouseoverTask = {
         trigger: 'mouseOverEdgeHighlight',
         data: {
             highlight: {
@@ -669,6 +667,9 @@ function renderMouseoverEffects(renderingScheduler, task) {
     var selectedEdgeIndices = task.data.selected.edgeIndices || [];
     var selectedNodeIndices = task.data.selected.nodeIndices || [];
 
+    var initialHighlightLengths = highlightedEdgeIndices.length + highlightedNodeIndices.length;
+    var initialSelectedLengths = selectedEdgeIndices.length + selectedNodeIndices.length;
+
     // TODO: Decide if we need to dedupe these arrays.
 
     // Extend edges with neighbors of nodes
@@ -696,60 +697,61 @@ function renderMouseoverEffects(renderingScheduler, task) {
     // Setup highlight buffers
     //////////////////////////////////////////////////////////////////////////
 
-    // TODO: Start with a small buffer and increase if necessary, masking underlying
-    // data so we don't have to clear out later values. This way we won't have to constantly allocate
-    buffers.highlightedEdges = new Float32Array(highlightedEdgeIndices.length * 4 * numMidEdges);
-    buffers.highlightedNodePositions = new Float32Array(highlightedNodeIndices.length * 2);
-    buffers.highlightedNodeSizes = new Uint8Array(highlightedNodeIndices.length);
-    buffers.highlightedNodeColors = new Uint32Array(highlightedNodeIndices.length);
-    buffers.highlightedArrowStartPos = new Float32Array(highlightedEdgeIndices.length * 2 * 3);
-    buffers.highlightedArrowEndPos = new Float32Array(highlightedEdgeIndices.length * 2 * 3);
-    buffers.highlightedArrowNormalDir = new Float32Array(highlightedEdgeIndices.length * 3);
-    buffers.highlightedArrowPointColors = new Uint32Array(highlightedEdgeIndices.length * 3);
-    buffers.highlightedArrowPointSizes = new Uint8Array(highlightedEdgeIndices.length * 3);
-
     renderer.setNumElements(renderState, 'edgehighlight', highlightedEdgeIndices.length * 2 * numMidEdges);
     renderer.setNumElements(renderState, 'pointhighlight', highlightedNodeIndices.length);
     renderer.setNumElements(renderState, 'arrowhighlight', highlightedEdgeIndices.length * 3);
 
-    // Copy in data
-    _.each(highlightedEdgeIndices, function (val, idx) {
-        // The start at the first midedge corresponding to hovered edge
-        var edgeStartIdx = (val * 4 * numMidEdges);
-        var highlightStartIdx = (idx * 4 * numMidEdges);
-        for (var midEdgeIdx = 0; midEdgeIdx < numMidEdges; midEdgeIdx = midEdgeIdx + 1) {
-            var midEdgeStride = midEdgeIdx * 4;
-            buffers.highlightedEdges[highlightStartIdx + midEdgeStride] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride)];
-            buffers.highlightedEdges[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 1];
-            buffers.highlightedEdges[highlightStartIdx + midEdgeStride + 2] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 2];
-            buffers.highlightedEdges[highlightStartIdx + midEdgeStride + 3] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 3];
-        }
-    });
+    if (initialHighlightLengths > 0) {
+        // TODO: Start with a small buffer and increase if necessary, masking underlying
+        // data so we don't have to clear out later values. This way we won't have to constantly allocate
+        buffers.highlightedEdges = new Float32Array(highlightedEdgeIndices.length * 4 * numMidEdges);
+        buffers.highlightedNodePositions = new Float32Array(highlightedNodeIndices.length * 2);
+        buffers.highlightedNodeSizes = new Uint8Array(highlightedNodeIndices.length);
+        buffers.highlightedNodeColors = new Uint32Array(highlightedNodeIndices.length);
+        buffers.highlightedArrowStartPos = new Float32Array(highlightedEdgeIndices.length * 2 * 3);
+        buffers.highlightedArrowEndPos = new Float32Array(highlightedEdgeIndices.length * 2 * 3);
+        buffers.highlightedArrowNormalDir = new Float32Array(highlightedEdgeIndices.length * 3);
+        buffers.highlightedArrowPointColors = new Uint32Array(highlightedEdgeIndices.length * 3);
+        buffers.highlightedArrowPointSizes = new Uint8Array(highlightedEdgeIndices.length * 3);
 
-    _.each(highlightedNodeIndices, function (val, idx) {
-        buffers.highlightedNodePositions[idx*2] = hostNodePositions[val*2];
-        buffers.highlightedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
-        buffers.highlightedNodeSizes[idx] = hostNodeSizes[val];
-        buffers.highlightedNodeColors[idx] = hostNodeColors[val];
-    });
+        // Copy in data
+        _.each(highlightedEdgeIndices, function (val, idx) {
+            // The start at the first midedge corresponding to hovered edge
+            var edgeStartIdx = (val * 4 * numMidEdges);
+            var highlightStartIdx = (idx * 4 * numMidEdges);
+            for (var midEdgeIdx = 0; midEdgeIdx < numMidEdges; midEdgeIdx = midEdgeIdx + 1) {
+                var midEdgeStride = midEdgeIdx * 4;
+                buffers.highlightedEdges[highlightStartIdx + midEdgeStride] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride)];
+                buffers.highlightedEdges[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 1];
+                buffers.highlightedEdges[highlightStartIdx + midEdgeStride + 2] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 2];
+                buffers.highlightedEdges[highlightStartIdx + midEdgeStride + 3] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 3];
+            }
+        });
 
-    populateArrowBuffers(highlightedEdgeIndices, buffers.midSpringsPos, buffers.highlightedArrowStartPos,
-            buffers.highlightedArrowEndPos, buffers.highlightedArrowNormalDir, hostNodeSizes,
-            logicalEdges, buffers.highlightedArrowPointSizes, buffers.highlightedArrowPointColors,
-            buffers.edgeColors, numRenderedSplits);
+        _.each(highlightedNodeIndices, function (val, idx) {
+            buffers.highlightedNodePositions[idx*2] = hostNodePositions[val*2];
+            buffers.highlightedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
+            buffers.highlightedNodeSizes[idx] = hostNodeSizes[val];
+            buffers.highlightedNodeColors[idx] = hostNodeColors[val];
+        });
 
-    renderer.loadBuffers(renderState, {
-        'highlightedEdgesPos': buffers.highlightedEdges,
-        'highlightedPointsPos': buffers.highlightedNodePositions,
-        'highlightedPointsSizes': buffers.highlightedNodeSizes,
-        'highlightedPointsColors': buffers.highlightedNodeColors,
-        'highlightedArrowStartPos': buffers.highlightedArrowStartPos,
-        'highlightedArrowEndPos': buffers.highlightedArrowEndPos,
-        'highlightedArrowNormalDir': buffers.highlightedArrowNormalDir,
-        'highlightedArrowPointColors': buffers.highlightedArrowPointColors,
-        'highlightedArrowPointSizes': buffers.highlightedArrowPointSizes
-    });
+        populateArrowBuffers(highlightedEdgeIndices, buffers.midSpringsPos, buffers.highlightedArrowStartPos,
+                buffers.highlightedArrowEndPos, buffers.highlightedArrowNormalDir, hostNodeSizes,
+                logicalEdges, buffers.highlightedArrowPointSizes, buffers.highlightedArrowPointColors,
+                buffers.edgeColors, numRenderedSplits);
 
+        renderer.loadBuffers(renderState, {
+            'highlightedEdgesPos': buffers.highlightedEdges,
+            'highlightedPointsPos': buffers.highlightedNodePositions,
+            'highlightedPointsSizes': buffers.highlightedNodeSizes,
+            'highlightedPointsColors': buffers.highlightedNodeColors,
+            'highlightedArrowStartPos': buffers.highlightedArrowStartPos,
+            'highlightedArrowEndPos': buffers.highlightedArrowEndPos,
+            'highlightedArrowNormalDir': buffers.highlightedArrowNormalDir,
+            'highlightedArrowPointColors': buffers.highlightedArrowPointColors,
+            'highlightedArrowPointSizes': buffers.highlightedArrowPointSizes
+        });
+    }
 
     //////////////////////////////////////////////////////////////////////////
     // Setup selected buffers
@@ -758,79 +760,84 @@ function renderMouseoverEffects(renderingScheduler, task) {
     // TODO: Start with a small buffer and increase if necessary, masking underlying
     // data so we don't have to clear out later values. This way we won't have to constantly allocate
 
-    buffers.selectedEdges = new Float32Array(selectedEdgeIndices.length * 4 * numMidEdges);
-    buffers.selectedEdgeStarts = new Float32Array(selectedEdgeIndices.length * 4 * numMidEdges);
-    buffers.selectedEdgeEnds = new Float32Array(selectedEdgeIndices.length * 4 * numMidEdges);
-    buffers.selectedEdgeColors = new Uint32Array(selectedEdgeIndices.length * 2 * numMidEdges);
-    buffers.selectedNodePositions = new Float32Array(selectedNodeIndices.length * 2);
-    buffers.selectedNodeSizes = new Uint8Array(selectedNodeIndices.length);
-    buffers.selectedNodeColors = new Uint32Array(selectedNodeIndices.length);
-    buffers.selectedArrowStartPos = new Float32Array(selectedEdgeIndices.length * 2 * 3);
-    buffers.selectedArrowEndPos = new Float32Array(selectedEdgeIndices.length * 2 * 3);
-    buffers.selectedArrowNormalDir = new Float32Array(selectedEdgeIndices.length * 3);
-    buffers.selectedArrowPointColors = new Uint32Array(selectedEdgeIndices.length * 3);
-    buffers.selectedArrowPointSizes = new Uint8Array(selectedEdgeIndices.length * 3);
-
     renderer.setNumElements(renderState, 'edgeselected', selectedEdgeIndices.length * 2 * numMidEdges);
     renderer.setNumElements(renderState, 'pointselected', selectedNodeIndices.length);
     renderer.setNumElements(renderState, 'arrowselected', selectedEdgeIndices.length * 3);
 
-    // Copy in data
-    _.each(selectedEdgeIndices, function (val, idx) {
-        // The start at the first midedge corresponding to hovered edge
-        var edgeStartIdx = (val * 4 * numMidEdges);
-        var highlightStartIdx = (idx * 4 * numMidEdges);
-        var edgeColorStartIdx = (val * 2 * numMidEdges);
-        var highlightColorStartIdx = (idx * 2 * numMidEdges);
-        for (var midEdgeIdx = 0; midEdgeIdx < numMidEdges; midEdgeIdx = midEdgeIdx + 1) {
-            var midEdgeStride = midEdgeIdx * 4;
-            buffers.selectedEdges[highlightStartIdx + midEdgeStride] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride)];
-            buffers.selectedEdges[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 1];
-            buffers.selectedEdges[highlightStartIdx + midEdgeStride + 2] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 2];
-            buffers.selectedEdges[highlightStartIdx + midEdgeStride + 3] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 3];
+    if (initialSelectedLengths > 0) {
 
-            buffers.selectedEdgeStarts[highlightStartIdx + midEdgeStride] = buffers.midSpringsStarts[edgeStartIdx + (midEdgeStride)];
-            buffers.selectedEdgeStarts[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsStarts[edgeStartIdx + (midEdgeStride) + 1];
-            buffers.selectedEdgeStarts[highlightStartIdx + midEdgeStride + 2] = buffers.midSpringsStarts[edgeStartIdx + (midEdgeStride) + 2];
-            buffers.selectedEdgeStarts[highlightStartIdx + midEdgeStride + 3] = buffers.midSpringsStarts[edgeStartIdx + (midEdgeStride) + 3];
 
-            buffers.selectedEdgeEnds[highlightStartIdx + midEdgeStride] = buffers.midSpringsEnds[edgeStartIdx + (midEdgeStride)];
-            buffers.selectedEdgeEnds[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsEnds[edgeStartIdx + (midEdgeStride) + 1];
-            buffers.selectedEdgeEnds[highlightStartIdx + midEdgeStride + 2] = buffers.midSpringsEnds[edgeStartIdx + (midEdgeStride) + 2];
-            buffers.selectedEdgeEnds[highlightStartIdx + midEdgeStride + 3] = buffers.midSpringsEnds[edgeStartIdx + (midEdgeStride) + 3];
+        buffers.selectedEdges = new Float32Array(selectedEdgeIndices.length * 4 * numMidEdges);
+        buffers.selectedEdgeStarts = new Float32Array(selectedEdgeIndices.length * 4 * numMidEdges);
+        buffers.selectedEdgeEnds = new Float32Array(selectedEdgeIndices.length * 4 * numMidEdges);
+        buffers.selectedEdgeColors = new Uint32Array(selectedEdgeIndices.length * 2 * numMidEdges);
+        buffers.selectedNodePositions = new Float32Array(selectedNodeIndices.length * 2);
+        buffers.selectedNodeSizes = new Uint8Array(selectedNodeIndices.length);
+        buffers.selectedNodeColors = new Uint32Array(selectedNodeIndices.length);
+        buffers.selectedArrowStartPos = new Float32Array(selectedEdgeIndices.length * 2 * 3);
+        buffers.selectedArrowEndPos = new Float32Array(selectedEdgeIndices.length * 2 * 3);
+        buffers.selectedArrowNormalDir = new Float32Array(selectedEdgeIndices.length * 3);
+        buffers.selectedArrowPointColors = new Uint32Array(selectedEdgeIndices.length * 3);
+        buffers.selectedArrowPointSizes = new Uint8Array(selectedEdgeIndices.length * 3);
 
-            var midEdgeColorStride = midEdgeIdx * 2;
-            buffers.selectedEdgeColors[highlightColorStartIdx + midEdgeColorStride] = buffers.midEdgesColors[edgeColorStartIdx + midEdgeColorStride];
-            buffers.selectedEdgeColors[highlightColorStartIdx + midEdgeColorStride + 1] = buffers.midEdgesColors[edgeColorStartIdx + midEdgeColorStride + 1];
-        }
-    });
+        // Copy in data
+        _.each(selectedEdgeIndices, function (val, idx) {
+            // The start at the first midedge corresponding to hovered edge
+            var edgeStartIdx = (val * 4 * numMidEdges);
+            var highlightStartIdx = (idx * 4 * numMidEdges);
+            var edgeColorStartIdx = (val * 2 * numMidEdges);
+            var highlightColorStartIdx = (idx * 2 * numMidEdges);
+            for (var midEdgeIdx = 0; midEdgeIdx < numMidEdges; midEdgeIdx = midEdgeIdx + 1) {
+                var midEdgeStride = midEdgeIdx * 4;
+                buffers.selectedEdges[highlightStartIdx + midEdgeStride] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride)];
+                buffers.selectedEdges[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 1];
+                buffers.selectedEdges[highlightStartIdx + midEdgeStride + 2] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 2];
+                buffers.selectedEdges[highlightStartIdx + midEdgeStride + 3] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 3];
 
-    _.each(selectedNodeIndices, function (val, idx) {
-        buffers.selectedNodePositions[idx*2] = hostNodePositions[val*2];
-        buffers.selectedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
-        buffers.selectedNodeSizes[idx] = hostNodeSizes[val];
-        buffers.selectedNodeColors[idx] = hostNodeColors[val];
-    });
+                buffers.selectedEdgeStarts[highlightStartIdx + midEdgeStride] = buffers.midSpringsStarts[edgeStartIdx + (midEdgeStride)];
+                buffers.selectedEdgeStarts[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsStarts[edgeStartIdx + (midEdgeStride) + 1];
+                buffers.selectedEdgeStarts[highlightStartIdx + midEdgeStride + 2] = buffers.midSpringsStarts[edgeStartIdx + (midEdgeStride) + 2];
+                buffers.selectedEdgeStarts[highlightStartIdx + midEdgeStride + 3] = buffers.midSpringsStarts[edgeStartIdx + (midEdgeStride) + 3];
 
-    populateArrowBuffers(selectedEdgeIndices, buffers.midSpringsPos, buffers.selectedArrowStartPos,
-            buffers.selectedArrowEndPos, buffers.selectedArrowNormalDir, hostNodeSizes,
-            logicalEdges, buffers.selectedArrowPointSizes, buffers.selectedArrowPointColors,
-            buffers.edgeColors, numRenderedSplits);
+                buffers.selectedEdgeEnds[highlightStartIdx + midEdgeStride] = buffers.midSpringsEnds[edgeStartIdx + (midEdgeStride)];
+                buffers.selectedEdgeEnds[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsEnds[edgeStartIdx + (midEdgeStride) + 1];
+                buffers.selectedEdgeEnds[highlightStartIdx + midEdgeStride + 2] = buffers.midSpringsEnds[edgeStartIdx + (midEdgeStride) + 2];
+                buffers.selectedEdgeEnds[highlightStartIdx + midEdgeStride + 3] = buffers.midSpringsEnds[edgeStartIdx + (midEdgeStride) + 3];
 
-    renderer.loadBuffers(renderState, {
-        'selectedMidSpringsPos': buffers.selectedEdges,
-        'selectedMidEdgesColors': buffers.selectedEdgeColors,
-        'selectedMidSpringsStarts': buffers.selectedEdgeStarts,
-        'selectedMidSpringsEnds': buffers.selectedEdgeEnds,
-        'selectedCurPoints': buffers.selectedNodePositions,
-        'selectedPointSizes': buffers.selectedNodeSizes,
-        'selectedPointColors': buffers.selectedNodeColors,
-        'selectedArrowStartPos': buffers.selectedArrowStartPos,
-        'selectedArrowEndPos': buffers.selectedArrowEndPos,
-        'selectedArrowNormalDir': buffers.selectedArrowNormalDir,
-        'selectedArrowColors': buffers.selectedArrowPointColors,
-        'selectedArrowPointSizes': buffers.selectedArrowPointSizes
-    });
+                var midEdgeColorStride = midEdgeIdx * 2;
+                buffers.selectedEdgeColors[highlightColorStartIdx + midEdgeColorStride] = buffers.midEdgesColors[edgeColorStartIdx + midEdgeColorStride];
+                buffers.selectedEdgeColors[highlightColorStartIdx + midEdgeColorStride + 1] = buffers.midEdgesColors[edgeColorStartIdx + midEdgeColorStride + 1];
+            }
+        });
+
+        _.each(selectedNodeIndices, function (val, idx) {
+            buffers.selectedNodePositions[idx*2] = hostNodePositions[val*2];
+            buffers.selectedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
+            buffers.selectedNodeSizes[idx] = hostNodeSizes[val];
+            buffers.selectedNodeColors[idx] = hostNodeColors[val];
+        });
+
+        populateArrowBuffers(selectedEdgeIndices, buffers.midSpringsPos, buffers.selectedArrowStartPos,
+                buffers.selectedArrowEndPos, buffers.selectedArrowNormalDir, hostNodeSizes,
+                logicalEdges, buffers.selectedArrowPointSizes, buffers.selectedArrowPointColors,
+                buffers.edgeColors, numRenderedSplits);
+
+        renderer.loadBuffers(renderState, {
+            'selectedMidSpringsPos': buffers.selectedEdges,
+            'selectedMidEdgesColors': buffers.selectedEdgeColors,
+            'selectedMidSpringsStarts': buffers.selectedEdgeStarts,
+            'selectedMidSpringsEnds': buffers.selectedEdgeEnds,
+            'selectedCurPoints': buffers.selectedNodePositions,
+            'selectedPointSizes': buffers.selectedNodeSizes,
+            'selectedPointColors': buffers.selectedNodeColors,
+            'selectedArrowStartPos': buffers.selectedArrowStartPos,
+            'selectedArrowEndPos': buffers.selectedArrowEndPos,
+            'selectedArrowNormalDir': buffers.selectedArrowNormalDir,
+            'selectedArrowColors': buffers.selectedArrowPointColors,
+            'selectedArrowPointSizes': buffers.selectedArrowPointSizes
+        });
+
+    }
 
     //////////////////////////////////////////////////////////////////////////
     // Handle Rendering + Texture backdrop.
