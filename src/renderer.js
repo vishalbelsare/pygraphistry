@@ -140,6 +140,27 @@ function bindBuffer(gl, glArrayType, buffer) {
 
 
 /**
+ * Wrapper functions to keep track of what attrib arrays are enabled.
+ * Apparently WebGL isn't supposed to really care if you do this or not,
+ * but documentation is lacking and it seems to be the source of
+ * major performance issues.
+ */
+var enabledVertexAttribArrayCache = [];
+function disableActiveVertexAttribArrays(gl) {
+    _.each(enabledVertexAttribArrayCache, function (location) {
+        gl.disableVertexAttribArray(location);
+    });
+    enabledVertexAttribArrayCache = [];
+}
+
+function enableVertexAttribArray(gl, location) {
+    enabledVertexAttribArrayCache.push(location);
+    gl.enableVertexAttribArray(location);
+}
+
+
+
+/**
  * Binds all of a programs attributes to elements of a/some buffer(s)
  * @param {WebGLRenderingContext} gl - the WebGL context containing the program and buffers
  * @param {WebGLProgram} program - The WebGL program to bind
@@ -158,7 +179,10 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
 
     debug('Binding program %s', programName);
 
+    disableActiveVertexAttribArrays(gl);
+
     useProgram(gl, program);
+
 
     _.each(bindings.attributes, function(binding, attribute) {
         var element = modelSettings[binding[0]][binding[1]];
@@ -173,16 +197,15 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
             : (function () { throw new Error('unknown datasource ' + datasource); }());
 
         debug('  binding buffer', attribute, binding, datasource, glArrayType, glBuffer, element);
-
-        bindBuffer(gl, glArrayType, glBuffer);
         var location = getAttribLocationFast(gl, program, programName, attribute);
 
+        bindBuffer(gl, glArrayType, glBuffer);
+
         gl.vertexAttribPointer(location, element.count, gl[element.type], element.normalize,
-                               element.stride, element.offset);
+                                   element.stride, element.offset);
 
-        gl.enableVertexAttribArray(location);
+        enableVertexAttribArray(gl, location);
     });
-
 
     _.each(bindings.uniforms || {}, function (binding, uniformName) {
 
@@ -415,6 +438,7 @@ function resizeCanvas(state) {
         }
     }
 }
+
 
 
 // RenderState * canvas * string -> {x: int, y:int, width: float, height: float}
@@ -993,6 +1017,21 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
         callback(true);
     }
 }
+
+// Helper to force GL Finish for debugging.
+// var stubTexture = new Uint8Array(5 * 5 * 4);
+// function readPixelStub(state) {
+//     var gl          = state.get('gl');
+//     var renderTarget = 'pointHitmapDownsampled';
+//     updateRenderTarget(state, renderTarget);
+
+//     var pixelreads = state.get('pixelreads');
+//     var texture = stubTexture;
+//     var readDims = {x: 0, y: 0, width: 5, height: 5};
+
+//     gl.readPixels(readDims.x, readDims.y, readDims.width, readDims.height,
+//                     gl.RGBA, gl.UNSIGNED_BYTE, texture);
+// }
 
 
 function renderItem(state, config, camera, gl, options, ext, programs, buffers, clearedFBOs, item) {
