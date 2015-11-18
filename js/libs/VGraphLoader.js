@@ -2,11 +2,9 @@
 
 var Q = require('q');
 var _ = require('underscore');
-var fs = require('fs');
 var pb = require('protobufjs');
 var path = require('path');
 
-var config  = require('config')();
 var util = require('../util.js');
 var weakcc = require('../weaklycc.js');
 var palettes = require('../palettes.js');
@@ -27,6 +25,7 @@ var EDGE   = pb_root.VectorGraph.AttributeTarget.EDGE;
 var decoders = {
     0: decode0
 }
+
 
 //introduce mapping names, and for each, how to send mapped buffer to NBody.js
 var attributeLoaders = function(graph) {
@@ -80,13 +79,6 @@ var attributeLoaders = function(graph) {
             target: EDGE,
             values: undefined
         },
-        edgeColor2: {
-            load: graph.setEdgeColors,
-            type: 'number',
-            default: graph.setEdgeColors,
-            target: EDGE,
-            values: undefined
-        },
         pointLabel: {
             load: graph.setPointLabels,
             type: 'string',
@@ -109,6 +101,174 @@ var attributeLoaders = function(graph) {
     };
 }
 
+
+var opentsdbMapper = {
+    mappings: {
+        pointTag: {
+            name: 'nodeTag'
+        },
+        edgeTag: {
+            name: 'edgeTag'
+        },
+        pointSize: {
+            name: 'degree',
+            transform: function (v) {
+                return normalize(logTransform(v), 5, Math.pow(2, 8))
+            }
+        },
+        pointTitle: {
+            name: 'label'
+        },
+        pointColor: {
+            name: 'community_spinglass',
+            transform: function (v) {
+                var palette = util.palettes.qual_palette2;
+                return util.int2color(normalize(v, 0, palette.length - 1), palette);
+            }
+        },
+        edgeColor: {
+            name: 'bytes',
+            transform: function (v) {
+                var palette = util.palettes.green2red_palette;
+                return util.int2color(normalize(logTransform(v), 0, palette.length - 1), palette);
+            }
+        },
+        edgeWeight: {
+            name: 'weight',
+            transform: function (v) {
+                return normalizeFloat(logTransform(v), 0.5, 1.5)
+            }
+        }
+    },
+}
+
+
+var misMapper = {
+    mappings: _.extend({}, opentsdbMapper.mappings, {
+        pointSize: {
+            name: 'betweeness',
+            transform: function (v) {
+                return normalize(v, 5, Math.pow(2, 8))
+            }
+        }
+    })
+}
+
+
+var defaultMapper = {
+    mappings: {
+        pointSize: {
+            name: 'pointSize',
+            transform: function (v) {
+                return normalize(v, 5, Math.pow(2, 8))
+            }
+        },
+        pointLabel: {
+            name: 'pointLabel'
+        },
+        edgeLabel: {
+            name: 'edgeLabel'
+        },
+        pointColor: {
+            name: 'pointColor',
+            transform: function (v) {
+                return _.map(v, function (cat) {
+                    return palettes.bindings[cat];
+                });
+            }
+        },
+        edgeColor: {
+            name: 'edgeColor',
+            transform: function (v) {
+                return _.map(v, function (cat) {
+                    return palettes.bindings[cat];
+                });
+            }
+        },
+        edgeHeight: {
+            name: 'edgeHeight'
+        },
+        pointTag: {
+            name: 'pointType',
+            transform: function (v) {
+                return normalize(v, 0, 2);
+            }
+        },
+        edgeTag: {
+            name: 'edgeType',
+            transform: function (v) {
+                return normalize(v, 0, 2);
+            }
+        },
+        edgeWeight: {
+            name: 'edgeWeight',
+            transform: function (v) {
+                return normalizeFloat(v, 0.5, 1.5)
+            }
+        }
+    }
+}
+
+
+var mappers = {
+    'opentsdb': opentsdbMapper,
+    'miserables': misMapper,
+    'splunk': defaultMapper,
+    'default': defaultMapper
+}
+
+
+
+function wrap(mappings, loaders) {
+    var res = {}
+    for (var a in loaders) {
+        if (a in mappings) {
+            var loader = loaders[a];
+            var mapping = mappings[a];
+
+            // Helper function to work around dubious JS scoping
+            doWrap(res, mapping, loader);
+
+            logger.trace('Mapping ' + mapping.name + ' to ' + a);
+        } else
+            res[a] = [loaders[a]];
+    }
+    return res;
+}
+
+
+function doWrap(res, mapping, loader) {
+    var mapped = res[mapping.name] || [];
+
+    if ('transform' in mapping) {
+        var oldLoad = loader.load;
+        loader.load = function (data) {
+            oldLoad(mapping.transform(data));
+        }
+    }
+
+    mapped.push(loader);
+    res[mapping.name] = mapped;
+}
+
+
+function runLoaders(loaders) {
+    var promises = _.map(loaders, function (loaderArray) {
+        return _.map(loaderArray, function (loader) {
+            if (loader.values) {
+                return loader.load(loader.values);
+            } else if (loader.default) {
+                return loader.default();
+            } else {
+                return Q();
+            }
+        });
+    });
+    var flatPromises = _.flatten(promises, true);
+    return Q.all(flatPromises);
+}
+
+
 /**
  * Load the raw data from the dataset object from S3
 **/
@@ -118,6 +278,7 @@ function load(graph, dataset) {
     graph.simulator.vgraph = vg;
     return decoders[vg.version](graph, vg, dataset.metadata);
 }
+
 
 function loadDataframe(graph, attrs, numPoints, numEdges) {
     var edgeAttrsList = _.filter(attrs, function (value) {
@@ -139,28 +300,12 @@ function loadDataframe(graph, attrs, numPoints, numEdges) {
     graph.dataframe.load(pointAttrs, 'point', numPoints);
 }
 
-function getAttributes(vg, attributes) {
-    var vectors = vg.string_vectors.concat(vg.int32_vectors, vg.double_vectors);
-    var attrs = [];
-    for (var i = 0; i < vectors.length; i++) {
-        var v = vectors[i];
-        if (v.values.length > 0 && (!attributes || attributes.length === 0 || attributes.indexOf(v.name) > -1) ) {
-            attrs.push({
-                name: v.name,
-                target : v.target,
-                type: typeof(v.values[0]),
-                values: v.values
-            });
-        }
-    }
-    return attrs;
-}
 
 function decode0(graph, vg, metadata)  {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
           vg.version, vg.name, vg.nvertices, vg.nedges);
 
-    var attrs = getAttributes(vg);
+    var attrs = getAttributes0(vg);
     loadDataframe(graph, attrs, vg.nvertices, vg.nedges);
     logger.debug('Graph has attribute: %o', _.pluck(attrs, 'name'));
     var vertices = [];
@@ -184,65 +329,7 @@ function decode0(graph, vg, metadata)  {
             vertices.push([xObj.values[i], yObj.values[i]]);
         }
     } else {
-        logger.trace('Running component analysis');
-
-        var components = weakcc(vg.nvertices, edges, 2);
-        var pointsPerRow = vg.nvertices / (Math.round(Math.sqrt(components.components.length)) + 1);
-
-        perf.startTiming('graph-viz:data:vgraphloader, weakcc postprocess');
-        var componentOffsets = [];
-        var cumulativePoints = 0;
-        var row = 0;
-        var col = 0;
-        var pointsInRow = 0;
-        var maxPointsInRow = 0;
-        var rowYOffset = 0;
-        var rollingMax = 0;
-        for (var i = 0; i < components.components.length; i++) {
-
-            maxPointsInRow = Math.max(maxPointsInRow, components.components[i].size);
-
-            componentOffsets.push({
-                rollingSum: cumulativePoints,
-                rowYOffset: rowYOffset,
-                rowRollingSum: pointsInRow,
-                rollingMaxInRow: maxPointsInRow,
-                row: row,
-                col: col
-            });
-
-            cumulativePoints += components.components[i].size;
-            if (pointsInRow > pointsPerRow) {
-                row++;
-                rowYOffset += maxPointsInRow;
-                col = 0;
-                pointsInRow = 0;
-                maxPointsInRow = 0;
-            } else {
-                col++;
-                pointsInRow += components.components[i].size;
-            }
-        }
-        for (var i = components.components.length - 1; i >= 0; i--) {
-            components.components[i].rowHeight =
-                Math.max(components.components[i].size,
-                    i + 1 < components.components.length
-                    && components.components[i+1].row == components.components[i].row ?
-                        components.components[i].rollingMaxInRow :
-                        0);
-        }
-
-        var initSize = 5 * Math.sqrt(vg.nvertices);
-        for (var i = 0; i < vg.nvertices; i++) {
-            var c = components.nodeToComponent[i];
-            var offset = componentOffsets[c];
-            var vertex = [ initSize * (offset.rowRollingSum + 0.9 * components.components[c].size * Math.random()) / vg.nvertices ];
-            for (var j = 1; j < dimensions.length; j++) {
-                vertex.push(initSize * (offset.rowYOffset + 0.9 * components.components[c].size * Math.random()) / vg.nvertices);
-            }
-            vertices.push(vertex);
-        }
-        perf.endTiming('graph-viz:data:vgraphloader, weakcc postprocess');
+        vertices = computeInitialPositions(vg.nvertices, edges, dimensions);
     }
 
     var loaders = attributeLoaders(graph);
@@ -276,8 +363,8 @@ function decode0(graph, vg, metadata)  {
     });
 
     // Create map from attribute name -> type
-    vg.attributeTypeMap = createAttributeTypeMap([[vg.string_vectors, 'string'],
-            [vg.int32_vectors, 'int32'], [vg.double_vectors, 'double']]);
+    //vg.attributeTypeMap = createAttributeTypeMap([[vg.string_vectors, 'string'],
+    //        [vg.int32_vectors, 'int32'], [vg.double_vectors, 'double']]);
 
 
     return graph.setVertices(vertices)
@@ -291,219 +378,99 @@ function decode0(graph, vg, metadata)  {
 }
 
 
-function getAttributeType (vg, attribute) {
-    return vg.attributeTypeMap[attribute];
-}
+function computeInitialPositions(nvertices, edges, dimensions) {
+    logger.trace('Running component analysis');
 
+    var components = weakcc(nvertices, edges, 2);
+    var pointsPerRow = nvertices / (Math.round(Math.sqrt(components.components.length)) + 1);
 
-function createAttributeTypeMap (pairs) {
-    var map = {};
-    _.each(pairs, function (pair) {
-        var vectors = pair[0];
-        var typeName = pair[1];
-        var attributes = _.pluck(vectors, 'name');
-        _.each(attributes, function (attr) {
-            map[attr] = typeName;
-        })
-    });
-    return map;
-}
+    perf.startTiming('graph-viz:data:vgraphloader, weakcc postprocess');
+    var componentOffsets = [];
+    var cumulativePoints = 0;
+    var row = 0;
+    var col = 0;
+    var pointsInRow = 0;
+    var maxPointsInRow = 0;
+    var rowYOffset = 0;
+    var vertices = [];
 
+    for (var i = 0; i < components.components.length; i++) {
+        maxPointsInRow = Math.max(maxPointsInRow, components.components[i].size);
 
-function runLoaders(loaders) {
-    var promises = _.map(loaders, function (loaderArray, aname) {
-        return _.map(loaderArray, function (loader) {
-            if (loader.values) {
-                return loader.load(loader.values);
-            } else if (loader.default) {
-                return loader.default();
-            } else {
-                return Q();
-            }
+        componentOffsets.push({
+            rollingSum: cumulativePoints,
+            rowYOffset: rowYOffset,
+            rowRollingSum: pointsInRow,
+            rollingMaxInRow: maxPointsInRow,
+            row: row,
+            col: col
         });
-    });
-    var flatPromises = _.flatten(promises, true);
-    return Q.all(flatPromises);
-}
 
-var testMapper = {
-    mappings: {
-        pointTag: {
-            name: 'nodeTag'
-        },
-        edgeTag: {
-            name: 'edgeTag'
-        },
-        pointSize: {
-            name: 'degree',
-            transform: function (v) {
-                return normalize(logTransform(v), 5, Math.pow(2, 8))
-            }
-        },
-        pointTitle: {
-            name: 'label'
-        },
-        pointColor: {
-            name: 'community_spinglass',
-            transform: function (v) {
-                var palette = util.palettes.qual_palette2;
-                return int2color(normalize(v, 0, palette.length - 1), palette);
-            }
-        },
-        edgeColor: {
-            name: 'bytes',
-            transform: function (v) {
-                var palette = util.palettes.green2red_palette;
-                return int2color(normalize(logTransform(v), 0, palette.length - 1), palette);
-            }
-        },
-        edgeWeight: {
-            name: 'weight',
-            transform: function (v) {
-                return normalizeFloat(logTransform(v), 0.5, 1.5)
-            }
-        }
-    },
-}
-
-var testMapperDemo = {
-    mappings: _.extend({}, testMapper.mappings, {
-        x: {
-            name: 'x'
-        },
-        y: {
-            name: 'y'
-        }
-    }),
-}
-
-var misMapper = {
-    mappings: _.extend({}, testMapper.mappings, {
-        pointSize: {
-            name: 'betweeness',
-            transform: function (v) {
-                return normalize(v, 5, Math.pow(2, 8))
-            }
-        }
-    })
-}
-
-var debugMapper = {
-    mappings: {
-        pointLabel: {
-            name: 'label'
-        },
-        pointSize: {
-            name: 'size'
-        }
-    },
-}
-
-var defaultMapper = {
-    mappings: {
-        pointSize: {
-            name: 'pointSize',
-            transform: function (v) {
-                return normalize(v, 5, Math.pow(2, 8))
-            }
-        },
-        pointLabel: {
-            name: 'pointLabel'
-        },
-        edgeLabel: {
-            name: 'edgeLabel'
-        },
-        pointColor: {
-            name: 'pointColor',
-            transform: function (v) {
-                return _.map(v, function (cat) {
-                    return palettes.bindings[cat];
-                });
-            }
-        },
-        edgeColor2: {
-            name: 'edgeColor2',
-            transform: function (v) {
-                var palette = util.palettes.qual_palette2;
-                return int2color(groupRoundAndClamp(v, 0, palette.length - 1), palette);
-            }
-        },
-        edgeColor: {
-            name: 'edgeColor',
-            transform: function (v) {
-                var palette = util.palettes.green2red_palette;
-                return int2color(normalize(v, 0, palette.length - 1), palette);
-            }
-        },
-        edgeHeight: {
-            name: 'edgeHeight'
-        },
-        pointTag: {
-            name: 'pointType',
-            transform: function (v) {
-                return normalize(v, 0, 2);
-            }
-        },
-        edgeTag: {
-            name: 'edgeType',
-            transform: function (v) {
-                return normalize(v, 0, 2);
-            }
-        },
-        edgeWeight: {
-            name: 'edgeWeight',
-            transform: function (v) {
-                return normalizeFloat(v, 0.5, 1.5)
-            }
+        cumulativePoints += components.components[i].size;
+        if (pointsInRow > pointsPerRow) {
+            row++;
+            rowYOffset += maxPointsInRow;
+            col = 0;
+            pointsInRow = 0;
+            maxPointsInRow = 0;
+        } else {
+            col++;
+            pointsInRow += components.components[i].size;
         }
     }
-}
-
-function wrap(mappings, loaders) {
-    var res = {}
-    for (var a in loaders) {
-        if (a in mappings) {
-            var loader = loaders[a];
-            var mapping = mappings[a];
-
-            // Helper function to work around dubious JS scoping
-            doWrap(res, mapping, loader);
-
-            logger.trace('Mapping ' + mapping.name + ' to ' + a);
-        } else
-            res[a] = [loaders[a]];
+    for (var i = components.components.length - 1; i >= 0; i--) {
+        components.components[i].rowHeight =
+            Math.max(components.components[i].size,
+                i + 1 < components.components.length
+                && components.components[i+1].row == components.components[i].row ?
+                    components.components[i].rollingMaxInRow :
+                    0);
     }
-    return res;
+
+    var initSize = 5 * Math.sqrt(nvertices);
+    for (var i = 0; i < nvertices; i++) {
+        var c = components.nodeToComponent[i];
+        var offset = componentOffsets[c];
+        var vertex = [ initSize * (offset.rowRollingSum + 0.9 * components.components[c].size * Math.random()) / nvertices ];
+        for (var j = 1; j < dimensions.length; j++) {
+            vertex.push(initSize * (offset.rowYOffset + 0.9 * components.components[c].size * Math.random()) / nvertices);
+        }
+        vertices.push(vertex);
+    }
+    perf.endTiming('graph-viz:data:vgraphloader, weakcc postprocess');
+    return vertices;
 }
 
-function doWrap(res, mapping, loader) {
-    var mapped = res[mapping.name] || [];
 
-    if ('transform' in mapping) {
-        var oldLoad = loader.load;
-        loader.load = function (data) {
-            oldLoad(mapping.transform(data));
+function getVectors0(vg) {
+    return vg.string_vectors.concat(vg.uint32_vectors, vg.double_vectors);
+}
+
+
+function getAttributes0(vg) {
+    var vectors = getVectors0(vg);
+    var attrs = [];
+    for (var i = 0; i < vectors.length; i++) {
+        var v = vectors[i];
+        if (v.values.length > 0) {
+            attrs.push({
+                name: v.name,
+                target : v.target,
+                type: typeof(v.values[0]),
+                values: v.values
+            });
         }
     }
-
-    mapped.push(loader);
-    res[mapping.name] = mapped;
+    return attrs;
 }
 
-var mappers = {
-    'opentsdb': testMapper,
-    'opentsdbDemo': testMapperDemo,
-    'miserables': misMapper,
-    'debug': debugMapper,
-    'splunk': defaultMapper,
-    'default': defaultMapper
-}
 
 function logTransform(values) {
     return _.map(values, function (val) {
         return val <= 0 ? 0 : Math.log(val);
     });
 }
+
 
 // rescale array of [a,b] range values to [minimum, maximum]
 function normalize(array, minimum, maximum) {
@@ -516,6 +483,7 @@ function normalize(array, minimum, maximum) {
     });
 }
 
+
 // rescale array of [a,b] range value to [minimum, maximum] with floats
 function normalizeFloat(array, minimum, maximum) {
     var max = _.max(array);
@@ -527,21 +495,7 @@ function normalizeFloat(array, minimum, maximum) {
     });
 }
 
-// map values to integers between minimum and maximum
-function groupRoundAndClamp(array, minimum, maximum) {
-    return array.map(function (v) {
-        var x = Math.round(v);
-        return Math.max(minimum, Math.min(maximum, x));
-    });
-}
-
-var int2color = util.int2color;
 
 module.exports = {
-    load: load,
-    getAttributeType: getAttributeType,
-    types: {
-        VERTEX: VERTEX,
-        EDGE: EDGE
-    }
+    load: load
 };

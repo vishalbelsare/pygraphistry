@@ -36,8 +36,11 @@ ace.define('ace/mode/graphistry_highlight_rules',
                 'ISBLANK|ISEMPTY|STARTSWITH|ENDSWITH|CONTAINS|' +
                 'CONCAT|SPLIT|LOWER|UPPER|LEN|LENGTH|' +
                 'REPLACE|TRIM|LTRIM|RTRIM|' +
-                'INT|NUMBER|MAX|MIN|' + //SIGN|TRUNC|FLOOR|CEIL|ROUND|LOG|LN|LOG2|LOG10|EXP|
-                'COALESCE'
+                'INT|NUMBER|' +
+                'MAX|MIN|COALESCE|' +
+                'ABS|SIGN|TRUNC|FLOOR|CEIL|ROUND|' +
+                'LOG|LN|LOG2|LOG10|EXP|POW|' +
+                'SIN|COS|TAN|ASIN|ACOS|ATAN'
                 //'count|min|max|avg|sum|rank'
             );
 

@@ -135,7 +135,7 @@ var programs = {
         'textures': ['uSampler']
     }
 
-}
+};
 
 /* datasource can be either SERVER or CLIENT */
 
@@ -191,6 +191,30 @@ var hitmapDownScale = Math.min(textures.pointHitmapDownsampled.height,
  */
 var models = {
     'logicalEdges': {
+        'curIdx': {
+            'datasource': VBODataSources.HOST,
+            'index': true,
+            'type': 'UNSIGNED_INT',
+            'hint': DrawOptions.STATIC_DRAW,
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': false
+        }
+    },
+    'selectedPointIndexes': {
+        'curIdx': {
+            'datasource': VBODataSources.HOST,
+            'index': true,
+            'type': 'UNSIGNED_INT',
+            'hint': DrawOptions.STATIC_DRAW,
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': false
+        }
+    },
+    'selectedEdgeIndexes': {
         'curIdx': {
             'datasource': VBODataSources.HOST,
             'index': true,
@@ -687,7 +711,7 @@ var models = {
             'normalize': true
         }
     }
-}
+};
 
 var pointCulledUniforms = {
     'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
@@ -696,7 +720,7 @@ var pointCulledUniforms = {
     'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
     'maxPointSize': { 'uniformType': '1f', 'defaultValues': [50.0] },
     'minPointSize': { 'uniformType': '1f', 'defaultValues': [8.0] }
-}
+};
 
 var pickingGlOpts = {
     'clearColor': [[1, 1, 1, 0.0]],
@@ -734,6 +758,34 @@ var items = {
             'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
         },
         'index': ['logicalEdges', 'curIdx'],
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
+    'indexeddummySelectedEdgeIndexes': {
+        'program': 'edgeculled',
+        'triggers': [],
+        'bindings': {
+            'curPos': ['curPoints', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'index': ['selectedEdgeIndexes', 'curIdx'],
+        'drawType': 'LINES',
+        'glOptions': {}
+    },
+    'indexeddummySelectedPointIndexes': {
+        'program': 'edgeculled',
+        'triggers': [],
+        'bindings': {
+            'curPos': ['curPoints', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor']
+        },
+        'uniforms': {
+            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
+        },
+        'index': ['selectedPointIndexes', 'curIdx'],
         'drawType': 'LINES',
         'glOptions': {}
     },
@@ -1149,7 +1201,7 @@ var items = {
         'renderTarget': 'steadyStateTexture',
         'readTarget': true
     }
-}
+};
 
 var stdOptions = {
     'enable': [['BLEND'], ['DEPTH_TEST']],
@@ -1173,7 +1225,7 @@ var camera2D = {
     'bounds': {'top': -1, 'left': 0, 'bottom': 0, 'right': 1},
     'nearPlane': -1,
     'farPlane': 10
-}
+};
 
 var sceneGis = {
     'options': stdOptions,
@@ -1182,9 +1234,9 @@ var sceneGis = {
     //'numRenderedSplits':7 ,
     'render': ['pointpicking',  'pointsampling', 'uberdemoedges', 'edgepicking', 'arrowculled', 'arrowhighlight', 'arrowselected',
         'uberpointculled', 'edgehighlight', 'edgeselected', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'pointhighlight', 'pointselected', 'dummyheights',
-    'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
+    'indexeddummy', 'indexeddummy2', 'indexeddummySelectedEdgeIndexes', 'indexeddummySelectedPointIndexes', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
-}
+};
 
 var sceneArcs = {
     'options': stdOptions,
@@ -1196,7 +1248,7 @@ var sceneArcs = {
     'midedgeculled', 'edgepicking', 'dummyheights',
     'arrowculled', 'arrowhighlight', 'edgehighlight', 'arrowselected', 'edgeselected',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'pointhighlight', 'pointselected',
-    'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
+    'indexeddummy', 'indexeddummy2', 'indexeddummySelectedEdgeIndexes', 'indexeddummySelectedPointIndexes', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 };
 
@@ -1210,7 +1262,7 @@ var sceneTransparent = {
     'midedgeculled', 'edgepicking', 'dummyheights',
     'arrowculled', 'arrowhighlight', 'edgehighlight', 'arrowselected', 'edgeselected',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'pointhighlight', 'pointselected',
-    'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
+    'indexeddummy', 'indexeddummy2', 'indexeddummySelectedEdgeIndexes', 'indexeddummySelectedPointIndexes', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
 };
 
@@ -1223,16 +1275,16 @@ var sceneStraight = {
     'midedgeculled', 'edgepicking',
     'arrowculled', 'arrowhighlight', 'edgehighlight', 'arrowselected', 'edgeselected',
     'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'pointhighlight', 'pointselected',
-    'indexeddummy', 'indexeddummy2', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
+    'indexeddummy', 'indexeddummy2', 'indexeddummySelectedEdgeIndexes', 'indexeddummySelectedPointIndexes', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
     'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
-}
+};
 
 var scenes = {
     'default': sceneArcs,
     'transparent': sceneTransparent,
     'gis' : sceneGis,
     'netflowStraight': sceneStraight
-}
+};
 
 function saneProgram(program, progName) {
     _.each(['sources', 'attributes', 'camera', 'uniforms'], function (field) {
