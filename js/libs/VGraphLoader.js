@@ -443,7 +443,9 @@ function computeInitialPositions(nvertices, edges, dimensions) {
 
 
 function getVectors0(vg) {
-    return vg.string_vectors.concat(vg.uint32_vectors, vg.double_vectors);
+    return vg.string_vectors.concat(vg.uint32_vectors,
+                                    vg.int32_vectors,
+                                    vg.double_vectors);
 }
 
 
