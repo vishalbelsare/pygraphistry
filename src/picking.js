@@ -4,11 +4,15 @@
 var debug   = require('debug')('graphistry:StreamGL:picking');
 var _       = require('underscore');
 
+
+var MAX = 255 | (255 << 8) | (255 << 16);
+var dimensionBitMask = 1 << 23;
+
 /**
  * @param {Number} raw
  * @returns {VizSliceElement}
  */
-function decodeGpuIndex (raw) {
+function decodeGpuElement (raw) {
     // Sit down and grab a drink. This might take a while.
     //
     // By now, I'm sure you've realized that we're checking against
@@ -37,24 +41,34 @@ function decodeGpuIndex (raw) {
     // Dimension Bitmask            1 << 31                 1 << 23
     //
 
-
-    var MAX = 255 | (255 << 8) | (255 << 16);
-    var dimensionBitMask = 1 << 23;
-
-    // Set dimension based on highest bit flag
-    var dim = ((raw & dimensionBitMask) !== 0) ? 2 : 1;
-
     // Check if it's 0 or garbage data.
     if (raw === 0 || raw === MAX || raw === undefined) {
         return {dim: 0, idx: -1};
     }
 
-    // Unset any bit masks to get back to the actual number
-    var idx = raw & (~dimensionBitMask);
-    // Mask away alpha and decrement to get zero-based indices
-    idx = (idx & MAX) - 1;
+    return {dim: decodeGpuDim(raw), idx: decodeGpuIndex(raw)};
+}
 
-    return {dim: dim, idx: idx};
+// A function that decodes gpu color data into index
+function decodeGpuIndex (raw) {
+
+    // Check if it's 0 or garbage data.
+    if (raw === 0 || raw === MAX || raw === undefined) {
+        return -1;
+    }
+
+    var idx = raw & (~dimensionBitMask);
+    idx = (idx & MAX) - 1;
+    return idx;
+}
+
+// A function that decodes gpu color data into dimension (e.g., node vs edge)
+function decodeGpuDim (raw) {
+
+    // Set dimension based on highest bit flag
+    var dim = ((raw & dimensionBitMask) !== 0) ? 2 : 1;
+    return dim;
+
 }
 
 
@@ -69,7 +83,7 @@ function hitTest(maps, width, height, x, y, numRenderedSplits) {
     var canvasIdx = (height - y) * width + x;
     for (var i = 0; i < maps.length; i++) {
         var raw = maps[i][canvasIdx];
-        retObj = decodeGpuIndex(raw);
+        retObj = decodeGpuElement(raw);
         if (retObj.idx > -1) {
             if (retObj.dim === 2) {
                 retObj.idx = Math.floor(retObj.idx / (numRenderedSplits + 1));
@@ -156,5 +170,6 @@ module.exports = {
     hitTest: hitTest,
     hitTestCircumference: hitTestCircumference,
     hitTestN: hitTestN,
-    decodeGpuIndex: decodeGpuIndex
+    decodeGpuIndex: decodeGpuIndex,
+    decodeGpuElement: decodeGpuElement
 };

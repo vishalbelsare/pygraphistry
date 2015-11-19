@@ -30,20 +30,52 @@ function makeErrorHandler(name) {
 
 
 function markHits(samples32) {
-    var hits = {},
-        idx;
-    _.forEach(samples32, function(sample32) {
-        idx = picking.decodeGpuIndex(sample32).idx;
-        hits[idx] = {dim: 1, idx: idx};
-    });
+    var hits = {};
+    var idx = -1;
+
+    // Approach one (sort -> count)
+    // O(NlogN), but less slamming memory
+    var sortedSamples = samples32.sort();
+
+    var left = -1;
+    var right = -1;
+    var runningCount = 0;
+    for (var i = 0; i < sortedSamples.length; i++) {
+        idx = picking.decodeGpuIndex(sortedSamples[i]);
+        right = idx;
+        if (right === left) {
+            runningCount++;
+        } else {
+            hits[left] = runningCount;
+            left = right;
+            runningCount = 1;
+        }
+
+    }
+    hits[left] = runningCount;
+
+
+    // Approach two (straight count + incr)
+    // O(N), but slams memory
+
+    // for (var i = 0; i < samples32.length; i++) {
+    //     idx = picking.decodeGpuIndex(samples32[i]);
+    //     hits[idx] = hits[idx] ? hits[idx] + 1 : 1;
+    // }
+
+    // Remove misses (-1)
+    delete hits[-1];
+
     return hits;
 }
 
-function topHits(hits) {
-    var vals = _.keys(hits).map(function (v) { return parseInt(v); });
-    vals.sort();
-    vals = vals.slice(0, MAX_LABELS);
-    return vals;
+function sortedHits(hits) {
+    var indices = _.keys(hits);
+    var sortedIndices = indices.sort(function (a, b) {
+        return hits[b] - hits[a];
+    });
+
+    return sortedIndices;
 }
 
 //renderState * String -> {<idx> -> {dim: int}}
@@ -51,17 +83,15 @@ function topHits(hits) {
 function getActiveApprox(renderState, textureName) {
     var samples32 = new Uint32Array(renderState.get('pixelreads')[textureName].buffer);
     var hits = markHits(samples32);
-
-    //only use first MAX_LABEL (sort to make deterministic)
-    var vals = topHits(hits);
+    var sorted = sortedHits(hits);
 
     var res = {};
-    vals.forEach(function (v) {
-        if (v > -1) {
-            var key = cacheKey(v, 1);
-            res[key] = {idx: v, dim: 1};
-        }
-    });
+    var limit = Math.min(MAX_LABELS, sorted.length);
+    for (var i = 0; i < limit; i++) {
+        var idx = sorted[i];
+        var key = cacheKey(idx, 1);
+        res[key] = {idx: idx, dim: 1};
+    }
 
     return res;
 }
