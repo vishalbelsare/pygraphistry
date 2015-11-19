@@ -401,6 +401,21 @@ Dataframe.prototype.getAttributeMask = function (type, dataframeAttribute, filte
 };
 
 
+Dataframe.prototype.mapToAttribute = function (type, dataframeAttribute, func) {
+    var attr = this.rawdata.attributes[type][dataframeAttribute];
+    var results = _.map(attr.values, func);
+    if (type === 'edge') {
+        // Convert to sorted order
+        var map = this.rawdata.hostBuffers.forwardsEdges.edgePermutation;
+        for (var i = 0; i < results.length; i++) {
+            // FIXME
+            results[i] = results[map[i]];
+        }
+    }
+    return results;
+};
+
+
 /**
  * Returns sorted edge mask
  * @param {String} dataframeAttribute
