@@ -1010,6 +1010,17 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
                                     renderTask.readPixels, renderTask.callback);
                 });
                 renderQueue = {};
+
+                // If anything is selected, we need to do the copy to texture + darken
+                // TODO: Investigate performance of this.
+                if (lastMouseoverTask &&
+                        (lastMouseoverTask.data.selected.nodeIndices.length + lastMouseoverTask.data.selected.edgeIndices.length > 0)
+                ) {
+                    renderer.copyCanvasToTexture(renderState, 'steadyStateTexture');
+                    renderer.setupFullscreenBuffer(renderState);
+                    renderMouseoverEffects(that);
+                }
+
             }
         }
 
