@@ -177,9 +177,9 @@ var textures = {
         'path': 'test-colormap2.png'
     }
 };
-var hitmapScale = Math.min(textures.hitmap.height, textures.hitmap.width) / 100.0;
-var hitmapDownScale = Math.min(textures.pointHitmapDownsampled.height,
-                               textures.pointHitmapDownsampled.width) / 100.0;
+var hitmapScale = Math.min(textures.hitmap.height.value, textures.hitmap.width.value) / 100.0;
+var hitmapDownScale = Math.min(textures.pointHitmapDownsampled.height.value,
+                               textures.pointHitmapDownsampled.width.value) / 100.0;
 
 /**
  * These represent different kinds/roles of VBOs.
