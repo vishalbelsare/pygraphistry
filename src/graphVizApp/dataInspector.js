@@ -163,7 +163,7 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
                     if (sel.isEmpty()) {
                         sel = sel.newFrom([selection]);
                     } else {
-                        var newRangeStart = sel[sel.length - 1];
+                        //var newRangeStart = sel[sel.length - 1];
                         var newRange = [];
                         sel = sel.newAdding(newRange);
                     }
