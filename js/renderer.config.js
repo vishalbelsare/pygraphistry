@@ -172,10 +172,10 @@ var textures = {
     },
     'pointHitmapDownsampled': {
         'datasource': VBODataSources.CLIENT,
-        'width': {'unit': 'percent', 'value': 10},
-        'height': {'unit': 'percent', 'value': 10},
+        'width': {'unit': 'percent', 'value': 5},
+        'height': {'unit': 'percent', 'value': 5},
         'uniforms': {
-            'textureScalingFactor': 10 / 100.0,
+            'textureScalingFactor': 5 / 100.0,
         }
     },
     'colorMap': {
