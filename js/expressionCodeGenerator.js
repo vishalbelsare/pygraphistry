@@ -60,6 +60,14 @@ function literalExpressionFor (value) {
     return JSON.stringify(value);
 }
 
+var InputPropertiesByShape = {
+    BetweenPredicate: ['start', 'stop', 'value'],
+    BinaryExpression: ['left', 'right'],
+    UnaryExpression: ['argument'],
+    NotExpression: ['value'],
+    ListExpression: ['elements']
+};
+
 ExpressionCodeGenerator.prototype = {
     /**
      * Ref. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
@@ -292,6 +300,20 @@ ExpressionCodeGenerator.prototype = {
         return eval(source); // jshint ignore:line
     },
 
+    planNodeFunctionForAST: function (ast, inputNodes, bindings) {
+        var transformedAST = _.mapObject(ast, function (value, key) {
+            if (bindings.hasOwnProperty(key)) {
+                return {type: 'Identifier', name: 'this.' + key};
+            } else {
+                return value;
+            }
+        });
+        this.bindings = bindings;
+        var body = this.expressionStringForAST(transformedAST);
+        var source = 'function () { return ' + body + '; })';
+        return eval(source);
+    },
+
     /** Evaluate an expression immediately, with no access to any bindings. */
     evaluateExpressionFree: function (ast) {
         this.bindings = {};
@@ -359,8 +381,36 @@ ExpressionCodeGenerator.prototype = {
     },
 
     /**
+     * @return {String[]}
+     */
+    inputPropertiesFromAST: function (ast) {
+        switch (ast.type) {
+            case 'BetweenPredicate':
+                return InputPropertiesByShape.BetweenPredicate;
+            case 'RegexPredicate':
+            case 'LikePredicate':
+            case 'BinaryPredicate':
+            case 'BinaryExpression':
+                return InputPropertiesByShape.BinaryExpression;
+            case 'UnaryExpression':
+                return InputPropertiesByShape.UnaryExpression;
+            case 'CastExpression':
+            case 'NotExpression':
+                return InputPropertiesByShape.NotExpression;
+            case 'ListExpression':
+            case 'FunctionCall':
+                return InputPropertiesByShape.ListExpression;
+            case 'Literal':
+            case 'Identifier':
+                return undefined;
+            default:
+                throw new Error('Unrecognized type: ' + ast.type);
+        }
+    },
+
+    /**
      * Printed source form of the expression in JavaScript that executes the AST.
-     * @param {Object} ast - From expression parser.
+     * @param {ClientQueryAST} ast - From expression parser.
      * @param {Number} [depth] - Specifies depth, to use for pretty-printing/indents.
      * @param {Number} [outerPrecedence] - Surrounding expression precedence, determines whether result needs ().
      * @returns {String}
@@ -380,18 +430,18 @@ ExpressionCodeGenerator.prototype = {
                 return this.wrapSubExpressionPerPrecedences('!' + arg, precedence, outerPrecedence);
             case 'BetweenPredicate':
                 precedence = this.precedenceOf('&&');
-                args = _.map([ast.value, ast.start, ast.stop], function (arg) {
+                args = _.mapObject(_.pick(ast, InputPropertiesByShape.BetweenPredicate), function (arg) {
                     return this.expressionStringForAST(arg, depth + 1, this.precedenceOf('<='));
                 }, this);
-                subExprString = args[0] + ' >= ' + args[1] +
-                    ' && ' + args[0] + ' <= ' + args[2];
+                subExprString = args.value + ' >= ' + args.start +
+                    ' && ' + args.value + ' <= ' + args.stop;
                 return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
             case 'RegexPredicate':
                 precedence = this.precedenceOf('.');
-                args = _.map([ast.left, ast.right], function (arg) {
+                args = _.mapObject(_.pick(ast, InputPropertiesByShape.BinaryExpression), function (arg) {
                     return this.expressionStringForAST(arg, depth + 1, this.precedenceOf('<='));
                 }, this);
-                subExprString = '(new RegExp(' + args[1] + ')).test(' + args[0] + ')';
+                subExprString = '(new RegExp(' + args.right + ')).test(' + args.left + ')';
                 return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
             case 'LikePredicate':
                 if (ast.right.type !== 'Literal') {
