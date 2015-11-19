@@ -157,7 +157,10 @@ var textures = {
     'hitmap': {
         'datasource': VBODataSources.CLIENT,
         'width': {'unit': 'percent', 'value': 25},
-        'height': {'unit': 'percent', 'value': 25}
+        'height': {'unit': 'percent', 'value': 25},
+        'uniforms': {
+            'textureScalingFactor': 25 / 100.0,
+        }
     },
     'pointTexture': {
         'datasource': VBODataSources.CLIENT,
@@ -169,17 +172,19 @@ var textures = {
     },
     'pointHitmapDownsampled': {
         'datasource': VBODataSources.CLIENT,
-        'width': {'unit': 'percent', 'value': 5},
-        'height': {'unit': 'percent', 'value': 5}
+        'width': {'unit': 'percent', 'value': 10},
+        'height': {'unit': 'percent', 'value': 10},
+        'uniforms': {
+            'textureScalingFactor': 10 / 100.0,
+        }
     },
     'colorMap': {
         'datasource': VBODataSources.SERVER,
         'path': 'test-colormap2.png'
     }
 };
-var hitmapScale = Math.min(textures.hitmap.height.value, textures.hitmap.width.value) / 100.0;
-var hitmapDownScale = Math.min(textures.pointHitmapDownsampled.height.value,
-                               textures.pointHitmapDownsampled.width.value) / 100.0;
+var hitmapScale = textures.hitmap.uniforms.textureScalingFactor;
+var hitmapDownScale = textures.pointHitmapDownsampled.uniforms.textureScalingFactor;
 
 /**
  * These represent different kinds/roles of VBOs.
