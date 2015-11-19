@@ -1,9 +1,4 @@
 'use strict';
-
-var debug   = require('debug')('graphistry:StreamGL:graphVizApp:highlight');
-var $       = window.$;
-var Rx      = require('rx');
-              require('../rx-jquery-stub');
 var _       = require('underscore');
 
 var util            = require('./util.js');
