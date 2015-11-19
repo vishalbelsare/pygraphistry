@@ -16,8 +16,9 @@ var Rx          = require('rx');
 var picking     = require('./picking.js');
 
 //0--1: the closer to 1, the more likely that unsampled points disappear
-var APPROX = 0.3;
+var APPROX = 0.5;
 var MAX_LABELS = 20;
+var TIME_BETWEEN_SAMPLES = 300; // ms
 
 
 function makeErrorHandler(name) {
@@ -78,9 +79,23 @@ function sortedHits(hits) {
     return sortedIndices;
 }
 
+
+// POI choosing new ones should be throttled to a reasonable amount.
+// This is going in POI hit checking to avoid having to manage outside.
+var lastRes = {};
+var timeOfLastRes = 0;
+
 //renderState * String -> {<idx> -> {dim: int}}
 //dict of points that are on screen -- approx may skip some
-function getActiveApprox(renderState, textureName) {
+function getActiveApprox(renderState, textureName, forceResample) {
+
+    // If it hasn't been long enough, just return last hits.
+    if (!forceResample && Date.now() - timeOfLastRes < TIME_BETWEEN_SAMPLES) {
+        // Clone because we might want to mutate this later
+        return _.clone(lastRes);
+    }
+
+
     var samples32 = new Uint32Array(renderState.get('pixelreads')[textureName].buffer);
     var hits = markHits(samples32);
     var sorted = sortedHits(hits);
@@ -93,6 +108,9 @@ function getActiveApprox(renderState, textureName) {
         res[key] = {idx: idx, dim: 1};
     }
 
+
+    lastRes = _.clone(res);
+    timeOfLastRes = Date.now();
     return res;
 }
 

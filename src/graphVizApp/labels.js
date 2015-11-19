@@ -200,7 +200,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, se
     // Get hits from POI if it's enabled, and add highlighted/selected after
     var hits = {};
     if (poiIsEnabled) {
-        hits = poi.getActiveApprox(appState.renderState, 'pointHitmapDownsampled');
+        hits = poi.getActiveApprox(appState.renderState, 'pointHitmapDownsampled', false);
     }
 
     _.each([elementsToHighlight, elementsToExpand], function (set) {
