@@ -598,6 +598,7 @@ function renderSlowEffects(renderingScheduler) {
 
     // TODO: Make steadyStateTextureDark instead of just doing it in the shader.
     renderer.copyCanvasToTexture(renderState, 'steadyStateTexture');
+    renderer.setupFullscreenBuffer(renderState);
     renderMouseoverEffects(renderingScheduler);
 }
 
@@ -848,7 +849,6 @@ function renderMouseoverEffects(renderingScheduler, task) {
     var shouldDarken = selectedEdgeIndices.length > 0 || selectedNodeIndices.length > 0;
     var renderTrigger = shouldDarken ? 'highlightDark' : 'highlight';
 
-    renderer.setupFullscreenBuffer(renderState);
     renderer.setCamera(renderState);
     renderer.render(renderState, renderTrigger, renderTrigger);
 }
