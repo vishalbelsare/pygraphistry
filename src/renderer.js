@@ -1033,6 +1033,19 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
 //                     gl.RGBA, gl.UNSIGNED_BYTE, texture);
 // }
 
+function setTextureUniforms(state, config, itemDef, renderTarget) {
+    if (!renderTarget || renderTarget === 'CANVAS') {
+        return;
+    }
+
+    var uniformsToSet = config.textures[renderTarget].uniforms;
+    if (uniformsToSet) {
+        _.each(uniformsToSet, function (val, key) {
+            setUniform(state, key, val);
+        });
+    }
+}
+
 
 function renderItem(state, config, camera, gl, options, ext, programs, buffers, clearedFBOs, item) {
     var itemDef = config.items[item];
@@ -1043,9 +1056,14 @@ function renderItem(state, config, camera, gl, options, ext, programs, buffers, 
 
     updateRenderTarget(state, renderTarget);
 
+
     //change viewport in case of downsampled target
     var dims = getTextureDims(config, gl.canvas, camera, renderTarget);
     gl.viewport(0, 0, dims.width, dims.height);
+
+    //set uniforms for downsampled targets
+    setTextureUniforms(state, config, itemDef, renderTarget);
+
 
     if (!clearedFBOs[renderTarget]) {
         debug('  clearing render target', renderTarget);
