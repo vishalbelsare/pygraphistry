@@ -292,7 +292,9 @@ function effectLabels(toClear, labels, newPos, highlighted, clicked, poi) {
         rawElt.style.display = 'none';
     });
 
-    labels.forEach(function (elt, i) {
+    // For each label move it
+    for (var i = 0; i < labels.length; i++) {
+        var elt = labels[i];
         // This is a very frequently occuring loop, so we avoid using
         // Jquery css methods here, which can be expensive.
         //
@@ -303,7 +305,9 @@ function effectLabels(toClear, labels, newPos, highlighted, clicked, poi) {
 
         elt.elt.removeClass('on');
         elt.elt.removeClass('clicked');
-    });
+
+        rawElt.style.display = 'block';
+    }
 
     highlighted.forEach(function (label) {
         if (label.idx > -1) {
@@ -319,12 +323,6 @@ function effectLabels(toClear, labels, newPos, highlighted, clicked, poi) {
             poi.state.activeLabels[cacheKey].elt.toggleClass('clicked', true);
         }
     });
-
-    labels.forEach(function (lbl) {
-        var rawElt = lbl.elt[0];
-        rawElt.style.display = 'block';
-    });
-
 }
 
 // Coords are in canvas space.
