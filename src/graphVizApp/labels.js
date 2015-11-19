@@ -288,11 +288,19 @@ function effectLabels(toClear, labels, newPos, highlighted, clicked, poi) {
 
     // DOM effects: disable old, then move->enable new
     toClear.forEach(function (lbl) {
-        lbl.elt.css('display', 'none');
+        var rawElt = lbl.elt[0];
+        rawElt.style.display = 'none';
     });
 
     labels.forEach(function (elt, i) {
-        elt.elt.css('left', newPos[2 * i]).css('top', newPos[2 * i + 1]);
+        // This is a very frequently occuring loop, so we avoid using
+        // Jquery css methods here, which can be expensive.
+        //
+        // Jquery class methods aren't too slow, so we'll keep using for convenience.
+        var rawElt = elt.elt[0];
+        rawElt.style.left = String(newPos[2*i]) + 'px';
+        rawElt.style.top = String(newPos[2*i + 1]) + 'px';
+
         elt.elt.removeClass('on');
         elt.elt.removeClass('clicked');
     });
@@ -313,7 +321,8 @@ function effectLabels(toClear, labels, newPos, highlighted, clicked, poi) {
     });
 
     labels.forEach(function (lbl) {
-        lbl.elt.css('display', 'block');
+        var rawElt = lbl.elt[0];
+        rawElt.style.display = 'block';
     });
 
 }
