@@ -65,8 +65,10 @@ function etl(msg, params) {
     return Q.all(qDatasources).then(function (datasources) {
         desc.datasources = datasources;
         logger.debug('Dataset', desc);
+        var nnodes = msg.metadata.nvertices || '?';
+        var nedges = msg.metadata.nedges || '?';
         return uploadJSON(desc, sprintf('%s/dataset.json', folder)).then(function (url) {
-            return {name: url, nnodes: '?', nedges: '?'};
+            return {name: url, nnodes: nnodes, nedges: nedges};
         });
     });
 }
