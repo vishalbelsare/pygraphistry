@@ -617,17 +617,17 @@ SetsPanel.prototype = {
     highlightSetModels: function (setModels) {
         this.latestHighlightedObject.onNext(this.vizSliceFromSetModels(setModels));
         if (setModels.length === 0 || _.any(setModels, function (vizSet) { return !vizSet.isConcrete(); })) {
-            var set_ids = _.map(setModels, function (setModel) { return setModel.id; });
+            var setIDs = _.map(setModels, function (setModel) { return setModel.id; });
             if (true) { return; }
-            this.commands.highlight.sendWithObservableResult({gesture: 'sets', action: 'replace', set_ids: set_ids});
+            this.commands.highlight.sendWithObservableResult({gesture: 'sets', action: 'replace', set_ids: setIDs});
         }
     },
 
     selectSetModels: function (setModels) {
         this.activeSelection.onNext(this.vizSliceFromSetModels(setModels));
         if (setModels.length === 0 || _.any(setModels, function (vizSet) { return !vizSet.isConcrete(); })) {
-            var set_ids = _.map(setModels, function (setModel) { return setModel.id; });
-            this.commands.select.sendWithObservableResult({gesture: 'sets', action: 'replace', set_ids: set_ids});
+            var setIDs = _.map(setModels, function (setModel) { return setModel.id; });
+            this.commands.select.sendWithObservableResult({gesture: 'sets', action: 'replace', set_ids: setIDs});
         }
     }
 };
