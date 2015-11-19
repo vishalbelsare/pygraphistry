@@ -63,9 +63,13 @@ function setupDrag($eventTarget, camera, appState) {
                 .distinctUntilChanged(function(pos) { return {x: pos.pageX, y: pos.pageY}; })
                 .scan(function(accPos, curPos) {
                     // Calculate the distance moved (since last event) for each move event
+
+                    // Use raw dom element to get height/width for perf reasons.
+                    var rawTarget = $eventTarget[0];
+
                     return {
-                        deltaX: (curPos.pageX - accPos.x) / $eventTarget.width(),
-                        deltaY: (curPos.pageY - accPos.y) / $eventTarget.height(),
+                        deltaX: (curPos.pageX - accPos.x) / rawTarget.offsetWidth,
+                        deltaY: (curPos.pageY - accPos.y) / rawTarget.offsetHeight,
                         x: curPos.pageX,
                         y: curPos.pageY
                     };
