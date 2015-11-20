@@ -166,14 +166,14 @@ ExpressionCodeGenerator.prototype = {
      * @returns {String}
      */
     translateOperator: function (operatorString) {
-        switch (operatorString.toLowerCase()) {
-            case 'and':
+        switch (operatorString.toUpperCase()) {
+            case 'AND':
                 return '&&';
-            case 'or':
+            case 'OR':
                 return '||';
-            case 'not':
+            case 'NOT':
                 return '!';
-            case 'is':
+            case 'IS':
             case '=':
             case '==':
                 return '===';
@@ -423,11 +423,11 @@ ExpressionCodeGenerator.prototype = {
                 args = _.mapObject(_.pick(ast, InputPropertiesByShape.BinaryExpression), function (arg, key) {
                     return this.expressionStringForAST({type: 'Identifier', name: key}, depth + 1, precedence);
                 }, this);
-                switch (ast.operator.toLowerCase()) {
-                    case 'and':
+                switch (ast.operator.toUpperCase()) {
+                    case 'AND':
                         subExprString = args.left + '.intersection(' + args.right + ')';
                         return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
-                    case 'or':
+                    case 'OR':
                         subExprString = args.left + '.union(' + args.right + ')';
                         return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
                 }
@@ -521,7 +521,7 @@ ExpressionCodeGenerator.prototype = {
             case 'BinaryPredicate':
             case 'BinaryExpression':
                 // Maybe InExpression would be a better logic branch:
-                if (ast.operator.toLowerCase() === 'in') {
+                if (ast.operator.toUpperCase() === 'IN') {
                     args = _.map([ast.left, ast.right], function (arg) {
                         return this.expressionStringForAST(arg, depth + 1, precedence);
                     }, this);
