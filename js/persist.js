@@ -96,42 +96,43 @@ function ContentSchema(prefixPath, options) {
     this.prefixPath = prefixPath || '';
 }
 
-ContentSchema.prototype.pathForWorkbookSpecifier = function (workbookName) {
-    return path.join(this.prefixPath, 'Workbooks', workbookName, '/');
-};
+ContentSchema.prototype = {
+    pathForWorkbookSpecifier: function (workbookName) {
+        return path.join(this.prefixPath, 'Workbooks', workbookName, '/');
+    },
 
-ContentSchema.prototype.subSchemaForWorkbook = function (workbookName) {
-    return new ContentSchema(this.pathForWorkbookSpecifier(workbookName), this.options);
-};
+    subSchemaForWorkbook: function (workbookName) {
+        return new ContentSchema(this.pathForWorkbookSpecifier(workbookName), this.options);
+    },
 
-ContentSchema.prototype.pathForStaticContentKey = function (snapshotName) {
-    return path.join(this.prefixPath, 'Static', snapshotName, '/');
-};
+    pathForStaticContentKey: function (snapshotName) {
+        return path.join(this.prefixPath, 'Static', snapshotName, '/');
+    },
 
-ContentSchema.prototype.subSchemaForStaticContentKey = function (snapshotName) {
-    return new ContentSchema(this.pathForStaticContentKey(snapshotName), this.options);
-};
+    subSchemaForStaticContentKey: function (snapshotName) {
+        return new ContentSchema(this.pathForStaticContentKey(snapshotName), this.options);
+    },
 
-ContentSchema.prototype.pathFor = function (subPath) {
-    return path.join(this.prefixPath, subPath || '');
-};
+    pathFor: function (subPath) {
+        return path.join(this.prefixPath, subPath || '');
+    },
 
-ContentSchema.prototype.getURL = function (subPath) {
-    return new S3URLEncoder(this.pathFor(subPath));
-};
+    getURL: function (subPath) {
+        return new S3URLEncoder(this.pathFor(subPath));
+    },
 
-ContentSchema.prototype.uploadPublic = function (subPath, buffer, params) {
-    var uploadParams = _.extend(params || {}, {acl: 'public-read'});
-    return this.uploadToS3(subPath, buffer, uploadParams);
-};
+    uploadPublic: function (subPath, buffer, params) {
+        var uploadParams = _.extend(params || {}, {acl: 'public-read'});
+        return this.uploadToS3(subPath, buffer, uploadParams);
+    },
 
-ContentSchema.prototype.uploadToS3 = function (subPath, buffer, uploadParams) {
-    return s3.upload(this.options.S3, this.options.BUCKET, {name: this.pathFor(subPath)}, buffer, uploadParams);
-};
+    uploadToS3: function (subPath, buffer, uploadParams) {
+        return s3.upload(this.options.S3, this.options.BUCKET, {name: this.pathFor(subPath)}, buffer, uploadParams);
+    },
 
-
-ContentSchema.prototype.download = function (subPath) {
-    return s3.download(this.options.S3, this.options.BUCKET, this.pathFor(subPath), {expectCompressed: true});
+    download: function (subPath) {
+        return s3.download(this.options.S3, this.options.BUCKET, this.pathFor(subPath), {expectCompressed: true});
+    }
 };
 
 
