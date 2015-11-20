@@ -9,6 +9,7 @@ var log = require('common/logger.js');
 var logger = log.createLogger('graph-viz:dataframe');
 
 var ExpressionCodeGenerator = require('./expressionCodeGenerator');
+var ExpressionPlan = require('./ExpressionPlan.js');
 var DataframeMask = require('./DataframeMask.js');
 
 var baseDirPath = __dirname + '/../assets/dataframe/';
@@ -363,6 +364,18 @@ Dataframe.prototype.filterFuncForQueryObject = function (query) {
         }
     }
     return filterFunc;
+};
+
+
+/**
+ * @param {ClientQuery} query
+ * @returns {ExpressionPlan}
+ */
+Dataframe.prototype.planForQueryObject = function (query) {
+    if (query.ast === undefined) {
+        return undefined;
+    }
+    return new ExpressionPlan(this, query.ast);
 };
 
 
