@@ -616,7 +616,7 @@ ExpressionCodeGenerator.prototype = {
                         contextProperty = unsafeInputNameWord;
                     }
                     return this.wrapSubExpressionPerPrecedences(
-                        'this[' + literalExpressionFor(contextProperty) + ']',
+                        'this.' + contextProperty,
                         this.precedenceOf('['), outerPrecedence);
                 }
                 return 'value';
