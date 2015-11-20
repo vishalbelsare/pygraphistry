@@ -292,11 +292,11 @@ ExpressionCodeGenerator.prototype = {
         this.bindings = bindings;
         var body = this.expressionStringForAST(ast);
         if (this.hasMultipleBindings()) {
-            source = '(function (context) { return ' + body + '; })';
+            source = '(function () { return ' + body + '; })';
         } else {
             source = '(function (value) { return ' + body + '; })';
         }
-        logger.warn(source);
+        logger.warn('Evaluating (multi-column)', source);
         return eval(source); // jshint ignore:line
     },
 
@@ -309,9 +309,10 @@ ExpressionCodeGenerator.prototype = {
             }
         });
         this.bindings = bindings;
-        var body = this.expressionStringForAST(transformedAST);
-        var source = 'function () { return ' + body + '; })';
-        return eval(source);
+        var body = this.planNodeExpressionStringForAST(transformedAST);
+        var source = '(function () { return ' + body + '; })';
+        logger.warn('Evaluating (multi-column)', source);
+        return eval(source); // jshint ignore:line
     },
 
     /** Evaluate an expression immediately, with no access to any bindings. */
@@ -405,6 +406,36 @@ ExpressionCodeGenerator.prototype = {
                 return undefined;
             default:
                 throw new Error('Unrecognized type: ' + ast.type);
+        }
+    },
+
+    planNodeExpressionStringForAST: function (ast, depth, outerPrecedence) {
+        if (depth === undefined) {
+            depth = 0;
+        }
+        var precedence = this.precedenceOf('.'), subExprString, args, arg;
+        switch (ast.type) {
+            case 'NotExpression':
+                arg = this.expressionStringForAST({type: 'Identifier', name: 'value'}, depth + 1, precedence);
+                subExprString = arg + '.complement()';
+                return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
+            case 'BinaryPredicate':
+                args = _.mapObject(_.pick(ast, InputPropertiesByShape.BinaryExpression), function (arg, key) {
+                    return this.expressionStringForAST({type: 'Identifier', name: key}, depth + 1, precedence);
+                }, this);
+                switch (ast.operator.toLowerCase()) {
+                    case 'and':
+                        subExprString = args.left + '.intersection(' + args.right + ')';
+                        return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
+                    case 'or':
+                        subExprString = args.left + '.union(' + args.right + ')';
+                        return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
+                }
+                break;
+            case 'Literal':
+                return literalExpressionFor(ast.value);
+            default:
+                throw new Error('Unhandled expression type for planning: ' + ast.type);
         }
     },
 
@@ -563,7 +594,7 @@ ExpressionCodeGenerator.prototype = {
                 if (this.hasMultipleBindings()) {
                     var unsafeInputName = ast.name;
                     // Delete all non-word characters, but keep colons and dots.
-                    var unsafeInputNameWord = unsafeInputName.replace(/[^\W:.]/, '');
+                    var unsafeInputNameWord = unsafeInputName.replace(/[^\w:]/, '', 'g');
                     var unsafeInputParts = unsafeInputNameWord.split(/:/);
                     var scope = this.bindings;
                     if (unsafeInputParts.length === 0) {
@@ -581,8 +612,11 @@ ExpressionCodeGenerator.prototype = {
                     }
                     var lastInputPart = unsafeInputParts[unsafeInputParts.length - 1];
                     var contextProperty = scope[lastInputPart];
+                    if (contextProperty === undefined) {
+                        contextProperty = unsafeInputNameWord;
+                    }
                     return this.wrapSubExpressionPerPrecedences(
-                        'context[' + literalExpressionFor(contextProperty) + ']',
+                        'this[' + literalExpressionFor(contextProperty) + ']',
                         this.precedenceOf('['), outerPrecedence);
                 }
                 return 'value';
