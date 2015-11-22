@@ -65,7 +65,8 @@ var InputPropertiesByShape = {
     BinaryExpression: ['left', 'right'],
     UnaryExpression: ['argument'],
     NotExpression: ['value'],
-    ListExpression: ['elements']
+    ListExpression: ['elements'],
+    FunctionCall: ['arguments']
 };
 
 ExpressionCodeGenerator.prototype = {
@@ -400,8 +401,9 @@ ExpressionCodeGenerator.prototype = {
             case 'NotExpression':
                 return InputPropertiesByShape.NotExpression;
             case 'ListExpression':
-            case 'FunctionCall':
                 return InputPropertiesByShape.ListExpression;
+            case 'FunctionCall':
+                return InputPropertiesByShape.FunctionCall;
             case 'Literal':
             case 'Identifier':
                 return undefined;
@@ -597,10 +599,10 @@ ExpressionCodeGenerator.prototype = {
                     // Delete all non-word characters, but keep colons and dots.
                     var inputName = unsafeInputName.replace(/[^\w:]/, '', 'g');
                     var inputNameParts = inputName.split(/:/);
-                    var scope = this.bindings;
                     if (inputNameParts.length === 0) {
                         return 'undefined';
                     }
+                    var scope = this.bindings;
                     if (inputNameParts.length > 1) {
                         switch (inputNameParts[0]) {
                             case 'point':
