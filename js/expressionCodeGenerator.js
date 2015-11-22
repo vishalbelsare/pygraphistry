@@ -293,10 +293,11 @@ ExpressionCodeGenerator.prototype = {
         var body = this.expressionStringForAST(ast);
         if (this.hasMultipleBindings()) {
             source = '(function () { return ' + body + '; })';
+            logger.warn('Evaluating (multi-column)', source);
         } else {
             source = '(function (value) { return ' + body + '; })';
+            logger.warn('Evaluating (single-column)', source);
         }
-        logger.warn('Evaluating (multi-column)', source);
         return eval(source); // jshint ignore:line
     },
 
@@ -594,14 +595,14 @@ ExpressionCodeGenerator.prototype = {
                 if (this.hasMultipleBindings()) {
                     var unsafeInputName = ast.name;
                     // Delete all non-word characters, but keep colons and dots.
-                    var unsafeInputNameWord = unsafeInputName.replace(/[^\w:]/, '', 'g');
-                    var unsafeInputParts = unsafeInputNameWord.split(/:/);
+                    var inputName = unsafeInputName.replace(/[^\w:]/, '', 'g');
+                    var inputNameParts = inputName.split(/:/);
                     var scope = this.bindings;
-                    if (unsafeInputParts.length === 0) {
+                    if (inputNameParts.length === 0) {
                         return 'undefined';
                     }
-                    if (unsafeInputParts.length > 1) {
-                        switch (unsafeInputParts[0]) {
+                    if (inputNameParts.length > 1) {
+                        switch (inputNameParts[0]) {
                             case 'point':
                                 scope = scope.point;
                                 break;
@@ -610,10 +611,10 @@ ExpressionCodeGenerator.prototype = {
                                 break;
                         }
                     }
-                    var lastInputPart = unsafeInputParts[unsafeInputParts.length - 1];
+                    var lastInputPart = inputNameParts[inputNameParts.length - 1];
                     var contextProperty = scope[lastInputPart];
                     if (contextProperty === undefined) {
-                        contextProperty = unsafeInputNameWord;
+                        contextProperty = inputName;
                     }
                     return this.wrapSubExpressionPerPrecedences(
                         'this.' + contextProperty,
