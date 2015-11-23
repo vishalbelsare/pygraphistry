@@ -55,6 +55,24 @@ PlanNode.prototype = {
     },
 
     /**
+     * This recursively builds a hash by name of nodes in the plan representing separate identifiers.
+     * @param {Object} result
+     * @returns {Object}
+     */
+    identifierNodes: function (result) {
+        if (result === undefined) { result = {}; }
+        if (this.ast.type === 'Identifier') {
+            var identifierName = this.ast.name;
+            if (result[identifierName] === undefined) { result[identifierName] = []; }
+            result[identifierName].push(this);
+        }
+        _.mapObject(this.inputNodes, function (inputNode) {
+            inputNode.identifierNodes(result);
+        });
+        return result;
+    },
+
+    /**
      * This recursively counts identifiers in the input nodes' ASTs.
      * @returns {number}
      */
@@ -123,7 +141,7 @@ ExpressionPlan.prototype = {
     },
 
     /**
-     * @param ast
+     * @param {ClientQueryAST} ast
      * @param {PlanNode[]} inputNodes
      * @returns {PlanNode}
      */
@@ -149,13 +167,9 @@ ExpressionPlan.prototype = {
     /**
      *
      * @param {ClientQueryAST} ast - From expression parser.
-     * @param {Object} jobs - List of AST sub-parts collected so far, an array keyed by identifier.
      * @return {PlanNode}
      */
-    planFromAST: function (ast, jobs) {
-        if (jobs === undefined) {
-            jobs = [];
-        }
+    planFromAST: function (ast) {
         switch (ast.type) {
             case 'Literal':
             case 'Identifier':
@@ -164,7 +178,7 @@ ExpressionPlan.prototype = {
         var inputProperties = this.codeGenerator.inputPropertiesFromAST(ast);
         if (inputProperties !== undefined) {
             var inputResults = _.mapObject(_.pick(ast, inputProperties), function (inputAST) {
-                return this.planFromAST(inputAST, jobs);
+                return this.planFromAST(inputAST);
             }.bind(this));
             return this.combinePlanNodes(ast, inputResults);
         }
