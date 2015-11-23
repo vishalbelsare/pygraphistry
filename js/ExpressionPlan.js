@@ -4,8 +4,8 @@ var _ = require('underscore');
 var ExpressionCodeGenerator = require('./expressionCodeGenerator.js');
 
 var ReturnTypes = {
-    Positions: 'Positions',
-    Values: 'Values'
+    Positions: 'Positions', // Signifies a predicate, effectively returning a boolean value.
+    Values: 'Values' // Signifies an expression returning a value.
 };
 
 function PlanNode(ast, inputNodes, attributeName) {
