@@ -28,13 +28,18 @@ PlanNode.prototype = {
 
     /**
      * @param {Dataframe} dataframe
+     * @param {Boolean} valuesRequired
      * @returns {Array|DataframeMask}
      */
-    execute: function (dataframe) {
+    execute: function (dataframe, valuesRequired) {
         var results;
         if (this.canRunOnOneColumn()) {
             var normalization = dataframe.normalizeAttributeName(this.attributeName);
-            switch (this.returnType()) {
+            var returnType = this.returnType();
+            if (valuesRequired && returnType === ReturnTypes.Positions) {
+                returnType = ReturnTypes.Values;
+            }
+            switch (returnType) {
                 case ReturnTypes.Positions:
                     results = dataframe.getAttributeMask(normalization.type, normalization.attribute, this.executor);
                     break;
@@ -43,11 +48,11 @@ PlanNode.prototype = {
                     break;
             }
         } else {
-            var valuesRequired = _.any(this.inputNodes, function (inputNode) {
+            valuesRequired = _.any(this.inputNodes, function (inputNode) {
                 return inputNode.returnType() === ReturnTypes.Values;
             });
             var inputResults = _.mapObject(this.inputNodes, function (inputNode) {
-                return inputNode.execute(dataframe);
+                return inputNode.execute(dataframe, valuesRequired);
             });
             results = this.executor.call(inputResults);
         }
