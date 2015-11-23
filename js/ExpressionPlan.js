@@ -8,10 +8,16 @@ var ReturnTypes = {
     Values: 'Values' // Signifies an expression returning a value.
 };
 
-function PlanNode(ast, inputNodes, attributeName) {
+/**
+ * @param {ClientQueryAST} ast
+ * @param {PlanNode[]} inputNodes
+ * @param {AttributeName} attributeData
+ * @constructor
+ */
+function PlanNode(ast, inputNodes, attributeData) {
     this.ast = ast;
     this.inputNodes = inputNodes || [];
-    this.attributeName = attributeName;
+    this.attributeData = attributeData;
 }
 
 PlanNode.prototype = {
@@ -34,17 +40,17 @@ PlanNode.prototype = {
     execute: function (dataframe, valuesRequired) {
         var results;
         if (this.canRunOnOneColumn()) {
-            var normalization = dataframe.normalizeAttributeName(this.attributeName);
+            var attributeData = this.attributeData;
             var returnType = this.returnType();
             if (valuesRequired && returnType === ReturnTypes.Positions) {
                 returnType = ReturnTypes.Values;
             }
             switch (returnType) {
                 case ReturnTypes.Positions:
-                    results = dataframe.getAttributeMask(normalization.type, normalization.attribute, this.executor);
+                    results = dataframe.getAttributeMask(attributeData.type, attributeData.attribute, this.executor);
                     break;
                 case ReturnTypes.Values:
-                    results = dataframe.mapToAttribute(normalization.type, normalization.attribute, this.executor);
+                    results = dataframe.mapToAttribute(attributeData.type, attributeData.attribute, this.executor);
                     break;
             }
         } else {
@@ -128,7 +134,7 @@ PlanNode.prototype = {
  */
 function ExpressionPlan(dataframe, ast) {
     this.codeGenerator = new ExpressionCodeGenerator();
-    this.rootNode = this.planFromAST(ast);
+    this.rootNode = this.planFromAST(ast, dataframe);
     this.dataframe = dataframe;
     this.compile();
 }
@@ -154,7 +160,7 @@ ExpressionPlan.prototype = {
         // List all nodes under their attribute if they have one.
         var attributeNames = {};
         _.each(inputNodes, function (inputNode) {
-            var attributeName = inputNode.attributeName;
+            var attributeName = inputNode.attributeData.attribute;
             if (attributeName !== undefined) {
                 if (attributeNames[attributeName] === undefined) {
                     attributeNames[attributeName] = [];
@@ -165,25 +171,25 @@ ExpressionPlan.prototype = {
         if (_.size(attributeNames) > 1) {
             return new PlanNode(ast, inputNodes);
         } else {
-            return new PlanNode(ast, inputNodes, _.findKey(attributeNames));
+            return new PlanNode(ast, inputNodes, _.find(attributeNames)[0].attributeData);
         }
     },
 
     /**
-     *
      * @param {ClientQueryAST} ast - From expression parser.
+     * @param {Dataframe} dataframe - Normalizes attributes.
      * @return {PlanNode}
      */
-    planFromAST: function (ast) {
+    planFromAST: function (ast, dataframe) {
         switch (ast.type) {
             case 'Literal':
             case 'Identifier':
-                return new PlanNode(ast, undefined, ast.name);
+                return new PlanNode(ast, undefined, dataframe.normalizeAttributeName(ast.name));
         }
         var inputProperties = this.codeGenerator.inputPropertiesFromAST(ast);
         if (inputProperties !== undefined) {
             var inputResults = _.mapObject(_.pick(ast, inputProperties), function (inputAST) {
-                return this.planFromAST(inputAST);
+                return this.planFromAST(inputAST, dataframe);
             }.bind(this));
             return this.combinePlanNodes(ast, inputResults);
         }

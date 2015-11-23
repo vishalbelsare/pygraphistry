@@ -1024,9 +1024,15 @@ Dataframe.prototype.setNumElements = function (type, num) {
 // Data Access
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @typedef {Object} AttributeName
+ * @property {String} type
+ * @property {String} attribute
+ */
+
 
 /**
- * @returns {{attribute: String, type: String}}
+ * @returns {AttributeName}
  */
 Dataframe.prototype.normalizeAttributeName = function (dataframeAttribute, type) {
     var idx = dataframeAttribute ? dataframeAttribute.lastIndexOf(':') : -1;
