@@ -734,136 +734,19 @@ var pickingGlOpts = {
 };
 
 var items = {
-    'indexeddummy' : {
-        'program': 'edgeculled',
-        'triggers': [],
-        'bindings': {
-            'curPos': ['curPoints', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor']
-        },
-        'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
-        },
-        'index': ['logicalEdges', 'curIdx'],
-        'drawType': 'LINES',
-        'glOptions': {}
-    },
-    'indexeddummy2' : {
-        'program': 'midedgeculled',
-        'triggers': [],
-        'bindings': {
-            //'curPos': ['curMidPointsClient', 'curPos'],
-            'curPos': ['curMidPoints', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor'],
-            'startPos': ['midSpringsStarts', 'startPos'],
-            'endPos': ['midSpringsEnds', 'endPos']
-        },
-        'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
-        },
-        'index': ['logicalEdges', 'curIdx'],
-        'drawType': 'LINES',
-        'glOptions': {}
-    },
-    'indexeddummySelectedEdgeIndexes': {
-        'program': 'edgeculled',
-        'triggers': [],
-        'bindings': {
-            'curPos': ['curPoints', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor']
-        },
-        'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
-        },
-        'index': ['selectedEdgeIndexes', 'curIdx'],
-        'drawType': 'LINES',
-        'glOptions': {}
-    },
-    'indexeddummySelectedPointIndexes': {
-        'program': 'edgeculled',
-        'triggers': [],
-        'bindings': {
-            'curPos': ['curPoints', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor']
-        },
-        'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
-        },
-        'index': ['selectedPointIndexes', 'curIdx'],
-        'drawType': 'LINES',
-        'glOptions': {}
-    },
-    'indexeddummyForwardsEdgeIdxs1' : {
-        'program': 'edgeculled',
-        'triggers': [],
-        'bindings': {
-            'curPos': ['curPoints', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor']
-        },
-        'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
-        },
-        'index': ['forwardsEdgeStartEndIdxs', 'curIdx'],
-        'drawType': 'LINES',
-        'glOptions': {}
-    },
-    'indexeddummyForwardsEdgeIdxs2' : {
-        'program': 'midedgeculled',
-        'triggers': [],
-        'bindings': {
-            //'curPos': ['curMidPointsClient', 'curPos'],
-            'curPos': ['curMidPoints', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor'],
-            'startPos': ['midSpringsStarts', 'startPos'],
-            'endPos': ['midSpringsEnds', 'endPos']
-        },
-        'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
-        },
-        'index': ['forwardsEdgeStartEndIdxs', 'curIdx'],
-        'drawType': 'LINES',
-        'glOptions': {}
-    },
-    'indexeddummyBackwardsEdgeIdxs1' : {
-        'program': 'edgeculled',
-        'triggers': [],
-        'bindings': {
-            'curPos': ['curPoints', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor']
-        },
-        'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
-        },
-        'index': ['backwardsEdgeStartEndIdxs', 'curIdx'],
-        'drawType': 'LINES',
-        'glOptions': {}
-    },
-    'indexeddummyBackwardsEdgeIdxs2' : {
-        'program': 'midedgeculled',
-        'triggers': [],
-        'bindings': {
-            //'curPos': ['curMidPointsClient', 'curPos'],
-            'curPos': ['curMidPoints', 'curPos'],
-            'edgeColor': ['edgeColors', 'edgeColor'],
-            'startPos': ['midSpringsStarts', 'startPos'],
-            'endPos': ['midSpringsEnds', 'endPos']
-        },
-        'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
-            'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
-        },
-        'index': ['backwardsEdgeStartEndIdxs', 'curIdx'],
-        'drawType': 'LINES',
-        'glOptions': {}
-    },
     'uberdemoedges' : {
         'program': 'midedgeculled',
         'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos': ['midSpringsPos', 'curPos'],
             'edgeColor': ['midEdgeColors', 'midEdgeColor'],
+            'startPos': ['midSpringsStarts', 'startPos'],
+            'endPos': ['midSpringsEnds', 'endPos']
+        },
+        'otherBuffers': {
+            'logicalEdges': ['logicalEdges', 'curIdx'],
+            'curMidPoints': ['curMidPoints', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor'],
             'startPos': ['midSpringsStarts', 'startPos'],
             'endPos': ['midSpringsEnds', 'endPos']
         },
@@ -874,25 +757,19 @@ var items = {
         'drawType': 'LINES',
         'glOptions': {}
     },
-    'dummyheights': {
-        'program': 'edgeculled',
-        'triggers': [],
-        'bindings': {
-            'curPos': ['curMidPoints', 'curPos'],
-            'edgeColor': ['edgeHeights', 'edgeHeight']
-        },
-        'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] }
-        },
-        'drawType': 'LINES',
-        'glOptions': {}
-    },
     'midedgeculled' : {
         'program': 'midedgeculled',
         'triggers': ['renderSceneFull'],
         'bindings': {
             'curPos': ['midSpringsPos', 'curPos'],
             'edgeColor': ['midEdgesColors', 'midEdgeColor'],
+            'startPos': ['midSpringsStarts', 'startPos'],
+            'endPos': ['midSpringsEnds', 'endPos']
+        },
+        'otherBuffers': {
+            'logicalEdges': ['logicalEdges', 'curIdx'],
+            'curMidPoints': ['curMidPoints', 'curPos'],
+            'edgeColor': ['edgeColors', 'edgeColor'],
             'startPos': ['midSpringsStarts', 'startPos'],
             'endPos': ['midSpringsEnds', 'endPos']
         },
@@ -911,6 +788,9 @@ var items = {
             'edgeColor': ['selectedMidEdgesColors', 'midEdgeColor'],
             'startPos': ['selectedMidSpringsStarts', 'startPos'],
             'endPos': ['selectedMidSpringsEnds', 'endPos']
+        },
+        'otherBuffers': {
+            'selectedLogicalEdges': ['selectedEdgeIndexes', 'curIdx'],
         },
         'uniforms': {
             'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
@@ -1033,6 +913,9 @@ var items = {
             'pointSize':    ['selectedPointSizes', 'pointSize'],
             'pointColor':   ['selectedPointColors', 'pointColor'],
         },
+        'otherBuffers': {
+            'selectedLogicalPoints': ['selectedPointIndexes', 'curIdx'],
+        },
         'uniforms': pointCulledUniforms,
         'drawType': 'POINTS',
         'glOptions': {},
@@ -1044,6 +927,10 @@ var items = {
             'curPos':       ['highlightedPointsPos', 'curPos'],
             'pointSize':    ['highlightedPointsSizes', 'pointSize'],
             'pointColor':   ['highlightedPointsColors', 'pointColor'],
+        },
+        'otherBuffers': {
+            'forwardsEdgeStartEndIdxs': ['forwardsEdgeStartEndIdxs', 'curIdx'],
+            'backwardssEdgeStartEndIdxs': ['backwardsEdgeStartEndIdxs', 'curIdx'],
         },
         'uniforms': pointCulledUniforms,
         'drawType': 'POINTS',
@@ -1226,7 +1113,6 @@ var transparentOptions =
 
 var camera2D = {
     'type': '2d',
-    //'bounds': 'CANVAS', // Use runtime dimensions of canvas element
     'bounds': {'top': -1, 'left': 0, 'bottom': 0, 'right': 1},
     'nearPlane': -1,
     'farPlane': 10
@@ -1238,9 +1124,7 @@ var sceneGis = {
     'clientMidEdgeInterpolation': false,
     //'numRenderedSplits':7 ,
     'render': ['pointpicking',  'pointsampling', 'uberdemoedges', 'edgepicking', 'arrowculled', 'arrowhighlight', 'arrowselected',
-        'uberpointculled', 'edgehighlight', 'edgeselected', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'pointhighlight', 'pointselected', 'dummyheights',
-    'indexeddummy', 'indexeddummy2', 'indexeddummySelectedEdgeIndexes', 'indexeddummySelectedPointIndexes', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
-    'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
+        'uberpointculled', 'edgehighlight', 'edgeselected', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'pointhighlight', 'pointselected']
 };
 
 var sceneArcs = {
@@ -1250,11 +1134,9 @@ var sceneArcs = {
     'clientMidEdgeInterpolation': true,
     'arcHeight': 0.2,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-    'midedgeculled', 'edgepicking', 'dummyheights',
+    'midedgeculled', 'edgepicking',
     'arrowculled', 'arrowhighlight', 'edgehighlight', 'arrowselected', 'edgeselected',
-    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'pointhighlight', 'pointselected',
-    'indexeddummy', 'indexeddummy2', 'indexeddummySelectedEdgeIndexes', 'indexeddummySelectedPointIndexes', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
-    'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'pointhighlight', 'pointselected']
 };
 
 var sceneTransparent = {
@@ -1264,11 +1146,9 @@ var sceneTransparent = {
     'clientMidEdgeInterpolation': true,
     'arcHeight': 0.2,
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
-    'midedgeculled', 'edgepicking', 'dummyheights',
+    'midedgeculled', 'edgepicking',
     'arrowculled', 'arrowhighlight', 'edgehighlight', 'arrowselected', 'edgeselected',
-    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'pointhighlight', 'pointselected',
-    'indexeddummy', 'indexeddummy2', 'indexeddummySelectedEdgeIndexes', 'indexeddummySelectedPointIndexes', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
-    'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'pointhighlight', 'pointselected']
 };
 
 var sceneStraight = {
@@ -1279,9 +1159,7 @@ var sceneStraight = {
     'render': ['pointpicking',  'pointsampling', 'pointoutlinetexture', 'pointculledtexture',
     'midedgeculled', 'edgepicking',
     'arrowculled', 'arrowhighlight', 'edgehighlight', 'arrowselected', 'edgeselected',
-    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'pointhighlight', 'pointselected',
-    'indexeddummy', 'indexeddummy2', 'indexeddummySelectedEdgeIndexes', 'indexeddummySelectedPointIndexes', 'indexeddummyForwardsEdgeIdxs1', 'indexeddummyForwardsEdgeIdxs2',
-    'indexeddummyBackwardsEdgeIdxs1', 'indexeddummyBackwardsEdgeIdxs2']
+    'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy', 'fullscreenDark', 'pointhighlight', 'pointselected']
 };
 
 var scenes = {
@@ -1370,6 +1248,11 @@ function saneItem(programs, textures, models, item, itemName) {
         if (!(modelNames[0] in models) || !(modelNames[1] in models[modelNames[0]]))
             logger.die('In item "%s", undeclared model "%s"', itemName, modelNames);
     });
+    _.each(item.otherBuffers, function (modelNames) {
+        if (!(modelNames[0] in models) || !(modelNames[1] in models[modelNames[0]]))
+            logger.die('In item "%s.otherBuffers", undeclared model "%s"', itemName, modelNames);
+    });
+
 
     if (item.renderTarget) {
         var texName = item.renderTarget;
@@ -1423,20 +1306,16 @@ function generateAllConfigs(programs, textures, models, items, scenes) {
                 })
             }
 
-            _.each(item.bindings, function (modelNames, attr) {
-                var model = models[modelNames[0]][modelNames[1]];
-                var wrapper = {};
-                wrapper[modelNames[1]] = model;
-                cmodels[modelNames[0]] = wrapper;
-            })
+            var buffers = [].concat(_.values(item.bindings),
+                                       _.values(item.otherBuffers),
+                                       item.index ? [item.index] : []);
 
-            if (item.index) {
-                var modelNames = item.index;
+            _.each(buffers, function (modelNames) {
                 var model = models[modelNames[0]][modelNames[1]];
                 var wrapper = {};
                 wrapper[modelNames[1]] = model;
                 cmodels[modelNames[0]] = wrapper;
-            }
+            });
 
             if (item.renderTarget) {
                 ctextures[item.renderTarget] = textures[item.renderTarget];
