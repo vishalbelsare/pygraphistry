@@ -60,6 +60,10 @@ function literalExpressionFor (value) {
     return JSON.stringify(value);
 }
 
+function propertyAccessExprStringFor (key) {
+    return key.match(/\W/) ? 'this[' + literalExpressionFor(key) + ']' : 'this.' + key;
+}
+
 var InputPropertiesByShape = {
     BetweenPredicate: ['start', 'stop', 'value'],
     BinaryExpression: ['left', 'right'],
@@ -305,7 +309,7 @@ ExpressionCodeGenerator.prototype = {
     planNodeFunctionForAST: function (ast, inputNodes, bindings) {
         var transformedAST = _.mapObject(ast, function (value, key) {
             if (bindings.hasOwnProperty(key)) {
-                return {type: 'Identifier', name: 'this.' + key};
+                return {type: 'Identifier', name: propertyAccessExprStringFor(key)};
             } else {
                 return value;
             }
@@ -619,7 +623,7 @@ ExpressionCodeGenerator.prototype = {
                         contextProperty = inputName;
                     }
                     return this.wrapSubExpressionPerPrecedences(
-                        'this.' + contextProperty,
+                        propertyAccessExprStringFor(contextProperty),
                         this.precedenceOf('['), outerPrecedence);
                 }
                 return 'value';
