@@ -1123,9 +1123,11 @@ function getBufferNames (config, optFilter) {
     var renderItems = config.render;
     var bufferNamesLists = renderItems.map(function (itemName) {
         var iDef = config.items[itemName];
+        var bindings = _.values(iDef.bindings);
         var elementIndex = iDef.index ? [iDef.index] : [];
-        var bindings = _.values(iDef.bindings).concat(elementIndex);
-        return bindings
+        var otherBuffers = _.values(iDef.otherBuffers);
+        var bufferList = bindings.concat(otherBuffers).concat(elementIndex);
+        return bufferList
             .filter(function (binding) {
                 var modelName = binding[0];
                 var attribName = binding[1];
