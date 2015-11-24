@@ -143,19 +143,24 @@ var VBODataSources = {
     DEVICE: 'DEVICE', // OpenCL server buffer
     HOST: 'HOST',     // Plain server buffer
     CLIENT: 'CLIENT', // Client-computed buffer
-    SERVER: 'SERVER'
+};
+
+var textureDataSources = {
+    CLIENT: 'CLIENT', // Texture written by client
+    SEREVER: 'SERVER' // Texture downloaded from server
 };
 
 
 var DrawOptions = {
     DYNAMIC_DRAW: 'DYNAMIC_DRAW',
+    STREAM_DRAW: 'STREAM_DRAW',
     STATIC_DRAW: 'STATIC_DRAW'
 };
 
 
 var textures = {
     'hitmap': {
-        'datasource': VBODataSources.CLIENT,
+        'datasource': textureDataSources.CLIENT,
         'width': {'unit': 'percent', 'value': 25},
         'height': {'unit': 'percent', 'value': 25},
         'uniforms': {
@@ -163,15 +168,15 @@ var textures = {
         }
     },
     'pointTexture': {
-        'datasource': VBODataSources.CLIENT,
+        'datasource': textureDataSources.CLIENT,
         'retina': true
     },
     'steadyStateTexture': {
-        'datasource': VBODataSources.CLIENT,
+        'datasource': textureDataSources.CLIENT,
         'retina': true
     },
     'pointHitmapDownsampled': {
-        'datasource': VBODataSources.CLIENT,
+        'datasource': textureDataSources.CLIENT,
         'width': {'unit': 'percent', 'value': 5},
         'height': {'unit': 'percent', 'value': 5},
         'uniforms': {
@@ -179,7 +184,7 @@ var textures = {
         }
     },
     'colorMap': {
-        'datasource': VBODataSources.SERVER,
+        'datasource': textureDataSources.SERVER,
         'path': 'test-colormap2.png'
     }
 };
@@ -1356,7 +1361,7 @@ function isBufServerSide(buf) {
 }
 
 function isTextureServerSide(texture) {
-    return texture.datasource  === VBODataSources.SERVER;
+    return texture.datasource  === textureDataSources.SERVER;
 }
 
 module.exports = {
