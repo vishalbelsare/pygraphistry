@@ -915,7 +915,7 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
         Rx.Observable.combineLatest(hostBuffers.selectedPointIndexes, hostBuffers.selectedEdgeIndexes,
             function (pointIndexes, edgeIndexes) {
                 activeSelection.onNext(new VizSlice({point: pointIndexes, edge: edgeIndexes}));
-            }).take(1).subscribe(_.identity);
+            }).take(1).subscribe(_.identity, util.makeErrorHandler('Getting indexes of selections.'));
         var bufUpdates = ['curPoints', 'logicalEdges', 'edgeColors', 'pointSizes', 'curMidPoints'].map(function (bufName) {
             var bufUpdate = hostBuffers[bufName] || Rx.Observable.return();
             return bufUpdate.do(function (data) {

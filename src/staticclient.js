@@ -298,6 +298,8 @@ module.exports = {
         var vboUpdates = new Rx.ReplaySubject(1);
         vboUpdates.onNext('init');
 
+        var bufferBlackList = ['selectedPointIndexes', 'selectedEdgeIndexes'];
+
         $.ajaxAsObservable({url: getStaticContentURL(contentKey, 'metadata.json'), dataType: 'json'})
             .pluck('data')
             .do(function (data) {
@@ -317,7 +319,9 @@ module.exports = {
                     function () { vboUpdates.onNext('received'); },
                     function (err) { console.error('readyToRender error', err, (err||{}).stack); });
 
-                var changedBufferNames = _.keys(data.bufferByteLengths);
+                var changedBufferNames = _.select(_.keys(data.bufferByteLengths), function(bufferName) {
+                    return !_.contains(bufferBlackList, bufferName);
+                });
                 var bufferFileNames = changedBufferNames.map(function (bufferName) {
                     return bufferName + '.vbo';
                 });
