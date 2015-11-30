@@ -619,7 +619,7 @@ SetsPanel.prototype = {
         if (setModels.length === 0 || _.any(setModels, function (vizSet) { return !vizSet.isConcrete(); })) {
             var setIDs = _.map(setModels, function (setModel) { return setModel.id; });
             if (true) { return; }
-            this.commands.highlight.sendWithObservableResult({gesture: 'sets', action: 'replace', set_ids: setIDs});
+            this.commands.highlight.sendWithObservableResult({gesture: 'sets', action: 'replace', setIDs: setIDs});
         }
     },
 
@@ -627,7 +627,7 @@ SetsPanel.prototype = {
         this.activeSelection.onNext(this.vizSliceFromSetModels(setModels));
         if (setModels.length === 0 || _.any(setModels, function (vizSet) { return !vizSet.isConcrete(); })) {
             var setIDs = _.map(setModels, function (setModel) { return setModel.id; });
-            this.commands.select.sendWithObservableResult({gesture: 'sets', action: 'replace', set_ids: setIDs});
+            this.commands.select.sendWithObservableResult({gesture: 'sets', action: 'replace', setIDs: setIDs});
         }
     }
 };
