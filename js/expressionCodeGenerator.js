@@ -298,10 +298,10 @@ ExpressionCodeGenerator.prototype = {
         var body = this.expressionStringForAST(ast);
         if (this.hasMultipleBindings()) {
             source = '(function () { return ' + body + '; })';
-            logger.warn('Evaluating (multi-column)', source);
+            logger.warn('Evaluating (multi-column)', ast.type, source);
         } else {
             source = '(function (value) { return ' + body + '; })';
-            logger.warn('Evaluating (single-column)', source);
+            logger.warn('Evaluating (single-column)', ast.type, source);
         }
         return eval(source); // jshint ignore:line
     },
@@ -317,7 +317,7 @@ ExpressionCodeGenerator.prototype = {
         this.bindings = bindings;
         var body = this.planNodeExpressionStringForAST(transformedAST);
         var source = '(function () { return ' + body + '; })';
-        logger.warn('Evaluating (multi-column)', source);
+        logger.warn('Evaluating (multi-column)', ast.type, source);
         return eval(source); // jshint ignore:line
     },
 
@@ -387,6 +387,10 @@ ExpressionCodeGenerator.prototype = {
         return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
     },
 
+    isPredicate: function (ast) {
+        return _.isString(ast.type) && ast.type.endsWith('Predicate');
+    },
+
     /**
      * @return {String[]}
      */
@@ -437,10 +441,22 @@ ExpressionCodeGenerator.prototype = {
                     case 'OR':
                         subExprString = args.left + '.union(' + args.right + ')';
                         return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
+                    default:
+                        return this.expressionStringForAST(ast, depth, outerPrecedence);
                 }
                 break;
+            case 'BetweenPredicate':
+            case 'RegexPredicate':
+            case 'LikePredicate':
+            case 'BinaryExpression':
+            case 'UnaryExpression':
+            case 'CastExpression':
+            case 'ListExpression':
+            case 'FunctionCall':
             case 'Literal':
-                return literalExpressionFor(ast.value);
+                return this.expressionStringForAST(ast, depth + 1, outerPrecedence);
+            case 'Identifier':
+                return this.expressionStringForAST(ast, depth + 1, outerPrecedence);
             default:
                 throw new Error('Unhandled expression type for planning: ' + ast.type);
         }
