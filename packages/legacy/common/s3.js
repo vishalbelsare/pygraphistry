@@ -38,13 +38,16 @@ module.exports = {
             }
         }
 
+        var kilo = 1024;
+        var uploadOptions = {partSize: 6 * kilo * kilo, leavePartsOnError: true/*, queueSize: 1*/};
+
         var promiseResult;
         if (shouldCompress) {
             promiseResult = Q.nfcall(zlib.gzip, binaryBuffer)
                 .then(function (zipped) {
                     putParams.Body = zipped;
-                    logger.debug('Upload (gzipped) size', (putParams.Body.length / 1000).toFixed(1), 'KB');
-                    return Q.nfcall(S3.putObject.bind(S3), putParams);
+                    logger.debug('Upload (gzipped) size', (putParams.Body.length / 1024).toFixed(1), 'KB');
+                    return Q.nfcall(S3.upload.bind(S3), putParams, uploadOptions);
                 }).then(function () {
                     logger.debug('Upload (gzipped) done', metadata.name);
                 }).catch(function (e) {
@@ -52,8 +55,8 @@ module.exports = {
                     throw e;
                 });
         } else {
-            logger.debug('Upload size', (putParams.Body.length / 1000).toFixed(1), 'KB');
-            promiseResult = Q.nfcall(S3.putObject.bind(S3), putParams)
+            logger.debug('Upload size', (putParams.Body.length / kilo).toFixed(1), 'KB');
+            promiseResult = Q.nfcall(S3.upload.bind(S3), putParams, uploadOptions)
                 .then(function () {
                     logger.debug('Upload done', metadata.name);
                 }).catch(function (e) {
