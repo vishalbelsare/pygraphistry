@@ -14,9 +14,10 @@ module.exports = {
      */
     renderCaptionFromData: function renderGraphCaption(data)
     {
+
         var numNodes = data.elements.pointculled || data.elements.uberpointculled || 0,
             numEdges = (data.elements.edgeculled || data.elements.edgeculledindexed ||
-                data.elements.edgeculledindexedclient || data.elements.indexeddummy || 0) / 2;
+                data.elements.edgeculledindexedclient || data.bufferByteLengths.logicalEdges / 4 || 0) / 2;
         $('#graph-node-count').text(numNodes);
         $('#graph-edge-count').text(numEdges);
     }
