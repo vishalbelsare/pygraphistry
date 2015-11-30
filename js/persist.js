@@ -197,11 +197,6 @@ module.exports =
             var snapshotSchema = (new ContentSchema()).subSchemaForStaticContentKey(snapshotName),
                 edgeExport = staticContentForDataframe(dataframe, 'edge'),
                 pointExport = staticContentForDataframe(dataframe, 'point');
-            var promises = [];
-            promises.push(snapshotSchema.uploadPublic('renderconfig.json', JSON.stringify(renderConfig),
-                {ContentType: 'application/json', ContentEncoding: 'gzip'}));
-            promises.push(snapshotSchema.uploadPublic('metadata.json', JSON.stringify(metadata),
-                {ContentType: 'application/json', ContentEncoding: 'gzip'}));
             var vboAttributes = [
                 'curPoints',
                 'curMidPoints',
@@ -215,23 +210,35 @@ module.exports =
                 'pointColors',
                 'logicalEdges'
             ];
-            // compressedVBOs attributes are already gzipped:
-            _.each(vboAttributes, function(attributeName) {
-                if (compressedVBOs.hasOwnProperty(attributeName) && !_.isUndefined(compressedVBOs[attributeName])) {
-                    promises.push(snapshotSchema.uploadPublic(attributeName + '.vbo', compressedVBOs[attributeName],
-                        {shouldCompress: false, ContentEncoding: 'gzip'}));
-                }
+            // Stage the uploads so that partial failure maximizes available features:
+            // TODO report partial failure sensibly (e.g. "everything exported but labels").
+            return Q.all([
+                snapshotSchema.uploadPublic('renderconfig.json', JSON.stringify(renderConfig),
+                    {ContentType: 'application/json', ContentEncoding: 'gzip'}),
+                snapshotSchema.uploadPublic('metadata.json', JSON.stringify(metadata),
+                    {ContentType: 'application/json', ContentEncoding: 'gzip'})]
+            ).catch(function (err) {
+                throw new Error('Failed to upload JSON metadata: ', err.message);
+            }).then(function () {
+                // compressedVBOs attributes are already gzipped:
+                return Q.all(_.select(vboAttributes, function (attributeName) {
+                    return compressedVBOs.hasOwnProperty(attributeName) && !_.isUndefined(compressedVBOs[attributeName]);
+                }).map(function (attributeName) {
+                    return snapshotSchema.uploadPublic(attributeName + '.vbo', compressedVBOs[attributeName],
+                        {shouldCompress: false, ContentEncoding: 'gzip'});
+                })).catch(function (err) {
+                    throw new Error('Failed to upload VBOs: ', err.message);
+                });
+            }).then(function () {
+                return Q.allSettled([
+                    // These are ArrayBuffers, so ask for compression:
+                    snapshotSchema.uploadPublic('pointLabels.offsets', pointExport.indexes, {shouldCompress: false}),
+                    snapshotSchema.uploadPublic('pointLabels.buffer', pointExport.contents, {shouldCompress: false}),
+                    snapshotSchema.uploadPublic('edgeLabels.offsets', edgeExport.indexes, {shouldCompress: false}),
+                    snapshotSchema.uploadPublic('edgeLabels.buffer', edgeExport.contents, {shouldCompress: false})]);
+            }).catch (function (err) {
+                throw new Error('Failed to upload label contents: ', err.message);
             });
-            // These are ArrayBuffers, so ask for compression:
-            promises.push(snapshotSchema.uploadPublic('pointLabels.offsets', pointExport.indexes,
-                {shouldCompress: false}));
-            promises.push(snapshotSchema.uploadPublic('pointLabels.buffer', pointExport.contents,
-                {shouldCompress: false}));
-            promises.push(snapshotSchema.uploadPublic('edgeLabels.offsets', edgeExport.indexes,
-                {shouldCompress: false}));
-            promises.push(snapshotSchema.uploadPublic('edgeLabels.buffer', edgeExport.contents,
-                {shouldCompress: false}));
-            return Q.allSettled(promises);
         },
 
         /**
