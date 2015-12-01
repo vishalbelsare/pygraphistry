@@ -126,24 +126,18 @@ Dataframe.prototype.pruneMaskEdges = function (oldMask) {
         pointMaskOriginalLookup[idx] = 1;
     });
 
-    var edgeMaskOriginalLookup = {};
-    oldMask.mapEdgeIndexes(function (idx) {
-        edgeMaskOriginalLookup[idx] = 1;
-    });
-
     var edgeMask = [];
     var edges = this.rawdata.hostBuffers.forwardsEdges.edgesTyped;
-    // TODO: Don't iterate over every edge, instead go off of lookup.
-    for (var i = 0; i < edges.length/2; i++) {
-        var src = edges[2*i];
-        var dst = edges[2*i + 1];
+
+    oldMask.mapEdgeIndexes(function (edgeIdx) {
+        var src = edges[2*edgeIdx];
+        var dst = edges[2*edgeIdx + 1];
         var newSrc = pointMaskOriginalLookup[src];
         var newDst = pointMaskOriginalLookup[dst];
-        var newEdge = edgeMaskOriginalLookup ? edgeMaskOriginalLookup[i] : 1;
-        if (newSrc && newDst && newEdge) {
-            edgeMask.push(i);
+        if (newSrc && newDst) {
+            edgeMask.push(edgeIdx);
         }
-    }
+    });
 
     return new DataframeMask(
         this,
