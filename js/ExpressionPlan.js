@@ -28,7 +28,13 @@ PlanNode.prototype = {
             this.executor = generator.planNodeFunctionForAST(this.ast, this.inputNodes, dataframe.getColumnsByType());
         }
         _.mapObject(this.inputNodes, function (inputNode) {
-            inputNode.compile(generator, dataframe);
+            if (_.isArray(inputNode)) {
+                _.each(inputNode, function (eachNode) {
+                    eachNode.compile(generator, dataframe);
+                });
+            } else {
+                inputNode.compile(generator, dataframe);
+            }
         });
     },
 
@@ -81,7 +87,13 @@ PlanNode.prototype = {
                     return inputNode.returnType() === ReturnTypes.Values;
                 });
                 var inputResults = _.mapObject(this.inputNodes, function (inputNode) {
-                    return inputNode.execute(dataframe, valuesRequired);
+                    if (_.isArray(inputNode)) {
+                        return _.map(inputNode, function (eachNode) {
+                            return eachNode.execute(dataframe, valuesRequired);
+                        });
+                    } else {
+                        return inputNode.execute(dataframe, valuesRequired);
+                    }
                 });
                 results = this.executor.call(inputResults);
             }
@@ -102,7 +114,13 @@ PlanNode.prototype = {
             result[identifierName].push(this);
         }
         _.mapObject(this.inputNodes, function (inputNode) {
-            inputNode.identifierNodes(result);
+            if (_.isArray(inputNode)) {
+                _.each(inputNode, function (eachNode) {
+                    eachNode.identifierNodes(result);
+                });
+            } else {
+                inputNode.identifierNodes(result);
+            }
         });
         return result;
     },
@@ -117,7 +135,13 @@ PlanNode.prototype = {
         }
         var identifierCount = 0;
         _.mapObject(this.inputNodes, function (inputNode) {
-            identifierCount += inputNode.arity();
+            if (_.isArray(inputNode)) {
+                _.each(inputNode, function (eachNode) {
+                    identifierCount += eachNode.arity();
+                });
+            } else {
+                identifierCount += inputNode.arity();
+            }
         });
         return identifierCount;
     },
@@ -227,7 +251,13 @@ ExpressionPlan.prototype = {
         var inputProperties = this.codeGenerator.inputPropertiesFromAST(ast);
         if (inputProperties !== undefined) {
             var inputResults = _.mapObject(_.pick(ast, inputProperties), function (inputAST) {
-                return this.planFromAST(inputAST, dataframe);
+                if (_.isArray(inputAST)) {
+                    return _.map(inputAST, function (eachAST) {
+                        return this.planFromAST(eachAST, dataframe);
+                    }.bind(this));
+                } else {
+                    return this.planFromAST(inputAST, dataframe);
+                }
             }.bind(this));
             return this.combinePlanNodes(ast, inputResults);
         }
