@@ -111,29 +111,29 @@ function makeEmptyData () {
 //////////////////////////////////////////////////////////////////////////////
 
 /**
- * Takes in a mask of points, and returns an object
- * containing masks for both the points and edges.
- * The result's edges must begin and end in the set of points.
+ * Takes in a DataframeMask, and returns a new DataframeMask
+ * that is pruned to remove dangling edges. The result's edges
+ * must all begin and end in the set of points.
  * Relative to forwardsEdges (so sorted)
- * @param {Mask} pointMask - The set of points that the edges must connect.
- * @param {Mask?} edgeMaskOriginal - An optional set of edges to also filter on.
+ * @param {DataframeMask} oldMask - The mask to be pruned
  * @returns DataframeMask
  */
-Dataframe.prototype.masksFromPoints = function (pointMask, edgeMaskOriginal) {
+Dataframe.prototype.pruneMaskEdges = function (oldMask) {
+
+    // Create hash to lookup which points/edges exist in mask.
     var pointMaskOriginalLookup = {};
-    _.each(pointMask, function (newIdx/*, i*/) {
-        pointMaskOriginalLookup[newIdx] = 1;
+    oldMask.mapPointIndexes(function (idx) {
+        pointMaskOriginalLookup[idx] = 1;
     });
-    var edgeMaskOriginalLookup;
-    if (edgeMaskOriginal !== undefined) {
-        edgeMaskOriginalLookup = {};
-        _.each(edgeMaskOriginal, function (newIdx) {
-            edgeMaskOriginalLookup[newIdx] = 1;
-        });
-    }
+
+    var edgeMaskOriginalLookup = {};
+    oldMask.mapEdgeIndexes(function (idx) {
+        edgeMaskOriginalLookup[idx] = 1;
+    });
 
     var edgeMask = [];
     var edges = this.rawdata.hostBuffers.forwardsEdges.edgesTyped;
+    // TODO: Don't iterate over every edge, instead go off of lookup.
     for (var i = 0; i < edges.length/2; i++) {
         var src = edges[2*i];
         var dst = edges[2*i + 1];
@@ -147,9 +147,10 @@ Dataframe.prototype.masksFromPoints = function (pointMask, edgeMaskOriginal) {
 
     return new DataframeMask(
         this,
-        pointMask,
+        oldMask.point,
         edgeMask
     );
+
 };
 
 
@@ -209,43 +210,6 @@ Dataframe.prototype.presentVizSet = function (vizSet) {
     return response;
 };
 
-
-/**
- * @param {Mask} edgeMask
- * @param {Boolean?} edgeMaskFiltersPoints
- * @returns DataframeMask
- */
-Dataframe.prototype.masksFromEdges = function (edgeMask, edgeMaskFiltersPoints) {
-    var numPoints = this.numPoints();
-    var pointMask;
-    if (edgeMaskFiltersPoints === true) {
-        pointMask = [];
-        var pointLookup = {};
-        var edges = this.rawdata.hostBuffers.forwardsEdges.edgesTyped;
-
-        _.each(edgeMask, function (edgeIdx) {
-            var src = edges[2 * edgeIdx];
-            var dst = edges[2 * edgeIdx + 1];
-            pointLookup[src] = 1;
-            pointLookup[dst] = 1;
-        });
-
-        for (var i = 0; i < numPoints; i++) {
-            if (pointLookup[i]) {
-                pointMask.push(i);
-            }
-        }
-    } else {
-        pointMask = _.range(numPoints);
-    }
-
-    return new DataframeMask(
-        this,
-        pointMask,
-        edgeMask
-    );
-};
-
 /**
  * @param {?MaskList} maskList
  * @param {Number=Infinity} pointLimit
@@ -260,7 +224,6 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
         // Limit the universe first just to avoid computation scaling problems:
         if (pointLimit && universe.numByType('point') > pointLimit) {
             universe.limitNumByTypeTo('point', pointLimit);
-            return this.masksFromPoints(universe.point, universe.edge);
         }
         return universe;
     }
@@ -283,11 +246,11 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
     var numMasksSatisfiedByEdgeID = new Uint8Array(this.numEdges());
 
     _.each(maskList, function (mask) {
-        _.each(mask.edge, function (idx) {
+        mask.mapEdgeIndexes(function (idx) {
             numMasksSatisfiedByEdgeID[idx]++;
         });
 
-        _.each(mask.point, function (idx) {
+        mask.mapPointIndexes(function (idx) {
             numMasksSatisfiedByPointID[idx]++;
         });
     });
@@ -309,9 +272,6 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
         return !(pointLimitReached = pointMask.length >= pointLimit);
     });
 
-    if (pointLimitReached) {
-        return this.masksFromPoints(pointMask, edgeMask);
-    }
     return new DataframeMask(
         this,
         pointMask,
@@ -404,10 +364,18 @@ Dataframe.prototype.getAttributeMask = function (type, dataframeAttribute, filte
     switch (type) {
         case 'point':
             var pointMask = this.getPointAttributeMask(dataframeAttribute, filterFunc);
-            return this.masksFromPoints(pointMask);
+            return new DataframeMask(
+                this,
+                pointMask,
+                undefined
+            );
         case 'edge':
             var edgeMask = this.getEdgeAttributeMask(dataframeAttribute, filterFunc);
-            return this.masksFromEdges(edgeMask);
+            return new DataframeMask(
+                this,
+                undefined,
+                edgeMask
+            );
         default:
             throw new Error('Unknown graph component type');
     }
