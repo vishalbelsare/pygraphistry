@@ -1096,7 +1096,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                     break;
                 case 'sets':
                     var matchingSets = _.filter(viewConfig.sets, function (vizSet) {
-                        return specification.set_ids.indexOf(vizSet.id) !== -1;
+                        return specification.setIDs.indexOf(vizSet.id) !== -1;
                     });
                     var combinedMasks = _.reduce(matchingSets, function (masks, vizSet) {
                         return masks.union(vizSet.masks);
@@ -1148,7 +1148,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                     break;
                 case 'sets':
                     var matchingSets = _.filter(viewConfig.sets, function (vizSet) {
-                        return specification.set_ids.indexOf(vizSet.id) !== -1;
+                        return specification.setIDs.indexOf(vizSet.id) !== -1;
                     });
                     var combinedMasks = _.reduce(matchingSets, function (masks, vizSet) {
                         return masks.union(vizSet.masks);
@@ -1222,8 +1222,11 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                 var cleanContentKey = encodeURIComponent(contentKey);
                 persist.publishStaticContents(
                     cleanContentKey, this.lastCompressedVBOs,
-                    this.lastMetadata, graph.dataframe, renderConfig).then(function() {
+                    this.lastMetadata, graph.dataframe, renderConfig
+                ).then(function() {
                     cb({success: true, name: cleanContentKey});
+                }).catch(function (error) {
+                    cb({success: false, name: cleanContentKey});
                 }).done(
                     _.identity,
                     log.makeQErrorHandler(logger, 'persist_current_vbo')
