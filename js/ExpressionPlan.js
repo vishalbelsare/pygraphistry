@@ -27,14 +27,8 @@ PlanNode.prototype = {
         } else {
             this.executor = generator.planNodeFunctionForAST(this.ast, this.inputNodes, dataframe.getColumnsByType());
         }
-        _.mapObject(this.inputNodes, function (inputNode) {
-            if (_.isArray(inputNode)) {
-                _.each(inputNode, function (eachNode) {
-                    eachNode.compile(generator, dataframe);
-                });
-            } else {
-                inputNode.compile(generator, dataframe);
-            }
+        this.eachNode(function (eachNode) {
+            eachNode.compile(generator, dataframe);
         });
     },
 
@@ -101,6 +95,16 @@ PlanNode.prototype = {
         return results;
     },
 
+    eachNode: function (nodeIterator) {
+        _.each(this.inputNodes, function (eachNode, key) {
+            if (_.isArray(eachNode)) {
+                _.each(eachNode, nodeIterator);
+            } else {
+                nodeIterator(eachNode, key);
+            }
+        });
+    },
+
     /**
      * This recursively builds a hash by name of nodes in the plan representing separate identifiers.
      * @param {Object} result
@@ -113,14 +117,8 @@ PlanNode.prototype = {
             if (result[identifierName] === undefined) { result[identifierName] = []; }
             result[identifierName].push(this);
         }
-        _.mapObject(this.inputNodes, function (inputNode) {
-            if (_.isArray(inputNode)) {
-                _.each(inputNode, function (eachNode) {
-                    eachNode.identifierNodes(result);
-                });
-            } else {
-                inputNode.identifierNodes(result);
-            }
+        this.eachNode(function (eachNode) {
+            eachNode.identifierNodes(result);
         });
         return result;
     },
@@ -134,14 +132,8 @@ PlanNode.prototype = {
             return 1;
         }
         var identifierCount = 0;
-        _.mapObject(this.inputNodes, function (inputNode) {
-            if (_.isArray(inputNode)) {
-                _.each(inputNode, function (eachNode) {
-                    identifierCount += eachNode.arity();
-                });
-            } else {
-                identifierCount += inputNode.arity();
-            }
+        this.eachNode(function (eachNode) {
+            identifierCount += eachNode.arity();
         });
         return identifierCount;
     },
