@@ -188,7 +188,10 @@ VizServer.prototype.tickGraph = function (cb) {
 // TODO Extract a graph method and manage graph contexts by filter data operation.
 VizServer.prototype.filterGraphByMaskList = function (graph, maskList, errors, viewConfig, pointLimit, cb) {
     var filters = viewConfig.filters;
-    var masks = graph.dataframe.composeMasks(maskList, pointLimit);
+
+    var unprunedMasks = graph.dataframe.composeMasks(maskList, pointLimit);
+    // Prune out dangling edges.
+    var masks = graph.dataframe.pruneMaskEdges(unprunedMasks);
 
     logger.debug('mask lengths: ', masks.numEdges(), masks.numPoints());
 
@@ -1096,7 +1099,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                     break;
                 case 'sets':
                     var matchingSets = _.filter(viewConfig.sets, function (vizSet) {
-                        return specification.set_ids.indexOf(vizSet.id) !== -1;
+                        return specification.setIDs.indexOf(vizSet.id) !== -1;
                     });
                     var combinedMasks = _.reduce(matchingSets, function (masks, vizSet) {
                         return masks.union(vizSet.masks);
@@ -1148,7 +1151,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                     break;
                 case 'sets':
                     var matchingSets = _.filter(viewConfig.sets, function (vizSet) {
-                        return specification.set_ids.indexOf(vizSet.id) !== -1;
+                        return specification.setIDs.indexOf(vizSet.id) !== -1;
                     });
                     var combinedMasks = _.reduce(matchingSets, function (masks, vizSet) {
                         return masks.union(vizSet.masks);
@@ -1222,8 +1225,11 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                 var cleanContentKey = encodeURIComponent(contentKey);
                 persist.publishStaticContents(
                     cleanContentKey, this.lastCompressedVBOs,
-                    this.lastMetadata, graph.dataframe, renderConfig).then(function() {
+                    this.lastMetadata, graph.dataframe, renderConfig
+                ).then(function() {
                     cb({success: true, name: cleanContentKey});
+                }).catch(function (error) {
+                    cb({success: false, name: cleanContentKey});
                 }).done(
                     _.identity,
                     log.makeQErrorHandler(logger, 'persist_current_vbo')

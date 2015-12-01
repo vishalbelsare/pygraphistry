@@ -313,6 +313,10 @@ DataframeMask.prototype = {
         }
     },
 
+    toString: function () {
+        return JSON.stringify(_.omit(this, OmittedProperties), null, 4);
+    },
+
     typedIndexesForType: function (type) {
         var numElements = this.numByType(type),
             result = new Uint32Array(numElements),

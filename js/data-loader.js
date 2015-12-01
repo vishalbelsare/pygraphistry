@@ -73,7 +73,7 @@ function httpDownloader(http, url) {
  * modified time and fetches from S3 accordingly.
 **/
 function graphistryS3Downloader(url) {
-    console.error('Attempting to download from S3 ' + url.pathname);
+    logger.trace('Attempting to download from S3 ' + url.pathname);
     var params = {
         Bucket: config.BUCKET,
         Key: url.pathname.replace(/^\//,'') // Strip leading slash if there is one
