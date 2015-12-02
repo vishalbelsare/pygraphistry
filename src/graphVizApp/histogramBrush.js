@@ -41,7 +41,7 @@ function handleFiltersResponse (filtersResponseObservable, poi) {
 }
 
 
-function HistogramBrush(socket, filtersPanel) {
+function HistogramBrush(socket, filtersPanel, doneLoading) {
     debug('Initializing histogram brush');
 
     this.lastSelection = undefined;
@@ -63,7 +63,13 @@ function HistogramBrush(socket, filtersPanel) {
         this.updateDataframeAttribute(data.oldAttr, data.newAttr, data.type);
     }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Update Attribute'));
 
-    // Setup initial stream of global statistics.
+    // Once Loaded, setup initial stream of global statistics.
+    doneLoading.do(function () {
+        this.initializeGlobalData(socket, filtersPanel, updateDataframeAttributeSubject);
+    }.bind(this)).subscribe(_.identity, util.makeErrorHandler('histogram init done loading wrapper'));
+}
+
+HistogramBrush.prototype.initializeGlobalData = function(socket, filtersPanel, updateDataframeAttributeSubject) {
     var globalStream = this.aggregatePointsAndEdges({
         all: true});
     var globalStreamSparklines = this.aggregatePointsAndEdges({
@@ -95,7 +101,7 @@ function HistogramBrush(socket, filtersPanel) {
         this.updateHistogramData(filteredAttributes, data, true);
 
     }.bind(this)).subscribe(this.globalStats, util.makeErrorHandler('Global stat aggregate call'));
-}
+};
 
 
 HistogramBrush.prototype.setupFiltersInteraction = function(filtersPanel, poi) {
