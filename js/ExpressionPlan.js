@@ -157,9 +157,19 @@ PlanNode.prototype = {
             case 'CastExpression':
             case 'Literal':
             case 'ListExpression':
-            case 'FunctionCall':
             case 'Identifier':
                 return ReturnTypes.Values;
+            case 'FunctionCall':
+                switch (ast.callee.name.toUpperCase()) {
+                    case 'STARTSWITH':
+                    case 'ENDSWITH':
+                    case 'CONTAINS':
+                    case 'ISBLANK':
+                    case 'ISEMPTY':
+                        return ReturnTypes.Positions;
+                    default:
+                        return ReturnTypes.Values;
+                }
         }
         return ReturnTypes.Positions;
     },
