@@ -23,7 +23,8 @@ var VERTEX = pb_root.VectorGraph.AttributeTarget.VERTEX;
 var EDGE   = pb_root.VectorGraph.AttributeTarget.EDGE;
 
 var decoders = {
-    0: decode0
+    0: decode0,
+    1: decode1
 }
 
 
@@ -308,7 +309,8 @@ function decode0(graph, vg, metadata)  {
     var attrs = getAttributes0(vg);
     loadDataframe(graph, attrs, vg.nvertices, vg.nedges);
     logger.debug('Graph has attribute: %o', _.pluck(attrs, 'name'));
-    var vertices = [];
+
+    var vertices;
     var edges = new Array(vg.nedges);
     var dimensions = [1, 1];
 
@@ -325,8 +327,9 @@ function decode0(graph, vg, metadata)  {
     // Load vertices from protobuf Vertex message
     if (xObj && yObj) {
         logger.trace('Loading previous vertices from xObj');
+        vertices = new Array(vg.nvertices);
         for (var i = 0; i < vg.nvertices; i++) {
-            vertices.push([xObj.values[i], yObj.values[i]]);
+            vertices[i] = [xObj.values[i], yObj.values[i]];
         }
     } else {
         vertices = computeInitialPositions(vg.nvertices, edges, dimensions);
@@ -339,7 +342,7 @@ function decode0(graph, vg, metadata)  {
         mapper = mappers['default'];
     }
     loaders = wrap(mapper.mappings, loaders);
-    logger.trace('Attribute loaders: %o', loaders);
+    logger.trace('Attribute loaders:', loaders);
 
     _.each(attrs, function (attr) {
         var vname = attr.name;
@@ -354,18 +357,13 @@ function decode0(graph, vg, metadata)  {
             if (attr.target != loader.target) {
                 logger.warn('Vertex/Node attribute mismatch for ' + vname);
             } else if (attr.type != loader.type) {
-                logger.warn('Expected type ' + loader.type + ' but got ' + attr.type + ' for' + vname);
+                logger.warn('Expected type ' + loader.type + ' but got ' + attr.type + ' for ' + vname);
             } else {
                 loader.values = attr.values;
             }
         });
 
     });
-
-    // Create map from attribute name -> type
-    //vg.attributeTypeMap = createAttributeTypeMap([[vg.string_vectors, 'string'],
-    //        [vg.int32_vectors, 'int32'], [vg.double_vectors, 'double']]);
-
 
     return graph.setVertices(vertices)
     .then(function () {
@@ -495,6 +493,93 @@ function normalizeFloat(array, minimum, maximum) {
     return _.map(array, function (val) {
         return minimum + (val - min) * scaleFactor;
     });
+}
+
+
+function getVectors1(vg) {
+    return _.flatten([
+            vg.uint32_vectors, vg.int32_vectors, vg.int64_vectors,
+            vg.float_vectors, vg.double_vectors,
+            vg.string_vectors, vg.bool_vectors
+        ], false);
+}
+
+
+function getAttributes1(vg) {
+    var vectors = getVectors1(vg);
+    var attrs = {};
+    _.each(vectors, function (v) {
+        if (v.values.length > 0) {
+            attrs[v.name] = {
+                name: v.name,
+                target : v.target,
+                type: typeof(v.values[0]),
+                values: v.values
+            };
+        }
+    });
+    return attrs;
+}
+
+
+
+function decode1(graph, vg, metadata)  {
+    logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
+          vg.version, vg.name, vg.nvertices, vg.nedges);
+
+    var attrs = getAttributes1(vg);
+    loadDataframe(graph, attrs, vg.nvertices, vg.nedges);
+    logger.debug('Graph has attribute:', _.pluck(attrs, 'name'));
+    var edges = new Array(vg.nedges);
+
+
+    for (var i = 0; i < vg.edges.length; i++) {
+        var e = vg.edges[i];
+        edges[i] = [e.src, e.dst];
+    }
+
+    var dimensions = [1, 1];
+    var vertices = computeInitialPositions(vg.nvertices, edges, dimensions);
+
+    var loaders = attributeLoaders(graph);
+    var mapper = mappers[metadata.mapper];
+    if (!mapper) {
+        logger.warn('Unknown mapper', metadata.mapper, 'using "default"');
+        mapper = mappers['default'];
+    }
+    loaders = wrap(mapper.mappings, loaders);
+    logger.trace('Attribute loaders:', loaders);
+    logger.trace('Encodings:', metadata.view.encodings);
+
+    var encodings = _.omit(metadata.view.encodings, 'source', 'destination');
+
+    _.each(encodings, function (mapped, vname) {
+        if (!(mapped in attrs)) {
+            logger.warn('Column "' + mapped + '" mapped onto "' + vname + '" does not exists! Skipping...');
+            return;
+        }
+
+        var attr = attrs[mapped];
+        var loaderArray = loaders[vname];
+
+        _.each(loaderArray, function (loader) {
+            if (attr.target != loader.target) {
+                logger.warn('Vertex/Node attribute mismatch for ' + vname);
+            } else {
+                logger.trace('Mapping "' + vname + '" onto "' + attr.name + '"');
+                loader.values = attr.values;
+            }
+        });
+    });
+
+    return graph.setVertices(vertices)
+    .then(function () {
+        return graph.setEdges(edges);
+    }).then(function () {
+        return runLoaders(loaders);
+    }).then(function () {
+        return graph;
+    }).fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
 }
 
 
