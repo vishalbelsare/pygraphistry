@@ -210,6 +210,30 @@ DataframeMask.prototype = {
         return this.numPoints() === 0 && this.numEdges() === 0;
     },
 
+    /**
+     * @param {DataframeMask} other
+     * @returns {Boolean}
+     */
+    equals: function (other) {
+        var that = this;
+
+        // Quick test on sizes.
+        if (this.numPoints() !== other.numPoints() || this.numEdges() !== other.numEdges()) {
+            return false;
+        }
+
+        // If sizes are same, iterate through to make sure.
+        var isSame = true;
+        _.each(['point', 'edge'], function (type) {
+            that.mapIndexes(type, function (idx, i) {
+                if (other.getIndexByType(type, i) !== idx) {
+                    isSame = false;
+                }
+            });
+        });
+        return isSame;
+    },
+
     numPoints: function () {
         return this.numByType('point');
     },

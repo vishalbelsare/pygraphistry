@@ -21,10 +21,11 @@ var loaders = {
     'jsonMeta': loadJSONMeta
 };
 
-var downloader = {
+var downloaders = {
     'http:': httpDownloader.bind(undefined, http),
     'https:': httpDownloader.bind(undefined, https),
-    'null': graphistryS3Downloader // For legacy compatibility
+    's3:': s3Downloader,
+    'null': s3Downloader // For legacy compatibility
 };
 
 var tmpCache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);
@@ -72,10 +73,9 @@ function httpDownloader(http, url) {
 * Kick off the download process. This checks the
  * modified time and fetches from S3 accordingly.
 **/
-function graphistryS3Downloader(url) {
-    logger.trace('Attempting to download from S3 ' + url.pathname);
+function s3Downloader(url) {
     var params = {
-        Bucket: config.BUCKET,
+        Bucket: url.host || config.BUCKET,  // Defaults to Graphistry's bucket
         Key: url.pathname.replace(/^\//,'') // Strip leading slash if there is one
     };
     var res = Q.defer();
@@ -161,8 +161,8 @@ function loadJSONMeta(graph, rawDataset) {
 function downloadDatasources(dataset) {
     var qBlobs = _.map(dataset.datasources, function (datasource) {
         var url = urllib.parse(datasource.url);
-        if (url.protocol === 's3:' && url.host === config.BUCKET) {
-            return graphistryS3Downloader(url).then(function (blob) {
+        if (_.contains(_.keys(downloaders), url.protocol)) {
+            return downloaders[url.protocol](url).then(function (blob) {
                 return unzipBufferIfCompressed(blob);
             });
         } else {
@@ -202,7 +202,7 @@ module.exports = {
             config.scene, config.controls, config.mapper, config.device);
         var url = urllib.parse(config.url);
 
-        return downloader[url.protocol](url).then(function (data) {
+        return downloaders[url.protocol](url).then(function (data) {
             return {body: data, metadata: config};
         }).fail(log.makeQErrorHandler(logger, 'Failure while retrieving dataset'));
     }
