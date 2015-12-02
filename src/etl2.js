@@ -114,7 +114,7 @@ function process(req, res, params) {
     logger.debug('Message metadata', msg.metadata);
     return etl(msg, params).then(function(info) {
         res.send({
-            success: false, msg: 'API 2 is not yet live', dataset: info.name,
+            success: true, dataset: info.name,
             viztoken: apiKey.makeVizToken(params.key, info.name)
         });
         return info;
