@@ -329,7 +329,11 @@ Dataframe.prototype.planForQueryObject = function (query) {
     if (query.ast === undefined) {
         return undefined;
     }
-    return new ExpressionPlan(this, query.ast);
+    var plan = new ExpressionPlan(this, query.ast);
+    if (plan.rootNode.arity() <= 1) {
+        return undefined;
+    }
+    return plan;
 };
 
 
