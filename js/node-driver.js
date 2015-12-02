@@ -308,7 +308,14 @@ function create(dataset) {
         graph.dataframe.loadDegrees(outDegrees, inDegrees);
         graph.dataframe.loadEdgeDestinations(unsortedEdges);
         return graph;
+    }).then(function (graph) {
+        // Tell all layout algorithms to load buffers from dataframe, now that
+        // we're about to enable ticking
+        _.each(graph.simulator.layoutAlgorithms, function (algo) {
+            algo.updateDataframeBuffers(graph.simulator);
+        });
 
+        return graph;
     }).then(function (graph) {
         logger.trace('ANIMATING');
 
