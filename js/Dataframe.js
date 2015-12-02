@@ -375,7 +375,7 @@ Dataframe.prototype.getAttributeMask = function (type, dataframeAttribute, filte
                 edgeMask
             );
         default:
-            throw new Error('Unknown graph component type');
+            throw new Error('Unknown graph component type: ' + type);
     }
 };
 
