@@ -244,7 +244,7 @@ function doWrap(res, mapping, loader) {
     if ('transform' in mapping) {
         var oldLoad = loader.load;
         loader.load = function (data) {
-            oldLoad(mapping.transform(data));
+            return oldLoad(mapping.transform(data));
         }
     }
 

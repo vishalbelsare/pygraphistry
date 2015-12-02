@@ -338,6 +338,10 @@ DataframeMask.prototype.getPointIndex = function (index) {
     return this.getIndexByType('point', index);
 };
 
+DataframeMask.prototype.toString = function () {
+    return JSON.stringify(_.omit(this, 'dataframe'), null, 4);
+};
+
 var OmittedProperties = ['dataframe'];
 
 /**
