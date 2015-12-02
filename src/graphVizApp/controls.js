@@ -580,7 +580,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var filtersPanel = new FiltersPanel(socket, urlParams);
     filtersPanel.setupToggleControl(popoutClicks, $('#filterButton'));
     var filtersResponses = filtersPanel.control.filtersResponsesSubject;
-    var histogramBrush = new HistogramBrush(socket, filtersPanel);
+    var histogramBrush = new HistogramBrush(socket, filtersPanel, doneLoading);
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
     histogramBrush.setupMarqueeInteraction(brush);
     turnOnBrush.first(function (value) { return value === true; }).do(function () {
