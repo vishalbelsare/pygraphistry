@@ -2,10 +2,72 @@
 
 var _ = require('underscore');
 var ExpressionCodeGenerator = require('./expressionCodeGenerator.js');
+var DataframeMask = require('./DataframeMask.js');
+
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graph-viz:driver:planner');
 
 var ReturnTypes = {
     Positions: 'Positions', // Signifies a predicate, effectively returning a boolean value.
     Values: 'Values' // Signifies an expression returning a value.
+};
+
+function LocalBindings() {
+    this.attributes = [];
+}
+
+function attributeDataEquals (x, y) {
+    return x.attribute === y.attribute && x.type === y.type;
+}
+
+LocalBindings.prototype = {
+    includes: function (attributeData) {
+        return _.any(this.attributes, function (eachAttribute) {
+            return attributeDataEquals(eachAttribute, attributeData);
+        });
+    },
+
+    include: function (attributeData) {
+        var found = _.find(this.attributes, function (eachAttribute) {
+            return attributeDataEquals(eachAttribute, attributeData);
+        });
+        if (found === undefined) {
+            found = attributeData;
+            this.attributes.push(attributeData);
+        }
+        return found;
+    },
+
+    attributesByType: function () {
+        var result = {};
+        _.each(this.attributes, function (eachAttribute) {
+            var type = eachAttribute.type;
+            if (result[type] === undefined) {
+                result[type] = {};
+            }
+            result[type][eachAttribute.attribute] = eachAttribute;
+        });
+        return result;
+    },
+
+    attributesByName: function () {
+        var result = {};
+        _.each(this.attributes, function (eachAttribute) {
+            var attribute = eachAttribute.attribute;
+            if (result[attribute] === undefined) {
+                result[attribute] = eachAttribute;
+            }
+        });
+        return result;
+    },
+
+    hasIncompatibleTypes: function () {
+        var typeKeys = {};
+        _.each(this.attributes, function (eachAttribute) {
+            typeKeys[eachAttribute.type] = true;
+        });
+        return _.keys(typeKeys).length > 1;
+    }
 };
 
 /**
@@ -18,14 +80,32 @@ function PlanNode(ast, inputNodes, attributeData) {
     this.ast = ast;
     this.inputNodes = inputNodes || [];
     this.attributeData = attributeData;
+    this.inferBindings();
 }
 
 PlanNode.prototype = {
+    inferBindings: function () {
+        var bindings = new LocalBindings();
+        this.eachNode(function (inputNode) {
+            inputNode.eachAttribute(function (attributeData) {
+                bindings.include(attributeData);
+            });
+        });
+        // Disabled because we can't detect this correctly until execute().
+        if (bindings.hasIncompatibleTypes()) {
+            throw new Error('Cannot mix point and edge computations except via set aggregation.');
+        }
+        this.bindings = bindings;
+        if (this.attributeData === undefined) {
+            this.attributeData = bindings.attributesByName();
+        }
+    },
+
     compile: function (generator, dataframe) {
         if (this.canRunOnOneColumn()) {
             this.executor = generator.functionForAST(this.ast, {'*': 'value'});
         } else {
-            this.executor = generator.planNodeFunctionForAST(this.ast, this.inputNodes, dataframe.getColumnsByType());
+            this.executor = generator.functionForPlanNode(this, dataframe.getColumnsByType());
         }
         this.eachNode(function (eachNode) {
             eachNode.compile(generator, dataframe);
@@ -38,49 +118,42 @@ PlanNode.prototype = {
      * @returns {Array|DataframeMask}
      */
     execute: function (dataframe, valuesRequired) {
-        var results;
         if (this.canRunOnOneColumn()) {
-            _.each(this.attributeData, function (attributeData) {
-                var returnType = this.returnType();
-                if (valuesRequired && returnType === ReturnTypes.Positions) {
-                    returnType = ReturnTypes.Values;
-                }
-                switch (returnType) {
-                    case ReturnTypes.Positions:
-                        results = dataframe.getAttributeMask(attributeData.type, attributeData.attribute, this.executor);
-                        break;
-                    case ReturnTypes.Values:
-                        results = dataframe.mapToAttribute(attributeData.type, attributeData.attribute, this.executor);
-                        break;
-                }
-            }.bind(this));
+            var returnType = this.returnType(), executor = this.executor;
+            var attributeName = _.find(this.attributeData);
+            if (valuesRequired && returnType === ReturnTypes.Positions) {
+                returnType = ReturnTypes.Values;
+            }
+            switch (returnType) {
+                case ReturnTypes.Positions:
+                    return dataframe.getAttributeMask(attributeName.type, attributeName.attribute, executor);
+                case ReturnTypes.Values:
+                    return dataframe.mapToAttribute(attributeName.type, attributeName.attribute, executor);
+            }
         } else {
+            var iterationType = this.iterationType();
+            var numElements = dataframe.numByType(iterationType);
+            var bindingKeys, bindings, perElementBindings, i, j, attribute;
             if (this.returnType() === ReturnTypes.Values) {
-                var iterationType;
-                var bindings = _.mapObject(this.attributeData, function (attributeData) {
-                    if (iterationType === undefined) {
-                        iterationType = attributeData.type;
-                    } else if (attributeData.type !== iterationType) {
-                        throw new Error('Unsupported: multi-column expression over points and edges together.');
-                    }
-                    return dataframe.getBuffer(attributeData.name, attributeData.type);
+                bindings = _.mapObject(this.attributeData, function (attributeName) {
+                    return dataframe.getColumnValues(attributeName.attribute, attributeName.type);
                 });
-                var numElements = dataframe.numByType(iterationType);
-                results = new Array(numElements);
-                var bindingKeys = _.keys(bindings);
-                var perElementBindings = _.mapObject(bindings, function () { return undefined; });
-                for (var i=0; i<numElements; i++) {
-                    for (var j=0; j<bindingKeys.length; j++) {
-                        var attributeName = bindingKeys[j];
-                        perElementBindings[attributeName] = bindings[attributeName][i];
+                bindingKeys = _.keys(bindings);
+                perElementBindings = _.mapObject(this.attributeData, function () { return undefined; });
+                var resultValues = new Array(numElements);
+                for (i=0; i<numElements; i++) {
+                    for (j=0; j<bindingKeys.length; j++) {
+                        attribute = bindingKeys[j];
+                        perElementBindings[attribute] = bindings[attribute][i];
                     }
-                    results[i] = this.executor.call(perElementBindings);
+                    resultValues[i] = this.executor.call(perElementBindings);
                 }
+                return resultValues;
             } else {
                 valuesRequired = _.any(this.inputNodes, function (inputNode) {
                     return inputNode.returnType() === ReturnTypes.Values;
                 });
-                var inputResults = _.mapObject(this.inputNodes, function (inputNode) {
+                bindings = _.mapObject(this.inputNodes, function (inputNode) {
                     if (_.isArray(inputNode)) {
                         return _.map(inputNode, function (eachNode) {
                             return eachNode.execute(dataframe, valuesRequired);
@@ -89,10 +162,40 @@ PlanNode.prototype = {
                         return inputNode.execute(dataframe, valuesRequired);
                     }
                 });
-                results = this.executor.call(inputResults);
+                bindingKeys = _.keys(bindings);
+                perElementBindings = _.mapObject(this.inputNodes, function () { return undefined; });
+                var mask = [];
+                for (i=0; i<numElements; i++) {
+                    for (j=0; j<bindingKeys.length; j++) {
+                        attribute = bindingKeys[j];
+                        perElementBindings[attribute] = bindings[attribute][i];
+                    }
+                    if (this.executor.call(perElementBindings)) {
+                        mask.push(i);
+                    }
+                }
+                var pointMask = iterationType === 'point' ? mask : undefined;
+                var edgeMask = iterationType === 'edge' ? mask : undefined;
+                return new DataframeMask(dataframe, pointMask, edgeMask);
             }
         }
-        return results;
+        return undefined;
+    },
+
+    iterationType: function () {
+        var result;
+        _.each(this.attributeData, function (attributeName) {
+            if (result === undefined) {
+                result = attributeName.type;
+            }
+        });
+        return result || 'point';
+    },
+
+    eachAttribute: function (attributeIterator) {
+        _.each(this.attributeData, function (attributeName, key) {
+            attributeIterator(attributeName, key);
+        });
     },
 
     eachNode: function (nodeIterator) {
@@ -202,68 +305,37 @@ ExpressionPlan.prototype = {
     },
 
     /**
-     * @param {ClientQueryAST} ast
-     * @param {PlanNode[]} inputNodes
-     * @returns {PlanNode}
-     */
-    combinePlanNodes: function (ast, inputNodes) {
-        // List all nodes under their attribute if they have one.
-        var attributesByName = {};
-        var attributesByType = {};
-        _.each(inputNodes, function (inputNode) {
-            _.each(inputNode.attributeData, function (attributeData) {
-                var attributeName = attributeData.attribute;
-                if (attributeName !== undefined) {
-                    if (attributesByName[attributeName] === undefined) {
-                        attributesByName[attributeName] = [];
-                    }
-                    attributesByName[attributeName].push(inputNode);
-                }
-                var attributeType = attributeData.type;
-                if (attributeType !== undefined) {
-                    if (attributesByType[attributeType] === undefined) {
-                        attributesByType[attributeType] = [];
-                    }
-                    attributesByType[attributeType].push(inputNode);
-                }
-            });
-        });
-        // Disabled because we can't detect this correctly until execute().
-        if (false && _.size(attributesByType) > 1) {
-            throw new Error('Cannot mix point and edge computations except via set aggregation.');
-        }
-        return new PlanNode(ast, inputNodes, attributesByName);
-    },
-
-    /**
      * @param {ClientQueryAST} ast - From expression parser.
      * @param {Dataframe} dataframe - Normalizes attributes.
      * @return {PlanNode}
      */
     planFromAST: function (ast, dataframe) {
-        switch (ast.type) {
-            case 'Identifier':
-                var attributeData = {};
-                var attributeName = dataframe.normalizeAttributeName(ast.name);
-                attributeData[attributeName.attribute] = attributeName;
-                return new PlanNode(ast, undefined, attributeData);
-            case 'Literal':
-                return new PlanNode(ast);
-        }
         var inputProperties = this.codeGenerator.inputPropertiesFromAST(ast);
-        if (inputProperties !== undefined) {
-            var inputResults = _.mapObject(_.pick(ast, inputProperties), function (inputAST) {
-                if (_.isArray(inputAST)) {
-                    return _.map(inputAST, function (eachAST) {
-                        return this.planFromAST(eachAST, dataframe);
-                    }.bind(this));
-                } else {
-                    return this.planFromAST(inputAST, dataframe);
-                }
-            }.bind(this));
-            return this.combinePlanNodes(ast, inputResults);
+        if (inputProperties === undefined) {
+            switch (ast.type) {
+                case 'Identifier':
+                    var attributeData = {};
+                    var attributeName = dataframe.normalizeAttributeName(ast.name);
+                    if (attributeName !== undefined) {
+                        attributeData[attributeName.attribute] = attributeName;
+                    }
+                    return new PlanNode(ast, undefined, attributeData);
+                case 'Literal':
+                    return new PlanNode(ast);
+                default:
+                    throw new Error('Unhandled input to plan: ' + ast.type);
+            }
         }
-        throw new Error('Unhandled input to plan: ' + ast.type);
+        var inputResults = _.mapObject(_.pick(ast, inputProperties), function (inputAST) {
+            if (_.isArray(inputAST)) {
+                return _.map(inputAST, function (eachAST) {
+                    return this.planFromAST(eachAST, dataframe);
+                }.bind(this));
+            } else {
+                return this.planFromAST(inputAST, dataframe);
+            }
+        }.bind(this));
+        return new PlanNode(ast, inputResults);
     }
 };
 

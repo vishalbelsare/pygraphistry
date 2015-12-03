@@ -288,15 +288,14 @@ ExpressionCodeGenerator.prototype = {
         return safeFunctionName + '(' + args.join(', ') + ')';
     },
 
-    hasMultipleBindings: function () {
-        return Object.keys(this.bindings).length > 1;
+    hasMultipleBindings: function (bindings) {
+        return Object.keys(bindings).length > 1;
     },
 
     functionForAST: function (ast, bindings) {
         var source;
-        this.bindings = bindings;
-        var body = this.expressionStringForAST(ast);
-        if (this.hasMultipleBindings()) {
+        var body = this.expressionStringForAST(ast, bindings);
+        if (this.hasMultipleBindings(bindings)) {
             source = '(function () { return ' + body + '; })';
             logger.warn('Evaluating (multi-column)', ast.type, source);
         } else {
@@ -306,25 +305,37 @@ ExpressionCodeGenerator.prototype = {
         return eval(source); // jshint ignore:line
     },
 
-    planNodeFunctionForAST: function (ast, inputNodes, bindings) {
-        var transformedAST = _.mapObject(ast, function (value, key) {
+    transformedASTPerBindings: function (ast, bindings) {
+        return _.mapObject(ast, function (value, key) {
             if (bindings.hasOwnProperty(key)) {
                 return {type: 'Identifier', name: propertyAccessExprStringFor(key)};
             } else {
                 return value;
             }
         });
-        this.bindings = bindings;
-        var body = this.planNodeExpressionStringForAST(transformedAST);
+    },
+
+    localizedAST: function (ast) {
+        var propertiesToLocalize = this.inputPropertiesFromAST(ast);
+        return _.mapObject(ast, function (arg, key) {
+            if (_.contains(propertiesToLocalize, key)) {
+                return {type: 'Identifier', name: key};
+            } else {
+                return arg;
+            }
+        }, this);
+    },
+
+    functionForPlanNode: function (planNode, bindings) {
+        var body = this.planNodeExpressionStringForAST(planNode.ast, bindings);
         var source = '(function () { return ' + body + '; })';
-        logger.warn('Evaluating (multi-column)', ast.type, source);
+        logger.warn('Evaluating (multi-column)', planNode.ast.type, source);
         return eval(source); // jshint ignore:line
     },
 
     /** Evaluate an expression immediately, with no access to any bindings. */
     evaluateExpressionFree: function (ast) {
-        this.bindings = {};
-        var body = this.expressionStringForAST(ast);
+        var body = this.expressionStringForAST(ast, {});
         return eval(body); // jshint ignore:line
     },
 
@@ -368,7 +379,7 @@ ExpressionCodeGenerator.prototype = {
         return outputLiteralString;
     },
 
-    regexExpressionForLikeOperator: function (ast, depth, outerPrecedence) {
+    regexExpressionForLikeOperator: function (ast, bindings, depth, outerPrecedence) {
         var caseInsensitive = ast.operator.toUpperCase() === 'ILIKE';
         var escapeChar = '%'; // Could override in AST via "LIKE pattern ESCAPE char"
         if (ast.right.type !== 'Literal') {
@@ -382,7 +393,7 @@ ExpressionCodeGenerator.prototype = {
             outputLiteralString += 'i';
         }
         var precedence = this.precedenceOf('.');
-        var arg = this.expressionStringForAST(ast.left, depth + 1, precedence);
+        var arg = this.expressionStringForAST(ast.left, bindings, depth + 1, precedence);
         var subExprString = arg + '.match(' + outputLiteralString + ')';
         return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
     },
@@ -420,29 +431,30 @@ ExpressionCodeGenerator.prototype = {
         }
     },
 
-    planNodeExpressionStringForAST: function (ast, depth, outerPrecedence) {
+    planNodeExpressionStringForAST: function (ast, bindings, depth, outerPrecedence) {
         if (depth === undefined) {
             depth = 0;
         }
-        var precedence = this.precedenceOf('.'), subExprString, args, arg;
+        var precedence = this.precedenceOf('.'), subExprString;
+        var transformedAST = this.transformedASTPerBindings(ast, bindings);
+        var localizedAST = this.localizedAST(ast);
+        var localizedArgs = _.mapObject(_.pick(localizedAST, this.inputPropertiesFromAST(ast)), function (arg) {
+            return this.expressionStringForAST(arg, bindings, depth + 1, precedence);
+        }, this);
         switch (ast.type) {
             case 'NotExpression':
-                arg = this.expressionStringForAST({type: 'Identifier', name: 'value'}, depth + 1, precedence);
-                subExprString = arg + '.complement()';
+                subExprString = localizedArgs.value + '.complement()';
                 return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
             case 'BinaryPredicate':
-                args = _.mapObject(_.pick(ast, InputPropertiesByShape.BinaryExpression), function (arg, key) {
-                    return this.expressionStringForAST({type: 'Identifier', name: key}, depth + 1, precedence);
-                }, this);
                 switch (ast.operator.toUpperCase()) {
                     case 'AND':
-                        subExprString = args.left + '.intersection(' + args.right + ')';
+                        subExprString = localizedArgs.left + '.intersection(' + localizedArgs.right + ')';
                         return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
                     case 'OR':
-                        subExprString = args.left + '.union(' + args.right + ')';
+                        subExprString = localizedArgs.left + '.union(' + localizedArgs.right + ')';
                         return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
                     default:
-                        return this.expressionStringForAST(ast, depth, outerPrecedence);
+                        return this.expressionStringForAST(localizedAST, bindings, depth, outerPrecedence);
                 }
                 break;
             case 'BetweenPredicate':
@@ -454,9 +466,9 @@ ExpressionCodeGenerator.prototype = {
             case 'ListExpression':
             case 'FunctionCall':
             case 'Literal':
-                return this.expressionStringForAST(ast, depth + 1, outerPrecedence);
+                return this.expressionStringForAST(localizedAST, bindings, depth, outerPrecedence);
             case 'Identifier':
-                return this.expressionStringForAST(ast, depth + 1, outerPrecedence);
+                return this.expressionStringForAST(ast, bindings, depth + 1, outerPrecedence);
             default:
                 throw new Error('Unhandled expression type for planning: ' + ast.type);
         }
@@ -465,11 +477,12 @@ ExpressionCodeGenerator.prototype = {
     /**
      * Printed source form of the expression in JavaScript that executes the AST.
      * @param {ClientQueryAST} ast - From expression parser.
+     * @param {Object} bindings - Specifies available names.
      * @param {Number} [depth] - Specifies depth, to use for pretty-printing/indents.
      * @param {Number} [outerPrecedence] - Surrounding expression precedence, determines whether result needs ().
      * @returns {String}
      */
-    expressionStringForAST: function (ast, depth, outerPrecedence) {
+    expressionStringForAST: function (ast, bindings, depth, outerPrecedence) {
         if (typeof ast === 'string') {
             return ast;
         }
@@ -480,12 +493,12 @@ ExpressionCodeGenerator.prototype = {
         switch (ast.type) {
             case 'NotExpression':
                 precedence = this.precedenceOf('!');
-                arg = this.expressionStringForAST(ast.value, depth + 1, precedence);
+                arg = this.expressionStringForAST(ast.value, bindings, depth + 1, precedence);
                 return this.wrapSubExpressionPerPrecedences('!' + arg, precedence, outerPrecedence);
             case 'BetweenPredicate':
                 precedence = this.precedenceOf('&&');
                 args = _.mapObject(_.pick(ast, InputPropertiesByShape.BetweenPredicate), function (arg) {
-                    return this.expressionStringForAST(arg, depth + 1, this.precedenceOf('<='));
+                    return this.expressionStringForAST(arg, bindings, depth + 1, this.precedenceOf('<='));
                 }, this);
                 subExprString = args.value + ' >= ' + args.start +
                     ' && ' + args.value + ' <= ' + args.stop;
@@ -493,7 +506,7 @@ ExpressionCodeGenerator.prototype = {
             case 'RegexPredicate':
                 precedence = this.precedenceOf('.');
                 args = _.mapObject(_.pick(ast, InputPropertiesByShape.BinaryExpression), function (arg) {
-                    return this.expressionStringForAST(arg, depth + 1, this.precedenceOf('<='));
+                    return this.expressionStringForAST(arg, bindings, depth + 1, this.precedenceOf('<='));
                 }, this);
                 subExprString = '(new RegExp(' + args.right + ')).test(' + args.left + ')';
                 return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
@@ -505,7 +518,7 @@ ExpressionCodeGenerator.prototype = {
                 switch (ast.operator.toUpperCase()) {
                     case 'LIKE':
                         precedence = this.precedenceOf('.');
-                        arg = this.expressionStringForAST(ast.left, depth + 1, precedence);
+                        arg = this.expressionStringForAST(ast.left, bindings, depth + 1, precedence);
                         var prefix, suffix;
                         var lastPatternIndex = pattern.length - 1;
                         if (pattern.startsWith('%') && pattern.endsWith('%')) {
@@ -514,7 +527,7 @@ ExpressionCodeGenerator.prototype = {
                             precedence = this.precedenceOf('!==');
                             subExprString = arg + '.indexOf(' + literalExpressionFor(substring) + ') !== -1';
                         } else if (pattern.indexOf('%') !== pattern.lastIndexOf('%')) {
-                            return this.regexExpressionForLikeOperator(args, depth, outerPrecedence);
+                            return this.regexExpressionForLikeOperator(args, bindings, depth, outerPrecedence);
                         } else if (pattern.startsWith('%')) {
                             suffix = pattern.slice(-lastPatternIndex);
                             subExprString = arg + '.endsWith(' + literalExpressionFor(suffix) + ')';
@@ -536,7 +549,7 @@ ExpressionCodeGenerator.prototype = {
                         }
                         return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
                     case 'ILIKE':
-                        return this.regexExpressionForLikeOperator(ast, depth, outerPrecedence);
+                        return this.regexExpressionForLikeOperator(ast, bindings, depth, outerPrecedence);
                     default:
                         throw Error('Operator not yet implemented: ' + ast.operator);
                 }
@@ -546,7 +559,7 @@ ExpressionCodeGenerator.prototype = {
                 // Maybe InExpression would be a better logic branch:
                 if (ast.operator.toUpperCase() === 'IN') {
                     args = _.map([ast.left, ast.right], function (arg) {
-                        return this.expressionStringForAST(arg, depth + 1, precedence);
+                        return this.expressionStringForAST(arg, bindings, depth + 1, precedence);
                     }, this);
                     subExprString = args[1] + '.indexOf(' + args[0] + ') !== -1';
                     return this.wrapSubExpressionPerPrecedences(subExprString, this.precedenceOf('!=='), outerPrecedence);
@@ -554,14 +567,14 @@ ExpressionCodeGenerator.prototype = {
                 operator = this.translateOperator(ast.operator);
                 precedence = this.precedenceOf(operator);
                 args = _.map([ast.left, ast.right], function (arg) {
-                    return this.expressionStringForAST(arg, depth + 1, precedence);
+                    return this.expressionStringForAST(arg, bindings, depth + 1, precedence);
                 }, this);
                 subExprString = [args[0], operator, args[1]].join(' ');
                 return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
             case 'UnaryExpression':
                 operator = this.translateOperator(ast.operator);
                 precedence = this.precedenceOf(operator, ast.fixity);
-                arg = this.expressionStringForAST(ast.argument, depth + 1, precedence);
+                arg = this.expressionStringForAST(ast.argument, bindings, depth + 1, precedence);
                 switch (ast.fixity) {
                     case 'prefix':
                         subExprString = operator + ' ' + arg;
@@ -585,17 +598,17 @@ ExpressionCodeGenerator.prototype = {
                 }
                 switch (type_name.toLowerCase()) {
                     case 'string':
-                        castValue = this.expressionStringForAST(value, depth + 1, this.precedenceOf('.')) + '.toString()';
+                        castValue = this.expressionStringForAST(value, bindings, depth + 1, this.precedenceOf('.')) + '.toString()';
                         break;
                     case 'integer':
-                        castValue = 'parseInt(' + this.expressionStringForAST(value, depth + 1, this.precedenceOf('(')) + ')';
+                        castValue = 'parseInt(' + this.expressionStringForAST(value, bindings, depth + 1, this.precedenceOf('(')) + ')';
                         break;
                     case 'number':
-                        castValue = 'Number(' + this.expressionStringForAST(value, depth + 1, this.precedenceOf('(')) + ')';
+                        castValue = 'Number(' + this.expressionStringForAST(value, bindings, depth + 1, this.precedenceOf('(')) + ')';
                         break;
                     case 'array':
                         // Wraps the object in a single-slot Array. This is the simplest interpretation but workable:
-                        castValue = '[' + this.expressionStringForAST(value, depth + 1, this.precedenceOf('[')) + ']';
+                        castValue = '[' + this.expressionStringForAST(value, bindings, depth + 1, this.precedenceOf('[')) + ']';
                         break;
                     default:
                         throw Error('Unrecognized type: ' + type_name);
@@ -605,16 +618,16 @@ ExpressionCodeGenerator.prototype = {
                 return literalExpressionFor(ast.value);
             case 'ListExpression':
                 args = _.map(ast.elements, function (arg) {
-                    return this.expressionStringForAST(arg, depth + 1, this.precedenceOf('('));
+                    return this.expressionStringForAST(arg, bindings, depth + 1, this.precedenceOf('('));
                 }, this);
                 return '[' + args.join(', ') + ']';
             case 'FunctionCall':
                 args = _.map(ast.arguments, function (arg) {
-                    return this.expressionStringForAST(arg, depth + 1, this.precedenceOf('('));
+                    return this.expressionStringForAST(arg, bindings, depth + 1, this.precedenceOf('('));
                 }, this);
                 return this.expressionForFunctionCall(ast.callee.name, args, outerPrecedence);
             case 'Identifier':
-                if (this.hasMultipleBindings()) {
+                if (this.hasMultipleBindings(bindings)) {
                     var unsafeInputName = ast.name;
                     // Delete all non-word characters, but keep colons and dots.
                     var inputName = unsafeInputName.replace(/[^\w:]/, '', 'g');
@@ -622,7 +635,7 @@ ExpressionCodeGenerator.prototype = {
                     if (inputNameParts.length === 0) {
                         return 'undefined';
                     }
-                    var scope = this.bindings;
+                    var scope = bindings;
                     if (inputNameParts.length > 1) {
                         switch (inputNameParts[0]) {
                             case 'point':
