@@ -281,7 +281,7 @@ function load(graph, dataset) {
 }
 
 
-function loadDataframe(graph, attrs, numPoints, numEdges) {
+function loadDataframe(graph, attrs, numPoints, numEdges, encodings) {
     var edgeAttrsList = _.filter(attrs, function (value) {
         return value.target === EDGE;
     });
@@ -297,6 +297,7 @@ function loadDataframe(graph, attrs, numPoints, numEdges) {
         return [value.name, value];
     }));
 
+    _.extend(graph.dataframe.bufferAliases, encodings);
     graph.dataframe.load(edgeAttrs, 'edge', numEdges);
     graph.dataframe.load(pointAttrs, 'point', numPoints);
 }
@@ -307,7 +308,7 @@ function decode0(graph, vg, metadata)  {
           vg.version, vg.name, vg.nvertices, vg.nedges);
 
     var attrs = getAttributes0(vg);
-    loadDataframe(graph, attrs, vg.nvertices, vg.nedges);
+    loadDataframe(graph, attrs, vg.nvertices, vg.nedges, {});
     logger.debug('Graph has attribute: %o', _.pluck(attrs, 'name'));
 
     var vertices;
@@ -528,11 +529,11 @@ function decode1(graph, vg, metadata)  {
           vg.version, vg.name, vg.nvertices, vg.nedges);
 
     var attrs = getAttributes1(vg);
-    loadDataframe(graph, attrs, vg.nvertices, vg.nedges);
+    var encodings = _.omit(metadata.view.encodings, 'source', 'destination');
+    loadDataframe(graph, attrs, vg.nvertices, vg.nedges, encodings);
     logger.debug('Graph has attribute:', _.pluck(attrs, 'name'));
+
     var edges = new Array(vg.nedges);
-
-
     for (var i = 0; i < vg.edges.length; i++) {
         var e = vg.edges[i];
         edges[i] = [e.src, e.dst];
@@ -550,8 +551,6 @@ function decode1(graph, vg, metadata)  {
     loaders = wrap(mapper.mappings, loaders);
     logger.trace('Attribute loaders:', loaders);
     logger.trace('Encodings:', metadata.view.encodings);
-
-    var encodings = _.omit(metadata.view.encodings, 'source', 'destination');
 
     _.each(encodings, function (mapped, vname) {
         if (!(mapped in attrs)) {
