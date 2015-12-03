@@ -259,6 +259,30 @@ DataframeMask.prototype.minus = function (other) {
 };
 
 /**
+ * @param {DataframeMask} other
+ * @returns {Boolean}
+ */
+DataframeMask.prototype.equals = function (other) {
+    var that = this;
+
+    // Quick test on sizes.
+    if (this.numPoints() !== other.numPoints() || this.numEdges() !== other.numEdges()) {
+        return false;
+    }
+
+    // If sizes are same, iterate through to make sure.
+    var isSame = true;
+    _.each(['point', 'edge'], function (type) {
+        that.mapIndexes(type, function (idx, i) {
+            if (other.getIndexByType(type, i) !== idx) {
+                isSame = false;
+            }
+        })
+    });
+    return isSame;
+}
+
+/**
  * This callback applies to iterating across point and edge index arrays.
  * @callback IndexIteratorCallback
  * @param {Number} indexAsElement
