@@ -79,7 +79,7 @@ function uploadBuffer(buf, key) {
     var opts = {
         ContentType: 'application/octet-stream',
         ContentEncoding: 'gzip',
-        should_compress: false
+        shouldCompress: false
     };
     return s3.upload(config.S3, config.BUCKET, {name: key}, buf, opts).then(function() {
         return sprintf('s3://%s/%s', config.BUCKET, key);
@@ -92,7 +92,7 @@ function uploadJSON(obj, key) {
     var opts = {
         ContentType: 'application/json',
         ContentEncoding: 'gzip',
-        should_compress: true
+        shouldCompress: true
     };
     return s3.upload(config.S3, config.BUCKET, {name: key}, JSON.stringify(obj), opts).then(function() {
         return sprintf('s3://%s/%s', config.BUCKET, key);
