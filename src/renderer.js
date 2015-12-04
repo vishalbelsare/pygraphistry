@@ -752,7 +752,6 @@ function loadBuffer(state, buffer, bufferName, model, data) {
 //Create new index array that extends old one
 //GLContext * int * int * UInt32Array -> Uint32Array
 function expandHostBuffer(gl, length, repetition, oldHostBuffer) {
-    // util.consoleTimerStart('expandHostBuffer');
     var longerBuffer = new Uint32Array(Math.round(length * repetition));
 
     //memcpy old (initial) indexes
@@ -771,15 +770,16 @@ function expandHostBuffer(gl, length, repetition, oldHostBuffer) {
         baseValue |= highestBitMask;
     }
 
+    var unshiftedIndex = (oldHostBuffer.length / repetition) + 1;
     for (var i = oldHostBuffer.length; i < longerBuffer.length; i += repetition) {
-        var lbl = (i / repetition) + 1;
-        lbl = (lbl << 8) | baseValue;
+        var lbl = (unshiftedIndex << 8) | baseValue;
 
         for (var j = 0; j < repetition; j++) {
             longerBuffer[i + j] = lbl;
         }
+
+        unshiftedIndex++;
     }
-    // util.consoleTimerEnd('expandHostBuffer');
 
     return longerBuffer;
 }
