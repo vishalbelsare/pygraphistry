@@ -802,7 +802,6 @@ Dataframe.prototype.load = function (attributes, type, numElements) {
     // TODO: Decoding at the presentation layer.
     // decodeStrings(attributes);
     // decodeDates(attributes);
-    console.log(_.keys(attributes));
 
     var nodeTitleField = getNodeTitleField(attributes);
     var edgeTitleField = getEdgeTitleField(attributes);
@@ -1788,19 +1787,17 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
         }
 
         Array.prototype.sort.call(mapped, function (a, b) {
-            return edges[a*2] < edges[b*2] ? -1
-                    : edges[a*2] > edges[b*2] ? 1
-                    : edges[a*2 + 1] - edges[b*2 + 1];
+            return (edges[a*2] - edges[b*2] || (edges[a*2 + 1] - edges[b*2 + 1]));
         });
 
         for (i = 0; i < edges.length/2; i++) {
             idx = mapped[i];
-            // I believe it's slightly faster to copy it in using a 64 bit "cast"
-            // than to do it directly. However, it should be tested more before being enabled.
+            // It's slightly faster to copy it in using a 64 bit "cast"
+            // than to do it directly. Because this is a hot code path, we do this.
 
-            // maskedEdgeList[i] = maskedEdges[idx];
-            edgeListTyped[i*2] = edges[idx*2];
-            edgeListTyped[i*2 + 1] = edges[idx*2 + 1];
+            maskedEdgeList[i] = maskedEdges[idx];
+            // edgeListTyped[i*2] = edges[idx*2];
+            // edgeListTyped[i*2 + 1] = edges[idx*2 + 1];
         }
     }
 
