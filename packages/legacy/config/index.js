@@ -90,6 +90,11 @@ function defaults() {
             SECRET: 'Graphtacular'
         },
 
+        PYGRAPHISTRY: {
+            minVersion: '0.9.0',
+            latestVersion: '0.9.12'
+        },
+
         LOCAL_CACHE: true,
         LOCAL_CACHE_DIR: '/tmp/graphistry/data_cache',
 
