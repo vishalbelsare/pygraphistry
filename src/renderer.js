@@ -724,9 +724,6 @@ function loadBuffer(state, buffer, bufferName, model, data) {
         return;
     }
 
-    state.get('activeIndices')
-        .forEach(updateIndexBuffer.bind('', state, data.byteLength / 4));
-
     try{
         var glArrayType = model.index ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER;
         var glHint = model.hint || 'STREAM_DRAW';
@@ -755,30 +752,32 @@ function loadBuffer(state, buffer, bufferName, model, data) {
 //Create new index array that extends old one
 //GLContext * int * int * UInt32Array -> Uint32Array
 function expandHostBuffer(gl, length, repetition, oldHostBuffer) {
-
     var longerBuffer = new Uint32Array(Math.round(length * repetition));
 
     //memcpy old (initial) indexes
     if (oldHostBuffer.length) {
-        var dstU8 = new Uint8Array(longerBuffer.buffer, 0, oldHostBuffer.length * 4);
-        var srcU8 = new Uint8Array(oldHostBuffer.buffer);
-        dstU8.set(srcU8);
+        longerBuffer.set(oldHostBuffer);
     }
+
+    var highestBitMask = (1 << 31);
+    var isRep1 = (repetition === 1);
+    var isRep2 = (repetition === 2);
 
     for (var i = oldHostBuffer.length; i < longerBuffer.length; i += repetition) {
         var lbl = (i / repetition) + 1;
-        for (var j = 0; j < repetition; j++) {
-            longerBuffer[i + j] = (lbl << 8) | 255;
+        lbl = (lbl << 8) | 255;
 
-            // Tag first bit based on repetition (e.g., point, edge, etc)
-            // Repetition of 1 has 0 on highest bit.
-            // Repetition of 2 has 1 on highest bit.
-            var highestBitMask = (1 << 31);
-            if (repetition === 1) {
-                longerBuffer[i + j] &= (~highestBitMask);
-            } else if (repetition === 2) {
-                longerBuffer[i + j] |= highestBitMask;
-            }
+        // Tag first bit based on repetition (e.g., point, edge, etc)
+        // Repetition of 1 has 0 on highest bit.
+        // Repetition of 2 has 1 on highest bit.
+        if (isRep1) {
+            lbl &= (~highestBitMask);
+        } else if (isRep2) {
+            lbl |= highestBitMask;
+        }
+
+        for (var j = 0; j < repetition; j++) {
+            longerBuffer[i + j] = lbl;
         }
     }
 
@@ -803,8 +802,12 @@ function updateIndexBuffer(state, length, repetition) {
     var oldHostBuffer = indexHostBuffers[repetition];
 
     if (oldHostBuffer.length < length * repetition) {
+        console.log('Failed test for:', repetition, oldHostBuffer.length, length*repetition);
+        var start = Date.now();
 
+        var beforeExpand = Date.now();
         var longerBuffer = expandHostBuffer(gl, length, repetition, indexHostBuffers[repetition]);
+        console.log('TIME TO EXPAND: ', Date.now() - beforeExpand);
         indexHostBuffers[repetition] = longerBuffer;
 
         var glBuffer = indexGlBuffers[repetition];
@@ -812,8 +815,11 @@ function updateIndexBuffer(state, length, repetition) {
         debug('Expanding index buffer', glBuffer, 'memcpy', oldHostBuffer.length/repetition, 'elts',
               'write to', length * repetition);
 
+
         bindBuffer(gl, gl.ARRAY_BUFFER, glBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, longerBuffer, gl.STREAM_DRAW);
+        console.log('Before buffer Data: ', Date.now() - start);
+        gl.bufferData(gl.ARRAY_BUFFER, longerBuffer, gl.STATIC_DRAW);
+        console.log('TIME TOOK: ', Date.now() - start);
     }
 }
 
@@ -937,6 +943,7 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
         options     = state.get('options'),
         ext         = state.get('ext'),
         programs    = state.get('programs').toJS(),
+        numElements = state.get('numElements'),
         buffers     = state.get('buffers').toJS();
 
     var toRender = getItemsForTrigger(state, renderListTrigger) || renderListOverride;
@@ -950,6 +957,11 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
 
     debug('==== Rendering a frame (tag: ' + tag +')', toRender);
     state.get('renderPipeline').onNext({start: toRender});
+
+    // Update index buffers based on largest currently loaded buffer.
+    var maxElements = Math.max(_.max(_.values(numElements)), 0);
+    state.get('activeIndices')
+        .forEach(updateIndexBuffer.bind('', state, maxElements));
 
     var itemToTarget = function (config, itemName) {
         var itemDef = config.items[itemName];
