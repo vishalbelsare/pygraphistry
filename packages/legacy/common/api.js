@@ -53,13 +53,14 @@ function checkSSL(req) {
     //TODO make an error once prod ssl server enabled
     if (!req.secure && (config.ENVIRONMENT !== 'local')) {
         logger.warn('/encrypt needs https when not local');
-        //return res.json({error: 'requires https'});
+        //return res.json({success: false, error: 'requires https'});
     }
 }
 
 
 function init (app) {
     var nextEta = Date.now();
+    var maxReqRate = 1000;
 
     // https://.../api/encrypt?text=... => {encrypted: string} + {error: string}
     // allow at most 1 req per second
@@ -71,7 +72,7 @@ function init (app) {
 
         //immediate if not used in awhile, otherwise in 1s after next queued
         var now = Date.now();
-        nextEta = Math.max(now, nextEta + 1000);
+        nextEta = Math.max(now, nextEta + maxReqRate);
         setTimeout(
             function () {
                 try {
@@ -94,11 +95,18 @@ function init (app) {
 
         //immediate if not used in awhile, otherwise in 1s after next queued
         var now = Date.now();
-        nextEta = Math.max(now, nextEta + 1000);
+        nextEta = Math.max(now, nextEta + maxReqRate);
         setTimeout(
             function () {
                 try {
-                    var payload = {success: true, decrypted: decrypt(req.query.text)};
+                    var payload = {
+                        success: true,
+                        decrypted: decrypt(req.query.text),
+                        pygraphistry: {
+                            minVersion: config.PYGRAPHISTRY.minVersion,
+                            latestVersion: config.PYGRAPHISTRY.latestVersion
+                        }
+                    };
                     res.json(checkOnly ? _.omit(payload, 'decrypted') : payload);
                 } catch (err) {
                     logger.error(err, 'decrypter');
