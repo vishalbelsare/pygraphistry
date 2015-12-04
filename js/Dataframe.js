@@ -58,6 +58,7 @@ function Dataframe () {
         []
     );
     this.masksForVizSets = {};
+    this.bufferAliases = {};
     this.data = this.rawdata;
     this.resetData = makeEmptyData();
 }
@@ -803,8 +804,8 @@ Dataframe.prototype.load = function (attributes, type, numElements) {
     // decodeStrings(attributes);
     // decodeDates(attributes);
 
-    var nodeTitleField = getNodeTitleField(attributes);
-    var edgeTitleField = getEdgeTitleField(attributes);
+    var nodeTitleField = pickTitleField(this.bufferAliases, attributes, 'pointTitle');
+    var edgeTitleField = pickTitleField(this.bufferAliases, attributes, 'edgeTitle');
 
     var filteredKeys = _.keys(attributes)
         .filter(function (name) {
@@ -1640,26 +1641,14 @@ function decodeDates (attributes) {
 }
 
 
-function pickTitleField (attributes, prioritized) {
-    for (var i = 0; i < prioritized.length; i++) {
-        var field = prioritized[i];
-        if (attributes.hasOwnProperty(field)) {
-            return field;
-        }
+function pickTitleField (aliases, attributes, field) {
+    var mapped = aliases[field];
+    if (mapped && mapped in attributes) {
+        return mapped;
+    } else {
+        var oldDeprecatedNames = [field, 'node', 'label', 'edge'];
+        return _.find(oldDeprecatedNames, function (f) { return f in attributes; });
     }
-    return undefined;
-}
-
-
-function getNodeTitleField (attributes) {
-    var prioritized = ['pointTitle', 'node', 'label', 'ip'];
-    return pickTitleField(attributes, prioritized);
-}
-
-
-function getEdgeTitleField (attributes) {
-    var prioritized = ['edgeTitle', 'edge'];
-    return pickTitleField(attributes, prioritized);
 }
 
 function round_down(num, multiple) {
