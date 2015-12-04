@@ -106,14 +106,14 @@ function notIdentity (val) {
     return !val;
 }
 
-var time = 0;
+var times = {};
 function consoleTimerStart(name) {
     console.log('==Started Timing', name);
-    time = Date.now();
+    times[name] = Date.now();
 }
 
 function consoleTimerEnd(name) {
-    console.log('++' + name + ' took', (Date.now() - time), 'ms' );
+    console.log('++' + name + ' took', (Date.now() - times[name]), 'ms' );
 }
 
 module.exports = {

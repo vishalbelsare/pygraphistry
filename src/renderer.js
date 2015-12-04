@@ -802,12 +802,10 @@ function updateIndexBuffer(state, length, repetition) {
     var oldHostBuffer = indexHostBuffers[repetition];
 
     if (oldHostBuffer.length < length * repetition) {
-        console.log('Failed test for:', repetition, oldHostBuffer.length, length*repetition);
         var start = Date.now();
 
         var beforeExpand = Date.now();
         var longerBuffer = expandHostBuffer(gl, length, repetition, indexHostBuffers[repetition]);
-        console.log('TIME TO EXPAND: ', Date.now() - beforeExpand);
         indexHostBuffers[repetition] = longerBuffer;
 
         var glBuffer = indexGlBuffers[repetition];
@@ -817,9 +815,7 @@ function updateIndexBuffer(state, length, repetition) {
 
 
         bindBuffer(gl, gl.ARRAY_BUFFER, glBuffer);
-        console.log('Before buffer Data: ', Date.now() - start);
         gl.bufferData(gl.ARRAY_BUFFER, longerBuffer, gl.STATIC_DRAW);
-        console.log('TIME TOOK: ', Date.now() - start);
     }
 }
 
