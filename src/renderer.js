@@ -752,6 +752,7 @@ function loadBuffer(state, buffer, bufferName, model, data) {
 //Create new index array that extends old one
 //GLContext * int * int * UInt32Array -> Uint32Array
 function expandHostBuffer(gl, length, repetition, oldHostBuffer) {
+    // util.consoleTimerStart('expandHostBuffer');
     var longerBuffer = new Uint32Array(Math.round(length * repetition));
 
     //memcpy old (initial) indexes
@@ -759,27 +760,26 @@ function expandHostBuffer(gl, length, repetition, oldHostBuffer) {
         longerBuffer.set(oldHostBuffer);
     }
 
+    // Tag first bit based on repetition (e.g., point, edge, etc)
+    // Repetition of 1 has 0 on highest bit.
+    // Repetition of 2 has 1 on highest bit.
     var highestBitMask = (1 << 31);
-    var isRep1 = (repetition === 1);
-    var isRep2 = (repetition === 2);
+    var baseValue = 255;
+    if (repetition === 1) {
+        baseValue &= (~highestBitMask);
+    } else if (repetition === 2) {
+        baseValue |= highestBitMask;
+    }
 
     for (var i = oldHostBuffer.length; i < longerBuffer.length; i += repetition) {
         var lbl = (i / repetition) + 1;
-        lbl = (lbl << 8) | 255;
-
-        // Tag first bit based on repetition (e.g., point, edge, etc)
-        // Repetition of 1 has 0 on highest bit.
-        // Repetition of 2 has 1 on highest bit.
-        if (isRep1) {
-            lbl &= (~highestBitMask);
-        } else if (isRep2) {
-            lbl |= highestBitMask;
-        }
+        lbl = (lbl << 8) | baseValue;
 
         for (var j = 0; j < repetition; j++) {
             longerBuffer[i + j] = lbl;
         }
     }
+    // util.consoleTimerEnd('expandHostBuffer');
 
     return longerBuffer;
 }
