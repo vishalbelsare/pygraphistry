@@ -725,26 +725,30 @@ function loadBuffer(state, buffer, bufferName, model, data) {
     }
 
     try{
-        var glArrayType = model.index ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER;
-        var glHint = model.hint || 'STREAM_DRAW';
-        bindBuffer(gl, glArrayType, buffer);
-
-
-        if(bufferSizes[bufferName] >= data.byteLength) {
-            debug('Reusing existing GL buffer to load data for buffer %s (current size: %d, new data size: %d)',
-                  bufferName, bufferSizes[bufferName], data.byteLength);
-            gl.bufferSubData(glArrayType, 0, data);
-        } else {
-            debug('Creating new buffer data store for buffer %s (new size: %d, hint: %s)',
-                  bufferName, data.byteLength, glHint);
-            gl.bufferData(glArrayType, data, gl[glHint]);
-            bufferSizes[bufferName] = data.byteLength;
-        }
+        loadBufferBody(state, buffer, bufferName, model, data, bufferSizes, gl);
     } catch(glErr) {
         // This often doesn't get called on GL errors, since they seem to be thrown from the global
         // WebGL context, not at the point we call the command (above).
         console.error('Error: could not load data into buffer', bufferName, '. Error:', glErr);
         throw glErr;
+    }
+}
+
+// Separated out because V8 can't optimize try-catch bodies.
+function loadBufferBody(state, buffer, bufferName, model, data, bufferSizes, gl) {
+    var glArrayType = model.index ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER;
+    var glHint = model.hint || 'STREAM_DRAW';
+    bindBuffer(gl, glArrayType, buffer);
+
+    if(bufferSizes[bufferName] >= data.byteLength) {
+        debug('Reusing existing GL buffer to load data for buffer %s (current size: %d, new data size: %d)',
+              bufferName, bufferSizes[bufferName], data.byteLength);
+        gl.bufferSubData(glArrayType, 0, data);
+    } else {
+        debug('Creating new buffer data store for buffer %s (new size: %d, hint: %s)',
+              bufferName, data.byteLength, glHint);
+        gl.bufferData(glArrayType, data, gl[glHint]);
+        bufferSizes[bufferName] = data.byteLength;
     }
 }
 
