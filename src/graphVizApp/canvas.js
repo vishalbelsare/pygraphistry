@@ -69,6 +69,7 @@ function expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPo
 
     var starts = new Float32Array(numEdges * (numRenderedSplits + 1) * 4);
     var ends = new Float32Array(numEdges * (numRenderedSplits + 1) * 4);
+
     var offset = 0;
 
     for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex++) {
@@ -124,7 +125,6 @@ function getEdgeLabelPos (appState, edgeIndex) {
 //  * int * float
 //  -> {midSpringsPos: Float32Array, midSpringsStarts: Float32Array, midSpringsEnds: Float32Array}
 function expandLogicalEdges(renderState, bufferSnapshots, numRenderedSplits, edgeHeight) {
-    util.consoleTimerStart('AllExpandLogicalEdges');
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
     var numEdges = logicalEdges.length / 2;
@@ -152,11 +152,9 @@ function expandLogicalEdges(renderState, bufferSnapshots, numRenderedSplits, edg
         midSpringsPos[index + 3] = dstMidPointY;
     };
 
-    util.consoleTimerStart('ExpandMidpoints');
     //for each midEdge, start x/y & end x/y
     var midSpringsEndpoints = expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPoints);
     // Used to be 85ms
-    util.consoleTimerEnd('ExpandMidpoints');
 
     //TODO have server pre-compute real heights, and use them here
     //var edgeHeights = renderState.get('hostBuffersCache').edgeHeights;
@@ -185,11 +183,7 @@ function expandLogicalEdges(renderState, bufferSnapshots, numRenderedSplits, edg
         valueCache[h][e] = val;
     }
 
-    util.consoleTimerStart('logicalEdgesLoop');
-
     for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
-
-
 
         srcPointIdx = logicalEdges[2 * edgeIndex];
         dstPointIdx = logicalEdges[2 * edgeIndex + 1];
@@ -214,8 +208,6 @@ function expandLogicalEdges(renderState, bufferSnapshots, numRenderedSplits, edg
         }
         prevSrcIdx = srcPointIdx;
         prevDstIdx = dstPointIdx;
-
-
 
         // We haven't seen this combo of heightCounter and edgeSeqLen yet.
         var cachedObj = getFromCache(heightCounter, edgeSeqLen);
@@ -250,12 +242,6 @@ function expandLogicalEdges(renderState, bufferSnapshots, numRenderedSplits, edg
         var cosArray = cachedObj.cosArray;
         var sinArray = cachedObj.sinArray;
 
-
-
-
-
-
-
         var edgeLength =
             srcPointIdx === dstPointIdx ? 1.0
             : Math.sqrt(Math.pow((dstPointX - srcPointX), 2) + Math.pow((dstPointY - srcPointY), 2));
@@ -287,11 +273,6 @@ function expandLogicalEdges(renderState, bufferSnapshots, numRenderedSplits, edg
         setMidEdge(edgeIndex, numRenderedSplits,  prevPointX, prevPointY, dstPointX, dstPointY);
 
     }
-
-    util.consoleTimerEnd('logicalEdgesLoop');
-    util.consoleTimerEnd('AllExpandLogicalEdges');
-
-    console.log('lengths: ', midSpringsPos.length, midSpringsEndpoints.starts.length, midSpringsEndpoints.ends.length);
 
     return {
         midSpringsPos: midSpringsPos,
@@ -442,7 +423,6 @@ function getMidEdgeColors(bufferSnapshot, numEdges, numRenderedSplits) {
     srcColor = {};
     dstColor = {};
 
-    var start = Date.now();
     if (!midEdgeColors) {
         midEdgeColors = new Uint32Array(numMidEdgeColors);
         numSegments = numRenderedSplits + 1;
@@ -543,7 +523,6 @@ function getMidEdgeColors(bufferSnapshot, numEdges, numRenderedSplits) {
             midEdgeColors.set(colorArray, midEdgeColorIndex);
         }
 
-        console.log('Expanded midedge colors in: ', Date.now() - start);
         return midEdgeColors;
     }
 }
@@ -623,11 +602,12 @@ function renderSlowEffects(renderingScheduler) {
         var expectedNumMidEdgeColors = numEdges * (numRenderedSplits + 1);
         if (!appSnapshot.buffers.midEdgesColors || (appSnapshot.buffers.midEdgesColors.length !== expectedNumMidEdgeColors)) {
             midEdgesColors = getMidEdgeColors(appSnapshot.buffers, numEdges, numRenderedSplits);
+        }
+        end1 = Date.now();
+        if (!appSnapshot.buffers.midEdgesColors || (appSnapshot.buffers.midEdgesColors.length !== expectedNumMidEdgeColors)) {
             appSnapshot.buffers.midEdgesColors = midEdgesColors;
             renderer.loadBuffers(renderState, {'midEdgesColors': midEdgesColors});
         }
-
-        end1 = Date.now();
         renderer.loadBuffers(renderState, {'midSpringsPos': midSpringsPos});
         renderer.loadBuffers(renderState, {'midSpringsStarts': expanded.midSpringsStarts});
         renderer.loadBuffers(renderState, {'midSpringsEnds': expanded.midSpringsEnds});
