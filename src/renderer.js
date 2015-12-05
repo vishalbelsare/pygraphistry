@@ -806,9 +806,7 @@ function updateIndexBuffer(state, length, repetition) {
     var oldHostBuffer = indexHostBuffers[repetition];
 
     if (oldHostBuffer.length < length * repetition) {
-        var start = Date.now();
 
-        var beforeExpand = Date.now();
         var longerBuffer = expandHostBuffer(gl, length, repetition, indexHostBuffers[repetition]);
         indexHostBuffers[repetition] = longerBuffer;
 
