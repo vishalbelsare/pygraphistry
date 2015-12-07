@@ -84,31 +84,6 @@ function baseMaskOn (mask, basisMask) {
 }
 
 
-DataframeMask.prototype.numByType = function (type) {
-    return this[type] !== undefined ? this[type].length : this.dataframe.getOriginalNumElements(type);
-};
-
-DataframeMask.prototype.isEmpty = function () {
-    return this.numPoints() === 0 && this.numEdges() === 0;
-};
-
-DataframeMask.prototype.numPoints = function () {
-    return this.numByType('point');
-};
-
-DataframeMask.prototype.numEdges = function () {
-    return this.numByType('edge');
-};
-
-DataframeMask.prototype.limitNumByTypeTo = function (type, limit) {
-    if (limit >= this.numByType(type)) { return; }
-    if (this[type] === undefined) {
-        this[type] = _.range(limit);
-    } else {
-        this[type].length = limit;
-    }
-};
-
 /**
  * Returns the union of two sorted arrays of integers.
  * @param {Mask} x
@@ -141,6 +116,7 @@ DataframeMask.unionOfTwoMasks = function(x, y) {
     return result;
 };
 
+
 /**
  * Returns the intersection of two sorted arrays of integers.
  * @param {Mask} x
@@ -168,6 +144,7 @@ DataframeMask.intersectionOfTwoMasks = function(x, y) {
     return result;
 };
 
+
 /**
  * Returns the complement of a sorted array in a universe/range.
  * @param {Mask} x
@@ -191,6 +168,7 @@ DataframeMask.complementOfMask = function(x, sizeOfUniverse) {
     }
     return result;
 };
+
 
 /**
  * Returns the intersection of the first mask and the complement of the second mask.
@@ -219,191 +197,220 @@ DataframeMask.minusMask = function (x, y) {
     return result;
 };
 
-/**
- * @param {DataframeMask} other
- * @returns {DataframeMask}
- */
-DataframeMask.prototype.union = function (other) {
-    return new DataframeMask(this.dataframe,
-        DataframeMask.unionOfTwoMasks(this.point, other.point),
-        DataframeMask.unionOfTwoMasks(this.edge, other.edge));
-};
-
-/**
- * @param {DataframeMask} other
- * @returns {DataframeMask}
- */
-DataframeMask.prototype.intersection = function (other) {
-    return new DataframeMask(this.dataframe,
-        DataframeMask.intersectionOfTwoMasks(this.point, other.point),
-        DataframeMask.intersectionOfTwoMasks(this.edge, other.edge));
-};
-
-/**
- * @returns {DataframeMask}
- */
-DataframeMask.prototype.complement = function () {
-    return new DataframeMask(this.dataframe,
-        DataframeMask.complementOfMask(this.point, this.dataframe.numPoints()),
-        DataframeMask.complementOfMask(this.edge, this.dataframe.numEdges()));
-};
-
-/**
- * @param {DataframeMask} other
- * @returns {DataframeMask}
- */
-DataframeMask.prototype.minus = function (other) {
-    return new DataframeMask(this.dataframe,
-        DataframeMask.minusMask(this.point, other.point),
-        DataframeMask.minusMask(this.edge, other.edge));
-};
-
-/**
- * @param {DataframeMask} other
- * @returns {Boolean}
- */
-DataframeMask.prototype.equals = function (other) {
-    var that = this;
-
-    // Quick test on sizes.
-    if (this.numPoints() !== other.numPoints() || this.numEdges() !== other.numEdges()) {
-        return false;
-    }
-
-    // If sizes are same, iterate through to make sure.
-    var isSame = true;
-    _.each(['point', 'edge'], function (type) {
-        that.mapIndexes(type, function (idx, i) {
-            if (other.getIndexByType(type, i) !== idx) {
-                isSame = false;
-            }
-        })
-    });
-    return isSame;
-}
-
-/**
- * This callback applies to iterating across point and edge index arrays.
- * @callback IndexIteratorCallback
- * @param {Number} indexAsElement
- * @param {Number} index
- * */
-
-/**
- * @param {String} type point/edge
- * @param {IndexIteratorCallback} iterator
- */
-DataframeMask.prototype.mapIndexes = function (type, iterator) {
-    var numElements = this.numByType(type), i = 0;
-    var mask = this[type];
-    if (mask === undefined) {
-        for (i = 0; i < numElements; i++) {
-            iterator.call(this, i, i);
-        }
-    } else {
-        for (i = 0; i < numElements; i++) {
-            iterator.call(this, mask[i], i);
-        }
-    }
-};
-
-/**
- * @param {IndexIteratorCallback} iterator
- */
-DataframeMask.prototype.mapPointIndexes = function (iterator) {
-    this.mapIndexes('point', iterator);
-};
-
-/**
- * @param {IndexIteratorCallback} iterator
- */
-DataframeMask.prototype.mapEdgeIndexes = function (iterator) {
-    this.mapIndexes('edge', iterator);
-};
-
-DataframeMask.prototype.getIndexByType = function (type, index) {
-    if (this[type] === undefined) {
-        return index;
-    } else {
-        return this[type][index];
-    }
-};
-
-DataframeMask.prototype.typedIndexesForType = function (type) {
-    var numElements = this.numByType(type),
-        result = new Uint32Array(numElements),
-        i = 0,
-        mask = this[type];
-    if (mask === undefined) {
-        for (i=0; i<numElements; i++) {
-            result[i] = i;
-        }
-    } else {
-        for (i=0; i<numElements; i++) {
-            result[i] = mask[i];
-        }
-    }
-    return result;
-};
-
-DataframeMask.prototype.typedEdgeIndexes = function () {
-    return this.typedIndexesForType('edge');
-};
-
-DataframeMask.prototype.typedPointIndexes = function () {
-    return this.typedIndexesForType('point');
-};
-
-DataframeMask.prototype.getEdgeIndex = function (index) {
-    return this.getIndexByType('edge', index);
-};
-
-DataframeMask.prototype.getPointIndex = function (index) {
-    return this.getIndexByType('point', index);
-};
-
-DataframeMask.prototype.toString = function () {
-    return JSON.stringify(_.omit(this, 'dataframe'), null, 4);
-};
 
 var OmittedProperties = ['dataframe'];
 
-/**
- * Override to avoid serializing the dataframe or a typed array.
- * Also translates mask indexes from rawdata to data framing.
- * @param {DataframeMask} basisMask
- */
-DataframeMask.prototype.toJSON = function (basisMask) {
-    var result = _.omit(this, OmittedProperties);
-    _.each(GraphComponentTypes, function (componentType) {
-        var componentMask = result[componentType];
-        if (basisMask) {
-            componentMask = baseMaskOn(componentMask, basisMask[componentType]);
+
+DataframeMask.prototype = {
+    numByType: function (type) {
+        return this[type] !== undefined ? this[type].length : this.dataframe.getOriginalNumElements(type);
+    },
+
+    isEmpty: function () {
+        return this.numPoints() === 0 && this.numEdges() === 0;
+    },
+
+    /**
+     * @param {DataframeMask} other
+     * @returns {Boolean}
+     */
+    equals: function (other) {
+        var that = this;
+
+        // Quick test on sizes.
+        if (this.numPoints() !== other.numPoints() || this.numEdges() !== other.numEdges()) {
+            return false;
         }
-        if (componentMask !== undefined && !(componentMask instanceof Array)) {
-            result[componentType] = new Array(componentMask.length);
-            for (var i = 0; i < componentMask.length; i++) {
-                result[componentType][i] = componentMask[i];
+
+        // If sizes are same, iterate through to make sure.
+        var isSame = true;
+        _.each(['point', 'edge'], function (type) {
+            that.mapIndexes(type, function (idx, i) {
+                if (other.getIndexByType(type, i) !== idx) {
+                    isSame = false;
+                }
+            });
+        });
+        return isSame;
+    },
+
+    numPoints: function () {
+        return this.numByType('point');
+    },
+
+    numEdges: function () {
+        return this.numByType('edge');
+    },
+
+    limitNumByTypeTo: function (type, limit) {
+        if (limit >= this.numByType(type)) { return; }
+        if (this[type] === undefined) {
+            this[type] = _.range(limit);
+        } else {
+            this[type].length = limit;
+        }
+    },
+
+    /**
+     * @param {DataframeMask} other
+     * @returns {DataframeMask}
+     */
+    union: function (other) {
+        return new DataframeMask(this.dataframe,
+            DataframeMask.unionOfTwoMasks(this.point, other.point),
+            DataframeMask.unionOfTwoMasks(this.edge, other.edge));
+    },
+
+    /**
+     * @param {DataframeMask} other
+     * @returns {DataframeMask}
+     */
+    intersection: function (other) {
+        return new DataframeMask(this.dataframe,
+            DataframeMask.intersectionOfTwoMasks(this.point, other.point),
+            DataframeMask.intersectionOfTwoMasks(this.edge, other.edge));
+    },
+
+    /**
+     * @returns {DataframeMask}
+     */
+    complement: function () {
+        return new DataframeMask(this.dataframe,
+            DataframeMask.complementOfMask(this.point, this.dataframe.numPoints()),
+            DataframeMask.complementOfMask(this.edge, this.dataframe.numEdges()));
+    },
+
+    /**
+     * @param {DataframeMask} other
+     * @returns {DataframeMask}
+     */
+    minus: function (other) {
+        return new DataframeMask(this.dataframe,
+            DataframeMask.minusMask(this.point, other.point),
+            DataframeMask.minusMask(this.edge, other.edge));
+    },
+
+    /**
+     * This callback applies to iterating across point and edge index arrays.
+     * @callback IndexIteratorCallback
+     * @param {Number} indexAsElement
+     * @param {Number} index
+     * */
+
+    /**
+     * @param {String} type point/edge
+     * @param {IndexIteratorCallback} iterator
+     */
+    mapIndexes: function (type, iterator) {
+        var numElements = this.numByType(type), i = 0;
+        var mask = this[type];
+        if (mask === undefined) {
+            for (i = 0; i < numElements; i++) {
+                iterator.call(this, i, i);
+            }
+        } else {
+            for (i = 0; i < numElements; i++) {
+                iterator.call(this, mask[i], i);
             }
         }
-    });
-    return result;
-};
+    },
 
-/**
- * No-op which might accept updated masks from a client specification.
- * @param clientMask
- */
-DataframeMask.prototype.fromJSON = function (clientMask) {
-    if (clientMask === undefined) { return; }
-    _.each(GraphComponentTypes, function (componentType) {
-        if (clientMask[componentType] !== undefined) {
-            var numComponents = this.dataframe.numByType(componentType);
-            var componentMask = _.filter(clientMask[componentType], function (idx) { return idx < numComponents; });
-            // TODO translate to filter-independent offsets
-            this[componentType] = componentMask.sort();
+    /**
+     * @param {IndexIteratorCallback} iterator
+     */
+    mapPointIndexes: function (iterator) {
+        this.mapIndexes('point', iterator);
+    },
+
+    /**
+     * @param {IndexIteratorCallback} iterator
+     */
+    mapEdgeIndexes: function (iterator) {
+        this.mapIndexes('edge', iterator);
+    },
+
+    getIndexByType: function (type, index) {
+        if (this[type] === undefined) {
+            return index;
+        } else {
+            return this[type][index];
         }
-    }.bind(this));
+    },
+
+    toString: function () {
+        return JSON.stringify(_.omit(this, OmittedProperties), null, 4);
+    },
+
+    typedIndexesForType: function (type) {
+        var numElements = this.numByType(type),
+            result = new Uint32Array(numElements),
+            i = 0,
+            mask = this[type];
+        if (mask === undefined) {
+            for (i=0; i<numElements; i++) {
+                result[i] = i;
+            }
+        } else {
+            for (i=0; i<numElements; i++) {
+                result[i] = mask[i];
+            }
+        }
+        return result;
+    },
+
+    typedEdgeIndexes: function () {
+        return this.typedIndexesForType('edge');
+    },
+
+    typedPointIndexes: function () {
+        return this.typedIndexesForType('point');
+    },
+
+    getEdgeIndex: function (index) {
+        return this.getIndexByType('edge', index);
+    },
+
+    getPointIndex: function (index) {
+        return this.getIndexByType('point', index);
+    },
+
+    /**
+     * Override to avoid serializing the dataframe or a typed array.
+     * Also translates mask indexes from rawdata to data framing.
+     * @param {DataframeMask} basisMask
+     */
+    toJSON: function (basisMask) {
+        var result = _.omit(this, OmittedProperties);
+        _.each(GraphComponentTypes, function (componentType) {
+            var componentMask = result[componentType];
+            if (basisMask) {
+                componentMask = baseMaskOn(componentMask, basisMask[componentType]);
+            }
+            if (componentMask !== undefined && !(componentMask instanceof Array)) {
+                result[componentType] = new Array(componentMask.length);
+                for (var i = 0; i < componentMask.length; i++) {
+                    result[componentType][i] = componentMask[i];
+                }
+            }
+        });
+        return result;
+    },
+
+    /**
+     * No-op which might accept updated masks from a client specification.
+     * @param clientMask
+     */
+    fromJSON: function (clientMask) {
+        if (clientMask === undefined) { return; }
+        _.each(GraphComponentTypes, function (componentType) {
+            if (clientMask[componentType] !== undefined) {
+                var numComponents = this.dataframe.numByType(componentType);
+                var componentMask = _.filter(clientMask[componentType], function (idx) { return idx < numComponents; });
+                // TODO translate to filter-independent offsets
+                this[componentType] = componentMask.sort();
+            }
+        }.bind(this));
+    }
 };
 
 module.exports = DataframeMask;
