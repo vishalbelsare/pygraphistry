@@ -651,7 +651,7 @@ var models = {
             'offset': 0,
             'stride': 0,
             'normalize': true,
-            'sizeHint': 'numElements.edge * (numElements.renderedSplits + 1)'
+            'sizeHint': 'numElements.edge * (numElements.renderedSplits + 1) * 2'
         }
     },
     'arrowColors': {
