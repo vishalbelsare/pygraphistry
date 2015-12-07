@@ -710,7 +710,8 @@ function loadBuffers(state, bufferData) {
     });
 }
 
-// TODO: Error checking
+// Eagerly allocate a buffer for a given buffer name if one of that size
+// doesn't already exist
 function allocateBufferSize(state, bufferName, sizeInBytes) {
     var gl = state.get('gl');
     var config = state.get('config').toJS();

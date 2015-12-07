@@ -92,20 +92,7 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
     this.arrayBuffers = {};
 
     var config = renderState.get('config').toJS();
-    // Hook to preallocate memory when initial sizes are available.
-    var initialSizes = new Command('gettingInitialSizes', 'get_sizes_for_memory_allocation', socket);
-    initialSizes.sendWithObservableResult().do(function (resp) {
-        var numElements = resp.numElements;
-        _.extend(numElements, {
-            renderedSplits: config.numRenderedSplits
-        });
-        that.allocateAllArrayBuffers(config, numElements, renderState);
-        var largestModel = that.getLargestModelSize(config, numElements);
-        var maxElements = Math.max(_.max(_.values(numElements)), largestModel);
-        renderState.get('activeIndices')
-            .forEach(renderer.updateIndexBuffer.bind('', renderState, maxElements));
-    }).subscribe(_.identity, util.makeErrorHandler('get initial sizes'));
-
+    this.attemptToAllocateBuffersOnHints(socket, config, renderState);
 
     /* Rendering queue */
     var renderTasks = new Rx.Subject();
@@ -294,6 +281,23 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
     }
 }
 
+// Hook to preallocate memory when initial sizes are available.
+RenderingScheduler.prototype.attemptToAllocateBuffersOnHints = function (socket, config, renderState) {
+    var that = this;
+    var initialSizes = new Command('gettingInitialSizes', 'get_sizes_for_memory_allocation', socket);
+    initialSizes.sendWithObservableResult().do(function (resp) {
+        var numElements = resp.numElements;
+        _.extend(numElements, {
+            renderedSplits: config.numRenderedSplits
+        });
+        that.allocateAllArrayBuffers(config, numElements, renderState);
+        var largestModel = that.getLargestModelSize(config, numElements);
+        var maxElements = Math.max(_.max(_.values(numElements)), largestModel);
+        renderState.get('activeIndices')
+            .forEach(renderer.updateIndexBuffer.bind('', renderState, maxElements));
+    }).subscribe(_.identity, util.makeErrorHandler('get initial sizes'));
+};
+
 
 
 //int * int * Int32Array * Float32Array -> {starts: Float32Array, ends: Float32Array}
@@ -365,9 +369,6 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
 
     //for each midEdge, start x/y & end x/y
     var midSpringsEndpoints = that.expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPoints);
-    // Used to be 85ms
-
-    console.log('curPosSizes: ', midSpringsPos.length, midSpringsEndpoints.starts.length);
 
     //TODO have server pre-compute real heights, and use them here
     //var edgeHeights = renderState.get('hostBuffersCache').edgeHeights;
@@ -1136,14 +1137,15 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
 };
 
 
-
-
+// Given a render config and info about number of nodes/edges,
+// allocate buffers based on size hints.
 RenderingScheduler.prototype.allocateAllArrayBuffers = function (config, numElements, renderState) {
     var that = this;
     _.each(config.models, function (model, modelName) {
         _.each(model, function (desc, key) {
             if (desc.sizeHint) {
                 // Default to 4;
+                // TODO: Have a proper lookup for bytelengths
                 var bytesPerElement = 4;
                 if (desc.type === 'FLOAT') {
                     bytesPerElement = 4;
@@ -1153,42 +1155,66 @@ RenderingScheduler.prototype.allocateAllArrayBuffers = function (config, numElem
                     bytesPerElement = 1;
                 }
 
+                // HACK
+                // TODO: Replace this eval with a safer way (function lookup in common?)
+                // It evals a size hint from render config into a number.
+                // We do this because we can't send these functions over the network with
+                // the rest of render config.
                 var sizeInBytes = eval(desc.sizeHint) * desc.count * bytesPerElement;
+
+                // Allocate arraybuffers for RenderingScheduler
                 that.allocateArrayBufferOnHint(modelName, sizeInBytes);
+                // Allocate GPU buffer in renderer
                 renderer.allocateBufferSize(renderState, modelName, sizeInBytes);
             }
         });
     });
 };
 
+// Explicitly allocate an array buffer for a given name based on a size hint
 RenderingScheduler.prototype.allocateArrayBufferOnHint = function (name, bytes) {
-    console.log('Allocating', bytes, 'bytes for', name);
-    this.arrayBuffers[name] = new ArrayBuffer(bytes);
+    debug('Hinted allocation of', bytes, 'bytes for', name);
+    if (!this.arrayBuffers[name] || this.arrayBuffers[name].byteLength < bytes) {
+        debug('Allocating', bytes, 'bytes for', name, 'on hint.');
+        this.arrayBuffers[name] = new ArrayBuffer(bytes);
+    }
 };
 
-RenderingScheduler.prototype.getTypedArray = function (name, constructor, length) {
-    var bytesPerElement = constructor.BYTES_PER_ELEMENT;
+// Get a typed array by name, of a certain type and length.
+// We go through this function to allow arraybuffer reuse,
+// and to make preallocation easier. Because we reuse data buffers,
+// older typed arrays of the same name are invalidated.
+RenderingScheduler.prototype.getTypedArray = function (name, Constructor, length) {
+    var bytesPerElement = Constructor.BYTES_PER_ELEMENT;
     var lengthInBytes = length * bytesPerElement;
-    console.log('getting typed array for ' + name + ':', constructor, length, lengthInBytes);
+    debug('getting typed array for ' + name + ':', Constructor, length, lengthInBytes);
     // TODO: Check to make sure that we don't leak references to old
     // array buffers when we replace with a bigger one.
     if (!this.arrayBuffers[name] || this.arrayBuffers[name].byteLength < lengthInBytes) {
-        console.log('Reallocating for ' + name + ' to: ', lengthInBytes, 'bytes');
-        console.log('Old byteLength: ', this.arrayBuffers[name] ? this.arrayBuffers[name].byteLength : 0);
+        debug('Reallocating for ' + name + ' to: ', lengthInBytes, 'bytes');
+        debug('Old byteLength: ', this.arrayBuffers[name] ? this.arrayBuffers[name].byteLength : 0);
         this.arrayBuffers[name] = new ArrayBuffer(lengthInBytes);
     } else {
-        console.log('Was in cache of proper size -- fast path');
+        debug('Was in cache of proper size -- fast path');
     }
 
-    var array = new constructor(this.arrayBuffers[name], 0, length);
+    var array = new Constructor(this.arrayBuffers[name], 0, length);
     return array;
 };
 
+// Given a render config and info about number of nodes/edges,
+// figure out the size of our largest model for letting the
+// renderer create index buffers.
 RenderingScheduler.prototype.getLargestModelSize = function (config, numElements) {
     var that = this;
     var sizes = _.map(config.models, function (model, modelName) {
         return _.map(model, function (desc, key) {
             if (desc.sizeHint) {
+                // HACK
+                // TODO: Replace this eval with a safer way (function lookup in common?)
+                // It evals a size hint from render config into a number.
+                // We do this because we can't send these functions over the network with
+                // the rest of render config.
                 var num = eval(desc.sizeHint) * desc.count;
                 return num;
             } else {
