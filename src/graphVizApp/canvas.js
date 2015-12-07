@@ -90,6 +90,8 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
     var that = this;
     this.renderState = renderState;
     this.arrayBuffers = {};
+    // Remember last task in case you need to rerender mouseovers without an update.
+    this.lastMouseoverTask = undefined;
 
     var config = renderState.get('config').toJS();
     this.attemptToAllocateBuffersOnHints(socket, config, renderState);
@@ -248,8 +250,8 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
 
                 // If anything is selected, we need to do the copy to texture + darken
                 // TODO: Investigate performance of this.
-                if (lastMouseoverTask &&
-                        (lastMouseoverTask.data.selected.nodeIndices.length + lastMouseoverTask.data.selected.edgeIndices.length > 0)
+                if (that.lastMouseoverTask &&
+                        (that.lastMouseoverTask.data.selected.nodeIndices.length + that.lastMouseoverTask.data.selected.edgeIndices.length > 0)
                 ) {
                     renderer.copyCanvasToTexture(renderState, 'steadyStateTexture');
                     renderer.setupFullscreenBuffer(renderState);
@@ -391,11 +393,11 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
             return undefined;
         }
         return valueCache[h][e];
-    }
+    };
     var putInCache = function (h, e, val) {
         valueCache[h] = valueCache[h] || {};
         valueCache[h][e] = val;
-    }
+    };
 
     for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
 
@@ -423,18 +425,19 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
         prevSrcIdx = srcPointIdx;
         prevDstIdx = dstPointIdx;
 
-        // We haven't seen this combo of heightCounter and edgeSeqLen yet.
+        var moduloHeight, unitRadius, cosArray, sinArray, midPointIdx;
         var cachedObj = getFromCache(heightCounter, edgeSeqLen);
         if (!cachedObj) {
-            var moduloHeight = edgeHeight * (1.0 + 2 * heightCounter/edgeSeqLen);
-            var unitRadius = (1 + Math.pow(moduloHeight, 2)) / (2 * moduloHeight);
+            // We haven't seen this combo of heightCounter and edgeSeqLen yet.
+            moduloHeight = edgeHeight * (1.0 + 2 * heightCounter/edgeSeqLen);
+            unitRadius = (1 + Math.pow(moduloHeight, 2)) / (2 * moduloHeight);
             var theta = Math.asin((1 / unitRadius)) * 2;
             var thetaStep = -theta / (numRenderedSplits + 1);
 
             var curTheta;
-            var cosArray = new Float32Array(numRenderedSplits);
-            var sinArray = new Float32Array(numRenderedSplits);
-            for (var midPointIdx = 0; midPointIdx < numRenderedSplits; midPointIdx++) {
+            cosArray = new Float32Array(numRenderedSplits);
+            sinArray = new Float32Array(numRenderedSplits);
+            for (midPointIdx = 0; midPointIdx < numRenderedSplits; midPointIdx++) {
                 curTheta = thetaStep * (midPointIdx + 1);
                 cosArray[midPointIdx] = Math.cos(curTheta);
                 sinArray[midPointIdx] = Math.sin(curTheta);
@@ -447,14 +450,14 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
                 thetaStep: thetaStep,
                 cosArray: cosArray,
                 sinArray: sinArray
-            }
+            };
             putInCache(heightCounter, edgeSeqLen, cachedObj);
         }
 
-        var moduloHeight = cachedObj.moduloHeight;
-        var unitRadius = cachedObj.unitRadius;
-        var cosArray = cachedObj.cosArray;
-        var sinArray = cachedObj.sinArray;
+        moduloHeight = cachedObj.moduloHeight;
+        unitRadius = cachedObj.unitRadius;
+        cosArray = cachedObj.cosArray;
+        sinArray = cachedObj.sinArray;
 
         var edgeLength =
             srcPointIdx === dstPointIdx ? 1.0
@@ -475,7 +478,7 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
         var prevPointY = srcPointY;
         var nextPointX;
         var nextPointY;
-        for (var midPointIdx = 0; midPointIdx < numRenderedSplits; midPointIdx++) {
+        for (midPointIdx = 0; midPointIdx < numRenderedSplits; midPointIdx++) {
             var cos = cosArray[midPointIdx];
             var sin = sinArray[midPointIdx];
             nextPointX = centerPointX + (cos * startRadiusX) - (sin * startRadiusY);
@@ -625,7 +628,7 @@ RenderingScheduler.prototype.populateArrowBuffers = function (maybeIterable, mid
 };
 
 RenderingScheduler.prototype.getMidEdgeColors = function (bufferSnapshot, numEdges, numRenderedSplits) {
-    var midEdgeColors, edges, edgeColors, srcNodeIdx, dstNodeIdx, srcColorInt, srcColor,
+    var midEdgeColors, edges, edgeColors, srcColorInt, srcColor,
         dstColorInt, dstColor, edgeIndex, midEdgeIndex, numSegments, lambda,
         colorHSVInterpolator, convertRGBInt2Color, convertColor2RGBInt, interpolatedColorInt;
 
@@ -635,7 +638,7 @@ RenderingScheduler.prototype.getMidEdgeColors = function (bufferSnapshot, numEdg
     srcColor = {};
     dstColor = {};
 
-    var midEdgeColors = this.getTypedArray('midEdgesColors', Uint32Array, numMidEdgeColors);
+    midEdgeColors = this.getTypedArray('midEdgesColors', Uint32Array, numMidEdgeColors);
 
     numSegments = numRenderedSplits + 1;
     edges = new Uint32Array(bufferSnapshot.logicalEdges.buffer);
@@ -645,13 +648,13 @@ RenderingScheduler.prototype.getMidEdgeColors = function (bufferSnapshot, numEdg
     var putInCache = function (src, dst, val) {
         cache[src] = cache[src] || [];
         cache[src][dst] = val;
-    }
+    };
     var getFromCache = function (src, dst) {
         if (!cache[src]) {
             return undefined;
         }
         return cache[src][dst];
-    }
+    };
 
 
     // Interpolate colors in the HSV color space.
@@ -784,10 +787,6 @@ RenderingScheduler.prototype.makeArrows = function (bufferSnapshots, edgeMode, n
             arrowPointSizes, arrowColors, edgeColors, numRenderedSplits);
 };
 
-// Remember last task in case you need to rerender mouseovers without an update.
-// TODO: Structure this so there's no global
-var lastMouseoverTask;
-
 /*
  * Render expensive items (eg, edges) when a quiet state is detected. This function is called
  * from within an animation frame and must execute all its work inside it. Callbacks(rx, etc)
@@ -908,7 +907,7 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
         return;
     }
 
-    task = task || lastMouseoverTask;
+    task = task || that.lastMouseoverTask;
     if (!task) {
         return;
     }
@@ -919,7 +918,7 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
     // We need to be careful not to accidentally modify the internals of this cached task.
     // To be safe, we always cache it as a separate copy. Sucks because we need to know its full structure
     // here too, but whatever.
-    lastMouseoverTask = {
+    that.lastMouseoverTask = {
         trigger: 'mouseOverEdgeHighlight',
         data: {
             highlight: {
@@ -1141,8 +1140,9 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
 // allocate buffers based on size hints.
 RenderingScheduler.prototype.allocateAllArrayBuffers = function (config, numElements, renderState) {
     var that = this;
+    debug('Allocating all arraybuffers on hint for numElements: ', numElements);
     _.each(config.models, function (model, modelName) {
-        _.each(model, function (desc, key) {
+        _.each(model, function (desc) {
             if (desc.sizeHint) {
                 // Default to 4;
                 // TODO: Have a proper lookup for bytelengths
@@ -1160,7 +1160,7 @@ RenderingScheduler.prototype.allocateAllArrayBuffers = function (config, numElem
                 // It evals a size hint from render config into a number.
                 // We do this because we can't send these functions over the network with
                 // the rest of render config.
-                var sizeInBytes = eval(desc.sizeHint) * desc.count * bytesPerElement;
+                var sizeInBytes = eval(desc.sizeHint) * desc.count * bytesPerElement; // jshint ignore:line
 
                 // Allocate arraybuffers for RenderingScheduler
                 that.allocateArrayBufferOnHint(modelName, sizeInBytes);
@@ -1206,16 +1206,16 @@ RenderingScheduler.prototype.getTypedArray = function (name, Constructor, length
 // figure out the size of our largest model for letting the
 // renderer create index buffers.
 RenderingScheduler.prototype.getLargestModelSize = function (config, numElements) {
-    var that = this;
-    var sizes = _.map(config.models, function (model, modelName) {
-        return _.map(model, function (desc, key) {
+    debug('Getting largerst model size for: ', numElements);
+    var sizes = _.map(config.models, function (model) {
+        return _.map(model, function (desc) {
             if (desc.sizeHint) {
                 // HACK
                 // TODO: Replace this eval with a safer way (function lookup in common?)
                 // It evals a size hint from render config into a number.
                 // We do this because we can't send these functions over the network with
                 // the rest of render config.
-                var num = eval(desc.sizeHint) * desc.count;
+                var num = eval(desc.sizeHint) * desc.count; // jshint ignore:line
                 return num;
             } else {
                 return 0;
@@ -1224,7 +1224,7 @@ RenderingScheduler.prototype.getLargestModelSize = function (config, numElements
     });
     var maxNum = _.max(_.flatten(sizes));
     return maxNum;
-}
+};
 
 module.exports = {
     setupBackgroundColor: setupBackgroundColor,
