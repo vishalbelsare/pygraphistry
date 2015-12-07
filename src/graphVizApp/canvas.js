@@ -11,6 +11,7 @@ var util            = require('./util.js');
 var renderer        = require('../renderer');
 var colorPicker     = require('./colorpicker.js');
 var VizSlice        = require('./VizSlice.js');
+var Command         = require('./command.js');
 
 
 function setupCameraInteractions(appState, $eventTarget) {
@@ -85,35 +86,25 @@ function getEdgeLabelPos (appState, edgeIndex) {
 
 
 function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
-                                  isAnimating, simulateOn, activeSelection) {
+                                  isAnimating, simulateOn, activeSelection, socket) {
     var that = this;
     this.renderState = renderState;
     this.arrayBuffers = {};
 
-
-
-
     var config = renderState.get('config').toJS();
-    console.log('config: ', config);
-    // var numElements = {
-    //     edge: 254,
-    //     point: 77,
-    //     renderedSplits: config.numRenderedSplits
-    // };
-    var numElements = {
-        edge: 537309,
-        point: 56399,
-        renderedSplits: config.numRenderedSplits
-    };
-    this.allocateAllArrayBuffers(config, numElements, renderState);
-    var largestModel = this.getLargestModelSize(config, numElements);
-    var maxElements = Math.max(_.max(_.values(numElements)), largestModel);
-    renderState.get('activeIndices')
-        .forEach(renderer.updateIndexBuffer.bind('', renderState, maxElements));
-
-
-
-
+    // Hook to preallocate memory when initial sizes are available.
+    var initialSizes = new Command('gettingInitialSizes', 'get_sizes_for_memory_allocation', socket);
+    initialSizes.sendWithObservableResult().do(function (resp) {
+        var numElements = resp.numElements;
+        _.extend(numElements, {
+            renderedSplits: config.numRenderedSplits
+        });
+        that.allocateAllArrayBuffers(config, numElements, renderState);
+        var largestModel = that.getLargestModelSize(config, numElements);
+        var maxElements = Math.max(_.max(_.values(numElements)), largestModel);
+        renderState.get('activeIndices')
+            .forEach(renderer.updateIndexBuffer.bind('', renderState, maxElements));
+    }).subscribe(_.identity, util.makeErrorHandler('get initial sizes'));
 
 
     /* Rendering queue */

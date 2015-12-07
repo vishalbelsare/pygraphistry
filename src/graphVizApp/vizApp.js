@@ -80,6 +80,7 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
     var poiIsEnabled = new Rx.ReplaySubject(1);
     poiIsEnabled.onNext(urlParams.hasOwnProperty('poi') ? urlParams.poi : true);
 
+
     var appState = {
         renderState: initialRenderState,
         vboUpdates: vboUpdates,
@@ -123,7 +124,8 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
                                                                 appState.hitmapUpdates,
                                                                 appState.isAnimating,
                                                                 appState.simulateOn,
-                                                                appState.activeSelection);
+                                                                appState.activeSelection,
+                                                                socket);
 
     canvas.setupCameraInteractions(appState, $simCont).subscribe(
         appState.cameraChanges,
