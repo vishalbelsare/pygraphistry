@@ -36,7 +36,9 @@ function create(renderer, device, vendor, controls) {
         renderer: renderer,
         stepNumber: 0,
         __pointsHostBuffer: undefined,
-        dataframe: dataframe
+        dataframe: dataframe,
+        originalNumEdges: Q.defer(),
+        originalNumPoints: Q.defer()
     };
 
     _.each({
