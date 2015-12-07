@@ -139,6 +139,7 @@ function expandLogicalEdges(renderState, bufferSnapshots, numRenderedSplits, edg
     }
 
 
+
     var midSpringsPos = bufferSnapshots.midSpringsPos;
     var midEdgesPerEdge = numRenderedSplits + 1;
     var midEdgeStride = 4 * midEdgesPerEdge;
@@ -155,6 +156,8 @@ function expandLogicalEdges(renderState, bufferSnapshots, numRenderedSplits, edg
     //for each midEdge, start x/y & end x/y
     var midSpringsEndpoints = expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPoints);
     // Used to be 85ms
+
+    console.log('curPosSizes: ', midSpringsPos.length, midSpringsEndpoints.starts.length);
 
     //TODO have server pre-compute real heights, and use them here
     //var edgeHeights = renderState.get('hostBuffersCache').edgeHeights;
@@ -918,6 +921,24 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
                                   isAnimating, simulateOn, activeSelection) {
     var that = this;
     this.renderState = renderState;
+    this.arrayBuffers = {};
+
+
+
+
+    var config = renderState.get('config').toJS();
+    console.log('config: ', config);
+    var numElements = {
+        edge: 254,
+        point: 77,
+        renderedSplits: config.numRenderedSplits
+    };
+    this.allocateAllArrayBuffers(config, numElements);
+
+
+
+
+
 
     /* Rendering queue */
     var renderTasks = new Rx.Subject();
@@ -1105,6 +1126,48 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
         }
     }
 }
+
+RenderingScheduler.prototype.allocateAllArrayBuffers = function (config, numElements) {
+    var that = this;
+    _.each(config.models, function (model, modelName) {
+        _.each(model, function (desc, key) {
+            if (desc.sizeHint) {
+                // Default to 4;
+                var bytesPerElement = 4;
+                if (desc.type === 'FLOAT') {
+                    bytesPerElement = 4;
+                } else if (desc.type === 'UNSIGNED_INT') {
+                    bytesPerElement = 4;
+                }  else if (desc.type === 'UNSIGNED_BYTE') {
+                    bytesPerElement = 1;
+                }
+
+                var sizeInBytes = eval(desc.sizeHint) * desc.count * bytesPerElement;
+                that.allocateArrayBufferOnHint(modelName, sizeInBytes);
+            }
+        });
+    });
+};
+
+RenderingScheduler.prototype.allocateArrayBufferOnHint = function (name, bytes) {
+    console.log('Allocating', bytes, 'bytes for', name);
+    this.arrayBuffers[name] = new ArrayBuffer(bytes);
+};
+
+RenderingScheduler.prototype.getTypedArray = function (name, constructor, length) {
+    var bytesPerElement = constructor.BYTES_PER_ELEMENT;
+    var lengthInBytes = length * bytesPerElement;
+    console.log('getting typed array for ' + name + ':', constructor, length, lengthInBytes);
+    // TODO: Check to make sure that we don't leak references to old
+    // array buffers when we replace with a bigger one.
+    if (!this.arrayBuffers[name] || this.arrayBuffers[name].byteLength < lengthInBytes) {
+        console.log('Reallocating for ' + name + ' to: ', lengthInBytes, 'bytes');
+        this.arrayBuffers[name] = new ArrayBuffer(lengthInBytes);
+    }
+
+    var array = new constructor(this.arrayBuffers[name], 0, length);
+    return array;
+};
 
 
 module.exports = {
