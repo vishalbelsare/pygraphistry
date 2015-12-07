@@ -317,20 +317,23 @@ ExpressionCodeGenerator.prototype = {
 
     localizedAST: function (ast) {
         var propertiesToLocalize = this.inputPropertiesFromAST(ast);
-        return _.mapObject(ast, function (arg, key) {
+        var localized = _.mapObject(ast, function (arg, key) {
             if (_.contains(propertiesToLocalize, key)) {
                 return {type: 'Identifier', name: key};
             } else {
                 return arg;
             }
         }, this);
+        localized.isLocalized = true;
+        return localized;
     },
 
     functionForPlanNode: function (planNode, bindings) {
-        var body = this.planNodeExpressionStringForAST(planNode.ast, bindings);
-        var source = '(function () { return ' + body + '; })';
+        var result = this.planNodeExpressionStringForAST(planNode.ast, bindings);
+        var source = '(function () { return ' + result.expr + '; })';
         logger.warn('Evaluating (multi-column)', planNode.ast.type, source);
-        return eval(source); // jshint ignore:line
+        result.executor = eval(source); // jshint ignore:line
+        return result;
     },
 
     /** Evaluate an expression immediately, with no access to any bindings. */
@@ -431,12 +434,19 @@ ExpressionCodeGenerator.prototype = {
         }
     },
 
+    /**
+     * @param {ClientQueryAST} ast
+     * @param {Object} bindings
+     * @param {Number} depth
+     * @param {Number} outerPrecedence
+     * @returns {{ast: {ClientQueryAST}, expr: {String}}}
+     */
     planNodeExpressionStringForAST: function (ast, bindings, depth, outerPrecedence) {
         if (depth === undefined) {
             depth = 0;
         }
         var precedence = this.precedenceOf('.'), subExprString;
-        var transformedAST = this.transformedASTPerBindings(ast, bindings);
+        var transformedAST = undefined && this.transformedASTPerBindings(ast, bindings);
         var localizedAST = this.localizedAST(ast);
         var localizedArgs = _.mapObject(_.pick(localizedAST, this.inputPropertiesFromAST(ast)), function (arg) {
             return this.expressionStringForAST(arg, bindings, depth + 1, precedence);
@@ -444,17 +454,17 @@ ExpressionCodeGenerator.prototype = {
         switch (ast.type) {
             case 'NotExpression':
                 subExprString = localizedArgs.value + '.complement()';
-                return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
+                return {ast: localizedAST, expr: this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence)};
             case 'BinaryPredicate':
                 switch (ast.operator.toUpperCase()) {
                     case 'AND':
                         subExprString = localizedArgs.left + '.intersection(' + localizedArgs.right + ')';
-                        return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
+                        return {ast: localizedAST, expr: this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence)};
                     case 'OR':
                         subExprString = localizedArgs.left + '.union(' + localizedArgs.right + ')';
-                        return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
+                        return {ast: localizedAST, expr: this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence)};
                     default:
-                        return this.expressionStringForAST(localizedAST, bindings, depth, outerPrecedence);
+                        return {ast: ast, expr: this.expressionStringForAST(ast, bindings, depth + 1, outerPrecedence)};
                 }
                 break;
             case 'BetweenPredicate':
@@ -466,9 +476,9 @@ ExpressionCodeGenerator.prototype = {
             case 'ListExpression':
             case 'FunctionCall':
             case 'Literal':
-                return this.expressionStringForAST(localizedAST, bindings, depth, outerPrecedence);
+                return {ast: ast, expr: this.expressionStringForAST(ast, bindings, depth + 1, outerPrecedence)};
             case 'Identifier':
-                return this.expressionStringForAST(ast, bindings, depth + 1, outerPrecedence);
+                return {ast: ast, expr: this.expressionStringForAST(ast, bindings, depth + 1, outerPrecedence)};
             default:
                 throw new Error('Unhandled expression type for planning: ' + ast.type);
         }

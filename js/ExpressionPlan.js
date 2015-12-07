@@ -102,10 +102,14 @@ PlanNode.prototype = {
     },
 
     compile: function (generator, dataframe) {
-        if (this.canRunOnOneColumn()) {
+        if (this.isConstant()) {
+            this.executor = undefined;
+        } else if (this.canRunOnOneColumn()) {
             this.executor = generator.functionForAST(this.ast, {'*': 'value'});
         } else {
-            this.executor = generator.functionForPlanNode(this, dataframe.getColumnsByType());
+            var planNodeResult = generator.functionForPlanNode(this, dataframe.getColumnsByType());
+            this.isLocalized = planNodeResult.ast.isLocalized;
+            this.executor = planNodeResult.executor;
         }
         this.eachNode(function (eachNode) {
             eachNode.compile(generator, dataframe);
@@ -115,11 +119,29 @@ PlanNode.prototype = {
     /**
      * @param {Dataframe} dataframe
      * @param {Boolean} valuesRequired
+     * @param {String} iterationType
      * @returns {Array|DataframeMask}
      */
-    execute: function (dataframe, valuesRequired) {
-        if (this.canRunOnOneColumn()) {
-            var returnType = this.returnType(), executor = this.executor;
+    execute: function (dataframe, valuesRequired, iterationType) {
+        if (iterationType === undefined) {
+            iterationType = this.iterationType();
+        } else if (iterationType !== this.iterationType()) {
+            throw new Error('Using an expression of iteration type ' + this.iterationType() + ' within ' + iterationType);
+        }
+        var numElements = dataframe.numByType(iterationType), i= 0, resultValues;
+        var returnType = this.returnType();
+        if (this.isConstant()) {
+            // map constant values to the iteration types.
+            // TODO: don't allocate all this (challenge is combining this return value with other arrays/masks).
+            resultValues = new Array(numElements);
+            var value = this.ast.value;
+            //resultValues.fill(this.ast.value);
+            for (i=0; i<numElements; i++) {
+                resultValues[i] = value;
+            }
+            return resultValues;
+        } else if (this.canRunOnOneColumn()) {
+            var executor = this.executor;
             var attributeName = _.find(this.attributeData);
             if (valuesRequired && returnType === ReturnTypes.Positions) {
                 returnType = ReturnTypes.Values;
@@ -128,19 +150,36 @@ PlanNode.prototype = {
                 case ReturnTypes.Positions:
                     return dataframe.getAttributeMask(attributeName.type, attributeName.attribute, executor);
                 case ReturnTypes.Values:
-                    return dataframe.mapToAttribute(attributeName.type, attributeName.attribute, executor);
+                    if (this.ast.type === 'Identifier') {
+                        return dataframe.getUnfilteredColumnValues(attributeName.type, attributeName.attribute);
+                    } else {
+                        return dataframe.mapUnfilteredColumnValues(attributeName.type, attributeName.attribute, executor);
+                    }
             }
         } else {
-            var iterationType = this.iterationType();
-            var numElements = dataframe.numByType(iterationType);
-            var bindingKeys, bindings, perElementBindings, i, j, attribute;
-            if (this.returnType() === ReturnTypes.Values) {
-                bindings = _.mapObject(this.attributeData, function (attributeName) {
-                    return dataframe.getColumnValues(attributeName.attribute, attributeName.type);
+            var j, attribute, bindings;
+            if (this.isLocalized) {
+                valuesRequired = _.any(this.inputNodes, function (inputNode) {
+                    return inputNode.returnType() === ReturnTypes.Values;
                 });
-                bindingKeys = _.keys(bindings);
-                perElementBindings = _.mapObject(this.attributeData, function () { return undefined; });
-                var resultValues = new Array(numElements);
+                bindings = _.mapObject(this.inputNodes, function (inputNode) {
+                    if (_.isArray(inputNode)) {
+                        return _.map(inputNode, function (eachNode) {
+                            return eachNode.execute(dataframe, valuesRequired, iterationType);
+                        });
+                    } else {
+                        return inputNode.execute(dataframe, valuesRequired, iterationType);
+                    }
+                });
+            } else {
+                bindings = _.mapObject(this.attributeData, function (attributeName) {
+                    return dataframe.getUnfilteredColumnValues(attributeName.type, attributeName.attribute);
+                });
+            }
+            var bindingKeys = _.keys(bindings);
+            var perElementBindings = _.mapObject(bindings, function () { return undefined; });
+            if (this.returnType() === ReturnTypes.Values) {
+                resultValues = new Array(numElements);
                 for (i=0; i<numElements; i++) {
                     for (j=0; j<bindingKeys.length; j++) {
                         attribute = bindingKeys[j];
@@ -150,20 +189,6 @@ PlanNode.prototype = {
                 }
                 return resultValues;
             } else {
-                valuesRequired = _.any(this.inputNodes, function (inputNode) {
-                    return inputNode.returnType() === ReturnTypes.Values;
-                });
-                bindings = _.mapObject(this.inputNodes, function (inputNode) {
-                    if (_.isArray(inputNode)) {
-                        return _.map(inputNode, function (eachNode) {
-                            return eachNode.execute(dataframe, valuesRequired);
-                        });
-                    } else {
-                        return inputNode.execute(dataframe, valuesRequired);
-                    }
-                });
-                bindingKeys = _.keys(bindings);
-                perElementBindings = _.mapObject(this.inputNodes, function () { return undefined; });
                 var mask = [];
                 for (i=0; i<numElements; i++) {
                     for (j=0; j<bindingKeys.length; j++) {
@@ -174,9 +199,14 @@ PlanNode.prototype = {
                         mask.push(i);
                     }
                 }
-                var pointMask = iterationType === 'point' ? mask : undefined;
-                var edgeMask = iterationType === 'edge' ? mask : undefined;
-                return new DataframeMask(dataframe, pointMask, edgeMask);
+                switch (iterationType) {
+                    case 'point':
+                        return new DataframeMask(dataframe, mask, undefined);
+                    case 'edge':
+                        return new DataframeMask(dataframe, undefined, mask);
+                    default:
+                        throw new Error('Unhandled iteration type for masks: ' + iterationType);
+                }
             }
         }
         return undefined;
@@ -234,6 +264,9 @@ PlanNode.prototype = {
         if (this.ast.type === 'Identifier') {
             return 1;
         }
+        if (this.ast.type === 'Literal') {
+            return 0;
+        }
         var identifierCount = 0;
         this.eachNode(function (eachNode) {
             identifierCount += eachNode.arity();
@@ -241,7 +274,7 @@ PlanNode.prototype = {
         return identifierCount;
     },
 
-    isPlanLeaf: function () { return this.arity() === 0; },
+    isConstant: function () { return this.arity() === 0; },
 
     canRunOnOneColumn: function () {
         return this.arity() <= 1;

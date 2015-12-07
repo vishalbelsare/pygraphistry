@@ -277,6 +277,7 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
 /**
  * @typedef {Object} ClientQueryAST
  * @property {String} type - AST node type (from expressionParser.js)
+ * @property {Boolean} isLocalized - Whether the AST transformed to run as a single PlanNode.
  */
 
 /**
@@ -378,21 +379,6 @@ Dataframe.prototype.getAttributeMask = function (type, dataframeAttribute, filte
         default:
             throw new Error('Unknown graph component type: ' + type);
     }
-};
-
-
-Dataframe.prototype.mapToAttribute = function (type, dataframeAttribute, func) {
-    var attr = this.rawdata.attributes[type][dataframeAttribute];
-    var results = _.map(attr.values, func);
-    if (type === 'edge') {
-        // Convert to sorted order
-        var map = this.rawdata.hostBuffers.forwardsEdges.edgePermutation;
-        for (var i = 0; i < results.length; i++) {
-            // FIXME
-            results[i] = results[map[i]];
-        }
-    }
-    return results;
 };
 
 
@@ -1258,6 +1244,31 @@ Dataframe.prototype.getColumnValues = function (column, type) {
 
     var attributes = this.data.attributes[type];
     return attributes[column].values;
+};
+
+
+Dataframe.prototype.sortEdgeColumnValues = function (type, values) {
+    if (type === 'edge') {
+        // Convert to sorted order
+        var map = this.rawdata.hostBuffers.forwardsEdges.edgePermutation;
+        for (var i = 0; i < values.length; i++) {
+            // FIXME
+            values[i] = values[map[i]];
+        }
+    }
+};
+
+
+Dataframe.prototype.mapUnfilteredColumnValues = function (type, dataframeAttribute, func) {
+    var attr = this.rawdata.attributes[type][dataframeAttribute];
+    var results = func === undefined ? attr.values : _.map(attr.values, func);
+    this.sortEdgeColumnValues(type, results);
+    return results;
+};
+
+
+Dataframe.prototype.getUnfilteredColumnValues = function (type, dataframeAttribute) {
+    return this.mapUnfilteredColumnValues(type, dataframeAttribute, undefined);
 };
 
 
