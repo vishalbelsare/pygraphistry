@@ -300,8 +300,12 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
 //Scatter: label each midEdge with containing edge's start/end pos (used for dynamic culling)
 RenderingScheduler.prototype.expandMidEdgeEndpoints = function(numEdges, numRenderedSplits, logicalEdges, curPoints) {
 
-    var starts = new Float32Array(numEdges * (numRenderedSplits + 1) * 4);
-    var ends = new Float32Array(numEdges * (numRenderedSplits + 1) * 4);
+    // var starts = new Float32Array(numEdges * (numRenderedSplits + 1) * 4);
+    // var ends = new Float32Array(numEdges * (numRenderedSplits + 1) * 4);
+
+    var starts = this.getTypedArray('midSpringsStarts', Float32Array, numEdges * (numRenderedSplits + 1) * 4);
+    var ends = this.getTypedArray('midSpringsEnds', Float32Array, numEdges * (numRenderedSplits + 1) * 4);
+
 
     var offset = 0;
 
@@ -344,14 +348,7 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
 
     var numVertices = (2 * numEdges) * (numRenderedSplits + 1);
 
-    if (!bufferSnapshots.midSpringsPos) {
-        bufferSnapshots.midSpringsPos = new Float32Array(numVertices * 2);
-    } else {
-        // Wrap it again with an updated size.
-        bufferSnapshots.midSpringsPos = new Float32Array(bufferSnapshots.midSpringsPos.buffer, 0, numVertices * 2);
-    }
-
-
+    bufferSnapshots.midSpringsPos = that.getTypedArray('midSpringsPos', Float32Array, numVertices * 2);
 
     var midSpringsPos = bufferSnapshots.midSpringsPos;
     var midEdgesPerEdge = numRenderedSplits + 1;
@@ -519,10 +516,7 @@ RenderingScheduler.prototype.expandLogicalMidEdges = function (bufferSnapshots) 
     var midSpringsEndpoints = that.expandMidEdgeEndpoints(numEdges, numSplits, logicalEdges, curPoints);
 
 
-
-    if (!bufferSnapshots.midSpringsPos) {
-        bufferSnapshots.midSpringsPos = new Float32Array(numVertices * 2);
-    }
+    bufferSnapshots.midSpringsPos = that.getTypedArray('midSpringsPos', Float32Array, numVertices * 2);
     var midSpringsPos = bufferSnapshots.midSpringsPos;
 
     for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
@@ -640,108 +634,107 @@ RenderingScheduler.prototype.getMidEdgeColors = function (bufferSnapshot, numEdg
     srcColor = {};
     dstColor = {};
 
-    if (!midEdgeColors) {
-        midEdgeColors = new Uint32Array(numMidEdgeColors);
-        numSegments = numRenderedSplits + 1;
-        edges = new Uint32Array(bufferSnapshot.logicalEdges.buffer);
-        edgeColors = new Uint32Array(bufferSnapshot.edgeColors.buffer);
+    var midEdgeColors = this.getTypedArray('midEdgesColors', Uint32Array, numMidEdgeColors);
 
-        var cache = [];
-        var putInCache = function (src, dst, val) {
-            cache[src] = cache[src] || [];
-            cache[src][dst] = val;
-        }
-        var getFromCache = function (src, dst) {
-            if (!cache[src]) {
-                return undefined;
-            }
-            return cache[src][dst];
-        }
+    numSegments = numRenderedSplits + 1;
+    edges = new Uint32Array(bufferSnapshot.logicalEdges.buffer);
+    edgeColors = new Uint32Array(bufferSnapshot.edgeColors.buffer);
 
-
-        // Interpolate colors in the HSV color space.
-        colorHSVInterpolator = function (color1, color2, lambda) {
-            var color1HSV, color2HSV, h, s, v;
-            color1HSV = color1.hsv();
-            color2HSV = color2.hsv();
-            var h1 = color1HSV.h;
-            var h2 = color2HSV.h;
-            var maxCCW = h1 - h2;
-            var maxCW =  (h2 + 360) - h1;
-            var hueStep;
-            if (maxCW > maxCCW) {
-                //hueStep = higherHue - lowerHue;
-                //hueStep = h2 - h1;
-                hueStep = h2 - h1;
-            } else {
-                //hueStep = higherHue - lowerHue;
-                hueStep = (360 + h2) - h1;
-            }
-            h = (h1 + (hueStep * (lambda))) % 360;
-            //h = color1HSV.h * (1 - lambda) + color2HSV.h * (lambda);
-            s = color1HSV.s * (1 - lambda) + color2HSV.s * (lambda);
-            v = color1HSV.v * (1 - lambda) + color2HSV.v * (lambda);
-            return interpolatedColor.hsv([h, s, v]);
-        };
-
-        var colorRGBInterpolator = function (color1, color2, lambda) {
-            var r, g, b;
-            r = color1.r * (1 - lambda) + color2.r * (lambda);
-            g = color1.g * (1 - lambda) + color2.g * (lambda);
-            b = color1.b * (1 - lambda) + color2.b * (lambda);
-            return {
-                r: r,
-                g: g,
-                b: b
-            };
-        };
-
-        // Convert from HSV to RGB Int
-        convertColor2RGBInt = function (color) {
-            return (color.r << 0) + (color.g << 8) + (color.b << 16);
-        };
-
-        // Convert from RGB Int to HSV
-        convertRGBInt2Color= function (rgbInt) {
-            return {
-                r:rgbInt & 0xFF,
-                g:(rgbInt >> 8) & 0xFF,
-                b:(rgbInt >> 16) & 0xFF
-            };
-        };
-
-
-        for (edgeIndex = 0; edgeIndex < numEdges/2; edgeIndex++) {
-
-            srcColorInt = edgeColors[edgeIndex*2];
-            dstColorInt = edgeColors[edgeIndex*2 + 1];
-
-            var midEdgeColorIndex = (2*edgeIndex) * numSegments;
-            var colorArray = getFromCache(srcColorInt, dstColorInt);
-            if (!colorArray) {
-                colorArray = new Uint32Array(numSegments*2);
-                srcColor = convertRGBInt2Color(srcColorInt);
-                dstColor = convertRGBInt2Color(dstColorInt);
-
-                interpolatedColorInt = convertColor2RGBInt(srcColor);
-                colorArray[0] = interpolatedColorInt;
-
-                for (midEdgeIndex = 0; midEdgeIndex < numSegments; midEdgeIndex++) {
-                    colorArray[midEdgeIndex*2] = interpolatedColorInt;
-                    lambda = (midEdgeIndex + 1) / (numSegments);
-                    interpolatedColorInt =
-                        convertColor2RGBInt(colorRGBInterpolator(srcColor, dstColor, lambda));
-
-                    colorArray[midEdgeIndex*2 + 1] = interpolatedColorInt;
-                }
-                putInCache(srcColorInt, dstColorInt, colorArray);
-            }
-
-            midEdgeColors.set(colorArray, midEdgeColorIndex);
-        }
-
-        return midEdgeColors;
+    var cache = [];
+    var putInCache = function (src, dst, val) {
+        cache[src] = cache[src] || [];
+        cache[src][dst] = val;
     }
+    var getFromCache = function (src, dst) {
+        if (!cache[src]) {
+            return undefined;
+        }
+        return cache[src][dst];
+    }
+
+
+    // Interpolate colors in the HSV color space.
+    colorHSVInterpolator = function (color1, color2, lambda) {
+        var color1HSV, color2HSV, h, s, v;
+        color1HSV = color1.hsv();
+        color2HSV = color2.hsv();
+        var h1 = color1HSV.h;
+        var h2 = color2HSV.h;
+        var maxCCW = h1 - h2;
+        var maxCW =  (h2 + 360) - h1;
+        var hueStep;
+        if (maxCW > maxCCW) {
+            //hueStep = higherHue - lowerHue;
+            //hueStep = h2 - h1;
+            hueStep = h2 - h1;
+        } else {
+            //hueStep = higherHue - lowerHue;
+            hueStep = (360 + h2) - h1;
+        }
+        h = (h1 + (hueStep * (lambda))) % 360;
+        //h = color1HSV.h * (1 - lambda) + color2HSV.h * (lambda);
+        s = color1HSV.s * (1 - lambda) + color2HSV.s * (lambda);
+        v = color1HSV.v * (1 - lambda) + color2HSV.v * (lambda);
+        return interpolatedColor.hsv([h, s, v]);
+    };
+
+    var colorRGBInterpolator = function (color1, color2, lambda) {
+        var r, g, b;
+        r = color1.r * (1 - lambda) + color2.r * (lambda);
+        g = color1.g * (1 - lambda) + color2.g * (lambda);
+        b = color1.b * (1 - lambda) + color2.b * (lambda);
+        return {
+            r: r,
+            g: g,
+            b: b
+        };
+    };
+
+    // Convert from HSV to RGB Int
+    convertColor2RGBInt = function (color) {
+        return (color.r << 0) + (color.g << 8) + (color.b << 16);
+    };
+
+    // Convert from RGB Int to HSV
+    convertRGBInt2Color= function (rgbInt) {
+        return {
+            r:rgbInt & 0xFF,
+            g:(rgbInt >> 8) & 0xFF,
+            b:(rgbInt >> 16) & 0xFF
+        };
+    };
+
+
+    for (edgeIndex = 0; edgeIndex < numEdges/2; edgeIndex++) {
+
+        srcColorInt = edgeColors[edgeIndex*2];
+        dstColorInt = edgeColors[edgeIndex*2 + 1];
+
+        var midEdgeColorIndex = (2*edgeIndex) * numSegments;
+        var colorArray = getFromCache(srcColorInt, dstColorInt);
+        if (!colorArray) {
+            colorArray = new Uint32Array(numSegments*2);
+            srcColor = convertRGBInt2Color(srcColorInt);
+            dstColor = convertRGBInt2Color(dstColorInt);
+
+            interpolatedColorInt = convertColor2RGBInt(srcColor);
+            colorArray[0] = interpolatedColorInt;
+
+            for (midEdgeIndex = 0; midEdgeIndex < numSegments; midEdgeIndex++) {
+                colorArray[midEdgeIndex*2] = interpolatedColorInt;
+                lambda = (midEdgeIndex + 1) / (numSegments);
+                interpolatedColorInt =
+                    convertColor2RGBInt(colorRGBInterpolator(srcColor, dstColor, lambda));
+
+                colorArray[midEdgeIndex*2 + 1] = interpolatedColorInt;
+            }
+            putInCache(srcColorInt, dstColorInt, colorArray);
+        }
+
+        midEdgeColors.set(colorArray, midEdgeColorIndex);
+    }
+
+    return midEdgeColors;
 };
 
 RenderingScheduler.prototype.makeArrows = function (bufferSnapshots, edgeMode, numRenderedSplits) {
@@ -750,28 +743,38 @@ RenderingScheduler.prototype.makeArrows = function (bufferSnapshots, edgeMode, n
     var edgeColors = new Uint32Array(bufferSnapshots.edgeColors.buffer);
     var numEdges = logicalEdges.length / 2;
 
+
+
+
+
+
     if (!bufferSnapshots.arrowStartPos) {
-        bufferSnapshots.arrowStartPos = new Float32Array(numEdges * 2 * 3);
+        // bufferSnapshots.arrowStartPos = new Float32Array(numEdges * 2 * 3);
+        bufferSnapshots.arrowStartPos = this.getTypedArray('arrowStartPos', Float32Array, numEdges * 2 * 3);
     }
     var arrowStartPos = bufferSnapshots.arrowStartPos;
 
     if (!bufferSnapshots.arrowEndPos) {
-        bufferSnapshots.arrowEndPos = new Float32Array(numEdges * 2 * 3);
+        // bufferSnapshots.arrowEndPos = new Float32Array(numEdges * 2 * 3);
+        bufferSnapshots.arrowEndPos = this.getTypedArray('arrowEndPos', Float32Array, numEdges * 2 * 3);
     }
     var arrowEndPos = bufferSnapshots.arrowEndPos;
 
     if (!bufferSnapshots.arrowNormalDir) {
-        bufferSnapshots.arrowNormalDir = new Float32Array(numEdges * 3);
+        // bufferSnapshots.arrowNormalDir = new Float32Array(numEdges * 3);
+        bufferSnapshots.arrowNormalDir = this.getTypedArray('arrowNormalDir', Float32Array, numEdges * 3);
     }
     var arrowNormalDir = bufferSnapshots.arrowNormalDir;
 
     if (!bufferSnapshots.arrowColors) {
-        bufferSnapshots.arrowColors = new Uint32Array(numEdges * 3);
+        // bufferSnapshots.arrowColors = new Uint32Array(numEdges * 3);
+        bufferSnapshots.arrowColors = this.getTypedArray('arrowColors', Uint32Array, numEdges * 3);
     }
     var arrowColors = bufferSnapshots.arrowColors;
 
     if (!bufferSnapshots.arrowPointSizes) {
-        bufferSnapshots.arrowPointSizes = new Uint8Array(numEdges * 3);
+        // bufferSnapshots.arrowPointSizes = new Uint8Array(numEdges * 3);
+        bufferSnapshots.arrowPointSizes = this.getTypedArray('arrowPointSizes', Uint8Array, numEdges * 3);
     }
     var arrowPointSizes = bufferSnapshots.arrowPointSizes;
 
@@ -1170,7 +1173,10 @@ RenderingScheduler.prototype.getTypedArray = function (name, constructor, length
     // array buffers when we replace with a bigger one.
     if (!this.arrayBuffers[name] || this.arrayBuffers[name].byteLength < lengthInBytes) {
         console.log('Reallocating for ' + name + ' to: ', lengthInBytes, 'bytes');
+        console.log('Old byteLength: ', this.arrayBuffers[name] ? this.arrayBuffers[name].byteLength : 0);
         this.arrayBuffers[name] = new ArrayBuffer(lengthInBytes);
+    } else {
+        console.log('Was in cache of proper size -- fast path');
     }
 
     var array = new constructor(this.arrayBuffers[name], 0, length);
