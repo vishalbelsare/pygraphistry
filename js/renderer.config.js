@@ -268,29 +268,32 @@ var models = {
             'count': 2,
             'offset': 0,
             'stride': 8,
-            'normalize': false
+            'normalize': false,
+            'sizeHint': 'numElements.edge * (numElements.renderedSplits + 1) * 2'
         }
     },
     'midSpringsStarts': {
         'startPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
             'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 2,
             'offset': 0,
             'stride': 8,
-            'normalize': false
+            'normalize': false,
+            'sizeHint': 'numElements.edge * (numElements.renderedSplits + 1) * 2'
         }
     },
     'midSpringsEnds': {
         'endPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
             'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 2,
             'offset': 0,
             'stride': 8,
-            'normalize': false
+            'normalize': false,
+            'sizeHint': 'numElements.edge * (numElements.renderedSplits + 1) * 2'
         }
     },
     'selectedMidSpringsPos': {
@@ -306,7 +309,7 @@ var models = {
     },
     'selectedMidSpringsStarts': {
         'startPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
             'hint': 'DYNAMIC_DRAW',
             'count': 2,
@@ -317,7 +320,7 @@ var models = {
     },
     'selectedMidSpringsEnds': {
         'endPos': {
-            'datasource': 'CLIENT',
+            'datasource': VBODataSources.CLIENT,
             'type': 'FLOAT',
             'hint': 'DYNAMIC_DRAW',
             'count': 2,
@@ -356,7 +359,8 @@ var models = {
             'count': 2,
             'offset': 0,
             'stride': 8,
-            'normalize': false
+            'normalize': false,
+            'sizeHint': 'numElements.edge * 2 * 3'
         }
     },
     'arrowEndPos': {
@@ -367,7 +371,8 @@ var models = {
             'count': 2,
             'offset': 0,
             'stride': 8,
-            'normalize': false
+            'normalize': false,
+            'sizeHint': 'numElements.edge * 2 * 3'
         }
     },
     'arrowNormalDir': {
@@ -378,7 +383,8 @@ var models = {
             'count': 1,
             'offset': 0,
             'stride': 0,
-            'normalize': false
+            'normalize': false,
+            'sizeHint': 'numElements.edge * 3'
         }
     },
     'highlightedArrowStartPos': {
@@ -537,7 +543,7 @@ var models = {
     },
     'edgeHeights': {
         'edgeHeight':  {
-            'datasource': 'HOST',
+            'datasource': VBODataSources.HOST,
             'type': 'FLOAT',
             'hint': 'STATIC_DRAW',
             'count': 1,
@@ -554,7 +560,8 @@ var models = {
             'count': 1,
             'offset': 0,
             'stride': 0,
-            'normalize': false
+            'normalize': false,
+            'sizeHint': 'numElements.edge * 3'
         }
     },
     'selectedArrowPointSizes': {
@@ -643,7 +650,8 @@ var models = {
             'count': 4,
             'offset': 0,
             'stride': 0,
-            'normalize': true
+            'normalize': true,
+            'sizeHint': 'numElements.edge * (numElements.renderedSplits + 1) * 2'
         }
     },
     'arrowColors': {
@@ -654,7 +662,8 @@ var models = {
             'count': 4,
             'offset': 0,
             'stride': 0,
-            'normalize': true
+            'normalize': true,
+            'sizeHint': 'numElements.edge * 3'
         }
     },
     'pointColors': {
