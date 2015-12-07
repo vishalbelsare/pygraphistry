@@ -710,6 +710,25 @@ function loadBuffers(state, bufferData) {
     });
 }
 
+// TODO: Error checking
+function allocateBufferSize(state, bufferName, sizeInBytes) {
+    var gl = state.get('gl');
+    var config = state.get('config').toJS();
+    var buffers = state.get('buffers').toJS();
+    var bufferSizes = state.get('bufferSizes');
+
+    var buffer = buffers[bufferName];
+    var model = _.values(config.models[bufferName])[0];
+    var glArrayType = model.index ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER;
+    var glHint = model.hint || 'STREAM_DRAW';
+
+    if(sizeInBytes > bufferSizes[bufferName]) {
+        bindBuffer(gl, glArrayType, buffer);
+        gl.bufferData(glArrayType, sizeInBytes, gl[glHint]);
+        bufferSizes[bufferName] = sizeInBytes;
+    }
+}
+
 
 function loadBuffer(state, buffer, bufferName, model, data) {
     var gl = state.get('gl');
@@ -1212,5 +1231,7 @@ module.exports = {
     getServerBufferNames: getServerBufferNames,
     getServerTextureNames: getServerTextureNames,
     getBufferNames: getBufferNames,
+    allocateBufferSize: allocateBufferSize,
+    updateIndexBuffer: updateIndexBuffer,
     setFlags: setFlags
 };

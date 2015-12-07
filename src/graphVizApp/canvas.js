@@ -95,12 +95,21 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
 
     var config = renderState.get('config').toJS();
     console.log('config: ', config);
+    // var numElements = {
+    //     edge: 254,
+    //     point: 77,
+    //     renderedSplits: config.numRenderedSplits
+    // };
     var numElements = {
-        edge: 254,
-        point: 77,
+        edge: 537309,
+        point: 56399,
         renderedSplits: config.numRenderedSplits
     };
-    this.allocateAllArrayBuffers(config, numElements);
+    this.allocateAllArrayBuffers(config, numElements, renderState);
+    var largestModel = this.getLargestModelSize(config, numElements);
+    var maxElements = Math.max(_.max(_.values(numElements)), largestModel);
+    renderState.get('activeIndices')
+        .forEach(renderer.updateIndexBuffer.bind('', renderState, maxElements));
 
 
 
@@ -1138,7 +1147,7 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
 
 
 
-RenderingScheduler.prototype.allocateAllArrayBuffers = function (config, numElements) {
+RenderingScheduler.prototype.allocateAllArrayBuffers = function (config, numElements, renderState) {
     var that = this;
     _.each(config.models, function (model, modelName) {
         _.each(model, function (desc, key) {
@@ -1155,6 +1164,7 @@ RenderingScheduler.prototype.allocateAllArrayBuffers = function (config, numElem
 
                 var sizeInBytes = eval(desc.sizeHint) * desc.count * bytesPerElement;
                 that.allocateArrayBufferOnHint(modelName, sizeInBytes);
+                renderer.allocateBufferSize(renderState, modelName, sizeInBytes);
             }
         });
     });
@@ -1183,6 +1193,21 @@ RenderingScheduler.prototype.getTypedArray = function (name, constructor, length
     return array;
 };
 
+RenderingScheduler.prototype.getLargestModelSize = function (config, numElements) {
+    var that = this;
+    var sizes = _.map(config.models, function (model, modelName) {
+        return _.map(model, function (desc, key) {
+            if (desc.sizeHint) {
+                var num = eval(desc.sizeHint) * desc.count;
+                return num;
+            } else {
+                return 0;
+            }
+        });
+    });
+    var maxNum = _.max(_.flatten(sizes));
+    return maxNum;
+}
 
 module.exports = {
     setupBackgroundColor: setupBackgroundColor,
