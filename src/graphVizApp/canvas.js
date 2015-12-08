@@ -11,7 +11,6 @@ var util            = require('./util.js');
 var renderer        = require('../renderer');
 var colorPicker     = require('./colorpicker.js');
 var VizSlice        = require('./VizSlice.js');
-var Command         = require('./command.js');
 
 
 function setupCameraInteractions(appState, $eventTarget) {
@@ -286,9 +285,8 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
 // Hook to preallocate memory when initial sizes are available.
 RenderingScheduler.prototype.attemptToAllocateBuffersOnHints = function (socket, config, renderState) {
     var that = this;
-    var initialSizes = new Command('gettingInitialSizes', 'get_sizes_for_memory_allocation', socket);
-    initialSizes.sendWithObservableResult().do(function (resp) {
-        var numElements = resp.numElements;
+
+    socket.on('sizes_for_memory_allocation', function (numElements) {
         _.extend(numElements, {
             renderedSplits: config.numRenderedSplits
         });
@@ -297,7 +295,7 @@ RenderingScheduler.prototype.attemptToAllocateBuffersOnHints = function (socket,
         var maxElements = Math.max(_.max(_.values(numElements)), largestModel);
         renderState.get('activeIndices')
             .forEach(renderer.updateIndexBuffer.bind('', renderState, maxElements));
-    }).subscribe(_.identity, util.makeErrorHandler('get initial sizes'));
+    });
 };
 
 
