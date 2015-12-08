@@ -283,6 +283,9 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
 }
 
 // Hook to preallocate memory when initial sizes are available.
+// We handle these by putting them into an Rx.subject and handling
+// each with a 1ms delay in between, to give the JS thread
+// some breathing room to handle other callbacks/repaints.
 RenderingScheduler.prototype.attemptToAllocateBuffersOnHints = function (socket, config, renderState) {
     var that = this;
 
@@ -290,12 +293,36 @@ RenderingScheduler.prototype.attemptToAllocateBuffersOnHints = function (socket,
         _.extend(numElements, {
             renderedSplits: config.numRenderedSplits
         });
-        that.allocateAllArrayBuffers(config, numElements, renderState);
+        var allocationFunctions = that.allocateAllArrayBuffersFactory(config, numElements, renderState);
+
         var largestModel = that.getLargestModelSize(config, numElements);
         var maxElements = Math.max(_.max(_.values(numElements)), largestModel);
-        renderState.get('activeIndices')
-            .forEach(renderer.updateIndexBuffer.bind('', renderState, maxElements));
+        var activeIndices = renderState.get('activeIndices');
+        _.each(activeIndices, function (index) {
+            allocationFunctions.push(function () {
+                renderer.updateIndexBuffer.bind('', renderState, maxElements)(index);
+            });
+        });
+
+        var timeoutLength = 1;
+        var index = 0;
+        var process = function () {
+            // We've handled everything
+            if (index >= allocationFunctions.length) {
+                return;
+            }
+
+            // Do one big job, then increment
+            allocationFunctions[index]();
+            index++;
+
+            // Cede control to browser, then handle next element
+            setTimeout(process, timeoutLength);
+        };
+        process();
+
     });
+
 };
 
 
@@ -1135,9 +1162,10 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
 
 
 // Given a render config and info about number of nodes/edges,
-// allocate buffers based on size hints.
-RenderingScheduler.prototype.allocateAllArrayBuffers = function (config, numElements, renderState) {
+// generate an array of functions that will allocate memory for them
+RenderingScheduler.prototype.allocateAllArrayBuffersFactory = function (config, numElements, renderState) {
     var that = this;
+    var functions = [];
     debug('Allocating all arraybuffers on hint for numElements: ', numElements);
     _.each(config.models, function (model, modelName) {
         _.each(model, function (desc) {
@@ -1161,12 +1189,17 @@ RenderingScheduler.prototype.allocateAllArrayBuffers = function (config, numElem
                 var sizeInBytes = eval(desc.sizeHint) * desc.count * bytesPerElement; // jshint ignore:line
 
                 // Allocate arraybuffers for RenderingScheduler
-                that.allocateArrayBufferOnHint(modelName, sizeInBytes);
+                functions.push(function () {
+                    that.allocateArrayBufferOnHint(modelName, sizeInBytes);
+                });
                 // Allocate GPU buffer in renderer
-                renderer.allocateBufferSize(renderState, modelName, sizeInBytes);
+                functions.push(function () {
+                    renderer.allocateBufferSize(renderState, modelName, sizeInBytes);
+                });
             }
         });
     });
+    return functions;
 };
 
 // Explicitly allocate an array buffer for a given name based on a size hint
@@ -1213,7 +1246,7 @@ RenderingScheduler.prototype.getLargestModelSize = function (config, numElements
                 // It evals a size hint from render config into a number.
                 // We do this because we can't send these functions over the network with
                 // the rest of render config.
-                var num = eval(desc.sizeHint) * desc.count; // jshint ignore:line
+                var num = eval(desc.sizeHint); // jshint ignore:line
                 return num;
             } else {
                 return 0;

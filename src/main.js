@@ -119,6 +119,22 @@ function displayErrors(socket, $canvas) {
     });
 }
 
+function handleLoadingMessages(socket) {
+    var INITIAL_MESSAGE = 'Herding stray GPUs';
+    var $loadText = $('#load-text');
+
+    socket.on('update_loading_status', function (data) {
+        var message = data.message;
+        // TODO: Use the percentage
+        // var percentage = data.message;
+
+        console.log('UPDATE: ', message);
+        $loadText.text(message);
+    });
+
+    $loadText.text(INITIAL_MESSAGE);
+}
+
 //CanvasD * <string> * Observable renderState->
 //  Replay_1 {
 //      vboUpdates: Observable {'start', 'received', 'rendered'},
@@ -126,16 +142,6 @@ function displayErrors(socket, $canvas) {
 //  }
 function init(streamClient, canvasElement, vizType) {
     debug('Initializing client networking driver', vizType);
-
-    var textNum = 0;
-    var loadingText = [
-        'herding stray GPUs',
-        'munching graph data'
-    ];
-    Rx.Observable.interval(1000).take(2).subscribe(function () {
-        $('#load-text').text(loadingText[textNum]);
-        textNum++;
-    });
 
     var apiEvents = new Rx.Subject();
     var apiActions = new Rx.Subject();
@@ -167,6 +173,7 @@ function init(streamClient, canvasElement, vizType) {
         .flatMap(function (nfo) {
             /** @param {RenderInfo} nfo */
             var socket  = nfo.socket;
+            handleLoadingMessages(socket);
             displayErrors(socket, $(canvasElement));
             apiEvents.onNext({event: 'workerConnected', uri: nfo.uri});
 
