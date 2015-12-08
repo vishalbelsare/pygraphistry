@@ -1493,18 +1493,19 @@ function calculateBinning(numValues, values, indices, goalNumberOfBins) {
     var bottomVal;
     var topVal;
     var binWidth;
+    var range = max - min;
     if (goalNumberOfBins) {
         numBins = goalNumberOfBins;
         bottomVal = min;
         topVal = max;
-        binWidth = (max - min) / (goalNumberOfBins - 1);
+        binWidth = range / (goalNumberOfBins - 1);
 
     // Try to find a good division.
     } else {
-        var goalWidth = (max - min) / goalBins;
+        var goalWidth = range / goalBins;
 
         binWidth = 10;
-        numBins = (max - min) / binWidth;
+        numBins = range / binWidth;
 
         // Edge case for invalid values
         // Should capture general case of NaNs and other invalid
@@ -1519,7 +1520,7 @@ function calculateBinning(numValues, values, indices, goalNumberOfBins) {
             } else {
                 binWidth *= 10;
             }
-            numBins = (max - min) / binWidth;
+            numBins = range / binWidth;
         }
 
         // Refine by doubling/halving
@@ -1530,7 +1531,7 @@ function calculateBinning(numValues, values, indices, goalNumberOfBins) {
             } else {
                 binWidth *= 2;
             }
-            numBins = (max - min) / binWidth;
+            numBins = range / binWidth;
         }
 
         bottomVal = round_down(min, binWidth);
