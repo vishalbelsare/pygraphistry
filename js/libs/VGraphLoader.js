@@ -369,17 +369,20 @@ function decode0(graph, vg, metadata, socket)  {
 
     });
 
-    clientNotification.loadingStatus(socket, 'Binding nodes');
-    return graph.setVertices(vertices)
-    .then(function () {
-        clientNotification.loadingStatus(socket, 'Binding edges');
-        return graph.setEdges(edges);
-    }).then(function () {
-        clientNotification.loadingStatus(socket, 'Binding everything else');
-        return runLoaders(loaders);
-    }).then(function () {
-        return graph;
-    }).fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
+    return clientNotification.loadingStatus(socket, 'Binding nodes')
+        .then(function () {
+            return graph.setVertices(vertices);
+        }).then(function () {
+            return clientNotification.loadingStatus(socket, 'Binding edges');
+        }).then(function () {
+            return graph.setEdges(edges);
+        }).then(function () {
+            return clientNotification.loadingStatus(socket, 'Binding everything else');
+        }).then(function () {
+            return runLoaders(loaders);
+        }).then(function () {
+            return graph;
+        }).fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
 }
 
 
@@ -579,17 +582,21 @@ function decode1(graph, vg, metadata, socket)  {
             }
         });
     });
-    clientNotification.loadingStatus(socket, 'Binding nodes');
-    return graph.setVertices(vertices)
-    .then(function () {
-        clientNotification.loadingStatus(socket, 'Binding edges');
-        return graph.setEdges(edges);
-    }).then(function () {
-        clientNotification.loadingStatus(socket, 'Binding everything else');
-        return runLoaders(loaders);
-    }).then(function () {
-        return graph;
-    }).fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
+
+    return clientNotification.loadingStatus(socket, 'Binding nodes')
+        .then(function () {
+            return graph.setVertices(vertices);
+        }).then(function () {
+            return clientNotification.loadingStatus(socket, 'Binding edges');
+        }).then(function () {
+            return graph.setEdges(edges);
+        }).then(function () {
+            return clientNotification.loadingStatus(socket, 'Binding everything else');
+        }).then(function () {
+            return runLoaders(loaders);
+        }).then(function () {
+            return graph;
+        }).fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
 }
 
 function notifyClientOfSizesForAllocation (socket, nedges, nvertices) {

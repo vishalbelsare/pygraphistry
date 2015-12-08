@@ -298,10 +298,11 @@ function create(dataset, socket) {
 
     var graph = init(device, vendor, controls, socket).then(function (graph) {
         logger.trace('LOADING DATASET');
-        clientNotification.loadingStatus(socket, 'Loading dataset');
-        return loader.loadDatasetIntoSim(graph, dataset, socket);
-
-    }).then(function (graph) {
+        return Q.all([
+            loader.loadDatasetIntoSim(graph, dataset, socket),
+            clientNotification.loadingStatus(socket, 'Loading dataset')
+        ]);
+    }).spread(function (graph) {
         // Load into dataframe data attributes that rely on the simulator existing.
         var outDegrees = graph.simulator.dataframe.getHostBuffer('forwardsEdges').degreesTyped;
         var inDegrees = graph.simulator.dataframe.getHostBuffer('backwardsEdges').degreesTyped;
@@ -379,9 +380,11 @@ function create(dataset, socket) {
                 log.makeRxErrorHandler(logger, 'node-driver: tick failed')
             );
 
-        clientNotification.loadingStatus(socket, 'Graph created');
         logger.trace('Graph created');
         return graph;
+    })
+    .then(function (graph) {
+        return clientNotification.loadingStatus(socket, 'Graph created', null, graph); // returns graph
     })
     .fail(function (err) {
         logger.die(err, 'Driver initialization error');

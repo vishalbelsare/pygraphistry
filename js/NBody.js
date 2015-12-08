@@ -63,8 +63,10 @@ function create(renderer, device, vendor, controls, socket) {
         graph[cfg.setterName] = boundBuffers[name].setter.bind('', graph);
     });
 
-    clientNotification.loadingStatus(socket, 'Creating physics simulator');
-    return createSimulator(dataframe, renderer, device, vendor, controls).then(function (simulator) {
+    return clientNotification.loadingStatus(socket, 'Creating physics simulator')
+    .then(function () {
+        return createSimulator(dataframe, renderer, device, vendor, controls);
+    }).then(function (simulator) {
         graph.simulator = simulator;
         graph.globalControls = simulator.controls.global;
     }).then(function () {
