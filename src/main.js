@@ -128,7 +128,6 @@ function handleLoadingMessages(socket) {
         // TODO: Use the percentage
         // var percentage = data.message;
 
-        console.log('UPDATE: ', message);
         $loadText.text(message);
     });
 
