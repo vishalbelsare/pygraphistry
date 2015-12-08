@@ -6,7 +6,6 @@ function loadingStatus(socket, message, percentage) {
         percentage: percentage
     };
 
-    console.log('UPDATING LOADINGSTATUS: ', message);
     socket.emit('update_loading_status', payload);
 }
 
