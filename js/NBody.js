@@ -28,17 +28,16 @@ var boundBuffers = {};
  * @param bgColor - [0--255,0--255,0--255,0--1]
  * @param [dimensions=\[1,1\]] - a two element array [width,height] used for internal posituin calculations.
  */
-function create(renderer, device, vendor, controls) {
+function create(renderer, device, vendor, controls, socket) {
 
     var dataframe = new Dataframe();
 
     var graph = {
         renderer: renderer,
+        socket: socket,
         stepNumber: 0,
         __pointsHostBuffer: undefined,
-        dataframe: dataframe,
-        originalNumEdges: Q.defer(),
-        originalNumPoints: Q.defer()
+        dataframe: dataframe
     };
 
     _.each({

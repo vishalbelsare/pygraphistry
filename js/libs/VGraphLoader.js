@@ -273,11 +273,11 @@ function runLoaders(loaders) {
 /**
  * Load the raw data from the dataset object from S3
 **/
-function load(graph, dataset) {
+function load(graph, dataset, socket) {
     var vg = pb_root.VectorGraph.decode(dataset.body);
     logger.trace('attaching vgraph to simulator');
     graph.simulator.vgraph = vg;
-    return decoders[vg.version](graph, vg, dataset.metadata);
+    return decoders[vg.version](graph, vg, dataset.metadata, socket);
 }
 
 
@@ -303,14 +303,11 @@ function loadDataframe(graph, attrs, numPoints, numEdges, encodings) {
 }
 
 
-function decode0(graph, vg, metadata)  {
+function decode0(graph, vg, metadata, socket)  {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
           vg.version, vg.name, vg.nvertices, vg.nedges);
 
-    // Set in graph number of points/edges so client can preallocate.
-    // TODO: Wrap this into dataframe init logic.
-    graph.originalNumEdges.resolve(vg.nedges);
-    graph.originalNumPoints.resolve(vg.nvertices);
+    notifyClientOfSizesForAllocation(socket, vg.nedges, vg.nvertices);
 
     var attrs = getAttributes0(vg);
     loadDataframe(graph, attrs, vg.nvertices, vg.nedges, {});
@@ -529,14 +526,11 @@ function getAttributes1(vg) {
 
 
 
-function decode1(graph, vg, metadata)  {
+function decode1(graph, vg, metadata, socket)  {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
           vg.version, vg.name, vg.nvertices, vg.nedges);
 
-    // Set in graph number of points/edges so client can preallocate.
-    // TODO: Wrap this into dataframe init logic.
-    graph.originalNumEdges.resolve(vg.nedges);
-    graph.originalNumPoints.resolve(vg.nvertices);
+    notifyClientOfSizesForAllocation(socket, vg.nedges, vg.nvertices);
 
     var attrs = getAttributes1(vg);
     var encodings = _.omit(metadata.view.encodings, 'source', 'destination');
@@ -589,6 +583,15 @@ function decode1(graph, vg, metadata)  {
     }).then(function () {
         return graph;
     }).fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
+}
+
+function notifyClientOfSizesForAllocation (socket, nedges, nvertices) {
+    var MAX_SIZE_TO_ALLOCATE = 2000000;
+    var numElements = {
+        edge: Math.min(nedges, MAX_SIZE_TO_ALLOCATE),
+        point: Math.min(nvertices, MAX_SIZE_TO_ALLOCATE)
+    };
+    socket.emit('sizes_for_memory_allocation', numElements);
 }
 
 

@@ -216,7 +216,7 @@ function fetchBufferByteLengths(counts, renderConfig) {
 }
 
 
-function init(device, vendor, controls) {
+function init(device, vendor, controls, socket) {
     logger.trace("Starting initialization");
 
     /* Example of RenderGL instatiation.
@@ -231,7 +231,7 @@ function init(device, vendor, controls) {
 
     return RenderNull.create(null)
         .then(function (renderer) {
-            return NBody.create(renderer, device, vendor, controls);
+            return NBody.create(renderer, device, vendor, controls, socket);
         }).fail(log.makeQErrorHandler(logger, 'Failure in NBody creation'));
 }
 
@@ -280,7 +280,7 @@ function delayObservableGenerator(delay, value, cb) {
 ///////////////////////////////////////////////////////////////////////////
 
 
-function create(dataset) {
+function create(dataset, socket) {
     logger.trace("STARTING DRIVER");
 
     //Observable {play: bool, layout: bool, ... cfg settings ...}
@@ -295,9 +295,9 @@ function create(dataset) {
     var device = dataset.metadata.device;
     var vendor = dataset.metadata.vendor;
 
-    var graph = init(device, vendor, controls).then(function (graph) {
+    var graph = init(device, vendor, controls, socket).then(function (graph) {
         logger.trace('LOADING DATASET');
-        return loader.loadDatasetIntoSim(graph, dataset);
+        return loader.loadDatasetIntoSim(graph, dataset, socket);
 
     }).then(function (graph) {
         // Load into dataframe data attributes that rely on the simulator existing.
