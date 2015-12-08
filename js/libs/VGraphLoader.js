@@ -8,6 +8,7 @@ var path = require('path');
 var util = require('../util.js');
 var weakcc = require('../weaklycc.js');
 var palettes = require('../palettes.js');
+var clientNotification = require('../clientNotification.js');
 
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:data:vgraphloader');
@@ -335,7 +336,7 @@ function decode0(graph, vg, metadata, socket)  {
             vertices[i] = [xObj.values[i], yObj.values[i]];
         }
     } else {
-        vertices = computeInitialPositions(vg.nvertices, edges, dimensions);
+        vertices = computeInitialPositions(vg.nvertices, edges, dimensions, socket);
     }
 
     var loaders = attributeLoaders(graph);
@@ -368,10 +369,13 @@ function decode0(graph, vg, metadata, socket)  {
 
     });
 
+    clientNotification.loadingStatus(socket, 'Binding nodes');
     return graph.setVertices(vertices)
     .then(function () {
+        clientNotification.loadingStatus(socket, 'Binding edges');
         return graph.setEdges(edges);
     }).then(function () {
+        clientNotification.loadingStatus(socket, 'Binding everything else');
         return runLoaders(loaders);
     }).then(function () {
         return graph;
@@ -379,8 +383,9 @@ function decode0(graph, vg, metadata, socket)  {
 }
 
 
-function computeInitialPositions(nvertices, edges, dimensions) {
+function computeInitialPositions(nvertices, edges, dimensions, socket) {
     logger.trace('Running component analysis');
+    clientNotification.loadingStatus(socket, 'Initializing positions');
 
     var components = weakcc(nvertices, edges, 2);
     var pointsPerRow = nvertices / (Math.round(Math.sqrt(components.components.length)) + 1);
@@ -544,7 +549,7 @@ function decode1(graph, vg, metadata, socket)  {
     }
 
     var dimensions = [1, 1];
-    var vertices = computeInitialPositions(vg.nvertices, edges, dimensions);
+    var vertices = computeInitialPositions(vg.nvertices, edges, dimensions, socket);
 
     var loaders = attributeLoaders(graph);
     var mapper = mappers[metadata.mapper];
@@ -574,11 +579,13 @@ function decode1(graph, vg, metadata, socket)  {
             }
         });
     });
-
+    clientNotification.loadingStatus(socket, 'Binding nodes');
     return graph.setVertices(vertices)
     .then(function () {
+        clientNotification.loadingStatus(socket, 'Binding edges');
         return graph.setEdges(edges);
     }).then(function () {
+        clientNotification.loadingStatus(socket, 'Binding everything else');
         return runLoaders(loaders);
     }).then(function () {
         return graph;

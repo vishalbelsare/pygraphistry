@@ -16,7 +16,8 @@ var Q = require("q"),
     lConf = require('./layout.config.js'),
 //    webcl = require('node-webcl'),
     metrics = require("./metrics.js"),
-    loader = require("./data-loader.js");
+    loader = require("./data-loader.js"),
+    clientNotification = require('./clientNotification.js');
 
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:data:node-driver');
@@ -297,6 +298,7 @@ function create(dataset, socket) {
 
     var graph = init(device, vendor, controls, socket).then(function (graph) {
         logger.trace('LOADING DATASET');
+        clientNotification.loadingStatus(socket, 'Loading dataset');
         return loader.loadDatasetIntoSim(graph, dataset, socket);
 
     }).then(function (graph) {
@@ -377,6 +379,7 @@ function create(dataset, socket) {
                 log.makeRxErrorHandler(logger, 'node-driver: tick failed')
             );
 
+        clientNotification.loadingStatus(socket, 'Graph created');
         logger.trace('Graph created');
         return graph;
     })

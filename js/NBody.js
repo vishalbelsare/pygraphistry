@@ -6,6 +6,7 @@ var lConf = require('./layout.config.js');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');
 var Dataframe = require('./Dataframe.js');
+var clientNotification = require('./clientNotification.js');
 
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:graph-viz:graph:nbody');
@@ -29,6 +30,7 @@ var boundBuffers = {};
  * @param [dimensions=\[1,1\]] - a two element array [width,height] used for internal posituin calculations.
  */
 function create(renderer, device, vendor, controls, socket) {
+
 
     var dataframe = new Dataframe();
 
@@ -61,6 +63,7 @@ function create(renderer, device, vendor, controls, socket) {
         graph[cfg.setterName] = boundBuffers[name].setter.bind('', graph);
     });
 
+    clientNotification.loadingStatus(socket, 'Creating physics simulator');
     return createSimulator(dataframe, renderer, device, vendor, controls).then(function (simulator) {
         graph.simulator = simulator;
         graph.globalControls = simulator.controls.global;
