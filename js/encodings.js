@@ -57,10 +57,9 @@ module.exports = {
                                 .domain(defaultDomain)
                                 .range(['blue', 'white', 'red']);
                         } else {
-                            var baseColor = d3.rgb('blue');
                             scaling = d3.scale.linear()
                                 .domain(defaultDomain)
-                                .range([baseColor.darker(2), baseColor.brighter(2)]);
+                                .range(['blue', 'white']);
                         }
                     }
                 }
