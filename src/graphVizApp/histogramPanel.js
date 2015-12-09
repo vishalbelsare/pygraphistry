@@ -126,7 +126,7 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
                 } else {
                     panel.updateHistogram(histogram.get('vizContainer'), histogram, histogram.get('attribute'));
                 }
-                return;
+                return this;
             }
 
             var attribute = histogram.get('attribute');
