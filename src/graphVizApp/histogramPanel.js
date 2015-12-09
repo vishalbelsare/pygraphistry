@@ -151,6 +151,8 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
         },
 
         encode: function () {
+            // TODO: BETA flagged feature:
+            if ($('.beta').hasClass('beta')) { return; }
             panel.encodeAttribute(this.model.get('attribute'), this.model.get('is_encoded')).take(1).do(function (response) {
                 this.model.set('is_encoded', response.enabled);
             }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Encoding histogram attribute'));
