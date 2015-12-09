@@ -97,6 +97,7 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             'click .expandHistogramButton': 'expand',
             'click .expandedHistogramButton': 'shrink',
             'click .refreshHistogramButton': 'refresh',
+            //'mouseover': 'encode_enable',
             'click .topMenu': 'encode',
             'dragstart .topMenu': 'dragStart'
         },
@@ -159,6 +160,10 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             panel.encodeAttribute(dataframeAttribute, is_encoded, binning).take(1).do(function (response) {
                 this.model.set('is_encoded', response.enabled);
             }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Encoding histogram attribute'));
+        },
+
+        encode_enable: function () {
+            this.encode(true);
         },
 
         dragStart: function () {
