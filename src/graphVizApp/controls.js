@@ -648,7 +648,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     //tick stream until canceled/timed out (ends with finalCenter)
     var autoCentering =
         doneLoading.flatMapLatest(function () {
-            return Rx.Observable.interval(1000)
+            return Rx.Observable.interval(50)
                 .do(function () { debug('auto center interval'); })
                 .merge(centeringDone)
                 .takeUntil(centeringDone.delay(1));
@@ -660,9 +660,9 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     autoCentering.subscribe(
         function (count) {
             if (count === true ||
-                typeof count === 'number' && (count < 3  ||
-                                             (count % 2 === 0 && count < 10) ||
-                                              count % 10 === 0)) {
+                typeof count === 'number' && (count < 10  ||
+                                             (count % 20 === 0 && count < 100) ||
+                                              count % 100 === 0)) {
                 $('#center').trigger('click');
             }
         },
