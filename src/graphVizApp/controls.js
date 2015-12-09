@@ -575,12 +575,45 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     setupPanelControl(popoutClicks, $('#layoutSettingsButton'),  $('#renderingItems'), 'Turning on/off settings');
 
+    var $tooltips = $('[data-toggle="tooltip"]');
+    var $bolt = $graph.find('.fa');
+    var $center = $('#center');
+    var $shrinkToFit = $center.find('.fa');
+    var numTicks = urlParams.play !== undefined ? urlParams.play : 5000;
+
+
+    /**
+     * Returns whether camera auto-centering is specified; defaults to true.
+     */
+    var finalCenter = (function () {
+        var flag = urlParams.center;
+        return flag === undefined || flag.toString().toLowerCase() === 'true';
+    }());
+
+    var $simulation = $('#simulation');
+    var centeringDone =
+        Rx.Observable.merge(
+            Rx.Observable.fromEvent($center, 'click'),
+            Rx.Observable.fromEvent($graph, 'click'),
+            $simulation.onAsObservable('mousewheel'),
+            $simulation.onAsObservable('mousedown'),
+            $('#zoomin').onAsObservable('click'),
+            $('#zoomout').onAsObservable('click'))
+        //skip events autoplay triggers
+        .filter(function (evt){ return evt.originalEvent !== undefined; })
+        .merge(Rx.Observable.timer(numTicks))
+        .map(_.constant(finalCenter));
+
+    var readyForHistograms = centeringDone.zip(doneLoading)
+        .merge(Rx.Observable.from([1]).delay(3000))
+        .take(1);
+
     var marquee = setupMarquee(appState, turnOnMarquee);
     var brush = setupBrush(appState, turnOnBrush);
     var filtersPanel = new FiltersPanel(socket, urlParams);
     filtersPanel.setupToggleControl(popoutClicks, $('#filterButton'));
     var filtersResponses = filtersPanel.control.filtersResponsesSubject;
-    var histogramBrush = new HistogramBrush(socket, filtersPanel, doneLoading);
+    var histogramBrush = new HistogramBrush(socket, filtersPanel, readyForHistograms);
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
     histogramBrush.setupMarqueeInteraction(brush);
     turnOnBrush.first(function (value) { return value === true; }).do(function () {
@@ -615,35 +648,6 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         socket.emit('interaction', payload);
     }, util.makeErrorHandler('marquee error'));
 
-    var $tooltips = $('[data-toggle="tooltip"]');
-    var $bolt = $graph.find('.fa');
-    var $center = $('#center');
-    var $shrinkToFit = $center.find('.fa');
-    var numTicks = urlParams.play !== undefined ? urlParams.play : 5000;
-
-
-    /**
-     * Returns whether camera auto-centering is specified; defaults to true.
-     */
-    var finalCenter = (function () {
-        var flag = urlParams.center;
-        return flag === undefined || flag.toString().toLowerCase() === 'true';
-    }());
-
-
-    var $simulation = $('#simulation');
-    var centeringDone =
-        Rx.Observable.merge(
-            Rx.Observable.fromEvent($center, 'click'),
-            Rx.Observable.fromEvent($graph, 'click'),
-            $simulation.onAsObservable('mousewheel'),
-            $simulation.onAsObservable('mousedown'),
-            $('#zoomin').onAsObservable('click'),
-            $('#zoomout').onAsObservable('click'))
-        //skip events autoplay triggers
-        .filter(function (evt){ return evt.originalEvent !== undefined; })
-        .merge(Rx.Observable.timer(numTicks))
-        .map(_.constant(finalCenter));
 
     //tick stream until canceled/timed out (ends with finalCenter)
     var autoCentering =
