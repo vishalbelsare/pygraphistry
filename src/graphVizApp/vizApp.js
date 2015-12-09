@@ -156,7 +156,7 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
 
     var doneLoading = vboUpdates.filter(function (update) {
         return update === 'received';
-    }).take(1).do(ui.hideSpinnerShowBody).delay(700);
+    }).take(1).do(ui.hideSpinnerShowBody).delay(100);
 
     controls.init(appState, socket, $toolbar, doneLoading, workerParams, urlParams);
     api.setupAPIHooks(socket, appState, doneLoading);
