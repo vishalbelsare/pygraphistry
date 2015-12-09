@@ -1416,7 +1416,7 @@ Dataframe.prototype.aggregate = function (simulator, indices, attributes, binnin
         indices = unsortedIndices;
     }
 
-    var process = function (attribute, indices) {
+    var processAgg = function (attribute, indices) {
 
         var goalNumberOfBins = binning ? binning._goalNumberOfBins : 0;
         var binningHint = binning ? binning[attribute] : undefined;
@@ -1444,10 +1444,20 @@ Dataframe.prototype.aggregate = function (simulator, indices, attributes, binnin
     var aggregated = {};
 
     _.each(keysToAggregate, function (attribute) {
+
         chain = chain.then(function() {
-            return process(attribute, indices)
+            return processAgg(attribute, indices)
                 .then(function (agg) {
+                    // Store result
                     aggregated[attribute] = agg;
+
+                    // Force loop restart before handling next
+                    // So async IO can go through, e.g., VBO updates
+                    var waitForNextTick = Q.defer();
+                    process.nextTick(function () {
+                        waitForNextTick.resolve();
+                    });
+                    return waitForNextTick.promise;
                 });
         });
     });
@@ -1459,7 +1469,7 @@ Dataframe.prototype.aggregate = function (simulator, indices, attributes, binnin
 
     // Array of promises
     // var promisedAggregates = _.map(keysToAggregate, function (attribute) {
-    //     return process(attribute, indices);
+    //     return processAgg(attribute, indices);
     // });
 
     // return Q.all(promisedAggregates).then(function (aggregated) {
