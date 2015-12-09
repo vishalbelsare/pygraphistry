@@ -150,10 +150,13 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             return this;
         },
 
-        encode: function () {
+        encode: function (new_state) {
             // TODO: BETA flagged feature:
             if ($('.beta').hasClass('beta')) { return; }
-            panel.encodeAttribute(this.model.get('attribute'), this.model.get('is_encoded')).take(1).do(function (response) {
+            var is_encoded = new_state !== undefined ? !new_state : this.model.get('is_encoded');
+            var dataframeAttribute = this.model.get('attribute');
+            var binning = this.model.get('globalStats').sparkLines[dataframeAttribute];
+            panel.encodeAttribute(dataframeAttribute, is_encoded, binning).take(1).do(function (response) {
                 this.model.set('is_encoded', response.enabled);
             }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Encoding histogram attribute'));
         },
@@ -324,11 +327,12 @@ HistogramsPanel.prototype.updateAttribute = function (oldAttr, newAttr, type) {
     });
 };
 
-HistogramsPanel.prototype.encodeAttribute = function (dataframeAttribute, reset) {
+HistogramsPanel.prototype.encodeAttribute = function (dataframeAttribute, reset, binning) {
     return this.filtersPanel.control.encodeCommand.sendWithObservableResult({
         attribute: dataframeAttribute,
         encodingType: 'pointColor',
-        reset: reset
+        reset: reset,
+        binning: binning
     });
 };
 
