@@ -660,7 +660,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     autoCentering.subscribe(
         function (count) {
             if (count === true ||
-                typeof count === 'number' && (count < 10  ||
+                typeof count === 'number' && ((count % 2 && count < 10) ||
                                              (count % 20 === 0 && count < 100) ||
                                               count % 100 === 0)) {
                 $('#center').trigger('click');
