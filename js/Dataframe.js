@@ -60,7 +60,7 @@ function Dataframe () {
     this.masksForVizSets = {};
     this.bufferAliases = {};
     this.data = this.rawdata;
-    this.resetData = makeEmptyData();
+    this.bufferOverlays = {};
 }
 
 /**
@@ -1058,22 +1058,39 @@ Dataframe.prototype.getAllBuffers = function (type) {
 
 /// Buffer reset capability, specific to local buffers for now to make highlight work:
 
-Dataframe.prototype.snapshotLocalBuffer = function (name) {
-    this.resetData.localBuffers[name] = _.clone(this.data.localBuffers[name]);
+Dataframe.prototype.overlayLocalBuffer = function (name, alias, values) {
+    if (values) {
+        var newBuffer = this.getLocalBuffer(name).constructor(values.length);
+        for (var i=0; i< values.length; i++) {
+            newBuffer[i] = values[i];
+        }
+        this.data.localBuffers[alias] = newBuffer;
+    }
+    if (this.hasLocalBuffer(name) && this.hasLocalBuffer(alias)) {
+        this.bufferOverlays[name] = alias;
+    } else {
+        throw new Error('Invalid overlay of ' + name + ' to ' + alias);
+    }
 };
 
 Dataframe.prototype.canResetLocalBuffer = function (name) {
-    return this.resetData.localBuffers[name] !== undefined;
+    return this.bufferOverlays[name] !== undefined;
 };
 
 Dataframe.prototype.resetLocalBuffer = function (name) {
     if (this.canResetLocalBuffer(name)) {
-        this.data.localBuffers[name] = this.resetData.localBuffers[name];
-        delete this.resetData.localBuffers[name];
+        delete this.bufferOverlays[name];
     }
 };
 
+Dataframe.prototype.hasLocalBuffer = function (name) {
+    return this.data.localBuffers[name] !== undefined || this.rawdata.localBuffers[name] !== undefined;
+};
+
 Dataframe.prototype.getLocalBuffer = function (name) {
+    if (this.canResetLocalBuffer(name)) {
+        name = this.bufferOverlays[name];
+    }
     var res = this.data.localBuffers[name];
     if (!res) {
         throw new Error("Invalid Local Buffer: " + name);
@@ -1269,6 +1286,41 @@ Dataframe.prototype.mapUnfilteredColumnValues = function (type, dataframeAttribu
 
 Dataframe.prototype.getUnfilteredColumnValues = function (type, dataframeAttribute) {
     return this.mapUnfilteredColumnValues(type, dataframeAttribute, undefined);
+};
+
+
+Dataframe.prototype.summarizeColumnValues = function (type, dataframeAttribute) {
+    var attr = this.rawdata.attributes[type][dataframeAttribute];
+    var values = attr.values;
+    var numValues = values.length;
+    var distinctCounts = {}, minValue = Infinity, maxValue = -Infinity;
+    for (var i = 0; i < numValues; i++) {
+        var value = values[i];
+        if (value < minValue) { minValue = value; }
+        else if (value > maxValue) { maxValue = value; }
+        if (distinctCounts[value] === undefined) {
+            distinctCounts[value] = 1;
+        } else {
+            distinctCounts[value]++;
+        }
+    }
+    var summary = {
+        dataType: attr.type,
+        numValues: numValues,
+        numDistinctValues: _.size(distinctCounts),
+        maxValue: maxValue,
+        minValue: minValue
+    };
+    summary.quantitative = summary.dataType === 'number';
+    summary.ordered = summary.dataType === 'number' || summary.dataType === 'string';
+    summary.categorical = summary.dataType === 'string' && _.size(distinctCounts) < 100;
+    var goesNegative = summary.quantitative && summary.minValue < 0,
+        goesPositive = summary.quantitative && summary.maxValue > 0;
+    if (summary.categorical) {
+        summary.values = _.keys(distinctCounts);
+    }
+    summary.diverging = goesNegative && goesPositive;
+    return summary;
 };
 
 

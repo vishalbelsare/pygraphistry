@@ -1,3 +1,5 @@
+'use strict';
+
 // Provides palettes
 // When run as main, writes palette order to stdout && values to palettes.json
 // Adds a final 'repeating' PairedRepeat singleton palette
@@ -23,14 +25,14 @@ if (require.main === module) {
     palettes[0] = palettes[oldPos];
     palettes[oldPos] = tmp;
 
-    palettes.push('PairedRepeat')
+    palettes.push('PairedRepeat');
 
-    console.log('["' + palettes.join('", "') + '"]')
+    console.log('["' + palettes.join('", "') + '"]');
 }
 
 //redone for printing below
-brewer['PairedRepeat'] = {
-    0: _.flatten(_.times(10000, function () { return brewer['Paired'][12]; }))
+brewer.PairedRepeat = {
+    0: _.flatten(_.times(10000, function () { return brewer.Paired[12]; }))
 };
 
 ////////////// BIND PALETTES
@@ -95,11 +97,11 @@ if (require.main === module) {
     var fs = require('fs');
 
     var modifiedDocs = JSON.parse(JSON.stringify(all));
-    delete modifiedDocs['PairedRepeat'];
+    delete modifiedDocs.PairedRepeat;
     modifiedDocs['PairedRepeat (repeats 10,000 times)'] = {
         12: {
             offset: 265000,
-            hexes: all['Paired'][12].hexes
+            hexes: all.Paired[12].hexes
         }
     };
 
@@ -123,6 +125,7 @@ module.exports = {
 
     //{int -> int}
     //Ex: bindings[9 * 1000 + 3] == 3383340
-    bindings: categoryToColorInt
+    bindings: categoryToColorInt,
 
+    hexToInt: hexToInt
 };
