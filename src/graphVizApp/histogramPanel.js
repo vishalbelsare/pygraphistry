@@ -60,6 +60,14 @@ var HistogramCollection = Backbone.Collection.extend({
     comparator: 'position'
 });
 
+/**
+ * @param globalStats
+ * @param attributes
+ * @param {FiltersPanel} filtersPanel
+ * @param attrChangeSubject
+ * @param updateAttributeSubject
+ * @constructor
+ */
 function HistogramsPanel(globalStats, attributes, filtersPanel,
                          attrChangeSubject, updateAttributeSubject) {
     this.filtersPanel = filtersPanel;
@@ -89,6 +97,7 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             'click .expandHistogramButton': 'expand',
             'click .expandedHistogramButton': 'shrink',
             'click .refreshHistogramButton': 'refresh',
+            'click .topMenu': 'encode',
             'dragstart .topMenu': 'dragStart'
         },
 
@@ -139,6 +148,12 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             }
 
             return this;
+        },
+
+        encode: function () {
+            panel.encodeAttribute(this.model.get('attribute'), this.model.get('is_encoded')).take(1).do(function (response) {
+                this.model.set('is_encoded', response.enabled);
+            }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Encoding histogram attribute'));
         },
 
         dragStart: function () {
@@ -304,6 +319,14 @@ HistogramsPanel.prototype.updateAttribute = function (oldAttr, newAttr, type) {
         oldAttr: oldAttr,
         newAttr: newAttr,
         type: type
+    });
+};
+
+HistogramsPanel.prototype.encodeAttribute = function (dataframeAttribute, reset) {
+    return this.filtersPanel.control.encodeCommand.sendWithObservableResult({
+        attribute: dataframeAttribute,
+        encodingType: 'pointColor',
+        reset: reset
     });
 };
 
