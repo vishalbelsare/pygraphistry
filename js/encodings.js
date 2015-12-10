@@ -9,7 +9,7 @@ var defaults = {
     color: {
         quantitative: {
             sequential: {
-                range: ['blue', 'white']
+                range: ['white', 'blue']
             },
             diverging: {
                 range: ['blue', 'white', 'red']
@@ -146,7 +146,11 @@ module.exports = {
                     step = binning.binWidth;
                 palette = _.map(binning.bins, function (itemCount, index) {
                     // Use the scaling to get hex string, not machine integer, for D3/color.
-                    return scaling(minValue + step * index);
+                    if (summary.quantitative) {
+                        return scaling(minValue + step * index);
+                    } else {
+                        return scaling(index);
+                    }
                 });
             }
         }
