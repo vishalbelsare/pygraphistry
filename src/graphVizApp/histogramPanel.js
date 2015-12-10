@@ -758,17 +758,13 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     var isEncoded = model.get('is_encoded');
     var encodingPalette = model.get('encoding_palette');
     var updateColumnColor = function (d, i) {
-        console.log('Updating column color for: ', d, i);
         var defaultFill = '#FFFFFF';
         var filterFill = '#556ED4';
         if (histFilter && i >= histFilter.firstBin && i <= histFilter.lastBin) {
-            console.log('Choosing :', filterFill);
             return filterFill;
         } else if (isEncoded && encodingPalette) {
-            console.log('Choosing: ', encodingPalette[i]);
             return encodingPalette[i];
         } else {
-            console.log('Choosing: ', defaultFill);
             return defaultFill;
         }
     };
