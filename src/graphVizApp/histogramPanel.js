@@ -97,7 +97,6 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             'click .expandHistogramButton': 'expand',
             'click .expandedHistogramButton': 'shrink',
             'click .refreshHistogramButton': 'refresh',
-            //'mouseover': 'encode_enable',
             'click .topMenu': 'encode',
             'dragstart .topMenu': 'dragStart'
         },
@@ -105,6 +104,7 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
         initialize: function () {
             this.listenTo(this.model, 'destroy', this.remove);
             this.listenTo(this.model, 'change:timeStamp', this.render);
+            this.listenTo(this.model, 'change:encodingType', this.render);
             var params = {
                 fields: attributes,
                 attribute: this.model.attributes.attribute,
@@ -151,21 +151,20 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             return this;
         },
 
-        encode: function (new_state) {
+        encode: function () {
             // TODO: BETA flagged feature:
             if ($('.beta').hasClass('beta')) { return; }
-            var is_encoded = new_state !== undefined ? !new_state : this.model.get('is_encoded');
+            var is_encoded = this.model.get('encodingType') !== undefined;
             var dataframeAttribute = this.model.get('attribute');
             var binning = this.model.get('globalStats').sparkLines[dataframeAttribute];
             panel.encodeAttribute(dataframeAttribute, is_encoded, binning).take(1).do(function (response) {
-                this.model.set('is_encoded', response.enabled);
-                this.model.set('colors_indexed_per_bin', response.palette);
-                this.render();
+                if (response.enabled) {
+                    panel.assignEncodingTypeToHistogram(response.encodingType, this.model, response.palette);
+                } else {
+                    this.model.set('colorsIndexedPerBin', undefined);
+                    this.model.set('encodingType', undefined);
+                }
             }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Encoding histogram attribute'));
-        },
-
-        encode_enable: function () {
-            this.encode(true);
         },
 
         dragStart: function () {
@@ -342,6 +341,21 @@ HistogramsPanel.prototype.encodeAttribute = function (dataframeAttribute, reset,
         binning: binning
     });
 };
+
+
+HistogramsPanel.prototype.assignEncodingTypeToHistogram = function (encodingType, model, colorsIndexedPerBin) {
+    if (model !== undefined) {
+        model.set('colorsIndexedPerBin', colorsIndexedPerBin);
+        model.set('encodingType', encodingType);
+    }
+    this.histograms.each(function (histogram) {
+        if (histogram !== model && histogram.get('encodingType') === encodingType) {
+            histogram.set('colorsIndexedPerBin', undefined);
+            histogram.set('encodingType', undefined);
+        }
+    });
+}
+
 
 // These manage the FilterPanel's filters according to the histogram UI:
 
@@ -755,8 +769,8 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
             return 'crosshair';
         }
     };
-    var isEncoded = model.get('is_encoded');
-    var encodingPalette = model.get('colors_indexed_per_bin');
+    var isEncoded = model.get('encodingType') !== undefined;
+    var encodingPalette = model.get('colorsIndexedPerBin');
     var updateColumnColor = function (d, i) {
         var defaultFill = '#FFFFFF';
         var filterFill = '#556ED4';
