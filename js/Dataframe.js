@@ -1492,14 +1492,17 @@ Dataframe.prototype.countBy = function (simulator, attribute, binning, indices, 
         return Q({type: 'nodata'});
     }
 
-    var rawBins = _.countBy(indices, function (valIdx) {
-        return values[valIdx];
-    });
+    var rawBins = {};
+    for (var i = 0; i < indices.length; i++) {
+        var val = values[i];
+        rawBins[val] = (rawBins[val] || 0) + 1;
+    }
 
     var numBins = Math.min(_.keys(rawBins).length, maxNumBins);
     var numBinsWithoutOther = numBins - 1;
-    var sortedKeys = _.sortBy(_.keys(rawBins), function (key) {
-        return -1 * rawBins[key];
+    var keys = _.keys(rawBins);
+    var sortedKeys = keys.sort(function (a, b) {
+        return rawBins[b] - rawBins[a];
     });
 
     // Copy over numBinsWithoutOther from rawBins to bins directly.
@@ -1508,6 +1511,7 @@ Dataframe.prototype.countBy = function (simulator, attribute, binning, indices, 
     _.each(sortedKeys.slice(0, numBinsWithoutOther), function (key) {
         bins[key] = rawBins[key];
     });
+
 
     var otherKeys = sortedKeys.slice(numBinsWithoutOther);
     if (otherKeys.length === 1) {
