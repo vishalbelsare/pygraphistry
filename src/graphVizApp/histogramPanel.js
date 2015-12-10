@@ -159,7 +159,7 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             var binning = this.model.get('globalStats').sparkLines[dataframeAttribute];
             panel.encodeAttribute(dataframeAttribute, is_encoded, binning).take(1).do(function (response) {
                 this.model.set('is_encoded', response.enabled);
-                this.model.set('encoding_palette', response.palette);
+                this.model.set('colors_indexed_per_bin', response.palette);
                 this.render();
             }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Encoding histogram attribute'));
         },
@@ -756,7 +756,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
         }
     };
     var isEncoded = model.get('is_encoded');
-    var encodingPalette = model.get('encoding_palette');
+    var encodingPalette = model.get('colors_indexed_per_bin');
     var updateColumnColor = function (d, i) {
         var defaultFill = '#FFFFFF';
         var filterFill = '#556ED4';
