@@ -9,7 +9,7 @@ var defaults = {
     color: {
         quantitative: {
             sequential: {
-                range: ['blue', 'white']
+                range: ['white', 'blue']
             },
             diverging: {
                 range: ['blue', 'white', 'red']
