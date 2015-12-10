@@ -1,11 +1,12 @@
 'use strict';
 
+var _        = require('underscore');
 var d3       = require('d3');
 
 var palettes = require('./palettes');
 
 module.exports = {
-    inferEncoding: function (dataframe, type, attributeName, encodingType) {
+    inferEncoding: function (dataframe, type, attributeName, encodingType, binning) {
         var summary = dataframe.summarizeColumnValues(type, attributeName);
         var scaling;
         var defaultDomain = [summary.minValue, summary.maxValue];
@@ -79,12 +80,22 @@ module.exports = {
                 throw new Error('No encoding found for: ' + encodingType);
         }
         var scaleAndEncode = scaling;
+        var palette;
         if (scaling && encodingType.substr(encodingType.length - 5) === 'Color') {
             scaleAndEncode = function (x) { return palettes.hexToInt(scaling(x)); };
+            if (binning !== undefined && scaling !== undefined) {
+                var minValue = summary.minValue,
+                    step = binning.binWidth;
+                palette = _.map(binning.bins, function (itemCount, index) {
+                    // Use the scaling to get hex string, not machine integer, for D3/color.
+                    return scaling(minValue + step * index);
+                });
+            }
         }
         return {
             encodingType: encodingType,
             bufferName: encodingType + 's',
+            palette: palette,
             scaling: scaleAndEncode
         };
     }
