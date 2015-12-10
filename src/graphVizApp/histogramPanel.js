@@ -159,6 +159,8 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             var binning = this.model.get('globalStats').sparkLines[dataframeAttribute];
             panel.encodeAttribute(dataframeAttribute, is_encoded, binning).take(1).do(function (response) {
                 this.model.set('is_encoded', response.enabled);
+                this.model.set('encoding_palette', response.palette);
+                this.render();
             }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Encoding histogram attribute'));
         },
 
@@ -737,29 +739,46 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     //////////////////////////////////////////////////////////////////////////
 
     var histogramFilters = this.histogramFilters;
+    var histFilter = histogramFilters[attribute];
 
     var updateOpacity = function (d, i) {
-        var histFilter = histogramFilters[attribute];
         if (histFilter && i >= histFilter.firstBin && i <= histFilter.lastBin) {
             return 0.25;
         } else {
-            return 0;
+            return 1;
         }
     };
     var updateCursor = function (d, i) {
-        var histFilter = histogramFilters[attribute];
         if (histFilter && i >= histFilter.firstBin && i <= histFilter.lastBin && histFilter.completed) {
             return 'pointer';
         } else {
             return 'crosshair';
         }
     };
+    var isEncoded = model.get('is_encoded');
+    var encodingPalette = model.get('encoding_palette');
+    var updateColumnColor = function (d, i) {
+        console.log('Updating column color for: ', d, i);
+        var defaultFill = '#FFFFFF';
+        var filterFill = '#556ED4';
+        if (histFilter && i >= histFilter.firstBin && i <= histFilter.lastBin) {
+            console.log('Choosing :', filterFill);
+            return filterFill;
+        } else if (isEncoded && encodingPalette) {
+            console.log('Choosing: ', encodingPalette[i]);
+            return encodingPalette[i];
+        } else {
+            console.log('Choosing: ', defaultFill);
+            return defaultFill;
+        }
+    };
 
 
     var columns = selectColumns(svg, stackedBins);
     var columnRectangles = svg.selectAll('.column-rect');
-    columnRectangles.attr('opacity', updateOpacity);
-    columnRectangles.style('cursor', updateCursor);
+    columnRectangles.attr('opacity', updateOpacity)
+        .style('cursor', updateCursor)
+        .attr('fill', updateColumnColor);
 
     applyAttrColumns(columns.enter().append('g'))
         .attr('attribute', attribute)
@@ -773,7 +792,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
             .attr('class', 'column-rect')
             .attr('width', barWidth + barPadding)
             .attr('height', height)
-            .attr('fill', '#556ED4')
+            .attr('fill', updateColumnColor)
             .attr('opacity', updateOpacity)
             .style('cursor', updateCursor)
             .on('mousedown', this.handleHistogramDown.bind(this, filterRedrawCallback, id, model.attributes.globalStats))
