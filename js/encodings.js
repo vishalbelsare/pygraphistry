@@ -5,6 +5,31 @@ var d3       = require('d3');
 
 var palettes = require('./palettes');
 
+var defaults = {
+    color: {
+        quantitative: {
+            sequential: {
+                range: ['blue', 'white']
+            },
+            diverging: {
+                range: ['blue', 'white', 'red']
+            }
+        }
+    },
+    pointSize: {
+        range: [0, 30]
+    },
+    pointOpacity: {
+        range: [0, 1]
+    },
+    edgeSize: {
+        range: [0, 10]
+    },
+    edgeOpacity: {
+        range: [0, 1]
+    }
+};
+
 module.exports = {
     inferEncoding: function (dataframe, type, attributeName, encodingType, binning) {
         var summary = dataframe.summarizeColumnValues(type, attributeName);
@@ -29,16 +54,17 @@ module.exports = {
         switch (encodingType) {
             case 'pointSize':
                 if (summary.quantitative && !summary.diverging) {
+                    // Square root because point size/radius yields a point area:
                     scaling = d3.scale.sqrt()
                         .domain(defaultDomain)
-                        .range([0, 30]); // TODO: Should be clamped to max point size in pixels.
+                        .range(defaults.pointSize.range);
                 }
                 break;
             case 'pointOpacity':
                 if (summary.quantitative && !summary.diverging) {
                     scaling = d3.scale.linear()
                         .domain(defaultDomain)
-                        .range([0, 1]); // TODO: Should be clamped to max point size in pixels.
+                        .range(defaults.pointOpacity.range);
                 }
                 break;
             case 'pointColor':
@@ -56,11 +82,11 @@ module.exports = {
                         if (summary.diverging) {
                             scaling = d3.scale.linear()
                                 .domain(defaultDomain)
-                                .range(['blue', 'white', 'red']);
+                                .range(defaults.color.quantitative.diverging.range);
                         } else {
                             scaling = d3.scale.linear()
                                 .domain(defaultDomain)
-                                .range(['blue', 'white']);
+                                .range(defaults.color.quantitative.sequential.range);
                         }
                     }
                 }
@@ -69,11 +95,43 @@ module.exports = {
                 break;
             case 'pointLabel':
                 break;
+            case 'edgeSize':
+                if (summary.quantitative && !summary.diverging) {
+                    scaling = d3.scale.linear()
+                        .domain(defaultDomain)
+                        .range(defaults.edgeSize.range);
+                }
+                break;
+            case 'edgeColor':
+                if (summary.categorical) {
+                    if (summary.numDistinctValues < 10) {
+                        scaling = d3.scale.category10()
+                            .domain(summary.values);
+                    } else if (summary.numDistinctValues < 20) {
+                        scaling = d3.scale.category20()
+                            .domain(summary.values);
+                    }
+                }
+                if (scaling === undefined) {
+                    if (summary.quantitative) {
+                        if (summary.diverging) {
+
+                            scaling = d3.scale.linear()
+                                .domain(defaultDomain)
+                                .range(defaults.color.quantitative.diverging.range);
+                        } else {
+                            scaling = d3.scale.linear()
+                                .domain(defaultDomain)
+                                .range(defaults.color.quantitative.sequential.range);
+                        }
+                    }
+                }
+                break;
             case 'edgeOpacity':
                 if (summary.quantitative && !summary.diverging) {
                     scaling = d3.scale.linear()
                         .domain(defaultDomain)
-                        .range([0, 1]); // TODO: Should be clamped to max point size in pixels.
+                        .range(defaults.edgeOpacity.range);
                 }
                 break;
             default:
@@ -94,7 +152,7 @@ module.exports = {
         }
         return {
             encodingType: encodingType,
-            bufferName: encodingType + 's',
+            bufferName: encodingType && (encodingType + 's'),
             palette: palette,
             scaling: scaleAndEncode
         };
