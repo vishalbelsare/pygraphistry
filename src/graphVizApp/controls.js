@@ -605,7 +605,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         .map(_.constant(finalCenter));
 
     var readyForHistograms = centeringDone.zip(doneLoading)
-        .merge(doneLoading.delay(10000))
+        .merge(histogramPanelToggle)
         .take(1);
 
     var marquee = setupMarquee(appState, turnOnMarquee);
