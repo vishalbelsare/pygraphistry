@@ -337,7 +337,7 @@ HistogramsPanel.prototype.updateAttribute = function (oldAttr, newAttr, type) {
 HistogramsPanel.prototype.encodeAttribute = function (dataframeAttribute, reset, binning) {
     return this.filtersPanel.control.encodeCommand.sendWithObservableResult({
         attribute: dataframeAttribute,
-        encodingType: 'pointColor',
+        encodingType: 'color',
         reset: reset,
         binning: binning
     });
