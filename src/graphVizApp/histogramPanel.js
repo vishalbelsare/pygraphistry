@@ -154,10 +154,10 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
         encode: function () {
             // TODO: BETA flagged feature:
             if ($('.beta').hasClass('beta')) { return; }
-            var is_encoded = this.model.get('encodingType') !== undefined;
+            var isEncoded = this.model.get('encodingType') !== undefined;
             var dataframeAttribute = this.model.get('attribute');
             var binning = this.model.get('globalStats').sparkLines[dataframeAttribute];
-            panel.encodeAttribute(dataframeAttribute, is_encoded, binning).take(1).do(function (response) {
+            panel.encodeAttribute(dataframeAttribute, isEncoded, binning).take(1).do(function (response) {
                 if (response.enabled) {
                     panel.assignEncodingTypeToHistogram(response.encodingType, this.model, response.palette);
                 } else {
@@ -354,7 +354,7 @@ HistogramsPanel.prototype.assignEncodingTypeToHistogram = function (encodingType
             histogram.set('encodingType', undefined);
         }
     });
-}
+};
 
 
 // These manage the FilterPanel's filters according to the histogram UI:
