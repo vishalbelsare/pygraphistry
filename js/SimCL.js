@@ -919,11 +919,12 @@ function setEdgeColors(simulator, edgeColors) {
         logger.trace('Using default edge colors');
         // Using unsorted edges so it can be consistent with provided edge colors.
         var unsortedEdges = simulator.dataframe.getHostBuffer('unsortedEdges');
+        var pointColorsBuffer = simulator.dataframe.getLocalBuffer('pointColors');
 
         edgeColors = new Uint32Array(unsortedEdges.length);
         for (var i = 0; i < edgeColors.length; i++) {
             var nodeIdx = unsortedEdges[i];
-            edgeColors[i] = simulator.dataframe.getLocalBuffer('pointColors')[nodeIdx];
+            edgeColors[i] = pointColorsBuffer[nodeIdx];
         }
     }
 
@@ -1005,12 +1006,14 @@ function setMidEdgeColors(simulator, midEdgeColors) {
             };
         };
 
+        var pointColorsBuffer = simulator.dataframe.getLocalBuffer('pointColors');
+
         for (edgeIndex = 0; edgeIndex < numEdges; edgeIndex++) {
             srcNodeIdx = forwardsEdges.edgesTyped[2 * edgeIndex];
             dstNodeIdx = forwardsEdges.edgesTyped[2 * edgeIndex + 1];
 
-            srcColorInt = simulator.dataframe.getLocalBuffer('pointColors')[srcNodeIdx];
-            dstColorInt = simulator.dataframe.getLocalBuffer('pointColors')[dstNodeIdx];
+            srcColorInt = pointColorsBuffer[srcNodeIdx];
+            dstColorInt = pointColorsBuffer[dstNodeIdx];
 
             // srcColorInt = simulator.buffersLocal.pointColors[srcNodeIdx];
             // dstColorInt = simulator.buffersLocal.pointColors[dstNodeIdx];
