@@ -7,7 +7,7 @@ var palettes = require('./palettes');
 
 var defaults = {
     color: {
-        quantitative: {
+        isQuantitative: {
             sequential: {
                 range: ['white', 'blue']
             },
@@ -32,14 +32,15 @@ var defaults = {
 
 module.exports = {
     inferEncoding: function (dataframe, type, attributeName, encodingType, binning) {
-        var summary = dataframe.summarizeColumnValues(type, attributeName);
+        var aggregations = dataframe.getColumnAggregations(attributeName, type);
+        var summary = aggregations.getSummary();
         var scaling;
         var defaultDomain = [summary.minValue, summary.maxValue];
         if (!encodingType) {
             switch (type) {
                 case 'point':
-                    if (summary.quantitative) {
-                        if (summary.diverging) {
+                    if (summary.isQuantitative) {
+                        if (summary.isDiverging) {
                             encodingType = 'pointColor';
                         } else {
                             encodingType = 'pointSize';
@@ -53,7 +54,7 @@ module.exports = {
         }
         switch (encodingType) {
             case 'pointSize':
-                if (summary.quantitative && !summary.diverging) {
+                if (summary.isQuantitative && !summary.isDiverging) {
                     // Square root because point size/radius yields a point area:
                     scaling = d3.scale.sqrt()
                         .domain(defaultDomain)
@@ -61,32 +62,36 @@ module.exports = {
                 }
                 break;
             case 'pointOpacity':
-                if (summary.quantitative && !summary.diverging) {
+                if (summary.isQuantitative && !summary.isDiverging) {
                     scaling = d3.scale.linear()
                         .domain(defaultDomain)
                         .range(defaults.pointOpacity.range);
                 }
                 break;
             case 'pointColor':
-                if (summary.categorical) {
-                    if (summary.numDistinctValues < 10) {
+                if (summary.isCategorical) {
+                    if (summary.countDistinct <= 10) {
                         scaling = d3.scale.category10()
-                            .domain(summary.values);
-                    } else if (summary.numDistinctValues < 20) {
+                            .domain(summary.distinctValues);
+                    } else if (summary.countDistinct <= 20) {
                         scaling = d3.scale.category20()
-                            .domain(summary.values);
+                            .domain(summary.distinctValues);
+                    } else {
+                        // TODO ensure wraparound
+                        scaling = d3.scale.category20()
+                            .domain(summary.distinctValues);
                     }
                 }
                 if (scaling === undefined) {
-                    if (summary.quantitative) {
-                        if (summary.diverging) {
+                    if (summary.isOrdered) {
+                        if (summary.isDiverging) {
                             scaling = d3.scale.linear()
                                 .domain(defaultDomain)
-                                .range(defaults.color.quantitative.diverging.range);
+                                .range(defaults.color.isQuantitative.diverging.range);
                         } else {
                             scaling = d3.scale.linear()
                                 .domain(defaultDomain)
-                                .range(defaults.color.quantitative.sequential.range);
+                                .range(defaults.color.isQuantitative.sequential.range);
                         }
                     }
                 }
@@ -96,39 +101,39 @@ module.exports = {
             case 'pointLabel':
                 break;
             case 'edgeSize':
-                if (summary.quantitative && !summary.diverging) {
+                if (summary.isQuantitative && !summary.isDiverging) {
                     scaling = d3.scale.linear()
                         .domain(defaultDomain)
                         .range(defaults.edgeSize.range);
                 }
                 break;
             case 'edgeColor':
-                if (summary.categorical) {
-                    if (summary.numDistinctValues < 10) {
+                if (summary.isCategorical) {
+                    if (summary.countDistinct < 10) {
                         scaling = d3.scale.category10()
-                            .domain(summary.values);
-                    } else if (summary.numDistinctValues < 20) {
+                            .domain(summary.distinctValues);
+                    } else if (summary.countDistinct < 20) {
                         scaling = d3.scale.category20()
-                            .domain(summary.values);
+                            .domain(summary.distinctValues);
                     }
                 }
                 if (scaling === undefined) {
-                    if (summary.quantitative) {
-                        if (summary.diverging) {
+                    if (summary.isOrdered) {
+                        if (summary.isDiverging) {
 
                             scaling = d3.scale.linear()
                                 .domain(defaultDomain)
-                                .range(defaults.color.quantitative.diverging.range);
+                                .range(defaults.color.isQuantitative.diverging.range);
                         } else {
                             scaling = d3.scale.linear()
                                 .domain(defaultDomain)
-                                .range(defaults.color.quantitative.sequential.range);
+                                .range(defaults.color.isQuantitative.sequential.range);
                         }
                     }
                 }
                 break;
             case 'edgeOpacity':
-                if (summary.quantitative && !summary.diverging) {
+                if (summary.isQuantitative && !summary.isDiverging) {
                     scaling = d3.scale.linear()
                         .domain(defaultDomain)
                         .range(defaults.edgeOpacity.range);
@@ -146,7 +151,7 @@ module.exports = {
                     step = binning.binWidth;
                 palette = _.map(binning.bins, function (itemCount, index) {
                     // Use the scaling to get hex string, not machine integer, for D3/color.
-                    if (summary.quantitative) {
+                    if (summary.isQuantitative) {
                         return scaling(minValue + step * index);
                     } else {
                         return scaling(index);

@@ -1236,8 +1236,10 @@ Dataframe.prototype.getDataType = function (column, type) {
     return this.rawdata.attributes[type][column].type;
 };
 
+var LargeColumnProperties = ['values', 'aggregations'];
+
 Dataframe.prototype.getColumn = function (column, type) {
-    return _.omit(this.rawdata.attributes[type][column], 'values');
+    return _.omit(this.rawdata.attributes[type][column], LargeColumnProperties);
 };
 
 // TODO: Have this return edge attributes in sorted order, unless
@@ -1261,6 +1263,201 @@ Dataframe.prototype.getColumnValues = function (column, type) {
 
     var attributes = this.data.attributes[type];
     return attributes[column].values;
+};
+
+/**
+ * @typedef {Object} Aggregations
+ * @property {String} dataType
+ * @property {String} jsType
+ * @property {Boolean} isNumeric
+ * @property {Boolean} isIntegral
+ * @property {Boolean} isContinuous
+ * @property {Boolean} isCategorical
+ * @property {Number} count
+ * @property {Number} countDistinct
+ * @property {Object.<Number>} distinctValues count of instances by value
+ * @property {Number} maxValue
+ * @property {Number} minValue
+ * @property {Number} averageValue
+ * @property {Object} binning
+ */
+
+
+/**
+ * @param {Dataframe} dataframe
+ * @param {Object} column
+ * @constructor
+ */
+function ColumnAggregation(dataframe, column) {
+    this.dataframe = dataframe;
+    this.column = column;
+    /* @type Aggregations */
+    this.aggregations = {
+        count: undefined,
+        countDistinct: undefined,
+        distinctValues: undefined,
+        maxValue: undefined,
+        minValue: undefined,
+        binning: undefined
+    };
+}
+
+ColumnAggregation.prototype.updateAggregationTo = function (aggType, value) {
+    this.aggregations[aggType] = value;
+};
+
+ColumnAggregation.prototype.updateAggregations = function (valuesByAggType) {
+    _.extend(this.aggregations, valuesByAggType);
+};
+
+ColumnAggregation.prototype.getAggregationByType = function (aggType) {
+    if (this.aggregations[aggType] === undefined) {
+        this.runAggregationForAggType(aggType);
+    }
+    return this.aggregations[aggType];
+};
+
+var AggTypes = [
+    'jsType', 'dataType',
+    'isNumeric', 'isIntegral', 'isContinuous', 'isQuantitative', 'isOrdered',
+    'isDiverging', 'hasPositive', 'hasNegative',
+    'count', 'sum', 'minValue', 'maxValue', 'averageValue',
+    'countDistinct', 'distinctValues', 'isCategorical'
+];
+
+ColumnAggregation.prototype.getSummary = function () {
+    return _.object(AggTypes, _.map(AggTypes, function (aggType) {
+        return this.getAggregationByType(aggType);
+    }, this));
+};
+
+ColumnAggregation.prototype.runAggregationForAggType = function (aggType) {
+    switch (aggType) {
+        case 'jsType':
+        case 'dataType':
+        case 'isNumeric':
+        case 'isIntegral':
+        case 'isContinuous':
+        case 'isQuantitative':
+        case 'isOrdered':
+        case 'isDiverging':
+        case 'hasPositive':
+        case 'hasNegative':
+            this.inferDataType();
+            break;
+        case 'count':
+            this.aggregations.count = this.column.values.length;
+            break;
+        case 'sum':
+        case 'minValue':
+        case 'maxValue':
+        case 'averageValue':
+            this.fixedAllocationNumericAggregations();
+            break;
+        case 'countDistinct':
+        case 'distinctValues':
+        case 'isCategorical':
+            this.countDistinct(500);
+            break;
+        case 'binning':
+            break;
+        default:
+            throw new Error('Unrecognized aggregation type: ' + aggType);
+    }
+};
+
+ColumnAggregation.prototype.isIntegral = function (value) {
+    return parseInt(value) == value; // jshint ignore:line
+};
+
+ColumnAggregation.prototype.fixedAllocationNumericAggregations = function () {
+    var minValue = Infinity, maxValue = -Infinity, sum = 0,
+        value = 0, values = this.column.values, numValues = this.getAggregationByType('count');
+    for (var i=0; i < numValues; i++) {
+        value = values[i];
+        if (value < minValue) { minValue = value; }
+        else if (value > maxValue) { maxValue = value; }
+        sum += parseFloat(value);
+    }
+    this.updateAggregationTo('minValue', minValue);
+    this.updateAggregationTo('maxValue', maxValue);
+    this.updateAggregationTo('sum', sum);
+    this.updateAggregationTo('averageValue', sum / numValues);
+};
+
+var MaxDistinctValues = 400;
+
+ColumnAggregation.prototype.countDistinct = function (limit) {
+    var values = this.column.values;
+    var numValues = this.getAggregationByType('count');
+    if (limit === undefined) {
+        limit = MaxDistinctValues;
+    }
+    var distinctCounts = {}, numDistinct = 0, minValue = Infinity, maxValue = -Infinity;
+    for (var i = 0; i < numValues; i++) {
+        var value = values[i];
+        if (value < minValue) { minValue = value; }
+        else if (value > maxValue) { maxValue = value; }
+        if (numDistinct > limit) { continue; }
+        if (distinctCounts[value] === undefined) {
+            numDistinct++;
+            distinctCounts[value] = 1;
+        } else {
+            distinctCounts[value]++;
+        }
+    }
+    this.updateAggregationTo('countDistinct', numDistinct);
+    this.updateAggregationTo('distinctValues', distinctCounts);
+    var isCategorical = this.getAggregationByType('dataType') === 'string' && numDistinct <= limit;
+    this.updateAggregationTo('isCategorical' , isCategorical);
+};
+
+ColumnAggregation.prototype.inferDataType = function () {
+    var values = this.column.values;
+    var numValues = this.getAggregationByType('count');
+    var value, isNumeric = true, isIntegral = true, jsType;
+    for (var i=0; i<numValues; i++) {
+        value = values[i];
+        jsType = typeof value;
+        if (isNumeric) {
+            isNumeric = isNumeric && !isNaN(value);
+            isIntegral = isNumeric && this.isIntegral(value);
+        }
+    }
+    var summary = {
+        jsType: jsType,
+        isNumeric: isNumeric,
+        isIntegral: isIntegral,
+        isContinuous: isNumeric && !isIntegral
+    };
+    if (isIntegral) {
+        summary.dataType = 'integer';
+    } else if (isNumeric) {
+        summary.dataType = 'number';
+    } else {
+        summary.dataType = 'string';
+    }
+    summary.isQuantitative = summary.isContinuous;
+    summary.isOrdered = _.contains(['number', 'integer', 'string'], summary.dataType);
+    var hasNegative = this.getAggregationByType('minValue') < 0,
+        hasPositive = this.getAggregationByType('maxValue') > 0;
+    summary.hasPositive = hasPositive;
+    summary.hasNegative = hasNegative;
+    summary.isDiverging = hasNegative && hasPositive;
+    this.updateAggregations(summary);
+};
+
+
+/**
+ * @returns {ColumnAggregation}
+ */
+Dataframe.prototype.getColumnAggregations = function(columnName, type, unfiltered) {
+    var column = (unfiltered ? this.rawdata : this.data).attributes[type][columnName];
+    if (column === undefined) { return undefined; }
+    if (column.aggregations === undefined) {
+        column.aggregations = new ColumnAggregation(this, column);
+    }
+    return column.aggregations;
 };
 
 
@@ -1289,39 +1486,6 @@ Dataframe.prototype.getUnfilteredColumnValues = function (type, dataframeAttribu
 };
 
 
-Dataframe.prototype.summarizeColumnValues = function (type, dataframeAttribute) {
-    var attr = this.rawdata.attributes[type][dataframeAttribute];
-    var values = attr.values;
-    var numValues = values.length;
-    var distinctCounts = {}, minValue = Infinity, maxValue = -Infinity;
-    for (var i = 0; i < numValues; i++) {
-        var value = values[i];
-        if (value < minValue) { minValue = value; }
-        else if (value > maxValue) { maxValue = value; }
-        if (distinctCounts[value] === undefined) {
-            distinctCounts[value] = 1;
-        } else {
-            distinctCounts[value]++;
-        }
-    }
-    var summary = {
-        dataType: attr.type,
-        numValues: numValues,
-        numDistinctValues: _.size(distinctCounts),
-        maxValue: maxValue,
-        minValue: minValue
-    };
-    summary.quantitative = summary.dataType === 'number';
-    summary.ordered = summary.dataType === 'number' || summary.dataType === 'string';
-    summary.categorical = summary.dataType === 'string' && _.size(distinctCounts) < 100;
-    var goesNegative = summary.quantitative && summary.minValue < 0,
-        goesPositive = summary.quantitative && summary.maxValue > 0;
-    if (summary.categorical) {
-        summary.values = _.keys(distinctCounts);
-    }
-    summary.diverging = goesNegative && goesPositive;
-    return summary;
-};
 
 
 Dataframe.prototype.getAttributeKeys = function (type) {
@@ -1403,7 +1567,7 @@ Dataframe.prototype.serializeColumns = function (target, options) {
 // [int] * ?[ string ] * ?{string -> ??} * ?{countBy, ??} * {point, edge, undefined}
 // -> ??
 //undefined type signifies both nodes and edges
-Dataframe.prototype.aggregate = function (simulator, indices, attributes, binning, mode, type) {
+Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, type) {
 
     var that = this;
     // convert indices for edges from sorted to unsorted;
@@ -1423,9 +1587,9 @@ Dataframe.prototype.aggregate = function (simulator, indices, attributes, binnin
         var dataType = that.getDataType(attribute, type);
 
         if (mode !== 'countBy' && dataType !== 'string') {
-            return that.histogram(simulator, attribute, binningHint, goalNumberOfBins, indices, type);
+            return that.histogram(attribute, binningHint, goalNumberOfBins, indices, type);
         } else {
-            return that.countBy(simulator, attribute, binningHint, indices, type);
+            return that.countBy(attribute, binningHint, indices, type);
         }
     };
 
@@ -1482,7 +1646,7 @@ Dataframe.prototype.aggregate = function (simulator, indices, attributes, binnin
 };
 
 
-Dataframe.prototype.countBy = function (simulator, attribute, binning, indices, type) {
+Dataframe.prototype.countBy = function (attribute, binning, indices, type) {
     var values = this.getColumnValues(attribute, type);
 
     // TODO: Get this value from a proper source, instead of hard coding.
@@ -1535,18 +1699,32 @@ Dataframe.prototype.countBy = function (simulator, attribute, binning, indices, 
     });
 };
 
-// Returns a binning object with properties numBins, binWidth, minValue,
-// maxValue
-function calculateBinning(numValues, values, indices, goalNumberOfBins) {
 
-    var goalBins = numValues > 30 ? Math.ceil(Math.log(numValues) / Math.log(2)) + 1
-                                 : Math.ceil(Math.sqrt(numValues));
-    goalBins = Math.min(goalBins, 30); // Cap number of bins.
+/**
+ * @typedef {Object} Binning
+ * @property {Number} numBins
+ * @property {Number} binWidth
+ * @property {Number} minValue
+ * @property {Number} maxValue
+ */
+
+
+/**
+ * @param {ColumnAggregation} aggregations
+ * @param {Number} numValues
+ * @param {Number} goalNumberOfBins
+ * @returns {Binning} a binning object
+ */
+Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNumberOfBins) {
+    var maxBinCount = 30;
+    var goalBins = numValues > maxBinCount ?
+        Math.ceil(Math.log(numValues) / Math.log(2)) + 1 :
+        Math.ceil(Math.sqrt(numValues));
+    goalBins = Math.min(goalBins, maxBinCount); // Cap number of bins.
     goalBins = Math.max(goalBins, 8); // Cap min number of bins.
 
-    var minMax = minMaxMasked(values, indices);
-    var max = minMax.max;
-    var min = minMax.min;
+    var max = aggregations.getAggregationByType('maxValue');
+    var min = aggregations.getAggregationByType('minValue');
 
     var defaultBinning = {
         numBins: 1,
@@ -1560,7 +1738,13 @@ function calculateBinning(numValues, values, indices, goalNumberOfBins) {
     var topVal;
     var binWidth;
     var range = max - min;
-    if (goalNumberOfBins) {
+    if (aggregations.getAggregationByType('countDistinct') < maxBinCount &&
+        aggregations.getAggregationByType('isIntegral')) {
+        numBins = numValues;
+        bottomVal = min;
+        topVal = max;
+        binWidth = range / (numBins - 1);
+    } else if (goalNumberOfBins) {
         numBins = goalNumberOfBins;
         bottomVal = min;
         topVal = max;
@@ -1568,7 +1752,7 @@ function calculateBinning(numValues, values, indices, goalNumberOfBins) {
 
     // Try to find a good division.
     } else {
-        var goalWidth = range / goalBins;
+        //var goalWidth = range / goalBins;
 
         binWidth = 10;
         numBins = range / binWidth;
@@ -1614,10 +1798,10 @@ function calculateBinning(numValues, values, indices, goalNumberOfBins) {
         minValue: bottomVal,
         maxValue: topVal
     };
-}
+};
 
 
-Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNumberOfBins, indices, type) {
+Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, indices, type) {
     // Binning has binWidth, minValue, maxValue, and numBins
 
     // Disabled because filtering is expensive, and we now have type safety coming from
@@ -1625,14 +1809,20 @@ Dataframe.prototype.histogram = function (simulator, attribute, binning, goalNum
     // values = _.filter(values, function (x) { return !isNaN(x)});
 
     var values = this.getColumnValues(attribute, type);
+    if (indices !== undefined) {
+        values = _.map(indices, function (idx) { return values[idx]; });
+    }
+    var aggregations = this.getColumnAggregations(attribute, type);
 
-    var numValues = indices.length;
+    var numValues = aggregations.getAggregationByType('countDistinct');
     if (numValues === 0) {
         return Q({type: 'nodata'});
     }
 
     // Override if provided binning data.
-    binning = binning || calculateBinning(numValues, values, indices, goalNumberOfBins);
+    if (!binning) {
+        binning = this.calculateBinning(aggregations, numValues, goalNumberOfBins);
+    }
     var numBins = binning.numBins;
     var binWidth = binning.binWidth;
     var bottomVal = binning.minValue;
