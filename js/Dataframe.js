@@ -360,17 +360,17 @@ Dataframe.prototype.getMaskForPredicateOnAttributeValues = function (attributeVa
 /**
  * @returns {DataframeMask}
  */
-Dataframe.prototype.getAttributeMask = function (type, dataframeAttribute, filterFunc) {
+Dataframe.prototype.getAttributeMask = function (type, columnName, filterFunc) {
     switch (type) {
         case 'point':
-            var pointMask = this.getPointAttributeMask(dataframeAttribute, filterFunc);
+            var pointMask = this.getPointAttributeMask(columnName, filterFunc);
             return new DataframeMask(
                 this,
                 pointMask,
                 undefined
             );
         case 'edge':
-            var edgeMask = this.getEdgeAttributeMask(dataframeAttribute, filterFunc);
+            var edgeMask = this.getEdgeAttributeMask(columnName, filterFunc);
             return new DataframeMask(
                 this,
                 undefined,
@@ -384,12 +384,12 @@ Dataframe.prototype.getAttributeMask = function (type, dataframeAttribute, filte
 
 /**
  * Returns sorted edge mask
- * @param {String} dataframeAttribute
+ * @param {String} columnName
  * @param {Function<Object>} filterFunc
  * @returns {Mask}
  */
-Dataframe.prototype.getEdgeAttributeMask = function (dataframeAttribute, filterFunc) {
-    var attr = this.rawdata.attributes.edge[dataframeAttribute];
+Dataframe.prototype.getEdgeAttributeMask = function (columnName, filterFunc) {
+    var attr = this.rawdata.attributes.edge[columnName];
     var edgeMask = this.getMaskForPredicateOnAttributeValues(attr.values, filterFunc);
     // Convert to sorted order
     var map = this.rawdata.hostBuffers.forwardsEdges.edgePermutation;
@@ -402,12 +402,12 @@ Dataframe.prototype.getEdgeAttributeMask = function (dataframeAttribute, filterF
 
 /**
  * Returns sorted point mask
- * @param {String} dataframeAttribute
+ * @param {String} columnName
  * @param {Function<Object>} filterFunc
  * @returns {Mask}
  */
-Dataframe.prototype.getPointAttributeMask = function (dataframeAttribute, filterFunc) {
-    var attr = this.rawdata.attributes.point[dataframeAttribute];
+Dataframe.prototype.getPointAttributeMask = function (columnName, filterFunc) {
+    var attr = this.rawdata.attributes.point[columnName];
     return this.getMaskForPredicateOnAttributeValues(attr.values, filterFunc);
 };
 
@@ -977,21 +977,21 @@ Dataframe.prototype.setNumElements = function (type, num) {
 //////////////////////////////////////////////////////////////////////////////
 
 /**
- * @typedef {Object} AttributeName
+ * @typedef {Object} ColumnName
  * @property {String} type
  * @property {String} attribute
  */
 
 
 /**
- * @returns {AttributeName}
+ * @returns {ColumnName}
  */
-Dataframe.prototype.normalizeAttributeName = function (dataframeAttribute, type) {
-    var idx = dataframeAttribute ? dataframeAttribute.lastIndexOf(':') : -1;
-    var name = dataframeAttribute;
+Dataframe.prototype.normalizeAttributeName = function (columnName, type) {
+    var idx = columnName ? columnName.lastIndexOf(':') : -1;
+    var name = columnName;
     if (idx !== -1) {
-        type = dataframeAttribute.substring(0, idx);
-        name = dataframeAttribute.substring(idx + 1);
+        type = columnName.substring(0, idx);
+        name = columnName.substring(idx + 1);
     }
     return this.getKeyFromName(name, type);
 };
@@ -1000,7 +1000,7 @@ Dataframe.prototype.normalizeAttributeName = function (dataframeAttribute, type)
 /** Given a name, return the key that corresponds to that name.
  * If no match exists, check to see if name is just a key.
  * If it doesn't exist as key, return false.
- * @returns {{attribute: String, type: String}}
+ * @returns {ColumnName}
  */
 Dataframe.prototype.getKeyFromName = function (maybeName, type) {
     // TODO: Maintain an actual lookup instead of iterating through.
@@ -1231,38 +1231,47 @@ Dataframe.prototype.getRowsCompact = function (indices, type) {
 };
 
 /** Answers the type for the column name and type (point/edge). */
-Dataframe.prototype.getDataType = function (column, type) {
+Dataframe.prototype.getDataType = function (columnName, type) {
     // Assumes that types don't change after filtering
-    return this.rawdata.attributes[type][column].type;
+    return this.rawdata.attributes[type][columnName].type;
 };
 
 var LargeColumnProperties = ['values', 'aggregations'];
 
-Dataframe.prototype.getColumn = function (column, type) {
-    return _.omit(this.rawdata.attributes[type][column], LargeColumnProperties);
+Dataframe.prototype.getColumn = function (columnName, type) {
+    return _.omit(this.rawdata.attributes[type][columnName], LargeColumnProperties);
 };
+
+
+/**
+ * @typedef {Object} Column
+ * @property {Array} values
+ * @property {String} type
+ * @property {Object} target
+ */
+
 
 // TODO: Have this return edge attributes in sorted order, unless
 // explicitly requested to be unsorted (for internal performance reasons)
-Dataframe.prototype.getColumnValues = function (column, type) {
+Dataframe.prototype.getColumnValues = function (columnName, type) {
 
     // A filter has been done, and we need to apply the
     // mask and compact.
-    if (!this.data.attributes[type][column]) {
+    if (!this.data.attributes[type][columnName]) {
         var rawAttributes = this.rawdata.attributes[type];
         var newValues = [];
         this.lastMasks.mapIndexes(type, function (idx) {
-            newValues.push(rawAttributes[column].values[idx]);
+            newValues.push(rawAttributes[columnName].values[idx]);
         });
-        this.data.attributes[type][column] = {
+        this.data.attributes[type][columnName] = {
             values: newValues,
-            type: rawAttributes[column].type,
-            target: rawAttributes[column].target
+            type: rawAttributes[columnName].type,
+            target: rawAttributes[columnName].target
         };
     }
 
     var attributes = this.data.attributes[type];
-    return attributes[column].values;
+    return attributes[columnName].values;
 };
 
 /**
@@ -1452,7 +1461,8 @@ ColumnAggregation.prototype.inferDataType = function () {
  * @returns {ColumnAggregation}
  */
 Dataframe.prototype.getColumnAggregations = function(columnName, type, unfiltered) {
-    var column = (unfiltered ? this.rawdata : this.data).attributes[type][columnName];
+    var dataframeData = (unfiltered ? this.rawdata : this.data);
+    var column = dataframeData.attributes[type][columnName];
     if (column === undefined) { return undefined; }
     if (column.aggregations === undefined) {
         column.aggregations = new ColumnAggregation(this, column);
@@ -1473,16 +1483,16 @@ Dataframe.prototype.sortEdgeColumnValues = function (type, values) {
 };
 
 
-Dataframe.prototype.mapUnfilteredColumnValues = function (type, dataframeAttribute, func) {
-    var attr = this.rawdata.attributes[type][dataframeAttribute];
+Dataframe.prototype.mapUnfilteredColumnValues = function (type, columnName, func) {
+    var attr = this.rawdata.attributes[type][columnName];
     var results = func === undefined ? attr.values : _.map(attr.values, func);
     this.sortEdgeColumnValues(type, results);
     return results;
 };
 
 
-Dataframe.prototype.getUnfilteredColumnValues = function (type, dataframeAttribute) {
-    return this.mapUnfilteredColumnValues(type, dataframeAttribute, undefined);
+Dataframe.prototype.getUnfilteredColumnValues = function (type, columnName) {
+    return this.mapUnfilteredColumnValues(type, columnName, undefined);
 };
 
 
