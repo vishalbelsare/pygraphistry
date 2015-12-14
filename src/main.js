@@ -376,7 +376,7 @@ function setupErrorReporters(urlParams) {
         msg.type = 'JSError';
         msg.err = content;
 
-        $.post(reportURL, JSON.stringify(msg));
+        $.post(reportURL, msg);
     });
 
     // Track AJAX errors (jQuery API)
@@ -395,7 +395,7 @@ function setupErrorReporters(urlParams) {
             message: thrownError
         };
 
-        $.post(reportURL, JSON.stringify(msg));
+        $.post(reportURL, msg);
     });
 
     // Patch console calls to forward errors to central
@@ -406,7 +406,7 @@ function setupErrorReporters(urlParams) {
             msg.type = 'console.' + fun;
             msg.err = {message: nodeutil.format.apply(this, arguments)};
 
-            $.post(reportURL, JSON.stringify(msg));
+            $.post(reportURL, msg);
         }));
     });
 }
