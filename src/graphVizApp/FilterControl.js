@@ -28,6 +28,8 @@ function FilterControl(socket) {
     this.updateFiltersRequests = new Rx.Subject();
     this.runFilterCommand = new Command('filtering the view', 'filter', socket);
 
+    this.encodeCommand = new Command('Encode a column', 'encode_by_column', socket);
+
     /** @type Rx.ReplaySubject */
     this.filtersResponsesSubject = new Rx.ReplaySubject(1);
     /** @type Rx.ReplaySubject */

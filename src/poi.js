@@ -34,9 +34,14 @@ function markHits(samples32) {
     var hits = {};
     var idx = -1;
 
+
     // Approach one (sort -> count)
     // O(NlogN), but less slamming memory
-    var sortedSamples = samples32.sort();
+    Array.prototype.sort.call(samples32, function (a, b) {
+        return a - b;
+    });
+    var sortedSamples = samples32;
+
 
     var left = -1;
     var right = -1;

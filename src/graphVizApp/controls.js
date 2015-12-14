@@ -575,12 +575,45 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     setupPanelControl(popoutClicks, $('#layoutSettingsButton'),  $('#renderingItems'), 'Turning on/off settings');
 
+    var $tooltips = $('[data-toggle="tooltip"]');
+    var $bolt = $graph.find('.fa');
+    var $center = $('#center');
+    var $shrinkToFit = $center.find('.fa');
+    var numTicks = urlParams.play !== undefined ? urlParams.play : 5000;
+
+
+    /**
+     * Returns whether camera auto-centering is specified; defaults to true.
+     */
+    var finalCenter = (function () {
+        var flag = urlParams.center;
+        return flag === undefined || flag.toString().toLowerCase() === 'true';
+    }());
+
+    var $simulation = $('#simulation');
+    var centeringDone =
+        Rx.Observable.merge(
+            Rx.Observable.fromEvent($center, 'click'),
+            Rx.Observable.fromEvent($graph, 'click'),
+            $simulation.onAsObservable('mousewheel'),
+            $simulation.onAsObservable('mousedown'),
+            $('#zoomin').onAsObservable('click'),
+            $('#zoomout').onAsObservable('click'))
+        //skip events autoplay triggers
+        .filter(function (evt){ return evt.originalEvent !== undefined; })
+        .merge(Rx.Observable.timer(numTicks))
+        .map(_.constant(finalCenter));
+
+    var readyForHistograms = centeringDone.zip(doneLoading)
+        .merge(histogramPanelToggle)
+        .take(1);
+
     var marquee = setupMarquee(appState, turnOnMarquee);
     var brush = setupBrush(appState, turnOnBrush);
     var filtersPanel = new FiltersPanel(socket, urlParams);
     filtersPanel.setupToggleControl(popoutClicks, $('#filterButton'));
     var filtersResponses = filtersPanel.control.filtersResponsesSubject;
-    var histogramBrush = new HistogramBrush(socket, filtersPanel, doneLoading);
+    var histogramBrush = new HistogramBrush(socket, filtersPanel, readyForHistograms);
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
     histogramBrush.setupMarqueeInteraction(brush);
     turnOnBrush.first(function (value) { return value === true; }).do(function () {
@@ -615,40 +648,11 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         socket.emit('interaction', payload);
     }, util.makeErrorHandler('marquee error'));
 
-    var $tooltips = $('[data-toggle="tooltip"]');
-    var $bolt = $graph.find('.fa');
-    var $center = $('#center');
-    var $shrinkToFit = $center.find('.fa');
-    var numTicks = urlParams.play !== undefined ? urlParams.play : 5000;
-
-
-    /**
-     * Returns whether camera auto-centering is specified; defaults to true.
-     */
-    var finalCenter = (function () {
-        var flag = urlParams.center;
-        return flag === undefined || flag.toString().toLowerCase() === 'true';
-    }());
-
-
-    var $simulation = $('#simulation');
-    var centeringDone =
-        Rx.Observable.merge(
-            Rx.Observable.fromEvent($center, 'click'),
-            Rx.Observable.fromEvent($graph, 'click'),
-            $simulation.onAsObservable('mousewheel'),
-            $simulation.onAsObservable('mousedown'),
-            $('#zoomin').onAsObservable('click'),
-            $('#zoomout').onAsObservable('click'))
-        //skip events autoplay triggers
-        .filter(function (evt){ return evt.originalEvent !== undefined; })
-        .merge(Rx.Observable.timer(numTicks))
-        .map(_.constant(finalCenter));
 
     //tick stream until canceled/timed out (ends with finalCenter)
     var autoCentering =
         doneLoading.flatMapLatest(function () {
-            return Rx.Observable.interval(1000)
+            return Rx.Observable.interval(50)
                 .do(function () { debug('auto center interval'); })
                 .merge(centeringDone)
                 .takeUntil(centeringDone.delay(1));
@@ -660,9 +664,9 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     autoCentering.subscribe(
         function (count) {
             if (count === true ||
-                typeof count === 'number' && (count < 3  ||
-                                             (count % 2 === 0 && count < 10) ||
-                                              count % 10 === 0)) {
+                typeof count === 'number' && ((count % 2 && count < 10) ||
+                                             (count % 20 === 0 && count < 100) ||
+                                              count % 100 === 0)) {
                 $('#center').trigger('click');
             }
         },

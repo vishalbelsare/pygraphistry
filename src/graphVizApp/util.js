@@ -106,6 +106,16 @@ function notIdentity (val) {
     return !val;
 }
 
+var times = {};
+function consoleTimerStart(name) {
+    console.log('==Started Timing', name);
+    times[name] = Date.now();
+}
+
+function consoleTimerEnd(name) {
+    console.log('++' + name + ' took', (Date.now() - times[name]), 'ms' );
+}
+
 module.exports = {
     makeErrorHandler: makeErrorHandler,
     observableFilter: observableFilter,
@@ -113,5 +123,7 @@ module.exports = {
     notIdentity: notIdentity,
     OR: OR,
     AND: AND,
-    bufferUntilReady: bufferUntilReady
+    bufferUntilReady: bufferUntilReady,
+    consoleTimerEnd: consoleTimerEnd,
+    consoleTimerStart: consoleTimerStart
 };

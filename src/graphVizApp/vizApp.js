@@ -80,6 +80,7 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
     var poiIsEnabled = new Rx.ReplaySubject(1);
     poiIsEnabled.onNext(urlParams.hasOwnProperty('poi') ? urlParams.poi : true);
 
+
     var appState = {
         renderState: initialRenderState,
         vboUpdates: vboUpdates,
@@ -123,7 +124,8 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
                                                                 appState.hitmapUpdates,
                                                                 appState.isAnimating,
                                                                 appState.simulateOn,
-                                                                appState.activeSelection);
+                                                                appState.activeSelection,
+                                                                socket);
 
     canvas.setupCameraInteractions(appState, $simCont).subscribe(
         appState.cameraChanges,
@@ -154,7 +156,7 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
 
     var doneLoading = vboUpdates.filter(function (update) {
         return update === 'received';
-    }).take(1).do(ui.hideSpinnerShowBody).delay(700);
+    }).take(1).do(ui.hideSpinnerShowBody).delay(100);
 
     controls.init(appState, socket, $toolbar, doneLoading, workerParams, urlParams);
     api.setupAPIHooks(socket, appState, doneLoading);

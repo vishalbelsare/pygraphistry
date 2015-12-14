@@ -60,6 +60,14 @@ var HistogramCollection = Backbone.Collection.extend({
     comparator: 'position'
 });
 
+/**
+ * @param globalStats
+ * @param attributes
+ * @param {FiltersPanel} filtersPanel
+ * @param attrChangeSubject
+ * @param updateAttributeSubject
+ * @constructor
+ */
 function HistogramsPanel(globalStats, attributes, filtersPanel,
                          attrChangeSubject, updateAttributeSubject) {
     this.filtersPanel = filtersPanel;
@@ -89,12 +97,14 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             'click .expandHistogramButton': 'expand',
             'click .expandedHistogramButton': 'shrink',
             'click .refreshHistogramButton': 'refresh',
+            'click .topMenu': 'encode',
             'dragstart .topMenu': 'dragStart'
         },
 
         initialize: function () {
             this.listenTo(this.model, 'destroy', this.remove);
             this.listenTo(this.model, 'change:timeStamp', this.render);
+            this.listenTo(this.model, 'change:encodingType', this.render);
             var params = {
                 fields: attributes,
                 attribute: this.model.attributes.attribute,
@@ -117,7 +127,7 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
                 } else {
                     panel.updateHistogram(histogram.get('vizContainer'), histogram, histogram.get('attribute'));
                 }
-                return;
+                return this;
             }
 
             var attribute = histogram.get('attribute');
@@ -139,6 +149,22 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             }
 
             return this;
+        },
+
+        encode: function () {
+            // TODO: BETA flagged feature:
+            if ($('.beta').hasClass('beta')) { return; }
+            var isEncoded = this.model.get('encodingType') !== undefined;
+            var dataframeAttribute = this.model.get('attribute');
+            var binning = this.model.get('globalStats').sparkLines[dataframeAttribute];
+            panel.encodeAttribute(dataframeAttribute, isEncoded, binning).take(1).do(function (response) {
+                if (response.enabled) {
+                    panel.assignEncodingTypeToHistogram(response.encodingType, this.model, response.palette);
+                } else {
+                    this.model.set('colorsIndexedPerBin', undefined);
+                    this.model.set('encodingType', undefined);
+                }
+            }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Encoding histogram attribute'));
         },
 
         dragStart: function () {
@@ -306,6 +332,30 @@ HistogramsPanel.prototype.updateAttribute = function (oldAttr, newAttr, type) {
         type: type
     });
 };
+
+HistogramsPanel.prototype.encodeAttribute = function (dataframeAttribute, reset, binning) {
+    return this.filtersPanel.control.encodeCommand.sendWithObservableResult({
+        attribute: dataframeAttribute,
+        encodingType: 'color',
+        reset: reset,
+        binning: binning
+    });
+};
+
+
+HistogramsPanel.prototype.assignEncodingTypeToHistogram = function (encodingType, model, colorsIndexedPerBin) {
+    if (model !== undefined) {
+        model.set('colorsIndexedPerBin', colorsIndexedPerBin);
+        model.set('encodingType', encodingType);
+    }
+    this.histograms.each(function (histogram) {
+        if (histogram !== model && histogram.get('encodingType') === encodingType) {
+            histogram.set('colorsIndexedPerBin', undefined);
+            histogram.set('encodingType', undefined);
+        }
+    });
+};
+
 
 // These manage the FilterPanel's filters according to the histogram UI:
 
@@ -703,29 +753,42 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     //////////////////////////////////////////////////////////////////////////
 
     var histogramFilters = this.histogramFilters;
+    var histFilter = histogramFilters[attribute];
 
     var updateOpacity = function (d, i) {
-        var histFilter = histogramFilters[attribute];
         if (histFilter && i >= histFilter.firstBin && i <= histFilter.lastBin) {
             return 0.25;
         } else {
-            return 0;
+            return 1;
         }
     };
     var updateCursor = function (d, i) {
-        var histFilter = histogramFilters[attribute];
         if (histFilter && i >= histFilter.firstBin && i <= histFilter.lastBin && histFilter.completed) {
             return 'pointer';
         } else {
             return 'crosshair';
         }
     };
+    var isEncoded = model.get('encodingType') !== undefined;
+    var encodingPalette = model.get('colorsIndexedPerBin');
+    var updateColumnColor = function (d, i) {
+        var defaultFill = '#FFFFFF';
+        var filterFill = '#556ED4';
+        if (histFilter && i >= histFilter.firstBin && i <= histFilter.lastBin) {
+            return filterFill;
+        } else if (isEncoded && encodingPalette) {
+            return encodingPalette[i];
+        } else {
+            return defaultFill;
+        }
+    };
 
 
     var columns = selectColumns(svg, stackedBins);
     var columnRectangles = svg.selectAll('.column-rect');
-    columnRectangles.attr('opacity', updateOpacity);
-    columnRectangles.style('cursor', updateCursor);
+    columnRectangles.attr('opacity', updateOpacity)
+        .style('cursor', updateCursor)
+        .attr('fill', updateColumnColor);
 
     applyAttrColumns(columns.enter().append('g'))
         .attr('attribute', attribute)
@@ -739,7 +802,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
             .attr('class', 'column-rect')
             .attr('width', barWidth + barPadding)
             .attr('height', height)
-            .attr('fill', '#556ED4')
+            .attr('fill', updateColumnColor)
             .attr('opacity', updateOpacity)
             .style('cursor', updateCursor)
             .on('mousedown', this.handleHistogramDown.bind(this, filterRedrawCallback, id, model.attributes.globalStats))
