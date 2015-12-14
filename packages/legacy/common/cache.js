@@ -48,15 +48,16 @@ function Cache(cacheDir, enabled) {
 
 
     this.put = function(url, data) {
-        if (!enabled)
+        if (!enabled) {
             return Q();
+        }
 
         var path = getCacheFile(url);
         return Q.denodeify(fs.writeFile)(path, data, {encoding: 'utf8'}).then(
             function () {
                 logger.debug('Dataset saved in cache:', path);
+                return path;
             },
-            //util.makeErrorHandler('Failure while caching dataset')
             function (e) {
                 logger.error(e, 'Failure while caching dataset');
             }
