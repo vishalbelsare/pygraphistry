@@ -10,7 +10,9 @@ var config   = require('config')();
 var s3       = require('common/s3.js');
 var Log      = require('common/logger.js');
 var apiKey   = require('common/api.js');
+var Cache    = require('common/cache.js');
 var logger   = Log.createLogger('etlworker:etl2');
+var tmpCache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);
 
 
 
@@ -81,9 +83,7 @@ function uploadBuffer(buf, key) {
         ContentEncoding: 'gzip',
         shouldCompress: false
     };
-    return s3.upload(config.S3, config.BUCKET, {name: key}, buf, opts).then(function() {
-        return sprintf('s3://%s/%s', config.BUCKET, key);
-    });
+    return uploadAndCache(buf, key, opts);
 }
 
 
@@ -94,9 +94,46 @@ function uploadJSON(obj, key) {
         ContentEncoding: 'gzip',
         shouldCompress: true
     };
-    return s3.upload(config.S3, config.BUCKET, {name: key}, JSON.stringify(obj), opts).then(function() {
-        return sprintf('s3://%s/%s', config.BUCKET, key);
-    });
+    return uploadAndCache(JSON.stringify(obj), key, opts);
+}
+
+
+// [String+Buffer] * String * Object -> Q(String)
+function uploadAndCache(data, key, opts) {
+    function s3Upload(data, key, cache) {
+        return s3.upload(config.S3, config.BUCKET, {name: key}, data, opts).then(function() {
+            return sprintf('s3://%s/%s', config.BUCKET, key);
+        });
+    }
+
+    function cacheLocally(data, key) {
+        // Wait a couple of seconds to make sure our cache has a
+        // more recent timestamp than S3
+        var res = Q.defer();
+        setTimeout(function () {
+            logger.debug('Caching dataset locally');
+            var url = sprintf('s3://%s/%s', config.BUCKET, key);
+            var qSaved = tmpCache.put(urllib.parse(url), data).then(_.constant(url));
+            res.resolve(qSaved);
+        }, 2000);
+        return res.promise;
+    }
+
+    if (config.ENVIRONMENT === 'local') {
+        logger.debug('Attempting to upload dataset');
+        return s3Upload(data, key, opts)
+            .fail(function (err) {
+                logger.error(err, 'S3 Upload failed');
+            }).then(cacheLocally.bind(null, data, key),
+                    cacheLocally.bind(null, data, key)); // Cache locally regardless of result
+    } else {
+        // On prod/staging ETL fails if upload fails
+        logger.debug('Uploading dataset');
+        return s3Upload(data, key, opts)
+            .fail(function (err) {
+                logger.error(err, 'S3 Upload failed');
+            });
+    }
 }
 
 
