@@ -69,14 +69,9 @@ var HTTP_SERVER_LISTEN_PORT = config.HTTP_LISTEN_PORT;
 
 function logClientError(req, res) {
     var writeError = function (msg) {
-        //logger.debug('Logging client error', msg);
         if(config.ENVIRONMENT === 'local') {
             msg.ip = req.ip;
-            if (msg.err) {
-                logger.error(msg.err, 'Client Error');
-            } else {
-                logger.error(msg, 'Client Error');
-            }
+            logger.error(msg, 'Client Error');
             /* jshint -W064 */
             return Q();
             /* jshint +W064 */
@@ -86,22 +81,14 @@ function logClientError(req, res) {
             .fail(Log.makeQErrorHandler(logger, 'Error writing client error'));
     };
 
-    var data = '';
-
-    req.on('data', function (chunk) {
-        data += chunk;
-    });
-
-    req.on('end', function () {
-        try {
-            writeError(JSON.parse(data)).done(function () {
-                res.status(200).end();
-            });
-        } catch(err) {
-            logger.error(err, 'Error reading client error');
-            res.status(500).end();
-        }
-    });
+    try {
+        writeError(req.body).done(function () {
+            res.status(200).end();
+        });
+    } catch (err) {
+        logger.error(err, 'Error reading client error');
+        res.status(500).end();
+    }
 }
 
 /**
@@ -260,7 +247,7 @@ propagatePostToWorker('/oneshot', 'oneshot');
 
 
 // Store client errors in a log file (indexed by Splunk)
-app.post('/error', bodyParser.json({type: '*', limit: '64mb'}), logClientError);
+app.post('/error', bodyParser.urlencoded({extended: true, limit: '64kb'}), logClientError);
 
 // Default '/' static assets
 app.use('/graphistry', express.static(MAIN_STATIC_PATH));
