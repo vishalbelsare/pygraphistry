@@ -32,7 +32,7 @@ var defaults = {
 
 module.exports = {
     inferEncoding: function (dataframe, type, attributeName, encodingType, binning) {
-        var aggregations = dataframe.getColumnAggregations(attributeName, type);
+        var aggregations = dataframe.getColumnAggregations(attributeName, type, true);
         var summary = aggregations.getSummary();
         var scaling;
         var defaultDomain = [summary.minValue, summary.maxValue];
@@ -120,7 +120,6 @@ module.exports = {
                 if (scaling === undefined) {
                     if (summary.isOrdered) {
                         if (summary.isDiverging) {
-
                             scaling = d3.scale.linear()
                                 .domain(defaultDomain)
                                 .range(defaults.color.isQuantitative.diverging.range);
