@@ -918,12 +918,15 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
     var appSnapshot = that.appSnapshot;
     var renderState = that.renderState;
     var buffers = appSnapshot.buffers;
-    //var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
-    var numRenderedSplits;
-    if (buffers.midSpringsPos) {
-        numRenderedSplits = ((buffers.midSpringsPos.length / 4) / (buffers.logicalEdges.length / 8)) - 1;
-    } else {
-        return;
+    var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
+
+    // HACK for GIS
+    if (!numRenderedSplits && numRenderedSplits !== 0) {
+        if (buffers.midSpringsPos) {
+            numRenderedSplits = Math.round(((buffers.midSpringsPos.length / 4) / (buffers.logicalEdges.length / 8)) - 1);
+        } else {
+            return;
+        }
     }
     var numMidEdges = numRenderedSplits + 1;
 
