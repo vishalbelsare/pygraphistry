@@ -1417,7 +1417,17 @@ ColumnAggregation.prototype.countDistinct = function (limit) {
     }
     this.updateAggregationTo('countDistinct', numDistinct);
     this.updateAggregationTo('distinctValues', distinctCounts);
-    var isCategorical = this.getAggregationByType('dataType') === 'string' && numDistinct <= limit;
+    var isCategorical = false;
+    switch (this.getAggregationByType('dataType')) {
+        case 'string':
+            isCategorical = numDistinct <= limit;
+            break;
+        case 'integer':
+            isCategorical = numDistinct <= limit &&
+                (minValue === 0 || minValue === 1) && // allow [1..N+1]
+                maxValue - minValue === numDistinct - 1; // dense integer range [0..N]
+            break;
+    }
     this.updateAggregationTo('isCategorical' , isCategorical);
 };
 
