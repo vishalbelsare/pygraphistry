@@ -41,6 +41,7 @@ function etl(msg, params) {
         apiVersion: params.apiVersion,
         created: Date.now(),
         creator: apiKey.decrypt(params.key),
+        name: msg.metadata.name,
         view: msg.metadata.view,
         types: msg.metadata.types,
     };
