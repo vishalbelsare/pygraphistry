@@ -206,7 +206,7 @@ function pickWorker (cb) {
         .subscribe(
             function () { count++; },
             function (err) {
-                logger.exception(err, 'assign_worker error');
+                logger.error(err, 'assign_worker error');
                 cb(err || new Error('Unexpected error while assigning workers.'));
             },
             function () {
