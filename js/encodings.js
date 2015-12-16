@@ -39,15 +39,14 @@ module.exports = {
         if (!encodingType) {
             switch (type) {
                 case 'point':
-                    if (summary.isQuantitative) {
-                        if (summary.isDiverging) {
-                            encodingType = 'pointColor';
-                        } else {
-                            encodingType = 'pointSize';
-                        }
+                    if (summary.isQuantitative && !summary.isDiverging) {
+                        encodingType = 'pointSize';
+                    } else {
+                        encodingType = 'pointColor';
                     }
                     break;
                 case 'edge':
+                    // Only encoding that works (buffer management) and has enough visual capacity on edges:
                     encodingType = 'edgeColor';
                     break;
             }
