@@ -166,7 +166,22 @@ function setupMarquee(appState, isOn) {
     return marquee;
 }
 
+/**
+ * @typedef {Object} Brush
+ * @property selections
+ * @property bounds
+ * @property drags
+ * @property doneDragging
+ * @property $elt
+ * @property isOn
+ */
 
+
+/**
+ * @param appState
+ * @param isOn
+ * @returns {Brush}
+ */
 function setupBrush(appState, isOn) {
     var camera = appState.renderState.get('camera');
     var cnv = appState.renderState.get('canvas');
