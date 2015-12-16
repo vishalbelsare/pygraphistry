@@ -32,6 +32,11 @@ var NUM_COUNTBY_HISTOGRAM = NUM_COUNTBY_SPARKLINES;
 // Globals for updates
 //////////////////////////////////////////////////////////////////////////////
 
+var FullOpacity = 1;
+var PartialOpacity = 0.5;
+var SelectedOpacity = 0.25;
+var Transparent = 0;
+
 // TODO: Pull these into the created histogram object, away from globals.
 var color = d3.scale.ordinal()
         .range(['#0FA5C5', '#929292', '#0FA5C5', '#00BBFF'])
@@ -651,7 +656,7 @@ HistogramsPanel.prototype.updateHistogram = function ($el, model, attribute) {
         }).append('rect')
             .attr('height', barHeight + barPadding)
             .attr('width', width)
-            .attr('opacity', 0)
+            .attr('opacity', Transparent)
             .on('mouseover', this.toggleTooltips.bind(this, true, svg))
             .on('mouseout', this.toggleTooltips.bind(this, false, svg));
 
@@ -724,7 +729,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
         .attr('class', 'lowerTooltip')
         .attr('y', height + marginSparklines.bottom - 4)
         .attr('x', 0)
-        .attr('opacity', 0)
+        .attr('opacity', Transparent)
         .attr('fill', color('global'))
         .attr('font-size', '0.7em');
 
@@ -734,7 +739,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
         .attr('class', 'upperTooltip')
         .attr('y', -4)
         .attr('x', 0)
-        .attr('opacity', 0)
+        .attr('opacity', Transparent)
         .attr('font-size', '0.7em');
 
     upperTooltip.selectAll('.globalTooltip').data([''])
@@ -758,9 +763,9 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
 
     var updateOpacity = function (d, i) {
         if (histFilter && i >= histFilter.firstBin && i <= histFilter.lastBin) {
-            return 0.25;
+            return SelectedOpacity;
         } else {
-            return 1;
+            return FullOpacity;
         }
     };
     var updateCursor = function (d, i) {
@@ -995,21 +1000,21 @@ HistogramsPanel.prototype.toggleTooltips = function (showTooltip, svg) {
     if (showTooltip) {
         globalTooltip.text('TOTAL: ' + String(global) + ', ');
         localTooltip.text('SELECTED: ' + String(local));
-        tooltipBox.attr('opacity', 1);
+        tooltipBox.attr('opacity', FullOpacity);
     } else {
         globalTooltip.text('');
         localTooltip.text('');
-        tooltipBox.attr('opacity', 0);
+        tooltipBox.attr('opacity', Transparent);
     }
 
 
     var textBox = svg.select('.lowerTooltip');
     if (showTooltip) {
         textBox.text(data.name);
-        textBox.attr('opacity', 1);
+        textBox.attr('opacity', FullOpacity);
     } else {
         textBox.text('');
-        textBox.attr('opacity', 0);
+        textBox.attr('opacity', Transparent);
     }
 
     this.highlight(bars, showTooltip);
