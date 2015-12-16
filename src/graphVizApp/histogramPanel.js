@@ -22,7 +22,8 @@ var util    = require('./util.js');
 var DIST = false;
 var DRAG_SAMPLE_INTERVAL = 200;
 var BAR_THICKNESS = 16;
-var SPARKLINE_HEIGHT = 60;
+var SPARKLINE_HEIGHT = 65;
+var SPARKLINE_BACKGROUND_HEIGHT = 5;
 var NUM_SPARKLINES = 30;
 var NUM_COUNTBY_SPARKLINES = NUM_SPARKLINES - 1;
 var NUM_COUNTBY_HISTOGRAM = NUM_COUNTBY_SPARKLINES;
@@ -772,7 +773,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     var isEncoded = model.get('encodingType') !== undefined;
     var encodingPalette = model.get('colorsIndexedPerBin');
     var updateColumnColor = function (d, i) {
-        var defaultFill = '#FFFFFF';
+        var defaultFill = '#FCFCFC';
         var filterFill = '#556ED4';
         if (histFilter && i >= histFilter.firstBin && i <= histFilter.lastBin) {
             return filterFill;
@@ -831,6 +832,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     this.applyAttrBars(bars.enter().append('rect'), 'left', 'right')
         .attr('class', 'bar-rect')
         .attr('width', barWidth)
+        .attr('transform', 'translate(0,' + SPARKLINE_BACKGROUND_HEIGHT + ')')
         .attr('height', function (d) {
             return yScale(d.y0) - yScale(d.y1) + heightDelta(d, yScale);
         })
@@ -1163,7 +1165,7 @@ function initializeSparklineViz($el, model) {
     height = height - marginSparklines.top - marginSparklines.bottom;
 
     var xScale = setupBinScale(type, width, numBins);
-    var yScale = setupAmountScale(height, stackedBins, DIST);
+    var yScale = setupAmountScale(height - SPARKLINE_BACKGROUND_HEIGHT, stackedBins, DIST);
     var svg = setupSvg($el[0], marginSparklines, width, height);
 
     _.extend(d3Data, {
