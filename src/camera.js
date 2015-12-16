@@ -243,11 +243,18 @@
     };
 
     Camera2d.prototype.semanticZoom = function(numPoints) {
+        // HACK;
         // To zoom in, we use the quadroot of the ratio of
         // points to area to estimate our zoom level. This also has
         // to be adjusted by a constant, which depends on the size of the
         // dataset. We combine constants for small datasets and large datasets
         // using alpha, which is a measure of how "big" a dataset is.
+
+        // HACK so it always uses the first set numPoints.
+        if (!this.numPoints) {
+            this.numPoints = numPoints;
+        }
+        numPoints = this.numPoints;
 
         var pointSizeConstantBig = 1.0;
         var pointSizeConstantSmall = 7.5;
@@ -264,6 +271,12 @@
     };
 
     Camera2d.prototype.semanticZoomEdges = function (numPoints) {
+
+        // HACK so it always uses the first set numPoints.
+        if (!this.numPoints) {
+            this.numPoints = numPoints;
+        }
+        numPoints = this.numPoints;
 
         var pointSizeConstantBig = 2.0;
         var pointSizeConstantSmall = 20;
