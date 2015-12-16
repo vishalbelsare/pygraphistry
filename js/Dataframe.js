@@ -1089,7 +1089,13 @@ Dataframe.prototype.hasLocalBuffer = function (name) {
 
 Dataframe.prototype.getLocalBuffer = function (name) {
     if (this.canResetLocalBuffer(name)) {
-        name = this.bufferOverlays[name];
+        var alias = this.bufferOverlays[name];
+        // Prevents a possible race condition resetting a buffer alias/overlay:
+        if (this.hasLocalBuffer(alias)) {
+            name = alias;
+        } else {
+            this.resetLocalBuffer(alias);
+        }
     }
     var res = this.data.localBuffers[name];
     if (!res) {
