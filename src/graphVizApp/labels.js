@@ -149,10 +149,11 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
 
     appState.cameraChanges.combineLatest(
         appState.vboUpdates,
+        appState.hitmapUpdates,
         latestHighlightedObject,
         appState.activeSelection,
         appState.poiIsEnabled,
-        function (camera, vboUpdates, highlighted, selection, poiIsEnabled) {
+        function (camera, vboUpdates, hitmapUpdates, highlighted, selection, poiIsEnabled) {
             return {
                 highlighted: highlighted,
                 selection: selection,
@@ -188,6 +189,8 @@ function renderLabels(appState, $labelCont, highlighted, selected, poiIsEnabled)
 }
 
 function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, selected, poiIsEnabled) {
+
+    console.log('UPDATING LABELS');
 
     // Trying to handle set highlight/selection, but badly:
     var elementsToExpand = selected.size() > 1 ? [] : selected.getVizSliceElements();

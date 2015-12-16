@@ -116,6 +116,7 @@ function getActiveApprox(renderState, textureName, forceResample) {
 
     lastRes = _.clone(res);
     timeOfLastRes = Date.now();
+    console.log('RES: ', res);
     return res;
 }
 
@@ -349,6 +350,8 @@ function emptyCache (instance) {
         val.elt.css('display', 'none');
         delete instance.state.activeLabels[key];
     });
+    console.log('Setting time of last res to 0');
+    timeOfLastRes = 0; // Force next activeApprox to resample (TODO: Represent this logic better)
 }
 
 /**
