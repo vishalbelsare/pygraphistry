@@ -1257,8 +1257,9 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
         // TODO: Determine if this order is deterministic,
         // and if not, explicitly send over a bin ordering from aggregate.
         var binNames = _.keys(stats.bins);
+        var isNumeric = _.isNumber(stats.minValue) && _.isNumber(stats.maxValue);
         for (var i = firstBin; i <= lastBin; i++) {
-            list.push(binNames[i]);
+            list.push(isNumeric ? parseFloat(binNames[i]) : binNames[i]);
         }
         this.histogramFilters[dataframeAttribute].equals = list;
     }
