@@ -1764,12 +1764,14 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
     var topVal;
     var binWidth;
     var range = max - min;
+    var isCountBy;
     if (aggregations.getAggregationByType('countDistinct') < maxBinCount &&
         aggregations.getAggregationByType('isIntegral')) {
         numBins = numValues;
         bottomVal = min;
         topVal = max;
         binWidth = range / (numBins - 1);
+        isCountBy = true;
     } else if (goalNumberOfBins) {
         numBins = goalNumberOfBins;
         bottomVal = min;
@@ -1821,6 +1823,7 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
     return {
         numBins: numBins,
         binWidth: binWidth,
+        isCountBy: isCountBy,
         minValue: bottomVal,
         maxValue: topVal
     };
@@ -1874,7 +1877,7 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
     //var dataSize = indices.length;
 
     var retObj = {
-        type: 'histogram',
+        type: binning.isCountBy ? 'countBy' : 'histogram',
         numBins: numBins,
         binWidth: binWidth,
         numValues: numValues,
@@ -1882,9 +1885,15 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
         minValue: bottomVal
     };
 
+    var bins, binValues;
+
     // Fast path for case of only one bin.
     if (numBins === 1) {
-        _.extend(retObj, {bins: [numValues]});
+        bins = [numValues];
+        if (binning.isCountBy) {
+            binValues = [min];
+        }
+        _.extend(retObj, {bins: bins, binValues: binValues});
         return Q(retObj);
     }
 
@@ -1897,18 +1906,25 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
     // Dead code, exists solely for timing.
     // TODO: Make this a config option.
 
-    var bins = Array.apply(null, new Array(numBins)).map(function () { return 0; });
+    bins = Array.apply(null, new Array(numBins)).map(function () { return 0; });
+    binValues = new Array(numBins);
 
-    var binId;
+    var binId, value;
     for (i = 0; i < indices.length; i++) {
         // Here we use an optimized "Floor" because we know it's a smallish, positive number.
         // TODO: Have to be careful because floating point error.
         // In particular, we need to math math as closely as possible on filters.
-        binId = ((values[indices[i]] - bottomVal) / binWidth) | 0;
+        value = values[indices[i]];
+        binId = ((value - bottomVal) / binWidth) | 0;
         bins[binId]++;
+        if (binValues[binId] === undefined) {
+            binValues[binId] = value;
+        } else if (binValues[binId] !== value) {
+            binValues[binId] = null;
+        }
     }
 
-    _.extend(retObj, {bins: bins});
+    _.extend(retObj, {bins: bins, binValues: binValues});
     return Q(retObj);
 };
 
