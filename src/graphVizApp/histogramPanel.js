@@ -1252,7 +1252,7 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
         var stop = stats.minValue + (stats.binWidth * lastBin) + stats.binWidth;
         this.histogramFilters[dataframeAttribute].start = start;
         this.histogramFilters[dataframeAttribute].stop = stop;
-    } else {
+    } else { // stats.type === 'countBy'
         var list = [];
         // TODO: Determine if this order is deterministic,
         // and if not, explicitly send over a bin ordering from aggregate.
