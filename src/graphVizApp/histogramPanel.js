@@ -593,9 +593,16 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
         _.each(zippedBins, function (stack, idx) {
             var local = stack[0] || 0;
             var total = stack[1] || 0;
-            var start = globalStats.minValue + (globalStats.binWidth * idx);
-            var stop = start + globalStats.binWidth;
-            var name = prettyPrint(start, attr) + '  :  ' + prettyPrint(stop, attr);
+            var name;
+            var binValues = globalStats.binValues;
+            // Guard against null or undefined:
+            if (binValues && !!binValues[idx] || binValues[idx] === 0) {
+                name = prettyPrint(binValues[idx], attr);
+            } else {
+                var start = globalStats.minValue + (globalStats.binWidth * idx);
+                var stop = start + globalStats.binWidth;
+                name = prettyPrint(start, attr) + ' : ' + prettyPrint(stop, attr);
+            }
             var stackedObj = toStackedObject(local, total, idx, name, attr, numLocal, numTotal, distribution);
             stackedBins.push(stackedObj);
         });
@@ -1066,7 +1073,7 @@ function prettyPrint (d, attributeName, noLimit) {
         var str = String(d);
         var limit = 10;
         if (str.length > limit && !noLimit) {
-            return str.substr(0, limit-1) + '...';
+            return str.substr(0, limit-1) + '…';
         } else {
             return str;
         }
