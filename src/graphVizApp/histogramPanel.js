@@ -33,7 +33,7 @@ var NUM_COUNTBY_HISTOGRAM = NUM_COUNTBY_SPARKLINES;
 //////////////////////////////////////////////////////////////////////////////
 
 var FullOpacity = 1;
-var PartialOpacity = 0.5;
+//var PartialOpacity = 0.5;
 var SelectedOpacity = 0.25;
 var Transparent = 0;
 
