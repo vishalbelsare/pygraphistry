@@ -291,6 +291,41 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
 
 /**
  * @param {ClientQuery} query
+ * @param {Error[]}errors
+ * @returns {DataframeMask}
+ */
+Dataframe.prototype.getMasksForQuery = function (query, errors) {
+    var attribute = query.attribute,
+        type = query.type;
+    var normalization = this.normalizeAttributeName(attribute, type);
+    if (normalization === undefined) {
+        errors.push('Unknown frame element');
+        return undefined;
+    } else {
+        type = normalization.type;
+        attribute = normalization.attribute;
+    }
+    try {
+        var plan = this.planForQueryObject(query);
+        var masks;
+        if (plan === undefined) {
+            var filterFunc = this.filterFuncForQueryObject(query);
+            masks = this.getAttributeMask(type, attribute, filterFunc);
+        } else {
+            masks = plan.execute();
+        }
+        if (masks === undefined || _.isArray(masks)) {
+            throw new Error('Unable to execute the query');
+        } else {
+            return masks;
+        }
+    } catch (e) {
+        errors.push(e.message);
+    }
+};
+
+/**
+ * @param {ClientQuery} query
  * @returns Function<Object>
  */
 Dataframe.prototype.filterFuncForQueryObject = function (query) {

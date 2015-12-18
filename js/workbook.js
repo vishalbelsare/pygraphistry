@@ -14,8 +14,10 @@ var blankLegendTemplate = {
     edges: undefined
 };
 
+// Template for viewConfig
 var blankViewTemplate = {
     title: undefined,
+    exclusions: [],
     filters: [
         // nodes/edges limited per client render estimate:
         {
