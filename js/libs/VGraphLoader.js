@@ -274,11 +274,11 @@ function runLoaders(loaders) {
 /**
  * Load the raw data from the dataset object from S3
 **/
-function load(graph, dataset, socket) {
+function load(graph, dataset) {
     var vg = pb_root.VectorGraph.decode(dataset.body);
     logger.trace('attaching vgraph to simulator');
     graph.simulator.vgraph = vg;
-    return decoders[vg.version](graph, vg, dataset.metadata, socket);
+    return decoders[vg.version](graph, vg, dataset.metadata);
 }
 
 
@@ -304,11 +304,11 @@ function loadDataframe(graph, attrs, numPoints, numEdges, encodings) {
 }
 
 
-function decode0(graph, vg, metadata, socket)  {
+function decode0(graph, vg, metadata)  {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
           vg.version, vg.name, vg.nvertices, vg.nedges);
 
-    notifyClientOfSizesForAllocation(socket, vg.nedges, vg.nvertices);
+    notifyClientOfSizesForAllocation(graph.socket, vg.nedges, vg.nvertices);
 
     var attrs = getAttributes0(vg);
     loadDataframe(graph, attrs, vg.nvertices, vg.nedges, {});
@@ -336,7 +336,8 @@ function decode0(graph, vg, metadata, socket)  {
             vertices[i] = [xObj.values[i], yObj.values[i]];
         }
     } else {
-        vertices = computeInitialPositions(vg.nvertices, edges, dimensions, socket);
+        clientNotification.loadingStatus(graph.socket, 'Initializing positions');
+        vertices = computeInitialPositions(vg.nvertices, edges, dimensions, graph.socket);
     }
 
     var loaders = attributeLoaders(graph);
@@ -369,15 +370,15 @@ function decode0(graph, vg, metadata, socket)  {
 
     });
 
-    return clientNotification.loadingStatus(socket, 'Binding nodes')
+    return clientNotification.loadingStatus(graph.socket, 'Binding nodes')
         .then(function () {
             return graph.setVertices(vertices);
         }).then(function () {
-            return clientNotification.loadingStatus(socket, 'Binding edges');
+            return clientNotification.loadingStatus(graph.socket, 'Binding edges');
         }).then(function () {
             return graph.setEdges(edges);
         }).then(function () {
-            return clientNotification.loadingStatus(socket, 'Binding everything else');
+            return clientNotification.loadingStatus(graph.socket, 'Binding everything else');
         }).then(function () {
             return runLoaders(loaders);
         }).then(function () {
@@ -386,9 +387,8 @@ function decode0(graph, vg, metadata, socket)  {
 }
 
 
-function computeInitialPositions(nvertices, edges, dimensions, socket) {
+function computeInitialPositions(nvertices, edges, dimensions) {
     logger.trace('Running component analysis');
-    clientNotification.loadingStatus(socket, 'Initializing positions');
 
     var components = weakcc(nvertices, edges, 2);
     var pointsPerRow = nvertices / (Math.round(Math.sqrt(components.components.length)) + 1);
@@ -533,12 +533,11 @@ function getAttributes1(vg) {
 }
 
 
-
-function decode1(graph, vg, metadata, socket)  {
+function decode1(graph, vg, metadata)  {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
           vg.version, vg.name, vg.nvertices, vg.nedges);
 
-    notifyClientOfSizesForAllocation(socket, vg.nedges, vg.nvertices);
+    notifyClientOfSizesForAllocation(graph.socket, vg.nedges, vg.nvertices);
 
     var attrs = getAttributes1(vg);
     var encodings = _.omit(metadata.view.encodings, 'source', 'destination');
@@ -552,7 +551,8 @@ function decode1(graph, vg, metadata, socket)  {
     }
 
     var dimensions = [1, 1];
-    var vertices = computeInitialPositions(vg.nvertices, edges, dimensions, socket);
+    clientNotification.loadingStatus(graph.socket, 'Initializing positions');
+    var vertices = computeInitialPositions(vg.nvertices, edges, dimensions);
 
     var loaders = attributeLoaders(graph);
     var mapper = mappers[metadata.mapper];
@@ -583,15 +583,15 @@ function decode1(graph, vg, metadata, socket)  {
         });
     });
 
-    return clientNotification.loadingStatus(socket, 'Binding nodes')
+    return clientNotification.loadingStatus(graph.socket, 'Binding nodes')
         .then(function () {
             return graph.setVertices(vertices);
         }).then(function () {
-            return clientNotification.loadingStatus(socket, 'Binding edges');
+            return clientNotification.loadingStatus(graph.socket, 'Binding edges');
         }).then(function () {
             return graph.setEdges(edges);
         }).then(function () {
-            return clientNotification.loadingStatus(socket, 'Binding everything else');
+            return clientNotification.loadingStatus(graph.socket, 'Binding everything else');
         }).then(function () {
             return runLoaders(loaders);
         }).then(function () {
