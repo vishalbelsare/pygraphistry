@@ -124,10 +124,9 @@ CASEExpression
 NOTExpression
   = operator:NOT __ argument:NOTExpression {
       return {
-        type: 'UnaryExpression',
+        type: 'NotExpression',
         operator: operator,
-        argument: argument,
-        fixity: 'prefix'
+        value: argument
       };
     }
   / EqualityPredicate
