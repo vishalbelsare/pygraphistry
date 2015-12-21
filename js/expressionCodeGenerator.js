@@ -304,7 +304,7 @@ ExpressionCodeGenerator.prototype = {
             case 'COALESCE':
                 return this.wrapSubExpressionPerPrecedences(args.join(' || '), this.precedenceOf('||'), outerPrecedence);
             default:
-                throw Error('Unrecognized function: ' + inputFunctionName);
+                throw new Error('Unrecognized function: ' + inputFunctionName);
         }
         return safeFunctionName + '(' + args.join(', ') + ')';
     },
