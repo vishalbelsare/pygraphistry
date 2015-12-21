@@ -256,9 +256,28 @@ ExpressionCodeGenerator.prototype = {
             case 'RTRIM':
                 return methodCall(args[0], 'trimRight');
             case 'MAX':
+                if (args.length === 1) {
+                    // TODO handle aggregation over the single expression.
+                    return methodCall('Math', 'max', args);
+                }
                 return methodCall('Math', 'max', args);
             case 'MIN':
+                if (args.length === 1) {
+                    // TODO handle aggregation over the single expression.
+                    return methodCall('Math', 'min', args);
+                }
                 return methodCall('Math', 'min', args);
+            // Unambiguously aggregate functions:
+            case 'AVG':
+            case 'AVERAGE':
+            case 'COUNT':
+            case 'MEDIAN':
+            case 'SUM':
+            case 'PCT':
+            case 'PERCENTILE':
+            case 'COUNT_DISTINCT':
+            case 'DISTINCT_VALUES':
+                throw new Error('Function not yet implemented: ' + inputFunctionName);
             case 'RAND':
                 return methodCall('Math', 'random', args);
             case 'SIGN':
