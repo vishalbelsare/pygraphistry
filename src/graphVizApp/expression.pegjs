@@ -5,6 +5,14 @@
   // Header/utility functions for grammar match bodies.
   //
 
+  function joinWords(arguments) {
+    if (arguments.length === 1 && typeof arguments[0] === 'string') {
+      return arguments[0];
+    }
+    var args = Array.prototype.slice.call(arguments);
+    return args.join('');
+  }
+
   function extractList(list, index) {
     var result = new Array(list.length), i;
 
@@ -571,23 +579,43 @@ IsPredicate
         right: right
       };
     }
+  / left:MemberAccess __ operator:IS __ negation:NOT __ right:UnaryExpression {
+    return {
+      type: 'NotExpression',
+      operator: negation,
+      value: {
+        type: 'BinaryPredicate',
+        operator: operator,
+        left: left,
+        right: right
+      }
+    };
+  }
+
+InOperator
+  = IN / NOT __ IN
 
 InPredicate
-  = left:MemberAccess __ operator:IN __ right:Expression
-    { return {
-         type: 'BinaryPredicate',
-         operator: operator,
-         left: left,
-         right: right
-      };
-    }
-  / left:MemberAccess __ operator:IN __ lparen ( ( MemberAccess comma __ )+ )? __ rparen
-    { return buildBinaryPredicate(first, rest); }
+  = left:MemberAccess __ operator:InOperator __ right:Expression {
+    return {
+      type: 'BinaryPredicate',
+      operator: joinWords(operator),
+      left: left,
+      right: right
+    };
+  }
+  / left:MemberAccess __ operator:InOperator __ lparen ( ( elements:ElementList comma __ )+ )? __ rparen {
+    return {
+      type: 'BinaryPredicate',
+      operator: joinWords(operator),
+      left: left,
+      right: elements
+    };
+  }
 
 BetweenPredicate
   = value:MemberAccess __ BETWEEN __ low:MemberAccess __ AND __ high:MemberAccess
     {
-      // TODO: use negated
       return {
           type: 'BetweenPredicate',
           value: value,
@@ -595,16 +623,29 @@ BetweenPredicate
           stop:  high
       };
     }
+  / value:MemberAccess __ operator:NOT __ BETWEEN __ low:MemberAccess __ AND __ high:MemberAccess
+    {
+      return {
+        type: 'NotExpression',
+        operator: operator,
+        value: {
+          type: 'BetweenPredicate',
+          value: value,
+          start: low,
+          stop:  high
+        }
+      };
+    }
 
 LikeOperator "text comparison"
-  = LIKE / ILIKE
+  = LIKE / ILIKE / NOT __ LIKE / NOT __ ILIKE
 
 LikePredicate "text comparison"
   = value:MemberAccess
     __ operator:LikeOperator __ like:MemberAccess __ ESCAPE escapeChar:StringLiteral
     { return {
         type: 'LikePredicate',
-        operator: operator,
+        operator: joinWords(operator),
         left: value,
         right: like,
         escapeChar: escapeChar
@@ -614,14 +655,14 @@ LikePredicate "text comparison"
     __ operator:LikeOperator __ like:MemberAccess
     { return {
         type: 'LikePredicate',
-        operator: operator,
+        operator: joinWords(operator),
         left: value,
         right: like
       };
     }
 
 RegexOperator
-  = REGEXP / SIMILAR __ TO
+  = REGEXP / SIMILAR __ TO / NOT __ REGEXP / NOT __ SIMILAR __ TO
 
 RegexPredicate "regex expression"
   = value:MemberAccess
@@ -629,18 +670,9 @@ RegexPredicate "regex expression"
     {
       return {
         type: 'RegexPredicate',
-        operator: operator,
+        operator: joinWords(operator),
         left: value,
         right: matcher
-      };
-    }
-
-NOTKeywordPredicate "not"
-  = operator:NOT __ argument:KeywordPredicate {
-      return {
-        type: 'NotExpression',
-        operator: operator,
-        value: argument
       };
     }
 
@@ -658,8 +690,7 @@ MemberAccess
     }
 
 KeywordPredicate
-  = NOTKeywordPredicate
-  / LikePredicate
+  = LikePredicate
   / RegexPredicate
   / BetweenPredicate
   / InPredicate
