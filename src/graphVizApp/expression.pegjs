@@ -222,9 +222,25 @@ FunctionInvocation "function call"
     };
   }
 
+TimeTypeName "time type name"
+  = DATE
+  / TIME
+  / TIMESTAMP
+
+TimeExpression "time"
+  = typeName:TimeTypeName __ expression:Expression
+  {
+    return {
+      type: 'FunctionCall',
+      callee: callee,
+      arguments: [expression]
+    };
+  }
+
 PrimaryExpression
   = BracketedIdentifier
   / CastExpression
+  / TimeExpression
   / FunctionInvocation
   / Identifier
   / LiteralValue
