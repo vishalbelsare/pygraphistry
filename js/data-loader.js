@@ -129,19 +129,19 @@ function unzipBufferIfCompressed(buffer, twice) {
 
 
 // Run appropriate loader based on dataset type
-function loadDatasetIntoSim(graph, dataset, socket) {
+function loadDatasetIntoSim(graph, dataset) {
     logger.debug('Loading dataset: %o', dataset);
 
     var loader = loaders[dataset.metadata.type];
     return unzipBufferIfCompressed(dataset.body).then(function (body) {
         dataset.body = body;
-        return loader(graph, dataset, socket);
+        return loader(graph, dataset);
     });
 }
 
 
 // Parse the json dataset decription, download then load data.
-function loadJSONMeta(graph, rawDataset, socket) {
+function loadJSONMeta(graph, rawDataset) {
     var dataset = JSON.parse(rawDataset.body.toString('utf8'));
     return downloadDatasources(dataset).then(function (dataset) {
         if (dataset.datasources.length !== 1) {
@@ -152,7 +152,7 @@ function loadJSONMeta(graph, rawDataset, socket) {
         }
 
         var data = dataset.datasources[0].data
-        return VGraphLoader.load(graph, {body: data, metadata: dataset}, socket);
+        return VGraphLoader.load(graph, {body: data, metadata: dataset});
     });
 }
 

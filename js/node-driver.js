@@ -299,7 +299,7 @@ function create(dataset, socket) {
     var graph = init(device, vendor, controls, socket).then(function (graph) {
         logger.trace('LOADING DATASET');
         return Q.all([
-            loader.loadDatasetIntoSim(graph, dataset, socket),
+            loader.loadDatasetIntoSim(graph, dataset),
             clientNotification.loadingStatus(socket, 'Loading dataset')
         ]);
     }).spread(function (graph) {

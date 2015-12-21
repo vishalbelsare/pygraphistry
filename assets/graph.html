@@ -570,67 +570,66 @@
 
 <script type="text/x-handlebars-template" id="filterTemplate">
     <div class="topMenu row">
-        <!--<div class="col-md-1 expandButton">
-            <a href="#">
-                <i class="fa fa-caret-right expandFilterButton" cid="{{id}}"></i>
-            </a>
-        </div>-->
-        <div class="col-md-8 filterName control-title attributeName">{{model.title}}</div>
-        <div class="col-md-2"></div>
+        {{#if model.isSystem}}
+            <div class="col-md-12">
+        {{else if model.controlType}}
+            <div class="col-md-12">
+        {{else}}
+            <div class="col-md-10">
+        {{/if}}
+            <form class="filterEditor form-horizontal">
+                <div class="form-group-sm" title="Data Type">
+                    <label class="control-label" for="filterDataType{{id}}">Data Type</label>
+                    <span class="form-control-static">{{model.dataType}}</span>
+                    <select class="filterDataTypeSelector form-control hidden" id="filterDataType{{id}}" title="Data Type">
+                        <option value="">(Unknown)</option>
+                        {{#each dataTypes}}
+                        {{#if selected}}
+                            <option value="{{name}}" selected="selected">{{name}}</option>
+                        {{else}}
+                            <option value="{{name}}">{{name}}</option>
+                        {{/if}}
+                        {{/each}}
+                    </select>
+                </div>
+                <div class="form-group-sm" title="Control Type">
+                    <label class="control-label" for="filterControlType{{id}}">Control Type</label>
+                    <span class="form-control-static">{{model.controlType}}</span>
+                    <select class="filterControlTypeSelector form-control hidden" id="filterControlType{{id}}" title="Control Type">
+                        <option value="">(Unknown)</option>
+                        {{#each controlTypes}}
+                        {{#if selected}}
+                            <option value="{{value}}" selected="selected">{{name}}</option>
+                        {{else}}
+                            <option value="{{value}}">{{name}}</option>
+                        {{/if}}
+                        {{/each}}
+                    </select>
+                </div>
+                <div class="row form-group" title="Expression">
+                    <label class="control-label" for="filterExpression{{id}}">Expression</label>
+                    <!--
+                    <textarea class="form-control filterExpression" id="filterExpression{{id}}" name="expression" title="Filter expression"
+                              rows="2" cols="40" placeholder="{{model.placeholder}}">{{model.expression}}</textarea>-->
+                    <div class="form-control filterExpression" id="filterExpression{{id}}" title="Filter expression"
+                            ></div>
+                </div>
+            </form>
+        </div>
+        {{#unless model.isSystem}}
         <div class="col-md-1 disableButton">
-            {{#unless model.isSystem}}
             <a href="#">
                 <i class="fa fa-toggle-on disableFilterButton" title="Enabled" cid="{{id}}"></i>
             </a>
-            {{/unless}}
         </div>
         <div class="col-md-1 deleteButton">
-            {{#unless model.isSystem}}
             <a href="#">
                 <i class="fa fa-close deleteFilterButton" cid="{{id}}"
                     title="Delete Filter"></i>
             </a>
-            {{/unless}}
         </div>
+        {{/unless}}
     </div>
-    <form class="filterEditor form-horizontal">
-        <div class="form-group-sm" title="Data Type">
-            <label class="control-label" for="filterDataType{{id}}">Data Type</label>
-            <span class="form-control-static">{{model.dataType}}</span>
-            <select class="filterDataTypeSelector form-control hidden" id="filterDataType{{id}}" title="Data Type">
-                <option value="">(Unknown)</option>
-                {{#each dataTypes}}
-                {{#if selected}}
-                    <option value="{{name}}" selected="selected">{{name}}</option>
-                {{else}}
-                    <option value="{{name}}">{{name}}</option>
-                {{/if}}
-                {{/each}}
-            </select>
-        </div>
-        <div class="form-group-sm" title="Control Type">
-            <label class="control-label" for="filterControlType{{id}}">Control Type</label>
-            <span class="form-control-static">{{model.controlType}}</span>
-            <select class="filterControlTypeSelector form-control hidden" id="filterControlType{{id}}" title="Control Type">
-                <option value="">(Unknown)</option>
-                {{#each controlTypes}}
-                {{#if selected}}
-                    <option value="{{value}}" selected="selected">{{name}}</option>
-                {{else}}
-                    <option value="{{value}}">{{name}}</option>
-                {{/if}}
-                {{/each}}
-            </select>
-        </div>
-        <div class="row form-group" title="Expression">
-            <label class="control-label" for="filterExpression{{id}}">Expression</label>
-            <!--
-            <textarea class="form-control filterExpression" id="filterExpression{{id}}" name="expression" title="Filter expression"
-                      rows="2" cols="40" placeholder="{{model.placeholder}}">{{model.expression}}</textarea>-->
-            <div class="form-control filterExpression" id="filterExpression{{id}}" title="Filter expression"
-                    ></div>
-        </div>
-    </form>
 </script>
 
 <script type="text/template" id="addFilterTemplate">
@@ -685,7 +684,7 @@ Note: this release does not support expressions with multiple fields nor changin
     <div class="topMenu">
         <div class="col-xs-1 expandButton">
             <a href="#">
-                <i class="fa fa-caret-right expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
+                <i class="fa fa-caret-right interactive expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
         <div class="col-xs-9">
@@ -705,7 +704,7 @@ Note: this release does not support expressions with multiple fields nor changin
         </div>
         <div class="col-xs-1 closeButton">
             <a href="#">
-                <i class="fa fa-times closeHistogramButton" id="closeHistogramButton{{id}}" cid="{{id}}"></i>
+                <i class="fa fa-times interactive closeHistogramButton" id="closeHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
     </div>
@@ -717,7 +716,7 @@ Note: this release does not support expressions with multiple fields nor changin
     <div class="topMenu grab-cursor" draggable="true">
         <div class="col-xs-1 histogramButton expandButton">
             <a href="#">
-                <i class="fa fa-caret-right histogramButton expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
+                <i class="fa fa-caret-right interactive histogramButton expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
         <div class="col-xs-9 attributeName">
@@ -727,8 +726,8 @@ Note: this release does not support expressions with multiple fields nor changin
         <div class="col-xs-1 histogramButton refreshButton refreshHistogramButton-{{modelId}}">
             <a href="#">
                 <span class="fa-stack">
-                    <i class="fa fa-filter histogramButton refreshHistogramButton refreshHistogramButton-{{modelId}}" id="refreshHistogramButton{{modelId}}" cid="{{id}}"></i>
-                    <i class="fa fa-trash histogramRemoveIcon" style="font-size: 0.9em; position: absolute; margin-left: -0.5em; margin-top: 0.5em; pointer-events: none"></i>
+                    <i class="fa fa-filter histogramButton interactive refreshHistogramButton refreshHistogramButton-{{modelId}}" id="refreshHistogramButton{{modelId}}" cid="{{id}}"></i>
+                    <i class="fa fa-trash histogramRemoveIcon interactive" style="font-size: 0.9em; position: absolute; margin-left: -0.5em; margin-top: 0.5em; pointer-events: none"></i>
                 </span>
 
             </a>
@@ -736,7 +735,7 @@ Note: this release does not support expressions with multiple fields nor changin
         -->
         <div class="col-xs-1 histogramButton closeButton">
             <a href="#">
-                <i class="fa fa-times histogramButton closeHistogramButton" id="closeHistogramButton{{id}}" cid="{{id}}"></i>
+                <i class="fa fa-times interactive histogramButton closeHistogramButton" id="closeHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
 
