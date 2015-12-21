@@ -197,6 +197,8 @@ ExpressionCodeGenerator.prototype = {
         }.bind(this);
         switch (inputFunctionName.toUpperCase()) {
             case 'DATE':
+            case 'TIME':
+            case 'TIMESTAMP':
                 safeFunctionName = 'new Date';
                 break;
             case 'CONCATENATE':
