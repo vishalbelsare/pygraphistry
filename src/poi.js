@@ -116,7 +116,6 @@ function getActiveApprox(renderState, textureName, forceResample) {
 
     lastRes = _.clone(res);
     timeOfLastRes = Date.now();
-    console.log('RES: ', res);
     return res;
 }
 
