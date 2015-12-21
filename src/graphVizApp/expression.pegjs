@@ -60,6 +60,8 @@ start = Expression
 
 TypeName "type name"
   = STRING
+  / BOOLEAN
+  / NULL
   / INTEGER
   / NUMBER
   / ARRAY
@@ -728,6 +730,7 @@ AUTOINCREMENT = "AUTOINCREMENT"i
 BEFORE = "BEFORE"i
 BEGIN = "BEGIN"i
 BETWEEN = "BETWEEN"i
+BOOLEAN = "BOOLEAN"i
 BY = "BY"i
 CASCADE = "CASCADE"i
 CASE = "CASE"i
