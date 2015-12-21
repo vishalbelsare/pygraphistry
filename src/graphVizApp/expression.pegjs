@@ -56,7 +56,7 @@
   }
 }
 
-start = Expression
+start = Term
 
 TypeName "type name"
   = STRING
@@ -83,9 +83,9 @@ CastExpression "cast"
 
 /*
 CASEListExpression
-  = first:WHEN __ SearchCondition
+  = first:WHEN __ Expression
   = first:(
-      WHEN __ condition:SearchCondition __ THEN __ result:SearchCondition {
+      WHEN __ condition:Expression __ THEN __ result:Expression {
         return [{
           type: 'CaseBranch',
           condition: condition,
@@ -94,7 +94,7 @@ CASEListExpression
       }
     )
     rest:(
-      __ WHEN __ condition:SearchCondition __ THEN __ result:SearchCondition {
+      __ WHEN __ condition:Expression __ THEN __ result:Expression {
         return {
           type: 'CaseBranch',
           condition: condition,
@@ -105,9 +105,9 @@ CASEListExpression
     { return [first].concat(rest); }
 
 CASEExpression
-  = CASE __ value:SearchCondition ?
+  = CASE __ value:Expression
     __ cases:CASEListExpression
-    ( __ ELSE __ elseClause:SearchCondition )? __ END
+    ( __ ELSE __ elseClause:Expression )? __ END
     {
       return {
         type: 'CaseExpression',
@@ -143,13 +143,13 @@ LimitClause "limit"
   = LIMIT __ limit:Expression
     { return { type: 'Limit', value: limit } }
 
-RowValueExpression
+Expression
   = ORExpression
 
 Predicate "WHERE clause"
-  = RowValueExpression
+  = Expression
 
-Expression
+Term
   = LimitClause
   / Predicate
 
@@ -167,12 +167,12 @@ LiteralValue "literal"
 
 ElementList
   = first:(
-      element:RowValueExpression {
+      element:Expression {
         return optionalList(element);
       }
     )
     rest:(
-      __ comma __ element:RowValueExpression {
+      __ comma __ element:Expression {
         return optionalList(element);
       }
     )*
