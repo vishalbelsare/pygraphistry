@@ -179,6 +179,9 @@ ExpressionCodeGenerator.prototype = {
             case 'NOT':
                 return '!';
             case 'IS':
+            case '!=':
+            case '<>':
+                return '!==';
             case '=':
             case '==':
                 return '===';
@@ -587,6 +590,7 @@ ExpressionCodeGenerator.prototype = {
                         throw Error('Operator not yet implemented: ' + ast.operator);
                 }
                 break;
+            case 'EqualityPredicate':
             case 'BinaryPredicate':
             case 'BinaryExpression':
                 // Maybe InExpression would be a better logic branch:
