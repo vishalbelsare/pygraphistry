@@ -149,18 +149,20 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
 
     appState.cameraChanges.combineLatest(
         appState.vboUpdates,
+        appState.isAnimating,
         latestHighlightedObject,
         appState.activeSelection,
         appState.poiIsEnabled,
-        function (camera, vboUpdates, highlighted, selection, poiIsEnabled) {
+        function (camera, vboUpdates, isAnimating, highlighted, selection, poiIsEnabled) {
             return {
                 highlighted: highlighted,
                 selection: selection,
-                poiIsEnabled: poiIsEnabled
+                poiIsEnabled: poiIsEnabled,
+                doneAnimating: !isAnimating
             };
         }
     ).do(function (toShow) {
-        renderLabels(appState, $labelCont, toShow.highlighted, toShow.selection, toShow.poiIsEnabled);
+        renderLabels(appState, $labelCont, toShow.highlighted, toShow.selection, toShow.doneAnimating, toShow.poiIsEnabled);
     })
     .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
 }
@@ -169,7 +171,7 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
 
 // AppState * $DOM * {dim:int, idx:int} * {dim:int, idx:int} -> ()
 // Immediately reposition each label based on camera and curPoints buffer
-function renderLabels(appState, $labelCont, highlighted, selected, poiIsEnabled) {
+function renderLabels(appState, $labelCont, highlighted, selected, doneAnimating, poiIsEnabled) {
     debug('rendering labels');
 
     // TODO: Simplify this so we don't have to have this separate call for getting
@@ -182,17 +184,16 @@ function renderLabels(appState, $labelCont, highlighted, selected, poiIsEnabled)
 
     curPoints.take(1)
         .do(function (curPoints) {
-            renderLabelsImmediate(appState, $labelCont, curPoints, highlighted, selected, poiIsEnabled);
+            renderLabelsImmediate(appState, $labelCont, curPoints, highlighted, selected, doneAnimating, poiIsEnabled);
         })
         .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
 }
 
-function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, selected, poiIsEnabled) {
+function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, selected, doneAnimating, poiIsEnabled) {
 
     // Trying to handle set highlight/selection, but badly:
     var elementsToExpand = selected.size() > 1 ? [] : selected.getVizSliceElements();
     var elementsToHighlight = highlighted.size() > 1 ? [] : highlighted.getVizSliceElements();
-
 
     var poi = appState.poi;
     var points = new Float32Array(curPoints.buffer);
@@ -200,7 +201,7 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, se
     // Get hits from POI if it's enabled, and add highlighted/selected after
     var hits = {};
     if (poiIsEnabled) {
-        hits = poi.getActiveApprox(appState.renderState, 'pointHitmapDownsampled', false);
+        hits = poi.getActiveApprox(appState.renderState, 'pointHitmapDownsampled', doneAnimating);
     }
 
     _.each([elementsToHighlight, elementsToExpand], function (set) {
