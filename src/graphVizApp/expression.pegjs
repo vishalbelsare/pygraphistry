@@ -146,12 +146,12 @@ LimitClause "limit"
 RowValueExpression
   = ORExpression
 
-SearchCondition "WHERE clause"
+Predicate "WHERE clause"
   = RowValueExpression
 
 Expression
   = LimitClause
-  / SearchCondition
+  / Predicate
 
 TimePseudoLiteral "now"
   = CURRENT_TIME / CURRENT_DATE / CURRENT_TIMESTAMP
@@ -225,7 +225,7 @@ PrimaryExpression
   / FunctionInvocation
   / Identifier
   / LiteralValue
-  / lparen __ expression:SearchCondition __ rparen { return expression; }
+  / lparen __ expression:Predicate __ rparen { return expression; }
   / ListLiteral
 
 DecimalDigit
