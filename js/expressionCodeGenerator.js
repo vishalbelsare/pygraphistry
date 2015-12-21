@@ -626,6 +626,14 @@ ExpressionCodeGenerator.prototype = {
                         // Wraps the object in a single-slot Array. This is the simplest interpretation but workable:
                         castValue = '[' + this.expressionStringForAST(value, bindings, depth + 1, this.precedenceOf('[')) + ']';
                         break;
+                    case 'date':
+                    case 'timestamp':
+                        // Should only accept a date string or the number of seconds since the epoch this way:
+                        castValue = 'new Date(' + this.expressionStringForAST(value, bindings, depth + 1, this.precedenceOf('(')) + ')';
+                        break;
+                    case 'time':
+                        castValue = 'new Date(' + this.expressionStringForAST(value, bindings, depth + 1, this.precedenceOf('(')) + ').getTime()';
+                        break;
                     default:
                         throw Error('Unrecognized type: ' + type_name);
                 }
