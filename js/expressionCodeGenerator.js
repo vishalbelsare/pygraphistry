@@ -631,31 +631,38 @@ ExpressionCodeGenerator.prototype = {
                 }
                 switch (type_name.toLowerCase()) {
                     case 'string':
-                        castValue = this.expressionStringForAST(value, bindings, depth2, this.precedenceOf('.')) + '.toString()';
+                        precedence = this.precedenceOf('.');
+                        castValue = this.expressionStringForAST(value, bindings, depth2, precedence) + '.toString()';
                         break;
                     case 'integer':
-                        castValue = 'parseInt(' + this.expressionStringForAST(value, bindings, depth2, this.precedenceOf('(')) + ')';
+                        precedence = this.precedenceOf('(');
+                        castValue = 'parseInt(' + this.expressionStringForAST(value, bindings, depth2, precedence) + ')';
                         break;
                     case 'number':
-                        castValue = 'Number(' + this.expressionStringForAST(value, bindings, depth2, this.precedenceOf('(')) + ')';
+                        precedence = this.precedenceOf('(');
+                        castValue = 'Number(' + this.expressionStringForAST(value, bindings, depth2, precedence) + ')';
                         break;
                     case 'boolean':
-                        castValue = '!!' + this.expressionStringForAST(value, bindings, depth2, this.precedenceOf('!'));
+                        precedence = this.precedenceOf('!');
+                        castValue = '!!' + this.expressionStringForAST(value, bindings, depth2, precedence);
                         break;
                     case 'null':
                         castValue = 'null';
                         break;
                     case 'array':
                         // Wraps the object in a single-slot Array. This is the simplest interpretation but workable:
-                        castValue = '[' + this.expressionStringForAST(value, bindings, depth2, this.precedenceOf('[')) + ']';
+                        precedence = this.precedenceOf('[');
+                        castValue = '[' + this.expressionStringForAST(value, bindings, depth2, precedence) + ']';
                         break;
                     case 'date':
                     case 'timestamp':
                         // Should only accept a date string or the number of seconds since the epoch this way:
-                        castValue = 'new Date(' + this.expressionStringForAST(value, bindings, depth2, this.precedenceOf('(')) + ')';
+                        precedence = this.precedenceOf('(');
+                        castValue = 'new Date(' + this.expressionStringForAST(value, bindings, depth2, precedence) + ')';
                         break;
                     case 'time':
-                        castValue = 'new Date(' + this.expressionStringForAST(value, bindings, depth2, this.precedenceOf('(')) + ').getTime()';
+                        precedence = this.precedenceOf('(');
+                        castValue = 'new Date(' + this.expressionStringForAST(value, bindings, depth2, precedence) + ').getTime()';
                         break;
                     default:
                         throw Error('Unrecognized type: ' + type_name);
