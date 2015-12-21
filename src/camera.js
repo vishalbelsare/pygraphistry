@@ -251,7 +251,7 @@
         // using alpha, which is a measure of how "big" a dataset is.
 
         // HACK so it always uses the first set numPoints.
-        if (!this.numPoints) {
+        if (this.numPoints === undefined) {
             this.numPoints = numPoints;
         }
         numPoints = this.numPoints;

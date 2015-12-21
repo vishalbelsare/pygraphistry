@@ -133,7 +133,6 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
 
     var toClear = [];
 
-
     var cnvCached = {width: cnv.width, height: cnv.height};
 
     _.values(activeLabels).forEach(function (lbl) {
@@ -223,6 +222,7 @@ function genLabel (instance, $labelCont, idx, info) {
             if (domTree) {
                 $elt.append(domTree);
             } else {
+                $elt[0].style.display = 'none';
                 $elt.empty();
             }
         })
@@ -252,7 +252,13 @@ function fetchLabel (instance, idx, dim) {
         if (labelCache === undefined) {
             console.warn('label cache entry not found', cacheKey(idx, dim));
         } else {
-            labelCache.onNext(createLabelDom(dim, data[0]));
+            // TODO: Represent this in a cleaner way from the server
+            if (!data[0].title) {
+                // Invalid label request
+                labelCache.onNext(false);
+            } else {
+                labelCache.onNext(createLabelDom(dim, data[0]));
+            }
         }
     });
 }
@@ -328,7 +334,10 @@ function getLabel(instance, data) {
 //instance * int -> ReplaySubject_1 ?DOM
 function getLabelDom (instance, data) {
    return getLabel(instance, data).map(function (l) {
-       return l.labelDOM;
+        if (!l) {
+            return l;
+        }
+        return l.labelDOM;
    });
 }
 
@@ -336,7 +345,10 @@ function getLabelDom (instance, data) {
 //instance * int -> ReplaySubject_1 LabelObject
 function getLabelObject (instance, data) {
    return getLabel(instance, data).map(function (l) {
-       return l.labelObj;
+        if (!l) {
+            return l;
+        }
+        return l.labelObj;
    });
 }
 
