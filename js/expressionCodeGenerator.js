@@ -616,6 +616,12 @@ ExpressionCodeGenerator.prototype = {
                     case 'number':
                         castValue = 'Number(' + this.expressionStringForAST(value, bindings, depth + 1, this.precedenceOf('(')) + ')';
                         break;
+                    case 'boolean':
+                        castValue = '!!' + this.expressionStringForAST(value, bindings, depth + 1, this.precedenceOf('!'));
+                        break;
+                    case 'null':
+                        castValue = 'null';
+                        break;
                     case 'array':
                         // Wraps the object in a single-slot Array. This is the simplest interpretation but workable:
                         castValue = '[' + this.expressionStringForAST(value, bindings, depth + 1, this.precedenceOf('[')) + ']';
