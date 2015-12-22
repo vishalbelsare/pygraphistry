@@ -120,7 +120,7 @@ function ExpressionEditor(targetElement) {
     this.editor = ace.edit(targetElement);
     this.editor.setTheme('ace/theme/chrome');
     this.editor.setOptions({
-        minLines: 2,
+        minLines: 1,
         maxLines: 4,
         wrap: true,
         enableBasicAutocompletion: true,
