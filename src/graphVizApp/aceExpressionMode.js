@@ -52,7 +52,7 @@ ace.define('ace/mode/graphistry_highlight_rules',
                 'constant.language.boolean': 'true|false',
                 'constant.language': 'null|Infinity|NaN',
                 'support.function': builtinFunctions,
-                'support.type': 'string|integer|array|number'
+                'support.type': 'string|integer|array|number|boolean|null|date|time|timestamp'
             }, 'identifier', true);
 
             this.$rules = {
