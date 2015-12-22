@@ -2,6 +2,11 @@
 
 var _ = require('underscore');
 
+var DimCodes = {
+    point: 1,
+    edge: 2
+};
+
 function pickTitleField (attribs, prioritized) {
     for (var i = 0; i < prioritized.length; i++) {
         var field = prioritized[i];
@@ -38,19 +43,23 @@ function presetLabels (labels, indices, range) {
 
 
 function getLabels(graph, indices, dim) {
-    var type = (dim === 2) ? 'edge' : 'point';
+    var type = _.findKey(DimCodes, function (dimCode) { return dimCode === dim; });
     var simulator = graph.simulator;
 
-    var pointLabels = simulator.dataframe.getLabels('point');
-    var edgeLabels = simulator.dataframe.getLabels('edge');
-
-    if (type === 'point' && pointLabels && pointLabels.length) {
-        return presetLabels(pointLabels, indices, simulator.timeSubset.pointsRange);
-    } else if (type === 'edge' && edgeLabels && edgeLabels.length) {
-        return presetLabels(edgeLabels, indices, simulator.timeSubset.edgeRange);
-    } else {
-        return defaultLabels(graph, indices, type);
+    var precomputedLabels = simulator.dataframe.getLabels(type);
+    if (precomputedLabels && precomputedLabels.length) {
+        var range;
+        switch (type) {
+            case 'point':
+                range = simulator.timeSubset.pointsRange;
+                break;
+            case 'edge':
+                range = simulator.timeSubset.edgeRange;
+                break;
+        }
+        return presetLabels(precomputedLabels, indices, range);
     }
+    return defaultLabels(graph, indices, type);
 }
 
 
