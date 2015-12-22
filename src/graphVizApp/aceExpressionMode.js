@@ -13,11 +13,12 @@ ace.define('ace/mode/graphistry_highlight_rules',
             var operatorKeywords = (
                 'between|and|or|not|in|' +
                 'is|isnull|notnull|' +
-                'like|ilike'
+                'like|ilike|regexp|similar|to|' +
+                'union|intersect'
             );
             var controlKeywords = (
-                'limit'
-                //'case|when|else|end|type'
+                'limit|' +
+                'case|when|if|then|else|end|type'
             );
 
             var identifierRe = '[a-zA-Z\\$_\u00a1-\uffff][a-zA-Z:\\d\\$_\u00a1-\uffff]*\\b';
@@ -40,8 +41,8 @@ ace.define('ace/mode/graphistry_highlight_rules',
                 'MAX|MIN|COALESCE|' +
                 'ABS|SIGN|TRUNC|FLOOR|CEIL|ROUND|' +
                 'LOG|LN|LOG2|LOG10|EXP|POW|' +
-                'SIN|COS|TAN|ASIN|ACOS|ATAN'
-                //'count|min|max|avg|sum|rank'
+                'SIN|COS|TAN|ASIN|ACOS|ATAN'/* +
+                'COUNT|COUNTDISTINCT|COUNTD|MIN|MAX|AVG|SUM|STDDEV|MEDIAN|RANK'*/
             );
 
             var keywordMapper = this.createKeywordMapper({
