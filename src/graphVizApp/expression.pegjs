@@ -710,12 +710,13 @@ BetweenPredicate
     }
 
 LikeOperator "text comparison"
-  = LIKE / ILIKE / NOT __ LIKE / NOT __ ILIKE
+  = LIKE / ILIKE
 
 LikePredicate "text comparison"
   = value:MemberAccess
     __ operator:LikeOperator __ like:MemberAccess __ ESCAPE escapeChar:StringLiteral
-    { return {
+    {
+      return {
         type: 'LikePredicate',
         operator: joinWords(operator),
         left: value,
@@ -725,16 +726,46 @@ LikePredicate "text comparison"
     }
   / value:MemberAccess
     __ operator:LikeOperator __ like:MemberAccess
-    { return {
+    {
+      return {
         type: 'LikePredicate',
         operator: joinWords(operator),
         left: value,
         right: like
       };
     }
+  / value:MemberAccess __ negation:NOT
+    __ operator:LikeOperator __ like:MemberAccess __ ESCAPE escapeChar:StringLiteral
+    {
+      return {
+        type: 'NotExpression',
+        operator: negation,
+        value: {
+          type: 'LikePredicate',
+          operator: joinWords(operator),
+          left: value,
+          right: like,
+          escapeChar: escapeChar
+        }
+      };
+    }
+  / value:MemberAccess __ negation:NOT
+    __ operator:LikeOperator __ like:MemberAccess
+    {
+      return {
+        type: 'NotExpression',
+        operator: negation,
+        value: {
+          type: 'LikePredicate',
+          operator: joinWords(operator),
+          left: value,
+          right: like
+        }
+      };
+    }
 
 RegexOperator
-  = REGEXP / SIMILAR __ TO / NOT __ REGEXP / NOT __ SIMILAR __ TO
+  = REGEXP / SIMILAR __ TO
 
 RegexPredicate "regex expression"
   = value:MemberAccess
@@ -745,6 +776,20 @@ RegexPredicate "regex expression"
         operator: joinWords(operator),
         left: value,
         right: matcher
+      };
+    }
+  / value:MemberAccess __ negation:NOT
+    __ operator:RegexOperator __ matcher:MemberAccess
+    {
+      return {
+        type: 'NotExpression',
+        operator: negation,
+        value: {
+          type: 'RegexPredicate',
+          operator: joinWords(operator),
+          left: value,
+          right: matcher
+        }
       };
     }
 
