@@ -528,6 +528,8 @@ ExpressionCodeGenerator.prototype = {
                         return {ast: ast, expr: this.expressionStringForAST(ast, bindings, depth2, outerPrecedence)};
                 }
                 break;
+            case 'ConditionalExpression':
+            case 'CaseExpression':
             case 'BetweenPredicate':
             case 'RegexPredicate':
             case 'LikePredicate':
