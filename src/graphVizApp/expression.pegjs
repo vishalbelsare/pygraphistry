@@ -224,7 +224,9 @@ Expression
   / ConditionalExpression
   / ORExpression
 
-Predicate "WHERE clause"
+// Syntactically, predicates and expressions are mixable.
+
+Predicate "predicate"
   = Expression
 
 Term
@@ -243,7 +245,7 @@ LiteralValue "literal"
   / BooleanLiteral
   / TimePseudoLiteral
 
-ElementList
+ElementList "elements"
   = first:(
       element:Expression {
         return optionalList(element);
@@ -256,7 +258,7 @@ ElementList
     )*
     { return Array.prototype.concat.apply(first, rest); }
 
-ListLiteral
+ListLiteral "list"
   = lparen __ rparen {
       return {
         type: 'ListExpression',
@@ -542,6 +544,8 @@ Keyword
   / NOT          !IdentifierPart
   / NOTNULL      !IdentifierPart
   / OR           !IdentifierPart
+  / REGEXP       !IdentifierPart
+  / SIMILAR      !IdentifierPart
   / THEN         !IdentifierPart
   / TO           !IdentifierPart
   / WHEN         !IdentifierPart
