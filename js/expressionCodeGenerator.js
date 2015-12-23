@@ -67,6 +67,9 @@ function propertyAccessExprStringFor (key) {
 var InputPropertiesByShape = {
     BetweenPredicate: ['start', 'stop', 'value'],
     BinaryExpression: ['left', 'right'],
+    CaseExpression: ['value', 'cases', 'elseClause'],
+    ConditionalExpression: ['cases', 'elseClause'],
+    CaseBranch: ['condition', 'result'],
     UnaryExpression: ['argument'],
     NotExpression: ['value'],
     ListExpression: ['elements'],
@@ -425,6 +428,33 @@ ExpressionCodeGenerator.prototype = {
         return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
     },
 
+    /**
+     * Turns conditional case ASTs into chained/nested ?: expressions.
+     * @param {ClientQueryAST[]} cases
+     * @param {ClientQueryAST} elseClause
+     * @param {Object} bindings
+     * @param {Number} depth
+     * @returns {string}
+     */
+    expressionForConditions: function (cases, elseClause, bindings, depth) {
+        var resultStr = '';
+        var precedence = this.precedenceOf('?:');
+        _.each(cases, function (caseExpr) {
+            var conditionArg = this.expressionStringForAST(caseExpr.condition, bindings, depth, precedence),
+                resultArg = this.expressionStringForAST(caseExpr.result, bindings, depth, precedence);
+            resultStr += conditionArg + ' ? ' + resultArg + ' : (';
+        }, this);
+        if (elseClause === undefined) {
+            resultStr += 'undefined';
+        } else {
+            resultStr += this.expressionStringForAST(elseClause, bindings, depth, precedence);
+        }
+        for (var i=0; i<cases.length; i++) {
+            resultStr += ')';
+        }
+        return resultStr;
+    },
+
     isPredicate: function (ast) {
         return _.isString(ast.type) && ast.type.endsWith('Predicate');
     },
@@ -443,6 +473,12 @@ ExpressionCodeGenerator.prototype = {
                 return InputPropertiesByShape.BinaryExpression;
             case 'UnaryExpression':
                 return InputPropertiesByShape.UnaryExpression;
+            case 'CaseExpression':
+                return InputPropertiesByShape.CaseExpression;
+            case 'ConditionalExpression':
+                return InputPropertiesByShape.ConditionalExpression;
+            case 'CaseBranch':
+                return InputPropertiesByShape.CaseBranch;
             case 'CastExpression':
             case 'NotExpression':
                 return InputPropertiesByShape.NotExpression;
@@ -672,6 +708,25 @@ ExpressionCodeGenerator.prototype = {
                         throw Error('Unrecognized type: ' + type_name);
                 }
                 return castValue;
+            case 'CaseExpression':
+                // Turns case statement into if statements.
+                var caseComparison = ast.value,
+                    cases = ast.cases;
+                if (caseComparison !== undefined) {
+                    cases = _.map(cases, function (caseAST) {
+                        return {
+                            type: 'EqualityPredicate',
+                            operator: '=',
+                            left: caseComparison,
+                            right: caseAST
+                        };
+                    });
+                }
+                return this.expressionForConditions(cases, ast.elseClause, bindings, depth2);
+            case 'ConditionalExpression':
+                return this.expressionForConditions(ast.cases, ast.elseClause, bindings, depth2);
+            case 'CaseBranch':
+                return this.expressionForConditions([ast], undefined, bindings, depth2);
             case 'Literal':
                 return literalExpressionFor(ast.value);
             case 'ListExpression':
