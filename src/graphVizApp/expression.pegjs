@@ -92,16 +92,14 @@ CastExpression "cast"
     };
   }
 
-/*
-CASEListExpression
-  = first:WHEN __ Expression
+CASEListExpression "cases"
   = first:(
       WHEN __ condition:Expression __ THEN __ result:Expression {
-        return [{
+        return {
           type: 'CaseBranch',
           condition: condition,
           result: result
-        }];
+        };
       }
     )
     rest:(
@@ -115,10 +113,29 @@ CASEListExpression
     )*
     { return [first].concat(rest); }
 
-CASEExpression
+CASEExpression "case"
   = CASE __ value:Expression
+    __ cases:CASEListExpression __ END
+    {
+      return {
+        type: 'CaseExpression',
+        value: value,
+        cases: cases,
+        elseClause: undefined
+      };
+    }
+  / CASE __ cases:CASEListExpression __ END
+    {
+      return {
+        type: 'CaseExpression',
+        value: undefined,
+        cases: cases,
+        elseClause: undefined
+      };
+    }
+  / CASE __ value:Expression
     __ cases:CASEListExpression
-    ( __ ELSE __ elseClause:Expression )? __ END
+    __ ELSE __ elseClause:Expression __ END
     {
       return {
         type: 'CaseExpression',
@@ -127,9 +144,58 @@ CASEExpression
         elseClause: elseClause
       };
     }
-*/
+  / CASE __ cases:CASEListExpression
+    __ ELSE __ elseClause:Expression __ END
+    {
+      return {
+        type: 'CaseExpression',
+        value: undefined,
+        cases: cases,
+        elseClause: elseClause
+      };
+    }
 
-NOTExpression
+ConditionalBranchExpression
+  = first:(
+    IF __ condition:Expression __ THEN __ result:Expression {
+      return {
+        type: 'CaseBranch',
+        condition: condition,
+        result: result
+      };
+    }
+  )
+  rest:(
+    __ ELSE __ IF __ condition:Expression __ THEN __ result:Expression {
+      return {
+        type: 'CaseBranch',
+        condition: condition,
+        result: result
+      };
+    }
+  )*
+  { return [first].concat(rest); }
+
+ConditionalExpression "conditional"
+  = cases:ConditionalBranchExpression __ END
+    {
+      return {
+        type: 'ConditionalExpression',
+        cases: cases,
+        elseClause: undefined
+      };
+    }
+  / cases:ConditionalBranchExpression
+    __ ELSE __ elseClause:Expression __ END
+    {
+      return {
+        type: 'ConditionalExpression',
+        cases: cases,
+        elseClause: elseClause
+      };
+    }
+
+NOTExpression "not"
   = operator:NOT __ argument:NOTExpression {
       return {
         type: 'NotExpression',
@@ -154,7 +220,9 @@ LimitClause "limit"
     { return { type: 'Limit', value: limit } }
 
 Expression
-  = ORExpression
+  = CASEExpression
+  / ConditionalExpression
+  / ORExpression
 
 Predicate "WHERE clause"
   = Expression

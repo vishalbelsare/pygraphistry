@@ -9,6 +9,12 @@ ace.define('ace/snippets/graphistry',
         exports.snippetText = '# CAST\n\
 snippet cast\n\
 	CAST(${1:expression} AS ${2:data_type})\n\
+# CASE\n\
+snippet case\n\
+	CASE ${1:expression} WHEN ${2:condition} THEN ${3:result} END\n\
+# IF\n\
+snippet if\n\
+	IF ${1:expression} THEN ${2:result} ELSE ${3:alternative} END\n\
 # IN\n\
 snippet in\n\
 	IN (${1:first}, ${2:next})\n\
