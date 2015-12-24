@@ -273,6 +273,10 @@ ExpressionCodeGenerator.prototype = {
                     return methodCall('Math', 'min', args);
                 }
                 return methodCall('Math', 'min', args);
+            case 'GREATEST':
+                return methodCall('Math', 'max', args);
+            case 'LEAST':
+                return methodCall('Math', 'min', args);
             // Unambiguously aggregate functions:
             case 'AVG':
             case 'AVERAGE':

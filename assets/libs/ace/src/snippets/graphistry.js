@@ -69,6 +69,12 @@ snippet max\n\
 # MIN\n\
 snippet min\n\
 	MIN(${1:first}, ${2:next})\n\
+# GREATEST\n\
+snippet greatest\n\
+	GREATEST(${1:first}, ${2:next})\n\
+# LEAST\n\
+snippet least\n\
+	LEAST(${1:first}, ${2:next})\n\
 # COALESCE\n\
 snippet coalesce\n\
 	COALESCE(${1:first}, ${2:next})\n\
