@@ -275,9 +275,19 @@ DataframeMask.prototype = {
 
     /**
      * @param {DataframeMask} other
+     */
+    assertSameDataframe: function (other) {
+        if (other.dataframe !== this.dataframe) {
+            throw new Error('Support for working with masks across dataframes is not yet implemented.');
+        }
+    },
+
+    /**
+     * @param {DataframeMask} other
      * @returns {DataframeMask}
      */
     union: function (other) {
+        this.assertSameDataframe(other);
         return new DataframeMask(this.dataframe,
             DataframeMask.unionOfTwoMasks(this.point, other.point),
             DataframeMask.unionOfTwoMasks(this.edge, other.edge));
@@ -288,6 +298,7 @@ DataframeMask.prototype = {
      * @returns {DataframeMask}
      */
     intersection: function (other) {
+        this.assertSameDataframe(other);
         return new DataframeMask(this.dataframe,
             DataframeMask.intersectionOfTwoMasks(this.point, other.point),
             DataframeMask.intersectionOfTwoMasks(this.edge, other.edge));
@@ -297,6 +308,7 @@ DataframeMask.prototype = {
      * @returns {DataframeMask}
      */
     complement: function () {
+        this.assertSameDataframe(other);
         return new DataframeMask(this.dataframe,
             DataframeMask.complementOfMask(this.point, this.dataframe.numPoints()),
             DataframeMask.complementOfMask(this.edge, this.dataframe.numEdges()));
@@ -307,6 +319,7 @@ DataframeMask.prototype = {
      * @returns {DataframeMask}
      */
     minus: function (other) {
+        this.assertSameDataframe(other);
         return new DataframeMask(this.dataframe,
             DataframeMask.minusMask(this.point, other.point),
             DataframeMask.minusMask(this.edge, other.edge));
