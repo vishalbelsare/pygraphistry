@@ -72,6 +72,9 @@ snippet min\n\
 # COALESCE\n\
 snippet coalesce\n\
 	COALESCE(${1:first}, ${2:next})\n\
+# NULLIF\n\
+snippet nullif\n\
+	NULLIF(${1:value}, ${2:nullSignifier})\n\
 ';
         exports.scope = 'graphistry';
 

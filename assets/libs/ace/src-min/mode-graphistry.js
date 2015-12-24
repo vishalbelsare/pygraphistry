@@ -38,7 +38,7 @@ ace.define('ace/mode/graphistry_highlight_rules',
                 'CONCAT|SPLIT|LOWER|UPPER|LEN|LENGTH|' +
                 'REPLACE|TRIM|LTRIM|RTRIM|' +
                 'INT|NUMBER|' +
-                'MAX|MIN|COALESCE|' +
+                'MAX|MIN|COALESCE|NULLIF|' +
                 'ABS|SIGN|TRUNC|FLOOR|CEIL|ROUND|' +
                 'LOG|LN|LOG2|LOG10|EXP|POW|' +
                 'SIN|COS|TAN|ASIN|ACOS|ATAN'/* +
