@@ -15,6 +15,28 @@ var GraphComponentTypes = ['point', 'edge'];
  */
 
 /**
+ * @param {Mask} sortedArray
+ * @param {Number} value
+ * @returns {Number}
+ */
+function indexOfInSorted(sortedArray, value) {
+    var low = 0,
+        high = sortedArray.length - 1,
+        mid;
+    while (low < high) {
+        mid = Math.floor((low + high) / 2);
+        if (sortedArray[mid] > value) {
+            high = mid - 1;
+        } else if (sortedArray[mid] < value) {
+            low = mid + 1;
+        } else {
+            return mid;
+        }
+    }
+    return -1;
+}
+
+/**
  * @param {Dataframe} dataframe
  * @param {Mask} pointIndexes Sorted list of indexes into the raw points data. If undefined, means all indexes.
  * @param {Mask} edgeIndexes Sorted list of indexes into the raw edges data. If undefined, means all indexes.
@@ -366,12 +388,12 @@ DataframeMask.prototype = {
         return this.typedIndexesForType('point');
     },
 
-    getEdgeIndex: function (index) {
-        return this.getIndexByType('edge', index);
-    },
-
-    getPointIndex: function (index) {
-        return this.getIndexByType('point', index);
+    contains: function (type, index) {
+        if (this[type] === undefined) {
+            return index > 0 && index < this.dataframe.numByType(type);
+        } else {
+            return indexOfInSorted(this[type], index) !== -1;
+        }
     },
 
     /**
