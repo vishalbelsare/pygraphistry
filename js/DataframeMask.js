@@ -219,6 +219,35 @@ DataframeMask.minusMask = function (x, y) {
     return result;
 };
 
+/**
+ * Returns the intersection of x and y, x-y, and y-x.
+ * @param {Mask} x
+ * @param {Mask} y
+ * @returns {Object.<Mask>}
+ */
+DataframeMask.diffMask = function (x, y) {
+    // Smallest results: full intersection and no output on each count.
+    var result = {xOnly: [], intersection: [], yOnly: []};
+    var xLength = x.length, yLength = y.length;
+    var xIndex = 0, yIndex = 0;
+    while (xIndex < xLength && yIndex < yLength) {
+        if (x[xIndex] < y[yIndex]) {
+            result.xOnly.push(x[xIndex++]);
+        } else if (y[yIndex] < x[xIndex]) {
+            result.yOnly.push(y[yIndex++]);
+        } else /* x[xIndex] === y[yIndex] */ {
+            result.intersection.push(y[yIndex++]);
+            xIndex++;
+        }
+    }
+    while (xIndex < xLength) {
+        result.xOnly.push(x[xIndex++]);
+    }
+    while (yIndex < yLength) {
+        result.yOnly.push(y[yIndex++]);
+    }
+    return result;
+};
 
 var OmittedProperties = ['dataframe'];
 
@@ -323,6 +352,19 @@ DataframeMask.prototype = {
         return new DataframeMask(this.dataframe,
             DataframeMask.minusMask(this.point, other.point),
             DataframeMask.minusMask(this.edge, other.edge));
+    },
+
+    /**
+     * @param {DataframeMask} other
+     * @returns {{dataframe: Dataframe, point: Object.<Mask>, edge: Object.<Mask>}}
+     */
+    diff: function (other) {
+        this.assertSameDataframe(other);
+        return {
+            dataframe: this.dataframe,
+            point: DataframeMask.diffMask(this.point, other.point),
+            edge: DataframeMask.diffMask(this.edge, other.edge)
+        };
     },
 
     /**
