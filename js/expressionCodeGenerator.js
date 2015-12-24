@@ -307,6 +307,22 @@ ExpressionCodeGenerator.prototype = {
                 return methodCall('Math', inputFunctionName.toLowerCase(), args);
             case 'LN':
                 return methodCall('Math', 'log', args);
+            case 'NULLIF':
+                // "NULLIF(A, B)" => "IF A = B THEN NULL ELSE A END"
+                return this.expressionStringForAST({
+                    type: 'ConditionalExpression',
+                    cases: [{
+                        type: 'CaseBranch',
+                        condition: {
+                            type: 'EqualityPredicate',
+                            operator: '=',
+                            left: args[0],
+                            right: args[1]
+                        },
+                        result: args[0]
+                    }],
+                    elseClause: args[1]
+                });
             case 'COALESCE':
                 return this.wrapSubExpressionPerPrecedences(args.join(' || '), this.precedenceOf('||'), outerPrecedence);
             default:
