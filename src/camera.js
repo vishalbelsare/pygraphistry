@@ -121,6 +121,45 @@
         this.edgeScaling = value;
     };
 
+    // Set Position given center x/y coord, plus optional width and height.
+    // Only X or Y are strictly necessary. Will compute using provided info,
+    // and will always maintain aspect ratio if possible.
+    // args{x, y, height, width} ->
+    Camera2d.prototype.setPosition = function (args) {
+        var centerX = args.x;
+        var centerY = args.y;
+        var height = args.height;
+        var width = args.width;
+
+        // Manual checks against undefined to see if we need to fallback;
+        if (centerX === undefined) {
+            centerX = this.center.x;
+        }
+
+        if (centerY === undefined) {
+            centerY = this.center.y;
+        }
+
+        var aspectRatio = this.width / this.height;
+
+        if (height === undefined && width === undefined) {
+            // Use existing height/width
+            height = this.height;
+            width = this.width;
+        } else if (height === undefined) {
+            height = width / aspectRatio;
+        } else if (width === undefined) {
+            width = height * aspectRatio;
+        }
+
+        this.width = width;
+        this.height = height;
+        this.center = {
+            x: centerX,
+            y: centerY
+        };
+    };
+
     Camera2d.prototype.centerOn = function(left, right, top, bottom) {
         // Add 10% for margins
         var nwidth = (right - left) * 1.1;

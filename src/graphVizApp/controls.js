@@ -522,6 +522,21 @@ function setupPanelControl (toolbarClicks, $panelButton, $panel, errorLogLabel) 
     return panelToggles;
 }
 
+function setupCameraApi (appState) {
+    var renderState = appState.renderState;
+    var renderingScheduler = appState.renderingScheduler;
+    var camera = renderState.get('camera');
+
+    appState.apiActions
+        .filter(function (e) { return e.event === 'updateCamera'; })
+        .do(function (e) {
+            console.log('RECIEVED API UPDATE CAMERA: ', e.cameraPosition);
+            camera.setPosition(e.cameraPosition);
+            renderingScheduler.renderScene('cameraApi', {trigger: 'renderSceneFast'});
+            appState.cameraChanges.onNext(camera);
+        }).subscribe(_.identity, util.makeErrorHandler('api update camera'));
+}
+
 
 function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     createLegend($('#graph-legend'), urlParams);
@@ -710,6 +725,8 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         .do(function (e) {
             setLocalSetting(e.setting, e.value, appState);
         }).subscribe(_.identity, util.makeErrorHandler('updateSetting'));
+
+    setupCameraApi(appState);
 }
 
 
