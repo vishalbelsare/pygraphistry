@@ -304,6 +304,7 @@ ExpressionCodeGenerator.prototype = {
             case 'ASIN':
             case 'ACOS':
             case 'ATAN':
+            case 'RANDOM':
                 return methodCall('Math', inputFunctionName.toLowerCase(), args);
             case 'LN':
                 return methodCall('Math', 'log', args);
