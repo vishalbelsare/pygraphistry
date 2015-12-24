@@ -174,6 +174,8 @@ DataframeMask.intersectionOfTwoMasks = function(x, y) {
  * @returns {Mask}
  */
 DataframeMask.complementOfMask = function(x, sizeOfUniverse) {
+    // Undefined means all, complement is empty:
+    if (x === undefined) { return []; }
     var xLength = x.length;
     // We know the exact length.
     var result = new Array(sizeOfUniverse - xLength);
@@ -196,9 +198,14 @@ DataframeMask.complementOfMask = function(x, sizeOfUniverse) {
  * Returns the intersection of the first mask and the complement of the second mask.
  * @param {Mask} x
  * @param {Mask} y
+ * @param {Number} sizeOfUniverse only needed when undefined might be passed
  * @returns {Mask}
  */
-DataframeMask.minusMask = function (x, y) {
+DataframeMask.minusMask = function (x, y, sizeOfUniverse) {
+    // The universe minus something is the complement:
+    if (x === undefined) { return DataframeMask.complementOfMask(y, sizeOfUniverse); }
+    // The complement of the universe is empty:
+    if (y === undefined) { return []; }
     var xLength = x.length, yLength = y.length;
     // Smallest result: full intersection and no output.
     var result = [];
@@ -350,8 +357,8 @@ DataframeMask.prototype = {
     minus: function (other) {
         this.assertSameDataframe(other);
         return new DataframeMask(this.dataframe,
-            DataframeMask.minusMask(this.point, other.point),
-            DataframeMask.minusMask(this.edge, other.edge));
+            DataframeMask.minusMask(this.point, other.point, this.dataframe.numPoints()),
+            DataframeMask.minusMask(this.edge, other.edge, this.dataframe.numEdges()));
     },
 
     /**
