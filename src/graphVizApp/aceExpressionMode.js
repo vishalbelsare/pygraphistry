@@ -11,9 +11,9 @@ ace.define('ace/mode/graphistry_highlight_rules',
         var GraphistryHighlightRules = function () {
 
             var operatorKeywords = (
-                'between|and|or|not|in|' +
+                'between|and|or|not|in|memberof|' +
                 'is|isnull|notnull|' +
-                'like|ilike|regexp|similar|to|' +
+                'like|ilike|regexp|similar|to|escape|' +
                 'union|intersect'
             );
             var controlKeywords = (

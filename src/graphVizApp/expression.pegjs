@@ -155,6 +155,17 @@ CASEExpression "case"
       };
     }
 
+MemberOfOperator =
+  IN / MEMBEROF
+
+MemberOfSetPredicate "in set"
+  = MemberOfOperator __ value:Expression {
+    return {
+      type: 'MemberOfExpression',
+      value: value
+    };
+  }
+
 ConditionalBranchExpression
   = first:(
     IF __ condition:Expression __ THEN __ result:Expression {
@@ -222,6 +233,7 @@ LimitClause "limit"
 Expression
   = CASEExpression
   / ConditionalExpression
+  / MemberOfSetPredicate
   / ORExpression
 
 // Syntactically, predicates and expressions are mixable.
@@ -296,6 +308,26 @@ FunctionInvocation "function call"
       type: 'FunctionCall',
       callee: callee,
       arguments: elements
+    };
+  }
+
+AggregateInvocation "aggregate invocations"
+  = callee:FunctionIdentifier __ OF __ argument:Expression __ PER __ partition:Expression
+  {
+    return {
+      type: 'AggregateInvocation',
+      callee: callee,
+      partition: partition,
+      argument: argument
+    };
+  }
+  / callee:FunctionIdentifier __ OF __ Expression
+  {
+    return {
+      type: 'AggregateInvocation',
+      callee: callee,
+      partition: undefined,
+      argument: argument
     };
   }
 
@@ -541,9 +573,12 @@ Keyword
   / IS           !IdentifierPart
   / ISNULL       !IdentifierPart
   / LIKE         !IdentifierPart
+  / MEMBEROF     !IdentifierPart
   / NOT          !IdentifierPart
   / NOTNULL      !IdentifierPart
+  / OF           !IdentifierPart
   / OR           !IdentifierPart
+  / PER          !IdentifierPart
   / REGEXP       !IdentifierPart
   / SIMILAR      !IdentifierPart
   / THEN         !IdentifierPart
@@ -735,7 +770,7 @@ LikeOperator "text comparison"
 
 LikePredicate "text comparison"
   = value:MemberAccess
-    __ operator:LikeOperator __ like:MemberAccess __ ESCAPE escapeChar:StringLiteral
+    __ operator:LikeOperator __ like:MemberAccess __ ESCAPE __ escapeChar:StringLiteral
     {
       return {
         type: 'LikePredicate',
@@ -756,7 +791,7 @@ LikePredicate "text comparison"
       };
     }
   / value:MemberAccess __ negation:NOT
-    __ operator:LikeOperator __ like:MemberAccess __ ESCAPE escapeChar:StringLiteral
+    __ operator:LikeOperator __ like:MemberAccess __ ESCAPE __ escapeChar:StringLiteral
     {
       return {
         type: 'NotExpression',
@@ -985,6 +1020,7 @@ LEFT = "LEFT"i
 LIKE = "LIKE"i
 LIMIT = "LIMIT"i
 MATCH = "MATCH"i
+MEMBEROF = "MEMBEROF"i
 NAN = "NaN"i
 NATURAL = "NATURAL"i
 NO = "NO"i
@@ -998,6 +1034,7 @@ ON = "ON"i
 OR = "OR"i
 ORDER = "ORDER"i
 OUTER = "OUTER"i
+PER = "PER"i
 PLAN = "PLAN"i
 PRAGMA = "PRAGMA"i
 PRIMARY = "PRIMARY"i
