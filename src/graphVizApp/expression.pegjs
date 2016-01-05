@@ -664,11 +664,8 @@ IsPredicate
     };
   }
 
-InOperator
-  = IN / NOT __ IN
-
 InPredicate
-  = left:MemberAccess __ operator:InOperator __ right:Expression {
+  = left:MemberAccess __ operator:IN __ right:Expression {
     return {
       type: 'BinaryPredicate',
       operator: joinWords(operator),
@@ -676,12 +673,36 @@ InPredicate
       right: right
     };
   }
-  / left:MemberAccess __ operator:InOperator __ lparen ( ( elements:ElementList comma __ )+ )? __ rparen {
+  / left:MemberAccess __ operator:IN __ lparen ( ( elements:ElementList comma __ )+ )? __ rparen {
     return {
       type: 'BinaryPredicate',
       operator: joinWords(operator),
       left: left,
       right: elements
+    };
+  }
+  / left:MemberAccess __ negation:NOT __ operator:IN __ right:Expression {
+    return {
+      type: 'NotExpression',
+      operator: negation,
+      value: {
+        type: 'BinaryPredicate',
+        operator: joinWords(operator),
+        left: left,
+        right: right
+      }
+    };
+  }
+  / left:MemberAccess __ negation:NOT __ operator:IN __ lparen ( ( elements:ElementList comma __ )+ )? __ rparen {
+    return {
+      type: 'NotExpression',
+      operator: negation,
+      value: {
+        type: 'BinaryPredicate',
+        operator: joinWords(operator),
+        left: left,
+        right: elements
+      }
     };
   }
 
