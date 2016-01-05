@@ -63,6 +63,8 @@ snippet find\n\
 # REPLACE\n\
 snippet replace\n\
 	REPLACE(${1:body}, ${2:substring}, ${3:replacement})\n\
+# SIMILAR\n\
+	SIMILAR TO "${1:regexp}"\n\
 # MAX\n\
 snippet max\n\
 	MAX(${1:first}, ${2:next})\n\
