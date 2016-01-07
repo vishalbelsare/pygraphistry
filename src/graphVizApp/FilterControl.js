@@ -65,10 +65,17 @@ FilterControl.prototype.namespaceMetadataObservable = function () {
     return this.namespaceMetadataSubject;
 };
 
-FilterControl.prototype.updateFilters = function (filterSet) {
-    this.updateFiltersRequests.onNext(filterSet);
+FilterControl.prototype.updateExclusions = function (exclusions) {
+    this.updateFiltersRequests.onNext({exclusions: exclusions});
     return this.filtersResponsesSubject;
 };
+
+FilterControl.prototype.updateFilters = function (filterStack) {
+    this.updateFiltersRequests.onNext({filters: filterStack});
+    return this.filtersResponsesSubject;
+};
+
+FilterControl.prototype.clearExclusions = function () { return this.updateExclusions([]); };
 
 FilterControl.prototype.clearFilters = function () { return this.updateFilters([]); };
 
