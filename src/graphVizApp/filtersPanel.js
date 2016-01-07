@@ -15,7 +15,7 @@ var util          = require('./util.js');
 
 var COLLAPSED_FILTER_HEIGHT = 80;
 
-var FilterModel = Backbone.Model.extend({
+var QuerySelectionModel = Backbone.Model.extend({
     defaults: {
         title: undefined,
         attribute: undefined,
@@ -23,9 +23,6 @@ var FilterModel = Backbone.Model.extend({
         controlType: undefined,
         enabled: true,
         query: undefined
-    },
-    isSystem: function () {
-        return this.get('level') === 'system';
     },
     placeholderQuery: function () {
         var result = {
@@ -105,6 +102,12 @@ var FilterModel = Backbone.Model.extend({
         if (!_.isEqual(query, this.get('query'))) {
             this.set('query', query);
         }
+    }
+});
+
+var FilterModel = QuerySelectionModel.extend({
+    isSystem: function () {
+        return this.get('level') === 'system';
     }
 });
 
