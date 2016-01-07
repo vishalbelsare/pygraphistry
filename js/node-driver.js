@@ -519,7 +519,8 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
                 uncompressed: uncompressed,
                 elements: elements,
                 bufferByteLengths:bufferByteLengths,
-                versions: versions
+                versions: versions,
+                tick: graph.simulator.versions.tick
             };
 
             extendDataVersions(bundledData, bufferVersions, graph);
