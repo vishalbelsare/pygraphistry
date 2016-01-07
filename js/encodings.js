@@ -1,7 +1,7 @@
 'use strict';
 
 var _        = require('underscore');
-var d3       = require('d3');
+var d3Scale  = require('d3-scale');
 
 var palettes = require('./palettes');
 
@@ -55,14 +55,14 @@ module.exports = {
             case 'pointSize':
                 if (summary.isQuantitative && !summary.isDiverging) {
                     // Square root because point size/radius yields a point area:
-                    scaling = d3.scale.sqrt()
+                    scaling = d3Scale.sqrt()
                         .domain(defaultDomain)
                         .range(defaults.pointSize.range);
                 }
                 break;
             case 'pointOpacity':
                 if (summary.isQuantitative && !summary.isDiverging) {
-                    scaling = d3.scale.linear()
+                    scaling = d3Scale.linear()
                         .domain(defaultDomain)
                         .range(defaults.pointOpacity.range);
                 }
@@ -70,25 +70,25 @@ module.exports = {
             case 'pointColor':
                 if (summary.isCategorical) {
                     if (summary.countDistinct <= 10) {
-                        scaling = d3.scale.category10()
+                        scaling = d3Scale.category10()
                             .domain(summary.distinctValues);
                     } else if (summary.countDistinct <= 20) {
-                        scaling = d3.scale.category20()
+                        scaling = d3Scale.category20()
                             .domain(summary.distinctValues);
                     } else {
                         // TODO ensure wraparound
-                        scaling = d3.scale.category20()
+                        scaling = d3Scale.category20()
                             .domain(summary.distinctValues);
                     }
                 }
                 if (scaling === undefined) {
                     if (summary.isOrdered) {
                         if (summary.isDiverging) {
-                            scaling = d3.scale.linear()
+                            scaling = d3Scale.linear()
                                 .domain(defaultDomain)
                                 .range(defaults.color.isQuantitative.diverging.range);
                         } else {
-                            scaling = d3.scale.linear()
+                            scaling = d3Scale.linear()
                                 .domain(defaultDomain)
                                 .range(defaults.color.isQuantitative.sequential.range);
                         }
@@ -101,7 +101,7 @@ module.exports = {
                 break;
             case 'edgeSize':
                 if (summary.isQuantitative && !summary.isDiverging) {
-                    scaling = d3.scale.linear()
+                    scaling = d3Scale.linear()
                         .domain(defaultDomain)
                         .range(defaults.edgeSize.range);
                 }
@@ -109,21 +109,21 @@ module.exports = {
             case 'edgeColor':
                 if (summary.isCategorical) {
                     if (summary.countDistinct < 10) {
-                        scaling = d3.scale.category10()
+                        scaling = d3Scale.category10()
                             .domain(summary.distinctValues);
                     } else if (summary.countDistinct < 20) {
-                        scaling = d3.scale.category20()
+                        scaling = d3Scale.category20()
                             .domain(summary.distinctValues);
                     }
                 }
                 if (scaling === undefined) {
                     if (summary.isOrdered) {
                         if (summary.isDiverging) {
-                            scaling = d3.scale.linear()
+                            scaling = d3Scale.linear()
                                 .domain(defaultDomain)
                                 .range(defaults.color.isQuantitative.diverging.range);
                         } else {
-                            scaling = d3.scale.linear()
+                            scaling = d3Scale.linear()
                                 .domain(defaultDomain)
                                 .range(defaults.color.isQuantitative.sequential.range);
                         }
@@ -132,7 +132,7 @@ module.exports = {
                 break;
             case 'edgeOpacity':
                 if (summary.isQuantitative && !summary.isDiverging) {
-                    scaling = d3.scale.linear()
+                    scaling = d3Scale.linear()
                         .domain(defaultDomain)
                         .range(defaults.edgeOpacity.range);
                 }
