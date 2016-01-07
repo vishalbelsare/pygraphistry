@@ -137,9 +137,16 @@ HistogramBrush.prototype.setupMarqueeInteraction = function(marquee) {
             }
         });
         var attributes = _.map(attributeNames, function (name) {
+            var normalizedName = name,
+                dataType = data.globalStats.histograms[name].dataType;
+            if (normalizedName.indexOf(':') !== -1) {
+                var nameParts = normalizedName.split(':', 2);
+                normalizedName = nameParts[1];
+                dataType = nameParts[0];
+            }
             return {
-                name: name,
-                type: data.globalStats.histograms[name].dataType
+                name: normalizedName,
+                type: dataType
             };
         });
 
@@ -259,15 +266,28 @@ HistogramBrush.prototype.aggregatePointsAndEdges = function(params) {
         this.aggregationCommand.sendWithObservableResult(_.extend({}, params, {type: 'edge'})),
         function (pointHists, edgeHists) {
 
-            _.each(pointHists.data, function (val) {
+            // Disambiguate column names present on both points and edges:
+            var pointHistsData = pointHists.data || {},
+                edgeHistsData = edgeHists.data || {};
+            _.each(_.keys(edgeHistsData), function (columnName) {
+                if (pointHistsData.hasOwnProperty(columnName)) {
+                    var pointColumnName = 'point:' + columnName;
+                    pointHistsData[pointColumnName] = pointHistsData[columnName];
+                    delete pointHistsData[columnName];
+                    var edgeColumnName = 'edge:' + columnName;
+                    edgeHistsData[edgeColumnName] = edgeHistsData[columnName];
+                    delete edgeHistsData[columnName];
+                }
+            });
+            _.each(pointHistsData, function (val) {
                 val.dataType = 'point';
             });
-            _.each(edgeHists.data, function (val) {
+            _.each(edgeHistsData, function (val) {
                 val.dataType = 'edge';
             });
 
             return {success: pointHists.success && edgeHists.success,
-                    data: _.extend({}, pointHists.data || {}, edgeHists.data || {})};
+                    data: _.extend({}, pointHistsData, edgeHistsData)};
         });
 };
 

@@ -59,7 +59,40 @@ var marginSparklines = {top: 15, right: 10, bottom: 15, left: 10};
 //////////////////////////////////////////////////////////////////////////////
 
 // Setup Backbone for the brushing histogram
-var HistogramModel = Backbone.Model.extend({});
+var HistogramModel = Backbone.Model.extend({
+    getHistogramData: function (attributeName, type) {
+        if (attributeName === undefined) {
+            attributeName = this.get('attribute');
+        }
+        if (type === undefined) {
+            type = this.get('type');
+        }
+        var histogramsByName = this.get('globalStats').histograms;
+        if (histogramsByName.hasOwnProperty(attributeName)) {
+            return histogramsByName[attributeName];
+        } else if (type !== undefined) {
+            return histogramsByName[type + ':' + attributeName];
+        } else if (histogramsByName.hasOwnProperty('point:' + attributeName)) {
+            return histogramsByName['point:' + attributeName];
+        } else {
+            return histogramsByName['edge:' + attributeName];
+        }
+    },
+    getSparkLineData: function () {
+        var sparkLinesByName = this.get('globalStats').sparkLines,
+            attributeName = this.get('attribute'),
+            type = this.get('type');
+        if (sparkLinesByName.hasOwnProperty(attributeName)) {
+            return sparkLinesByName[attributeName];
+        } else if (type !== undefined) {
+            return sparkLinesByName[type + ':' + attributeName];
+        } else if (sparkLinesByName.hasOwnProperty('point:' + attributeName)) {
+            return sparkLinesByName['point:' + attributeName];
+        } else {
+            return sparkLinesByName['edge:' + attributeName];
+        }
+    }
+});
 
 var HistogramCollection = Backbone.Collection.extend({
     model: HistogramModel,
@@ -113,7 +146,7 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             this.listenTo(this.model, 'change:encodingType', this.render);
             var params = {
                 fields: attributes,
-                attribute: this.model.attributes.attribute,
+                attribute: this.model.get('attribute'),
                 modelId: this.model.cid,
                 id: this.cid
             };
@@ -122,6 +155,7 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             this.$el.html(html);
             this.$el.attr('cid', this.cid);
         },
+
         render: function () {
             // TODO: Wrap updates into render
             var histogram = this.model;
@@ -148,7 +182,8 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
                 initializeSparklineViz(vizContainer, histogram); // TODO: Link to data?
                 panel.updateSparkline(vizContainer, histogram, attribute);
             } else {
-                vizHeight = histogram.get('globalStats').histograms[attribute].numBins * BAR_THICKNESS + margin.top + margin.bottom;
+                var histogramData = histogram.getHistogramData();
+                vizHeight = histogramData.numBins * BAR_THICKNESS + margin.top + margin.bottom;
                 vizContainer.height(String(vizHeight) + 'px');
                 initializeHistogramViz(vizContainer, histogram); // TODO: Link to data?
                 panel.updateHistogram(vizContainer, histogram, attribute);
@@ -162,7 +197,7 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             if ($('.beta').hasClass('beta')) { return; }
             var isEncoded = this.model.get('encodingType') !== undefined;
             var dataframeAttribute = this.model.get('attribute');
-            var binning = this.model.get('globalStats').sparkLines[dataframeAttribute];
+            var binning = this.model.getSparkLineData();
             panel.encodeAttribute(dataframeAttribute, isEncoded, binning).take(1).do(function (response) {
                 if (response.enabled) {
                     panel.assignEncodingTypeToHistogram(response.encodingType, this.model, response.palette);
@@ -197,7 +232,7 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             var vizContainer = this.model.get('vizContainer');
             var attribute = this.model.get('attribute');
             var d3Data = this.model.get('d3Data');
-            var histogram = this.model.get('globalStats').histograms[attribute];
+            var histogram = this.model.getHistogramData();
             var numBins = (histogram.type === 'countBy') ? Math.min(NUM_COUNTBY_HISTOGRAM, histogram.numBins) : histogram.numBins;
             var vizHeight = numBins * BAR_THICKNESS + margin.top + margin.bottom;
             d3Data.svg.selectAll('*').remove();
@@ -314,7 +349,7 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             view.render();
         },
         removeHistogram: function (histogram) {
-            panel.updateAttribute(histogram.attributes.attribute);
+            panel.updateAttribute(histogram.get('attribute'));
         },
         addHistogramFromDropdown: function (evt) {
             var attribute = $(evt.currentTarget).text().trim();
@@ -635,8 +670,8 @@ HistogramsPanel.prototype.highlight = function (selection, toggle) {
 HistogramsPanel.prototype.updateHistogram = function ($el, model, attribute) {
     var height = $el.height() - margin.top - margin.bottom;
     var width = $el.width() - margin.left - margin.right;
-    var data = model.attributes.data;
-    var globalStats = model.attributes.globalStats.histograms[attribute];
+    var data = model.get('data');
+    var globalStats = model.getHistogramData(attribute);
     var bins = data.bins || []; // Guard against empty bins.
     var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
     var d3Data = model.get('d3Data');
@@ -701,9 +736,9 @@ HistogramsPanel.prototype.updateHistogram = function ($el, model, attribute) {
 HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     var width = $el.width() - marginSparklines.left - marginSparklines.right;
     var height = $el.height() - marginSparklines.top - marginSparklines.bottom;
-    var data = model.attributes.data;
+    var data = model.get('data');
     var id = model.cid;
-    var globalStats = model.attributes.globalStats.sparkLines[attribute];
+    var globalStats = model.getSparkLineData();
     var bins = data.bins || []; // Guard against empty bins.
     var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
     var d3Data = model.get('d3Data');
@@ -818,7 +853,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
             .attr('fill', updateColumnColor)
             .attr('opacity', updateOpacity)
             .style('cursor', updateCursor)
-            .on('mousedown', this.handleHistogramDown.bind(this, filterRedrawCallback, id, model.attributes.globalStats))
+            .on('mousedown', this.handleHistogramDown.bind(this, filterRedrawCallback, id, model.get('globalStats')))
             .on('mouseover', this.toggleTooltips.bind(this, true, svg))
             .on('mouseout', this.toggleTooltips.bind(this, false, svg));
 
@@ -1083,10 +1118,10 @@ function prettyPrint (d, attributeName, noLimit) {
 function initializeHistogramViz($el, model) {
     var width = $el.width();
     var height = $el.height(); // TODO: Get this more naturally.
-    var data = model.attributes.data;
+    var data = model.get('data');
     var id = model.cid;
-    var attribute = model.attributes.attribute;
-    var globalStats = model.attributes.globalStats.histograms[attribute];
+    var attribute = model.get('attribute');
+    var globalStats = model.getHistogramData();
     var name = model.get('attribute');
     var bins = data.bins || []; // Guard against empty bins.
     var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
@@ -1160,9 +1195,9 @@ function initializeHistogramViz($el, model) {
 function initializeSparklineViz($el, model) {
     var width = $el.width();
     var height = $el.height();
-    var data = model.attributes.data;
-    var attribute = model.attributes.attribute;
-    var globalStats = model.attributes.globalStats.sparkLines[attribute];
+    var data = model.get('data');
+    var attribute = model.get('attribute');
+    var globalStats = model.getSparkLineData();
     var bins = data.bins || []; // Guard against empty bins.
     var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
     var d3Data = model.get('d3Data');
