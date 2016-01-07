@@ -300,6 +300,10 @@ DataframeMask.prototype = {
         return this.numByType('edge');
     },
 
+    maskSize: function () {
+        return {point: this.numPoints(), edge: this.numEdges()};
+    },
+
     limitNumByTypeTo: function (type, limit) {
         if (limit >= this.numByType(type)) { return; }
         if (this[type] === undefined) {
