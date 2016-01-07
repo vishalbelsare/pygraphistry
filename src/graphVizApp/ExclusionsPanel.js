@@ -14,97 +14,48 @@ var ExpressionEditor    = require('./expressionEditor.js');
 var util          = require('./util.js');
 
 
-var COLLAPSED_FILTER_HEIGHT = 80;
+var COLLAPSED_EXCLUSION_HEIGHT = 80;
 
 
-var FilterModel = QuerySelectionModel.extend({
-    isSystem: function () {
-        return this.get('level') === 'system';
-    }
+var ExclusionModel = QuerySelectionModel.extend({
 });
 
-var FilterCollection = Backbone.Collection.extend({
-    model: FilterModel,
+var ExclusionCollection = Backbone.Collection.extend({
+    model: ExclusionModel,
     control: undefined,
     namespaceMetadata: undefined,
-    addFilter: function(attributes) {
+    addExclusion: function(attributes) {
         if (!attributes.title) {
             attributes.title = attributes.attribute;
         }
-        var newFilter = new FilterModel(attributes);
-        this.push(newFilter);
+        var newExclusion = new ExclusionModel(attributes);
+        this.push(newExclusion);
     }
 });
 
-/**
- * This is not the underlying data type but the logical type for the query.
- * @type {Array.<{name: String, value: String}>}
- */
-var DataTypes = [
-    {value: 'string', name: 'String'},
-    {value: 'number', name: 'Numeric'}, // decimal
-    {value: 'float', name: 'Float'},
-    {value: 'date', name: 'Date'},
-    {value: 'datetime', name: 'Date and Time'},
-    {value: 'boolean', name: 'Boolean'},
-    {value: 'categorical', name: 'Categorical'}
-];
-
-/**
- * What kinds of controls can be selected at top-level (then configured/styled).
- * TODO make these parametric or hierarchical.
- * @type {Array.<{name: String, value: String}>}
- */
-var FilterControlTypes = [
-    {value: 'select', name: 'Select'},
-    // Might include All and/or None:
-    {value: 'multiselect', name: 'Multi-Select'},
-    // Single vs double-bounded range:
-    {value: 'range', name: 'Range'},
-    // Continuous vs discrete slider:
-    {value: 'slider', name: 'Slider'},
-    {value: 'histogram', name: 'Histogram'},
-    {value: 'calendar', name: 'Calendar'},
-    // Role of text (substring vs prefix or blob).
-    {value: 'text', name: 'Text'}
-];
-
-var FilterView = Backbone.View.extend({
+var ExclusionView = Backbone.View.extend({
     tagName: 'div',
-    className: 'filterInspector',
+    className: 'exclusionInspector',
     events: {
-        'click .disableFilterButton': 'disable',
-        'click .disabledFilterButton': 'enable',
-        'click .expandFilterButton': 'expand',
-        'click .expendedFilterButton': 'shrink',
-        'click .deleteFilterButton': 'delete',
-        'change textarea.filterExpression': 'updateQuery'
+        'click .disableExclusionButton': 'disable',
+        'click .disabledExclusionButton': 'enable',
+        'click .expandExclusionButton': 'expand',
+        'click .expendedExclusionButton': 'shrink',
+        'click .deleteExclusionButton': 'delete',
+        'change textarea.exclusionExpression': 'updateQuery'
     },
 
     initialize: function (options) {
         this.control = options.control;
         this.listenTo(this.model, 'destroy', this.remove);
-        this.template = Handlebars.compile($('#filterTemplate').html());
+        this.template = Handlebars.compile($('#exclusionTemplate').html());
     },
     render: function () {
         var bindings = {
             model: _.extend({
-                    placeholder: this.control.queryToExpression(this.model.placeholderQuery()),
-                    isSystem: this.model.isSystem() || undefined
+                    placeholder: this.control.queryToExpression(this.model.placeholderQuery())
                 },
-                this.model.toJSON()),
-            dataTypes: _.map(DataTypes, function (dataType) {
-                if (dataType.value === this.model.get('dataType')) {
-                    return _.extend({selected: true}, dataType);
-                }
-                return dataType;
-            }, this),
-            controlTypes: _.map(FilterControlTypes, function (controlType) {
-                if (controlType.value === this.model.get('controlType')) {
-                    return _.extend({selected: true}, controlType);
-                }
-                return controlType;
-            }, this)
+                this.model.toJSON())
         };
         var html = this.template(bindings);
         this.$el.html(html);
@@ -115,7 +66,7 @@ var FilterView = Backbone.View.extend({
     initEditor: function () {
         if (this.editor !== undefined) { return; }
 
-        this.$expressionArea = this.$('.filterExpression');
+        this.$expressionArea = this.$('.exclusionExpression');
 
         this.editor = new ExpressionEditor(this.$expressionArea[0]);
         var readOnly = this.model.get('controlType') !== undefined;
@@ -170,7 +121,7 @@ var FilterView = Backbone.View.extend({
         }
         this.editor.clearAnnotationsAndMarkers();
         if (annotation === undefined) {
-            this.$expressionArea.attr('title', 'Filter expression');
+            this.$expressionArea.attr('title', 'Exclusion expression');
         } else {
             this.$expressionArea.attr('title', annotation.text);
             this.editor.session.setAnnotations([annotation]);
@@ -182,7 +133,7 @@ var FilterView = Backbone.View.extend({
     },
     disable: function (event) {
         var $button = $(event.target);
-        $button.removeClass('disableFilterButton').addClass('disabledFilterButton');
+        $button.removeClass('disableExclusionButton').addClass('disabledExclusionButton');
         $button.removeClass('fa-toggle-on').addClass('fa-toggle-off');
         $button.attr('title', 'Disabled');
         $('input', this.$el).attr('disabled');
@@ -192,7 +143,7 @@ var FilterView = Backbone.View.extend({
     },
     enable: function (event) {
         var $button = $(event.target);
-        $button.removeClass('disabledFilterButton').addClass('disableFilterButton');
+        $button.removeClass('disabledExclusionButton').addClass('disableExclusionButton');
         $button.removeClass('fa-toggle-off').addClass('fa-toggle-on');
         $button.attr('title', 'Enabled');
         $('input', this.$el).removeAttr('disabled');
@@ -201,131 +152,116 @@ var FilterView = Backbone.View.extend({
         this.model.set('enabled', true);
     },
     expand: function (event) {
-        $(event.target).removeClass('expandFilterButton').addClass('expandedFilterButton');
+        $(event.target).removeClass('expandExclusionButton').addClass('expandedExclusionButton');
     },
     shrink: function (event) {
-        $(event.target).removeClass('expandedFilterButton').addClass('expandFilterButton');
-        this.$el.css('height', COLLAPSED_FILTER_HEIGHT);
+        $(event.target).removeClass('expandedExclusionButton').addClass('expandExclusionButton');
+        this.$el.css('height', COLLAPSED_EXCLUSION_HEIGHT);
     }
 });
 
-var AllFiltersView = Backbone.View.extend({
+var AllExclusionsView = Backbone.View.extend({
     events: {
-        'click .addFilterDropdownField': 'addFilterFromDropdown'
+        'click .addExclusionButton': 'addExclusionFromButton'
     },
     initialize: function (options) {
         this.control = options.control;
-        this.listenTo(this.collection, 'add', this.addFilter);
-        this.listenTo(this.collection, 'remove', this.removeFilter);
+        this.listenTo(this.collection, 'add', this.addExclusion);
+        this.listenTo(this.collection, 'remove', this.removeExclusion);
         this.listenTo(this.collection, 'reset', this.refresh);
         this.listenTo(this.collection, 'all', this.render);
 
         this.el = options.el;
-        this.filtersContainer = $('#filters');
+        this.exclusionsContainer = $('#exclusions');
 
-        this.collection.each(this.addFilter, this);
+        this.collection.each(this.addExclusion, this);
     },
     render: function () {
-        var $filterButton = $('#filterButton');
+        var $exclusionButton = $('#exclusionButton');
         var numElements = this.collection.length;
-        $('.badge', $filterButton).text(numElements > 0 ? numElements : '');
+        $('.badge', $exclusionButton).text(numElements > 0 ? numElements : '');
         return this;
     },
-    addFilter: function (filter) {
-        var view = new FilterView({
-            model: filter,
+    addExclusion: function (exclusion) {
+        var view = new ExclusionView({
+            model: exclusion,
             collection: this.collection,
             control: this.control
         });
         var childElement = view.render().el;
-        // var dataframeAttribute = filter.get('attribute');
-        this.filtersContainer.append(childElement);
-        filter.set('$el', $(childElement));
+        // var dataframeAttribute = exclusion.get('attribute');
+        this.exclusionsContainer.append(childElement);
+        exclusion.set('$el', $(childElement));
     },
-    removeFilter: function (filter) {
-        var $el = filter.get('$el');
+    removeExclusion: function (exclusion) {
+        var $el = exclusion.get('$el');
         if ($el) {
             $el.remove();
         }
     },
-    addFilterFromDropdown: function (evt) {
-        var $target = $(evt.currentTarget);
-        var attributes = {};
-        // Preferred route, just get the data:
-        if ($target.data('attributes') !== undefined) {
-            attributes = _.clone($target.data('attributes'));
-            // TODO: Schema fix-up, need to re-examine:
-            attributes.attribute = attributes.name;
-        } else {
-            // Fallback: parse!
-            var attribute = $target.text().trim();
-            var parts = attribute.match(/^(?:([-A-z_]+):)?([^()]+)(?:[ ]+\(.+\))?$/);
-            attributes.attribute = attribute;
-            attributes.type = parts[1] || 'point';
-            attributes.attribute = attributes.type + ':' + parts[2];
-            if (parts.length > 3) {
-                attributes.dataType = parts[3];
-            }
-        }
-        this.collection.addFilter(attributes);
+    addExclusionFromButton: function (evt) {
+        this.collection.addExclusion({});
     },
     remove: function () {
         this.combinedSubscription.dispose();
     },
     /** Recreates the UI; do not call during interactions. */
     refresh: function () {
-        this.filtersContainer.empty();
-        this.collection.each(this.addFilter, this);
+        this.exclusionsContainer.empty();
+        this.collection.each(this.addExclusion, this);
     }
 });
 
-// Used to attach attributes to Add Filter dropdown:
+// Used to attach attributes to Add Exclusion dropdown:
 Handlebars.registerHelper('json', function(context) {
     return JSON.stringify(context);
 });
 
 
-function FiltersPanel(socket/*, urlParams*/) {
-    //var $button = $('#filterButton');
+function ExclusionsPanel(socket, control) {
+    //var $button = $('#exclusionButton');
 
-    this.control = new FilterControl(socket);
+    if (control === undefined) {
+        control = new FilterControl(socket);
+    }
+    this.control = control;
 
     var that = this;
-    this.control.filtersResponsesSubject.take(1).do(function (filters) {
-        _.each(filters, function (filter) {
-            that.collection.add(new FilterModel(filter));
+    this.control.exclusionsResponsesSubject.take(1).do(function (exclusions) {
+        _.each(exclusions, function (exclusion) {
+            that.collection.add(new ExclusionModel(exclusion));
         });
-    }).subscribe(_.identity, util.makeErrorHandler('Reading filters from workbook'));
-    this.collection = new FilterCollection([], {
+    }).subscribe(_.identity, util.makeErrorHandler('Reading exclusions from workbook'));
+    this.collection = new ExclusionCollection([], {
         control: this.control
     });
 
-    this.model = FilterModel;
+    this.model = ExclusionModel;
 
-    /** Exposes changes to the FilterCollection. */
-    this.filtersSubject = new Rx.ReplaySubject(1);
-    // Seed with a fresh filters list. Should come from persisted state.
+    /** Exposes changes to the ExclusionCollection. */
+    this.exclusionsSubject = new Rx.ReplaySubject(1);
+    // Seed with a fresh exclusions list. Should come from persisted state.
     this.collection.on('change reset add remove', function (/*model, options*/) {
-        that.filtersSubject.onNext(that.collection);
+        that.exclusionsSubject.onNext(that.collection);
     });
 
-    this.filtersSubject.subscribe(
+    this.exclusionsSubject.subscribe(
         function (collection) {
-            that.control.updateFilters(collection.map(function (model) {
+            that.control.updateExclusions(collection.map(function (model) {
                 return _.omit(model.toJSON(), '$el');
             }));
         },
-        util.makeErrorHandler('updateFilters on filters change event')
+        util.makeErrorHandler('updateExclusions on exclusions change event')
     );
 
     var namespaceMetadataObservable = this.control.namespaceMetadataObservable();
     this.combinedSubscription = namespaceMetadataObservable.combineLatest(
-        this.filtersSubject,
+        this.exclusionsSubject,
         function (dfa, fs) {
-            return {dataframeAttributes: dfa, filterSet: fs};
+            return {dataframeAttributes: dfa, exclusionSet: fs};
         }).do(function (data) {
-            // Setup add filter button.
-            var addFilterTemplate = Handlebars.compile($('#addFilterTemplate').html());
+            // Setup add exclusion button.
+            var addExclusionTemplate = Handlebars.compile($('#addExclusionTemplate').html());
             // TODO flatten the namespace into selectable elements:
             var fields = [];
             _.each(data.dataframeAttributes, function (columns, typeName) {
@@ -339,28 +275,28 @@ function FiltersPanel(socket/*, urlParams*/) {
                 });
             });
             var params = {fields: fields};
-            var html = addFilterTemplate(params);
-            $('#addFilter').html(html);
+            var html = addExclusionTemplate(params);
+            $('#addExclusion').html(html);
         }).subscribe(_.identity, function (err) {
-            console.log('Error updating Add Filter', err);
+            console.log('Error updating Add Exclusion', err);
         });
 
-    this.view = new AllFiltersView({
+    this.view = new AllExclusionsView({
         collection: this.collection,
         control: this.control,
-        el: $('#filtersPanel')
+        el: $('#exclusionsPanel')
     });
 }
 
-FiltersPanel.prototype.isVisible = function () { return this.view.$el.is(':visible'); };
+ExclusionsPanel.prototype.isVisible = function () { return this.view.$el.is(':visible'); };
 
-FiltersPanel.prototype.toggleVisibility = function (newVisibility) {
+ExclusionsPanel.prototype.toggleVisibility = function (newVisibility) {
     var $panel = this.view.el;
     $panel.toggle(newVisibility);
     $panel.css('visibility', newVisibility ? 'visible': 'hidden');
 };
 
-FiltersPanel.prototype.setupToggleControl = function (toolbarClicks, $panelButton) {
+ExclusionsPanel.prototype.setupToggleControl = function (toolbarClicks, $panelButton) {
     var panelToggles = toolbarClicks.filter(function (elt) {
         return elt === $panelButton[0];
     }).map(function () {
@@ -370,13 +306,13 @@ FiltersPanel.prototype.setupToggleControl = function (toolbarClicks, $panelButto
     this.togglesSubscription = panelToggles.do(function (newVisibility) {
         $panelButton.children('i').toggleClass('toggle-on', newVisibility);
         this.toggleVisibility(newVisibility);
-    }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Turning on/off the filter panel'));
+    }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Turning on/off the exclusion panel'));
 };
 
-FiltersPanel.prototype.dispose = function () {
-    this.filtersSubject.dispose();
+ExclusionsPanel.prototype.dispose = function () {
+    this.exclusionsSubject.dispose();
     this.togglesSubscription.dispose();
 };
 
 
-module.exports = FiltersPanel;
+module.exports = ExclusionsPanel;
