@@ -29,7 +29,14 @@ var ExclusionCollection = Backbone.Collection.extend({
             attributes.title = attributes.attribute;
         }
         var newExclusion = new ExclusionModel(attributes);
-        this.push(newExclusion);
+        var match = this.find(function (exclusion) {
+            return _.isEqual(newExclusion.get('query'), exclusion.get('query'));
+        });
+        if (match === undefined) {
+            this.push(newExclusion);
+        } else {
+            match.set('enabled', true);
+        }
     }
 });
 
@@ -232,7 +239,7 @@ function ExclusionsPanel(socket, control, labelRequests) {
         return labelRequest.exclude_query !== undefined;
     }).do(function (labelRequest) {
         var exclusion = labelRequest.exclude_query;
-        that.collection.add(new ExclusionModel(exclusion));
+        that.collection.addExclusion(exclusion);
     }).subscribe(_.identity, util.makeErrorHandler('Handling an exclusion from a label'));
 
     this.control.exclusionsResponsesSubject.take(1).do(function (exclusions) {
