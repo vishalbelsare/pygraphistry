@@ -53,10 +53,10 @@ function makeFetcher (workerUrl, endpoint, queryKey) {
         var oReq = new XMLHttpRequest();
         oReq.open('GET', fetchUrl, true);
         oReq.responseType = 'arraybuffer';
-        oReq.timeout = 5000;
+        oReq.timeout = 10000;
         oReq.ontimeout = function () {
             debug('Fetch buffer timeout');
-            res.onNext(true);
+            res.onNext(new Uint8Array(0));
         };
 
         var now = Date.now();
