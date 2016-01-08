@@ -297,19 +297,26 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
 Dataframe.prototype.getMasksForQuery = function (query, errors) {
     var attribute = query.attribute,
         type = query.type;
-    var normalization = this.normalizeAttributeName(attribute, type);
-    if (normalization === undefined) {
-        errors.push('Unknown frame element');
-        return undefined;
-    } else {
-        type = normalization.type;
-        attribute = normalization.attribute;
+    if (attribute) {
+        var normalization = this.normalizeAttributeName(attribute, type);
+        if (normalization === undefined) {
+            errors.push('Unknown frame element');
+            return undefined;
+        } else {
+            type = normalization.type;
+            attribute = normalization.attribute;
+        }
     }
     try {
-        var plan = this.planForQueryObject(query);
-        var masks;
-        if (plan === undefined) {
-            var filterFunc = this.filterFuncForQueryObject(query);
+        var plan = new ExpressionPlan(this, query.ast);
+        var masks, filterFunc;
+        if (query.ast === undefined) {
+            filterFunc = this.filterFuncForQueryObject(query);
+            masks = this.getAttributeMask(type, attribute, filterFunc);
+        } else if (plan.isRedundant()) {
+            type = plan.rootNode.iterationType();
+            attribute = this.normalizeAttributeName(_.keys(plan.rootNode.identifierNodes())[0], type).attribute;
+            filterFunc = this.filterFuncForQueryObject(query);
             masks = this.getAttributeMask(type, attribute, filterFunc);
         } else {
             masks = plan.execute();
@@ -355,22 +362,6 @@ Dataframe.prototype.filterFuncForQueryObject = function (query) {
         }
     }
     return filterFunc;
-};
-
-
-/**
- * @param {ClientQuery} query
- * @returns {ExpressionPlan}
- */
-Dataframe.prototype.planForQueryObject = function (query) {
-    if (query.ast === undefined) {
-        return undefined;
-    }
-    var plan = new ExpressionPlan(this, query.ast);
-    if (plan.rootNode.arity() <= 1) {
-        return undefined;
-    }
-    return plan;
 };
 
 

@@ -320,7 +320,9 @@ PlanNode.prototype = {
  */
 function ExpressionPlan(dataframe, ast) {
     this.codeGenerator = new ExpressionCodeGenerator();
+    /** @type PlanNode */
     this.rootNode = this.planFromAST(ast, dataframe);
+    /** @type Dataframe */
     this.dataframe = dataframe;
     this.compile();
 }
@@ -328,6 +330,10 @@ function ExpressionPlan(dataframe, ast) {
 ExpressionPlan.prototype = {
     compile: function () {
         this.rootNode.compile(this.codeGenerator, this.dataframe);
+    },
+
+    isRedundant: function () {
+        return this.rootNode.canRunOnOneColumn();
     },
 
     /**
