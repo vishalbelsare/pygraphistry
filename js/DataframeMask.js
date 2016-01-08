@@ -348,7 +348,6 @@ DataframeMask.prototype = {
      * @returns {DataframeMask}
      */
     complement: function () {
-        this.assertSameDataframe(other);
         return new DataframeMask(this.dataframe,
             DataframeMask.complementOfMask(this.point, this.dataframe.numPoints()),
             DataframeMask.complementOfMask(this.edge, this.dataframe.numEdges()));
