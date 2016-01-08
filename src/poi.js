@@ -292,15 +292,15 @@ function createLabelDom(dim, labelObj) {
                 .append($labelType);
         var $table= $('<table>');
         labelObj.columns.forEach(function (pair) {
-            var $row = $('<tr>').addClass('graph-label-pair');
-            var $key = $('<td>').addClass('graph-label-key').text(pair[0]);
-            var val = pair[1];
-            var entry =
-                pair[0].indexOf('Date') > -1 && typeof(val) === 'number' ?
-                    $.datepicker.formatDate( 'd-M-yy', new Date(val))
-                : (!isNaN(val) && val % 1 !== 0) ?
-                    sprintf('%.4f', val)
-                : sprintf('%s', val);
+            var key = pair[0], val = pair[1],
+                $row = $('<tr>').addClass('graph-label-pair'),
+                $key = $('<td>').addClass('graph-label-key').text(key);
+            var entry = sprintf('%s', val);
+            if (key.indexOf('Date') > -1 && typeof(val) === 'number') {
+                entry = $.datepicker.formatDate('d-M-yy', new Date(val));
+            } else if (!isNaN(val) && val % 1 !== 0) {
+                entry = sprintf('%.4f', val);
+            }
             var $wrap = $('<div>').addClass('graph-label-value-wrapper').html(entry);
             var $val = $('<td>').addClass('graph-label-value').append($wrap);
             $row.append($key).append($val);
