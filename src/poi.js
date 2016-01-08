@@ -278,7 +278,7 @@ function exclusionForKeyAndValue(key, value) {
                     left: {type: 'Identifier', name: key},
                     right: {type: 'Literal', value: value}
                 },
-                inputString: key + ' = ' + value
+                inputString: key + ' = ' + value.toString()
             }
         }
     };
