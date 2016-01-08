@@ -56,6 +56,7 @@ var ExclusionView = Backbone.View.extend({
         this.control = options.control;
         this.listenTo(this.model, 'destroy', this.remove);
         this.template = Handlebars.compile($('#exclusionTemplate').html());
+        this.listenTo(this.model, 'change', this.updateFromModel);
     },
     render: function () {
         var bindings = {
@@ -70,24 +71,27 @@ var ExclusionView = Backbone.View.extend({
         this.initEditor();
         return this;
     },
+    isEditorReadOnly: function () {
+        return this.model.get('controlType') !== undefined;
+    },
+    updateFromModel: function () {
+        if (this.isEditorReadOnly()) {
+            var inputString = this.model.get('query').inputString;
+            if (inputString !== undefined) {
+                this.editor.session.setValue(inputString);
+            }
+        }
+    },
     initEditor: function () {
         if (this.editor !== undefined) { return; }
 
         this.$expressionArea = this.$('.exclusionExpression');
 
         this.editor = new ExpressionEditor(this.$expressionArea[0]);
-        var readOnly = this.model.get('controlType') !== undefined;
+        var readOnly = this.isEditorReadOnly();
         this.editor.setReadOnly(readOnly);
         this.$expressionArea.toggleClass('disabled', readOnly);
         this.$el.toggleClass('disabled', readOnly);
-        if (readOnly) {
-            this.listenTo(this.model, 'change', function () {
-                var inputString = this.model.get('query').inputString;
-                if (inputString !== undefined) {
-                    this.editor.session.setValue(inputString);
-                }
-            });
-        }
         this.control.namespaceMetadataObservable().filter(function (namespaceMetadata) {
             return namespaceMetadata !== undefined;
         }).subscribe(function (namespaceMetadata) {
