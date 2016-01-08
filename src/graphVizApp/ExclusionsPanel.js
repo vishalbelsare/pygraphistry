@@ -273,33 +273,6 @@ function ExclusionsPanel(socket, control, labelRequests) {
         util.makeErrorHandler('updateExclusions on exclusions change event')
     );
 
-    var namespaceMetadataObservable = this.control.namespaceMetadataObservable();
-    this.combinedSubscription = namespaceMetadataObservable.combineLatest(
-        this.exclusionsSubject,
-        function (dfa, fs) {
-            return {dataframeAttributes: dfa, exclusionSet: fs};
-        }).do(function (data) {
-            // Setup add exclusion button.
-            var addExclusionTemplate = Handlebars.compile($('#addExclusionTemplate').html());
-            // TODO flatten the namespace into selectable elements:
-            var fields = [];
-            _.each(data.dataframeAttributes, function (columns, typeName) {
-                _.each(columns, function (column, attributeName) {
-                    // PATCH rename "type" to "dataType" to avoid collisions:
-                    if (column.hasOwnProperty('type') && !column.hasOwnProperty('dataType')) {
-                        column.dataType = column.type;
-                        delete column.type;
-                    }
-                    fields.push(_.extend({type: typeName, name: attributeName}, column));
-                });
-            });
-            var params = {fields: fields};
-            var html = addExclusionTemplate(params);
-            $('#addExclusion').html(html);
-        }).subscribe(_.identity, function (err) {
-            console.log('Error updating Add Exclusion', err);
-        });
-
     this.view = new AllExclusionsView({
         collection: this.collection,
         control: this.control,
