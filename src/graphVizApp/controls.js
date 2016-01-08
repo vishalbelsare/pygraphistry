@@ -295,7 +295,7 @@ function controlMaker (urlParams, $anchor, appState, param, type) {
             class: type + '-checkbox',
             id: param.name,
             type: 'checkbox',
-            checked: urlParams.hasOwnProperty(param.name) ? urlParams[param.name] === 'true' : param.value
+            checked: urlParams.hasOwnProperty(param.name) ? (urlParams[param.name] === 'true' || urlParams[param.name] === true) : param.value
         }).data('param', param);
     } else if (param.type === 'color') {
         $input = $('<div>').css({display: 'inline-block'})
@@ -307,6 +307,7 @@ function controlMaker (urlParams, $anchor, appState, param, type) {
         console.warn('Ignoring param of unknown type', param);
         $input = $('<div>').text('Unknown setting type' + param.type);
     }
+
     var $col = $('<div>').addClass('col-xs-8').append($input);
     var $label = $('<label>').attr({
         for: param.name,
