@@ -45,6 +45,8 @@ function indexOfInSorted(sortedArray, value) {
  */
 function DataframeMask(dataframe, pointIndexes, edgeIndexes, basis) {
     this.dataframe = dataframe;
+    /** Boolean for whether untouched/undefined masks mean empty vs full. */
+    this.isExclusive = false;
     var pointMask = pointIndexes;
     var edgeMask = edgeIndexes;
     if (basis) {
@@ -176,6 +178,7 @@ DataframeMask.intersectionOfTwoMasks = function(x, y) {
 DataframeMask.complementOfMask = function(x, sizeOfUniverse) {
     // Undefined means all, complement is empty:
     if (x === undefined) { return []; }
+    if (x === []) { return undefined; }
     var xLength = x.length;
     // We know the exact length.
     var result = new Array(sizeOfUniverse - xLength);
@@ -268,6 +271,10 @@ DataframeMask.prototype = {
         return this.numPoints() === 0 && this.numEdges() === 0;
     },
 
+    setExclusive: function (exclusive) {
+        this.isExclusive = exclusive;
+    },
+
     /**
      * @param {DataframeMask} other
      * @returns {Boolean}
@@ -322,6 +329,22 @@ DataframeMask.prototype = {
         }
     },
 
+    getMaskForType: function (type) {
+        if (this[type] === undefined && this.isExclusive) {
+            return [];
+        }
+        return this[type];
+    },
+
+    /**
+     * @param {String} type point/edge
+     * @param {DataframeMask} other
+     * @returns {Mask}
+     */
+    unionForType: function (type, other) {
+        return DataframeMask.unionOfTwoMasks(this.getMaskForType(type), other.getMaskForType(type));
+    },
+
     /**
      * @param {DataframeMask} other
      * @returns {DataframeMask}
@@ -329,8 +352,17 @@ DataframeMask.prototype = {
     union: function (other) {
         this.assertSameDataframe(other);
         return new DataframeMask(this.dataframe,
-            DataframeMask.unionOfTwoMasks(this.point, other.point),
-            DataframeMask.unionOfTwoMasks(this.edge, other.edge));
+            this.unionForType(GraphComponentTypes[0], other),
+            this.unionForType(GraphComponentTypes[1], other));
+    },
+
+    /**
+     * @param {String} type point/edge
+     * @param {DataframeMask} other
+     * @returns {Mask}
+     */
+    intersectionForType: function (type, other) {
+        return DataframeMask.intersectionOfTwoMasks(this.getMaskForType(type), other.getMaskForType(type));
     },
 
     /**
@@ -340,17 +372,19 @@ DataframeMask.prototype = {
     intersection: function (other) {
         this.assertSameDataframe(other);
         return new DataframeMask(this.dataframe,
-            DataframeMask.intersectionOfTwoMasks(this.point, other.point),
-            DataframeMask.intersectionOfTwoMasks(this.edge, other.edge));
+            this.intersectionForType(GraphComponentTypes[0], other),
+            this.intersectionForType(GraphComponentTypes[1], other));
     },
 
     /**
      * @returns {DataframeMask}
      */
     complement: function () {
-        return new DataframeMask(this.dataframe,
-            DataframeMask.complementOfMask(this.point, this.dataframe.numPoints()),
-            DataframeMask.complementOfMask(this.edge, this.dataframe.numEdges()));
+        var result = new DataframeMask(this.dataframe,
+            DataframeMask.complementOfMask(this.getMaskForType('point'), this.dataframe.numPoints()),
+            DataframeMask.complementOfMask(this.getMaskForType('edge'), this.dataframe.numEdges()));
+        result.setExclusive(!this.isExclusive);
+        return result;
     },
 
     /**
@@ -360,8 +394,8 @@ DataframeMask.prototype = {
     minus: function (other) {
         this.assertSameDataframe(other);
         return new DataframeMask(this.dataframe,
-            DataframeMask.minusMask(this.point, other.point, this.dataframe.numPoints()),
-            DataframeMask.minusMask(this.edge, other.edge, this.dataframe.numEdges()));
+            DataframeMask.minusMask(this.getMaskForType('point'), other.getMaskForType('point'), this.dataframe.numPoints()),
+            DataframeMask.minusMask(this.getMaskForType('edge'), other.getMaskForType('edge'), this.dataframe.numEdges()));
     },
 
     /**
@@ -372,8 +406,8 @@ DataframeMask.prototype = {
         this.assertSameDataframe(other);
         return {
             dataframe: this.dataframe,
-            point: DataframeMask.diffMask(this.point, other.point),
-            edge: DataframeMask.diffMask(this.edge, other.edge)
+            point: DataframeMask.diffMask(this.getMaskForType('point'), other.getMaskForType('point')),
+            edge: DataframeMask.diffMask(this.getMaskForType('edge'), other.getMaskForType('edge'))
         };
     },
 
