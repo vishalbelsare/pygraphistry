@@ -20,6 +20,11 @@ var APPROX = 0.5;
 var MAX_LABELS = 20;
 var TIME_BETWEEN_SAMPLES = 300; // ms
 
+var DimCodes = {
+    point: 1,
+    edge: 2
+};
+
 
 function makeErrorHandler(name) {
     return function (err) {
@@ -270,11 +275,8 @@ function createLabelDom(dim, labelObj) {
     var $content;
     var $labelType = $('<span>').addClass('label-type').addClass('pull-right');
 
-    if (dim === 2) {
-        $cont.addClass('graph-label-edge');
-    } else if (dim === 1) {
-        $cont.addClass('graph-label-point');
-    }
+    var type = _.findKey(DimCodes, function (dimCode) { return dimCode === dim; });
+    $cont.addClass('graph-label-' + type);
 
     if (labelObj.formatted) {
         $cont.addClass('graph-label-preset');
