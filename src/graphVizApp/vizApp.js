@@ -28,7 +28,10 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
     //////////////////////////////////////////////////////////////////////////
     // App State
     //////////////////////////////////////////////////////////////////////////
-    var poi = poiLib(socket);
+
+    var labelRequests = new Rx.Subject();
+    var poi = poiLib(socket, labelRequests);
+
     // Observable DOM
     var labelHover = new Rx.Subject();
 
@@ -89,6 +92,7 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
         isAnimating: isAnimating,
         labelHover: labelHover,
         poi: poi,
+        labelRequests: labelRequests,
         settingsChanges: settingsChanges,
         marqueeOn: marqueeOn,
         marqueeActive: marqueeActive,

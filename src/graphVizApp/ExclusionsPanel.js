@@ -218,7 +218,7 @@ Handlebars.registerHelper('json', function(context) {
 });
 
 
-function ExclusionsPanel(socket, control) {
+function ExclusionsPanel(socket, control, labelRequests) {
     //var $button = $('#exclusionButton');
 
     if (control === undefined) {
@@ -227,6 +227,14 @@ function ExclusionsPanel(socket, control) {
     this.control = control;
 
     var that = this;
+
+    this.labelRequestSubscription = labelRequests.filter(function (labelRequest) {
+        return labelRequest.exclude_query !== undefined;
+    }).do(function (labelRequest) {
+        var exclusion = labelRequest.exclude_query;
+        that.collection.add(new ExclusionModel(exclusion));
+    }).subscribe(_.identity, util.makeErrorHandler('Handling an exclusion from a label'));
+
     this.control.exclusionsResponsesSubject.take(1).do(function (exclusions) {
         _.each(exclusions, function (exclusion) {
             that.collection.add(new ExclusionModel(exclusion));
@@ -312,6 +320,7 @@ ExclusionsPanel.prototype.setupToggleControl = function (toolbarClicks, $panelBu
 ExclusionsPanel.prototype.dispose = function () {
     this.exclusionsSubject.dispose();
     this.togglesSubscription.dispose();
+    this.labelRequestSubscription.dispose();
 };
 
 

@@ -643,7 +643,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var brush = setupBrush(appState, turnOnBrush);
     var filtersPanel = new FiltersPanel(socket, urlParams);
     filtersPanel.setupToggleControl(popoutClicks, $('#filterButton'));
-    var exclusionsPanel = new ExclusionsPanel(socket, filtersPanel.control);
+    var exclusionsPanel = new ExclusionsPanel(socket, filtersPanel.control, appState.labelRequests);
     exclusionsPanel.setupToggleControl(popoutClicks, $('#exclusionButton'));
     var filtersResponses = filtersPanel.control.filtersResponsesSubject;
     var histogramBrush = new HistogramBrush(socket, filtersPanel, readyForHistograms);
