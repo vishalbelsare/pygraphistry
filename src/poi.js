@@ -20,6 +20,11 @@ var APPROX = 0.5;
 var MAX_LABELS = 20;
 var TIME_BETWEEN_SAMPLES = 300; // ms
 
+var DimCodes = {
+    point: 1,
+    edge: 2
+};
+
 
 function makeErrorHandler(name) {
     return function (err) {
@@ -257,24 +262,37 @@ function fetchLabel (instance, idx, dim) {
                 // Invalid label request
                 labelCache.onNext(false);
             } else {
-                labelCache.onNext(createLabelDom(dim, data[0]));
+                labelCache.onNext(createLabelDom(instance, dim, data[0]));
             }
         }
     });
 }
 
-function createLabelDom(dim, labelObj) {
+function exclusionForKeyAndValue(key, value) {
+    return {
+        exclude_query: {
+            query: {
+                ast: {
+                    type: 'BinaryExpression',
+                    operator: '=',
+                    left: {type: 'Identifier', name: key},
+                    right: {type: 'Literal', value: value}
+                },
+                inputString: key + ' = ' + JSON.stringify(value)
+            }
+        }
+    };
+}
+
+function createLabelDom(instance, dim, labelObj) {
     var $cont = $('<div>').addClass('graph-label-container');
     var $pin = $('<i>').addClass('fa fa-lg fa-thumb-tack');
     var $title;
     var $content;
     var $labelType = $('<span>').addClass('label-type').addClass('pull-right');
 
-    if (dim === 2) {
-        $cont.addClass('graph-label-edge');
-    } else if (dim === 1) {
-        $cont.addClass('graph-label-point');
-    }
+    var type = _.findKey(DimCodes, function (dimCode) { return dimCode === dim; });
+    $cont.addClass('graph-label-' + type);
 
     if (labelObj.formatted) {
         $cont.addClass('graph-label-preset');
@@ -291,17 +309,24 @@ function createLabelDom(dim, labelObj) {
         $title = $('<div>').addClass('graph-label-title').append($pin).append(' ' + labelObj.title)
                 .append($labelType);
         var $table= $('<table>');
+        var labelRequests = instance.state.labelRequests;
         labelObj.columns.forEach(function (pair) {
-            var $row = $('<tr>').addClass('graph-label-pair');
-            var $key = $('<td>').addClass('graph-label-key').text(pair[0]);
-            var val = pair[1];
-            var entry =
-                pair[0].indexOf('Date') > -1 && typeof(val) === 'number' ?
-                    $.datepicker.formatDate( 'd-M-yy', new Date(val))
-                : (!isNaN(val) && val % 1 !== 0) ?
-                    sprintf('%.4f', val)
-                : sprintf('%s', val);
+            var key = pair[0], val = pair[1],
+                $row = $('<tr>').addClass('graph-label-pair'),
+                $key = $('<td>').addClass('graph-label-key').text(key);
+            var entry = sprintf('%s', val);
+            if (key.indexOf('Date') > -1 && typeof(val) === 'number') {
+                entry = $.datepicker.formatDate('d-M-yy', new Date(val));
+            } else if (!isNaN(val) && val % 1 !== 0) {
+                entry = sprintf('%.4f', val);
+            }
             var $wrap = $('<div>').addClass('graph-label-value-wrapper').html(entry);
+            var $exclude = $('<a class="exclude-by-key-value">').html('&nbsp;<i class="fa fa-ban"></i>');
+            $exclude.attr('title', 'Exclude by ' + $key.text() + '=' + entry);
+            $exclude.click(function () {
+                labelRequests.onNext(exclusionForKeyAndValue(key, val));
+            });
+            $wrap.append($exclude);
             var $val = $('<td>').addClass('graph-label-value').append($wrap);
             $row.append($key).append($val);
             $table.append($row);
@@ -391,7 +416,7 @@ function emptyCache (instance) {
  * @param {socket.io socket} socket
  * @returns POIHandler
  */
-function init(socket) {
+function init(socket, labelRequests) {
     debug('initializing label engine');
 
     var instance = {};
@@ -401,6 +426,9 @@ function init(socket) {
         state: {
 
             socket: socket,
+
+            // Rx.Subject
+            labelRequests: labelRequests,
 
             //[ ReplaySubject_1 ?HtmlString ]
             labelCache: {},

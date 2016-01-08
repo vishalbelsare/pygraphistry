@@ -32,12 +32,14 @@ function FilterControl(socket) {
 
     /** @type Rx.ReplaySubject */
     this.filtersResponsesSubject = new Rx.ReplaySubject(1);
+    this.exclusionsResponsesSubject = new Rx.ReplaySubject(1);
     /** @type Rx.ReplaySubject */
     this.setsResponsesSubject = new Rx.ReplaySubject(1);
     // Get initial filters values:
     this.getFiltersCommand.sendWithObservableResult()
         .do(function (reply) {
             this.filtersResponsesSubject.onNext(reply.filters);
+            this.exclusionsResponsesSubject.onNext(reply.exclusions);
             if (reply.sets !== undefined) {
                 this.setsResponsesSubject.onNext(reply.sets);
             }
@@ -65,10 +67,17 @@ FilterControl.prototype.namespaceMetadataObservable = function () {
     return this.namespaceMetadataSubject;
 };
 
-FilterControl.prototype.updateFilters = function (filterSet) {
-    this.updateFiltersRequests.onNext(filterSet);
+FilterControl.prototype.updateExclusions = function (exclusions) {
+    this.updateFiltersRequests.onNext({exclusions: exclusions});
     return this.filtersResponsesSubject;
 };
+
+FilterControl.prototype.updateFilters = function (filterStack) {
+    this.updateFiltersRequests.onNext({filters: filterStack});
+    return this.filtersResponsesSubject;
+};
+
+FilterControl.prototype.clearExclusions = function () { return this.updateExclusions([]); };
 
 FilterControl.prototype.clearFilters = function () { return this.updateFilters([]); };
 
