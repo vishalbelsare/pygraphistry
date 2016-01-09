@@ -45,7 +45,6 @@ function get_likely_local_ip() {
 }
 
 
-// FIXME: Get real viz server IP:port from DB
 var VIZ_SERVER_HOST = get_likely_local_ip();
 var nextLocalWorker = 0;
 
