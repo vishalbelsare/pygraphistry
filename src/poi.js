@@ -9,6 +9,7 @@
 var debug       = require('debug')('graphistry:StreamGL:poi');
 var _           = require('underscore');
 var sprintf     = require('sprintf-js').sprintf;
+var moment      = require('moment');
 var $           = window.$;
 var Rx          = require('rx');
                   require('./rx-jquery-stub');
@@ -317,6 +318,8 @@ function createLabelDom(instance, dim, labelObj) {
             var entry = sprintf('%s', val);
             if (key.indexOf('Date') > -1 && typeof(val) === 'number') {
                 entry = $.datepicker.formatDate('d-M-yy', new Date(val));
+            } else if (key.search(/time/i) !== -1 && typeof(val) === 'number') {
+                entry = moment.unix(val).format();
             } else if (!isNaN(val) && val % 1 !== 0) {
                 entry = sprintf('%.4f', val);
             }
