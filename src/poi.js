@@ -323,7 +323,6 @@ function createLabelDom(instance, dim, labelObj) {
             var $exclude = $('<a class="exclude-by-key-value">').html('&nbsp;<i class="fa fa-ban"></i>');
             $exclude.data({placement: 'right', toggle: 'tooltip'});
             $exclude.attr('title', 'Exclude by ' + $key.text() + '=' + entry);
-            $exclude.tooltip();
             $exclude.click(function () {
                 labelRequests.onNext({exclude_query: {query: queryForKeyAndValue(key, val)}});
             });
@@ -331,7 +330,6 @@ function createLabelDom(instance, dim, labelObj) {
             var $filter = $('<a class="filter-by-key-value">').html('<i class="fa fa-filter"></i>');
             $filter.data({placement: 'right', toggle: 'tooltip'});
             $filter.attr('title', 'Filter by ' + $key.text() + '=' + entry);
-            $filter.tooltip();
             $filter.click(function () {
                 labelRequests.onNext({filter_query: {query: queryForKeyAndValue(key, val)}});
             });
@@ -342,10 +340,11 @@ function createLabelDom(instance, dim, labelObj) {
         });
         $content = $('<div>').addClass('graph-label-contents').append($table);
     }
+    $cont.append($title).append($content);
 
     return {
         labelObj: labelObj,
-        labelDOM: $cont.append($title).append($content)
+        labelDOM: $cont
     };
 }
 
