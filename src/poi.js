@@ -322,7 +322,9 @@ function createLabelDom(instance, dim, labelObj) {
             }
             var $wrap = $('<div>').addClass('graph-label-value-wrapper').html(entry);
             var $exclude = $('<a class="exclude-by-key-value">').html('&nbsp;<i class="fa fa-ban"></i>');
+            $exclude.data({placement: 'right', toggle: 'tooltip'});
             $exclude.attr('title', 'Exclude by ' + $key.text() + '=' + entry);
+            $exclude.tooltip();
             $exclude.click(function () {
                 labelRequests.onNext(exclusionForKeyAndValue(key, val));
             });
