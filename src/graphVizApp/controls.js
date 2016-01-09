@@ -642,7 +642,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     var marquee = setupMarquee(appState, turnOnMarquee);
     var brush = setupBrush(appState, turnOnBrush);
-    var filtersPanel = new FiltersPanel(socket, urlParams);
+    var filtersPanel = new FiltersPanel(socket, appState.labelRequests);
     filtersPanel.setupToggleControl(popoutClicks, $('#filterButton'));
     var exclusionsPanel = new ExclusionsPanel(socket, filtersPanel.control, appState.labelRequests);
     exclusionsPanel.setupToggleControl(popoutClicks, $('#exclusionButton'));

@@ -269,19 +269,15 @@ function fetchLabel (instance, idx, dim) {
     });
 }
 
-function exclusionForKeyAndValue(key, value) {
+function queryForKeyAndValue(key, value) {
     return {
-        exclude_query: {
-            query: {
-                ast: {
-                    type: 'BinaryExpression',
-                    operator: '=',
-                    left: {type: 'Identifier', name: key},
-                    right: {type: 'Literal', value: value}
-                },
-                inputString: key + ' = ' + JSON.stringify(value)
-            }
-        }
+        ast: {
+            type: 'BinaryExpression',
+            operator: '=',
+            left: {type: 'Identifier', name: key},
+            right: {type: 'Literal', value: value}
+        },
+        inputString: key + ' = ' + JSON.stringify(value)
     };
 }
 
@@ -329,9 +325,17 @@ function createLabelDom(instance, dim, labelObj) {
             $exclude.attr('title', 'Exclude by ' + $key.text() + '=' + entry);
             $exclude.tooltip();
             $exclude.click(function () {
-                labelRequests.onNext(exclusionForKeyAndValue(key, val));
+                labelRequests.onNext({exclude_query: {query: queryForKeyAndValue(key, val)}});
             });
             $wrap.append($exclude);
+            var $filter = $('<a class="filter-by-key-value">').html('<i class="fa fa-filter"></i>');
+            $filter.data({placement: 'right', toggle: 'tooltip'});
+            $filter.attr('title', 'Filter by ' + $key.text() + '=' + entry);
+            $filter.tooltip();
+            $filter.click(function () {
+                labelRequests.onNext({filter_query: {query: queryForKeyAndValue(key, val)}});
+            });
+            $wrap.append($filter);
             var $val = $('<td>').addClass('graph-label-value').append($wrap);
             $row.append($key).append($val);
             $table.append($row);

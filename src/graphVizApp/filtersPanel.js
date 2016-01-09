@@ -285,12 +285,20 @@ Handlebars.registerHelper('json', function(context) {
 });
 
 
-function FiltersPanel(socket/*, urlParams*/) {
+function FiltersPanel(socket, labelRequests) {
     //var $button = $('#filterButton');
 
     this.control = new FilterControl(socket);
 
     var that = this;
+
+    this.labelRequestSubscription = labelRequests.filter(function (labelRequest) {
+        return labelRequest.filter_query !== undefined;
+    }).do(function (labelRequest) {
+        var filter = labelRequest.filter_query;
+        that.collection.addFilter(filter);
+    }).subscribe(_.identity, util.makeErrorHandler('Handling a filter from a label'));
+
     this.control.filtersResponsesSubject.take(1).do(function (filters) {
         _.each(filters, function (filter) {
             that.collection.add(new FilterModel(filter));
@@ -376,6 +384,7 @@ FiltersPanel.prototype.setupToggleControl = function (toolbarClicks, $panelButto
 FiltersPanel.prototype.dispose = function () {
     this.filtersSubject.dispose();
     this.togglesSubscription.dispose();
+    this.labelRequestSubscription.dispose();
 };
 
 
