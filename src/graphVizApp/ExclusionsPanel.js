@@ -264,6 +264,10 @@ function ExclusionsPanel(socket, control, labelRequests) {
         that.exclusionsSubject.onNext(that.collection);
     });
 
+    this.collection.on('add', function () {
+        that.toggleVisibility(true);
+    });
+
     this.exclusionsSubject.subscribe(
         function (collection) {
             that.control.updateExclusions(collection.map(function (model) {
