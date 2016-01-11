@@ -248,23 +248,22 @@ function cacheKey(idx, dim) {
 }
 
 
-function fetchLabel (instance, idx, dim) {
-    instance.state.socket.emit('get_labels', {dim: dim, indices: [idx]}, function (err, data) {
+function fetchLabel (instance, labelCacheEntry, idx, dim) {
+    instance.state.socket.emit('get_labels', {dim: dim, indices: [idx]}, function (err, labels) {
         if (err) {
             console.error('get_labels', err);
             return;
         }
-        var labelCache = instance.state.labelCache[cacheKey(idx, dim)];
-        if (labelCache === undefined) {
+        if (labelCacheEntry === undefined) {
             console.warn('label cache entry not found', cacheKey(idx, dim));
+            return;
+        }
+        // TODO: Represent this in a cleaner way from the server
+        if (labels[0].title) {
+            labelCacheEntry.onNext(labels[0]);
         } else {
-            // TODO: Represent this in a cleaner way from the server
-            if (!data[0].title) {
-                // Invalid label request
-                labelCache.onNext(false);
-            } else {
-                labelCache.onNext(createLabelDom(instance, dim, data[0]));
-            }
+            // Invalid label request/response
+            labelCacheEntry.onNext(false);
         }
     });
 }
@@ -342,46 +341,43 @@ function createLabelDom(instance, dim, labelObj) {
     }
     $cont.append($title).append($content);
 
-    return {
-        labelObj: labelObj,
-        labelDOM: $cont
-    };
+    return $cont;
 }
 
 
 //TODO batch fetches
-//instance * int -> ReplaySubject_1 {labelObj, labelDOM}
+//instance * int -> ReplaySubject_1 labelObj
 function getLabel(instance, data) {
     // TODO: Make cache aware of both idx and dim
     var idx = data.idx;
     var dim = data.dim;
 
-    if (!instance.state.labelCache[cacheKey(idx, dim)]) {
-        instance.state.labelCache[cacheKey(idx, dim)] = new Rx.ReplaySubject(1);
-        fetchLabel(instance, idx, dim);
+    var key = cacheKey(idx, dim),
+        cache = instance.state.labelCache;
+    if (!cache[key]) {
+        var labelObs = new Rx.ReplaySubject(1);
+        cache[key] = labelObs;
+        fetchLabel(instance, labelObs, idx, dim);
     }
-    return instance.state.labelCache[cacheKey(idx, dim)];
+    return cache[key];
 }
 
 
 //instance * int -> ReplaySubject_1 ?DOM
 function getLabelDom (instance, data) {
    return getLabel(instance, data).map(function (l) {
-        if (!l) {
-            return l;
-        }
-        return l.labelDOM;
-   });
-}
-
-
-//instance * int -> ReplaySubject_1 LabelObject
-function getLabelObject (instance, data) {
-   return getLabel(instance, data).map(function (l) {
-        if (!l) {
-            return l;
-        }
-        return l.labelObj;
+       if (!l) {
+           return l;
+       }
+       // TODO: Make cache aware of both idx and dim
+       var idx = data.idx;
+       var dim = data.dim;
+       var key = cacheKey(idx, dim),
+           cache = instance.state.labelDOMCache;
+       if (!cache[key]) {
+           cache[key] = createLabelDom(instance, dim, l);
+       }
+       return cache[key];
    });
 }
 
@@ -389,6 +385,7 @@ function getLabelObject (instance, data) {
 // Invalidates Cache but does not attempt to refill.
 function emptyCache (instance) {
     instance.state.labelCache = {};
+    instance.state.labelDOMCache = {};
     _.each(instance.state.activeLabels, function (val, key) {
         instance.state.inactiveLabels.push(val);
         val.elt.css('display', 'none');
@@ -438,8 +435,11 @@ function init(socket, labelRequests) {
             // Rx.Subject
             labelRequests: labelRequests,
 
-            //[ ReplaySubject_1 ?HtmlString ]
+            //[ ReplaySubject_1 labelObj ]
             labelCache: {},
+
+            //[ $DOM ]
+            labelDOMCache: {},
 
             //{<int> -> {elt: $DOM, idx: int} }
             activeLabels: {},
@@ -458,7 +458,7 @@ function init(socket, labelRequests) {
 
         //int -> Subject ?HtmlString
         getLabelDom: getLabelDom.bind('', instance),
-        getLabelObject: getLabelObject.bind('', instance),
+        getLabelObject: getLabel.bind('', instance),
 
         getActiveApprox: getActiveApprox,
         finishApprox: finishApprox,
