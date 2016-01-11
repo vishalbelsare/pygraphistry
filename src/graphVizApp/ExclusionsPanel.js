@@ -69,6 +69,7 @@ var ExclusionView = Backbone.View.extend({
         this.$el.html(html);
 
         this.initEditor();
+        $('[data-toggle="tooltip"]', this.$el).tooltip();
         return this;
     },
     isEditorReadOnly: function () {

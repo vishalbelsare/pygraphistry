@@ -110,6 +110,7 @@ var FilterView = Backbone.View.extend({
         this.$el.html(html);
 
         this.initEditor();
+        $('[data-toggle="tooltip"]', this.$el).tooltip();
         return this;
     },
     initEditor: function () {
@@ -229,6 +230,7 @@ var AllFiltersView = Backbone.View.extend({
         var $filterButton = $('#filterButton');
         var numElements = this.collection.length;
         $('.badge', $filterButton).text(numElements > 0 ? numElements : '');
+        $('[data-toggle="tooltip"]', this.$el).tooltip();
         return this;
     },
     addFilter: function (filter) {

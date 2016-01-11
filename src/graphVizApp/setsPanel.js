@@ -264,6 +264,7 @@ var VizSetView = Backbone.View.extend({
         var bindings = this.bindingsFor(this.model);
         var html = this.template(bindings);
         this.$el.html(html);
+        $('[data-toggle="tooltip"]', this.$el).tooltip();
         return this;
     },
     delete: function (/*event*/) {
