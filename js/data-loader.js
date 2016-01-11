@@ -76,7 +76,7 @@ function httpDownloader(http, url) {
 function s3Downloader(url) {
     var params = {
         Bucket: url.host || config.BUCKET,  // Defaults to Graphistry's bucket
-        Key: url.pathname.replace(/^\//,'') // Strip leading slash if there is one
+        Key: decodeURIComponent(url.pathname.replace(/^\//,'')) // Strip leading slash if there is one
     };
     var res = Q.defer();
 
