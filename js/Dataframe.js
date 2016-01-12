@@ -206,16 +206,17 @@ Dataframe.prototype.presentVizSet = function (vizSet) {
 };
 
 /**
- * @param {?MaskList} maskList
+ * @param {?MaskList} selectionMasks
+ * @param {?DataframeMask} exclusionMask
  * @param {Number=Infinity} pointLimit
  * @returns ?DataframeMask
  */
-Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
+Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMask, pointLimit) {
     if (!pointLimit) {
         pointLimit = Infinity;
     }
-    if (maskList === undefined || !maskList.length || maskList.length === 0) {
-        var universe = this.fullDataframeMask();
+    if (selectionMasks === undefined || !selectionMasks.length || selectionMasks.length === 0) {
+        var universe = exclusionMask === undefined ? this.fullDataframeMask() : exclusionMask.complement();
         // Limit the universe first just to avoid computation scaling problems:
         if (pointLimit && universe.numByType('point') > pointLimit) {
             universe.limitNumByTypeTo('point', pointLimit);
@@ -225,11 +226,11 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
     // TODO: Make this faster.
 
     // Assumes we will never have more than 255 separate masks.
-    var numMasks = maskList.length;
+    var numMasks = selectionMasks.length;
     var MASK_LIMIT = 255;
     if (numMasks > MASK_LIMIT) {
         console.error('TOO MANY MASKS; truncating to: ' + MASK_LIMIT);
-        maskList.length = 255;
+        selectionMasks.length = 255;
     }
 
     // The overall masks per type, made by mask intersection:
@@ -240,7 +241,7 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
     var numMasksSatisfiedByPointID = new Uint8Array(this.numPoints());
     var numMasksSatisfiedByEdgeID = new Uint8Array(this.numEdges());
 
-    _.each(maskList, function (mask) {
+    _.each(selectionMasks, function (mask) {
         mask.mapEdgeIndexes(function (idx) {
             numMasksSatisfiedByEdgeID[idx]++;
         });
@@ -249,6 +250,15 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
             numMasksSatisfiedByPointID[idx]++;
         });
     });
+
+    if (exclusionMask !== undefined) {
+        exclusionMask.mapPointIndexes(function (idx) {
+            numMasksSatisfiedByPointID[idx] = 0;
+        });
+        exclusionMask.mapEdgeIndexes(function (idx) {
+            numMasksSatisfiedByEdgeID[idx] = 0;
+        });
+    }
 
     _.each(numMasksSatisfiedByEdgeID, function (count, i) {
         // Shorthand for "if we've passed all masks":
