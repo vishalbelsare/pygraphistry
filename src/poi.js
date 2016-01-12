@@ -323,7 +323,7 @@ function createLabelDom(instance, dim, labelObj) {
             $exclude.data({placement: 'right', toggle: 'tooltip'});
             $exclude.attr('title', 'Exclude by ' + $key.text() + '=' + entry);
             $exclude.tooltip();
-            $exclude.click(function () {
+            $exclude.on('click', function () {
                 labelRequests.onNext({exclude_query: {query: queryForKeyAndValue(key, val)}});
             });
             $wrap.append($exclude);
@@ -331,7 +331,7 @@ function createLabelDom(instance, dim, labelObj) {
             $filter.data({placement: 'right', toggle: 'tooltip'});
             $filter.attr('title', 'Filter by ' + $key.text() + '=' + entry);
             $filter.tooltip();
-            $filter.click(function () {
+            $filter.on('click', function () {
                 labelRequests.onNext({filter_query: {query: queryForKeyAndValue(key, val)}});
             });
             $wrap.append($filter);
