@@ -206,24 +206,23 @@ Dataframe.prototype.presentVizSet = function (vizSet) {
 };
 
 /**
- * @param {?MaskList} selectionMasks
- * @param {?DataframeMask} exclusionMask
+ * This performs mask join operations over the dataset, optimized for having many masks.
+ * It allocates two full-sized arrays (bytesize * number of elements) instead of temporary mask objects.
+ * There may be other, smarter solutions if we cache strategically, or use a query planner.
+ * @param {?DataframeMask[]} selectionMasks
+ * @param {?DataframeMask[]} exclusionMasks
  * @param {Number=Infinity} pointLimit
  * @returns ?DataframeMask
  */
-Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMask, pointLimit) {
+Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMasks, pointLimit) {
     if (!pointLimit) {
         pointLimit = Infinity;
     }
-    if (selectionMasks === undefined || !selectionMasks.length || selectionMasks.length === 0) {
-        var universe = exclusionMask === undefined ? this.fullDataframeMask() : exclusionMask.complement();
-        // Limit the universe first just to avoid computation scaling problems:
-        if (pointLimit && universe.numByType('point') > pointLimit) {
-            universe.limitNumByTypeTo('point', pointLimit);
-        }
-        return universe;
+
+    // No selection masks imply a universal selection:
+    if (selectionMasks.length === 0) {
+        selectionMasks = [this.fullDataframeMask()];
     }
-    // TODO: Make this faster.
 
     // Assumes we will never have more than 255 separate masks.
     var numMasks = selectionMasks.length;
@@ -233,14 +232,11 @@ Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMask, poin
         selectionMasks.length = 255;
     }
 
-    // The overall masks per type, made by mask intersection:
-    var edgeMask = [];
-    var pointMask = [];
-
     // Assumes Uint8Array() constructor initializes to zero, which it should.
     var numMasksSatisfiedByPointID = new Uint8Array(this.numPoints());
     var numMasksSatisfiedByEdgeID = new Uint8Array(this.numEdges());
 
+    // Equivalent to reduce over AND:
     _.each(selectionMasks, function (mask) {
         mask.mapEdgeIndexes(function (idx) {
             numMasksSatisfiedByEdgeID[idx]++;
@@ -251,14 +247,19 @@ Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMask, poin
         });
     });
 
-    if (exclusionMask !== undefined) {
-        exclusionMask.mapPointIndexes(function (idx) {
+    // Equivalent to reduce over NOT OR:
+    _.each(exclusionMasks, function (mask) {
+        mask.mapPointIndexes(function (idx) {
             numMasksSatisfiedByPointID[idx] = 0;
         });
-        exclusionMask.mapEdgeIndexes(function (idx) {
+        mask.mapEdgeIndexes(function (idx) {
             numMasksSatisfiedByEdgeID[idx] = 0;
         });
-    }
+    });
+
+    // The overall masks per type, made by mask intersection:
+    var edgeMask = [];
+    var pointMask = [];
 
     _.each(numMasksSatisfiedByEdgeID, function (count, i) {
         // Shorthand for "if we've passed all masks":
