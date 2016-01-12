@@ -421,6 +421,7 @@ function emptyCache (instance) {
 
 /**
  * @param {socket.io socket} socket
+ * @param {Rx.Subject} labelRequests
  * @returns POIHandler
  */
 function init(socket, labelRequests) {
