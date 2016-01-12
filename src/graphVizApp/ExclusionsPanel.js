@@ -247,9 +247,13 @@ function ExclusionsPanel(socket, control, labelRequests) {
         that.collection.addExclusion(exclusion);
     }).subscribe(_.identity, util.makeErrorHandler('Handling an exclusion from a label'));
 
+    // Initial exclusions list, after which adds should pop open the panel:
     this.control.exclusionsResponsesSubject.take(1).do(function (exclusions) {
         _.each(exclusions, function (exclusion) {
             that.collection.add(new ExclusionModel(exclusion));
+        });
+        that.collection.on('add', function () {
+            that.toggleVisibility(true);
         });
     }).subscribe(_.identity, util.makeErrorHandler('Reading exclusions from workbook'));
     this.collection = new ExclusionCollection([], {
@@ -263,10 +267,6 @@ function ExclusionsPanel(socket, control, labelRequests) {
     // Seed with a fresh exclusions list. Should come from persisted state.
     this.collection.on('change reset add remove', function (/*model, options*/) {
         that.exclusionsSubject.onNext(that.collection);
-    });
-
-    this.collection.on('add', function () {
-        that.toggleVisibility(true);
     });
 
     this.exclusionsSubject.subscribe(
