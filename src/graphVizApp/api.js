@@ -210,7 +210,7 @@ function nodePosition(appState, subscriber) {
 
 function nodeLabel(appState, subscriber) {
     appState.poi.getLabelObject({dim: 1, idx: subscriber.node.viewIdx}).do(function (label) {
-        console.log('LABLE',label);
+        console.log('LABEL',label);
         postEvent(appState.apiEvents, subscriber, {
             event: 'node.getLabel',
             node: subscriber.node,
