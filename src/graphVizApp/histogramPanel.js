@@ -136,7 +136,7 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             'click .expandHistogramButton': 'expand',
             'click .expandedHistogramButton': 'shrink',
             'click .refreshHistogramButton': 'refresh',
-            'click .topMenu': 'encode',
+            'click .encode-attribute': 'encode',
             'dragstart .topMenu': 'dragStart'
         },
 
@@ -189,16 +189,34 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
                 panel.updateHistogram(vizContainer, histogram, attribute);
             }
 
+            if (!$.urlParam('beta')) {
+                $('.encode-attribute', this.$el).hide();
+            }
+            $('[data-toggle="tooltip"]', this.$el).tooltip();
+
             return this;
         },
 
-        encode: function () {
-            // TODO: BETA flagged feature:
-            if ($('.beta').hasClass('beta')) { return; }
+        encode: function (evt) {
+            var target = $(evt.currentTarget);
+            var encodingSpec = {
+                encodingType: 'color',
+                variation: undefined
+            };
+            if (target.hasClass('encode-size')) {
+                encodingSpec.encodingType = 'size';
+                encodingSpec.variation = 'quantitative';
+            } else if (target.hasClass('encode-color-quantitative')) {
+                encodingSpec.encodingType = 'color';
+                encodingSpec.variation = 'quantitative';
+            } else if (target.hasClass('encode-color-categorical')) {
+                encodingSpec.encodingType = 'color';
+                encodingSpec.variation = 'categorical';
+            }
             var isEncoded = this.model.get('encodingType') !== undefined;
             var dataframeAttribute = this.model.get('attribute');
             var binning = this.model.getSparkLineData();
-            panel.encodeAttribute(dataframeAttribute, isEncoded, binning).take(1).do(function (response) {
+            panel.encodeAttribute(dataframeAttribute, encodingSpec, isEncoded, binning).take(1).do(function (response) {
                 if (response.enabled) {
                     panel.assignEncodingTypeToHistogram(response.encodingType, this.model, response.palette);
                 } else {
@@ -374,10 +392,11 @@ HistogramsPanel.prototype.updateAttribute = function (oldAttr, newAttr, type) {
     });
 };
 
-HistogramsPanel.prototype.encodeAttribute = function (dataframeAttribute, reset, binning) {
+HistogramsPanel.prototype.encodeAttribute = function (dataframeAttribute, encodingSpec, reset, binning) {
     return this.filtersPanel.control.encodeCommand.sendWithObservableResult({
         attribute: dataframeAttribute,
-        encodingType: 'color',
+        encodingType: encodingSpec.encodingType,
+        variation: encodingSpec.variation,
         reset: reset,
         binning: binning
     });
