@@ -713,7 +713,7 @@
 1. Pick field to filter on from dropdown.
 2. Enter an ANSI SQL expression over that field (but no other).
 Note: this release does not support expressions with multiple fields nor changing which field a filter acts over."
-                ><i class="fa fa-question-circle" /></a>
+                ><i class="fa fa-question-circle"></i></a>
         </div>
         <div class="col-md-1"></div>
     </div>
@@ -748,6 +748,24 @@ Note: this release does not support expressions with multiple fields nor changin
                     {{/each}}
                 </ul>
             </div>
+            <div class="encode-attribute interactive encode-color-categorical"
+                 data-toggle="tooltip" title="Encode Color Categorical">
+                <a href="#">
+                    <i class="fa fa-circle"></i>
+                </a>
+            </div>
+            <div class="encode-attribute interactive encode-color-quantitative"
+                 data-toggle="tooltip" title="Encode Color Quantitative">
+                <a href="#">
+                    <i class="fa fa-circle"></i>
+                </a>
+            </div>
+            <div class="encode-attribute interactive encode-size"
+                 data-toggle="tooltip" title="Encode Size">
+                <a href="#">
+                    <i class="fa fa-circle"></i>
+                </a>
+            </div>
         </div>
         <div class="col-xs-1 closeButton">
             <a href="#">
@@ -766,26 +784,23 @@ Note: this release does not support expressions with multiple fields nor changin
                 <i class="fa fa-caret-right interactive histogramButton expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
-        <div class="col-xs-9 attributeName">
-            {{attribute}}
-        </div>
-        <!--
-        <div class="col-xs-1 histogramButton refreshButton refreshHistogramButton-{{modelId}}">
+        <div class="col-xs-4 attributeName">{{attribute}}</div>
+        <div class="col-xs-6">
             <a href="#">
-                <span class="fa-stack">
-                    <i class="fa fa-filter histogramButton interactive refreshHistogramButton refreshHistogramButton-{{modelId}}" id="refreshHistogramButton{{modelId}}" cid="{{id}}"></i>
-                    <i class="fa fa-trash histogramRemoveIcon interactive" style="font-size: 0.9em; position: absolute; margin-left: -0.5em; margin-top: 0.5em; pointer-events: none"></i>
-                </span>
-
-            </a>
+                <i class="encode-attribute interactive encode-color-categorical fa fa-square"
+                   data-toggle="tooltip" title="Encode Color Categorical"></i></a>
+            <a href="#">
+                <i class="encode-attribute interactive encode-color-quantitative fa fa-square"
+                   data-toggle="tooltip" title="Encode Color Quantitative"></i></a>
+            <a href="#">
+                <i class="encode-attribute interactive encode-size fa fa-circle"
+                   data-toggle="tooltip" title="Encode Size"></i></a>
         </div>
-        -->
         <div class="col-xs-1 histogramButton closeButton">
             <a href="#">
                 <i class="fa fa-times interactive histogramButton closeHistogramButton" id="closeHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
-
     </div>
     <div class="vizContainer"></div>
     <div class="divide-line"></div>
