@@ -54,6 +54,15 @@ console.warn('%cWarning: having the console open can slow down execution signifi
  * @property {String?} camera - defaults to '2d', can also be '3d'
  */
 
+$.urlParam = function(name){
+    var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+    if (results==null){
+        return null;
+    }
+    else{
+        return results[1] || 0;
+    }
+}
 
 /**
  * Gets the URL param for the dataset
