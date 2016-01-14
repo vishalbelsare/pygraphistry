@@ -85,6 +85,9 @@ function traverse (edgeList, root, label, depth, done, nodeToComponent) {
             enqueueEdges(edgeList, label, src, nextLevel, done);
             traversed++;
         }
+        if (nextLevel.length > 50000) {
+            throw new Error('Too many roots at the next level; assuming a super-node.');
+        }
         roots = nextLevel;
     }
 
@@ -126,16 +129,25 @@ module.exports = function weaklycc (numPoints, edges, depth) {
         if (!done[root]) {
             if (lastSize < threshold) { // originally (true && lastSize < threshold), why true && ?
 
-                //skip first as likely supernode
+                //skip first as likely super-node
                 var defC = components.length > 1 ? 1 : 0;
 
                 components[defC].size++;
                 done[root] = true;
                 nodeToComponent[root] = defC;
             } else {
-                var size = traverse(edgeList, root, components.length, depth, done, nodeToComponent);
-                components.push({root: root, component: components.length, size: size});
-                lastSize = size;
+                // This tries to fail gracefully under super-node conditions with lots of multi-edges.
+                // The alternative is a crash due to memory/heap exhaustion.
+                try {
+                    var size = traverse(edgeList, root, components.length, depth, done, nodeToComponent);
+                    components.push({root: root, component: components.length, size: size});
+                    lastSize = size;
+                } catch (e) {
+                    // Make one last component out of all remaining nodes.
+                    var remainingSize = numPoints - _.reduce(function (memo, size) { return memo + size; }, 0);
+                    components.push({root: root, component: components.length, size: remainingSize});
+                    break;
+                }
 
                 //cut down for second component (first was a likely outlier)
                 if (components.length === 2) {
