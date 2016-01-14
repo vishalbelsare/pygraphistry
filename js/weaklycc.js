@@ -130,22 +130,32 @@ module.exports = function weaklycc (numPoints, edges, depth) {
             if (lastSize < threshold) { // originally (true && lastSize < threshold), why true && ?
 
                 //skip first as likely super-node
-                var defC = components.length > 1 ? 1 : 0;
+                var defaultLabel = components.length > 1 ? 1 : 0;
 
-                components[defC].size++;
+                components[defaultLabel].size++;
                 done[root] = true;
-                nodeToComponent[root] = defC;
+                nodeToComponent[root] = defaultLabel;
             } else {
                 // This tries to fail gracefully under super-node conditions with lots of multi-edges.
                 // The alternative is a crash due to memory/heap exhaustion.
+                var label = components.length, componentSize = 0;
                 try {
-                    var size = traverse(edgeList, root, components.length, depth, done, nodeToComponent);
-                    components.push({root: root, component: components.length, size: size});
-                    lastSize = size;
-                } catch (e) {
+                    componentSize = traverse(edgeList, root, label, depth, done, nodeToComponent);
+                    components.push({root: root, component: label, size: componentSize});
+                    lastSize = componentSize;
+                } catch (ignore) {
                     // Make one last component out of all remaining nodes.
-                    var remainingSize = numPoints - _.reduce(components, function (memo, component) { return memo + component.size; }, 0);
-                    components.push({root: root, component: components.length, size: remainingSize});
+                    componentSize = 0;
+                    for (var j=0; j<numPoints; j++) {
+                        if (nodeToComponent[j] === 0) {
+                            nodeToComponent[j] = label;
+                            componentSize++;
+                        } else if (nodeToComponent[j] === label) {
+                            // incomplete traverse effect
+                            componentSize++;
+                        }
+                    }
+                    components.push({root: root, component: label, size: componentSize});
                     break;
                 }
 
