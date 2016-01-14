@@ -118,7 +118,7 @@ module.exports = function weaklycc (numPoints, edges, depth) {
     var threshold = Math.min(lastSize * 0.1, 1000);
     for (var i = 0; i < numPoints; i++) {
         var root = roots[i];
-        if (done[root] === 0) {
+        if (!done[root]) {
             if (lastSize < threshold) { // originally (true && lastSize < threshold), why true && ?
 
                 //skip first as likely supernode
