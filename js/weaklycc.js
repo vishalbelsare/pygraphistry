@@ -144,7 +144,7 @@ module.exports = function weaklycc (numPoints, edges, depth) {
                     lastSize = size;
                 } catch (e) {
                     // Make one last component out of all remaining nodes.
-                    var remainingSize = numPoints - _.reduce(function (memo, size) { return memo + size; }, 0);
+                    var remainingSize = numPoints - _.reduce(components, function (memo, component) { return memo + component.size; }, 0);
                     components.push({root: root, component: components.length, size: remainingSize});
                     break;
                 }
