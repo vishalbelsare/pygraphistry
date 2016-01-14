@@ -86,7 +86,7 @@ function traverse (edgeList, root, label, depth, done, nodeToComponent) {
     return traversed;
 }
 
-// Compute undired weakly connected components
+// Compute undirected weakly connected components
 // int * [ [int, int] ] ->
 //   {  nodeToComponent: Uint32Array,
 //      components: [{root: int, component: int, size: int}]
@@ -118,8 +118,8 @@ module.exports = function weaklycc (numPoints, edges, depth) {
     var threshold = Math.min(lastSize * 0.1, 1000);
     for (var i = 0; i < numPoints; i++) {
         var root = roots[i];
-        if (!done[root]) {
-            if (lastSize < threshold) { // originaly (true && lastSize < threshold), why true && ?
+        if (done[root] === 0) {
+            if (lastSize < threshold) { // originally (true && lastSize < threshold), why true && ?
 
                 //skip first as likely supernode
                 var defC = components.length > 1 ? 1 : 0;
@@ -133,7 +133,7 @@ module.exports = function weaklycc (numPoints, edges, depth) {
                 lastSize = size;
 
                 //cut down for second component (first was a likely outlier)
-                if (components.length == 2) {
+                if (components.length === 2) {
                     threshold = Math.min(lastSize * 0.2, threshold);
                 }
             }
@@ -150,4 +150,4 @@ module.exports = function weaklycc (numPoints, edges, depth) {
         //[{root: int, component: int, size: int}]
         components: components
     };
-}
+};
