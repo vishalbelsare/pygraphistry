@@ -34,7 +34,12 @@ var edgesToDegrees = function (numPoints, edgeList) {
 };
 
 
-//int * [ int ] -> [int]
+/**
+ * Returns all point indexes sorted descending by their degree.
+ * @param {Number} numPoints
+ * @param {Number[]} degrees
+ * @returns {Number[]}
+ */
 var computeRoots = function (numPoints, degrees) {
     perf.startTiming('graph-viz:weaklycc:computeRoots');
     var roots = new Array(numPoints);
