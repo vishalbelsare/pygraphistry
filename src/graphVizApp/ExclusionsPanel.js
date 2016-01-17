@@ -211,7 +211,7 @@ var AllExclusionsView = Backbone.View.extend({
             $el.remove();
         }
     },
-    addExclusionFromButton: function (evt) {
+    addExclusionFromButton: function (/*evt*/) {
         this.collection.addExclusion({});
     },
     remove: function () {
@@ -241,9 +241,9 @@ function ExclusionsPanel(socket, control, labelRequests) {
     var that = this;
 
     this.labelRequestSubscription = labelRequests.filter(function (labelRequest) {
-        return labelRequest.exclude_query !== undefined;
+        return labelRequest.excludeQuery !== undefined;
     }).do(function (labelRequest) {
-        var exclusion = labelRequest.exclude_query;
+        var exclusion = labelRequest.excludeQuery;
         that.collection.addExclusion(exclusion);
     }).subscribe(_.identity, util.makeErrorHandler('Handling an exclusion from a label'));
 

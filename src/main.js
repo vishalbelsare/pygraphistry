@@ -56,13 +56,13 @@ console.warn('%cWarning: having the console open can slow down execution signifi
 
 $.urlParam = function(name){
     var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
-    if (results==null){
+    if (results === null) {
         return null;
     }
     else{
         return results[1] || 0;
     }
-}
+};
 
 /**
  * Gets the URL param for the dataset

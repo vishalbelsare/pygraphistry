@@ -295,9 +295,9 @@ function FiltersPanel(socket, labelRequests) {
     var that = this;
 
     this.labelRequestSubscription = labelRequests.filter(function (labelRequest) {
-        return labelRequest.filter_query !== undefined;
+        return labelRequest.filterQuery !== undefined;
     }).do(function (labelRequest) {
-        var filter = labelRequest.filter_query;
+        var filter = labelRequest.filterQuery;
         that.collection.addFilter(filter);
     }).subscribe(_.identity, util.makeErrorHandler('Handling a filter from a label'));
 
