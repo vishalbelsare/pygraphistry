@@ -71,7 +71,7 @@ var FilterControlTypes = [
 
 var FilterView = Backbone.View.extend({
     tagName: 'div',
-    className: 'filterInspector',
+    className: 'filterInspector container-fluid',
     events: {
         'click .disableFilterButton': 'disable',
         'click .disabledFilterButton': 'enable',
@@ -350,7 +350,7 @@ function FiltersPanel(socket, labelRequests) {
             });
             var params = {fields: fields};
             var html = addFilterTemplate(params);
-            $('#addFilter').html(html);
+            $('#addFilter').addClass('container-fluid').html(html);
         }).subscribe(_.identity, function (err) {
             console.log('Error updating Add Filter', err);
         });
