@@ -298,18 +298,22 @@
             </div>  <!-- /form-horizontal -->
         </div> <!-- /renderingItems -->
 
-        <div id="exclusionsPanel" class="exclusionsPanel container">
+        <div id="exclusionsPanel" class="exclusionsPanel">
             <p class="panelHeader text-center bg-primary">Exclusions</p>
             <div id="exclusions"></div>
-            <div id="addExclusion">
-                <button type="button" class="btn btn-primary btn-xs addExclusionButton"
-                        data-toggle="tooltip" title="New Exclusion" {{disabled}}>
-                    <span class="fa fa-plus"></span>
-                </button>
+            <div id="addExclusion" class="container-fluid">
+                <div class="row">
+                    <div class="col-xs-12">
+                        <button type="button" class="btn btn-primary btn-xs addExclusionButton"
+                                data-toggle="tooltip" title="New Exclusion" {{disabled}}>
+                            <span class="fa fa-plus"></span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div> <!-- /exclusionsPanel -->
 
-        <div id="filtersPanel" class="filtersPanel container">
+        <div id="filtersPanel" class="filtersPanel">
             <p class="panelHeader text-center bg-primary">Filters</p>
             <div id="filters"></div>
             <div id="addFilter"></div>
@@ -589,7 +593,7 @@
 
 <script type="text/x-handlebars-template" id="exclusionTemplate">
     <div class="topMenu row">
-        <div class="col-md-10">
+        <div class="col-xs-10">
             <form class="exclusionEditor form-horizontal">
                 <div class="row form-group" title="Expression">
                     <!--
@@ -600,12 +604,12 @@
                 </div>
             </form>
         </div>
-        <div class="col-md-1 disableButton">
+        <div class="col-xs-1 disableButton">
             <a href="#">
                 <i class="fa fa-toggle-on disableExclusionButton" data-toggle="tooltip" data-placement="right" title="Enabled" cid="{{id}}"></i>
             </a>
         </div>
-        <div class="col-md-1 deleteButton">
+        <div class="col-xs-1 deleteButton">
             <a href="#">
                 <i class="fa fa-close deleteExclusionButton" cid="{{id}}"
                    data-toggle="tooltip" data-placement="right" title="Delete Exclusion"></i>
@@ -617,11 +621,11 @@
 <script type="text/x-handlebars-template" id="filterTemplate">
     <div class="topMenu row">
         {{#if model.isSystem}}
-            <div class="col-md-12">
+            <div class="col-xs-12 full-column">
         {{else if model.controlType}}
-            <div class="col-md-12">
+            <div class="col-xs-12 full-column">
         {{else}}
-            <div class="col-md-10">
+            <div class="col-xs-10">
         {{/if}}
             <form class="filterEditor form-horizontal">
                 <div class="form-group-sm" title="Data Type">
@@ -662,13 +666,13 @@
             </form>
         </div>
         {{#unless model.isSystem}}
-        <div class="col-md-1 disableButton">
+        <div class="col-xs-1 disableButton">
             <a href="#">
                 <i class="fa fa-toggle-on disableFilterButton"
                    data-toggle="tooltip" data-placement="right" title="Enabled" cid="{{id}}"></i>
             </a>
         </div>
-        <div class="col-md-1 deleteButton">
+        <div class="col-xs-1 deleteButton">
             <a href="#">
                 <i class="fa fa-close deleteFilterButton" cid="{{id}}"
                    data-toggle="tooltip" title="Delete Filter"></i>
@@ -687,8 +691,7 @@
     </div>
     -->
     <div class="row">
-        <div class="col-md-1"></div>
-        <div class="col-md-4">
+        <div class="col-xs-5">
             <div class="dropdown">
                 <button class="btn btn-primary dropdown-toggle" type="button" id="addFilterButton" data-toggle="dropdown" aria-expanded="true">
                     Add Filter
@@ -708,14 +711,13 @@
                 </ul>
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-xs-7">
             <a class="filter-about" href="#" data-toggle="tooltip" data-placement="bottom" title="To use,
 1. Pick field to filter on from dropdown.
 2. Enter an ANSI SQL expression over that field (but no other).
 Note: this release does not support expressions with multiple fields nor changing which field a filter acts over."
                 ><i class="fa fa-question-circle"></i></a>
         </div>
-        <div class="col-md-1"></div>
     </div>
     <!--
     <div class="col-xs-1 filterButton closeButton">
