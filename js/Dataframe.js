@@ -277,23 +277,15 @@ Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMasks, lim
         var limit = limits[type],
             numMasksSatisfiedByID = type === 'edge' ? numMasksSatisfiedByEdgeID : numMasksSatisfiedByPointID,
             targetMask = type === 'edge' ? edgeMask : pointMask;
-        if (limit < this.numByType(type)) {
-            var limitReached = false;
-            _.every(numMasksSatisfiedByID, function (count, i) {
-                // Shorthand for "if we've passed all masks":
-                if (count === numMasks) {
-                    targetMask.push(i);
-                }
-                // This is how we implement the limit, just to stop pushing once reached:
-                return !(limitReached = targetMask.length >= limit);
-            });
-        } else {
-            _.each(numMasksSatisfiedByID, function (count, i) {
-                // Shorthand for "if we've passed all masks":
-                if (count === numMasks) {
-                    targetMask.push(i);
-                }
-            });
+        for (var i=0; i<numMasksSatisfiedByID.length; i++) {
+            // Shorthand for "if we've passed all masks":
+            if (numMasksSatisfiedByID[i] === numMasks) {
+                targetMask.push(i);
+            }
+            // This is how we implement the limit, just to stop pushing once reached:
+            if (targetMask.length >= limit) {
+                break;
+            }
         }
     });
 
