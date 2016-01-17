@@ -211,13 +211,18 @@ Dataframe.prototype.presentVizSet = function (vizSet) {
  * There may be other, smarter solutions if we cache strategically, or use a query planner.
  * @param {?DataframeMask[]} selectionMasks
  * @param {?DataframeMask[]} exclusionMasks
- * @param {Number=Infinity} pointLimit
+ * @param {Object.<Number=Infinity>} limits
  * @returns ?DataframeMask
  */
-Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMasks, pointLimit) {
-    if (!pointLimit) {
-        pointLimit = Infinity;
+Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMasks, limits) {
+    if (!limits) {
+        limits = {point: Infinity, edge: Infinity};
     }
+    _.each(GraphComponentTypes, function (type) {
+        if (limits[type] === undefined) {
+            limits[type] = Infinity;
+        }
+    });
 
     // No selection masks imply a universal selection:
     if (selectionMasks.length === 0) {
@@ -268,14 +273,28 @@ Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMasks, poi
         }
     });
 
-    var pointLimitReached = false;
-    _.every(numMasksSatisfiedByPointID, function (count, i) {
-        // Shorthand for "if we've passed all masks":
-        if (count === numMasks) {
-            pointMask.push(i);
+    _.each(GraphComponentTypes, function (type) {
+        var limit = limits[type],
+            numMasksSatisfiedByID = type === 'edge' ? numMasksSatisfiedByEdgeID : numMasksSatisfiedByPointID,
+            targetMask = type === 'edge' ? edgeMask : pointMask;
+        if (limit < this.numByType(type)) {
+            var limitReached = false;
+            _.every(numMasksSatisfiedByID, function (count, i) {
+                // Shorthand for "if we've passed all masks":
+                if (count === numMasks) {
+                    targetMask.push(i);
+                }
+                // This is how we implement the limit, just to stop pushing once reached:
+                return !(limitReached = targetMask.length >= limit);
+            });
+        } else {
+            _.each(numMasksSatisfiedByID, function (count, i) {
+                // Shorthand for "if we've passed all masks":
+                if (count === numMasks) {
+                    targetMask.push(i);
+                }
+            });
         }
-        // This is how we implement the limit, just to stop pushing once reached:
-        return !(pointLimitReached = pointMask.length >= pointLimit);
     });
 
     return new DataframeMask(
