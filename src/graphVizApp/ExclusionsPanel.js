@@ -42,7 +42,7 @@ var ExclusionCollection = Backbone.Collection.extend({
 
 var ExclusionView = Backbone.View.extend({
     tagName: 'div',
-    className: 'exclusionInspector',
+    className: 'exclusionInspector container-fluid',
     events: {
         'click .disableExclusionButton': 'disable',
         'click .disabledExclusionButton': 'enable',
