@@ -263,20 +263,17 @@ Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMasks, lim
     });
 
     // The overall masks per type, made by mask intersection:
-    var edgeMask = [];
-    var pointMask = [];
-
-    _.each(numMasksSatisfiedByEdgeID, function (count, i) {
-        // Shorthand for "if we've passed all masks":
-        if (count === numMasks) {
-            edgeMask.push(i);
-        }
-    });
+    var result = new DataframeMask(
+        this,
+        [],
+        []
+    );
+    var resultMasks = {point: [], edge: []};
 
     _.each(GraphComponentTypes, function (type) {
         var limit = limits[type],
             numMasksSatisfiedByID = type === 'edge' ? numMasksSatisfiedByEdgeID : numMasksSatisfiedByPointID,
-            targetMask = type === 'edge' ? edgeMask : pointMask;
+            targetMask = result[type];
         for (var i=0; i<numMasksSatisfiedByID.length; i++) {
             // Shorthand for "if we've passed all masks":
             if (numMasksSatisfiedByID[i] === numMasks) {
@@ -289,11 +286,7 @@ Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMasks, lim
         }
     });
 
-    return new DataframeMask(
-        this,
-        pointMask,
-        edgeMask
-    );
+    return result;
 };
 
 /**
