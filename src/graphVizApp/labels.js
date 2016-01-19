@@ -292,6 +292,10 @@ function effectLabels(toClear, labels, newPos, highlighted, clicked, poi) {
         var rawElt = lbl.elt[0];
         rawElt.style.display = 'none';
     });
+    // In case a label made a tooltip
+    if (toClear.length) {
+        $('body > .label-tooltip').remove();
+    }
 
     // For each label move it
     for (var i = 0; i < labels.length; i++) {
