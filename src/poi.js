@@ -319,22 +319,25 @@ function createLabelDom(instance, dim, labelObj) {
                 entry = sprintf('%.4f', val);
             }
             var $wrap = $('<div>').addClass('graph-label-value-wrapper').html(entry);
+
+            var $icons = $('<div>').addClass('graph-label-icons');
+            $wrap.append($icons);
             var $exclude = $('<a class="exclude-by-key-value">').html('<i class="fa fa-ban"></i>');
-            $exclude.data({placement: 'right', toggle: 'tooltip'});
-            $exclude.attr('title', 'Exclude by ' + $key.text() + '=' + entry);
-            $exclude.tooltip();
+            $exclude.data({placement: 'bottom', toggle: 'tooltip'});
+            $exclude.attr('title', 'Exclude if ' + $key.text() + '=' + entry);
+            $exclude.tooltip({container: 'body'});
             $exclude.on('click', function () {
                 labelRequests.onNext({excludeQuery: {query: queryForKeyAndValue(key, val)}});
             });
-            $wrap.append($exclude);
             var $filter = $('<a class="filter-by-key-value">').html('<i class="fa fa-filter"></i>');
-            $filter.data({placement: 'right', toggle: 'tooltip'});
-            $filter.attr('title', 'Filter by ' + $key.text() + '=' + entry);
-            $filter.tooltip();
+            $filter.data({placement: 'bottom', toggle: 'tooltip'});
+            $filter.attr('title', 'Filter for ' + $key.text() + '=' + entry);
+            $filter.tooltip({container: 'body'});
             $filter.on('click', function () {
                 labelRequests.onNext({filterQuery: {query: queryForKeyAndValue(key, val)}});
             });
-            $wrap.append($filter);
+            $icons.append($exclude).append($filter);
+
             var $val = $('<td>').addClass('graph-label-value').append($wrap);
             $row.append($key).append($val);
             $table.append($row);
