@@ -34,7 +34,12 @@ var edgesToDegrees = function (numPoints, edgeList) {
 };
 
 
-//int * [ int ] -> [int]
+/**
+ * Returns all point indexes sorted descending by their degree.
+ * @param {Number} numPoints
+ * @param {Number[]} degrees
+ * @returns {Number[]}
+ */
 var computeRoots = function (numPoints, degrees) {
     perf.startTiming('graph-viz:weaklycc:computeRoots');
     var roots = new Array(numPoints);
@@ -80,13 +85,16 @@ function traverse (edgeList, root, label, depth, done, nodeToComponent) {
             enqueueEdges(edgeList, label, src, nextLevel, done);
             traversed++;
         }
+        if (nextLevel.length > 50000) {
+            throw new Error('Too many roots at the next level; assuming a super-node.');
+        }
         roots = nextLevel;
     }
 
     return traversed;
 }
 
-// Compute undired weakly connected components
+// Compute undirected weakly connected components
 // int * [ [int, int] ] ->
 //   {  nodeToComponent: Uint32Array,
 //      components: [{root: int, component: int, size: int}]
@@ -119,21 +127,40 @@ module.exports = function weaklycc (numPoints, edges, depth) {
     for (var i = 0; i < numPoints; i++) {
         var root = roots[i];
         if (!done[root]) {
-            if (lastSize < threshold) { // originaly (true && lastSize < threshold), why true && ?
+            if (lastSize < threshold) { // originally (true && lastSize < threshold), why true && ?
 
-                //skip first as likely supernode
-                var defC = components.length > 1 ? 1 : 0;
+                //skip first as likely super-node
+                var defaultLabel = components.length > 1 ? 1 : 0;
 
-                components[defC].size++;
+                components[defaultLabel].size++;
                 done[root] = true;
-                nodeToComponent[root] = defC;
+                nodeToComponent[root] = defaultLabel;
             } else {
-                var size = traverse(edgeList, root, components.length, depth, done, nodeToComponent);
-                components.push({root: root, component: components.length, size: size});
-                lastSize = size;
+                // This tries to fail gracefully under super-node conditions with lots of multi-edges.
+                // The alternative is a crash due to memory/heap exhaustion.
+                var label = components.length, componentSize = 0;
+                try {
+                    componentSize = traverse(edgeList, root, label, depth, done, nodeToComponent);
+                    components.push({root: root, component: label, size: componentSize});
+                    lastSize = componentSize;
+                } catch (ignore) {
+                    // Make one last component out of all remaining nodes.
+                    componentSize = 0;
+                    for (var j=0; j<numPoints; j++) {
+                        if (nodeToComponent[j] === 0) {
+                            nodeToComponent[j] = label;
+                            componentSize++;
+                        } else if (nodeToComponent[j] === label) {
+                            // incomplete traverse effect
+                            componentSize++;
+                        }
+                    }
+                    components.push({root: root, component: label, size: componentSize});
+                    break;
+                }
 
                 //cut down for second component (first was a likely outlier)
-                if (components.length == 2) {
+                if (components.length === 2) {
                     threshold = Math.min(lastSize * 0.2, threshold);
                 }
             }
@@ -150,4 +177,4 @@ module.exports = function weaklycc (numPoints, edges, depth) {
         //[{root: int, component: int, size: int}]
         components: components
     };
-}
+};

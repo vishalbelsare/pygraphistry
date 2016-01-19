@@ -76,7 +76,7 @@ function httpDownloader(http, url) {
 function s3Downloader(url) {
     var params = {
         Bucket: url.host || config.BUCKET,  // Defaults to Graphistry's bucket
-        Key: url.pathname.replace(/^\//,'') // Strip leading slash if there is one
+        Key: decodeURIComponent(url.pathname.replace(/^\//,'')) // Strip leading slash if there is one
     };
     var res = Q.defer();
 
@@ -88,7 +88,7 @@ function s3Downloader(url) {
             // Try to load from cache regardless of timestamp.
             res.resolve(tmpCache.get(url, new Date(0)));
         } else {
-            var mtime = new Date(data['LastModified']);
+            var mtime = new Date(data.LastModified);
             logger.debug('Got S3 headers, dataset was last modified on', mtime);
             tmpCache.get(url, mtime).then(function (data) {
                 res.resolve(data);
@@ -140,7 +140,7 @@ function loadDatasetIntoSim(graph, dataset) {
 }
 
 
-// Parse the json dataset decription, download then load data.
+// Parse the json dataset description, download then load data.
 function loadJSONMeta(graph, rawDataset) {
     var dataset = JSON.parse(rawDataset.body.toString('utf8'));
     return downloadDatasources(dataset).then(function (dataset) {
@@ -183,7 +183,8 @@ function downloadDatasources(dataset) {
 module.exports = {
     loadDatasetIntoSim: loadDatasetIntoSim,
     datasetURLFromQuery: function datasetURLFromQuery(query) {
-        return query.dataset ? urllib.parse(decodeURIComponent(query.dataset)) : undefined;
+        if (!query.dataset) { return undefined; }
+        return urllib.parse(decodeURIComponent(query.dataset));
     },
     datasetConfigFromQuery: function datasetConfigFromQuery(query) {
         function hasParam(param) { return param !== undefined && param !== 'undefined'; }

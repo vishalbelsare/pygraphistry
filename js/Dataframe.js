@@ -206,41 +206,43 @@ Dataframe.prototype.presentVizSet = function (vizSet) {
 };
 
 /**
- * @param {?MaskList} maskList
- * @param {Number=Infinity} pointLimit
+ * This performs mask join operations over the dataset, optimized for having many masks.
+ * It allocates two full-sized arrays (bytesize * number of elements) instead of temporary mask objects.
+ * There may be other, smarter solutions if we cache strategically, or use a query planner.
+ * @param {?DataframeMask[]} selectionMasks
+ * @param {?DataframeMask[]} exclusionMasks
+ * @param {Object.<Number=Infinity>} limits
  * @returns ?DataframeMask
  */
-Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
-    if (!pointLimit) {
-        pointLimit = Infinity;
+Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMasks, limits) {
+    if (!limits) {
+        limits = {point: Infinity, edge: Infinity};
     }
-    if (maskList === undefined || !maskList.length || maskList.length === 0) {
-        var universe = this.fullDataframeMask();
-        // Limit the universe first just to avoid computation scaling problems:
-        if (pointLimit && universe.numByType('point') > pointLimit) {
-            universe.limitNumByTypeTo('point', pointLimit);
+    _.each(GraphComponentTypes, function (type) {
+        if (limits[type] === undefined) {
+            limits[type] = Infinity;
         }
-        return universe;
+    });
+
+    // No selection masks imply a universal selection:
+    if (selectionMasks.length === 0) {
+        selectionMasks = [this.fullDataframeMask()];
     }
-    // TODO: Make this faster.
 
     // Assumes we will never have more than 255 separate masks.
-    var numMasks = maskList.length;
+    var numMasks = selectionMasks.length;
     var MASK_LIMIT = 255;
     if (numMasks > MASK_LIMIT) {
         console.error('TOO MANY MASKS; truncating to: ' + MASK_LIMIT);
-        maskList.length = 255;
+        selectionMasks.length = 255;
     }
-
-    // The overall masks per type, made by mask intersection:
-    var edgeMask = [];
-    var pointMask = [];
 
     // Assumes Uint8Array() constructor initializes to zero, which it should.
     var numMasksSatisfiedByPointID = new Uint8Array(this.numPoints());
     var numMasksSatisfiedByEdgeID = new Uint8Array(this.numEdges());
 
-    _.each(maskList, function (mask) {
+    // Equivalent to reduce over AND:
+    _.each(selectionMasks, function (mask) {
         mask.mapEdgeIndexes(function (idx) {
             numMasksSatisfiedByEdgeID[idx]++;
         });
@@ -250,28 +252,41 @@ Dataframe.prototype.composeMasks = function (maskList, pointLimit) {
         });
     });
 
-    _.each(numMasksSatisfiedByEdgeID, function (count, i) {
-        // Shorthand for "if we've passed all masks":
-        if (count === numMasks) {
-            edgeMask.push(i);
-        }
+    // Equivalent to reduce over NOT OR:
+    _.each(exclusionMasks, function (mask) {
+        mask.mapPointIndexes(function (idx) {
+            numMasksSatisfiedByPointID[idx] = 0;
+        });
+        mask.mapEdgeIndexes(function (idx) {
+            numMasksSatisfiedByEdgeID[idx] = 0;
+        });
     });
 
-    var pointLimitReached = false;
-    _.every(numMasksSatisfiedByPointID, function (count, i) {
-        // Shorthand for "if we've passed all masks":
-        if (count === numMasks) {
-            pointMask.push(i);
-        }
-        // This is how we implement the limit, just to stop pushing once reached:
-        return !(pointLimitReached = pointMask.length >= pointLimit);
-    });
-
-    return new DataframeMask(
+    // The overall masks per type, made by mask intersection:
+    var result = new DataframeMask(
         this,
-        pointMask,
-        edgeMask
+        [],
+        []
     );
+    var resultMasks = {point: [], edge: []};
+
+    _.each(GraphComponentTypes, function (type) {
+        var limit = limits[type],
+            numMasksSatisfiedByID = type === 'edge' ? numMasksSatisfiedByEdgeID : numMasksSatisfiedByPointID,
+            targetMask = result[type];
+        for (var i=0; i<numMasksSatisfiedByID.length; i++) {
+            // Shorthand for "if we've passed all masks":
+            if (numMasksSatisfiedByID[i] === numMasks) {
+                targetMask.push(i);
+            }
+            // This is how we implement the limit, just to stop pushing once reached:
+            if (targetMask.length >= limit) {
+                break;
+            }
+        }
+    });
+
+    return result;
 };
 
 /**

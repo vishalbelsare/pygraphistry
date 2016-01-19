@@ -426,8 +426,10 @@ DataframeMask.prototype = {
         var numElements = this.numByType(type), i = 0;
         var mask = this[type];
         if (mask === undefined) {
-            for (i = 0; i < numElements; i++) {
-                iterator.call(this, i, i);
+            if (!this.isExclusive) {
+                for (i = 0; i < numElements; i++) {
+                    iterator.call(this, i, i);
+                }
             }
         } else {
             for (i = 0; i < numElements; i++) {

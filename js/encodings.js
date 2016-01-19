@@ -31,7 +31,7 @@ var defaults = {
 };
 
 module.exports = {
-    inferEncoding: function (dataframe, type, attributeName, encodingType, binning) {
+    inferEncoding: function (dataframe, type, attributeName, encodingType, variation, binning) {
         var aggregations = dataframe.getColumnAggregations(attributeName, type, true);
         var summary = aggregations.getSummary();
         var scaling;
@@ -46,14 +46,17 @@ module.exports = {
                     }
                     break;
                 case 'edge':
-                    // Only encoding that works (buffer management) and has enough visual capacity on edges:
-                    encodingType = 'edgeColor';
-                    break;
+                    if (summary.isQuantitative && !summary.isDiverging) {
+                        encodingType = 'edgeSize';
+                    } else {
+                        encodingType = 'edgeColor';
+                    }
             }
         }
         switch (encodingType) {
             case 'pointSize':
-                if (summary.isQuantitative && !summary.isDiverging) {
+                // Has to have a magnitude, not negative:
+                if (summary.isOrdered && !summary.isDiverging) {
                     // Square root because point size/radius yields a point area:
                     scaling = d3Scale.sqrt()
                         .domain(defaultDomain)
@@ -61,7 +64,8 @@ module.exports = {
                 }
                 break;
             case 'pointOpacity':
-                if (summary.isQuantitative && !summary.isDiverging) {
+                // Has to have a magnitude, not negative:
+                if (summary.isOrdered && !summary.isDiverging) {
                     scaling = d3Scale.linear()
                         .domain(defaultDomain)
                         .range(defaults.pointOpacity.range);
@@ -69,7 +73,10 @@ module.exports = {
                 break;
             case 'pointColor':
                 if (summary.isCategorical) {
-                    if (summary.countDistinct <= 10) {
+                    if (variation === 'quantitative' && summary.isOrdered) {
+                        // User can request a quantitative interpretation of ordered categorical domains.
+                        scaling = undefined;
+                    } else if (summary.countDistinct <= 10) {
                         scaling = d3Scale.category10()
                             .domain(summary.distinctValues);
                     } else if (summary.countDistinct <= 20) {
@@ -100,6 +107,7 @@ module.exports = {
             case 'pointLabel':
                 break;
             case 'edgeSize':
+                // TODO ensure sizes are binned/scaled so that they may be visually distinguished.
                 if (summary.isQuantitative && !summary.isDiverging) {
                     scaling = d3Scale.linear()
                         .domain(defaultDomain)

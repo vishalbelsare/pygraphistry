@@ -298,17 +298,22 @@
             </div>  <!-- /form-horizontal -->
         </div> <!-- /renderingItems -->
 
-        <div id="exclusionsPanel" class="exclusionsPanel container">
+        <div id="exclusionsPanel" class="exclusionsPanel">
             <p class="panelHeader text-center bg-primary">Exclusions</p>
             <div id="exclusions"></div>
-            <div id="addExclusion">
-                <button type="button" class="btn btn-primary btn-xs addExclusionButton" title="New Exclusion" {{disabled}}>
-                    <span title="New Exclusion" class="fa fa-plus"></span>
-                </button>
+            <div id="addExclusion" class="container-fluid">
+                <div class="row">
+                    <div class="col-xs-12">
+                        <button type="button" class="btn btn-primary btn-xs addExclusionButton"
+                                data-toggle="tooltip" title="New Exclusion" {{disabled}}>
+                            <span class="fa fa-plus"></span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div> <!-- /exclusionsPanel -->
 
-        <div id="filtersPanel" class="filtersPanel container">
+        <div id="filtersPanel" class="filtersPanel">
             <p class="panelHeader text-center bg-primary">Filters</p>
             <div id="filters"></div>
             <div id="addFilter"></div>
@@ -512,7 +517,8 @@
 <script type="text/x-handlebars-template" id="setTemplate">
     <div class="topMenu setEntry row {{selectionClass}}">
         <div class="col-md-10 labelArea">
-            <a href="#"><i class="label label-info fa fa-tag tagButton" title="Tag">
+            <a href="#"><i class="label label-info fa fa-tag tagButton"
+                           data-toggle="tooltip" data-placement="right" title="Tag">
                 {{#if title~}}
                     {{~title~}}
                 {{~else~}}
@@ -529,7 +535,8 @@
         </div>
         <div class="col-md-1 deleteButton">
             <a href="#">
-                <i class="fa fa-close deleteSetButton" title="Delete Set"></i>
+                <i class="fa fa-close deleteSetButton"
+                   data-toggle="tooltip" title="Delete Set"></i>
             </a>
         </div>
     </div>
@@ -537,7 +544,8 @@
 
 <script type="text/x-handlebars-template" id="setCreateTemplate">
     <div class="btn-group btn-group-xs createSetDropdown">
-        <button type="button" class="btn btn-primary btn-xs addSetButton" title="New Set" {{disabled}}>
+        <button type="button" class="btn btn-primary btn-xs addSetButton"
+                data-toggle="tooltip" title="New Set" {{disabled}}>
             <span title="New Set" class="fa fa-plus"></span>
         </button>
         <button type="button" class="btn btn-default btn-xs dropdown-toggle" title="New Set"
@@ -594,27 +602,26 @@
 
 <script type="text/x-handlebars-template" id="exclusionTemplate">
     <div class="topMenu row">
-        <div class="col-md-10">
+        <div class="col-xs-10">
             <form class="exclusionEditor form-horizontal">
                 <div class="row form-group" title="Expression">
-                    <label class="control-label" for="exclusionExpression{{id}}">Expression</label>
                     <!--
                     <textarea class="form-control exclusionExpression" id="exclusionExpression{{id}}" name="expression" title="Exclusion expression"
                           rows="2" cols="40" placeholder="{{model.placeholder}}">{{model.expression}}</textarea>-->
-                    <div class="form-control exclusionExpression" id="exclusionExpression{{id}}" title="Exclusion expression"
-                    ></div>
+                    <div class="form-control exclusionExpression" id="exclusionExpression{{id}}"
+                         data-toggle="tooltip" title="Exclusion expression"></div>
                 </div>
             </form>
         </div>
-        <div class="col-md-1 disableButton">
+        <div class="col-xs-1 disableButton">
             <a href="#">
-                <i class="fa fa-toggle-on disableExclusionButton" title="Enabled" cid="{{id}}"></i>
+                <i class="fa fa-toggle-on disableExclusionButton" data-toggle="tooltip" data-placement="right" title="Enabled" cid="{{id}}"></i>
             </a>
         </div>
-        <div class="col-md-1 deleteButton">
+        <div class="col-xs-1 deleteButton">
             <a href="#">
                 <i class="fa fa-close deleteExclusionButton" cid="{{id}}"
-                   title="Delete Exclusion"></i>
+                   data-toggle="tooltip" data-placement="right" title="Delete Exclusion"></i>
             </a>
         </div>
     </div>
@@ -623,11 +630,11 @@
 <script type="text/x-handlebars-template" id="filterTemplate">
     <div class="topMenu row">
         {{#if model.isSystem}}
-            <div class="col-md-12">
+            <div class="col-xs-12 full-column">
         {{else if model.controlType}}
-            <div class="col-md-12">
+            <div class="col-xs-12 full-column">
         {{else}}
-            <div class="col-md-10">
+            <div class="col-xs-10">
         {{/if}}
             <form class="filterEditor form-horizontal">
                 <div class="form-group-sm" title="Data Type">
@@ -659,25 +666,25 @@
                     </select>
                 </div>
                 <div class="row form-group" title="Expression">
-                    <label class="control-label" for="filterExpression{{id}}">Expression</label>
                     <!--
                     <textarea class="form-control filterExpression" id="filterExpression{{id}}" name="expression" title="Filter expression"
                               rows="2" cols="40" placeholder="{{model.placeholder}}">{{model.expression}}</textarea>-->
-                    <div class="form-control filterExpression" id="filterExpression{{id}}" title="Filter expression"
-                            ></div>
+                    <div class="form-control filterExpression" id="filterExpression{{id}}"
+                         data-toggle="tooltip" data-placement="right" title="Filter expression"></div>
                 </div>
             </form>
         </div>
         {{#unless model.isSystem}}
-        <div class="col-md-1 disableButton">
+        <div class="col-xs-1 disableButton">
             <a href="#">
-                <i class="fa fa-toggle-on disableFilterButton" title="Enabled" cid="{{id}}"></i>
+                <i class="fa fa-toggle-on disableFilterButton"
+                   data-toggle="tooltip" data-placement="right" title="Enabled" cid="{{id}}"></i>
             </a>
         </div>
-        <div class="col-md-1 deleteButton">
+        <div class="col-xs-1 deleteButton">
             <a href="#">
                 <i class="fa fa-close deleteFilterButton" cid="{{id}}"
-                    title="Delete Filter"></i>
+                   data-toggle="tooltip" title="Delete Filter"></i>
             </a>
         </div>
         {{/unless}}
@@ -693,8 +700,7 @@
     </div>
     -->
     <div class="row">
-        <div class="col-md-1"></div>
-        <div class="col-md-4">
+        <div class="col-xs-5">
             <div class="dropdown">
                 <button class="btn btn-primary dropdown-toggle" type="button" id="addFilterButton" data-toggle="dropdown" aria-expanded="true">
                     Add Filter
@@ -714,14 +720,13 @@
                 </ul>
             </div>
         </div>
-        <div class="col-md-6">
-            <a class="filter-about" href="#" title="To use,
+        <div class="col-xs-7">
+            <a class="filter-about" href="#" data-toggle="tooltip" data-placement="bottom" title="To use,
 1. Pick field to filter on from dropdown.
 2. Enter an ANSI SQL expression over that field (but no other).
 Note: this release does not support expressions with multiple fields nor changing which field a filter acts over."
-                ><i class="fa fa-question-circle" /></a>
+                ><i class="fa fa-question-circle"></i></a>
         </div>
-        <div class="col-md-1"></div>
     </div>
     <!--
     <div class="col-xs-1 filterButton closeButton">
@@ -741,7 +746,8 @@ Note: this release does not support expressions with multiple fields nor changin
         </div>
         <div class="col-xs-9">
             <div class="dropdown">
-                <button class="btn btn-default btn-block dropdown-toggle pull-right" type="button" id="dropdownMenu{{id}}" data-toggle="dropdown" aria-expanded="true">
+                <button class="btn btn-default btn-block dropdown-toggle pull-right" type="button" id="dropdownMenu{{id}}"
+                        data-toggle="dropdown" aria-expanded="true">
                     {{attribute}}
                     <span class="caret"></span>
                 </button>
@@ -752,6 +758,24 @@ Note: this release does not support expressions with multiple fields nor changin
                         </a></li>
                     {{/each}}
                 </ul>
+            </div>
+            <div class="encode-attribute interactive encode-color-categorical"
+                 data-toggle="tooltip" title="Encode Color Categorical">
+                <a href="#">
+                    <i class="fa fa-circle"></i>
+                </a>
+            </div>
+            <div class="encode-attribute interactive encode-color-quantitative"
+                 data-toggle="tooltip" title="Encode Color Quantitative">
+                <a href="#">
+                    <i class="fa fa-circle"></i>
+                </a>
+            </div>
+            <div class="encode-attribute interactive encode-size"
+                 data-toggle="tooltip" title="Encode Size">
+                <a href="#">
+                    <i class="fa fa-circle"></i>
+                </a>
             </div>
         </div>
         <div class="col-xs-1 closeButton">
@@ -771,26 +795,23 @@ Note: this release does not support expressions with multiple fields nor changin
                 <i class="fa fa-caret-right interactive histogramButton expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
-        <div class="col-xs-9 attributeName">
-            {{attribute}}
-        </div>
-        <!--
-        <div class="col-xs-1 histogramButton refreshButton refreshHistogramButton-{{modelId}}">
+        <div class="col-xs-4 attributeName">{{attribute}}</div>
+        <div class="col-xs-6">
             <a href="#">
-                <span class="fa-stack">
-                    <i class="fa fa-filter histogramButton interactive refreshHistogramButton refreshHistogramButton-{{modelId}}" id="refreshHistogramButton{{modelId}}" cid="{{id}}"></i>
-                    <i class="fa fa-trash histogramRemoveIcon interactive" style="font-size: 0.9em; position: absolute; margin-left: -0.5em; margin-top: 0.5em; pointer-events: none"></i>
-                </span>
-
-            </a>
+                <i class="encode-attribute interactive encode-color-categorical fa fa-square"
+                   data-toggle="tooltip" title="Encode Color Categorical"></i></a>
+            <a href="#">
+                <i class="encode-attribute interactive encode-color-quantitative fa fa-square"
+                   data-toggle="tooltip" title="Encode Color Quantitative"></i></a>
+            <a href="#">
+                <i class="encode-attribute interactive encode-size fa fa-circle"
+                   data-toggle="tooltip" title="Encode Size"></i></a>
         </div>
-        -->
         <div class="col-xs-1 histogramButton closeButton">
             <a href="#">
                 <i class="fa fa-times interactive histogramButton closeHistogramButton" id="closeHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
-
     </div>
     <div class="vizContainer"></div>
     <div class="divide-line"></div>

@@ -267,11 +267,8 @@ PlanNode.prototype = {
         if (this.ast.type === 'Literal') {
             return 0;
         }
-        var identifierCount = 0;
-        this.eachNode(function (eachNode) {
-            identifierCount += eachNode.arity();
-        });
-        return identifierCount;
+        var identifierNodes = this.identifierNodes();
+        return _.size(identifierNodes);
     },
 
     isConstant: function () { return this.arity() === 0; },
