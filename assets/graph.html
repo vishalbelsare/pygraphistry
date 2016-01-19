@@ -374,9 +374,11 @@
     </div>
 
     <div id="timeExplorer" class="panel">
+        <div id="timeExplorerVerticalLine" class="verticalLine"></div>
         <div id="timeExplorerTop"></div>
         <div id="timeExplorerBody"></div>
         <div id="timeExplorerMain"></div>
+        <div id="timeExplorerAxisContainer"></div>
         <div id="timeExplorerBottom"></div>
     </div>
 
@@ -809,6 +811,16 @@ Note: this release does not support expressions with multiple fields nor changin
         </ul>
     </div>
 </script>
+
+<script type="text/tempate" id="timeBarTemplate">
+
+    <div class="vizContainer"></div>
+</script>
+
+<script type="text/template" id="timeBarBottomAxisTemplate">
+    <div class="axisContainer"></div>
+</script>
+
 
 </body>
 </html>
