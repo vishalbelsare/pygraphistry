@@ -2,7 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:histogramBrush');
 var $       = window.$;
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 var _       = require('underscore');
 
@@ -116,17 +116,17 @@ HistogramBrush.prototype.setupFiltersInteraction = function(filtersPanel, poi) {
 HistogramBrush.prototype.setupMarqueeInteraction = function(marquee) {
     marquee.selections.map(function (val) {
         return {type: 'selection', sel: val};
-    }).merge(marquee.drags.sample(DRAG_SAMPLE_INTERVAL).map(function (val) {
+    }).merge(marquee.drags.inspectTime(DRAG_SAMPLE_INTERVAL).map(function (val) {
             return {type: 'drag', sel: val};
         })
     ).merge(this.dataframeAttributeChange.map(function () {
             return {type: 'dataframeAttributeChange', sel: this.lastSelection};
         }, this)
-    ).flatMapLatest(function (selContainer) {
+    ).switchMap(function (selContainer) {
         return this.globalStats.map(function (globalVal) {
             return {type: selContainer.type, sel: selContainer.sel, globalStats: globalVal};
         });
-    }.bind(this)).flatMapLatest(function (data) {
+    }.bind(this)).switchMap(function (data) {
         var binning = {};
         var attributeNames = _.pluck(this.activeDataframeAttributes, 'name');
         _.each(this.activeDataframeAttributes, function (attr) {

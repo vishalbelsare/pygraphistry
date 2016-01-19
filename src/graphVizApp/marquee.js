@@ -2,7 +2,7 @@
 
 var debug = require('debug')('graphistry:StreamGL:marquee');
 var $     = window.$;
-var Rx    = require('rx');
+var Rx    = require('rxjs/Rx.KitchenSink');
             require('../rx-jquery-stub');
 var _     = require('underscore');
 var renderer = require('../renderer.js');
@@ -78,7 +78,7 @@ function eventPageCoordsInElement (evt, $elt) {
 // doAfterSelection takes (appState, rect, $elt, width, height)
 //
 function marqueeSelections (appState, $cont, $elt, isOn, marqueeState, doAfterSelection) {
-    var bounds = isOn.flatMapLatest(function (isOn) {
+    var bounds = isOn.switchMap(function (isOn) {
         if (!isOn) {
             debug('stop listening for marquee selections');
             $('#simulation').css({
@@ -110,13 +110,13 @@ function marqueeSelections (appState, $cont, $elt, isOn, marqueeState, doAfterSe
             .do(function () {
                 debug('marquee instance started, listening');
                 firstRunSinceMousedown = true;
-            }).flatMapLatest(function (startPoint) {
+            }).switchMap(function (startPoint) {
                 return Rx.Observable.fromEvent($(window.document), 'mousemove')
                     .do(function (evt) {
                         debug('stopPropagation: marquee move');
                         evt.stopPropagation();
                     })
-                    .sample(1)
+                    .inspectTime(1)
                     .map(function (moveEvt) {
                         return toRect(startPoint, toPoint($cont, moveEvt));
                     }).do(function (rect) {
@@ -184,7 +184,7 @@ function clearMarquee($cont, $elt) {
 
 
 function marqueeDrags(selections, $cont, $elt, marqueeState, takeLast, doAfterDrags) {
-    var drags = selections.flatMapLatest(function (selection) {
+    var drags = selections.switchMap(function (selection) {
         var firstRunSinceMousedown = true;
         var dragDelta = {x: 0, y: 0};
         return Rx.Observable.fromEvent($elt, 'mousedown')
@@ -201,14 +201,14 @@ function marqueeDrags(selections, $cont, $elt, marqueeState, takeLast, doAfterDr
                 $cont.addClass('beingdragged');
             })
             .map(toPoint.bind('', $cont))
-            .flatMapLatest(function (startPoint) {
+            .switchMap(function (startPoint) {
                 debug('Start of drag: ', startPoint);
                 var observable =  Rx.Observable.fromEvent($(window.document), 'mousemove')
                     .do(function (evt) {
                         debug('stopPropagation: marquee move 2');
                         evt.stopPropagation();
                     })
-                    .sample(1)
+                    .inspectTime(1)
                     .map(function (evt) {
                         return {start: startPoint, end: toPoint($cont, evt)};
                     }).do(function (drag) {
@@ -425,7 +425,7 @@ function initBrush (appState, $cont, toggle, cfg) {
 
 
     var doneDraggingRaw = new Rx.ReplaySubject(1);
-    var doneDragging = doneDraggingRaw.debounce(50).map(transformAll);
+    var doneDragging = doneDraggingRaw.debounceTime(50).map(transformAll);
 
     var bounds = marqueeSelections(appState, $cont, $elt, isOn, appState.brushOn, _.identity);
 
@@ -436,7 +436,7 @@ function initBrush (appState, $cont, toggle, cfg) {
 
     var selections = bounds.map(transformAll);
 
-    var allSubject = new Rx.Subject(1);
+    var allSubject = new Rx.Subject();
     selections = selections.merge(allSubject);
     // Set up server state so initial selection is all.
     allSubject.onNext({all: true});

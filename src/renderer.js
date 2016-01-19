@@ -3,7 +3,7 @@
 var _           = require('underscore');
 // TODO: Upgrade to immutable v3 (from v2) -- breaking changes; our usage must be updated to match
 var Immutable   = require('immutable');
-var Rx          = require('rx');
+var Rx          = require('rxjs/Rx.KitchenSink');
 var util        = require('./graphVizApp/util.js');
 var debug       = require('debug')('graphistry:StreamGL:renderer');
 
@@ -286,7 +286,7 @@ function init(config, canvas, urlParams) {
     resizeCanvas(state);
 
     Rx.Observable.fromEvent(window, 'resize')
-        .debounce(100).delay(50)
+        .debounceTime(100).delay(50)
         .subscribe(function() {
             resizeCanvas(state);
         }, util.makeErrorHandler('resize handler'));

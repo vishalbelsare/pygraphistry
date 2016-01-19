@@ -2,7 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:canvas');
 var $       = window.$;
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 var _       = require('underscore');
 
@@ -27,7 +27,7 @@ function setupCameraInteractions(appState, $eventTarget) {
         interactions = interaction.setupSwipe(eventTarget, camera)
             .merge(
                 interaction.setupPinch($eventTarget, camera)
-                    .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity)));
+                    .switchMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity)));
     } else {
         debug('Detected mouse-based device. Setting up mouse interaction event handlers.');
         interactions = interaction.setupDrag($eventTarget, camera, appState)
@@ -41,9 +41,9 @@ function setupCameraInteractions(appState, $eventTarget) {
                                 renderState.get('hostBuffers').curPoints,
                                 camera),
         interaction.setupZoomButton($('#zoomin'), camera, 1 / 1.25)
-            .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity)),
+            .switchMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity)),
         interaction.setupZoomButton($('#zoomout'), camera, 1.25)
-            .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
+            .switchMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
     );
 }
 
@@ -145,7 +145,7 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
 
     vboUpdates.filter(function (status) {
         return status === 'received';
-    }).flatMapLatest(function () {
+    }).switchMap(function () {
         var hostBuffers = renderState.get('hostBuffers');
         // FIXME handle selection update buffers here.
         Rx.Observable.combineLatest(hostBuffers.selectedPointIndexes, hostBuffers.selectedEdgeIndexes,

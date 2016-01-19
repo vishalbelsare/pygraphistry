@@ -11,7 +11,7 @@ var _           = require('underscore');
 var sprintf     = require('sprintf-js').sprintf;
 var moment      = require('moment');
 var $           = window.$;
-var Rx          = require('rx');
+var Rx          = require('rxjs/Rx.KitchenSink');
                   require('./rx-jquery-stub');
 
 var picking     = require('./picking.js');
@@ -217,13 +217,13 @@ function genLabel (instance, $labelCont, idx, info) {
     };
 
     setter
-        .sample(3)
+        .inspectTime(3)
         .do(function (data) {
             res.dim = data.dim;
             res.idx = data.idx;
             $elt.empty();
         })
-        .flatMapLatest(instance.getLabelDom)
+        .switchMap(instance.getLabelDom)
         .do(function (domTree) {
             if (domTree) {
                 $elt.append(domTree);

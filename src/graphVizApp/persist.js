@@ -2,7 +2,7 @@
 
 var $               = window.$;
 var _               = require('underscore');
-var Rx              = require('rx');
+var Rx              = require('rxjs/Rx.KitchenSink');
                       require('../rx-jquery-stub');
 var Handlebars      = require('handlebars');
 var Color           = require('color');
@@ -80,7 +80,7 @@ module.exports = {
             })
             .flatMap(function ($modal) {
                 workbookName = $('.modal-body input', $modal).val();
-                return Rx.Observable.fromCallback(socket.emit, socket)('persist_current_workbook', workbookName)
+                return Rx.Observable.bindCallback(socket.emit.bind(socket))('persist_current_workbook', workbookName)
                     .map(function (reply) {
                         return {reply: reply, $modal: $modal, workbookName: workbookName};
                     });
@@ -141,7 +141,7 @@ module.exports = {
             })
             .flatMap(function ($modal) {
                 var contentKey = $('.modal-body input', $modal).val();
-                return Rx.Observable.fromCallback(socket.emit, socket)('persist_current_vbo', contentKey)
+                return Rx.Observable.bindCallback(socket.emit.bind(socket))('persist_current_vbo', contentKey)
                     .map(function (reply) {
                         return {reply: reply, $modal: $modal, contentKey: contentKey};
                     });
@@ -173,7 +173,7 @@ module.exports = {
                 if (!contentKey || !previewDataURL) {
                     throw new Error('No content provided: ', response);
                 }
-                return Rx.Observable.fromCallback(socket.emit, socket)('persist_upload_png_export', previewDataURL, contentKey, 'preview.png')
+                return Rx.Observable.bindCallback(socket.emit.bind(socket))('persist_upload_png_export', previewDataURL, contentKey, 'preview.png')
                     .map(function () {
                         return response;
                     });

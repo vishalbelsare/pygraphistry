@@ -2,7 +2,7 @@
 
 // var debug   = require('debug')('graphistry:StreamGL:graphVizApp:HistogramsPanel');
 var $       = window.$;
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 var _       = require('underscore');
 var Handlebars = require('handlebars');

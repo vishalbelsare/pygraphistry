@@ -1,6 +1,6 @@
 'use strict';
 
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
 var _       = require('underscore');
 
 function makeErrorHandler(name) {
@@ -27,7 +27,7 @@ function bufferUntilReady(stream) {
     // always handle the last request.
     stream.subscribe(replayStream, makeErrorHandler('Copying stream for util.bufferUntilReady'));
 
-    lastElem.flatMapLatest(function (last) {
+    lastElem.switchMap(function (last) {
         return replayStream.filter(function (data) {
             return data !== last;
         }).take(1);
@@ -62,7 +62,7 @@ function createAlphaNumericUID() {
 
 // Usage:
 // mainObservableStream
-//    .flatMapLatest(util.observableFilter(subStream, _.identity))
+//    .switchMap(util.observableFilter(subStream, _.identity))
 //    .do (// Here you have mainObservable filtered on subStream)
 //
 // Operator is util.AND or util.OR
@@ -76,7 +76,7 @@ function observableFilter (streams, pred, operator) {
             console.error('Observable Filter on 3+ elements not implemented yet');
         }
         return function (origVal) {
-            return streams[0].flatMapLatest(function (val0) {
+            return streams[0].switchMap(function (val0) {
                 return streams[1].map(function (val1) {
                     return {val0: val0, val1: val1};
                 });
