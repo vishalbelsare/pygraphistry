@@ -8,7 +8,7 @@
 var urlModule    = require('url');
 var debug        = require('debug')('graphistry:StreamGL:client');
 var $            = window.$;
-var Rx           = require('rx');
+var Rx           = require('rxjs/Rx.KitchenSink');
                    require('./rx-jquery-stub');
 var _            = require('underscore');
 var io           = require('socket.io-client');
@@ -217,7 +217,7 @@ function connect(vizType, urlParams) {
 
                     debug('Stream client websocket connected to visualization server', vizType);
 
-                    return Rx.Observable.fromCallback(socket.emit.bind(socket, 'viz'))(vizType)
+                    return Rx.Observable.bindCallback(socket.emit.bind(socket, 'viz'))(vizType)
                         .do(function (v) {
                             debug('notified viz type', v);
                         })
@@ -239,7 +239,7 @@ function connect(vizType, urlParams) {
 //socket * canvas * {?is3d: bool}
 function createRenderer(socket, canvas, urlParams) {
     debug('Getting render-config from server', urlParams);
-    return Rx.Observable.fromCallback(socket.emit, socket)('render_config', null)
+    return Rx.Observable.bindCallback(socket.emit.bind(socket))('render_config', null)
         .map(function (res) {
             if (res && res.success) {
                 debug('Received render-config from server', res.renderConfig);

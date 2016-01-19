@@ -6,7 +6,7 @@
 
 var debug        = require('debug')('graphistry:StreamGL:staticclient');
 var $            = window.$;
-var Rx           = require('rx');
+var Rx           = require('rxjs/Rx.KitchenSink');
                    require('./rx-jquery-stub');
 var _            = require('underscore');
 

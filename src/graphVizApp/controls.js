@@ -2,7 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:controls');
 var $       = window.$;
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 var _       = require('underscore');
 var Color   = require('color');
@@ -85,7 +85,7 @@ var encodingForLabelParams = [
         cb: (function () {
             var sheet = createStyleElement();
             return function (stream) {
-                stream.sample(20).subscribe(function (c) {
+                stream.inspectTime(20).subscribe(function (c) {
                     sheet.text('.graph-label, .graph-label table { color: ' + c.rgbaString() + ' }');
                 });
             };
@@ -99,7 +99,7 @@ var encodingForLabelParams = [
         cb: (function () {
             var sheet = createStyleElement();
             return function (stream) {
-                stream.sample(20).subscribe(function (c) {
+                stream.inspectTime(20).subscribe(function (c) {
                     sheet.text('.graph-label .graph-label-container  { background-color: ' + c.rgbaString() + ' }');
                 });
             };
@@ -216,7 +216,7 @@ function clicksFromPopoutControls($elt) {
                     // Stop from propagating to canvas
                     evt.stopPropagation();
                 })
-                .flatMapLatest(function () {
+                .switchMap(function () {
                     return Rx.Observable.fromEvent(elt, 'mouseup');
                 })
                 .map(_.constant(elt));
@@ -335,7 +335,7 @@ function createControlHeader($anchor, name) {
 
 function createControls(socket, appState, trigger, urlParams) {
 
-    var rxControls = Rx.Observable.fromCallback(socket.emit, socket)('layout_controls', null)
+    var rxControls = Rx.Observable.bindCallback(socket.emit.bind(socket))('layout_controls', null)
         .map(function (res) {
             if (res && res.success) {
                 debug('Received layout controls from server', res.controls);
@@ -406,7 +406,7 @@ function createControls(socket, appState, trigger, urlParams) {
                 $slider.onAsObservable('slide'),
                 $slider.onAsObservable('slideStop')
             ).distinctUntilChanged()
-            .sample(50)
+            .inspectTime(50)
             .subscribe(
                 function () {
                     if ($that.hasClass('layout-menu-slider')) {
@@ -582,7 +582,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var brushIsOn = false;
     // Use separate subject so downstream subscribers don't trigger control changes twice.
     // TODO: Figure out the correct pattern for this.
-    var turnOnBrush = new Rx.Subject(1);
+    var turnOnBrush = new Rx.Subject();
     popoutClicks
         .merge(
             Rx.Observable.fromEvent($graph, 'click')
@@ -673,7 +673,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     Rx.Observable.zip(
         marquee.drags,
-        marquee.drags.flatMapLatest(function () {
+        marquee.drags.switchMap(function () {
             return marquee.selections.take(1);
         }),
         function(a, b) { return {drag: a, selection: b}; }
@@ -685,7 +685,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     //tick stream until canceled/timed out (ends with finalCenter)
     var autoCentering =
-        doneLoading.flatMapLatest(function () {
+        doneLoading.switchMap(function () {
             return Rx.Observable.interval(50)
                 .do(function () { debug('auto center interval'); })
                 .merge(centeringDone)

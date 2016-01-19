@@ -2,7 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:shortestpaths');
 var $       = window.$;
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 
 //poi * labelDOM -> int U exn
@@ -36,7 +36,7 @@ module.exports = function ($btn, poi, socket) {
         .do(function () {
             $btn.find('.fa').toggleClass('toggle-on', true);
         })
-        .flatMapLatest(function () {
+        .switchMap(function () {
 
             //TODO why is this red?
             var RED = 255 << 8;

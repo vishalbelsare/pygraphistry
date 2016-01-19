@@ -2,7 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:labels');
 var $       = window.$;
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 var _       = require('underscore');
 
@@ -45,20 +45,18 @@ function setupLatestHighlightedObject (appState, $eventTarget, textures) {
             appState.hitmapUpdates,
             _.identity
         )
-        .flatMapLatest(util.observableFilter([appState.marqueeOn, appState.brushOn],
+        .switchMap(util.observableFilter([appState.marqueeOn, appState.brushOn],
                 function (v) {
                     return (v !== 'selecting') && (v !== 'dragging');
                 },
                 util.AND
         ))
-        .flatMapLatest(util.observableFilter(appState.isAnimatingOrSimulating, util.notIdentity))
+        .switchMap(util.observableFilter(appState.isAnimatingOrSimulating, util.notIdentity))
         .map(function (pos) {
             return picking.hitTestN(appState.renderState, textures, pos.x, pos.y, 10);
         })
         // Only update when changes.
-        .distinctUntilChanged(function (hit) {
-            return hit.idx;
-        }).map(function (hit) {
+        .distinctUntilKeyChanged('idx').map(function (hit) {
             var elements = hit.idx === -1 ? [] : [hit];
             return new VizSlice(elements);
         })
@@ -75,8 +73,8 @@ function setupClickSelections (appState, $eventTarget) {
     var activeSelection = appState.activeSelection;
 
     $eventTarget.mousedownAsObservable()
-        .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
-        .flatMapLatest(function (down) {
+        .switchMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
+        .switchMap(function (down) {
             return $eventTarget.mouseupAsObservable().take(1).map(function (up) {
                 var downUp = [down, up];
                 downUp.ctrl = down.ctrlKey || down.metaKey;
@@ -87,7 +85,7 @@ function setupClickSelections (appState, $eventTarget) {
             var dist = distance(downUp[0].clientX, downUp[0].clientY, downUp[1].clientX, downUp[1].clientY);
             return dist < 5;
         })
-        .flatMapLatest(function (downUp) {
+        .switchMap(function (downUp) {
             var $target = $(downUp[1].target);
             var targetElementStream;
             // Clicked on existing POI label, return point corresponding to label
@@ -111,7 +109,7 @@ function setupClickSelections (appState, $eventTarget) {
                     ctrl: downUp.ctrl
                 };
             });
-        }).flatMapLatest(function (data) {
+        }).switchMap(function (data) {
             return activeSelection.take(1).map(function (sel) {
                 return {sel: sel, clickSlice: data.clickSlice, ctrl: data.ctrl};
             });
@@ -368,7 +366,7 @@ function setupCursor(renderState, renderingScheduler, isAnimating, latestHighlig
         $cont.css({display: 'none'});
     }, util.makeErrorHandler('renderCursor isAnimating'));
 
-    notAnimating.flatMapLatest(function () {
+    notAnimating.switchMap(function () {
         return rxPoints.combineLatest(
             rxSizes,
             latestHighlightedObject,

@@ -2,7 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:dataInspector');
 var $       = window.$;
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 var _       = require('underscore');
 var Backbone = require('backbone');
@@ -59,7 +59,7 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle, filter
 
 
     // Grab header.
-    Rx.Observable.fromCallback(socket.emit, socket)('inspect_header', null)
+    Rx.Observable.bindCallback(socket.emit.bind(socket))('inspect_header', null)
     .do(function (reply) {
         if (!reply || !reply.success) {
             console.error('Server error on inspectHeader', (reply||{}).error);

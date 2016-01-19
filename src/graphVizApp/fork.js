@@ -2,7 +2,7 @@
 
 var $               = window.$;
 var _               = require('underscore');
-var Rx              = require('rx');
+var Rx              = require('rxjs/Rx.KitchenSink');
                       require('../rx-jquery-stub');
 var Handlebars = require('handlebars');
 
@@ -45,7 +45,7 @@ module.exports = function (socket, urlParams) {
         })
         .flatMap(function ($modal) {
             var name = $('.modal-body input', $modal).val();
-            return Rx.Observable.fromCallback(socket.emit, socket)('fork_vgraph', name)
+            return Rx.Observable.bindCallback(socket.emit.bind(socket))('fork_vgraph', name)
                 .map(function (reply) {
                     return {reply: reply, $modal: $modal};
                 });
