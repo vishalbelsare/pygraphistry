@@ -70,7 +70,7 @@ function Dataframe () {
  * @property {Object} labels
  * @property {Object} hostBuffers
  * @property {Object} localBuffers
- * @property {Object} renderedBuffers
+ * @property {Object} rendererBuffers
  * @property {{point: Number, edge: Number}} numElements
  */
 
