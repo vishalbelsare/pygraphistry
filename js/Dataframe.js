@@ -149,6 +149,25 @@ Dataframe.prototype.pruneMaskEdges = function (oldMask) {
 };
 
 
+/**
+ * Takes a mask and excludes points disconnected by it.
+ * Uses encapsulateEdges' result of degreesTyped on forwardsEdges and backwardsEdges.
+ * @param {DataframeMask} oldMask
+ * @returns {DataframeMask}
+ */
+Dataframe.prototype.pruneOrphans = function (oldMask) {
+    var degreeOutTyped = this.getHostBuffer('forwardsEdges').degreesTyped,
+        degreeInTyped = this.getHostBuffer('backwardsEdges').degreesTyped,
+        resultPointMask = [];
+    oldMask.mapPointIndexes(function (pointIdx) {
+        if (degreeInTyped[pointIdx] > 0 || degreeOutTyped[pointIdx] > 0) {
+            resultPointMask.push(pointIdx);
+        }
+    });
+    return new DataframeMask(this, resultPointMask, oldMask.edge);
+};
+
+
 Dataframe.prototype.numPoints = function numPoints() {
     return this.rawdata.numElements.point;
 };
@@ -536,6 +555,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     var originalEdges = rawdata.hostBuffers.unsortedEdges;
     //var originalForwardsEdges = rawdata.hostBuffers.forwardsEdges.edgesTyped;
 
+    // We start unsorted because we're working with the rawdata first.
     var unsortedEdgeMask = new Uint32Array(this.typedArrayCache.unsortedEdgeMask.buffer, 0, numEdges);
 
     var map = rawdata.hostBuffers.forwardsEdges.edgePermutationInverseTyped;
@@ -2252,6 +2272,7 @@ Dataframe.prototype.encapsulateEdges = function (edges, numPoints, oldEncapsulat
 
     return {
         //Uint32Array
+        //out degree by node idx
         degreesTyped: degreesTyped,
 
         //Uint32Array [(srcIdx, dstIdx), ...]
@@ -2272,7 +2293,7 @@ Dataframe.prototype.encapsulateEdges = function (edges, numPoints, oldEncapsulat
         //Int32Array [(first edge number, number of sibling edges)]
         workItemsTyped: workItemsTyped,
 
-        //Uint32Array [work item number node belongs to]
+        //Uint32Array [work item number by node idx]
         srcToWorkItem: srcToWorkItem,
 
         edgeStartEndIdxsTyped: edgeStartEndIdxsTyped
