@@ -1880,6 +1880,7 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
 
     var incFunction;
     var decFunction;
+    // TODO: Rest of time ranges
     if (timeAggregation === 'day') {
         incFunction = function (date) {
             date.setHours(24,0,0,0);
@@ -1953,7 +1954,20 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
         bins[binId]++;
     });
 
-    return {bins: bins};
+    return {
+        bins: bins,
+        maxBin: _.max(bins),
+        numBins: numBins,
+        step: binWidth,
+        attr: timeAttr,
+        type: timeType,
+        start: cutoffs[cutoffs.length - 1],
+        topVal: cutoffs[cutoffs.length - 1],
+        stop: cutoffs[0],
+        bottomVal: cutoffs[0],
+        timeAggregation: timeAggregation,
+        cutoffs: cutoffs
+    };
 };
 
 
