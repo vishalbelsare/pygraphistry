@@ -389,7 +389,7 @@ function createControls(socket, appState, trigger, urlParams) {
                     if ($that.hasClass('layout-checkbox')) {
                         setLayoutParameter(socket, param.algoName, param.name, input.checked, appState.settingsChanges);
                     } else if ($that.hasClass('local-checkbox')) {
-                        setLocalSetting(param.name, input.checked, appState);
+                        setViewParameter(param.name, input.checked, appState);
                     }
                 },
                 util.makeErrorHandler('menu checkbox')
@@ -413,7 +413,7 @@ function createControls(socket, appState, trigger, urlParams) {
                         setLayoutParameter(socket, param.algoName,
                                     param.name, Number($slider.val()), appState.settingsChanges);
                     } else if ($that.hasClass('local-menu-slider')) {
-                        setLocalSetting(param.name, Number($slider.val()), appState);
+                        setViewParameter(param.name, Number($slider.val()), appState);
                     }
                 },
                 util.makeErrorHandler('menu slider')
@@ -437,7 +437,7 @@ function toPercent(pos) {
 }
 
 
-function setLocalSetting(name, pos, appState) {
+function setViewParameter(name, pos, appState) {
     var camera = appState.renderState.get('camera');
     var val = 0;
 
@@ -727,7 +727,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     appState.apiActions
         .filter(function (e) { return e.event === 'updateSetting'; })
         .do(function (e) {
-            setLocalSetting(e.setting, e.value, appState);
+            setViewParameter(e.setting, e.value, appState);
         }).subscribe(_.identity, util.makeErrorHandler('updateSetting'));
 
     setupCameraApi(appState);
