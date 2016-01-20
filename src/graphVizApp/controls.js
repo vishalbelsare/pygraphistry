@@ -125,7 +125,7 @@ var encodingForLabelParams = [
 
 
 
-function sendLayoutSetting(socket, algorithm, param, value, settingsChanges) {
+function setLayoutParameter(socket, algorithm, param, value, settingsChanges) {
     var update = {};
     var controls = {};
 
@@ -387,7 +387,7 @@ function createControls(socket, appState, trigger, urlParams) {
             $(input).onAsObservable('switchChange.bootstrapSwitch').subscribe(
                 function () {
                     if ($that.hasClass('layout-checkbox')) {
-                        sendLayoutSetting(socket, param.algoName, param.name, input.checked, appState.settingsChanges);
+                        setLayoutParameter(socket, param.algoName, param.name, input.checked, appState.settingsChanges);
                     } else if ($that.hasClass('local-checkbox')) {
                         setLocalSetting(param.name, input.checked, appState);
                     }
@@ -410,7 +410,7 @@ function createControls(socket, appState, trigger, urlParams) {
             .subscribe(
                 function () {
                     if ($that.hasClass('layout-menu-slider')) {
-                        sendLayoutSetting(socket, param.algoName,
+                        setLayoutParameter(socket, param.algoName,
                                     param.name, Number($slider.val()), appState.settingsChanges);
                     } else if ($that.hasClass('local-menu-slider')) {
                         setLocalSetting(param.name, Number($slider.val()), appState);
