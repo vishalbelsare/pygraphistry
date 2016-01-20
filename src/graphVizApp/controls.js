@@ -25,7 +25,7 @@ var externalLink    = require('./externalLink.js');
 // Setup client side controls.
 var encodingPerElementParams = [
     {
-        name: 'pointSize',
+        name: 'pointScaling',
         prettyName: 'Point Size',
         type: 'discrete',
         value: 50.0,
@@ -34,7 +34,7 @@ var encodingPerElementParams = [
         min: 1
     },
     {
-        name: 'edgeSize',
+        name: 'edgeScaling',
         prettyName: 'Edge Size',
         type: 'discrete',
         value: 50.0,
@@ -72,13 +72,13 @@ function createStyleElement() {
 
 var encodingForLabelParams = [
     {
-        name: 'labels',
+        name: 'labelsEnabled',
         prettyName: 'Show Labels',
         type: 'bool',
-        value: true,
+        value: true
     },
     {
-        name: 'labelFgColor',
+        name: 'labelForegroundColor',
         prettyName: 'Text Color',
         type: 'color',
         def: new Color('#1f1f33'),
@@ -92,7 +92,7 @@ var encodingForLabelParams = [
         }())
     },
     {
-        name: 'labelBgColor',
+        name: 'labelBackgroundColor',
         prettyName: 'Background Color',
         type: 'color',
         def: (new Color('#fff')).alpha(0.9),
@@ -115,10 +115,10 @@ var encodingForLabelParams = [
         min: 0
     },
     {
-        name: 'poi',
+        name: 'poiEnabled',
         prettyName: 'Points of Interest',
         type: 'bool',
-        value: true,
+        value: true
     }
 ];
 
@@ -135,14 +135,14 @@ function setLayoutParameter(socket, algorithm, param, value, settingsChanges) {
     var payload = {
         play: true,
         layout: true,
-        simControls: controls,
+        simControls: controls
     };
 
     debug('Sending layout settings', payload);
     socket.emit('interaction', payload);
     settingsChanges.onNext({
         name: algorithm + '.' + param,
-        value: value,
+        value: value
     });
 }
 
@@ -389,7 +389,7 @@ function createControls(socket, appState, trigger, urlParams) {
                     if ($that.hasClass('layout-checkbox')) {
                         setLayoutParameter(socket, param.algoName, param.name, input.checked, appState.settingsChanges);
                     } else if ($that.hasClass('local-checkbox')) {
-                        setViewParameter(param.name, input.checked, appState);
+                        setViewParameter(socket, param.name, input.checked, appState);
                     }
                 },
                 util.makeErrorHandler('menu checkbox')
@@ -413,7 +413,7 @@ function createControls(socket, appState, trigger, urlParams) {
                         setLayoutParameter(socket, param.algoName,
                                     param.name, Number($slider.val()), appState.settingsChanges);
                     } else if ($that.hasClass('local-menu-slider')) {
-                        setViewParameter(param.name, Number($slider.val()), appState);
+                        setViewParameter(socket, param.name, Number($slider.val()), appState);
                     }
                 },
                 util.makeErrorHandler('menu slider')
@@ -437,7 +437,7 @@ function toPercent(pos) {
 }
 
 
-function setViewParameter(name, pos, appState) {
+function setViewParameter(socket, name, pos, appState) {
     var camera = appState.renderState.get('camera');
     var val = 0;
 
@@ -451,11 +451,11 @@ function setViewParameter(name, pos, appState) {
     }
 
     switch (name) {
-        case 'pointSize':
+        case 'pointScaling':
             val = toLog(1, 100, 0.1, 10, pos);
             camera.setPointScaling(val);
             break;
-        case 'edgeSize':
+        case 'edgeScaling':
             val = toLog(1, 100, 0.1, 10, pos);
             camera.setEdgeScaling(val);
             break;
@@ -474,11 +474,11 @@ function setViewParameter(name, pos, appState) {
             }
             opControl.text('.graph-label { opacity: ' + toPercent(pos) + '; }');
             break;
-        case 'poi':
+        case 'poiEnabled':
             val = pos;
             appState.poiIsEnabled.onNext(val);
             break;
-        case 'labels':
+        case 'labelsEnabled':
             if (pos) {
                 $('.graph-label-container').show();
             } else {
@@ -490,6 +490,11 @@ function setViewParameter(name, pos, appState) {
             return;
     }
 
+    socket.emit('update_view_parameter', {name: name, value: val}, function (response) {
+        if (!response.success) {
+            throw Error('Update view parameter failed.');
+        }
+    });
     appState.settingsChanges.onNext({name: name, value: pos});
 }
 
@@ -727,7 +732,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     appState.apiActions
         .filter(function (e) { return e.event === 'updateSetting'; })
         .do(function (e) {
-            setViewParameter(e.setting, e.value, appState);
+            setViewParameter(socket, e.setting, e.value, appState);
         }).subscribe(_.identity, util.makeErrorHandler('updateSetting'));
 
     setupCameraApi(appState);
