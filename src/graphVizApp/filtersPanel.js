@@ -402,6 +402,7 @@ FiltersPanel.prototype.dispose = function () {
     this.filtersSubject.dispose();
     this.togglesSubscription.dispose();
     this.labelRequestSubscription.dispose();
+    this.pruneOrphansSubscription.dispose();
 };
 
 
