@@ -55,6 +55,8 @@ var blankViewTemplate = {
             title: 'Selected'
         }
     ],
+    parameters: {
+    },
     legend: blankLegendTemplate
 };
 
