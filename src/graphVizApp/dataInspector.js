@@ -43,13 +43,8 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle, filter
     // TODO: Separate this into some sort of control/window manager.
     histogramPanelToggle.do(function (histogramsOn) {
         // TODO: Why is this inversed here?
-        if (!histogramsOn) {
-            $('#inspector').css('width', '85%');
-            $inspectorOverlay.css('width', '85%');
-        } else {
-            $('#inspector').css('width', '100%');
-            $inspectorOverlay.css('width', '100%');
-        }
+        $('#inspector').toggleClass('with-histograms', !histogramsOn);
+        $inspectorOverlay.toggleClass('with-histograms', !histogramsOn);
     }).subscribe(_.identity, util.makeErrorHandler('change width on inspectorOverlay'));
 
 
