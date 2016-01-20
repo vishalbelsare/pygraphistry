@@ -4,12 +4,18 @@ var _        = require('underscore');
 var Q        = require('q');
 var zlib     = require('zlib');
 
+var config      = require('config')();
 var log         = require('./logger.js');
 var logger      = log.createLogger('graphistry:common:s3');
 
 
 module.exports = {
     upload: function upload(S3, bucket, metadata, binaryBuffer, params) {
+        if (!config.S3UPLOADS) {
+            logger.warn('Not uploading to S3 (disabled by config)');
+            return Q();
+        }
+
         logger.debug('Uploading binary blob', metadata.name);
 
         var acl = params && params.acl,
