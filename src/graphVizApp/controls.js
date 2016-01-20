@@ -472,14 +472,16 @@ function setViewParameter(socket, name, pos, appState) {
             if (!opControl.length) {
                 opControl = $('<style>').appendTo($('body'));
             }
-            opControl.text('.graph-label { opacity: ' + toPercent(pos) + '; }');
+            val = toPercent(pos);
+            opControl.text('.graph-label { opacity: ' + val + '; }');
             break;
         case 'poiEnabled':
             val = pos;
             appState.poiIsEnabled.onNext(val);
             break;
         case 'labelsEnabled':
-            if (pos) {
+            val = !!pos;
+            if (val) {
                 $('.graph-label-container').show();
             } else {
                 $('.graph-label-container').hide();
