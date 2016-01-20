@@ -376,15 +376,7 @@ function getLabelDom (instance, data) {
        if (!l) {
            return l;
        }
-       // TODO: Make cache aware of both idx and dim
-       var idx = data.idx;
-       var dim = data.dim;
-       var key = cacheKey(idx, dim),
-           cache = instance.state.labelDOMCache;
-       if (!cache[key]) {
-           cache[key] = createLabelDom(instance, dim, l);
-       }
-       return cache[key];
+       return createLabelDom(instance, data.dim, l);
    });
 }
 
@@ -392,7 +384,6 @@ function getLabelDom (instance, data) {
 // Invalidates Cache but does not attempt to refill.
 function emptyCache (instance) {
     instance.state.labelCache = {};
-    instance.state.labelDOMCache = {};
     _.each(instance.state.activeLabels, function (val, key) {
         instance.state.inactiveLabels.push(val);
         val.elt.css('display', 'none');
