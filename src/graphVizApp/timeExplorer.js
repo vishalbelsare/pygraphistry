@@ -662,16 +662,42 @@ function initializeBottomAxis ($el, model) {
 
     var xScale = setupBinScale(width, data.numBins)
 
+
+
+    // Figure out which ticks to show
+    var maxNumTicks = Math.floor(width/50);
     var numTicks = numBins + 1;
+    var tickContent = data.cutoffs;
+
+    if (maxNumTicks < numTicks) {
+        tickContent = [];
+        var greatestSeen = 0;
+        for (var i = 0; i < numTicks; i++) {
+            var newTickNum = Math.floor(i * (maxNumTicks/numTicks));
+            if (newTickNum >= greatestSeen) {
+                tickContent[i] = data.cutoffs[i];
+                greatestSeen++;
+            } else {
+                tickContent[i] = false;
+            }
+        }
+    }
+
+
     var expandedTickTitles = [];
     var xAxis = d3.svg.axis()
         .scale(xScale)
         .orient('bottom')
         .ticks(numTicks)
         .tickFormat(function (d) {
-            var raw = data.cutoffs[d];
-            expandedTickTitles.push(prettyPrintTime(raw));
-            return prettyPrintTime(raw, data.timeAggregation)
+            var raw = tickContent[d];
+            debug('raw: ', raw);
+            if (raw) {
+                expandedTickTitles.push(prettyPrintTime(raw));
+                return prettyPrintTime(raw, data.timeAggregation)
+            } else {
+                return '';
+            }
         });
 
     var svg = setupSvg($el[0], axisMargin, width, height);
