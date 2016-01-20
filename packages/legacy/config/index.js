@@ -63,6 +63,8 @@ function defaults() {
         HTTP_LISTEN_ADDRESS: 'localhost',
         HTTP_LISTEN_PORT: 3000,
 
+        // Enable S3 write for etl, save-a-copy, fork
+        S3UPLOADS: true,
         BUCKET: 'graphistry.data',
         S3: getS3(),
 
