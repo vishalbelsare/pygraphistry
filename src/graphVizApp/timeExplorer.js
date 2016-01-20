@@ -11,6 +11,7 @@ var Backbone = require('backbone');
 var d3 = require('d3');
 var Command = require('./command.js');
 var util    = require('./util.js');
+var FilterControl = require('./FilterControl.js');
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -54,56 +55,124 @@ var TimeBarCollection = Backbone.Collection.extend({
 });
 
 
+
 //////////////////////////////////////////////////////////////////////////////
 // Explorer / Data Management
 //////////////////////////////////////////////////////////////////////////////
 
-function getTimeData (dataType, attr, start, stop, timeAggregation) {
-    debug('getTimeDataRequest: ', dataType, attr, start, stop, timeAggregation);
-
-    // TODO: Remove stub
-    var subject = new Rx.Subject();
-
-    var obj = {};
 
 
 
-    var bins = Array.apply(null, new Array(200)).map(function () { return Math.floor(Math.random() * 10)   });
-
-    obj.bins = bins;
-    obj.maxBin = _.max(bins);
-    obj.numBins = bins.length;
-    obj.start = start;
-    obj.stop = stop;
-    obj.step = (stop - start) / bins.length;
-    obj.attr = attr;
-    obj.dataType = dataType;
-    obj.timeAggregation = timeAggregation;
-
-    if (dataType && attr) {
-        obj.name = '' + dataType + ':' + attr;
-    } else {
-        obj.name = '_all';
-    }
-
-    setTimeout(function() {
-        subject.onNext(obj);
-    }, 1000);
 
 
-    return subject;
+
+function TimeExplorer (socket, $div) {
+    window.timeExplorer = this; // TODO KILL THIS TESTING THING
+    var that = this;
+    this.$div = $div;
+    this.socket = socket;
+
+    this.panel = new TimeExplorerPanel(socket, $div);
+
+    this.getTimeDataCommand = new Command('getting time data', 'timeAggregation', socket);
+    this.getTimeBoundsCommand = new Command('getting time bounds', 'getTimeBoundaries', socket);
+
+    this.activeQueries = [
+        {
+            name: 'smallTime',
+            query: that.makeQuery('point', 'time', 'point:time < "2007-01-02T00:01:24+00:00"')
+        },
+
+        {
+            name: 'medTime',
+            query: that.makeQuery('point', 'time', 'point:time >= "2007-01-02T00:01:24+00:00" and point:time < "2007-01-05T00:01:24+00:00"')
+        },
+
+        {
+            name: 'largeTime',
+            query: that.makeQuery('point', 'time', 'point:time >= "2007-01-05T00:01:24+00:00"')
+
+        }
+    ];
+    this.timeDescription = {
+        timeType: 'point',
+        timeAttr: 'time',
+        timeAggregation: 'hour'
+    };
+
+    this.getTimeBoundsCommand.sendWithObservableResult(this.timeDescription)
+        .flatMap(function (resp) {
+            var timeType = that.timeDescription.timeType;
+            var timeAttr = that.timeDescription.timeAttr;
+            var timeAggregation = that.timeDescription.timeAggregation;
+            return that.getMultipleTimeData(timeType, timeAttr, resp.min, resp.max, timeAggregation, that.activeQueries);
+        }).do(function (data) {
+            debug('Got time data stream: ', data);
+            var dividedData = {};
+            dividedData.all = data._all;
+            delete data['_all'];
+            dividedData.user = data;
+            dividedData.maxBinValue = dividedData.all.maxBin;
+
+            that.panel.model.set(dividedData);
+        }).subscribe(_.identity, util.makeErrorHandler('Error getting time data stream'));
+
+
+    debug('Initialized Time Explorer');
 }
 
-function getMultipleTimeData (dataTypes, attr, start, stop, timeAggregation) {
-    var attrPairs = _.zip(dataTypes, attr);
-    attrPairs.push([null, null]); // Get all
-    var subjects = _.map(attrPairs, function (data) {
-        var dataType = data[0];
-        var attr = data[1];
-        return getTimeData(dataType, attr, start, stop, timeAggregation);
+TimeExplorer.prototype.makeQuery = function (type, attr, string) {
+    return {
+        type: type,
+        attribute: attr,
+        query: FilterControl.prototype.queryFromExpressionString(string)
+    };
+};
+
+TimeExplorer.prototype.getTimeData = function (timeType, timeAttr, start, stop, timeAggregation, otherFilters, name) {
+    // FOR UberAll
+    // LARGEST      2007-01-07T23:59:24+00:00
+    // SMALLEST     2007-01-01T00:01:24+00:00
+    // timeExplorer.realGetTimeData('point', 'time', '2007-01-01T00:01:24+00:00', '2007-01-07T23:59:24+00:00', 'day', [])
+    // timeExplorer.realGetTimeData('point', 'time', '2007-01-01T00:01:24+00:00', '2007-01-07T23:59:24+00:00', 'day', [timeExplorer.makeQuery('point', 'trip', 'point:trip > 5000')])
+
+    var combinedAttr = '' + timeType + ':' + timeAttr;
+    var timeFilterQuery = combinedAttr + ' >= "' + start + '" AND ' + combinedAttr + ' <= "' + stop + '"';
+
+    var timeFilter = {
+        type: timeType,
+        attribute: timeAttr,
+        query: FilterControl.prototype.queryFromExpressionString(timeFilterQuery)
+    }
+
+    var filters = otherFilters.concat([timeFilter]);
+
+    var payload = {
+        start: start,
+        stop: stop,
+        timeType: timeType,
+        timeAttr: timeAttr,
+        timeAggregation: timeAggregation,
+        filters: filters
+    }
+
+    debug('SENDING TIME DATA COMMAND:', payload);
+    return this.getTimeDataCommand.sendWithObservableResult(payload)
+        .map(function (resp) {
+            resp.data.name = name;
+            return resp.data;
+        });
+};
+
+
+TimeExplorer.prototype.getMultipleTimeData = function (timeType, timeAttr, start, stop, timeAggregation, activeQueries) {
+    var that = this;
+    var subjects = _.map(activeQueries, function (queryWrapper) {
+        return that.getTimeData(timeType, timeAttr, start, stop, timeAggregation, [queryWrapper.query], queryWrapper.name);
     });
 
-    debug('subjects: ', subjects);
+    var allSubject = that.getTimeData(timeType, timeAttr, start, stop, timeAggregation, [], '_all');
+    subjects.push(allSubject);
 
     return Rx.Observable.zip(subjects, function () {
         debug('zipping');
@@ -115,32 +184,6 @@ function getMultipleTimeData (dataTypes, attr, start, stop, timeAggregation) {
         return ret;
     });
 }
-
-
-function TimeExplorer (socket, $div) {
-    var that = this;
-    this.$div = $div;
-    this.socket = socket;
-
-    this.panel = new TimeExplorerPanel(socket, $div);
-
-    var now = Date.now();
-    // SECONDS
-    var timeDataStream = getMultipleTimeData(['point', 'point', 'point', 'edge'], ['category', 'severity', 'betweenness', 'name'], now - 200000, now, 'second');
-
-    timeDataStream.do(function (data) {
-        debug('Got time data stream: ', data);
-        var dividedData = {};
-        dividedData.all = data._all;
-        delete data['_all'];
-        dividedData.user = data;
-
-        that.panel.model.set(dividedData);
-    }).subscribe(_.identity, util.makeErrorHandler('Error getting time data stream'));
-
-    debug('Initialized Time Explorer');
-}
-
 
 
 
@@ -179,9 +222,7 @@ function TimeExplorerPanel (socket, $parent) {
         },
 
         render: function () {
-            debug('rendering bottom axis panel');
             var model = this.model;
-            debug('model: ', model);
 
             if (model.get('initialized')) {
                 updateBottomAxis(model.get('axisContainer'), model);
@@ -226,7 +267,6 @@ function TimeExplorerPanel (socket, $parent) {
         },
 
         render: function () {
-            debug('rendering bar');
             var model = this.model;
 
             // Don't do first time work.
@@ -365,7 +405,6 @@ function TimeExplorerPanel (socket, $parent) {
         },
 
         updateChildren: function () {
-            debug('Updating: ', this.model);
             var data = this.model.attributes;
             var params;
 
@@ -379,6 +418,7 @@ function TimeExplorerPanel (socket, $parent) {
             // Handle main bar, '_all'
             params = {
                 data: data.all,
+                maxBinValue: data.maxBinValue,
                 timeStamp: Date.now()
             };
             this.mainBarView.model.id = params.data.name;
@@ -395,6 +435,7 @@ function TimeExplorerPanel (socket, $parent) {
                 var barModel = new TimeBarModel();
                 var params = {
                     data: val,
+                    maxBinValue: data.maxBinValue,
                     timeStamp: Date.now()
                 };
 
@@ -422,7 +463,7 @@ function TimeExplorerPanel (socket, $parent) {
 //////////////////////////////////////////////////////////////////////////////
 
 function initializeTimeBar ($el, model) {
-    debug('initializing time bar: ', model);
+    // debug('initializing time bar: ', model);
 
     var width = $el.width() - margin.left - margin.right;
     var height = $el.height() - margin.top - margin.bottom;
@@ -437,12 +478,13 @@ function initializeTimeBar ($el, model) {
 }
 
 function updateTimeBar ($el, model) {
-    debug('updating time bar: ', model);
+    // debug('updating time bar: ', model);
 
     var width = $el.width() - margin.left - margin.right;
     var height = $el.height() - margin.top - margin.bottom;
     var d3Data = model.get('d3Data');
     var data = model.get('data');
+    var maxBinValue = model.get('maxBinValue');
     var id = model.cid;
 
     var svg = d3Data.svg;
@@ -456,7 +498,7 @@ function updateTimeBar ($el, model) {
     var barType = model.get('barType');
 
     var xScale = setupBinScale(width, data.numBins)
-    var yScale = setupAmountScale(height, data.maxBin, data.bins);
+    var yScale = setupAmountScale(height, maxBinValue, data.bins);
 
     var barWidth = Math.floor(width/data.numBins) - BAR_SIDE_PADDING;
 
@@ -500,7 +542,6 @@ function updateTimeBar ($el, model) {
     var adjustedX = pageX - svgOffset.left;
     var activeBin = Math.floor(xScale.invert(adjustedX));
     var upperTooltipValue = data.bins[activeBin];
-    console.log('activeBin: ', activeBin);
 
     upperTooltip.attr('x', pageX)
         .text(upperTooltipValue);
@@ -546,9 +587,9 @@ function updateTimeBar ($el, model) {
 
     var recolorBar = function (d) {
         if (d.idx === activeBin) {
-            debug('color focus');
+            // debug('color focus');
             var colorVal = color(barType + 'Focus');
-            debug('colorVal: ', colorVal);
+            // debug('colorVal: ', colorVal);
             return color(barType + 'Focus');
         } else {
             return color(barType);
@@ -586,16 +627,6 @@ function setupSvg (el, margin, width, height) {
             .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 }
 
-function prettyPrintTime(raw, timeAggregation) {
-    var date = new Date(raw);
-
-    if (timeAggregation === 'second') {
-        return date.getUTCSeconds();
-    }
-
-    return date.toUTCString();
-}
-
 function setupBinScale (width, numBins) {
     return d3.scale.linear()
         .range([0, width])
@@ -626,7 +657,6 @@ function initializeBottomAxis ($el, model) {
     model.set('d3Data', d3Data);
     var numBins = data.numBins;
 
-    debug('DATA: ', data);
     width = width - axisMargin.left - axisMargin.right;
     height = height - axisMargin.top - axisMargin.bottom;
 
@@ -639,7 +669,7 @@ function initializeBottomAxis ($el, model) {
         .orient('bottom')
         .ticks(numTicks)
         .tickFormat(function (d) {
-            var raw = data.start + (data.step * d);
+            var raw = data.cutoffs[d];
             expandedTickTitles.push(prettyPrintTime(raw));
             return prettyPrintTime(raw, data.timeAggregation)
         });
@@ -684,7 +714,35 @@ function updateBottomAxis ($el, model) {
     debug('update bottom axis');
 }
 
+//////////////////////////////////////////////////////////////////////////////
+// Printing Utils
+//////////////////////////////////////////////////////////////////////////////
 
+function dayOfWeekAsString(idx) {
+  return ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"][idx];
+}
+
+function hourAsString(idx) {
+    var hour = idx % 12;
+    var ampm = ['AM', 'PM'][Math.floor(idx/12)];
+    return '' + hour + ' ' + ampm;
+}
+
+function prettyPrintTime(raw, timeAggregation) {
+    var date = new Date(raw);
+
+    if (timeAggregation === 'second') {
+        return date.getUTCSeconds();
+    } else if (timeAggregation === 'minute') {
+        return date.getUTCMinutes();
+    } else if (timeAggregation === 'hour') {
+        return hourAsString(date.getUTCHours());
+    } else if (timeAggregation === 'day') {
+        return dayOfWeekAsString(date.getUTCDay());
+    }
+
+    return date.toUTCString();
+}
 
 
 
