@@ -1871,6 +1871,92 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
 };
 
 
+// Counts occurences of type that matches type of time attr.
+Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, start, stop, timeAggregation) {
+
+    // Compute binning
+    var startDate = new Date(start);
+    var endDate = new Date(stop);
+
+    var incFunction;
+    var decFunction;
+    if (timeAggregation === 'day') {
+        incFunction = function (date) {
+            date.setHours(24,0,0,0);
+        };
+        decFunction = function (date) {
+            date.setHours(0,0,0,0);
+        };
+    } else if (timeAggregation === 'hour') {
+        incFunction = function (date) {
+            date.setMinutes(60,0,0);
+        };
+        decFunction = function (date) {
+            date.setMinutes(0,0,0);
+        };
+    } else if (timeAggregation === 'minute') {
+        incFunction = function (date) {
+            date.setSeconds(60,0);
+        };
+        decFunction = function (date) {
+            date.setSeconds(0,0);
+        };
+    } else if (timeAggregation === 'second') {
+        incFunction = function (date) {
+            date.setMilliseconds(1000);
+        };
+        decFunction = function (date) {
+            date.setMilliseconds(0);
+        };
+    } else {
+        return;
+    }
+
+    decFunction(startDate);
+    incFunction(endDate);
+
+
+    // TODO: We don't strictly need to compute all cutoffs to bin.
+    // We should just compute numBins, width, start, stop like in normal histograms
+    var cutoffs = [startDate];
+
+    var runningDate = startDate;
+    var backupCount = 0;
+    while (runningDate < endDate && backupCount < 100000) {
+        var newDate = new Date(runningDate.getTime());
+        incFunction(newDate);
+        if (newDate < endDate) {
+            cutoffs.push(newDate);
+        }
+        runningDate = newDate;
+        backupCount++;
+    }
+
+    cutoffs.push(endDate);
+    var cutoffNumbers = cutoffs.map(function (val, i) {
+        return val.getTime();
+    });
+
+    // Fill bins
+    var numBins = cutoffs.length - 1;
+    var bins = Array.apply(null, new Array(numBins)).map(function () { return 0; });
+    var timeValues = this.getColumnValues(timeAttr, timeType);
+    var binWidth = cutoffNumbers[1] - cutoffNumbers[0];
+
+    var binId, value;
+    mask.mapIndexes(timeType, function (idx) {
+        var value = timeValues[idx];
+        var valueDate = new Date(value);
+        var valueNum = valueDate.getTime();
+
+        var binId = ((valueNum - cutoffNumbers[0]) / binWidth) | 0;
+        bins[binId]++;
+    });
+
+    return {bins: bins};
+};
+
+
 Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, indices, type) {
     // Binning has binWidth, minValue, maxValue, and numBins
 
