@@ -287,7 +287,7 @@ Handlebars.registerHelper('json', function(context) {
 });
 
 
-function FiltersPanel(socket, labelRequests) {
+function FiltersPanel(socket, labelRequests, settingsChanges) {
     //var $button = $('#filterButton');
 
     this.control = new FilterControl(socket);
@@ -300,6 +300,14 @@ function FiltersPanel(socket, labelRequests) {
         var filter = labelRequest.filterQuery;
         that.collection.addFilter(filter);
     }).subscribe(_.identity, util.makeErrorHandler('Handling a filter from a label'));
+
+    this.pruneOrphansSubscription = settingsChanges.filter(function (nameAndValue) {
+        return nameAndValue.name === 'pruneOrphans';
+    }).map(function (nameAndValue) {
+        return nameAndValue.value;
+    }).distinctUntilChanged().do(function (/*pruneOrphansEnabled*/) {
+        that.runFilters();
+    }).subscribe(_.identity, util.makeErrorHandler('Handle prune orphans settings change'));
 
     this.control.filtersResponsesSubject.take(1).do(function (filters) {
         _.each(filters, function (filter) {
@@ -321,9 +329,7 @@ function FiltersPanel(socket, labelRequests) {
 
     this.filtersSubject.subscribe(
         function (collection) {
-            that.control.updateFilters(collection.map(function (model) {
-                return _.omit(model.toJSON(), '$el');
-            }));
+            that.runFilters(collection);
         },
         util.makeErrorHandler('updateFilters on filters change event')
     );
@@ -361,6 +367,15 @@ function FiltersPanel(socket, labelRequests) {
         el: $('#filtersPanel')
     });
 }
+
+FiltersPanel.prototype.runFilters = function (collection) {
+    if (collection === undefined) {
+        collection = this.collection;
+    }
+    return this.control.updateFilters(collection.map(function (model) {
+        return _.omit(model.toJSON(), '$el');
+    }));
+};
 
 FiltersPanel.prototype.isVisible = function () { return this.view.$el.is(':visible'); };
 
