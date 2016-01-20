@@ -59,6 +59,12 @@ var encodingPerElementParams = [
         step: 1,
         max: 100,
         min: 0
+    },
+    {
+        name: 'pruneOrphans',
+        prettyName: 'Prune Isolated Nodes',
+        type: 'bool',
+        value: false
     }
 ];
 
@@ -439,7 +445,7 @@ function toPercent(pos) {
 
 function setViewParameter(socket, name, pos, appState) {
     var camera = appState.renderState.get('camera');
-    var val = 0;
+    var val = pos;
 
     function setUniform(name, value) {
         var uniforms = appState.renderState.get('uniforms');
@@ -476,20 +482,15 @@ function setViewParameter(socket, name, pos, appState) {
             opControl.text('.graph-label { opacity: ' + val + '; }');
             break;
         case 'poiEnabled':
-            val = pos;
             appState.poiIsEnabled.onNext(val);
             break;
         case 'labelsEnabled':
-            val = !!pos;
             if (val) {
                 $('.graph-label-container').show();
             } else {
                 $('.graph-label-container').hide();
             }
             break;
-        default:
-            console.error('Unknown local setting', name);
-            return;
     }
 
     socket.emit('update_view_parameter', {name: name, value: val}, function (response) {
