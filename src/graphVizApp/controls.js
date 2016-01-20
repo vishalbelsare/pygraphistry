@@ -273,7 +273,7 @@ function createLegend($elt, urlParams) {
 //  + {type: 'color', name: string, def: CSSColor, cb: (Stream {r,g,b,a}) -> () }
 //  * string -> DOM
 // (Will append at anchor position)
-function controlMaker (urlParams, $anchor, appState, param, type) {
+function controlMaker (urlParams, param, type) {
     var $input;
     if (param.type === 'continuous') {
         $input = $('<input>').attr({
@@ -321,14 +321,10 @@ function controlMaker (urlParams, $anchor, appState, param, type) {
         class: 'control-label col-xs-4'
     }).text(param.prettyName);
 
-    var $entry = $('<div>')
+    return $('<div>')
         .addClass('form-group')
         .addClass(param.type === 'color' ? 'colorer' : param.type)
         .append($label, $col);
-
-    $anchor.append($entry);
-
-    return $entry;
 }
 
 
@@ -354,12 +350,14 @@ function createControls(socket, appState, trigger, urlParams) {
     var $renderingItems = $('#renderingItems');
     var $anchor = $renderingItems.children('.form-horizontal');
 
-    var makeControl = controlMaker.bind('', urlParams, $anchor, appState);
-
-
     $renderingItems.css({'display': 'block', 'left': '100%'});
-    rxControls
-    .do(function (controls) {
+
+    Rx.Observable.combineLatest(rxControls, appState.viewConfigChanges, function (controls, viewConfig) {
+        var parameters = viewConfig.parameters;
+        // TODO fix this so whitelisted urlParams can update viewConfig.parameters, and then those affect/init values.
+        _.extend(urlParams, parameters);
+        var makeControl = controlMaker.bind('', urlParams);
+
         //workaround: https://github.com/nostalgiaz/bootstrap-switch/issues/446
         setTimeout(function () {
             $('#renderingItems').css({'display': 'none', 'left': '5em'});
@@ -368,20 +366,20 @@ function createControls(socket, appState, trigger, urlParams) {
         //APPEARANCE
         createControlHeader($anchor, 'Appearance');
         _.each(encodingPerElementParams, function (param) {
-            makeControl(param, 'local');
+            $anchor.append(makeControl(param, 'local'));
         });
 
         //LABELS
         createControlHeader($anchor, 'Labels');
         _.each(encodingForLabelParams, function (param) {
-            makeControl(param, 'local');
+            $anchor.append(makeControl(param, 'local'));
         });
 
         //LAYOUT
         _.each(controls, function (la) {
             createControlHeader($anchor, la.name);
             _.each(la.params, function (param) {
-                makeControl(param, 'layout');
+                $anchor.append(makeControl(param, 'layout'));
             });
         });
 
