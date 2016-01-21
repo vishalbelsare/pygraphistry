@@ -42,8 +42,8 @@ function etl(msg, params) {
         created: Date.now(),
         creator: apiKey.decrypt(params.key),
         name: msg.metadata.name,
-        view: msg.metadata.view,
-        types: msg.metadata.types,
+        nodes: msg.metadata.nodes,
+        edges: msg.metadata.edges,
     };
 
     var qDatasources = _.map(msg.metadata.datasources, function (datasource) {
@@ -68,8 +68,8 @@ function etl(msg, params) {
     return Q.all(qDatasources).then(function (datasources) {
         desc.datasources = datasources;
         logger.debug('Dataset', desc);
-        var nnodes = msg.metadata.nvertices || '?';
-        var nedges = msg.metadata.nedges || '?';
+        var nnodes = _.pluck(desc.nodes, 'count').join('+');
+        var nedges = _.pluck(desc.nodes, 'count').join('+');
         return uploadJSON(desc, sprintf('%s/dataset.json', folder)).then(function (url) {
             return {name: url, nnodes: nnodes, nedges: nedges};
         });
