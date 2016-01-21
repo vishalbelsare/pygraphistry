@@ -152,19 +152,31 @@ Dataframe.prototype.pruneMaskEdges = function (oldMask) {
 /**
  * Takes a mask and excludes points disconnected by it.
  * Uses encapsulateEdges' result of degreesTyped on forwardsEdges and backwardsEdges.
- * @param {DataframeMask} oldMask
+ * @param {DataframeMask} baseMask
  * @returns {DataframeMask}
  */
-Dataframe.prototype.pruneOrphans = function (oldMask) {
-    var degreeOutTyped = this.getHostBuffer('forwardsEdges').degreesTyped,
-        degreeInTyped = this.getHostBuffer('backwardsEdges').degreesTyped,
-        resultPointMask = [];
-    oldMask.mapPointIndexes(function (pointIdx) {
-        if (degreeInTyped[pointIdx] > 0 || degreeOutTyped[pointIdx] > 0) {
-            resultPointMask.push(pointIdx);
+Dataframe.prototype.pruneOrphans = function (baseMask) {
+    var resultPointMask = [];
+    if (baseMask.numPoints() === this.numPoints()) {
+        var degreeColumn = this.getColumnValues('degree', 'point');
+        baseMask.mapPointIndexes(function (pointIdx) {
+            if (degreeColumn[pointIdx] !== 0) {
+                resultPointMask.push(pointIdx);
+            }
+        });
+    } else {
+        var degreeOutTyped = this.getHostBuffer('forwardsEdges').degreesTyped,
+            degreeInTyped = this.getHostBuffer('backwardsEdges').degreesTyped;
+        if (degreeInTyped.length !== baseMask.numPoints()) {
+            throw new Error('Mismatched buffer lengths');
         }
-    });
-    return new DataframeMask(this, resultPointMask, oldMask.edge);
+        baseMask.mapPointIndexes(function (pointIdx, idx) {
+            if (degreeInTyped[idx] !== 0 || degreeOutTyped[idx] !== 0) {
+                resultPointMask.push(pointIdx);
+            }
+        });
+    }
+    return new DataframeMask(this, resultPointMask, baseMask.edge);
 };
 
 
@@ -506,10 +518,14 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
  * TODO: Take in Set objects, not just Mask.
  * @param {DataframeMask} masks
  * @param {SimCL} simulator
- * @returns {Promise.<Array<Buffer>>}
+ * @returns {Promise.<Array<Buffer>>} updated arrays - false if no-op
  */
 Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulator) {
     logger.debug('Starting Filtering Data In-Place by DataframeMask');
+
+    if (masks === this.lastMasks) {
+        return Q(false);
+    }
 
     var start = Date.now();
 
@@ -518,7 +534,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     // TODO: These buffers are initialized in a different event loop and we want to no-op before they're ready.
     var rawSimBuffers = rawdata.buffers.simulator;
     if (rawSimBuffers.forwardsEdgeWeights === undefined || rawSimBuffers.backwardsEdgeWeights === undefined) {
-        return Q({});
+        return Q(false);
     }
     /** @type {DataframeData} */
     var newData = makeEmptyData();
