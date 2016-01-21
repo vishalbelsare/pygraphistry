@@ -254,7 +254,7 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
     $inspector.append(paginatorEl);
 
     setupSelectionRerender(activeSelection, grid, dim);
-    setupSearchBar(columns[0].label, dataFrame, $inspector);
+    setupSearchBar(columns[0].label, dataFrame, $inspector, workerUrl, dim);
 
     var $colHeaders = $inspector.find('.backgrid').find('thead').find('tr').children();
     $colHeaders.each(function () {
@@ -309,7 +309,7 @@ function setupSearchStreams(searchRequests) {
 }
 
 
-function setupSearchBar(searchField, dataFrame, $inspector) {
+function setupSearchBar(searchField, dataFrame, $inspector, workerUrl, dim) {
 
     var serverSideFilter = new Backgrid.Extension.ServerSideFilter({
         collection: dataFrame,
@@ -358,9 +358,26 @@ function setupSearchBar(searchField, dataFrame, $inspector) {
     serverSideFilter.search = search;
     serverSideFilter.delegateEvents();
 
-    // Attach element to inspector.
     var filterEl = serverSideFilter.render().el;
+
+    // Add an export button to bar
+    var exportButtonTemp = '<button class="csvExportButton btn btn-xs btn-primary pull-right" id="csvExportButton' + dim +
+        '" style="margin-top:3px">Export as CSV</button>';
+
+    $(filterEl).append($(exportButtonTemp));
+
+    // Attach element to inspector.
     $inspector.prepend(filterEl);
+
+    $('#csvExportButton'+dim).on('click', function (evt) {
+        evt.preventDefault();
+        var exportUrl = 'export_csv';
+        var type = (dim === 2) ? 'edge' : 'point';
+        var params = {type: type};
+        window.location = workerUrl + exportUrl + '?type=' + type;
+
+    });
+
 }
 
 
