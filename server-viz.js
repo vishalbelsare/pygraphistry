@@ -688,6 +688,24 @@ function VizServer(app, socket, cachedVBOs) {
         }.bind(this)).subscribe(_.identity, log.makeRxErrorHandler(logger, 'get_filters handler'));
     }.bind(this));
 
+    this.socket.on('move_nodes', function (data, cb) {
+        this.graph.take(1).do(function (graph) {
+
+            if (data.marquee) {
+                graph.simulator.moveNodes(data.marquee)
+                    .then(function () {
+                        this.tickGraph(cb);
+                    }.bind(this));
+            }
+
+        }.bind(this)).subscribe(
+            _.identity,
+            function (err) {
+                log.makeRxErrorHandler(logger, 'move nodes handler')(err);
+            }
+        );
+    }.bind(this));
+
     this.socket.on('layout_controls', function(_, cb) {
         logger.info('Sending layout controls to client');
 
@@ -902,6 +920,7 @@ VizServer.prototype.getViewToLoad = function (workbookDoc, query) {
  * @returns {Promise}
  */
 VizServer.prototype.setupDataset = function (workbookDoc, query) {
+    this.datasetName = query.dataset;
     var queryDatasetURL = loader.datasetURLFromQuery(query),
         queryDatasetConfig = loader.datasetConfigFromQuery(query);
     var datasetURLString, datasetConfig;
@@ -1113,6 +1132,32 @@ VizServer.prototype.defineRoutesInApp = function (app) {
         }
 
         appRouteResponder.readSelection('edge', req.query, res);
+    });
+
+    this.app.get('/export_csv', function (req, res) {
+        logger.debug('Got export CSV request: ', req.query);
+        var type = req.query.type;
+
+        appRouteResponder.graph.take(1).do(function (graph) {
+            var content = graph.dataframe.formatAsCsv(type)
+                .then(function (formattedCsv) {
+
+                    var datasetName = appRouteResponder.datasetName || 'graphistry';
+                    var filenameSuffix = (type === 'point') ? 'Points' : 'Edges';
+                    var filename = datasetName + filenameSuffix + '.csv';
+                    res.setHeader('Content-Disposition', 'attachment; filename=' + filename + ';');
+                    res.setHeader('Content-Type', 'text/plain');
+                    res.charset = 'UTF-8';
+                    res.write(formattedCsv);
+                    res.send();
+
+                });
+        }).subscribe(
+            _.identity,
+            function (err) {
+                log.makeRxErrorHandler(logger, 'export csv handler')(err);
+            }
+        );
     });
 };
 
