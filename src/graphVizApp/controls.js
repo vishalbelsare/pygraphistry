@@ -357,7 +357,6 @@ function createControls(socket, appState, trigger, urlParams) {
         var parameters = viewConfig.parameters;
         // TODO fix this so whitelisted urlParams can update viewConfig.parameters, and then those affect/init values.
         _.extend(urlParams, parameters);
-        var makeControl = controlMaker.bind('', urlParams);
 
         //workaround: https://github.com/nostalgiaz/bootstrap-switch/issues/446
         setTimeout(function () {
@@ -367,20 +366,20 @@ function createControls(socket, appState, trigger, urlParams) {
         //APPEARANCE
         createControlHeader($anchor, 'Appearance');
         _.each(encodingPerElementParams, function (param) {
-            $anchor.append(makeControl(param, 'local'));
+            $anchor.append(controlMaker(parameters, param, 'local'));
         });
 
         //LABELS
         createControlHeader($anchor, 'Labels');
         _.each(encodingForLabelParams, function (param) {
-            $anchor.append(makeControl(param, 'local'));
+            $anchor.append(controlMaker(parameters, param, 'local'));
         });
 
         //LAYOUT
         _.each(controls, function (la) {
             createControlHeader($anchor, la.name);
             _.each(la.params, function (param) {
-                $anchor.append(makeControl(param, 'layout'));
+                $anchor.append(controlMaker(parameters, param, 'layout'));
             });
         });
 
