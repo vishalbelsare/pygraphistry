@@ -383,7 +383,7 @@
         <div id="timeExplorerVerticalLine" class="verticalLine"></div>
         <div id="timeExplorerTop"></div>
         <div class="row timeExplorerBodyRow timeExplorerFixedHeight">
-            <div id="timeExplorerSideInput" class="col-xs-2 timeExplorerFixedHeight noPadding"></div>
+            <div id="timeExplorerSideInput" class="col-xs-2 timeExplorerFixedHeight"></div>
             <div id="timeExplorerVizContainer" class="col-xs-9 timeExplorerFixedHeight noPadding">
                 <div id="timeExplorerBody" class="noPadding"></div>
                 <div id="timeExplorerMain" class="noPadding"></div>
@@ -851,6 +851,43 @@ Note: this release does not support expressions with multiple fields nor changin
 
 <script type="text/template" id="timeBarBottomAxisTemplate">
     <div class="axisContainer"></div>
+</script>
+
+<script type="text/template" id="timeExplorerSideInputTemplate">
+
+    <form class="form-inline">
+        <div class="form-group">
+            <input type="text" class="form-control" id="timeType" placeholder="type (point|edge)">
+        </div>
+        <div class="form-group">
+            <input type="text" class="form-control" id="timeAttr" placeholder="timeColumn">
+        </div>
+        <button id="timeAttrSubmitButton" type="submit" class="btn btn-default">Initialize</button>
+    </form>
+
+    <br>
+
+    <form class="form-inline">
+        <div class="form-group">
+            <input type="text" class="form-control" id="newType" placeholder="type (point|edge)">
+        </div>
+        <div class="form-group">
+            <input type="text" class="form-control" id="newAttr" placeholder="name">
+        </div>
+        <div class="form-group">
+            <input type="text" class="form-control" id="newQuery" placeholder="type:name > 2">
+        </div>
+        <button id="newAttrSubmitButton" type="submit" class="btn btn-default">Add Filtered Bar</button>
+    </form>
+
+    <br>
+
+    <select id="timeAggregationSelect" class="form-control">
+        {{#each timeAggregationOptions}}
+            <option>{{this}}</option>
+        {{/each}}
+    </select>
+
 </script>
 
 
