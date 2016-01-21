@@ -763,19 +763,28 @@ function initializeTimeBar ($el, model) {
     var svg = setupSvg($el[0], margin, width, height);
 
     _.extend(d3Data, {
-        svg: svg
+        svg: svg,
+        width: width,
+        height: height
     });
 }
 
 function getActiveBinForPosition ($el, model, pageX) {
-    var width = $el.width() - margin.left - margin.right;
     var d3Data = model.get('d3Data');
+    var width = d3Data.width;
+    if (!width) {
+        width = $el.width() - margin.left - margin.right;
+    }
     var data = model.get('data');
     var svg = d3Data.svg;
     var xScale = setupBinScale(width, data.numBins)
 
-    var jquerySvg = $(svg[0]);
-    var svgOffset = jquerySvg.offset();
+    var svgOffset = d3Data.svgOffset;
+    if (!svgOffset) {
+        var jquerySvg = $(svg[0]);
+        svgOffset = jquerySvg.offset();
+        d3Data.svgOffset = svgOffset;
+    }
     var adjustedX = pageX - svgOffset.left;
     var activeBin = Math.floor(xScale.invert(adjustedX));
     return activeBin;
@@ -784,9 +793,9 @@ function getActiveBinForPosition ($el, model, pageX) {
 function updateTimeBar ($el, model) {
     // debug('updating time bar: ', model);
 
-    var width = $el.width() - margin.left - margin.right;
-    var height = $el.height() - margin.top - margin.bottom;
     var d3Data = model.get('d3Data');
+    var width = d3Data.width;
+    var height = d3Data.height;
     var data = model.get('data');
     var maxBinValue = model.get('maxBinValue');
     var id = model.cid;
@@ -871,8 +880,12 @@ function updateTimeBar ($el, model) {
     var activeBin = getActiveBinForPosition($el, model, pageX);
     var upperTooltipValue = data.bins[activeBin];
 
-    var jquerySvg = $(svg[0]);
-    var svgOffset = jquerySvg.offset();
+    var svgOffset = d3Data.svgOffset;
+    if (!svgOffset) {
+        var jquerySvg = $(svg[0]);
+        svgOffset = jquerySvg.offset();
+        d3Data.svgOffset = svgOffset;
+    }
     var adjustedX = pageX - svgOffset.left;
 
     upperTooltip.attr('x', adjustedX + 3)
@@ -955,9 +968,6 @@ function updateTimeBar ($el, model) {
 
     bars.enter().append('rect')
         .attr('class', 'bar-rect')
-        .attr('data-container', 'body')
-        .attr('data-placement', dataPlacement)
-        .attr('data-html', true)
         .style('pointer-events', 'none')
         .style('fill', recolorBar)
         .style('opacity', 1)
@@ -979,9 +989,9 @@ function updateTimeBar ($el, model) {
 function updateTimeBarLineChart ($el, model) {
     // debug('updating time bar: ', model);
 
-    var width = $el.width() - margin.left - margin.right;
-    var height = $el.height() - margin.top - margin.bottom;
     var d3Data = model.get('d3Data');
+    var width = d3Data.width;
+    var height = d3Data.height;
     var data = model.get('data');
     var maxBinValue = model.get('maxBinValue');
     var id = model.cid;
@@ -1060,8 +1070,13 @@ function updateTimeBarLineChart ($el, model) {
     var activeBin = getActiveBinForPosition($el, model, pageX);
     var upperTooltipValue = data.bins[activeBin];
 
-    var jquerySvg = $(svg[0]);
-    var svgOffset = jquerySvg.offset();
+    var svgOffset = d3Data.svgOffset;
+    if (!svgOffset) {
+        var jquerySvg = $(svg[0]);
+        svgOffset = jquerySvg.offset();
+        d3Data.svgOffset = svgOffset;
+    }
+
     var adjustedX = pageX - svgOffset.left;
 
     upperTooltip.attr('x', adjustedX + 3)
