@@ -382,11 +382,19 @@
         <div id="timeExplorerDragBox" class="dragBox"></div>
         <div id="timeExplorerVerticalLine" class="verticalLine"></div>
         <div id="timeExplorerTop"></div>
-        <div id="timeExplorerVizContainer">
-            <div id="timeExplorerBody"></div>
-            <div id="timeExplorerMain"></div>
+        <div class="row timeExplorerBodyRow timeExplorerFixedHeight">
+            <div id="timeExplorerSideInput" class="col-xs-2 timeExplorerFixedHeight noPadding"></div>
+            <div id="timeExplorerVizContainer" class="col-xs-9 timeExplorerFixedHeight noPadding">
+                <div id="timeExplorerBody" class="noPadding"></div>
+                <div id="timeExplorerMain" class="noPadding"></div>
+            </div>
         </div>
-        <div id="timeExplorerAxisContainer"></div>
+        <div class="row timeExplorerFixedHeightAxis">
+            <div class="timeExplorerFixedHeightAxis noPadding col-xs-9 col-xs-offset-2">
+                <div id="timeExplorerAxisContainer" class="noPadding">
+                </div>
+            </div>
+        </div>
         <div id="timeExplorerBottom"></div>
     </div>
 
