@@ -686,8 +686,8 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         }),
         function(a, b) { return {drag: a, selection: b}; }
     ).subscribe(function (move) {
-        var payload = {play: true, layout: true, marquee: move};
-        socket.emit('interaction', payload);
+        var payload = {marquee: move};
+        socket.emit('move_nodes', payload);
     }, util.makeErrorHandler('marquee error'));
 
 
