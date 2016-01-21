@@ -30,16 +30,16 @@ var color = d3.scale.ordinal()
 
 var margin = {
     top: 15,
-    right: 5,
+    right: 10,
     bottom: 2,
-    left: 5
+    left: 10
 };
 
 var axisMargin = {
-    top: 0,
-    right: 5,
+    top: 1,
+    right: 10,
     bottom: 10,
-    left: 5
+    left: 10
 };
 
 
@@ -746,16 +746,22 @@ function updateTimeBar ($el, model) {
     var activeBin = getActiveBinForPosition($el, model, pageX);
     var upperTooltipValue = data.bins[activeBin];
 
-    upperTooltip.attr('x', pageX)
+    var jquerySvg = $(svg[0]);
+    var svgOffset = jquerySvg.offset();
+    var adjustedX = pageX - svgOffset.left;
+
+    upperTooltip.attr('x', adjustedX + 3)
         .text(upperTooltipValue);
 
     upperTooltip.data([''])
         .enter().append('text')
-        .attr('class', 'upperTooltip')
+        .classed('upperTooltip', true)
+        .classed('unselectable', true)
         .attr('y', -5)
         .attr('x', 0)
         .attr('opacity', 1.0)
         .attr('font-size', '0.7em')
+        .attr('pointer-events', 'none')
         .text('Text Data');
 
     //////////////////////////////////////////////////////////////////////////
@@ -1050,7 +1056,6 @@ function initializeBottomAxis ($el, model) {
     } else {
         numbersToShow = _.range(numTicks);
     }
-
 
     var expandedTickTitles = [];
     var xAxis = d3.svg.axis()
