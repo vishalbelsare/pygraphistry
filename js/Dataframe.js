@@ -1883,31 +1883,31 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     // TODO: Rest of time ranges
     if (timeAggregation === 'day') {
         incFunction = function (date) {
-            date.setHours(24,0,0,0);
+            return date.setHours(24,0,0,0);
         };
         decFunction = function (date) {
-            date.setHours(0,0,0,0);
+            return date.setHours(0,0,0,0);
         };
     } else if (timeAggregation === 'hour') {
         incFunction = function (date) {
-            date.setMinutes(60,0,0);
+            return date.setMinutes(60,0,0);
         };
         decFunction = function (date) {
-            date.setMinutes(0,0,0);
+            return date.setMinutes(0,0,0);
         };
     } else if (timeAggregation === 'minute') {
         incFunction = function (date) {
-            date.setSeconds(60,0);
+            return date.setSeconds(60,0);
         };
         decFunction = function (date) {
-            date.setSeconds(0,0);
+            return date.setSeconds(0,0);
         };
     } else if (timeAggregation === 'second') {
         incFunction = function (date) {
-            date.setMilliseconds(1000);
+            return date.setMilliseconds(1000);
         };
         decFunction = function (date) {
-            date.setMilliseconds(0);
+            return date.setMilliseconds(0);
         };
     } else {
         return;
@@ -1928,17 +1928,46 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     // We should just compute numBins, width, start, stop like in normal histograms
     var cutoffs = [startDate];
 
-    var runningDate = startDate;
-    var backupCount = 0;
-    while (runningDate < endDate && backupCount < 100000) {
-        var newDate = new Date(runningDate.getTime());
-        incFunction(newDate);
-        if (newDate < endDate) {
+    // Figure out how many it would be.
+    var timeA = new Date(start);
+    var timeB = new Date(start);
+    decFunction(timeA);
+    incFunction(timeB);
+    var binWidth = timeB.getTime() - timeA.getTime();
+
+    var estimatedNumberBins = (endDate.getTime() - startDate.getTime())/binWidth;
+    var MAX_BINS_TIME_HISTOGRAM = 2500;
+
+    var approximated = false;
+    if (estimatedNumberBins > MAX_BINS_TIME_HISTOGRAM) {
+
+        var diff = endDate.getTime() - startDate.getTime();
+        var startNum = startDate.getTime();
+        var step = Math.floor(diff / MAX_BINS_TIME_HISTOGRAM);
+        var runningDate = startNum + step;
+        while (runningDate < endDate) {
+            var newDate = new Date(runningDate);
             cutoffs.push(newDate);
+            runningDate += step;
         }
-        runningDate = newDate;
-        backupCount++;
+        approximated = true;
+
+    } else {
+
+        var runningDate = startDate;
+        var backupCount = 0;
+        while (runningDate < endDate && backupCount < 100000) {
+            var newDate = new Date(runningDate.getTime());
+            incFunction(newDate);
+            if (newDate < endDate) {
+                cutoffs.push(newDate);
+            }
+            runningDate = newDate;
+            backupCount++;
+        }
+
     }
+
 
     cutoffs.push(endDate);
     var cutoffNumbers = cutoffs.map(function (val, i) {
@@ -1949,7 +1978,7 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     var numBins = cutoffs.length - 1;
     var bins = Array.apply(null, new Array(numBins)).map(function () { return 0; });
     var timeValues = this.getColumnValues(timeAttr, timeType);
-    var binWidth = cutoffNumbers[1] - cutoffNumbers[0];
+    binWidth = cutoffNumbers[1] - cutoffNumbers[0];
 
     var binId, value;
     mask.mapIndexes(timeType, function (idx) {
@@ -1973,7 +2002,8 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
         stop: cutoffs[0],
         bottomVal: cutoffs[0],
         timeAggregation: timeAggregation,
-        cutoffs: cutoffs
+        cutoffs: cutoffs,
+        approximated: approximated
     };
 };
 
