@@ -27,7 +27,7 @@ var externalLink    = require('./externalLink.js');
 var encodingPerElementParams = [
     {
         name: 'pointScaling',
-        prettyName: 'Point Size',
+        displayName: 'Point Size',
         type: 'discrete',
         value: 50.0,
         step: 1,
@@ -36,7 +36,7 @@ var encodingPerElementParams = [
     },
     {
         name: 'edgeScaling',
-        prettyName: 'Edge Size',
+        displayName: 'Edge Size',
         type: 'discrete',
         value: 50.0,
         step: 1,
@@ -45,7 +45,7 @@ var encodingPerElementParams = [
     },
     {
         name: 'pointOpacity',
-        prettyName: 'Point Opacity',
+        displayName: 'Point Opacity',
         type: 'discrete',
         value: 100,
         step: 1,
@@ -54,7 +54,7 @@ var encodingPerElementParams = [
     },
     {
         name: 'edgeOpacity',
-        prettyName: 'Edge Opacity',
+        displayName: 'Edge Opacity',
         type: 'discrete',
         value: 100,
         step: 1,
@@ -63,7 +63,7 @@ var encodingPerElementParams = [
     },
     {
         name: 'pruneOrphans',
-        prettyName: 'Prune Isolated Nodes',
+        displayName: 'Prune Isolated Nodes',
         type: 'bool',
         value: false
     }
@@ -80,13 +80,13 @@ function createStyleElement() {
 var encodingForLabelParams = [
     {
         name: 'labelsEnabled',
-        prettyName: 'Show Labels',
+        displayName: 'Show Labels',
         type: 'bool',
         value: true
     },
     {
         name: 'labelForegroundColor',
-        prettyName: 'Text Color',
+        displayName: 'Text Color',
         type: 'color',
         def: new Color('#1f1f33'),
         cb: (function () {
@@ -100,7 +100,7 @@ var encodingForLabelParams = [
     },
     {
         name: 'labelBackgroundColor',
-        prettyName: 'Background Color',
+        displayName: 'Background Color',
         type: 'color',
         def: (new Color('#fff')).alpha(0.9),
         cb: (function () {
@@ -114,7 +114,7 @@ var encodingForLabelParams = [
     },
     {
         name: 'labelTransparency',
-        prettyName: 'Transparency',
+        displayName: 'Transparency',
         type: 'discrete',
         value: 100,
         step: 1,
@@ -123,7 +123,7 @@ var encodingForLabelParams = [
     },
     {
         name: 'poiEnabled',
-        prettyName: 'Points of Interest',
+        displayName: 'Points of Interest',
         type: 'bool',
         value: true
     }
@@ -320,7 +320,7 @@ function controlMaker (urlParams, param, type) {
     var $label = $('<label>').attr({
         for: param.name,
         class: 'control-label col-xs-4'
-    }).text(param.prettyName);
+    }).text(param.displayName);
 
     return $('<div>')
         .addClass('form-group')
