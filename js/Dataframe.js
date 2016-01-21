@@ -61,6 +61,7 @@ function Dataframe () {
     this.bufferAliases = {};
     this.data = this.rawdata;
     this.bufferOverlays = {};
+    this.metadata = {};
 }
 
 /**
