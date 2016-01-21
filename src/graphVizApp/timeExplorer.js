@@ -22,6 +22,7 @@ var TIME_BAR_HEIGHT = 75;
 var MIN_COLUMN_WIDTH = 4;
 var AXIS_HEIGHT = 20;
 var BAR_SIDE_PADDING = 1;
+var DOUBLE_CLICK_TIME = 500;
 
 var color = d3.scale.ordinal()
         .range(['#929292', '#6B6868', '#0FA5C5', '#E35E13'])
@@ -109,6 +110,9 @@ function TimeExplorer (socket, $div) {
 
     this.getTimeBoundsCommand.sendWithObservableResult(this.timeDescription)
         .do(function (resp) {
+            that.originalStart = resp.min;
+            that.originalStop = resp.max;
+
             that.modifyTimeDescription({
                 start: resp.min,
                 stop: resp.max
@@ -125,7 +129,6 @@ function TimeExplorer (socket, $div) {
 
     this.queryChangeSubject.filter(function (desc) {
             // Not initialized
-            debug('FILTERING: ', desc);
             return !(_.contains(_.values(desc), null));
         }).flatMap(function (timeDesc) {
             var timeType = timeDesc.timeType;
@@ -133,10 +136,8 @@ function TimeExplorer (socket, $div) {
             var timeAggregation = timeDesc.timeAggregation;
             var start = timeDesc.start;
             var stop = timeDesc.stop;
-            debug('GOT TIME DESC AND GETTING DATA: ', timeDesc);
             return that.getMultipleTimeData(timeType, timeAttr, start, stop, timeAggregation, that.activeQueries);
         }).do(function (data) {
-            debug('Got time data stream: ', data);
             var dividedData = {};
             dividedData.all = data._all;
             delete data['_all'];
@@ -213,7 +214,6 @@ TimeExplorer.prototype.getTimeData = function (timeType, timeAttr, start, stop, 
         filters: filters
     }
 
-    debug('SENDING TIME DATA COMMAND:', payload);
     return this.getTimeDataCommand.sendWithObservableResult(payload)
         .map(function (resp) {
             resp.data.name = name;
@@ -447,6 +447,12 @@ function TimeExplorerPanel (socket, $parent, explorer) {
         handleMouseDown: function (evt) {
             var that = this;
 
+            // In the middle of prior click/double click. Don't start new one.
+            if (that.handlingMouseDown) {
+                return;
+            }
+            that.handlingMouseDown = true;
+
             var startX = evt.pageX;
             var leftX = evt.pageX;
             var rightX = evt.pageX;
@@ -454,7 +460,6 @@ function TimeExplorerPanel (socket, $parent, explorer) {
 
             var positionChanges = Rx.Observable.fromEvent(that.$timeExplorerVizContainer, 'mousemove')
                 .map(function (evt) {
-                    debug('MOUSEMOVE');
 
                     mouseMoved = true;
                     var newX = evt.pageX;
@@ -475,31 +480,63 @@ function TimeExplorerPanel (socket, $parent, explorer) {
                 .do(function () {
                     positionChanges.dispose();
 
-                    // if (leftX === rightX) {
-                    //     // Click
-                    //     debug('CLICK', that.model.attributes);
-                    // } else {
-                    //     // Drag
-                    //     debug('DRAG', that.model.attributes);
-                    // }
+                    var filterDownFunc = function () {
+                        var leftBin = that.mainBarView.getBinForPosition(leftX);
+                        var rightBin = that.mainBarView.getBinForPosition(rightX);
 
-                    var leftBin = that.mainBarView.getBinForPosition(leftX);
-                    var rightBin = that.mainBarView.getBinForPosition(rightX);
+                        var mainBarData = that.model.get('all');
+                        var cutoffs = mainBarData.cutoffs;
 
-                    var mainBarData = that.model.get('all');
-                    var cutoffs = mainBarData.cutoffs;
+                        var leftCutoff = cutoffs[leftBin];
+                        var rightCutoff = cutoffs[rightBin + 1];
 
-                    var leftCutoff = cutoffs[leftBin];
-                    var rightCutoff = cutoffs[rightBin + 1];
+                        var explorer = that.model.get('explorer');
+                        explorer.modifyTimeDescription({
+                            start: leftCutoff,
+                            stop: rightCutoff
+                        });
 
-                    debug('leftCutoff, rightCutoff, leftBin, rightBin, leftX, rightX:',
-                        leftCutoff, rightCutoff, leftBin, rightBin, leftX, rightX);
+                        that.handlingMouseDown = false;
+                    };
 
-                    var explorer = that.model.get('explorer');
-                    explorer.modifyTimeDescription({
-                        start: leftCutoff,
-                        stop: rightCutoff
-                    });
+                    var zoomOutFunc = function () {
+                        var explorer = that.model.get('explorer');
+                        explorer.modifyTimeDescription({
+                            start: explorer.originalStart,
+                            stop: explorer.originalStop
+                        });
+
+                        Rx.Observable.timer(DOUBLE_CLICK_TIME)
+                            .take(1)
+                            .do(function () {
+                                that.handlingMouseDown = false;
+                            }).subscribe(_.identity);
+                    };
+
+                    if (leftX === rightX) {
+                        // Click
+                        // Wait for new click to zoom out, else zoom in
+                        // TODO: Figure out how to do this in terms of user accessibility settings
+                        // that the user specified on how long to wait between double click.
+                        var mousedownStream = Rx.Observable.fromEvent(that.$timeExplorerVizContainer, 'mousedown');
+                        var timer = Rx.Observable.timer(DOUBLE_CLICK_TIME);
+
+                        timer.merge(mousedownStream)
+                            .take(1)
+                            .do(function (val) {
+                                if (val) {
+                                    // Is mousedown event
+                                    zoomOutFunc();
+                                } else {
+                                    // Timed out, is click
+                                    filterDownFunc();
+                                }
+                            }).subscribe(_.identity, util.makeErrorHandler('time explorer double click'));
+
+                    } else {
+                        // Drag
+                        filterDownFunc();
+                    }
 
                     that.$dragBox.css('display', 'none');
 
