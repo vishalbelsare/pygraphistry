@@ -36,9 +36,9 @@ var margin = {
 
 var axisMargin = {
     top: 0,
-    right: 10,
+    right: 5,
     bottom: 10,
-    left: 10
+    left: 5
 };
 
 
@@ -72,7 +72,7 @@ function TimeExplorer (socket, $div) {
     this.$div = $div;
     this.socket = socket;
 
-    this.panel = new TimeExplorerPanel(socket, $div);
+    this.panel = new TimeExplorerPanel(socket, $div, this);
 
     this.getTimeDataCommand = new Command('getting time data', 'timeAggregation', socket);
     this.getTimeBoundsCommand = new Command('getting time bounds', 'getTimeBoundaries', socket);
@@ -97,15 +97,39 @@ function TimeExplorer (socket, $div) {
     this.timeDescription = {
         timeType: 'point',
         timeAttr: 'time',
-        timeAggregation: 'hour'
+        timeAggregation: 'day',
+        start: null,
+        stop: null
     };
 
+    this.queryChangeSubject = new Rx.ReplaySubject(1);
+
+
+
+
     this.getTimeBoundsCommand.sendWithObservableResult(this.timeDescription)
-        .flatMap(function (resp) {
-            var timeType = that.timeDescription.timeType;
-            var timeAttr = that.timeDescription.timeAttr;
-            var timeAggregation = that.timeDescription.timeAggregation;
-            return that.getMultipleTimeData(timeType, timeAttr, resp.min, resp.max, timeAggregation, that.activeQueries);
+        .do(function (resp) {
+            that.queryChangeSubject.take(1).do(function (timeDesc) {
+                timeDesc.start = resp.min;
+                timeDesc.stop = resp.max;
+                debug('ON NEXTING: ', timeDesc);
+                that.queryChangeSubject.onNext(timeDesc);
+            }).subscribe(_.identity);
+        }).subscribe(_.identity);
+
+
+    this.queryChangeSubject.filter(function (desc) {
+            // Not initialized
+            debug('FILTERING: ', desc);
+            return !(_.contains(_.values(desc), null));
+        }).flatMap(function (timeDesc) {
+            var timeType = timeDesc.timeType;
+            var timeAttr = timeDesc.timeAttr;
+            var timeAggregation = timeDesc.timeAggregation;
+            var start = timeDesc.start;
+            var stop = timeDesc.stop;
+            debug('GOT TIME DESC AND GETTING DATA: ', timeDesc);
+            return that.getMultipleTimeData(timeType, timeAttr, start, stop, timeAggregation, that.activeQueries);
         }).do(function (data) {
             debug('Got time data stream: ', data);
             var dividedData = {};
@@ -116,6 +140,26 @@ function TimeExplorer (socket, $div) {
 
             that.panel.model.set(dividedData);
         }).subscribe(_.identity, util.makeErrorHandler('Error getting time data stream'));
+
+
+    // this.getTimeBoundsCommand.sendWithObservableResult(this.timeDescription)
+    //     .flatMap(function (resp) {
+    //         var timeType = that.timeDescription.timeType;
+    //         var timeAttr = that.timeDescription.timeAttr;
+    //         var timeAggregation = that.timeDescription.timeAggregation;
+    //         return that.getMultipleTimeData(timeType, timeAttr, resp.min, resp.max, timeAggregation, that.activeQueries);
+    //     }).do(function (data) {
+    //         debug('Got time data stream: ', data);
+    //         var dividedData = {};
+    //         dividedData.all = data._all;
+    //         delete data['_all'];
+    //         dividedData.user = data;
+    //         dividedData.maxBinValue = dividedData.all.maxBin;
+
+    //         that.panel.model.set(dividedData);
+    //     }).subscribe(_.identity, util.makeErrorHandler('Error getting time data stream'));
+
+    this.queryChangeSubject.onNext(this.timeDescription);
 
 
     debug('Initialized Time Explorer');
@@ -194,10 +238,10 @@ TimeExplorer.prototype.getMultipleTimeData = function (timeType, timeAttr, start
 
 
 
-function TimeExplorerPanel (socket, $parent) {
+function TimeExplorerPanel (socket, $parent, explorer) {
     var that = this;
 
-    this.userBars = new TimeBarCollection();
+    this.userBars = new TimeBarCollection({explorer: explorer});
     var panel = this;
 
     var MainBarView = Backbone.View.extend({
@@ -213,7 +257,7 @@ function TimeExplorerPanel (socket, $parent) {
 
         initialize: function () {
             this.listenTo(this.model, 'destroy', this.remove);
-            this.listenTo(this.model, 'change', this.render);
+            this.listenTo(this.model, 'change:key', this.render);
 
             var params = {};
             var html = this.template(params);
@@ -224,20 +268,21 @@ function TimeExplorerPanel (socket, $parent) {
         render: function () {
             var model = this.model;
 
-            if (model.get('initialized')) {
-                updateBottomAxis(model.get('axisContainer'), model);
-                return this;
-            }
+            // if (model.get('initialized')) {
+            //     updateBottomAxis(model.get('axisContainer'), model);
+            //     return this;
+            // }
 
             model.set('$el', this.$el);
             var axisContainer = this.$el.children('.axisContainer');
+            axisContainer.empty();
             model.set('axisContainer', axisContainer);
             var axisHeight = '' + AXIS_HEIGHT + 'px';
             axisContainer.height(axisHeight);
             initializeBottomAxis(axisContainer, model);
             updateBottomAxis(axisContainer, model);
 
-            model.set('initialized', true);
+            // model.set('initialized', true);
             return this;
         }
     });
@@ -349,9 +394,9 @@ function TimeExplorerPanel (socket, $parent) {
     });
 
     this.userBarsView = new UserBarsView({collection: this.userBars});
-    var mainBarModel = new TimeBarModel({});
+    var mainBarModel = new TimeBarModel({explorer: explorer, timeStamp: Date.now()});
     this.mainBarView = new TimeBarView({model: mainBarModel});
-    this.bottomAxisView = new BottomAxisView({model: new BottomAxisModel() });
+    this.bottomAxisView = new BottomAxisView({model: new BottomAxisModel({explorer: explorer}) });
 
 
     var TimeExplorerView = Backbone.View.extend({
@@ -406,12 +451,19 @@ function TimeExplorerPanel (socket, $parent) {
 
         updateChildren: function () {
             var data = this.model.attributes;
+            var explorer = this.model.get('explorer');
             var params;
+
+            debug('data: ', data);
+
+            // TODO: Make this a cleaner system
+            var axisKey = '' + data.all.start + data.all.stop + data.all.timeAggregation;
 
             // Handle axis
             params = {
                 data: data.all,
-                timeStamp: Date.now()
+                timeStamp: Date.now(),
+                key: axisKey
             };
             this.bottomAxisView.model.set(params);
 
@@ -419,7 +471,8 @@ function TimeExplorerPanel (socket, $parent) {
             params = {
                 data: data.all,
                 maxBinValue: data.maxBinValue,
-                timeStamp: Date.now()
+                timeStamp: Date.now(),
+                lineUnchanged: false
             };
             this.mainBarView.model.id = params.data.name;
             this.mainBarView.model.set('barType', 'main');
@@ -432,11 +485,12 @@ function TimeExplorerPanel (socket, $parent) {
 
             //Add new data elements
             _.each(data.user, function (val, key) {
-                var barModel = new TimeBarModel();
+                var barModel = new TimeBarModel({explorer: explorer});
                 var params = {
                     data: val,
                     maxBinValue: data.maxBinValue,
-                    timeStamp: Date.now()
+                    timeStamp: Date.now(),
+                    lineUnchanged: false
                 };
 
                 barModel.set(params);
@@ -451,7 +505,7 @@ function TimeExplorerPanel (socket, $parent) {
 
     });
 
-    this.model = new TimeExplorerModel();
+    this.model = new TimeExplorerModel({explorer: explorer});
     this.view = new TimeExplorerView({model: this.model});
     this.collection = this.userBars;
 
@@ -493,6 +547,18 @@ function updateTimeBar ($el, model) {
     // TODO: Do this more properly
     if (!data) {
         return;
+    }
+
+    // Draw as time series if too many
+    if ((width/MIN_COLUMN_WIDTH) < data.numBins) {
+        updateTimeBarLineChart($el, model);
+        d3Data.lastDraw = 'lineChart';
+        return;
+    }
+
+    // Reset if line Chart
+    if (d3Data.lastDraw === 'lineChart') {
+        svg.selectAll("*").remove();
     }
 
     var barType = model.get('barType');
@@ -562,6 +628,15 @@ function updateTimeBar ($el, model) {
     var columns = svg.selectAll('.column')
         .data(data.bins);
 
+    var columnRects = columns.selectAll('rect');
+
+    columns.attr('transform', function (d, i) {
+            return 'translate(' + xScale(i) + ',0)';
+        });
+
+    columnRects.attr('width', barWidth + BAR_SIDE_PADDING);
+
+
     columns.enter().append('g')
         .classed('g', true)
         .classed('column', true)
@@ -571,6 +646,8 @@ function updateTimeBar ($el, model) {
             .attr('width', barWidth + BAR_SIDE_PADDING)
             .attr('height', height)
             .attr('opacity', 0);
+
+    columns.exit().remove();
 
     // TODO: Is this assignment correct?
     var bars = columns.selectAll('.bar-rect')
@@ -600,6 +677,14 @@ function updateTimeBar ($el, model) {
 
     var dataPlacement = (data.name === '_all') ? 'all' : 'user';
 
+    bars.attr('width', barWidth)
+        .attr('y', function (d) {
+            return height - yScale(d.val);
+        })
+        .attr('height', function (d) {
+            return yScale(d.val);
+        });
+
     bars.enter().append('rect')
         .attr('class', 'bar-rect')
         .attr('data-container', 'body')
@@ -616,8 +701,142 @@ function updateTimeBar ($el, model) {
             return yScale(d.val);
         });
 
+    bars.exit().remove();
+
+    d3Data.lastDraw = 'barChart';
 
 }
+
+
+function updateTimeBarLineChart ($el, model) {
+    // debug('updating time bar: ', model);
+
+    var width = $el.width() - margin.left - margin.right;
+    var height = $el.height() - margin.top - margin.bottom;
+    var d3Data = model.get('d3Data');
+    var data = model.get('data');
+    var maxBinValue = model.get('maxBinValue');
+    var id = model.cid;
+
+    var svg = d3Data.svg;
+
+    // Guard against no data.
+    // TODO: Do this more properly
+    if (!data) {
+        return;
+    }
+
+    // Reset because I don't know how to do it cleanly
+    if (d3Data.lastDraw === 'barChart') {
+        debug('REMOVING');
+        svg.selectAll("*").remove();
+    }
+
+    var barType = model.get('barType');
+
+    var xScale = setupBinScale(width, data.numBins)
+    var yScale = setupAmountScale(height, maxBinValue, data.bins);
+
+    var barWidth = Math.floor(width/data.numBins) - BAR_SIDE_PADDING;
+
+    //////////////////////////////////////////////////////////////////////////
+    // Make Line Beneath
+    //////////////////////////////////////////////////////////////////////////
+    var lineDimensions = {
+        x1: 0,
+        y1: height,
+        x2: width,
+        y2: height
+    };
+
+    var lines = svg.selectAll('.line')
+        .data([lineDimensions]);
+
+    lines.enter().append('line')
+        .classed('line', true)
+        .style('stroke', 'black')
+        .attr('x1', function (d) {
+            return d.x1;
+        })
+        .attr('x2', function (d) {
+            return d.x2;
+        })
+        .attr('y1', function (d) {
+            return d.y1;
+        })
+        .attr('y2', function (d) {
+            return d.y2;
+        });
+
+    //////////////////////////////////////////////////////////////////////////
+    // Upper Tooltip
+    //////////////////////////////////////////////////////////////////////////
+
+    var upperTooltip = svg.selectAll('.upperTooltip');
+    var pageX = model.get('pageX');
+    var jquerySvg = $(svg[0]);
+    var svgOffset = jquerySvg.offset();
+    var adjustedX = pageX - svgOffset.left;
+    var activeBin = Math.floor(xScale.invert(adjustedX));
+    var upperTooltipValue = data.bins[activeBin];
+
+    upperTooltip.attr('x', pageX)
+        .text(upperTooltipValue);
+
+    upperTooltip.data([''])
+        .enter().append('text')
+        .attr('class', 'upperTooltip')
+        .attr('y', -5)
+        .attr('x', 0)
+        .attr('opacity', 1.0)
+        .attr('font-size', '0.7em')
+        .text('Text Data');
+
+    //////////////////////////////////////////////////////////////////////////
+    // Make Area Lines
+    //////////////////////////////////////////////////////////////////////////
+
+    var area = d3.svg.area()
+        .x(function(d, i) { return xScale(i); })
+        .y0(height)
+        .y1(function(d) { return height - yScale(d); });
+
+    // var areaChart = svg.selectAll('.areaChart')
+    //     .datum(data.bins);
+
+    // HACKY WAY TO AVOID REDRAW
+    var areaChart = svg.selectAll('.areaChart');
+
+    if (!model.get('lineUnchanged')) {
+        debug('DRAWING');
+        svg.append('path')
+            .datum(data.bins)
+            .classed('areaChart', true)
+            .classed('area', true)
+            .attr('d', area)
+            .attr('fill', function () {
+                debug('Actually doing stuff');
+                debug('bin length: ', data.bins.length);
+                return color(barType);
+            });
+    }
+
+    model.set('lineUnchanged', true);
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function setupSvg (el, margin, width, height) {
     return d3.select(el).append('svg')
@@ -662,25 +881,28 @@ function initializeBottomAxis ($el, model) {
 
     var xScale = setupBinScale(width, data.numBins)
 
-
+    var startDate = new Date(data.cutoffs[0]);
+    var endDate = new Date(data.cutoffs[data.cutoffs.length - 1]);
 
     // Figure out which ticks to show
     var maxNumTicks = Math.floor(width/50);
     var numTicks = numBins + 1;
     var tickContent = data.cutoffs;
 
+
+    var numbersToShow;
     if (maxNumTicks < numTicks) {
-        tickContent = [];
-        var greatestSeen = 0;
-        for (var i = 0; i < numTicks; i++) {
-            var newTickNum = Math.floor(i * (maxNumTicks/numTicks));
-            if (newTickNum >= greatestSeen) {
-                tickContent[i] = data.cutoffs[i];
-                greatestSeen++;
-            } else {
-                tickContent[i] = false;
-            }
+        numbersToShow = [];
+
+        var step = Math.floor(numTicks/maxNumTicks);
+        for (var i = 0; i < maxNumTicks - 1; i++) {
+            numbersToShow[i] = step*i;
         }
+        numbersToShow[maxNumTicks-1] = data.cutoffs.length-1;
+
+        numTicks = maxNumTicks;
+    } else {
+        numbersToShow = _.range(numTicks);
     }
 
 
@@ -689,12 +911,15 @@ function initializeBottomAxis ($el, model) {
         .scale(xScale)
         .orient('bottom')
         .ticks(numTicks)
+        .tickValues(numbersToShow)
         .tickFormat(function (d) {
+            // debug('tick arg: ', arguments);
             var raw = tickContent[d];
-            debug('raw: ', raw);
             if (raw) {
-                expandedTickTitles.push(prettyPrintTime(raw));
-                return prettyPrintTime(raw, data.timeAggregation)
+                var expanded = prettyPrintTime(raw);
+                expandedTickTitles.push(expanded);
+                var label = prettyPrintTime(raw, data.timeAggregation);
+                return label;
             } else {
                 return '';
             }
@@ -705,7 +930,6 @@ function initializeBottomAxis ($el, model) {
     svg.append('g')
         .attr('class', 'x axis')
         .attr('id', 'timexaxis-' + id)
-        // .attr('transform', 'translate(')
         .call(xAxis);
 
     d3.select('#timexaxis-' + id)
@@ -713,8 +937,8 @@ function initializeBottomAxis ($el, model) {
         .attr('data-container', 'body')
         .attr('data-placement', 'top')
         .attr('data-toggle', 'tooltip')
-        .attr('data-original-title', function (d) {
-            return expandedTickTitles[d];
+        .attr('data-original-title', function (d, i) {
+            return expandedTickTitles[i];
         });
 
     d3.select('#timexaxis-' + id)
@@ -745,7 +969,7 @@ function updateBottomAxis ($el, model) {
 //////////////////////////////////////////////////////////////////////////////
 
 function dayOfWeekAsString(idx) {
-  return ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"][idx];
+  return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][idx];
 }
 
 function hourAsString(idx) {
