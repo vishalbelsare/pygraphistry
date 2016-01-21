@@ -311,7 +311,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
 
         initialize: function () {
             this.listenTo(this.model, 'destroy', this.remove);
-            this.listenTo(this.model, 'change:timeStamp', this.render);
+            this.listenTo(this.model, 'change:timeStamp', this.newContent);
             // TODO: listen to changes and render
 
             // Set default values
@@ -322,6 +322,11 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             var html = this.template(params);
             this.$el.html(html);
             this.$el.attr('cid', this.cid);
+        },
+
+        newContent: function () {
+            this.model.set('initialized', false);
+            this.render();
         },
 
         render: function () {
@@ -337,6 +342,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             // Need to init svg and all that.
             model.set('$el', this.$el);
             var vizContainer = this.$el.children('.vizContainer');
+            vizContainer.empty();
             model.set('vizContainer', vizContainer);
             var vizHeight = '' + TIME_BAR_HEIGHT + 'px';
             vizContainer.height(vizHeight);
