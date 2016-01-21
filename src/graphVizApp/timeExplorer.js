@@ -109,12 +109,17 @@ function TimeExplorer (socket, $div) {
 
     this.getTimeBoundsCommand.sendWithObservableResult(this.timeDescription)
         .do(function (resp) {
-            that.queryChangeSubject.take(1).do(function (timeDesc) {
-                timeDesc.start = resp.min;
-                timeDesc.stop = resp.max;
-                debug('ON NEXTING: ', timeDesc);
-                that.queryChangeSubject.onNext(timeDesc);
-            }).subscribe(_.identity);
+            that.modifyTimeDescription({
+                start: resp.min,
+                stop: resp.max
+            });
+
+            // that.queryChangeSubject.take(1).do(function (timeDesc) {
+            //     timeDesc.start = resp.min;
+            //     timeDesc.stop = resp.max;
+            //     debug('ON NEXTING: ', timeDesc);
+            //     that.queryChangeSubject.onNext(timeDesc);
+            // }).subscribe(_.identity);
         }).subscribe(_.identity);
 
 
@@ -164,6 +169,14 @@ function TimeExplorer (socket, $div) {
 
     debug('Initialized Time Explorer');
 }
+
+TimeExplorer.prototype.modifyTimeDescription = function (change) {
+    var that = this;
+    that.queryChangeSubject.take(1).do(function (timeDesc) {
+        _.extend(timeDesc, change);
+        that.queryChangeSubject.onNext(timeDesc);
+    }).subscribe(_.identity);
+};
 
 TimeExplorer.prototype.makeQuery = function (type, attr, string) {
     return {
@@ -340,6 +353,10 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             this.render();
         },
 
+        getBinForPosition: function (pageX) {
+            return getActiveBinForPosition(this.$el, this.model, pageX);
+        },
+
         close: function () {
 
         }
@@ -406,13 +423,16 @@ function TimeExplorerPanel (socket, $parent, explorer) {
         $timeExplorerMain: $('#timeExplorerMain'),
         $timeExplorerBottom: $('#timeExplorerBottom'),
         $timeExplorerAxisContainer: $('#timeExplorerAxisContainer'),
+        $timeExplorerVizContainer: $('#timeExplorerVizContainer'),
+        $dragBox: $('#timeExplorerDragBox'),
         $verticalLine: $('#timeExplorerVerticalLine'),
         userBarsView: that.userBarsView,
         mainBarView: that.mainBarView,
         bottomAxisView: that.bottomAxisView,
 
         events: {
-            'mousemove': 'mousemove'
+            'mousemove': 'mousemove',
+            'mousedown #timeExplorerVizContainer': 'handleMouseDown'
         },
 
         initialize: function () {
@@ -421,6 +441,69 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             this.setupVerticalLine();
             this.render();
 
+
+        },
+
+        handleMouseDown: function (evt) {
+            var that = this;
+
+            var startX = evt.pageX;
+            var leftX = evt.pageX;
+            var rightX = evt.pageX;
+            var mouseMoved = false;
+
+            var positionChanges = Rx.Observable.fromEvent(that.$timeExplorerVizContainer, 'mousemove')
+                .map(function (evt) {
+                    debug('MOUSEMOVE');
+
+                    mouseMoved = true;
+                    var newX = evt.pageX;
+                    var ends = [startX, newX];
+                    leftX = _.min(ends);
+                    rightX = _.max(ends);
+
+                    that.$dragBox.css('left', leftX);
+                    that.$dragBox.css('width', rightX - leftX);
+                    that.$dragBox.css('display', 'block');
+
+                    debug('dragBox: ', that.$dragBox[0]);
+
+                }).subscribe(_.identity, util.makeErrorHandler('time explorer drag move'));
+
+            Rx.Observable.fromEvent(this.$timeExplorerVizContainer, 'mouseup')
+                .take(1)
+                .do(function () {
+                    positionChanges.dispose();
+
+                    // if (leftX === rightX) {
+                    //     // Click
+                    //     debug('CLICK', that.model.attributes);
+                    // } else {
+                    //     // Drag
+                    //     debug('DRAG', that.model.attributes);
+                    // }
+
+                    var leftBin = that.mainBarView.getBinForPosition(leftX);
+                    var rightBin = that.mainBarView.getBinForPosition(rightX);
+
+                    var mainBarData = that.model.get('all');
+                    var cutoffs = mainBarData.cutoffs;
+
+                    var leftCutoff = cutoffs[leftBin];
+                    var rightCutoff = cutoffs[rightBin + 1];
+
+                    debug('leftCutoff, rightCutoff, leftBin, rightBin, leftX, rightX:',
+                        leftCutoff, rightCutoff, leftBin, rightBin, leftX, rightX);
+
+                    var explorer = that.model.get('explorer');
+                    explorer.modifyTimeDescription({
+                        start: leftCutoff,
+                        stop: rightCutoff
+                    });
+
+                    that.$dragBox.css('display', 'none');
+
+                }).subscribe(_.identity, util.makeErrorHandler('time explorer drag mouseup'));
 
         },
 
@@ -531,6 +614,20 @@ function initializeTimeBar ($el, model) {
     });
 }
 
+function getActiveBinForPosition ($el, model, pageX) {
+    var width = $el.width() - margin.left - margin.right;
+    var d3Data = model.get('d3Data');
+    var data = model.get('data');
+    var svg = d3Data.svg;
+    var xScale = setupBinScale(width, data.numBins)
+
+    var jquerySvg = $(svg[0]);
+    var svgOffset = jquerySvg.offset();
+    var adjustedX = pageX - svgOffset.left;
+    var activeBin = Math.floor(xScale.invert(adjustedX));
+    return activeBin;
+}
+
 function updateTimeBar ($el, model) {
     // debug('updating time bar: ', model);
 
@@ -603,10 +700,7 @@ function updateTimeBar ($el, model) {
 
     var upperTooltip = svg.selectAll('.upperTooltip');
     var pageX = model.get('pageX');
-    var jquerySvg = $(svg[0]);
-    var svgOffset = jquerySvg.offset();
-    var adjustedX = pageX - svgOffset.left;
-    var activeBin = Math.floor(xScale.invert(adjustedX));
+    var activeBin = getActiveBinForPosition($el, model, pageX);
     var upperTooltipValue = data.bins[activeBin];
 
     upperTooltip.attr('x', pageX)
