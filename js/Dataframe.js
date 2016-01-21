@@ -4,6 +4,7 @@ var _ = require('underscore');
 var dateFormat = require('dateformat');
 var Q = require('q');
 var fs = require('fs');
+var csv = require('csv');
 
 var log = require('common/logger.js');
 var logger = log.createLogger('graph-viz:dataframe');
@@ -1661,6 +1662,19 @@ Dataframe.prototype.serializeColumns = function (target, options) {
     serialize(toSerialize, options.compress, target);
 };
 
+/** Return a promise of a string CSV representation of the dataframe
+ */
+Dataframe.prototype.formatAsCsv = function (type) {
+    var that = this;
+
+    var compact = that.getRowsCompact(undefined, type);
+    var promiseStringify = Q.denodeify(csv.stringify);
+    console.log('compact header: ', compact.header);
+    var structuredArrays = [compact.header].concat(compact.values);
+
+    return promiseStringify(structuredArrays);
+
+};
 
 //////////////////////////////////////////////////////////////////////////////
 // Aggregations and Histograms
