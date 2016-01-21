@@ -885,7 +885,7 @@ function initializeBottomAxis ($el, model) {
     var endDate = new Date(data.cutoffs[data.cutoffs.length - 1]);
 
     // Figure out which ticks to show
-    var maxNumTicks = Math.floor(width/50);
+    var maxNumTicks = Math.floor(width/60);
     var numTicks = numBins + 1;
     var tickContent = data.cutoffs;
 
@@ -895,12 +895,21 @@ function initializeBottomAxis ($el, model) {
         numbersToShow = [];
 
         var step = Math.floor(numTicks/maxNumTicks);
-        for (var i = 0; i < maxNumTicks - 1; i++) {
-            numbersToShow[i] = step*i;
-        }
-        numbersToShow[maxNumTicks-1] = data.cutoffs.length-1;
 
+        var largestNumber = 0;
+        while (largestNumber < data.cutoffs.length - 1) {
+            // Validate that it's not too close to the end
+            var ratioTillEnd = ((data.cutoffs.length - 1 - largestNumber) / step);
+            if (ratioTillEnd > 0.25) {
+                numbersToShow.push(largestNumber);
+            }
+            largestNumber += step;
+        }
+        numbersToShow.push(data.cutoffs.length-1);
+
+        maxNumTicks = numbersToShow.length;
         numTicks = maxNumTicks;
+
     } else {
         numbersToShow = _.range(numTicks);
     }

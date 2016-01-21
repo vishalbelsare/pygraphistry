@@ -20,7 +20,7 @@ var persist         = require('./persist.js');
 var goLiveButton    = require('./goLiveButton.js');
 var colorPicker     = require('./colorpicker.js');
 var externalLink    = require('./externalLink.js');
-
+var TimeExplorer    = require('./timeExplorer.js');
 
 // Setup client side controls.
 var encodingPerElementParams = [
@@ -662,6 +662,8 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     setsPanel.setupFiltersPanelInteraction(filtersPanel);
     setsPanel.setupToggleControl(popoutClicks, $('#setsPanelButton'));
     setsPanel.setupSelectionInteraction(appState.activeSelection, appState.latestHighlightedObject);
+
+    var timeExplorer = new TimeExplorer(socket, $('#timeExplorer'));
 
     createControls(
         socket,
