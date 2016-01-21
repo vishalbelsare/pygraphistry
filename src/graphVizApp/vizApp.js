@@ -86,6 +86,7 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
     var viewConfigChanges = new Rx.ReplaySubject(1);
     socket.emit('get_view_config', null, function (response) {
         if (response.success) {
+            debug('Received view config from server', response.viewConfig);
             viewConfigChanges.onNext(response.viewConfig);
         } else {
             throw Error('Failed to get viewConfig');
