@@ -1913,9 +1913,16 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
         return;
     }
 
+    // Make sure startDate is on a nice boundary
     decFunction(startDate);
-    incFunction(endDate);
 
+    // Before incrementing endDate, check to see if it's already a boundary (in which case we don't)
+    // want to incremement
+    var testDate = new Date(endDate.getTime());
+    decFunction(testDate);
+    if (testDate.getTime() !== endDate.getTime()) {
+        incFunction(endDate);
+    }
 
     // TODO: We don't strictly need to compute all cutoffs to bin.
     // We should just compute numBins, width, start, stop like in normal histograms
