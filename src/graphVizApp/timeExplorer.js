@@ -18,7 +18,7 @@ var FilterControl = require('./FilterControl.js');
 // CONSTANTS
 //////////////////////////////////////////////////////////////////////////////
 
-var TIME_BAR_HEIGHT = 75;
+var TIME_BAR_HEIGHT = 60;
 var MIN_COLUMN_WIDTH = 4;
 var AXIS_HEIGHT = 20;
 var BAR_SIDE_PADDING = 1;
@@ -73,32 +73,31 @@ function TimeExplorer (socket, $div) {
     this.$div = $div;
     this.socket = socket;
 
-    this.panel = new TimeExplorerPanel(socket, $div, this);
-
     this.getTimeDataCommand = new Command('getting time data', 'timeAggregation', socket);
     this.getTimeBoundsCommand = new Command('getting time bounds', 'getTimeBoundaries', socket);
 
-    this.activeQueries = [
-        {
-            name: 'smallTime',
-            query: that.makeQuery('point', 'time', 'point:time < "2007-01-02T00:01:24+00:00"')
-        },
+    // this.activeQueries = [
+    //     {
+    //         name: 'smallTime',
+    //         query: that.makeQuery('point', 'time', 'point:time < "2007-01-02T00:01:24+00:00"')
+    //     },
 
-        {
-            name: 'medTime',
-            query: that.makeQuery('point', 'time', 'point:time >= "2007-01-02T00:01:24+00:00" and point:time < "2007-01-05T00:01:24+00:00"')
-        },
+    //     {
+    //         name: 'medTime',
+    //         query: that.makeQuery('point', 'time', 'point:time >= "2007-01-02T00:01:24+00:00" and point:time < "2007-01-05T00:01:24+00:00"')
+    //     },
 
-        {
-            name: 'largeTime',
-            query: that.makeQuery('point', 'time', 'point:time >= "2007-01-05T00:01:24+00:00"')
+    //     {
+    //         name: 'largeTime',
+    //         query: that.makeQuery('point', 'time', 'point:time >= "2007-01-05T00:01:24+00:00"')
 
-        }
-    ];
+    //     }
+    // ];
+    this.activeQueries = [];
     this.timeDescription = {
-        timeType: 'point',
-        timeAttr: 'time',
-        timeAggregation: 'day',
+        timeType: null,
+        timeAttr: null,
+        timeAggregation: null,
         start: null,
         stop: null
     };
@@ -106,10 +105,13 @@ function TimeExplorer (socket, $div) {
     this.queryChangeSubject = new Rx.ReplaySubject(1);
 
 
-
-
-    this.getTimeBoundsCommand.sendWithObservableResult(this.timeDescription)
-        .do(function (resp) {
+    this.queryChangeSubject.filter(function (timeDesc) {
+            return (timeDesc.timeType && timeDesc.timeAttr);
+        }).distinctUntilChanged(function (timeDesc) {
+            return timeDesc.timeType + timeDesc.timeAttr;
+        }).flatMap(function (timeDesc) {
+            return that.getTimeBoundsCommand.sendWithObservableResult(timeDesc);
+        }).do(function (resp) {
             that.originalStart = resp.min;
             that.originalStop = resp.max;
 
@@ -117,13 +119,6 @@ function TimeExplorer (socket, $div) {
                 start: resp.min,
                 stop: resp.max
             });
-
-            // that.queryChangeSubject.take(1).do(function (timeDesc) {
-            //     timeDesc.start = resp.min;
-            //     timeDesc.stop = resp.max;
-            //     debug('ON NEXTING: ', timeDesc);
-            //     that.queryChangeSubject.onNext(timeDesc);
-            // }).subscribe(_.identity);
         }).subscribe(_.identity);
 
 
@@ -138,9 +133,10 @@ function TimeExplorer (socket, $div) {
             var stop = timeDesc.stop;
             return that.getMultipleTimeData(timeType, timeAttr, start, stop, timeAggregation, that.activeQueries);
         }).do(function (data) {
+            debug('GOT NEW DATA: ', data);
             var dividedData = {};
-            dividedData.all = data._all;
-            delete data['_all'];
+            dividedData.all = data.All;
+            delete data['All'];
             dividedData.user = data;
             dividedData.maxBinValue = dividedData.all.maxBin;
 
@@ -167,6 +163,8 @@ function TimeExplorer (socket, $div) {
 
     this.queryChangeSubject.onNext(this.timeDescription);
 
+    this.panel = new TimeExplorerPanel(socket, $div, this);
+
 
     debug('Initialized Time Explorer');
 }
@@ -175,9 +173,19 @@ TimeExplorer.prototype.modifyTimeDescription = function (change) {
     var that = this;
     that.queryChangeSubject.take(1).do(function (timeDesc) {
         _.extend(timeDesc, change);
+        debug('NEW TIME DESC: ', timeDesc);
         that.queryChangeSubject.onNext(timeDesc);
     }).subscribe(_.identity);
 };
+
+TimeExplorer.prototype.addActiveQuery = function (type, attr, string) {
+    var formattedQuery = this.makeQuery(type, attr, string);
+    this.activeQueries.push({
+        name: string,
+        query: formattedQuery
+    });
+    this.modifyTimeDescription({}); // Update. TODO: Make an actual update func
+}
 
 TimeExplorer.prototype.makeQuery = function (type, attr, string) {
     return {
@@ -228,7 +236,7 @@ TimeExplorer.prototype.getMultipleTimeData = function (timeType, timeAttr, start
         return that.getTimeData(timeType, timeAttr, start, stop, timeAggregation, [queryWrapper.query], queryWrapper.name);
     });
 
-    var allSubject = that.getTimeData(timeType, timeAttr, start, stop, timeAggregation, [], '_all');
+    var allSubject = that.getTimeData(timeType, timeAttr, start, stop, timeAggregation, [], 'All');
     subjects.push(allSubject);
 
     return Rx.Observable.zip(subjects, function () {
@@ -332,6 +340,11 @@ function TimeExplorerPanel (socket, $parent, explorer) {
         render: function () {
             var model = this.model;
 
+            // Don't do anything, you haven't been populated yet
+            if (!this.model.get('data')) {
+                return;
+            }
+
             // Don't do first time work.
             // TODO: Should this be initialize instead?
             if (model.get('initialized')) {
@@ -356,6 +369,12 @@ function TimeExplorerPanel (socket, $parent, explorer) {
         mousemoveParent: function (evt) {
             this.model.set('pageX', evt.pageX);
             this.model.set('pageY', evt.pageY);
+            this.render();
+        },
+
+        mouseoutParent: function (evt) {
+            this.model.set('pageX', -1);
+            this.model.set('pageY', -1);
             this.render();
         },
 
@@ -411,16 +430,84 @@ function TimeExplorerPanel (socket, $parent, explorer) {
 
         mousemoveParent: function (evt) {
             this.collection.each(function (child) {
-                child.view.mousemoveParent(evt);
+                if (child.view) {
+                    child.view.mousemoveParent(evt);
+                }
+            });
+        },
+
+        mouseoutParent: function (evt) {
+            this.collection.each(function (child) {
+                if (child.view) {
+                    child.view.mouseoutParent(evt);
+                }
             });
         }
     });
+
+    var SideInputView = Backbone.View.extend({
+        el: $('#timeExplorerSideInput'),
+        template: Handlebars.compile($('#timeExplorerSideInputTemplate').html()),
+        events: {
+            'click #timeAttrSubmitButton': 'submitTimeAttr',
+            'click #newAttrSubmitButton': 'submitNewAttr',
+            'change #timeAggregationSelect': 'submitTimeAggregation'
+        },
+
+        initialize: function () {
+            this.listenTo(this.model, 'destroy', this.remove);
+
+            var params = {
+                timeAggregationOptions: ['day', 'hour', 'minute', 'second']
+            };
+            var html = this.template(params);
+            this.$el.html(html);
+            this.$el.attr('cid', this.cid);
+            this.setSelectedTimeAggregation();
+        },
+
+        render: function () {
+
+        },
+
+        submitTimeAttr: function (evt) {
+            evt.preventDefault();
+            var timeType = $('#timeType').val();
+            var timeAttr = $('#timeAttr').val();
+            this.model.get('explorer').modifyTimeDescription({
+                timeType: timeType,
+                timeAttr: timeAttr
+            });
+        },
+
+        submitNewAttr: function (evt) {
+            evt.preventDefault();
+            var newType = $('#newType').val();
+            var newAttr = $('#newAttr').val();
+            var newQuery = $('#newQuery').val();
+            this.model.get('explorer').addActiveQuery(newType, newAttr, newQuery);
+        },
+
+        submitTimeAggregation: function (evt) {
+            evt.preventDefault();
+            this.setSelectedTimeAggregation();
+        },
+
+        setSelectedTimeAggregation: function () {
+            var timeAggregation = $('#timeAggregationSelect').val();
+            this.model.get('explorer').modifyTimeDescription({
+                timeAggregation: timeAggregation
+            });
+        }
+
+    });
+    var SideInputModel = Backbone.Model.extend({});
+    this.sideInputView = new SideInputView({model: new SideInputModel({explorer: explorer})});
 
     this.userBarsView = new UserBarsView({collection: this.userBars});
     var mainBarModel = new TimeBarModel({explorer: explorer, timeStamp: Date.now()});
     this.mainBarView = new TimeBarView({model: mainBarModel});
     this.bottomAxisView = new BottomAxisView({model: new BottomAxisModel({explorer: explorer}) });
-
 
     var TimeExplorerView = Backbone.View.extend({
         el: $parent,
@@ -430,28 +517,44 @@ function TimeExplorerPanel (socket, $parent, explorer) {
         $timeExplorerBottom: $('#timeExplorerBottom'),
         $timeExplorerAxisContainer: $('#timeExplorerAxisContainer'),
         $timeExplorerVizContainer: $('#timeExplorerVizContainer'),
+        $timeExplorerSideInput: $('#timeExplorerSideInput'),
         $dragBox: $('#timeExplorerDragBox'),
         $verticalLine: $('#timeExplorerVerticalLine'),
         userBarsView: that.userBarsView,
         mainBarView: that.mainBarView,
         bottomAxisView: that.bottomAxisView,
+        sideInputView: that.sideInputView,
 
         events: {
-            'mousemove': 'mousemove',
+            'mousemove #timeExplorerVizContainer': 'mousemove',
+            'mouseout #timeExplorerVizContainer': 'mouseout',
             'mousedown #timeExplorerVizContainer': 'handleMouseDown'
         },
 
         initialize: function () {
             // TODO: Add, remove, reset handlers
             this.listenTo(this.model, 'change', this.updateChildren);
-            this.setupVerticalLine();
+            this.listenTo(this.model, 'change:all', this.setupMouseInteractions);
+            // this.setupVerticalLine();
             this.render();
 
 
         },
 
+        setupMouseInteractions: function () {
+            // TODO: Figure out how to make this not fire everytime changes occur,
+            // but only when data is first added
+            if (!this.enableMouseInteractions) {
+                this.setupVerticalLine();
+                this.enableMouseInteractions = true;
+            }
+        },
+
         handleMouseDown: function (evt) {
             var that = this;
+            if (!this.enableMouseInteractions) {
+                return;
+            }
 
             // In the middle of prior click/double click. Don't start new one.
             if (that.handlingMouseDown) {
@@ -476,8 +579,6 @@ function TimeExplorerPanel (socket, $parent, explorer) {
                     that.$dragBox.css('left', leftX);
                     that.$dragBox.css('width', rightX - leftX);
                     that.$dragBox.css('display', 'block');
-
-                    debug('dragBox: ', that.$dragBox[0]);
 
                 }).subscribe(_.identity, util.makeErrorHandler('time explorer drag move'));
 
@@ -552,13 +653,13 @@ function TimeExplorerPanel (socket, $parent, explorer) {
 
         setupVerticalLine: function () {
             var that = this;
-            this.$el.on('mouseover', function (evt) {
+            this.$timeExplorerVizContainer.on('mouseover', function (evt) {
                 that.$verticalLine.css('display', 'block');
             });
-            this.$el.on('mouseout', function (evt) {
+            this.$timeExplorerVizContainer.on('mouseout', function (evt) {
                 that.$verticalLine.css('display', 'none');
             });
-            this.$el.on('mousemove', function (evt) {
+            this.$timeExplorerVizContainer.on('mousemove', function (evt) {
                 var x = evt.pageX - 1;
                 that.$verticalLine.css('left', '' + x + 'px');
             });
@@ -571,16 +672,25 @@ function TimeExplorerPanel (socket, $parent, explorer) {
         },
 
         mousemove: function (evt) {
+            if (!this.enableMouseInteractions) {
+                return;
+            }
             this.mainBarView.mousemoveParent(evt);
             this.userBarsView.mousemoveParent(evt);
+        },
+
+        mouseout: function (evt) {
+            if (!this.enableMouseInteractions) {
+                return;
+            }
+            this.mainBarView.mouseoutParent(evt);
+            this.userBarsView.mouseoutParent(evt);
         },
 
         updateChildren: function () {
             var data = this.model.attributes;
             var explorer = this.model.get('explorer');
             var params;
-
-            debug('data: ', data);
 
             // TODO: Make this a cleaner system
             var axisKey = '' + data.all.start + data.all.stop + data.all.timeAggregation;
@@ -738,6 +848,21 @@ function updateTimeBar ($el, model) {
         });
 
     //////////////////////////////////////////////////////////////////////////
+    // Name Caption
+    //////////////////////////////////////////////////////////////////////////
+
+    var nameCaption = svg.selectAll('.nameCaption');
+    nameCaption.data([''])
+        .enter().append('text')
+        .classed('nameCaption', true)
+        .classed('unselectable', true)
+        .attr('y', -5)
+        .attr('x', 5)
+        .attr('opacity', 1.0)
+        .attr('font-size', '0.7em')
+        .text(data.name);
+
+    //////////////////////////////////////////////////////////////////////////
     // Upper Tooltip
     //////////////////////////////////////////////////////////////////////////
 
@@ -762,7 +887,7 @@ function updateTimeBar ($el, model) {
         .attr('opacity', 1.0)
         .attr('font-size', '0.7em')
         .attr('pointer-events', 'none')
-        .text('Text Data');
+        .text('');
 
     //////////////////////////////////////////////////////////////////////////
     // Make Columns
@@ -818,7 +943,7 @@ function updateTimeBar ($el, model) {
 
     bars.style('fill', recolorBar);
 
-    var dataPlacement = (data.name === '_all') ? 'all' : 'user';
+    var dataPlacement = (data.name === 'All') ? 'all' : 'user';
 
     bars.attr('width', barWidth)
         .attr('y', function (d) {
@@ -912,28 +1037,46 @@ function updateTimeBarLineChart ($el, model) {
         });
 
     //////////////////////////////////////////////////////////////////////////
+    // Name Caption
+    //////////////////////////////////////////////////////////////////////////
+
+    var nameCaption = svg.selectAll('.nameCaption');
+    nameCaption.data([''])
+        .enter().append('text')
+        .classed('nameCaption', true)
+        .classed('unselectable', true)
+        .attr('y', -5)
+        .attr('x', 5)
+        .attr('opacity', 1.0)
+        .attr('font-size', '0.7em')
+        .text(data.name);
+
+    //////////////////////////////////////////////////////////////////////////
     // Upper Tooltip
     //////////////////////////////////////////////////////////////////////////
 
     var upperTooltip = svg.selectAll('.upperTooltip');
     var pageX = model.get('pageX');
+    var activeBin = getActiveBinForPosition($el, model, pageX);
+    var upperTooltipValue = data.bins[activeBin];
+
     var jquerySvg = $(svg[0]);
     var svgOffset = jquerySvg.offset();
     var adjustedX = pageX - svgOffset.left;
-    var activeBin = Math.floor(xScale.invert(adjustedX));
-    var upperTooltipValue = data.bins[activeBin];
 
-    upperTooltip.attr('x', pageX)
+    upperTooltip.attr('x', adjustedX + 3)
         .text(upperTooltipValue);
 
     upperTooltip.data([''])
         .enter().append('text')
-        .attr('class', 'upperTooltip')
+        .classed('upperTooltip', true)
+        .classed('unselectable', true)
         .attr('y', -5)
         .attr('x', 0)
         .attr('opacity', 1.0)
         .attr('font-size', '0.7em')
-        .text('Text Data');
+        .attr('pointer-events', 'none')
+        .text('');
 
     //////////////////////////////////////////////////////////////////////////
     // Make Area Lines
@@ -951,15 +1094,12 @@ function updateTimeBarLineChart ($el, model) {
     var areaChart = svg.selectAll('.areaChart');
 
     if (!model.get('lineUnchanged')) {
-        debug('DRAWING');
         svg.append('path')
             .datum(data.bins)
             .classed('areaChart', true)
             .classed('area', true)
             .attr('d', area)
             .attr('fill', function () {
-                debug('Actually doing stuff');
-                debug('bin length: ', data.bins.length);
                 return color(barType);
             });
     }
