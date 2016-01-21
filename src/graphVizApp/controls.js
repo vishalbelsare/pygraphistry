@@ -4,6 +4,7 @@ var debug   = require('debug')('graphistry:StreamGL:graphVizApp:controls');
 var $       = window.$;
 var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
+var d3      = require('d3');
 var _       = require('underscore');
 var Color   = require('color');
 
@@ -428,17 +429,13 @@ function createControls(socket, appState, trigger, urlParams) {
     .subscribe(_.identity, util.makeErrorHandler('createControls'));
 }
 
-function toLog(minPos, maxPos, minVal, maxVal, pos) {
-    var logMinVal = Math.log(minVal);
-    var logMaxVal = Math.log(maxVal);
-    var scale = (logMaxVal - logMinVal) / (maxPos - minPos);
-    return Math.exp(logMinVal + scale * (pos - minPos));
+function logScaling(minPos, maxPos, minVal, maxVal) {
+    return d3.scale.log().domain([minVal, maxVal]).range([minPos, maxPos]);
 }
 
-
-function toPercent(pos) {
-    return pos / 100;
-}
+var PercentScale = d3.scale.linear().domain([0, 1]).range([0, 100]);
+var PointSizeScale = logScaling(1, 100, 0.1, 10);
+var EdgeSizeScale = logScaling(1, 100, 0.1, 10);
 
 
 function setViewParameter(socket, name, pos, appState) {
@@ -456,19 +453,19 @@ function setViewParameter(socket, name, pos, appState) {
 
     switch (name) {
         case 'pointScaling':
-            val = toLog(1, 100, 0.1, 10, pos);
+            val = PointSizeScale.invert(pos);
             camera.setPointScaling(val);
             break;
         case 'edgeScaling':
-            val = toLog(1, 100, 0.1, 10, pos);
+            val = EdgeSizeScale.invert(pos);
             camera.setEdgeScaling(val);
             break;
         case 'pointOpacity':
-            val = toPercent(pos);
+            val = PercentScale.invert(pos);
             setUniform('pointOpacity', [val]);
             break;
         case 'edgeOpacity':
-            val = toPercent(pos);
+            val = PercentScale.invert(pos);
             setUniform('edgeOpacity', [val]);
             break;
         case 'labelTransparency':
@@ -476,7 +473,7 @@ function setViewParameter(socket, name, pos, appState) {
             if (!opControl.length) {
                 opControl = $('<style>').appendTo($('body'));
             }
-            val = toPercent(pos);
+            val = PercentScale.invert(pos);
             opControl.text('.graph-label { opacity: ' + val + '; }');
             break;
         case 'poiEnabled':
