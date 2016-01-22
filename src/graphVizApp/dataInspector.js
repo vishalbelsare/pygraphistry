@@ -222,12 +222,10 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
                 return;
             }
             row.model.set('selected', false);
-            _.each(grid.selection, function (sel) {
-                if (row.model.attributes._index === sel.idx && dim === sel.dim) {
-                    grid.selectedModels.push(row.model);
-                    row.model.set('selected', true);
-                }
-            });
+            if (grid.selection.containsIndexByDim(row.model.attributes._index, dim)) {
+                grid.selectedModels.push(row.model);
+                row.model.set('selected', true);
+            }
             // Seems to be racy at initialization, so guard for now.
             // TODO: Clean up so this guard isn't necessary.
             if (row.userRender) {
