@@ -38,7 +38,7 @@ function setupCameraInteractions(appState, $eventTarget) {
 
     return Rx.Observable.merge(
         interactions,
-        interaction.setupRotate(camera),
+        interaction.setupRotate($eventTarget, camera),
         interaction.setupCenter($('#center'),
                                 renderState.get('hostBuffers').curPoints,
                                 camera),
@@ -51,9 +51,7 @@ function setupCameraInteractions(appState, $eventTarget) {
 
 function setupKeyInteractions(appState, $eventTarget) {
     // Deselect on escape;
-    // $eventTarget.keyup(function (evt) {
-    $('body').keyup(function (evt) {
-        console.log('GOT KEYUP ON SIM CONTAINER');
+    $eventTarget.keyup(function (evt) {
         var ESC_KEYCODE = 27;
         if (evt.keyCode === ESC_KEYCODE) {
             appState.activeSelection.onNext(new VizSlice({point: [], edge: []}));
