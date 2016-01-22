@@ -359,22 +359,18 @@ function setupSearchBar(searchField, dataFrame, $inspector, workerUrl, dim) {
     var filterEl = serverSideFilter.render().el;
 
     // Add an export button to bar
-    var exportButtonTemp = '<button class="csvExportButton btn btn-xs btn-primary pull-right" id="csvExportButton' + dim +
-        '" style="margin-top:3px">Export as CSV</button>';
 
-    $(filterEl).append($(exportButtonTemp));
+    var exportUrl = 'export_csv';
+    var type = (dim === 2) ? 'edge' : 'point';
+    var href = workerUrl + exportUrl + '?type=' + type;
+    var $exportButton = $('<a href="' + href + '" target="_blank" download class="csvExportButton pull-right btn btn-xs btn-default" id="csvExportButton' + dim + '">' +
+        '<span class="glyphicon glyphicon-cloud-download"></span>' +
+        'Download ' + searchField.toLowerCase() + ' table as CSV' +
+        '</a>');
+    $(filterEl).append($exportButton);
 
     // Attach element to inspector.
     $inspector.prepend(filterEl);
-
-    $('#csvExportButton'+dim).on('click', function (evt) {
-        evt.preventDefault();
-        var exportUrl = 'export_csv';
-        var type = (dim === 2) ? 'edge' : 'point';
-        var params = {type: type};
-        window.location = workerUrl + exportUrl + '?type=' + type;
-
-    });
 
 }
 
