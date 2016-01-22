@@ -121,7 +121,7 @@
         this.edgeScaling = value;
     };
 
-    // Set Position given center x/y coord, plus optional width and height.
+    // Set Position given center x/y coordinates, plus optional width and height.
     // Only X or Y are strictly necessary. Will compute using provided info,
     // and will always maintain aspect ratio if possible.
     // args{x, y, height, width} ->
@@ -164,8 +164,8 @@
         // Add 10% for margins
         var nwidth = (right - left) * 1.1;
         var nheight = (bottom - top) * 1.1;
-        left = left - nwidth * 0.05;
-        top = top - nheight * 0.05;
+        left -= nwidth * 0.05;
+        top -= nheight * 0.05;
         var aspectRatio = this.width / this.height;
 
         if (nwidth / nheight > aspectRatio) {
@@ -208,7 +208,7 @@
         var projectionMatrix = mat4.create(); //new J3DIMatrix4();
 
         // Choose arbitrary near and far planes (0, 20)
-        // We purposelly swap and negate the top and bottom arguments so that the matrix follows
+        // We purposely swap and negate the top and bottom arguments so that the matrix follows
         // HTML-style coordinates (top-left corner at 0,0) vs. than GL coordinates (bottom-left 0,0)
         mat4.ortho(projectionMatrix,
                    this.center.x - (this.width / 2), this.center.x + (this.width / 2),
@@ -277,7 +277,7 @@
 
     Camera2d.prototype.canvas2WorldCoords = function (x, y, canvas) {
         var screenCoords = this.canvas2ScreenCoords(x, y, canvas);
-        screenCoords.y = screenCoords.y * -1.0;
+        screenCoords.y *= -1.0;
         return screenCoords;
     };
 
