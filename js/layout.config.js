@@ -11,9 +11,9 @@ var ForceAtlas2Naive     = require('./layouts/forceAtlas2Naive.js'),
 var SIMULATION_TIME = 100;
 
 
-function Param(type, prettyName, defValue, toSlider, fromSlider) {
+function Param(type, displayName, defValue, toSlider, fromSlider) {
     this.type = type;
-    this.prettyName = prettyName;
+    this.displayName = displayName;
     this.fromSlider = fromSlider || _.identity;
     this.toSlider = toSlider || _.identity;
     this.value = defValue;
@@ -21,14 +21,14 @@ function Param(type, prettyName, defValue, toSlider, fromSlider) {
 Param.prototype.toClient = function(name, algoName) {
     return {
         name: name, algoName: algoName,
-        prettyName: this.prettyName, type: this.type, value: this.toSlider(this.value),
+        displayName: this.displayName, type: this.type, value: this.toSlider(this.value),
     };
 };
 Param.prototype.set = function(v) {
     this.value = this.fromSlider(v);
 };
 
-function ContinuousParam(prettyName, value, min, max) {
+function ContinuousParam(displayName, value, min, max) {
     var sliderRange = 101; // From 0 to 100
     var range = Math.abs(max - min);
     function fromSlider(val) {
@@ -38,13 +38,13 @@ function ContinuousParam(prettyName, value, min, max) {
         return (val - min) / range * sliderRange;
     }
 
-    Param.call(this, 'continuous', prettyName, value, toSlider, fromSlider);
+    Param.call(this, 'continuous', displayName, value, toSlider, fromSlider);
 }
 ContinuousParam.prototype = Object.create(Param.prototype);
 ContinuousParam.prototype.constructor = ContinuousParam;
 
-function DiscreteParam(prettyName, value, min, max, step) {
-    Param.call(this, 'discrete', prettyName, value);
+function DiscreteParam(displayName, value, min, max, step) {
+    Param.call(this, 'discrete', displayName, value);
     this.min = min;
     this.max = max;
     this.step = step;
