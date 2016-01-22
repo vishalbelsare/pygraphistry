@@ -308,7 +308,16 @@ function createLabelDom(instance, dim, labelObj) {
         var labelRequests = instance.state.labelRequests;
         labelObj.columns.forEach(function (pair) {
             var key = pair[0], val = pair[1];
-            if (key === undefined || val === undefined || (typeof(val) === 'number' && isNaN(val))) {
+            // Null guards:
+            if (key === undefined || val === undefined || val === null) {
+                return;
+            }
+            // Float/Integer nulls:
+            if (typeof(val) === 'number' && (isNaN(val) || val === 0x7FFFFFF)) {
+                return;
+            }
+            // String nulls:
+            if (val === 'n/a' || val === '\0') {
                 return;
             }
             var $row = $('<tr>').addClass('graph-label-pair'),
