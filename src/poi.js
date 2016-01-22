@@ -317,7 +317,13 @@ function createLabelDom(instance, dim, labelObj) {
             if (key.indexOf('Date') > -1 && typeof(val) === 'number') {
                 entry = $.datepicker.formatDate('d-M-yy', new Date(val));
             } else if (key.search(/time/i) !== -1 && typeof(val) === 'number') {
-                entry = moment.unix(val).format();
+                var momentVal = moment.unix(val);
+                if (!momentVal.isValid()) {
+                    momentVal = moment(val);
+                }
+                if (momentVal.isValid()) {
+                    entry = momentVal.format();
+                }
             } else if (!isNaN(val) && val % 1 !== 0) {
                 entry = sprintf('%.4f', val);
             }
