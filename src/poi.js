@@ -308,7 +308,7 @@ function createLabelDom(instance, dim, labelObj) {
         var labelRequests = instance.state.labelRequests;
         labelObj.columns.forEach(function (pair) {
             var key = pair[0], val = pair[1];
-            if (key === undefined || val === undefined || isNaN(val)) {
+            if (key === undefined || val === undefined || (typeof(val) === 'number' && isNaN(val))) {
                 return;
             }
             var $row = $('<tr>').addClass('graph-label-pair'),
