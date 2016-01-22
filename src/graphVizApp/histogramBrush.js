@@ -280,10 +280,14 @@ HistogramBrush.prototype.aggregatePointsAndEdges = function(params) {
                 }
             });
             _.each(pointHistsData, function (val) {
-                val.dataType = 'point';
+                if (val !== undefined) {
+                    val.dataType = 'point';
+                }
             });
             _.each(edgeHistsData, function (val) {
-                val.dataType = 'edge';
+                if (val !== undefined) {
+                    val.dataType = 'edge';
+                }
             });
 
             return {success: pointHists.success && edgeHists.success,

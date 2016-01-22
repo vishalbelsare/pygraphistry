@@ -307,8 +307,11 @@ function createLabelDom(instance, dim, labelObj) {
         var $table= $('<table>');
         var labelRequests = instance.state.labelRequests;
         labelObj.columns.forEach(function (pair) {
-            var key = pair[0], val = pair[1],
-                $row = $('<tr>').addClass('graph-label-pair'),
+            var key = pair[0], val = pair[1];
+            if (key === undefined || val === undefined || isNaN(val)) {
+                return;
+            }
+            var $row = $('<tr>').addClass('graph-label-pair'),
                 $key = $('<td>').addClass('graph-label-key').text(key);
             var entry = sprintf('%s', val);
             if (key.indexOf('Date') > -1 && typeof(val) === 'number') {
