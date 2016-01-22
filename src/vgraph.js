@@ -19,9 +19,9 @@ if (builder === null) {
 var pb_root = builder.build();
 
 var defaults = {
-    'double': NaN,
-    'integer': 0,
-    'string': 'n/a',
+    double: NaN,
+    integer: 0x7FFFFFFF,
+    string: '\0'
 };
 
 // String * String -> Vector
@@ -70,7 +70,7 @@ function getAttributeVectors(header, target) {
 
 function defined(value) {
     return value !== undefined && value !== null &&
-        value !== '' && value !== 'n/a' &&
+        value !== '' && value !== defaults.string &&
         !(typeof value === 'number' && isNaN(value));
 }
 
