@@ -51,7 +51,7 @@ function setupDrag($eventTarget, camera, appState) {
             return true;
         })
         .do(function (clickPos) {
-            clickPos.preventDefault();
+            // clickPos.preventDefault();
             $sim.toggleClass('moving', true);
         })
         .switchMap(function(clickPos) {
@@ -116,11 +116,11 @@ function setupMousemove($eventTarget) {
 */
 // Camera -> Observable Camera
 // feature-gated by 3d
-function setupRotate(camera) {
+function setupRotate($eventTarget, camera) {
 
     var presses = new Rx.Subject();
 
-    $(document).keydown(function (e) { presses.onNext(e); });
+    $eventTarget.keydown(function (e) { presses.onNext(e); });
 
     var CODES = {LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40};
     var AMT = 5;

@@ -34,9 +34,11 @@ function setupCameraInteractions(appState, $eventTarget) {
             .merge(interaction.setupScroll($eventTarget, canvas, camera, appState));
     }
 
+    setupKeyInteractions(appState, $eventTarget);
+
     return Rx.Observable.merge(
         interactions,
-        interaction.setupRotate(camera),
+        interaction.setupRotate($eventTarget, camera),
         interaction.setupCenter($('#center'),
                                 renderState.get('hostBuffers').curPoints,
                                 camera),
@@ -45,6 +47,17 @@ function setupCameraInteractions(appState, $eventTarget) {
         interaction.setupZoomButton($('#zoomout'), camera, 1.25)
             .switchMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
     );
+}
+
+function setupKeyInteractions(appState, $eventTarget) {
+    // Deselect on escape;
+    $eventTarget.keyup(function (evt) {
+        var ESC_KEYCODE = 27;
+        if (evt.keyCode === ESC_KEYCODE) {
+            appState.activeSelection.onNext(new VizSlice({point: [], edge: []}));
+        }
+    });
+
 }
 
 
