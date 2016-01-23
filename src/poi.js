@@ -313,7 +313,7 @@ function createLabelDom(instance, dim, labelObj) {
                 return;
             }
             // Float/Integer nulls:
-            if (typeof(val) === 'number' && (isNaN(val) || val === 0x7FFFFFF)) {
+            if (typeof(val) === 'number' && (isNaN(val) || val === 0x7FFFFFFF)) {
                 return;
             }
             // String nulls:
