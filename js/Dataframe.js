@@ -1863,7 +1863,7 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
         bottomVal = min;
         topVal = max;
         binWidth = range / (numBins - 1);
-        isCountBy = true;
+        isCountBy = range <= maxBinCount;
     } else if (goalNumberOfBins) {
         numBins = goalNumberOfBins;
         bottomVal = min;
