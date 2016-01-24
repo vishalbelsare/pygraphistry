@@ -4,6 +4,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:vizApp');
 var $       = window.$;
+var _       = require('underscore');
 var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 
@@ -82,6 +83,11 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
 
     var poiIsEnabled = new Rx.ReplaySubject(1);
     poiIsEnabled.onNext(urlParams.hasOwnProperty('poi') ? urlParams.poi : true);
+    apiActions
+        .filter(function (msg) { return msg && (msg.setting === 'poi'); })
+        .do(function (msg) {
+            poiIsEnabled.onNext(msg.value);
+        }).subscribe(_.identity, util.makeErrorHandler('renderPipeline error'));
 
     var viewConfigChanges = new Rx.ReplaySubject(1);
     socket.emit('get_view_config', null, function (response) {
