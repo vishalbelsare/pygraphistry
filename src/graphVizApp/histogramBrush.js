@@ -47,6 +47,7 @@ function HistogramBrush(socket, filtersPanel, doneLoading) {
     this.lastSelection = undefined;
     this.activeDataframeAttributes = [];
     this.dataframeAttributeChange = new Rx.Subject();
+    this.histogramsPanelReady = new Rx.ReplaySubject(1);
 
     // Grab global stats at initialization
     this.globalStats = new Rx.ReplaySubject(1);
@@ -100,6 +101,8 @@ HistogramBrush.prototype.initializeGlobalData = function(socket, filtersPanel, u
         }, this);
         this.updateHistogramData(filteredAttributes, data, true);
 
+        this.histogramsPanelReady.onNext(this.histogramsPanel);
+
     }.bind(this)).subscribe(this.globalStats, util.makeErrorHandler('Global stat aggregate call'));
 };
 
@@ -107,6 +110,12 @@ HistogramBrush.prototype.initializeGlobalData = function(socket, filtersPanel, u
 HistogramBrush.prototype.setupFiltersInteraction = function(filtersPanel, poi) {
     // Setup filtering:
     handleFiltersResponse(filtersPanel.control.filtersResponsesSubject, poi);
+};
+
+HistogramBrush.prototype.setupApiInteraction = function (apiActions) {
+    this.histogramsPanelReady
+        .do(function (panel) { panel.setupApiInteraction(apiActions); })
+        .subscribe(_.identity, util.makeErrorHandler('HistogramBrush.setupApiInteraction'));
 };
 
 

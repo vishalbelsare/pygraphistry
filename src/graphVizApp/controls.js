@@ -652,6 +652,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var histogramBrush = new HistogramBrush(socket, filtersPanel, readyForHistograms);
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
     histogramBrush.setupMarqueeInteraction(brush);
+    histogramBrush.setupApiInteraction(appState.apiActions);
     turnOnBrush.first(function (value) { return value === true; }).do(function () {
         togglePanel($('#histogramPanelControl'), $('#histogram.panel'), true);
     }).subscribe(_.identity, util.makeErrorHandler('Enabling the histogram on first brush use.'));

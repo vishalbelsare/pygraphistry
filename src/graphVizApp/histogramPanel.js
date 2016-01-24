@@ -402,6 +402,9 @@ HistogramsPanel.prototype.encodeAttribute = function (dataframeAttribute, encodi
     });
 };
 
+HistogramsPanel.prototype.setupApiInteraction = function (apiActions) {
+};
+
 
 HistogramsPanel.prototype.assignEncodingTypeToHistogram = function (encodingType, model, colorsIndexedPerBin) {
     if (model !== undefined) {
