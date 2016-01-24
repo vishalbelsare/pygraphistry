@@ -403,6 +403,44 @@ HistogramsPanel.prototype.encodeAttribute = function (dataframeAttribute, encodi
 };
 
 HistogramsPanel.prototype.setupApiInteraction = function (apiActions) {
+    //FIXME should route all this via Backbone calls, not DOM
+    apiActions
+        .filter(function (command) { return command.event === 'encode'; })
+        .do(function (command) {
+            console.log('adding hist panel', command.attribute);
+            this.updateAttribute(null, command.attribute, 'sparkLines');
+        }.bind(this))
+        .flatMap(function (command) {
+            //poll until exists on DOM & return
+            return Rx.Observable.interval(10).timeInterval()
+                .map(function () {
+                    return $('.histogramDiv .attributeName')
+                        .filter(function() {
+                            return $(this).text() === command.attribute;
+                        }).parents('.histogramDiv');
+                }.bind(this))
+                .filter(function ($hist) { return $hist.length; })
+                .take(1)
+                .do(function ($histogramPanel) {
+                    console.log('made, encoding', $histogramPanel);
+                    this.encodeAttribute(command.attribute, command.encodingType);
+                    var route =  {
+                        'size': {
+                            'quantitative': '.encode-size',
+                            'categorical': '.encode-size'
+                        },
+                        'color': {
+                            'quantitative': '.encode-color-quantitative',
+                            'categorical': '.encode-color-categorical'
+                        }
+                    };
+                    var routed = route[command.encodingType][command.variation];
+                    var $i = $(routed, $histogramPanel);
+                    $i[0].click();
+                    console.log('clicked on', $i, routed);
+                }.bind(this));
+        }.bind(this))
+        .subscribe(_.identity, util.makeErrorHandler('HistogramsPanel.setupApiInteractions'));
 };
 
 
