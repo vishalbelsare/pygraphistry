@@ -386,9 +386,12 @@ Dataframe.prototype.getMasksForQuery = function (query, errors) {
 Dataframe.prototype.filterFuncForQueryObject = function (query) {
     var filterFunc = _.identity;
 
-    if (query.ast !== undefined) {
+    var ast = query.ast;
+    if (ast !== undefined) {
         var generator = new ExpressionCodeGenerator('javascript');
-        filterFunc = generator.functionForAST(query.ast, {'*': 'value'});
+        var columnName = this.normalizeAttributeName(query.attribute, query.type);
+        ast = generator.transformASTForNullGuards(ast, {value: columnName}, this);
+        filterFunc = generator.functionForAST(ast, {'*': 'value'});
         // Maintained only for earlier range queries from histograms, may drop soon:
     } else if (query.start !== undefined && query.stop !== undefined) {
         // Range:
@@ -1359,6 +1362,29 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     return attributes[columnName].values;
 };
 
+
+function numberSignifiesUndefined(value) {
+    return isNaN(value) || value === 0x7FFFFFFF;
+}
+
+
+function valueSignifiedUndefined(value) {
+    switch (typeof value) {
+        case 'undefined':
+            return true;
+        case 'string':
+            // TODO retire 'n/a'
+            return value === '\0' || value === 'n/a';
+        case 'number':
+            return numberSignifiesUndefined(value);
+        case 'object':
+            return _.isNull(value);
+        default:
+            return false;
+    }
+}
+
+
 /**
  * @typedef {Object} Aggregations
  * @property {String} dataType
@@ -1469,6 +1495,7 @@ ColumnAggregation.prototype.fixedAllocationNumericAggregations = function () {
         value = 0, values = this.column.values, numValues = this.getAggregationByType('count');
     for (var i=0; i < numValues; i++) {
         value = values[i];
+        if (numberSignifiesUndefined(value)) { continue; }
         if (value < minValue) { minValue = value; }
         else if (value > maxValue) { maxValue = value; }
         sum += parseFloat(value);
@@ -1490,6 +1517,7 @@ ColumnAggregation.prototype.countDistinct = function (limit) {
     var distinctCounts = {}, numDistinct = 0, minValue = Infinity, maxValue = -Infinity;
     for (var i = 0; i < numValues; i++) {
         var value = values[i];
+        if (valueSignifiedUndefined(value)) { continue; }
         if (value < minValue) { minValue = value; }
         else if (value > maxValue) { maxValue = value; }
         if (numDistinct > limit) { continue; }
@@ -1522,6 +1550,7 @@ ColumnAggregation.prototype.inferDataType = function () {
     var value, isNumeric = true, isIntegral = true, jsType;
     for (var i=0; i<numValues; i++) {
         value = values[i];
+        if (valueSignifiedUndefined(value)) { continue; }
         jsType = typeof value;
         if (isNumeric) {
             isNumeric = isNumeric && !isNaN(value);
@@ -1777,6 +1806,7 @@ Dataframe.prototype.countBy = function (attribute, binning, indices, type) {
     var rawBins = {};
     for (var i = 0; i < indices.length; i++) {
         var val = values[i];
+        if (valueSignifiedUndefined(val)) { continue; }
         rawBins[val] = (rawBins[val] || 0) + 1;
     }
 

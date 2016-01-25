@@ -101,7 +101,12 @@ PlanNode.prototype = {
         }
     },
 
+    /**
+     * @param {ExpressionCodeGenerator} generator
+     * @param {Dataframe} dataframe
+     */
     compile: function (generator, dataframe) {
+        this.ast = generator.transformASTForNullGuards(this.ast, this.attributeData, dataframe);
         if (this.isConstant()) {
             this.executor = undefined;
         } else if (this.canRunOnOneColumn()) {
