@@ -677,7 +677,7 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
             var key = globalKeys[idx];
             var local = bins[key] || 0;
             var total = globalBins[key];
-            if (binValues && !!binValues[idx] || binValues[idx] === 0) {
+            if (binValues && (!!binValues[idx] || binValues[idx] === 0)) {
                 name = prettyPrint(binValues[idx], attr);
             }
             var stackedObj = toStackedObject(local, total, idx, name, attr, numLocal, numTotal, distribution);
@@ -694,7 +694,7 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
             var local = stack[0] || 0;
             var total = stack[1] || 0;
             // Guard against null or undefined:
-            if (binValues && !!binValues[idx] || binValues[idx] === 0) {
+            if (binValues && (!!binValues[idx] || binValues[idx] === 0)) {
                 name = prettyPrint(binValues[idx], attr);
             } else {
                 var start = globalStats.minValue + (globalStats.binWidth * idx);
