@@ -627,7 +627,7 @@ HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
 // Histogram Widget
 //////////////////////////////////////////////////////////////////////////////
 
-function toStackedObject(local, total, idx, key, attr, numLocal, numTotal, distribution) {
+function toStackedObject(local, total, idx, name, attr, numLocal, numTotal, distribution) {
     var stackedObj;
     // If we want to normalize to a distribution as percentage of total.
     // TODO: Finish implementing this...
@@ -657,7 +657,7 @@ function toStackedObject(local, total, idx, key, attr, numLocal, numTotal, distr
 
     stackedObj.total = total;
     stackedObj.local = local;
-    stackedObj.name = key;
+    stackedObj.name = name;
     stackedObj.id = idx;
     stackedObj.attr = attr;
     return stackedObj;
@@ -669,13 +669,18 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
     // TODO: Get this in a cleaner, more extensible way
     var globalBins = globalStats.bins || [];
     var stackedBins = [];
+    var binValues = globalStats.binValues;
+    var name;
     if (type === 'countBy') {
         var globalKeys = _.keys(globalBins);
         _.each(_.range(Math.min(globalKeys.length, limit)), function (idx) {
             var key = globalKeys[idx];
+            if (binValues && !!binValues[idx] || binValues[idx] === 0) {
+                name = prettyPrint(binValues[idx], attr);
+            }
             var local = bins[key] || 0;
             var total = globalBins[key];
-            var stackedObj = toStackedObject(local, total, idx, key, attr, numLocal, numTotal, distribution);
+            var stackedObj = toStackedObject(local, total, idx, name, attr, numLocal, numTotal, distribution);
             stackedBins.push(stackedObj);
         });
 
@@ -688,8 +693,6 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
         _.each(zippedBins, function (stack, idx) {
             var local = stack[0] || 0;
             var total = stack[1] || 0;
-            var name;
-            var binValues = globalStats.binValues;
             // Guard against null or undefined:
             if (binValues && !!binValues[idx] || binValues[idx] === 0) {
                 name = prettyPrint(binValues[idx], attr);
@@ -1141,9 +1144,21 @@ function maybePrecise(v) {
     }
 }
 
+function d3ColorFromRGBA(x) {
+    var r = (x >> 16) & 255,
+        g = (x >> 8) & 255,
+        b = x & 255;
+    return d3.rgb(r, g, b);
+}
+
 function prettyPrint (d, attributeName, noLimit) {
     if (!isNaN(d)) {
         d = Number(d); // Cast to number in case it's a string
+
+        if (attributeName.match(/color/i)) {
+            var decodedColor = d3ColorFromRGBA(d);
+            return decodedColor.toString();
+        }
 
         if (attributeName.indexOf('Date') > -1) {
             return d3.time.format('%m/%d/%Y')(new Date(d));
