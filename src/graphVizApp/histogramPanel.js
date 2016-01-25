@@ -544,19 +544,15 @@ HistogramsPanel.prototype.updateHistogramFiltersFromFiltersSubject = function ()
             attribute = histFilter.attribute;
         }
         var matchingFilter = this.findFilterForHistogramFilter(attribute);
-        if (matchingFilter !== undefined) {
+        if (matchingFilter === undefined) {
+            histogramFiltersToRemove[attribute] = histFilter;
+        } else {
             // Update histogram filter from filter:
             var query = matchingFilter.query;
-            if (query.start !== undefined || query.stop !== undefined) {
-                histFilter.start = query.start;
-                histFilter.stop = query.stop;
-            } else if (query.equals !== undefined) {
-                histFilter.equals = query.equals;
-            } else if (query.ast !== undefined) {
+            if (query.ast !== undefined) {
                 updateHistogramFilterFromExpression(histFilter, query.ast);
             }
-        } else {
-            histogramFiltersToRemove[attribute] = histFilter;
+            _.extend(histFilter, _.pick(query, ['start', 'stop', 'equals']));
         }
     }, this);
     _.each(histogramFiltersToRemove, function (histFilter, attribute) {
@@ -610,10 +606,7 @@ HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
             query.ast = histFilter.ast;
         }
         var matchingFilter = this.findFilterForHistogramFilter(attribute);
-        if (matchingFilter !== undefined) {
-            // Assume that only interaction has happened, only update the query for now:
-            matchingFilter.set('query', query);
-        } else {
+        if (matchingFilter === undefined) {
             filtersCollection.addFilter({
                 attribute: attribute,
                 controlType: 'histogram',
@@ -621,6 +614,9 @@ HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
                 histogramControl: histFilter,
                 query: query
             });
+        } else {
+            // Assume that only interaction has happened, only update the query for now:
+            matchingFilter.set('query', query);
         }
     }, this);
 };
