@@ -840,6 +840,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
         _.each(_.keys(simulator.versions.buffers), function (key) {
             simulator.versions.buffers[key] += 1;
         });
+        simulator.versions.tick++;
 
         that.lastMasks.point = unsortedMasks.point;
         that.lastMasks.edge = unsortedMasks.edge;
@@ -1137,13 +1138,26 @@ Dataframe.prototype.getAllBuffers = function (type) {
 
 /// Buffer reset capability, specific to local buffers for now to make highlight work:
 
-Dataframe.prototype.overlayLocalBuffer = function (name, alias, values) {
+Dataframe.prototype.overlayLocalBuffer = function (type, name, alias, values) {
     if (values) {
-        var newBuffer = this.getLocalBuffer(name).constructor(values.length);
+        var newUnfilteredBuffer = this.getLocalBuffer(name).constructor(values.length); // Used to get constructor, does not care about contents
         for (var i=0; i< values.length; i++) {
-            newBuffer[i] = values[i];
+            newUnfilteredBuffer[i] = values[i];
         }
-        this.data.localBuffers[alias] = newBuffer;
+
+        // Update rawdata (unfiltered)
+        this.rawdata.localBuffers[alias] = newUnfilteredBuffer;
+
+        var numFilteredElements = this.lastMasks.maskSize()[type];
+        var newFilteredBuffer = newUnfilteredBuffer.constructor(numFilteredElements);
+
+        // Filter and toss into data.
+        // TODO: This is shared code between filtering code and here.
+        this.lastMasks.mapIndexes(type, function (indexInRaw, i) {
+            newFilteredBuffer[i] = newUnfilteredBuffer[indexInRaw];
+        });
+
+        this.data.localBuffers[alias] = newFilteredBuffer;
     }
     if (this.hasLocalBuffer(name) && this.hasLocalBuffer(alias)) {
         this.bufferOverlays[name] = alias;
@@ -1358,6 +1372,7 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     var attributes = this.data.attributes[type];
     return attributes[columnName].values;
 };
+
 
 /**
  * @typedef {Object} Aggregations
