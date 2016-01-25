@@ -57,6 +57,9 @@ if (!Math.trunc) {
 //</editor-fold>
 
 function literalExpressionFor (value) {
+    if (_.isNumber(value)) {
+        return value.toString();
+    }
     return JSON.stringify(value);
 }
 
