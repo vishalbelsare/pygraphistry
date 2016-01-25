@@ -1373,9 +1373,16 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
     var stats = globalStats.sparkLines[dataframeAttribute];
     var dataType = stats.dataType;
 
+    var identifier = {type: 'Identifier', name: dataframeAttribute};
     if (stats.type === 'histogram') {
         updatedHistogramFilter.start = stats.minValue + (stats.binWidth * firstBin);
         updatedHistogramFilter.stop = stats.minValue + (stats.binWidth * lastBin) + stats.binWidth;
+        updatedHistogramFilter.ast = {
+            type: 'BetweenPredicate',
+            start: {type: 'Literal', value: updatedHistogramFilter.start},
+            stop: {type: 'Literal', value: updatedHistogramFilter.stop},
+            value: identifier
+        };
     } else { // stats.type === 'countBy'
         var list = [];
         // TODO: Determine if this order is deterministic,
@@ -1386,6 +1393,24 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
             list.push(isNumeric ? Number(binNames[i]) : binNames[i]);
         }
         updatedHistogramFilter.equals = list;
+        var elements = _.map(list, function (x) {
+            return {type: 'Literal', value: x};
+        });
+        if (elements.length > 1) {
+            updatedHistogramFilter.ast = {
+                type: 'BinaryPredicate',
+                operator: 'IN',
+                left: identifier,
+                right: {type: 'ListExpression', elements: elements}
+            };
+        } else {
+            updatedHistogramFilter.ast = {
+                type: 'BinaryPredicate',
+                operator: '=',
+                left: identifier,
+                right: {type: 'Literal', value: elements[0]}
+            };
+        }
     }
     // TODO rename type property to dataType for clarity.
     updatedHistogramFilter.type = dataType;
