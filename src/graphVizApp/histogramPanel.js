@@ -675,11 +675,11 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
         var globalKeys = _.keys(globalBins);
         _.each(_.range(Math.min(globalKeys.length, limit)), function (idx) {
             var key = globalKeys[idx];
+            var local = bins[key] || 0;
+            var total = globalBins[key];
             if (binValues && !!binValues[idx] || binValues[idx] === 0) {
                 name = prettyPrint(binValues[idx], attr);
             }
-            var local = bins[key] || 0;
-            var total = globalBins[key];
             var stackedObj = toStackedObject(local, total, idx, name, attr, numLocal, numTotal, distribution);
             stackedBins.push(stackedObj);
         });
@@ -1151,17 +1151,31 @@ function d3ColorFromRGBA(x) {
     return d3.rgb(r, g, b);
 }
 
-function prettyPrint (d, attributeName, noLimit) {
-    if (!isNaN(d)) {
-        d = Number(d); // Cast to number in case it's a string
+function decodeColumnValue (val, attributeName) {
+    if (!isNaN(val)) {
+        val = Number(val); // Cast to number in case it's a string
 
         if (attributeName.match(/color/i)) {
-            var decodedColor = d3ColorFromRGBA(d);
-            return decodedColor.toString();
+            return d3ColorFromRGBA(val);
         }
 
         if (attributeName.indexOf('Date') > -1) {
-            return d3.time.format('%m/%d/%Y')(new Date(d));
+            return new Date(val);
+        }
+    }
+    return val;
+}
+
+function prettyPrint (d, attributeName, noLimit) {
+    if (!isNaN(d)) {
+        d = decodeColumnValue(d, attributeName);
+
+        if (d instanceof d3.color) {
+            return d.toString();
+        }
+
+        if (d instanceof Date) {
+            return d3.time.format('%m/%d/%Y')(d);
         }
 
         var abs = Math.abs(d);
@@ -1349,7 +1363,7 @@ function setupSvg (el, margin, width, height) {
  */
 HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute, id, globalStats, firstBin, lastBin) {
 
-    this.histogramFilters[dataframeAttribute] = {
+    var updatedHistogramFilter = {
         firstBin: firstBin,
         lastBin: lastBin
     };
@@ -1358,23 +1372,22 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
     var dataType = stats.dataType;
 
     if (stats.type === 'histogram') {
-        var start = stats.minValue + (stats.binWidth * firstBin);
-        var stop = stats.minValue + (stats.binWidth * lastBin) + stats.binWidth;
-        this.histogramFilters[dataframeAttribute].start = start;
-        this.histogramFilters[dataframeAttribute].stop = stop;
+        updatedHistogramFilter.start = stats.minValue + (stats.binWidth * firstBin);
+        updatedHistogramFilter.stop = stats.minValue + (stats.binWidth * lastBin) + stats.binWidth;
     } else { // stats.type === 'countBy'
         var list = [];
         // TODO: Determine if this order is deterministic,
         // and if not, explicitly send over a bin ordering from aggregate.
-        var binNames = _.keys(stats.bins);
+        var binNames = stats.binValues || _.keys(stats.bins);
         var isNumeric = _.isNumber(stats.minValue) && _.isNumber(stats.maxValue);
         for (var i = firstBin; i <= lastBin; i++) {
-            list.push(isNumeric ? parseFloat(binNames[i]) : binNames[i]);
+            list.push(isNumeric ? Number(binNames[i]) : binNames[i]);
         }
-        this.histogramFilters[dataframeAttribute].equals = list;
+        updatedHistogramFilter.equals = list;
     }
     // TODO rename type property to dataType for clarity.
-    this.histogramFilters[dataframeAttribute].type = dataType;
+    updatedHistogramFilter.type = dataType;
+    this.histogramFilters[dataframeAttribute] = updatedHistogramFilter;
 
     $('.refreshHistogramButton-' + id).css('visibility', 'visible');
 };
