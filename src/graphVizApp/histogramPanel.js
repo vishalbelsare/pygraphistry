@@ -606,6 +606,9 @@ HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
             // Leave blank until/if we can determine this better?
             dataType = histFilter.type || 'string';
         }
+        if (histFilter.ast !== undefined) {
+            query.ast = histFilter.ast;
+        }
         var matchingFilter = this.findFilterForHistogramFilter(attribute);
         if (matchingFilter !== undefined) {
             // Assume that only interaction has happened, only update the query for now:
