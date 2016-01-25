@@ -1407,7 +1407,7 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
                 type: 'BinaryPredicate',
                 operator: '=',
                 left: identifier,
-                right: {type: 'Literal', value: elements[0]}
+                right: elements[0]
             };
         }
     }
