@@ -679,6 +679,8 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
             var total = globalBins[key];
             if (binValues && (!!binValues[idx] || binValues[idx] === 0)) {
                 name = prettyPrint(binValues[idx], attr);
+            } else {
+                name = key;
             }
             var stackedObj = toStackedObject(local, total, idx, name, attr, numLocal, numTotal, distribution);
             stackedBins.push(stackedObj);
