@@ -524,6 +524,7 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
  */
 Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulator) {
     logger.debug('Starting Filtering Data In-Place by DataframeMask');
+    var that = this;
 
     if (masks === this.lastMasks) {
         return Q(false);
@@ -678,6 +679,25 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     newData.numElements.backwardsWorkItems = newData.hostBuffers.backwardsEdges.workItemsTyped.length / 4;
     // TODO: NumMidPoints and MidEdges
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Copy Buffer Overlays
+    ///////////////////////////////////////////////////////////////////////////
+
+    _.each(this.bufferOverlays, function (val, key) {
+        var alias = val.alias;
+        var type = val.type;
+        var originalName = val.originalName;
+
+        var newBuffer = that.getLocalBuffer(originalName).constructor(masks.maskSize()[type]);
+        var rawBuffer = that.rawdata.localBuffers[alias];
+
+        masks.mapIndexes(type, function (rawIndex, i) {
+            newBuffer[i] = rawBuffer[rawIndex];
+        });
+
+        newData.localBuffers[alias] = newBuffer;
+    });
+
     //////////////////////////////////
     // SIMULATOR BUFFERS.
     //////////////////////////////////
@@ -696,8 +716,6 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     var newCurPoints = new Float32Array(this.typedArrayCache.newCurPoints.buffer, 0, numPoints * 2);
 
     var filteredSimBuffers = this.data.buffers.simulator;
-
-    var that = this;
 
     return Q.all([
         rawSimBuffers.prevForces.read(tempPrevForces),
@@ -1160,7 +1178,7 @@ Dataframe.prototype.overlayLocalBuffer = function (type, name, alias, values) {
         this.data.localBuffers[alias] = newFilteredBuffer;
     }
     if (this.hasLocalBuffer(name) && this.hasLocalBuffer(alias)) {
-        this.bufferOverlays[name] = alias;
+        this.bufferOverlays[name] = {type: type, alias: alias, originalName: name};
     } else {
         throw new Error('Invalid overlay of ' + name + ' to ' + alias);
     }
@@ -1180,9 +1198,11 @@ Dataframe.prototype.hasLocalBuffer = function (name) {
     return this.data.localBuffers[name] !== undefined || this.rawdata.localBuffers[name] !== undefined;
 };
 
-Dataframe.prototype.getLocalBuffer = function (name) {
+Dataframe.prototype.getLocalBuffer = function (name, unfiltered) {
+    var data = unfiltered ? this.rawdata : this.data;
+
     if (this.canResetLocalBuffer(name)) {
-        var alias = this.bufferOverlays[name];
+        var alias = this.bufferOverlays[name] && this.bufferOverlays[name].alias; // Guard against no overlay
         // Prevents a possible race condition resetting a buffer alias/overlay:
         if (this.hasLocalBuffer(alias)) {
             name = alias;
@@ -1190,7 +1210,7 @@ Dataframe.prototype.getLocalBuffer = function (name) {
             this.resetLocalBuffer(alias);
         }
     }
-    var res = this.data.localBuffers[name];
+    var res = data.localBuffers[name];
     if (!res) {
         throw new Error("Invalid Local Buffer: " + name);
     }
