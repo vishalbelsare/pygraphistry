@@ -72,6 +72,16 @@ module.exports = {
                 }
                 break;
             case 'pointColor':
+                // Minimally support using columns with color in the name as their own palettes.
+                // Assumes direct RGBA int32 values for now.
+                if (attributeName.match(/color/i)) {
+                    return {
+                        encodingType: encodingType,
+                        bufferName: encodingType + 's',
+                        palette: summary.distinctValues,
+                        scaling: _.identity
+                    };
+                }
                 if (summary.isCategorical) {
                     if (variation === 'quantitative' && summary.isOrdered) {
                         // User can request a quantitative interpretation of ordered categorical domains.
@@ -115,6 +125,16 @@ module.exports = {
                 }
                 break;
             case 'edgeColor':
+                // Minimally support using columns with color in the name as their own palettes.
+                // Assumes direct RGBA int32 values for now.
+                if (attributeName.match(/color/i)) {
+                    return {
+                        encodingType: encodingType,
+                        bufferName: encodingType + 's',
+                        palette: summary.distinctValues,
+                        scaling: _.identity
+                    };
+                }
                 if (summary.isCategorical) {
                     if (summary.countDistinct < 10) {
                         scaling = d3Scale.category10()
