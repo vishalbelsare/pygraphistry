@@ -1396,8 +1396,6 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     return attributes[columnName].values;
 };
 
-
-<<<<<<< HEAD
 function numberSignifiesUndefined(value) {
     return isNaN(value) || value === 0x7FFFFFFF;
 }
@@ -1419,9 +1417,6 @@ function valueSignifiedUndefined(value) {
     }
 }
 
-
-=======
->>>>>>> bug/filtersAndEncodings
 /**
  * @typedef {Object} Aggregations
  * @property {String} dataType
