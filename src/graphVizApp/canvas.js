@@ -97,7 +97,7 @@ function getEdgeLabelPos (appState, edgeIndex) {
 }
 
 
-function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
+function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates,
                                   isAnimating, simulateOn, activeSelection, socket) {
     var that = this;
     this.renderState = renderState;
@@ -113,6 +113,15 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
     var renderQueue = {};
     var renderingPaused = true; // False when the animation loop is running.
 
+    var fullBufferNameList = renderer.getBufferNames(renderState.get('config').toJS())
+        .concat(
+            //TODO move client-only into render.config dummies when more sane
+            ['highlightedEdges', 'highlightedNodePositions', 'highlightedNodeSizes', 'highlightedNodeColors',
+             'highlightedArrowStartPos', 'highlightedArrowEndPos', 'highlightedArrowNormalDir',
+             'highlightedArrowPointColors', 'highlightedArrowPointSizes', 'selectedEdges', 'selectedNodePositions', 'selectedNodeSizes', 'selectedNodeColors',
+             'selectedArrowStartPos', 'selectedArrowEndPos', 'selectedArrowNormalDir',
+             'selectedArrowPointColors', 'selectedArrowPointSizes', 'selectedEdgeColors', 'selectedEdgeEnds', 'selectedEdgeStarts']);
+
     /* Since we cannot read out of Rx streams withing the animation frame, we record the latest
      * value produced by needed rx streams and pass them as function arguments to the quiet state
      * callback. */
@@ -125,16 +134,13 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
         //{ <activeBufferName> -> undefined}
         // Seem to be client-defined local buffers
         buffers:
-            _.object(
-                renderer.getBufferNames(renderState.get('config').toJS())
-                .concat(
-                    //TODO move client-only into render.config dummies when more sane
-                    ['highlightedEdges', 'highlightedNodePositions', 'highlightedNodeSizes', 'highlightedNodeColors',
-                     'highlightedArrowStartPos', 'highlightedArrowEndPos', 'highlightedArrowNormalDir',
-                     'highlightedArrowPointColors', 'highlightedArrowPointSizes', 'selectedEdges', 'selectedNodePositions', 'selectedNodeSizes', 'selectedNodeColors',
-                     'selectedArrowStartPos', 'selectedArrowEndPos', 'selectedArrowNormalDir',
-                     'selectedArrowPointColors', 'selectedArrowPointSizes', 'selectedEdgeColors', 'selectedEdgeEnds', 'selectedEdgeStarts'])
-                .map(function (v) { return [v, undefined]; })),
+            _.object(fullBufferNameList.map(function (v) { return [v, undefined]; })),
+
+        bufferComputedVersions:
+            _.object(fullBufferNameList.map(function (v) { return [v, -1]; })),
+
+        bufferReceivedVersions:
+            _.object(fullBufferNameList.map(function (v) { return [v, -1]; })),
 
         hitmapUpdates: hitmapUpdates
     };
@@ -171,9 +177,18 @@ function RenderingScheduler (renderState, vboUpdates, hitmapUpdates,
                 that.appSnapshot.buffers[bufName] = data;
             });
         });
-        return bufUpdates[0]
-            .combineLatest(bufUpdates[1], bufUpdates[2], bufUpdates[3], bufUpdates[4], _.identity);
-    }).do(function () {
+        return vboVersions
+            .combineLatest(bufUpdates[0], bufUpdates[1], bufUpdates[2], bufUpdates[3], bufUpdates[4], _.identity);
+    }).do(function (vboVersions) {
+
+        _.each(vboVersions, function (buffersByType) {
+            _.each(buffersByType, function (versionNumber, name) {
+                if (that.appSnapshot.bufferReceivedVersions[name] !== undefined) {
+                    that.appSnapshot.bufferReceivedVersions[name] = versionNumber;
+                }
+            });
+        });
+
         that.appSnapshot.vboUpdated = true;
         that.renderScene('vboupdate', {trigger: 'renderSceneFast'});
         that.renderScene('vboupdate_picking', {
@@ -859,14 +874,21 @@ RenderingScheduler.prototype.renderSlowEffects = function () {
         // Approximates filtering when number of logicalEdges changes.
         var numEdges = midSpringsPos.length / 2 / (numRenderedSplits + 1);
         var expectedNumMidEdgeColors = numEdges * (numRenderedSplits + 1);
-        if (!appSnapshot.buffers.midEdgesColors || (appSnapshot.buffers.midEdgesColors.length !== expectedNumMidEdgeColors)) {
+
+        var shouldRecomputeEdgeColors =
+            (!appSnapshot.buffers.midEdgesColors || (appSnapshot.buffers.midEdgesColors.length !== expectedNumMidEdgeColors)
+                || appSnapshot.bufferReceivedVersions.edgeColors > appSnapshot.bufferComputedVersions.edgeColors);
+
+        if (shouldRecomputeEdgeColors) {
             midEdgesColors = that.getMidEdgeColors(appSnapshot.buffers, numEdges, numRenderedSplits);
         }
         end1 = Date.now();
-        if (!appSnapshot.buffers.midEdgesColors || (appSnapshot.buffers.midEdgesColors.length !== expectedNumMidEdgeColors)) {
+        if (shouldRecomputeEdgeColors) {
             appSnapshot.buffers.midEdgesColors = midEdgesColors;
             renderer.loadBuffers(renderState, {'midEdgesColors': midEdgesColors});
+            appSnapshot.bufferComputedVersions.edgeColors = appSnapshot.bufferReceivedVersions.edgeColors;
         }
+
         renderer.loadBuffers(renderState, {'midSpringsPos': midSpringsPos});
         renderer.loadBuffers(renderState, {'midSpringsStarts': expanded.midSpringsStarts});
         renderer.loadBuffers(renderState, {'midSpringsEnds': expanded.midSpringsEnds});

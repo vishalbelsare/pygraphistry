@@ -298,6 +298,9 @@ module.exports = {
         var vboUpdates = new Rx.ReplaySubject(1);
         vboUpdates.onNext('init');
 
+        var previousVersions = {buffers: {}, textures: {}};
+        var vboVersions = new Rx.BehaviorSubject(previousVersions);
+
         var bufferBlackList = ['selectedPointIndexes', 'selectedEdgeIndexes'];
 
         $.ajaxAsObservable({url: getStaticContentURL(contentKey, 'metadata.json'), dataType: 'json'})
@@ -373,7 +376,10 @@ module.exports = {
                     throw new Error('Content Not Found');
                 });
 
-        return vboUpdates;
+        return {
+            vboUpdates: vboUpdates,
+            vboVersions: vboVersions
+        };
 
     }
 };

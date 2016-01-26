@@ -209,8 +209,10 @@ function init(streamClient, canvasElement, vizType) {
                     };
                 });
         }).do(/** @param {RenderInfo} nfo */ function (nfo) {
-            var vboUpdates = streamClient.handleVboUpdates(nfo.socket, nfo.uri, nfo.initialRenderState);
-            vizApp(nfo.socket, nfo.initialRenderState, vboUpdates, apiEvents, apiActions, nfo.uri, urlParams);
+            var vboUpdateWrapper = streamClient.handleVboUpdates(nfo.socket, nfo.uri, nfo.initialRenderState);
+            var vboUpdates = vboUpdateWrapper.vboUpdates;
+            var vboVersions = vboUpdateWrapper.vboVersions;
+            vizApp(nfo.socket, nfo.initialRenderState, vboUpdates, vboVersions, apiEvents, apiActions, nfo.uri, urlParams);
             if (urlParams.debug) {
                 createInfoOverlay(nfo.initialRenderState, vboUpdates);
             }
