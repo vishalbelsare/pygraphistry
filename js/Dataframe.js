@@ -2069,6 +2069,7 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
         // TODO: Have to be careful because floating point error.
         // In particular, we need to math math as closely as possible on filters.
         value = values[indices[i]];
+        if (numberSignifiesUndefined(value)) { continue; }
         binId = ((value - bottomVal) / binWidth) | 0;
         bins[binId]++;
         if (binValues[binId] === undefined) {
