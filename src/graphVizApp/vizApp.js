@@ -150,6 +150,7 @@ function init(socket, initialRenderState, vboUpdates, vboVersions, apiEvents, ap
 
     appState.renderingScheduler = new canvas.RenderingScheduler(appState.renderState,
                                                                 appState.vboUpdates,
+                                                                appState.vboVersions,
                                                                 appState.hitmapUpdates,
                                                                 appState.isAnimating,
                                                                 appState.simulateOn,
