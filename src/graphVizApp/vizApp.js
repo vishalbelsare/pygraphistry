@@ -21,7 +21,7 @@ var api             = require('./api.js');
 var VizSlice        = require('./VizSlice.js');
 
 
-function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
+function init(socket, initialRenderState, vboUpdates, vboVersions, apiEvents, apiActions,
               workerParams, urlParams) {
     debug('Initializing vizApp.');
     console.log('URL PARAMS: ', urlParams);
@@ -110,6 +110,7 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
     var appState = {
         renderState: initialRenderState,
         vboUpdates: vboUpdates,
+        vboVersions: vboVersions,
         hitmapUpdates: new Rx.ReplaySubject(1),
         cameraChanges: cameraChanges,
         viewConfigChanges: viewConfigChanges,

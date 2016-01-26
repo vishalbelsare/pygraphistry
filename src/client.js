@@ -285,6 +285,8 @@ function handleVboUpdates(socket, uri, renderState) {
     var previousVersions = {buffers: {}, textures: {}};
     var vboUpdateStep = 0;
 
+    var vboVersions = new Rx.BehaviorSubject(previousVersions);
+
     socket.on('vbo_update', function (data, handshake) {
         debug('0. socket vbo update');
 
@@ -383,6 +385,8 @@ function handleVboUpdates(socket, uri, renderState) {
                 });
             });
 
+            vboVersions.onNext(previousVersions);
+
         } catch (e) {
             debug('ERROR vbo_update', e, e.stack, thisStep);
         }
@@ -390,7 +394,10 @@ function handleVboUpdates(socket, uri, renderState) {
 
     socket.emit('begin_streaming');
 
-    return vboUpdates;
+    return {
+        vboUpdates: vboUpdates,
+        vboVersions: vboVersions
+    };
 }
 
 module.exports = {
