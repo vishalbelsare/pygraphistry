@@ -318,16 +318,26 @@ function effectLabels(toClear, labels, newPos, highlighted, clicked, poi) {
 
     highlighted.forEach(function (label) {
         if (label.idx > -1) {
-            var cacheKey = poi.cacheKey(label.idx, label.dim);
-            poi.state.activeLabels[cacheKey].elt.toggleClass('on', true);
+            var cacheKey = poi.cacheKey(label.idx, label.dim),
+                cacheValue = poi.state.activeLabels[cacheKey];
+            if (cacheValue === undefined) {
+                console.warn('Label cache missing expected key: ' + cacheKey);
+            } else {
+                cacheValue.elt.toggleClass('on', true);
+            }
         }
     });
 
     clicked.forEach(function (clickObj) {
         if (clickObj.idx > -1) {
-            var cacheKey = poi.cacheKey(clickObj.idx, clickObj.dim);
-            poi.state.activeLabels[cacheKey].elt.toggleClass('on', true);
-            poi.state.activeLabels[cacheKey].elt.toggleClass('clicked', true);
+            var cacheKey = poi.cacheKey(clickObj.idx, clickObj.dim),
+                cacheValue = poi.state.activeLabels[cacheKey];
+            if (cacheValue === undefined) {
+                console.warn('Label cache missing expected key: ' + cacheKey);
+            } else {
+                poi.state.activeLabels[cacheKey].elt.toggleClass('on', true);
+                poi.state.activeLabels[cacheKey].elt.toggleClass('clicked', true);
+            }
         }
     });
 }
