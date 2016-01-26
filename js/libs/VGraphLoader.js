@@ -479,17 +479,44 @@ function getVectors0(vg) {
 function getAttributes0(vg) {
     var vectors = getVectors0(vg);
     var attrs = [];
+
     for (var i = 0; i < vectors.length; i++) {
         var v = vectors[i];
         if (v.values.length > 0) {
+            var type = typeof(v.values[0]);
+
+            // Attempt to infer date types when possible
+            // Check if name contains time or date
+            if ((/time/i).test(v.name) || (/date/i).test(v.name)) {
+                logger.debug('Attempting to cast ' + v.name + ' to a date object.');
+                var testDate = new Date(v.values[0]);
+                var isValidDate = (!isNaN(testDate.getTime()));
+
+                if (isValidDate) {
+                    logger.debug('Successfully cast ' + v.name + ' as a date.');
+                    type = 'date';
+
+                    var newValues = v.values.map(function (val) {
+                        var date = new Date(val);
+                        return date.getTime(); // Represent date as a number
+                    });
+
+                    v.values = newValues;
+
+                } else {
+                    logger.debug('Failed to cast ' + v.name + ' as a date.');
+                }
+            }
+
             attrs.push({
                 name: v.name,
                 target : v.target,
-                type: typeof(v.values[0]),
+                type: type,
                 values: v.values
             });
         }
     }
+
     return attrs;
 }
 

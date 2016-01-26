@@ -1406,6 +1406,11 @@ function numberSignifiesUndefined(value) {
     return isNaN(value) || value === 0x7FFFFFFF;
 }
 
+function dateSignifiesUndefined(value) {
+    var dateObj = new Date(value);
+    return isNaN(testDate.getTime());
+}
+
 
 function valueSignifiedUndefined(value) {
     switch (typeof value) {
@@ -1416,6 +1421,8 @@ function valueSignifiedUndefined(value) {
             return value === '\0' || value === 'n/a';
         case 'number':
             return numberSignifiesUndefined(value);
+        case 'date':
+            return dateSignifiesUndefined(value);
         case 'object':
             return _.isNull(value);
         default:
@@ -1609,7 +1616,7 @@ ColumnAggregation.prototype.inferDataType = function () {
         summary.dataType = 'string';
     }
     summary.isQuantitative = summary.isContinuous;
-    summary.isOrdered = _.contains(['number', 'integer', 'string'], summary.dataType);
+    summary.isOrdered = _.contains(['number', 'integer', 'string', 'date'], summary.dataType);
     var hasNegative = this.getAggregationByType('minValue') < 0,
         hasPositive = this.getAggregationByType('maxValue') > 0;
     summary.hasPositive = hasPositive;
