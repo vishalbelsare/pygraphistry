@@ -1361,7 +1361,7 @@ Dataframe.prototype.getRowsCompact = function (indices, type) {
 /** Answers the type for the column name and type (point/edge). */
 Dataframe.prototype.getDataType = function (columnName, type) {
     // Assumes that types don't change after filtering
-    return this.rawdata.attributes[type][columnName].type;
+    return this.rawdata.attributes[type][columnName] && this.rawdata.attributes[type][columnName].type;
 };
 
 var LargeColumnProperties = ['values', 'aggregations'];
