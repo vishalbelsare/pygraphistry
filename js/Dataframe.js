@@ -1170,6 +1170,12 @@ Dataframe.prototype.overlayLocalBuffer = function (type, name, alias, values) {
         this.rawdata.localBuffers[alias] = newUnfilteredBuffer;
 
         var numFilteredElements = this.lastMasks.maskSize()[type];
+
+        // TODO figure out how to generically assigned to edges (since some are strides of 2, some are 1)
+        if (name === 'edgeColors') {
+            numFilteredElements = this.lastMasks.maskSize()[type] * 2;
+        }
+
         var newFilteredBuffer = newUnfilteredBuffer.constructor(numFilteredElements);
 
         // Filter and toss into data.
