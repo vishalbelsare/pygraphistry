@@ -15,6 +15,7 @@ var Rx          = require('rxjs/Rx.KitchenSink');
                   require('./rx-jquery-stub');
 
 var picking     = require('./picking.js');
+var contentFormatter = require('./graphVizApp/contentFormatter.js');
 
 //0--1: the closer to 1, the more likely that unsampled points disappear
 var APPROX = 0.5;
@@ -297,8 +298,8 @@ function createLabelDom(instance, dim, labelObj) {
     } else {
         // Filter out 'hidden' columns
         // TODO: Encode this in a proper schema instead of hungarian-ish notation
-        labelObj.columns = _.filter(labelObj.columns, function (pair) {
-            return (pair[0][0] !== '_');
+        labelObj.columns = _.filter(labelObj.columns, function (col) {
+            return (col.key[0] !== '_');
         });
 
         $cont.addClass('graph-label-default');
@@ -306,8 +307,8 @@ function createLabelDom(instance, dim, labelObj) {
                 .append($labelType);
         var $table= $('<table>');
         var labelRequests = instance.state.labelRequests;
-        labelObj.columns.forEach(function (pair) {
-            var key = pair[0], val = pair[1];
+        labelObj.columns.forEach(function (col) {
+            var key = col.key, val = col.value;
             // Null guards:
             if (key === undefined || val === undefined || val === null) {
                 return;

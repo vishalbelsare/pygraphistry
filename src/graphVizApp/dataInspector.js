@@ -14,6 +14,7 @@ var Backgrid = require('backgrid');
 
 var util        = require('./util.js');
 var VizSlice    = require('./VizSlice.js');
+var contentFormatter = require('./contentFormatter.js');
 
 var ROWS_PER_PAGE = 8;
 
@@ -192,6 +193,15 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
         },
 
         parseRecords: function (resp) {
+            // Transform response values for presentation.
+            _.each(resp.values, function (rowContents) {
+                _.each(_.keys(rowContents), function (attrName) {
+                    var dataType = resp.dataTypes[attrName];
+                    var formatted = contentFormatter.defaultFormat(rowContents[attrName], dataType);
+                    rowContents[attrName] = formatted;
+                });
+            });
+
             return resp.values;
         }
     });
