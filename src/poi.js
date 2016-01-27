@@ -8,13 +8,12 @@
 
 var debug       = require('debug')('graphistry:StreamGL:poi');
 var _           = require('underscore');
-var sprintf     = require('sprintf-js').sprintf;
-var moment      = require('moment');
 var $           = window.$;
 var Rx          = require('rxjs/Rx.KitchenSink');
                   require('./rx-jquery-stub');
 
 var picking     = require('./picking.js');
+var contentFormatter = require('./graphVizApp/contentFormatter.js');
 
 //0--1: the closer to 1, the more likely that unsampled points disappear
 var APPROX = 0.5;
@@ -297,8 +296,8 @@ function createLabelDom(instance, dim, labelObj) {
     } else {
         // Filter out 'hidden' columns
         // TODO: Encode this in a proper schema instead of hungarian-ish notation
-        labelObj.columns = _.filter(labelObj.columns, function (pair) {
-            return (pair[0][0] !== '_');
+        labelObj.columns = _.filter(labelObj.columns, function (col) {
+            return (col.key[0] !== '_');
         });
 
         $cont.addClass('graph-label-default');
@@ -306,36 +305,23 @@ function createLabelDom(instance, dim, labelObj) {
                 .append($labelType);
         var $table= $('<table>');
         var labelRequests = instance.state.labelRequests;
-        labelObj.columns.forEach(function (pair) {
-            var key = pair[0], val = pair[1];
-            // Null guards:
+        labelObj.columns.forEach(function (col) {
+            var key = col.key, val = col.value;
+
+            // Basic null guards:
             if (key === undefined || val === undefined || val === null) {
                 return;
             }
-            // Float/Integer nulls:
-            if (typeof(val) === 'number' && (isNaN(val) || val === 0x7FFFFFFF)) {
+
+            var entry = contentFormatter.defaultFormat(val, col.dataType);
+            // Null value guard
+            if (entry === undefined || entry === null) {
                 return;
             }
-            // String nulls:
-            if (val === 'n/a' || val === '\0') {
-                return;
-            }
+
             var $row = $('<tr>').addClass('graph-label-pair'),
                 $key = $('<td>').addClass('graph-label-key').text(key);
-            var entry = sprintf('%s', val);
-            if (key.indexOf('Date') > -1 && typeof(val) === 'number') {
-                entry = $.datepicker.formatDate('d-M-yy', new Date(val));
-            } else if (key.search(/time/i) !== -1 && typeof(val) === 'number') {
-                var momentVal = moment.unix(val);
-                if (!momentVal.isValid()) {
-                    momentVal = moment(val);
-                }
-                if (momentVal.isValid()) {
-                    entry = momentVal.format();
-                }
-            } else if (!isNaN(val) && val % 1 !== 0) {
-                entry = sprintf('%.4f', val);
-            }
+
             var $wrap = $('<div>').addClass('graph-label-value-wrapper').html(entry);
 
             var $icons = $('<div>').addClass('graph-label-icons');
