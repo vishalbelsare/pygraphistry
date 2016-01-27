@@ -2013,9 +2013,6 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
     // values = _.filter(values, function (x) { return !isNaN(x)});
 
     var values = this.getColumnValues(attribute, type);
-    if (indices !== undefined) {
-        values = _.map(indices, function (idx) { return values[idx]; });
-    }
     var aggregations = this.getColumnAggregations(attribute, type);
 
     var numValues = aggregations.getAggregationByType('countDistinct');
@@ -2084,6 +2081,11 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
     bins = Array.apply(null, new Array(numBins)).map(function () { return 0; });
     binValues = new Array(numBins);
 
+
+    // When iterating through values, we make sure to use the full value array and an
+    // indices "mask" over it. This is because each histogram brush move produces a single
+    // new (large) array of indices. Then each separate histogram can use the already existing
+    // values array and the single indices array to compute bins without any large allocations.
     var binId, value;
     for (i = 0; i < indices.length; i++) {
         // Here we use an optimized "Floor" because we know it's a smallish, positive number.
