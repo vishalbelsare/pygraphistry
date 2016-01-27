@@ -4,11 +4,26 @@ var $       = window.$;
 var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 var _       = require('underscore');
-var moment  = require('moment');
+var moment  = require('moment-timezone');
 var sprintf = require('sprintf-js').sprintf;
+var debug   = require('debug')('graphistry:StreamGL:graphVizApp:contentFormatter');
 
 var util    = require('./util.js');
 
+// TODO: Wrap this up into a formatter object instead of a global here.
+// Initialize with moment's best guess at timezone.
+var displayTimezone = moment.tz.guess();
+function setTimeZone (newTimezone) {
+    var zoneObj = moment.tz.zone(newTimezone);
+    if (zoneObj) {
+        debug('Setting timezone from '+ displayTimezone + ' to: ' + newTimezone);
+        displayTimezone = newTimezone;
+    } else {
+        debug('Attempted to set timezone to invalid value: ' + newTimezone);
+    }
+}
+
+window.setTimeZone =setTimeZone;
 
 function defaultFormat (value, dataType) {
 
@@ -40,7 +55,12 @@ function defaultFormat (value, dataType) {
             return 'Invalid Date';
         }
 
-        return momentVal.format('MMM D YYYY, h:mm:ss a Z');
+        // If user has specified a timezone, use that to format the time.
+        if (displayTimezone) {
+            momentVal.tz(displayTimezone);
+        }
+
+        return momentVal.format('MMM D YYYY, h:mm:ss a z');
     }
 
     if (dataType === 'number') {
@@ -59,5 +79,6 @@ function shortFormat (value, dateType) {
 
 
 module.exports = {
-    defaultFormat: defaultFormat
+    defaultFormat: defaultFormat,
+    setTimeZone: setTimeZone
 };
