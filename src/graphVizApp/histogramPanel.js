@@ -963,7 +963,7 @@ HistogramsPanel.prototype.handleHistogramDown = function (redrawCallback, id, gl
     var $element = $(col[0][0]);
     var $parent = $element.parent();
 
-    var startBin = $element.attr('binnumber');
+    var startBin = +($element.attr('binnumber')); // Cast to number from string
     var attr = $element.attr('attribute');
     var numBins = globalStats.sparkLines[attr].numBins;
     var lastHistogramFilter = this.histogramFilters[attr];
