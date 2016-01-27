@@ -21,6 +21,7 @@ var persist         = require('./persist.js');
 var goLiveButton    = require('./goLiveButton.js');
 var colorPicker     = require('./colorpicker.js');
 var externalLink    = require('./externalLink.js');
+var contentFormatter = require('./contentFormatter.js');
 
 
 // Setup client side controls.
@@ -126,6 +127,12 @@ var encodingForLabelParams = [
         displayName: 'Points of Interest',
         type: 'bool',
         value: true
+    },
+    {
+        name: 'displayTimeZone',
+        displayName: 'Display Time Zone',
+        type: 'text',
+        value: ''
     }
 ];
 
@@ -311,6 +318,25 @@ function controlMaker (urlParams, param, type) {
                 .append($('<div>').css({opacity: 0.3, background: 'white'})))
             .append($('<div>').addClass('colorHolder'));
         param.cb(colorPicker.makeInspector($input, urlParams[param.name] ? urlParams[param.name] : param.def));
+    }else if (param.type === 'text') {
+
+        var $innerInput = $('<input>').attr({
+            class: type + '-control-textbox form-control control-textbox',
+            id: param.name,
+            type: 'text'
+        }).data('param', param);
+
+        var $button = $('<button class="btn btn-default control-textbox-button">Set</button>')
+
+        var $wrappedInput = $('<div>').addClass('col-xs-8').addClass('inputWrapper')
+            .css('padding-left', '0px')
+            .append($innerInput);
+        var $wrappedButton = $('<div>').addClass('col-xs-4').addClass('buttonWrapper')
+            .css('padding-left', '0px')
+            .append($button);
+
+        $input = $('<div>').append($wrappedInput).append($wrappedButton);
+
     } else {
         console.warn('Ignoring param of unknown type', param);
         $input = $('<div>').text('Unknown setting type' + param.type);
@@ -424,6 +450,29 @@ function createControls(socket, appState, trigger, urlParams) {
             );
         });
 
+        $('.control-textbox-button').each(function () {
+            var $that = $(this);
+            var input = this;
+
+            $(input).onAsObservable('click')
+                .do(function (evt) {
+                    var $button = $(evt.target);
+                    var $input = $button.parent().siblings('.inputWrapper').first()
+                        .children('.control-textbox').first();
+                    var val = $input.val();
+                    var param = $input.data('param');
+
+                    if ($input.hasClass('layout-control-textbox')) {
+                        console.log('Layout control textboxes are not supported yet.')
+                    } else if ($input.hasClass('local-control-textbox')) {
+                        setViewParameter(socket, param.name, val, appState);
+                    }
+
+                })
+                .subscribe(_.identity, util.makeErrorHandler('control text box'));
+        });
+
+
     })
     .subscribe(_.identity, util.makeErrorHandler('createControls'));
 }
@@ -474,6 +523,9 @@ function setViewParameter(socket, name, pos, appState) {
             }
             val = PercentScale.invert(pos);
             opControl.text('.graph-label { opacity: ' + val + '; }');
+            break;
+        case 'displayTimeZone':
+            contentFormatter.setTimeZone(val);
             break;
         case 'poiEnabled':
             appState.poiIsEnabled.onNext(val);
