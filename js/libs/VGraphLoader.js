@@ -489,7 +489,7 @@ function castToMoment (value) {
         momentVal = moment.unix(value);
 
         // If not valid, or unreasonable year, try milliseconds constructor
-        if (!momentVal.isValid() || momentVal.year() > 5000 || moment.year() < 500) {
+        if (!momentVal.isValid() || momentVal.year() > 5000 || momentVal.year() < 500) {
             momentVal = moment(value);
         }
 
