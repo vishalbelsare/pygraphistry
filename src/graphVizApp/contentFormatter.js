@@ -14,6 +14,12 @@ var util    = require('./util.js');
 // Initialize with moment's best guess at timezone.
 var displayTimezone = moment.tz.guess();
 function setTimeZone (newTimezone) {
+    // Treat empty string as reset (because this comes from a text input)
+    if (newTimezone === '') {
+        displayTimezone = moment.tz.guess();
+        return;
+    }
+
     var zoneObj = moment.tz.zone(newTimezone);
     if (zoneObj) {
         debug('Setting timezone from '+ displayTimezone + ' to: ' + newTimezone);
@@ -22,8 +28,6 @@ function setTimeZone (newTimezone) {
         debug('Attempted to set timezone to invalid value: ' + newTimezone);
     }
 }
-
-window.setTimeZone =setTimeZone;
 
 function defaultFormat (value, dataType) {
 
