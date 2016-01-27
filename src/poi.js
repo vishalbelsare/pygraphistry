@@ -8,8 +8,6 @@
 
 var debug       = require('debug')('graphistry:StreamGL:poi');
 var _           = require('underscore');
-var sprintf     = require('sprintf-js').sprintf;
-var moment      = require('moment');
 var $           = window.$;
 var Rx          = require('rxjs/Rx.KitchenSink');
                   require('./rx-jquery-stub');
@@ -309,34 +307,21 @@ function createLabelDom(instance, dim, labelObj) {
         var labelRequests = instance.state.labelRequests;
         labelObj.columns.forEach(function (col) {
             var key = col.key, val = col.value;
-            // Null guards:
+
+            // Basic null guards:
             if (key === undefined || val === undefined || val === null) {
                 return;
             }
-            // Float/Integer nulls:
-            if (typeof(val) === 'number' && (isNaN(val) || val === 0x7FFFFFFF)) {
+
+            var entry = contentFormatter.defaultFormat(val, col.dataType);
+            // Null value guard
+            if (entry === undefined || entry === null) {
                 return;
             }
-            // String nulls:
-            if (val === 'n/a' || val === '\0') {
-                return;
-            }
+
             var $row = $('<tr>').addClass('graph-label-pair'),
                 $key = $('<td>').addClass('graph-label-key').text(key);
-            var entry = sprintf('%s', val);
-            if (key.indexOf('Date') > -1 && typeof(val) === 'number') {
-                entry = $.datepicker.formatDate('d-M-yy', new Date(val));
-            } else if (key.search(/time/i) !== -1 && typeof(val) === 'number') {
-                var momentVal = moment.unix(val);
-                if (!momentVal.isValid()) {
-                    momentVal = moment(val);
-                }
-                if (momentVal.isValid()) {
-                    entry = momentVal.format();
-                }
-            } else if (!isNaN(val) && val % 1 !== 0) {
-                entry = sprintf('%.4f', val);
-            }
+
             var $wrap = $('<div>').addClass('graph-label-value-wrapper').html(entry);
 
             var $icons = $('<div>').addClass('graph-label-icons');
