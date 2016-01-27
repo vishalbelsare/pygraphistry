@@ -50,7 +50,7 @@ function setupDrag($eventTarget, camera, appState) {
             }
             return true;
         })
-        .do(function (clickPos) {
+        .do(function (/*clickPos*/) {
             // clickPos.preventDefault();
             $sim.toggleClass('moving', true);
         })

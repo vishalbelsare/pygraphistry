@@ -1,15 +1,9 @@
 'use strict';
 
-var $       = window.$;
-var Rx      = require('rxjs/Rx.KitchenSink');
-              require('../rx-jquery-stub');
-var _       = require('underscore');
 var moment  = require('moment-timezone');
 var sprintf = require('sprintf-js').sprintf;
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:contentFormatter');
 var d3      = require('d3');
-
-var util    = require('./util.js');
 
 // TODO: Wrap this up into a formatter object instead of a global here.
 // Initialize with moment's best guess at timezone.
@@ -137,11 +131,11 @@ function shortFormat (value, dataType, attributeName) {
         value = decodeColumnValue(value, attributeName);
 
         if (value instanceof d3.color) {
-            return d.toString();
+            return value.toString();
         }
 
         if (value instanceof Date) {
-            return d3.time.format('%m/%d/%Y')(d);
+            return d3.time.format('%m/%d/%Y')(value);
         }
 
         var abs = Math.abs(value);

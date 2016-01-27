@@ -326,7 +326,7 @@ function controlMaker (urlParams, param, type) {
             type: 'text'
         }).data('param', param);
 
-        var $button = $('<button class="btn btn-default control-textbox-button">Set</button>')
+        var $button = $('<button class="btn btn-default control-textbox-button">Set</button>');
 
         var $wrappedInput = $('<div>').addClass('col-xs-8').addClass('inputWrapper')
             .css('padding-left', '0px')
@@ -451,7 +451,6 @@ function createControls(socket, appState, trigger, urlParams) {
         });
 
         $('.control-textbox-button').each(function () {
-            var $that = $(this);
             var input = this;
 
             $(input).onAsObservable('click')
@@ -463,7 +462,7 @@ function createControls(socket, appState, trigger, urlParams) {
                     var param = $input.data('param');
 
                     if ($input.hasClass('layout-control-textbox')) {
-                        console.log('Layout control textboxes are not supported yet.')
+                        console.log('Layout control textboxes are not supported yet.');
                     } else if ($input.hasClass('local-control-textbox')) {
                         setViewParameter(socket, param.name, val, appState);
                     }

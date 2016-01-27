@@ -1170,12 +1170,13 @@ function initializeHistogramViz($el, model) {
         .orient('right')
         .ticks(numTicks)
         .tickFormat(function (d) {
+            var fullTitle;
             if (type === 'countBy') {
-                var fullTitle = contentFormatter.defaultFormat(stackedBins[d].name, globalStats.dataType);
+                fullTitle = contentFormatter.defaultFormat(stackedBins[d].name, globalStats.dataType);
                 fullTitles[d] = fullTitle;
                 return contentFormatter.shortFormat(stackedBins[d].name, globalStats.dataType, name);
             } else {
-                var fullTitle = contentFormatter.defaultFormat(d * globalStats.binWidth + globalStats.minValue, globalStats.dataType);
+                fullTitle = contentFormatter.defaultFormat(d * globalStats.binWidth + globalStats.minValue, globalStats.dataType);
                 fullTitles[d] = fullTitle;
                 return contentFormatter.defaultFormat(d * globalStats.binWidth + globalStats.minValue, globalStats.dataType, name);
             }
