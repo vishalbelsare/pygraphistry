@@ -1833,9 +1833,9 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
         var dataType = that.getDataType(attribute, type);
 
         if (mode !== 'countBy' && dataType !== 'string') {
-            return that.histogram(attribute, binningHint, goalNumberOfBins, indices, type);
+            return that.histogram(attribute, binningHint, goalNumberOfBins, indices, type, dataType);
         } else {
-            return that.countBy(attribute, binningHint, indices, type);
+            return that.countBy(attribute, binningHint, indices, type, dataType);
         }
     };
 
@@ -1892,7 +1892,7 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
 };
 
 
-Dataframe.prototype.countBy = function (attribute, binning, indices, type) {
+Dataframe.prototype.countBy = function (attribute, binning, indices, type, dataType) {
     var values = this.getColumnValues(attribute, type);
 
     // TODO: Get this value from a proper source, instead of hard coding.
@@ -1941,6 +1941,7 @@ Dataframe.prototype.countBy = function (attribute, binning, indices, type) {
 
     return Q({
         type: 'countBy',
+        dataType: dataType,
         numValues: numValues,
         numBins: _.keys(bins).length,
         bins: bins
@@ -2052,7 +2053,7 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
 };
 
 
-Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, indices, type) {
+Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, indices, type, dataType) {
     // Binning has binWidth, minValue, maxValue, and numBins
 
     // Disabled because filtering is expensive, and we now have type safety coming from
@@ -2097,6 +2098,7 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
 
     var retObj = {
         type: binning.isCountBy ? 'countBy' : 'histogram',
+        dataType: dataType,
         numBins: numBins,
         binWidth: binWidth,
         numValues: numValues,
