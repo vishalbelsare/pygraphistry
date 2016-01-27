@@ -1446,12 +1446,18 @@ function valueSignifiedUndefined(value) {
  * @property {Boolean} isIntegral
  * @property {Boolean} isContinuous
  * @property {Boolean} isCategorical
+ * @property {Boolean} isQuantitative
+ * @property {Boolean} isOrdered
+ * @property {Boolean} isDiverging
+ * @property {Boolean} hasPositive
+ * @property {Boolean} hasNegative
  * @property {Number} count
  * @property {Number} countDistinct
  * @property {Object.<Number>} distinctValues count of instances by value
- * @property {Number} maxValue
- * @property {Number} minValue
+ * @property {Object} maxValue
+ * @property {Object} minValue
  * @property {Number} averageValue
+ * @property {Number} sum
  * @property {Object} binning
  */
 
@@ -1498,6 +1504,9 @@ var AggTypes = [
     'countDistinct', 'distinctValues', 'isCategorical'
 ];
 
+/**
+ * @returns {Aggregations}
+ */
 ColumnAggregation.prototype.getSummary = function () {
     return _.object(AggTypes, _.map(AggTypes, function (aggType) {
         return this.getAggregationByType(aggType);
@@ -1513,19 +1522,27 @@ ColumnAggregation.prototype.runAggregationForAggType = function (aggType) {
         case 'isContinuous':
         case 'isQuantitative':
         case 'isOrdered':
+            this.inferDataType();
+            break;
         case 'isDiverging':
         case 'hasPositive':
         case 'hasNegative':
-            this.inferDataType();
+            this.inferDivergence();
             break;
         case 'count':
             this.aggregations.count = this.column.values.length;
             break;
-        case 'sum':
         case 'minValue':
         case 'maxValue':
+        case 'sum':
         case 'averageValue':
-            this.fixedAllocationNumericAggregations();
+            if (this.getAggregationByType('isNumeric')) {
+                this.fixedAllocationNumericAggregations();
+            } else {
+                this.minMaxGenericAggregations();
+                this.updateAggregationTo('sum', null);
+                this.updateAggregationTo('averageValue', null);
+            }
             break;
         case 'countDistinct':
         case 'distinctValues':
@@ -1541,6 +1558,26 @@ ColumnAggregation.prototype.runAggregationForAggType = function (aggType) {
 
 ColumnAggregation.prototype.isIntegral = function (value) {
     return parseInt(value) == value; // jshint ignore:line
+};
+
+ColumnAggregation.prototype.minMaxGenericAggregations = function () {
+    var minValue = null, maxValue = null, value, values = this.column.values, numValues = this.getAggregationByType('count');
+    var isLessThan;
+    switch (this.getAggregationByType('dataType')) {
+        case 'string':
+            isLessThan = function (a, b) { return a.localeCompare(b) < 0; };
+            break;
+        default:
+            isLessThan = function (a, b) { return a < b; };
+    }
+    for (var i=0; i < numValues; i++) {
+        value = values[i];
+        if (valueSignifiedUndefined(value)) { continue; }
+        if (minValue === null || isLessThan(value, minValue)) { minValue = value; }
+        if (maxValue === null || isLessThan(maxValue, value)) { maxValue = value; }
+    }
+    this.updateAggregationTo('minValue', minValue);
+    this.updateAggregationTo('maxValue', maxValue);
 };
 
 ColumnAggregation.prototype.fixedAllocationNumericAggregations = function () {
@@ -1597,6 +1634,8 @@ ColumnAggregation.prototype.countDistinct = function (limit) {
     this.updateAggregationTo('isCategorical' , isCategorical);
 };
 
+var OrderedDataTypes = ['number', 'integer', 'string', 'date'];
+
 ColumnAggregation.prototype.inferDataType = function () {
     var values = this.column.values;
     var numValues = this.getAggregationByType('count');
@@ -1624,12 +1663,19 @@ ColumnAggregation.prototype.inferDataType = function () {
         summary.dataType = 'string';
     }
     summary.isQuantitative = summary.isContinuous;
-    summary.isOrdered = _.contains(['number', 'integer', 'string', 'date'], summary.dataType);
-    var hasNegative = this.getAggregationByType('minValue') < 0,
-        hasPositive = this.getAggregationByType('maxValue') > 0;
-    summary.hasPositive = hasPositive;
-    summary.hasNegative = hasNegative;
-    summary.isDiverging = hasNegative && hasPositive;
+    summary.isOrdered = _.contains(OrderedDataTypes, summary.dataType);
+    this.updateAggregations(summary);
+};
+
+ColumnAggregation.prototype.inferDivergence = function () {
+    var isNumeric = this.getAggregationByType('isNumeric'),
+        hasNegative = isNumeric && this.getAggregationByType('minValue') < 0,
+        hasPositive = isNumeric && this.getAggregationByType('maxValue') > 0,
+        summary = {
+            hasPositive: hasPositive,
+            hasNegative: hasNegative,
+            isDiverging: hasNegative && hasPositive
+        };
     this.updateAggregations(summary);
 };
 
@@ -1882,6 +1928,7 @@ Dataframe.prototype.countBy = function (attribute, binning, indices, type) {
     if (otherKeys.length === 1) {
         bins[otherKeys[0]] = rawBins[otherKeys[0]];
     } else if (otherKeys.length > 1) {
+        // TODO ensure that this _other bin can be selected and it turn into a correct AST query.
         var sum = _.reduce(otherKeys, function (memo, key) {
             return memo + rawBins[key];
         }, 0);
@@ -2090,7 +2137,7 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
     for (i = 0; i < indices.length; i++) {
         // Here we use an optimized "Floor" because we know it's a smallish, positive number.
         // TODO: Have to be careful because floating point error.
-        // In particular, we need to math math as closely as possible on filters.
+        // In particular, we need to match math as closely as possible in expressions.
         value = values[indices[i]];
         if (numberSignifiesUndefined(value)) { continue; }
         binId = ((value - bottomVal) / binWidth) | 0;
