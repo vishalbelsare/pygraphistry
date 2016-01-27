@@ -228,8 +228,10 @@ var AllFiltersView = Backbone.View.extend({
     },
     render: function () {
         var $filterButton = $('#filterButton');
-        var numElements = this.collection.length;
-        $('.badge', $filterButton).text(numElements > 0 ? numElements : '');
+        var numActiveElements = this.collection.filter(function (filterModel) {
+            return !!filterModel.get('enabled');
+        }).length;
+        $('.badge', $filterButton).text(numActiveElements > 0 ? numActiveElements : '');
         $('[data-toggle="tooltip"]', this.$el).tooltip();
         return this;
     },

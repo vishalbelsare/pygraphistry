@@ -190,8 +190,10 @@ var AllExclusionsView = Backbone.View.extend({
     },
     render: function () {
         var $exclusionButton = $('#exclusionButton');
-        var numElements = this.collection.length;
-        $('.badge', $exclusionButton).text(numElements > 0 ? numElements : '');
+        var numActiveElements = this.collection.filter(function (filterModel) {
+            return !!filterModel.get('enabled');
+        }).length;
+        $('.badge', $exclusionButton).text(numActiveElements > 0 ? numActiveElements : '');
         return this;
     },
     addExclusion: function (exclusion) {
