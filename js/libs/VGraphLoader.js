@@ -332,7 +332,6 @@ function decode0(graph, vg, metadata)  {
     loadDataframe(graph, attrs, vg.nvertices, vg.nedges, {}, {});
     logger.debug('Graph has attribute: %o', _.pluck(attrs, 'name'));
 
-    var vertices;
     var edges = new Array(vg.nedges);
     var dimensions = [1, 1];
 
@@ -341,19 +340,9 @@ function decode0(graph, vg, metadata)  {
         edges[i] = [e.src, e.dst];
     }
 
+    var vertices = lookupInitialPosition(vg, attrs);
 
-    // Do the vertices already exist in the serialized version?
-    var xObj = _.find(vg.double_vectors, function (o) { return o.name === 'x'; });
-    var yObj = _.find(vg.double_vectors, function (o) { return o.name === 'y'; });
-
-    // Load vertices from protobuf Vertex message
-    if (xObj && yObj) {
-        logger.trace('Loading previous vertices from xObj');
-        vertices = new Array(vg.nvertices);
-        for (var i = 0; i < vg.nvertices; i++) {
-            vertices[i] = [xObj.values[i], yObj.values[i]];
-        }
-    } else {
+    if (vertices === undefined) {
         clientNotification.loadingStatus(graph.socket, 'Initializing positions');
         vertices = computeInitialPositions(vg.nvertices, edges, dimensions, graph.socket);
     }
@@ -466,6 +455,23 @@ function computeInitialPositions(nvertices, edges, dimensions) {
     }
     perf.endTiming('graph-viz:data:vgraphloader, weakcc postprocess');
     return vertices;
+}
+
+
+function lookupInitialPosition(vg, vectors) {
+    var x = _.find(vectors, function (o) { return o.name === 'x'; });
+    var y = _.find(vectors, function (o) { return o.name === 'y'; });
+
+    if (x && y) {
+        logger.trace('Loading previous vertices from xObj');
+        var vertices = new Array(vg.nvertices);
+        for (var i = 0; i < vg.nvertices; i++) {
+            vertices[i] = [x.values[i], y.values[i]];
+        }
+        return vertices;
+    } else {
+        return undefined;
+    }
 }
 
 
