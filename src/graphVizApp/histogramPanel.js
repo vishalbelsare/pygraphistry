@@ -11,6 +11,7 @@ var Backbone = require('backbone');
 var d3 = require('d3');
 
 var util    = require('./util.js');
+var contentFormatter = require('./contentFormatter.js');
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -677,7 +678,7 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
             var local = bins[key] || 0;
             var total = globalBins[key];
             if (binValues && (!!binValues[idx] || binValues[idx] === 0)) {
-                name = prettyPrint(binValues[idx], attr);
+                name = contentFormatter.shortFormat(binValues[idx], globalStats.dataType, attr);
             } else {
                 name = key;
             }
@@ -696,11 +697,13 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
             var total = stack[1] || 0;
             // Guard against null or undefined:
             if (binValues && (!!binValues[idx] || binValues[idx] === 0)) {
-                name = prettyPrint(binValues[idx], attr);
+                name = contentFormatter.shortFormat(binValues[idx], globalStats.dataType, attr);
             } else {
                 var start = globalStats.minValue + (globalStats.binWidth * idx);
                 var stop = start + globalStats.binWidth;
-                name = prettyPrint(start, attr) + ' : ' + prettyPrint(stop, attr);
+                var firstHalf = contentFormatter.shortFormat(start, globalStats.dataType, attr);
+                var secondHalf = contentFormatter.shortFormat(stop, globalStats.dataType, attr);
+                name = firstHalf + ' : ' + secondHalf;
             }
             var stackedObj = toStackedObject(local, total, idx, name, attr, numLocal, numTotal, distribution);
             stackedBins.push(stackedObj);
@@ -1136,75 +1139,6 @@ function heightDelta(d, xScale) {
     }
 }
 
-function maybePrecise(v) {
-    var diff = Math.abs(v - Math.round(v));
-    if (diff > 0.1) {
-        return v.toFixed(1);
-    } else {
-        return v;
-    }
-}
-
-function d3ColorFromRGBA(x) {
-    var r = (x >> 16) & 255,
-        g = (x >> 8) & 255,
-        b = x & 255;
-    return d3.rgb(r, g, b);
-}
-
-function decodeColumnValue (val, attributeName) {
-    if (!isNaN(val)) {
-        val = Number(val); // Cast to number in case it's a string
-
-        if (attributeName.match(/color/i)) {
-            return d3ColorFromRGBA(val);
-        }
-
-        if (attributeName.indexOf('Date') > -1) {
-            return new Date(val);
-        }
-    }
-    return val;
-}
-
-function prettyPrint (d, attributeName, noLimit) {
-    if (!isNaN(d)) {
-        d = decodeColumnValue(d, attributeName);
-
-        if (d instanceof d3.color) {
-            return d.toString();
-        }
-
-        if (d instanceof Date) {
-            return d3.time.format('%m/%d/%Y')(d);
-        }
-
-        var abs = Math.abs(d);
-        var precision = 4;
-        if (abs > 1000000000000 || (d !== 0 && Math.abs(d) < 0.00001)) {
-            return String(d.toExponential(precision));
-        } else if (abs > 1000000000) {
-            return String( maybePrecise(d/1000000000) ) + 'B';
-        } else if (abs > 1000000) {
-            return String( maybePrecise(d/1000000) ) + 'M';
-        } else if (abs > 1000) {
-            return String( maybePrecise(d/1000) ) + 'K';
-        } else {
-            d = Math.round(d*1000000) / 1000000; // Kill rounding errors
-            return String(d);
-        }
-
-    } else {
-        var str = String(d);
-        var limit = 10;
-        if (str.length > limit && !noLimit) {
-            return str.substr(0, limit-1) + '…';
-        } else {
-            return str;
-        }
-    }
-}
-
 function initializeHistogramViz($el, model) {
     var width = $el.width();
     var height = $el.height(); // TODO: Get this more naturally.
@@ -1237,11 +1171,13 @@ function initializeHistogramViz($el, model) {
         .ticks(numTicks)
         .tickFormat(function (d) {
             if (type === 'countBy') {
-                fullTitles[d] = prettyPrint(stackedBins[d].name, name, true);
-                return prettyPrint(stackedBins[d].name, name); // name of bin
+                var fullTitle = contentFormatter.defaultFormat(stackedBins[d].name, globalStats.dataType);
+                fullTitles[d] = fullTitle;
+                return contentFormatter.shortFormat(stackedBins[d].name, globalStats.dataType, name);
             } else {
-                fullTitles[d] = prettyPrint(d * globalStats.binWidth + globalStats.minValue, name, true);
-                return prettyPrint(d * globalStats.binWidth + globalStats.minValue, name);
+                var fullTitle = contentFormatter.defaultFormat(d * globalStats.binWidth + globalStats.minValue, globalStats.dataType);
+                fullTitles[d] = fullTitle;
+                return contentFormatter.defaultFormat(d * globalStats.binWidth + globalStats.minValue, globalStats.dataType, name);
             }
         });
 
