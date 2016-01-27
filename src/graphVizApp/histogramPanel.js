@@ -851,13 +851,13 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     upperTooltip.selectAll('.globalTooltip').data([''])
         .enter().append('tspan')
         .attr('class', 'globalTooltip')
-        .attr('fill', color('global'))
+        .attr('fill', colorHighlighted('global'))
         .text('global, ');
 
     upperTooltip.selectAll('.localTooltip').data([''])
         .enter().append('tspan')
         .attr('class', 'localTooltip')
-        .attr('fill', color('local'))
+        .attr('fill', colorHighlighted('local'))
         .text('local');
 
     //////////////////////////////////////////////////////////////////////////
