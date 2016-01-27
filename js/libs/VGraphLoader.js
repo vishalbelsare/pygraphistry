@@ -4,6 +4,7 @@ var Q = require('q');
 var _ = require('underscore');
 var pb = require('protobufjs');
 var path = require('path');
+var moment = require('moment');
 
 var util = require('../util.js');
 var weakcc = require('../weaklycc.js');
@@ -481,21 +482,66 @@ function getVectors0(vg) {
                                     vg.double_vectors);
 }
 
+function castToMoment (value) {
+    var momentVal;
+    if (typeof(value) === 'number') {
+        // First attempt unix seconds constructor
+        momentVal = moment.unix(value);
+
+        // If not valid, or unreasonable year, try milliseconds constructor
+        if (!momentVal.isValid() || momentVal.year() > 5000 || moment.year() < 500) {
+            momentVal = moment(value);
+        }
+
+    } else {
+        momentVal = moment(value);
+    }
+
+    return momentVal;
+}
+
 
 function getAttributes0(vg) {
     var vectors = getVectors0(vg);
     var attrs = [];
+
     for (var i = 0; i < vectors.length; i++) {
         var v = vectors[i];
         if (v.values.length > 0) {
+            var type = typeof(v.values[0]);
+
+            // Attempt to infer date types when possible
+            // Check if name contains time or date
+            if ((/time/i).test(v.name) || (/date/i).test(v.name)) {
+                logger.debug('Attempting to cast ' + v.name + ' to a moment object.');
+                var testMoment = castToMoment(v.values[0]);
+                var isValidMoment = testMoment.isValid();
+
+                if (isValidMoment) {
+                    logger.debug('Successfully cast ' + v.name + ' as a moment.');
+                    type = 'date';
+
+                    var newValues = v.values.map(function (val) {
+                        var date = castToMoment(val);
+                        return date.valueOf(); // Represent date as a number
+                    });
+
+                    v.values = newValues;
+
+                } else {
+                    logger.debug('Failed to cast ' + v.name + ' as a moment.');
+                }
+            }
+
             attrs.push({
                 name: v.name,
                 target : v.target,
-                type: typeof(v.values[0]),
+                type: type,
                 values: v.values
             });
         }
     }
+
     return attrs;
 }
 
