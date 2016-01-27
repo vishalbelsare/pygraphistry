@@ -364,6 +364,7 @@ Dataframe.prototype.getMasksForQuery = function (query, errors) {
         } else if (plan.isRedundant()) {
             type = plan.rootNode.iterationType();
             attribute = this.normalizeAttributeName(_.keys(plan.rootNode.identifierNodes())[0], type).attribute;
+            _.defaults(query, {attribute: attribute, type: type});
             filterFunc = this.filterFuncForQueryObject(query);
             masks = this.getAttributeMask(type, attribute, filterFunc);
         } else {
@@ -390,8 +391,15 @@ Dataframe.prototype.filterFuncForQueryObject = function (query) {
     if (ast !== undefined) {
         var generator = new ExpressionCodeGenerator('javascript');
         var columnName = this.normalizeAttributeName(query.attribute, query.type);
-        ast = generator.transformASTForNullGuards(ast, {value: columnName}, this);
-        filterFunc = generator.functionForAST(ast, {'*': 'value'});
+        if (columnName === undefined) {
+            // Trust that this is still single-attribute. Doubtful idea.
+            var plan = new ExpressionPlan(this, ast);
+            plan.compile();
+            filterFunc = plan.rootNode.executor;
+        } else {
+            ast = generator.transformASTForNullGuards(ast, {value: columnName}, this);
+            filterFunc = generator.functionForAST(ast, {'*': 'value'});
+        }
         // Maintained only for earlier range queries from histograms, may drop soon:
     } else if (query.start !== undefined && query.stop !== undefined) {
         // Range:
