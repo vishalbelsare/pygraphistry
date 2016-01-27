@@ -650,8 +650,12 @@ function decode1(graph, vg, metadata)  {
     }
     // TODO Check if x/y are bound in graphInfo.nodes.encodings
     var dimensions = [1, 1];
-    clientNotification.loadingStatus(graph.socket, 'Initializing positions');
-    var vertices = computeInitialPositions(vg.nvertices, edges, dimensions);
+
+    var vertices = lookupInitialPosition(vg, _.values(vgAttributes.nodes));
+    if (vertices === undefined) {
+        clientNotification.loadingStatus(graph.socket, 'Initializing positions');
+        vertices = computeInitialPositions(vg.nvertices, edges, dimensions, graph.socket);
+    }
 
     var loaders = attributeLoaders(graph);
     var mapper = mappers[metadata.mapper];
