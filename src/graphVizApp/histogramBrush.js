@@ -147,15 +147,15 @@ HistogramBrush.prototype.setupMarqueeInteraction = function(marquee) {
         });
         var attributes = _.map(attributeNames, function (name) {
             var normalizedName = name,
-                dataType = data.globalStats.histograms[name].dataType;
+                graphType = data.globalStats.histograms[name].graphType;
             if (normalizedName.indexOf(':') !== -1) {
                 var nameParts = normalizedName.split(':', 2);
                 normalizedName = nameParts[1];
-                dataType = nameParts[0];
+                graphType = nameParts[0];
             }
             return {
                 name: normalizedName,
-                type: dataType
+                type: graphType
             };
         });
 
@@ -290,12 +290,12 @@ HistogramBrush.prototype.aggregatePointsAndEdges = function(params) {
             });
             _.each(pointHistsData, function (val) {
                 if (val !== undefined) {
-                    val.dataType = 'point';
+                    val.graphType = 'point';
                 }
             });
             _.each(edgeHistsData, function (val) {
                 if (val !== undefined) {
-                    val.dataType = 'edge';
+                    val.graphType = 'edge';
                 }
             });
 

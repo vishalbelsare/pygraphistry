@@ -1370,7 +1370,7 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
     };
 
     var stats = globalStats.sparkLines[dataframeAttribute];
-    var dataType = stats.dataType;
+    var graphType = stats.graphType;
 
     var identifier = {type: 'Identifier', name: dataframeAttribute};
     if (stats.type === 'histogram') {
@@ -1411,8 +1411,8 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
             };
         }
     }
-    // TODO rename type property to dataType for clarity.
-    updatedHistogramFilter.type = dataType;
+    // TODO rename type property to graphType for clarity.
+    updatedHistogramFilter.type = graphType;
     this.histogramFilters[dataframeAttribute] = updatedHistogramFilter;
 
     $('.refreshHistogramButton-' + id).css('visibility', 'visible');
