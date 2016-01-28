@@ -19,9 +19,9 @@ if (builder === null) {
 var pb_root = builder.build();
 
 var defaults = {
-    'double': NaN,
-    'integer': 0,
-    'string': 'n/a',
+    double: NaN,
+    integer: 0x7FFFFFFF,
+    string: '\0'
 };
 
 // String * String -> Vector
@@ -36,7 +36,7 @@ function makeVector(name, type, target) {
         vector = new pb_root.VectorGraph.Int32AttributeVector();
         vector.dest = 'int32_vectors';
         vector.transform = function (x) {
-            return parseInt(x) || 0
+            return parseInt(x) || 0;
         };
     } else {
         vector = new pb_root.VectorGraph.StringAttributeVector();
@@ -70,16 +70,17 @@ function getAttributeVectors(header, target) {
 
 function defined(value) {
     return value !== undefined && value !== null &&
-        value !== '' && value !== 'n/a' &&
+        value !== '' && value !== defaults.string &&
         !(typeof value === 'number' && isNaN(value));
 }
 
 function inferType(samples) {
-    if (samples.length === 0)
+    if (samples.length === 0) {
         return 'empty';
+    }
     if (_.all(samples, function (val) { return !isNaN(val); })) {
         if (_.all(samples, function (val) { return val === +val && val === (val|0); })) {
-            return 'integer'
+            return 'integer';
         } else {
             return 'double';
         }
@@ -107,7 +108,7 @@ function getHeader(table) {
             res[key] = data;
         });
         total++;
-    })
+    });
 
     return _.object(_.map(res, function (data, name) {
         data.freq = data.count / total;
@@ -119,14 +120,14 @@ function getHeader(table) {
 // Simple (and dumb) conversion of JSON edge lists to VGraph
 // JSON * String * String * String -> VGraph
 function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
-    nlabels = nlabels || []
+    nlabels = nlabels || [];
 
     var node2Idx = {};
     var idx2Node = {};
     var nodeCount = 0;
     var edges = [];
     // For detecting duplicate edges.
-    var edgeMap = {}
+    var edgeMap = {};
 
     var addNode = function (node) {
         if (!node2Idx.hasOwnProperty(node)) {
@@ -269,5 +270,5 @@ function decodeVGraph(buffer) {
 
 module.exports = {
     fromEdgeList: fromEdgeList,
-    decodeVGraph: decodeVGraph,
+    decodeVGraph: decodeVGraph
 };
