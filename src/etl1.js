@@ -69,7 +69,9 @@ function publish(vg, name) {
     } else {
         // On prod/staging ETL fails if upload fails
         logger.debug('Uploading dataset');
-        return s3Upload(binData, metadata)
+        return cacheLocally()
+            .then(function () { return s3Upload(binData, metadata) },
+                  function () { return s3Upload(binData, metadata) })
             .then(_.constant(name))
             .fail(function (err) {
                 logger.error(err, 'S3 Upload failed');
