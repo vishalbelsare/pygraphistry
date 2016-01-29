@@ -500,6 +500,11 @@ function castToMoment (value) {
     return momentVal;
 }
 
+function dateAsNumber (val) {
+    var date = castToMoment(val);
+    return date.valueOf(); // Represent date as a number
+}
+
 
 function getAttributes0(vg) {
     var vectors = getVectors0(vg);
@@ -521,11 +526,7 @@ function getAttributes0(vg) {
                     logger.debug('Successfully cast ' + v.name + ' as a moment.');
                     type = 'date';
 
-                    var newValues = v.values.map(function (val) {
-                        var date = castToMoment(val);
-                        return date.valueOf(); // Represent date as a number
-                    });
-
+                    var newValues = v.values.map(dateAsNumber);
                     v.values = newValues;
 
                 } else {
