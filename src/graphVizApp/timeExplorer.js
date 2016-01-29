@@ -24,6 +24,8 @@ var AXIS_HEIGHT = 20;
 var BAR_SIDE_PADDING = 1;
 var DOUBLE_CLICK_TIME = 500;
 
+var DEFAULT_TIME_AGGREGATION = 'day';
+
 var color = d3.scale.ordinal()
         .range(['#929292', '#6B6868', '#0FA5C5', '#E35E13'])
         .domain(['user', 'userFocus', 'main', 'mainFocus']);
@@ -42,7 +44,12 @@ var axisMargin = {
     left: 10
 };
 
-
+var timeAggregationButtons = [
+    {shortValue: 'D', longValue: 'day', active: true},
+    {shortValue: 'H', longValue: 'hour'},
+    {shortValue: 'M', longValue: 'minute'},
+    {shortValue: 'S', longValue: 'second'}
+];
 
 
 
@@ -97,7 +104,7 @@ function TimeExplorer (socket, $div) {
     this.timeDescription = {
         timeType: null,
         timeAttr: null,
-        timeAggregation: null,
+        timeAggregation: DEFAULT_TIME_AGGREGATION,
         start: null,
         stop: null
     };
@@ -224,6 +231,7 @@ TimeExplorer.prototype.getTimeData = function (timeType, timeAttr, start, stop, 
 
     return this.getTimeDataCommand.sendWithObservableResult(payload)
         .map(function (resp) {
+            console.log('payload: ', payload);
             resp.data.name = name;
             return resp.data;
         });
@@ -314,7 +322,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
         template: Handlebars.compile($('#timeBarTemplate').html()),
 
         events: {
-
+            'click .timeAggButton': 'changeTimeAgg',
         },
 
         initialize: function () {
@@ -326,7 +334,9 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             this.model.set('pageX', 0);
             this.model.set('pageY', 0);
 
-            var params = {};
+            var params = {
+                timeAggregationButtons: timeAggregationButtons
+            };
             var html = this.template(params);
             this.$el.html(html);
             this.$el.attr('cid', this.cid);
@@ -382,6 +392,27 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             return getActiveBinForPosition(this.$el, this.model, pageX);
         },
 
+        changeTimeAgg: function (evt) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            console.log('GOT CLICK: ', evt);
+
+            var target = evt.target;
+            var shortText = $(target).text();
+            $(target).parent().children('button').not('#timeAggButton-' + shortText).removeClass('active');
+            $(target).addClass('active');
+            console.log('TARGET: ', target);
+            console.log($(target));
+            var aggValue = $(target).data('aggregation-value');
+            console.log('aggValue: ', aggValue);
+
+
+            this.model.get('explorer').modifyTimeDescription({
+                timeAggregation: aggValue
+            });
+
+        },
+
         close: function () {
 
         }
@@ -389,8 +420,9 @@ function TimeExplorerPanel (socket, $parent, explorer) {
 
     var UserBarsView = Backbone.View.extend({
         el: $('#timeExplorerBody'),
+        template: Handlebars.compile($('#timeExplorerBodyTemplate').html()),
         events: {
-
+            'click #newAttrSubmitButton': 'submitNewAttr',
         },
 
         initialize: function () {
@@ -398,24 +430,56 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             this.listenTo(this.collection, 'remove', this.removeBar);
             this.listenTo(this.collection, 'reset', this.addAll);
 
+            this.render();
         },
 
         render: function () {
             // this.collection.sort(); //TODO
-            var newDiv = $('<div></div>');
-            this.collection.each(function (child) {
-                newDiv.append(child.view.el);
-            });
 
             this.$el.empty();
+
+            var newDiv = $('<div id="timeExplorerUserBarsRenderingContainer"></div>');
             this.$el.append(newDiv);
+            newDiv = $('#timeExplorerUserBarsRenderingContainer');
+
+            this.collection.each(function (child) {
+                // TODO: This guard is a hack. I don't know how to initialize backbone
+                if (child.view) {
+                    newDiv.append(child.view.el);
+                    child.view.render();
+
+                }
+            });
+
+            console.log('RENDERING USER BARS VIEW');
+
+            var params = {
+
+            };
+            var addRowHtml = this.template(params);
+            newDiv.append(addRowHtml);
+
+            this.$el.attr('cid', this.cid);
+            // this.$el.empty();
+            // this.$el.append(newDiv);
+        },
+
+        submitNewAttr: function (evt) {
+            evt.preventDefault();
+            var newType = $('#newType').val();
+            var newAttr = $('#newAttr').val();
+            var newQuery = $('#newQuery').val();
+            // TODO: Don't use this global. Instead properly structure userbars as a model, that contains a collection.
+            explorer.addActiveQuery(newType, newAttr, newQuery);
+            // this.collection.get('explorer').addActiveQuery(newType, newAttr, newQuery);
         },
 
         addBar: function (model) {
             var view = new TimeBarView({model: model});
             model.view = view;
-            this.$el.append(view.el);
-            view.render();
+            // this.$el.append(view.el);
+            // view.render();
+            this.render();
         },
 
         removeBar: function () {
@@ -423,9 +487,9 @@ function TimeExplorerPanel (socket, $parent, explorer) {
         },
 
         addAll: function () {
-            this.$el.empty();
+            // this.$el.empty();
             this.collection.each(this.addBar, this);
-
+            this.render();
         },
 
         mousemoveParent: function (evt) {
@@ -463,7 +527,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             var html = this.template(params);
             this.$el.html(html);
             this.$el.attr('cid', this.cid);
-            this.setSelectedTimeAggregation();
+            // this.setSelectedTimeAggregation();
         },
 
         render: function () {
@@ -504,7 +568,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
     var SideInputModel = Backbone.Model.extend({});
     this.sideInputView = new SideInputView({model: new SideInputModel({explorer: explorer})});
 
-    this.userBarsView = new UserBarsView({collection: this.userBars});
+    this.userBarsView = new UserBarsView({explorer: explorer, collection: this.userBars});
     var mainBarModel = new TimeBarModel({explorer: explorer, timeStamp: Date.now()});
     this.mainBarView = new TimeBarView({model: mainBarModel});
     this.bottomAxisView = new BottomAxisView({model: new BottomAxisModel({explorer: explorer}) });
@@ -551,6 +615,14 @@ function TimeExplorerPanel (socket, $parent, explorer) {
         },
 
         handleMouseDown: function (evt) {
+            // Return early if it's a UI element
+            // TODO: Figure out how to represent this in terms of the selector
+            var $target = $(evt.target);
+            if ($target.hasClass('btn') || $target.hasClass('form-control')) {
+                return;
+            }
+
+
             var that = this;
             if (!this.enableMouseInteractions) {
                 return;
@@ -753,7 +825,9 @@ function TimeExplorerPanel (socket, $parent, explorer) {
 //////////////////////////////////////////////////////////////////////////////
 
 function initializeTimeBar ($el, model) {
-    // debug('initializing time bar: ', model);
+    debug('initializing time bar: ', model);
+    debug('$el: ', $el);
+    debug('$el sizes: ', $el.width(), $el.height());
 
     var width = $el.width() - margin.left - margin.right;
     var height = $el.height() - margin.top - margin.bottom;
