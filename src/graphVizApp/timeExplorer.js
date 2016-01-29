@@ -335,8 +335,13 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             this.model.set('pageY', 0);
 
             var params = {
-                timeAggregationButtons: timeAggregationButtons
+
             };
+
+            if (this.model.get('showTimeAggregationButtons')) {
+                params.timeAggregationButtons = timeAggregationButtons;
+            }
+
             var html = this.template(params);
             this.$el.html(html);
             this.$el.attr('cid', this.cid);
@@ -572,7 +577,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
     // this.sideInputView = new SideInputView({model: new SideInputModel({explorer: explorer})});
 
     this.userBarsView = new UserBarsView({explorer: explorer, collection: this.userBars});
-    var mainBarModel = new TimeBarModel({explorer: explorer, timeStamp: Date.now()});
+    var mainBarModel = new TimeBarModel({explorer: explorer, timeStamp: Date.now(), showTimeAggregationButtons: true});
     this.mainBarView = new TimeBarView({model: mainBarModel});
     this.bottomAxisView = new BottomAxisView({model: new BottomAxisModel({explorer: explorer}) });
 
@@ -809,6 +814,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
                 data: data.all,
                 maxBinValue: data.maxBinValue,
                 timeStamp: Date.now(),
+                showTimeAggregationButtons: true,
                 lineUnchanged: false
             };
             this.mainBarView.model.id = params.data.name;
