@@ -358,6 +358,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             // Don't do first time work.
             // TODO: Should this be initialize instead?
             if (model.get('initialized')) {
+                console.log('INITIALIZED');
                 updateTimeBar(model.get('vizContainer'), model);
                 return this;
             }
@@ -369,6 +370,8 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             model.set('vizContainer', vizContainer);
             var vizHeight = '' + TIME_BAR_HEIGHT + 'px';
             vizContainer.height(vizHeight);
+            console.log('SETTING VIZCONTAINER HEIGHT TO: ', vizHeight);
+            console.log('vizContainer: ', vizContainer);
             initializeTimeBar(vizContainer, model);
             updateTimeBar(vizContainer, model);
 
@@ -565,8 +568,8 @@ function TimeExplorerPanel (socket, $parent, explorer) {
         }
 
     });
-    var SideInputModel = Backbone.Model.extend({});
-    this.sideInputView = new SideInputView({model: new SideInputModel({explorer: explorer})});
+    // var SideInputModel = Backbone.Model.extend({});
+    // this.sideInputView = new SideInputView({model: new SideInputModel({explorer: explorer})});
 
     this.userBarsView = new UserBarsView({explorer: explorer, collection: this.userBars});
     var mainBarModel = new TimeBarModel({explorer: explorer, timeStamp: Date.now()});
@@ -587,12 +590,15 @@ function TimeExplorerPanel (socket, $parent, explorer) {
         userBarsView: that.userBarsView,
         mainBarView: that.mainBarView,
         bottomAxisView: that.bottomAxisView,
-        sideInputView: that.sideInputView,
+        // sideInputView: that.sideInputView,
+
+        timeBarInitializationMenuTemplate: Handlebars.compile($('#timeBarInitializationMenuTemplate').html()),
 
         events: {
             'mousemove #timeExplorerVizContainer': 'mousemove',
             'mouseout #timeExplorerVizContainer': 'mouseout',
-            'mousedown #timeExplorerVizContainer': 'handleMouseDown'
+            'mousedown #timeExplorerVizContainer': 'handleMouseDown',
+            'click #timeAttrSubmitButton': 'submitTimeAttr',
         },
 
         initialize: function () {
@@ -600,9 +606,35 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             this.listenTo(this.model, 'change', this.updateChildren);
             this.listenTo(this.model, 'change:all', this.setupMouseInteractions);
             // this.setupVerticalLine();
+            this.renderInitializationMenu();
+        },
+
+        renderInitializationMenu: function () {
+            var params = {};
+            var html = this.timeBarInitializationMenuTemplate(params);
+            this.$timeExplorerMain.append(html);
+        },
+
+        submitTimeAttr: function (evt) {
+            evt.preventDefault();
+            var timeType = $('#timeType').val();
+            var timeAttr = $('#timeAttr').val();
+
             this.render();
 
+            this.model.get('explorer').modifyTimeDescription({
+                timeType: timeType,
+                timeAttr: timeAttr
+            });
+        },
 
+        render: function () {
+            // TODO: New div and render correct eleements in right order
+            this.$timeExplorerMain.empty();
+
+            console.log('RENDERING TOP LEVEL VIEW');
+            this.$timeExplorerMain.append(this.mainBarView.el);
+            this.$timeExplorerAxisContainer.append(this.bottomAxisView.el);
         },
 
         setupMouseInteractions: function () {
@@ -735,12 +767,6 @@ function TimeExplorerPanel (socket, $parent, explorer) {
                 var x = evt.pageX - 1;
                 that.$verticalLine.css('left', '' + x + 'px');
             });
-        },
-
-        render: function () {
-            // TODO: New div and render correct eleements in right order
-            this.$timeExplorerMain.append(this.mainBarView.el);
-            this.$timeExplorerAxisContainer.append(this.bottomAxisView.el);
         },
 
         mousemove: function (evt) {
