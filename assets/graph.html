@@ -383,14 +383,14 @@
         <div id="timeExplorerVerticalLine" class="verticalLine"></div>
         <div id="timeExplorerTop"></div>
         <div class="row timeExplorerBodyRow timeExplorerFixedHeight">
-            <div id="timeExplorerSideInput" class="col-xs-2 timeExplorerFixedHeight"></div>
-            <div id="timeExplorerVizContainer" class="col-xs-9 timeExplorerFixedHeight noPadding">
+            <!-- <div id="timeExplorerSideInput" class="col-xs-2 timeExplorerFixedHeight"></div> -->
+            <div id="timeExplorerVizContainer" class="col-xs-10 col-xs-offset-1 timeExplorerFixedHeight noPadding">
                 <div id="timeExplorerBody" class="noPadding"></div>
                 <div id="timeExplorerMain" class="noPadding"></div>
             </div>
         </div>
         <div class="row timeExplorerFixedHeightAxis">
-            <div class="timeExplorerFixedHeightAxis noPadding col-xs-9 col-xs-offset-2">
+            <div class="timeExplorerFixedHeightAxis noPadding col-xs-10 col-xs-offset-1">
                 <div id="timeExplorerAxisContainer" class="noPadding">
                 </div>
             </div>
@@ -845,12 +845,54 @@ Note: this release does not support expressions with multiple fields nor changin
 </script>
 
 <script type="text/tempate" id="timeBarTemplate">
+    {{#if timeAggregationButtons}}
+        <div class="timeAggregationSwitchboard">
+            <div class="btn-group" data-toggle="buttons-radio">
+                {{#each timeAggregationButtons}}
 
+                    <button type="button" id="timeAggButton-{{this.shortValue}}" class="timeAggButton btn btn-primary btn-xs {{#if this.active}}active{{/if}}" data-aggregation-value="{{this.longValue}}">{{this.shortValue}}</button>
+
+                {{/each}}
+            </div>
+        </div>
+    {{/if}}
     <div class="vizContainer"></div>
+</script>
+
+<script type="text/template" id="timeExplorerBodyTemplate">
+    <div class="row">
+        <form class="form-inline">
+            <div class="form-group">
+                <input type="text" class="form-control" id="newType" placeholder="type (point|edge)">
+            </div>
+            <div class="form-group">
+                <input type="text" class="form-control" id="newAttr" placeholder="name">
+            </div>
+            <div class="form-group">
+                <input type="text" class="form-control" id="newQuery" placeholder="type:name > 2">
+            </div>
+            <button id="newAttrSubmitButton" type="submit" class="btn btn-default">Add Filtered Bar</button>
+        </form>
+    <div>
 </script>
 
 <script type="text/template" id="timeBarBottomAxisTemplate">
     <div class="axisContainer"></div>
+</script>
+
+<script type="text/template" id="timeBarInitializationMenuTemplate">
+
+    <div class="row">
+        <form class="form-inline">
+            <div class="form-group">
+                <input type="text" class="form-control" id="timeType" placeholder="type (point|edge)">
+            </div>
+            <div class="form-group">
+                <input type="text" class="form-control" id="timeAttr" placeholder="timeColumn">
+            </div>
+            <button id="timeAttrSubmitButton" type="submit" class="btn btn-default">Initialize</button>
+        </form>
+    </div>
 </script>
 
 <script type="text/template" id="timeExplorerSideInputTemplate">
@@ -867,6 +909,7 @@ Note: this release does not support expressions with multiple fields nor changin
 
     <br>
 
+    <!--
     <form class="form-inline">
         <div class="form-group">
             <input type="text" class="form-control" id="newType" placeholder="type (point|edge)">
@@ -887,6 +930,7 @@ Note: this release does not support expressions with multiple fields nor changin
             <option>{{this}}</option>
         {{/each}}
     </select>
+    -->
 
 </script>
 
