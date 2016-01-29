@@ -610,6 +610,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
         },
 
         renderInitializationMenu: function () {
+            this.userBarsView.$el.css('visibility', 'hidden');
             var params = {};
             var html = this.timeBarInitializationMenuTemplate(params);
             this.$timeExplorerMain.append(html);
@@ -635,6 +636,8 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             console.log('RENDERING TOP LEVEL VIEW');
             this.$timeExplorerMain.append(this.mainBarView.el);
             this.$timeExplorerAxisContainer.append(this.bottomAxisView.el);
+
+            this.userBarsView.$el.css('visibility', 'visible');
         },
 
         setupMouseInteractions: function () {
