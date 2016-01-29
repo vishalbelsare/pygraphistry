@@ -28,7 +28,7 @@ var EDGE   = pb_root.VectorGraph.AttributeTarget.EDGE;
 var decoders = {
     0: decode0,
     1: decode1
-}
+};
 
 
 //introduce mapping names, and for each, how to send mapped buffer to NBody.js
@@ -102,7 +102,7 @@ var attributeLoaders = function(graph) {
           default: graph.setEdgeWeight,
           values: undefined
         },
-        // PoinTitle and edgeTitle are handled in their own special hacky way.
+        // PointTitle and edgeTitle are handled in their own special way.
         // They are loaded outside of the loader mechanism
         // Without these two dummy entries, decode1 would discard encodings for
         // PointTitle and edgeTitle as invalid.
@@ -120,7 +120,7 @@ var attributeLoaders = function(graph) {
 
         }
     };
-}
+};
 
 
 var opentsdbMapper = {
@@ -134,7 +134,7 @@ var opentsdbMapper = {
         pointSize: {
             name: 'degree',
             transform: function (v) {
-                return normalize(logTransform(v), 5, Math.pow(2, 8))
+                return normalize(logTransform(v), 5, Math.pow(2, 8));
             }
         },
         pointTitle: {
@@ -157,11 +157,11 @@ var opentsdbMapper = {
         edgeWeight: {
             name: 'weight',
             transform: function (v) {
-                return normalizeFloat(logTransform(v), 0.5, 1.5)
+                return normalizeFloat(logTransform(v), 0.5, 1.5);
             }
         }
-    },
-}
+    }
+};
 
 
 var misMapper = {
@@ -169,11 +169,11 @@ var misMapper = {
         pointSize: {
             name: 'betweeness',
             transform: function (v) {
-                return normalize(v, 5, Math.pow(2, 8))
+                return normalize(v, 5, Math.pow(2, 8));
             }
         }
     })
-}
+};
 
 
 var defaultMapper = {
@@ -181,7 +181,7 @@ var defaultMapper = {
         pointSize: {
             name: 'pointSize',
             transform: function (v) {
-                return normalize(v, 5, Math.pow(2, 8))
+                return normalize(v, 5, Math.pow(2, 8));
             }
         },
         pointLabel: {
@@ -224,11 +224,11 @@ var defaultMapper = {
         edgeWeight: {
             name: 'edgeWeight',
             transform: function (v) {
-                return normalizeFloat(v, 0.5, 1.5)
+                return normalizeFloat(v, 0.5, 1.5);
             }
         }
     }
-}
+};
 
 
 var mappers = {
@@ -236,11 +236,11 @@ var mappers = {
     'miserables': misMapper,
     'splunk': defaultMapper,
     'default': defaultMapper
-}
+};
 
 
 function wrap(mappings, loaders) {
-    var res = {}
+    var res = {};
     for (var a in loaders) {
         if (a in mappings) {
             var loader = loaders[a];
@@ -264,7 +264,7 @@ function doWrap(res, mapping, loader) {
         var oldLoad = loader.load;
         loader.load = function (data) {
             return oldLoad(mapping.transform(data));
-        }
+        };
     }
 
     mapped.push(loader);
@@ -367,9 +367,9 @@ function decode0(graph, vg, metadata)  {
         var loaderArray = loaders[vname];
 
         _.each(loaderArray, function (loader) {
-            if (attr.target != loader.target) {
+            if (attr.target !== loader.target) {
                 logger.warn('Vertex/Node attribute mismatch for ' + vname);
-            } else if (attr.type != loader.type) {
+            } else if (attr.type !== loader.type) {
                 logger.warn('Expected type ' + loader.type + ' but got ' + attr.type + ' for ' + vname);
             } else {
                 loader.values = attr.values;
@@ -612,7 +612,7 @@ function getAttributes1(vg) {
 
 function sameKeys(o1, o2){
     var k1 = _.keys(o1);
-    var k2 = _.keys(o2)
+    var k2 = _.keys(o2);
     var ki = _.intersection(k1, k2);
     return k1.length === k2.length && k2.length === ki.length;
 }
