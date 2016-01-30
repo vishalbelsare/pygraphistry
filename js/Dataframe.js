@@ -4,6 +4,7 @@ var _ = require('underscore');
 var dateFormat = require('dateformat');
 var Q = require('q');
 var fs = require('fs');
+var csv = require('csv');
 
 var log = require('common/logger.js');
 var logger = log.createLogger('graph-viz:dataframe');
@@ -61,6 +62,7 @@ function Dataframe () {
     this.bufferAliases = {};
     this.data = this.rawdata;
     this.bufferOverlays = {};
+    this.metadata = {};
 }
 
 /**
@@ -70,7 +72,7 @@ function Dataframe () {
  * @property {Object} labels
  * @property {Object} hostBuffers
  * @property {Object} localBuffers
- * @property {Object} renderedBuffers
+ * @property {Object} rendererBuffers
  * @property {{point: Number, edge: Number}} numElements
  */
 
@@ -146,6 +148,37 @@ Dataframe.prototype.pruneMaskEdges = function (oldMask) {
         edgeMask
     );
 
+};
+
+
+/**
+ * Takes a mask and excludes points disconnected by it.
+ * Uses encapsulateEdges' result of degreesTyped on forwardsEdges and backwardsEdges.
+ * @param {DataframeMask} baseMask
+ * @returns {DataframeMask}
+ */
+Dataframe.prototype.pruneOrphans = function (baseMask) {
+    var resultPointMask = [];
+    if (baseMask.numPoints() === this.numPoints()) {
+        var degreeColumn = this.getColumnValues('degree', 'point');
+        baseMask.mapPointIndexes(function (pointIdx) {
+            if (degreeColumn[pointIdx] !== 0) {
+                resultPointMask.push(pointIdx);
+            }
+        });
+    } else {
+        var degreeOutTyped = this.getHostBuffer('forwardsEdges').degreesTyped,
+            degreeInTyped = this.getHostBuffer('backwardsEdges').degreesTyped;
+        if (degreeInTyped.length !== baseMask.numPoints()) {
+            throw new Error('Mismatched buffer lengths');
+        }
+        baseMask.mapPointIndexes(function (pointIdx, idx) {
+            if (degreeInTyped[idx] !== 0 || degreeOutTyped[idx] !== 0) {
+                resultPointMask.push(pointIdx);
+            }
+        });
+    }
+    return new DataframeMask(this, resultPointMask, baseMask.edge);
 };
 
 
@@ -331,6 +364,7 @@ Dataframe.prototype.getMasksForQuery = function (query, errors) {
         } else if (plan.isRedundant()) {
             type = plan.rootNode.iterationType();
             attribute = this.normalizeAttributeName(_.keys(plan.rootNode.identifierNodes())[0], type).attribute;
+            _.defaults(query, {attribute: attribute, type: type});
             filterFunc = this.filterFuncForQueryObject(query);
             masks = this.getAttributeMask(type, attribute, filterFunc);
         } else {
@@ -353,9 +387,19 @@ Dataframe.prototype.getMasksForQuery = function (query, errors) {
 Dataframe.prototype.filterFuncForQueryObject = function (query) {
     var filterFunc = _.identity;
 
-    if (query.ast !== undefined) {
+    var ast = query.ast;
+    if (ast !== undefined) {
         var generator = new ExpressionCodeGenerator('javascript');
-        filterFunc = generator.functionForAST(query.ast, {'*': 'value'});
+        var columnName = this.normalizeAttributeName(query.attribute, query.type);
+        if (columnName === undefined) {
+            // Trust that this is still single-attribute. Doubtful idea.
+            var plan = new ExpressionPlan(this, ast);
+            plan.compile();
+            filterFunc = plan.rootNode.executor;
+        } else {
+            ast = generator.transformASTForNullGuards(ast, {value: columnName}, this);
+            filterFunc = generator.functionForAST(ast, {'*': 'value'});
+        }
         // Maintained only for earlier range queries from histograms, may drop soon:
     } else if (query.start !== undefined && query.stop !== undefined) {
         // Range:
@@ -487,10 +531,15 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
  * TODO: Take in Set objects, not just Mask.
  * @param {DataframeMask} masks
  * @param {SimCL} simulator
- * @returns {Promise.<Array<Buffer>>}
+ * @returns {Promise.<Array<Buffer>>} updated arrays - false if no-op
  */
 Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulator) {
     logger.debug('Starting Filtering Data In-Place by DataframeMask');
+    var that = this;
+
+    if (masks === this.lastMasks) {
+        return Q(false);
+    }
 
     var start = Date.now();
 
@@ -499,7 +548,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     // TODO: These buffers are initialized in a different event loop and we want to no-op before they're ready.
     var rawSimBuffers = rawdata.buffers.simulator;
     if (rawSimBuffers.forwardsEdgeWeights === undefined || rawSimBuffers.backwardsEdgeWeights === undefined) {
-        return Q({});
+        return Q(false);
     }
     /** @type {DataframeData} */
     var newData = makeEmptyData();
@@ -536,6 +585,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     var originalEdges = rawdata.hostBuffers.unsortedEdges;
     //var originalForwardsEdges = rawdata.hostBuffers.forwardsEdges.edgesTyped;
 
+    // We start unsorted because we're working with the rawdata first.
     var unsortedEdgeMask = new Uint32Array(this.typedArrayCache.unsortedEdgeMask.buffer, 0, numEdges);
 
     var map = rawdata.hostBuffers.forwardsEdges.edgePermutationInverseTyped;
@@ -640,6 +690,25 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     newData.numElements.backwardsWorkItems = newData.hostBuffers.backwardsEdges.workItemsTyped.length / 4;
     // TODO: NumMidPoints and MidEdges
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Copy Buffer Overlays
+    ///////////////////////////////////////////////////////////////////////////
+
+    _.each(this.bufferOverlays, function (val, key) {
+        var alias = val.alias;
+        var type = val.type;
+        var originalName = val.originalName;
+
+        var newBuffer = that.getLocalBuffer(originalName).constructor(masks.maskSize()[type]);
+        var rawBuffer = that.rawdata.localBuffers[alias];
+
+        masks.mapIndexes(type, function (rawIndex, i) {
+            newBuffer[i] = rawBuffer[rawIndex];
+        });
+
+        newData.localBuffers[alias] = newBuffer;
+    });
+
     //////////////////////////////////
     // SIMULATOR BUFFERS.
     //////////////////////////////////
@@ -658,8 +727,6 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     var newCurPoints = new Float32Array(this.typedArrayCache.newCurPoints.buffer, 0, numPoints * 2);
 
     var filteredSimBuffers = this.data.buffers.simulator;
-
-    var that = this;
 
     return Q.all([
         rawSimBuffers.prevForces.read(tempPrevForces),
@@ -802,6 +869,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
         _.each(_.keys(simulator.versions.buffers), function (key) {
             simulator.versions.buffers[key] += 1;
         });
+        simulator.versions.tick++;
 
         that.lastMasks.point = unsortedMasks.point;
         that.lastMasks.edge = unsortedMasks.edge;
@@ -1099,16 +1167,35 @@ Dataframe.prototype.getAllBuffers = function (type) {
 
 /// Buffer reset capability, specific to local buffers for now to make highlight work:
 
-Dataframe.prototype.overlayLocalBuffer = function (name, alias, values) {
+Dataframe.prototype.overlayLocalBuffer = function (type, name, alias, values) {
     if (values) {
-        var newBuffer = this.getLocalBuffer(name).constructor(values.length);
+        var newUnfilteredBuffer = this.getLocalBuffer(name).constructor(values.length); // Used to get constructor, does not care about contents
         for (var i=0; i< values.length; i++) {
-            newBuffer[i] = values[i];
+            newUnfilteredBuffer[i] = values[i];
         }
-        this.data.localBuffers[alias] = newBuffer;
+
+        // Update rawdata (unfiltered)
+        this.rawdata.localBuffers[alias] = newUnfilteredBuffer;
+
+        var numFilteredElements = this.lastMasks.maskSize()[type];
+
+        // TODO figure out how to generically assigned to edges (since some are strides of 2, some are 1)
+        if (name === 'edgeColors') {
+            numFilteredElements = this.lastMasks.maskSize()[type] * 2;
+        }
+
+        var newFilteredBuffer = newUnfilteredBuffer.constructor(numFilteredElements);
+
+        // Filter and toss into data.
+        // TODO: This is shared code between filtering code and here.
+        this.lastMasks.mapIndexes(type, function (indexInRaw, i) {
+            newFilteredBuffer[i] = newUnfilteredBuffer[indexInRaw];
+        });
+
+        this.data.localBuffers[alias] = newFilteredBuffer;
     }
     if (this.hasLocalBuffer(name) && this.hasLocalBuffer(alias)) {
-        this.bufferOverlays[name] = alias;
+        this.bufferOverlays[name] = {type: type, alias: alias, originalName: name};
     } else {
         throw new Error('Invalid overlay of ' + name + ' to ' + alias);
     }
@@ -1128,9 +1215,11 @@ Dataframe.prototype.hasLocalBuffer = function (name) {
     return this.data.localBuffers[name] !== undefined || this.rawdata.localBuffers[name] !== undefined;
 };
 
-Dataframe.prototype.getLocalBuffer = function (name) {
+Dataframe.prototype.getLocalBuffer = function (name, unfiltered) {
+    var data = unfiltered ? this.rawdata : this.data;
+
     if (this.canResetLocalBuffer(name)) {
-        var alias = this.bufferOverlays[name];
+        var alias = this.bufferOverlays[name] && this.bufferOverlays[name].alias; // Guard against no overlay
         // Prevents a possible race condition resetting a buffer alias/overlay:
         if (this.hasLocalBuffer(alias)) {
             name = alias;
@@ -1138,7 +1227,7 @@ Dataframe.prototype.getLocalBuffer = function (name) {
             this.resetLocalBuffer(alias);
         }
     }
-    var res = this.data.localBuffers[name];
+    var res = data.localBuffers[name];
     if (!res) {
         throw new Error("Invalid Local Buffer: " + name);
     }
@@ -1280,7 +1369,7 @@ Dataframe.prototype.getRowsCompact = function (indices, type) {
 /** Answers the type for the column name and type (point/edge). */
 Dataframe.prototype.getDataType = function (columnName, type) {
     // Assumes that types don't change after filtering
-    return this.rawdata.attributes[type][columnName].type;
+    return this.rawdata.attributes[type][columnName] && this.rawdata.attributes[type][columnName].type;
 };
 
 var LargeColumnProperties = ['values', 'aggregations'];
@@ -1321,6 +1410,34 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     return attributes[columnName].values;
 };
 
+function numberSignifiesUndefined(value) {
+    return isNaN(value) || value === 0x7FFFFFFF;
+}
+
+function dateSignifiesUndefined(value) {
+    var dateObj = new Date(value);
+    return isNaN(testDate.getTime());
+}
+
+
+function valueSignifiedUndefined(value) {
+    switch (typeof value) {
+        case 'undefined':
+            return true;
+        case 'string':
+            // TODO retire 'n/a'
+            return value === '\0' || value === 'n/a';
+        case 'number':
+            return numberSignifiesUndefined(value);
+        case 'date':
+            return dateSignifiesUndefined(value);
+        case 'object':
+            return _.isNull(value);
+        default:
+            return false;
+    }
+}
+
 /**
  * @typedef {Object} Aggregations
  * @property {String} dataType
@@ -1329,12 +1446,18 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
  * @property {Boolean} isIntegral
  * @property {Boolean} isContinuous
  * @property {Boolean} isCategorical
+ * @property {Boolean} isQuantitative
+ * @property {Boolean} isOrdered
+ * @property {Boolean} isDiverging
+ * @property {Boolean} hasPositive
+ * @property {Boolean} hasNegative
  * @property {Number} count
  * @property {Number} countDistinct
  * @property {Object.<Number>} distinctValues count of instances by value
- * @property {Number} maxValue
- * @property {Number} minValue
+ * @property {Object} maxValue
+ * @property {Object} minValue
  * @property {Number} averageValue
+ * @property {Number} sum
  * @property {Object} binning
  */
 
@@ -1381,6 +1504,9 @@ var AggTypes = [
     'countDistinct', 'distinctValues', 'isCategorical'
 ];
 
+/**
+ * @returns {Aggregations}
+ */
 ColumnAggregation.prototype.getSummary = function () {
     return _.object(AggTypes, _.map(AggTypes, function (aggType) {
         return this.getAggregationByType(aggType);
@@ -1396,19 +1522,27 @@ ColumnAggregation.prototype.runAggregationForAggType = function (aggType) {
         case 'isContinuous':
         case 'isQuantitative':
         case 'isOrdered':
+            this.inferDataType();
+            break;
         case 'isDiverging':
         case 'hasPositive':
         case 'hasNegative':
-            this.inferDataType();
+            this.inferDivergence();
             break;
         case 'count':
             this.aggregations.count = this.column.values.length;
             break;
-        case 'sum':
         case 'minValue':
         case 'maxValue':
+        case 'sum':
         case 'averageValue':
-            this.fixedAllocationNumericAggregations();
+            if (this.getAggregationByType('isNumeric')) {
+                this.fixedAllocationNumericAggregations();
+            } else {
+                this.minMaxGenericAggregations();
+                this.updateAggregationTo('sum', null);
+                this.updateAggregationTo('averageValue', null);
+            }
             break;
         case 'countDistinct':
         case 'distinctValues':
@@ -1426,11 +1560,32 @@ ColumnAggregation.prototype.isIntegral = function (value) {
     return parseInt(value) == value; // jshint ignore:line
 };
 
+ColumnAggregation.prototype.minMaxGenericAggregations = function () {
+    var minValue = null, maxValue = null, value, values = this.column.values, numValues = this.getAggregationByType('count');
+    var isLessThan;
+    switch (this.getAggregationByType('dataType')) {
+        case 'string':
+            isLessThan = function (a, b) { return a.localeCompare(b) < 0; };
+            break;
+        default:
+            isLessThan = function (a, b) { return a < b; };
+    }
+    for (var i=0; i < numValues; i++) {
+        value = values[i];
+        if (valueSignifiedUndefined(value)) { continue; }
+        if (minValue === null || isLessThan(value, minValue)) { minValue = value; }
+        if (maxValue === null || isLessThan(maxValue, value)) { maxValue = value; }
+    }
+    this.updateAggregationTo('minValue', minValue);
+    this.updateAggregationTo('maxValue', maxValue);
+};
+
 ColumnAggregation.prototype.fixedAllocationNumericAggregations = function () {
     var minValue = Infinity, maxValue = -Infinity, sum = 0,
         value = 0, values = this.column.values, numValues = this.getAggregationByType('count');
     for (var i=0; i < numValues; i++) {
         value = values[i];
+        if (numberSignifiesUndefined(value)) { continue; }
         if (value < minValue) { minValue = value; }
         else if (value > maxValue) { maxValue = value; }
         sum += parseFloat(value);
@@ -1452,6 +1607,7 @@ ColumnAggregation.prototype.countDistinct = function (limit) {
     var distinctCounts = {}, numDistinct = 0, minValue = Infinity, maxValue = -Infinity;
     for (var i = 0; i < numValues; i++) {
         var value = values[i];
+        if (valueSignifiedUndefined(value)) { continue; }
         if (value < minValue) { minValue = value; }
         else if (value > maxValue) { maxValue = value; }
         if (numDistinct > limit) { continue; }
@@ -1478,12 +1634,15 @@ ColumnAggregation.prototype.countDistinct = function (limit) {
     this.updateAggregationTo('isCategorical' , isCategorical);
 };
 
+var OrderedDataTypes = ['number', 'integer', 'string', 'date'];
+
 ColumnAggregation.prototype.inferDataType = function () {
     var values = this.column.values;
     var numValues = this.getAggregationByType('count');
     var value, isNumeric = true, isIntegral = true, jsType;
     for (var i=0; i<numValues; i++) {
         value = values[i];
+        if (valueSignifiedUndefined(value)) { continue; }
         jsType = typeof value;
         if (isNumeric) {
             isNumeric = isNumeric && !isNaN(value);
@@ -1504,12 +1663,19 @@ ColumnAggregation.prototype.inferDataType = function () {
         summary.dataType = 'string';
     }
     summary.isQuantitative = summary.isContinuous;
-    summary.isOrdered = _.contains(['number', 'integer', 'string'], summary.dataType);
-    var hasNegative = this.getAggregationByType('minValue') < 0,
-        hasPositive = this.getAggregationByType('maxValue') > 0;
-    summary.hasPositive = hasPositive;
-    summary.hasNegative = hasNegative;
-    summary.isDiverging = hasNegative && hasPositive;
+    summary.isOrdered = _.contains(OrderedDataTypes, summary.dataType);
+    this.updateAggregations(summary);
+};
+
+ColumnAggregation.prototype.inferDivergence = function () {
+    var isNumeric = this.getAggregationByType('isNumeric'),
+        hasNegative = isNumeric && this.getAggregationByType('minValue') < 0,
+        hasPositive = isNumeric && this.getAggregationByType('maxValue') > 0,
+        summary = {
+            hasPositive: hasPositive,
+            hasNegative: hasNegative,
+            isDiverging: hasNegative && hasPositive
+        };
     this.updateAggregations(summary);
 };
 
@@ -1625,6 +1791,19 @@ Dataframe.prototype.serializeColumns = function (target, options) {
     serialize(toSerialize, options.compress, target);
 };
 
+/** Return a promise of a string CSV representation of the dataframe
+ */
+Dataframe.prototype.formatAsCsv = function (type) {
+    var that = this;
+
+    var compact = that.getRowsCompact(undefined, type);
+    var promiseStringify = Q.denodeify(csv.stringify);
+    console.log('compact header: ', compact.header);
+    var structuredArrays = [compact.header].concat(compact.values);
+
+    return promiseStringify(structuredArrays);
+
+};
 
 //////////////////////////////////////////////////////////////////////////////
 // Aggregations and Histograms
@@ -1654,9 +1833,9 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
         var dataType = that.getDataType(attribute, type);
 
         if (mode !== 'countBy' && dataType !== 'string') {
-            return that.histogram(attribute, binningHint, goalNumberOfBins, indices, type);
+            return that.histogram(attribute, binningHint, goalNumberOfBins, indices, type, dataType);
         } else {
-            return that.countBy(attribute, binningHint, indices, type);
+            return that.countBy(attribute, binningHint, indices, type, dataType);
         }
     };
 
@@ -1713,7 +1892,7 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
 };
 
 
-Dataframe.prototype.countBy = function (attribute, binning, indices, type) {
+Dataframe.prototype.countBy = function (attribute, binning, indices, type, dataType) {
     var values = this.getColumnValues(attribute, type);
 
     // TODO: Get this value from a proper source, instead of hard coding.
@@ -1726,6 +1905,7 @@ Dataframe.prototype.countBy = function (attribute, binning, indices, type) {
     var rawBins = {};
     for (var i = 0; i < indices.length; i++) {
         var val = values[i];
+        if (valueSignifiedUndefined(val)) { continue; }
         rawBins[val] = (rawBins[val] || 0) + 1;
     }
 
@@ -1748,6 +1928,7 @@ Dataframe.prototype.countBy = function (attribute, binning, indices, type) {
     if (otherKeys.length === 1) {
         bins[otherKeys[0]] = rawBins[otherKeys[0]];
     } else if (otherKeys.length > 1) {
+        // TODO ensure that this _other bin can be selected and it turn into a correct AST query.
         var sum = _.reduce(otherKeys, function (memo, key) {
             return memo + rawBins[key];
         }, 0);
@@ -1760,6 +1941,7 @@ Dataframe.prototype.countBy = function (attribute, binning, indices, type) {
 
     return Q({
         type: 'countBy',
+        dataType: dataType,
         numValues: numValues,
         numBins: _.keys(bins).length,
         bins: bins
@@ -1812,7 +1994,7 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
         bottomVal = min;
         topVal = max;
         binWidth = range / (numBins - 1);
-        isCountBy = true;
+        isCountBy = range <= maxBinCount;
     } else if (goalNumberOfBins) {
         numBins = goalNumberOfBins;
         bottomVal = min;
@@ -1869,7 +2051,6 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
         maxValue: topVal
     };
 };
-
 
 // Counts occurences of type that matches type of time attr.
 Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, start, stop, timeAggregation) {
@@ -2008,7 +2189,7 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
 };
 
 
-Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, indices, type) {
+Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, indices, type, dataType) {
     // Binning has binWidth, minValue, maxValue, and numBins
 
     // Disabled because filtering is expensive, and we now have type safety coming from
@@ -2016,9 +2197,6 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
     // values = _.filter(values, function (x) { return !isNaN(x)});
 
     var values = this.getColumnValues(attribute, type);
-    if (indices !== undefined) {
-        values = _.map(indices, function (idx) { return values[idx]; });
-    }
     var aggregations = this.getColumnAggregations(attribute, type);
 
     var numValues = aggregations.getAggregationByType('countDistinct');
@@ -2056,6 +2234,7 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
 
     var retObj = {
         type: binning.isCountBy ? 'countBy' : 'histogram',
+        dataType: dataType,
         numBins: numBins,
         binWidth: binWidth,
         numValues: numValues,
@@ -2087,12 +2266,18 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
     bins = Array.apply(null, new Array(numBins)).map(function () { return 0; });
     binValues = new Array(numBins);
 
+
+    // When iterating through values, we make sure to use the full value array and an
+    // indices "mask" over it. This is because each histogram brush move produces a single
+    // new (large) array of indices. Then each separate histogram can use the already existing
+    // values array and the single indices array to compute bins without any large allocations.
     var binId, value;
     for (i = 0; i < indices.length; i++) {
         // Here we use an optimized "Floor" because we know it's a smallish, positive number.
         // TODO: Have to be careful because floating point error.
-        // In particular, we need to math math as closely as possible on filters.
+        // In particular, we need to match math as closely as possible in expressions.
         value = values[indices[i]];
+        if (numberSignifiesUndefined(value)) { continue; }
         binId = ((value - bottomVal) / binWidth) | 0;
         bins[binId]++;
         if (binValues[binId] === undefined) {
@@ -2389,6 +2574,7 @@ Dataframe.prototype.encapsulateEdges = function (edges, numPoints, oldEncapsulat
 
     return {
         //Uint32Array
+        //out degree by node idx
         degreesTyped: degreesTyped,
 
         //Uint32Array [(srcIdx, dstIdx), ...]
@@ -2409,7 +2595,7 @@ Dataframe.prototype.encapsulateEdges = function (edges, numPoints, oldEncapsulat
         //Int32Array [(first edge number, number of sibling edges)]
         workItemsTyped: workItemsTyped,
 
-        //Uint32Array [work item number node belongs to]
+        //Uint32Array [work item number by node idx]
         srcToWorkItem: srcToWorkItem,
 
         edgeStartEndIdxsTyped: edgeStartEndIdxsTyped

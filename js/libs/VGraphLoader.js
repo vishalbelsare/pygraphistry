@@ -4,6 +4,7 @@ var Q = require('q');
 var _ = require('underscore');
 var pb = require('protobufjs');
 var path = require('path');
+var moment = require('moment');
 
 var util = require('../util.js');
 var weakcc = require('../weaklycc.js');
@@ -13,6 +14,7 @@ var clientNotification = require('../clientNotification.js');
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:data:vgraphloader');
 var perf        = require('common/perfStats.js').createPerfMonitor();
+
 
 var builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
 if (builder === null) {
@@ -99,6 +101,23 @@ var attributeLoaders = function(graph) {
           target: EDGE,
           default: graph.setEdgeWeight,
           values: undefined
+        },
+        // PoinTitle and edgeTitle are handled in their own special hacky way.
+        // They are loaded outside of the loader mechanism
+        // Without these two dummy entries, decode1 would discard encodings for
+        // PointTitle and edgeTitle as invalid.
+        pointTitle: {
+            load: function () { return Q(); },
+            type: 'string',
+            target: VERTEX,
+            default: function () { return Q(); }
+        },
+        edgeTitle: {
+            load: function () { return Q(); },
+            type: 'string',
+            target: EDGE,
+            default: function () { return Q(); }
+
         }
     };
 }
@@ -220,7 +239,6 @@ var mappers = {
 }
 
 
-
 function wrap(mappings, loaders) {
     var res = {}
     for (var a in loaders) {
@@ -282,7 +300,7 @@ function load(graph, dataset) {
 }
 
 
-function loadDataframe(graph, attrs, numPoints, numEdges, encodings) {
+function loadDataframe(graph, attrs, numPoints, numEdges, aliases, graphInfo) {
     var edgeAttrsList = _.filter(attrs, function (value) {
         return value.target === EDGE;
     });
@@ -298,7 +316,8 @@ function loadDataframe(graph, attrs, numPoints, numEdges, encodings) {
         return [value.name, value];
     }));
 
-    _.extend(graph.dataframe.bufferAliases, encodings);
+    _.extend(graph.dataframe.bufferAliases, aliases);
+    _.extend(graph.dataframe.metadata, graphInfo);
     graph.dataframe.load(edgeAttrs, 'edge', numEdges);
     graph.dataframe.load(pointAttrs, 'point', numPoints);
 }
@@ -311,10 +330,9 @@ function decode0(graph, vg, metadata)  {
     notifyClientOfSizesForAllocation(graph.socket, vg.nedges, vg.nvertices);
 
     var attrs = getAttributes0(vg);
-    loadDataframe(graph, attrs, vg.nvertices, vg.nedges, {});
+    loadDataframe(graph, attrs, vg.nvertices, vg.nedges, {}, {});
     logger.debug('Graph has attribute: %o', _.pluck(attrs, 'name'));
 
-    var vertices;
     var edges = new Array(vg.nedges);
     var dimensions = [1, 1];
 
@@ -323,19 +341,9 @@ function decode0(graph, vg, metadata)  {
         edges[i] = [e.src, e.dst];
     }
 
+    var vertices = lookupInitialPosition(vg, attrs);
 
-    // Do the vertices already exist in the serialized version?
-    var xObj = _.find(vg.double_vectors, function (o) { return o.name === 'x'; });
-    var yObj = _.find(vg.double_vectors, function (o) { return o.name === 'y'; });
-
-    // Load vertices from protobuf Vertex message
-    if (xObj && yObj) {
-        logger.trace('Loading previous vertices from xObj');
-        vertices = new Array(vg.nvertices);
-        for (var i = 0; i < vg.nvertices; i++) {
-            vertices[i] = [xObj.values[i], yObj.values[i]];
-        }
-    } else {
+    if (vertices === undefined) {
         clientNotification.loadingStatus(graph.socket, 'Initializing positions');
         vertices = computeInitialPositions(vg.nvertices, edges, dimensions, graph.socket);
     }
@@ -451,27 +459,89 @@ function computeInitialPositions(nvertices, edges, dimensions) {
 }
 
 
+function lookupInitialPosition(vg, vectors) {
+    var x = _.find(vectors, function (o) { return o.name === 'x'; });
+    var y = _.find(vectors, function (o) { return o.name === 'y'; });
+
+    if (x && y) {
+        logger.trace('Loading previous vertices from xObj');
+        var vertices = new Array(vg.nvertices);
+        for (var i = 0; i < vg.nvertices; i++) {
+            vertices[i] = [x.values[i], y.values[i]];
+        }
+        return vertices;
+    } else {
+        return undefined;
+    }
+}
+
+
 function getVectors0(vg) {
     return vg.string_vectors.concat(vg.uint32_vectors,
                                     vg.int32_vectors,
                                     vg.double_vectors);
 }
 
+function castToMoment (value) {
+    var momentVal;
+    if (typeof(value) === 'number') {
+        // First attempt unix seconds constructor
+        momentVal = moment.unix(value);
+
+        // If not valid, or unreasonable year, try milliseconds constructor
+        if (!momentVal.isValid() || momentVal.year() > 5000 || momentVal.year() < 500) {
+            momentVal = moment(value);
+        }
+
+    } else {
+        momentVal = moment(value);
+    }
+
+    return momentVal;
+}
+
 
 function getAttributes0(vg) {
     var vectors = getVectors0(vg);
     var attrs = [];
+
     for (var i = 0; i < vectors.length; i++) {
         var v = vectors[i];
         if (v.values.length > 0) {
+            var type = typeof(v.values[0]);
+
+            // Attempt to infer date types when possible
+            // Check if name contains time or date
+            if ((/time/i).test(v.name) || (/date/i).test(v.name)) {
+                logger.debug('Attempting to cast ' + v.name + ' to a moment object.');
+                var testMoment = castToMoment(v.values[0]);
+                var isValidMoment = testMoment.isValid();
+
+                if (isValidMoment) {
+                    logger.debug('Successfully cast ' + v.name + ' as a moment.');
+                    type = 'date';
+
+                    var newValues = v.values.map(function (val) {
+                        var date = castToMoment(val);
+                        return date.valueOf(); // Represent date as a number
+                    });
+
+                    v.values = newValues;
+
+                } else {
+                    logger.debug('Failed to cast ' + v.name + ' as a moment.');
+                }
+            }
+
             attrs.push({
                 name: v.name,
                 target : v.target,
-                type: typeof(v.values[0]),
+                type: type,
                 values: v.values
             });
         }
     }
+
     return attrs;
 }
 
@@ -518,9 +588,12 @@ function getVectors1(vg) {
 
 function getAttributes1(vg) {
     var vectors = getVectors1(vg);
-    var attrs = {};
+    var nattrs = {};
+    var eattrs = {};
+
     _.each(vectors, function (v) {
         if (v.values.length > 0) {
+            var attrs = v.target === VERTEX ? nattrs : eattrs;
             attrs[v.name] = {
                 name: v.name,
                 target : v.target,
@@ -529,30 +602,106 @@ function getAttributes1(vg) {
             };
         }
     });
-    return attrs;
+
+    return {
+        nodes: nattrs,
+        edges: eattrs
+    };
+}
+
+
+function sameKeys(o1, o2){
+    var k1 = _.keys(o1);
+    var k2 = _.keys(o2)
+    var ki = _.intersection(k1, k2);
+    return k1.length === k2.length && k2.length === ki.length;
+}
+
+
+function getSimpleEncodings(encodings, loaders, target) {
+    // These encodings are handled in their own special way.
+    var blacklist = ['source', 'destination', 'nodeId'];
+
+    var sane = _.pick(encodings, function (enc, graphProperty) {
+        if (_.contains(blacklist, graphProperty)) {
+            return false;
+        }
+
+        if (!(graphProperty in loaders)) {
+            console.warn('In encodings, unknown graph property:', graphProperty);
+            return false;
+        }
+
+        if (!_.all(loaders[graphProperty], function (loader) { return loader.target == target; })) {
+            console.warn('Wrong target type (node/edge) for graph property', graphProperty);
+            return false;
+        }
+        if (enc.attributes.length !== 1) {
+            console.warn('Support for multiple attributes not implemented yet for', graphProperty);
+            return false;
+        }
+        return true;
+    });
+
+    return _.object(_.map(sane, function (enc, graphProperty) {
+        return [graphProperty, enc.attributes[0]];
+    }));
+}
+
+
+function checkMetadata(metadata, vg, vgAttributes) {
+    if (metadata.nodes.length === 0 || metadata.edges.length === 0) {
+        throw new Error('Nodes or edges missing!');
+    }
+
+    if (metadata.nodes.length > 1 || metadata.edges.length > 1) {
+        throw new Error('K-partite graphs support not implemented yet!');
+    }
+
+    var nodesMetadata = metadata.nodes[0];
+    var edgesMetadata = metadata.edges[0];
+
+    logger.debug('Node attributes metadata:', nodesMetadata.attributes);
+    logger.debug('Edge attributes metadata:', edgesMetadata.attributes);
+    logger.debug('VGraph has node attributes:', _.pluck(vgAttributes.nodes, 'name'));
+    logger.debug('VGraph has edge attributes:', _.pluck(vgAttributes.edges, 'name'));
+
+    if (!sameKeys(nodesMetadata.attributes, vgAttributes.nodes) ||
+        !sameKeys(edgesMetadata.attributes, vgAttributes.edges)) {
+        throw new Error('Discrepenties between metadata and VGraph attributes');
+    }
+    if (nodesMetadata.count !== vg.nvertices || edgesMetadata.count !== vg.nedges) {
+        throw new Error('Discrepenties in number of nodes/edges between metadata and VGraph');
+    }
+
+    return {
+        'nodes': nodesMetadata,
+        'edges': edgesMetadata
+    };
 }
 
 
 function decode1(graph, vg, metadata)  {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
-          vg.version, vg.name, vg.nvertices, vg.nedges);
+                 vg.version, vg.name, vg.nvertices, vg.nedges);
 
+    var vgAttributes = getAttributes1(vg);
+    var graphInfo = checkMetadata(metadata, vg, vgAttributes);
     notifyClientOfSizesForAllocation(graph.socket, vg.nedges, vg.nvertices);
-
-    var attrs = getAttributes1(vg);
-    var encodings = _.omit(metadata.view.encodings, 'source', 'destination');
-    loadDataframe(graph, attrs, vg.nvertices, vg.nedges, encodings);
-    logger.debug('Graph has attribute:', _.pluck(attrs, 'name'));
 
     var edges = new Array(vg.nedges);
     for (var i = 0; i < vg.edges.length; i++) {
         var e = vg.edges[i];
         edges[i] = [e.src, e.dst];
     }
-
+    // TODO Check if x/y are bound in graphInfo.nodes.encodings
     var dimensions = [1, 1];
-    clientNotification.loadingStatus(graph.socket, 'Initializing positions');
-    var vertices = computeInitialPositions(vg.nvertices, edges, dimensions);
+
+    var vertices = lookupInitialPosition(vg, _.values(vgAttributes.nodes));
+    if (vertices === undefined) {
+        clientNotification.loadingStatus(graph.socket, 'Initializing positions');
+        vertices = computeInitialPositions(vg.nvertices, edges, dimensions, graph.socket);
+    }
 
     var loaders = attributeLoaders(graph);
     var mapper = mappers[metadata.mapper];
@@ -562,23 +711,25 @@ function decode1(graph, vg, metadata)  {
     }
     loaders = wrap(mapper.mappings, loaders);
     logger.trace('Attribute loaders:', loaders);
-    logger.trace('Encodings:', metadata.view.encodings);
 
-    _.each(encodings, function (mapped, vname) {
-        if (!(mapped in attrs)) {
-            logger.warn('Column "' + mapped + '" mapped onto "' + vname + '" does not exists! Skipping...');
-            return;
-        }
+    var nodeEncodings = getSimpleEncodings(graphInfo.nodes.encodings, loaders, VERTEX);
+    var edgeEncodings = getSimpleEncodings(graphInfo.edges.encodings, loaders, EDGE);
 
-        var attr = attrs[mapped];
-        var loaderArray = loaders[vname];
 
+    var flatAttributeArray = _.values(vgAttributes.nodes).concat(_.values(vgAttributes.edges));
+    var allEncodings =  _.extend({}, nodeEncodings, edgeEncodings);
+    loadDataframe(graph, flatAttributeArray, vg.nvertices, vg.nedges, allEncodings, graphInfo);
+
+    _.each(loaders, function (loaderArray, graphProperty) {
         _.each(loaderArray, function (loader) {
-            if (attr.target != loader.target) {
-                logger.warn('Vertex/Node attribute mismatch for ' + vname);
+            var encodings = loader.target == VERTEX ? nodeEncodings : edgeEncodings;
+            var attributes = loader.target == VERTEX ? vgAttributes.nodes : vgAttributes.edges;
+            if (graphProperty in encodings) {
+                var attributeName = encodings[graphProperty];
+                logger.debug('Loading values for', graphProperty, 'from attribute', attributeName);
+                loader.values = attributes[attributeName].values;
             } else {
-                logger.trace('Mapping "' + vname + '" onto "' + attr.name + '"');
-                loader.values = attr.values;
+                logger.debug('Loading default values for', graphProperty);
             }
         });
     });

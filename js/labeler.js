@@ -21,15 +21,32 @@ function pickTitleField (attribs, prioritized) {
 function defaultLabels(graph, indices, type) {
 
     var rows = graph.dataframe.getRows(indices, type);
-    return rows.map(function (row) {
+
+    var structuredData = rows.map(function (row) {
+        var title = row._title;
+        var filteredRow = _.omit(row, '_title');
+
+        var unsortedColumns = _.map(_.keys(filteredRow), function (columnName) {
+            var dataType = graph.dataframe.getDataType(columnName, type);
+
+            return {
+                value: filteredRow[columnName],
+                key: columnName,
+                dataType: dataType
+            };
+        });
+
+        var sortedColumns = _.sortBy(unsortedColumns, function (obj) {
+            return obj.key;
+        });
+
         return {
-            title: row._title,
-            columns: _.sortBy(
-                _.pairs(_.omit(row, '_title')),
-                function (kvPair) { return kvPair[0]; }
-            )
+            title: title,
+            columns: sortedColumns
         };
     });
+
+    return structuredData;
 }
 
 

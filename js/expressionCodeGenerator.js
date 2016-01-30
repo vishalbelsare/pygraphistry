@@ -57,6 +57,9 @@ if (!Math.trunc) {
 //</editor-fold>
 
 function literalExpressionFor (value) {
+    if (_.isNumber(value)) {
+        return value.toString();
+    }
     return JSON.stringify(value);
 }
 
@@ -374,6 +377,81 @@ ExpressionCodeGenerator.prototype = {
         }, this);
         localized.isLocalized = true;
         return localized;
+    },
+
+    /**
+     * Wraps the AST in clauses that check for values signifying undefined, for k-partite / partitioned domains.
+     * @param {ClientQueryAST} ast
+     * @param {Object.<ColumnName>} attributeData
+     * @param {Dataframe} dataframe
+     * @returns {ClientQueryAST}
+     */
+    transformASTForNullGuards: function (ast, attributeData, dataframe) {
+        if (this.isPredicate(ast)) {
+            var guards = [];
+            _.each(attributeData, function (attributeName) {
+                var nativeType = dataframe.getDataType(attributeName.attribute, attributeName.type),
+                    identifier = {type: 'Identifier', name: attributeName.type + ':' + attributeName.attribute};
+                switch (nativeType) {
+                    case 'float':
+                    case 'double':
+                        guards.push({
+                            type: 'BinaryPredicate',
+                            operator: '=',
+                            left: identifier,
+                            right: {type: 'Literal', dataType: 'number', value: NaN}
+                        });
+                        break;
+                    case 'integer':
+                        guards.push({
+                            type: 'BinaryPredicate',
+                            operator: '=',
+                            left: identifier,
+                            right: {type: 'Literal', dataType: 'integer', value: 0x7FFFFFFF}
+                        });
+                        break;
+                    case 'number':
+                        // TODO distinguish float/double from integer.
+                        guards.push({
+                            type: 'BinaryPredicate',
+                            operator: '=',
+                            left: identifier,
+                            right: {type: 'Literal', dataType: 'number', value: NaN}
+                        });
+                        guards.push({
+                            type: 'BinaryPredicate',
+                            operator: '=',
+                            left: identifier,
+                            right: {type: 'Literal', dataType: 'integer', value: 0x7FFFFFFF}
+                        });
+                        break;
+                    case 'string':
+                        guards.push({
+                            type: 'BinaryPredicate',
+                            operator: '=',
+                            left: identifier,
+                            right: {type: 'Literal', dataType: 'number', value: '\0'}
+                        });
+                        // TODO retire 'n/a'
+                        guards.push({
+                            type: 'BinaryPredicate',
+                            operator: '=',
+                            left: identifier,
+                            right: {type: 'Literal', dataType: 'integer', value: 'n/a'}
+                        });
+                        break;
+                }
+            });
+            return _.reduce(guards, function (memo, guard) {
+                return {
+                    type: 'BinaryPredicate',
+                    operator: 'OR',
+                    left: guard,
+                    right: memo
+                };
+            }, ast);
+        }
+        return ast;
     },
 
     functionForPlanNode: function (planNode, bindings) {
