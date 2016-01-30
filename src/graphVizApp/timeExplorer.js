@@ -110,6 +110,7 @@ function TimeExplorer (socket, $div) {
     };
 
     this.queryChangeSubject = new Rx.ReplaySubject(1);
+    this.zoomRequests = new Rx.Subject(1);
 
 
     this.queryChangeSubject.filter(function (timeDesc) {
@@ -147,6 +148,8 @@ function TimeExplorer (socket, $div) {
             dividedData.user = data;
             dividedData.maxBinValue = dividedData.all.maxBin;
 
+            debug('DIVIDED DATA: ', dividedData);
+
             that.panel.model.set(dividedData);
         }).subscribe(_.identity, util.makeErrorHandler('Error getting time data stream'));
 
@@ -169,6 +172,7 @@ function TimeExplorer (socket, $div) {
     //     }).subscribe(_.identity, util.makeErrorHandler('Error getting time data stream'));
 
     this.queryChangeSubject.onNext(this.timeDescription);
+    this.setupZoom();
 
     this.panel = new TimeExplorerPanel(socket, $div, this);
 
@@ -254,9 +258,68 @@ TimeExplorer.prototype.getMultipleTimeData = function (timeType, timeAttr, start
             var obj = arguments[i];
             ret[obj.name] = obj;
         }
+        console.log('RET: ', ret);
         return ret;
     });
-}
+};
+
+TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, numLeft, numRight) {
+    console.log('GOT ZOOM TIME REQUEST: ', arguments);
+    // Negative if zoom out, positive if zoom in.
+    var adjustedZoom = 1.0 - zoomFactor;
+
+    var params = {
+        numLeft: numLeft,
+        numRight: numRight,
+        zoom: adjustedZoom
+    };
+
+    this.zoomRequests.onNext(params);
+};
+
+TimeExplorer.prototype.setupZoom = function () {
+    var that = this;
+    this.zoomRequests.flatMap(function (request) {
+        return that.queryChangeSubject
+            .take(1)
+            .map(function (desc) {
+                return {request: request, timeDesc: desc};
+            });
+    }).map(function (data) {
+        var req = data.request;
+        var desc = data.timeDesc;
+
+        var total = req.numLeft + req.numRight + 1;
+        var numStart = (new Date(desc.start)).getTime();
+        var numStop = (new Date(desc.stop)).getTime();
+
+        var diff = numStop - numStart;
+
+        // Deltas are represented as zoom in, so change towards a smaller window
+        var startDelta = (req.numLeft/total) * diff * req.zoom;
+        var stopDelta = (req.numRight/total) * diff * req.zoom;
+
+        var newStart = numStart + Math.round(startDelta);
+        var newStop = numStop - Math.round(stopDelta);
+
+        // Guard against stop < start
+        if (newStart >= newStop) {
+            newStart = newStop - 1;
+        }
+
+        var newStartDate = new Date(newStart);
+        var newStopDate = new Date(newStop);
+
+        console.log('New Start, Stop: ', newStartDate, newStopDate);
+
+        that.modifyTimeDescription({
+            start: newStart,
+            stop: newStop
+        });
+
+    }).subscribe(_.identity, util.makeErrorHandler('zoom request handler'));
+
+};
 
 
 
@@ -363,7 +426,6 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             // Don't do first time work.
             // TODO: Should this be initialize instead?
             if (model.get('initialized')) {
-                console.log('INITIALIZED');
                 updateTimeBar(model.get('vizContainer'), model);
                 return this;
             }
@@ -375,8 +437,6 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             model.set('vizContainer', vizContainer);
             var vizHeight = '' + TIME_BAR_HEIGHT + 'px';
             vizContainer.height(vizHeight);
-            console.log('SETTING VIZCONTAINER HEIGHT TO: ', vizHeight);
-            console.log('vizContainer: ', vizContainer);
             initializeTimeBar(vizContainer, model);
             updateTimeBar(vizContainer, model);
 
@@ -650,8 +710,60 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             // but only when data is first added
             if (!this.enableMouseInteractions) {
                 this.setupVerticalLine();
+                this.setupZoomInteraction();
                 this.enableMouseInteractions = true;
             }
+        },
+
+        setupZoomInteraction: function () {
+            var that = this;
+            var zoomBase = 1.05;
+
+            this.$timeExplorerVizContainer.onAsObservable('mousewheel')
+                // TODO Replace this with correct Rx5 handler.
+                .sample(20)
+                .do(function (wheelEvent) {
+                    wheelEvent.preventDefault();
+                })
+                .map(function(wheelEvent) {
+                    var zoomFactor = (wheelEvent.deltaY < 0 ? zoomBase : 1.0 / zoomBase) || 1.0;
+
+                    var xPos = wheelEvent.pageX;
+                    var selectedBin = that.mainBarView.getBinForPosition(xPos);
+                    var mainBarData = that.model.get('all');
+                    var numBins = mainBarData.numBins;
+
+                    var numLeft = selectedBin;
+                    var numRight = numBins - selectedBin - 1;
+
+                    // TODO: Prevent this case in general?
+                    if (numLeft < 0 || numRight < 0) {
+                        return;
+                    }
+
+                    var explorer = that.model.get('explorer');
+                    explorer.zoomTimeRange(zoomFactor, numLeft, numRight);
+                    // explorer.modifyTimeDescription({
+                    //     start: leftCutoff,
+                    //     stop: rightCutoff
+                    // });
+
+
+                    // var bounds = $eventTarget[0].getBoundingClientRect();
+                    // var zoomFactor = (wheelEvent.deltaY < 0 ? zoomBase : 1.0 / zoomBase) || 1.0;
+
+                    // var canvasPos = {
+                    //     x: (wheelEvent.clientX - bounds.left),
+                    //     y: (wheelEvent.clientY - bounds.top)
+                    // };
+
+                    // var screenPos = camera.canvas2ScreenCoords(canvasPos.x, canvasPos.y, canvas);
+                    // debug('Mouse screen pos=(%f,%f)', screenPos.x, screenPos.y);
+
+                    // return zoom(camera, zoomFactor, screenPos);
+                }).subscribe(_.identity, util.makeErrorHandler('zoom handle on time explorer'));
+
+
         },
 
         handleMouseDown: function (evt) {
