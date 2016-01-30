@@ -8,13 +8,12 @@
 
 var debug       = require('debug')('graphistry:StreamGL:poi');
 var _           = require('underscore');
-var sprintf     = require('sprintf-js').sprintf;
-var moment      = require('moment');
 var $           = window.$;
-var Rx          = require('rx');
+var Rx          = require('rxjs/Rx.KitchenSink');
                   require('./rx-jquery-stub');
 
 var picking     = require('./picking.js');
+var contentFormatter = require('./graphVizApp/contentFormatter.js');
 
 //0--1: the closer to 1, the more likely that unsampled points disappear
 var APPROX = 0.5;
@@ -217,13 +216,13 @@ function genLabel (instance, $labelCont, idx, info) {
     };
 
     setter
-        .sample(3)
+        .inspectTime(3)
         .do(function (data) {
             res.dim = data.dim;
             res.idx = data.idx;
             $elt.empty();
         })
-        .flatMapLatest(instance.getLabelDom)
+        .switchMap(instance.getLabelDom)
         .do(function (domTree) {
             if (domTree) {
                 $elt.append(domTree);
@@ -248,23 +247,22 @@ function cacheKey(idx, dim) {
 }
 
 
-function fetchLabel (instance, idx, dim) {
-    instance.state.socket.emit('get_labels', {dim: dim, indices: [idx]}, function (err, data) {
+function fetchLabel (instance, labelCacheEntry, idx, dim) {
+    instance.state.socket.emit('get_labels', {dim: dim, indices: [idx]}, function (err, labels) {
         if (err) {
             console.error('get_labels', err);
             return;
         }
-        var labelCache = instance.state.labelCache[cacheKey(idx, dim)];
-        if (labelCache === undefined) {
+        if (labelCacheEntry === undefined) {
             console.warn('label cache entry not found', cacheKey(idx, dim));
+            return;
+        }
+        // TODO: Represent this in a cleaner way from the server
+        if (labels[0].title) {
+            labelCacheEntry.onNext(labels[0]);
         } else {
-            // TODO: Represent this in a cleaner way from the server
-            if (!data[0].title) {
-                // Invalid label request
-                labelCache.onNext(false);
-            } else {
-                labelCache.onNext(createLabelDom(instance, dim, data[0]));
-            }
+            // Invalid label request/response
+            labelCacheEntry.onNext(false);
         }
     });
 }
@@ -298,8 +296,8 @@ function createLabelDom(instance, dim, labelObj) {
     } else {
         // Filter out 'hidden' columns
         // TODO: Encode this in a proper schema instead of hungarian-ish notation
-        labelObj.columns = _.filter(labelObj.columns, function (pair) {
-            return (pair[0][0] !== '_');
+        labelObj.columns = _.filter(labelObj.columns, function (col) {
+            return (col.key[0] !== '_');
         });
 
         $cont.addClass('graph-label-default');
@@ -307,33 +305,45 @@ function createLabelDom(instance, dim, labelObj) {
                 .append($labelType);
         var $table= $('<table>');
         var labelRequests = instance.state.labelRequests;
-        labelObj.columns.forEach(function (pair) {
-            var key = pair[0], val = pair[1],
-                $row = $('<tr>').addClass('graph-label-pair'),
-                $key = $('<td>').addClass('graph-label-key').text(key);
-            var entry = sprintf('%s', val);
-            if (key.indexOf('Date') > -1 && typeof(val) === 'number') {
-                entry = $.datepicker.formatDate('d-M-yy', new Date(val));
-            } else if (key.search(/time/i) !== -1 && typeof(val) === 'number') {
-                entry = moment.unix(val).format();
-            } else if (!isNaN(val) && val % 1 !== 0) {
-                entry = sprintf('%.4f', val);
+        labelObj.columns.forEach(function (col) {
+            var key = col.key, val = col.value;
+
+            // Basic null guards:
+            if (key === undefined || val === undefined || val === null) {
+                return;
             }
+
+            var entry = contentFormatter.defaultFormat(val, col.dataType);
+            // Null value guard
+            if (entry === undefined || entry === null) {
+                return;
+            }
+
+            var $row = $('<tr>').addClass('graph-label-pair'),
+                $key = $('<td>').addClass('graph-label-key').text(key);
+
             var $wrap = $('<div>').addClass('graph-label-value-wrapper').html(entry);
-            var $exclude = $('<a class="exclude-by-key-value">').html('&nbsp;<i class="fa fa-ban"></i>');
-            $exclude.data({placement: 'right', toggle: 'tooltip'});
-            $exclude.attr('title', 'Exclude by ' + $key.text() + '=' + entry);
-            $exclude.click(function () {
-                labelRequests.onNext({exclude_query: {query: queryForKeyAndValue(key, val)}});
+
+            var $icons = $('<div>').addClass('graph-label-icons');
+            $wrap.append($icons);
+            var $exclude = $('<a class="exclude-by-key-value">').html('<i class="fa fa-ban"></i>');
+            $exclude.data({placement: 'bottom', toggle: 'tooltip'});
+            $exclude.attr('title', 'Exclude if ' + $key.text() + '=' + entry);
+            $exclude.tooltip({container: 'body'})
+                .data('bs.tooltip').tip().addClass('label-tooltip'); // so labels can remove
+            $exclude.on('click', function () {
+                labelRequests.onNext({excludeQuery: {query: queryForKeyAndValue(key, val)}});
             });
-            $wrap.append($exclude);
             var $filter = $('<a class="filter-by-key-value">').html('<i class="fa fa-filter"></i>');
-            $filter.data({placement: 'right', toggle: 'tooltip'});
-            $filter.attr('title', 'Filter by ' + $key.text() + '=' + entry);
-            $filter.click(function () {
-                labelRequests.onNext({filter_query: {query: queryForKeyAndValue(key, val)}});
+            $filter.data({placement: 'bottom', toggle: 'tooltip'});
+            $filter.attr('title', 'Filter for ' + $key.text() + '=' + entry);
+            $filter.tooltip({container: 'body'})
+                .data('bs.tooltip').tip().addClass('label-tooltip'); // so labels can remove
+            $filter.on('click', function () {
+                labelRequests.onNext({filterQuery: {query: queryForKeyAndValue(key, val)}});
             });
-            $wrap.append($filter);
+            $icons.append($exclude).append($filter);
+
             var $val = $('<td>').addClass('graph-label-value').append($wrap);
             $row.append($key).append($val);
             $table.append($row);
@@ -342,46 +352,35 @@ function createLabelDom(instance, dim, labelObj) {
     }
     $cont.append($title).append($content);
 
-    return {
-        labelObj: labelObj,
-        labelDOM: $cont
-    };
+    return $cont;
 }
 
 
 //TODO batch fetches
-//instance * int -> ReplaySubject_1 {labelObj, labelDOM}
+//instance * int -> ReplaySubject_1 labelObj
 function getLabel(instance, data) {
     // TODO: Make cache aware of both idx and dim
     var idx = data.idx;
     var dim = data.dim;
 
-    if (!instance.state.labelCache[cacheKey(idx, dim)]) {
-        instance.state.labelCache[cacheKey(idx, dim)] = new Rx.ReplaySubject(1);
-        fetchLabel(instance, idx, dim);
+    var key = cacheKey(idx, dim),
+        cache = instance.state.labelCache;
+    if (!cache[key]) {
+        var labelObs = new Rx.ReplaySubject(1);
+        cache[key] = labelObs;
+        fetchLabel(instance, labelObs, idx, dim);
     }
-    return instance.state.labelCache[cacheKey(idx, dim)];
+    return cache[key];
 }
 
 
 //instance * int -> ReplaySubject_1 ?DOM
 function getLabelDom (instance, data) {
    return getLabel(instance, data).map(function (l) {
-        if (!l) {
-            return l;
-        }
-        return l.labelDOM;
-   });
-}
-
-
-//instance * int -> ReplaySubject_1 LabelObject
-function getLabelObject (instance, data) {
-   return getLabel(instance, data).map(function (l) {
-        if (!l) {
-            return l;
-        }
-        return l.labelObj;
+       if (!l) {
+           return l;
+       }
+       return createLabelDom(instance, data.dim, l);
    });
 }
 
@@ -422,6 +421,7 @@ function emptyCache (instance) {
 
 /**
  * @param {socket.io socket} socket
+ * @param {Rx.Subject} labelRequests
  * @returns POIHandler
  */
 function init(socket, labelRequests) {
@@ -438,8 +438,11 @@ function init(socket, labelRequests) {
             // Rx.Subject
             labelRequests: labelRequests,
 
-            //[ ReplaySubject_1 ?HtmlString ]
+            //[ ReplaySubject_1 labelObj ]
             labelCache: {},
+
+            //[ $DOM ]
+            labelDOMCache: {},
 
             //{<int> -> {elt: $DOM, idx: int} }
             activeLabels: {},
@@ -458,7 +461,7 @@ function init(socket, labelRequests) {
 
         //int -> Subject ?HtmlString
         getLabelDom: getLabelDom.bind('', instance),
-        getLabelObject: getLabelObject.bind('', instance),
+        getLabelObject: getLabel.bind('', instance),
 
         getActiveApprox: getActiveApprox,
         finishApprox: finishApprox,

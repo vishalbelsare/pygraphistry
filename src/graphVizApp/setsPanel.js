@@ -2,7 +2,7 @@
 
 var $       = window.$;
 //var _       = require('underscore');
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
 require('../rx-jquery-stub');
 var Handlebars = require('handlebars');
 var Backbone   = require('backbone');
@@ -264,6 +264,7 @@ var VizSetView = Backbone.View.extend({
         var bindings = this.bindingsFor(this.model);
         var html = this.template(bindings);
         this.$el.html(html);
+        $('[data-toggle="tooltip"]', this.$el).tooltip();
         return this;
     },
     delete: function (/*event*/) {
@@ -476,7 +477,7 @@ SetsPanel.prototype = {
         var sourceType = srcSystemSet.id;
         switch (sourceType) {
             case 'selection':
-                this.activeSelection.take(1).flatMapLatest(function (activeSelection) {
+                this.activeSelection.take(1).switchMap(function (activeSelection) {
                     var specification = {masks: VizSetModel.prototype.maskFromVizSlice(activeSelection)};
                     return this.commands.create.sendWithObservableResult(sourceType, specification).do(function (createSetResult) {
                         this.handleCreateSetResult(createSetResult);
@@ -487,7 +488,7 @@ SetsPanel.prototype = {
                     _.identity, util.makeErrorHandler('Creating a Set from Selection'));
                 break;
             case 'filtered':
-                this.filtersSubject.take(1).flatMapLatest(function (filtersCollection) {
+                this.filtersSubject.take(1).switchMap(function (filtersCollection) {
                     var userFilters = filtersCollection.select(function (filter) { return !filter.isSystem(); });
                     var specification = {
                         title: _.map(userFilters, function (filter) { return filter.get('query').inputString; }).join(' and '),

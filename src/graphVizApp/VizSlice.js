@@ -2,6 +2,11 @@
 
 var _ = require('underscore');
 
+var DimCodes = {
+    point: 1,
+    edge: 2
+};
+
 /**
  * @typedef {Object} VizSliceElement
  * @property {Number} dim - Enum: 1 for point, 2 for edge.
@@ -141,23 +146,20 @@ VizSlice.prototype = {
 
     containsIndexByDim: function (idx, dim) {
         switch (dim) {
-            case 1:
-                if (indexOfInSorted(this.point, idx) > -1) {
+            case DimCodes.point:
+                if (this.point !== undefined && indexOfInSorted(this.point, idx) > -1) {
                     return true;
                 }
                 break;
-            case 2:
-                if (indexOfInSorted(this.edge, idx) > -1) {
+            case DimCodes.edge:
+                if (this.edge !== undefined && indexOfInSorted(this.edge, idx) > -1) {
                     return true;
                 }
                 break;
         }
-        for (var i=0; i< this.separateItems.length; i++) {
-            if (this.separateItems[i].dim === dim && this.separateItems[i].idx === idx) {
-                return true;
-            }
-        }
-        return false;
+        return _.find(this.separateItems, function (separateItem) {
+            return separateItem.dim === dim && separateItem.idx === idx;
+        }) !== undefined;
     },
 
     getPointIndexValues: function () {
@@ -223,10 +225,10 @@ VizSlice.prototype = {
         var result = this.copy();
         if (this._isMaskShaped()) {
             switch (selection.dim) {
-                case 1:
+                case DimCodes.point:
                     result.point = removeOrAddFromSortedArray(result.point, selection.idx);
                     break;
-                case 2:
+                case DimCodes.edge:
                     result.edge = removeOrAddFromSortedArray(result.edge, selection.idx);
                     break;
             }

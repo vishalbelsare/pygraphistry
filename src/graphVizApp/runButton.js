@@ -2,7 +2,7 @@
 
 //var debug   = require('debug')('graphistry:StreamGL:graphVizApp:runButton');
 var $       = window.$;
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 var _       = require('underscore');
 
@@ -37,7 +37,7 @@ module.exports = function (appState, socket, urlParams, isAutoCentering) {
                 disable,
                 Rx.Observable.timer(numTicks)
             ).take(1).map(_.constant(Rx.Observable.return(false))))
-        .flatMapLatest(_.identity);
+        .switchMap(_.identity);
 
     var runActions =
         appState.apiActions
@@ -52,7 +52,7 @@ module.exports = function (appState, socket, urlParams, isAutoCentering) {
             .do(function (wasOn) {
                 $bolt.toggleClass('toggle-on', !wasOn);
             })
-            .flatMapLatest(function (wasOn) {
+            .switchMap(function (wasOn) {
                 var isOn = !wasOn;
                 appState.simulateOn.onNext(isOn);
                 return isOn ? Rx.Observable.interval(INTERACTION_INTERVAL) : Rx.Observable.empty();

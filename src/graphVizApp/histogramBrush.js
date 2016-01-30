@@ -2,7 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:histogramBrush');
 var $       = window.$;
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 var _       = require('underscore');
 
@@ -47,6 +47,7 @@ function HistogramBrush(socket, filtersPanel, doneLoading) {
     this.lastSelection = undefined;
     this.activeDataframeAttributes = [];
     this.dataframeAttributeChange = new Rx.Subject();
+    this.histogramsPanelReady = new Rx.ReplaySubject(1);
 
     // Grab global stats at initialization
     this.globalStats = new Rx.ReplaySubject(1);
@@ -100,6 +101,8 @@ HistogramBrush.prototype.initializeGlobalData = function(socket, filtersPanel, u
         }, this);
         this.updateHistogramData(filteredAttributes, data, true);
 
+        this.histogramsPanelReady.onNext(this.histogramsPanel);
+
     }.bind(this)).subscribe(this.globalStats, util.makeErrorHandler('Global stat aggregate call'));
 };
 
@@ -109,6 +112,12 @@ HistogramBrush.prototype.setupFiltersInteraction = function(filtersPanel, poi) {
     handleFiltersResponse(filtersPanel.control.filtersResponsesSubject, poi);
 };
 
+HistogramBrush.prototype.setupApiInteraction = function (apiActions) {
+    this.histogramsPanelReady
+        .do(function (panel) { panel.setupApiInteraction(apiActions); })
+        .subscribe(_.identity, util.makeErrorHandler('HistogramBrush.setupApiInteraction'));
+};
+
 
 /**
  * Take stream of selections and drags and use them for histograms
@@ -116,17 +125,17 @@ HistogramBrush.prototype.setupFiltersInteraction = function(filtersPanel, poi) {
 HistogramBrush.prototype.setupMarqueeInteraction = function(marquee) {
     marquee.selections.map(function (val) {
         return {type: 'selection', sel: val};
-    }).merge(marquee.drags.sample(DRAG_SAMPLE_INTERVAL).map(function (val) {
+    }).merge(marquee.drags.inspectTime(DRAG_SAMPLE_INTERVAL).map(function (val) {
             return {type: 'drag', sel: val};
         })
     ).merge(this.dataframeAttributeChange.map(function () {
             return {type: 'dataframeAttributeChange', sel: this.lastSelection};
         }, this)
-    ).flatMapLatest(function (selContainer) {
+    ).switchMap(function (selContainer) {
         return this.globalStats.map(function (globalVal) {
             return {type: selContainer.type, sel: selContainer.sel, globalStats: globalVal};
         });
-    }.bind(this)).flatMapLatest(function (data) {
+    }.bind(this)).switchMap(function (data) {
         var binning = {};
         var attributeNames = _.pluck(this.activeDataframeAttributes, 'name');
         _.each(this.activeDataframeAttributes, function (attr) {
@@ -138,15 +147,15 @@ HistogramBrush.prototype.setupMarqueeInteraction = function(marquee) {
         });
         var attributes = _.map(attributeNames, function (name) {
             var normalizedName = name,
-                dataType = data.globalStats.histograms[name].dataType;
+                graphType = data.globalStats.histograms[name].graphType;
             if (normalizedName.indexOf(':') !== -1) {
                 var nameParts = normalizedName.split(':', 2);
                 normalizedName = nameParts[1];
-                dataType = nameParts[0];
+                graphType = nameParts[0];
             }
             return {
                 name: normalizedName,
-                type: dataType
+                type: graphType
             };
         });
 
@@ -280,10 +289,14 @@ HistogramBrush.prototype.aggregatePointsAndEdges = function(params) {
                 }
             });
             _.each(pointHistsData, function (val) {
-                val.dataType = 'point';
+                if (val !== undefined) {
+                    val.graphType = 'point';
+                }
             });
             _.each(edgeHistsData, function (val) {
-                val.dataType = 'edge';
+                if (val !== undefined) {
+                    val.graphType = 'edge';
+                }
             });
 
             return {success: pointHists.success && edgeHists.success,

@@ -2,7 +2,7 @@
 
 var $       = window.$;
 var _       = require('underscore');
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 var Handlebars = require('handlebars');
 var Backbone = require('backbone');
@@ -42,7 +42,7 @@ var ExclusionCollection = Backbone.Collection.extend({
 
 var ExclusionView = Backbone.View.extend({
     tagName: 'div',
-    className: 'exclusionInspector',
+    className: 'exclusionInspector container-fluid',
     events: {
         'click .disableExclusionButton': 'disable',
         'click .disabledExclusionButton': 'enable',
@@ -69,6 +69,7 @@ var ExclusionView = Backbone.View.extend({
         this.$el.html(html);
 
         this.initEditor();
+        $('[data-toggle="tooltip"]', this.$el).tooltip();
         return this;
     },
     isEditorReadOnly: function () {
@@ -189,8 +190,10 @@ var AllExclusionsView = Backbone.View.extend({
     },
     render: function () {
         var $exclusionButton = $('#exclusionButton');
-        var numElements = this.collection.length;
-        $('.badge', $exclusionButton).text(numElements > 0 ? numElements : '');
+        var numActiveElements = this.collection.filter(function (filterModel) {
+            return !!filterModel.get('enabled');
+        }).length;
+        $('.badge', $exclusionButton).text(numActiveElements > 0 ? numActiveElements : '');
         return this;
     },
     addExclusion: function (exclusion) {
@@ -210,7 +213,7 @@ var AllExclusionsView = Backbone.View.extend({
             $el.remove();
         }
     },
-    addExclusionFromButton: function (evt) {
+    addExclusionFromButton: function (/*evt*/) {
         this.collection.addExclusion({});
     },
     remove: function () {
@@ -240,15 +243,19 @@ function ExclusionsPanel(socket, control, labelRequests) {
     var that = this;
 
     this.labelRequestSubscription = labelRequests.filter(function (labelRequest) {
-        return labelRequest.exclude_query !== undefined;
+        return labelRequest.excludeQuery !== undefined;
     }).do(function (labelRequest) {
-        var exclusion = labelRequest.exclude_query;
+        var exclusion = labelRequest.excludeQuery;
         that.collection.addExclusion(exclusion);
     }).subscribe(_.identity, util.makeErrorHandler('Handling an exclusion from a label'));
 
+    // Initial exclusions list, after which adds should pop open the panel:
     this.control.exclusionsResponsesSubject.take(1).do(function (exclusions) {
         _.each(exclusions, function (exclusion) {
             that.collection.add(new ExclusionModel(exclusion));
+        });
+        that.collection.on('add', function () {
+            that.toggleVisibility(true);
         });
     }).subscribe(_.identity, util.makeErrorHandler('Reading exclusions from workbook'));
     this.collection = new ExclusionCollection([], {
@@ -262,10 +269,6 @@ function ExclusionsPanel(socket, control, labelRequests) {
     // Seed with a fresh exclusions list. Should come from persisted state.
     this.collection.on('change reset add remove', function (/*model, options*/) {
         that.exclusionsSubject.onNext(that.collection);
-    });
-
-    this.collection.on('add', function () {
-        that.toggleVisibility(true);
     });
 
     this.exclusionsSubject.subscribe(

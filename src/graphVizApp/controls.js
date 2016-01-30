@@ -2,8 +2,9 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:controls');
 var $       = window.$;
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
+var d3      = require('d3');
 var _       = require('underscore');
 var Color   = require('color');
 
@@ -21,12 +22,13 @@ var goLiveButton    = require('./goLiveButton.js');
 var colorPicker     = require('./colorpicker.js');
 var externalLink    = require('./externalLink.js');
 var TimeExplorer    = require('./timeExplorer.js');
+var contentFormatter = require('./contentFormatter.js');
 
 // Setup client side controls.
 var encodingPerElementParams = [
     {
-        name: 'pointSize',
-        prettyName: 'Point Size',
+        name: 'pointScaling',
+        displayName: 'Point Size',
         type: 'discrete',
         value: 50.0,
         step: 1,
@@ -34,8 +36,8 @@ var encodingPerElementParams = [
         min: 1
     },
     {
-        name: 'edgeSize',
-        prettyName: 'Edge Size',
+        name: 'edgeScaling',
+        displayName: 'Edge Size',
         type: 'discrete',
         value: 50.0,
         step: 1,
@@ -44,7 +46,7 @@ var encodingPerElementParams = [
     },
     {
         name: 'pointOpacity',
-        prettyName: 'Point Opacity',
+        displayName: 'Point Opacity',
         type: 'discrete',
         value: 100,
         step: 1,
@@ -53,12 +55,18 @@ var encodingPerElementParams = [
     },
     {
         name: 'edgeOpacity',
-        prettyName: 'Edge Opacity',
+        displayName: 'Edge Opacity',
         type: 'discrete',
         value: 100,
         step: 1,
         max: 100,
         min: 0
+    },
+    {
+        name: 'pruneOrphans',
+        displayName: 'Prune Isolated Nodes',
+        type: 'bool',
+        value: false
     }
 ];
 
@@ -72,34 +80,34 @@ function createStyleElement() {
 
 var encodingForLabelParams = [
     {
-        name: 'labels',
-        prettyName: 'Show Labels',
+        name: 'labelsEnabled',
+        displayName: 'Show Labels',
         type: 'bool',
-        value: true,
+        value: true
     },
     {
-        name: 'labelFgColor',
-        prettyName: 'Text Color',
+        name: 'labelForegroundColor',
+        displayName: 'Text Color',
         type: 'color',
         def: new Color('#1f1f33'),
         cb: (function () {
             var sheet = createStyleElement();
             return function (stream) {
-                stream.sample(20).subscribe(function (c) {
+                stream.inspectTime(20).subscribe(function (c) {
                     sheet.text('.graph-label, .graph-label table { color: ' + c.rgbaString() + ' }');
                 });
             };
         }())
     },
     {
-        name: 'labelBgColor',
-        prettyName: 'Background Color',
+        name: 'labelBackgroundColor',
+        displayName: 'Background Color',
         type: 'color',
         def: (new Color('#fff')).alpha(0.9),
         cb: (function () {
             var sheet = createStyleElement();
             return function (stream) {
-                stream.sample(20).subscribe(function (c) {
+                stream.inspectTime(20).subscribe(function (c) {
                     sheet.text('.graph-label .graph-label-container  { background-color: ' + c.rgbaString() + ' }');
                 });
             };
@@ -107,7 +115,7 @@ var encodingForLabelParams = [
     },
     {
         name: 'labelTransparency',
-        prettyName: 'Transparency',
+        displayName: 'Transparency',
         type: 'discrete',
         value: 100,
         step: 1,
@@ -115,17 +123,23 @@ var encodingForLabelParams = [
         min: 0
     },
     {
-        name: 'poi',
-        prettyName: 'Points of Interest',
+        name: 'poiEnabled',
+        displayName: 'Points of Interest',
         type: 'bool',
-        value: true,
+        value: true
+    },
+    {
+        name: 'displayTimeZone',
+        displayName: 'Display Time Zone',
+        type: 'text',
+        value: ''
     }
 ];
 
 
 
 
-function sendLayoutSetting(socket, algorithm, param, value, settingsChanges) {
+function setLayoutParameter(socket, algorithm, param, value, settingsChanges) {
     var update = {};
     var controls = {};
 
@@ -135,14 +149,14 @@ function sendLayoutSetting(socket, algorithm, param, value, settingsChanges) {
     var payload = {
         play: true,
         layout: true,
-        simControls: controls,
+        simControls: controls
     };
 
     debug('Sending layout settings', payload);
     socket.emit('interaction', payload);
     settingsChanges.onNext({
         name: algorithm + '.' + param,
-        value: value,
+        value: value
     });
 }
 
@@ -216,7 +230,7 @@ function clicksFromPopoutControls($elt) {
                     // Stop from propagating to canvas
                     evt.stopPropagation();
                 })
-                .flatMapLatest(function () {
+                .switchMap(function () {
                     return Rx.Observable.fromEvent(elt, 'mouseup');
                 })
                 .map(_.constant(elt));
@@ -267,7 +281,7 @@ function createLegend($elt, urlParams) {
 //  + {type: 'color', name: string, def: CSSColor, cb: (Stream {r,g,b,a}) -> () }
 //  * string -> DOM
 // (Will append at anchor position)
-function controlMaker (urlParams, $anchor, appState, param, type) {
+function controlMaker (urlParams, param, type) {
     var $input;
     if (param.type === 'continuous') {
         $input = $('<input>').attr({
@@ -304,6 +318,25 @@ function controlMaker (urlParams, $anchor, appState, param, type) {
                 .append($('<div>').css({opacity: 0.3, background: 'white'})))
             .append($('<div>').addClass('colorHolder'));
         param.cb(colorPicker.makeInspector($input, urlParams[param.name] ? urlParams[param.name] : param.def));
+    }else if (param.type === 'text') {
+
+        var $innerInput = $('<input>').attr({
+            class: type + '-control-textbox form-control control-textbox',
+            id: param.name,
+            type: 'text'
+        }).data('param', param);
+
+        var $button = $('<button class="btn btn-default control-textbox-button">Set</button>');
+
+        var $wrappedInput = $('<div>').addClass('col-xs-8').addClass('inputWrapper')
+            .css('padding-left', '0px')
+            .append($innerInput);
+        var $wrappedButton = $('<div>').addClass('col-xs-4').addClass('buttonWrapper')
+            .css('padding-left', '0px')
+            .append($button);
+
+        $input = $('<div>').append($wrappedInput).append($wrappedButton);
+
     } else {
         console.warn('Ignoring param of unknown type', param);
         $input = $('<div>').text('Unknown setting type' + param.type);
@@ -313,16 +346,12 @@ function controlMaker (urlParams, $anchor, appState, param, type) {
     var $label = $('<label>').attr({
         for: param.name,
         class: 'control-label col-xs-4'
-    }).text(param.prettyName);
+    }).text(param.displayName);
 
-    var $entry = $('<div>')
+    return $('<div>')
         .addClass('form-group')
         .addClass(param.type === 'color' ? 'colorer' : param.type)
         .append($label, $col);
-
-    $anchor.append($entry);
-
-    return $entry;
 }
 
 
@@ -335,7 +364,7 @@ function createControlHeader($anchor, name) {
 
 function createControls(socket, appState, trigger, urlParams) {
 
-    var rxControls = Rx.Observable.fromCallback(socket.emit, socket)('layout_controls', null)
+    var rxControls = Rx.Observable.bindCallback(socket.emit.bind(socket))('layout_controls', null)
         .map(function (res) {
             if (res && res.success) {
                 debug('Received layout controls from server', res.controls);
@@ -348,12 +377,13 @@ function createControls(socket, appState, trigger, urlParams) {
     var $renderingItems = $('#renderingItems');
     var $anchor = $renderingItems.children('.form-horizontal');
 
-    var makeControl = controlMaker.bind('', urlParams, $anchor, appState);
-
-
     $renderingItems.css({'display': 'block', 'left': '100%'});
-    rxControls
-    .do(function (controls) {
+
+    Rx.Observable.combineLatest(rxControls, appState.viewConfigChanges, function (controls, viewConfig) {
+        var parameters = viewConfig.parameters;
+        // TODO fix this so whitelisted urlParams can update viewConfig.parameters, and then those affect/init values.
+        _.extend(urlParams, parameters);
+
         //workaround: https://github.com/nostalgiaz/bootstrap-switch/issues/446
         setTimeout(function () {
             $('#renderingItems').css({'display': 'none', 'left': '5em'});
@@ -362,20 +392,20 @@ function createControls(socket, appState, trigger, urlParams) {
         //APPEARANCE
         createControlHeader($anchor, 'Appearance');
         _.each(encodingPerElementParams, function (param) {
-            makeControl(param, 'local');
+            $anchor.append(controlMaker(parameters, param, 'local'));
         });
 
         //LABELS
         createControlHeader($anchor, 'Labels');
         _.each(encodingForLabelParams, function (param) {
-            makeControl(param, 'local');
+            $anchor.append(controlMaker(parameters, param, 'local'));
         });
 
         //LAYOUT
         _.each(controls, function (la) {
             createControlHeader($anchor, la.name);
             _.each(la.params, function (param) {
-                makeControl(param, 'layout');
+                $anchor.append(controlMaker(parameters, param, 'layout'));
             });
         });
 
@@ -387,9 +417,9 @@ function createControls(socket, appState, trigger, urlParams) {
             $(input).onAsObservable('switchChange.bootstrapSwitch').subscribe(
                 function () {
                     if ($that.hasClass('layout-checkbox')) {
-                        sendLayoutSetting(socket, param.algoName, param.name, input.checked, appState.settingsChanges);
+                        setLayoutParameter(socket, param.algoName, param.name, input.checked, appState.settingsChanges);
                     } else if ($that.hasClass('local-checkbox')) {
-                        setLocalSetting(param.name, input.checked, appState);
+                        setViewParameter(socket, param.name, input.checked, appState);
                     }
                 },
                 util.makeErrorHandler('menu checkbox')
@@ -406,40 +436,58 @@ function createControls(socket, appState, trigger, urlParams) {
                 $slider.onAsObservable('slide'),
                 $slider.onAsObservable('slideStop')
             ).distinctUntilChanged()
-            .sample(50)
+            .inspectTime(50)
             .subscribe(
                 function () {
                     if ($that.hasClass('layout-menu-slider')) {
-                        sendLayoutSetting(socket, param.algoName,
+                        setLayoutParameter(socket, param.algoName,
                                     param.name, Number($slider.val()), appState.settingsChanges);
                     } else if ($that.hasClass('local-menu-slider')) {
-                        setLocalSetting(param.name, Number($slider.val()), appState);
+                        setViewParameter(socket, param.name, Number($slider.val()), appState);
                     }
                 },
                 util.makeErrorHandler('menu slider')
             );
         });
 
+        $('.control-textbox-button').each(function () {
+            var input = this;
+
+            $(input).onAsObservable('click')
+                .do(function (evt) {
+                    var $button = $(evt.target);
+                    var $input = $button.parent().siblings('.inputWrapper').first()
+                        .children('.control-textbox').first();
+                    var val = $input.val();
+                    var param = $input.data('param');
+
+                    if ($input.hasClass('layout-control-textbox')) {
+                        console.log('Layout control textboxes are not supported yet.');
+                    } else if ($input.hasClass('local-control-textbox')) {
+                        setViewParameter(socket, param.name, val, appState);
+                    }
+
+                })
+                .subscribe(_.identity, util.makeErrorHandler('control text box'));
+        });
+
+
     })
     .subscribe(_.identity, util.makeErrorHandler('createControls'));
 }
 
-function toLog(minPos, maxPos, minVal, maxVal, pos) {
-    var logMinVal = Math.log(minVal);
-    var logMaxVal = Math.log(maxVal);
-    var scale = (logMaxVal - logMinVal) / (maxPos - minPos);
-    return Math.exp(logMinVal + scale * (pos - minPos));
+function logScaling(minPos, maxPos, minVal, maxVal) {
+    return d3.scale.log().domain([minVal, maxVal]).range([minPos, maxPos]);
 }
 
+var PercentScale = d3.scale.linear().domain([0, 1]).range([0, 100]);
+var PointSizeScale = logScaling(1, 100, 0.1, 10);
+var EdgeSizeScale = logScaling(1, 100, 0.1, 10);
 
-function toPercent(pos) {
-    return pos / 100;
-}
 
-
-function setLocalSetting(name, pos, appState) {
+function setViewParameter(socket, name, pos, appState) {
     var camera = appState.renderState.get('camera');
-    var val = 0;
+    var val = pos;
 
     function setUniform(name, value) {
         var uniforms = appState.renderState.get('uniforms');
@@ -451,20 +499,20 @@ function setLocalSetting(name, pos, appState) {
     }
 
     switch (name) {
-        case 'pointSize':
-            val = toLog(1, 100, 0.1, 10, pos);
+        case 'pointScaling':
+            val = PointSizeScale.invert(pos);
             camera.setPointScaling(val);
             break;
-        case 'edgeSize':
-            val = toLog(1, 100, 0.1, 10, pos);
+        case 'edgeScaling':
+            val = EdgeSizeScale.invert(pos);
             camera.setEdgeScaling(val);
             break;
         case 'pointOpacity':
-            val = toPercent(pos);
+            val = PercentScale.invert(pos);
             setUniform('pointOpacity', [val]);
             break;
         case 'edgeOpacity':
-            val = toPercent(pos);
+            val = PercentScale.invert(pos);
             setUniform('edgeOpacity', [val]);
             break;
         case 'labelTransparency':
@@ -472,24 +520,29 @@ function setLocalSetting(name, pos, appState) {
             if (!opControl.length) {
                 opControl = $('<style>').appendTo($('body'));
             }
-            opControl.text('.graph-label { opacity: ' + toPercent(pos) + '; }');
+            val = PercentScale.invert(pos);
+            opControl.text('.graph-label { opacity: ' + val + '; }');
             break;
-        case 'poi':
-            val = pos;
+        case 'displayTimeZone':
+            contentFormatter.setTimeZone(val);
+            break;
+        case 'poiEnabled':
             appState.poiIsEnabled.onNext(val);
             break;
-        case 'labels':
-            if (pos) {
+        case 'labelsEnabled':
+            if (val) {
                 $('.graph-label-container').show();
             } else {
                 $('.graph-label-container').hide();
             }
             break;
-        default:
-            console.error('Unknown local setting', name);
-            return;
     }
 
+    socket.emit('update_view_parameter', {name: name, value: val}, function (response) {
+        if (!response.success) {
+            throw Error('Update view parameter failed.');
+        }
+    });
     appState.settingsChanges.onNext({name: name, value: pos});
 }
 
@@ -582,7 +635,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var brushIsOn = false;
     // Use separate subject so downstream subscribers don't trigger control changes twice.
     // TODO: Figure out the correct pattern for this.
-    var turnOnBrush = new Rx.Subject(1);
+    var turnOnBrush = new Rx.Subject();
     popoutClicks
         .merge(
             Rx.Observable.fromEvent($graph, 'click')
@@ -642,7 +695,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     var marquee = setupMarquee(appState, turnOnMarquee);
     var brush = setupBrush(appState, turnOnBrush);
-    var filtersPanel = new FiltersPanel(socket, appState.labelRequests);
+    var filtersPanel = new FiltersPanel(socket, appState.labelRequests, appState.settingsChanges);
     filtersPanel.setupToggleControl(popoutClicks, $('#filterButton'));
     var exclusionsPanel = new ExclusionsPanel(socket, filtersPanel.control, appState.labelRequests);
     exclusionsPanel.setupToggleControl(popoutClicks, $('#exclusionButton'));
@@ -650,6 +703,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var histogramBrush = new HistogramBrush(socket, filtersPanel, readyForHistograms);
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
     histogramBrush.setupMarqueeInteraction(brush);
+    histogramBrush.setupApiInteraction(appState.apiActions);
     turnOnBrush.first(function (value) { return value === true; }).do(function () {
         togglePanel($('#histogramPanelControl'), $('#histogram.panel'), true);
     }).subscribe(_.identity, util.makeErrorHandler('Enabling the histogram on first brush use.'));
@@ -675,19 +729,19 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     Rx.Observable.zip(
         marquee.drags,
-        marquee.drags.flatMapLatest(function () {
+        marquee.drags.switchMap(function () {
             return marquee.selections.take(1);
         }),
         function(a, b) { return {drag: a, selection: b}; }
     ).subscribe(function (move) {
-        var payload = {play: true, layout: true, marquee: move};
-        socket.emit('interaction', payload);
+        var payload = {marquee: move};
+        socket.emit('move_nodes', payload);
     }, util.makeErrorHandler('marquee error'));
 
 
     //tick stream until canceled/timed out (ends with finalCenter)
     var autoCentering =
-        doneLoading.flatMapLatest(function () {
+        doneLoading.switchMap(function () {
             return Rx.Observable.interval(50)
                 .do(function () { debug('auto center interval'); })
                 .merge(centeringDone)
@@ -729,7 +783,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     appState.apiActions
         .filter(function (e) { return e.event === 'updateSetting'; })
         .do(function (e) {
-            setLocalSetting(e.setting, e.value, appState);
+            setViewParameter(socket, e.setting, e.value, appState);
         }).subscribe(_.identity, util.makeErrorHandler('updateSetting'));
 
     setupCameraApi(appState);

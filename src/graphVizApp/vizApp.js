@@ -4,7 +4,8 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:vizApp');
 var $       = window.$;
-var Rx      = require('rx');
+var _       = require('underscore');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 
 var shortestpaths   = require('./shortestpaths.js');
@@ -20,7 +21,7 @@ var api             = require('./api.js');
 var VizSlice        = require('./VizSlice.js');
 
 
-function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
+function init(socket, initialRenderState, vboUpdates, vboVersions, apiEvents, apiActions,
               workerParams, urlParams) {
     debug('Initializing vizApp.');
     console.log('URL PARAMS: ', urlParams);
@@ -82,13 +83,37 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
 
     var poiIsEnabled = new Rx.ReplaySubject(1);
     poiIsEnabled.onNext(urlParams.hasOwnProperty('poi') ? urlParams.poi : true);
+    apiActions
+        .filter(function (msg) { return msg && (msg.setting === 'poi'); })
+        .do(function (msg) {
+            poiIsEnabled.onNext(msg.value);
+        }).subscribe(_.identity, util.makeErrorHandler('renderPipeline error'));
 
+    var viewConfigChanges = new Rx.ReplaySubject(1);
+    socket.emit('get_view_config', null, function (response) {
+        if (response.success) {
+            debug('Received view config from server', response.viewConfig);
+            viewConfigChanges.onNext(response.viewConfig);
+        } else {
+            throw Error('Failed to get viewConfig');
+        }
+    });
+    viewConfigChanges.do(function (viewConfig) {
+        var parameters = viewConfig.parameters;
+        if (parameters !== undefined) {
+            if (parameters.poiEnabled !== undefined) {
+                poiIsEnabled.onNext(parameters.poiEnabled);
+            }
+        }
+    });
 
     var appState = {
         renderState: initialRenderState,
         vboUpdates: vboUpdates,
+        vboVersions: vboVersions,
         hitmapUpdates: new Rx.ReplaySubject(1),
         cameraChanges: cameraChanges,
+        viewConfigChanges: viewConfigChanges,
         isAnimating: isAnimating,
         labelHover: labelHover,
         poi: poi,
@@ -125,6 +150,7 @@ function init(socket, initialRenderState, vboUpdates, apiEvents, apiActions,
 
     appState.renderingScheduler = new canvas.RenderingScheduler(appState.renderState,
                                                                 appState.vboUpdates,
+                                                                appState.vboVersions,
                                                                 appState.hitmapUpdates,
                                                                 appState.isAnimating,
                                                                 appState.simulateOn,

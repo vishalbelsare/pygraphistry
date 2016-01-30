@@ -1,6 +1,6 @@
 'use strict';
 
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 var _       = require('underscore');
 
@@ -13,7 +13,7 @@ var util            = require('./util.js');
  * @returns {Rx.Observable}
  */
 function encodeEntities(socket, slice) {
-    return Rx.Observable.fromCallback(socket.emit, socket)('get_global_ids', slice.getVizSliceElements())
+    return Rx.Observable.bindCallback(socket.emit.bind(socket))('get_global_ids', slice.getVizSliceElements())
         .do(function (reply) {
             if (!reply || !reply.success) {
                 console.error('Server error on get_global_ids', (reply||{}).error);
@@ -72,7 +72,7 @@ function setupAPIHooks(socket, appState, doneLoading) {
         postEvent(apiEvents, undefined, {event: 'loaded'});
     }).subscribe(_.identity, util.makeErrorHandler('API hook for doneLoading'));
 
-    appState.latestHighlightedObject.flatMapLatest(function (slice) {
+    appState.latestHighlightedObject.switchMap(function (slice) {
         return encodeEntities(socket, slice);
     }).do(function (ids) {
         _.each(event2subscribers.highlighted, function (subscriber) {
@@ -80,7 +80,7 @@ function setupAPIHooks(socket, appState, doneLoading) {
         });
     }).subscribe(_.identity, util.makeErrorHandler('API hook for latestHighlightedObject'));
 
-    appState.activeSelection.flatMapLatest(function (slice) {
+    appState.activeSelection.switchMap(function (slice) {
         return encodeEntities(socket, slice);
     }).do(function (ids) {
         _.each(event2subscribers.selected, function (subscriber) {
@@ -119,7 +119,7 @@ function setupAPIHooks(socket, appState, doneLoading) {
         }).each(function (subscriber) {
             nodeClick(appState, subscriber, e);
         });
-    }).flatMapLatest(function (e) {
+    }).switchMap(function (e) {
         return encodeEntities(socket, e.clickSlice);
     }).do(function (sel) {
         _.each(event2subscribers.clicked, function (subscriber) {
@@ -210,7 +210,7 @@ function nodePosition(appState, subscriber) {
 
 function nodeLabel(appState, subscriber) {
     appState.poi.getLabelObject({dim: 1, idx: subscriber.node.viewIdx}).do(function (label) {
-        console.log('LABLE',label);
+        console.log('LABEL',label);
         postEvent(appState.apiEvents, subscriber, {
             event: 'node.getLabel',
             node: subscriber.node,

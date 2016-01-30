@@ -3,7 +3,7 @@
 
 var $$       = window.Quo;
 var $        = window.$;
-var Rx       = require('rx');
+var Rx       = require('rxjs/Rx.KitchenSink');
                require('../rx-jquery-stub');
 var _        = require('underscore');
 var debug    = require('debug')('graphistry:StreamGL:interaction');
@@ -29,7 +29,7 @@ function setupDrag($eventTarget, camera, appState) {
     var $html = $('html');
 
     return $eventTarget.mousedownAsObservable()
-        .flatMapLatest(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
+        .switchMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
         .filter(function (evt) {
             var $p = $(evt.target);
 
@@ -50,17 +50,19 @@ function setupDrag($eventTarget, camera, appState) {
             }
             return true;
         })
-        .do(function (clickPos) {
-            clickPos.preventDefault();
+        .do(function (/*clickPos*/) {
+            // clickPos.preventDefault();
             $sim.toggleClass('moving', true);
         })
-        .flatMapLatest(function(clickPos) {
+        .switchMap(function(clickPos) {
             return $('html').mousemoveAsObservable()
                 .takeUntil($html.mouseupAsObservable()
                     .do(function () {
                         $sim.toggleClass('moving', false);
                     }))
-                .distinctUntilChanged(function(pos) { return {x: pos.pageX, y: pos.pageY}; })
+                .distinctUntilChanged(function(a, b) {
+                    return (a.x === b.x) && (a.y === b.y);
+                }, function(pos) { return {x: pos.pageX, y: pos.pageY}; })
                 .scan(function(accPos, curPos) {
                     // Calculate the distance moved (since last event) for each move event
 
@@ -96,7 +98,7 @@ function setupMousemove($eventTarget) {
         .filter(function (v) {
             return ! $(v.target).parents('.graph-label.clicked').length;
         })
-        .sample(1)
+        .inspectTime(1)
         .map(function (evt) {
             evt.preventDefault();
             return {
@@ -114,11 +116,11 @@ function setupMousemove($eventTarget) {
 */
 // Camera -> Observable Camera
 // feature-gated by 3d
-function setupRotate(camera) {
+function setupRotate($eventTarget, camera) {
 
     var presses = new Rx.Subject();
 
-    $(document).keydown(function (e) { presses.onNext(e); });
+    $eventTarget.keydown(function (e) { presses.onNext(e); });
 
     var CODES = {LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40};
     var AMT = 5;
@@ -150,8 +152,8 @@ function setupScroll($eventTarget, canvas, camera, appState) {
     var zoomBase = 1.1;
 
     return $eventTarget.onAsObservable('mousewheel')
-        .sample(1)
-        .flatMapLatest(util.observableFilter([appState.marqueeOn, appState.brushOn],
+        .inspectTime(1)
+        .switchMap(util.observableFilter([appState.marqueeOn, appState.brushOn],
             function (val) {
                 return val !== 'done';
             },
@@ -210,8 +212,8 @@ function zoom(camera, zoomFactor, zoomPoint) {
 
 function setupCenter($toggle, curPoints, camera) {
     return $toggle.onAsObservable('click')
-        .sample(1)
-        .flatMapLatest(function () {
+        .inspectTime(1)
+        .switchMap(function () {
             debug('click on center');
             return curPoints.take(1).map(function (curPoints) {
                 var points = new Float32Array(curPoints.buffer);

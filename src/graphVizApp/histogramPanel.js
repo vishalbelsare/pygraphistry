@@ -2,7 +2,7 @@
 
 // var debug   = require('debug')('graphistry:StreamGL:graphVizApp:HistogramsPanel');
 var $       = window.$;
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 var _       = require('underscore');
 var Handlebars = require('handlebars');
@@ -11,6 +11,7 @@ var Backbone = require('backbone');
 var d3 = require('d3');
 
 var util    = require('./util.js');
+var contentFormatter = require('./contentFormatter.js');
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -136,7 +137,7 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             'click .expandHistogramButton': 'expand',
             'click .expandedHistogramButton': 'shrink',
             'click .refreshHistogramButton': 'refresh',
-            'click .topMenu': 'encode',
+            'click .encode-attribute': 'encode',
             'dragstart .topMenu': 'dragStart'
         },
 
@@ -189,16 +190,34 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
                 panel.updateHistogram(vizContainer, histogram, attribute);
             }
 
+            if (!$.urlParam('beta')) {
+                $('.encode-attribute', this.$el).hide();
+            }
+            $('[data-toggle="tooltip"]', this.$el).tooltip();
+
             return this;
         },
 
-        encode: function () {
-            // TODO: BETA flagged feature:
-            if ($('.beta').hasClass('beta')) { return; }
+        encode: function (evt) {
+            var target = $(evt.currentTarget);
+            var encodingSpec = {
+                encodingType: 'color',
+                variation: undefined
+            };
+            if (target.hasClass('encode-size')) {
+                encodingSpec.encodingType = 'size';
+                encodingSpec.variation = 'quantitative';
+            } else if (target.hasClass('encode-color-quantitative')) {
+                encodingSpec.encodingType = 'color';
+                encodingSpec.variation = 'quantitative';
+            } else if (target.hasClass('encode-color-categorical')) {
+                encodingSpec.encodingType = 'color';
+                encodingSpec.variation = 'categorical';
+            }
             var isEncoded = this.model.get('encodingType') !== undefined;
             var dataframeAttribute = this.model.get('attribute');
             var binning = this.model.getSparkLineData();
-            panel.encodeAttribute(dataframeAttribute, isEncoded, binning).take(1).do(function (response) {
+            panel.encodeAttribute(dataframeAttribute, encodingSpec, isEncoded, binning).take(1).do(function (response) {
                 if (response.enabled) {
                     panel.assignEncodingTypeToHistogram(response.encodingType, this.model, response.palette);
                 } else {
@@ -374,13 +393,55 @@ HistogramsPanel.prototype.updateAttribute = function (oldAttr, newAttr, type) {
     });
 };
 
-HistogramsPanel.prototype.encodeAttribute = function (dataframeAttribute, reset, binning) {
+HistogramsPanel.prototype.encodeAttribute = function (dataframeAttribute, encodingSpec, reset, binning) {
     return this.filtersPanel.control.encodeCommand.sendWithObservableResult({
         attribute: dataframeAttribute,
-        encodingType: 'color',
+        encodingType: encodingSpec.encodingType,
+        variation: encodingSpec.variation,
         reset: reset,
         binning: binning
     });
+};
+
+HistogramsPanel.prototype.setupApiInteraction = function (apiActions) {
+    //FIXME should route all this via Backbone calls, not DOM
+    apiActions
+        .filter(function (command) { return command.event === 'encode'; })
+        .do(function (command) {
+            console.log('adding hist panel', command.attribute);
+            this.updateAttribute(null, command.attribute, 'sparkLines');
+        }.bind(this))
+        .flatMap(function (command) {
+            //poll until exists on DOM & return
+            return Rx.Observable.interval(10).timeInterval()
+                .map(function () {
+                    return $('.histogramDiv .attributeName')
+                        .filter(function() {
+                            return $(this).text() === command.attribute;
+                        }).parents('.histogramDiv');
+                }.bind(this))
+                .filter(function ($hist) { return $hist.length; })
+                .take(1)
+                .do(function ($histogramPanel) {
+                    console.log('made, encoding', $histogramPanel);
+                    this.encodeAttribute(command.attribute, command.encodingType);
+                    var route =  {
+                        'size': {
+                            'quantitative': '.encode-size',
+                            'categorical': '.encode-size'
+                        },
+                        'color': {
+                            'quantitative': '.encode-color-quantitative',
+                            'categorical': '.encode-color-categorical'
+                        }
+                    };
+                    var routed = route[command.encodingType][command.variation];
+                    var $i = $(routed, $histogramPanel);
+                    $i[0].click();
+                    console.log('clicked on', $i, routed);
+                }.bind(this));
+        }.bind(this))
+        .subscribe(_.identity, util.makeErrorHandler('HistogramsPanel.setupApiInteractions'));
 };
 
 
@@ -484,19 +545,15 @@ HistogramsPanel.prototype.updateHistogramFiltersFromFiltersSubject = function ()
             attribute = histFilter.attribute;
         }
         var matchingFilter = this.findFilterForHistogramFilter(attribute);
-        if (matchingFilter !== undefined) {
+        if (matchingFilter === undefined) {
+            histogramFiltersToRemove[attribute] = histFilter;
+        } else {
             // Update histogram filter from filter:
             var query = matchingFilter.query;
-            if (query.start !== undefined || query.stop !== undefined) {
-                histFilter.start = query.start;
-                histFilter.stop = query.stop;
-            } else if (query.equals !== undefined) {
-                histFilter.equals = query.equals;
-            } else if (query.ast !== undefined) {
+            if (query.ast !== undefined) {
                 updateHistogramFilterFromExpression(histFilter, query.ast);
             }
-        } else {
-            histogramFiltersToRemove[attribute] = histFilter;
+            _.extend(histFilter, _.pick(query, ['start', 'stop', 'equals']));
         }
     }, this);
     _.each(histogramFiltersToRemove, function (histFilter, attribute) {
@@ -546,11 +603,11 @@ HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
             // Leave blank until/if we can determine this better?
             dataType = histFilter.type || 'string';
         }
+        if (histFilter.ast !== undefined) {
+            query.ast = histFilter.ast;
+        }
         var matchingFilter = this.findFilterForHistogramFilter(attribute);
-        if (matchingFilter !== undefined) {
-            // Assume that only interaction has happened, only update the query for now:
-            matchingFilter.set('query', query);
-        } else {
+        if (matchingFilter === undefined) {
             filtersCollection.addFilter({
                 attribute: attribute,
                 controlType: 'histogram',
@@ -558,6 +615,9 @@ HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
                 histogramControl: histFilter,
                 query: query
             });
+        } else {
+            // Assume that only interaction has happened, only update the query for now:
+            matchingFilter.set('query', query);
         }
     }, this);
 };
@@ -567,7 +627,7 @@ HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
 // Histogram Widget
 //////////////////////////////////////////////////////////////////////////////
 
-function toStackedObject(local, total, idx, key, attr, numLocal, numTotal, distribution) {
+function toStackedObject(local, total, idx, name, attr, numLocal, numTotal, distribution) {
     var stackedObj;
     // If we want to normalize to a distribution as percentage of total.
     // TODO: Finish implementing this...
@@ -597,7 +657,7 @@ function toStackedObject(local, total, idx, key, attr, numLocal, numTotal, distr
 
     stackedObj.total = total;
     stackedObj.local = local;
-    stackedObj.name = key;
+    stackedObj.name = name;
     stackedObj.id = idx;
     stackedObj.attr = attr;
     return stackedObj;
@@ -609,13 +669,20 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
     // TODO: Get this in a cleaner, more extensible way
     var globalBins = globalStats.bins || [];
     var stackedBins = [];
+    var binValues = globalStats.binValues;
+    var name;
     if (type === 'countBy') {
         var globalKeys = _.keys(globalBins);
         _.each(_.range(Math.min(globalKeys.length, limit)), function (idx) {
             var key = globalKeys[idx];
             var local = bins[key] || 0;
             var total = globalBins[key];
-            var stackedObj = toStackedObject(local, total, idx, key, attr, numLocal, numTotal, distribution);
+            if (binValues && (!!binValues[idx] || binValues[idx] === 0)) {
+                name = contentFormatter.shortFormat(binValues[idx], globalStats.dataType, attr);
+            } else {
+                name = key;
+            }
+            var stackedObj = toStackedObject(local, total, idx, name, attr, numLocal, numTotal, distribution);
             stackedBins.push(stackedObj);
         });
 
@@ -628,15 +695,15 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
         _.each(zippedBins, function (stack, idx) {
             var local = stack[0] || 0;
             var total = stack[1] || 0;
-            var name;
-            var binValues = globalStats.binValues;
             // Guard against null or undefined:
-            if (binValues && !!binValues[idx] || binValues[idx] === 0) {
-                name = prettyPrint(binValues[idx], attr);
+            if (binValues && (!!binValues[idx] || binValues[idx] === 0)) {
+                name = contentFormatter.shortFormat(binValues[idx], globalStats.dataType, attr);
             } else {
                 var start = globalStats.minValue + (globalStats.binWidth * idx);
                 var stop = start + globalStats.binWidth;
-                name = prettyPrint(start, attr) + ' : ' + prettyPrint(stop, attr);
+                var firstHalf = contentFormatter.shortFormat(start, globalStats.dataType, attr);
+                var secondHalf = contentFormatter.shortFormat(stop, globalStats.dataType, attr);
+                name = firstHalf + ' : ' + secondHalf;
             }
             var stackedObj = toStackedObject(local, total, idx, name, attr, numLocal, numTotal, distribution);
             stackedBins.push(stackedObj);
@@ -787,13 +854,13 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     upperTooltip.selectAll('.globalTooltip').data([''])
         .enter().append('tspan')
         .attr('class', 'globalTooltip')
-        .attr('fill', color('global'))
+        .attr('fill', colorHighlighted('global'))
         .text('global, ');
 
     upperTooltip.selectAll('.localTooltip').data([''])
         .enter().append('tspan')
         .attr('class', 'localTooltip')
-        .attr('fill', color('local'))
+        .attr('fill', colorHighlighted('local'))
         .text('local');
 
     //////////////////////////////////////////////////////////////////////////
@@ -899,7 +966,7 @@ HistogramsPanel.prototype.handleHistogramDown = function (redrawCallback, id, gl
     var $element = $(col[0][0]);
     var $parent = $element.parent();
 
-    var startBin = $element.attr('binnumber');
+    var startBin = +($element.attr('binnumber')); // Cast to number from string
     var attr = $element.attr('attribute');
     var numBins = globalStats.sparkLines[attr].numBins;
     var lastHistogramFilter = this.histogramFilters[attr];
@@ -1072,49 +1139,6 @@ function heightDelta(d, xScale) {
     }
 }
 
-function maybePrecise(v) {
-    var diff = Math.abs(v - Math.round(v));
-    if (diff > 0.1) {
-        return v.toFixed(1);
-    } else {
-        return v;
-    }
-}
-
-function prettyPrint (d, attributeName, noLimit) {
-    if (!isNaN(d)) {
-        d = Number(d); // Cast to number in case it's a string
-
-        if (attributeName.indexOf('Date') > -1) {
-            return d3.time.format('%m/%d/%Y')(new Date(d));
-        }
-
-        var abs = Math.abs(d);
-        var precision = 4;
-        if (abs > 1000000000000 || (d !== 0 && Math.abs(d) < 0.00001)) {
-            return String(d.toExponential(precision));
-        } else if (abs > 1000000000) {
-            return String( maybePrecise(d/1000000000) ) + 'B';
-        } else if (abs > 1000000) {
-            return String( maybePrecise(d/1000000) ) + 'M';
-        } else if (abs > 1000) {
-            return String( maybePrecise(d/1000) ) + 'K';
-        } else {
-            d = Math.round(d*1000000) / 1000000; // Kill rounding errors
-            return String(d);
-        }
-
-    } else {
-        var str = String(d);
-        var limit = 10;
-        if (str.length > limit && !noLimit) {
-            return str.substr(0, limit-1) + '…';
-        } else {
-            return str;
-        }
-    }
-}
-
 function initializeHistogramViz($el, model) {
     var width = $el.width();
     var height = $el.height(); // TODO: Get this more naturally.
@@ -1146,12 +1170,15 @@ function initializeHistogramViz($el, model) {
         .orient('right')
         .ticks(numTicks)
         .tickFormat(function (d) {
+            var fullTitle;
             if (type === 'countBy') {
-                fullTitles[d] = prettyPrint(stackedBins[d].name, name, true);
-                return prettyPrint(stackedBins[d].name, name); // name of bin
+                fullTitle = contentFormatter.defaultFormat(stackedBins[d].name, globalStats.dataType);
+                fullTitles[d] = fullTitle;
+                return contentFormatter.shortFormat(stackedBins[d].name, globalStats.dataType, name);
             } else {
-                fullTitles[d] = prettyPrint(d * globalStats.binWidth + globalStats.minValue, name, true);
-                return prettyPrint(d * globalStats.binWidth + globalStats.minValue, name);
+                fullTitle = contentFormatter.defaultFormat(d * globalStats.binWidth + globalStats.minValue, globalStats.dataType);
+                fullTitles[d] = fullTitle;
+                return contentFormatter.defaultFormat(d * globalStats.binWidth + globalStats.minValue, globalStats.dataType, name);
             }
         });
 
@@ -1274,32 +1301,56 @@ function setupSvg (el, margin, width, height) {
  */
 HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute, id, globalStats, firstBin, lastBin) {
 
-    this.histogramFilters[dataframeAttribute] = {
+    var updatedHistogramFilter = {
         firstBin: firstBin,
         lastBin: lastBin
     };
 
     var stats = globalStats.sparkLines[dataframeAttribute];
-    var dataType = stats.dataType;
+    var graphType = stats.graphType;
 
+    var identifier = {type: 'Identifier', name: dataframeAttribute};
     if (stats.type === 'histogram') {
-        var start = stats.minValue + (stats.binWidth * firstBin);
-        var stop = stats.minValue + (stats.binWidth * lastBin) + stats.binWidth;
-        this.histogramFilters[dataframeAttribute].start = start;
-        this.histogramFilters[dataframeAttribute].stop = stop;
+        updatedHistogramFilter.start = stats.minValue + (stats.binWidth * firstBin);
+        updatedHistogramFilter.stop = stats.minValue + (stats.binWidth * lastBin) + stats.binWidth;
+        updatedHistogramFilter.ast = {
+            type: 'BetweenPredicate',
+            start: {type: 'Literal', value: updatedHistogramFilter.start},
+            stop: {type: 'Literal', value: updatedHistogramFilter.stop},
+            value: identifier
+        };
     } else { // stats.type === 'countBy'
         var list = [];
         // TODO: Determine if this order is deterministic,
         // and if not, explicitly send over a bin ordering from aggregate.
-        var binNames = _.keys(stats.bins);
+        var binNames = stats.binValues || _.keys(stats.bins);
         var isNumeric = _.isNumber(stats.minValue) && _.isNumber(stats.maxValue);
         for (var i = firstBin; i <= lastBin; i++) {
-            list.push(isNumeric ? parseFloat(binNames[i]) : binNames[i]);
+            list.push(isNumeric ? Number(binNames[i]) : binNames[i]);
         }
-        this.histogramFilters[dataframeAttribute].equals = list;
+        updatedHistogramFilter.equals = list;
+        var elements = _.map(list, function (x) {
+            return {type: 'Literal', value: x};
+        });
+        if (elements.length > 1) {
+            updatedHistogramFilter.ast = {
+                type: 'BinaryPredicate',
+                operator: 'IN',
+                left: identifier,
+                right: {type: 'ListExpression', elements: elements}
+            };
+        } else {
+            updatedHistogramFilter.ast = {
+                type: 'BinaryPredicate',
+                operator: '=',
+                left: identifier,
+                right: elements[0]
+            };
+        }
     }
-    // TODO rename type property to dataType for clarity.
-    this.histogramFilters[dataframeAttribute].type = dataType;
+    // TODO rename type property to graphType for clarity.
+    updatedHistogramFilter.type = graphType;
+    this.histogramFilters[dataframeAttribute] = updatedHistogramFilter;
 
     $('.refreshHistogramButton-' + id).css('visibility', 'visible');
 };

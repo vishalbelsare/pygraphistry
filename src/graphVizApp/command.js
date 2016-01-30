@@ -1,6 +1,6 @@
 'use strict';
 
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:command');
 
 
@@ -20,7 +20,7 @@ Command.prototype = {
         for (var i = 0; i < arguments.length; i++) {
             args[i + 1] = arguments[i];
         }
-        var src = Rx.Observable.fromCallback(this.socket.emit, this.socket).apply(null, args);
+        var src = Rx.Observable.bindCallback(this.socket.emit.bind(this.socket)).apply(null, args);
         if (this.disableErrorFiltering === true) {
             return src;
         }

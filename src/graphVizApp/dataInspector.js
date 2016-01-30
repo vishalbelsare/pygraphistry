@@ -2,7 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:dataInspector');
 var $       = window.$;
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 var _       = require('underscore');
 var Backbone = require('backbone');
@@ -14,6 +14,7 @@ var Backgrid = require('backgrid');
 
 var util        = require('./util.js');
 var VizSlice    = require('./VizSlice.js');
+var contentFormatter = require('./contentFormatter.js');
 
 var ROWS_PER_PAGE = 8;
 
@@ -43,13 +44,8 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle, filter
     // TODO: Separate this into some sort of control/window manager.
     histogramPanelToggle.do(function (histogramsOn) {
         // TODO: Why is this inversed here?
-        if (!histogramsOn) {
-            $('#inspector').css('width', '85%');
-            $inspectorOverlay.css('width', '85%');
-        } else {
-            $('#inspector').css('width', '100%');
-            $inspectorOverlay.css('width', '100%');
-        }
+        $('#inspector').toggleClass('with-histograms', !histogramsOn);
+        $inspectorOverlay.toggleClass('with-histograms', !histogramsOn);
     }).subscribe(_.identity, util.makeErrorHandler('change width on inspectorOverlay'));
 
 
@@ -59,7 +55,7 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle, filter
 
 
     // Grab header.
-    Rx.Observable.fromCallback(socket.emit, socket)('inspect_header', null)
+    Rx.Observable.bindCallback(socket.emit.bind(socket))('inspect_header', null)
     .do(function (reply) {
         if (!reply || !reply.success) {
             console.error('Server error on inspectHeader', (reply||{}).error);
@@ -197,6 +193,15 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
         },
 
         parseRecords: function (resp) {
+            // Transform response values for presentation.
+            _.each(resp.values, function (rowContents) {
+                _.each(_.keys(rowContents), function (attrName) {
+                    var dataType = resp.dataTypes[attrName];
+                    var formatted = contentFormatter.defaultFormat(rowContents[attrName], dataType);
+                    rowContents[attrName] = formatted;
+                });
+            });
+
             return resp.values;
         }
     });
@@ -227,12 +232,10 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
                 return;
             }
             row.model.set('selected', false);
-            _.each(grid.selection, function (sel) {
-                if (row.model.attributes._index === sel.idx && dim === sel.dim) {
-                    grid.selectedModels.push(row.model);
-                    row.model.set('selected', true);
-                }
-            });
+            if (grid.selection.containsIndexByDim(row.model.attributes._index, dim)) {
+                grid.selectedModels.push(row.model);
+                row.model.set('selected', true);
+            }
             // Seems to be racy at initialization, so guard for now.
             // TODO: Clean up so this guard isn't necessary.
             if (row.userRender) {
@@ -259,7 +262,7 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
     $inspector.append(paginatorEl);
 
     setupSelectionRerender(activeSelection, grid, dim);
-    setupSearchBar(columns[0].label, dataFrame, $inspector);
+    setupSearchBar(columns[0].label, dataFrame, $inspector, workerUrl, dim);
 
     var $colHeaders = $inspector.find('.backgrid').find('thead').find('tr').children();
     $colHeaders.each(function () {
@@ -314,7 +317,7 @@ function setupSearchStreams(searchRequests) {
 }
 
 
-function setupSearchBar(searchField, dataFrame, $inspector) {
+function setupSearchBar(searchField, dataFrame, $inspector, workerUrl, dim) {
 
     var serverSideFilter = new Backgrid.Extension.ServerSideFilter({
         collection: dataFrame,
@@ -363,9 +366,22 @@ function setupSearchBar(searchField, dataFrame, $inspector) {
     serverSideFilter.search = search;
     serverSideFilter.delegateEvents();
 
-    // Attach element to inspector.
     var filterEl = serverSideFilter.render().el;
+
+    // Add an export button to bar
+
+    var exportUrl = 'export_csv';
+    var type = (dim === 2) ? 'edge' : 'point';
+    var href = workerUrl + exportUrl + '?type=' + type;
+    var $exportButton = $('<a href="' + href + '" target="_blank" download class="csvExportButton pull-right btn btn-xs btn-default" id="csvExportButton' + dim + '">' +
+        '<span class="glyphicon glyphicon-cloud-download"></span>' +
+        'Download ' + searchField.toLowerCase() + ' table as CSV' +
+        '</a>');
+    $(filterEl).append($exportButton);
+
+    // Attach element to inspector.
     $inspector.prepend(filterEl);
+
 }
 
 

@@ -6,7 +6,7 @@
 
 var debug        = require('debug')('graphistry:StreamGL:localclient');
 var $            = window.$;
-var Rx           = require('rx');
+var Rx           = require('rxjs/Rx.KitchenSink');
                    require('./rx-jquery-stub');
 var _            = require('underscore');
 
@@ -104,6 +104,9 @@ module.exports = {
         var vboUpdates = new Rx.ReplaySubject(1);
         vboUpdates.onNext('init');
 
+        var previousVersions = {buffers: {}, textures: {}};
+        var vboVersions = new Rx.BehaviorSubject(previousVersions);
+
         $.ajaxAsObservable({url: BASE_PATH + 'metadata.json', dataType: 'json'})
             .pluck('data')
             .do(function (data) {
@@ -171,7 +174,10 @@ module.exports = {
                     console.error('fetch vbo exn', err, (err||{}).stack);
                 });
 
-        return vboUpdates;
+        return {
+            vboUpdates: vboUpdates,
+            vboVersions: vboVersions
+        };
 
     }
 };
