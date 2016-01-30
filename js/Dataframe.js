@@ -159,7 +159,7 @@ Dataframe.prototype.pruneMaskEdges = function (oldMask) {
  */
 Dataframe.prototype.pruneOrphans = function (baseMask) {
     var resultPointMask = [];
-    if (baseMask.numPoints() === this.numPoints()) {
+    if (baseMask.numPoints() === this.numPoints() && baseMask.numEdges() === this.numEdges()) {
         var degreeColumn = this.getColumnValues('degree', 'point');
         baseMask.mapPointIndexes(function (pointIdx) {
             if (degreeColumn[pointIdx] !== 0) {
