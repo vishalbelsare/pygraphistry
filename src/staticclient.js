@@ -16,6 +16,11 @@ var caption      = require('./caption.js');
 
 //======
 
+var DimCodes = {
+    point: 1,
+    edge: 2
+};
+
 // Site-level configuration:
 var BUCKET_REGION = 'us-west-1';
 var BUCKET_NAME = 'graphistry.data';
@@ -211,7 +216,7 @@ function getRangeForLabel(offsetsForType, type, index) {
 
 
 function getLabel(offsetsForType, type, index) {
-    var translatedType = type === 1 ? 'point' : (type === 2 ? 'edge' : type),
+    var translatedType = _.findKey(DimCodes, function (dimCode) { return dimCode === type; }) || type,
         labelCache = labelsByType[translatedType];
     if (labelCache.hasOwnProperty(index)) {
         var res = new Rx.Subject();
