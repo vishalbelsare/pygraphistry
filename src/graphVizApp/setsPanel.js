@@ -625,8 +625,11 @@ SetsPanel.prototype = {
     },
 
     selectSetModels: function (setModels) {
-        this.activeSelection.onNext(this.vizSliceFromSetModels(setModels));
-        if (setModels.length === 0 || _.any(setModels, function (vizSet) { return !vizSet.isConcrete(); })) {
+        var allConcrete = _.every(setModels, function (vizSet) { return vizSet.isConcrete(); });
+        if (allConcrete) {
+            this.activeSelection.onNext(this.vizSliceFromSetModels(setModels));
+        }
+        if (setModels.length === 0 || !allConcrete) {
             var setIDs = _.map(setModels, function (setModel) { return setModel.id; });
             this.commands.select.sendWithObservableResult({gesture: 'sets', action: 'replace', setIDs: setIDs});
         }
