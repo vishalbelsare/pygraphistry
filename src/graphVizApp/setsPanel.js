@@ -616,11 +616,15 @@ SetsPanel.prototype = {
     },
 
     highlightSetModels: function (setModels) {
-        this.latestHighlightedObject.onNext(this.vizSliceFromSetModels(setModels));
-        if (setModels.length === 0 || _.any(setModels, function (vizSet) { return !vizSet.isConcrete(); })) {
+        var allConcrete = _.every(setModels, function (vizSet) { return vizSet.isConcrete(); });
+        if (allConcrete) {
+            this.latestHighlightedObject.onNext(this.vizSliceFromSetModels(setModels));
+        }
+        if (false && setModels.length === 0 || !allConcrete) {
             var setIDs = _.map(setModels, function (setModel) { return setModel.id; });
-            if (true) { return; }
-            this.commands.highlight.sendWithObservableResult({gesture: 'sets', action: 'replace', setIDs: setIDs});
+            this.commands.highlight.sendWithObservableResult({gesture: 'sets', action: 'replace', setIDs: setIDs}).do(
+                Command.prototype.logErrorFromResponse
+            ).subscribe(_.identity, util.makeErrorHandler('highlighting sets'));
         }
     },
 
