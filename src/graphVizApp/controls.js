@@ -565,9 +565,15 @@ function togglePanel ($panelButton, $panel, newVisibility) {
 // else toggle off $panelButton and hide $panel
 //Return toggle status stream
 function setupPanelControl (toolbarClicks, $panelButton, $panel, errorLogLabel) {
+    var neverOpened = true;
     var panelToggles = toolbarClicks.filter(function (elt) {
         return elt === $panelButton[0];
     }).map(function () {
+        // HACK Make sure the first click always opens even if technically :visible already for D3/etc.
+        if (neverOpened) {
+            neverOpened = false;
+            return true;
+        }
         // return the target state (boolean negate)
         return !$panel.is(':visible');
     });
