@@ -19,7 +19,7 @@ var FilterControl = require('./FilterControl.js');
 //////////////////////////////////////////////////////////////////////////////
 
 var TIME_BAR_HEIGHT = 60;
-var MIN_COLUMN_WIDTH = 4;
+var MIN_COLUMN_WIDTH = 8;
 var AXIS_HEIGHT = 20;
 var BAR_SIDE_PADDING = 1;
 var DOUBLE_CLICK_TIME = 500;
