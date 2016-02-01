@@ -1342,11 +1342,15 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
         var isNumeric = _.isNumber(stats.minValue) && _.isNumber(stats.maxValue);
         var otherIsSelected = false;
         for (var i = firstBin; i <= lastBin; i++) {
-            if (binNames[i] === '_other') {
+            var binName = binNames[i];
+            if (binName === '_other') {
                 otherIsSelected = true;
                 continue;
             }
-            binValues.push(isNumeric ? Number(binNames[i]) : binNames[i]);
+            if (stats.binValues && stats.binValues[binName] !== undefined) {
+                binName = stats.binValues[binName].representative;
+            }
+            binValues.push(isNumeric ? Number(binName) : binName);
         }
         updatedHistogramFilter.equals = binValues;
         var elements = _.map(binValues, function (x) {
