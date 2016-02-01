@@ -2178,12 +2178,12 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
         step: binWidth,
         attr: timeAttr,
         type: timeType,
-        start: cutoffs[cutoffs.length - 1],
-        topVal: cutoffs[cutoffs.length - 1],
-        stop: cutoffs[0],
-        bottomVal: cutoffs[0],
+        start: cutoffNumbers[cutoffNumbers.length - 1],
+        topVal: cutoffNumbers[cutoffNumbers.length - 1],
+        stop: cutoffNumbers[0],
+        bottomVal: cutoffNumbers[0],
         timeAggregation: timeAggregation,
-        cutoffs: cutoffs,
+        cutoffs: cutoffNumbers,
         approximated: approximated
     };
 };
