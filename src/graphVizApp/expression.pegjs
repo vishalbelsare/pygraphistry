@@ -429,7 +429,12 @@ NumericLiteral "number"
     }
 
 NumericConstant "numeric constant"
-  = INFINITY / NAN
+  = INFINITY {
+    return {type: "Literal", dataType: 'number', value: 'Infinity' };
+  }
+  / NAN {
+    return {type: "Literal", dataType: 'number', value: 'NaN' };
+  }
 
 EscapedEscapeCharacter = "\\"
 
@@ -597,6 +602,7 @@ ReservedWord "reserved word"
   = Keyword
   / NullLiteral
   / BooleanLiteral
+  / NumericConstant
 
 AdditiveOperator
   = plus
