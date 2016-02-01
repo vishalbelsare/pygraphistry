@@ -56,7 +56,10 @@ if (!Math.trunc) {
 
 //</editor-fold>
 
-function literalExpressionFor (value) {
+function literalExpressionFor (value, dataType) {
+    if (dataType === 'number' && typeof value === 'string') {
+        value = Number(value);
+    }
     if (_.isNumber(value)) {
         return value.toString();
     }
@@ -829,7 +832,7 @@ ExpressionCodeGenerator.prototype = {
             case 'CaseBranch':
                 return this.expressionForConditions([ast], undefined, bindings, depth2);
             case 'Literal':
-                return literalExpressionFor(ast.value);
+                return literalExpressionFor(ast.value, ast.dataType);
             case 'ListExpression':
                 args = _.map(ast.elements, function (arg) {
                     return this.expressionStringForAST(arg, bindings, depth2, this.precedenceOf('('));
