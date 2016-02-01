@@ -591,7 +591,7 @@ function setupCameraApi (appState) {
     appState.apiActions
         .filter(function (e) { return e.event === 'updateCamera'; })
         .do(function (e) {
-            console.log('RECIEVED API UPDATE CAMERA: ', e.cameraPosition);
+            console.log('RECEIVED API UPDATE CAMERA: ', e.cameraPosition);
             camera.setPosition(e.cameraPosition);
             renderingScheduler.renderScene('cameraApi', {trigger: 'renderSceneFast'});
             appState.cameraChanges.onNext(camera);
