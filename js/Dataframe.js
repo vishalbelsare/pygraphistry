@@ -53,17 +53,17 @@ function Dataframe () {
         undefined
     );
     /** The last mask applied as a result of selections. Empty by default. */
-    this.lastSelectionMasks = new DataframeMask(
-        this,
-        [],
-        []
-    );
+    this.lastSelectionMasks = this.newEmptyMask();
     this.masksForVizSets = {};
     this.bufferAliases = {};
     this.data = this.rawdata;
     this.bufferOverlays = {};
     this.metadata = {};
 }
+
+Dataframe.prototype.newEmptyMask = function () {
+    return new DataframeMask(this, [], []);
+};
 
 /**
  * @typedef {Object} DataframeData
@@ -1560,16 +1560,18 @@ ColumnAggregation.prototype.isIntegral = function (value) {
     return parseInt(value) == value; // jshint ignore:line
 };
 
+function isLessThanForDataType(dataType) {
+    switch (dataType) {
+        case 'string':
+            return function (a, b) { return a.localeCompare(b) < 0; };
+        default:
+            return function (a, b) { return a < b; };
+    }
+}
+
 ColumnAggregation.prototype.minMaxGenericAggregations = function () {
     var minValue = null, maxValue = null, value, values = this.column.values, numValues = this.getAggregationByType('count');
-    var isLessThan;
-    switch (this.getAggregationByType('dataType')) {
-        case 'string':
-            isLessThan = function (a, b) { return a.localeCompare(b) < 0; };
-            break;
-        default:
-            isLessThan = function (a, b) { return a < b; };
-    }
+    var isLessThan = isLessThanForDataType(this.getAggregationByType('dataType'));
     for (var i=0; i < numValues; i++) {
         value = values[i];
         if (valueSignifiedUndefined(value)) { continue; }
@@ -1610,12 +1612,14 @@ ColumnAggregation.prototype.countDistinct = function (limit) {
         if (valueSignifiedUndefined(value)) { continue; }
         if (value < minValue) { minValue = value; }
         else if (value > maxValue) { maxValue = value; }
-        if (numDistinct > limit) { continue; }
-        if (distinctCounts[value] === undefined) {
-            numDistinct++;
-            distinctCounts[value] = 1;
-        } else {
-            distinctCounts[value]++;
+        if (numDistinct < limit) {
+            var key = value.toString();
+            if (distinctCounts[key] === undefined) {
+                numDistinct++;
+                distinctCounts[key] = 1;
+            } else {
+                distinctCounts[key] += 1;
+            }
         }
     }
     this.updateAggregationTo('countDistinct', numDistinct);
@@ -1918,7 +1922,7 @@ Dataframe.prototype.countBy = function (attribute, binning, indices, type, dataT
 
     // Copy over numBinsWithoutOther from rawBins to bins directly.
     // Take the rest and bucket them into '_other'
-    var bins = {};
+    var bins = {}, binValues;
     _.each(sortedKeys.slice(0, numBinsWithoutOther), function (key) {
         bins[key] = rawBins[key];
     });
@@ -1933,6 +1937,7 @@ Dataframe.prototype.countBy = function (attribute, binning, indices, type, dataT
             return memo + rawBins[key];
         }, 0);
         bins._other = sum;
+        binValues = {_other: {representative: '_other', numValues: otherKeys.length}};
     }
 
     var numValues = _.reduce(_.values(bins), function (memo, num) {
@@ -1944,7 +1949,8 @@ Dataframe.prototype.countBy = function (attribute, binning, indices, type, dataT
         dataType: dataType,
         numValues: numValues,
         numBins: _.keys(bins).length,
-        bins: bins
+        bins: bins,
+        binValues: binValues
     });
 };
 
@@ -1988,12 +1994,18 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
     var binWidth;
     var range = max - min;
     var isCountBy;
-    if (aggregations.getAggregationByType('countDistinct') < maxBinCount &&
+    var countDistinct = aggregations.getAggregationByType('countDistinct');
+    if (isNaN(range)) { // Implies non-numerical domain.
+        numBins = Math.min(countDistinct, maxBinCount);
+        bottomVal = min;
+        topVal = max;
+        isCountBy = countDistinct <= numBins;
+    } else if (countDistinct < maxBinCount &&
         aggregations.getAggregationByType('isIntegral')) {
         numBins = numValues;
         bottomVal = min;
         topVal = max;
-        binWidth = range / (numBins - 1);
+        binWidth = range / Math.max(numBins - 1, 1);
         isCountBy = range <= maxBinCount;
     } else if (goalNumberOfBins) {
         numBins = goalNumberOfBins;
@@ -2051,6 +2063,14 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
         maxValue: topVal
     };
 };
+
+/**
+ * @typedef {Object} BinDescription
+ * @property {Object} min
+ * @property {Object} max
+ * @property {Object} representative
+ * @property {Boolean} isSingular
+ */
 
 
 Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, indices, type, dataType) {
@@ -2112,7 +2132,7 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
     if (numBins === 1) {
         bins = [numValues];
         if (binning.isCountBy) {
-            binValues = [min];
+            binValues = [{min: min, max: min, representative: min, isSingular: true}];
         }
         _.extend(retObj, {bins: bins, binValues: binValues});
         return Q(retObj);
@@ -2136,19 +2156,34 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
     // new (large) array of indices. Then each separate histogram can use the already existing
     // values array and the single indices array to compute bins without any large allocations.
     var binId, value;
+    var isLessThan = isLessThanForDataType(aggregations.getAggregationByType('dataType'));
     for (i = 0; i < indices.length; i++) {
         // Here we use an optimized "Floor" because we know it's a smallish, positive number.
         // TODO: Have to be careful because floating point error.
         // In particular, we need to match math as closely as possible in expressions.
         value = values[indices[i]];
-        if (numberSignifiesUndefined(value)) { continue; }
-        binId = ((value - bottomVal) / binWidth) | 0;
+        if (valueSignifiedUndefined(value)) { continue; }
+        if (_.isNumber(value)) {
+            binId = ((value - bottomVal) / binWidth) | 0;
+        } else {
+            for (var eachBinId = 0; eachBinId < numBins; eachBinId++) {
+                if (!isLessThan(binValues[eachBinId])) {
+                    binId = eachBinId;
+                    break;
+                }
+            }
+            binId |= 0;
+        }
         bins[binId]++;
         if (binValues[binId] === undefined) {
-            binValues[binId] = value;
-        } else if (binValues[binId] !== value) {
-            binValues[binId] = null;
+            binValues[binId] = {min: value, max: value, representative: value, isSingular: true};
         }
+        var binDescription = binValues[binId];
+        if (binDescription.representative !== value) {
+            binDescription.isSingular = false;
+        }
+        if (isLessThan(value, binDescription.min)) { binDescription.min = value; }
+        if (isLessThan(binDescription.max, value)) { binDescription.max = value; }
     }
 
     _.extend(retObj, {bins: bins, binValues: binValues});
