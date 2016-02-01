@@ -670,15 +670,28 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
     var globalBins = globalStats.bins || [];
     var stackedBins = [];
     var binValues = globalStats.binValues;
+    var dataType = globalStats.dataType;
     var name;
+    var localFormat = function (value) {
+        return contentFormatter.shortFormat(value, dataType, attr);
+    };
     if (type === 'countBy') {
         var globalKeys = _.keys(globalBins);
         _.each(_.range(Math.min(globalKeys.length, limit)), function (idx) {
             var key = globalKeys[idx];
             var local = bins[key] || 0;
             var total = globalBins[key];
-            if (binValues && (!!binValues[idx] || binValues[idx] === 0)) {
-                name = contentFormatter.shortFormat(binValues[idx], globalStats.dataType, attr);
+            var binDescription;
+            if (key === '_other' && binValues && binValues._other) {
+                binDescription = binValues._other;
+                name = '(Another ' + localFormat(binDescription.numValues) + ' values)';
+            } else if (binValues && binValues[idx]) {
+                binDescription = binValues[idx];
+                if (binDescription.isSingular) {
+                    name = localFormat(binDescription.representative);
+                } else if (binDescription.min !== undefined) {
+                    name = localFormat(binDescription.min) + ' : ' + localFormat(binDescription.max);
+                }
             } else {
                 name = key;
             }
@@ -695,15 +708,17 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
         _.each(zippedBins, function (stack, idx) {
             var local = stack[0] || 0;
             var total = stack[1] || 0;
-            // Guard against null or undefined:
-            if (binValues && (!!binValues[idx] || binValues[idx] === 0)) {
-                name = contentFormatter.shortFormat(binValues[idx], globalStats.dataType, attr);
+            if (binValues && binValues[idx]) {
+                var binDescription = binValues[idx];
+                if (binDescription.isSingular) {
+                    name = localFormat(binDescription.representative);
+                } else if (binDescription.min !== undefined) {
+                    name = localFormat(binDescription.min) + ' : ' + localFormat(binDescription.max);
+                }
             } else {
                 var start = globalStats.minValue + (globalStats.binWidth * idx);
                 var stop = start + globalStats.binWidth;
-                var firstHalf = contentFormatter.shortFormat(start, globalStats.dataType, attr);
-                var secondHalf = contentFormatter.shortFormat(stop, globalStats.dataType, attr);
-                name = firstHalf + ' : ' + secondHalf;
+                name = localFormat(start) + ' : ' + localFormat(stop);
             }
             var stackedObj = toStackedObject(local, total, idx, name, attr, numLocal, numTotal, distribution);
             stackedBins.push(stackedObj);
@@ -1319,17 +1334,22 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
             stop: {type: 'Literal', value: updatedHistogramFilter.stop},
             value: identifier
         };
-    } else { // stats.type === 'countBy'
-        var list = [];
+    } else if (stats.type === 'countBy') {
+        var binValues = [];
         // TODO: Determine if this order is deterministic,
         // and if not, explicitly send over a bin ordering from aggregate.
-        var binNames = stats.binValues || _.keys(stats.bins);
+        var binNames = _.keys(stats.bins);
         var isNumeric = _.isNumber(stats.minValue) && _.isNumber(stats.maxValue);
+        var otherIsSelected = false;
         for (var i = firstBin; i <= lastBin; i++) {
-            list.push(isNumeric ? Number(binNames[i]) : binNames[i]);
+            if (binNames[i] === '_other') {
+                otherIsSelected = true;
+                continue;
+            }
+            binValues.push(isNumeric ? Number(binNames[i]) : binNames[i]);
         }
-        updatedHistogramFilter.equals = list;
-        var elements = _.map(list, function (x) {
+        updatedHistogramFilter.equals = binValues;
+        var elements = _.map(binValues, function (x) {
             return {type: 'Literal', value: x};
         });
         if (elements.length > 1) {
@@ -1339,13 +1359,37 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
                 left: identifier,
                 right: {type: 'ListExpression', elements: elements}
             };
-        } else {
+        } else if (elements.length === 1) {
             updatedHistogramFilter.ast = {
                 type: 'BinaryPredicate',
                 operator: '=',
                 left: identifier,
                 right: elements[0]
             };
+        }
+        if (otherIsSelected) {
+            var otherAST = {
+                type: 'NotExpression',
+                operator: 'NOT',
+                value: {
+                    type: 'BinaryPredicate',
+                    operator: 'IN',
+                    left: identifier,
+                    right: {type: 'ListExpression', elements: _.map(binNames, function (x) {
+                        return {type: 'Literal', value: x};
+                    })}
+                }
+            };
+            if (updatedHistogramFilter.ast === undefined) {
+                updatedHistogramFilter.ast = otherAST;
+            } else {
+                updatedHistogramFilter.ast = {
+                    type: 'BinaryPredicate',
+                    operator: 'OR',
+                    left: otherAST,
+                    right: updatedHistogramFilter.ast
+                };
+            }
         }
     }
     // TODO rename type property to graphType for clarity.
