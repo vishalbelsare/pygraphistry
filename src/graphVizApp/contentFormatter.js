@@ -100,13 +100,29 @@ function decodeColumnValue (val, attributeName) {
     return val;
 }
 
-function maybePrecise(v) {
-    var diff = Math.abs(v - Math.round(v));
-    if (diff > 0.1) {
-        return v.toFixed(1);
-    } else {
-        return v;
+/**
+ * Calculate significant figures on this as a radix.
+ * @param {Number} v
+ * @param {Number} significantFigures
+ * @returns {String}
+ */
+function maybePrecise(v, significantFigures) {
+    if (v === Math.floor(v)) {
+        return v.toString();
     }
+    var remainder = Math.abs(v), precision = significantFigures;
+    while (remainder > 1 && precision > 0) {
+        remainder /= 10;
+        precision--;
+    }
+    // Cut out trailing zeroes beyond the decimal point:
+    var printed = v.toFixed(precision), printedOneLessDigit = v.toFixed(precision - 1);
+    while (precision > 1 && Number(printedOneLessDigit) === Number(printed)) {
+        printed = printedOneLessDigit;
+        precision--;
+        printedOneLessDigit = v.toFixed(precision - 1);
+    }
+    return printed;
 }
 
 function shortFormat (value, dataType, attributeName) {
@@ -143,11 +159,11 @@ function shortFormat (value, dataType, attributeName) {
         if (abs > 1000000000000 || (value !== 0 && Math.abs(value) < 0.00001)) {
             return String(value.toExponential(precision));
         } else if (abs > 1000000000) {
-            return String( maybePrecise(value/1000000000) ) + 'B';
+            return maybePrecise(value/1000000000, precision) + 'B';
         } else if (abs > 1000000) {
-            return String( maybePrecise(value/1000000) ) + 'M';
+            return maybePrecise(value/1000000, precision) + 'M';
         } else if (abs > 1000) {
-            return String( maybePrecise(value/1000) ) + 'K';
+            return maybePrecise(value/1000, precision) + 'K';
         } else {
             value = Math.round(value*1000000) / 1000000; // Kill rounding errors
             return String(value);
