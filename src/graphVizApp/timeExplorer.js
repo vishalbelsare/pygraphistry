@@ -2,7 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:TimeExplorer');
 var $       = window.$;
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 var _       = require('underscore');
 var Handlebars = require('handlebars');
@@ -110,7 +110,7 @@ function TimeExplorer (socket, $div) {
     };
 
     this.queryChangeSubject = new Rx.ReplaySubject(1);
-    this.zoomRequests = new Rx.Subject(1);
+    this.zoomRequests = new Rx.ReplaySubject(1);
 
 
     this.queryChangeSubject.filter(function (timeDesc) {
@@ -118,8 +118,11 @@ function TimeExplorer (socket, $div) {
         }).distinctUntilChanged(function (timeDesc) {
             return timeDesc.timeType + timeDesc.timeAttr;
         }).flatMap(function (timeDesc) {
+            console.log('GETTING TIME BOUNDS');
             return that.getTimeBoundsCommand.sendWithObservableResult(timeDesc);
         }).do(function (resp) {
+            console.log('GOT TIME BOUNDS');
+
             that.originalStart = resp.min;
             that.originalStop = resp.max;
 
@@ -127,13 +130,14 @@ function TimeExplorer (socket, $div) {
                 start: resp.min,
                 stop: resp.max
             });
-        }).subscribe(_.identity);
+        }).subscribe(_.identity, util.makeErrorHandler('getting time bounds'));
 
 
     this.queryChangeSubject.filter(function (desc) {
             // Not initialized
             return !(_.contains(_.values(desc), null));
         }).flatMap(function (timeDesc) {
+            console.log('WE GETTING TIME DATA');
             var timeType = timeDesc.timeType;
             var timeAttr = timeDesc.timeAttr;
             var timeAggregation = timeDesc.timeAggregation;
@@ -213,6 +217,8 @@ TimeExplorer.prototype.getTimeData = function (timeType, timeAttr, start, stop, 
     // timeExplorer.realGetTimeData('point', 'time', '2007-01-01T00:01:24+00:00', '2007-01-07T23:59:24+00:00', 'day', [])
     // timeExplorer.realGetTimeData('point', 'time', '2007-01-01T00:01:24+00:00', '2007-01-07T23:59:24+00:00', 'day', [timeExplorer.makeQuery('point', 'trip', 'point:trip > 5000')])
 
+    console.log('GET TIME DATA');
+
     var combinedAttr = '' + timeType + ':' + timeAttr;
     var timeFilterQuery = combinedAttr + ' >= "' + start + '" AND ' + combinedAttr + ' <= "' + stop + '"';
 
@@ -233,6 +239,8 @@ TimeExplorer.prototype.getTimeData = function (timeType, timeAttr, start, stop, 
         filters: filters
     }
 
+    console.log('SENDING TIME DATA COMMAND');
+
     return this.getTimeDataCommand.sendWithObservableResult(payload)
         .map(function (resp) {
             console.log('payload: ', payload);
@@ -251,7 +259,7 @@ TimeExplorer.prototype.getMultipleTimeData = function (timeType, timeAttr, start
     var allSubject = that.getTimeData(timeType, timeAttr, start, stop, timeAggregation, [], 'All');
     subjects.push(allSubject);
 
-    return Rx.Observable.zip(subjects, function () {
+    var zipFunc = function () {
         debug('zipping');
         var ret = {};
         for (var i = 0; i < arguments.length; i++) {
@@ -260,7 +268,13 @@ TimeExplorer.prototype.getMultipleTimeData = function (timeType, timeAttr, start
         }
         console.log('RET: ', ret);
         return ret;
-    });
+    };
+
+    subjects.push(zipFunc);
+
+    return Rx.Observable.zip.apply(Rx.Observable, subjects);
+
+    // return Rx.Observable.zip(subjects, zipFunc);
 };
 
 TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, numLeft, numRight) {
@@ -285,7 +299,7 @@ TimeExplorer.prototype.setupZoom = function () {
             .map(function (desc) {
                 return {request: request, timeDesc: desc};
             });
-    }).map(function (data) {
+    }).do(function (data) {
         var req = data.request;
         var desc = data.timeDesc;
 
@@ -721,11 +735,11 @@ function TimeExplorerPanel (socket, $parent, explorer) {
 
             this.$timeExplorerVizContainer.onAsObservable('mousewheel')
                 // TODO Replace this with correct Rx5 handler.
-                .sample(20)
+                .inspectTime(5)
                 .do(function (wheelEvent) {
                     wheelEvent.preventDefault();
                 })
-                .map(function(wheelEvent) {
+                .do(function(wheelEvent) {
                     var zoomFactor = (wheelEvent.deltaY < 0 ? zoomBase : 1.0 / zoomBase) || 1.0;
 
                     var xPos = wheelEvent.pageX;
