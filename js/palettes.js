@@ -6,6 +6,7 @@
 
 var _      = require('underscore');
 var brewer = require('colorbrewer');
+var sprintf = require('sprintf-js').sprintf;
 
 
 //////////// SORT PALETTES
@@ -36,6 +37,11 @@ brewer.PairedRepeat = {
 };
 
 ////////////// BIND PALETTES
+
+// int -> '#RRGGBB'
+function intToHex (value) {
+    return sprintf('#%02x%02x%02x', value & 255, (value >> 8) & 255, (value >> 16) & 255);
+}
 
 //'#AABBCC' -> int
 //TODO: this returns ABGR as that's what vgraphloader sends to the client
@@ -127,5 +133,20 @@ module.exports = {
     //Ex: bindings[9 * 1000 + 3] == 3383340
     bindings: categoryToColorInt,
 
-    hexToInt: hexToInt
+    // Find out if a set of [unique] values fits one category's integer space we've defined for palettes.
+    valuesFitOnePaletteCategory: function (intValues) {
+        if (intValues.length === 0) { return true; }
+        var paletteNumbers = _.map(intValues, function (intValue) { return Math.floor(intValue / 1000); }),
+            offsets = _.map(intValues, function (intValue) { return intValue % 1000; }),
+            firstPaletteNumber = paletteNumbers[0];
+        if (firstPaletteNumber >= encounteredPalettes) {
+            return false;
+        }
+        return _.every(intValues, function (intValue, idx) {
+            return paletteNumbers[idx] === firstPaletteNumber && offsets[idx] < 11; // HACK: largest palette size
+        });
+    },
+
+    hexToInt: hexToInt,
+    intToHex: intToHex
 };
