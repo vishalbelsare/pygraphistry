@@ -159,9 +159,10 @@ MemberOfOperator =
   IN / MEMBEROF
 
 MemberOfSetPredicate "in set"
-  = MemberOfOperator __ value:Expression {
+  = operator:MemberOfOperator __ value:Expression {
     return {
       type: 'MemberOfExpression',
+      operator: operator,
       value: value
     };
   }
