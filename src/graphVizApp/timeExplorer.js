@@ -23,6 +23,7 @@ var MIN_COLUMN_WIDTH = 8;
 var AXIS_HEIGHT = 20;
 var BAR_SIDE_PADDING = 1;
 var DOUBLE_CLICK_TIME = 500;
+var ZOOM_UPDATE_RATE = 2000;
 
 var DEFAULT_TIME_AGGREGATION = 'day';
 
@@ -293,7 +294,7 @@ TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, numLeft, numRight) 
 
 TimeExplorer.prototype.setupZoom = function () {
     var that = this;
-    this.zoomRequests.flatMap(function (request) {
+    this.zoomRequests.inspectTime(ZOOM_UPDATE_RATE).flatMap(function (request) {
         return that.queryChangeSubject
             .take(1)
             .map(function (desc) {
@@ -425,7 +426,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
         },
 
         newContent: function () {
-            this.model.set('initialized', false);
+            // this.model.set('initialized', false);
             this.render();
         },
 
@@ -1025,8 +1026,19 @@ function getActiveBinForPosition ($el, model, pageX) {
     return activeBin;
 }
 
+function tagBins (rawBins, cutoffs) {
+    var taggedBins = _.map(rawBins, function (v, i) {
+        return {
+            binVal: v,
+            key: cutoffs[i]
+        };
+    });
+
+    return taggedBins;
+}
+
 function updateTimeBar ($el, model) {
-    // debug('updating time bar: ', model);
+    debug('updating time bar: ', model);
 
     var d3Data = model.get('d3Data');
     var width = d3Data.width;
@@ -1034,6 +1046,7 @@ function updateTimeBar ($el, model) {
     var data = model.get('data');
     var maxBinValue = model.get('maxBinValue');
     var id = model.cid;
+    var taggedBins = tagBins(data.bins, data.cutoffs);
 
     var svg = d3Data.svg;
 
@@ -1052,6 +1065,7 @@ function updateTimeBar ($el, model) {
 
     // Reset if line Chart
     if (d3Data.lastDraw === 'lineChart') {
+        console.log('RESETTING SVG BECAUSE WAS LINE');
         svg.selectAll("*").remove();
     }
 
@@ -1142,40 +1156,51 @@ function updateTimeBar ($el, model) {
     //////////////////////////////////////////////////////////////////////////
 
     var columns = svg.selectAll('.column')
-        .data(data.bins);
+        .data(taggedBins, function (d, i) {
+            // console.log('COLUMN KEY: ', d, i);
+            console.log('Column key: ', d.key);
+            return d.key;
+        });
 
     var columnRects = columns.selectAll('rect');
 
-    columns.attr('transform', function (d, i) {
+    columns.exit().remove();
+
+    columns.transition().duration(ZOOM_UPDATE_RATE)
+        .attr('transform', function (d, i) {
+            // console.log('UPDATING COLUMN');
             return 'translate(' + xScale(i) + ',0)';
         });
 
-    columnRects.attr('width', barWidth + BAR_SIDE_PADDING);
+    columnRects.transition().duration(ZOOM_UPDATE_RATE)
+        .attr('width', Math.floor(barWidth + BAR_SIDE_PADDING));
 
 
     columns.enter().append('g')
         .classed('g', true)
         .classed('column', true)
         .attr('transform', function (d, i) {
+            console.log('ENTERING COLUMN');
             return 'translate(' + xScale(i) + ',0)';
         }).append('rect')
             .attr('width', barWidth + BAR_SIDE_PADDING)
             .attr('height', height)
             .attr('opacity', 0);
 
-    columns.exit().remove();
-
     // TODO: Is this assignment correct?
     var bars = columns.selectAll('.bar-rect')
         // .data(data.bins);
         .data(function (d, i) {
             var params = {
-                val: d,
+                val: d.binVal,
+                key: d.key,
                 idx: i
             };
             return [params];
         }, function (d, i) {
-            return d.idx;
+            // console.log('BAR ARGS: ', d, i);
+            return d.key;
+            // return d.idx;
         });
 
     var recolorBar = function (d) {
@@ -1217,6 +1242,8 @@ function updateTimeBar ($el, model) {
     bars.exit().remove();
 
     d3Data.lastDraw = 'barChart';
+    d3Data.lastTopVal = data.topVal;
+    d3Data.lastBottomVal = data.bottomVal;
 
 }
 
