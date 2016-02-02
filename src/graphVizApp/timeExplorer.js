@@ -644,6 +644,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
 
         removeBar: function () {
             //TODO
+            console.log('ATTEMPTING TO REMOVE USER BAR, NOT IMPLEMENTED YET');
         },
 
         addAll: function () {
@@ -835,24 +836,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
 
                     var explorer = that.model.get('explorer');
                     explorer.zoomTimeRange(zoomFactor, numLeft, numRight);
-                    // explorer.modifyTimeDescription({
-                    //     start: leftCutoff,
-                    //     stop: rightCutoff
-                    // });
 
-
-                    // var bounds = $eventTarget[0].getBoundingClientRect();
-                    // var zoomFactor = (wheelEvent.deltaY < 0 ? zoomBase : 1.0 / zoomBase) || 1.0;
-
-                    // var canvasPos = {
-                    //     x: (wheelEvent.clientX - bounds.left),
-                    //     y: (wheelEvent.clientY - bounds.top)
-                    // };
-
-                    // var screenPos = camera.canvas2ScreenCoords(canvasPos.x, canvasPos.y, canvas);
-                    // debug('Mouse screen pos=(%f,%f)', screenPos.x, screenPos.y);
-
-                    // return zoom(camera, zoomFactor, screenPos);
                 }).subscribe(_.identity, util.makeErrorHandler('zoom handle on time explorer'));
 
 
@@ -1028,10 +1012,40 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             var barModels = [];
             var collection = this.userBarsView.collection;
 
-            //TODO: Update stuff that already exists instead of overwriting
+            console.log('DATA: User: ', data.user);
+            console.log('Collection: ', collection);
+
+
+            var dataKeys = _.keys(data.user);
+            var existingKeys = _.pluck(collection.models, 'id');
+
+            var updatedKeys = _.intersection(dataKeys, existingKeys);
+            var newKeys = _.difference(dataKeys, existingKeys);
+            // var deletedKeys = _.difference(existingKeys, dataKeys);
+
+            var barModels = [];
+
+            // Handle updated keys
+            _.each(updatedKeys, function (key) {
+                var val = data.user[key];
+                console.log('Updating data for: ', key);
+
+                var params = {
+                    data: val,
+                    maxBinValue: data.maxBinValue,
+                    timeStamp: Date.now(),
+                    lineUnchanged: false
+                };
+
+                var model = collection.get(key);
+                model.set(params);
+                model.set('barType', 'user');
+                barModels.push(model);
+            });
 
             //Add new data elements
-            _.each(data.user, function (val, key) {
+            _.each(newKeys, function (key) {
+                var val = data.user[key];
                 var barModel = new TimeBarModel({explorer: explorer});
                 var params = {
                     data: val,
@@ -1046,8 +1060,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
                 barModels.push(barModel);
             });
 
-            // TODO: set not reset
-            collection.reset(barModels);
+            collection.set(barModels);
         }
 
     });
