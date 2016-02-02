@@ -491,6 +491,22 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             this.render();
         },
 
+        renderMouseEffects: function () {
+            var model = this.model;
+
+            // Don't do anything, you haven't been populated yet
+            if (!this.model.get('data')) {
+                return;
+            }
+
+            // Don't do first time work.
+            // TODO: Should this be initialize instead?
+            if (model.get('initialized')) {
+                updateTimeBarMouseover(model.get('vizContainer'), model);
+                return this;
+            }
+        },
+
         render: function () {
             var model = this.model;
 
@@ -523,13 +539,13 @@ function TimeExplorerPanel (socket, $parent, explorer) {
         mousemoveParent: function (evt) {
             this.model.set('pageX', evt.pageX);
             this.model.set('pageY', evt.pageY);
-            this.render();
+            this.renderMouseEffects();
         },
 
         mouseoutParent: function (evt) {
             this.model.set('pageX', -1);
             this.model.set('pageY', -1);
-            this.render();
+            this.renderMouseEffects();
         },
 
         getBinForPosition: function (pageX) {
@@ -1098,6 +1114,137 @@ function tagBins (rawBins, cutoffs) {
     return taggedBins;
 }
 
+function updateTimeBarMouseover ($el, model) {
+
+    var d3Data = model.get('d3Data');
+    var width = d3Data.width;
+    var height = d3Data.height;
+    var data = model.get('data');
+    var maxBinValue = model.get('maxBinValue');
+    var id = model.cid;
+    var taggedBins = tagBins(data.bins, data.cutoffs);
+    var barType = model.get('barType');
+
+    var svg = d3Data.svg;
+
+    // Guard against no data.
+    // TODO: Do this more properly
+    if (!data) {
+        return;
+    }
+
+    if (d3Data.lastDraw === 'lineChart') {
+        updateTimeBarLineChartMouseover($el, model);
+        return;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Upper Tooltip
+    //////////////////////////////////////////////////////////////////////////
+
+    var upperTooltip = svg.selectAll('.upperTooltip');
+    var pageX = model.get('pageX');
+    var activeBin = getActiveBinForPosition($el, model, pageX);
+    var upperTooltipValue = data.bins[activeBin];
+
+    var svgOffset = d3Data.svgOffset;
+    if (!svgOffset) {
+        var jquerySvg = $(svg[0]);
+        svgOffset = jquerySvg.offset();
+        d3Data.svgOffset = svgOffset;
+    }
+    var adjustedX = pageX - svgOffset.left;
+
+    upperTooltip.attr('x', adjustedX + 3)
+        .text(upperTooltipValue);
+
+    upperTooltip.data([''])
+        .enter().append('text')
+        .classed('upperTooltip', true)
+        .classed('unselectable', true)
+        .attr('y', -5)
+        .attr('x', 0)
+        .attr('opacity', 1.0)
+        .attr('font-size', '0.7em')
+        .attr('pointer-events', 'none')
+        .text('');
+
+    //////////////////////////////////////////////////////////////////////////
+    // Update Bar Colors
+    //////////////////////////////////////////////////////////////////////////
+
+
+    var recolorBar = function (d) {
+        if (d.idx === activeBin) {
+            // debug('color focus');
+            var colorVal = color(barType + 'Focus');
+            // debug('colorVal: ', colorVal);
+            return color(barType + 'Focus');
+        } else {
+            return color(barType);
+        }
+    };
+
+    var columns = svg.selectAll('.column');
+
+    var bars = columns.selectAll('.bar-rect')
+        .style('fill', recolorBar);
+}
+
+
+function updateTimeBarLineChartMouseover ($el, model) {
+    // debug('updating time bar: ', model);
+
+    var d3Data = model.get('d3Data');
+    var width = d3Data.width;
+    var height = d3Data.height;
+    var data = model.get('data');
+    var maxBinValue = model.get('maxBinValue');
+    var id = model.cid;
+    var barType = model.get('barType');
+
+    var svg = d3Data.svg;
+
+    // Guard against no data.
+    // TODO: Do this more properly
+    if (!data) {
+        return;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Upper Tooltip
+    //////////////////////////////////////////////////////////////////////////
+
+    var upperTooltip = svg.selectAll('.upperTooltip');
+    var pageX = model.get('pageX');
+    var activeBin = getActiveBinForPosition($el, model, pageX);
+    var upperTooltipValue = data.bins[activeBin];
+
+    var svgOffset = d3Data.svgOffset;
+    if (!svgOffset) {
+        var jquerySvg = $(svg[0]);
+        svgOffset = jquerySvg.offset();
+        d3Data.svgOffset = svgOffset;
+    }
+
+    var adjustedX = pageX - svgOffset.left;
+
+    upperTooltip.attr('x', adjustedX + 3)
+        .text(upperTooltipValue);
+
+    upperTooltip.data([''])
+        .enter().append('text')
+        .classed('upperTooltip', true)
+        .classed('unselectable', true)
+        .attr('y', -5)
+        .attr('x', 0)
+        .attr('opacity', 1.0)
+        .attr('font-size', '0.7em')
+        .attr('pointer-events', 'none')
+        .text('');
+}
+
+
 function updateTimeBar ($el, model) {
     // debug('updating time bar: ', model);
 
@@ -1136,6 +1283,27 @@ function updateTimeBar ($el, model) {
     var yScale = setupAmountScale(height, maxBinValue, data.bins);
 
     var barWidth = Math.floor(width/data.numBins) - BAR_SIDE_PADDING;
+
+    //////////////////////////////////////////////////////////////////////////
+    // Compute mouse position values
+    //////////////////////////////////////////////////////////////////////////
+
+
+
+    var pageX = model.get('pageX');
+    var activeBin = getActiveBinForPosition($el, model, pageX);
+
+    var recolorBar = function (d) {
+        if (d.idx === activeBin) {
+            // debug('color focus');
+            var colorVal = color(barType + 'Focus');
+            // debug('colorVal: ', colorVal);
+            return color(barType + 'Focus');
+        } else {
+            return color(barType);
+        }
+    };
+
 
     //////////////////////////////////////////////////////////////////////////
     // Make Line Beneath
@@ -1180,37 +1348,6 @@ function updateTimeBar ($el, model) {
         .attr('opacity', 1.0)
         .attr('font-size', '0.7em')
         .text(data.name);
-
-    //////////////////////////////////////////////////////////////////////////
-    // Upper Tooltip
-    //////////////////////////////////////////////////////////////////////////
-
-    var upperTooltip = svg.selectAll('.upperTooltip');
-    var pageX = model.get('pageX');
-    var activeBin = getActiveBinForPosition($el, model, pageX);
-    var upperTooltipValue = data.bins[activeBin];
-
-    var svgOffset = d3Data.svgOffset;
-    if (!svgOffset) {
-        var jquerySvg = $(svg[0]);
-        svgOffset = jquerySvg.offset();
-        d3Data.svgOffset = svgOffset;
-    }
-    var adjustedX = pageX - svgOffset.left;
-
-    upperTooltip.attr('x', adjustedX + 3)
-        .text(upperTooltipValue);
-
-    upperTooltip.data([''])
-        .enter().append('text')
-        .classed('upperTooltip', true)
-        .classed('unselectable', true)
-        .attr('y', -5)
-        .attr('x', 0)
-        .attr('opacity', 1.0)
-        .attr('font-size', '0.7em')
-        .attr('pointer-events', 'none')
-        .text('');
 
     //////////////////////////////////////////////////////////////////////////
     // Make Columns
@@ -1280,26 +1417,14 @@ function updateTimeBar ($el, model) {
             // return d.idx;
         });
 
-    var recolorBar = function (d) {
-        if (d.idx === activeBin) {
-            // debug('color focus');
-            var colorVal = color(barType + 'Focus');
-            // debug('colorVal: ', colorVal);
-            return color(barType + 'Focus');
-        } else {
-            return color(barType);
-        }
-    };
-
     bars.exit().remove();
-
-    bars.style('fill', recolorBar);
 
     var dataPlacement = (data.name === 'All') ? 'all' : 'user';
 
     // console.log('barWidth: ', barWidth);
 
     bars.attr('width', barWidth)
+        .attr('fill', recolorBar)
         .attr('y', function (d) {
             return height - yScale(d.val);
         })
@@ -1310,8 +1435,8 @@ function updateTimeBar ($el, model) {
     bars.enter().append('rect')
         .attr('class', 'bar-rect')
         .style('pointer-events', 'none')
-        .style('fill', recolorBar)
         .style('opacity', 1)
+        .attr('fill', recolorBar)
         .attr('width', barWidth)
         .attr('y', function (d) {
             // console.log('ENTERING BAR');
@@ -1320,6 +1445,9 @@ function updateTimeBar ($el, model) {
         .attr('height', function (d) {
             return yScale(d.val);
         });
+
+    // Handle mouse position specific parts
+    updateTimeBarMouseover($el, model);
 
 
     d3Data.lastDraw = 'barChart';
@@ -1407,38 +1535,6 @@ function updateTimeBarLineChart ($el, model) {
         .text(data.name);
 
     //////////////////////////////////////////////////////////////////////////
-    // Upper Tooltip
-    //////////////////////////////////////////////////////////////////////////
-
-    var upperTooltip = svg.selectAll('.upperTooltip');
-    var pageX = model.get('pageX');
-    var activeBin = getActiveBinForPosition($el, model, pageX);
-    var upperTooltipValue = data.bins[activeBin];
-
-    var svgOffset = d3Data.svgOffset;
-    if (!svgOffset) {
-        var jquerySvg = $(svg[0]);
-        svgOffset = jquerySvg.offset();
-        d3Data.svgOffset = svgOffset;
-    }
-
-    var adjustedX = pageX - svgOffset.left;
-
-    upperTooltip.attr('x', adjustedX + 3)
-        .text(upperTooltipValue);
-
-    upperTooltip.data([''])
-        .enter().append('text')
-        .classed('upperTooltip', true)
-        .classed('unselectable', true)
-        .attr('y', -5)
-        .attr('x', 0)
-        .attr('opacity', 1.0)
-        .attr('font-size', '0.7em')
-        .attr('pointer-events', 'none')
-        .text('');
-
-    //////////////////////////////////////////////////////////////////////////
     // Make Area Lines
     //////////////////////////////////////////////////////////////////////////
 
@@ -1463,6 +1559,9 @@ function updateTimeBarLineChart ($el, model) {
                 return color(barType);
             });
     }
+
+    // Handle mouse position specific updates
+    updateTimeBarLineChartMouseover($el, model);
 
     model.set('lineUnchanged', true);
 
