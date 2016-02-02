@@ -23,7 +23,7 @@ var MIN_COLUMN_WIDTH = 8;
 var AXIS_HEIGHT = 20;
 var BAR_SIDE_PADDING = 1;
 var DOUBLE_CLICK_TIME = 500;
-var ZOOM_UPDATE_RATE = 2000;
+var ZOOM_UPDATE_RATE = 100;
 
 var DEFAULT_TIME_AGGREGATION = 'day';
 
@@ -279,7 +279,7 @@ TimeExplorer.prototype.getMultipleTimeData = function (timeType, timeAttr, start
 };
 
 TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, numLeft, numRight) {
-    console.log('GOT ZOOM TIME REQUEST: ', arguments);
+    // console.log('GOT ZOOM TIME REQUEST: ', arguments);
     // Negative if zoom out, positive if zoom in.
     var adjustedZoom = 1.0 - zoomFactor;
 
@@ -1038,7 +1038,7 @@ function tagBins (rawBins, cutoffs) {
 }
 
 function updateTimeBar ($el, model) {
-    debug('updating time bar: ', model);
+    // debug('updating time bar: ', model);
 
     var d3Data = model.get('d3Data');
     var width = d3Data.width;
@@ -1158,7 +1158,6 @@ function updateTimeBar ($el, model) {
     var columns = svg.selectAll('.column')
         .data(taggedBins, function (d, i) {
             // console.log('COLUMN KEY: ', d, i);
-            console.log('Column key: ', d.key);
             return d.key;
         });
 
@@ -1175,17 +1174,37 @@ function updateTimeBar ($el, model) {
     columnRects.transition().duration(ZOOM_UPDATE_RATE)
         .attr('width', Math.floor(barWidth + BAR_SIDE_PADDING));
 
+    var enterTweenTransformFunc = function (d, i) {
+        return 'translate(' + xScale(i) + ',0)';
+    };
 
-    columns.enter().append('g')
-        .classed('g', true)
+    var newCols = columns.enter().append('g');
+
+    newCols.classed('g', true)
         .classed('column', true)
-        .attr('transform', function (d, i) {
-            console.log('ENTERING COLUMN');
-            return 'translate(' + xScale(i) + ',0)';
-        }).append('rect')
+        .append('rect')
             .attr('width', barWidth + BAR_SIDE_PADDING)
             .attr('height', height)
             .attr('opacity', 0);
+
+    // Store a copy in this scope (because it'll later be updated by the time this function executes)
+    var topVal = d3Data.lastTopVal;
+
+    newCols.transition().duration(ZOOM_UPDATE_RATE)
+        .attrTween('transform', function (d, i, a) {
+            // console.log('TESTING TRANSFORM: ', d, i, d3Data);
+            if (topVal && d.key >= topVal) {
+                // console.log('TOP PATH, init width');
+                return d3.interpolate('translate(' + width + ',0)', String(enterTweenTransformFunc.call(this, d, i)));
+            } else {
+                // console.log('BOTTOM PATH, init 0');
+                return d3.interpolate('translate(0,0)', String(enterTweenTransformFunc.call(this, d, i)));
+            }
+        });
+        // .attr('transform', function (d, i) {
+        //     console.log('ENTERING COLUMN');
+        //     return 'translate(' + xScale(i) + ',0)';
+        // })
 
     // TODO: Is this assignment correct?
     var bars = columns.selectAll('.bar-rect')
@@ -1244,6 +1263,8 @@ function updateTimeBar ($el, model) {
     d3Data.lastDraw = 'barChart';
     d3Data.lastTopVal = data.topVal;
     d3Data.lastBottomVal = data.bottomVal;
+
+    // console.log('Setting top vals. Top1, top2: ', data.topVal, data.cutoffs[data.cutoffs.length - 1]);
 
 }
 
