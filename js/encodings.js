@@ -96,11 +96,7 @@ module.exports = {
                     } else if (summary.countDistinct <= 10) {
                         scaling = d3Scale.category10()
                             .domain(distinctValues);
-                    } else if (summary.countDistinct <= 20) {
-                        scaling = d3Scale.category20()
-                            .domain(distinctValues);
-                    } else {
-                        // TODO ensure wraparound
+                    } else { //if (summary.countDistinct < 20) {
                         scaling = d3Scale.category20()
                             .domain(distinctValues);
                     }
@@ -155,7 +151,7 @@ module.exports = {
                     } else if (summary.countDistinct < 10) {
                         scaling = d3Scale.category10()
                             .domain(distinctValues);
-                    } else if (summary.countDistinct < 20) {
+                    } else { //if (summary.countDistinct < 20) {
                         scaling = d3Scale.category20()
                             .domain(distinctValues);
                     }
