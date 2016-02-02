@@ -23,7 +23,11 @@ var MIN_COLUMN_WIDTH = 8;
 var AXIS_HEIGHT = 20;
 var BAR_SIDE_PADDING = 1;
 var DOUBLE_CLICK_TIME = 500;
+
 var ZOOM_UPDATE_RATE = 100;
+var ZOOM_POLL_RATE = ZOOM_UPDATE_RATE + 20;
+var SCROLL_SAMPLE_TIME = 5;
+var SCROLLS_PER_ZOOM = Math.floor(ZOOM_UPDATE_RATE / SCROLL_SAMPLE_TIME);
 
 var DEFAULT_TIME_AGGREGATION = 'day';
 
@@ -109,6 +113,7 @@ function TimeExplorer (socket, $div) {
         start: null,
         stop: null
     };
+    this.zoomCount = 0;
 
     this.queryChangeSubject = new Rx.ReplaySubject(1);
     this.zoomRequests = new Rx.ReplaySubject(1);
@@ -119,10 +124,10 @@ function TimeExplorer (socket, $div) {
         }).distinctUntilChanged(function (timeDesc) {
             return timeDesc.timeType + timeDesc.timeAttr;
         }).flatMap(function (timeDesc) {
-            console.log('GETTING TIME BOUNDS');
+            // console.log('GETTING TIME BOUNDS');
             return that.getTimeBoundsCommand.sendWithObservableResult(timeDesc);
         }).do(function (resp) {
-            console.log('GOT TIME BOUNDS');
+            // console.log('GOT TIME BOUNDS');
 
             that.originalStart = resp.min;
             that.originalStop = resp.max;
@@ -138,7 +143,7 @@ function TimeExplorer (socket, $div) {
             // Not initialized
             return !(_.contains(_.values(desc), null));
         }).flatMap(function (timeDesc) {
-            console.log('WE GETTING TIME DATA');
+            // console.log('WE GETTING TIME DATA');
             var timeType = timeDesc.timeType;
             var timeAttr = timeDesc.timeAttr;
             var timeAggregation = timeDesc.timeAggregation;
@@ -146,14 +151,14 @@ function TimeExplorer (socket, $div) {
             var stop = timeDesc.stop;
             return that.getMultipleTimeData(timeType, timeAttr, start, stop, timeAggregation, that.activeQueries);
         }).do(function (data) {
-            debug('GOT NEW DATA: ', data);
+            // debug('GOT NEW DATA: ', data);
             var dividedData = {};
             dividedData.all = data.All;
             delete data['All'];
             dividedData.user = data;
             dividedData.maxBinValue = dividedData.all.maxBin;
 
-            debug('DIVIDED DATA: ', dividedData);
+            // debug('DIVIDED DATA: ', dividedData);
 
             that.panel.model.set(dividedData);
         }).subscribe(_.identity, util.makeErrorHandler('Error getting time data stream'));
@@ -218,7 +223,7 @@ TimeExplorer.prototype.getTimeData = function (timeType, timeAttr, start, stop, 
     // timeExplorer.realGetTimeData('point', 'time', '2007-01-01T00:01:24+00:00', '2007-01-07T23:59:24+00:00', 'day', [])
     // timeExplorer.realGetTimeData('point', 'time', '2007-01-01T00:01:24+00:00', '2007-01-07T23:59:24+00:00', 'day', [timeExplorer.makeQuery('point', 'trip', 'point:trip > 5000')])
 
-    console.log('GET TIME DATA');
+    // console.log('GET TIME DATA');
 
     var combinedAttr = '' + timeType + ':' + timeAttr;
     var timeFilterQuery = combinedAttr + ' >= "' + start + '" AND ' + combinedAttr + ' <= "' + stop + '"';
@@ -240,11 +245,11 @@ TimeExplorer.prototype.getTimeData = function (timeType, timeAttr, start, stop, 
         filters: filters
     }
 
-    console.log('SENDING TIME DATA COMMAND');
+    // console.log('SENDING TIME DATA COMMAND');
 
     return this.getTimeDataCommand.sendWithObservableResult(payload)
         .map(function (resp) {
-            console.log('payload: ', payload);
+            // console.log('payload: ', payload);
             resp.data.name = name;
             return resp.data;
         });
@@ -267,7 +272,7 @@ TimeExplorer.prototype.getMultipleTimeData = function (timeType, timeAttr, start
             var obj = arguments[i];
             ret[obj.name] = obj;
         }
-        console.log('RET: ', ret);
+        // console.log('RET: ', ret);
         return ret;
     };
 
@@ -281,7 +286,14 @@ TimeExplorer.prototype.getMultipleTimeData = function (timeType, timeAttr, start
 TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, numLeft, numRight) {
     // console.log('GOT ZOOM TIME REQUEST: ', arguments);
     // Negative if zoom out, positive if zoom in.
+
+
+    // HACK UNTIL FIGURE OUT BACKPRESS IN RX5
+    this.zoomCount++;
+
     var adjustedZoom = 1.0 - zoomFactor;
+
+    console.log('zoomReq: ', adjustedZoom);
 
     var params = {
         numLeft: numLeft,
@@ -294,7 +306,41 @@ TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, numLeft, numRight) 
 
 TimeExplorer.prototype.setupZoom = function () {
     var that = this;
-    this.zoomRequests.inspectTime(ZOOM_UPDATE_RATE).flatMap(function (request) {
+    this.zoomRequests
+    .inspectTime(ZOOM_POLL_RATE)
+    // .bufferWithTimeOrCount(ZOOM_UPDATE_RATE, SCROLLS_PER_ZOOM)
+    // .bufferTime(ZOOM_UPDATE_RATE)
+    // .filter(function (requests) {
+    //     console.log('testing reqs');
+    //     return requests.length > 0;
+    // })
+    // .map(function (requests) {
+    //     console.log('REQUESTS: ', requests);
+    //     // TODO: Does this need to be treated separately
+    //     if (requests.length > 1) {
+//
+    //         var combinedZoom = _.reduce(requests, function (memo, req) {
+    //             return memo * req.zoom;
+    //         }, 1.0);
+
+    //         var req = requests[0];
+    //         req.zoom = combinedZoom;
+
+    //         return req;
+    //     } else {
+    //         return requests[0];
+    //     }
+
+    // })
+    // .map(function (req) {
+    //     console.log('ZOOMING: ', req.zoom, that.zoomCount);
+
+    //     req.zoom = Math.pow(req.zoom, that.zoomCount);
+    //     that.zoomCount = 0;
+    //     console.log('FINAL ZOOM: ', req);
+    //     return req;
+    // })
+    .flatMap(function (request) {
         return that.queryChangeSubject
             .take(1)
             .map(function (desc) {
@@ -308,14 +354,29 @@ TimeExplorer.prototype.setupZoom = function () {
         var numStart = (new Date(desc.start)).getTime();
         var numStop = (new Date(desc.stop)).getTime();
 
-        var diff = numStop - numStart;
+        var newStart = numStart;
+        var newStop = numStop;
 
-        // Deltas are represented as zoom in, so change towards a smaller window
-        var startDelta = (req.numLeft/total) * diff * req.zoom;
-        var stopDelta = (req.numRight/total) * diff * req.zoom;
+        console.log('numStart, numStop: ', numStart, numStop);
 
-        var newStart = numStart + Math.round(startDelta);
-        var newStop = numStop - Math.round(stopDelta);
+        for (var i = 0; i < that.zoomCount; i++) {
+            var diff = newStop - newStart;
+
+            var leftRatio = (req.numLeft/total) || 1; // Prevents breaking on single bin
+            var rightRatio = (req.numRight/total) || 1;
+
+            // Scale diff based on how many zoom requests
+            // minus raw = in, so pos diff or delta
+
+            // Deltas are represented as zoom in, so change towards a smaller window
+            var startDelta = leftRatio * diff * req.zoom;
+            var stopDelta = rightRatio * diff * req.zoom;
+
+            newStart = newStart + Math.round(startDelta);
+            newStop = newStop - Math.round(stopDelta);
+
+        }
+        that.zoomCount = 0;
 
         // Guard against stop < start
         if (newStart >= newStop) {
@@ -534,7 +595,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
                 }
             });
 
-            console.log('RENDERING USER BARS VIEW');
+            // console.log('RENDERING USER BARS VIEW');
 
             var params = {
 
@@ -732,11 +793,11 @@ function TimeExplorerPanel (socket, $parent, explorer) {
 
         setupZoomInteraction: function () {
             var that = this;
-            var zoomBase = 1.05;
+            var zoomBase = 1.03;
 
             this.$timeExplorerVizContainer.onAsObservable('mousewheel')
                 // TODO Replace this with correct Rx5 handler.
-                .inspectTime(5)
+                .inspectTime(SCROLL_SAMPLE_TIME)
                 .do(function (wheelEvent) {
                     wheelEvent.preventDefault();
                 })
@@ -1161,7 +1222,7 @@ function updateTimeBar ($el, model) {
             return d.key;
         });
 
-    var columnRects = columns.selectAll('rect');
+    var columnRects = columns.selectAll('.column-rect');
 
     columns.exit().remove();
 
@@ -1183,6 +1244,7 @@ function updateTimeBar ($el, model) {
     newCols.classed('g', true)
         .classed('column', true)
         .append('rect')
+            .classed('column-rect', true)
             .attr('width', barWidth + BAR_SIDE_PADDING)
             .attr('height', height)
             .attr('opacity', 0);
@@ -1201,10 +1263,6 @@ function updateTimeBar ($el, model) {
                 return d3.interpolate('translate(0,0)', String(enterTweenTransformFunc.call(this, d, i)));
             }
         });
-        // .attr('transform', function (d, i) {
-        //     console.log('ENTERING COLUMN');
-        //     return 'translate(' + xScale(i) + ',0)';
-        // })
 
     // TODO: Is this assignment correct?
     var bars = columns.selectAll('.bar-rect')
@@ -1233,9 +1291,13 @@ function updateTimeBar ($el, model) {
         }
     };
 
+    bars.exit().remove();
+
     bars.style('fill', recolorBar);
 
     var dataPlacement = (data.name === 'All') ? 'all' : 'user';
+
+    // console.log('barWidth: ', barWidth);
 
     bars.attr('width', barWidth)
         .attr('y', function (d) {
@@ -1252,13 +1314,13 @@ function updateTimeBar ($el, model) {
         .style('opacity', 1)
         .attr('width', barWidth)
         .attr('y', function (d) {
+            // console.log('ENTERING BAR');
             return height - yScale(d.val);
         })
         .attr('height', function (d) {
             return yScale(d.val);
         });
 
-    bars.exit().remove();
 
     d3Data.lastDraw = 'barChart';
     d3Data.lastTopVal = data.topVal;
@@ -1288,7 +1350,7 @@ function updateTimeBarLineChart ($el, model) {
     }
 
     // Reset because I don't know how to do it cleanly
-    if (d3Data.lastDraw === 'barChart') {
+    if (d3Data.lastDraw === 'barChart' || (!model.get('lineUnchanged'))) {
         debug('REMOVING');
         svg.selectAll("*").remove();
     }
