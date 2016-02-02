@@ -1017,7 +1017,7 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
     var initialHighlightLengths = highlightedEdgeIndices.length + highlightedNodeIndices.length;
     var initialSelectedLengths = selectedEdgeIndices.length + selectedNodeIndices.length;
 
-    // TODO: Decide if we need to dedupe these arrays.
+    // TODO: Decide whether we need to de-duplicate these arrays.
     // TODO: Decide a threshold or such to show neighborhoods for large selections.
     if (initialHighlightLengths <= 1) {
         // Extend edges with neighbors of nodes
@@ -1135,7 +1135,7 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
             var highlightStartIdx = (idx * 4 * numMidEdges);
             var edgeColorStartIdx = (val * 2 * numMidEdges);
             var highlightColorStartIdx = (idx * 2 * numMidEdges);
-            for (var midEdgeIdx = 0; midEdgeIdx < numMidEdges; midEdgeIdx = midEdgeIdx + 1) {
+            for (var midEdgeIdx = 0; midEdgeIdx < numMidEdges; midEdgeIdx ++) {
                 var midEdgeStride = midEdgeIdx * 4;
                 buffers.selectedEdges[highlightStartIdx + midEdgeStride] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride)];
                 buffers.selectedEdges[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 1];
