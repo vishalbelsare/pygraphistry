@@ -190,9 +190,9 @@ module.exports = {
                     binValues = binning.binValues;
                 if (binning.bins && _.size(binning.bins) > 0) {
                     if (binning.type === 'countBy') {
-                        palette = {};
+                        palette = new Array(_.size(binning.bins));
                         _.each(_.keys(binning.bins), function (key, index) {
-                            palette[key] = scaling(index);
+                            palette[index] = scaling(key);
                         });
                     } else if (summary.isNumeric) {
                         palette = _.map(binning.bins, function (itemCount, index) {
