@@ -19,13 +19,13 @@ var FilterControl = require('./FilterControl.js');
 //////////////////////////////////////////////////////////////////////////////
 
 var TIME_BAR_HEIGHT = 60;
-var MIN_COLUMN_WIDTH = 8;
+var MIN_COLUMN_WIDTH = 4;
 var AXIS_HEIGHT = 20;
 var BAR_SIDE_PADDING = 1;
 var DOUBLE_CLICK_TIME = 500;
 
-var ZOOM_UPDATE_RATE = 100;
-var ZOOM_POLL_RATE = ZOOM_UPDATE_RATE + 20;
+var ZOOM_UPDATE_RATE = 80;
+var ZOOM_POLL_RATE = ZOOM_UPDATE_RATE + 5;
 var SCROLL_SAMPLE_TIME = 5;
 var SCROLLS_PER_ZOOM = Math.floor(ZOOM_UPDATE_RATE / SCROLL_SAMPLE_TIME);
 
@@ -1363,13 +1363,13 @@ function updateTimeBar ($el, model) {
 
     columns.exit().remove();
 
-    columns.transition().duration(ZOOM_UPDATE_RATE)
+    columns.transition().duration(ZOOM_UPDATE_RATE).ease('linear')
         .attr('transform', function (d, i) {
             // console.log('UPDATING COLUMN');
             return 'translate(' + xScale(i) + ',0)';
         });
 
-    columnRects.transition().duration(ZOOM_UPDATE_RATE)
+    columnRects.transition().duration(ZOOM_UPDATE_RATE).ease('linear')
         .attr('width', Math.floor(barWidth + BAR_SIDE_PADDING));
 
     var enterTweenTransformFunc = function (d, i) {
@@ -1389,7 +1389,7 @@ function updateTimeBar ($el, model) {
     // Store a copy in this scope (because it'll later be updated by the time this function executes)
     var topVal = d3Data.lastTopVal;
 
-    newCols.transition().duration(ZOOM_UPDATE_RATE)
+    newCols.transition().duration(ZOOM_UPDATE_RATE).ease('linear')
         .attrTween('transform', function (d, i, a) {
             // console.log('TESTING TRANSFORM: ', d, i, d3Data);
             if (topVal && d.key >= topVal) {
@@ -1423,7 +1423,9 @@ function updateTimeBar ($el, model) {
 
     // console.log('barWidth: ', barWidth);
 
-    bars.attr('width', barWidth)
+    // bars
+    bars.transition().duration(ZOOM_UPDATE_RATE).ease('linear')
+        .attr('width', barWidth)
         .attr('fill', recolorBar)
         .attr('y', function (d) {
             return height - yScale(d.val);
