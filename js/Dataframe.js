@@ -1562,10 +1562,15 @@ ColumnAggregation.prototype.isIntegral = function (value) {
     return parseInt(value) == value; // jshint ignore:line
 };
 
+// TODO customize based on user/content preferences:
+var DefaultLocale = 'en-US';
+// TODO customize based on user/content preferences, and/or per column.
+var LocaleCompareOptions = {usage: 'sort', numeric: true};
+
 function isLessThanForDataType(dataType) {
     switch (dataType) {
         case 'string':
-            return function (a, b) { return a.localeCompare(b) < 0; };
+            return function (a, b) { return a.localeCompare(b, DefaultLocale, LocaleCompareOptions) < 0; };
         default:
             return function (a, b) { return a < b; };
     }
