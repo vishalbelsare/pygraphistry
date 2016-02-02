@@ -1438,6 +1438,8 @@ function valueSignifiedUndefined(value) {
     }
 }
 
+Dataframe.prototype.valueSignifiesUndefined = valueSignifiedUndefined;
+
 /**
  * @typedef {Object} Aggregations
  * @property {String} dataType
