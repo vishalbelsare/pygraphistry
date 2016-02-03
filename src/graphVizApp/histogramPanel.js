@@ -908,7 +908,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     var updateColumnColor = function (d, i) {
         if (histFilter && i >= histFilter.firstBin && i <= histFilter.lastBin) {
             return FilterHistogramBarFillColor;
-        } else if (encodesColor && legend) {
+        } else if (encodesColor && legend && legend[i] !== undefined) {
             return legend[i];
         } else {
             return DefaultHistogramBarFillColor;
