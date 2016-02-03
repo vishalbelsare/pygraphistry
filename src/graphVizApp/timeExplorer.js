@@ -257,7 +257,7 @@ TimeExplorer.prototype.getMultipleTimeData = function (timeType, timeAttr, start
     // return Rx.Observable.zip(subjects, zipFunc);
 };
 
-TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, percentage) {
+TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, percentage, dragBox, vizContainer) {
     // console.log('GOT ZOOM TIME REQUEST: ', arguments);
     // Negative if zoom out, positive if zoom in.
 
@@ -271,7 +271,9 @@ TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, percentage) {
 
     var params = {
         percentage: percentage,
-        zoom: adjustedZoom
+        zoom: adjustedZoom,
+        dragBox: dragBox,
+        vizContainer: vizContainer
     };
 
     this.zoomRequests.onNext(params);
@@ -769,13 +771,20 @@ function TimeExplorerPanel (socket, $parent, explorer) {
                     wheelEvent.preventDefault();
                 })
                 .do(function(wheelEvent) {
+
+                    // DONT ZOOM IF DRAG BOX IS VISIBLE
+                    // TODO: Enable zooming and rescale box
+                    if (that.$dragBox.css('display') !== 'none') {
+                        return;
+                    }
+
                     var zoomFactor = (wheelEvent.deltaY < 0 ? zoomBase : 1.0 / zoomBase) || 1.0;
 
                     var xPos = wheelEvent.pageX;
                     var percentage = that.mainBarView.getPercentageForPosition(xPos);
 
                     var explorer = that.model.get('explorer');
-                    explorer.zoomTimeRange(zoomFactor, percentage);
+                    explorer.zoomTimeRange(zoomFactor, percentage, that.$dragBox);
 
                 }).subscribe(_.identity, util.makeErrorHandler('zoom handle on time explorer'));
 
