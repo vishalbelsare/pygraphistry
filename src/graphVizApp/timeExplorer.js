@@ -256,7 +256,7 @@ TimeExplorer.prototype.getMultipleTimeData = function (timeType, timeAttr, start
     // return Rx.Observable.zip(subjects, zipFunc);
 };
 
-TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, numLeft, numRight) {
+TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, percentage) {
     // console.log('GOT ZOOM TIME REQUEST: ', arguments);
     // Negative if zoom out, positive if zoom in.
 
@@ -269,8 +269,7 @@ TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, numLeft, numRight) 
     // console.log('zoomReq: ', adjustedZoom);
 
     var params = {
-        numLeft: numLeft,
-        numRight: numRight,
+        percentage: percentage,
         zoom: adjustedZoom
     };
 
@@ -291,7 +290,7 @@ TimeExplorer.prototype.setupZoom = function () {
         var req = data.request;
         var desc = data.timeDesc;
 
-        var total = req.numLeft + req.numRight + 1;
+        // var total = req.numLeft + req.numRight + 1;
         var numStart = (new Date(desc.start)).getTime();
         var numStop = (new Date(desc.stop)).getTime();
 
@@ -303,8 +302,8 @@ TimeExplorer.prototype.setupZoom = function () {
         for (var i = 0; i < that.zoomCount; i++) {
             var diff = newStop - newStart;
 
-            var leftRatio = (req.numLeft/total) || 1; // Prevents breaking on single bin
-            var rightRatio = (req.numRight/total) || 1;
+            var leftRatio = req.percentage;// (req.numLeft/total) || 1; // Prevents breaking on single bin
+            var rightRatio = 1 - req.percentage;// (req.numRight/total) || 1;
 
             // Scale diff based on how many zoom requests
             // minus raw = in, so pos diff or delta
@@ -772,22 +771,10 @@ function TimeExplorerPanel (socket, $parent, explorer) {
                     var zoomFactor = (wheelEvent.deltaY < 0 ? zoomBase : 1.0 / zoomBase) || 1.0;
 
                     var xPos = wheelEvent.pageX;
-                    var selectedBin = that.mainBarView.getBinForPosition(xPos);
                     var percentage = that.mainBarView.getPercentageForPosition(xPos);
-                    console.log('percentage: ', percentage);
-                    var mainBarData = that.model.get('all');
-                    var numBins = mainBarData.numBins;
-
-                    var numLeft = selectedBin;
-                    var numRight = numBins - selectedBin - 1;
-
-                    // TODO: Prevent this case in general?
-                    if (numLeft < 0 || numRight < 0) {
-                        return;
-                    }
 
                     var explorer = that.model.get('explorer');
-                    explorer.zoomTimeRange(zoomFactor, numLeft, numRight);
+                    explorer.zoomTimeRange(zoomFactor, percentage);
 
                 }).subscribe(_.identity, util.makeErrorHandler('zoom handle on time explorer'));
 
@@ -1177,7 +1164,6 @@ function getPercentageForPosition ($el, model, pageX) {
     // Guard percentage
     percentage = Math.max(0, percentage);
     percentage = Math.min(1, percentage);
-    console.log('percentage');
     return percentage;
 }
 
