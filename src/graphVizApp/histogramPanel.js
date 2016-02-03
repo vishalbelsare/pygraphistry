@@ -29,6 +29,9 @@ var NUM_SPARKLINES = 30;
 var NUM_COUNTBY_SPARKLINES = NUM_SPARKLINES - 1;
 var NUM_COUNTBY_HISTOGRAM = NUM_COUNTBY_SPARKLINES;
 
+var DefaultHistogramBarFillColor = '#FCFCFC';
+var FilterHistogramBarFillColor = '#556ED4';
+
 //////////////////////////////////////////////////////////////////////////////
 // Globals for updates
 //////////////////////////////////////////////////////////////////////////////
@@ -219,9 +222,9 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
             var binning = this.model.getSparkLineData();
             panel.encodeAttribute(dataframeAttribute, encodingSpec, isEncoded, binning).take(1).do(function (response) {
                 if (response.enabled) {
-                    panel.assignEncodingTypeToHistogram(response.encodingType, this.model, response.palette);
+                    panel.assignEncodingTypeToHistogram(response.encodingType, this.model, response.legend);
                 } else {
-                    this.model.set('colorsIndexedPerBin', undefined);
+                    this.model.set('legend', undefined);
                     this.model.set('encodingType', undefined);
                 }
             }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Encoding histogram attribute'));
@@ -445,14 +448,14 @@ HistogramsPanel.prototype.setupApiInteraction = function (apiActions) {
 };
 
 
-HistogramsPanel.prototype.assignEncodingTypeToHistogram = function (encodingType, model, colorsIndexedPerBin) {
+HistogramsPanel.prototype.assignEncodingTypeToHistogram = function (encodingType, model, legend) {
     if (model !== undefined) {
-        model.set('colorsIndexedPerBin', colorsIndexedPerBin);
+        model.set('legend', legend);
         model.set('encodingType', encodingType);
     }
     this.histograms.each(function (histogram) {
         if (histogram !== model && histogram.get('encodingType') === encodingType) {
-            histogram.set('colorsIndexedPerBin', undefined);
+            histogram.set('legend', undefined);
             histogram.set('encodingType', undefined);
         }
     });
@@ -899,17 +902,16 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
             return 'crosshair';
         }
     };
-    var isEncoded = model.get('encodingType') !== undefined;
-    var encodingPalette = model.get('colorsIndexedPerBin');
+    var encodingType = model.get('encodingType'),
+        encodesColor = encodingType !== undefined && encodingType.search(/Color$/) !== -1;
+    var legend = model.get('legend');
     var updateColumnColor = function (d, i) {
-        var defaultFill = '#FCFCFC';
-        var filterFill = '#556ED4';
         if (histFilter && i >= histFilter.firstBin && i <= histFilter.lastBin) {
-            return filterFill;
-        } else if (isEncoded && encodingPalette) {
-            return encodingPalette[i];
+            return FilterHistogramBarFillColor;
+        } else if (encodesColor && legend) {
+            return legend[i];
         } else {
-            return defaultFill;
+            return DefaultHistogramBarFillColor;
         }
     };
 
