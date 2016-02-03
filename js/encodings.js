@@ -54,6 +54,7 @@ module.exports = {
             }
         }
         var distinctValues = _.keys(summary.distinctValues).sort();
+        var domain = defaultDomain;
         switch (encodingType) {
             case 'pointSize':
                 // Has to have a magnitude, not negative:
@@ -86,11 +87,12 @@ module.exports = {
                 if (summary.isCategorical) {
                     if (variation === 'quantitative' && summary.isOrdered) {
                         // User can request a quantitative interpretation of ordered categorical domains.
-                        var domain = defaultDomain;
-                        if (!summary.isNumeric) {
-                            domain = _.range(distinctValues.length);
+                        if (summary.isNumeric) {
+                            domain = defaultDomain;
+                        } else {
+                            domain = distinctValues;
                         }
-                        scaling = d3Scale.linear()
+                        scaling = d3Scale.ordinal()
                             .domain(domain)
                             .range(defaults.color.isQuantitative.sequential.range);
                     } else if (summary.countDistinct <= 10) {
@@ -141,11 +143,21 @@ module.exports = {
                 if (summary.isCategorical) {
                     if (variation === 'quantitative' && summary.isOrdered) {
                         // User can request a quantitative interpretation of ordered categorical domains.
-                        var domain = defaultDomain;
-                        if (!summary.isNumeric) {
-                            domain = _.range(distinctValues.length);
+                        if (summary.isNumeric) {
+                            domain = defaultDomain;
+                        } else if (binning.bins && _.size(binning.bins) > 0) {
+                            // A linear ordering has to trust bin order to make visual sense.
+                            if (binning.type === 'countBy') {
+                                domain = _.sortBy(_.keys(binning.bins), function (key) {
+                                    return binning.bins[key];
+                                });
+                            } else {
+                                domain = distinctValues;
+                            }
+                        } else {
+                            domain = distinctValues;
                         }
-                        scaling = d3Scale.linear()
+                        scaling = d3Scale.ordinal()
                             .domain(domain)
                             .range(defaults.color.isQuantitative.sequential.range);
                     } else if (summary.countDistinct < 10) {
@@ -194,10 +206,18 @@ module.exports = {
             // NOTE: Use the scaling to get hex string / number, not machine integer, for D3 color/size.
             if (binning.bins && _.size(binning.bins) > 0) {
                 if (binning.type === 'countBy') {
-                    legend = new Array(_.size(binning.bins));
-                    _.each(_.keys(binning.bins), function (key, index) {
-                        legend[index] = (key === '_other') ? undefined : scaling(key);
-                    });
+                    if (_.isArray(binning.bins)) {
+                        legend = _.map(binning.bins, function (itemCount, index) {
+                            return scaling(index);
+                        });
+                    } else {
+                        var sortedBinKeys = _.sortBy(_.keys(binning.bins), function (key) {
+                            return binning.bins[key];
+                        });
+                        legend = _.map(sortedBinKeys, function (key) {
+                            return (key === '_other') ? undefined : scaling(key);
+                        });
+                    }
                 } else if (summary.isNumeric) {
                     legend = _.map(binning.bins, function (itemCount, index) {
                         return scaling(minValue + step * index);
