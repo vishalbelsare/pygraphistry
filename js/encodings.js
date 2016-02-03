@@ -30,6 +30,51 @@ var defaults = {
     }
 };
 
+function inferColorScalingFor(summary, variation, defaultDomain, distinctValues, binning) {
+    var domain;
+    if (summary.isCategorical) {
+        if (variation === 'quantitative' && summary.isOrdered) {
+            // User can request a quantitative interpretation of ordered categorical domains.
+            if (summary.isNumeric) {
+                domain = defaultDomain;
+            } else if (binning.bins && _.size(binning.bins) > 0) {
+                // A linear ordering has to trust bin order to make visual sense.
+                if (binning.type === 'countBy') {
+                    domain = _.sortBy(_.keys(binning.bins), function (key) {
+                        return binning.bins[key];
+                    });
+                } else {
+                    domain = distinctValues;
+                }
+            } else {
+                domain = distinctValues;
+            }
+            return d3Scale.ordinal()
+                .domain(domain)
+                .range(defaults.color.isQuantitative.sequential.range);
+        } else if (summary.countDistinct < 10) {
+            return d3Scale.category10()
+                .domain(distinctValues);
+        } else { //if (summary.countDistinct < 20) {
+            return d3Scale.category20()
+                .domain(distinctValues);
+        }
+    }
+    if (summary.isOrdered) {
+        if (summary.isDiverging) {
+            return d3Scale.linear()
+                .domain(defaultDomain)
+                .range(defaults.color.isQuantitative.diverging.range);
+        } else {
+            return d3Scale.linear()
+                .domain(defaultDomain)
+                .range(defaults.color.isQuantitative.sequential.range);
+        }
+    }
+    return undefined;
+}
+
+
 module.exports = {
     inferEncoding: function (dataframe, type, attributeName, encodingType, variation, binning) {
         var aggregations = dataframe.getColumnAggregations(attributeName, type, true);
@@ -84,38 +129,7 @@ module.exports = {
                         scaling: _.identity
                     };
                 }
-                if (summary.isCategorical) {
-                    if (variation === 'quantitative' && summary.isOrdered) {
-                        // User can request a quantitative interpretation of ordered categorical domains.
-                        if (summary.isNumeric) {
-                            domain = defaultDomain;
-                        } else {
-                            domain = distinctValues;
-                        }
-                        scaling = d3Scale.ordinal()
-                            .domain(domain)
-                            .range(defaults.color.isQuantitative.sequential.range);
-                    } else if (summary.countDistinct <= 10) {
-                        scaling = d3Scale.category10()
-                            .domain(distinctValues);
-                    } else { //if (summary.countDistinct < 20) {
-                        scaling = d3Scale.category20()
-                            .domain(distinctValues);
-                    }
-                }
-                if (scaling === undefined) {
-                    if (summary.isOrdered) {
-                        if (summary.isDiverging) {
-                            scaling = d3Scale.linear()
-                                .domain(defaultDomain)
-                                .range(defaults.color.isQuantitative.diverging.range);
-                        } else {
-                            scaling = d3Scale.linear()
-                                .domain(defaultDomain)
-                                .range(defaults.color.isQuantitative.sequential.range);
-                        }
-                    }
-                }
+                scaling = inferColorScalingFor(summary, variation, defaultDomain, distinctValues, binning);
                 break;
             case 'pointTitle':
                 break;
@@ -140,47 +154,7 @@ module.exports = {
                         scaling: _.identity
                     };
                 }
-                if (summary.isCategorical) {
-                    if (variation === 'quantitative' && summary.isOrdered) {
-                        // User can request a quantitative interpretation of ordered categorical domains.
-                        if (summary.isNumeric) {
-                            domain = defaultDomain;
-                        } else if (binning.bins && _.size(binning.bins) > 0) {
-                            // A linear ordering has to trust bin order to make visual sense.
-                            if (binning.type === 'countBy') {
-                                domain = _.sortBy(_.keys(binning.bins), function (key) {
-                                    return binning.bins[key];
-                                });
-                            } else {
-                                domain = distinctValues;
-                            }
-                        } else {
-                            domain = distinctValues;
-                        }
-                        scaling = d3Scale.ordinal()
-                            .domain(domain)
-                            .range(defaults.color.isQuantitative.sequential.range);
-                    } else if (summary.countDistinct < 10) {
-                        scaling = d3Scale.category10()
-                            .domain(distinctValues);
-                    } else { //if (summary.countDistinct < 20) {
-                        scaling = d3Scale.category20()
-                            .domain(distinctValues);
-                    }
-                }
-                if (scaling === undefined) {
-                    if (summary.isOrdered) {
-                        if (summary.isDiverging) {
-                            scaling = d3Scale.linear()
-                                .domain(defaultDomain)
-                                .range(defaults.color.isQuantitative.diverging.range);
-                        } else {
-                            scaling = d3Scale.linear()
-                                .domain(defaultDomain)
-                                .range(defaults.color.isQuantitative.sequential.range);
-                        }
-                    }
-                }
+                scaling = inferColorScalingFor(summary, variation, defaultDomain, distinctValues, binning);
                 break;
             case 'edgeOpacity':
                 // Has to have a magnitude, not negative:
