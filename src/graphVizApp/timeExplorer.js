@@ -1873,6 +1873,10 @@ function updateBottomAxis ($el, model) {
             }
         });
 
+    // TODO: Figure out how to get keying on axis animations
+    // svg.select('#timexaxis-' + id).transition().duration(ZOOM_UPDATE_RATE).ease('linear')
+        // .call(xAxis);
+
     svg.select('#timexaxis-' + id)
         .call(xAxis);
 
