@@ -40,13 +40,30 @@ brewer.PairedRepeat = {
 
 // int -> '#RRGGBB'
 function intToHex (value) {
-    return sprintf('#%02x%02x%02x', value & 255, (value >> 8) & 255, (value >> 16) & 255);
+    return sprintf('#%02x%02x%02x', value & 0xFF, (value >> 8) & 0xFF, (value >> 16) & 0xFF);
 }
 
-//'#AABBCC' -> int
-//TODO: this returns ABGR as that's what vgraphloader sends to the client
-function hexToInt (hexStr) {
-    var out = parseInt(hexStr.replace('#', '0x'), 16);
+/**
+ * Convert RGBA color to WebGL buffer-compatible output.
+ * #sadness, rgba => abgr
+ * @param {Number} value
+ * @return {Number}
+ */
+function convertRGBAToABGR (value) {
+    return ((value & 0xFF) << 24)
+        | ((value & 0xFF00) << 8)
+        | ((value >> 8) & 0xFF00)
+        | ((value >> 24) & 0xFF);
+}
+
+/**
+ * '#AABBCC' -> int
+ * TODO: this returns ABGR as that's what vgraphloader sends to the client
+ * @param {String} hexColor
+ * @return {Number}
+ */
+function hexToABGR (hexColor) {
+    var out = parseInt(hexColor.replace('#', '0x'), 16);
 
     //sadness, rgba => abgr
     var c = {
@@ -83,7 +100,7 @@ palettes.forEach(function (palette) {
         //use to create palette.out
         //console.log('palette', palette, encounteredPalettes * 1000, brewer[palette][dim].length, brewer[palette][dim].join(','))
 
-        palettesToColorInts[palette][dim] = brewer[palette][dim].map(hexToInt);
+        palettesToColorInts[palette][dim] = brewer[palette][dim].map(hexToABGR);
         palettesToColorInts[palette][dim].forEach(function (color, idx) {
             categoryToColorInt[encounteredPalettes * 1000 + idx] = color;
         });
@@ -147,6 +164,6 @@ module.exports = {
         });
     },
 
-    hexToInt: hexToInt,
+    hexToABGR: hexToABGR,
     intToHex: intToHex
 };

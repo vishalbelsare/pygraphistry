@@ -1502,7 +1502,7 @@ ColumnAggregation.prototype.getAggregationByType = function (aggType) {
 var AggTypes = [
     'jsType', 'dataType',
     'isNumeric', 'isIntegral', 'isContinuous', 'isQuantitative', 'isOrdered',
-    'isDiverging', 'hasPositive', 'hasNegative',
+    'isDiverging', 'hasPositive', 'hasNegative', 'isPositive',
     'count', 'sum', 'minValue', 'maxValue', 'averageValue',
     'countDistinct', 'distinctValues', 'isCategorical'
 ];

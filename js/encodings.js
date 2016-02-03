@@ -1,7 +1,8 @@
 'use strict';
 
 var _        = require('underscore');
-var d3Scale  = require('d3-scale');
+var d3Scale       = require('d3-scale');
+var d3Interpolate = require('d3-interpolate');
 
 var palettes = require('./palettes');
 
@@ -32,11 +33,14 @@ var defaults = {
 
 function inferColorScalingFor(summary, variation, defaultDomain, distinctValues, binning) {
     var domain;
+    var defaultSequentialRange = defaults.color.isQuantitative.sequential.range;
     if (summary.isCategorical) {
         if (variation === 'quantitative' && summary.isOrdered) {
             // User can request a quantitative interpretation of ordered categorical domains.
             if (summary.isNumeric) {
-                domain = defaultDomain;
+                return d3Scale.linear()
+                    .domain(defaultDomain)
+                    .range(defaultSequentialRange);
             } else if (binning.bins && _.size(binning.bins) > 0) {
                 // A linear ordering has to trust bin order to make visual sense.
                 if (binning.type === 'countBy') {
@@ -49,9 +53,12 @@ function inferColorScalingFor(summary, variation, defaultDomain, distinctValues,
             } else {
                 domain = distinctValues;
             }
+            var interpolation = d3Interpolate.interpolate(defaultSequentialRange[0], defaultSequentialRange[1]),
+                numValues = domain.length,
+                range = _.map(_.range(numValues), function (idx) { return interpolation(idx / numValues); });
             return d3Scale.ordinal()
                 .domain(domain)
-                .range(defaults.color.isQuantitative.sequential.range);
+                .range(range);
         } else if (summary.countDistinct < 10) {
             return d3Scale.category10()
                 .domain(distinctValues);
@@ -68,7 +75,7 @@ function inferColorScalingFor(summary, variation, defaultDomain, distinctValues,
         } else {
             return d3Scale.linear()
                 .domain(defaultDomain)
-                .range(defaults.color.isQuantitative.sequential.range);
+                .range(defaultSequentialRange);
         }
     }
     return undefined;
@@ -76,30 +83,35 @@ function inferColorScalingFor(summary, variation, defaultDomain, distinctValues,
 
 
 module.exports = {
+    inferEncodingType: function (dataframe, type, attributeName) {
+        var aggregations = dataframe.getColumnAggregations(attributeName, type, true);
+        var summary = aggregations.getSummary();
+        switch (type) {
+            case 'point':
+                if (summary.isPositive) {
+                    return 'pointSize';
+                } else {
+                    return 'pointColor';
+                }
+                break;
+            case 'edge':
+                if (summary.isPositive) {
+                    return 'edgeSize';
+                } else {
+                    return 'edgeColor';
+                }
+        }
+        return undefined;
+    },
+    bufferNameForEncodingType: function (encodingType) {
+        return encodingType && (encodingType + 's');
+    },
     inferEncoding: function (dataframe, type, attributeName, encodingType, variation, binning) {
         var aggregations = dataframe.getColumnAggregations(attributeName, type, true);
         var summary = aggregations.getSummary();
         var scaling;
         var defaultDomain = [summary.minValue, summary.maxValue];
-        if (!encodingType) {
-            switch (type) {
-                case 'point':
-                    if (summary.isPositive) {
-                        encodingType = 'pointSize';
-                    } else {
-                        encodingType = 'pointColor';
-                    }
-                    break;
-                case 'edge':
-                    if (summary.isPositive) {
-                        encodingType = 'edgeSize';
-                    } else {
-                        encodingType = 'edgeColor';
-                    }
-            }
-        }
         var distinctValues = _.keys(summary.distinctValues).sort();
-        var domain = defaultDomain;
         switch (encodingType) {
             case 'pointSize':
                 // Has to have a magnitude, not negative:
@@ -123,8 +135,6 @@ module.exports = {
                 // Assumes direct RGBA int32 values for now.
                 if (attributeName.match(/color/i)) {
                     return {
-                        encodingType: encodingType,
-                        bufferName: encodingType + 's',
                         legend: distinctValues,
                         scaling: _.identity
                     };
@@ -148,8 +158,6 @@ module.exports = {
                 // Assumes direct RGBA int32 values for now.
                 if (attributeName.match(/color/i)) {
                     return {
-                        encodingType: encodingType,
-                        bufferName: encodingType + 's',
                         legend: distinctValues,
                         scaling: _.identity
                     };
@@ -167,13 +175,9 @@ module.exports = {
             default:
                 throw new Error('No encoding found for: ' + encodingType);
         }
-        var scaleAndEncode = scaling;
         /** A legend per the binning. @type <Array> */
         var legend;
         if (scaling !== undefined && binning !== undefined) {
-            if (encodingType.match(/Color$/)) {
-                scaleAndEncode = function (x) { return palettes.hexToInt(scaling(x)); };
-            }
             // All this just handles many shapes of binning metadata, kind of messy.
             var minValue = summary.minValue,
                 step = binning.binWidth || 0,
@@ -211,10 +215,8 @@ module.exports = {
             }
         }
         return {
-            encodingType: encodingType,
-            bufferName: encodingType && (encodingType + 's'),
             legend: legend,
-            scaling: scaleAndEncode
+            scaling: scaling
         };
     }
 };
