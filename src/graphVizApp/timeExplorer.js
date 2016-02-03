@@ -25,6 +25,7 @@ var BAR_SIDE_PADDING = 1;
 var DOUBLE_CLICK_TIME = 500;
 
 var ZOOM_UPDATE_RATE = 90;
+// var ZOOM_UPDATE_RATE = 1500;
 var ZOOM_POLL_RATE = ZOOM_UPDATE_RATE - 10;
 var SCROLL_SAMPLE_TIME = 5;
 var SCROLLS_PER_ZOOM = Math.floor(ZOOM_UPDATE_RATE / SCROLL_SAMPLE_TIME);
@@ -1775,13 +1776,23 @@ function initializeBottomAxis ($el, model) {
     width = width - axisMargin.left - axisMargin.right;
     height = height - axisMargin.top - axisMargin.bottom;
 
+    var xAxisScale = d3.scale.linear()
+        .range([0, width])
+        .domain([0, width]);
+
     var svg = setupSvg($el[0], axisMargin, width, height);
+
+    var xAxis = d3.svg.axis()
+        .scale(xAxisScale)
+        .orient('bottom');
 
     svg.append('g')
         .attr('class', 'x axis x-axis')
         .attr('id', 'timexaxis-' + id);
 
     _.extend(d3Data, {
+        xAxisScale: xAxisScale,
+        xAxis: xAxis,
         svg: svg,
         width: width,
         height: height
@@ -1800,11 +1811,8 @@ function updateBottomAxis ($el, model) {
     var height = d3Data.height;
     var svg = d3Data.svg;
 
+    var xAxisScale = d3Data.xAxisScale;
     var xScale = setupBinScale(width, data.numBins, data);
-
-    var xAxisScale = d3.scale.linear()
-        .range([0, width])
-        .domain([0, width]);
 
 
     var startDate = new Date(data.cutoffs[0]);
@@ -1816,6 +1824,7 @@ function updateBottomAxis ($el, model) {
     // var tickContent = data.cutoffs;
     var tickContent = [];
     var tickPositions = [];
+    var tickKeys = [];
 
     if (maxNumTicks < numTicks) {
 
@@ -1829,11 +1838,13 @@ function updateBottomAxis ($el, model) {
             var val = data.cutoffs[runningPos];
             tickContent.push(val);
             tickPositions.push(pos);
+            tickKeys.push(data.keys[runningPos]);
 
             runningPos += step;
         }
         tickContent.push(data.cutoffs[data.cutoffs.length - 1]);
         tickPositions.push(width);
+        tickKeys.push(data.keys[data.keys.length - 1]);
 
         numTicks = tickContent.length;
 
@@ -1844,6 +1855,7 @@ function updateBottomAxis ($el, model) {
             var val = cutoff;
             tickContent.push(val);
             tickPositions.push(pos);
+            tickKeys.push(data.keys[i]);
         });
 
     }
@@ -1852,12 +1864,12 @@ function updateBottomAxis ($el, model) {
     // as what the active bounds are.
     tickContent = tickContent.slice(1, tickContent.length-1);
     tickPositions = tickPositions.slice(1, tickPositions.length-1);
+    tickKeys = tickKeys.slice(1, tickKeys.length-1);
 
     var expandedTickTitles = [];
-    var xAxis = d3.svg.axis()
-        .scale(xAxisScale)
-        .orient('bottom')
-        .ticks(numTicks)
+    var xAxis = d3Data.xAxis;
+
+    xAxis.ticks(numTicks)
         .tickValues(tickPositions)
         .tickFormat(function (d, i) {
 
@@ -1877,8 +1889,174 @@ function updateBottomAxis ($el, model) {
     // svg.select('#timexaxis-' + id).transition().duration(ZOOM_UPDATE_RATE).ease('linear')
         // .call(xAxis);
 
-    svg.select('#timexaxis-' + id)
-        .call(xAxis);
+    var timeAxisSelection = svg.select('#timexaxis-' + id);
+
+    if (!d3Data.lastTickKeys) {
+        // No prior ticks, just draw
+        timeAxisSelection.call(xAxis);
+    } else {
+        var lastTickKeys = d3Data.lastTickKeys;
+        var lastTickPositions = d3Data.lastTickPositions;
+        var lastTickContent = d3Data.lastTickContent;
+        var lastNumTicks = lastTickPositions.length;
+
+
+
+        if (d3Data.lastBottomVal > data.bottomVal) {
+            // zoomed out
+
+            var prevIds = _.range(lastTickContent.length);
+            var newIds = _.range(tickContent.length);
+            var dec = 0;
+            _.each(tickContent, function (v, i) {
+                if (v < d3Data.lastBottomVal) {
+                    dec++;
+                }
+            });
+
+            newIds = _.map(newIds, function (v) {
+                return v - dec;
+            });
+
+            var positionTweens = [];
+            _.each(newIds, function (v, i) {
+                var start, stop;
+                if (v < 0) {
+                    start = 0;
+                } else if (v >= lastTickContent.length) {
+                    start = width;
+                } else {
+                    start = lastTickPositions[v];
+                }
+
+                stop = tickPositions[i];
+                positionTweens.push([start, stop]);
+            });
+
+            var tweeningContent = tickContent;
+
+        } else {
+            // zoomed in
+
+            var prevIds = _.range(lastTickContent.length);
+            var newIds = _.range(tickContent.length);
+            var dec = 0;
+            _.each(lastTickContent, function (v, i) {
+                if (v < data.bottomVal) {
+                    dec++;
+                }
+            });
+
+            prevIds = _.map(prevIds, function (v) {
+                return v - dec;
+            });
+
+            var positionTweens = [];
+            _.each(prevIds, function (v, i) {
+                var start, stop;
+                if (v < 0) {
+                    stop = 0;
+                } else if (v >= tickContent.length) {
+                    stop = width;
+                } else {
+                    stop = tickPositions[v];
+                }
+
+                start = lastTickPositions[i];
+                positionTweens.push([start, stop]);
+            });
+
+            var tweeningContent = lastTickContent;
+        }
+
+
+
+        var getInterpolatedTicks = function (t) {
+
+            var newMin = data.bottomVal;
+            var newMax = data.topVal;
+
+            if (t > 0.99) {
+                return {
+                    numTicks: numTicks,
+                    tickPositions: tickPositions,
+                    tickContent: tickContent
+                };
+            }
+
+            var tempNumTicks = tweeningContent.length;
+            var tempTickContent = tweeningContent;
+
+            var tempTickPositions = _.map(positionTweens, function (startStop, i) {
+                var start = startStop[0];
+                var stop = startStop[1];
+
+                var interpolater = d3.interpolateNumber(start, stop);
+                return interpolater(t);
+            });
+
+            return {
+                numTicks: tempNumTicks,
+                tickPositions: tempTickPositions,
+                tickContent: tempTickContent
+            };
+
+        };
+
+        timeAxisSelection.transition().duration(ZOOM_UPDATE_RATE).ease('linear').tween('#timexaxis-' + id, function (d, i) {
+
+            return function (t) {
+                // Make changes to axis
+                var interpolatedTicks = getInterpolatedTicks(t);
+                var expandedTickTitles = [];
+
+                // TODO: Encapsulate these functions
+                xAxis.ticks(interpolatedTicks.numTicks)
+                    .tickValues(interpolatedTicks.tickPositions)
+                    .tickFormat(function (d, i) {
+
+                        // debug('tick arg: ', arguments);
+                        var raw = interpolatedTicks.tickContent[i];
+                        if (raw) {
+                            var expanded = prettyPrintTime(raw);
+                            expandedTickTitles.push(expanded);
+                            var label = prettyPrintTime(raw, data.timeAggregation);
+                            return label;
+                        } else {
+                            return '';
+                        }
+                    });
+
+
+                // Update axis
+                timeAxisSelection.call(xAxis);
+
+                // Update mouseover tooltip content
+                d3.select('#timexaxis-' + id)
+                    .selectAll('text')
+                    .attr('data-container', 'body')
+                    .attr('data-placement', 'top')
+                    .attr('data-toggle', 'tooltip')
+                    .attr('data-original-title', function (d, i) {
+                        return expandedTickTitles[i];
+                    });
+
+                d3.select('#timexaxis-' + id)
+                .selectAll('text')
+                .on('mouseover', function () {
+                    var target = d3.event.target;
+                    $(target).tooltip('fixTitle');
+                    $(target).tooltip('show');
+                })
+                .on('mouseout', function () {
+                    var target = d3.event.target;
+                    $(target).tooltip('hide');
+                });
+                    };
+
+        });
+
+    }
 
     d3.select('#timexaxis-' + id)
         .selectAll('text')
@@ -1900,6 +2078,12 @@ function updateBottomAxis ($el, model) {
             var target = d3.event.target;
             $(target).tooltip('hide');
         });
+
+    d3Data.lastTickKeys = tickKeys;
+    d3Data.lastTickPositions = tickPositions;
+    d3Data.lastTickContent = tickContent;
+    d3Data.lastTopVal = data.topVal;
+    d3Data.lastBottomVal = data.bottomVal;
 
 }
 
