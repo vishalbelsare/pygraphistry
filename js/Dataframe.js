@@ -2059,6 +2059,11 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     var startDate = new Date(start);
     var endDate = new Date(stop);
 
+    //////////////////////////////////////////////////////////////////////////
+    // COMPUTE INC / DEC FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////
+
+
     var incFunction;
     var decFunction;
     // TODO: Rest of time ranges
@@ -2094,22 +2099,32 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
         return;
     }
 
-    // Make sure startDate is on a nice boundary
-    decFunction(startDate);
+    //////////////////////////////////////////////////////////////////////////
+    // Optionally set start / stop to nice boundaries
+    //////////////////////////////////////////////////////////////////////////
 
-    // Before incrementing endDate, check to see if it's already a boundary (in which case we don't)
-    // want to incremement
-    var testDate = new Date(endDate.getTime());
-    decFunction(testDate);
-    if (testDate.getTime() !== endDate.getTime()) {
-        incFunction(endDate);
-    }
+
+    // // Make sure startDate is on a nice boundary
+    // decFunction(startDate);
+
+    // // Before incrementing endDate, check to see if it's already a boundary (in which case we don't)
+    // // want to incremement
+    // var testDate = new Date(endDate.getTime());
+    // decFunction(testDate);
+    // if (testDate.getTime() !== endDate.getTime()) {
+    //     incFunction(endDate);
+    // }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Compute cutoffs
+    //////////////////////////////////////////////////////////////////////////
+
 
     // TODO: We don't strictly need to compute all cutoffs to bin.
     // We should just compute numBins, width, start, stop like in normal histograms
     var cutoffs = [startDate];
 
-    // Figure out how many it would be.
+    // Guess how many it would be.
     var timeA = new Date(start);
     var timeB = new Date(start);
     decFunction(timeA);
@@ -2118,6 +2133,7 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
 
     var estimatedNumberBins = (endDate.getTime() - startDate.getTime())/binWidth;
     var MAX_BINS_TIME_HISTOGRAM = 2500;
+
 
     var approximated = false;
     if (estimatedNumberBins > MAX_BINS_TIME_HISTOGRAM) {
@@ -2155,11 +2171,24 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
         return val.getTime();
     });
 
+
+    //////////////////////////////////////////////////////////////////////////
+    // Compute bins given cutoffs
+    //////////////////////////////////////////////////////////////////////////
+
     // Fill bins
     var numBins = cutoffs.length - 1;
     var bins = Array.apply(null, new Array(numBins)).map(function () { return 0; });
     var timeValues = this.getColumnValues(timeAttr, timeType);
-    binWidth = cutoffNumbers[1] - cutoffNumbers[0];
+
+    // COMPUTE BIN WIDTH
+    var binWidthTestDate = new Date(start);
+    decFunction(binWidthTestDate);
+    var bottom = binWidthTestDate.getTime();
+    incFunction(binWidthTestDate);
+    var top = binWidthTestDate.getTime();
+    binWidth = top - bottom;
+    // binWidth = cutoffNumbers[1] - cutoffNumbers[0];
 
     var binId, value;
     mask.mapIndexes(timeType, function (idx) {
@@ -2167,9 +2196,50 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
         var valueDate = new Date(value);
         var valueNum = valueDate.getTime();
 
-        var binId = ((valueNum - cutoffNumbers[0]) / binWidth) | 0;
-        bins[binId]++;
+        // Because the first and last bins can be variable width (but ONLY those)
+        // We need to special case being in the first bucket, and make rest of computations
+        // against the second cutoff number and inc by one
+
+        // In bin one
+        if (valueNum < cutoffNumbers[1]) {
+            bins[0]++;
+        } else {
+            // In any other bin
+            var binId = (((valueNum - cutoffNumbers[1]) / binWidth) | 0) + 1;
+            bins[binId]++;
+        }
+
+        // var binId = ((valueNum - cutoffNumbers[0]) / binWidth) | 0;
+        // bins[binId]++;
     });
+
+    //////////////////////////////////////////////////////////////////////////
+    // Compute offsets array for visualization purposes
+    //////////////////////////////////////////////////////////////////////////
+
+    var widths = [];
+    for (var i = 0; i < cutoffNumbers.length - 1; i++) {
+        widths[i] = (cutoffNumbers[i+1] - cutoffNumbers[i])/binWidth;
+    }
+
+    var rawOffsets = [];
+    // Compute scan of widths
+    for (var i = 0; i < widths.length; i++) {
+        var prev = (i > 0) ? rawOffsets[i-1] : 0;
+        rawOffsets[i] = prev + widths[i];
+    }
+
+    // Normalize rawOffsets so that they are out of 1.0;
+    var denom = rawOffsets[rawOffsets.length - 1];
+    var offsets = [];
+    for (var i = 0; i < rawOffsets.length; i++) {
+        var raw = (i > 0) ? rawOffsets[i-1] : 0;
+        offsets[i] = (raw / denom);
+    }
+
+
+
+
 
     return {
         bins: bins,
@@ -2184,7 +2254,9 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
         bottomVal: cutoffNumbers[0],
         timeAggregation: timeAggregation,
         cutoffs: cutoffNumbers,
-        approximated: approximated
+        approximated: approximated,
+        offsets: offsets,
+        widths: widths
     };
 };
 
