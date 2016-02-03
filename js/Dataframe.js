@@ -1453,6 +1453,7 @@ Dataframe.prototype.valueSignifiesUndefined = valueSignifiedUndefined;
  * @property {Boolean} isDiverging
  * @property {Boolean} hasPositive
  * @property {Boolean} hasNegative
+ * @property {Boolean} isPositive Has positive values and no negative ones.
  * @property {Number} count
  * @property {Number} countDistinct
  * @property {Object.<Number>} distinctValues count of instances by value
@@ -1685,7 +1686,8 @@ ColumnAggregation.prototype.inferDivergence = function () {
         summary = {
             hasPositive: hasPositive,
             hasNegative: hasNegative,
-            isDiverging: hasNegative && hasPositive
+            isDiverging: hasNegative && hasPositive,
+            isPositive: hasPositive && !hasNegative
         };
     this.updateAggregations(summary);
 };

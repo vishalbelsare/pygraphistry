@@ -39,14 +39,14 @@ module.exports = {
         if (!encodingType) {
             switch (type) {
                 case 'point':
-                    if (summary.isQuantitative && !summary.isDiverging) {
+                    if (summary.isPositive) {
                         encodingType = 'pointSize';
                     } else {
                         encodingType = 'pointColor';
                     }
                     break;
                 case 'edge':
-                    if (summary.isQuantitative && !summary.isDiverging) {
+                    if (summary.isPositive) {
                         encodingType = 'edgeSize';
                     } else {
                         encodingType = 'edgeColor';
@@ -58,7 +58,7 @@ module.exports = {
         switch (encodingType) {
             case 'pointSize':
                 // Has to have a magnitude, not negative:
-                if (summary.isOrdered && !summary.isDiverging) {
+                if (summary.isPositive) {
                     // Square root because point size/radius yields a point area:
                     scaling = d3Scale.sqrt()
                         .domain(defaultDomain)
@@ -67,7 +67,7 @@ module.exports = {
                 break;
             case 'pointOpacity':
                 // Has to have a magnitude, not negative:
-                if (summary.isOrdered && !summary.isDiverging) {
+                if (summary.isPositive) {
                     scaling = d3Scale.linear()
                         .domain(defaultDomain)
                         .range(defaults.pointOpacity.range);
@@ -123,7 +123,7 @@ module.exports = {
                 break;
             case 'edgeSize':
                 // TODO ensure sizes are binned/scaled so that they may be visually distinguished.
-                if (summary.isQuantitative && !summary.isDiverging) {
+                if (summary.isPositive) {
                     scaling = d3Scale.linear()
                         .domain(defaultDomain)
                         .range(defaults.edgeSize.range);
@@ -183,7 +183,8 @@ module.exports = {
                 }
                 break;
             case 'edgeOpacity':
-                if (summary.isQuantitative && !summary.isDiverging) {
+                // Has to have a magnitude, not negative:
+                if (summary.isPositive) {
                     scaling = d3Scale.linear()
                         .domain(defaultDomain)
                         .range(defaults.edgeOpacity.range);
