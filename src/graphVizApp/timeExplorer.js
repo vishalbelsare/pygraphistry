@@ -1823,6 +1823,11 @@ function initializeBottomAxis ($el, model) {
 
     }
 
+    // Get rid of first and last ticks, because they should be represented in a more visible way
+    // as what the active bounds are.
+    tickContent = tickContent.slice(1, tickContent.length-1);
+    tickPositions = tickPositions.slice(1, tickPositions.length-1);
+
     var expandedTickTitles = [];
     var xAxis = d3.svg.axis()
         .scale(xAxisScale)
