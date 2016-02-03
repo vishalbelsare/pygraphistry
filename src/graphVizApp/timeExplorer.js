@@ -57,6 +57,8 @@ var timeAggregationButtons = [
 ];
 
 
+var INTERACTION_MODE = 'FILTER';
+
 
 
 var TimeExplorerModel = Backbone.Model.extend({});
@@ -88,23 +90,6 @@ function TimeExplorer (socket, $div) {
     this.getTimeDataCommand = new Command('getting time data', 'timeAggregation', socket);
     this.getTimeBoundsCommand = new Command('getting time bounds', 'getTimeBoundaries', socket);
 
-    // this.activeQueries = [
-    //     {
-    //         name: 'smallTime',
-    //         query: that.makeQuery('point', 'time', 'point:time < "2007-01-02T00:01:24+00:00"')
-    //     },
-
-    //     {
-    //         name: 'medTime',
-    //         query: that.makeQuery('point', 'time', 'point:time >= "2007-01-02T00:01:24+00:00" and point:time < "2007-01-05T00:01:24+00:00"')
-    //     },
-
-    //     {
-    //         name: 'largeTime',
-    //         query: that.makeQuery('point', 'time', 'point:time >= "2007-01-05T00:01:24+00:00"')
-
-    //     }
-    // ];
     this.activeQueries = [];
     this.timeDescription = {
         timeType: null,
@@ -117,6 +102,7 @@ function TimeExplorer (socket, $div) {
 
     this.queryChangeSubject = new Rx.ReplaySubject(1);
     this.zoomRequests = new Rx.ReplaySubject(1);
+    this.graphTimeFilter = null;
 
 
     this.queryChangeSubject.filter(function (timeDesc) {
@@ -164,23 +150,6 @@ function TimeExplorer (socket, $div) {
         }).subscribe(_.identity, util.makeErrorHandler('Error getting time data stream'));
 
 
-    // this.getTimeBoundsCommand.sendWithObservableResult(this.timeDescription)
-    //     .flatMap(function (resp) {
-    //         var timeType = that.timeDescription.timeType;
-    //         var timeAttr = that.timeDescription.timeAttr;
-    //         var timeAggregation = that.timeDescription.timeAggregation;
-    //         return that.getMultipleTimeData(timeType, timeAttr, resp.min, resp.max, timeAggregation, that.activeQueries);
-    //     }).do(function (data) {
-    //         debug('Got time data stream: ', data);
-    //         var dividedData = {};
-    //         dividedData.all = data._all;
-    //         delete data['_all'];
-    //         dividedData.user = data;
-    //         dividedData.maxBinValue = dividedData.all.maxBin;
-
-    //         that.panel.model.set(dividedData);
-    //     }).subscribe(_.identity, util.makeErrorHandler('Error getting time data stream'));
-
     this.queryChangeSubject.onNext(this.timeDescription);
     this.setupZoom();
 
@@ -190,11 +159,15 @@ function TimeExplorer (socket, $div) {
     debug('Initialized Time Explorer');
 }
 
+TimeExplorer.prototype.updateGraphTimeFilter = function (newTimeFilter) {
+    console.log('GOT TIME FILTER UPDATE: ', newTimeFilter);
+};
+
 TimeExplorer.prototype.modifyTimeDescription = function (change) {
     var that = this;
     that.queryChangeSubject.take(1).do(function (timeDesc) {
         _.extend(timeDesc, change);
-        debug('NEW TIME DESC: ', timeDesc);
+        // debug('NEW TIME DESC: ', timeDesc);
         that.queryChangeSubject.onNext(timeDesc);
     }).subscribe(_.identity);
 };
@@ -266,7 +239,7 @@ TimeExplorer.prototype.getMultipleTimeData = function (timeType, timeAttr, start
     subjects.push(allSubject);
 
     var zipFunc = function () {
-        debug('zipping');
+        // debug('zipping');
         var ret = {};
         for (var i = 0; i < arguments.length; i++) {
             var obj = arguments[i];
@@ -293,7 +266,7 @@ TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, numLeft, numRight) 
 
     var adjustedZoom = 1.0 - zoomFactor;
 
-    console.log('zoomReq: ', adjustedZoom);
+    // console.log('zoomReq: ', adjustedZoom);
 
     var params = {
         numLeft: numLeft,
@@ -308,38 +281,6 @@ TimeExplorer.prototype.setupZoom = function () {
     var that = this;
     this.zoomRequests
     .inspectTime(ZOOM_POLL_RATE)
-    // .bufferWithTimeOrCount(ZOOM_UPDATE_RATE, SCROLLS_PER_ZOOM)
-    // .bufferTime(ZOOM_UPDATE_RATE)
-    // .filter(function (requests) {
-    //     console.log('testing reqs');
-    //     return requests.length > 0;
-    // })
-    // .map(function (requests) {
-    //     console.log('REQUESTS: ', requests);
-    //     // TODO: Does this need to be treated separately
-    //     if (requests.length > 1) {
-//
-    //         var combinedZoom = _.reduce(requests, function (memo, req) {
-    //             return memo * req.zoom;
-    //         }, 1.0);
-
-    //         var req = requests[0];
-    //         req.zoom = combinedZoom;
-
-    //         return req;
-    //     } else {
-    //         return requests[0];
-    //     }
-
-    // })
-    // .map(function (req) {
-    //     console.log('ZOOMING: ', req.zoom, that.zoomCount);
-
-    //     req.zoom = Math.pow(req.zoom, that.zoomCount);
-    //     that.zoomCount = 0;
-    //     console.log('FINAL ZOOM: ', req);
-    //     return req;
-    // })
     .flatMap(function (request) {
         return that.queryChangeSubject
             .take(1)
@@ -357,7 +298,7 @@ TimeExplorer.prototype.setupZoom = function () {
         var newStart = numStart;
         var newStop = numStop;
 
-        console.log('numStart, numStop: ', numStart, numStop);
+        // console.log('numStart, numStop: ', numStart, numStop);
 
         for (var i = 0; i < that.zoomCount; i++) {
             var diff = newStop - newStart;
@@ -386,7 +327,7 @@ TimeExplorer.prototype.setupZoom = function () {
         var newStartDate = new Date(newStart);
         var newStopDate = new Date(newStop);
 
-        console.log('New Start, Stop: ', newStartDate, newStopDate);
+        // console.log('New Start, Stop: ', newStartDate, newStopDate);
 
         that.modifyTimeDescription({
             start: newStart,
@@ -555,16 +496,16 @@ function TimeExplorerPanel (socket, $parent, explorer) {
         changeTimeAgg: function (evt) {
             evt.preventDefault();
             evt.stopPropagation();
-            console.log('GOT CLICK: ', evt);
+            // console.log('GOT CLICK: ', evt);
 
             var target = evt.target;
             var shortText = $(target).text();
             $(target).parent().children('button').not('#timeAggButton-' + shortText).removeClass('active');
             $(target).addClass('active');
-            console.log('TARGET: ', target);
-            console.log($(target));
+            // console.log('TARGET: ', target);
+            // console.log($(target));
             var aggValue = $(target).data('aggregation-value');
-            console.log('aggValue: ', aggValue);
+            // console.log('aggValue: ', aggValue);
 
 
             this.model.get('explorer').modifyTimeDescription({
@@ -763,6 +704,11 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             // TODO: Add, remove, reset handlers
             this.listenTo(this.model, 'change', this.updateChildren);
             this.listenTo(this.model, 'change:all', this.setupMouseInteractions);
+
+            this.dragBoxLastLeftX = Infinity;
+            this.dragBoxLastRightX = -Infinity;
+
+
             // this.setupVerticalLine();
             this.renderInitializationMenu();
         },
@@ -791,7 +737,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             // TODO: New div and render correct eleements in right order
             this.$timeExplorerMain.empty();
 
-            console.log('RENDERING TOP LEVEL VIEW');
+            // console.log('RENDERING TOP LEVEL VIEW');
             this.$timeExplorerMain.append(this.mainBarView.el);
             this.$timeExplorerAxisContainer.append(this.bottomAxisView.el);
 
@@ -850,8 +796,9 @@ function TimeExplorerPanel (socket, $parent, explorer) {
                 return;
             }
 
-
             var that = this;
+            var explorer = that.model.get('explorer');
+
             if (!this.enableMouseInteractions) {
                 return;
             }
@@ -862,92 +809,195 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             }
             that.handlingMouseDown = true;
 
-            var startX = evt.pageX;
-            var leftX = evt.pageX;
-            var rightX = evt.pageX;
-            var mouseMoved = false;
 
-            var positionChanges = Rx.Observable.fromEvent(that.$timeExplorerVizContainer, 'mousemove')
-                .map(function (evt) {
+            if (INTERACTION_MODE === 'ZOOM') {
+                var startX = evt.pageX;
+                var leftX = evt.pageX;
+                var rightX = evt.pageX;
+                var mouseMoved = false;
 
-                    mouseMoved = true;
-                    var newX = evt.pageX;
-                    var ends = [startX, newX];
-                    leftX = _.min(ends);
-                    rightX = _.max(ends);
+                var positionChanges = Rx.Observable.fromEvent(that.$timeExplorerVizContainer, 'mousemove')
+                    .map(function (evt) {
 
-                    that.$dragBox.css('left', leftX);
-                    that.$dragBox.css('width', rightX - leftX);
-                    that.$dragBox.css('display', 'block');
+                        mouseMoved = true;
+                        var newX = evt.pageX;
+                        var ends = [startX, newX];
+                        leftX = _.min(ends);
+                        rightX = _.max(ends);
 
-                }).subscribe(_.identity, util.makeErrorHandler('time explorer drag move'));
+                        that.$dragBox.css('left', leftX);
+                        that.$dragBox.css('width', rightX - leftX);
+                        that.$dragBox.css('display', 'block');
 
-            Rx.Observable.fromEvent(this.$timeExplorerVizContainer, 'mouseup')
-                .take(1)
-                .do(function () {
-                    positionChanges.dispose();
+                    }).subscribe(_.identity, util.makeErrorHandler('time explorer drag move'));
 
-                    var filterDownFunc = function () {
-                        var leftBin = that.mainBarView.getBinForPosition(leftX);
-                        var rightBin = that.mainBarView.getBinForPosition(rightX);
+                Rx.Observable.fromEvent(this.$timeExplorerVizContainer, 'mouseup')
+                    .take(1)
+                    .do(function () {
+                        positionChanges.dispose();
 
-                        var mainBarData = that.model.get('all');
-                        var cutoffs = mainBarData.cutoffs;
+                        var filterDownFunc = function () {
+                            var leftBin = that.mainBarView.getBinForPosition(leftX);
+                            var rightBin = that.mainBarView.getBinForPosition(rightX);
 
-                        var leftCutoff = cutoffs[leftBin];
-                        var rightCutoff = cutoffs[rightBin + 1];
+                            var mainBarData = that.model.get('all');
+                            var cutoffs = mainBarData.cutoffs;
 
-                        var explorer = that.model.get('explorer');
-                        explorer.modifyTimeDescription({
-                            start: leftCutoff,
-                            stop: rightCutoff
-                        });
+                            var leftCutoff = cutoffs[leftBin];
+                            var rightCutoff = cutoffs[rightBin + 1];
 
-                        that.handlingMouseDown = false;
-                    };
+                            var explorer = that.model.get('explorer');
+                            explorer.modifyTimeDescription({
+                                start: leftCutoff,
+                                stop: rightCutoff
+                            });
 
-                    var zoomOutFunc = function () {
-                        var explorer = that.model.get('explorer');
-                        explorer.modifyTimeDescription({
-                            start: explorer.originalStart,
-                            stop: explorer.originalStop
-                        });
+                            that.handlingMouseDown = false;
+                        };
 
-                        Rx.Observable.timer(DOUBLE_CLICK_TIME)
-                            .take(1)
-                            .do(function () {
+                        var zoomOutFunc = function () {
+                            var explorer = that.model.get('explorer');
+                            explorer.modifyTimeDescription({
+                                start: explorer.originalStart,
+                                stop: explorer.originalStop
+                            });
+
+                            Rx.Observable.timer(DOUBLE_CLICK_TIME)
+                                .take(1)
+                                .do(function () {
+                                    that.handlingMouseDown = false;
+                                }).subscribe(_.identity);
+                        };
+
+                        if (leftX === rightX) {
+                            // Click
+                            // Wait for new click to zoom out, else zoom in
+                            // TODO: Figure out how to do this in terms of user accessibility settings
+                            // that the user specified on how long to wait between double click.
+                            var mousedownStream = Rx.Observable.fromEvent(that.$timeExplorerVizContainer, 'mousedown');
+                            var timer = Rx.Observable.timer(DOUBLE_CLICK_TIME);
+
+                            timer.merge(mousedownStream)
+                                .take(1)
+                                .do(function (val) {
+                                    if (val) {
+                                        // Is mousedown event
+                                        zoomOutFunc();
+                                    } else {
+                                        // Timed out, is click
+                                        filterDownFunc();
+                                    }
+                                }).subscribe(_.identity, util.makeErrorHandler('time explorer double click'));
+
+                        } else {
+                            // Drag
+                            filterDownFunc();
+                        }
+
+                        that.$dragBox.css('display', 'none');
+
+                    }).subscribe(_.identity, util.makeErrorHandler('time explorer drag mouseup'));
+
+            } else if (INTERACTION_MODE === 'FILTER') {
+
+                var startX = evt.pageX;
+                var startLeftX = that.dragBoxLastLeftX;
+                var startRightX = that.dragBoxLastRightX;
+                var leftX = evt.pageX;
+                var rightX = evt.pageX;
+                var mouseMoved = false;
+
+                var clickedOnOldWindow = (startX >= that.dragBoxLastLeftX && startX <= that.dragBoxLastRightX);
+
+                var positionChanges = Rx.Observable.fromEvent(that.$timeExplorerVizContainer, 'mousemove')
+                    .map(function (evt) {
+
+                        mouseMoved = true;
+                        var newX = evt.pageX;
+
+                        if (clickedOnOldWindow) {
+
+                            // TODO: Prevent delta from going off the border
+                            var delta = newX - startX;
+
+                            that.dragBoxLastLeftX = startLeftX + delta;
+                            that.dragBoxLastRightX = startRightX + delta;
+
+                            leftX = that.dragBoxLastLeftX;
+                            rightX = that.dragBoxLastRightX;
+
+                            that.$dragBox.css('left', leftX);
+                            that.$dragBox.css('width', rightX - leftX);
+                            that.$dragBox.css('display', 'block');
+
+                        } else {
+                            // Create new window
+                            var ends = [startX, newX];
+                            leftX = _.min(ends);
+                            rightX = _.max(ends);
+
+                            that.dragBoxLastRightX = rightX;
+                            that.dragBoxLastLeftX = leftX;
+
+                            that.$dragBox.css('left', leftX);
+                            that.$dragBox.css('width', rightX - leftX);
+                            that.$dragBox.css('display', 'block');
+
+                        }
+                    }).subscribe(_.identity, util.makeErrorHandler('time explorer drag move'));
+
+                Rx.Observable.fromEvent(this.$timeExplorerVizContainer, 'mouseup')
+                    .take(1)
+                    .do(function () {
+                        positionChanges.dispose();
+
+                        var removeFilterFunc = function () {
+
+                            that.dragBoxLastLeftX = Infinity;
+                            that.dragBoxLastRightX = -Infinity;
+
+                            explorer.updateGraphTimeFilter(null);
+                            that.handlingMouseDown = false;
+                            that.$dragBox.css('display', 'none');
+                        };
+
+                        var applyFilterFunc = function () {
+                            var leftBin = that.mainBarView.getBinForPosition(leftX);
+                            var rightBin = that.mainBarView.getBinForPosition(rightX);
+
+                            var mainBarData = that.model.get('all');
+                            var cutoffs = mainBarData.cutoffs;
+
+                            var leftCutoff = cutoffs[leftBin];
+                            var rightCutoff = cutoffs[rightBin + 1];
+
+                            explorer.updateGraphTimeFilter({
+                                start: leftCutoff,
+                                stop: rightCutoff
+                            });
+
+                            that.handlingMouseDown = false;
+                        };
+
+                        if (leftX === rightX) {
+                            // Click
+                            if (clickedOnOldWindow) {
+                                removeFilterFunc();
+                            } else {
                                 that.handlingMouseDown = false;
-                            }).subscribe(_.identity);
-                    };
+                            }
 
-                    if (leftX === rightX) {
-                        // Click
-                        // Wait for new click to zoom out, else zoom in
-                        // TODO: Figure out how to do this in terms of user accessibility settings
-                        // that the user specified on how long to wait between double click.
-                        var mousedownStream = Rx.Observable.fromEvent(that.$timeExplorerVizContainer, 'mousedown');
-                        var timer = Rx.Observable.timer(DOUBLE_CLICK_TIME);
+                        } else {
+                            // Drag
+                            applyFilterFunc();
+                        }
 
-                        timer.merge(mousedownStream)
-                            .take(1)
-                            .do(function (val) {
-                                if (val) {
-                                    // Is mousedown event
-                                    zoomOutFunc();
-                                } else {
-                                    // Timed out, is click
-                                    filterDownFunc();
-                                }
-                            }).subscribe(_.identity, util.makeErrorHandler('time explorer double click'));
+                    }).subscribe(_.identity, util.makeErrorHandler('time explorer drag mouseup'));
 
-                    } else {
-                        // Drag
-                        filterDownFunc();
-                    }
 
-                    that.$dragBox.css('display', 'none');
+            }
 
-                }).subscribe(_.identity, util.makeErrorHandler('time explorer drag mouseup'));
+
 
         },
 
@@ -1012,8 +1062,8 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             var barModels = [];
             var collection = this.userBarsView.collection;
 
-            console.log('DATA: User: ', data.user);
-            console.log('Collection: ', collection);
+            // console.log('DATA: User: ', data.user);
+            // console.log('Collection: ', collection);
 
 
             var dataKeys = _.keys(data.user);
@@ -1028,7 +1078,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             // Handle updated keys
             _.each(updatedKeys, function (key) {
                 var val = data.user[key];
-                console.log('Updating data for: ', key);
+                // console.log('Updating data for: ', key);
 
                 var params = {
                     data: val,
@@ -1077,9 +1127,9 @@ function TimeExplorerPanel (socket, $parent, explorer) {
 //////////////////////////////////////////////////////////////////////////////
 
 function initializeTimeBar ($el, model) {
-    debug('initializing time bar: ', model);
-    debug('$el: ', $el);
-    debug('$el sizes: ', $el.width(), $el.height());
+    // debug('initializing time bar: ', model);
+    // debug('$el: ', $el);
+    // debug('$el sizes: ', $el.width(), $el.height());
 
     var width = $el.width() - margin.left - margin.right;
     var height = $el.height() - margin.top - margin.bottom;
@@ -1286,7 +1336,7 @@ function updateTimeBar ($el, model) {
 
     // Reset if line Chart
     if (d3Data.lastDraw === 'lineChart') {
-        console.log('RESETTING SVG BECAUSE WAS LINE');
+        // console.log('RESETTING SVG BECAUSE WAS LINE');
         svg.selectAll("*").remove();
     }
 
@@ -1494,7 +1544,7 @@ function updateTimeBarLineChart ($el, model) {
 
     // Reset because I don't know how to do it cleanly
     if (d3Data.lastDraw === 'barChart' || (!model.get('lineUnchanged'))) {
-        debug('REMOVING');
+        // debug('REMOVING');
         svg.selectAll("*").remove();
     }
 
@@ -1623,7 +1673,7 @@ function setupAmountScale (height, maxBin) {
 
 
 function initializeBottomAxis ($el, model) {
-    debug('init bottom axis');
+    // debug('init bottom axis');
 
     var width = $el.width();
     var height = $el.height();
@@ -1726,7 +1776,7 @@ function initializeBottomAxis ($el, model) {
 }
 
 function updateBottomAxis ($el, model) {
-    debug('update bottom axis');
+    // debug('update bottom axis');
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1761,41 +1811,4 @@ function prettyPrintTime(raw, timeAggregation) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// TODO: Export class
 module.exports = TimeExplorer;
