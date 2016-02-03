@@ -965,6 +965,10 @@ function TimeExplorerPanel (socket, $parent, explorer) {
                             var leftBin = that.mainBarView.getBinForPosition(leftX);
                             var rightBin = that.mainBarView.getBinForPosition(rightX);
 
+                            // Guard edges
+                            leftBin = Math.max(leftBin, 0);
+                            rightBin = Math.min(rightBin, cutoffs.length - 2);
+
                             var mainBarData = that.model.get('all');
                             var cutoffs = mainBarData.cutoffs;
 
