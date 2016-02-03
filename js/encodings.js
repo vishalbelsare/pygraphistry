@@ -3,8 +3,7 @@
 var _        = require('underscore');
 var d3Scale       = require('d3-scale');
 var d3Interpolate = require('d3-interpolate');
-
-var palettes = require('./palettes');
+var Color         = require('color');
 
 var defaults = {
     color: {
@@ -55,7 +54,7 @@ function inferColorScalingFor(summary, variation, defaultDomain, distinctValues,
             }
             var interpolation = d3Interpolate.interpolate(defaultSequentialRange[0], defaultSequentialRange[1]),
                 numValues = domain.length,
-                range = _.map(_.range(numValues), function (idx) { return interpolation(idx / numValues); });
+                range = _.map(_.range(numValues), function (idx) { return Color(interpolation(idx / numValues)).hexString(); });
             return d3Scale.ordinal()
                 .domain(domain)
                 .range(range);
