@@ -920,8 +920,22 @@ function TimeExplorerPanel (socket, $parent, explorer) {
 
                         if (clickedOnOldWindow) {
 
-                            // TODO: Prevent delta from going off the border
+                            var leftBound = that.$timeExplorerMain.offset().left + margin.left;
+                            var rightBound = that.$timeExplorerMain.offset().left + that.$timeExplorerMain.width() - margin.right;
+                            // Slight extra padding
+                            leftBound += 2;
+                            rightBound -= 5;
+
+                            // Prevent delta from going off the border
                             var delta = newX - startX;
+                            // check left
+                            if (startLeftX + delta <= leftBound) {
+                                delta = leftBound - startLeftX;
+                            }
+                            // check right
+                            if (startRightX + delta >= rightBound) {
+                                delta = rightBound - startRightX;
+                            }
 
                             that.dragBoxLastLeftX = startLeftX + delta;
                             that.dragBoxLastRightX = startRightX + delta;
