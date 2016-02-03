@@ -376,10 +376,10 @@ function TimeExplorerPanel (socket, $parent, explorer) {
         render: function () {
             var model = this.model;
 
-            // if (model.get('initialized')) {
-            //     updateBottomAxis(model.get('axisContainer'), model);
-            //     return this;
-            // }
+            if (model.get('initialized')) {
+                updateBottomAxis(model.get('axisContainer'), model);
+                return this;
+            }
 
             model.set('$el', this.$el);
             var axisContainer = this.$el.children('.axisContainer');
@@ -390,7 +390,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             initializeBottomAxis(axisContainer, model);
             updateBottomAxis(axisContainer, model);
 
-            // model.set('initialized', true);
+            model.set('initialized', true);
             return this;
         }
     });
@@ -1775,6 +1775,31 @@ function initializeBottomAxis ($el, model) {
     width = width - axisMargin.left - axisMargin.right;
     height = height - axisMargin.top - axisMargin.bottom;
 
+    var svg = setupSvg($el[0], axisMargin, width, height);
+
+    svg.append('g')
+        .attr('class', 'x axis x-axis')
+        .attr('id', 'timexaxis-' + id);
+
+    _.extend(d3Data, {
+        svg: svg,
+        width: width,
+        height: height
+    });
+}
+
+function updateBottomAxis ($el, model) {
+    // debug('update bottom axis');
+
+    var data = model.get('data');
+    var id = model.cid;
+    var d3Data = model.get('d3Data');
+    var numBins = data.numBins;
+
+    var width = d3Data.width;
+    var height = d3Data.height;
+    var svg = d3Data.svg;
+
     var xScale = setupBinScale(width, data.numBins, data);
 
     var xAxisScale = d3.scale.linear()
@@ -1848,11 +1873,7 @@ function initializeBottomAxis ($el, model) {
             }
         });
 
-    var svg = setupSvg($el[0], axisMargin, width, height);
-
-    svg.append('g')
-        .attr('class', 'x axis')
-        .attr('id', 'timexaxis-' + id)
+    svg.select('#timexaxis-' + id)
         .call(xAxis);
 
     d3.select('#timexaxis-' + id)
@@ -1876,15 +1897,9 @@ function initializeBottomAxis ($el, model) {
             $(target).tooltip('hide');
         });
 
-    _.extend(d3Data, {
-        xAxis: xAxis,
-        svg: svg
-    });
 }
 
-function updateBottomAxis ($el, model) {
-    // debug('update bottom axis');
-}
+
 
 //////////////////////////////////////////////////////////////////////////////
 // Printing Utils
