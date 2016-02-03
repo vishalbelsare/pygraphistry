@@ -1166,6 +1166,7 @@ function getActiveBinForPosition ($el, model, pageX) {
         d3Data.svgOffset = svgOffset;
     }
     var adjustedX = pageX - svgOffset.left;
+
     var activeBin = Math.floor(xScale.invert(adjustedX));
     return activeBin;
 }
@@ -1710,11 +1711,13 @@ function setupBinScale (width, numBins, data) {
         return adjusted;
     };
 
-    wrappedScale.invert = function () {
+    wrappedScale.invert = function (arg) {
+        var adjustedArg = arg + leftWidthOffset;
+        return rawScale.invert.call(this, adjustedArg);
 
         // TODO: Adjust invert to know about offset
-        var rawReturn = rawScale.invert.apply(this, arguments);
-        return rawReturn;
+        // var rawReturn = rawScale.invert.apply(this, arguments);
+        // return rawReturn;
     }
 
     wrappedScale.rawScale = rawScale;
