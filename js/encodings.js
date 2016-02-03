@@ -196,7 +196,7 @@ module.exports = {
                 if (binning.type === 'countBy') {
                     legend = new Array(_.size(binning.bins));
                     _.each(_.keys(binning.bins), function (key, index) {
-                        legend[index] = scaling(key);
+                        legend[index] = (key === '_other') ? undefined : scaling(key);
                     });
                 } else if (summary.isNumeric) {
                     legend = _.map(binning.bins, function (itemCount, index) {
