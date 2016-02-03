@@ -1170,11 +1170,12 @@ function getActiveBinForPosition ($el, model, pageX) {
     return activeBin;
 }
 
-function tagBins (rawBins, cutoffs) {
+function tagBins (rawBins, keys, cutoffs) {
     var taggedBins = _.map(rawBins, function (v, i) {
         return {
             binVal: v,
-            key: cutoffs[i]
+            key: keys[i],
+            cutoff: cutoffs[i]
         };
     });
 
@@ -1189,7 +1190,7 @@ function updateTimeBarMouseover ($el, model) {
     var data = model.get('data');
     var maxBinValue = model.get('maxBinValue');
     var id = model.cid;
-    var taggedBins = tagBins(data.bins, data.cutoffs);
+    var taggedBins = tagBins(data.bins, data.keys, data.cutoffs);
     var barType = model.get('barType');
 
     var svg = d3Data.svg;
@@ -1321,7 +1322,7 @@ function updateTimeBar ($el, model) {
     var data = model.get('data');
     var maxBinValue = model.get('maxBinValue');
     var id = model.cid;
-    var taggedBins = tagBins(data.bins, data.cutoffs);
+    var taggedBins = tagBins(data.bins, data.keys, data.cutoffs);
 
     var svg = d3Data.svg;
 
@@ -1427,7 +1428,8 @@ function updateTimeBar ($el, model) {
     var baseBarWidth = Math.floor(width / sumOfWidths);
 
     var adjustedWidths = _.map(data.widths, function (val) {
-        return Math.floor(baseBarWidth * val) - BAR_SIDE_PADDING;
+        var base = Math.floor(baseBarWidth * val) - BAR_SIDE_PADDING;
+        return Math.max(base, 1);
     });
 
 
@@ -1480,8 +1482,7 @@ function updateTimeBar ($el, model) {
     newCols.transition().duration(ZOOM_UPDATE_RATE).ease('linear')
         .attrTween('transform', function (d, i, a) {
             // console.log('TESTING TRANSFORM: ', d, i, d3Data);
-            if (topVal && d.key >= topVal) {
-                // console.log('TOP PATH, init width');
+            if (topVal && d.cutoff >= topVal) {
                 return d3.interpolate('translate(' + width + ',0)', String(enterTweenTransformFunc.call(this, d, i)));
             } else {
                 // console.log('BOTTOM PATH, init 0');
