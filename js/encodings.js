@@ -79,7 +79,7 @@ module.exports = {
                     return {
                         encodingType: encodingType,
                         bufferName: encodingType + 's',
-                        palette: distinctValues,
+                        legend: distinctValues,
                         scaling: _.identity
                     };
                 }
@@ -134,7 +134,7 @@ module.exports = {
                     return {
                         encodingType: encodingType,
                         bufferName: encodingType + 's',
-                        palette: distinctValues,
+                        legend: distinctValues,
                         scaling: _.identity
                     };
                 }
