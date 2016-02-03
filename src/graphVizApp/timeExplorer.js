@@ -1777,48 +1777,62 @@ function initializeBottomAxis ($el, model) {
 
     var xScale = setupBinScale(width, data.numBins, data);
 
+    var xAxisScale = d3.scale.linear()
+        .range([0, width])
+        .domain([0, width]);
+
+
     var startDate = new Date(data.cutoffs[0]);
     var endDate = new Date(data.cutoffs[data.cutoffs.length - 1]);
 
     // Figure out which ticks to show
     var maxNumTicks = Math.floor(width/60);
     var numTicks = numBins + 1;
-    var tickContent = data.cutoffs;
+    // var tickContent = data.cutoffs;
+    var tickContent = [];
+    var tickPositions = [];
 
-
-    var numbersToShow;
     if (maxNumTicks < numTicks) {
-        numbersToShow = [];
 
         var step = Math.floor(numTicks/maxNumTicks);
 
-        var largestNumber = 0;
-        while (largestNumber < data.cutoffs.length - 1) {
-            // Validate that it's not too close to the end
-            var ratioTillEnd = ((data.cutoffs.length - 1 - largestNumber) / step);
-            if (ratioTillEnd > 0.25) {
-                numbersToShow.push(largestNumber);
-            }
-            largestNumber += step;
-        }
-        numbersToShow.push(data.cutoffs.length-1);
+        var runningPos = 0;
 
-        maxNumTicks = numbersToShow.length;
-        numTicks = maxNumTicks;
+        // first and every step but last
+        while (runningPos < data.cutoffs.length - 1) {
+            var pos = xScale(runningPos);
+            var val = data.cutoffs[runningPos];
+            tickContent.push(val);
+            tickPositions.push(pos);
+
+            runningPos += step;
+        }
+        tickContent.push(data.cutoffs[data.cutoffs.length - 1]);
+        tickPositions.push(width);
+
+        numTicks = tickContent.length;
 
     } else {
-        numbersToShow = _.range(numTicks);
+
+        _.each(data.cutoffs, function (cutoff, i) {
+            var pos = xScale(i);
+            var val = cutoff;
+            tickContent.push(val);
+            tickPositions.push(pos);
+        });
+
     }
 
     var expandedTickTitles = [];
     var xAxis = d3.svg.axis()
-        .scale(xScale.rawScale)
+        .scale(xAxisScale)
         .orient('bottom')
         .ticks(numTicks)
-        .tickValues(numbersToShow)
-        .tickFormat(function (d) {
+        .tickValues(tickPositions)
+        .tickFormat(function (d, i) {
+
             // debug('tick arg: ', arguments);
-            var raw = tickContent[d];
+            var raw = tickContent[i];
             if (raw) {
                 var expanded = prettyPrintTime(raw);
                 expandedTickTitles.push(expanded);
@@ -1858,7 +1872,6 @@ function initializeBottomAxis ($el, model) {
         });
 
     _.extend(d3Data, {
-        xScale: xScale,
         xAxis: xAxis,
         svg: svg
     });
