@@ -493,6 +493,10 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             return getActiveBinForPosition(this.$el, this.model, pageX);
         },
 
+        getPercentageForPosition: function (pageX) {
+            return getPercentageForPosition(this.$el, this.model, pageX);
+        },
+
         changeTimeAgg: function (evt) {
             evt.preventDefault();
             evt.stopPropagation();
@@ -769,6 +773,8 @@ function TimeExplorerPanel (socket, $parent, explorer) {
 
                     var xPos = wheelEvent.pageX;
                     var selectedBin = that.mainBarView.getBinForPosition(xPos);
+                    var percentage = that.mainBarView.getPercentageForPosition(xPos);
+                    console.log('percentage: ', percentage);
                     var mainBarData = that.model.get('all');
                     var numBins = mainBarData.numBins;
 
@@ -1148,6 +1154,33 @@ function initializeTimeBar ($el, model) {
         height: height
     });
 }
+
+function getPercentageForPosition ($el, model, pageX) {
+
+    var d3Data = model.get('d3Data');
+    var width = d3Data.width;
+    if (!width) {
+        width = $el.width() - margin.left - margin.right;
+    }
+    var data = model.get('data');
+    var svg = d3Data.svg;
+
+    var svgOffset = d3Data.svgOffset;
+    if (!svgOffset) {
+        var jquerySvg = $(svg[0]);
+        svgOffset = jquerySvg.offset();
+        d3Data.svgOffset = svgOffset;
+    }
+    var adjustedX = pageX - svgOffset.left;
+
+    var percentage = adjustedX / width;
+    // Guard percentage
+    percentage = Math.max(0, percentage);
+    percentage = Math.min(1, percentage);
+    console.log('percentage');
+    return percentage;
+}
+
 
 function getActiveBinForPosition ($el, model, pageX) {
     var d3Data = model.get('d3Data');
