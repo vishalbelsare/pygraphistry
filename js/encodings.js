@@ -181,42 +181,44 @@ module.exports = {
                 throw new Error('No encoding found for: ' + encodingType);
         }
         var scaleAndEncode = scaling;
-        var palette;
-        if (scaling && encodingType.match(/Color$/)) {
-            scaleAndEncode = function (x) { return palettes.hexToInt(scaling(x)); };
-            if (binning !== undefined && scaling !== undefined) {
-                var minValue = summary.minValue,
-                    step = binning.binWidth || 0,
-                    binValues = binning.binValues;
-                if (binning.bins && _.size(binning.bins) > 0) {
-                    if (binning.type === 'countBy') {
-                        palette = new Array(_.size(binning.bins));
-                        _.each(_.keys(binning.bins), function (key, index) {
-                            palette[index] = scaling(key);
-                        });
-                    } else if (summary.isNumeric) {
-                        palette = _.map(binning.bins, function (itemCount, index) {
-                            // Use the scaling to get hex string, not machine integer, for D3/color.
-                            return scaling(minValue + step * index);
-                        });
-                    } else {
-                        palette = _.map(binning.bins, function (itemCount, index) {
-                            var value = binValues !== undefined && binValues[index] ? binValues[index] : index;
-                            return scaling(value);
-                        });
-                    }
+        /** A legend per the binning. @type <Array> */
+        var legend;
+        if (scaling !== undefined && binning !== undefined) {
+            if (encodingType.match(/Color$/)) {
+                scaleAndEncode = function (x) { return palettes.hexToInt(scaling(x)); };
+            }
+            // All this just handles many shapes of binning metadata, kind of messy.
+            var minValue = summary.minValue,
+                step = binning.binWidth || 0,
+                binValues = binning.binValues;
+            // NOTE: Use the scaling to get hex string / number, not machine integer, for D3 color/size.
+            if (binning.bins && _.size(binning.bins) > 0) {
+                if (binning.type === 'countBy') {
+                    legend = new Array(_.size(binning.bins));
+                    _.each(_.keys(binning.bins), function (key, index) {
+                        legend[index] = scaling(key);
+                    });
+                } else if (summary.isNumeric) {
+                    legend = _.map(binning.bins, function (itemCount, index) {
+                        return scaling(minValue + step * index);
+                    });
                 } else {
-                    palette = new Array(binning.numBins);
-                    for (var i=0; i<binning.numBins; i++) {
-                        palette[i] = scaling(minValue + step * i);
-                    }
+                    legend = _.map(binning.bins, function (itemCount, index) {
+                        var value = binValues !== undefined && binValues[index] ? binValues[index] : index;
+                        return scaling(value);
+                    });
+                }
+            } else {
+                legend = new Array(binning.numBins);
+                for (var i = 0; i < binning.numBins; i++) {
+                    legend[i] = scaling(minValue + step * i);
                 }
             }
         }
         return {
             encodingType: encodingType,
             bufferName: encodingType && (encodingType + 's'),
-            palette: palette,
+            legend: legend,
             scaling: scaleAndEncode
         };
     }
