@@ -1157,7 +1157,7 @@ function getActiveBinForPosition ($el, model, pageX) {
     }
     var data = model.get('data');
     var svg = d3Data.svg;
-    var xScale = setupBinScale(width, data.numBins)
+    var xScale = setupBinScale(width, data.numBins, data);
 
     var svgOffset = d3Data.svgOffset;
     if (!svgOffset) {
@@ -1346,10 +1346,10 @@ function updateTimeBar ($el, model) {
 
     var barType = model.get('barType');
 
-    var xScale = setupBinScale(width, data.numBins)
+    var xScale = setupBinScale(width, data.numBins, data);
     var yScale = setupAmountScale(height, maxBinValue, data.bins);
 
-    var barWidth = Math.floor(width/data.numBins) - BAR_SIDE_PADDING;
+    // var barWidth = Math.floor(width/data.numBins) - BAR_SIDE_PADDING;
 
     //////////////////////////////////////////////////////////////////////////
     // Compute mouse position values
@@ -1417,6 +1417,21 @@ function updateTimeBar ($el, model) {
         .text(data.name);
 
     //////////////////////////////////////////////////////////////////////////
+    // Compute widths in pixels
+    //////////////////////////////////////////////////////////////////////////
+
+    var sumOfWidths = _.reduce(data.widths, function (memo, num) {
+        return memo + num;
+    }, 0);
+
+    var baseBarWidth = Math.floor(width / sumOfWidths);
+
+    var adjustedWidths = _.map(data.widths, function (val) {
+        return Math.floor(baseBarWidth * val) - BAR_SIDE_PADDING;
+    });
+
+
+    //////////////////////////////////////////////////////////////////////////
     // Make Columns
     //////////////////////////////////////////////////////////////////////////
 
@@ -1437,7 +1452,10 @@ function updateTimeBar ($el, model) {
         });
 
     columnRects.transition().duration(ZOOM_UPDATE_RATE).ease('linear')
-        .attr('width', Math.floor(barWidth + BAR_SIDE_PADDING));
+        .attr('width', function (d, i) {
+            return Math.floor(adjustedWidths[i] + BAR_SIDE_PADDING);
+        });
+        // .attr('width', Math.floor(barWidth + BAR_SIDE_PADDING));
 
     var enterTweenTransformFunc = function (d, i) {
         return 'translate(' + xScale(i) + ',0)';
@@ -1449,7 +1467,10 @@ function updateTimeBar ($el, model) {
         .classed('column', true)
         .append('rect')
             .classed('column-rect', true)
-            .attr('width', barWidth + BAR_SIDE_PADDING)
+            .attr('width', function (v, i) {
+                return adjustedWidths[i] + BAR_SIDE_PADDING;
+            })
+            // .attr('width', barWidth + BAR_SIDE_PADDING)
             .attr('height', height)
             .attr('opacity', 0);
 
@@ -1492,7 +1513,10 @@ function updateTimeBar ($el, model) {
 
     // bars
     bars.transition().duration(ZOOM_UPDATE_RATE).ease('linear')
-        .attr('width', barWidth)
+        .attr('width', function (d) {
+            return adjustedWidths[d.idx];
+        })
+        // .attr('width', barWidth)
         .attr('fill', recolorBar)
         .attr('y', function (d) {
             return height - yScale(d.val);
@@ -1506,7 +1530,10 @@ function updateTimeBar ($el, model) {
         .style('pointer-events', 'none')
         .style('opacity', 1)
         .attr('fill', recolorBar)
-        .attr('width', barWidth)
+        .attr('width', function (d) {
+            return adjustedWidths[d.idx];
+        })
+        // .attr('width', barWidth)
         .attr('y', function (d) {
             // console.log('ENTERING BAR');
             return height - yScale(d.val);
@@ -1554,7 +1581,7 @@ function updateTimeBarLineChart ($el, model) {
 
     var barType = model.get('barType');
 
-    var xScale = setupBinScale(width, data.numBins)
+    var xScale = setupBinScale(width, data.numBins, data);
     var yScale = setupAmountScale(height, maxBinValue, data.bins);
 
     var barWidth = Math.floor(width/data.numBins) - BAR_SIDE_PADDING;
@@ -1657,10 +1684,45 @@ function setupSvg (el, margin, width, height) {
             .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 }
 
-function setupBinScale (width, numBins) {
-    return d3.scale.linear()
-        .range([0, width])
+function setupBinScale (width, numBins, data) {
+    // console.log('DATA: ', data);
+    // Because we know that the first and last bins may be cutoff, we use a linear scale
+    // across a longer range that we have, and wrap it to cut off the first bit
+
+    var extra = (1 - data.widths[0]) + (1 - data.widths[data.widths.length - 1]);
+    var ratio = (numBins / (numBins - extra));
+    var expandedWidth = width * ratio;
+
+    var rawScale = d3.scale.linear()
+        // .range([0, width])
+        .range([0, expandedWidth])
         .domain([0, numBins]);
+
+    var leftWidthOffset = ((1 - data.widths[0]) / numBins) * expandedWidth;
+
+    var wrappedScale = function () {
+        var rawReturn = rawScale.apply(this, arguments);
+
+        var adjusted = Math.max(0, rawReturn - leftWidthOffset); // Shift left
+        adjusted = Math.min(width, adjusted); // Make sure within bounds
+
+        return adjusted;
+    };
+
+    wrappedScale.invert = function () {
+
+        // TODO: Adjust invert to know about offset
+        var rawReturn = rawScale.invert.apply(this, arguments);
+        return rawReturn;
+    }
+
+    wrappedScale.rawScale = rawScale;
+
+
+
+    return wrappedScale;
+    // return rawScale;
+
 }
 
 function setupAmountScale (height, maxBin) {
@@ -1690,7 +1752,7 @@ function initializeBottomAxis ($el, model) {
     width = width - axisMargin.left - axisMargin.right;
     height = height - axisMargin.top - axisMargin.bottom;
 
-    var xScale = setupBinScale(width, data.numBins)
+    var xScale = setupBinScale(width, data.numBins, data);
 
     var startDate = new Date(data.cutoffs[0]);
     var endDate = new Date(data.cutoffs[data.cutoffs.length - 1]);
@@ -1727,7 +1789,7 @@ function initializeBottomAxis ($el, model) {
 
     var expandedTickTitles = [];
     var xAxis = d3.svg.axis()
-        .scale(xScale)
+        .scale(xScale.rawScale)
         .orient('bottom')
         .ticks(numTicks)
         .tickValues(numbersToShow)
