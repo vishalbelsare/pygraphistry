@@ -21,8 +21,8 @@ var persist         = require('./persist.js');
 var goLiveButton    = require('./goLiveButton.js');
 var colorPicker     = require('./colorpicker.js');
 var externalLink    = require('./externalLink.js');
+var TimeExplorer    = require('./timeExplorer.js');
 var contentFormatter = require('./contentFormatter.js');
-
 
 // Setup client side controls.
 var encodingPerElementParams = [
@@ -636,6 +636,17 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         $('#inspector').css('visibility', dataInspectorIsVisible ? 'visible' : 'hidden');
     }).subscribe(_.identity, util.makeErrorHandler('dataInspector visibility toggle'));
 
+    // Visibility for time explorer
+    var $timeExplorerButton = $('#timeExplorerButton');
+    var timeExplorerIsVisible = false;
+    popoutClicks.filter(function (elt) {
+        return elt === $timeExplorerButton[0];
+    }).do(function () {
+        timeExplorerIsVisible = !timeExplorerIsVisible;
+        toggleButton($timeExplorerButton, timeExplorerIsVisible);
+        $('#timeExplorer').css('visibility', timeExplorerIsVisible ? 'visible' : 'hidden');
+    }).subscribe(_.identity, util.makeErrorHandler('timeExplorer visibility toggle'));
+
 
     // histogram brush:
     var brushIsOn = false;
@@ -722,6 +733,8 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     setsPanel.setupFiltersPanelInteraction(filtersPanel);
     setsPanel.setupToggleControl(popoutClicks, $('#setsPanelButton'));
     setsPanel.setupSelectionInteraction(appState.activeSelection, appState.latestHighlightedObject);
+
+    var timeExplorer = new TimeExplorer(socket, $('#timeExplorer'), filtersPanel);
 
     createControls(
         socket,
