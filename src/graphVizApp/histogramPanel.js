@@ -133,7 +133,6 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
     var HistogramView = Backbone.View.extend({
         tagName: 'div',
         className: 'histogramDiv',
-        template: Handlebars.compile($('#histogramTemplateNoDropdown').html()),
 
         events: {
             'click .closeHistogramButton': 'close',
@@ -155,6 +154,7 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
                 id: this.cid
             };
 
+            this.template = Handlebars.compile($('#histogramTemplateNoDropdown').html());
             var html = this.template(params);
             this.$el.html(html);
             this.$el.attr('cid', this.cid);
