@@ -2237,8 +2237,15 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
         offsets[i] = (raw / denom);
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    // Provide keys for d3
+    //////////////////////////////////////////////////////////////////////////
 
-
+    var keys = _.map(cutoffs, function (d) {
+        var newDate = new Date(d.getTime());
+        decFunction(newDate);
+        return timeAggregation + newDate.getTime();
+    });
 
 
     return {
@@ -2256,7 +2263,8 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
         cutoffs: cutoffNumbers,
         approximated: approximated,
         offsets: offsets,
-        widths: widths
+        widths: widths,
+        keys: keys
     };
 };
 
