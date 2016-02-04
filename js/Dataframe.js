@@ -1411,24 +1411,31 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
 };
 
 function numberSignifiesUndefined(value) {
-    return isNaN(value) || value === 0x7FFFFFFF;
+    return isNaN(value);
+}
+
+function int32SignifiesUndefined(value) {
+    return value === 0x7FFFFFFF;
 }
 
 function dateSignifiesUndefined(value) {
     var dateObj = new Date(value);
-    return isNaN(testDate.getTime());
+    return isNaN(dateObj.getTime());
 }
 
+function stringSignifiesUndefined (value) {
+    // TODO retire 'n/a'
+    return value === '\0' || value === 'n/a';
+}
 
 function valueSignifiedUndefined(value) {
     switch (typeof value) {
         case 'undefined':
             return true;
         case 'string':
-            // TODO retire 'n/a'
-            return value === '\0' || value === 'n/a';
+            return stringSignifiesUndefined(value);
         case 'number':
-            return numberSignifiesUndefined(value);
+            return numberSignifiesUndefined(value) || int32SignifiesUndefined(value);
         case 'date':
             return dateSignifiesUndefined(value);
         case 'object':
