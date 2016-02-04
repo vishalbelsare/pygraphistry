@@ -66,13 +66,10 @@ function hexToABGR (hexColor) {
     var out = parseInt(hexColor.replace('#', '0x'), 16);
 
     //sadness, rgba => abgr
-    var c = {
-        r: (out >> 16) & 255,
-        g: (out >> 8) & 255,
-        b: out & 255
-    };
-
-    return (c.b << 16) | (c.g << 8) | c.r;
+    var r = (out >> 16) & 255,
+        g = (out >> 8) & 255,
+        b = out & 255;
+    return (b << 16) | (g << 8) | r;
 }
 
 //{<string> -> {<int> -> [int]_int}}

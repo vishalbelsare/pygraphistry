@@ -2089,7 +2089,7 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
  */
 
 
-// Counts occurences of type that matches type of time attr.
+// Counts occurrences of type that matches type of time attr.
 Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, start, stop, timeAggregation) {
 
     // Compute binning
