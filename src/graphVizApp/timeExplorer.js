@@ -380,332 +380,331 @@ TimeExplorer.prototype.setupZoom = function () {
 //////////////////////////////////////////////////////////////////////////////
 
 
+var BottomAxisView = Backbone.View.extend({
+    tagName: 'div',
+    className: 'bottomAxisDiv',
+
+    events: {},
+
+    initialize: function () {
+        this.listenTo(this.model, 'destroy', this.remove);
+        this.listenTo(this.model, 'change:key', this.render);
+
+        var params = {};
+        this.template = Handlebars.compile($('#timeBarBottomAxisTemplate').html());
+        var html = this.template(params);
+        this.$el.html(html);
+        this.$el.attr('cid', this.cid);
+    },
+
+    render: function () {
+        var model = this.model;
+
+        if (model.get('initialized')) {
+            updateBottomAxis(model.get('axisContainer'), model);
+            return this;
+        }
+
+        model.set('$el', this.$el);
+        var axisContainer = this.$el.children('.axisContainer');
+        axisContainer.empty();
+        model.set('axisContainer', axisContainer);
+        var axisHeight = '' + AXIS_HEIGHT + 'px';
+        axisContainer.height(axisHeight);
+        initializeBottomAxis(axisContainer, model);
+        updateBottomAxis(axisContainer, model);
+
+        model.set('initialized', true);
+        return this;
+    }
+});
+
+var MainBarView = Backbone.View.extend({
+
+});
+
+var TimeBarView = Backbone.View.extend({
+    tagName: 'div',
+    className: 'timeBarDiv',
+
+    events: {
+        'click .timeAggButton': 'changeTimeAgg'
+    },
+
+    initialize: function () {
+        this.listenTo(this.model, 'destroy', this.remove);
+        this.listenTo(this.model, 'change:timeStamp', this.newContent);
+        // TODO: listen to changes and render
+
+        // Set default values
+        this.model.set('pageX', 0);
+        this.model.set('pageY', 0);
+
+        var params = {
+
+        };
+
+        if (this.model.get('showTimeAggregationButtons')) {
+            params.timeAggregationButtons = timeAggregationButtons;
+        }
+
+        this.template = Handlebars.compile($('#timeBarTemplate').html());
+        var html = this.template(params);
+        this.$el.html(html);
+        this.$el.attr('cid', this.cid);
+    },
+
+    newContent: function () {
+        // this.model.set('initialized', false);
+        this.render();
+    },
+
+    renderMouseEffects: function () {
+        var model = this.model;
+
+        // Don't do anything, you haven't been populated yet
+        if (!this.model.get('data')) {
+            return;
+        }
+
+        // Don't do first time work.
+        // TODO: Should this be initialize instead?
+        if (model.get('initialized')) {
+            updateTimeBarMouseover(model.get('vizContainer'), model);
+            return this;
+        }
+    },
+
+    render: function () {
+        var model = this.model;
+
+        // Don't do anything, you haven't been populated yet
+        if (!this.model.get('data')) {
+            return this;
+        }
+
+        // Don't do first time work.
+        // TODO: Should this be initialize instead?
+        if (model.get('initialized')) {
+            updateTimeBar(model.get('vizContainer'), model);
+            return this;
+        }
+
+        // Need to init svg and all that.
+        model.set('$el', this.$el);
+        var vizContainer = this.$el.children('.vizContainer');
+        vizContainer.empty();
+        model.set('vizContainer', vizContainer);
+        var vizHeight = '' + TIME_BAR_HEIGHT + 'px';
+        vizContainer.height(vizHeight);
+        initializeTimeBar(vizContainer, model);
+        updateTimeBar(vizContainer, model);
+
+        model.set('initialized', true);
+        return this;
+    },
+
+    mousemoveParent: function (evt) {
+        this.model.set('pageX', evt.pageX);
+        this.model.set('pageY', evt.pageY);
+        this.renderMouseEffects();
+    },
+
+    mouseoutParent: function (evt) {
+        this.model.set('pageX', -1);
+        this.model.set('pageY', -1);
+        this.renderMouseEffects();
+    },
+
+    getBinForPosition: function (pageX) {
+        return getActiveBinForPosition(this.$el, this.model, pageX);
+    },
+
+    getPercentageForPosition: function (pageX) {
+        return getPercentageForPosition(this.$el, this.model, pageX);
+    },
+
+    changeTimeAgg: function (evt) {
+        evt.preventDefault();
+        evt.stopPropagation();
+        // console.log('GOT CLICK: ', evt);
+
+        var target = evt.target;
+        var shortText = $(target).text();
+        $(target).parent().children('button').not('#timeAggButton-' + shortText).removeClass('active');
+        $(target).addClass('active');
+        // console.log('TARGET: ', target);
+        // console.log($(target));
+        var aggValue = $(target).data('aggregation-value');
+        // console.log('aggValue: ', aggValue);
+
+
+        this.model.get('explorer').modifyTimeDescription({
+            timeAggregation: aggValue
+        });
+
+    },
+
+    close: function () {
+
+    }
+});
+
+var UserBarsView = Backbone.View.extend({
+    el: $('#timeExplorerBody'),
+    events: {
+        'click #newAttrSubmitButton': 'submitNewAttr'
+    },
+
+    initialize: function () {
+        this.listenTo(this.collection, 'add', this.addBar);
+        this.listenTo(this.collection, 'remove', this.removeBar);
+        this.listenTo(this.collection, 'reset', this.addAll);
+
+        this.template = Handlebars.compile($('#timeExplorerBodyTemplate').html());
+
+        this.render();
+    },
+
+    render: function () {
+        // this.collection.sort(); //TODO
+
+        this.$el.empty();
+
+        var newDiv = $('<div id="timeExplorerUserBarsRenderingContainer"></div>');
+        this.$el.append(newDiv);
+        newDiv = $('#timeExplorerUserBarsRenderingContainer');
+
+        this.collection.each(function (child) {
+            // TODO: This guard is a hack. I don't know how to initialize backbone
+            if (child.view) {
+                newDiv.append(child.view.el);
+                child.view.render();
+
+            }
+        });
+
+        // console.log('RENDERING USER BARS VIEW');
+
+        var params = {
+
+        };
+        var addRowHtml = this.template(params);
+        newDiv.append(addRowHtml);
+
+        this.$el.attr('cid', this.cid);
+        // this.$el.empty();
+        // this.$el.append(newDiv);
+    },
+
+    submitNewAttr: function (evt) {
+        evt.preventDefault();
+        var newType = $('#newType').val();
+        var newAttr = $('#newAttr').val();
+        var newQuery = $('#newQuery').val();
+        // TODO: Don't use this global. Instead properly structure userbars as a model, that contains a collection.
+        explorer.addActiveQuery(newType, newAttr, newQuery);
+        // this.collection.get('explorer').addActiveQuery(newType, newAttr, newQuery);
+    },
+
+    addBar: function (model) {
+        var view = new TimeBarView({model: model});
+        model.view = view;
+        // this.$el.append(view.el);
+        // view.render();
+        this.render();
+    },
+
+    removeBar: function () {
+        //TODO
+        console.log('ATTEMPTING TO REMOVE USER BAR, NOT IMPLEMENTED YET');
+    },
+
+    addAll: function () {
+        // this.$el.empty();
+        this.collection.each(this.addBar, this);
+        this.render();
+    },
+
+    mousemoveParent: function (evt) {
+        this.collection.each(function (child) {
+            if (child.view) {
+                child.view.mousemoveParent(evt);
+            }
+        });
+    },
+
+    mouseoutParent: function (evt) {
+        this.collection.each(function (child) {
+            if (child.view) {
+                child.view.mouseoutParent(evt);
+            }
+        });
+    }
+});
+
+var SideInputView = Backbone.View.extend({
+    el: $('#timeExplorerSideInput'),
+    events: {
+        'click #timeAttrSubmitButton': 'submitTimeAttr',
+        'click #newAttrSubmitButton': 'submitNewAttr',
+        'change #timeAggregationSelect': 'submitTimeAggregation'
+    },
+
+    initialize: function () {
+        this.listenTo(this.model, 'destroy', this.remove);
+
+        var params = {
+            timeAggregationOptions: ['day', 'hour', 'minute', 'second']
+        };
+        this.template = Handlebars.compile($('#timeExplorerSideInputTemplate').html());
+        var html = this.template(params);
+        this.$el.html(html);
+        this.$el.attr('cid', this.cid);
+        // this.setSelectedTimeAggregation();
+    },
+
+    render: function () {
+
+    },
+
+    submitTimeAttr: function (evt) {
+        evt.preventDefault();
+        var timeType = $('#timeType').val();
+        var timeAttr = $('#timeAttr').val();
+        this.model.get('explorer').modifyTimeDescription({
+            timeType: timeType,
+            timeAttr: timeAttr
+        });
+    },
+
+    submitNewAttr: function (evt) {
+        evt.preventDefault();
+        var newType = $('#newType').val();
+        var newAttr = $('#newAttr').val();
+        var newQuery = $('#newQuery').val();
+        this.model.get('explorer').addActiveQuery(newType, newAttr, newQuery);
+    },
+
+    submitTimeAggregation: function (evt) {
+        evt.preventDefault();
+        this.setSelectedTimeAggregation();
+    },
+
+    setSelectedTimeAggregation: function () {
+        var timeAggregation = $('#timeAggregationSelect').val();
+        this.model.get('explorer').modifyTimeDescription({
+            timeAggregation: timeAggregation
+        });
+    }
+});
 
 
 function TimeExplorerPanel (socket, $parent, explorer) {
     var that = this;
 
     this.userBars = new TimeBarCollection({explorer: explorer});
-    var panel = this;
 
-    var MainBarView = Backbone.View.extend({
-
-    });
-
-    var BottomAxisView = Backbone.View.extend({
-        tagName: 'div',
-        className: 'bottomAxisDiv',
-        template: Handlebars.compile($('#timeBarBottomAxisTemplate').html()),
-
-        events: {},
-
-        initialize: function () {
-            this.listenTo(this.model, 'destroy', this.remove);
-            this.listenTo(this.model, 'change:key', this.render);
-
-            var params = {};
-            var html = this.template(params);
-            this.$el.html(html);
-            this.$el.attr('cid', this.cid);
-        },
-
-        render: function () {
-            var model = this.model;
-
-            if (model.get('initialized')) {
-                updateBottomAxis(model.get('axisContainer'), model);
-                return this;
-            }
-
-            model.set('$el', this.$el);
-            var axisContainer = this.$el.children('.axisContainer');
-            axisContainer.empty();
-            model.set('axisContainer', axisContainer);
-            var axisHeight = '' + AXIS_HEIGHT + 'px';
-            axisContainer.height(axisHeight);
-            initializeBottomAxis(axisContainer, model);
-            updateBottomAxis(axisContainer, model);
-
-            model.set('initialized', true);
-            return this;
-        }
-    });
-
-    var TimeBarView = Backbone.View.extend({
-        tagName: 'div',
-        className: 'timeBarDiv',
-        template: Handlebars.compile($('#timeBarTemplate').html()),
-
-        events: {
-            'click .timeAggButton': 'changeTimeAgg',
-        },
-
-        initialize: function () {
-            this.listenTo(this.model, 'destroy', this.remove);
-            this.listenTo(this.model, 'change:timeStamp', this.newContent);
-            // TODO: listen to changes and render
-
-            // Set default values
-            this.model.set('pageX', 0);
-            this.model.set('pageY', 0);
-
-            var params = {
-
-            };
-
-            if (this.model.get('showTimeAggregationButtons')) {
-                params.timeAggregationButtons = timeAggregationButtons;
-            }
-
-            var html = this.template(params);
-            this.$el.html(html);
-            this.$el.attr('cid', this.cid);
-        },
-
-        newContent: function () {
-            // this.model.set('initialized', false);
-            this.render();
-        },
-
-        renderMouseEffects: function () {
-            var model = this.model;
-
-            // Don't do anything, you haven't been populated yet
-            if (!this.model.get('data')) {
-                return;
-            }
-
-            // Don't do first time work.
-            // TODO: Should this be initialize instead?
-            if (model.get('initialized')) {
-                updateTimeBarMouseover(model.get('vizContainer'), model);
-                return this;
-            }
-        },
-
-        render: function () {
-            var model = this.model;
-
-            // Don't do anything, you haven't been populated yet
-            if (!this.model.get('data')) {
-                return;
-            }
-
-            // Don't do first time work.
-            // TODO: Should this be initialize instead?
-            if (model.get('initialized')) {
-                updateTimeBar(model.get('vizContainer'), model);
-                return this;
-            }
-
-            // Need to init svg and all that.
-            model.set('$el', this.$el);
-            var vizContainer = this.$el.children('.vizContainer');
-            vizContainer.empty();
-            model.set('vizContainer', vizContainer);
-            var vizHeight = '' + TIME_BAR_HEIGHT + 'px';
-            vizContainer.height(vizHeight);
-            initializeTimeBar(vizContainer, model);
-            updateTimeBar(vizContainer, model);
-
-            model.set('initialized', true);
-            return this;
-        },
-
-        mousemoveParent: function (evt) {
-            this.model.set('pageX', evt.pageX);
-            this.model.set('pageY', evt.pageY);
-            this.renderMouseEffects();
-        },
-
-        mouseoutParent: function (evt) {
-            this.model.set('pageX', -1);
-            this.model.set('pageY', -1);
-            this.renderMouseEffects();
-        },
-
-        getBinForPosition: function (pageX) {
-            return getActiveBinForPosition(this.$el, this.model, pageX);
-        },
-
-        getPercentageForPosition: function (pageX) {
-            return getPercentageForPosition(this.$el, this.model, pageX);
-        },
-
-        changeTimeAgg: function (evt) {
-            evt.preventDefault();
-            evt.stopPropagation();
-            // console.log('GOT CLICK: ', evt);
-
-            var target = evt.target;
-            var shortText = $(target).text();
-            $(target).parent().children('button').not('#timeAggButton-' + shortText).removeClass('active');
-            $(target).addClass('active');
-            // console.log('TARGET: ', target);
-            // console.log($(target));
-            var aggValue = $(target).data('aggregation-value');
-            // console.log('aggValue: ', aggValue);
-
-
-            this.model.get('explorer').modifyTimeDescription({
-                timeAggregation: aggValue
-            });
-
-        },
-
-        close: function () {
-
-        }
-    });
-
-    var UserBarsView = Backbone.View.extend({
-        el: $('#timeExplorerBody'),
-        template: Handlebars.compile($('#timeExplorerBodyTemplate').html()),
-        events: {
-            'click #newAttrSubmitButton': 'submitNewAttr',
-        },
-
-        initialize: function () {
-            this.listenTo(this.collection, 'add', this.addBar);
-            this.listenTo(this.collection, 'remove', this.removeBar);
-            this.listenTo(this.collection, 'reset', this.addAll);
-
-            this.render();
-        },
-
-        render: function () {
-            // this.collection.sort(); //TODO
-
-            this.$el.empty();
-
-            var newDiv = $('<div id="timeExplorerUserBarsRenderingContainer"></div>');
-            this.$el.append(newDiv);
-            newDiv = $('#timeExplorerUserBarsRenderingContainer');
-
-            this.collection.each(function (child) {
-                // TODO: This guard is a hack. I don't know how to initialize backbone
-                if (child.view) {
-                    newDiv.append(child.view.el);
-                    child.view.render();
-
-                }
-            });
-
-            // console.log('RENDERING USER BARS VIEW');
-
-            var params = {
-
-            };
-            var addRowHtml = this.template(params);
-            newDiv.append(addRowHtml);
-
-            this.$el.attr('cid', this.cid);
-            // this.$el.empty();
-            // this.$el.append(newDiv);
-        },
-
-        submitNewAttr: function (evt) {
-            evt.preventDefault();
-            var newType = $('#newType').val();
-            var newAttr = $('#newAttr').val();
-            var newQuery = $('#newQuery').val();
-            // TODO: Don't use this global. Instead properly structure userbars as a model, that contains a collection.
-            explorer.addActiveQuery(newType, newAttr, newQuery);
-            // this.collection.get('explorer').addActiveQuery(newType, newAttr, newQuery);
-        },
-
-        addBar: function (model) {
-            var view = new TimeBarView({model: model});
-            model.view = view;
-            // this.$el.append(view.el);
-            // view.render();
-            this.render();
-        },
-
-        removeBar: function () {
-            //TODO
-            console.log('ATTEMPTING TO REMOVE USER BAR, NOT IMPLEMENTED YET');
-        },
-
-        addAll: function () {
-            // this.$el.empty();
-            this.collection.each(this.addBar, this);
-            this.render();
-        },
-
-        mousemoveParent: function (evt) {
-            this.collection.each(function (child) {
-                if (child.view) {
-                    child.view.mousemoveParent(evt);
-                }
-            });
-        },
-
-        mouseoutParent: function (evt) {
-            this.collection.each(function (child) {
-                if (child.view) {
-                    child.view.mouseoutParent(evt);
-                }
-            });
-        }
-    });
-
-    var SideInputView = Backbone.View.extend({
-        el: $('#timeExplorerSideInput'),
-        template: Handlebars.compile($('#timeExplorerSideInputTemplate').html()),
-        events: {
-            'click #timeAttrSubmitButton': 'submitTimeAttr',
-            'click #newAttrSubmitButton': 'submitNewAttr',
-            'change #timeAggregationSelect': 'submitTimeAggregation'
-        },
-
-        initialize: function () {
-            this.listenTo(this.model, 'destroy', this.remove);
-
-            var params = {
-                timeAggregationOptions: ['day', 'hour', 'minute', 'second']
-            };
-            var html = this.template(params);
-            this.$el.html(html);
-            this.$el.attr('cid', this.cid);
-            // this.setSelectedTimeAggregation();
-        },
-
-        render: function () {
-
-        },
-
-        submitTimeAttr: function (evt) {
-            evt.preventDefault();
-            var timeType = $('#timeType').val();
-            var timeAttr = $('#timeAttr').val();
-            this.model.get('explorer').modifyTimeDescription({
-                timeType: timeType,
-                timeAttr: timeAttr
-            });
-        },
-
-        submitNewAttr: function (evt) {
-            evt.preventDefault();
-            var newType = $('#newType').val();
-            var newAttr = $('#newAttr').val();
-            var newQuery = $('#newQuery').val();
-            this.model.get('explorer').addActiveQuery(newType, newAttr, newQuery);
-        },
-
-        submitTimeAggregation: function (evt) {
-            evt.preventDefault();
-            this.setSelectedTimeAggregation();
-        },
-
-        setSelectedTimeAggregation: function () {
-            var timeAggregation = $('#timeAggregationSelect').val();
-            this.model.get('explorer').modifyTimeDescription({
-                timeAggregation: timeAggregation
-            });
-        }
-
-    });
     // var SideInputModel = Backbone.Model.extend({});
     // this.sideInputView = new SideInputView({model: new SideInputModel({explorer: explorer})});
 
@@ -736,7 +735,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             'mousemove #timeExplorerVizContainer': 'mousemove',
             'mouseout #timeExplorerVizContainer': 'mouseout',
             'mousedown #timeExplorerVizContainer': 'handleMouseDown',
-            'click #timeAttrSubmitButton': 'submitTimeAttr',
+            'click #timeAttrSubmitButton': 'submitTimeAttr'
         },
 
         initialize: function () {
