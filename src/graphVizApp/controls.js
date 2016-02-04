@@ -630,6 +630,17 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         $('#inspector').css('visibility', dataInspectorIsVisible ? 'visible' : 'hidden');
     }).subscribe(_.identity, util.makeErrorHandler('dataInspector visibility toggle'));
 
+    // Visibility for time explorer
+    var $timeExplorerButton = $('#timeExplorerButton');
+    var timeExplorerIsVisible = false;
+    popoutClicks.filter(function (elt) {
+        return elt === $timeExplorerButton[0];
+    }).do(function () {
+        timeExplorerIsVisible = !timeExplorerIsVisible;
+        toggleButton($timeExplorerButton, timeExplorerIsVisible);
+        $('#timeExplorer').css('visibility', timeExplorerIsVisible ? 'visible' : 'hidden');
+    }).subscribe(_.identity, util.makeErrorHandler('timeExplorer visibility toggle'));
+
 
     // histogram brush:
     var brushIsOn = false;
