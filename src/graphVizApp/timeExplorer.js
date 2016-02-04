@@ -82,11 +82,11 @@ var TimeBarCollection = Backbone.Collection.extend({
 
 
 
-function TimeExplorer (socket, $div) {
-    window.timeExplorer = this; // TODO KILL THIS TESTING THING
+function TimeExplorer (socket, $div, filtersPanel) {
     var that = this;
     this.$div = $div;
     this.socket = socket;
+    this.filtersPanel = filtersPanel;
 
     this.getTimeDataCommand = new Command('getting time data', 'timeAggregation', socket);
     this.getTimeBoundsCommand = new Command('getting time bounds', 'getTimeBoundaries', socket);
@@ -161,7 +161,40 @@ function TimeExplorer (socket, $div) {
 }
 
 TimeExplorer.prototype.updateGraphTimeFilter = function (newTimeFilter) {
-    console.log('GOT TIME FILTER UPDATE: ', newTimeFilter);
+    var that = this;
+
+    var filtersCollection = that.filtersPanel.collection;
+    var filterModel = filtersCollection.findWhere({
+        controlType: 'timeExplorer'
+    });
+    var filterer = that.filtersPanel.control;
+
+    if (newTimeFilter) {
+
+        var combinedAttr = '' + this.timeDescription.timeType + ':' + this.timeDescription.timeAttr;
+        var timeFilterQuery = combinedAttr + ' >= ' + newTimeFilter.start + ' AND ' + combinedAttr + ' <= ' + newTimeFilter.stop;
+
+        var query = that.makeQuery(this.timeDescription.timeType, this.timeDescription.timeAttr, timeFilterQuery).query;
+
+        if (filterModel === undefined) {
+            // Make new
+            filtersCollection.addFilter({
+                attribute: this.timeDescription.timeAttr,
+                dataType: 'number', // TODO: make this a date type
+                controlType: 'timeExplorer',
+                query: query
+            });
+
+        } else {
+            // Update
+            filterModel.set('query', query);
+        }
+
+    } else {
+        // Delete
+        filtersCollection.remove(filterModel);
+    }
+
 };
 
 TimeExplorer.prototype.modifyTimeDescription = function (change) {
@@ -200,7 +233,7 @@ TimeExplorer.prototype.getTimeData = function (timeType, timeAttr, start, stop, 
     // console.log('GET TIME DATA');
 
     var combinedAttr = '' + timeType + ':' + timeAttr;
-    var timeFilterQuery = combinedAttr + ' >= "' + start + '" AND ' + combinedAttr + ' <= "' + stop + '"';
+    var timeFilterQuery = combinedAttr + ' >= ' + start + ' AND ' + combinedAttr + ' <= ' + stop;
 
     var timeFilter = {
         type: timeType,

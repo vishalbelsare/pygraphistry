@@ -717,7 +717,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     setsPanel.setupToggleControl(popoutClicks, $('#setsPanelButton'));
     setsPanel.setupSelectionInteraction(appState.activeSelection, appState.latestHighlightedObject);
 
-    var timeExplorer = new TimeExplorer(socket, $('#timeExplorer'));
+    var timeExplorer = new TimeExplorer(socket, $('#timeExplorer'), filtersPanel);
 
     createControls(
         socket,
