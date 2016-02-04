@@ -213,7 +213,7 @@ TimeExplorer.prototype.addActiveQuery = function (type, attr, string) {
         query: formattedQuery
     });
     this.modifyTimeDescription({}); // Update. TODO: Make an actual update func
-}
+};
 
 TimeExplorer.prototype.makeQuery = function (type, attr, string) {
     return {
@@ -239,7 +239,7 @@ TimeExplorer.prototype.getTimeData = function (timeType, timeAttr, start, stop, 
         type: timeType,
         attribute: timeAttr,
         query: FilterControl.prototype.queryFromExpressionString(timeFilterQuery)
-    }
+    };
 
     var filters = otherFilters.concat([timeFilter]);
 
@@ -250,7 +250,7 @@ TimeExplorer.prototype.getTimeData = function (timeType, timeAttr, start, stop, 
         timeAttr: timeAttr,
         timeAggregation: timeAggregation,
         filters: filters
-    }
+    };
 
     // console.log('SENDING TIME DATA COMMAND');
 
@@ -348,8 +348,8 @@ TimeExplorer.prototype.setupZoom = function () {
             var startDelta = leftRatio * diff * req.zoom;
             var stopDelta = rightRatio * diff * req.zoom;
 
-            newStart = newStart + Math.round(startDelta);
-            newStop = newStop - Math.round(stopDelta);
+            newStart += Math.round(startDelta);
+            newStop -= Math.round(stopDelta);
 
         }
         that.zoomCount = 0;
@@ -358,9 +358,6 @@ TimeExplorer.prototype.setupZoom = function () {
         if (newStart >= newStop) {
             newStart = newStop - 1;
         }
-
-        var newStartDate = new Date(newStart);
-        var newStopDate = new Date(newStop);
 
         // console.log('New Start, Stop: ', newStartDate, newStopDate);
 
@@ -464,7 +461,7 @@ var TimeBarView = Backbone.View.extend({
 
         // Don't do anything, you haven't been populated yet
         if (!this.model.get('data')) {
-            return;
+            return this;
         }
 
         // Don't do first time work.
@@ -510,7 +507,7 @@ var TimeBarView = Backbone.View.extend({
         this.renderMouseEffects();
     },
 
-    mouseoutParent: function (evt) {
+    mouseoutParent: function (/*evt*/) {
         this.model.set('pageX', -1);
         this.model.set('pageY', -1);
         this.renderMouseEffects();
@@ -602,8 +599,8 @@ var UserBarsView = Backbone.View.extend({
         var newType = $('#newType').val();
         var newAttr = $('#newAttr').val();
         var newQuery = $('#newQuery').val();
-        // TODO: Don't use this global. Instead properly structure userbars as a model, that contains a collection.
-        explorer.addActiveQuery(newType, newAttr, newQuery);
+        // TODO: Don't use this global. Instead properly structure user bars as a model, that contains a collection.
+        this.model.get('explorer').addActiveQuery(newType, newAttr, newQuery);
         // this.collection.get('explorer').addActiveQuery(newType, newAttr, newQuery);
     },
 
@@ -1205,7 +1202,6 @@ function getPercentageForPosition ($el, model, pageX) {
     if (!width) {
         width = $el.width() - margin.left - margin.right;
     }
-    var data = model.get('data');
     var svg = d3Data.svg;
 
     var svgOffset = d3Data.svgOffset;
@@ -1261,12 +1257,8 @@ function tagBins (rawBins, keys, cutoffs) {
 function updateTimeBarMouseover ($el, model) {
 
     var d3Data = model.get('d3Data');
-    var width = d3Data.width;
-    var height = d3Data.height;
     var data = model.get('data');
     var maxBinValue = model.get('maxBinValue');
-    var id = model.cid;
-    var taggedBins = tagBins(data.bins, data.keys, data.cutoffs);
     var barType = model.get('barType');
 
     var svg = d3Data.svg;
@@ -1320,9 +1312,6 @@ function updateTimeBarMouseover ($el, model) {
 
     var recolorBar = function (d) {
         if (d.idx === activeBin) {
-            // debug('color focus');
-            var colorVal = color(barType + 'Focus');
-            // debug('colorVal: ', colorVal);
             return color(barType + 'Focus');
         } else {
             return color(barType);
@@ -1340,12 +1329,7 @@ function updateTimeBarLineChartMouseover ($el, model) {
     // debug('updating time bar: ', model);
 
     var d3Data = model.get('d3Data');
-    var width = d3Data.width;
-    var height = d3Data.height;
     var data = model.get('data');
-    var maxBinValue = model.get('maxBinValue');
-    var id = model.cid;
-    var barType = model.get('barType');
 
     var svg = d3Data.svg;
 
@@ -1397,7 +1381,6 @@ function updateTimeBar ($el, model) {
     var height = d3Data.height;
     var data = model.get('data');
     var maxBinValue = model.get('maxBinValue');
-    var id = model.cid;
     var taggedBins = tagBins(data.bins, data.keys, data.cutoffs);
 
     var svg = d3Data.svg;
@@ -1439,9 +1422,6 @@ function updateTimeBar ($el, model) {
 
     var recolorBar = function (d) {
         if (d.idx === activeBin) {
-            // debug('color focus');
-            var colorVal = color(barType + 'Focus');
-            // debug('colorVal: ', colorVal);
             return color(barType + 'Focus');
         } else {
             return color(barType);
@@ -1584,9 +1564,7 @@ function updateTimeBar ($el, model) {
 
     bars.exit().remove();
 
-    var dataPlacement = (data.name === 'All') ? 'all' : 'user';
-
-    // console.log('barWidth: ', barWidth);
+    // var dataPlacement = (data.name === 'All') ? 'all' : 'user';
 
     // bars
     bars.transition().duration(ZOOM_UPDATE_RATE).ease('linear')
@@ -1640,7 +1618,6 @@ function updateTimeBarLineChart ($el, model) {
     var height = d3Data.height;
     var data = model.get('data');
     var maxBinValue = model.get('maxBinValue');
-    var id = model.cid;
 
     var svg = d3Data.svg;
 
@@ -1661,7 +1638,7 @@ function updateTimeBarLineChart ($el, model) {
     var xScale = setupBinScale(width, data.numBins, data);
     var yScale = setupAmountScale(height, maxBinValue, data.bins);
 
-    var barWidth = Math.floor(width/data.numBins) - BAR_SIDE_PADDING;
+    // var barWidth = Math.floor(width/data.numBins) - BAR_SIDE_PADDING;
 
     //////////////////////////////////////////////////////////////////////////
     // Make Line Beneath
@@ -1719,7 +1696,7 @@ function updateTimeBarLineChart ($el, model) {
     // var areaChart = svg.selectAll('.areaChart')
     //     .datum(data.bins);
 
-    // HACKY WAY TO AVOID REDRAW
+    // HACK: WAY TO AVOID REDRAW
     var areaChart = svg.selectAll('.areaChart');
 
     if (!model.get('lineUnchanged')) {
@@ -1793,7 +1770,7 @@ function setupBinScale (width, numBins, data) {
         // TODO: Adjust invert to know about offset
         // var rawReturn = rawScale.invert.apply(this, arguments);
         // return rawReturn;
-    }
+    };
 
     wrappedScale.rawScale = rawScale;
 
@@ -1822,11 +1799,9 @@ function initializeBottomAxis ($el, model) {
 
     var width = $el.width();
     var height = $el.height();
-    var data = model.get('data');
     var id = model.cid;
     var d3Data = {};
     model.set('d3Data', d3Data);
-    var numBins = data.numBins;
 
     width = width - axisMargin.left - axisMargin.right;
     height = height - axisMargin.top - axisMargin.bottom;
@@ -1907,8 +1882,7 @@ function updateBottomAxis ($el, model) {
 
         _.each(data.cutoffs, function (cutoff, i) {
             var pos = xScale(i);
-            var val = cutoff;
-            tickContent.push(val);
+            tickContent.push(cutoff);
             tickPositions.push(pos);
             tickKeys.push(data.keys[i]);
         });
