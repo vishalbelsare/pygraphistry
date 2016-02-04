@@ -1552,7 +1552,7 @@ module.exports = (function() {
       // Header/utility functions for grammar match bodies.
       //
 
-      function joinWords(arguments) {
+      function joinWords() {
         if (arguments.length === 1 && typeof arguments[0] === 'string') {
           return arguments[0];
         }
