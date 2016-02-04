@@ -2134,7 +2134,6 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     var estimatedNumberBins = (endDate.getTime() - startDate.getTime())/binWidth;
     var MAX_BINS_TIME_HISTOGRAM = 2500;
 
-
     var approximated = false;
     if (estimatedNumberBins > MAX_BINS_TIME_HISTOGRAM) {
 
@@ -2165,12 +2164,10 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
 
     }
 
-
     cutoffs.push(endDate);
     var cutoffNumbers = cutoffs.map(function (val, i) {
         return val.getTime();
     });
-
 
     //////////////////////////////////////////////////////////////////////////
     // Compute bins given cutoffs
@@ -2187,8 +2184,14 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     var bottom = binWidthTestDate.getTime();
     incFunction(binWidthTestDate);
     var top = binWidthTestDate.getTime();
-    binWidth = top - bottom;
-    // binWidth = cutoffNumbers[1] - cutoffNumbers[0];
+
+    // If we have more than 3 bins, we can just take a difference from the middle
+    if (cutoffNumbers.length > 3) {
+        binWidth = cutoffNumbers[2] - cutoffNumbers[1];
+    } else {
+        binWidth = top - bottom;
+    }
+
 
     var binId, value;
     mask.mapIndexes(timeType, function (idx) {
