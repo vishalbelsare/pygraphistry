@@ -2082,6 +2082,226 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
  */
 
 
+// Counts occurences of type that matches type of time attr.
+Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, start, stop, timeAggregation) {
+
+    // Compute binning
+    var startDate = new Date(start);
+    var endDate = new Date(stop);
+
+    //////////////////////////////////////////////////////////////////////////
+    // COMPUTE INC / DEC FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////
+
+
+    var incFunction;
+    var decFunction;
+    // TODO: Rest of time ranges
+    if (timeAggregation === 'day') {
+        incFunction = function (date) {
+            return date.setHours(24,0,0,0);
+        };
+        decFunction = function (date) {
+            return date.setHours(0,0,0,0);
+        };
+    } else if (timeAggregation === 'hour') {
+        incFunction = function (date) {
+            return date.setMinutes(60,0,0);
+        };
+        decFunction = function (date) {
+            return date.setMinutes(0,0,0);
+        };
+    } else if (timeAggregation === 'minute') {
+        incFunction = function (date) {
+            return date.setSeconds(60,0);
+        };
+        decFunction = function (date) {
+            return date.setSeconds(0,0);
+        };
+    } else if (timeAggregation === 'second') {
+        incFunction = function (date) {
+            return date.setMilliseconds(1000);
+        };
+        decFunction = function (date) {
+            return date.setMilliseconds(0);
+        };
+    } else {
+        return;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Optionally set start / stop to nice boundaries
+    //////////////////////////////////////////////////////////////////////////
+
+
+    // // Make sure startDate is on a nice boundary
+    // decFunction(startDate);
+
+    // // Before incrementing endDate, check to see if it's already a boundary (in which case we don't)
+    // // want to incremement
+    // var testDate = new Date(endDate.getTime());
+    // decFunction(testDate);
+    // if (testDate.getTime() !== endDate.getTime()) {
+    //     incFunction(endDate);
+    // }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Compute cutoffs
+    //////////////////////////////////////////////////////////////////////////
+
+
+    // TODO: We don't strictly need to compute all cutoffs to bin.
+    // We should just compute numBins, width, start, stop like in normal histograms
+    var cutoffs = [startDate];
+
+    // Guess how many it would be.
+    var timeA = new Date(start);
+    var timeB = new Date(start);
+    decFunction(timeA);
+    incFunction(timeB);
+    var binWidth = timeB.getTime() - timeA.getTime();
+
+    var estimatedNumberBins = (endDate.getTime() - startDate.getTime())/binWidth;
+    var MAX_BINS_TIME_HISTOGRAM = 2500;
+
+    var approximated = false;
+    if (estimatedNumberBins > MAX_BINS_TIME_HISTOGRAM) {
+
+        var diff = endDate.getTime() - startDate.getTime();
+        var startNum = startDate.getTime();
+        var step = Math.floor(diff / MAX_BINS_TIME_HISTOGRAM);
+        var runningDate = startNum + step;
+        while (runningDate < endDate) {
+            var newDate = new Date(runningDate);
+            cutoffs.push(newDate);
+            runningDate += step;
+        }
+        approximated = true;
+
+    } else {
+
+        var runningDate = startDate;
+        var backupCount = 0;
+        while (runningDate < endDate && backupCount < 100000) {
+            var newDate = new Date(runningDate.getTime());
+            incFunction(newDate);
+            if (newDate < endDate) {
+                cutoffs.push(newDate);
+            }
+            runningDate = newDate;
+            backupCount++;
+        }
+
+    }
+
+    cutoffs.push(endDate);
+    var cutoffNumbers = cutoffs.map(function (val, i) {
+        return val.getTime();
+    });
+
+    //////////////////////////////////////////////////////////////////////////
+    // Compute bins given cutoffs
+    //////////////////////////////////////////////////////////////////////////
+
+    // Fill bins
+    var numBins = cutoffs.length - 1;
+    var bins = Array.apply(null, new Array(numBins)).map(function () { return 0; });
+    var timeValues = this.getColumnValues(timeAttr, timeType);
+
+    // COMPUTE BIN WIDTH
+    var binWidthTestDate = new Date(start);
+    decFunction(binWidthTestDate);
+    var bottom = binWidthTestDate.getTime();
+    incFunction(binWidthTestDate);
+    var top = binWidthTestDate.getTime();
+
+    // If we have more than 3 bins, we can just take a difference from the middle
+    if (cutoffNumbers.length > 3) {
+        binWidth = cutoffNumbers[2] - cutoffNumbers[1];
+    } else {
+        binWidth = top - bottom;
+    }
+
+
+    var binId, value;
+    mask.mapIndexes(timeType, function (idx) {
+        var value = timeValues[idx];
+        var valueDate = new Date(value);
+        var valueNum = valueDate.getTime();
+
+        // Because the first and last bins can be variable width (but ONLY those)
+        // We need to special case being in the first bucket, and make rest of computations
+        // against the second cutoff number and inc by one
+
+        // In bin one
+        if (valueNum < cutoffNumbers[1]) {
+            bins[0]++;
+        } else {
+            // In any other bin
+            var binId = (((valueNum - cutoffNumbers[1]) / binWidth) | 0) + 1;
+            bins[binId]++;
+        }
+
+        // var binId = ((valueNum - cutoffNumbers[0]) / binWidth) | 0;
+        // bins[binId]++;
+    });
+
+    //////////////////////////////////////////////////////////////////////////
+    // Compute offsets array for visualization purposes
+    //////////////////////////////////////////////////////////////////////////
+
+    var widths = [];
+    for (var i = 0; i < cutoffNumbers.length - 1; i++) {
+        widths[i] = (cutoffNumbers[i+1] - cutoffNumbers[i])/binWidth;
+    }
+
+    var rawOffsets = [];
+    // Compute scan of widths
+    for (var i = 0; i < widths.length; i++) {
+        var prev = (i > 0) ? rawOffsets[i-1] : 0;
+        rawOffsets[i] = prev + widths[i];
+    }
+
+    // Normalize rawOffsets so that they are out of 1.0;
+    var denom = rawOffsets[rawOffsets.length - 1];
+    var offsets = [];
+    for (var i = 0; i < rawOffsets.length; i++) {
+        var raw = (i > 0) ? rawOffsets[i-1] : 0;
+        offsets[i] = (raw / denom);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Provide keys for d3
+    //////////////////////////////////////////////////////////////////////////
+
+    var keys = _.map(cutoffs, function (d) {
+        var newDate = new Date(d.getTime());
+        decFunction(newDate);
+        return timeAggregation + newDate.getTime();
+    });
+
+
+    return {
+        bins: bins,
+        maxBin: _.max(bins),
+        numBins: numBins,
+        step: binWidth,
+        attr: timeAttr,
+        type: timeType,
+        start: cutoffNumbers[cutoffNumbers.length - 1],
+        topVal: cutoffNumbers[cutoffNumbers.length - 1],
+        stop: cutoffNumbers[0],
+        bottomVal: cutoffNumbers[0],
+        timeAggregation: timeAggregation,
+        cutoffs: cutoffNumbers,
+        approximated: approximated,
+        offsets: offsets,
+        widths: widths,
+        keys: keys
+    };
+};
+
+
 Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, indices, type, dataType) {
     // Binning has binWidth, minValue, maxValue, and numBins
 
