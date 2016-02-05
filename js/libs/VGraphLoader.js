@@ -5,6 +5,7 @@ var _ = require('underscore');
 var pb = require('protobufjs');
 var path = require('path');
 var moment = require('moment');
+var Color = require('color');
 
 var util = require('../util.js');
 var weakcc = require('../weaklycc.js');
@@ -531,6 +532,27 @@ function getAttributes0(vg) {
 
                 } else {
                     logger.debug('Failed to cast ' + v.name + ' as a moment.');
+                }
+            }
+
+            if ((/color/i).test(v.name)) {
+                var isValidColor = false, sampleValue = v.values[0];
+                if (type === 'number') {
+                    if (sampleValue > 0 && sampleValue <= 0xFFFFFFFF) {
+                        isValidColor = true;
+                    }
+                } else if (type === 'string') {
+                    try {
+                        var testColor = new Color(sampleValue);
+                        isValidColor = testColor !== undefined && testColor.rgbaString() !== undefined;
+                    } catch (e) {
+                        logger.debug('Failed to cast ' + v.name + ' as a color: ' + e.message);
+                    }
+                }
+                if (isValidColor) {
+                    type = 'color';
+                } else {
+                    logger.debug('Failed to cast ' + v.name + ' as a color.');
                 }
             }
 
