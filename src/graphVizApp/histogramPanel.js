@@ -676,7 +676,7 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
     var dataType = globalStats.dataType;
     var name;
     var localFormat = function (value) {
-        return contentFormatter.shortFormat(value, dataType, attr);
+        return contentFormatter.shortFormat(value, dataType);
     };
     if (type === 'countBy') {
         var globalKeys = _.keys(globalBins);
@@ -1191,11 +1191,11 @@ function initializeHistogramViz($el, model) {
             if (type === 'countBy') {
                 fullTitle = contentFormatter.defaultFormat(stackedBins[d].name, globalStats.dataType);
                 fullTitles[d] = fullTitle;
-                return contentFormatter.shortFormat(stackedBins[d].name, globalStats.dataType, name);
+                return contentFormatter.shortFormat(stackedBins[d].name, globalStats.dataType);
             } else {
                 fullTitle = contentFormatter.defaultFormat(d * globalStats.binWidth + globalStats.minValue, globalStats.dataType);
                 fullTitles[d] = fullTitle;
-                return contentFormatter.defaultFormat(d * globalStats.binWidth + globalStats.minValue, globalStats.dataType, name);
+                return contentFormatter.defaultFormat(d * globalStats.binWidth + globalStats.minValue, globalStats.dataType);
             }
         });
 

@@ -74,6 +74,13 @@ function defaultFormat (value, dataType) {
         }
     }
 
+    if (dataType === 'color') {
+        if (!isNaN(value)) {
+            value = d3ColorFromRGBA(value);
+            return value.toString();
+        }
+    }
+
     return String(value); // Default
 }
 
@@ -88,10 +95,6 @@ function d3ColorFromRGBA(x) {
 function decodeColumnValue (val, attributeName) {
     if (!isNaN(val)) {
         val = Number(val); // Cast to number in case it's a string
-
-        if (attributeName.match(/color/i)) {
-            return d3ColorFromRGBA(val);
-        }
 
         if (attributeName.indexOf('Date') > -1) {
             return new Date(val);
@@ -125,7 +128,7 @@ function maybePrecise(v, significantFigures) {
     return printed;
 }
 
-function shortFormat (value, dataType, attributeName) {
+function shortFormat (value, dataType) {
 
     if (dataType === 'date') {
         var momentVal = castToMoment(value);
@@ -142,43 +145,37 @@ function shortFormat (value, dataType, attributeName) {
         return momentVal.format('MMM D YY, h:mm:ss a');
     }
 
-
-    if (!isNaN(value)) {
-        value = decodeColumnValue(value, attributeName);
-
-        if (value instanceof d3.color) {
+    if (dataType === 'color') {
+        if (!isNaN(value)) {
+            value = d3ColorFromRGBA(value);
             return value.toString();
         }
+    }
 
-        if (value instanceof Date) {
-            return d3.time.format('%m/%d/%Y')(value);
+    if (isNaN(value)) {
+        var str = String(value);
+        var limit = 10;
+        if (str.length > limit) {
+            return str.substr(0, limit - 1) + '…';
+        } else {
+            return str;
         }
-
+    } else {
         var abs = Math.abs(value);
         var precision = 4;
         if (abs > 1000000000000 || (value !== 0 && Math.abs(value) < 0.00001)) {
             return String(value.toExponential(precision));
         } else if (abs > 1000000000) {
-            return maybePrecise(value/1000000000, precision) + 'B';
+            return maybePrecise(value / 1000000000, precision) + 'B';
         } else if (abs > 1000000) {
-            return maybePrecise(value/1000000, precision) + 'M';
+            return maybePrecise(value / 1000000, precision) + 'M';
         } else if (abs > 1000) {
-            return maybePrecise(value/1000, precision) + 'K';
+            return maybePrecise(value / 1000, precision) + 'K';
         } else {
-            value = Math.round(value*1000000) / 1000000; // Kill rounding errors
+            value = Math.round(value * 1000000) / 1000000; // Kill rounding errors
             return String(value);
         }
-
-    } else {
-        var str = String(value);
-        var limit = 10;
-        if (str.length > limit) {
-            return str.substr(0, limit-1) + '…';
-        } else {
-            return str;
-        }
     }
-
 }
 
 
