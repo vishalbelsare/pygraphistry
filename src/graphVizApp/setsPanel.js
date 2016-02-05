@@ -451,7 +451,7 @@ var AllVizSetsView = Backbone.View.extend({
     }
 });
 
-function SetsPanel(socket/*, urlParams*/) {
+function SetsPanel(socket) {
 
     this.commands = {
         getAll: new Command('getting sets', 'get_sets', socket),

@@ -876,8 +876,9 @@ RenderingScheduler.prototype.renderSlowEffects = function () {
         var expectedNumMidEdgeColors = numEdges * (numRenderedSplits + 1);
 
         var shouldRecomputeEdgeColors =
-            (!appSnapshot.buffers.midEdgesColors || (appSnapshot.buffers.midEdgesColors.length !== expectedNumMidEdgeColors)
-                || appSnapshot.bufferReceivedVersions.edgeColors > appSnapshot.bufferComputedVersions.edgeColors);
+            (!appSnapshot.buffers.midEdgesColors ||
+            (appSnapshot.buffers.midEdgesColors.length !== expectedNumMidEdgeColors) ||
+            appSnapshot.bufferReceivedVersions.edgeColors > appSnapshot.bufferComputedVersions.edgeColors);
 
         if (shouldRecomputeEdgeColors) {
             midEdgesColors = that.getMidEdgeColors(appSnapshot.buffers, numEdges, numRenderedSplits);

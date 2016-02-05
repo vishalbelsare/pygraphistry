@@ -28,7 +28,7 @@ var ZOOM_UPDATE_RATE = 90;
 // var ZOOM_UPDATE_RATE = 1500;
 var ZOOM_POLL_RATE = ZOOM_UPDATE_RATE - 10;
 var SCROLL_SAMPLE_TIME = 5;
-var SCROLLS_PER_ZOOM = Math.floor(ZOOM_UPDATE_RATE / SCROLL_SAMPLE_TIME);
+//var SCROLLS_PER_ZOOM = Math.floor(ZOOM_UPDATE_RATE / SCROLL_SAMPLE_TIME);
 
 var DEFAULT_TIME_AGGREGATION = 'day';
 
@@ -141,7 +141,7 @@ function TimeExplorer (socket, $div, filtersPanel) {
             // debug('GOT NEW DATA: ', data);
             var dividedData = {};
             dividedData.all = data.All;
-            delete data['All'];
+            delete data.All;
             dividedData.user = data;
             dividedData.maxBinValue = dividedData.all.maxBin;
 
@@ -167,7 +167,6 @@ TimeExplorer.prototype.updateGraphTimeFilter = function (newTimeFilter) {
     var filterModel = filtersCollection.findWhere({
         controlType: 'timeExplorer'
     });
-    var filterer = that.filtersPanel.control;
 
     if (newTimeFilter) {
 
@@ -2016,7 +2015,7 @@ function updateBottomAxis ($el, model) {
             var tempNumTicks = tweeningContent.length;
             var tempTickContent = tweeningContent;
 
-            var tempTickPositions = _.map(positionTweens, function (startStop, i) {
+            var tempTickPositions = _.map(positionTweens, function (startStop/*, i*/) {
                 var start = startStop[0];
                 var stop = startStop[1];
 
@@ -2032,7 +2031,7 @@ function updateBottomAxis ($el, model) {
 
         };
 
-        timeAxisSelection.transition().duration(ZOOM_UPDATE_RATE).ease('linear').tween('#timexaxis-' + id, function (d, i) {
+        timeAxisSelection.transition().duration(ZOOM_UPDATE_RATE).ease('linear').tween('#timexaxis-' + id, function (/*d, i*/) {
 
             return function (t) {
                 // Make changes to axis
@@ -2128,8 +2127,8 @@ function dayOfWeekAsString(idx) {
 
 function hourAsString(idx) {
     var hour = idx % 12;
-    var ampm = ['AM', 'PM'][Math.floor(idx/12)];
-    return '' + hour + ' ' + ampm;
+    var meridiemPart = ['AM', 'PM'][Math.floor(idx/12)];
+    return '' + hour + ' ' + meridiemPart;
 }
 
 function prettyPrintTime(raw, timeAggregation) {
