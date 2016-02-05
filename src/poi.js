@@ -11,6 +11,7 @@ var _           = require('underscore');
 var $           = window.$;
 var Rx          = require('rxjs/Rx.KitchenSink');
                   require('./rx-jquery-stub');
+var Color       = require('color');
 
 var picking     = require('./picking.js');
 var contentFormatter = require('./graphVizApp/contentFormatter.js');
@@ -313,22 +314,22 @@ function createLabelDom(instance, dim, labelObj) {
                 return;
             }
 
-            var entry = contentFormatter.defaultFormat(val, col.dataType);
+            var displayName = col.displayName || contentFormatter.defaultFormat(val, col.dataType);
             // Null value guard
-            if (entry === undefined || entry === null) {
+            if (displayName === undefined || displayName === null) {
                 return;
             }
 
             var $row = $('<tr>').addClass('graph-label-pair'),
                 $key = $('<td>').addClass('graph-label-key').text(key);
 
-            var $wrap = $('<div>').addClass('graph-label-value-wrapper').html(entry);
+            var $wrap = $('<div>').addClass('graph-label-value-wrapper').html(displayName);
 
             var $icons = $('<div>').addClass('graph-label-icons');
             $wrap.append($icons);
             var $exclude = $('<a class="exclude-by-key-value">').html('<i class="fa fa-ban"></i>');
             $exclude.data({placement: 'bottom', toggle: 'tooltip'});
-            $exclude.attr('title', 'Exclude if ' + $key.text() + '=' + entry);
+            $exclude.attr('title', 'Exclude if ' + $key.text() + '=' + displayName);
             $exclude.tooltip({container: 'body'})
                 .data('bs.tooltip').tip().addClass('label-tooltip'); // so labels can remove
             $exclude.on('click', function () {
@@ -336,7 +337,7 @@ function createLabelDom(instance, dim, labelObj) {
             });
             var $filter = $('<a class="filter-by-key-value">').html('<i class="fa fa-filter"></i>');
             $filter.data({placement: 'bottom', toggle: 'tooltip'});
-            $filter.attr('title', 'Filter for ' + $key.text() + '=' + entry);
+            $filter.attr('title', 'Filter for ' + $key.text() + '=' + displayName);
             $filter.tooltip({container: 'body'})
                 .data('bs.tooltip').tip().addClass('label-tooltip'); // so labels can remove
             $filter.on('click', function () {
@@ -345,6 +346,9 @@ function createLabelDom(instance, dim, labelObj) {
             $icons.append($exclude).append($filter);
 
             var $val = $('<td>').addClass('graph-label-value').append($wrap);
+            if (col.dataType === 'color') {
+                $val.css('background-color', new Color(displayName).rgbString());
+            }
             $row.append($key).append($val);
             $table.append($row);
         });
