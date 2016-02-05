@@ -13,6 +13,8 @@ var ExpressionCodeGenerator = require('./expressionCodeGenerator');
 var ExpressionPlan = require('./ExpressionPlan.js');
 var DataframeMask = require('./DataframeMask.js');
 
+var palettes    = require('./palettes');
+
 var baseDirPath = __dirname + '/../assets/dataframe/';
 /**
  * @readonly
@@ -1499,8 +1501,12 @@ ColumnAggregation.prototype.updateAggregations = function (valuesByAggType) {
     _.extend(this.aggregations, valuesByAggType);
 };
 
+ColumnAggregation.prototype.hasAggregationByType = function (aggType) {
+    return this.aggregations[aggType] !== undefined;
+};
+
 ColumnAggregation.prototype.getAggregationByType = function (aggType) {
-    if (this.aggregations[aggType] === undefined) {
+    if (!this.hasAggregationByType(aggType)) {
         this.runAggregationForAggType(aggType);
     }
     return this.aggregations[aggType];
@@ -1713,6 +1719,32 @@ Dataframe.prototype.getColumnAggregations = function(columnName, type, unfiltere
     return column.aggregations;
 };
 
+
+/** Auto-detect when a buffer is filled with our ETL-defined color space and map that directly:
+ * TODO don't have ETL magically encode the color space; it doesn't save space, time, code, or style.
+ * @returns {Boolean}
+ */
+Dataframe.prototype.doesColumnRepresentColorPaletteMap = function (type, columnName) {
+    var aggregations = this.getColumnAggregations(columnName, type, true);
+    var aggType = 'fitsColorPaletteMap';
+    if (!aggregations.hasAggregationByType(aggType)) {
+        if (this.getDataType(columnName, type) === 'color' &&
+            aggregations.getAggregationByType('dataType') === 'integer') {
+            var distinctValues = _.keys(aggregations.getAggregationByType('distinctValues')),
+                fits = false;
+            if (_.isEmpty(distinctValues)) {
+                distinctValues = [aggregations.getAggregationByType('minValue'),
+                    aggregations.getAggregationByType('maxValue')];
+            }
+            if (palettes.valuesFitOnePaletteCategory(distinctValues)) {
+                fits = true;
+            }
+        }
+        aggregations.updateAggregationTo(aggType, fits);
+        return fits;
+    }
+    return aggregations.getAggregationByType(aggType);
+};
 
 Dataframe.prototype.sortEdgeColumnValues = function (type, values) {
     if (type === 'edge') {
