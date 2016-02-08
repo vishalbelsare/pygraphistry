@@ -24,6 +24,14 @@ var externalLink    = require('./externalLink.js');
 var TimeExplorer    = require('./timeExplorer.js');
 var contentFormatter = require('./contentFormatter.js');
 
+function logScaling(minPos, maxPos, minVal, maxVal) {
+    return d3.scale.log().domain([minVal, maxVal]).range([minPos, maxPos]);
+}
+
+var PercentScale = d3.scale.linear().domain([0, 1]).range([0, 100]);
+var PointSizeScale = logScaling(1, 100, 0.1, 10);
+var EdgeSizeScale = logScaling(1, 100, 0.1, 10);
+
 // Setup client side controls.
 var encodingPerElementParams = [
     {
@@ -33,7 +41,8 @@ var encodingPerElementParams = [
         value: 50.0,
         step: 1,
         max: 100.0,
-        min: 1
+        min: 1,
+        scaling: PointSizeScale
     },
     {
         name: 'edgeScaling',
@@ -42,7 +51,8 @@ var encodingPerElementParams = [
         value: 50.0,
         step: 1,
         max: 100.0,
-        min: 1
+        min: 1,
+        scaling: EdgeSizeScale
     },
     {
         name: 'pointOpacity',
@@ -51,7 +61,8 @@ var encodingPerElementParams = [
         value: 100,
         step: 1,
         max: 100,
-        min: 0
+        min: 0,
+        scaling: PercentScale
     },
     {
         name: 'edgeOpacity',
@@ -60,7 +71,8 @@ var encodingPerElementParams = [
         value: 100,
         step: 1,
         max: 100,
-        min: 0
+        min: 0,
+        scaling: PercentScale
     },
     {
         name: 'pruneOrphans',
@@ -120,7 +132,8 @@ var encodingForLabelParams = [
         value: 100,
         step: 1,
         max: 100,
-        min: 0
+        min: 0,
+        scaling: PercentScale
     },
     {
         name: 'poiEnabled',
@@ -283,7 +296,12 @@ function createLegend($elt, urlParams) {
 // (Will append at anchor position)
 function controlMaker (urlParams, param, type) {
     var $input;
+    var initValue;
     if (param.type === 'continuous') {
+        initValue = urlParams[param.name] ? parseFloat(urlParams[param.name]) : param.value;
+        if (param.scaling !== undefined) {
+            initValue = param.scaling(initValue);
+        }
         $input = $('<input>').attr({
             class: type + '-menu-slider menu-slider',
             id: param.name,
@@ -292,9 +310,13 @@ function controlMaker (urlParams, param, type) {
             'data-slider-min': 0,
             'data-slider-max': 100,
             'data-slider-step': 1,
-            'data-slider-value': urlParams[param.name] ? parseFloat(urlParams[param.name]) : param.value
+            'data-slider-value': initValue
         }).data('param', param);
     } else if (param.type === 'discrete') {
+        initValue = urlParams.hasOwnProperty(param.name) ? parseFloat(urlParams[param.name]) : param.value;
+        if (param.scaling !== undefined) {
+            initValue = param.scaling(initValue);
+        }
         $input = $('<input>').attr({
             class: type + '-menu-slider menu-slider',
             id: param.name,
@@ -303,21 +325,23 @@ function controlMaker (urlParams, param, type) {
             'data-slider-min': param.min,
             'data-slider-max': param.max,
             'data-slider-step': param.step,
-            'data-slider-value': urlParams[param.name] ? parseFloat(urlParams[param.name]) : param.value
+            'data-slider-value': initValue
         }).data('param', param);
     } else if (param.type === 'bool') {
+        initValue = urlParams.hasOwnProperty(param.name) ? (urlParams[param.name] === 'true' || urlParams[param.name] === true) : param.value;
         $input = $('<input>').attr({
             class: type + '-checkbox',
             id: param.name,
             type: 'checkbox',
-            checked: urlParams.hasOwnProperty(param.name) ? (urlParams[param.name] === 'true' || urlParams[param.name] === true) : param.value
+            checked: initValue
         }).data('param', param);
     } else if (param.type === 'color') {
+        initValue = urlParams[param.name] ? urlParams[param.name] : param.def;
         $input = $('<div>').css({display: 'inline-block'})
             .append($('<div>').addClass('colorSelector')
                 .append($('<div>').css({opacity: 0.3, background: 'white'})))
             .append($('<div>').addClass('colorHolder'));
-        param.cb(colorPicker.makeInspector($input, urlParams[param.name] ? urlParams[param.name] : param.def));
+        param.cb(colorPicker.makeInspector($input, initValue));
     }else if (param.type === 'text') {
 
         var $innerInput = $('<input>').attr({
@@ -475,14 +499,6 @@ function createControls(socket, appState, trigger, urlParams) {
     })
     .subscribe(_.identity, util.makeErrorHandler('createControls'));
 }
-
-function logScaling(minPos, maxPos, minVal, maxVal) {
-    return d3.scale.log().domain([minVal, maxVal]).range([minPos, maxPos]);
-}
-
-var PercentScale = d3.scale.linear().domain([0, 1]).range([0, 100]);
-var PointSizeScale = logScaling(1, 100, 0.1, 10);
-var EdgeSizeScale = logScaling(1, 100, 0.1, 10);
 
 
 function setViewParameter(socket, name, pos, appState) {
