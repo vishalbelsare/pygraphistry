@@ -1382,7 +1382,7 @@ function updateTimeBar ($el, model) {
     var width = d3Data.width;
     var height = d3Data.height;
     var data = model.get('data');
-    var maxBinValue = model.get('maxBinValue');
+    var maxBinValue = data.maxBin;
     var taggedBins = tagBins(data.bins, data.keys, data.cutoffs);
 
     var svg = d3Data.svg;
@@ -1619,7 +1619,8 @@ function updateTimeBarLineChart ($el, model) {
     var width = d3Data.width;
     var height = d3Data.height;
     var data = model.get('data');
-    var maxBinValue = model.get('maxBinValue');
+    var maxBinValue = data.maxBin;
+    // var maxBinValue = model.get('maxBinValue');
 
     var svg = d3Data.svg;
 
