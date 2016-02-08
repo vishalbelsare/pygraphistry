@@ -5,11 +5,11 @@
   // Header/utility functions for grammar match bodies.
   //
 
-  function joinWords() {
-    if (arguments.length === 1 && typeof arguments[0] === 'string') {
-      return arguments[0];
+  function joinWords(words) {
+    if (words.length === 1 && typeof words[0] === 'string') {
+      return words[0];
     }
-    var args = Array.prototype.slice.call(arguments);
+    var args = Array.prototype.slice.call(words);
     return args.join('');
   }
 
