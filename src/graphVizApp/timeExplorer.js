@@ -63,6 +63,7 @@ var INTERACTION_MODE = 'FILTER';
 
 
 var TimeExplorerModel = Backbone.Model.extend({});
+var UserBarsModel = Backbone.Model.extend({});
 var TimeBarModel = Backbone.Model.extend({});
 var BottomAxisModel = Backbone.Model.extend({});
 var TimeBarCollection = Backbone.Collection.extend({
@@ -547,12 +548,15 @@ var TimeBarView = Backbone.View.extend({
 });
 
 var UserBarsView = Backbone.View.extend({
-    el: $('#timeExplorerBody'),
     events: {
         'click #newAttrSubmitButton': 'submitNewAttr'
     },
 
     initialize: function () {
+
+        this.$el = $('#timeExplorerBody');
+        this.el = this.$el[0];
+
         this.listenTo(this.collection, 'add', this.addBar);
         this.listenTo(this.collection, 'remove', this.removeBar);
         this.listenTo(this.collection, 'reset', this.addAll);
@@ -565,11 +569,11 @@ var UserBarsView = Backbone.View.extend({
     render: function () {
         // this.collection.sort(); //TODO
 
-        this.$el.empty();
-
         var newDiv = $('<div id="timeExplorerUserBarsRenderingContainer"></div>');
-        this.$el.append(newDiv);
-        newDiv = $('#timeExplorerUserBarsRenderingContainer');
+
+        // We empty out the div and reattach so that we can resort the elements without
+        // having to rerender the svgs inside.
+        this.$el.empty();
 
         this.collection.each(function (child) {
             // TODO: This guard is a hack. I don't know how to initialize backbone
@@ -580,8 +584,6 @@ var UserBarsView = Backbone.View.extend({
             }
         });
 
-        // console.log('RENDERING USER BARS VIEW');
-
         var params = {
 
         };
@@ -589,8 +591,7 @@ var UserBarsView = Backbone.View.extend({
         newDiv.append(addRowHtml);
 
         this.$el.attr('cid', this.cid);
-        // this.$el.empty();
-        // this.$el.append(newDiv);
+        this.$el.append(newDiv);
     },
 
     submitNewAttr: function (evt) {
@@ -599,7 +600,8 @@ var UserBarsView = Backbone.View.extend({
         var newAttr = $('#newAttr').val();
         var newQuery = $('#newQuery').val();
         // TODO: Don't use this global. Instead properly structure user bars as a model, that contains a collection.
-        this.model.get('explorer').addActiveQuery(newType, newAttr, newQuery);
+        var explorer = this.model.get('explorer');
+        explorer.addActiveQuery(newType, newAttr, newQuery);
         // this.collection.get('explorer').addActiveQuery(newType, newAttr, newQuery);
     },
 
@@ -704,7 +706,8 @@ function TimeExplorerPanel (socket, $parent, explorer) {
     // var SideInputModel = Backbone.Model.extend({});
     // this.sideInputView = new SideInputView({model: new SideInputModel({explorer: explorer})});
 
-    this.userBarsView = new UserBarsView({explorer: explorer, collection: this.userBars});
+    var userBarsModel = new UserBarsModel({explorer: explorer});
+    this.userBarsView = new UserBarsView({explorer: explorer, collection: this.userBars, model: userBarsModel});
     var mainBarModel = new TimeBarModel({explorer: explorer, timeStamp: Date.now(), showTimeAggregationButtons: true});
     this.mainBarView = new TimeBarView({model: mainBarModel});
     this.bottomAxisView = new BottomAxisView({model: new BottomAxisModel({explorer: explorer}) });
