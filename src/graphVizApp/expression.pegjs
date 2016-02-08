@@ -9,8 +9,7 @@
     if (words.length === 1 && typeof words[0] === 'string') {
       return words[0];
     }
-    var args = Array.prototype.slice.call(words);
-    return args.join('');
+    return words.join('');
   }
 
   function extractList(list, index) {
