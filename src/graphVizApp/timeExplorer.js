@@ -19,7 +19,7 @@ var FilterControl = require('./FilterControl.js');
 //////////////////////////////////////////////////////////////////////////////
 
 var TIME_BAR_HEIGHT = 60;
-var MIN_COLUMN_WIDTH = 4;
+var MIN_COLUMN_WIDTH = 6;
 var AXIS_HEIGHT = 20;
 var BAR_SIDE_PADDING = 1;
 var DOUBLE_CLICK_TIME = 500;
@@ -574,6 +574,7 @@ var UserBarsView = Backbone.View.extend({
         // We empty out the div and reattach so that we can resort the elements without
         // having to rerender the svgs inside.
         this.$el.empty();
+        this.$el.append(newDiv);
 
         this.collection.each(function (child) {
             // TODO: This guard is a hack. I don't know how to initialize backbone
@@ -591,7 +592,6 @@ var UserBarsView = Backbone.View.extend({
         newDiv.append(addRowHtml);
 
         this.$el.attr('cid', this.cid);
-        this.$el.append(newDiv);
     },
 
     submitNewAttr: function (evt) {
@@ -751,7 +751,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
         },
 
         renderInitializationMenu: function () {
-            this.userBarsView.$el.css('visibility', 'hidden');
+            this.userBarsView.$el.addClass('hidden');
             var params = {};
             var html = this.timeBarInitializationMenuTemplate(params);
             this.$timeExplorerMain.append(html);
@@ -778,7 +778,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             this.$timeExplorerMain.append(this.mainBarView.el);
             this.$timeExplorerAxisContainer.append(this.bottomAxisView.el);
 
-            this.userBarsView.$el.css('visibility', 'visible');
+            this.userBarsView.$el.removeClass('hidden');
         },
 
         setupMouseInteractions: function () {
