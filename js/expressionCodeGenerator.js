@@ -77,6 +77,7 @@ var InputPropertiesByShape = {
     ConditionalExpression: ['cases', 'elseClause'],
     CaseBranch: ['condition', 'result'],
     UnaryExpression: ['argument'],
+    MemberAccess: ['object', 'property'],
     NotExpression: ['value'],
     ListExpression: ['elements'],
     FunctionCall: ['arguments']
@@ -843,6 +844,13 @@ ExpressionCodeGenerator.prototype = {
                     return this.expressionStringForAST(arg, bindings, depth2, this.precedenceOf('('));
                 }, this);
                 return this.expressionForFunctionCall(ast.callee.name, args, outerPrecedence);
+            case 'MemberAccess':
+                precedence = this.precedenceOf('[');
+                args = _.mapObject(_.pick(ast, InputPropertiesByShape.MemberAccess), function (arg) {
+                    return this.expressionStringForAST(arg, bindings, depth2, precedence);
+                }, this);
+                subExprString = args.object + '[' + args.property + ']';
+                return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
             case 'Identifier':
                 if (this.hasMultipleBindings(bindings)) {
                     var unsafeInputName = ast.name;
