@@ -151,16 +151,16 @@ function shortFormat (value, dataType) {
     } else {
         var abs = Math.abs(value);
         var precision = 4;
-        if (abs > 1000000000000 || (value !== 0 && Math.abs(value) < 0.00001)) {
+        if (abs > 1e12 || (value !== 0 && abs < 1e-5)) {
             return String(value.toExponential(precision));
-        } else if (abs > 1000000000) {
-            return maybePrecise(value / 1000000000, precision) + 'B';
-        } else if (abs > 1000000) {
-            return maybePrecise(value / 1000000, precision) + 'M';
-        } else if (abs > 1000) {
-            return maybePrecise(value / 1000, precision) + 'K';
+        } else if (abs > 1e9) {
+            return maybePrecise(value / 1e9, precision) + 'B';
+        } else if (abs > 1e6) {
+            return maybePrecise(value / 1e6, precision) + 'M';
+        } else if (abs > 1e3) {
+            return maybePrecise(value / 1e3, precision) + 'K';
         } else {
-            value = Math.round(value * 1000000) / 1000000; // Kill rounding errors
+            value = Math.round(value * 1e6) / 1e6; // Kill rounding errors
             return String(value);
         }
     }
