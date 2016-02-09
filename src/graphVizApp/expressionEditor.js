@@ -33,8 +33,8 @@ DataframeCompleter.prototype.setNamespaceMetadata = function (namespaceMetadata)
 
 /**
  * Ace autocompletion framework API
- * @param {Ace.Editor} editor
- * @param {Ace.EditSession} session
+ * @param {ace.Editor} editor
+ * @param {ace.EditSession} session
  * @param {Number} pos
  * @param {String} prefix
  * @param {Function} callback
