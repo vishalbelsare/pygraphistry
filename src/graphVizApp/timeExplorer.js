@@ -12,6 +12,7 @@ var d3 = require('d3');
 var Command = require('./command.js');
 var util    = require('./util.js');
 var FilterControl = require('./FilterControl.js');
+var contentFormatter = require('./contentFormatter.js');
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1293,7 +1294,7 @@ function updateTimeBarMouseover ($el, model) {
     }
     var adjustedX = pageX - svgOffset.left;
 
-    upperTooltip.attr('x', adjustedX + 3)
+    upperTooltip.attr('x', adjustedX + 4)
         .text(upperTooltipValue);
 
     upperTooltip.data([''])
@@ -1306,6 +1307,35 @@ function updateTimeBarMouseover ($el, model) {
         .attr('font-size', '0.7em')
         .attr('pointer-events', 'none')
         .text('');
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // Update Moving Date Indicator (if main bar)
+    //////////////////////////////////////////////////////////////////////////
+
+    if (barType === 'main') {
+
+        var dateTooltip = svg.selectAll('.dateTooltip');
+        var dateTooltipValue = data.cutoffs[activeBin];
+        dateTooltipValue = contentFormatter.defaultFormat(dateTooltipValue, 'date');
+
+        dateTooltip.attr('x', adjustedX - 3)
+            .text(dateTooltipValue);
+
+        dateTooltip.data([''])
+            .enter().append('text')
+            .classed('dateTooltip', true)
+            .classed('unselectable', true)
+            .attr('y', -5)
+            .attr('x', 0)
+            .attr('text-anchor', 'end')
+            .attr('opacity', 1.0)
+            .attr('font-size', '0.7em')
+            .attr('pointer-events', 'none')
+            .text('');
+
+    }
+
 
     //////////////////////////////////////////////////////////////////////////
     // Update Bar Colors
@@ -1332,6 +1362,7 @@ function updateTimeBarLineChartMouseover ($el, model) {
 
     var d3Data = model.get('d3Data');
     var data = model.get('data');
+    var barType = model.get('barType');
 
     var svg = d3Data.svg;
 
@@ -1359,7 +1390,7 @@ function updateTimeBarLineChartMouseover ($el, model) {
 
     var adjustedX = pageX - svgOffset.left;
 
-    upperTooltip.attr('x', adjustedX + 3)
+    upperTooltip.attr('x', adjustedX + 4)
         .text(upperTooltipValue);
 
     upperTooltip.data([''])
@@ -1372,6 +1403,34 @@ function updateTimeBarLineChartMouseover ($el, model) {
         .attr('font-size', '0.7em')
         .attr('pointer-events', 'none')
         .text('');
+
+    //////////////////////////////////////////////////////////////////////////
+    // Update Moving Date Indicator (if main bar)
+    //////////////////////////////////////////////////////////////////////////
+
+    if (barType === 'main') {
+
+        var dateTooltip = svg.selectAll('.dateTooltip');
+        var dateTooltipValue = data.cutoffs[activeBin];
+        dateTooltipValue = contentFormatter.defaultFormat(dateTooltipValue, 'date');
+
+        dateTooltip.attr('x', adjustedX - 3)
+            .text(dateTooltipValue);
+
+        dateTooltip.data([''])
+            .enter().append('text')
+            .classed('dateTooltip', true)
+            .classed('unselectable', true)
+            .attr('y', -5)
+            .attr('x', 0)
+            .attr('text-anchor', 'end')
+            .attr('opacity', 1.0)
+            .attr('font-size', '0.7em')
+            .attr('pointer-events', 'none')
+            .text('');
+
+    }
+
 }
 
 
