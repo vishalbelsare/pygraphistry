@@ -327,17 +327,19 @@ function createLabelDom(instance, dim, labelObj) {
 
             var $icons = $('<div>').addClass('graph-label-icons');
             $wrap.append($icons);
+            var dataOptions = {placement: 'bottom', toggle: 'tooltip'};
+            var keyValueEqn = $key.text() + '=' + displayName;
             var $exclude = $('<a class="exclude-by-key-value">').html('<i class="fa fa-ban"></i>');
-            $exclude.data({placement: 'bottom', toggle: 'tooltip'});
-            $exclude.attr('title', 'Exclude if ' + $key.text() + '=' + displayName);
+            $exclude.data(dataOptions);
+            $exclude.attr('title', 'Exclude if ' + keyValueEqn);
             $exclude.tooltip({container: 'body'})
                 .data('bs.tooltip').tip().addClass('label-tooltip'); // so labels can remove
             $exclude.on('click', function () {
                 labelRequests.onNext({excludeQuery: {query: queryForKeyAndValue(key, val)}});
             });
             var $filter = $('<a class="filter-by-key-value">').html('<i class="fa fa-filter"></i>');
-            $filter.data({placement: 'bottom', toggle: 'tooltip'});
-            $filter.attr('title', 'Filter for ' + $key.text() + '=' + displayName);
+            $filter.data(dataOptions);
+            $filter.attr('title', 'Filter for ' + keyValueEqn);
             $filter.tooltip({container: 'body'})
                 .data('bs.tooltip').tip().addClass('label-tooltip'); // so labels can remove
             $filter.on('click', function () {
