@@ -297,73 +297,77 @@ function createLegend($elt, urlParams) {
 function controlMaker (urlParams, param, type) {
     var $input;
     var initValue;
-    if (param.type === 'continuous') {
-        initValue = urlParams[param.name] ? parseFloat(urlParams[param.name]) : param.value;
-        if (param.scaling !== undefined) {
-            initValue = param.scaling(initValue);
-        }
-        $input = $('<input>').attr({
-            class: type + '-menu-slider menu-slider',
-            id: param.name,
-            type: 'text',
-            'data-slider-id': param.name + 'Slider',
-            'data-slider-min': 0,
-            'data-slider-max': 100,
-            'data-slider-step': 1,
-            'data-slider-value': initValue
-        }).data('param', param);
-    } else if (param.type === 'discrete') {
-        initValue = urlParams.hasOwnProperty(param.name) ? parseFloat(urlParams[param.name]) : param.value;
-        if (param.scaling !== undefined) {
-            initValue = param.scaling(initValue);
-        }
-        $input = $('<input>').attr({
-            class: type + '-menu-slider menu-slider',
-            id: param.name,
-            type: 'text',
-            'data-slider-id': param.name + 'Slider',
-            'data-slider-min': param.min,
-            'data-slider-max': param.max,
-            'data-slider-step': param.step,
-            'data-slider-value': initValue
-        }).data('param', param);
-    } else if (param.type === 'bool') {
-        initValue = urlParams.hasOwnProperty(param.name) ? (urlParams[param.name] === 'true' || urlParams[param.name] === true) : param.value;
-        $input = $('<input>').attr({
-            class: type + '-checkbox',
-            id: param.name,
-            type: 'checkbox',
-            checked: initValue
-        }).data('param', param);
-    } else if (param.type === 'color') {
-        initValue = urlParams[param.name] ? urlParams[param.name] : param.def;
-        $input = $('<div>').css({display: 'inline-block'})
-            .append($('<div>').addClass('colorSelector')
-                .append($('<div>').css({opacity: 0.3, background: 'white'})))
-            .append($('<div>').addClass('colorHolder'));
-        param.cb(colorPicker.makeInspector($input, initValue));
-    } else if (param.type === 'text') {
+    switch (param.type) {
+        case 'continuous':
+            initValue = urlParams[param.name] ? parseFloat(urlParams[param.name]) : param.value;
+            if (param.scaling !== undefined) {
+                initValue = param.scaling(initValue);
+            }
+            $input = $('<input>').attr({
+                class: type + '-menu-slider menu-slider',
+                id: param.name,
+                type: 'text',
+                'data-slider-id': param.name + 'Slider',
+                'data-slider-min': 0,
+                'data-slider-max': 100,
+                'data-slider-step': 1,
+                'data-slider-value': initValue
+            }).data('param', param);
+            break;
+        case 'discrete':
+            initValue = urlParams.hasOwnProperty(param.name) ? parseFloat(urlParams[param.name]) : param.value;
+            if (param.scaling !== undefined) {
+                initValue = param.scaling(initValue);
+            }
+            $input = $('<input>').attr({
+                class: type + '-menu-slider menu-slider',
+                id: param.name,
+                type: 'text',
+                'data-slider-id': param.name + 'Slider',
+                'data-slider-min': param.min,
+                'data-slider-max': param.max,
+                'data-slider-step': param.step,
+                'data-slider-value': initValue
+            }).data('param', param);
+            break;
+        case 'bool':
+            initValue = urlParams.hasOwnProperty(param.name) ? (urlParams[param.name] === 'true' || urlParams[param.name] === true) : param.value;
+            $input = $('<input>').attr({
+                class: type + '-checkbox',
+                id: param.name,
+                type: 'checkbox',
+                checked: initValue
+            }).data('param', param);
+            break;
+        case 'color':
+            initValue = urlParams[param.name] ? urlParams[param.name] : param.def;
+            $input = $('<div>').css({display: 'inline-block'})
+                .append($('<div>').addClass('colorSelector')
+                    .append($('<div>').css({opacity: 0.3, background: 'white'})))
+                .append($('<div>').addClass('colorHolder'));
+            param.cb(colorPicker.makeInspector($input, initValue));
+            break;
+        case 'text':
+            var $innerInput = $('<input>').attr({
+                class: type + '-control-textbox form-control control-textbox',
+                id: param.name,
+                type: 'text'
+            }).data('param', param);
 
-        var $innerInput = $('<input>').attr({
-            class: type + '-control-textbox form-control control-textbox',
-            id: param.name,
-            type: 'text'
-        }).data('param', param);
+            var $button = $('<button class="btn btn-default control-textbox-button">Set</button>');
 
-        var $button = $('<button class="btn btn-default control-textbox-button">Set</button>');
+            var $wrappedInput = $('<div>').addClass('col-xs-8').addClass('inputWrapper')
+                .css('padding-left', '0px')
+                .append($innerInput);
+            var $wrappedButton = $('<div>').addClass('col-xs-4').addClass('buttonWrapper')
+                .css('padding-left', '0px')
+                .append($button);
 
-        var $wrappedInput = $('<div>').addClass('col-xs-8').addClass('inputWrapper')
-            .css('padding-left', '0px')
-            .append($innerInput);
-        var $wrappedButton = $('<div>').addClass('col-xs-4').addClass('buttonWrapper')
-            .css('padding-left', '0px')
-            .append($button);
-
-        $input = $('<div>').append($wrappedInput).append($wrappedButton);
-
-    } else {
-        console.warn('Ignoring param of unknown type', param);
-        $input = $('<div>').text('Unknown setting type' + param.type);
+            $input = $('<div>').append($wrappedInput).append($wrappedButton);
+            break;
+        default:
+            console.warn('Ignoring param of unknown type', param);
+            $input = $('<div>').text('Unknown setting type' + param.type);
     }
 
     var $col = $('<div>').addClass('col-xs-8').append($input);
