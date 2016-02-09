@@ -91,18 +91,6 @@ function d3ColorFromRGBA(x) {
     return d3.rgb(r, g, b);
 }
 
-
-function decodeColumnValue (val, attributeName) {
-    if (!isNaN(val)) {
-        val = Number(val); // Cast to number in case it's a string
-
-        if (attributeName.indexOf('Date') > -1) {
-            return new Date(val);
-        }
-    }
-    return val;
-}
-
 /**
  * Calculate significant figures on this as a radix.
  * @param {Number} v

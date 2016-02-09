@@ -342,7 +342,7 @@ function controlMaker (urlParams, param, type) {
                 .append($('<div>').css({opacity: 0.3, background: 'white'})))
             .append($('<div>').addClass('colorHolder'));
         param.cb(colorPicker.makeInspector($input, initValue));
-    }else if (param.type === 'text') {
+    } else if (param.type === 'text') {
 
         var $innerInput = $('<input>').attr({
             class: type + '-control-textbox form-control control-textbox',

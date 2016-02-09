@@ -1163,7 +1163,6 @@ function initializeHistogramViz($el, model) {
     var id = model.cid;
     var attribute = model.get('attribute');
     var globalStats = model.getHistogramData();
-    var name = model.get('attribute');
     var bins = data.bins || []; // Guard against empty bins.
     var type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
     var d3Data = model.get('d3Data');
