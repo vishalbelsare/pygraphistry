@@ -6,7 +6,16 @@
   //
 
   function joinWords() {
-    var words = Array.prototype.slice.call(arguments);
+    var words;
+    if (arguments.length === 1) {
+      if (typeof arguments[0] === 'string') {
+        return arguments[0];
+      } else {
+        words = arguments[0];
+      }
+    } else {
+      words = Array.prototype.slice.call(arguments);
+    }
     if (words.length === 1 && typeof words[0] === 'string') {
       return words[0];
     }
