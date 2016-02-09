@@ -867,13 +867,13 @@ RegexPredicate "regex expression"
 
 MemberAccess
   = first: PrimaryExpression
-    rest: ( __ lbracket __ property:Expression __ rbracket { return { name: property }; } )*
+    rest: ( __ lbracket __ property:Expression __ rbracket { return { property: property }; } )*
     {
       return buildTree(first, rest, function(result, element) {
         return {
           type:     'MemberAccess',
           object:   result,
-          name:     element.name
+          property: element.property
         };
       });
     }
