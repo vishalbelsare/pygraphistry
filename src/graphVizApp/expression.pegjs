@@ -5,7 +5,8 @@
   // Header/utility functions for grammar match bodies.
   //
 
-  function joinWords(words) {
+  function joinWords() {
+    var words = Array.prototype.slice.call(arguments);
     if (words.length === 1 && typeof words[0] === 'string') {
       return words[0];
     }
