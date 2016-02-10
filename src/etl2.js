@@ -69,7 +69,7 @@ function etl(msg, params) {
         desc.datasources = datasources;
         logger.debug('Dataset', desc);
         var nnodes = _.pluck(desc.nodes, 'count').join('+');
-        var nedges = _.pluck(desc.nodes, 'count').join('+');
+        var nedges = _.pluck(desc.edges, 'count').join('+');
         return uploadJSON(desc, sprintf('%s/dataset.json', folder)).then(function (url) {
             return {name: url, nnodes: nnodes, nedges: nedges};
         });
