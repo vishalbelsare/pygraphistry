@@ -35,10 +35,7 @@ var boundBuffers = {};
  * @param bgColor - [0--255,0--255,0--255,0--1]
  * @param [dimensions=\[1,1\]] - a two element array [width,height] used for internal position calculations.
  */
-function create(renderer, device, vendor, controls, socket) {
-
-
-    var dataframe = new Dataframe();
+function create(renderer, simulator, dataframe, device, vendor, controls, socket) {
 
     var graph = {
         renderer: renderer,
@@ -71,24 +68,12 @@ function create(renderer, device, vendor, controls, socket) {
 
     return clientNotification.loadingStatus(socket, 'Creating physics simulator')
     .then(function () {
-        return createSimulator(dataframe, renderer, device, vendor, controls);
-    }).then(function (simulator) {
         graph.simulator = simulator;
         graph.globalControls = simulator.controls.global;
     }).then(function () {
         Object.seal(graph);
         return graph;
     }).fail(log.makeQErrorHandler(logger, 'Cannot initialize nbody'));
-}
-
-function createSimulator(dataframe, renderer, device, vendor, controls) {
-    logger.trace('Creating Simulator');
-
-    // Hack, but making simulator depend on CL device it not worth the work.
-    var simulator = controls[0].simulator;
-
-    return simulator.create(dataframe, renderer, device, vendor, controls)
-        .fail(log.makeQErrorHandler(logger, 'Cannot create simulator'));
 }
 
 function updateSettings(graph, newCfg) {
