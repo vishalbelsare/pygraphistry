@@ -10,10 +10,7 @@ var Q = require("q"),
     Rx = require("rx"),
     _ = require('underscore'),
     request = require('request'),
-    NBody = require("./NBody.js"),
-    RenderNull = require('./RenderNull.js'),
     rConf = require('./renderer.config.js'),
-    lConf = require('./layout.config.js'),
 //    webcl = require('node-webcl'),
     metrics = require("./metrics.js"),
     loader = require("./data-loader.js"),
@@ -216,41 +213,6 @@ function fetchBufferByteLengths(counts, renderConfig) {
     }).object().value();
 }
 
-
-function init(device, vendor, controls, socket) {
-    logger.trace("Starting initialization");
-
-    /* Example of RenderGL instatiation.
-     * Left for historical purposes, probably broken!
-     *
-    var document = null;
-    var canvasStandin = {width: WIDTH, height: HEIGHT, clientWidth: WIDTH,
-                         clientHeight: HEIGHT};
-    var bgColor = [255, 255, 255, 1.0];
-    RenderGl.create(document, canvasStandin, bgColor, global.dimensions);
-    */
-
-    return RenderNull.create(null)
-        .then(function (renderer) {
-            return NBody.create(renderer, device, vendor, controls, socket);
-        }).fail(log.makeQErrorHandler(logger, 'Failure in NBody creation'));
-}
-
-
-
-function getControls(controlsName) {
-    var controls = lConf.controls.default;
-    if (controlsName in lConf.controls) {
-        controls = lConf.controls[controlsName];
-    }
-    else {
-        logger.warn('Unknown controls "%s", using defaults.', controlsName);
-    }
-
-    return controls;
-}
-
-
 /**
  * Returns an Observable that fires an event in `delay` ms, with the given `value`
  * @param  {number}   [delay=16]    - the time, in milliseconds, before the event is fired
@@ -281,7 +243,7 @@ function delayObservableGenerator(delay, value, cb) {
 ///////////////////////////////////////////////////////////////////////////
 
 
-function create(dataset, socket) {
+function create(dataset, socket, nBodyInstance) {
     logger.trace("STARTING DRIVER");
 
     //Observable {play: bool, layout: bool, ... cfg settings ...}
@@ -292,11 +254,8 @@ function create(dataset, socket) {
     // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
     // the contents of each VBO
     var animStepSubj = new Rx.BehaviorSubject(null);
-    var controls = getControls(dataset.metadata.controls);
-    var device = dataset.metadata.device;
-    var vendor = dataset.metadata.vendor;
 
-    var graph = init(device, vendor, controls, socket).then(function (graph) {
+    var graph = nBodyInstance.then(function (graph) {
         logger.trace('LOADING DATASET');
         return Q.all([
             loader.loadDatasetIntoSim(graph, dataset),
