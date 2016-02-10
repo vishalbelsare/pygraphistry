@@ -7,7 +7,7 @@
 
 
 var Q = require("q"),
-    Rx = require("rx"),
+    Rx = require("rxjs/Rx.KitchenSink"),
     _ = require('underscore'),
     request = require('request'),
     rConf = require('./renderer.config.js'),
@@ -232,7 +232,7 @@ function delayObservableGenerator(delay, value, cb) {
     return Rx.Observable.return(value)
         .delay(delay)
         .flatMap(function(v1) {
-            return Rx.Observable.fromNodeCallback(function(v2, cb) {
+            return Rx.Observable.bindNodeCallback(function(v2, cb) {
                 setImmediate(function() { cb(v2); });
             })(v1);
         });
@@ -439,7 +439,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
             var compressed =
                 bufferNames.map(function (bufferName) {
                     perf.startTiming('compress_durationMS');
-                    return Rx.Observable.fromNodeCallback(compress.deflate)(
+                    return Rx.Observable.bindNodeCallback(compress.deflate)(
                         vbos[bufferName].buffer,//binary,
                         {output: new Buffer(
                             Math.max(1024, Math.round(vbos[bufferName].buffer.byteLength * 1.5)))})
@@ -452,7 +452,7 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
                         });
                 });
 
-            return Rx.Observable.combineLatest.apply(Rx.Observable, compressed).take(1)
+            return Rx.Observable.combineLatest(compressed).take(1)
                 .do(function () { perf.endTiming('compressAll_durationMS');
 
         })
