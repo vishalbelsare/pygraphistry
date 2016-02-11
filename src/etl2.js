@@ -131,6 +131,7 @@ function uploadAndCache(data, key, opts) {
         // On prod/staging ETL fails if upload fails
         logger.debug('Uploading dataset');
         return s3Upload(data, key, opts)
+            .then(cacheLocally.bind(null, data, key))
             .fail(function (err) {
                 logger.error(err, 'S3 Upload failed');
             });
