@@ -3,13 +3,30 @@
 /// <reference path="../typings/rx/rx.d.ts"/>
 'use strict';
 
+var Rx          = require('rxjs/Rx.KitchenSink');
+
+Rx.Observable.return = function (value) {
+    return Rx.Observable.of(value);
+};
+
+Rx.Subject.prototype.onNext = Rx.Subject.prototype.next;
+Rx.Subject.prototype.onError = Rx.Subject.prototype.error;
+Rx.Subject.prototype.onCompleted = Rx.Subject.prototype.complete;
+Rx.Subject.prototype.dispose = Rx.Subscriber.prototype.unsubscribe;
+
+Rx.Subscriber.prototype.onNext = Rx.Subscriber.prototype.next;
+Rx.Subscriber.prototype.onError = Rx.Subscriber.prototype.error;
+Rx.Subscriber.prototype.onCompleted = Rx.Subscriber.prototype.complete;
+Rx.Subscriber.prototype.dispose = Rx.Subscriber.prototype.unsubscribe;
+
+Rx.Subscription.prototype.dispose = Rx.Subscription.prototype.unsubscribe;
+
 var fs          = require('fs');
 var path        = require('path');
 var url         = require('url');
 var util        = require('util');
 
 var _           = require('underscore');
-var Rx          = require('rx');
 var Q           = require('q');
 var express     = require('express');
 var io          = require('socket.io-client'); //for etl setup
@@ -283,7 +300,9 @@ function start() {
             }
         })
         .flatMap(function () {
-            return Rx.Observable.fromNodeCallback(http.listen.bind(http, HTTP_SERVER_LISTEN_PORT))(HTTP_SERVER_LISTEN_ADDRESS);
+            return Rx.Observable.bindNodeCallback(
+                http.listen.bind(http, HTTP_SERVER_LISTEN_PORT)
+            )(HTTP_SERVER_LISTEN_ADDRESS);
         });
 }
 
