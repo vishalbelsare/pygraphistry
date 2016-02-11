@@ -37,7 +37,7 @@ var dbObs = (config.ENVIRONMENT === 'local') ?
     (Rx.Observable.return()) :
     (mongoClientConnect(config.MONGO_SERVER, {auto_reconnect: true})
         .map(function(database) { return  database.db(config.DATABASE); })
-        .shareReplay(1));
+        .publishReplay(1));
 
 
 /**
